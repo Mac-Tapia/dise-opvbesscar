@@ -10,7 +10,7 @@
 ## 📊 Estado del Proyecto
 
 | Aspecto | Estado | Detalles |
-|---------|--------|---------|
+| - | - | - |
 | **Código Fuente** | ✅ COMPLETO | OE2 + OE3 implementados |
 | **OE.2 - Dimensionamiento** | ✅ VERIFICADO | Solar, BESS, Cargadores |
 | **OE.3 - Algoritmos** | ✅ VERIFICADO | Uncontrolled, RBC, PPO, SAC |
@@ -150,7 +150,7 @@ docker-compose -f Docker/docker-compose.yml up
 ## 🔧 Características Técnicas
 
 | Componente | Tecnología | Descripción |
-|-----------|-----------|------------|
+| - | - | - |
 | **Generación Solar** | pvlib-python | Radiación solar realista para Iquitos |
 | **Dataset** | CityLearn | Framework de simulación de ciudades inteligentes |
 | **RL - PPO** | Stable Baselines3 | Proximal Policy Optimization |
@@ -164,7 +164,7 @@ docker-compose -f Docker/docker-compose.yml up
 ## 📍 Parámetros Iquitos 2025
 
 | Parámetro | Valor | Fuente |
-|-----------|-------|--------|
+| - | - | - |
 | Latitud | -3.7° | Iquitos, Perú |
 | Longitud | -73.2° | Iquitos, Perú |
 | Zona horaria | UTC-5 | Perú |
@@ -255,7 +255,7 @@ docker-compose up
 ## 📚 Referencias Clave
 
 | Archivo | Propósito |
-|---------|-----------|
+| - | - |
 | `src/iquitos_citylearn/oe2/solar_pvlib.py` | Modela generación FV |
 | `src/iquitos_citylearn/oe2/bess.py` | Dimensiona batería |
 | `src/iquitos_citylearn/oe2/chargers.py` | Configura cargadores |

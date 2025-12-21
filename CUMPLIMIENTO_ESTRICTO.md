@@ -1039,7 +1039,7 @@ print(f"   Nivel servicio: {level_of_service:.1f}%")
 ## 🎯 RESUMEN OBLIGATORIO - CHECKLIST DE CUMPLIMIENTO
 
 | Dimensión | Ítem | Código/Script | ✅ Cumplimiento |
-|-----------|------|---------------|-----------------|
+| - | - | - | - |
 | **Ubicación** | 1. Área (m²) | chargers.py | [x] Validado |
 | | 2. Capacidad estacionamiento | chargers.py | [x] Validado |
 | | 3. Accesibilidad/Seguridad | configs/ | [x] Parámetros |
