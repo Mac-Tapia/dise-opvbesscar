@@ -16,6 +16,7 @@ class BessSizingOutput:
     surplus_kwh_day: float
     round_kwh: float
     profile_path: str
+    efficiency_roundtrip: float = 0.90  # CUMPLIMIENTO ESTRICTO: Eficiencia obligatoria
 
 def default_mall_shape_24h() -> np.ndarray:
     # Mildly higher daytime consumption typical for retail.
@@ -38,7 +39,12 @@ def run_bess_sizing(
     c_rate: float,
     round_kwh: float,
     mall_shape_24h: Optional[np.ndarray] = None,
+    efficiency_roundtrip: float = 0.90,  # CUMPLIMIENTO: Eficiencia BESS obligatoria
 ) -> Dict[str, object]:
+    # VALIDACIÓN ESTRICTA ÍTEM: DoD y eficiencia deben estar en rango válido
+    assert 0.7 <= dod <= 0.95, f"DoD inválido: {dod}. Debe estar entre 0.7-0.95"
+    assert 0.85 <= efficiency_roundtrip <= 0.98, f"Eficiencia inválida: {efficiency_roundtrip}. Debe estar entre 0.85-0.98"
+    
     out_dir.mkdir(parents=True, exist_ok=True)
 
     pv24 = pd.read_csv(pv_profile_24h_path)
@@ -59,9 +65,16 @@ def run_bess_sizing(
     df["deficit_kwh"] = (df["load_kwh"] - df["pv_kwh"]).clip(lower=0.0)
 
     surplus_day = float(df["surplus_kwh"].sum())
-    capacity_nominal = surplus_day / max(dod, 1e-9)
+    # CUMPLIMIENTO ESTRICTO ÍTEM: Capacidad nominal considerando DoD y eficiencia
+    # Fórmula: capacity = (excedente / DoD) / eficiencia
+    capacity_nominal = (surplus_day / max(dod, 1e-9)) / efficiency_roundtrip
     capacity_nominal = round_to_step(capacity_nominal, round_kwh)
     nominal_power = float(c_rate * capacity_nominal)
+    
+    # Validación: capacidad suficiente para autonomía mínima de 24h
+    avg_daily_demand = float(df["load_kwh"].sum())
+    autonomy_hours = (capacity_nominal * dod) / (avg_daily_demand / 24.0) if avg_daily_demand > 0 else 24.0
+    assert autonomy_hours >= 24.0, f"Autonomía insuficiente: {autonomy_hours}h < 24h requeridas"
 
     profile_path = out_dir / "bess_daily_balance_24h.csv"
     df.to_csv(profile_path, index=False)
@@ -74,6 +87,7 @@ def run_bess_sizing(
         surplus_kwh_day=float(surplus_day),
         round_kwh=float(round_kwh),
         profile_path=str(profile_path.resolve()),
+        efficiency_roundtrip=float(efficiency_roundtrip),  # CUMPLIMIENTO: Eficiencia registrada
     )
     (out_dir / "bess_results.json").write_text(pd.Series(out.__dict__).to_json(), encoding="utf-8")
     return out.__dict__
