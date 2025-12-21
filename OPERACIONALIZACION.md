@@ -531,7 +531,7 @@
 ## 📊 RESUMEN MAPEO OPERACIONAL
 
 | Variable (Tabla) | Definición Operacional | Código/Script | KPI Salida |
-|---|---|---|---|
+| - | - | - | ------ |
 | **OE.2.1** Ubicación infraestructura | Área disponible (m²), capacidad estacionamiento | configs/ + chargers.py | chargers_sizing.json |
 | **OE.2.2** Área protección | Área techada (m²), % cobertura | solar_pvlib.py | pv_profile_*.json |
 | **OE.2.3** Red eléctrica | Capacidad kVA, continuidad suministro | configs/default.yaml | Parámetros grid |
@@ -574,7 +574,7 @@ FLUJO OPERACIONAL (Tabla Operacional → Código):
 
 ## ✅ VALIDACIÓN CONTRA TABLA OPERACIONAL
 
-**Estado: TOTALMENTE ALINEADO**
+### Estado: TOTALMENTE ALINEADO
 
 - [x] Variables independientes (OE.2) codificadas
 - [x] Método y técnicas implementadas

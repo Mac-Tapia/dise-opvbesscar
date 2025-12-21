@@ -4,7 +4,7 @@
 
 **Objetivo:** Dimensionar la capacidad de generación solar, almacenamiento y cargadores de motos y mototaxis eléctricas para reducir las emisiones de CO₂ en Iquitos 2025.
 
-### ✅ Implementación Actual
+### ✅ Arquitectura de Control Implementada
 
 #### 1. **Generación Solar** (`src/iquitos_citylearn/oe2/solar_pvlib.py`)
 
@@ -47,7 +47,7 @@
 
 **Objetivo:** Seleccionar el Algoritmo de gestión de carga de motos y mototaxis eléctricas para reducir las emisiones de CO₂ en Iquitos 2025.
 
-### ✅ Implementación Actual
+### ✅ Arquitectura de Control Implementada
 
 #### 1. **Agentes de Control** (`src/iquitos_citylearn/oe3/agents/`)
 
@@ -91,7 +91,7 @@
 - ✅ Proyecta a 20 años
 - ✅ Compara reducción relativa entre agentes
 
-### 📊 Validación
+### 📊 Validación de Resultados
 
 - SAC genera emisiones mínimas vs. baseline
 - RBC ofrece mejora simple sin aprendizaje
@@ -103,7 +103,7 @@
 ## 🎯 Mapeo Código ↔ Objetivos
 
 | Objetivo | Componente | Archivo | Salida |
-|----------|-----------|---------|--------|
+| - | - | - | ------ |
 | OE.2 - Solar | Dimensionamiento FV | `oe2/solar_pvlib.py` | `pv_profile_*.json` |
 | OE.2 - Almacenamiento | Dimensionamiento BESS | `oe2/bess.py` | `bess_sizing.json` |
 | OE.2 - Cargadores | Dimensionamiento cargadores | `oe2/chargers.py` | `chargers_sizing.json` |
