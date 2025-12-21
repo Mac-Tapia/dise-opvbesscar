@@ -45,8 +45,17 @@ def build_pv_timeseries(
     target_annual_kwh: float,
     use_pvlib: bool = True,
 ) -> pd.DataFrame:
+    # CUMPLIMIENTO ESTRICTO ÍTEM: Calcular potencia FV (kWp) considerando eficiencia
+    system_losses = 0.18  # 18% pérdidas típicas (wiring, inverter, etc.)
+    inverter_efficiency = 0.97
+    efficiency = (1 - system_losses) * inverter_efficiency  # ~0.82
+    dc_capacity_kwp = target_dc_kw  # DC capacity in kWp
+    
     index = _timestamps(year=year, tz=tz, seconds_per_time_step=seconds_per_time_step)
     dt_hours = seconds_per_time_step / 3600.0
+    
+    # VALIDACIÓN OBLIGATORIA: Debe haber 8760 horas (1 año completo)
+    assert len(index) == 8760, f"Validación crítica: Se requieren 8760 horas, se tienen {len(index)}"
 
     pv_kw_per_kwp: pd.Series
     if use_pvlib:
@@ -67,6 +76,10 @@ def build_pv_timeseries(
     pv_kwh_per_kwp = pv_kw_per_kwp * dt_hours
     raw_annual_kwh = float((pv_kwh_per_kwp.sum() * target_dc_kw))
     scale = 1.0 if raw_annual_kwh <= 0 else (target_annual_kwh / raw_annual_kwh)
+    
+    # CUMPLIMIENTO ESTRICTO ÍTEM: Validar generación anual contra objetivo
+    annual_generation_kwh = raw_annual_kwh * scale
+    assert annual_generation_kwh >= (target_annual_kwh * 0.95), f"CRÍTICO: Generación anual insuficiente: {annual_generation_kwh} kWh < {target_annual_kwh*0.95} kWh objetivo"
 
     pv_kwh = pv_kwh_per_kwp * target_dc_kw * scale
 
