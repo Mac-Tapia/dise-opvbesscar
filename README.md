@@ -1,13 +1,34 @@
-# Iquitos – OE2 + OE3 (CityLearn con EV)
+# Iquitos 2025 – OE2 + OE3
 
-Este repositorio integra:
+## Reducción de Emisiones CO₂ mediante Energía Solar y Gestión de Carga EV
 
-- **OE2 (dimensionamiento)**: perfil FV anual (pvlib/clear-sky), selección de cargadores (motos/mototaxis) y dimensionamiento BESS a partir de excedentes diarios FV.
-- **OE3 (operación)**: dataset **CityLearn** con **EV + FV + BESS**, simulación con agentes CityLearn (Uncontrolled, BasicEVRBC y SAC) y generación de **tabla final de reducción CO₂** (anual y a 20 años).
+**Proyecto:** Dimensionamiento y gestión inteligente de motos/mototaxis eléctricas para reducir emisiones de CO₂ en Iquitos.
+
+**Ubicación:** Iquitos, Perú (lat: -3.7°, lon: -73.2°)  
+**Año objetivo:** 2025
 
 ---
 
-## 1) Requisitos
+## 📋 Objetivos del Proyecto
+
+### **OE.2 - Dimensionamiento de Infraestructura**
+
+✅ Dimensionar generación solar (FV), almacenamiento (BESS) y cargadores para motos/mototaxis eléctricas
+
+### **OE.3 - Algoritmos de Control**
+
+✅ Seleccionar algoritmo de gestión de carga (Uncontrolled, RBC, PPO, SAC) que minimize emisiones CO₂
+
+---
+
+## 📦 Componentes
+
+- **OE2**: Perfil FV anual (pvlib/clear-sky), dimensionamiento BESS, configuración cargadores para flota eléctrica
+- **OE3**: Dataset CityLearn (EV + FV + BESS), simulación multi-agente, análisis de reducción CO₂ (anual + 20 años)
+
+---
+
+## 1️⃣ Instalación y Requisitos
 
 - Python 3.10+
 - VSCode recomendado
@@ -43,6 +64,7 @@ Salida principal:
 ## 3) Ejecutar por etapas
 
 ### OE2
+
 ```bash
 python scripts/run_oe2_solar.py --config configs/default.yaml
 python scripts/run_oe2_chargers.py --config configs/default.yaml
@@ -50,6 +72,7 @@ python scripts/run_oe2_bess.py --config configs/default.yaml
 ```
 
 ### OE3
+
 ```bash
 python scripts/run_oe3_build_dataset.py --config configs/default.yaml
 python scripts/run_oe3_simulate.py --config configs/default.yaml
