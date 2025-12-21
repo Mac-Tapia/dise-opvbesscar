@@ -1,0 +1,73 @@
+project:
+  seed: 42
+  year: 2025
+  seconds_per_time_step: 3600
+
+paths:
+  raw_dir: data/raw
+  interim_dir: data/interim
+  processed_dir: data/processed
+  reports_dir: reports
+
+oe2:
+  location:
+    lat: -3.7437
+    lon: -73.2516
+    tz: America/Lima
+
+  mall:
+    energy_kwh_day: 10850.0
+    shape_24h: null
+
+  solar:
+    target_ac_kw: 3201.17
+    target_dc_kw: 4162.04
+    target_annual_kwh: 3970000.0
+    use_pvlib: true
+
+  ev_fleet:
+    motos_count: 900
+    mototaxis_count: 130
+    peak_share_day: 0.15
+    fc_motos: 1.0
+    fc_mototaxis: 1.0
+    pe_motos: 1.0
+    pe_mototaxis: 1.0
+    opening_hour: 7
+    closing_hour: 23
+    peak_hours: [7, 8, 17, 18]
+    session_minutes: 25
+    utilization: 0.92
+    charger_power_kw: 3.5
+    sockets_per_charger: 4
+
+  bess:
+    dod: 0.90
+    c_rate: 0.50
+    round_kwh: 10
+
+oe3:
+  dataset:
+    template_name: citylearn_challenge_2022_phase_all_plus_evs
+    name: iquitos_ev_mall
+    central_agent: true
+
+  grid:
+    carbon_intensity_kg_per_kwh: 0.45
+    tariff_usd_per_kwh: 0.20
+
+  evaluation:
+    agents: ["Uncontrolled", "BasicEVRBC", "SAC"]
+    sac:
+      episodes: 5
+      deterministic_eval: true
+
+  emissions:
+    km_per_kwh: 35.0
+    km_per_gallon: 120.0
+    kgco2_per_gallon: 8.9
+    project_life_years: 20
+
+  city_baseline_tpy:
+    transport: 258250.0
+    electricity_generation: 275000.0
