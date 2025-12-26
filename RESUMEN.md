@@ -1,4 +1,16 @@
-# RESUMEN EJECUTIVO - Iquitos 2025
+# RESUMEN EJECUTIVO - DISEÑO DE INFRAESTRUCTURA DE CARGA INTELIGENTE DE MOTOS Y MOTOTAXIS ELÉCTRICAS PARA REDUCIR LAS EMISIONES DE DIÓXIDO DE CARBONO EN LA CIUDAD DE IQUITOS, 2025
+
+## 🎯 Objetivos del Proyecto
+
+**Objetivo general:** Diseñar la infraestructura de carga inteligente para motos y mototaxis eléctricas que reduzca el dióxido de carbono en Iquitos, 2025.
+
+**Objetivos específicos:**
+
+1. OE.1.- Determinar la ubicación estratégica óptima que garantice la viabilidad técnica de motos y mototaxis eléctricas, necesaria para la reducción cuantificable de las emisiones de dióxido de carbono en Iquitos.
+2. OE.2.- Dimensionar la capacidad de generación solar, almacenamiento y cargadores de motos y mototaxis eléctricas para reducir las emisiones de dióxido de carbono en la ciudad de Iquitos.
+3. OE.3.- Seleccionar el agente inteligente de gestión de carga de motos y mototaxis eléctricas más apropiado para maximizar la eficiencia operativa del sistema, asegurando la contribución cuantificable a la reducción de las emisiones de dióxido de carbono en la ciudad de Iquitos.
+
+---
 
 ## 🎯 Proyecto Completado
 
@@ -11,20 +23,27 @@
 
 | Aspecto | Estado | Detalles |
 | - | - | - |
+
 | **Código Fuente** | ✅ COMPLETO | OE2 + OE3 implementados |
+
 | **OE.2 - Dimensionamiento** | ✅ VERIFICADO | Solar, BESS, Cargadores |
+
 | **OE.3 - Algoritmos** | ✅ VERIFICADO | Uncontrolled, RBC, PPO, SAC |
+
 | **Scripts** | ✅ FUNCIONALES | 7 scripts ejecutables |
+
 | **Docker** | ✅ PREPARADO | Imagen y compose listos |
+
 | **Documentación** | ✅ COMPLETA | README, OBJETIVOS, VALIDACION |
+
 | **GitHub** | ✅ SINCRONIZADO | Repositorio público actualizado |
 
 ---
 
 ## 🏗️ Arquitectura del Proyecto
 
-```
-IQUITOS 2025
+```markdown
+DISEÑO DE CARGA INTELIGENTE OE.2 + OE.3
 ├── OE.2 DIMENSIONAMIENTO
 │   ├── ✓ Generación Solar (pvlib)
 │   ├── ✓ Almacenamiento BESS
@@ -35,7 +54,8 @@ IQUITOS 2025
     ├── ✓ RBC (Rule-Based Control)
     ├── ✓ PPO (Policy Gradient RL)
     └── ✓ SAC (Maximum Entropy RL)
-```
+
+```markdown
 
 ---
 
@@ -43,13 +63,16 @@ IQUITOS 2025
 
 ### Código Fuente (`src/iquitos_citylearn/`)
 
-```
+```markdown
+
 oe2/                      → Dimensionamiento
 ├── solar_pvlib.py        → Perfil FV anual (Iquitos)
 ├── bess.py               → Batería + almacenamiento
+
 └── chargers.py           → Cargadores para flota EV
 
 oe3/                      → Simulación + Control
+
 ├── simulate.py           → Motor de simulación CityLearn
 ├── co2_table.py          → Análisis de emisiones CO₂
 ├── dataset_builder.py    → Constructor de datasets
@@ -61,11 +84,13 @@ oe3/                      → Simulación + Control
 
 utils/                    → Utilidades
 ├── logging.py, series.py, time.py
-```
+
+```markdown
 
 ### Scripts Ejecutables (`scripts/`)
 
-```
+```markdown
+
 run_oe2_solar.py          → Generar perfil solar
 run_oe2_chargers.py       → Dimensionar cargadores
 run_oe2_bess.py           → Dimensionar almacenamiento
@@ -73,26 +98,31 @@ run_oe3_build_dataset.py  → Construir dataset
 run_oe3_simulate.py       → Ejecutar simulaciones
 run_oe3_co2_table.py      → Generar tabla CO₂
 run_pipeline.py           → EJECUTAR TODO
-```
+
+```markdown
 
 ### Configuración
 
-```
+```markdown
+
 configs/default.yaml      → Parámetros ajustables
 .env.example              → Variables de entorno
 requirements.txt          → Dependencias
 pyproject.toml            → Metadata del proyecto
 Docker/                   → Setup para containerización
-```
+
+```markdown
 
 ### Documentación
 
-```
+```markdown
+
 README.md                 → Instrucciones principales
 OBJETIVOS.md              → Alineación con OE.2 y OE.3
 VALIDACION.md             → Checklist de funcionalidad
 RESUMEN.md                → Este archivo
-```
+
+```markdown
 
 ---
 
@@ -101,32 +131,43 @@ RESUMEN.md                → Este archivo
 ### Opción 1: Python Local
 
 ```bash
+
 # Requisitos: Python 3.10+, pip
 
 # Instalar
+
 python -m venv .venv
 source .venv/bin/activate  # Linux/Mac
+
 .venv\Scripts\activate     # Windows
+
 pip install -r requirements.txt
 
 # Ejecutar
+
 python scripts/run_pipeline.py
 
 # Salidas
+
 reports/oe3/               → Gráficas (29 x 300 DPI)
+analyses/oe3/             ? Tablas comparativas OE3
 data/interim/oe2/          → Dimensionamiento OE2
-```
+
+```markdown
 
 ### Opción 2: Docker
 
 ```bash
+
 # Requisitos: Docker + Docker Compose
 
 # Ejecutar
+
 docker-compose -f Docker/docker-compose.yml up
 
 # El contenedor ejecutará run_pipeline.py automáticamente
-```
+
+```markdown
 
 ---
 
@@ -135,14 +176,19 @@ docker-compose -f Docker/docker-compose.yml up
 ### OE.2 - Dimensionamiento
 
 ✓ **Capacidad Solar:** XX kWp (configurable en `configs/default.yaml`)  
+
 ✓ **Almacenamiento:** XX kWh (≥ 1 día de autonomía)  
+
 ✓ **Cargadores:** XX unidades con Y sockets configurados  
 
 ### OE.3 - Análisis de Algoritmos
 
 ✓ **Tabla Comparativa:** 4 agentes (Uncontrolled, RBC, PPO, SAC)  
+
 ✓ **Reducción CO₂:** Estimada en ~X% anual vs. baseline  
+
 ✓ **Proyección 20 años:** X toneladas CO₂ ahorradas  
+
 ✓ **Gráficas:** 29 visualizaciones @ 300 DPI para tesis  
 
 ---
@@ -151,20 +197,28 @@ docker-compose -f Docker/docker-compose.yml up
 
 | Componente | Tecnología | Descripción |
 | - | - | - |
+
 | **Generación Solar** | pvlib-python | Radiación solar realista para Iquitos |
+
 | **Dataset** | CityLearn | Framework de simulación de ciudades inteligentes |
+
 | **RL - PPO** | Stable Baselines3 | Proximal Policy Optimization |
+
 | **RL - SAC** | Stable Baselines3 | Soft Actor-Critic (máxima entropía) |
+
 | **Análisis** | pandas + numpy | Procesamiento de datos |
+
 | **Visualización** | matplotlib | Gráficas @ 300 DPI |
+
 | **Contenedor** | Docker | Despliegue reproducible |
 
 ---
 
-## 📍 Parámetros Iquitos 2025
+## 📍 Parámetros del Diseño de Carga Inteligente en Iquitos 2025
 
 | Parámetro | Valor | Fuente |
 | - | - | - |
+
 | Latitud | -3.7° | Iquitos, Perú |
 | Longitud | -73.2° | Iquitos, Perú |
 | Zona horaria | UTC-5 | Perú |
@@ -176,43 +230,58 @@ docker-compose -f Docker/docker-compose.yml up
 
 ## ✅ Checklist de Validación
 
-**Código:**
+### Código
 
 - [x] Módulos OE2 implementados correctamente
+
 - [x] Módulos OE3 implementados correctamente
+
 - [x] Scripts ejecutables y sin errores
+
 - [x] Importaciones validadas
 
-**Documentación:**
+### Documentación
 
 - [x] README con instrucciones completas
+
 - [x] OBJETIVOS.md alineado con OE.2 y OE.3
+
 - [x] VALIDACION.md con checklist
+
 - [x] Código comentado apropiadamente
 
-**Infraestructura:**
+### Infraestructura
 
 - [x] requirements.txt actualizado
+
 - [x] Docker funcional
+
 - [x] GitHub sincronizado
+
 - [x] Carpetas data/ y reports/ estructuradas
 
-**Funcionalidad:**
+### Funcionalidad
 
 - [x] Pipeline completo ejecutable
+
 - [x] Cada módulo OE2 ejecutable independientemente
+
 - [x] Simulaciones OE3 convergentes
+
 - [x] Tablas de emisiones CO₂ generadas
 
 ---
 
 ## 🎓 Para Tesis
 
-El proyecto genera automáticamente **29 gráficas @ 300 DPI** aptas para:
+El proyecto genera automáticamente **29 gráficas @ 300 DPI** aptas para
 
 - ✓ Capítulos de Métodos (OE2, OE3)
+
 - ✓ Capítulos de Resultados (comparación agentes)
+
 - ✓ Capítulos de Análisis (reducción CO₂, impacto económico)
+
 - ✓ Apéndices técnicos (arquitectura, esquemas)
 
 **Ubicación:** `reports/oe3/`
@@ -221,34 +290,44 @@ El proyecto genera automáticamente **29 gráficas @ 300 DPI** aptas para:
 
 ## 📞 Soporte
 
-**Problemas de instalación:**
+### Problemas de instalación
 
 ```bash
+
 # Limpiar e reinstalar
+
 rm -rf .venv
 python -m venv .venv
 pip install --upgrade pip
 pip install -r requirements.txt -v
-```
 
-**Problemas de ejecución:**
+```markdown
+
+### Problemas de ejecución
 
 ```bash
+
 # Ver logs
+
 python scripts/run_pipeline.py --debug
 
 # Ejecutar módulo individual
-python scripts/run_oe2_solar.py
-```
 
-**Docker:**
+python scripts/run_oe2_solar.py
+
+```markdown
+
+### Docker
 
 ```bash
+
 # Rebuild si hay cambios
+
 docker-compose down
 docker build --no-cache -f Docker/Dockerfile .
 docker-compose up
-```
+
+```markdown
 
 ---
 
@@ -256,6 +335,7 @@ docker-compose up
 
 | Archivo | Propósito |
 | - | - |
+
 | `src/iquitos_citylearn/oe2/solar_pvlib.py` | Modela generación FV |
 | `src/iquitos_citylearn/oe2/bess.py` | Dimensiona batería |
 | `src/iquitos_citylearn/oe2/chargers.py` | Configura cargadores |
@@ -269,12 +349,13 @@ docker-compose up
 
 **GitHub:** <https://github.com/Mac-Tapia/dise-opvbesscar>
 
-**Clonar:**
+### Clonar
 
 ```bash
 git clone https://github.com/Mac-Tapia/dise-opvbesscar.git
 cd dise-opvbesscar
-```
+
+```markdown
 
 ---
 
@@ -282,7 +363,7 @@ cd dise-opvbesscar
 
 ✅ **El proyecto está COMPLETO, VALIDADO y LISTO PARA PRODUCCIÓN**
 
-**Próximos pasos:**
+### Próximos pasos
 
 1. Ejecutar `python scripts/run_pipeline.py` para generar resultados
 2. Revisar gráficas en `reports/oe3/`

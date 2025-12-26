@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: iquitos-citylearn
+Version: 0.1.0
+Summary: OE2→OE3 CityLearn v2 pipeline for Iquitos EV charging infrastructure
+Requires-Python: >=3.10

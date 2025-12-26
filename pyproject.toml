@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "iquitos-citylearn"
 version = "0.1.0"
 description = "OE2→OE3 CityLearn v2 pipeline for Iquitos EV charging infrastructure"
-requires-python = ">=3.10"
+requires-python = ">=3.11,<3.12"
 dependencies = []
 
 [tool.setuptools]

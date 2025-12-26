@@ -1,373 +1,218 @@
 #!/usr/bin/env python3
 """
-VALIDACIÓN ESTRICTA - Cumplimiento de Ítems de Dimensiones Variables
-Según tabla operacional PDF.
-
-Este script verifica que CADA ÍTEM de CADA DIMENSIÓN sea implementado
-en el código. Cualquier falla = BLOQUEO.
+Validacion estricta - Tabla 9 (operacionalizacion de variables).
+Verifica que los outputs clave existan y contengan los campos requeridos.
 """
+from __future__ import annotations
 
-import sys
 import json
+import sys
 from pathlib import Path
-from typing import Dict, List, Tuple, Any
-import traceback
+from typing import Any, Dict, Iterable, List, Tuple
 
-# Color codes
-GREEN = "\033[92m"
-RED = "\033[91m"
-YELLOW = "\033[93m"
-CYAN = "\033[96m"
-RESET = "\033[0m"
-BOLD = "\033[1m"
+import pandas as pd
 
-class ValidadorEstructo:
-    def __init__(self):
-        self.proyecto_root = Path(__file__).parent.parent
-        self.src_root = self.proyecto_root / "src" / "iquitos_citylearn"
-        self.scripts_root = self.proyecto_root / "scripts"
-        self.configs_root = self.proyecto_root / "configs"
-        
-        self.resultados = []
-        self.fallos_criticos = []
-        
-    def log_ok(self, dimensión, ítem, detalles=""):
-        msg = f"{GREEN}✅ OK{RESET} | {BOLD}{dimensión}{RESET} → {ítem}"
-        if detalles:
-            msg += f" | {detalles}"
-        print(msg)
-        self.resultados.append(("OK", dimensión, ítem, detalles))
-        
-    def log_fallo(self, dimensión, ítem, razon, crítico=True):
-        symbol = f"{RED}❌ FALLO{RESET}" if crítico else f"{YELLOW}⚠️  ADVERTENCIA{RESET}"
-        msg = f"{symbol} | {BOLD}{dimensión}{RESET} → {ítem} | {razon}"
-        print(msg)
-        self.resultados.append(("FALLO", dimensión, ítem, razon))
-        if crítico:
-            self.fallos_criticos.append((dimensión, ítem, razon))
-        
-    def verificar_archivo_existe(self, ruta_relativa: str) -> bool:
-        ruta = self.proyecto_root / ruta_relativa
-        existe = ruta.exists()
-        if existe:
-            self.log_ok("Archivos", ruta_relativa, f"Encontrado ({ruta.stat().st_size} bytes)")
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def _read_json(path: Path) -> Dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _require_file(path: Path, label: str, failures: List[str]) -> bool:
+    if not path.exists():
+        failures.append(f"Missing file: {label} -> {path}")
+        return False
+    return True
+
+
+def _require_keys(data: Dict[str, Any], keys: Iterable[str], label: str, failures: List[str]) -> None:
+    missing = [k for k in keys if k not in data]
+    if missing:
+        failures.append(f"Missing keys in {label}: {missing}")
+
+
+def _require_columns(df: pd.DataFrame, cols: Iterable[str], label: str, failures: List[str]) -> None:
+    missing = [c for c in cols if c not in df.columns]
+    if missing:
+        failures.append(f"Missing columns in {label}: {missing}")
+
+
+def _load_csv(path: Path) -> pd.DataFrame:
+    return pd.read_csv(path)
+
+
+def main() -> int:
+    failures: List[str] = []
+    warnings: List[str] = []
+
+    # OE1 - Location summary
+    oe1_path = ROOT / "data" / "interim" / "oe1" / "location_summary.json"
+    if _require_file(oe1_path, "OE1 location_summary", failures):
+        oe1 = _read_json(oe1_path)
+        _require_keys(
+            oe1,
+            [
+                "site_name",
+                "area_techada_m2",
+                "area_estacionamiento_m2",
+                "distance_to_substation_m",
+                "vehicles_peak_motos",
+                "vehicles_peak_mototaxis",
+                "dwell_hours_min",
+                "parking_capacity_total",
+                "required_capacity_kva",
+            ],
+            "OE1 location_summary.json",
+            failures,
+        )
+        if float(oe1.get("area_techada_m2", 0) or 0) <= 0:
+            failures.append("OE1 area_techada_m2 must be > 0")
+        if float(oe1.get("area_estacionamiento_m2", 0) or 0) <= 0:
+            failures.append("OE1 area_estacionamiento_m2 must be > 0")
+        if oe1.get("required_capacity_kva") in (None, 0):
+            failures.append("OE1 required_capacity_kva must be > 0")
+
+    # OE2 - Solar
+    solar_path = ROOT / "data" / "interim" / "oe2" / "solar" / "solar_results.json"
+    if _require_file(solar_path, "OE2 solar_results", failures):
+        solar = _read_json(solar_path)
+        _require_keys(
+            solar,
+            [
+                "target_dc_kw",
+                "target_ac_kw",
+                "annual_kwh",
+                "area_utilizada_m2",
+                "performance_ratio",
+            ],
+            "OE2 solar_results.json",
+            failures,
+        )
+        if float(solar.get("annual_kwh", 0) or 0) <= 0:
+            failures.append("OE2 annual_kwh must be > 0")
+
+    # OE2 - Chargers
+    chargers_path = ROOT / "data" / "interim" / "oe2" / "chargers" / "chargers_results.json"
+    if _require_file(chargers_path, "OE2 chargers_results", failures):
+        chargers = _read_json(chargers_path)
+        _require_keys(
+            chargers,
+            [
+                "n_chargers_recommended",
+                "peak_power_kw",
+                "total_daily_energy_kwh",
+                "potencia_total_instalada_kw",
+            ],
+            "OE2 chargers_results.json",
+            failures,
+        )
+        if int(chargers.get("n_chargers_recommended", 0) or 0) <= 0:
+            failures.append("OE2 n_chargers_recommended must be > 0")
+        if float(chargers.get("peak_power_kw", 0) or 0) <= 0:
+            failures.append("OE2 peak_power_kw must be > 0")
+
+    # OE2 - BESS
+    bess_path = ROOT / "data" / "interim" / "oe2" / "bess" / "bess_results.json"
+    if _require_file(bess_path, "OE2 bess_results", failures):
+        bess = _read_json(bess_path)
+        _require_keys(
+            bess,
+            [
+                "capacity_kwh",
+                "nominal_power_kw",
+                "dod",
+                "autonomy_hours",
+                "peak_load_kw",
+                "sizing_mode",
+            ],
+            "OE2 bess_results.json",
+            failures,
+        )
+        if float(bess.get("capacity_kwh", 0) or 0) <= 0:
+            failures.append("OE2 capacity_kwh must be > 0")
+        if float(bess.get("nominal_power_kw", 0) or 0) <= 0:
+            failures.append("OE2 nominal_power_kw must be > 0")
+
+    # OE3 - Dataset schema
+    schema_path = ROOT / "data" / "processed" / "citylearn" / "iquitos_ev_mall" / "schema.json"
+    if _require_file(schema_path, "OE3 schema.json", failures):
+        schema = _read_json(schema_path)
+        if not schema.get("central_agent", False):
+            failures.append("Schema central_agent is not enabled")
+        if not schema.get("electric_vehicles_def"):
+            failures.append("Schema electric_vehicles_def is missing or empty")
+        if not schema.get("buildings"):
+            failures.append("Schema buildings section is missing")
+
+    # OE3 - Simulation summary
+    summary_path = ROOT / "outputs" / "oe3" / "simulations" / "simulation_summary.json"
+    if _require_file(summary_path, "OE3 simulation_summary", failures):
+        summary = _read_json(summary_path)
+        _require_keys(
+            summary,
+            ["best_agent", "pv_bess_results", "grid_only_result"],
+            "OE3 simulation_summary.json",
+            failures,
+        )
+
+    # OE3 - CO2 tables
+    co2_table_path = ROOT / "analyses" / "oe3" / "co2_comparison_table.csv"
+    if _require_file(co2_table_path, "OE3 co2_comparison_table", failures):
+        co2_df = _load_csv(co2_table_path)
+        _require_columns(
+            co2_df,
+            ["escenario", "tco2_anual", "reduccion_vs_base_pct"],
+            "OE3 co2_comparison_table.csv",
+            failures,
+        )
+
+    breakdown_path = ROOT / "analyses" / "oe3" / "co2_breakdown.csv"
+    if _require_file(breakdown_path, "OE3 co2_breakdown", failures):
+        breakdown_df = _load_csv(breakdown_path)
+        _require_columns(
+            breakdown_df,
+            ["metric", "value", "unit"],
+            "OE3 co2_breakdown.csv",
+            failures,
+        )
+        if "net_avoided_kgco2_y" in breakdown_df["metric"].values:
+            net_val = float(
+                breakdown_df.loc[breakdown_df["metric"] == "net_avoided_kgco2_y", "value"].iloc[0]
+            )
+            if net_val <= 0:
+                failures.append("Net CO2 avoided is not positive (check hypothesis HG)")
         else:
-            self.log_fallo("Archivos", ruta_relativa, f"NO EXISTE: {ruta}", crítico=True)
-        return existe
-        
-    def verificar_en_archivo(self, ruta_relativa: str, patrones: List[str], al_menos_uno=False) -> bool:
-        ruta = self.proyecto_root / ruta_relativa
-        if not ruta.exists():
-            self.log_fallo("Contenido", f"{ruta_relativa}", "Archivo no existe", crítico=True)
-            return False
-        
-        contenido = ruta.read_text(encoding='utf-8', errors='ignore')
-        
-        if al_menos_uno:
-            encontrado = any(patrón in contenido for patrón in patrones)
-            if encontrado:
-                self.log_ok("Contenido", f"{ruta_relativa}", f"Contiene uno de: {patrones[:2]}...")
-            else:
-                self.log_fallo("Contenido", f"{ruta_relativa}", f"No contiene ninguno de: {patrones}", crítico=True)
-            return encontrado
-        else:
-            encontrados = [p for p in patrones if p in contenido]
-            if len(encontrados) == len(patrones):
-                self.log_ok("Contenido", f"{ruta_relativa}", f"Todos {len(patrones)} patrones encontrados")
-                return True
-            else:
-                faltantes = [p for p in patrones if p not in contenido]
-                self.log_fallo("Contenido", f"{ruta_relativa}", f"Faltan: {faltantes[:2]}", crítico=True)
-                return False
-    
-    def verificar_config_yaml(self):
-        """Verificar que configs/default.yaml tenga todas las secciones requeridas"""
-        print(f"\n{CYAN}{BOLD}=== VALIDACIÓN OE.2/OE.3 - CONFIGURACIÓN YAML ==={RESET}")
-        
-        config_path = self.configs_root / "default.yaml"
-        if not config_path.exists():
-            self.log_fallo("Config YAML", "default.yaml", "NO EXISTE", crítico=True)
-            return False
-        
-        config_text = config_path.read_text()
-        
-        # Secciones OBLIGATORIAS
-        secciones_requeridas = {
-            "location:": "Ubicación geográfica",
-            "oe2:": "Parámetros OE.2",
-            "oe3:": "Parámetros OE.3",
-        }
-        
-        for seccion, descripción in secciones_requeridas.items():
-            if seccion in config_text:
-                self.log_ok("Config", descripción, f"Sección '{seccion}' presente")
-            else:
-                self.log_fallo("Config", descripción, f"Falta sección '{seccion}'", crítico=True)
-                
-        return True
-    
-    def validar_oe2_solar(self):
-        """Dimensión 4: Potencia Generación Solar y Simulación"""
-        print(f"\n{CYAN}{BOLD}=== OE.2 DIMENSIÓN: Potencia Generación Solar ==={RESET}")
-        
-        # ÍTEM 1: Calcular potencia FV
-        patrones_potencia = [
-            "target_dc_kw",
-            "target_ac_kw",
-            "efficiency",
-            "dc_capacity_kwp",
-        ]
-        self.verificar_en_archivo(
-            "src/iquitos_citylearn/oe2/solar_pvlib.py",
-            patrones_potencia
-        )
-        
-        # ÍTEM 2: Simular generación anual
-        patrones_generacion = [
-            "8760",  # 8760 horas en año
-            "annual_kwh",
-            "target_annual_kwh",
-            "scale",
-        ]
-        self.verificar_en_archivo(
-            "src/iquitos_citylearn/oe2/solar_pvlib.py",
-            patrones_generacion
-        )
-        
-        # ÍTEM 3: Verificar área requerida
-        self.log_ok("OE.2-Solar", "ÍTEM 3", "Función build_pv_timeseries() calcula área implícitamente")
-        
-    def validar_oe2_bess(self):
-        """Dimensión 5: Capacidad BESS"""
-        print(f"\n{CYAN}{BOLD}=== OE.2 DIMENSIÓN: Capacidad BESS ==={RESET}")
-        
-        # ÍTEM 1: Excedente diario
-        patrones_excedente = [
-            "surplus",
-            "deficit",
-            "pv_kwh",
-            "load_kwh",
-        ]
-        self.verificar_en_archivo(
-            "src/iquitos_citylearn/oe2/bess.py",
-            patrones_excedente
-        )
-        
-        # ÍTEM 2: DoD y eficiencia
-        patrones_dod = [
-            "dod",
-            "c_rate",
-            "efficiency",
-        ]
-        self.verificar_en_archivo(
-            "src/iquitos_citylearn/oe2/bess.py",
-            patrones_dod
-        )
-        
-        # ÍTEM 3: Capacidad nominal
-        patrones_capacidad = [
-            "capacity_nominal",
-            "nominal_power",
-            "BessSizingOutput",
-        ]
-        self.verificar_en_archivo(
-            "src/iquitos_citylearn/oe2/bess.py",
-            patrones_capacidad
-        )
-    
-    def validar_oe2_chargers(self):
-        """Dimensión 6: Cantidad Cargadores"""
-        print(f"\n{CYAN}{BOLD}=== OE.2 DIMENSIÓN: Cantidad de Cargadores ==={RESET}")
-        
-        # ÍTEM 1 & 2: Demanda y tomas
-        patrones_demanda = [
-            "sessions_peak_per_hour",
-            "session_minutes",
-            "utilization",
-            "chargers_needed",
-        ]
-        self.verificar_en_archivo(
-            "src/iquitos_citylearn/oe2/chargers.py",
-            patrones_demanda
-        )
-        
-        # ÍTEM 3: Número de cargadores
-        patrones_num = [
-            "math.ceil",
-            "chargers_required",
-            "ChargerSizingResult",
-        ]
-        self.verificar_en_archivo(
-            "src/iquitos_citylearn/oe2/chargers.py",
-            patrones_num
-        )
-    
-    def validar_oe3_arquitectura(self):
-        """Dimensión 7: Arquitectura de Control Centralizada"""
-        print(f"\n{CYAN}{BOLD}=== OE.3 DIMENSIÓN: Arquitectura Control Centralizada ==={RESET}")
-        
-        # ÍTEM 1: central_agent
-        self.log_ok("OE.3-Arch", "ÍTEM 1", "Arquitectura centralizada configurada en schema.json")
-        
-        # ÍTEM 2: Recursos controlables
-        patrones_recursos = [
-            "central_agent",
-            "Battery",
-            "EV_Charger",
-        ]
-        self.log_ok("OE.3-Arch", "ÍTEM 2", "Recursos BESS y EV_Charger definidos en schema")
-        
-        # ÍTEM 3: Validación dataset
-        patrones_dataset = [
-            "energy_simulation",
-            "carbon_intensity",
-            "charger_simulation",
-        ]
-        self.log_ok("OE.3-Arch", "ÍTEM 3", "Dataset contiene 3 archivos CSV requeridos")
-    
-    def validar_oe3_carga_ev(self):
-        """Dimensión 8: Tipo de Carga EV"""
-        print(f"\n{CYAN}{BOLD}=== OE.3 DIMENSIÓN: Tipo de Carga EV ==={RESET}")
-        
-        # ÍTEM 1: Ventana de conexión
-        self.log_ok("OE.3-Carga", "ÍTEM 1", "Ventana de conexión definida en datos")
-        
-        # ÍTEM 2: Proceso de carga
-        self.log_ok("OE.3-Carga", "ÍTEM 2", "charger_simulation.csv contiene estados y SOC")
-        
-        # ÍTEM 3: Baseline uncontrolled
-        patrones_uncontrolled = [
-            "UncontrolledChargingAgent",
-            "act",
-        ]
-        self.verificar_en_archivo(
-            "src/iquitos_citylearn/oe3/agents/uncontrolled.py",
-            patrones_uncontrolled
-        )
-    
-    def validar_oe3_optimizacion(self):
-        """Dimensión 9: Algoritmos de Optimización"""
-        print(f"\n{CYAN}{BOLD}=== OE.3 DIMENSIÓN: Algoritmos de Optimización ==={RESET}")
-        
-        # ÍTEM 1: Ejecutar 4 agentes
-        agentes_requeridos = [
-            ("Uncontrolled", "src/iquitos_citylearn/oe3/agents/uncontrolled.py"),
-            ("RBC", "src/iquitos_citylearn/oe3/agents/rbc.py"),
-            ("PPO", "src/iquitos_citylearn/oe3/agents/ppo_sb3.py"),
-            ("SAC", "src/iquitos_citylearn/oe3/agents/sac.py"),
-        ]
-        
-        for agente_nombre, ruta_relativa in agentes_requeridos:
-            if self.verificar_archivo_existe(ruta_relativa):
-                self.log_ok("OE.3-Opt", f"AGENTE: {agente_nombre}", f"Implementado en {ruta_relativa}")
-            else:
-                self.log_fallo("OE.3-Opt", f"AGENTE: {agente_nombre}", f"NO EXISTE: {ruta_relativa}", crítico=True)
-        
-        # ÍTEM 2: Extraer KPI
-        patrones_kpi = [
-            "SimulationResult",
-            "grid_import_kwh",
-            "carbon_kg",
-            "ev_charging_kwh",
-        ]
-        self.verificar_en_archivo(
-            "src/iquitos_citylearn/oe3/simulate.py",
-            patrones_kpi
-        )
-        
-        # ÍTEM 3: Seleccionar ganador
-        self.log_ok("OE.3-Opt", "ÍTEM 3", "Función para comparar agentes en co2_table.py")
-    
-    def validar_scripts_ejecucion(self):
-        """Validar que los scripts de ejecución existan"""
-        print(f"\n{CYAN}{BOLD}=== SCRIPTS DE EJECUCIÓN ==={RESET}")
-        
-        scripts_requeridos = [
-            "scripts/run_oe2_solar.py",
-            "scripts/run_oe2_bess.py",
-            "scripts/run_oe2_chargers.py",
-            "scripts/run_oe3_simulate.py",
-            "scripts/run_oe3_co2_table.py",
-            "scripts/run_pipeline.py",
-        ]
-        
-        for script in scripts_requeridos:
-            self.verificar_archivo_existe(script)
-    
-    def generar_reporte_final(self):
-        """Genera reporte final de validación"""
-        print(f"\n{CYAN}{BOLD}{'='*70}")
-        print(f"RESUMEN FINAL DE VALIDACIÓN - CUMPLIMIENTO ESTRICTO")
-        print(f"{'='*70}{RESET}\n")
-        
-        total_ok = len([r for r in self.resultados if r[0] == "OK"])
-        total_fallo = len([r for r in self.resultados if r[0] == "FALLO"])
-        total_items = total_ok + total_fallo
-        
-        print(f"{GREEN}✅ Cumplidos: {total_ok}/{total_items}{RESET}")
-        print(f"{RED}❌ Incumplidos: {total_fallo}/{total_items}{RESET}\n")
-        
-        if self.fallos_criticos:
-            print(f"{RED}{BOLD}FALLOS CRÍTICOS DETECTADOS:{RESET}")
-            for i, (dim, ítem, razon) in enumerate(self.fallos_criticos, 1):
-                print(f"  {i}. [{dim}] {ítem}: {razon}")
-            print()
-            
-        # Reporte JSON
-        reporte_path = self.proyecto_root / "REPORTE_CUMPLIMIENTO.json"
-        reporte = {
-            "timestamp": str(Path.cwd()),
-            "total_items": total_items,
-            "cumplidos": total_ok,
-            "incumplidos": total_fallo,
-            "fallos_criticos": self.fallos_criticos,
-            "estado_final": "BLOQUEADO" if self.fallos_criticos else "APROBADO",
-        }
-        
-        reporte_path.write_text(json.dumps(reporte, indent=2, ensure_ascii=False))
-        print(f"📄 Reporte guardado en: {reporte_path}")
-        
-        if self.fallos_criticos:
-            print(f"\n{RED}{BOLD}🚫 VALIDACIÓN FALLIDA - PROYECTO NO OPERACIONAL{RESET}")
-            return False
-        else:
-            print(f"\n{GREEN}{BOLD}✅ VALIDACIÓN EXITOSA - TODO CUMPLE ESTRICTAMENTE{RESET}")
-            return True
-    
-    def ejecutar(self):
-        """Ejecuta todas las validaciones"""
-        print(f"\n{BOLD}{CYAN}{'='*70}")
-        print(f"VALIDADOR ESTRICTO DE CUMPLIMIENTO - VARIABLES OPERACIONALES")
-        print(f"{'='*70}{RESET}\n")
-        
-        try:
-            # Validaciones de configuración
-            self.verificar_config_yaml()
-            
-            # OE.2 Validaciones
-            self.validar_oe2_solar()
-            self.validar_oe2_bess()
-            self.validar_oe2_chargers()
-            
-            # OE.3 Validaciones
-            self.validar_oe3_arquitectura()
-            self.validar_oe3_carga_ev()
-            self.validar_oe3_optimizacion()
-            
-            # Scripts
-            self.validar_scripts_ejecucion()
-            
-        except Exception as e:
-            print(f"\n{RED}❌ ERROR EN VALIDACIÓN:{RESET}")
-            traceback.print_exc()
-            self.fallos_criticos.append(("Sistema", "Exception", str(e)))
-        
-        # Reporte final
-        success = self.generar_reporte_final()
-        return 0 if success else 1
+            warnings.append("net_avoided_kgco2_y not found in breakdown")
+
+    report = {
+        "total_failures": len(failures),
+        "failures": failures,
+        "warnings": warnings,
+        "status": "FAILED" if failures else "OK",
+    }
+
+    report_path = ROOT / "REPORTE_CUMPLIMIENTO.json"
+    report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+
+    if failures:
+        print("Validation FAILED")
+        for item in failures:
+            print(f"- {item}")
+        if warnings:
+            print("\nWarnings:")
+            for item in warnings:
+                print(f"- {item}")
+        return 1
+
+    print("Validation OK")
+    if warnings:
+        print("\nWarnings:")
+        for item in warnings:
+            print(f"- {item}")
+    return 0
 
 
 if __name__ == "__main__":
-    validador = ValidadorEstructo()
-    exit_code = validador.ejecutar()
-    sys.exit(exit_code)
+    sys.exit(main())
