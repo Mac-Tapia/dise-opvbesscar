@@ -1,0 +1,21 @@
+{
+    "include": [
+        "src"
+    ],
+    "exclude": [
+        "**/__pycache__",
+        ".venv",
+        "data",
+        "outputs"
+    ],
+    "reportMissingImports": false,
+    "reportMissingTypeStubs": false,
+    "reportUnusedImport": "warning",
+    "reportUnusedVariable": "warning",
+    "reportGeneralTypeIssues": false,
+    "reportOptionalMemberAccess": false,
+    "reportArgumentType": false,
+    "reportOperatorIssue": false,
+    "pythonVersion": "3.11",
+    "typeCheckingMode": "basic"
+}

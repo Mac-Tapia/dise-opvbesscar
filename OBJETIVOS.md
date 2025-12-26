@@ -1,8 +1,24 @@
-# Verificación de Objetivos - Proyecto Iquitos 2025
+# Verificación de Objetivos - DISEÑO DE INFRAESTRUCTURA DE CARGA INTELIGENTE DE MOTOS Y MOTOTAXIS ELÉCTRICAS PARA REDUCIR LAS EMISIONES DE DIÓXIDO DE CARBONO EN LA CIUDAD DE IQUITOS, 2025
 
-## OE.2 - Dimensionamiento Solar, Almacenamiento y Cargadores
+## Objetivo General
 
-**Objetivo:** Dimensionar la capacidad de generación solar, almacenamiento y cargadores de motos y mototaxis eléctricas para reducir las emisiones de CO₂ en Iquitos 2025.
+**OG.** Diseñar la infraestructura de carga inteligente para motos y mototaxis eléctricas que reduzca las emisiones de dióxido de carbono en la ciudad de Iquitos, 2025.
+
+## Objetivos Específicos
+
+### OE.1 - Ubicación estratégica
+
+**Objetivo:** OE.1.- Determinar la ubicación estratégica óptima que garantice la viabilidad técnica de motos y mototaxis eléctricas, necesaria para la reducción cuantificable de las emisiones de dióxido de carbono en Iquitos.
+
+#### ✅ Instrumentos
+
+- `scripts/run_oe1_location.py`: Automatiza la evaluación de ubicaciones según criterios técnicos, energéticos y logísticos.
+- `src/iquitos_citylearn/oe1/location.py`: Implementa funciones de análisis espacial y restricciones de la flota eléctrica.
+- Documentación en `OPERACIONALIZACION.md` y `VALIDACION.md` para cumplir con el seguimiento estricto del desarrollo.
+
+### OE.2 - Dimensionamiento Solar, Almacenamiento y Cargadores
+
+**Objetivo:** OE.2.- Dimensionar la capacidad de generación solar, almacenamiento y cargadores de motos y mototaxis eléctricas para reducir las emisiones de dióxido de carbono en la ciudad de Iquitos.
 
 ### ✅ Arquitectura de Control Implementada
 
@@ -43,11 +59,11 @@
 
 ---
 
-## OE.3 - Algoritmos de Gestión de Carga
+### OE.3 - Algoritmos de Gestión de Carga
 
-**Objetivo:** Seleccionar el Algoritmo de gestión de carga de motos y mototaxis eléctricas para reducir las emisiones de CO₂ en Iquitos 2025.
+**Objetivo:** OE.3.- Seleccionar el agente inteligente de gestión de carga de motos y mototaxis eléctricas más apropiado para maximizar la eficiencia operativa del sistema, asegurando la contribución cuantificable a la reducción de las emisiones de dióxido de carbono en la ciudad de Iquitos.
 
-### ✅ Arquitectura de Control Implementada
+### ✅ Arquitectura de Control Implementada - Dual Loop Control
 
 #### 1. **Agentes de Control** (`src/iquitos_citylearn/oe3/agents/`)
 
@@ -111,7 +127,10 @@
 | OE.3 - Algoritmos | RBC (reglas heurísticas) | `oe3/agents/rbc.py` | Simulación OE3 |
 | OE.3 - Algoritmos | PPO (RL - Stable Baselines3) | `oe3/agents/ppo_sb3.py` | Simulación OE3 |
 | OE.3 - Algoritmos | SAC (RL - máxima entropía) | `oe3/agents/sac.py` | Simulación OE3 |
-| OE.3 - Análisis | Cálculo de emisiones CO₂ | `oe3/co2_table.py` | `co2_comparison_table.csv/.md` |
+| OE.3 - Análisis | Cálculo de emisiones CO₂ | `oe3/co2_table.py` | `analyses/oe3/co2_comparison_table.csv/.md` |
+
+Nota: OE.3 usa insumos de OE.2 en `data/interim/oe2` (solar/bess/chargers) y los intermedios consolidados en `data/interim/oe2/citylearn` para construir `data/processed/citylearn/iquitos_ev_mall/schema_pv_bess.json`.
+
 
 ---
 
@@ -144,7 +163,7 @@ python scripts/run_oe3_simulate.py
 # Generar tabla de reducción CO₂
 python scripts/run_oe3_co2_table.py
 
-# Salidas en: reports/oe3/
+# Salidas en: reports/oe3/ (graficas) y analyses/oe3/ (tablas)
 ```
 
 ### Completo (ambos objetivos)
@@ -181,4 +200,4 @@ Ambos objetivos están:
 - ✅ Ejecutables
 - ✅ Generan salidas cuantificables
 - ✅ Listos para despliegue Docker
-- ✅ Orientados a Iquitos 2025
+- ✅ Orientados al diseño de infraestructura de carga inteligente para Iquitos 2025

@@ -24,9 +24,18 @@ class RuntimePaths:
     interim_dir: Path
     processed_dir: Path
     reports_dir: Path
+    outputs_dir: Path
+    analyses_dir: Path
 
     def ensure(self) -> None:
-        for p in (self.raw_dir, self.interim_dir, self.processed_dir, self.reports_dir):
+        for p in (
+            self.raw_dir,
+            self.interim_dir,
+            self.processed_dir,
+            self.reports_dir,
+            self.outputs_dir,
+            self.analyses_dir,
+        ):
             p.mkdir(parents=True, exist_ok=True)
 
 def load_config(config_path: Path | None = None) -> Dict[str, Any]:
@@ -53,6 +62,8 @@ def load_paths(cfg: Dict[str, Any]) -> RuntimePaths:
         interim_dir=(root / paths['interim_dir']).resolve(),
         processed_dir=(root / paths['processed_dir']).resolve(),
         reports_dir=(root / paths['reports_dir']).resolve(),
+        outputs_dir=(root / paths.get('outputs_dir', 'outputs')).resolve(),
+        analyses_dir=(root / paths.get('analyses_dir', 'analyses')).resolve(),
     )
     rp.ensure()
     return rp

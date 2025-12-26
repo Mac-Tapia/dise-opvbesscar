@@ -13,7 +13,7 @@ El proyecto **CityLearn-EV con OE.2 y OE.3** ahora cumple **ESTRICTAMENTE** con 
 ### ✅ Cumplimiento por Dimensión
 
 | Dimensión | Variable | Ítems | Estado |
-|-----------|----------|-------|--------|
+| -------- | -------- | ----- | ------ |
 | **Ubicación** | Determinación estratégica | 3/3 | ✅ |
 | **Protección** | Área techada y cobertura | 3/3 | ✅ |
 | **Red** | Disponibilidad eléctrica | 2/2 | ✅ |
@@ -30,7 +30,7 @@ El proyecto **CityLearn-EV con OE.2 y OE.3** ahora cumple **ESTRICTAMENTE** con 
 
 ### OE.2 - SOLAR (solar_pvlib.py)
 
-**Ítem 1: Potencia FV (kWp) con eficiencia**
+#### Ítem 1: Potencia FV (kWp) con eficiencia
 
 ```python
 # ✅ AGREGADO:
@@ -40,7 +40,7 @@ efficiency = (1 - system_losses) * inverter_efficiency  # ~0.82
 dc_capacity_kwp = target_dc_kw
 ```
 
-**Ítem 2: Validación energía anual**
+#### Ítem 2: Validación energía anual
 
 ```python
 # ✅ AGREGADO:
@@ -50,7 +50,7 @@ assert annual_generation_kwh >= (target_annual_kwh * 0.95), "Generación insufic
 
 ### OE.2 - BESS (bess.py)
 
-**Ítem 2: DoD y eficiencia (OBLIGATORIO)**
+#### Ítem 2: DoD y eficiencia (OBLIGATORIO)
 
 ```python
 # ✅ AGREGADO:
@@ -59,14 +59,14 @@ assert 0.7 <= dod <= 0.95, "DoD fuera de rango"
 assert 0.85 <= efficiency_roundtrip <= 0.98, "Eficiencia fuera de rango"
 ```
 
-**Ítem 3: Capacidad con eficiencia**
+#### Ítem 3: Capacidad con eficiencia
 
 ```python
 # ✅ FÓRMULA EXACTA (TABLA OPERACIONAL):
 capacity_nominal = (surplus_day / max(dod, 1e-9)) / efficiency_roundtrip
 ```
 
-**Ítem 4: Validación autonomía 24h**
+#### Ítem 4: Validación autonomía 24h
 
 ```python
 # ✅ AGREGADO:
@@ -92,15 +92,15 @@ Se creó **`scripts/VALIDAR_CUMPLIMIENTO_ESTRICTO.py`** que:
 ✅ **BLOQUEA ejecución** si hay incumplimientos críticos  
 ✅ Proporciona diagnóstico exacto de fallos
 
-**Ejecución:**
+### Ejecución
 
 ```bash
 python scripts/VALIDAR_CUMPLIMIENTO_ESTRICTO.py
 ```
 
-**Resultado:**
+### Resultado
 
-```
+```text
 ✅ Cumplidos: 33/33
 ❌ Incumplidos: 0/33
 ✅ VALIDACIÓN EXITOSA - TODO CUMPLE ESTRICTAMENTE

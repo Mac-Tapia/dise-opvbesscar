@@ -1,6 +1,6 @@
 project:
   seed: 42
-  year: 2025
+  year: 2024  # Año de simulación (TMY)
   seconds_per_time_step: 3600
 
 paths:
@@ -8,43 +8,91 @@ paths:
   interim_dir: data/interim
   processed_dir: data/processed
   reports_dir: reports
+  outputs_dir: outputs
+  analyses_dir: analyses
+
+oe1:
+  site:
+    name: Mall de Iquitos
+    area_techada_m2: 20637.0
+    area_estacionamiento_m2: 957.0
+    area_per_moto_m2: 2.0
+    area_per_mototaxi_m2: 4.0
+    coverage_required_pct: 0.65
+    distance_to_substation_m: 60.0
+    vehicles_peak_motos: 900
+    vehicles_peak_mototaxis: 130
+    dwell_hours_min: 4.0
+    access_notes: "Acceso vial y seguridad verificados en visita de campo."
+    security_notes: "Zona de estacionamiento con vigilancia."
+    restrictions_notes: "Sombras puntuales por equipos; sin arbolado alto."
+  grid_connection:
+    continuity: "sistema aislado termico"
+    power_factor: 0.95
+    available_capacity_kva: null
 
 oe2:
   location:
-    lat: -3.7437
-    lon: -73.2516
+    lat: -3.75
+    lon: -73.25
+    alt: 104.0  # Altitud de Iquitos en metros
     tz: America/Lima
 
   mall:
-    energy_kwh_day: 10850.0
+    energy_kwh_day: 9202.4
     shape_24h: null
 
   solar:
-    target_ac_kw: 3201.17
-    target_dc_kw: 4162.04
-    target_annual_kwh: 3970000.0
+    # Capacidades base (Tabla 19 - 4.6.3) escaladas contra la energía objetivo real.
+    target_ac_kw: 3201.2  # Potencia AC nominal
+    target_dc_kw: 4162.0  # Potencia DC nominal
+    target_annual_kwh: 3972478  # Energía anual objetivo (kWh)
     use_pvlib: true
+    scale_to_target_annual: true
+
+    # Parámetros Sandia para el diseño en Iquitos
+    area_total_m2: 20637.0
+    factor_diseno: 0.65
+    surface_tilt: 10.0
+    surface_azimuth: 0.0
+
+    # Componentes preseleccionados (referencia tesis)
+    module_name: SunPower_SPR_315E_WHT__2007__E__
+    inverter_name: Sungrow_Power_Supply_Co___Ltd___SG2500U__550V_
+    selection_mode: auto_top5
+    candidate_count: 5
+    selection_metric: energy_per_m2
 
   ev_fleet:
     motos_count: 900
     mototaxis_count: 130
-    peak_share_day: 0.15
-    fc_motos: 1.0
-    fc_mototaxis: 1.0
-    pe_motos: 1.0
-    pe_mototaxis: 1.0
-    opening_hour: 7
-    closing_hour: 23
-    peak_hours: [7, 8, 17, 18]
+    pe_motos: 1.00  # PE=100% según escenario recomendado
+    pe_mototaxis: 1.00
+    fc_motos: 1.00  # FC=100% en hora punta
+    fc_mototaxis: 1.00
+    daily_sessions_factor: 2.0
+    opening_hour: 9
+    closing_hour: 22
+    peak_hours: [18, 19, 20, 21]
+    peak_share_day: 0.50
     session_minutes: 25
     utilization: 0.92
-    charger_power_kw: 3.5
+    charger_power_kw_moto: 2.0
+    charger_power_kw_mototaxi: 3.0
     sockets_per_charger: 4
 
   bess:
     dod: 0.90
     c_rate: 0.50
+    efficiency_roundtrip: 0.95
     round_kwh: 10
+    autonomy_hours: 4.0
+    sizing_mode: surplus_only
+    min_soc_percent: 10
+    load_scope: total
+    discharge_only_ev_hours: false
+    discharge_only_no_solar: false
+    pv_night_threshold_kwh: 0.1
 
 oe3:
   dataset:
@@ -57,10 +105,29 @@ oe3:
     tariff_usd_per_kwh: 0.20
 
   evaluation:
-    agents: ["Uncontrolled", "BasicEVRBC", "SAC"]
+    agents: ["SAC", "PPO", "A2C"]
     sac:
-      episodes: 5
+      episodes: 2
       deterministic_eval: true
+      device: cuda
+      checkpoint_freq_steps: 8760
+      prefer_citylearn: false
+    ppo:
+      episodes: 2
+      timesteps: 17520
+      checkpoint_freq_steps: 8760
+      device: cuda
+      target_kl: 0.015
+      kl_adaptive: true
+      log_interval: 1000
+    a2c:
+      episodes: 2
+      timesteps: 17520
+      n_steps: 256
+      learning_rate: 0.0003
+      entropy_coef: 0.01
+      checkpoint_freq_steps: 8760
+      device: cuda
 
   emissions:
     km_per_kwh: 35.0

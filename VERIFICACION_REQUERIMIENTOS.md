@@ -9,7 +9,7 @@
 ## 📊 RESUMEN GENERAL
 
 | Métrica | Valor | Estado |
-|---------|-------|--------|
+| ------- | ----- | ------ |
 | Total requerimientos | 9 | ✅ |
 | **Instalados correctamente** | 9/9 | ✅ **100%** |
 | Faltantes | 0 | ✅ |
@@ -114,7 +114,7 @@
 ## 🚀 DISPONIBILIDAD DE FUNCIONALIDADES
 
 | Funcionalidad | Paquetes Requeridos | Status |
-|---------------|-------------------|--------|
+| ------------- | ------------------- | ------ |
 | Cálculos solares (pvlib) | pvlib, numpy, pandas | ✅ |
 | Simulación BESS | pandas, numpy | ✅ |
 | Dimensionamiento chargers | pandas, numpy | ✅ |
@@ -128,7 +128,7 @@
 
 ## 💻 ENTORNO DEL SISTEMA
 
-```
+```text
 Python:       3.10+
 Entorno:      Virtual (.venv)
 Ubicación:    D:\diseñopvbesscar

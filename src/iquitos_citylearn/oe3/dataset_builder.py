@@ -71,19 +71,67 @@ def _discover_csv_paths(schema: Dict[str, Any], dataset_dir: Path) -> Dict[str, 
 
 def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
     artifacts: Dict[str, Any] = {}
-    # solar
+    
+    # Solar - cargar parámetros de CityLearn si existen
+    solar_citylearn_params = interim_dir / "oe2" / "solar" / "citylearn" / "solar_schema_params.json"
+    if solar_citylearn_params.exists():
+        artifacts["solar_params"] = json.loads(solar_citylearn_params.read_text(encoding="utf-8"))
+    
+    # Solar timeseries
     solar_path = interim_dir / "oe2" / "solar" / "pv_generation_timeseries.csv"
     if solar_path.exists():
         artifacts["solar_ts"] = pd.read_csv(solar_path)
-    # ev profile
-    ev_path = interim_dir / "oe2" / "ev" / "perfil_horario_carga.csv"
+    
+    # Solar generation para CityLearn (horario)
+    solar_citylearn_csv = interim_dir / "oe2" / "citylearn" / "solar_generation.csv"
+    if solar_citylearn_csv.exists():
+        artifacts["solar_generation_citylearn"] = pd.read_csv(solar_citylearn_csv)
+    
+    # EV profile
+    ev_path = interim_dir / "oe2" / "chargers" / "perfil_horario_carga.csv"
     if ev_path.exists():
         artifacts["ev_profile_24h"] = pd.read_csv(ev_path)
-    # bess
+    
+    # EV chargers individuales
+    ev_chargers = interim_dir / "oe2" / "chargers" / "individual_chargers.json"
+    if ev_chargers.exists():
+        artifacts["ev_chargers"] = json.loads(ev_chargers.read_text(encoding="utf-8"))
+    
+    # === CHARGERS RESULTS (dimensionamiento OE2) ===
+    chargers_results = interim_dir / "oe2" / "chargers" / "chargers_results.json"
+    if chargers_results.exists():
+        artifacts["chargers_results"] = json.loads(chargers_results.read_text(encoding="utf-8"))
+        logger.info(f"Cargados resultados de chargers OE2: {artifacts['chargers_results'].get('n_chargers_recommended', 0)} chargers")
+    
+    charger_profile_variants = interim_dir / "oe2" / "chargers" / "charger_profile_variants.json"
+    if charger_profile_variants.exists():
+        artifacts["charger_profile_variants"] = json.loads(charger_profile_variants.read_text(encoding="utf-8"))
+        variants_dir = charger_profile_variants.parent / "charger_profile_variants"
+        if variants_dir.exists():
+            artifacts["charger_profile_variants_dir"] = variants_dir
+        else:
+            artifacts["charger_profile_variants_dir"] = None
+
+    # BESS - cargar parámetros de CityLearn si existen
+    bess_citylearn_params = interim_dir / "oe2" / "citylearn" / "bess_schema_params.json"
+    if bess_citylearn_params.exists():
+        artifacts["bess_params"] = json.loads(bess_citylearn_params.read_text(encoding="utf-8"))
+    
+    # BESS results
     bess_path = interim_dir / "oe2" / "bess" / "bess_results.json"
     if bess_path.exists():
-        # stored as a json string from pd.Series.to_json
         artifacts["bess"] = json.loads(bess_path.read_text(encoding="utf-8"))
+    
+    # Building load para CityLearn
+    building_load_path = interim_dir / "oe2" / "citylearn" / "building_load.csv"
+    if building_load_path.exists():
+        artifacts["building_load_citylearn"] = pd.read_csv(building_load_path)
+    
+    # Mall demand
+    mall_demand_path = interim_dir / "oe2" / "demandamall" / "demanda_mall_kwh.csv"
+    if mall_demand_path.exists():
+        artifacts["mall_demand"] = pd.read_csv(mall_demand_path, parse_dates=['FECHA'])
+    
     return artifacts
 
 def _repeat_24h_to_length(values_24: np.ndarray, n: int) -> np.ndarray:
@@ -132,12 +180,14 @@ def build_citylearn_dataset(
     dataset_name = cfg["oe3"]["dataset"]["name"]
     central_agent = bool(cfg["oe3"]["dataset"].get("central_agent", True))
     seconds_per_time_step = int(cfg["project"]["seconds_per_time_step"])
-
-    cache_dir = raw_dir / "citylearn_templates"
-    cache_dir.mkdir(parents=True, exist_ok=True)
+    dt_hours = seconds_per_time_step / 3600.0
 
     ds = DataSet()
-    template_dir = Path(ds.get_dataset(name=template_name, directory=str(cache_dir)))
+    # get_dataset returns path to schema.json, we need the parent directory
+    # Use default cache location (CityLearn manages the download)
+    schema_file = Path(ds.get_dataset(name=template_name))
+    template_dir = schema_file.parent
+    logger.info(f"Using CityLearn template from: {template_dir}")
 
     out_dir = processed_dir / "citylearn" / dataset_name
     if out_dir.exists():
@@ -151,27 +201,216 @@ def build_citylearn_dataset(
     schema["central_agent"] = central_agent
     schema["seconds_per_time_step"] = seconds_per_time_step
 
+    # === PRESERVAR DEFINICIONES DE EVs ===
+    # Copiar electric_vehicles_def del template si existe
+    electric_vehicles_def = schema.get("electric_vehicles_def", {})
+    if electric_vehicles_def:
+        logger.info(f"Preservando {len(electric_vehicles_def)} definiciones de EVs del template")
+
     # Use only the first building to keep the district minimal
     bname, b = _find_first_building(schema)
     schema["buildings"] = {bname: b}
+    
+    # Asegurar que electric_vehicles_def se mantiene en el schema
+    if electric_vehicles_def:
+        schema["electric_vehicles_def"] = electric_vehicles_def
+    
+    # === HABILITAR EV STORAGE EN BUILDING ===
+    # CityLearn requiere electric_vehicle_storage activo para que los chargers funcionen
+    if isinstance(b.get("electric_vehicle_storage"), dict):
+        b["electric_vehicle_storage"]["active"] = True
+        logger.info("Habilitado electric_vehicle_storage en building")
+    else:
+        # Crear configuración mínima de EV storage
+        b["electric_vehicle_storage"] = {"active": True}
+        logger.info("Creado electric_vehicle_storage en building")
 
-    # Update PV + BESS sizes
+    # Update PV + BESS sizes from OE2 artifacts
     pv_dc_kw = float(cfg["oe2"]["solar"]["target_dc_kw"])
     bess_cap = None
     bess_pow = None
     artifacts = _load_oe2_artifacts(interim_dir)
-    if "bess" in artifacts:
+    
+    # Usar parámetros de CityLearn preparados si existen
+    if "solar_params" in artifacts:
+        solar_params = artifacts["solar_params"]
+        pv_params = solar_params.get("pv") or solar_params.get("photovoltaic") or {}
+        pv_dc_kw = float(pv_params.get("nominal_power", pv_dc_kw))
+        logger.info(f"Usando parámetros solares de OE2: {pv_dc_kw} kWp")
+    
+    if "bess_params" in artifacts:
+        bess_params = artifacts["bess_params"]
+        bess_cap = float(bess_params.get("electrical_storage", {}).get("capacity", 0.0))
+        bess_pow = float(bess_params.get("electrical_storage", {}).get("nominal_power", 0.0))
+        logger.info(f"Usando parámetros BESS de OE2: {bess_cap} kWh, {bess_pow} kW")
+    elif "bess" in artifacts:
         bess_cap = float(artifacts["bess"].get("capacity_kwh", 0.0))
         bess_pow = float(artifacts["bess"].get("nominal_power_kw", 0.0))
 
     # Heuristic update for device keys
     if isinstance(b, dict):
+        # Actualizar/Crear PV - SIEMPRE crear si no existe y tenemos potencia > 0
+        if pv_dc_kw > 0:
+            if not isinstance(b.get("pv"), dict):
+                # Crear configuración PV desde cero
+                b["pv"] = {
+                    "type": "citylearn.energy_model.PV",
+                    "autosize": False,
+                    "nominal_power": pv_dc_kw,
+                    "attributes": {
+                        "nominal_power": pv_dc_kw,
+                    }
+                }
+                logger.info(f"CREADO pv con nominal_power = {pv_dc_kw} kWp")
+            else:
+                # Actualizar existente
+                b["pv"]["nominal_power"] = pv_dc_kw
+                if isinstance(b["pv"].get("attributes"), dict):
+                    b["pv"]["attributes"]["nominal_power"] = pv_dc_kw
+                else:
+                    b["pv"]["attributes"] = {"nominal_power": pv_dc_kw}
+                logger.info(f"Actualizado pv.nominal_power = {pv_dc_kw}")
+        
         if isinstance(b.get("photovoltaic"), dict):
+            if isinstance(b["photovoltaic"].get("attributes"), dict):
+                b["photovoltaic"]["attributes"]["nominal_power"] = pv_dc_kw
             b["photovoltaic"]["nominal_power"] = pv_dc_kw
+            logger.info(f"Actualizado photovoltaic.nominal_power = {pv_dc_kw}")
+        
+        # Actualizar BESS - IMPORTANTE: actualizar tanto root como attributes
         if isinstance(b.get("electrical_storage"), dict) and bess_cap is not None:
             b["electrical_storage"]["capacity"] = bess_cap
             if bess_pow is not None:
                 b["electrical_storage"]["nominal_power"] = bess_pow
+            # También actualizar attributes si existe (CityLearn usa esto)
+            if isinstance(b["electrical_storage"].get("attributes"), dict):
+                b["electrical_storage"]["attributes"]["capacity"] = bess_cap
+                if bess_pow is not None:
+                    b["electrical_storage"]["attributes"]["nominal_power"] = bess_pow
+            logger.info(f"Actualizado electrical_storage: {bess_cap} kWh, {bess_pow} kW (root + attributes)")
+
+    # === CREAR CHARGERS DESDE OE2 (31 chargers x 4 sockets = 124 sockets) ===
+    if "chargers_results" in artifacts:
+        chargers_cfg = artifacts["chargers_results"]
+        n_chargers = int(chargers_cfg.get("n_chargers_recommended", 31))
+        sockets_per_charger = int(chargers_cfg.get("esc_rec", {}).get("sockets_per_charger", 4))
+        charger_power = float(chargers_cfg.get("esc_rec", {}).get("charger_power_kw", 2.14))
+        total_power_per_charger = charger_power * sockets_per_charger  # ~8.5 kW por cargador
+        total_sockets = n_chargers * sockets_per_charger
+
+        # Asegurar definiciones EV que coincidan con los IDs del charger_simulation.
+        ev_defs: Dict[str, Any] = {}
+        if isinstance(electric_vehicles_def, dict):
+            ev_defs = json.loads(json.dumps(electric_vehicles_def))
+
+        base_ev_def = None
+        if ev_defs:
+            base_ev_def = next(iter(ev_defs.values()))
+        else:
+            base_ev_def = {
+                "include": True,
+                "battery": {
+                    "type": "citylearn.energy_model.Battery",
+                    "autosize": False,
+                    "attributes": {
+                        "capacity": 40,
+                        "nominal_power": 50,
+                        "initial_soc": 0.25,
+                        "depth_of_discharge": 0.85,
+                    },
+                },
+            }
+
+        ev_names = [f"EV_Mall_{i}" for i in range(1, total_sockets + 1)]
+        ev_defs = {name: json.loads(json.dumps(base_ev_def)) for name in ev_names}
+        schema["electric_vehicles_def"] = ev_defs
+        
+        # Obtener charger template del building si existe
+        existing_chargers = b.get("chargers", {})
+        charger_template = None
+        if existing_chargers:
+            charger_template = list(existing_chargers.values())[0]
+        
+        # Crear n_chargers controlables por agentes (cada uno con 4 sockets)
+        new_chargers = {}
+        for i in range(1, n_chargers + 1):
+            charger_name = f"charger_mall_{i}"
+            charger_csv = f"{charger_name}.csv"
+            
+            if charger_template:
+                # Copiar template y actualizar
+                new_charger = json.loads(json.dumps(charger_template))
+                new_charger["charger_simulation"] = charger_csv
+            else:
+                # Crear charger desde cero con 4 sockets
+                new_charger = {
+                    "type": "citylearn.electric_vehicle_charger.Charger",
+                    "charger_simulation": charger_csv,
+                    "autosize": False,
+                    "active": True,  # Controlable por agentes
+                    "attributes": {
+                        "nominal_power": total_power_per_charger,
+                        "efficiency": 0.95,
+                        "charger_type": 0,  # 0 = Level 2
+                        "max_charging_power": total_power_per_charger,
+                        "min_charging_power": 0.5,
+                        "num_sockets": sockets_per_charger,  # 4 tomas por cargador
+                    }
+                }
+            
+            # Asegurar que es controlable y tiene la potencia correcta
+            new_charger["active"] = True
+            if "attributes" in new_charger:
+                new_charger["attributes"]["nominal_power"] = total_power_per_charger
+                new_charger["attributes"]["max_charging_power"] = total_power_per_charger
+                new_charger["attributes"]["num_sockets"] = sockets_per_charger
+            else:
+                new_charger["nominal_power"] = total_power_per_charger
+                new_charger["max_charging_power"] = total_power_per_charger
+                new_charger["num_sockets"] = sockets_per_charger
+            
+            new_chargers[charger_name] = new_charger
+        
+        b["chargers"] = new_chargers
+        
+        # Habilitar acciones de EV charging para control por agentes
+        inactive_actions = b.get("inactive_actions", [])
+        # Remover acciones de EV de inactive (para que sean controlables)
+        ev_actions = ["electric_vehicle_storage", "electric_vehicle_charger"]
+        for ev_act in ev_actions:
+            if ev_act in inactive_actions:
+                inactive_actions.remove(ev_act)
+        b["inactive_actions"] = inactive_actions
+        
+        logger.info(f"Creados {n_chargers} chargers de {total_power_per_charger:.2f} kW ({sockets_per_charger} sockets x {charger_power:.2f} kW)")
+        logger.info(f"Potencia total instalada: {n_chargers * total_power_per_charger:.1f} kW")
+        logger.info(f"Total sockets: {n_chargers * sockets_per_charger}")
+
+    if "charger_profile_variants" in artifacts:
+        variant_meta = artifacts["charger_profile_variants"]
+        variant_dir = artifacts.get("charger_profile_variants_dir")
+        if variant_dir is not None:
+            target_variants_dir = out_dir / "charger_profile_variants"
+            target_variants_dir.mkdir(parents=True, exist_ok=True)
+            schema_variants: List[Dict[str, Any]] = []
+            for variant in variant_meta.get("variants", []):
+                profile_name = variant.get("profile_path")
+                if not profile_name:
+                    continue
+                source_path = variant_dir / profile_name
+                if not source_path.exists():
+                    logger.warning(f"Falta el perfil {profile_name} en {variant_dir}")
+                    continue
+                dest_path = target_variants_dir / profile_name
+                shutil.copy2(source_path, dest_path)
+                variant_record = variant.copy()
+                variant_record["profile_path"] = str(Path("charger_profile_variants") / profile_name)
+                schema_variants.append(variant_record)
+            if schema_variants:
+                schema["charger_profile_variants"] = schema_variants
+                logger.info(f"Copiados {len(schema_variants)} perfiles estocásticos a {target_variants_dir}")
+        else:
+            logger.warning("No se encontró el directorio de perfiles de cargadores para los escenarios estocásticos")
 
     # Discover and overwrite relevant CSVs
     paths = _discover_csv_paths(schema, out_dir)
@@ -183,30 +422,114 @@ def build_citylearn_dataset(
     n = len(df_energy)
 
     # Build mall load and PV generation series for length n
-    mall_energy_day = float(cfg["oe2"]["mall"]["energy_kwh_day"])
-    mall_shape = cfg["oe2"]["mall"].get("shape_24h")  # may be None
-    if mall_shape is None:
-        # Default same as OE2 bess module
-        from iquitos_citylearn.oe2.bess import default_mall_shape_24h  # local import
-        mall_shape_arr = default_mall_shape_24h()
-    else:
-        mall_shape_arr = np.array(mall_shape, dtype=float)
-        mall_shape_arr = mall_shape_arr / mall_shape_arr.sum()
+    # Usar datos de CityLearn preparados si existen
+    mall_series = None
+    if "building_load_citylearn" in artifacts:
+        building_load = artifacts["building_load_citylearn"]
+        if len(building_load) >= n:
+            mall_series = building_load['non_shiftable_load'].values[:n]
+            logger.info(f"Usando demanda de building_load preparado: {len(mall_series)} registros")
+        else:
+            mall_series = _repeat_24h_to_length(building_load['non_shiftable_load'].values, n)
+            logger.info("Demanda building_load incompleta, repitiendo perfil diario")
+    elif "mall_demand" in artifacts:
+        mall_df = artifacts["mall_demand"].copy()
+        if not mall_df.empty:
+            date_col = None
+            for col in mall_df.columns:
+                col_norm = str(col).strip().lower()
+                if col_norm in ("fecha", "horafecha", "datetime", "timestamp", "time") or "fecha" in col_norm:
+                    date_col = col
+                    break
+            if date_col is None:
+                date_col = mall_df.columns[0]
 
-    mall_24h = mall_energy_day * mall_shape_arr
-    mall_series = _repeat_24h_to_length(mall_24h, n)
+            demand_col = None
+            for col in mall_df.columns:
+                if col == date_col:
+                    continue
+                col_norm = str(col).strip().lower()
+                if any(tag in col_norm for tag in ("kwh", "demanda", "power", "kw")):
+                    demand_col = col
+                    break
+            if demand_col is None:
+                candidates = [c for c in mall_df.columns if c != date_col]
+                demand_col = candidates[0] if candidates else date_col
 
-    # PV series per kWp (kWh/kWp per timestep). If available from OE2, use it.
+            unit_is_energy = "kwh" in str(demand_col).strip().lower()
+            mall_df = mall_df.rename(columns={date_col: "datetime", demand_col: "mall_kwh"})
+            mall_df["datetime"] = pd.to_datetime(mall_df["datetime"], errors="coerce")
+            mall_df["mall_kwh"] = pd.to_numeric(mall_df["mall_kwh"], errors="coerce")
+            mall_df = mall_df.dropna(subset=["datetime", "mall_kwh"])
+            mall_df = mall_df.set_index("datetime").sort_index()
+
+            if not mall_df.empty:
+                if len(mall_df.index) > 1:
+                    dt_minutes = (mall_df.index[1] - mall_df.index[0]).total_seconds() / 60
+                else:
+                    dt_minutes = 60
+                series = mall_df["mall_kwh"]
+                if not unit_is_energy and dt_minutes > 0:
+                    series = series * (dt_minutes / 60.0)
+                if dt_minutes < 60:
+                    series = series.resample("h").sum()
+
+                values = series.values
+                if len(values) >= n:
+                    mall_series = values[:n]
+                    logger.info(f"Usando demanda real del mall: {len(mall_series)} registros")
+                else:
+                    hourly_profile = series.groupby(series.index.hour).mean()
+                    hourly_profile = hourly_profile.reindex(range(24), fill_value=0.0)
+                    mall_series = _repeat_24h_to_length(hourly_profile.values, n)
+                    logger.info("Demanda real incompleta, repitiendo perfil horario promedio")
+
+    if mall_series is None:
+        mall_energy_day = float(cfg["oe2"]["mall"]["energy_kwh_day"])
+        mall_shape = cfg["oe2"]["mall"].get("shape_24h")  # may be None
+        if mall_shape is None:
+            # Default same as OE2 bess module
+            from iquitos_citylearn.oe2.bess import default_mall_shape_24h  # local import
+            mall_shape_arr = default_mall_shape_24h()
+        else:
+            mall_shape_arr = np.array(mall_shape, dtype=float)
+            mall_shape_arr = mall_shape_arr / mall_shape_arr.sum()
+
+        mall_24h = mall_energy_day * mall_shape_arr
+        mall_series = _repeat_24h_to_length(mall_24h, n)
+
+    # PV series - Usar solar_generation de CityLearn si existe
     pv_per_kwp = None
-    if "solar_ts" in artifacts:
+    if "solar_generation_citylearn" in artifacts:
+        solar_gen = artifacts["solar_generation_citylearn"]
+        if 'solar_generation' in solar_gen.columns:
+            pv_per_kwp = solar_gen['solar_generation'].values
+            logger.info(f"Usando solar_generation preparado: {len(pv_per_kwp)} registros")
+    
+    if pv_per_kwp is None and "solar_ts" in artifacts:
         solar_ts = artifacts["solar_ts"]
-        if "pv_kwh_per_kwp" in solar_ts.columns:
-            pv_per_kwp = solar_ts["pv_kwh_per_kwp"].values
+        # Resamplear a horario si es necesario
+        for col in ['pv_kwh', 'ac_energy_kwh']:
+            if col in solar_ts.columns:
+                pv_values = solar_ts[col].values
+                # Normalizar por kWp
+                pv_per_kwp = pv_values / pv_dc_kw if pv_dc_kw > 0 else pv_values
+                # Si es subhorario, agregar a horario
+                if len(pv_per_kwp) > n:
+                    ratio = len(pv_per_kwp) // n
+                    pv_per_kwp = np.array([pv_per_kwp[i*ratio:(i+1)*ratio].sum() for i in range(n)])
+                logger.info(f"Usando solar_ts [{col}]: {len(pv_per_kwp)} registros")
+                break
+    
     if pv_per_kwp is None or len(pv_per_kwp) < n:
         # fallback: repeat mean 24h from template solar column if it exists
         pv_per_kwp = np.zeros(n, dtype=float)
+        logger.warning("No se encontraron datos solares de OE2, usando ceros")
 
     pv_per_kwp = pv_per_kwp[:n]
+    # CityLearn expects inverter AC power per kW in W/kW.
+    if dt_hours > 0:
+        pv_per_kwp = pv_per_kwp / dt_hours * 1000.0
 
     # Identify columns to overwrite in energy_simulation (template-dependent names)
     def find_col(regex_list: List[str]) -> Optional[str]:
@@ -270,7 +593,6 @@ def build_citylearn_dataset(
     if "ev_profile_24h" in artifacts and "energy_kwh" in artifacts["ev_profile_24h"].columns:
         ev_energy_day = float(artifacts["ev_profile_24h"]["energy_kwh"].sum())
 
-    dt_hours = seconds_per_time_step / 3600.0
     steps_per_hour = int(round(1.0 / dt_hours))
     steps_per_day = int(round(24.0 / dt_hours))
 
@@ -279,32 +601,42 @@ def build_citylearn_dataset(
     departure_step = (closing + 1) * steps_per_hour  # depart after closing hour
     departure_step = min(departure_step, steps_per_day)  # clamp
 
-    # Build schedule arrays
-    state = np.full(n, 3, dtype=int)  # 3 = commuting
-    ev_id = np.full(n, -1, dtype=int)
-    dep_time = np.full(n, -1, dtype=int)
-    req_soc = np.full(n, -0.1, dtype=float)
-    arr_time = np.full(n, -1, dtype=int)
-    arr_soc = np.full(n, -0.1, dtype=float)
+    # Build schedule arrays - usar NaN para valores no aplicables (formato CityLearn)
+    state = np.full(n, 3, dtype=int)  # 3 = commuting/sin EV
+    ev_names = list(schema.get("electric_vehicles_def", {}).keys())
+    ev_id = np.full(n, np.nan, dtype=object)  # NaN cuando no hay EV
+    dep_time = np.full(n, np.nan, dtype=float)  # NaN cuando no hay EV
+    req_soc = np.full(n, np.nan, dtype=float)  # NaN cuando no hay EV
+    arr_time = np.full(n, np.nan, dtype=float)  # NaN cuando hay EV conectado
+    arr_soc = np.full(n, np.nan, dtype=float)  # NaN cuando hay EV conectado
 
-    soc_arr = 0.20
-    soc_req = 0.90
+    # SOC de llegada y salida requerido (en %)
+    soc_arr = 20.0  # 20% SOC al llegar
+    soc_req = 90.0  # 90% SOC requerido al salir
 
     for t in range(n):
         day_step = t % steps_per_day
         if arrival_step <= day_step < departure_step:
+            # EV conectado (state=1)
             state[t] = 1
-            ev_id[t] = 0
-            dep_time[t] = int(departure_step - day_step)
-            req_soc[t] = soc_req
+            if ev_names:
+                ev_id[t] = ev_names[t % len(ev_names)]
+            dep_time[t] = float(departure_step - day_step)  # Horas hasta salida
+            req_soc[t] = soc_req  # SOC requerido al salir (%)
+            arr_time[t] = np.nan  # No aplica cuando está conectado
+            arr_soc[t] = np.nan  # No aplica cuando está conectado
         else:
+            # Sin EV (state=3 = commuting)
             state[t] = 3
-            # time until next arrival
+            ev_id[t] = np.nan  # NaN = sin EV
+            dep_time[t] = np.nan  # No aplica
+            req_soc[t] = np.nan  # No aplica
+            # Tiempo estimado hasta próxima llegada
             if day_step < arrival_step:
-                arr_time[t] = int(arrival_step - day_step)
+                arr_time[t] = float(arrival_step - day_step)
             else:
-                arr_time[t] = int(steps_per_day - day_step + arrival_step)
-            arr_soc[t] = soc_arr
+                arr_time[t] = float(steps_per_day - day_step + arrival_step)
+            arr_soc[t] = soc_arr  # SOC esperado al llegar
 
     charger_df = pd.DataFrame(
         {
@@ -317,6 +649,40 @@ def build_citylearn_dataset(
         }
     )
 
+    # === GENERAR CSVs PARA TODOS LOS CHARGERS DE OE2 ===
+    n_chargers_oe2 = 31  # default
+    if "chargers_results" in artifacts:
+        n_chargers_oe2 = int(artifacts["chargers_results"].get("n_chargers_recommended", 31))
+    
+    # Crear CSVs para cada charger definido en el schema
+    chargers_in_schema = b.get("chargers", {})
+    for charger_name, charger_cfg in chargers_in_schema.items():
+        charger_csv = charger_cfg.get("charger_simulation", f"{charger_name}.csv")
+        charger_path = out_dir / charger_csv
+        
+        # Distribuir EVs entre chargers - algunos activos, otros esperando
+        charger_idx = int(charger_name.split("_")[-1]) if "_" in charger_name else 1
+        
+        # Crear variación para simular distribución de carga
+        if charger_idx <= n_chargers_oe2 // 3:
+            # Chargers principales: más activos
+            charger_df.to_csv(charger_path, index=False)
+        else:
+            # Chargers secundarios: menos activos (estado alternado)
+            # Usar vectorización en lugar de bucle for (mucho más rápido)
+            secondary_df = charger_df.copy()
+            # Crear máscara para filas que deben estar desconectadas
+            t_arr = np.arange(len(secondary_df))
+            mask = ((t_arr // 2) % 2) == (charger_idx % 2)
+            secondary_df.loc[mask, "electric_vehicle_charger_state"] = 3
+            secondary_df.loc[mask, "electric_vehicle_id"] = np.nan
+            secondary_df.loc[mask, "electric_vehicle_departure_time"] = np.nan
+            secondary_df.loc[mask, "electric_vehicle_required_soc_departure"] = np.nan
+            secondary_df.to_csv(charger_path, index=False)
+    
+    logger.info(f"Generados {len(chargers_in_schema)} archivos CSV de simulación de chargers")
+
+    # También generar para chargers del template original si existen
     for i, cp in enumerate(charger_list):
         if not cp.exists():
             continue
@@ -324,14 +690,16 @@ def build_citylearn_dataset(
         if i == 0:
             charger_df.to_csv(cp, index=False)
         else:
-            charger_df.assign(
-                electric_vehicle_charger_state=3,
-                electric_vehicle_id=-1,
-                electric_vehicle_departure_time=-1,
-                electric_vehicle_required_soc_departure=-0.1,
-                electric_vehicle_estimated_arrival_time=arr_time,
-                electric_vehicle_estimated_soc_arrival=arr_soc,
-            ).to_csv(cp, index=False)
+            # Charger sin EV conectado (state=3, todo NaN)
+            disconnected_df = pd.DataFrame({
+                "electric_vehicle_charger_state": np.full(n, 3, dtype=int),
+                "electric_vehicle_id": np.full(n, np.nan, dtype=object),
+                "electric_vehicle_departure_time": np.full(n, np.nan, dtype=float),
+                "electric_vehicle_required_soc_departure": np.full(n, np.nan, dtype=float),
+                "electric_vehicle_estimated_arrival_time": arr_time,
+                "electric_vehicle_estimated_soc_arrival": arr_soc,
+            })
+            disconnected_df.to_csv(cp, index=False)
 
     # Save schema
     schema_path.write_text(json.dumps(schema, indent=2), encoding="utf-8")
@@ -344,11 +712,27 @@ def build_citylearn_dataset(
     # 2) Grid-only variant: disable PV and BESS by setting nominal values to 0.
     schema_grid = json.loads(json.dumps(schema))
     bname2, b2 = _find_first_building(schema_grid)
+    
+    # Desactivar photovoltaic (formato antiguo)
     if isinstance(b2.get("photovoltaic"), dict):
         b2["photovoltaic"]["nominal_power"] = 0.0
+    
+    # Desactivar pv (formato nuevo con attributes)
+    if isinstance(b2.get("pv"), dict):
+        if isinstance(b2["pv"].get("attributes"), dict):
+            b2["pv"]["attributes"]["nominal_power"] = 0.0
+        else:
+            b2["pv"]["nominal_power"] = 0.0
+    
+    # Desactivar electrical_storage
     if isinstance(b2.get("electrical_storage"), dict):
         b2["electrical_storage"]["capacity"] = 0.0
         b2["electrical_storage"]["nominal_power"] = 0.0
+        if isinstance(b2["electrical_storage"].get("attributes"), dict):
+            b2["electrical_storage"]["attributes"]["capacity"] = 0.0
+            b2["electrical_storage"]["attributes"]["nominal_power"] = 0.0
+    
     (out_dir / "schema_grid_only.json").write_text(json.dumps(schema_grid, indent=2), encoding="utf-8")
+    logger.info("Schema grid-only creado con PV=0 y BESS=0")
 
     return BuiltDataset(dataset_dir=out_dir, schema_path=schema_path, building_name=bname)
