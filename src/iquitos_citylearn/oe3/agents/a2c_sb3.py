@@ -102,9 +102,13 @@ class A2CAgent:
                 return len(self._flatten(obs))
 
             def _get_act_dim(self):
-                if isinstance(self.env.action_space, list):
-                    return sum(sp.shape[0] for sp in self.env.action_space)
-                return self.env.action_space.shape[0]
+                action_space = getattr(self.env, "action_space", None)
+                if isinstance(action_space, list):
+                    return sum(getattr(sp, "shape", (0,))[0] for sp in action_space)
+                shape = getattr(action_space, "shape", None)
+                if shape and len(shape) > 0:
+                    return int(shape[0])
+                return 1
 
             def _flatten(self, obs):
                 if isinstance(obs, dict):
@@ -168,7 +172,15 @@ class A2CAgent:
         )
 
         progress_path = Path(self.config.progress_path) if self.config.progress_path else None
-        progress_headers = ("timestamp", "agent", "episode", "episode_reward", "episode_length", "global_step")
+        progress_headers = (
+            "timestamp",
+            "agent",
+            "episode",
+            "episode_reward",
+            "episode_length",
+            "global_step",
+            "progress_pct",
+        )
         expected_episodes = int(steps // 8760) if steps > 0 else 0
 
         class TrainingCallback(BaseCallback):
@@ -189,10 +201,13 @@ class A2CAgent:
                     return True
                 if self.log_interval_steps > 0 and self.n_calls % self.log_interval_steps == 0:
                     approx_episode = max(1, int(self.model.num_timesteps // 8760) + 1)
+                    pct = 100.0 * approx_episode / max(1, self.expected_episodes) if self.expected_episodes > 0 else None
                     logger.info(
-                        "[A2C] paso %d | ep~%d | pasos_global=%d",
+                        "[A2C] paso %d | ep~%d/%d (%.1f%%) | pasos_global=%d",
                         self.n_calls,
                         approx_episode,
+                        self.expected_episodes,
+                        pct if pct is not None else 0.0,
                         int(self.model.num_timesteps),
                     )
                     if self.progress_path is not None:
@@ -203,6 +218,7 @@ class A2CAgent:
                             "episode_reward": "",
                             "episode_length": "",
                             "global_step": int(self.model.num_timesteps),
+                            "progress_pct": pct if pct is not None else "",
                         }
                         append_progress_row(self.progress_path, row, self.progress_headers)
                 for info in infos:
@@ -219,6 +235,7 @@ class A2CAgent:
                     if self.agent.config.progress_interval_episodes > 0 and (
                         self.episode_count % self.agent.config.progress_interval_episodes == 0
                     ):
+                        pct = 100.0 * self.episode_count / self.expected_episodes if self.expected_episodes > 0 else None
                         row = {
                             "timestamp": datetime.utcnow().isoformat(),
                             "agent": "a2c",
@@ -226,14 +243,16 @@ class A2CAgent:
                             "episode_reward": reward,
                             "episode_length": length,
                             "global_step": int(self.model.num_timesteps),
+                            "progress_pct": pct if pct is not None else "",
                         }
                         if self.progress_path is not None:
                             append_progress_row(self.progress_path, row, self.progress_headers)
-                        if self.expected_episodes > 0:
+                        if pct is not None:
                             logger.info(
-                                "[A2C] ep %d/%d reward=%.4f len=%d step=%d",
+                                "[A2C] ep %d/%d (%.1f%%) reward=%.4f len=%d step=%d",
                                 self.episode_count,
                                 self.expected_episodes,
+                                pct,
                                 reward,
                                 length,
                                 int(self.model.num_timesteps),
@@ -288,7 +307,7 @@ class A2CAgent:
             except Exception as exc:
                 logger.warning("No se pudo guardar modelo A2C (%s)", exc)
 
-    def _get_lr_schedule(self, total_steps: int) -> Callable:
+    def _get_lr_schedule(self, total_steps: int) -> Callable[[float], float]:
         from stable_baselines3.common.utils import get_linear_fn
 
         if self.config.lr_schedule == "linear":
@@ -297,7 +316,7 @@ class A2CAgent:
             def cosine_schedule(progress):
                 return self.config.learning_rate * (0.5 * (1 + np.cos(np.pi * (1 - progress))))
             return cosine_schedule
-        return self.config.learning_rate
+        return lambda _progress: float(self.config.learning_rate)
 
     def _get_activation(self):
         import torch.nn as nn

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Optional
+from typing import Any, List
 import numpy as np
 import logging
 
@@ -26,6 +26,7 @@ class NoControlAgent:
             # Intentar obtener de CityLearn Agent base
             try:
                 from citylearn.agents.base import Agent
+                _ = Agent  # Referencia para evitar warning de import no usado
                 if hasattr(self.env, 'action_dimension'):
                     self.action_dimension = self.env.action_dimension
                 else:

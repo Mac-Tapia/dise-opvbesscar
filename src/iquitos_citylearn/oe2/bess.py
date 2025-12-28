@@ -74,6 +74,7 @@ class BessSimulationHour:
 def load_mall_demand_real(
     mall_demand_path: Path,
     year: int = 2024,
+    date_format: str = "%d/%m/%Y %H:%M",
 ) -> pd.DataFrame:
     """
     Carga la demanda real del mall desde CSV.
@@ -102,17 +103,29 @@ def load_mall_demand_real(
 
     date_col = find_col(["fecha", "horafecha", "datetime", "timestamp", "time"])
     if date_col is None:
-        date_col = df.columns[0]
+        date_col = str(df.columns[0])
+    else:
+        date_col = str(date_col)
 
     demand_col = find_col(["demanda_kwh", "demandamallkwh", "demanda", "power_kw", "kw", "kwh"])
     if demand_col is None:
         candidates = [c for c in df.columns if c != date_col]
-        demand_col = candidates[-1] if candidates else df.columns[0]
+        demand_col = str(candidates[-1] if candidates else df.columns[0])
+    else:
+        demand_col = str(demand_col)
 
     df = df.rename(columns={date_col: "datetime", demand_col: "power_kw"})
     
     # Asegurar índice datetime
-    df['datetime'] = pd.to_datetime(df['datetime'], dayfirst=True, errors='coerce')
+    # Intentar parseo explícito de fecha para evitar warnings; fallback a dateutil
+    df['datetime'] = pd.to_datetime(
+        df['datetime'],
+        format=date_format,
+        dayfirst=True,
+        errors='coerce',
+    )
+    if df['datetime'].isna().all():
+        df['datetime'] = pd.to_datetime(df['datetime'], dayfirst=True, errors='coerce')
     df['power_kw'] = pd.to_numeric(df['power_kw'], errors='coerce')
     df = df.dropna(subset=['datetime', 'power_kw'])
     df = df.set_index('datetime')
@@ -130,13 +143,15 @@ def load_mall_demand_real(
     df["power_kw"] = pd.to_numeric(df["power_kw"], errors="coerce")
     df = df.dropna(subset=["power_kw"])
 
+    raw_values = df["power_kw"].copy()
+
     if unit_is_energy:
-        # Los valores son energia por intervalo (kWh). Convertir a potencia y luego a energia horaria.
-        df["energy_kwh"] = df["power_kw"]
-        df["power_kw"] = df["energy_kwh"] * 60.0 / time_diff
+        # Los valores se declaran como energia por intervalo (kWh).
+        df["energy_kwh"] = raw_values
+        df["power_kw"] = raw_values * 60.0 / time_diff
     else:
-        # Los valores son potencia (kW). Convertir a energia por intervalo.
-        df["energy_kwh"] = df["power_kw"] * (time_diff / 60.0)
+        # Los valores son potencia (kW) -> energia por intervalo.
+        df["energy_kwh"] = raw_values * (time_diff / 60.0)
 
     if time_diff < 60:
         df_hourly = df["energy_kwh"].resample("h").sum().to_frame("mall_kwh")
@@ -156,12 +171,12 @@ def load_mall_demand_real(
         df_full = df_full.drop(columns=['hour'])
         return df_full
     
-    return df_hourly[['mall_kwh']]
+    return pd.DataFrame(df_hourly[['mall_kwh']])
 
 
 def load_pv_generation(pv_timeseries_path: Path) -> pd.DataFrame:
     """Carga la generación PV desde timeseries."""
-    df = pd.read_csv(pv_timeseries_path)
+    df: pd.DataFrame = pd.read_csv(pv_timeseries_path)
     
     # Detectar columna de tiempo
     time_col = None
@@ -196,12 +211,12 @@ def load_pv_generation(pv_timeseries_path: Path) -> pd.DataFrame:
     else:
         df_hourly['pv_kwh'] = 0.0
     
-    return df_hourly[['pv_kwh']]
+    return pd.DataFrame(df_hourly[['pv_kwh']])
 
 
 def load_ev_demand(ev_profile_path: Path, year: int = 2024) -> pd.DataFrame:
     """Carga el perfil de demanda EV."""
-    df = pd.read_csv(ev_profile_path)
+    df: pd.DataFrame = pd.read_csv(ev_profile_path)
     
     # Verificar columnas
     if 'hour' in df.columns and 'energy_kwh' in df.columns:
@@ -214,7 +229,7 @@ def load_ev_demand(ev_profile_path: Path, year: int = 2024) -> pd.DataFrame:
         df_full = df_full.drop(columns=['hour'])
         return df_full
     
-    return df
+    return pd.DataFrame(df)
 
 
 def simulate_bess_operation(
@@ -424,6 +439,8 @@ def generate_bess_plots(
     pv_kwh_day: float,
     out_dir: Path,
     reports_dir: Optional[Path] = None,
+    mall_profile_h: Optional[np.ndarray] = None,
+    ev_profile_h: Optional[np.ndarray] = None,
 ) -> None:
     """
     Genera las 4 gráficas del sistema FV + BESS.
@@ -439,6 +456,8 @@ def generate_bess_plots(
         pv_kwh_day: Generación diaria PV
         out_dir: Directorio de datos interim
         reports_dir: Directorio de reportes (opcional)
+        mall_profile_h: Perfil horario mall (24 valores) si se quiere graficar demanda real
+        ev_profile_h: Perfil horario EV (24 valores) si se quiere graficar demanda real
     """
     import matplotlib.pyplot as plt
     
@@ -469,13 +488,16 @@ def generate_bess_plots(
     grid_import = np.asarray(df_day['grid_import_kwh'].values)
     grid_export = np.asarray(df_day['grid_export_kwh'].values)
     
-    # Separar demanda Mall vs EV (proporcional)
-    total_demand_day = mall_kwh_day + ev_kwh_day
-    mall_ratio = mall_kwh_day / total_demand_day if total_demand_day > 0 else 0.5
-    ev_ratio = ev_kwh_day / total_demand_day if total_demand_day > 0 else 0.5
-    
-    mall_h = load * mall_ratio
-    ev_h = load * ev_ratio
+    # Separar demanda Mall vs EV usando perfiles reales si están disponibles
+    if mall_profile_h is not None and ev_profile_h is not None and len(mall_profile_h) == 24 and len(ev_profile_h) == 24:
+        mall_h = np.asarray(mall_profile_h, dtype=float)
+        ev_h = np.asarray(ev_profile_h, dtype=float)
+    else:
+        total_demand_day = mall_kwh_day + ev_kwh_day
+        mall_ratio = mall_kwh_day / total_demand_day if total_demand_day > 0 else 0.5
+        ev_ratio = ev_kwh_day / total_demand_day if total_demand_day > 0 else 0.5
+        mall_h = load * mall_ratio
+        ev_h = load * ev_ratio
     
     # ===== Panel 1: Demanda Total =====
     ax1 = axes[0]
@@ -571,7 +593,7 @@ def generate_bess_plots(
     # Gráfica adicional: Análisis mensual
     # ===========================================================
     if len(df_sim) >= 720:  # Al menos un mes de datos
-        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+        _fig, axes = plt.subplots(2, 2, figsize=(14, 10))
         
         # Agregar por mes
         df_sim_copy = df_sim.copy()
@@ -612,7 +634,9 @@ def generate_bess_plots(
         
         # Panel 4: Autosuficiencia mensual
         ax4 = axes[1, 1]
-        self_suff_monthly = 1.0 - (monthly['grid_import_kwh'] / monthly['load_kwh'].replace(0, 1))
+        load_series = pd.Series(monthly['load_kwh'])
+        import_series = pd.Series(monthly['grid_import_kwh'])
+        self_suff_monthly = 1.0 - (import_series / load_series.replace(0, 1))
         ax4.bar(months, self_suff_monthly * 100, color='teal', alpha=0.7)
         ax4.axhline(y=50, color='red', linestyle='--', label='50%')
         ax4.set_xlabel('Mes', fontsize=10)
@@ -702,6 +726,7 @@ def run_bess_sizing(
     pv_profile_path: Path,
     ev_profile_path: Path,
     mall_demand_path: Optional[Path] = None,
+    mall_date_format: str = "%d/%m/%Y %H:%M",
     dod: float = 0.90,
     c_rate: float = 0.50,
     round_kwh: float = 10.0,
@@ -728,6 +753,7 @@ def run_bess_sizing(
         pv_profile_path: Ruta al perfil PV (timeseries o 24h)
         ev_profile_path: Ruta al perfil EV
         mall_demand_path: Ruta al archivo de demanda real del mall
+        mall_date_format: Formato de fecha/hora del CSV de demanda real
         dod: Profundidad de descarga
         c_rate: C-rate del BESS
         round_kwh: Redondeo de capacidad
@@ -785,7 +811,7 @@ def run_bess_sizing(
         print(f"   Generacion PV (perfil 24h): {len(df_pv)} registros")
 
     if mall_demand_path and mall_demand_path.exists():
-        df_mall = load_mall_demand_real(mall_demand_path, year)
+        df_mall = load_mall_demand_real(mall_demand_path, year, date_format=mall_date_format)
         mall_kwh_day = df_mall['mall_kwh'].sum() / (len(df_mall) / 24)
         print(f"   Demanda Mall (real): {mall_kwh_day:.0f} kWh/dia")
     else:
@@ -803,6 +829,10 @@ def run_bess_sizing(
     df_ev = load_ev_demand(ev_profile_path, year)
     ev_kwh_day = df_ev['ev_kwh'].sum() / (len(df_ev) / 24)
     print(f"   Demanda EV: {ev_kwh_day:.0f} kWh/dia")
+
+    # Perfiles horarios (para graficar demanda real mall+EV)
+    mall_profile_h = df_mall.groupby(df_mall.index.hour)['mall_kwh'].mean().to_numpy()
+    ev_profile_h = df_ev.groupby(df_ev.index.hour)['ev_kwh'].mean().to_numpy()
 
     # ===========================================
     # 2. Alinear series temporales
@@ -832,11 +862,12 @@ def run_bess_sizing(
     bess_load_scope = str(load_scope).lower()
     pv_available = pv_kwh
     bess_load = total_load_kwh
-    mall_grid_import = None
+    mall_grid_import: Optional[np.ndarray] = None
 
     if bess_load_scope == "ev_priority":
         pv_available = pv_kwh
         bess_load = ev_kwh
+        mall_grid_import = np.zeros_like(mall_kwh)
     elif bess_load_scope == "ev_only":
         pv_available = np.maximum(pv_kwh - mall_kwh, 0.0)
         bess_load = ev_kwh
@@ -847,8 +878,14 @@ def run_bess_sizing(
 
     hours = np.arange(min_len) % 24
 
-    pv_hourly_mean = pd.Series(pv_kwh).groupby(hours).mean()
-    night_hours = set(pv_hourly_mean[pv_hourly_mean <= pv_night_threshold_kwh].index.astype(int).tolist())
+    hourly_means: dict[int, float] = {}
+    for h in range(24):
+        mask = hours == h
+        if mask.any():
+            hourly_means[h] = float(np.mean(pv_kwh[mask]))
+        else:
+            hourly_means[h] = 0.0
+    night_hours = {h for h, val in hourly_means.items() if val <= pv_night_threshold_kwh}
     night_mask = np.isin(hours, list(night_hours))
     discharge_hours_set = set(discharge_hours) if discharge_hours else None
     sizing_mask = night_mask
@@ -943,7 +980,8 @@ def run_bess_sizing(
     )
 
     if bess_load_scope == "ev_only":
-        grid_import_total = mall_grid_import + df_bess['grid_import_kwh'].values
+        mall_grid_array = mall_grid_import if mall_grid_import is not None else np.zeros_like(df_bess['grid_import_kwh'].values)
+        grid_import_total = mall_grid_array + df_bess['grid_import_kwh'].values
         df_sim = df_bess.copy()
         df_sim['pv_kwh'] = pv_kwh
         df_sim['load_kwh'] = total_load_kwh
@@ -964,11 +1002,11 @@ def run_bess_sizing(
         metrics['total_grid_export_kwh'] = total_grid_export
         metrics['self_sufficiency'] = self_sufficiency
     elif bess_load_scope == "ev_priority":
-        pv_surplus = df_bess['grid_export_kwh'].values
+        pv_surplus = np.asarray(df_bess['grid_export_kwh'].values, dtype=float)
         mall_pv_used = np.minimum(mall_kwh, pv_surplus)
         mall_grid_import = mall_kwh - mall_pv_used
         grid_export_total = pv_surplus - mall_pv_used
-        grid_import_total = df_bess['grid_import_kwh'].values + mall_grid_import
+        grid_import_total = np.asarray(df_bess['grid_import_kwh'].values, dtype=float) + mall_grid_import
 
         df_sim = df_bess.copy()
         df_sim['pv_kwh'] = pv_kwh
@@ -1004,9 +1042,10 @@ def run_bess_sizing(
     # ===========================================
     # 6. Guardar resultados
     # ===========================================
+    df_sim = pd.DataFrame(df_sim)
     df_sim.to_csv(out_dir / "bess_simulation_hourly.csv", index=False)
 
-    df_day = df_sim.groupby('hour').mean().reset_index()
+    df_day = df_sim.groupby('hour').mean(numeric_only=True).reset_index()
     df_day.to_csv(out_dir / "bess_daily_balance_24h.csv", index=False)
 
     output = BessSizingOutput(
@@ -1043,7 +1082,7 @@ def run_bess_sizing(
         json.dumps(result_dict, indent=2), encoding="utf-8"
     )
 
-    citylearn_params = prepare_citylearn_data(
+    _citylearn_params = prepare_citylearn_data(
         df_sim=df_sim,
         capacity_kwh=capacity_kwh,
         power_kw=power_kw,
@@ -1065,6 +1104,8 @@ def run_bess_sizing(
             pv_kwh_day=pv_day,
             out_dir=out_dir,
             reports_dir=reports_dir,
+            mall_profile_h=mall_profile_h,
+            ev_profile_h=ev_profile_h,
         )
 
     print("")

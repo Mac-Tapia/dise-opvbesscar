@@ -50,6 +50,8 @@ def main() -> None:
         n_scenarios=100,
         generate_plots=not args.no_plots,
         reports_dir=rp.reports_dir,
+        randomize_chargers=bool(ev.get("charger_randomize", True)),
+        charger_variation_pct=float(ev.get("charger_variation_pct", 0.1)),
     )
 
     analyses_dir = rp.analyses_dir / "oe2" / "chargers"
@@ -61,13 +63,15 @@ def main() -> None:
     # Mostrar resumen
     esc_rec = result["esc_rec"]
     print("\nRESUMEN FINAL:")
-    print(f"   Cargadores recomendados: {result['n_chargers_recommended']}")
+    print(f"   Cargadores recomendados: {int(result['n_chargers_recommended'])}")
     print(f"   Sockets totales: {int(esc_rec['sockets_total'])}")
-    print(f"   Energía diaria: {result['total_daily_energy_kwh']:.0f} kWh")
+    print(f"   Energia diaria: {result['total_daily_energy_kwh']:.0f} kWh")
     print(f"   Potencia pico: {result['peak_power_kw']:.0f} kW")
+    print(f"   Conteo observado en pico: {result['n_motos_peak']:,} motos, {result['n_mototaxis_peak']:,} mototaxis")
+    print(f"   Conteo estimado dia completo: {result['n_motos']:,} motos, {result['n_mototaxis']:,} mototaxis")
     print("\nDEMANDA TOTAL INSTALADA:")
-    print(f"   Motos:     {result['n_motos']:,} × {result['charger_power_kw_moto']} kW = {result['potencia_instalada_motos_kw']:,.0f} kW")
-    print(f"   Mototaxis: {result['n_mototaxis']:,} × {result['charger_power_kw_mototaxi']} kW = {result['potencia_instalada_mototaxis_kw']:,.0f} kW")
+    print(f"   Motos:     {result['n_motos']:,} x {result['charger_power_kw_moto']} kW = {result['potencia_instalada_motos_kw']:,.0f} kW")
+    print(f"   Mototaxis: {result['n_mototaxis']:,} x {result['charger_power_kw_mototaxi']} kW = {result['potencia_instalada_mototaxis_kw']:,.0f} kW")
     print(f"   TOTAL:     {result['potencia_total_instalada_kw']:,.0f} kW")
 
 

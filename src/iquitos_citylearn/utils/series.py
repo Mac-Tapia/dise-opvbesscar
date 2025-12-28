@@ -8,7 +8,8 @@ def read_first_numeric_csv(path: str | Path) -> pd.Series:
     num_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
     if not num_cols:
         raise ValueError(f"No numeric columns found in {path}")
-    return df[num_cols[0]].astype(float)
+    series = pd.Series(df[num_cols[0]].astype(float))
+    return series
 
 def repeat_to_length(x: np.ndarray, n: int) -> np.ndarray:
     if len(x) == n:

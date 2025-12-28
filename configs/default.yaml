@@ -107,22 +107,22 @@ oe3:
   evaluation:
     agents: ["SAC", "PPO", "A2C"]
     sac:
-      episodes: 2
+      episodes: 10
       deterministic_eval: true
       device: cuda
       checkpoint_freq_steps: 8760
       prefer_citylearn: false
     ppo:
-      episodes: 2
-      timesteps: 17520
+      episodes: 10
+      timesteps: 87600
       checkpoint_freq_steps: 8760
       device: cuda
       target_kl: 0.015
       kl_adaptive: true
       log_interval: 1000
     a2c:
-      episodes: 2
-      timesteps: 17520
+      episodes: 10
+      timesteps: 87600
       n_steps: 256
       learning_rate: 0.0003
       entropy_coef: 0.01

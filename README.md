@@ -88,6 +88,16 @@ python -m scripts.run_oe3_simulate --config configs/default.yaml
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
 ```
 
+### Verificación de agentes
+
+Antes de ejecutar las simulaciones OE3, puedes verificar que todos los agentes funcionan correctamente:
+
+```bash
+python scripts/verify_agents.py
+```
+
+Este script valida todos los agentes (baseline y RL) sin necesidad de ejecutar el pipeline completo. Ver documentación en `.github/copilot-instructions.md` sección "Verifying Agents".
+
 ---
 
 ## 4) Notas operativas

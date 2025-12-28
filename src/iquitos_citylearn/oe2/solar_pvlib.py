@@ -20,9 +20,9 @@ Parámetros de diseño Iquitos:
     alt: 104.0 m
     tz: America/Lima
 
-Componentes seleccionados (máximo kWp en techo):
-    Módulo: Kyocera_Solar_KS20__2008__E__ (20.2W, 0.072m², 280.3 W/m²)
-    Inversor: Power_Electronics__FS3000CU15__690V_ (3201.17 kW)
+Componentes preseleccionados (modo auto):
+    Módulo: SunPower_SPR_315E_WHT__2007__E__ (315 W, 1.631 m², 193.2 W/m²)
+    Inversor: Sungrow_Power_Supply_Co___Ltd___SG2500U__550V_ (2,500 kW AC)
 
 Referencias:
 - PVGIS: https://re.jrc.ec.europa.eu/pvg_tools/
@@ -33,12 +33,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Any, TYPE_CHECKING, List
+from typing import Dict, Optional, Tuple, Any, List, cast
 import warnings
-import io
 
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
 
 # pvlib se importa dinámicamente dentro de las funciones
@@ -141,11 +139,11 @@ class PVSystemConfig:
     tilt: float = IQUITOS_PARAMS['surface_tilt']
     azimuth: float = IQUITOS_PARAMS['surface_azimuth']
     
-    # Módulo PV - Kyocera KS20 (máxima densidad de potencia)
-    module_name: str = "Kyocera_Solar_KS20__2008__E__"
+    # Módulo PV por defecto (referencia SunPower 315 W)
+    module_name: str = "SunPower_SPR_315E_WHT__2007__E__"
     
-    # Inversor - Power Electronics FS3000CU15 (inversor central)
-    inverter_name: str = "Power_Electronics__FS3000CU15__690V_"
+    # Inversor por defecto (referencia Sungrow 2.5 MW)
+    inverter_name: str = "Sungrow_Power_Supply_Co___Ltd___SG2500U__550V_"
     
     # Pérdidas del sistema (%) - valores típicos para clima tropical húmedo
     soiling_loss: float = 3.0
@@ -206,9 +204,9 @@ def _get_pvgis_tmy(lat: float, lon: float, startyear: int = 2005, endyear: int =
         # La función puede devolver 2 o 4 valores dependiendo de la versión
         if isinstance(result, tuple):
             if len(result) == 4:
-                tmy_data, months_selected, inputs, meta = result
+                tmy_data, _months_selected, _inputs, _meta = result
             elif len(result) == 2:
-                tmy_data, meta = result
+                tmy_data, _meta = result
             else:
                 tmy_data = result[0]
         else:
@@ -229,9 +227,9 @@ def _get_pvgis_tmy(lat: float, lon: float, startyear: int = 2005, endyear: int =
             'pressure': 'pressure',
         }
         
-        tmy_data = tmy_data.rename(columns=column_map)
+        tmy_df = pd.DataFrame(tmy_data).rename(columns=column_map)
         
-        return tmy_data
+        return tmy_df
         
     except Exception as e:
         print(f"  WARN Error descargando PVGIS: {e}")
@@ -249,7 +247,7 @@ def _generate_synthetic_tmy(lat: float, lon: float) -> pd.DataFrame:
     # Crear índice temporal para un año (horario)
     year = 2024
     tz = 'America/Lima'
-    times = pd.date_range(
+    times: pd.DatetimeIndex = pd.date_range(
         start=f'{year}-01-01 00:00:00',
         end=f'{year}-12-31 23:00:00',
         freq='h',
@@ -262,8 +260,9 @@ def _generate_synthetic_tmy(lat: float, lon: float) -> pd.DataFrame:
     clearsky = location.get_clearsky(times, model='ineichen')
     
     # Factor de nubosidad para Iquitos (clima tropical húmedo)
-    hour = times.hour
-    month = times.month
+    time_series = times.to_series()
+    hour = time_series.dt.hour.to_numpy()
+    month = time_series.dt.month.to_numpy()
     
     # Estación húmeda (Dic-May) vs seca (Jun-Nov)
     cloud_base = np.where(
@@ -285,7 +284,8 @@ def _generate_synthetic_tmy(lat: float, lon: float) -> pd.DataFrame:
     # Temperatura Iquitos
     T_mean = 26.5
     T_daily_amp = 5.0
-    hour_float = hour + times.minute / 60
+    minute = time_series.dt.minute.to_numpy()
+    hour_float = hour + minute / 60
     temp_air = T_mean + T_daily_amp * np.sin((hour_float - 6) / 24 * 2 * np.pi) + np.random.normal(0, 1.0, len(times))
     
     # Viento
@@ -563,11 +563,11 @@ def _select_module(modules_db: pd.DataFrame, module_name: str, area_util: float)
     Selecciona módulo y calcula número máximo en el área disponible.
     """
     if module_name in modules_db.columns:
-        params = modules_db[module_name]
-        Vmp = params.get('Vmpo', 0)
-        Imp = params.get('Impo', 0)
+        params = cast(pd.Series, modules_db[module_name])
+        Vmp = float(params.get('Vmpo', 0) or 0.0)
+        Imp = float(params.get('Impo', 0) or 0.0)
         Pmp = Vmp * Imp
-        area = _get_module_area(params) or 0.072  # Default Kyocera KS20
+        area = _get_module_area(params) or 1.631  # Default SunPower SPR-315E area
         n_max = int(area_util / area) if area > 0 else 0
         density = Pmp / area if area > 0 else 0
         
@@ -585,8 +585,10 @@ def _select_module(modules_db: pd.DataFrame, module_name: str, area_util: float)
     best_mod = None
     best_density = 0
     for col in modules_db.columns:
-        params = modules_db[col]
-        Pmp = params.get('Vmpo', 0) * params.get('Impo', 0)
+        params = cast(pd.Series, modules_db[col])
+        Vmp = float(params.get('Vmpo', 0) or 0.0)
+        Imp = float(params.get('Impo', 0) or 0.0)
+        Pmp = Vmp * Imp
         area = _get_module_area(params)
         if Pmp > 0 and area > 0:
             density = Pmp / area
@@ -595,13 +597,15 @@ def _select_module(modules_db: pd.DataFrame, module_name: str, area_util: float)
                 best_mod = col
     
     if best_mod:
-        params = modules_db[best_mod]
+        params = cast(pd.Series, modules_db[best_mod])
         area = _get_module_area(params) or 1.0
         n_max = int(area_util / area)
         print(f"  OK Módulo alternativo: {best_mod} ({best_density:.1f} W/m²)")
-        return best_mod, params, n_max
+        return str(best_mod), params, n_max
     
-    return modules_db.columns[0], modules_db.iloc[:, 0], 1000
+    first_name = str(modules_db.columns[0])
+    first_params = cast(pd.Series, modules_db.iloc[:, 0])
+    return first_name, first_params, 1000
 
 
 def _select_inverter(inverters_db: pd.DataFrame, inverter_name: str, target_ac_kw: float) -> Tuple[str, pd.Series, int]:
@@ -609,10 +613,10 @@ def _select_inverter(inverters_db: pd.DataFrame, inverter_name: str, target_ac_k
     Selecciona inversor y calcula número de unidades necesarias.
     """
     if inverter_name in inverters_db.columns:
-        params = inverters_db[inverter_name]
-        paco = params.get('Paco', 0)
+        params = cast(pd.Series, inverters_db[inverter_name])
+        paco = float(params.get('Paco', 0) or 0.0)
         paco_kw = paco / 1000 if paco > 0 else 0
-        vdco = params.get('Vdco', 0)
+        vdco = float(params.get('Vdco', 0) or 0.0)
         
         if paco_kw > 0:
             n_inv = max(1, int(np.ceil(target_ac_kw / paco_kw)))
@@ -628,20 +632,22 @@ def _select_inverter(inverters_db: pd.DataFrame, inverter_name: str, target_ac_k
     best_inv = None
     best_paco = 0
     for col in inverters_db.columns:
-        params = inverters_db[col]
-        paco = params.get('Paco', 0)
+        params = cast(pd.Series, inverters_db[col])
+        paco = float(params.get('Paco', 0) or 0.0)
         if paco > best_paco:
             best_paco = paco
             best_inv = col
     
     if best_inv:
-        params = inverters_db[best_inv]
+        params = cast(pd.Series, inverters_db[best_inv])
         paco_kw = best_paco / 1000
         n_inv = max(1, int(np.ceil(target_ac_kw / paco_kw)))
         print(f"  OK Inversor alternativo: {best_inv} ({paco_kw:.1f} kW)")
-        return best_inv, params, n_inv
+        return str(best_inv), params, n_inv
     
-    return inverters_db.columns[0], inverters_db.iloc[:, 0], 1
+    first_inv = str(inverters_db.columns[0])
+    first_params = cast(pd.Series, inverters_db.iloc[:, 0])
+    return first_inv, first_params, 1
 
 
 def _calculate_string_config(
@@ -654,18 +660,18 @@ def _calculate_string_config(
     """
     Calcula configuración óptima de strings.
     """
-    Vmp = float(module_params.get('Vmpo', 17.0))
-    Voc = float(module_params.get('Voco', 21.0))
-    Imp = float(module_params.get('Impo', 1.19))
+    Vmp = float(module_params.get('Vmpo', 17.0) or 0.0)
+    Voc = float(module_params.get('Voco', 21.0) or 0.0)
+    Imp = float(module_params.get('Impo', 1.19) or 0.0)
     Pmp = Vmp * Imp
     
-    Vdco = float(inverter_params.get('Vdco', 1030))
-    Vdcmax = float(inverter_params.get('Vdcmax', 1500))
-    Mppt_low = float(inverter_params.get('Mppt_low', 500))
-    Mppt_high = float(inverter_params.get('Mppt_high', 850))
+    Vdco = float(inverter_params.get('Vdco', 1030) or 0.0)
+    Vdcmax = float(inverter_params.get('Vdcmax', 1500) or 0.0)
+    Mppt_low = float(inverter_params.get('Mppt_low', 500) or 0.0)
+    _mppt_high = float(inverter_params.get('Mppt_high', 850) or 0.0)  # upper MPPT not used directly
     
     # Coeficiente de temperatura de Voc (Sandia: V/°C)
-    beta_voc = float(module_params.get('Bvoco', -0.08))
+    beta_voc = float(module_params.get('Bvoco', -0.08) or 0.0)
     
     # Voc a temperatura mínima (15°C en Iquitos, delta = -10°C)
     Voc_cold = Voc + beta_voc * (-10)
@@ -674,13 +680,16 @@ def _calculate_string_config(
     
     # Módulos por string
     # Límite superior: Voc_cold × N < Vdcmax (margen 10%)
-    max_per_string = max(1, int((Vdcmax * 0.90) / Voc_cold))
+    safe_vdcmax = Vdcmax if Vdcmax > 0 else 1500.0
+    max_per_string = max(1, int((safe_vdcmax * 0.90) / max(Voc_cold, 1e-3)))
     
     # Límite inferior: Vmp × N > Mppt_low
-    min_per_string = max(1, int(np.ceil(Mppt_low / Vmp)))
+    safe_vmp = max(Vmp, 1e-3)
+    min_per_string = max(1, int(np.ceil(Mppt_low / safe_vmp)))
     
     # Óptimo: centrar en Vdco
-    opt_per_string = max(1, int(Vdco / Vmp))
+    safe_vdco = Vdco if Vdco > 0 else 1000.0
+    opt_per_string = max(1, int(safe_vdco / safe_vmp))
     
     modules_per_string = min(max_per_string, max(min_per_string, opt_per_string))
     
@@ -787,11 +796,11 @@ def run_pv_simulation(
     # Extraer resultados
     # mc.results.dc puede ser DataFrame o Series dependiendo del modelo
     if isinstance(mc.results.dc, pd.DataFrame):
-        dc_power = mc.results.dc['p_mp']
+        dc_power = cast(pd.Series, mc.results.dc['p_mp'])
     else:
-        dc_power = mc.results.dc
+        dc_power = cast(pd.Series, mc.results.dc)
     
-    ac_power = mc.results.ac
+    ac_power = cast(pd.Series, mc.results.ac)
     
     # Escalar por número de inversores si > 1
     if num_inverters > 1:
@@ -809,7 +818,8 @@ def run_pv_simulation(
     # Calcular energía por intervalo
     # Determinar duración del intervalo en horas
     if len(weather.index) > 1:
-        dt = (weather.index[1] - weather.index[0]).total_seconds() / 3600
+        delta = pd.to_timedelta(weather.index[1] - weather.index[0])
+        dt = delta.total_seconds() / 3600
     else:
         dt = 1.0
     
@@ -817,17 +827,19 @@ def run_pv_simulation(
     ac_energy = ac_power_final * dt / 1000  # kWh
     
     # Crear DataFrame de resultados
+    dc_array = np.asarray(dc_power)
+    ac_array = np.asarray(ac_power_final)
     results = pd.DataFrame({
         'timestamp': weather.index,
-        'ghi_wm2': weather['ghi'].values,
-        'dni_wm2': weather['dni'].values,
-        'dhi_wm2': weather['dhi'].values,
-        'temp_air_c': weather['temp_air'].values,
-        'wind_speed_ms': weather['wind_speed'].values,
-        'dc_power_kw': np.asarray(dc_power.values) / 1000,
-        'ac_power_kw': np.asarray(ac_power_final.values) / 1000,
-        'dc_energy_kwh': dc_energy.values,
-        'ac_energy_kwh': ac_energy.values,
+        'ghi_wm2': np.asarray(weather['ghi']),
+        'dni_wm2': np.asarray(weather['dni']),
+        'dhi_wm2': np.asarray(weather['dhi']),
+        'temp_air_c': np.asarray(weather['temp_air']),
+        'wind_speed_ms': np.asarray(weather['wind_speed']),
+        'dc_power_kw': dc_array / 1000,
+        'ac_power_kw': ac_array / 1000,
+        'dc_energy_kwh': np.asarray(dc_energy),
+        'ac_energy_kwh': np.asarray(ac_energy),
     })
     results.set_index('timestamp', inplace=True)
     
@@ -981,26 +993,35 @@ def calculate_representative_days(results: pd.DataFrame) -> Dict[str, Any]:
     despejado_ts = pd.Timestamp(despejado_date)
     nublado_ts = pd.Timestamp(nublado_date)
     intermedio_ts = pd.Timestamp(intermedio_date)
+    if pd.isna(despejado_ts) or pd.isna(nublado_ts) or pd.isna(intermedio_ts):
+        return {}
+    # Garantizar tipos no nulos para formateo
+    assert isinstance(despejado_ts, pd.Timestamp)
+    assert isinstance(nublado_ts, pd.Timestamp)
+    assert isinstance(intermedio_ts, pd.Timestamp)
     
     print("\n" + "="*60)
     print("  DÍAS REPRESENTATIVOS SEGÚN GHI DIARIO")
     print("="*60)
-    print(f"  Despejado (GHI max):   {despejado_ts.strftime('%Y-%m-%d')}    GHI = {despejado_ghi:.1f}")
-    print(f"  Intermedio (GHI med):  {intermedio_ts.strftime('%Y-%m-%d')}    GHI = {intermedio_ghi:.1f}")
-    print(f"  Nublado (GHI min>0):   {nublado_ts.strftime('%Y-%m-%d')}    GHI = {nublado_ghi:.1f}")
+    despejado_str = despejado_ts.to_pydatetime().strftime('%Y-%m-%d')
+    intermedio_str = intermedio_ts.to_pydatetime().strftime('%Y-%m-%d')
+    nublado_str = nublado_ts.to_pydatetime().strftime('%Y-%m-%d')
+    print(f"  Despejado (GHI max):   {despejado_str}    GHI = {despejado_ghi:.1f}")
+    print(f"  Intermedio (GHI med):  {intermedio_str}    GHI = {intermedio_ghi:.1f}")
+    print(f"  Nublado (GHI min>0):   {nublado_str}    GHI = {nublado_ghi:.1f}")
     print()
     print(f"Energía día despejado    [kWh]: {despejado_energy:.1f}")
     print(f"Energía día intermedio   [kWh]: {intermedio_energy:.1f}")
     print(f"Energía día nublado      [kWh]: {nublado_energy:.1f}")
     
     return {
-        'despejado_date': despejado_ts.strftime('%Y-%m-%d'),
+        'despejado_date': despejado_str,
         'despejado_ghi': despejado_ghi,
         'despejado_energy_kwh': despejado_energy,
-        'intermedio_date': intermedio_ts.strftime('%Y-%m-%d'),
+        'intermedio_date': intermedio_str,
         'intermedio_ghi': intermedio_ghi,
         'intermedio_energy_kwh': intermedio_energy,
-        'nublado_date': nublado_ts.strftime('%Y-%m-%d'),
+        'nublado_date': nublado_str,
         'nublado_ghi': nublado_ghi,
         'nublado_energy_kwh': nublado_energy,
     }
@@ -1128,7 +1149,7 @@ def build_pv_timeseries_sandia(
     )
     
     # Calcular capacidades del sistema
-    Pmp = float(module_params.get('Vmpo', 17)) * float(module_params.get('Impo', 1.19))
+    Pmp = float(module_params.get('Vmpo', 17.0) or 0.0) * float(module_params.get('Impo', 1.19) or 0.0)
     system_dc_kw = total_modules * Pmp / 1000
     system_ac_kw = target_ac_kw
     area_modules = total_modules * (_get_module_area(module_params) or 0.072)
@@ -1160,7 +1181,7 @@ def build_pv_timeseries_sandia(
     )
     
     # 8. Energía mensual
-    monthly = calculate_monthly_energy(results)
+    monthly = calculate_monthly_energy(results)  # pyright: ignore[reportUnusedVariable]
     
     # 9. Días representativos según GHI
     rep_days = calculate_representative_days(results)
@@ -1231,8 +1252,8 @@ def run_solar_sizing(
         factor_diseno=kwargs.get('factor_diseno', IQUITOS_PARAMS['factor_diseno']),
         tilt=kwargs.get('tilt', IQUITOS_PARAMS['surface_tilt']),
         azimuth=kwargs.get('azimuth', IQUITOS_PARAMS['surface_azimuth']),
-        module_name=kwargs.get('module_name', "Kyocera_Solar_KS20__2008__E__"),
-        inverter_name=kwargs.get('inverter_name', "Power_Electronics__FS3000CU15__690V_"),
+        module_name=kwargs.get('module_name', "SunPower_SPR_315E_WHT__2007__E__"),
+        inverter_name=kwargs.get('inverter_name', "Sungrow_Power_Supply_Co___Ltd___SG2500U__550V_"),
     )
     
     # Ejecutar simulación
@@ -1572,8 +1593,6 @@ def prepare_solar_for_citylearn(
     # Crear DataFrame para CityLearn
     # Formato: Month, Hour, Day Type, solar_generation (kWh/kWp)
     n_hours = min(len(pv_kwh), 8760)
-    idx = pd.date_range(start=f'{year}-01-01', periods=n_hours, freq='h')
-    
     df_solar = pd.DataFrame(index=range(n_hours))
     df_solar['Month'] = [(i // 720) % 12 + 1 for i in range(n_hours)]
     df_solar['Hour'] = [i % 24 for i in range(n_hours)]
@@ -1585,12 +1604,13 @@ def prepare_solar_for_citylearn(
     print(f"   OK solar_generation.csv: {n_hours} registros horarios")
     
     # Crear perfil promedio de 24 horas
-    df_24h = df_hourly.groupby(pd.to_datetime(df_hourly.index).hour).mean()  # type: ignore[union-attr]
+    hour_idx = pd.to_datetime(df_hourly.index)
+    df_24h = cast(pd.DataFrame, df_hourly.groupby(hour_idx.to_series().dt.hour).mean())
     
     profile_24h = pd.DataFrame({
         'hour': range(24),
-        'pv_kwh': df_24h[pv_col].values if len(df_24h) == 24 else np.zeros(24),
-        'pv_kwh_per_kwp': np.asarray(df_24h[pv_col].values) / pv_dc_kw if pv_dc_kw > 0 and len(df_24h) == 24 else np.zeros(24),
+        'pv_kwh': df_24h[pv_col].to_numpy() if len(df_24h) == 24 else np.zeros(24),
+        'pv_kwh_per_kwp': (np.asarray(df_24h[pv_col].to_numpy()) / pv_dc_kw) if pv_dc_kw > 0 and len(df_24h) == 24 else np.zeros(24),
     })
     profile_24h.to_csv(out_dir / "pv_profile_24h.csv", index=False)
     print(f"   OK pv_profile_24h.csv: Perfil promedio diario")
