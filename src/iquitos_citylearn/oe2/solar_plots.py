@@ -10,6 +10,7 @@ Gráficas incluidas:
 5. Comparación de escenarios
 6. Análisis temporal avanzado (mapa de calor, boxplots, PR mensual)
 """
+# pyright: reportAttributeAccessIssue=false, reportUnusedVariable=false, reportCallIssue=false
 from __future__ import annotations
 
 import pandas as pd
@@ -19,7 +20,7 @@ import matplotlib.dates as mdates
 import matplotlib.cm as cm  # type: ignore[import-untyped]
 from matplotlib.gridspec import GridSpec
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple, TYPE_CHECKING
+from typing import Dict, Any, Tuple
 import json
 from scipy import stats
 

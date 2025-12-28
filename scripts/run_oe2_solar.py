@@ -41,8 +41,8 @@ def main() -> None:
         'factor_diseno': float(solar.get("factor_diseno", 0.65)),
         'tilt': float(solar.get("surface_tilt", 10.0)),
         'azimuth': float(solar.get("surface_azimuth", 0.0)),
-        'module_name': str(solar.get("module_name", "Kyocera_Solar_KS20__2008__E__")),
-        'inverter_name': str(solar.get("inverter_name", "Power_Electronics__FS3000CU15__690V_")),
+        'module_name': str(solar.get("module_name", "SunPower_SPR_315E_WHT__2007__E__")),
+        'inverter_name': str(solar.get("inverter_name", "Sungrow_Power_Supply_Co___Ltd___SG2500U__550V_")),
     }
 
     # Usar intervalo de 15 minutos por defecto para mayor precisión

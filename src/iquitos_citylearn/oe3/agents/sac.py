@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Dict, List
@@ -297,7 +297,15 @@ class SACAgent:
             train_env = _TerminateOnTruncate(self.env)
 
         progress_path = Path(self.config.progress_path) if self.config.progress_path else None
-        progress_headers = ("timestamp", "agent", "episode", "episode_reward", "episode_length", "global_step")
+        progress_headers = (
+            "timestamp",
+            "agent",
+            "episode",
+            "episode_reward",
+            "episode_length",
+            "global_step",
+            "progress_pct",
+        )
         progress_interval_steps = int(self.config.log_interval or 0)
         progress_interval_episodes = int(self.config.progress_interval_episodes or 0)
 
@@ -345,9 +353,12 @@ class SACAgent:
                     self.global_steps += 1
 
                     if self.progress_interval_steps > 0 and self.episode_steps % self.progress_interval_steps == 0:
+                        pct = 100.0 * self.episode / max(1, self.total_episodes) if self.total_episodes else None
                         logger.info(
-                            "[SAC] ep %d paso %d | pasos_global=%d",
+                            "[SAC] ep %d/%d (%.1f%%) paso %d | pasos_global=%d",
                             self.episode,
+                            self.total_episodes,
+                            pct if pct is not None else 0.0,
                             self.episode_steps,
                             self.global_steps,
                         )
@@ -363,13 +374,15 @@ class SACAgent:
                                 "episode_reward": self.episode_reward,
                                 "episode_length": self.episode_steps,
                                 "global_step": self.global_steps,
+                                "progress_pct": pct if pct is not None else "",
                             }
                             if self.progress_path is not None:
                                 append_progress_row(self.progress_path, row, self.progress_headers)
                         logger.info(
-                            "[SAC] ep %d/%d terminado reward=%.4f pasos=%d",
+                            "[SAC] ep %d/%d (%.1f%%) terminado reward=%.4f pasos=%d",
                             self.episode,
                             self.total_episodes,
+                            pct if pct is not None else 0.0,
                             self.episode_reward,
                             self.episode_steps,
                         )
@@ -391,13 +404,13 @@ class SACAgent:
         
         # Configurar hiperparámetros si es posible
         if hasattr(self._citylearn_sac, 'batch_size'):
-            self._citylearn_sac.batch_size = self.config.batch_size
+            setattr(self._citylearn_sac, 'batch_size', self.config.batch_size)
         if hasattr(self._citylearn_sac, 'lr'):
-            self._citylearn_sac.lr = self.config.learning_rate
+            setattr(self._citylearn_sac, 'lr', self.config.learning_rate)
         if hasattr(self._citylearn_sac, 'gamma'):
-            self._citylearn_sac.gamma = self.config.gamma
+            setattr(self._citylearn_sac, 'gamma', self.config.gamma)
         if hasattr(self._citylearn_sac, 'tau'):
-            self._citylearn_sac.tau = self.config.tau
+            setattr(self._citylearn_sac, 'tau', self.config.tau)
 
         # Entrenar con logging de progreso
         logger.info("=" * 50)
@@ -450,9 +463,13 @@ class SACAgent:
                 return len(self._flatten(obs))
             
             def _get_act_dim(self):
-                if isinstance(self.env.action_space, list):
-                    return sum(sp.shape[0] for sp in self.env.action_space)
-                return self.env.action_space.shape[0]
+                action_space = getattr(self.env, "action_space", None)
+                if isinstance(action_space, list):
+                    return sum(getattr(sp, "shape", (0,))[0] for sp in action_space)
+                shape = getattr(action_space, "shape", None)
+                if shape and len(shape) > 0:
+                    return int(shape[0])
+                return 1
             
             def _flatten(self, obs):
                 if isinstance(obs, dict):
@@ -517,8 +534,16 @@ class SACAgent:
         )
         
         progress_path = Path(self.config.progress_path) if self.config.progress_path else None
-        progress_headers = ("timestamp", "agent", "episode", "episode_reward", "episode_length", "global_step")
-        expected_episodes = int(total_timesteps // 8760) if total_timesteps > 0 else 0
+        progress_headers = (
+            "timestamp",
+            "agent",
+            "episode",
+            "episode_reward",
+            "episode_length",
+            "global_step",
+            "progress_pct",
+        )
+        expected_episodes = int(self.config.episodes or 0) or (int(total_timesteps // 8760) if total_timesteps > 0 else 0)
 
         class TrainingCallback(BaseCallback):
             def __init__(self, agent, progress_path: Optional[Path], progress_headers, expected_episodes: int, verbose=0):
@@ -538,10 +563,13 @@ class SACAgent:
                     return True
                 if self.log_interval_steps > 0 and self.n_calls % self.log_interval_steps == 0:
                     approx_episode = max(1, int(self.model.num_timesteps // 8760) + 1)
+                    pct = 100.0 * approx_episode / max(1, self.expected_episodes) if self.expected_episodes > 0 else None
                     logger.info(
-                        "[SAC] paso %d | ep~%d | pasos_global=%d",
+                        "[SAC] paso %d | ep~%d/%d (%.1f%%) | pasos_global=%d",
                         self.n_calls,
                         approx_episode,
+                        self.expected_episodes,
+                        pct if pct is not None else 0.0,
                         int(self.model.num_timesteps),
                     )
                     if self.progress_path is not None:
@@ -552,6 +580,7 @@ class SACAgent:
                             "episode_reward": "",
                             "episode_length": "",
                             "global_step": int(self.model.num_timesteps),
+                            "progress_pct": pct if pct is not None else "",
                         }
                         append_progress_row(self.progress_path, row, self.progress_headers)
                 for info in infos:
@@ -568,6 +597,7 @@ class SACAgent:
                     if self.agent.config.progress_interval_episodes > 0 and (
                         self.episode_count % self.agent.config.progress_interval_episodes == 0
                     ):
+                        pct = 100.0 * self.episode_count / self.expected_episodes if self.expected_episodes > 0 else None
                         row = {
                             "timestamp": datetime.utcnow().isoformat(),
                             "agent": "sac",
@@ -575,14 +605,16 @@ class SACAgent:
                             "episode_reward": reward,
                             "episode_length": length,
                             "global_step": int(self.model.num_timesteps),
+                            "progress_pct": pct if pct is not None else "",
                         }
                         if self.progress_path is not None:
                             append_progress_row(self.progress_path, row, self.progress_headers)
-                        if self.expected_episodes > 0:
+                        if pct is not None:
                             logger.info(
-                                "[SAC] ep %d/%d reward=%.4f len=%d step=%d",
+                                "[SAC] ep %d/%d (%.1f%%) reward=%.4f len=%d step=%d",
                                 self.episode_count,
                                 self.expected_episodes,
+                                pct,
                                 reward,
                                 length,
                                 int(self.model.num_timesteps),
@@ -686,8 +718,11 @@ class SACAgent:
     def _zero_action(self):
         """Devuelve acción cero."""
         if isinstance(self.env.action_space, list):
-            return [[0.0] * sp.shape[0] for sp in self.env.action_space]
-        return [[0.0] * self.env.action_space.shape[0]]
+            return [[0.0] * getattr(sp, "shape", (1,))[0] for sp in self.env.action_space]
+        action_space = getattr(self.env, "action_space", None)
+        if action_space is not None and getattr(action_space, "shape", None):
+            return [[0.0] * action_space.shape[0]]
+        return [[0.0]]
     
     def save(self, path: str):
         """Guarda el modelo entrenado."""

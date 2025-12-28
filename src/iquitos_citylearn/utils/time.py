@@ -8,4 +8,5 @@ def year_index(year: int, step_minutes: int) -> pd.DatetimeIndex:
 
 def day_type_from_index(idx: pd.DatetimeIndex) -> np.ndarray:
     # 1..7 (Mon..Sun)
-    return (idx.dayofweek + 1).astype(int)
+    idx_series = idx.to_series()
+    return (idx_series.dt.dayofweek.to_numpy() + 1).astype(int)

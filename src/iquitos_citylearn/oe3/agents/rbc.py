@@ -232,7 +232,7 @@ class BasicRBCAgent:
         actions: List[List[float]] = []
         charger_idx_global = 0
         
-        for idx, (sp, ev_idx, bess_idx, ch_idx) in enumerate(zip(
+        for _idx, (sp, ev_idx, bess_idx, ch_idx) in enumerate(zip(
             self._subspaces, self._ev_indices, self._bess_indices, self._charger_indices
         )):
             action = np.zeros(sp.shape[0], dtype=float)
@@ -300,7 +300,7 @@ class BasicRBCAgent:
         logger.info("RBC no requiere entrenamiento (rule-based)")
 
 
-def make_basic_ev_rbc(env: Any, config: Optional[RBCConfig] = None) -> BasicRBCAgent:
+def make_basic_ev_rbc(env: Any, config: Optional[RBCConfig] = None) -> Any:
     """Crea agente RBC robusto.
     
     Intenta usar CityLearn's RBC primero, fallback a implementación propia.

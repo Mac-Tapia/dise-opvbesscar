@@ -7,3 +7,4 @@ pvlib>=0.10
 citylearn>=2.5.0
 gymnasium>=0.29
 torch>=2.0
+psutil>=5.9

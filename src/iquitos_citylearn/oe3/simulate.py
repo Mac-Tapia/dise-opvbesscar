@@ -13,7 +13,6 @@ from iquitos_citylearn.oe3.agents import (
     UncontrolledChargingAgent, 
     make_basic_ev_rbc, 
     make_sac,
-    NoControlAgent,
     make_no_control,
     make_ppo,
     make_a2c,
@@ -22,9 +21,7 @@ from iquitos_citylearn.oe3.agents import (
     A2CConfig,
     # Multiobjetivo
     MultiObjectiveReward,
-    MultiObjectiveWeights,
     IquitosContext,
-    CityLearnMultiObjectiveWrapper,
     create_iquitos_reward_weights,
 )
 
@@ -157,9 +154,9 @@ def _extract_carbon_intensity(env: Any, default_value: float) -> np.ndarray:
 def _make_env(schema_path: Path) -> Any:
     from citylearn.citylearn import CityLearnEnv  # type: ignore
     try:
-        return CityLearnEnv(schema=str(schema_path))
+        return CityLearnEnv(schema=str(schema_path))  # type: ignore[call-arg]
     except TypeError:
-        return CityLearnEnv(schema_path=str(schema_path))
+        return CityLearnEnv(schema_path=str(schema_path))  # type: ignore[call-arg]
 
 def _sample_action(env: Any) -> Any:
     """Sample random action handling CityLearn's list action space."""
@@ -681,7 +678,7 @@ def simulate(
             else:
                 updated = pd.DataFrame([summary_row])
 
-            updated = updated.sort_values("agent").reset_index(drop=True)
+            updated = updated.sort_values(by="agent").reset_index(drop=True)  # pyright: ignore[reportCallIssue]
             updated.to_csv(summary_path, index=False)
             md = updated.to_markdown(index=False)
             md_path.write_text(md, encoding="utf-8")

@@ -191,7 +191,16 @@ def build_citylearn_dataset(
 
     out_dir = processed_dir / "citylearn" / dataset_name
     if out_dir.exists():
-        shutil.rmtree(out_dir)
+        # Reintenta borrar para liberar locks de Windows
+        for attempt in range(3):
+            try:
+                shutil.rmtree(out_dir)
+                break
+            except PermissionError:
+                if attempt == 2:
+                    raise
+                import time
+                time.sleep(0.5)
     shutil.copytree(template_dir, out_dir)
 
     schema_path = out_dir / "schema.json"
@@ -292,10 +301,22 @@ def build_citylearn_dataset(
     # === CREAR CHARGERS DESDE OE2 (31 chargers x 4 sockets = 124 sockets) ===
     if "chargers_results" in artifacts:
         chargers_cfg = artifacts["chargers_results"]
+        esc_rec = chargers_cfg.get("esc_rec", {}) or {}
         n_chargers = int(chargers_cfg.get("n_chargers_recommended", 31))
-        sockets_per_charger = int(chargers_cfg.get("esc_rec", {}).get("sockets_per_charger", 4))
-        charger_power = float(chargers_cfg.get("esc_rec", {}).get("charger_power_kw", 2.14))
-        total_power_per_charger = charger_power * sockets_per_charger  # ~8.5 kW por cargador
+        sockets_per_charger = int(
+            esc_rec.get("sockets_per_charger", chargers_cfg.get("sockets_per_charger", 4))
+        )
+        # Potencias por socket (moto y mototaxi) si vienen de OE2; si no, usar defaults 2/3 kW
+        socket_power_moto_kw = float(
+            esc_rec.get("socket_power_moto_kw", chargers_cfg.get("charger_power_kw_moto", 2.0))
+        )
+        socket_power_mototaxi_kw = float(
+            esc_rec.get("socket_power_mototaxi_kw", chargers_cfg.get("charger_power_kw_mototaxi", 3.0))
+        )
+        # Suponer mitad sockets para motos y mitad para mototaxis
+        moto_sockets = sockets_per_charger // 2
+        mototaxi_sockets = sockets_per_charger - moto_sockets
+        total_power_per_charger = moto_sockets * socket_power_moto_kw + mototaxi_sockets * socket_power_mototaxi_kw
         total_sockets = n_chargers * sockets_per_charger
 
         # Asegurar definiciones EV que coincidan con los IDs del charger_simulation.
@@ -364,10 +385,16 @@ def build_citylearn_dataset(
                 new_charger["attributes"]["nominal_power"] = total_power_per_charger
                 new_charger["attributes"]["max_charging_power"] = total_power_per_charger
                 new_charger["attributes"]["num_sockets"] = sockets_per_charger
+                new_charger["attributes"]["socket_power_kw"] = total_power_per_charger / sockets_per_charger
+                new_charger["attributes"]["socket_power_moto_kw"] = socket_power_moto_kw
+                new_charger["attributes"]["socket_power_mototaxi_kw"] = socket_power_mototaxi_kw
             else:
                 new_charger["nominal_power"] = total_power_per_charger
                 new_charger["max_charging_power"] = total_power_per_charger
                 new_charger["num_sockets"] = sockets_per_charger
+                new_charger["socket_power_kw"] = total_power_per_charger / sockets_per_charger
+                new_charger["socket_power_moto_kw"] = socket_power_moto_kw
+                new_charger["socket_power_mototaxi_kw"] = socket_power_mototaxi_kw
             
             new_chargers[charger_name] = new_charger
         
@@ -382,7 +409,15 @@ def build_citylearn_dataset(
                 inactive_actions.remove(ev_act)
         b["inactive_actions"] = inactive_actions
         
-        logger.info(f"Creados {n_chargers} chargers de {total_power_per_charger:.2f} kW ({sockets_per_charger} sockets x {charger_power:.2f} kW)")
+        logger.info(
+            "Creados %s chargers de %.2f kW (sockets: %d x moto %.2f kW, %d x mototaxi %.2f kW)",
+            n_chargers,
+            total_power_per_charger,
+            sockets_per_charger,
+            socket_power_moto_kw,
+            mototaxi_sockets,
+            socket_power_mototaxi_kw,
+        )
         logger.info(f"Potencia total instalada: {n_chargers * total_power_per_charger:.1f} kW")
         logger.info(f"Total sockets: {n_chargers * sockets_per_charger}")
 
@@ -488,9 +523,8 @@ def build_citylearn_dataset(
         mall_energy_day = float(cfg["oe2"]["mall"]["energy_kwh_day"])
         mall_shape = cfg["oe2"]["mall"].get("shape_24h")  # may be None
         if mall_shape is None:
-            # Default same as OE2 bess module
-            from iquitos_citylearn.oe2.bess import default_mall_shape_24h  # local import
-            mall_shape_arr = default_mall_shape_24h()
+            # Default: perfil uniforme 24h si no hay forma provista
+            mall_shape_arr = np.ones(24, dtype=float) / 24.0
         else:
             mall_shape_arr = np.array(mall_shape, dtype=float)
             mall_shape_arr = mall_shape_arr / mall_shape_arr.sum()
@@ -583,15 +617,14 @@ def build_citylearn_dataset(
     # Charger simulation (first charger only if possible)
     charger_list: List[Path] = []
     if "_charger_list" in paths:
-        charger_list = paths["_charger_list"]
+        cl_raw = paths["_charger_list"]
+        if isinstance(cl_raw, list):
+            charger_list = [Path(p) for p in cl_raw]
+        elif isinstance(cl_raw, Path):
+            charger_list = [cl_raw]
     # Build a generic daily charger simulation for the same length n
     opening = int(cfg["oe2"]["ev_fleet"]["opening_hour"])
     closing = int(cfg["oe2"]["ev_fleet"]["closing_hour"])
-
-    # EV daily energy requirement from OE2 recommended profile, else 0
-    ev_energy_day = 0.0
-    if "ev_profile_24h" in artifacts and "energy_kwh" in artifacts["ev_profile_24h"].columns:
-        ev_energy_day = float(artifacts["ev_profile_24h"]["energy_kwh"].sum())
 
     steps_per_hour = int(round(1.0 / dt_hours))
     steps_per_day = int(round(24.0 / dt_hours))
@@ -711,7 +744,7 @@ def build_citylearn_dataset(
 
     # 2) Grid-only variant: disable PV and BESS by setting nominal values to 0.
     schema_grid = json.loads(json.dumps(schema))
-    bname2, b2 = _find_first_building(schema_grid)
+    _, b2 = _find_first_building(schema_grid)
     
     # Desactivar photovoltaic (formato antiguo)
     if isinstance(b2.get("photovoltaic"), dict):

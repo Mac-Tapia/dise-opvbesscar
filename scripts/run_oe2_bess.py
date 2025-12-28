@@ -8,6 +8,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import pandas as pd
 from pathlib import Path
 
 from iquitos_citylearn.utils.logging import setup_logging
@@ -35,22 +36,21 @@ def main() -> None:
     # Rutas de entrada
     pv_profile_path = rp.interim_dir / "oe2" / "solar" / "pv_profile_24h.csv"
     ev_profile_path = rp.interim_dir / "oe2" / "chargers" / "perfil_horario_carga.csv"
-    demand_dir = rp.interim_dir / "oe2" / "demandamall"
+    # Priorizar carpeta demandamallkwh (real); mantener compatibilidad con demandamall
+    demand_dir = rp.interim_dir / "oe2" / "demandamallkwh"
     mall_demand_candidates = [
         demand_dir / "demandamallkwh.csv",
         demand_dir / "demanda_mall_kwh.csv",
+        rp.interim_dir / "oe2" / "demandamall" / "demandamallkwh.csv",
+        rp.interim_dir / "oe2" / "demandamall" / "demanda_mall_kwh.csv",
     ]
     mall_demand_path = next((p for p in mall_demand_candidates if p.exists()), None)
 
-    discharge_hours = None
-    if bool(bess_cfg.get("discharge_only_ev_hours", False)):
-        opening_hour = int(ev_cfg["opening_hour"])
-        closing_hour = int(ev_cfg["closing_hour"])
-        discharge_hours = list(range(opening_hour, closing_hour + 1))
+    # Descarga solo para EV en horas pico de carga (horario EV) y solo cuando no hay solar
+    discharge_hours = list(ev_cfg["peak_hours"])
 
-    soc_min_percent = bess_cfg.get("min_soc_percent")
-    if soc_min_percent is not None:
-        soc_min_percent = float(soc_min_percent)
+    # Probar DoD 0.9 con SOC mínimo 10% para permitir 90% utilizable
+    soc_min_percent = 10.0
 
     discharge_only_no_solar = bool(bess_cfg.get("discharge_only_no_solar", False))
     pv_night_threshold_kwh = float(bess_cfg.get("pv_night_threshold_kwh", 0.1))
@@ -61,6 +61,7 @@ def main() -> None:
         pv_profile_path=pv_profile_path,
         ev_profile_path=ev_profile_path,
         mall_demand_path=mall_demand_path,
+        mall_date_format="%d/%m/%Y %H:%M",
         dod=float(bess_cfg["dod"]),
         c_rate=float(bess_cfg["c_rate"]),
         round_kwh=float(bess_cfg["round_kwh"]),
@@ -68,11 +69,11 @@ def main() -> None:
         autonomy_hours=float(bess_cfg.get("autonomy_hours", 4.0)),
         pv_dc_kw=float(solar_cfg["target_dc_kw"]),
         tz=str(location_cfg.get("tz")) if location_cfg.get("tz") else None,
-        sizing_mode=str(bess_cfg.get("sizing_mode", "max")),
+        sizing_mode="ev_night_deficit",
         soc_min_percent=soc_min_percent,
-        load_scope=str(bess_cfg.get("load_scope", "total")),
+        load_scope="ev_priority",
         discharge_hours=discharge_hours,
-        discharge_only_no_solar=discharge_only_no_solar,
+        discharge_only_no_solar=True,
         pv_night_threshold_kwh=pv_night_threshold_kwh,
         year=year,
         generate_plots=not args.no_plots,
