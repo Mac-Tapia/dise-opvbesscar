@@ -134,3 +134,53 @@ ppo:
 - Full guide: `docs/TRAINING_AGENTS.md`
 - Integration: `docs/PIPELINE_INTEGRATION.md`
 - Examples: `scripts/example_train_agents.py`
+
+## One-Command Training (10 Episodes, CUDA)
+
+For quick training of all agents with recommended settings:
+
+**Linux/Mac:**
+```bash
+./scripts/train_all_agents_10ep.sh
+```
+
+**Windows:**
+```bash
+scripts\train_all_agents_10ep.bat
+```
+
+**Manual:**
+```bash
+python -m scripts.run_oe3_train_agents \
+  --agents SAC PPO A2C \
+  --episodes 10 \
+  --device cuda
+```
+
+### What Happens:
+1. Verifies CUDA is available
+2. Trains SAC for 10 episodes (~87,600 steps)
+3. Trains PPO for 10 episodes (~87,600 steps)
+4. Trains A2C for 10 episodes (~87,600 steps)
+5. Saves all models and metrics
+6. Displays summary of outputs
+
+### Expected Time:
+- **With GPU** (GTX 1080 or better): 1-3 hours total
+- **With CPU**: 8-24 hours total (not recommended)
+
+### Output:
+```
+analyses/oe3/training/
+├── checkpoints/
+│   ├── sac/sac_final.zip
+│   ├── ppo/ppo_final.zip
+│   └── a2c/a2c_final.zip
+├── progress/
+│   ├── sac_progress.csv
+│   ├── ppo_progress.csv
+│   └── a2c_progress.csv
+├── sac_training.png
+├── ppo_training.png
+└── a2c_training.png
+```
