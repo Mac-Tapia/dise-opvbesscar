@@ -88,6 +88,27 @@ python -m scripts.run_oe3_simulate --config configs/default.yaml
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
 ```
 
+### Entrenar Agentes RL (Opcional)
+
+Para entrenar agentes de manera independiente antes de la evaluación:
+
+```bash
+# Entrenar todos los agentes (SAC, PPO, A2C)
+python -m scripts.run_oe3_train_agents --config configs/default.yaml
+
+# Entrenar solo algunos agentes
+python -m scripts.run_oe3_train_agents --agents SAC PPO
+
+# Entrenar con más episodios/timesteps
+python -m scripts.run_oe3_train_agents --agents SAC --episodes 20
+python -m scripts.run_oe3_train_agents --agents PPO --timesteps 50000
+
+# Usar GPU si está disponible
+python -m scripts.run_oe3_train_agents --device cuda
+```
+
+Los modelos entrenados se guardan en `analyses/oe3/training/checkpoints/` y pueden ser reutilizados. Ver `docs/TRAINING_AGENTS.md` para más detalles.
+
 ---
 
 ## 4) Notas operativas
