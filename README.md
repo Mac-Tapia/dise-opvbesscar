@@ -107,6 +107,19 @@ python -m scripts.run_oe3_train_agents --agents PPO --timesteps 50000
 python -m scripts.run_oe3_train_agents --device cuda
 ```
 
+**Script de conveniencia para entrenar todos los agentes (10 episodios en CUDA):**
+
+```bash
+# Linux/Mac
+./scripts/train_all_agents_10ep.sh
+
+# Windows
+scripts\train_all_agents_10ep.bat
+
+# O manualmente
+python -m scripts.run_oe3_train_agents --agents SAC PPO A2C --episodes 10 --device cuda
+```
+
 Los modelos entrenados se guardan en `analyses/oe3/training/checkpoints/` y pueden ser reutilizados. Ver `docs/TRAINING_AGENTS.md` para más detalles.
 
 ---
