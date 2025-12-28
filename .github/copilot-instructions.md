@@ -56,8 +56,11 @@ Agents in `src/iquitos_citylearn/oe3/agents/` control EV charging decisions:
 | Agent | File | Interface | Purpose |
 |-------|------|-----------|---------|
 | `UncontrolledChargingAgent` | `uncontrolled.py` | `predict(obs, deterministic)` | Baseline: charge EVs at max, BESS idle |
+| `NoControlAgent` | `no_control.py` | `predict(obs, deterministic)` | Baseline: all actions set to zero (no intervention) |
 | `BasicEVRBC` | `rbc.py` | CityLearn's RBC | Rule-based: prioritize solar hours |
 | `SAC` | `sac.py` | `learn(episodes)` + `predict()` | RL: Soft Actor-Critic from CityLearn |
+| `PPO` | `ppo_sb3.py` | `learn(timesteps)` + `predict()` | RL: Proximal Policy Optimization |
+| `A2C` | `a2c_sb3.py` | `learn(timesteps)` + `predict()` | RL: Advantage Actor-Critic |
 
 ### Agent Interface Contract
 ```python
@@ -75,12 +78,27 @@ agent.learn(episodes=5)  # Training phase
 _run_episode(env, agent, deterministic=True)  # Evaluation
 ```
 
+### Verifying Agents
+Use the verification script to test all agents:
+```bash
+python scripts/verify_agents.py
+```
+
+This script verifies:
+- Import correctness
+- Instance creation with mock environment
+- `predict()`/`act()` interface compliance
+- Valid action generation
+- Episode execution
+- `learn()` method availability (for RL agents)
+
 ### Adding New Agents
 1. Create `src/iquitos_citylearn/oe3/agents/my_agent.py`
 2. Implement `predict()` or `act()` method
 3. Export in `agents/__init__.py`
 4. Add to `cfg["oe3"]["evaluation"]["agents"]` list
 5. Handle in `simulate.py` agent selection logic
+6. Run `python scripts/verify_agents.py` to validate
 
 ## CityLearn Dataset Integration
 
