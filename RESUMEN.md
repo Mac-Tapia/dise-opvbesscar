@@ -52,8 +52,9 @@ DISEÑO DE CARGA INTELIGENTE OE.2 + OE.3
 └── OE.3 ALGORITMOS DE CONTROL
     ├── ✓ Baseline Uncontrolled
     ├── ✓ RBC (Rule-Based Control)
-    ├── ✓ PPO (Policy Gradient RL)
-    └── ✓ SAC (Maximum Entropy RL)
+    ├── ✓ PPO (Policy Gradient RL) - reward 8,142
+    ├── ✓ SAC (Maximum Entropy RL) - reward 15,145
+    └── ✓ A2C (Actor-Critic RL) - reward 8,040 [SELECCIONADO]
 
 ```markdown
 
@@ -171,25 +172,61 @@ docker-compose -f Docker/docker-compose.yml up
 
 ---
 
-## 📈 Resultados Esperados
+## 📈 Resultados Cuantificados
+
+### OE.1 - Ubicación Estratégica
+
+✓ **Ubicación seleccionada:** Mall de Iquitos  
+✓ **Área techada disponible:** 20,637 m² (factor diseño 65% = 13,414 m² útil)  
+✓ **Flota objetivo:** 900 motos + 130 mototaxis  
+✓ **Permanencia mínima:** ≥4 horas  
+✓ **Distancia a SET:** 60 m (Subestación Santa Rosa)  
 
 ### OE.2 - Dimensionamiento
 
-✓ **Capacidad Solar:** XX kWp (configurable en `configs/default.yaml`)  
+✓ **Sistema Fotovoltaico:**
+  - Potencia DC instalada: **2,591 kWp** (8,224 módulos SunPower SPR-315E)
+  - Potencia AC máxima: **2,500 kW** (inversor Sungrow SG2500U)
+  - Generación anual: **3,299 MWh** (9,040 kWh/día promedio)
+  - Performance Ratio: **76.5%**
 
-✓ **Almacenamiento:** XX kWh (≥ 1 día de autonomía)  
+✓ **Almacenamiento BESS:**
+  - Capacidad: **740 kWh**
+  - Potencia nominal: **370 kW** (C-rate 0.5)
+  - DoD: **90%**, SOC mínimo: **10%**
+  - Eficiencia roundtrip: **95%**
+  - Autonomía: **4 horas**
 
-✓ **Cargadores:** XX unidades con Y sockets configurados  
+✓ **Cargadores EV Modo 3:**
+  - Cantidad: **33 cargadores**
+  - Sockets totales: **129 tomas** (4 por cargador)
+  - Potencia por socket: **2-3 kW** (motos/mototaxis)
+  - Demanda diaria EV: **567 kWh**
+  - Vehículos efectivos/día: **927** (810 motos + 117 mototaxis)
+  - Potencia pico: **283 kW**
 
-### OE.3 - Análisis de Algoritmos
+### OE.3 - Agentes y Reducción CO₂
 
-✓ **Tabla Comparativa:** 4 agentes (Uncontrolled, RBC, PPO, SAC)  
+✓ **Agentes evaluados (5 episodios, 17,518 pasos):**
+  - SAC: reward **15,145.84** (mejor exploración)
+  - PPO: reward **8,142.55** (target_kl 0.015)
+  - A2C: reward **8,040.81** (**SELECCIONADO**)
 
-✓ **Reducción CO₂:** Estimada en ~X% anual vs. baseline  
+✓ **Reducción de emisiones cuantificada:**
+  - Baseline sin control (PV+BESS): **103,184 kgCO₂/año**
+  - Con control A2C: **95,505 kgCO₂/año**
+  - **Reducción neta: 7,679 kgCO₂/año (~7.45%)**
+  - Reducción directa: **85,534 kgCO₂/año**
+  - Reducción indirecta: **9,971 kgCO₂/año**
 
-✓ **Proyección 20 años:** X toneladas CO₂ ahorradas  
+✓ **Transporte electrificado:**
+  - Combustión (gasolina/diésel): **111,761 kgCO₂/año**
+  - Eléctrico con control: **7,967 kgCO₂/año**
+  - **Reducción: 92.87%**
 
-✓ **Gráficas:** 29 visualizaciones @ 300 DPI para tesis  
+✓ **Proyección 20 años: 153.6 toneladas CO₂ evitadas**
+
+✓ **Métricas de entrenamiento:** Disponibles en `analyses/oe3/training/*.csv`  
 
 ---
 
