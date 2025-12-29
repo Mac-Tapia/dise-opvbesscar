@@ -129,6 +129,7 @@ def compute_table(summary: Dict[str, Any], factors: EmissionsFactors,
 
     # Electrified + grid (optional)
     grid_kg_y = None
+    grid_tco2_y = None
     grid_ev_import_kwh_y = None
     if grid is not None:
         grid_ev_kwh_y = annualize(grid["ev_charging_kwh"], grid["simulated_years"])
@@ -136,12 +137,15 @@ def compute_table(summary: Dict[str, Any], factors: EmissionsFactors,
         grid_import_kwh_y = annualize(grid["grid_import_kwh"], grid["simulated_years"])
         grid_ev_import_kwh_y = allocate_grid_to_ev(grid_import_kwh_y, grid_ev_kwh_y, grid_build_kwh_y)
         grid_kg_y = grid_ev_import_kwh_y * factors.grid_kgco2_per_kwh
+        grid_tco2_y = grid_kg_y / 1000.0
 
     # Electrified + PV+BESS sin control (baseline)
     baseline_kg_y = base_ev_import_kwh_y * factors.grid_kgco2_per_kwh if baseline is not None else None
+    baseline_tco2_y = baseline_kg_y / 1000.0 if baseline_kg_y is not None else None
 
     # Electrified + PV+BESS + control
     ctrl_kg_y = best_ev_import_kwh_y * factors.grid_kgco2_per_kwh
+    ctrl_tco2_y = ctrl_kg_y / 1000.0
 
     data = [
         ("Emisiones transporte base (combustión)", base_kg_y),
@@ -156,9 +160,24 @@ def compute_table(summary: Dict[str, Any], factors: EmissionsFactors,
     df["tco2_anual"] = df["kgco2_anual"] / 1000.0
     df["tco2_20_anios"] = df["tco2_anual"] * factors.project_life_years
 
-    base = df.loc[df["escenario"].str.contains("combustión"), "tco2_anual"].iloc[0]
+    base = df.loc[df["escenario"].str.contains("combusti", case=False), "tco2_anual"].iloc[0]
     df["reduccion_vs_base_tco2_anual"] = base - df["tco2_anual"]
     df["reduccion_vs_base_pct"] = 100.0 * df["reduccion_vs_base_tco2_anual"] / max(base, 1e-9)
+
+    # Reducciones absolutas vs grid-only y vs PV+BESS sin control (OE2)
+    if grid_tco2_y is not None:
+        df["reduccion_vs_grid_tco2_anual"] = grid_tco2_y - df["tco2_anual"]
+        df["reduccion_vs_grid_pct"] = 100.0 * df["reduccion_vs_grid_tco2_anual"] / max(grid_tco2_y, 1e-9)
+    else:
+        df["reduccion_vs_grid_tco2_anual"] = None
+        df["reduccion_vs_grid_pct"] = None
+
+    if baseline_tco2_y is not None:
+        df["reduccion_vs_pvbess_tco2_anual"] = baseline_tco2_y - df["tco2_anual"]
+        df["reduccion_vs_pvbess_pct"] = 100.0 * df["reduccion_vs_pvbess_tco2_anual"] / max(baseline_tco2_y, 1e-9)
+    else:
+        df["reduccion_vs_pvbess_tco2_anual"] = None
+        df["reduccion_vs_pvbess_pct"] = None
 
     meta = {
         "annual_km_equivalent": km_y,
@@ -168,6 +187,9 @@ def compute_table(summary: Dict[str, Any], factors: EmissionsFactors,
         "best_agent": summary.get("best_agent"),
         "base_combustion_tco2_y": base,
         "reduction_tco2_y": base - (ctrl_kg_y / 1000.0),
+        "grid_tco2_y": grid_tco2_y,
+        "baseline_pvbess_tco2_y": baseline_tco2_y,
+        "control_tco2_y": ctrl_tco2_y,
     }
     
     # Contexto ciudad Iquitos si está disponible
@@ -385,6 +407,26 @@ def write_outputs(
     md.append(f"**Servicio de transporte equivalente:** {km_y:,.0f} km/año\n")
     md.append("\n### Tabla Comparativa de Escenarios\n")
     md.append(df[["escenario", "tco2_anual", "tco2_20_anios", "reduccion_vs_base_pct"]].to_markdown(index=False))
+
+    # Resumen OE2/OE3: reducciones absolutas vs grid y adicional vs PV+BESS sin control
+    grid_tco2_y = df.attrs.get("grid_tco2_y")
+    base_pvbess_tco2_y = df.attrs.get("baseline_pvbess_tco2_y")
+    ctrl_tco2_y = df.attrs.get("control_tco2_y")
+    if grid_tco2_y is not None and ctrl_tco2_y is not None:
+        oe3_abs = grid_tco2_y - ctrl_tco2_y
+        oe3_pct = 100.0 * oe3_abs / max(grid_tco2_y, 1e-9)
+        if base_pvbess_tco2_y is not None:
+            oe2_abs = grid_tco2_y - base_pvbess_tco2_y
+            oe2_pct = 100.0 * oe2_abs / max(grid_tco2_y, 1e-9)
+            incremental_abs = base_pvbess_tco2_y - ctrl_tco2_y
+            incremental_pct = 100.0 * incremental_abs / max(base_pvbess_tco2_y, 1e-9)
+            md.append("\n\n### Reducciones absolutas y adicionales\n")
+            md.append(f"- OE2 (PV+BESS sin control vs grid-only): {oe2_abs:.2f} tCO2/año ({oe2_pct:.2f}%)\n")
+            md.append(f"- OE3 (mejor agente vs grid-only): {oe3_abs:.2f} tCO2/año ({oe3_pct:.2f}%)\n")
+            md.append(f"- Aporte adicional del control (OE3 vs OE2): {incremental_abs:.2f} tCO2/año ({incremental_pct:.2f}% vs OE2)\n")
+        else:
+            md.append("\n\n### Reducción OE3 vs grid-only\n")
+            md.append(f"- OE3 (mejor agente vs grid-only): {oe3_abs:.2f} tCO2/año ({oe3_pct:.2f}%)\n")
     
     # Impacto en la ciudad
     md.append("\n\n## 4. Contribución a Iquitos 2025\n")

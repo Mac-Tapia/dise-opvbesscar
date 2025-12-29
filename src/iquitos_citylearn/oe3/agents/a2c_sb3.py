@@ -12,6 +12,16 @@ from ..progress import append_progress_row
 logger = logging.getLogger(__name__)
 
 
+def _progress_pct(current: int, total: int) -> Optional[float]:
+    """Calcula porcentaje de avance, None si no aplica."""
+    if total is None or total <= 0:
+        return None
+    try:
+        return round(100.0 * float(current) / float(total), 1)
+    except Exception:
+        return None
+
+
 def detect_device() -> str:
     """Auto-detecta el mejor dispositivo disponible (CUDA/MPS/CPU)."""
     try:
@@ -168,7 +178,17 @@ class A2CAgent:
         )
 
         progress_path = Path(self.config.progress_path) if self.config.progress_path else None
-        progress_headers = ("timestamp", "agent", "episode", "episode_reward", "episode_length", "global_step")
+        if progress_path is not None and progress_path.exists():
+            progress_path.unlink()
+        progress_headers = (
+            "timestamp",
+            "agent",
+            "episode",
+            "episode_reward",
+            "episode_length",
+            "global_step",
+            "progress_pct",
+        )
         expected_episodes = int(steps // 8760) if steps > 0 else 0
 
         class TrainingCallback(BaseCallback):
@@ -189,10 +209,13 @@ class A2CAgent:
                     return True
                 if self.log_interval_steps > 0 and self.n_calls % self.log_interval_steps == 0:
                     approx_episode = max(1, int(self.model.num_timesteps // 8760) + 1)
+                    pct = _progress_pct(approx_episode, self.expected_episodes)
+                    pct_str = f" ({pct:.1f}%)" if pct is not None else ""
                     logger.info(
-                        "[A2C] paso %d | ep~%d | pasos_global=%d",
+                        "[A2C] paso %d | ep~%d%s | pasos_global=%d",
                         self.n_calls,
                         approx_episode,
+                        pct_str,
                         int(self.model.num_timesteps),
                     )
                     if self.progress_path is not None:
@@ -203,6 +226,7 @@ class A2CAgent:
                             "episode_reward": "",
                             "episode_length": "",
                             "global_step": int(self.model.num_timesteps),
+                            "progress_pct": pct,
                         }
                         append_progress_row(self.progress_path, row, self.progress_headers)
                 for info in infos:
@@ -219,6 +243,7 @@ class A2CAgent:
                     if self.agent.config.progress_interval_episodes > 0 and (
                         self.episode_count % self.agent.config.progress_interval_episodes == 0
                     ):
+                        pct = _progress_pct(self.episode_count, self.expected_episodes)
                         row = {
                             "timestamp": datetime.utcnow().isoformat(),
                             "agent": "a2c",
@@ -226,14 +251,16 @@ class A2CAgent:
                             "episode_reward": reward,
                             "episode_length": length,
                             "global_step": int(self.model.num_timesteps),
+                            "progress_pct": pct,
                         }
                         if self.progress_path is not None:
                             append_progress_row(self.progress_path, row, self.progress_headers)
                         if self.expected_episodes > 0:
                             logger.info(
-                                "[A2C] ep %d/%d reward=%.4f len=%d step=%d",
+                                "[A2C] ep %d/%d (%.1f%%) reward=%.4f len=%d step=%d",
                                 self.episode_count,
                                 self.expected_episodes,
+                                pct if pct is not None else 0.0,
                                 reward,
                                 length,
                                 int(self.model.num_timesteps),

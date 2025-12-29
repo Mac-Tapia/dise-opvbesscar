@@ -167,9 +167,17 @@ def _sample_action(env: Any) -> Any:
         return [sp.sample() for sp in env.action_space]
     return env.action_space.sample()
 
-def _run_episode(env: Any, agent: Any, deterministic: bool = True) -> None:
+def _run_episode(
+    env: Any,
+    agent: Any,
+    deterministic: bool = True,
+    log_prefix: Optional[str] = None,
+    log_interval: int = 0,
+) -> None:
+    """Ejecuta un episodio completo con logging opcional de progreso."""
     obs, _ = env.reset()
     done = False
+    steps = 0
     while not done:
         if hasattr(agent, "predict"):
             action = agent.predict(obs, deterministic=deterministic)
@@ -179,6 +187,9 @@ def _run_episode(env: Any, agent: Any, deterministic: bool = True) -> None:
             action = _sample_action(env)
         obs, _, terminated, truncated, _ = env.step(action)
         done = bool(terminated or truncated)
+        steps += 1
+        if log_prefix and log_interval and steps % log_interval == 0:
+            logger.info("%s paso %d", log_prefix, steps)
 
 
 def _flatten_obs_for_trace(obs: Any) -> Tuple[np.ndarray, List[str]]:
@@ -407,9 +418,10 @@ def simulate(
     trace_action_names: List[str] = []
     if agent_name.lower() == "uncontrolled":
         agent = UncontrolledChargingAgent(env)
-        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_with_trace(
-            env, agent, deterministic=True
-        )
+        # Uncontrolled solo sirve de baseline; no generamos trazas grandes para evitar demoras y archivos enormes.
+        _run_episode(env, agent, deterministic=True, log_prefix="[Uncontrolled]", log_interval=500)
+        trace_obs = trace_actions = None
+        trace_rewards = []
     elif agent_name.lower() in ["nocontrol", "no_control"]:
         agent = make_no_control(env)
         trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_with_trace(

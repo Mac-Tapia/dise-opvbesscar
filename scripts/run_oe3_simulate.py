@@ -6,16 +6,27 @@ import json
 
 from iquitos_citylearn.utils.logging import setup_logging
 from iquitos_citylearn.oe3.dataset_builder import build_citylearn_dataset
-from iquitos_citylearn.oe3.simulate import simulate
+from iquitos_citylearn.oe3.simulate import simulate, SimulationResult
 from scripts._common import load_all
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/default.yaml")
+    ap.add_argument("--skip-uncontrolled", action="store_true", help="Reutiliza baseline existente y omite escenarios 'Uncontrolled'")
     args = ap.parse_args()
 
     setup_logging()
     cfg, rp = load_all(args.config)
+    summary_existing = None
+    if args.skip_uncontrolled:
+        summary_path = rp.outputs_dir / "oe3" / "simulations" / "simulation_summary.json"
+        if summary_path.exists():
+            try:
+                summary_existing = json.loads(summary_path.read_text(encoding="utf-8"))
+                print(f"[SKIP] Reutilizando baseline desde {summary_path}")
+            except Exception as exc:
+                print(f"[SKIP] No se pudo leer summary existente ({exc}), se recalculará baseline.")
+                summary_existing = None
 
     built = build_citylearn_dataset(
         cfg=cfg,
@@ -72,29 +83,32 @@ def main() -> None:
     det_eval = bool(sac_cfg.get("deterministic_eval", True))
 
     # Scenario A: Electrified transport + grid only
-    res_grid = simulate(
-        schema_path=schema_grid,
-        agent_name="Uncontrolled",
-        out_dir=out_dir,
-        training_dir=training_dir,
-        carbon_intensity_kg_per_kwh=ci,
-        seconds_per_time_step=seconds_per_time_step,
-        sac_episodes=sac_episodes,
-        deterministic_eval=True,
-        sac_prefer_citylearn=sac_prefer_citylearn,
-        sac_checkpoint_freq_steps=sac_checkpoint_freq,
-        ppo_checkpoint_freq_steps=ppo_checkpoint_freq,
-        ppo_target_kl=ppo_target_kl,
-        ppo_kl_adaptive=ppo_kl_adaptive,
-        ppo_log_interval=ppo_log_interval,
-        a2c_timesteps=a2c_timesteps,
-        a2c_checkpoint_freq_steps=a2c_checkpoint_freq,
-        a2c_n_steps=a2c_n_steps,
-        a2c_learning_rate=a2c_learning_rate,
-        a2c_entropy_coef=a2c_entropy_coef,
-        a2c_device=a2c_device,
-        seed=project_seed,
-    )
+    if summary_existing and "grid_only_result" in summary_existing:
+        res_grid = SimulationResult(**summary_existing["grid_only_result"])
+    else:
+        res_grid = simulate(
+            schema_path=schema_grid,
+            agent_name="Uncontrolled",
+            out_dir=out_dir,
+            training_dir=training_dir,
+            carbon_intensity_kg_per_kwh=ci,
+            seconds_per_time_step=seconds_per_time_step,
+            sac_episodes=sac_episodes,
+            deterministic_eval=True,
+            sac_prefer_citylearn=sac_prefer_citylearn,
+            sac_checkpoint_freq_steps=sac_checkpoint_freq,
+            ppo_checkpoint_freq_steps=ppo_checkpoint_freq,
+            ppo_target_kl=ppo_target_kl,
+            ppo_kl_adaptive=ppo_kl_adaptive,
+            ppo_log_interval=ppo_log_interval,
+            a2c_timesteps=a2c_timesteps,
+            a2c_checkpoint_freq_steps=a2c_checkpoint_freq,
+            a2c_n_steps=a2c_n_steps,
+            a2c_learning_rate=a2c_learning_rate,
+            a2c_entropy_coef=a2c_entropy_coef,
+            a2c_device=a2c_device,
+            seed=project_seed,
+        )
 
     # Scenario B: Electrified transport + PV+BESS + control (evaluate candidate agents)
     agent_names = list(eval_cfg["agents"])
@@ -134,30 +148,33 @@ def main() -> None:
         results[agent] = res.__dict__
 
     # Scenario C: Electrified transport + PV+BESS + no control (baseline)
-    res_uncontrolled = simulate(
-        schema_path=schema_pv,
-        agent_name="Uncontrolled",
-        out_dir=out_dir,
-        training_dir=training_dir,
-        carbon_intensity_kg_per_kwh=ci,
-        seconds_per_time_step=seconds_per_time_step,
-        sac_episodes=sac_episodes,
-        ppo_timesteps=ppo_timesteps,
-        deterministic_eval=True,
-        sac_prefer_citylearn=sac_prefer_citylearn,
-        sac_checkpoint_freq_steps=sac_checkpoint_freq,
-        ppo_checkpoint_freq_steps=ppo_checkpoint_freq,
-        ppo_target_kl=ppo_target_kl,
-        ppo_kl_adaptive=ppo_kl_adaptive,
-        ppo_log_interval=ppo_log_interval,
-        a2c_timesteps=a2c_timesteps,
-        a2c_checkpoint_freq_steps=a2c_checkpoint_freq,
-        a2c_n_steps=a2c_n_steps,
-        a2c_learning_rate=a2c_learning_rate,
-        a2c_entropy_coef=a2c_entropy_coef,
-        a2c_device=a2c_device,
-        seed=project_seed,
-    )
+    if summary_existing and "pv_bess_uncontrolled" in summary_existing:
+        res_uncontrolled = SimulationResult(**summary_existing["pv_bess_uncontrolled"])
+    else:
+        res_uncontrolled = simulate(
+            schema_path=schema_pv,
+            agent_name="Uncontrolled",
+            out_dir=out_dir,
+            training_dir=training_dir,
+            carbon_intensity_kg_per_kwh=ci,
+            seconds_per_time_step=seconds_per_time_step,
+            sac_episodes=sac_episodes,
+            ppo_timesteps=ppo_timesteps,
+            deterministic_eval=True,
+            sac_prefer_citylearn=sac_prefer_citylearn,
+            sac_checkpoint_freq_steps=sac_checkpoint_freq,
+            ppo_checkpoint_freq_steps=ppo_checkpoint_freq,
+            ppo_target_kl=ppo_target_kl,
+            ppo_kl_adaptive=ppo_kl_adaptive,
+            ppo_log_interval=ppo_log_interval,
+            a2c_timesteps=a2c_timesteps,
+            a2c_checkpoint_freq_steps=a2c_checkpoint_freq,
+            a2c_n_steps=a2c_n_steps,
+            a2c_learning_rate=a2c_learning_rate,
+            a2c_entropy_coef=a2c_entropy_coef,
+            a2c_device=a2c_device,
+            seed=project_seed,
+        )
 
     # Pick best (lowest annualized carbon, then highest autosuficiencia)
     def annualized_carbon(r: dict) -> float:

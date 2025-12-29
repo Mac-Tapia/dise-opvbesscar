@@ -107,27 +107,33 @@ oe3:
   evaluation:
     agents: ["SAC", "PPO", "A2C"]
     sac:
-      episodes: 2
+      episodes: 5
       deterministic_eval: true
-      device: cuda
-      checkpoint_freq_steps: 8760
+      device: cuda:0
+      hidden_sizes: [128, 128]   # redes más ligeras
+      use_amp: true              # mixed precision para acelerar en GPU
+      checkpoint_freq_steps: 8760  # checkpoint al cierre de cada episodio (8760 pasos)
       prefer_citylearn: false
     ppo:
-      episodes: 2
-      timesteps: 17520
+      episodes: 5
+      timesteps: 43800         # 5 episodios x 8760 pasos
+      n_steps: 1024            # menos pasos por update = updates más rápidos
+      batch_size: 128          # batch mayor reduce iteraciones
+      hidden_sizes: [128, 128]
       checkpoint_freq_steps: 8760
-      device: cuda
+      device: cuda:0
       target_kl: 0.015
       kl_adaptive: true
       log_interval: 1000
     a2c:
-      episodes: 2
-      timesteps: 17520
-      n_steps: 256
+      episodes: 5
+      timesteps: 43800
+      n_steps: 128
+      hidden_sizes: [128, 128]
       learning_rate: 0.0003
       entropy_coef: 0.01
       checkpoint_freq_steps: 8760
-      device: cuda
+      device: cuda:0
 
   emissions:
     km_per_kwh: 35.0
