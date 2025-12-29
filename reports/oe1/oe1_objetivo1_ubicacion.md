@@ -34,9 +34,9 @@ Nota: Tabla 10 transcrita; la distancia 4.4 km al SET se corrigió a 4400 m. CSV
 
 ## Vínculo directo con OE2 (dimensionamiento vigente)
 
-1. **Área techada → FV (OE2).** La superficie de 20,637 m² y factor de diseño 0.65 dan área útil 13,414.1 m². Resultado OE2 (solar): DC 4,162.0 kWp, AC 3,201.2 kW, energía anual 3,972,478 kWh (`data/interim/oe2/solar/solar_results.json`).
-2. **Flota pico → cargadores (OE2).** 900 motos + 130 mototaxis, permanencia ≥4 h, ventana 18:00-22:00. Resultado OE2 (chargers): 103 cargadores, 412 sockets, potencia total ~876 kW, energía diaria EV 644.4 kWh (`data/interim/oe2/chargers/chargers_results.json`).
-3. **Ubicación y red → BESS (OE2).** Distancia 60 m a SET Santa Rosa soporta conexión. BESS dimensionado para déficit nocturno: capacidad 1,780 kWh, potencia 890 kW (`data/interim/oe2/bess/bess_results.json`).
+1. **Área techada → FV (OE2).** La superficie de 20,637 m² y factor de diseño 0.65 dan área útil 13,414 m². Resultado OE2 (solar): **DC 2,591 kWp** (8,224 módulos SunPower SPR-315E), **AC 2,500 kW** (inversor Sungrow SG2500U), energía anual **3,299 MWh** (`data/interim/oe2/solar/solar_results.json`).
+2. **Flota pico → cargadores (OE2).** 900 motos + 130 mototaxis, permanencia ≥4 h, ventana 18:00-22:00. Resultado OE2 (chargers): **33 cargadores**, **129 sockets** (4 por cargador), potencia objetivo **310-340 kW**, energía diaria EV **567 kWh**, **927 vehículos efectivos/día** (`data/interim/oe2/chargers/chargers_results.json`).
+3. **Ubicación y red → BESS (OE2).** Distancia 60 m a SET Santa Rosa soporta conexión. BESS dimensionado para autonomía 4h: capacidad **740 kWh**, potencia **370 kW**, DoD 90%, eficiencia roundtrip 95%, SOC mínimo 10% (`data/interim/oe2/bess/bess_results.json`).
 
 ## Trazabilidad en configuración
 

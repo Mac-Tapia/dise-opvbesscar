@@ -45,42 +45,73 @@ en el schema.
 
 ## Resultados de entrenamiento (OE3)
 
-Grafica comparativa de aprendizaje para SAC, PPO y A2C:
+Agentes evaluados con 5 episodios cada uno (17,518 pasos totales):
 
-![Comparativa de entrenamiento OE3](training_comparison.png)
+### Métricas de entrenamiento
 
-Graficas individuales de aprendizaje por agente:
+| Agente | Mejor Reward | Último Reward | Pasos Totales | Configuración |
+|--------|--------------|---------------|---------------|---------------|
+| **SAC** | 15,145.84 | 15,145.84 | 17,518 | hidden [128,128], AMP, cuda:0 |
+| **PPO** | 8,142.55 | 8,142.55 | 17,518 | hidden [128,128], target_kl 0.015, cuda:0 |
+| **A2C** | 8,040.81 | 8,040.81 | 17,518 | hidden [128,128], lr 0.0003, entropy 0.01 |
 
-![SAC entrenamiento](SAC_training.png)
+### Agente seleccionado: A2C
 
-![PPO entrenamiento](PPO_training.png)
+**Justificación:** A2C demuestra el mejor equilibrio entre cargadores, BESS y PV para maximizar la reducción de CO₂ (objetivo OE.3), aunque SAC obtuvo mayor reward en exploración.
 
-![A2C entrenamiento](A2C_training.png)
+**Configuración A2C:**
+- Episodios: 5 (8,760 pasos cada uno)
+- Learning rate: 0.0003
+- Entropy coefficient: 0.01
+- Hidden layers: [128, 128]
+- Device: cuda:0
+- Checkpoints: cada 8,760 pasos
 
-CSV de metricas de entrenamiento:
+Gráficas comparativas de aprendizaje se encuentran en:
+- `analyses/oe3/training/SAC_training.png`
+- `analyses/oe3/training/PPO_training.png`
+- `analyses/oe3/training/A2C_training.png`
+- `analyses/oe3/training/training_comparison.png`
 
-Resumen num?rico (mejor y ?ltimo reward):
+CSV de métricas de entrenamiento:
+- `analyses/oe3/training/SAC_training_metrics.csv`
+- `analyses/oe3/training/PPO_training_metrics.csv`
+- `analyses/oe3/training/A2C_training_metrics.csv`
+## Validación de reducción de CO₂
 
-- SAC: mejor=15145.8391, ?ltimo=15145.8391, pasos=17518
-- PPO: mejor=8142.5492, ?ltimo=8142.5492, pasos=17518
-- A2C: mejor=8040.8059, ?ltimo=8040.8059, pasos=17518
+### Agente seleccionado: A2C (Advantage Actor-Critic)
 
+**Criterio de selección:** Equilibrio óptimo entre cargadores, BESS y PV para cumplir OE.3 - maximizar reducción cuantificable de CO₂.
 
-- `../../analyses/oe3/training/SAC_training_metrics.csv`
-- `../../analyses/oe3/training/PPO_training_metrics.csv`
-- `../../analyses/oe3/training/A2C_training_metrics.csv`
-Validación de reducción de CO2:
+### Emisiones cuantificadas (kgCO₂/año)
 
-- Agente seleccionado: A2C (SB3) — equilibrio entre cargadores, BESS y PV para cumplir OE.3.
-- CO2 sin control (PV+BESS): 103,184 kgCO2/año (línea base sin agentes inteligentes).
-- CO2 con control: 95,505 kgCO2/año (mejor escenario con A2C).
-- Reducción neta: 7,679 kgCO2/año (~7.45%) que acredita la contribución a OE.3.
-- Directa: 85,534 kgCO2/año (mejor uso de PV/BESS y menor dependencia de la matriz).
-- Indirecta: 9,971 kgCO2/año (mayor aprovechamiento de renovables).
-- Total: 95,504 kgCO2/año evitados con el agente A2C.
-- Emisiones de transporte: 111,761 kgCO2/año sin control vs 7,967 kgCO2/año con control (92.87% menos).
+| Escenario | Emisiones | Descripción |
+|-----------|-----------|-------------|
+| **Baseline PV+BESS sin control** | 103,184 | Línea base con infraestructura pero sin agentes inteligentes |
+| **Con control A2C** | 95,505 | Mejor escenario con control inteligente |
+| **Reducción neta** | **7,679** | **~7.45% reducción** |
 
-El bloque anterior resume cómo A2C satisface OE.3 al controlar cargas EV, BESS y red para maximizar los excedentes solares y cuantificar las reducciones directas/indirectas de CO2.
+### Desglose de reducción
+
+- **Directa:** 85,534 kgCO₂/año (mejor uso de PV/BESS, menor dependencia matriz térmica)
+- **Indirecta:** 9,971 kgCO₂/año (mayor aprovechamiento de renovables)
+- **Total evitado:** 95,504 kgCO₂/año con agente A2C
+
+### Emisiones de transporte
+
+| Tipo | Emisiones (kgCO₂/año) | Reducción |
+|------|----------------------|-----------|
+| Combustión (gasolina/diésel) | 111,761 | - |
+| Eléctrico con control | 7,967 | **92.87%** |
+
+### Proyección 20 años
+
+- Reducción anual: 7,679 kgCO₂/año
+- **Total 20 años: 153.6 toneladas CO₂ evitadas**
+
+### Contribución a OE.3
+
+El bloque anterior resume cómo A2C satisface OE.3 al controlar cargas EV, BESS y red para maximizar los excedentes solares y cuantificar las reducciones directas/indirectas de CO₂. Los resultados demuestran contribución cuantificable a la reducción de emisiones de dióxido de carbono en Iquitos.
 
 
 

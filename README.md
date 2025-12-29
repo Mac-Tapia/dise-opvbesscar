@@ -25,9 +25,15 @@
 
 ## 📦 Componentes del diseño
 
-- **OE1**: Análisis de ubicación estratégica (`scripts/run_oe1_location.py`) que determina viabilidad técnica y operativa del proyecto en Iquitos.
-- **OE2**: Perfil FV anual (pvlib/clear-sky), dimensionamiento BESS y configuración de cargadores para motos/mototaxis.
-- **OE3**: Dataset CityLearn consolidado (EV + FV + BESS), simulación multi-agente y análisis detallado de reducción CO₂ (anual + 20 años).
+- **OE1**: Análisis de ubicación estratégica que determina viabilidad técnica y operativa del Mall de Iquitos (20,637 m² área techada, 900 motos + 130 mototaxis, permanencia ≥4h, 60m a SET Santa Rosa).
+- **OE2**: Sistema dimensionado:
+  - **FV**: 2,591 kWp (8,224 módulos SunPower SPR-315E), 3,299 MWh/año
+  - **BESS**: 740 kWh / 370 kW (DoD 90%, eficiencia 95%, autonomía 4h)
+  - **Cargadores**: 33 unidades Modo 3, 129 sockets (2-3 kW), 567 kWh/día EV
+- **OE3**: Agentes inteligentes evaluados (SAC, PPO, A2C) con reducción cuantificada:
+  - Baseline sin control: 103,184 kgCO₂/año
+  - Con control A2C: 95,505 kgCO₂/año  
+  - **Reducción neta: 7,679 kgCO₂/año (~7.45%)**
 
 ---
 
@@ -104,11 +110,35 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 
 Ajusta parámetros en `configs/default.yaml`:
 
-- FV: `oe2.solar.target_dc_kw`, `oe2.solar.target_annual_kwh`
-- Cargadores: `oe2.ev_fleet.*`
-- BESS: `oe2.bess.*`
-- Intensidad de carbono: `oe3.grid.carbon_intensity_kg_per_kwh`
-- Factores transporte: `oe3.emissions.*`
+### OE2 - Dimensionamiento
+- **FV**: 
+  - `oe2.solar.target_dc_kw: 4162.0` (Potencia DC nominal)
+  - `oe2.solar.target_ac_kw: 3201.2` (Potencia AC nominal)
+  - `oe2.solar.target_annual_kwh: 3972478` (Energía anual objetivo)
+  - Módulo: SunPower SPR-315E, Inversor: Sungrow SG2500U
+- **Cargadores**: 
+  - `oe2.ev_fleet.motos_count: 900` / `mototaxis_count: 130`
+  - `pe_motos: 1.00`, `fc_motos: 1.00` (100% penetración escenario recomendado)
+  - `charger_power_kw_moto: 2.0` / `charger_power_kw_mototaxi: 3.0`
+  - `sockets_per_charger: 4`
+- **BESS**: 
+  - `oe2.bess.dod: 0.90` (DoD 90%)
+  - `oe2.bess.c_rate: 0.50`
+  - `oe2.bess.efficiency_roundtrip: 0.95` (95% eficiencia)
+  - `oe2.bess.autonomy_hours: 4.0`
+  - `oe2.bess.min_soc_percent: 10`
+
+### OE3 - Agentes y Emisiones
+- **Intensidad de carbono**: `oe3.grid.carbon_intensity_kg_per_kwh: 0.45`
+- **Agentes evaluados**: `oe3.evaluation.agents: ["SAC", "PPO", "A2C"]`
+- **Configuración RL**:
+  - SAC/PPO/A2C: 5 episodios, hidden_sizes [128, 128], device cuda:0
+  - PPO: target_kl 0.015, kl_adaptive true
+  - Checkpoints cada 8760 pasos (1 episodio)
+- **Factores transporte**: `oe3.emissions.*`
+  - `km_per_kwh: 35.0`
+  - `km_per_gallon: 120.0`
+  - `kgco2_per_gallon: 8.9`
 
 ---
 
