@@ -24,6 +24,6 @@
 | --- | --- | --- |
 | Continuity | sistema aislado termico | - |
 | Power factor | 0.95 | - |
-| Required capacity | 120.1 | kVA |
+| Required capacity | 509.9 | kVA |
 | Available capacity | 0.0 | kVA |
 | Capacity source | estimated_from_peak_power | - |

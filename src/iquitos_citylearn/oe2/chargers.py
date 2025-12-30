@@ -1,11 +1,11 @@
 """
-Módulo de dimensionamiento de cargadores EV para motos y mototaxis.
+Mdulo de dimensionamiento de cargadores EV para motos y mototaxis.
 
 Incluye:
-- Cálculo de cantidad de vehículos a cargar (diario, mensual, anual)
+- Cilculo de cantidad de vehculos a cargar (diario, mensual, anual)
 - Dimensionamiento de cargadores por escenarios
 - Perfil de carga diario con horas pico
-- Preparación de datos para control individual de cargadores en CityLearn
+- Preparacin de datos para control individual de cargadores en CityLearn
 """
 from __future__ import annotations
 
@@ -14,26 +14,27 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Any, Optional
 import math
 import json
+import shutil
 import numpy as np
 import pandas as pd
 
 
 @dataclass(frozen=True)
 class VehicleFleet:
-    """Configuración de la flota de vehículos."""
+    """Configuracin de la flota de vehculos."""
     n_motos: int
     n_mototaxis: int
-    battery_kwh_moto: float = 2.0  # kWh batería típica moto eléctrica
-    battery_kwh_mototaxi: float = 4.0  # kWh batería típica mototaxi
-    daily_km_moto: float = 40.0  # km/día promedio
-    daily_km_mototaxi: float = 80.0  # km/día promedio
+    battery_kwh_moto: float = 2.0  # kWh batera tpica moto elctrica
+    battery_kwh_mototaxi: float = 4.0  # kWh batera tpica mototaxi
+    daily_km_moto: float = 40.0  # km/da promedio
+    daily_km_mototaxi: float = 80.0  # km/da promedio
     efficiency_km_kwh_moto: float = 40.0  # km/kWh
     efficiency_km_kwh_mototaxi: float = 25.0  # km/kWh
 
 
 @dataclass(frozen=True)
 class ChargerSpec:
-    """Especificación de un tipo de cargador."""
+    """Especificacin de un tipo de cargador."""
     charger_id: str
     power_kw: float
     sockets: int
@@ -46,7 +47,7 @@ class ChargerSizingResult:
     """Resultado del dimensionamiento de cargadores."""
     scenario_id: int
     pe: float  # Probabilidad de evento de carga
-    fc: float  # Factor de carga (% de batería a cargar)
+    fc: float  # Factor de carga (% de batera a cargar)
     chargers_required: int
     sockets_total: int
     energy_day_kwh: float
@@ -55,7 +56,7 @@ class ChargerSizingResult:
     utilization: float
     charger_power_kw: float
     sockets_per_charger: int
-    # Nuevos campos para vehículos
+    # Nuevos campos para vehculos
     vehicles_day_motos: int = 0
     vehicles_day_mototaxis: int = 0
     vehicles_month_motos: int = 0
@@ -101,24 +102,24 @@ def calculate_vehicle_demand(
     days_per_year: int = 365,
 ) -> Dict[str, int]:
     """
-    Calcula la cantidad de vehículos a cargar por período.
+    Calcula la cantidad de vehculos a cargar por perodo.
     
     Args:
-        n_motos: Número total de motos en la flota
-        n_mototaxis: Número total de mototaxis en la flota
+        n_motos: Nmero total de motos en la flota
+        n_mototaxis: Nmero total de mototaxis en la flota
         pe: Probabilidad de evento de carga (0-1)
         fc: Factor de carga (0-1)
-        days_per_month: Días por mes
-        days_per_year: Días por año
+        days_per_month: Das por mes
+        days_per_year: Das por ao
     
     Returns:
-        Diccionario con vehículos diarios, mensuales y anuales
+        Diccionario con vehculos diarios, mensuales y anuales
     """
-    # Vehículos que cargan diariamente
+    # Vehculos que cargan diariamente
     vehicles_day_motos = int(round(n_motos * pe * fc))
     vehicles_day_mototaxis = int(round(n_mototaxis * pe * fc))
     
-    # Proyección mensual y anual
+    # Proyeccin mensual y anual
     vehicles_month_motos = vehicles_day_motos * days_per_month
     vehicles_month_mototaxis = vehicles_day_mototaxis * days_per_month
     
@@ -142,7 +143,7 @@ def chargers_needed(
     sockets_per_charger: int,
 ) -> int:
     """
-    Calcula el número de cargadores requeridos en hora pico.
+    Calcula el nmero de cargadores requeridos en hora pico.
 
     Cada socket puede atender 60 / (session_minutes / utilization) sesiones por hora.
     Cada cargador tiene `sockets_per_charger` sockets.
@@ -151,6 +152,46 @@ def chargers_needed(
     sessions_per_socket_per_hour = 60.0 / ts_eff
     capacity_per_charger_per_hour = sockets_per_charger * sessions_per_socket_per_hour
     return int(math.ceil(sessions_peak_per_hour / max(capacity_per_charger_per_hour, 1e-9)))
+
+
+def compute_capacity_metrics(
+    chargers: int,
+    sockets_per_charger: int,
+    session_minutes: float,
+    opening_hour: int,
+    closing_hour: int,
+) -> Dict[str, float]:
+    """Calcula capacidad de sesiones por hora y por dia dada la infraestructura."""
+    hours_open = max(closing_hour - opening_hour, 0)
+    sessions_per_hour_capacity = chargers * sockets_per_charger * (60.0 / session_minutes)
+    sessions_per_day_capacity = sessions_per_hour_capacity * hours_open
+    return {
+        "sessions_per_hour_capacity": sessions_per_hour_capacity,
+        "sessions_per_day_capacity": sessions_per_day_capacity,
+    }
+
+
+def compute_co2_reduction(
+    energy_day_kwh: float,
+    grid_carbon_kg_per_kwh: float,
+    km_per_kwh: float,
+    km_per_gallon: float,
+    kgco2_per_gallon: float,
+) -> Dict[str, float]:
+    """Calcula reduccion de CO2 al desplazar km electricos en lugar de gasolina."""
+    km_day = energy_day_kwh * km_per_kwh
+    gallons_day = km_day / km_per_gallon if km_per_gallon else 0.0
+    co2_gas_kg_day = gallons_day * kgco2_per_gallon
+    co2_ev_kg_day = energy_day_kwh * grid_carbon_kg_per_kwh
+    co2_reduction_kg_day = co2_gas_kg_day - co2_ev_kg_day
+    return {
+        "km_day": km_day,
+        "gallons_day": gallons_day,
+        "co2_gas_kg_day": co2_gas_kg_day,
+        "co2_ev_kg_day": co2_ev_kg_day,
+        "co2_reduction_kg_day": co2_reduction_kg_day,
+        "co2_reduction_kg_year": co2_reduction_kg_day * 365.0,
+    }
 
 
 def evaluate_scenario(
@@ -169,52 +210,52 @@ def evaluate_scenario(
     sockets_per_charger: int,
 ) -> ChargerSizingResult:
     """
-    Evalúa un escenario de dimensionamiento de cargadores Modo 3.
+    Evala un escenario de dimensionamiento de cargadores Modo 3.
     
     Considera que durante las horas pico (4 horas: 18-22h) llegan
-    todos los vehículos de la flota que necesitan cargar.
+    todos los vehculos de la flota que necesitan cargar.
     
     Args:
         pe_motos: Probabilidad de evento de carga para motos (0-1)
         pe_mototaxis: Probabilidad de evento de carga para mototaxis (0-1)
-        fc_motos: Factor de carga motos (% de batería a recargar)
-        fc_mototaxis: Factor de carga mototaxis (% de batería a recargar)
-        n_motos: Número total de motos en la flota
-        n_mototaxis: Número total de mototaxis en la flota
+        fc_motos: Factor de carga motos (% de batera a recargar)
+        fc_mototaxis: Factor de carga mototaxis (% de batera a recargar)
+        n_motos: Nmero total de motos en la flota
+        n_mototaxis: Nmero total de mototaxis en la flota
         peak_hours: Lista de horas pico (ej: [18, 19, 20, 21])
-        session_minutes: Duración de sesión de carga
-        utilization: Factor de utilización del cargador
+        session_minutes: Duracin de sesin de carga
+        utilization: Factor de utilizacin del cargador
         charger_power_kw_moto: Potencia cargador motos (2 kW Modo 3)
         charger_power_kw_mototaxi: Potencia cargador mototaxis (3 kW Modo 3)
         sockets_per_charger: Sockets por cargador
     """
-    # Vehículos efectivos que cargan (aplicando PE)
+    # Vehculos efectivos que cargan (aplicando PE)
     motos_charging = n_motos * pe_motos
     mototaxis_charging = n_mototaxis * pe_mototaxis
     total_vehicles_charging = motos_charging + mototaxis_charging
     
-    # Número de horas pico
+    # Nmero de horas pico
     n_peak_hours = len(peak_hours)
     
     # Sesiones por hora durante hora punta
-    # Los vehículos llegan distribuidos en las 4 horas pico
+    # Los vehculos llegan distribuidos en las 4 horas pico
     sessions_peak_motos = motos_charging / n_peak_hours
     sessions_peak_mototaxis = mototaxis_charging / n_peak_hours
     sessions_peak_per_hour = sessions_peak_motos + sessions_peak_mototaxis
     
     ts_h = session_minutes / 60.0
     
-    # Energía por sesión (potencia × tiempo × factor de carga)
-    # FC indica qué porcentaje de la batería se recarga
+    # Energa por sesin (potencia u tiempo u factor de carga)
+    # FC indica qu porcentaje de la batera se recarga
     energy_session_moto_kwh = charger_power_kw_moto * ts_h * fc_motos
     energy_session_mototaxi_kwh = charger_power_kw_mototaxi * ts_h * fc_mototaxis
     
-    # Energía diaria total (considera FC en la energía por sesión)
+    # Energa diaria total (considera FC en la energa por sesin)
     energy_motos_day = motos_charging * energy_session_moto_kwh
     energy_mototaxis_day = mototaxis_charging * energy_session_mototaxi_kwh
     energy_day = energy_motos_day + energy_mototaxis_day
     
-    # Potencia promedio ponderada para cálculo de cargadores
+    # Potencia promedio ponderada para cilculo de cargadores
     if total_vehicles_charging > 0:
         avg_charger_power = (motos_charging * charger_power_kw_moto + 
                             mototaxis_charging * charger_power_kw_mototaxi) / total_vehicles_charging
@@ -228,7 +269,7 @@ def evaluate_scenario(
         sockets_per_charger=sockets_per_charger,
     )
     
-    # Calcular vehículos (usando PE promedio y FC promedio para compatibilidad)
+    # Calcular vehculos (usando PE promedio y FC promedio para compatibilidad)
     pe_avg = (pe_motos * n_motos + pe_mototaxis * n_mototaxis) / (n_motos + n_mototaxis)
     fc_avg = (fc_motos * n_motos + fc_mototaxis * n_mototaxis) / (n_motos + n_mototaxis)
     vehicle_demand = calculate_vehicle_demand(n_motos, n_mototaxis, pe_avg, fc_avg)
@@ -271,10 +312,10 @@ def select_recommended(df: pd.DataFrame) -> pd.Series:
     """
     Selecciona el escenario recomendado de un DataFrame de escenarios.
 
-    La estrategia de selección es la siguiente:
-    1. Filtra los escenarios para quedarse con aquellos cuyo número de cargadores
-       requeridos está en o por encima del percentil 75.
-    2. De entre esos escenarios, selecciona el que tiene la máxima energía diaria.
+    La estrategia de seleccin es la siguiente:
+    1. Filtra los escenarios para quedarse con aquellos cuyo nmero de cargadores
+       requeridos esti en o por encima del percentil 75.
+    2. De entre esos escenarios, selecciona el que tiene la mixima energa diaria.
 
     Args:
         df: DataFrame con los escenarios de dimensionamiento. Debe contener
@@ -298,7 +339,7 @@ def build_hourly_profile(
     """
     Construye perfil de carga horario de 24h.
 
-    Distribuye la energía diaria entre horas pico y horas normales.
+    Distribuye la energa diaria entre horas pico y horas normales.
     """
     hours = list(range(24))
     operating_hours = [h for h in hours if opening_hour <= h <= closing_hour]
@@ -347,18 +388,18 @@ def create_individual_chargers(
     charger_type: str = "Level2",
 ) -> List[IndividualCharger]:
     """
-    Crea una lista de cargadores individuales para simulación en CityLearn.
+    Crea una lista de cargadores individuales para simulacin en CityLearn.
 
     Distribuye la carga total diaria (definida en `daily_profile`) de manera
-    equitativa entre el número de cargadores especificado. Para simular un
-    uso más realista, introduce una pequeña variación aleatoria (+/- 10%) en
+    equitativa entre el nmero de cargadores especificado. Para simular un
+    uso mis realista, introduce una pequea variacin aleatoria (+/- 10%) en
     el perfil de carga de cada cargador, normalizando luego para que la
-    energía diaria total se conserve.
+    energa diaria total se conserve.
 
     Args:
-        n_chargers: Número de cargadores individuales a crear.
+        n_chargers: Nmero de cargadores individuales a crear.
         charger_power_kw: Potencia nominal de cada cargador en kW.
-        sockets_per_charger: Número de tomas por cargador.
+        sockets_per_charger: Nmero de tomas por cargador.
         daily_profile: DataFrame con el perfil de carga agregado de 24 horas.
                        Debe contener las columnas 'energy_kwh' y 'power_kw'.
         charger_type: Etiqueta del tipo de cargador (ej. "Level2_EV").
@@ -375,12 +416,12 @@ def create_individual_chargers(
     base_profile = (daily_profile['power_kw'] / n_chargers).tolist()
     
     for i in range(n_chargers):
-        # Pequeña variación en el perfil (+/- 10%)
+        # Pequea variacin en el perfil (+/- 10%)
         rng = np.random.default_rng(42 + i)
         variation = 1.0 + rng.uniform(-0.1, 0.1, 24)
         individual_profile = [p * v for p, v in zip(base_profile, variation)]
         
-        # Normalizar para mantener energía total
+        # Normalizar para mantener energa total
         profile_sum = sum(individual_profile)
         if profile_sum > 0:
             individual_profile = [p * energy_per_charger / profile_sum for p in individual_profile]
@@ -390,7 +431,7 @@ def create_individual_chargers(
             charger_type=charger_type,
             power_kw=charger_power_kw,
             sockets=sockets_per_charger,
-            location_x=(i % 10) * 5.0,  # Distribución en grid
+            location_x=(i % 10) * 5.0,  # Distribucin en grid
             location_y=(i // 10) * 5.0,
             hourly_load_profile=individual_profile,
             daily_energy_kwh=sum(individual_profile),
@@ -409,29 +450,29 @@ def generate_charger_plots(
     reports_dir: Optional[Path] = None,
 ) -> None:
     """
-    Genera y guarda un conjunto de gráficas para el análisis de dimensionamiento.
+    Genera y guarda un conjunto de grificas para el anilisis de dimensionamiento.
 
     Crea las siguientes visualizaciones:
-    1.  **Vehículos a Cargar por Período:** Gráfico de barras que muestra la
+    1.  **Vehculos a Cargar por Perodo:** Grifico de barras que muestra la
         cantidad de motos y mototaxis a cargar diaria, mensual y anualmente
         para el escenario recomendado.
-    2.  **Perfil de Carga Diario:** Gráfico de línea que muestra la distribución
-        horaria de la demanda de energía, destacando las horas pico.
-    3.  **Análisis de Escenarios:** Un mapa de calor que relaciona PE y FC con
-        el número de cargadores, y un histograma de la distribución de
+    2.  **Perfil de Carga Diario:** Grifico de lnea que muestra la distribucin
+        horaria de la demanda de energa, destacando las horas pico.
+    3.  **Anilisis de Escenarios:** Un mapa de calor que relaciona PE y FC con
+        el nmero de cargadores, y un histograma de la distribucin de
         cargadores requeridos.
-    4.  **Resumen del Sistema:** Un dashboard con la energía diaria, la
-        relación entre sesiones pico y cargadores, una tabla resumen y el
+    4.  **Resumen del Sistema:** Un dashboard con la energa diaria, la
+        relacin entre sesiones pico y cargadores, una tabla resumen y el
         perfil de potencia horario.
 
     Args:
         df_scenarios: DataFrame con todos los escenarios de sensibilidad evaluados.
         esc_rec: Serie de pandas que representa el escenario recomendado.
         profile: DataFrame con el perfil de carga horario del escenario recomendado.
-        out_dir: Directorio base para guardar las gráficas (usado si `reports_dir`
+        out_dir: Directorio base para guardar las grificas (usado si `reports_dir`
                  es None).
-        reports_dir: Directorio de reportes de alto nivel donde se guardarán las
-                     gráficas, dentro de una subcarpeta `oe2/chargers`.
+        reports_dir: Directorio de reportes de alto nivel donde se guardarin las
+                     grificas, dentro de una subcarpeta `oe2/chargers`.
     """
     import matplotlib.pyplot as plt
     
@@ -445,10 +486,10 @@ def generate_charger_plots(
         try:
             plt.savefig(plots_dir / filename, dpi=150, bbox_inches='tight')
         except (IOError, OSError) as e:
-            print(f"  [ERROR] No se pudo guardar la gráfica {filename}: {e}")
+            print(f"  [ERROR] No se pudo guardar la grifica {filename}: {e}")
     
     # ===========================================================
-    # Gráfica 1: Cantidad de Vehículos a Cargar por Período
+    # Grifica 1: Cantidad de Vehculos a Cargar por Perodo
     # ===========================================================
     fig, axes = plt.subplots(1, 3, figsize=(14, 5))
     
@@ -478,10 +519,10 @@ def generate_charger_plots(
                     f'{val:,}', ha='center', va='bottom', fontsize=10, fontweight='bold')
         
         ax.set_title(period, fontsize=12, fontweight='bold')
-        ax.set_ylabel('Cantidad de Vehículos', fontsize=10)
+        ax.set_ylabel('Cantidad de Vehculos', fontsize=10)
         ax.set_ylim(0, max(heights) * 1.15 if max(heights) > 0 else 100)
     
-    plt.suptitle('Cantidad de Vehículos a Cargar por Período (Escenario Recomendado)', 
+    plt.suptitle('Cantidad de Vehculos a Cargar por Perodo (Escenario Recomendado)', 
                  fontsize=13, fontweight='bold')
     plt.tight_layout()
     save_plot('chargers_vehiculos_por_periodo.png')
@@ -489,7 +530,7 @@ def generate_charger_plots(
     print("  [OK] Grafica: Vehiculos a Cargar por Periodo")
     
     # ===========================================================
-    # Gráfica 2: Perfil de Carga Diario con Horas Pico
+    # Grifica 2: Perfil de Carga Diario con Horas Pico
     # ===========================================================
     fig, ax = plt.subplots(figsize=(12, 6))
     
@@ -509,11 +550,11 @@ def generate_charger_plots(
     if peak_start is not None and peak_end is not None:
         ax.axvspan(peak_start - 0.5, peak_end + 0.5, alpha=0.3, color='orange', label='Horas Pico')
     
-    # Línea de energía/potencia
-    ax.plot(hours, power, 'o-', color='steelblue', linewidth=2, markersize=6, label='Energía / Potencia')
+    # Lnea de energa/potencia
+    ax.plot(hours, power, 'o-', color='steelblue', linewidth=2, markersize=6, label='Energa / Potencia')
     
     ax.set_xlabel('Hora', fontsize=11)
-    ax.set_ylabel('Energía (kWh) / Potencia (kW)', fontsize=11)
+    ax.set_ylabel('Energa (kWh) / Potencia (kW)', fontsize=11)
     ax.set_title('Perfil de Carga Diario - Escenario Recomendado', fontsize=13, fontweight='bold')
     ax.set_xlim(-0.5, 23.5)
     ax.set_xticks(range(24))
@@ -526,7 +567,7 @@ def generate_charger_plots(
     print("  [OK] Grafica: Perfil de Carga Diario")
     
     # ===========================================================
-    # Gráfica 3: Comparación de Escenarios (PE x FC)
+    # Grifica 3: Comparacin de Escenarios (PE x FC)
     # ===========================================================
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
     
@@ -544,37 +585,37 @@ def generate_charger_plots(
     cbar = plt.colorbar(im, ax=ax1)
     cbar.set_label('Cargadores')
     
-    # Distribución de cargadores
+    # Distribucin de cargadores
     ax2 = axes[1]
     ax2.hist(df_scenarios['chargers_required'], bins=20, color='steelblue', 
              edgecolor='white', alpha=0.7)
     ax2.axvline(x=esc_rec['chargers_required'], color='red', linestyle='--', 
                 linewidth=2, label=f'Recomendado: {int(esc_rec["chargers_required"])}')
-    ax2.set_xlabel('Número de Cargadores', fontsize=10)
+    ax2.set_xlabel('Nmero de Cargadores', fontsize=10)
     ax2.set_ylabel('Frecuencia', fontsize=10)
-    ax2.set_title('Distribución de Cargadores por Escenario', fontsize=11, fontweight='bold')
+    ax2.set_title('Distribucin de Cargadores por Escenario', fontsize=11, fontweight='bold')
     ax2.legend()
     
-    plt.suptitle('Análisis de Escenarios de Dimensionamiento', fontsize=13, fontweight='bold')
+    plt.suptitle('Anilisis de Escenarios de Dimensionamiento', fontsize=13, fontweight='bold')
     plt.tight_layout()
     save_plot('chargers_analisis_escenarios.png')
     plt.close()
     print("  [OK] Grafica: Analisis de Escenarios")
     
     # ===========================================================
-    # Gráfica 4: Resumen del Sistema de Carga
+    # Grifica 4: Resumen del Sistema de Carga
     # ===========================================================
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     
-    # Panel 1: Energía diaria por escenario
+    # Panel 1: Energa diaria por escenario
     ax1 = axes[0, 0]
     ax1.scatter(df_scenarios['pe'] * df_scenarios['fc'], df_scenarios['energy_day_kwh'],
                 alpha=0.5, c='steelblue', s=50)
     ax1.axhline(y=esc_rec['energy_day_kwh'], color='red', linestyle='--', 
                 label=f'Recomendado: {esc_rec["energy_day_kwh"]:.0f} kWh')
-    ax1.set_xlabel('PE × FC', fontsize=10)
-    ax1.set_ylabel('Energía Diaria (kWh)', fontsize=10)
-    ax1.set_title('Energía Diaria vs Factor Combinado', fontsize=11, fontweight='bold')
+    ax1.set_xlabel('PE u FC', fontsize=10)
+    ax1.set_ylabel('Energa Diaria (kWh)', fontsize=10)
+    ax1.set_title('Energa Diaria vs Factor Combinado', fontsize=11, fontweight='bold')
     ax1.legend()
     ax1.grid(True, alpha=0.3)
     
@@ -592,16 +633,16 @@ def generate_charger_plots(
     ax3.axis('off')
     
     summary_data = [
-        ['Parámetro', 'Mínimo', 'Recomendado', 'Máximo'],
+        ['Parimetro', 'Mnimo', 'Recomendado', 'Miximo'],
         ['Cargadores', f'{df_scenarios["chargers_required"].min():.0f}', 
          f'{esc_rec["chargers_required"]:.0f}', f'{df_scenarios["chargers_required"].max():.0f}'],
         ['Sockets', f'{df_scenarios["sockets_total"].min():.0f}',
          f'{esc_rec["sockets_total"]:.0f}', f'{df_scenarios["sockets_total"].max():.0f}'],
-        ['Energía/día (kWh)', f'{df_scenarios["energy_day_kwh"].min():.0f}',
+        ['Energa/da (kWh)', f'{df_scenarios["energy_day_kwh"].min():.0f}',
          f'{esc_rec["energy_day_kwh"]:.0f}', f'{df_scenarios["energy_day_kwh"].max():.0f}'],
-        ['Motos/día', f'{df_scenarios["vehicles_day_motos"].min():.0f}',
+        ['Motos/da', f'{df_scenarios["vehicles_day_motos"].min():.0f}',
          f'{esc_rec["vehicles_day_motos"]:.0f}', f'{df_scenarios["vehicles_day_motos"].max():.0f}'],
-        ['Mototaxis/día', f'{df_scenarios["vehicles_day_mototaxis"].min():.0f}',
+        ['Mototaxis/da', f'{df_scenarios["vehicles_day_mototaxis"].min():.0f}',
          f'{esc_rec["vehicles_day_mototaxis"]:.0f}', f'{df_scenarios["vehicles_day_mototaxis"].max():.0f}'],
     ]
     
@@ -628,15 +669,15 @@ def generate_charger_plots(
         if pk:
             bars[i].set_color('orange')
     
-    ax4.set_xlabel('Hora del Día', fontsize=10)
+    ax4.set_xlabel('Hora del Da', fontsize=10)
     ax4.set_ylabel('Potencia (kW)', fontsize=10)
     ax4.set_title('Perfil de Potencia Horario', fontsize=11, fontweight='bold')
     ax4.set_xticks(range(0, 24, 2))
     
-    # Estadísticas
+    # Estadsticas
     total_energy = profile['energy_kwh'].sum()
     peak_power = profile['power_kw'].max()
-    ax4.annotate(f'Energía total: {total_energy:.0f} kWh\nPotencia pico: {peak_power:.0f} kW',
+    ax4.annotate(f'Energa total: {total_energy:.0f} kWh\nPotencia pico: {peak_power:.0f} kW',
                  xy=(0.98, 0.95), xycoords='axes fraction', ha='right', va='top',
                  fontsize=9, bbox=dict(boxstyle='round', facecolor='lightyellow'))
     
@@ -666,6 +707,10 @@ def run_charger_sizing(
     sockets_per_charger: int,
     opening_hour: int,
     closing_hour: int,
+    km_per_kwh: float,
+    km_per_gallon: float,
+    kgco2_per_gallon: float,
+    grid_carbon_kg_per_kwh: float,
     peak_hours: List[int],
     n_scenarios: int = 100,
     generate_plots: bool = True,
@@ -674,49 +719,57 @@ def run_charger_sizing(
     """
     Orquesta el proceso completo de dimensionamiento de cargadores EV Modo 3.
 
-    Esta función ejecuta los siguientes pasos:
-    1.  Calcula la demanda de la flota de vehículos eléctricos (motos y mototaxis).
-    2.  Evalúa un escenario de dimensionamiento principal basado en los parámetros
-        de entrada (PE, FC, etc.) para establecer una recomendación.
-    3.  Realiza un análisis de sensibilidad generando múltiples escenarios aleatorios
+    Esta funcin ejecuta los siguientes pasos:
+    1.  Calcula la demanda de la flota de vehculos elctricos (motos y mototaxis).
+    2.  Evala un escenario de dimensionamiento principal basado en los parimetros
+        de entrada (PE, FC, etc.) para establecer una recomendacin.
+    3.  Realiza un anilisis de sensibilidad generando mltiples escenarios aleatorios
         de PE (Probabilidad de Evento) y FC (Factor de Carga).
-    4.  Determina los escenarios de mínimo y máximo requerimiento de cargadores.
+    4.  Determina los escenarios de mnimo y miximo requerimiento de cargadores.
     5.  Construye y exporta el perfil de carga horario para el escenario recomendado.
     6.  Prepara y guarda los datos de cargadores individuales para su uso en
         simulaciones con CityLearn.
-    7.  Genera un conjunto de gráficas y reportes visuales si se solicita.
+    7.  Genera un conjunto de grificas y reportes visuales si se solicita.
     8.  Guarda todos los resultados, incluyendo dataframes y metadatos, en el
         directorio de salida.
 
     Args:
         out_dir: Directorio para guardar todos los artefactos generados.
-        seed: Semilla para la generación de números aleatorios, asegurando
+        seed: Semilla para la generacin de nmeros aleatorios, asegurando
               reproducibilidad.
-        n_motos: Número total de motos en la flota.
-        n_mototaxis: Número total de mototaxis en la flota.
-        pe_motos: Probabilidad de que una moto necesite cargar en un día (0-1).
+        n_motos: Nmero total de motos en la flota.
+        n_mototaxis: Nmero total de mototaxis en la flota.
+        pe_motos: Probabilidad de que una moto necesite cargar en un da (0-1).
         pe_mototaxis: Probabilidad de que un mototaxi necesite cargar (0-1).
-        fc_motos: Factor de carga promedio para motos (% de batería a recargar).
+        fc_motos: Factor de carga promedio para motos (% de batera a recargar).
         fc_mototaxis: Factor de carga promedio para mototaxis.
-        peak_share_day: Porcentaje de la energía diaria que se consume en horas pico.
-        session_minutes: Duración estimada de una sesión de carga en minutos.
-        utilization: Factor de utilización de los cargadores (0-1).
+        peak_share_day: Porcentaje de la energa diaria que se consume en horas pico.
+        session_minutes: Duracin estimada de una sesin de carga en minutos.
+        utilization: Factor de utilizacin de los cargadores (0-1).
         charger_power_kw_moto: Potencia del cargador para motos (kW).
         charger_power_kw_mototaxi: Potencia del cargador para mototaxis (kW).
-        sockets_per_charger: Número de tomas por cada cargador.
+        sockets_per_charger: Nmero de tomas por cada cargador.
         opening_hour: Hora de apertura del centro de carga.
         closing_hour: Hora de cierre del centro de carga.
+        km_per_kwh: Eficiencia elxctrica (km recorridos por kWh).
+        km_per_gallon: Eficiencia de referencia de gasolina (km por galxn).
+        kgco2_per_gallon: Emisiones de CO2 por galxn de gasolina.
+        grid_carbon_kg_per_kwh: Factor de emisixn de la red (kgCO2/kWh).
         peak_hours: Lista de horas consideradas como pico.
-        n_scenarios: Número de escenarios a generar para el análisis de sensibilidad.
-        generate_plots: Si es `True`, genera y guarda las gráficas de análisis.
-        reports_dir: Directorio opcional para guardar las gráficas en una estructura
+        n_scenarios: Nmero de escenarios a generar para el anilisis de sensibilidad.
+        generate_plots: Si es `True`, genera y guarda las grificas de anilisis.
+        reports_dir: Directorio opcional para guardar las grificas en una estructura
                      de reportes.
 
     Returns:
         Un diccionario que resume los resultados clave del dimensionamiento,
-        incluyendo el número de cargadores recomendados, la energía diaria,
+        incluyendo el nmero de cargadores recomendados, la energa diaria,
         potencia pico y rutas a los archivos generados.
     """
+    if out_dir.exists():
+        shutil.rmtree(out_dir)
+    if out_dir.exists():
+        shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     
     # Calcular potencia total instalada
@@ -724,7 +777,7 @@ def run_charger_sizing(
     potencia_instalada_mototaxis = n_mototaxis * charger_power_kw_mototaxi
     potencia_total_instalada = potencia_instalada_motos + potencia_instalada_mototaxis
     
-    # Vehículos efectivos que cargan
+    # Vehculos efectivos que cargan
     motos_efectivas = n_motos * pe_motos
     mototaxis_efectivas = n_mototaxis * pe_mototaxis
     
@@ -734,21 +787,21 @@ def run_charger_sizing(
     print(f"\n[+] Flota de vehiculos:")
     print(f"   Motos: {n_motos:,} (PE={pe_motos:.0%}, FC={fc_motos:.0%})")
     print(f"   Mototaxis: {n_mototaxis:,} (PE={pe_mototaxis:.0%}, FC={fc_mototaxis:.0%})")
-    print(f"   Motos efectivas/día: {motos_efectivas:,.0f}")
-    print(f"   Mototaxis efectivas/día: {mototaxis_efectivas:,.0f}")
+    print(f"   Motos efectivas/da: {motos_efectivas:,.0f}")
+    print(f"   Mototaxis efectivas/da: {mototaxis_efectivas:,.0f}")
     print(f"\n[+] Configuracion de carga Modo 3:")
     print(f"   Potencia cargador motos: {charger_power_kw_moto} kW")
     print(f"   Potencia cargador mototaxis: {charger_power_kw_mototaxi} kW")
     print(f"   Sockets por cargador: {sockets_per_charger}")
-    print(f"   Duración sesión: {session_minutes} min")
+    print(f"   Duracin sesin: {session_minutes} min")
     print(f"   Horario mall: {opening_hour}:00 - {closing_hour}:00")
     print(f"   Horas pico: {peak_hours} ({len(peak_hours)} horas)")
     print(f"\n[+] Demanda Total Instalada:")
-    print(f"   Motos:     {n_motos:,} × {charger_power_kw_moto} kW = {potencia_instalada_motos:,.0f} kW")
-    print(f"   Mototaxis: {n_mototaxis:,} × {charger_power_kw_mototaxi} kW = {potencia_instalada_mototaxis:,.0f} kW")
+    print(f"   Motos:     {n_motos:,} u {charger_power_kw_moto} kW = {potencia_instalada_motos:,.0f} kW")
+    print(f"   Mototaxis: {n_mototaxis:,} u {charger_power_kw_mototaxi} kW = {potencia_instalada_mototaxis:,.0f} kW")
     print(f"   TOTAL:     {potencia_total_instalada:,.0f} kW")
 
-    # Evaluar escenario con los parámetros dados
+    # Evaluar escenario con los parimetros dados
     print(f"\n[+] Evaluando escenario con PE y FC configurados...")
     
     res = evaluate_scenario(
@@ -770,7 +823,7 @@ def run_charger_sizing(
     # Usar el resultado como escenario recomendado
     esc_rec = pd.Series(res.__dict__)
     
-    # También generar escenarios adicionales para análisis de sensibilidad
+    # Tambin generar escenarios adicionales para anilisis de sensibilidad
     pe_list, fc_list = generate_random_scenarios(seed=seed, n_scenarios=n_scenarios)
     rows = []
     scenario_results: List[ChargerSizingResult] = []
@@ -800,17 +853,17 @@ def run_charger_sizing(
     except (IOError, OSError) as e:
         print(f"   [ERROR] No se pudo guardar el archivo de escenarios: {e}")
 
-    # Seleccionar escenarios min/max para comparación
+    # Seleccionar escenarios min/max para comparacin
     esc_min = df.sort_values("chargers_required", ascending=True).iloc[0]
     esc_max = df.sort_values("chargers_required", ascending=False).iloc[0]
     
     print(f"\n[+] Resultado del dimensionamiento:")
     print(f"   RECOMENDADO: {int(esc_rec['chargers_required'])} cargadores")
     print(f"   Sesiones/hora pico: {esc_rec['peak_sessions_per_hour']:.0f}")
-    print(f"   Energía diaria: {esc_rec['energy_day_kwh']:.0f} kWh")
-    print(f"\n   Análisis de sensibilidad:")
-    print(f"   Mínimo:      {int(esc_min['chargers_required'])} cargadores (PE={esc_min['pe']:.2f}, FC={esc_min['fc']:.2f})")
-    print(f"   Máximo:      {int(esc_max['chargers_required'])} cargadores (PE={esc_max['pe']:.2f}, FC={esc_max['fc']:.2f})")
+    print(f"   Energa diaria: {esc_rec['energy_day_kwh']:.0f} kWh")
+    print(f"\n   Anilisis de sensibilidad:")
+    print(f"   Mnimo:      {int(esc_min['chargers_required'])} cargadores (PE={esc_min['pe']:.2f}, FC={esc_min['fc']:.2f})")
+    print(f"   Miximo:      {int(esc_max['chargers_required'])} cargadores (PE={esc_max['pe']:.2f}, FC={esc_max['fc']:.2f})")
 
     # Exportar perfiles horarios para cada escenario (incluye recomendado)
     variant_dir = out_dir / "charger_profile_variants"
@@ -858,14 +911,36 @@ def run_charger_sizing(
     except (IOError, OSError) as e:
         print(f"   [ERROR] No se pudo guardar el perfil de carga horario: {e}")
     
-    # Estadísticas de vehículos
-    print(f"\n[+] Vehiculos a cargar (Escenario Recomendado):")
+
+    # Estadisticas de vehiculos y capacidad
+    print("\n[+] Vehiculos a cargar (Escenario Recomendado):")
     print(f"   Diario:  {int(esc_rec['vehicles_day_motos']):,} motos + {int(esc_rec['vehicles_day_mototaxis']):,} mototaxis")
     print(f"   Mensual: {int(esc_rec['vehicles_month_motos']):,} motos + {int(esc_rec['vehicles_month_mototaxis']):,} mototaxis")
     print(f"   Anual:   {int(esc_rec['vehicles_year_motos']):,} motos + {int(esc_rec['vehicles_year_mototaxis']):,} mototaxis")
-    
+
+    capacity = compute_capacity_metrics(
+        chargers=int(esc_rec['chargers_required']),
+        sockets_per_charger=sockets_per_charger,
+        session_minutes=session_minutes,
+        opening_hour=opening_hour,
+        closing_hour=closing_hour,
+    )
+    print(f"   Capacidad hora pico: {capacity['sessions_per_hour_capacity']:.0f} sesiones/h")
+    print(f"   Capacidad diaria:    {capacity['sessions_per_day_capacity']:.0f} sesiones/dia")
+
+    co2_metrics = compute_co2_reduction(
+        energy_day_kwh=float(esc_rec['energy_day_kwh']),
+        grid_carbon_kg_per_kwh=float(grid_carbon_kg_per_kwh),
+        km_per_kwh=float(km_per_kwh),
+        km_per_gallon=float(km_per_gallon),
+        kgco2_per_gallon=float(kgco2_per_gallon),
+    )
+    print(f"   CO2 gasolina (dia): {co2_metrics['co2_gas_kg_day']:.1f} kg")
+    print(f"   CO2 electrico (dia): {co2_metrics['co2_ev_kg_day']:.1f} kg")
+    print(f"   Reduccion (dia):     {co2_metrics['co2_reduction_kg_day']:.1f} kg")
+
     # Crear cargadores individuales para CityLearn
-    n_chargers_rec = esc_rec['chargers_required']
+    n_chargers_rec = int(round(esc_rec['chargers_required']))
     avg_charger_power = esc_rec['charger_power_kw']  # Potencia promedio ponderada
     individual_chargers = create_individual_chargers(
         n_chargers=n_chargers_rec,
@@ -908,7 +983,7 @@ def run_charger_sizing(
     except (IOError, OSError) as e:
         print(f"   [ERROR] No se pudo guardar el archivo de perfiles horarios por cargador: {e}")
     
-    # Generar gráficas
+    # Generar grificas
     if generate_plots:
         print("\n[+] Generando graficas...")
         generate_charger_plots(df, esc_rec, profile, out_dir, reports_dir=reports_dir)
@@ -938,6 +1013,13 @@ def run_charger_sizing(
         "n_chargers_recommended": n_chargers_rec,
         "total_daily_energy_kwh": profile['energy_kwh'].sum(),
         "peak_power_kw": profile['power_kw'].max(),
+        "capacity_sessions_per_hour": capacity["sessions_per_hour_capacity"],
+        "capacity_sessions_per_day": capacity["sessions_per_day_capacity"],
+        "demand_sessions_per_day": float(esc_rec["vehicles_day_motos"] + esc_rec["vehicles_day_mototaxis"]),
+        "co2_gas_kg_day": co2_metrics["co2_gas_kg_day"],
+        "co2_ev_kg_day": co2_metrics["co2_ev_kg_day"],
+        "co2_reduction_kg_day": co2_metrics["co2_reduction_kg_day"],
+        "co2_reduction_kg_year": co2_metrics["co2_reduction_kg_year"],
         # Demanda total instalada
         "n_motos": n_motos,
         "n_mototaxis": n_mototaxis,

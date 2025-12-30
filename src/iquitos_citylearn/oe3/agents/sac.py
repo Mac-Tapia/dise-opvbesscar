@@ -12,6 +12,16 @@ from ..progress import append_progress_row
 logger = logging.getLogger(__name__)
 
 
+def _progress_pct(current: int, total: int) -> Optional[float]:
+    """Calcula avance porcentual, devuelve None si no es calculable."""
+    if total is None or total <= 0:
+        return None
+    try:
+        return round(100.0 * float(current) / float(total), 1)
+    except Exception:
+        return None
+
+
 def detect_device() -> str:
     """Auto-detecta el mejor dispositivo disponible (CUDA/MPS/CPU)."""
     try:
@@ -297,7 +307,17 @@ class SACAgent:
             train_env = _TerminateOnTruncate(self.env)
 
         progress_path = Path(self.config.progress_path) if self.config.progress_path else None
-        progress_headers = ("timestamp", "agent", "episode", "episode_reward", "episode_length", "global_step")
+        if progress_path is not None and progress_path.exists():
+            progress_path.unlink()
+        progress_headers = (
+            "timestamp",
+            "agent",
+            "episode",
+            "episode_reward",
+            "episode_length",
+            "global_step",
+            "progress_pct",
+        )
         progress_interval_steps = int(self.config.log_interval or 0)
         progress_interval_episodes = int(self.config.progress_interval_episodes or 0)
 
@@ -328,7 +348,9 @@ class SACAgent:
                     self.episode += 1
                     self.episode_steps = 0
                     self.episode_reward = 0.0
-                    logger.info("[SAC] ep %d/%d iniciado", self.episode, self.total_episodes)
+                    pct = _progress_pct(self.episode, self.total_episodes)
+                    pct_str = f" ({pct:.1f}%)" if pct is not None else ""
+                    logger.info("[SAC] ep %d/%d%s iniciado", self.episode, self.total_episodes, pct_str)
                     return obs, info
 
                 def __getattr__(self, name: str):
@@ -356,6 +378,7 @@ class SACAgent:
                         if self.progress_interval_episodes > 0 and (
                             self.episode % self.progress_interval_episodes == 0
                         ):
+                            pct = _progress_pct(self.episode, self.total_episodes)
                             row = {
                                 "timestamp": datetime.utcnow().isoformat(),
                                 "agent": "sac",
@@ -363,13 +386,17 @@ class SACAgent:
                                 "episode_reward": self.episode_reward,
                                 "episode_length": self.episode_steps,
                                 "global_step": self.global_steps,
+                                "progress_pct": pct,
                             }
                             if self.progress_path is not None:
                                 append_progress_row(self.progress_path, row, self.progress_headers)
+                        pct = _progress_pct(self.episode, self.total_episodes)
+                        pct_str = f" ({pct:.1f}%)" if pct is not None else ""
                         logger.info(
-                            "[SAC] ep %d/%d terminado reward=%.4f pasos=%d",
+                            "[SAC] ep %d/%d%s terminado reward=%.4f pasos=%d",
                             self.episode,
                             self.total_episodes,
+                            pct_str,
                             self.episode_reward,
                             self.episode_steps,
                         )
@@ -517,7 +544,17 @@ class SACAgent:
         )
         
         progress_path = Path(self.config.progress_path) if self.config.progress_path else None
-        progress_headers = ("timestamp", "agent", "episode", "episode_reward", "episode_length", "global_step")
+        if progress_path is not None and progress_path.exists():
+            progress_path.unlink()
+        progress_headers = (
+            "timestamp",
+            "agent",
+            "episode",
+            "episode_reward",
+            "episode_length",
+            "global_step",
+            "progress_pct",
+        )
         expected_episodes = int(total_timesteps // 8760) if total_timesteps > 0 else 0
 
         class TrainingCallback(BaseCallback):
@@ -538,10 +575,13 @@ class SACAgent:
                     return True
                 if self.log_interval_steps > 0 and self.n_calls % self.log_interval_steps == 0:
                     approx_episode = max(1, int(self.model.num_timesteps // 8760) + 1)
+                    pct = _progress_pct(approx_episode, self.expected_episodes)
+                    pct_str = f" ({pct:.1f}%)" if pct is not None else ""
                     logger.info(
-                        "[SAC] paso %d | ep~%d | pasos_global=%d",
+                        "[SAC] paso %d | ep~%d%s | pasos_global=%d",
                         self.n_calls,
                         approx_episode,
+                        pct_str,
                         int(self.model.num_timesteps),
                     )
                     if self.progress_path is not None:
@@ -552,6 +592,7 @@ class SACAgent:
                             "episode_reward": "",
                             "episode_length": "",
                             "global_step": int(self.model.num_timesteps),
+                            "progress_pct": pct,
                         }
                         append_progress_row(self.progress_path, row, self.progress_headers)
                 for info in infos:
@@ -568,6 +609,7 @@ class SACAgent:
                     if self.agent.config.progress_interval_episodes > 0 and (
                         self.episode_count % self.agent.config.progress_interval_episodes == 0
                     ):
+                        pct = _progress_pct(self.episode_count, self.expected_episodes)
                         row = {
                             "timestamp": datetime.utcnow().isoformat(),
                             "agent": "sac",
@@ -575,14 +617,16 @@ class SACAgent:
                             "episode_reward": reward,
                             "episode_length": length,
                             "global_step": int(self.model.num_timesteps),
+                            "progress_pct": pct,
                         }
                         if self.progress_path is not None:
                             append_progress_row(self.progress_path, row, self.progress_headers)
                         if self.expected_episodes > 0:
                             logger.info(
-                                "[SAC] ep %d/%d reward=%.4f len=%d step=%d",
+                                "[SAC] ep %d/%d (%.1f%%) reward=%.4f len=%d step=%d",
                                 self.episode_count,
                                 self.expected_episodes,
+                                pct if pct is not None else 0.0,
                                 reward,
                                 length,
                                 int(self.model.num_timesteps),
