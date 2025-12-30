@@ -108,10 +108,4 @@ Deployment.pdf
 REPORTE_CUMPLIMIENTO.json
 extract_refs.txt
 
-# Temporary utility files
-tmp*.py
-co2_calc.py
-extract_pages.py
-extract_refs.py
-find_*.py
-make_summary_doc.py
+
