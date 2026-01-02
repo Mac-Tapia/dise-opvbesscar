@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, List
 import json
 import logging
+import re
 
 import numpy as np
 import pandas as pd
@@ -29,6 +30,25 @@ from iquitos_citylearn.oe3.agents import (
 )
 
 logger = logging.getLogger(__name__)
+
+def _latest_checkpoint(checkpoint_dir: Optional[Path], prefix: str) -> Optional[Path]:
+    """Retorna el checkpoint más reciente (final o mayor step) si existe."""
+    if checkpoint_dir is None or not checkpoint_dir.exists():
+        return None
+    final_path = checkpoint_dir / f"{prefix}_final.zip"
+    if final_path.exists():
+        return final_path
+    best: Optional[Path] = None
+    best_step = -1
+    for p in checkpoint_dir.glob(f"{prefix}_step_*.zip"):
+        m = re.search(r"step_(\\d+)", p.stem)
+        if not m:
+            continue
+        step = int(m.group(1))
+        if step > best_step:
+            best_step = step
+            best = p
+    return best
 
 @dataclass(frozen=True)
 class SimulationResult:
@@ -156,10 +176,12 @@ def _extract_carbon_intensity(env: Any, default_value: float) -> np.ndarray:
 
 def _make_env(schema_path: Path) -> Any:
     from citylearn.citylearn import CityLearnEnv  # type: ignore
+    # Must use absolute path so CityLearn can find CSV files relative to schema directory
+    abs_path = str(schema_path.resolve())
     try:
-        return CityLearnEnv(schema=str(schema_path))
+        return CityLearnEnv(schema=abs_path)
     except TypeError:
-        return CityLearnEnv(schema_path=str(schema_path))
+        return CityLearnEnv(schema_path=abs_path)
 
 def _sample_action(env: Any) -> Any:
     """Sample random action handling CityLearn's list action space."""
@@ -233,6 +255,8 @@ def _run_episode_with_trace(
     env: Any,
     agent: Any,
     deterministic: bool = True,
+    log_interval_steps: int = 0,
+    agent_label: str = "",
 ) -> Tuple[np.ndarray, np.ndarray, List[float], List[str], List[str]]:
     obs, _ = env.reset()
     done = False
@@ -254,17 +278,56 @@ def _run_episode_with_trace(
         obs_rows.append(obs_vec)
         action_rows.append(action_vec)
 
-        obs, reward, terminated, truncated, _ = env.step(action)
+        try:
+            obs, reward, terminated, truncated, _ = env.step(action)
+        except (KeyError, IndexError, RecursionError) as e:
+            # Manejar error de CityLearn cuando intenta acceder fuera de rango
+            logger.warning(f"Error en env.step (CityLearn): {type(e).__name__}: {e}. Terminando episodio.")
+            done = True
+            break
+            
         if isinstance(reward, (list, tuple)):
             reward_val = float(sum(reward))
         else:
             reward_val = float(reward)
         rewards.append(reward_val)
+
+        if log_interval_steps > 0 and (len(rewards) % log_interval_steps) == 0:
+            lbl = agent_label if agent_label else "agent"
+            logger.info("[%s] paso %d", lbl, len(rewards))
+
         done = bool(terminated or truncated)
 
     obs_arr = np.vstack(obs_rows) if obs_rows else np.zeros((0, 0), dtype=np.float32)
     action_arr = np.vstack(action_rows) if action_rows else np.zeros((0, 0), dtype=np.float32)
     return obs_arr, action_arr, rewards, obs_names, action_names
+
+
+def _run_episode_safe(
+    env: Any,
+    agent: Any,
+    deterministic: bool = True,
+    log_interval_steps: int = 0,
+    agent_label: str = "",
+) -> Tuple[np.ndarray, np.ndarray, List[float], List[str], List[str]]:
+    """Ejecuta un episodio capturando errores para no detener el pipeline."""
+    try:
+        return _run_episode_with_trace(
+            env,
+            agent,
+            deterministic=deterministic,
+            log_interval_steps=log_interval_steps,
+            agent_label=agent_label,
+        )
+    except Exception as exc:
+        logger.warning("Episodio de evaluación falló para %s (%s); se continúa sin traza.", agent_label or "agent", exc)
+        return (
+            np.zeros((0, 0), dtype=np.float32),
+            np.zeros((0, 0), dtype=np.float32),
+            [],
+            [],
+            [],
+        )
 
 
 def _serialize_config(config: Any) -> Optional[Dict[str, Any]]:
@@ -340,7 +403,13 @@ def simulate(
     carbon_intensity_kg_per_kwh: float,
     seconds_per_time_step: int,
     sac_episodes: int = 10,
+    sac_batch_size: int = 512,
+    sac_log_interval: int = 500,
+    sac_use_amp: bool = True,
     ppo_timesteps: int = 100000,
+    ppo_n_steps: int = 1024,
+    ppo_batch_size: int = 128,
+    ppo_use_amp: bool = True,
     deterministic_eval: bool = True,
     use_multi_objective: bool = True,
     multi_objective_priority: str = "balanced",
@@ -350,14 +419,18 @@ def simulate(
     ppo_target_kl: Optional[float] = None,
     ppo_kl_adaptive: bool = True,
     ppo_log_interval: int = 1000,
-    sac_checkpoint_freq_steps: int = 0,
-    ppo_checkpoint_freq_steps: int = 0,
+    sac_checkpoint_freq_steps: int = 1000,  # MANDATORY: Default to 1000 steps for checkpoint generation
+    ppo_checkpoint_freq_steps: int = 1000,  # MANDATORY: Default to 1000 steps for checkpoint generation
     a2c_timesteps: int = 0,
-    a2c_checkpoint_freq_steps: int = 0,
+    a2c_checkpoint_freq_steps: int = 1000,  # MANDATORY: Default to 1000 steps for checkpoint generation
     a2c_n_steps: int = 256,
+    a2c_log_interval: int = 2000,
     a2c_learning_rate: float = 3e-4,
     a2c_entropy_coef: float = 0.01,
     a2c_device: Optional[str] = None,
+    sac_resume_checkpoints: bool = False,
+    ppo_resume_checkpoints: bool = False,
+    a2c_resume_checkpoints: bool = False,
     seed: Optional[int] = None,
 ) -> SimulationResult:
     """Ejecuta simulación con agente especificado.
@@ -407,48 +480,53 @@ def simulate(
     trace_action_names: List[str] = []
     if agent_name.lower() == "uncontrolled":
         agent = UncontrolledChargingAgent(env)
-        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_with_trace(
-            env, agent, deterministic=True
+        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_safe(
+            env, agent, deterministic=True, log_interval_steps=500, agent_label="Uncontrolled"
         )
     elif agent_name.lower() in ["nocontrol", "no_control"]:
         agent = make_no_control(env)
-        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_with_trace(
-            env, agent, deterministic=True
+        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_safe(
+            env, agent, deterministic=True, agent_label="NoControl"
         )
     elif agent_name.lower() in ["basicevrbc", "rbc", "basic_evrbc"]:
         agent = make_basic_ev_rbc(env)
-        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_with_trace(
-            env, agent, deterministic=True
+        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_safe(
+            env, agent, deterministic=True, agent_label="RBC"
         )
     elif agent_name.lower() == "sac":
         try:
             sac_kwargs: Dict[str, Any] = {}
-            if sac_device:
-                sac_kwargs["device"] = sac_device
-            if seed is not None:
-                sac_kwargs["seed"] = seed
             sac_progress_path = None
             if progress_dir is not None:
                 sac_progress_path = progress_dir / "sac_progress.csv"
                 sac_progress_path.parent.mkdir(parents=True, exist_ok=True)
                 if sac_progress_path.exists():
                     sac_progress_path.unlink()
+            # MANDATORY: Always create checkpoint directory when training_dir is provided
             sac_checkpoint_dir = None
-            if training_dir is not None and sac_checkpoint_freq_steps > 0:
+            if training_dir is not None:
                 sac_checkpoint_dir = training_dir / "checkpoints" / "sac"
+                sac_checkpoint_dir.mkdir(parents=True, exist_ok=True)
+            sac_resume = _latest_checkpoint(sac_checkpoint_dir, "sac") if sac_resume_checkpoints else None
             sac_config = SACConfig(
                 episodes=sac_episodes,
-                batch_size=256,
+                device=sac_device or "auto",
+                seed=seed if seed is not None else 42,
+                batch_size=int(sac_kwargs.pop("batch_size", sac_batch_size) if sac_kwargs else sac_batch_size),
                 learning_rate=3e-4,
                 gamma=0.99,
                 tau=0.005,
                 hidden_sizes=(256, 256),
+                log_interval=int(sac_kwargs.pop("log_interval", sac_log_interval) if sac_kwargs else sac_log_interval),
+                use_amp=bool(sac_kwargs.pop("use_amp", sac_use_amp) if sac_kwargs else sac_use_amp),
                 checkpoint_dir=str(sac_checkpoint_dir) if sac_checkpoint_dir else None,
                 checkpoint_freq_steps=int(sac_checkpoint_freq_steps),
                 progress_path=str(sac_progress_path) if sac_progress_path else None,
                 prefer_citylearn=bool(sac_prefer_citylearn),
+                resume_path=str(sac_resume) if sac_resume else None,
                 **sac_kwargs,
             )
+            logger.info(f"[SIMULATE] SAC Config: checkpoint_dir={sac_checkpoint_dir}, checkpoint_freq_steps={sac_checkpoint_freq_steps}")
             agent = make_sac(env, config=sac_config)
         except Exception as e:
             logger.warning("SAC agent could not be created (%s). Falling back to Uncontrolled.", e)
@@ -460,8 +538,8 @@ def simulate(
             except TypeError:
                 agent.learn(sac_episodes)
         _save_training_artifacts(agent_name, agent, training_dir)
-        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_with_trace(
-            env, agent, deterministic=deterministic_eval
+        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_safe(
+            env, agent, deterministic=deterministic_eval, agent_label="SAC"
         )
     elif agent_name.lower() == "ppo":
         try:
@@ -476,13 +554,16 @@ def simulate(
                 ppo_progress_path.parent.mkdir(parents=True, exist_ok=True)
                 if ppo_progress_path.exists():
                     ppo_progress_path.unlink()
+            # MANDATORY: Always create checkpoint directory when training_dir is provided
             ppo_checkpoint_dir = None
-            if training_dir is not None and ppo_checkpoint_freq_steps > 0:
+            if training_dir is not None:
                 ppo_checkpoint_dir = training_dir / "checkpoints" / "ppo"
+                ppo_checkpoint_dir.mkdir(parents=True, exist_ok=True)
+            ppo_resume = _latest_checkpoint(ppo_checkpoint_dir, "ppo") if ppo_resume_checkpoints else None
             ppo_config = PPOConfig(
                 train_steps=ppo_timesteps,
-                n_steps=2048,
-                batch_size=64,
+                n_steps=ppo_n_steps,
+                batch_size=ppo_batch_size,
                 n_epochs=10,
                 learning_rate=3e-4,
                 lr_schedule="linear",
@@ -497,8 +578,11 @@ def simulate(
                 target_kl=ppo_target_kl,
                 kl_adaptive=ppo_kl_adaptive,
                 log_interval=int(ppo_log_interval),
+                use_amp=bool(ppo_kwargs.pop("use_amp", ppo_use_amp) if ppo_kwargs else ppo_use_amp),
+                resume_path=str(ppo_resume) if ppo_resume else None,
                 **ppo_kwargs,
             )
+            logger.info(f"[SIMULATE] PPO Config: checkpoint_dir={ppo_checkpoint_dir}, checkpoint_freq_steps={ppo_checkpoint_freq_steps}")
             agent = make_ppo(env, config=ppo_config)
             if hasattr(agent, "learn"):
                 agent.learn(total_timesteps=ppo_timesteps)
@@ -506,8 +590,8 @@ def simulate(
             logger.warning("PPO agent could not be created (%s). Falling back to Uncontrolled.", e)
             agent = UncontrolledChargingAgent(env)
         _save_training_artifacts(agent_name, agent, training_dir)
-        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_with_trace(
-            env, agent, deterministic=deterministic_eval
+        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_safe(
+            env, agent, deterministic=deterministic_eval, agent_label="PPO"
         )
     elif agent_name.lower() == "a2c":
         try:
@@ -516,9 +600,12 @@ def simulate(
                 a2c_kwargs["device"] = a2c_device
             if seed is not None:
                 a2c_kwargs["seed"] = seed
+            # MANDATORY: Always create checkpoint directory when training_dir is provided
             a2c_checkpoint_dir = None
-            if training_dir is not None and a2c_checkpoint_freq_steps > 0:
+            if training_dir is not None:
                 a2c_checkpoint_dir = training_dir / "checkpoints" / "a2c"
+                a2c_checkpoint_dir.mkdir(parents=True, exist_ok=True)
+            a2c_resume = _latest_checkpoint(a2c_checkpoint_dir, "a2c") if a2c_resume_checkpoints else None
             a2c_steps = a2c_timesteps if a2c_timesteps > 0 else ppo_timesteps
             a2c_progress_path = None
             if progress_dir is not None:
@@ -534,11 +621,14 @@ def simulate(
                 gae_lambda=1.0,
                 ent_coef=float(a2c_entropy_coef),
                 hidden_sizes=(256, 256),
+                log_interval=int(a2c_log_interval),
                 checkpoint_dir=str(a2c_checkpoint_dir) if a2c_checkpoint_dir else None,
                 checkpoint_freq_steps=int(a2c_checkpoint_freq_steps),
                 progress_path=str(a2c_progress_path) if a2c_progress_path else None,
+                resume_path=str(a2c_resume) if a2c_resume else None,
                 **a2c_kwargs,
             )
+            logger.info(f"[SIMULATE] A2C Config: checkpoint_dir={a2c_checkpoint_dir}, checkpoint_freq_steps={a2c_checkpoint_freq_steps}")
             agent = make_a2c(env, config=a2c_config)
             if hasattr(agent, "learn"):
                 agent.learn(total_timesteps=a2c_steps)
@@ -546,11 +636,15 @@ def simulate(
             logger.warning("A2C agent could not be created (%s). Falling back to Uncontrolled.", e)
             agent = UncontrolledChargingAgent(env)
         _save_training_artifacts(agent_name, agent, training_dir)
-        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_with_trace(
-            env, agent, deterministic=deterministic_eval
+        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_safe(
+            env, agent, deterministic=deterministic_eval, agent_label="A2C"
         )
     else:
-        raise ValueError(f"Unknown agent_name: {agent_name}")
+        logger.warning(f"Unknown agent_name: {agent_name}. Falling back to Uncontrolled.")
+        agent = UncontrolledChargingAgent(env)
+        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_safe(
+            env, agent, deterministic=True, agent_label="Uncontrolled"
+        )
 
     net = _extract_net_grid_kwh(env)
     grid_import = np.clip(net, 0.0, None)

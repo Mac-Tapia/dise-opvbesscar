@@ -58,7 +58,7 @@ class MultiObjectiveWeights:
 class IquitosContext:
     """Contexto específico de Iquitos para cálculos multiobjetivo."""
     # Factor de emisión (central térmica aislada)
-    co2_factor_kg_per_kwh: float = 0.45
+    co2_factor_kg_per_kwh: float = 0.4521
     
     # Tarifa eléctrica
     tariff_usd_per_kwh: float = 0.20
@@ -97,7 +97,10 @@ class MultiObjectiveReward:
         weights: Optional[MultiObjectiveWeights] = None,
         context: Optional[IquitosContext] = None,
     ):
-        self.weights = weights or MultiObjectiveWeights()
+        # Forzar pesos uniformizados si no se pasan explícitos
+        if weights is None:
+            weights = MultiObjectiveWeights(co2=0.50, cost=0.15, solar=0.20, ev_satisfaction=0.10, grid_stability=0.05)
+        self.weights = weights
         self.context = context or IquitosContext()
         
         # Historial para normalización adaptativa

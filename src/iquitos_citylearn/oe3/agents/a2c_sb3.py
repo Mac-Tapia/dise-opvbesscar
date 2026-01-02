@@ -7,7 +7,7 @@ from typing import Any, Optional, Dict, List, Callable
 import numpy as np
 import logging
 
-from ..progress import append_progress_row
+from ..progress import append_progress_row, render_progress_plot
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ def detect_device() -> str:
 class A2CConfig:
     """Configuración para A2C (SB3) con soporte CUDA/GPU."""
     train_steps: int = 100000
-    n_steps: int = 256
+    n_steps: int = 512
     learning_rate: float = 3e-4
     lr_schedule: str = "constant"
     gamma: float = 0.99
@@ -46,12 +46,14 @@ class A2CConfig:
     device: str = "auto"
     seed: int = 42
     verbose: int = 0
-    log_interval: int = 1000
+    log_interval: int = 2000
     checkpoint_dir: Optional[str] = None
-    checkpoint_freq_steps: int = 0
+    checkpoint_freq_steps: int = 1000  # MANDATORY: Default to 1000 for checkpoint generation
     save_final: bool = True
     progress_path: Optional[str] = None
     progress_interval_episodes: int = 1
+    resume_path: Optional[str] = None  # Ruta a checkpoint SB3 para reanudar
+    reward_smooth_lambda: float = 0.0
 
 
 class A2CAgent:
@@ -85,33 +87,61 @@ class A2CAgent:
         steps = total_timesteps or self.config.train_steps
 
         class CityLearnWrapper(gym.Wrapper):
-            def __init__(self, env):
+            def __init__(self, env, smooth_lambda: float = 0.0):
                 super().__init__(env)
-                self._obs_dim = self._get_obs_dim()
-                self._act_dim = self._get_act_dim()
+                obs0, _ = self.env.reset()
+                obs0_flat = self._flatten(obs0)
+                self.obs_dim = len(obs0_flat)
+                self.act_dim = self._get_act_dim()
+                self._smooth_lambda = smooth_lambda
+                self._prev_action = None
 
                 self.observation_space = gym.spaces.Box(
-                    low=-np.inf, high=np.inf, shape=(self._obs_dim,), dtype=np.float32
+                    low=-np.inf, high=np.inf, shape=(self.obs_dim,), dtype=np.float32
                 )
                 self.action_space = gym.spaces.Box(
-                    low=-1.0, high=1.0, shape=(self._act_dim,), dtype=np.float32
+                    low=-1.0, high=1.0, shape=(self.act_dim,), dtype=np.float32
                 )
-
-            def _get_obs_dim(self):
-                obs, _ = self.env.reset()
-                return len(self._flatten(obs))
 
             def _get_act_dim(self):
                 if isinstance(self.env.action_space, list):
                     return sum(sp.shape[0] for sp in self.env.action_space)
                 return self.env.action_space.shape[0]
 
-            def _flatten(self, obs):
+            def _get_pv_bess_feats(self):
+                pv_kw = 0.0
+                soc = 0.0
+                try:
+                    t = getattr(self.env, "time_step", 0)
+                    buildings = getattr(self.env, "buildings", [])
+                    for b in buildings:
+                        sg = getattr(b, "solar_generation", None)
+                        if sg is not None and len(sg) > t:
+                            pv_kw += float(max(0.0, sg[t]))
+                        es = getattr(b, "electrical_storage", None)
+                        if es is not None:
+                            soc = float(getattr(es, "state_of_charge", soc))
+                except Exception:
+                    pass
+                return np.array([pv_kw, soc], dtype=np.float32)
+
+            def _flatten_base(self, obs):
                 if isinstance(obs, dict):
                     return np.concatenate([np.array(v, dtype=np.float32).ravel() for v in obs.values()])
                 if isinstance(obs, (list, tuple)):
                     return np.concatenate([np.array(o, dtype=np.float32).ravel() for o in obs])
                 return np.array(obs, dtype=np.float32).ravel()
+
+            def _flatten(self, obs):
+                base = self._flatten_base(obs)
+                feats = self._get_pv_bess_feats()
+                arr = np.concatenate([base, feats])
+                target = getattr(self, "obs_dim", arr.size)
+                if arr.size < target:
+                    arr = np.pad(arr, (0, target - arr.size), mode="constant")
+                elif arr.size > target:
+                    arr = arr[: target]
+                return arr.astype(np.float32)
 
             def _unflatten_action(self, action):
                 if isinstance(self.env.action_space, list):
@@ -139,9 +169,15 @@ class A2CAgent:
                 if isinstance(reward, (list, tuple)):
                     reward = sum(reward)
 
+                flat_action = np.array(action, dtype=np.float32).ravel()
+                if self._prev_action is not None and self._smooth_lambda > 0.0:
+                    delta = flat_action - self._prev_action
+                    reward -= float(self._smooth_lambda * np.linalg.norm(delta))
+                self._prev_action = flat_action
+
                 return self._flatten(obs), float(reward), terminated, truncated, info
 
-        self.wrapped_env = Monitor(CityLearnWrapper(self.env))
+        self.wrapped_env = Monitor(CityLearnWrapper(self.env, smooth_lambda=self.config.reward_smooth_lambda))
         vec_env = make_vec_env(lambda: self.wrapped_env, n_envs=1, seed=self.config.seed)
 
         lr_schedule = self._get_lr_schedule(steps)
@@ -151,21 +187,31 @@ class A2CAgent:
         }
 
         logger.info("Creando modelo A2C en dispositivo: %s", self.device)
-        self.model = A2C(
-            "MlpPolicy",
-            vec_env,
-            learning_rate=lr_schedule,
-            n_steps=int(self.config.n_steps),
-            gamma=self.config.gamma,
-            gae_lambda=self.config.gae_lambda,
-            ent_coef=self.config.ent_coef,
-            vf_coef=self.config.vf_coef,
-            max_grad_norm=self.config.max_grad_norm,
-            policy_kwargs=policy_kwargs,
-            verbose=self.config.verbose,
-            seed=self.config.seed,
-            device=self.device,
-        )
+        resume_path = Path(self.config.resume_path) if self.config.resume_path else None
+        resuming = resume_path is not None and resume_path.exists()
+        if resuming:
+            logger.info("Reanudando A2C desde checkpoint: %s", resume_path)
+            self.model = A2C.load(
+                str(resume_path),
+                env=vec_env,
+                device=self.device,
+            )
+        else:
+            self.model = A2C(
+                "MlpPolicy",
+                vec_env,
+                learning_rate=lr_schedule,
+                n_steps=int(self.config.n_steps),
+                gamma=self.config.gamma,
+                gae_lambda=self.config.gae_lambda,
+                ent_coef=self.config.ent_coef,
+                vf_coef=self.config.vf_coef,
+                max_grad_norm=self.config.max_grad_norm,
+                policy_kwargs=policy_kwargs,
+                verbose=self.config.verbose,
+                seed=self.config.seed,
+                device=self.device,
+            )
 
         progress_path = Path(self.config.progress_path) if self.config.progress_path else None
         progress_headers = ("timestamp", "agent", "episode", "episode_reward", "episode_length", "global_step")
@@ -229,6 +275,8 @@ class A2CAgent:
                         }
                         if self.progress_path is not None:
                             append_progress_row(self.progress_path, row, self.progress_headers)
+                            png_path = self.progress_path.with_suffix(".png")
+                            render_progress_plot(self.progress_path, png_path, "A2C progreso")
                         if self.expected_episodes > 0:
                             logger.info(
                                 "[A2C] ep %d/%d reward=%.4f len=%d step=%d",
@@ -250,25 +298,47 @@ class A2CAgent:
 
         checkpoint_dir = self.config.checkpoint_dir
         checkpoint_freq = int(self.config.checkpoint_freq_steps or 0)
+        logger.info(f"[A2C Checkpoint Config] dir={checkpoint_dir}, freq={checkpoint_freq}")
         if checkpoint_dir:
             Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
+            logger.info(f"[A2C] Checkpoint directory created: {checkpoint_dir}")
+        else:
+            logger.warning("[A2C] NO checkpoint directory configured!")
 
         class CheckpointCallback(BaseCallback):
             def __init__(self, save_dir: Optional[str], freq: int, verbose=0):
                 super().__init__(verbose)
                 self.save_dir = Path(save_dir) if save_dir else None
                 self.freq = freq
+                self.call_count = 0
+                logger.info(f"[A2C CheckpointCallback.__init__] save_dir={self.save_dir}, freq={self.freq}")
+                if self.save_dir and self.freq > 0:
+                    self.save_dir.mkdir(parents=True, exist_ok=True)
+                    logger.info(f"[A2C CheckpointCallback] Created directory: {self.save_dir}")
 
-            def _on_step(self):
+            def _on_step(self) -> bool:
+                self.call_count += 1
+                
+                if self.call_count == 1:
+                    logger.info(f"[A2C CheckpointCallback._on_step] FIRST CALL DETECTED! num_timesteps={self.num_timesteps}")
+                
+                if self.call_count % 100 == 0:
+                    logger.info(f"[A2C CheckpointCallback._on_step] call #{self.call_count}, num_timesteps={self.num_timesteps}")
+                
                 if self.save_dir is None or self.freq <= 0:
                     return True
-                if self.n_calls % self.freq == 0:
-                    save_path = self.save_dir / f"a2c_step_{self.n_calls}"
+                
+                # Use num_timesteps (total steps so far) instead of n_calls (rollout count)
+                should_save = (self.num_timesteps > 0 and self.num_timesteps % self.freq == 0)
+                if should_save:
+                    self.save_dir.mkdir(parents=True, exist_ok=True)
+                    save_path = self.save_dir / f"a2c_step_{self.num_timesteps}"
                     try:
                         self.model.save(save_path)
-                        logger.info("Checkpoint A2C guardado en %s", save_path)
+                        logger.info(f"[A2C CHECKPOINT OK] Saved: {save_path}")
                     except Exception as exc:
-                        logger.warning("No se pudo guardar checkpoint A2C (%s)", exc)
+                        logger.error(f"[A2C CHECKPOINT ERROR] {exc}", exc_info=True)
+                
                 return True
 
         callback = CallbackList([
@@ -276,7 +346,13 @@ class A2CAgent:
             CheckpointCallback(checkpoint_dir, checkpoint_freq),
         ])
 
-        self.model.learn(total_timesteps=int(steps), callback=callback)
+        logger.info("[A2C] Starting model.learn() with callbacks")
+        self.model.learn(
+            total_timesteps=int(steps),
+            callback=callback,
+            reset_num_timesteps=not resuming,
+        )
+        logger.info("[A2C] model.learn() completed successfully")
         self._trained = True
         logger.info("A2C entrenado con %d timesteps", steps)
 
@@ -284,9 +360,17 @@ class A2CAgent:
             final_path = Path(checkpoint_dir) / "a2c_final"
             try:
                 self.model.save(final_path)
-                logger.info("Modelo A2C guardado en %s", final_path)
+                logger.info("[A2C FINAL OK] Modelo guardado en %s", final_path)
             except Exception as exc:
-                logger.warning("No se pudo guardar modelo A2C (%s)", exc)
+                logger.error("[A2C FINAL ERROR] %s", exc, exc_info=True)
+        
+        # MANDATORY: Verify checkpoints were created
+        if checkpoint_dir:
+            checkpoint_path = Path(checkpoint_dir)
+            zips = list(checkpoint_path.glob("*.zip"))
+            logger.info(f"[A2C VERIFICATION] Checkpoints created: {len(zips)} files")
+            for z in sorted(zips)[:5]:
+                logger.info(f"  - {z.name} ({z.stat().st_size / 1024:.1f} KB)")
 
     def _get_lr_schedule(self, total_steps: int) -> Callable:
         from stable_baselines3.common.utils import get_linear_fn
@@ -316,15 +400,48 @@ class A2CAgent:
             return self._zero_action()
 
         obs = self._flatten_obs(observations)
+        # Ajustar a la dimensión esperada por el modelo
+        try:
+            target_dim = int(self.model.observation_space.shape[0])
+            if obs.size < target_dim:
+                obs = np.pad(obs, (0, target_dim - obs.size), mode="constant")
+            elif obs.size > target_dim:
+                obs = obs[:target_dim]
+            obs = obs.astype(np.float32)
+        except Exception:
+            pass
         action, _ = self.model.predict(obs, deterministic=deterministic)
         return self._unflatten_action(action)
 
     def _flatten_obs(self, obs):
         if isinstance(obs, dict):
-            return np.concatenate([np.array(v, dtype=np.float32).ravel() for v in obs.values()])
-        if isinstance(obs, (list, tuple)):
-            return np.concatenate([np.array(o, dtype=np.float32).ravel() for o in obs])
-        return np.array(obs, dtype=np.float32).ravel()
+            arr = np.concatenate([np.array(v, dtype=np.float32).ravel() for v in obs.values()])
+        elif isinstance(obs, (list, tuple)):
+            arr = np.concatenate([np.array(o, dtype=np.float32).ravel() for o in obs])
+        else:
+            arr = np.array(obs, dtype=np.float32).ravel()
+        target_dim = None
+        # Priorizar el espacio de obs del modelo SB3 si existe
+        try:
+            if self._model is not None and hasattr(self._model, "observation_space"):
+                space = self._model.observation_space
+                if space is not None and hasattr(space, "shape") and space.shape:
+                    target_dim = int(space.shape[0])
+        except Exception:
+            target_dim = None
+        if target_dim is None:
+            try:
+                space = getattr(self.env, "observation_space", None)
+                if space is not None and hasattr(space, "shape") and space.shape:
+                    target_dim = int(space.shape[0])
+            except Exception:
+                target_dim = None
+        if target_dim is not None:
+            if arr.size < target_dim:
+                arr = np.pad(arr, (0, target_dim - arr.size), mode="constant")
+            elif arr.size > target_dim:
+                arr = arr[:target_dim]
+        return arr.astype(np.float32)
 
     def _unflatten_action(self, action):
         if isinstance(self.env.action_space, list):
@@ -360,5 +477,15 @@ class A2CAgent:
 
 
 def make_a2c(env: Any, config: Optional[A2CConfig] = None, **kwargs) -> A2CAgent:
-    cfg = config or A2CConfig(**kwargs) if kwargs else A2CConfig()
+    """Factory function para crear agente A2C robusto."""
+    # FIX CRÍTICO: Evaluación explícita para evitar bug con kwargs={}
+    if config is not None:
+        cfg = config
+        logger.info(f"[make_a2c] Using provided config: checkpoint_dir={cfg.checkpoint_dir}, checkpoint_freq_steps={cfg.checkpoint_freq_steps}")
+    elif kwargs:
+        cfg = A2CConfig(**kwargs)
+        logger.info(f"[make_a2c] Created A2CConfig from kwargs: checkpoint_dir={cfg.checkpoint_dir}")
+    else:
+        cfg = A2CConfig()
+        logger.info(f"[make_a2c] Created default A2CConfig: checkpoint_dir={cfg.checkpoint_dir}")
     return A2CAgent(env, cfg)

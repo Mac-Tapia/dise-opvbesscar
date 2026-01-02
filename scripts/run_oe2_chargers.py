@@ -27,6 +27,8 @@ def main() -> None:
 
     out_dir = rp.interim_dir / "oe2" / "chargers"
     ev = cfg["oe2"]["ev_fleet"]
+    emissions = cfg["oe3"]["emissions"]
+    grid_ci = float(cfg["oe3"]["grid"]["carbon_intensity_kg_per_kwh"])
     seed = int(cfg["project"]["seed"])
 
     result = run_charger_sizing(
@@ -46,6 +48,10 @@ def main() -> None:
         sockets_per_charger=int(ev["sockets_per_charger"]),
         opening_hour=int(ev["opening_hour"]),
         closing_hour=int(ev["closing_hour"]),
+        km_per_kwh=float(emissions["km_per_kwh"]),
+        km_per_gallon=float(emissions["km_per_gallon"]),
+        kgco2_per_gallon=float(emissions["kgco2_per_gallon"]),
+        grid_carbon_kg_per_kwh=grid_ci,
         peak_hours=list(ev["peak_hours"]),
         n_scenarios=100,
         generate_plots=not args.no_plots,

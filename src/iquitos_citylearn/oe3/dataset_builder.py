@@ -236,16 +236,18 @@ def build_citylearn_dataset(
         solar_params = artifacts["solar_params"]
         pv_params = solar_params.get("pv") or solar_params.get("photovoltaic") or {}
         pv_dc_kw = float(pv_params.get("nominal_power", pv_dc_kw))
-        logger.info(f"Usando parámetros solares de OE2: {pv_dc_kw} kWp")
+        logger.info(f"Usando parametros solares de OE2: {pv_dc_kw} kWp")
     
-    if "bess_params" in artifacts:
+    # Preferir resultados BESS actualizados; si no existen, usar parámetros del schema
+    if "bess" in artifacts:
+        bess_cap = float(artifacts["bess"].get("capacity_kwh", 0.0))
+        bess_pow = float(artifacts["bess"].get("nominal_power_kw", 0.0))
+        logger.info(f"Usando resultados BESS de OE2: {bess_cap} kWh, {bess_pow} kW")
+    elif "bess_params" in artifacts:
         bess_params = artifacts["bess_params"]
         bess_cap = float(bess_params.get("electrical_storage", {}).get("capacity", 0.0))
         bess_pow = float(bess_params.get("electrical_storage", {}).get("nominal_power", 0.0))
-        logger.info(f"Usando parámetros BESS de OE2: {bess_cap} kWh, {bess_pow} kW")
-    elif "bess" in artifacts:
-        bess_cap = float(artifacts["bess"].get("capacity_kwh", 0.0))
-        bess_pow = float(artifacts["bess"].get("nominal_power_kw", 0.0))
+        logger.info(f"Usando parametros BESS de OE2 (schema): {bess_cap} kWh, {bess_pow} kW")
 
     # Heuristic update for device keys
     if isinstance(b, dict):
@@ -289,102 +291,106 @@ def build_citylearn_dataset(
                     b["electrical_storage"]["attributes"]["nominal_power"] = bess_pow
             logger.info(f"Actualizado electrical_storage: {bess_cap} kWh, {bess_pow} kW (root + attributes)")
 
-    # === CREAR CHARGERS DESDE OE2 (31 chargers x 4 sockets = 124 sockets) ===
+    # === CREAR CHARGERS DESDE OE2 (usando chargers_citylearn per-toma) ===
     if "chargers_results" in artifacts:
         chargers_cfg = artifacts["chargers_results"]
-        n_chargers = int(chargers_cfg.get("n_chargers_recommended", 31))
-        sockets_per_charger = int(chargers_cfg.get("esc_rec", {}).get("sockets_per_charger", 4))
-        charger_power = float(chargers_cfg.get("esc_rec", {}).get("charger_power_kw", 2.14))
-        total_power_per_charger = charger_power * sockets_per_charger  # ~8.5 kW por cargador
-        total_sockets = n_chargers * sockets_per_charger
+        citylearn_path = chargers_cfg.get("chargers_citylearn_path")
+        chargers_df = None
+        if citylearn_path and Path(citylearn_path).exists():
+            chargers_df = pd.read_csv(citylearn_path)
+        elif "chargers_citylearn_path" in chargers_cfg:
+            alt = Path(chargers_cfg["chargers_citylearn_path"])
+            if alt.exists():
+                chargers_df = pd.read_csv(alt)
 
-        # Asegurar definiciones EV que coincidan con los IDs del charger_simulation.
-        ev_defs: Dict[str, Any] = {}
-        if isinstance(electric_vehicles_def, dict):
-            ev_defs = json.loads(json.dumps(electric_vehicles_def))
+        if chargers_df is not None and not chargers_df.empty:
+            # Cada fila es una toma controlable
+            total_devices = len(chargers_df)
+            # Asegurar definiciones EV que coincidan con los IDs del charger_simulation.
+            ev_defs: Dict[str, Any] = {}
+            if isinstance(electric_vehicles_def, dict):
+                ev_defs = json.loads(json.dumps(electric_vehicles_def))
 
-        base_ev_def = None
-        if ev_defs:
-            base_ev_def = next(iter(ev_defs.values()))
-        else:
-            base_ev_def = {
-                "include": True,
-                "battery": {
-                    "type": "citylearn.energy_model.Battery",
-                    "autosize": False,
-                    "attributes": {
-                        "capacity": 40,
-                        "nominal_power": 50,
-                        "initial_soc": 0.25,
-                        "depth_of_discharge": 0.85,
+            base_ev_def = None
+            if ev_defs:
+                base_ev_def = next(iter(ev_defs.values()))
+            else:
+                base_ev_def = {
+                    "include": True,
+                    "battery": {
+                        "type": "citylearn.energy_model.Battery",
+                        "autosize": False,
+                        "attributes": {
+                            "capacity": 40,
+                            "nominal_power": 50,
+                            "initial_soc": 0.25,
+                            "depth_of_discharge": 0.85,
+                        },
                     },
-                },
-            }
-
-        ev_names = [f"EV_Mall_{i}" for i in range(1, total_sockets + 1)]
-        ev_defs = {name: json.loads(json.dumps(base_ev_def)) for name in ev_names}
-        schema["electric_vehicles_def"] = ev_defs
-        
-        # Obtener charger template del building si existe
-        existing_chargers = b.get("chargers", {})
-        charger_template = None
-        if existing_chargers:
-            charger_template = list(existing_chargers.values())[0]
-        
-        # Crear n_chargers controlables por agentes (cada uno con 4 sockets)
-        new_chargers = {}
-        for i in range(1, n_chargers + 1):
-            charger_name = f"charger_mall_{i}"
-            charger_csv = f"{charger_name}.csv"
-            
-            if charger_template:
-                # Copiar template y actualizar
-                new_charger = json.loads(json.dumps(charger_template))
-                new_charger["charger_simulation"] = charger_csv
-            else:
-                # Crear charger desde cero con 4 sockets
-                new_charger = {
-                    "type": "citylearn.electric_vehicle_charger.Charger",
-                    "charger_simulation": charger_csv,
-                    "autosize": False,
-                    "active": True,  # Controlable por agentes
-                    "attributes": {
-                        "nominal_power": total_power_per_charger,
-                        "efficiency": 0.95,
-                        "charger_type": 0,  # 0 = Level 2
-                        "max_charging_power": total_power_per_charger,
-                        "min_charging_power": 0.5,
-                        "num_sockets": sockets_per_charger,  # 4 tomas por cargador
-                    }
                 }
-            
-            # Asegurar que es controlable y tiene la potencia correcta
-            new_charger["active"] = True
-            if "attributes" in new_charger:
-                new_charger["attributes"]["nominal_power"] = total_power_per_charger
-                new_charger["attributes"]["max_charging_power"] = total_power_per_charger
-                new_charger["attributes"]["num_sockets"] = sockets_per_charger
-            else:
-                new_charger["nominal_power"] = total_power_per_charger
-                new_charger["max_charging_power"] = total_power_per_charger
-                new_charger["num_sockets"] = sockets_per_charger
-            
-            new_chargers[charger_name] = new_charger
-        
-        b["chargers"] = new_chargers
-        
-        # Habilitar acciones de EV charging para control por agentes
-        inactive_actions = b.get("inactive_actions", [])
-        # Remover acciones de EV de inactive (para que sean controlables)
-        ev_actions = ["electric_vehicle_storage", "electric_vehicle_charger"]
-        for ev_act in ev_actions:
-            if ev_act in inactive_actions:
-                inactive_actions.remove(ev_act)
-        b["inactive_actions"] = inactive_actions
-        
-        logger.info(f"Creados {n_chargers} chargers de {total_power_per_charger:.2f} kW ({sockets_per_charger} sockets x {charger_power:.2f} kW)")
-        logger.info(f"Potencia total instalada: {n_chargers * total_power_per_charger:.1f} kW")
-        logger.info(f"Total sockets: {n_chargers * sockets_per_charger}")
+
+            ev_names = [f"EV_Mall_{i}" for i in range(1, total_devices + 1)]
+            ev_defs = {name: json.loads(json.dumps(base_ev_def)) for name in ev_names}
+            schema["electric_vehicles_def"] = ev_defs
+
+            existing_chargers = b.get("chargers", {})
+            charger_template = None
+            if existing_chargers:
+                charger_template = list(existing_chargers.values())[0]
+
+            new_chargers: Dict[str, Any] = {}
+            for idx, row in chargers_df.iterrows():
+                charger_name = str(row.get("charger_id", f"charger_mall_{idx+1}"))
+                power_kw = float(row.get("power_kw", 2.0))
+                sockets = int(row.get("sockets", 1)) if row.get("sockets", 1) else 1
+                charger_csv = f"{charger_name}.csv"
+
+                if charger_template:
+                    new_charger = json.loads(json.dumps(charger_template))
+                    new_charger["charger_simulation"] = charger_csv
+                else:
+                    new_charger = {
+                        "type": "citylearn.electric_vehicle_charger.Charger",
+                        "charger_simulation": charger_csv,
+                        "autosize": False,
+                        "active": True,
+                        "attributes": {
+                            "nominal_power": power_kw * sockets,
+                            "efficiency": 0.95,
+                            "charger_type": 0,
+                            "max_charging_power": power_kw * sockets,
+                            "min_charging_power": 0.5,
+                            "num_sockets": sockets,
+                        }
+                    }
+
+                new_charger["active"] = True
+                if "attributes" in new_charger:
+                    new_charger["attributes"]["nominal_power"] = power_kw * sockets
+                    new_charger["attributes"]["max_charging_power"] = power_kw * sockets
+                    new_charger["attributes"]["num_sockets"] = sockets
+                else:
+                    new_charger["nominal_power"] = power_kw * sockets
+                    new_charger["max_charging_power"] = power_kw * sockets
+                    new_charger["num_sockets"] = sockets
+
+                new_chargers[charger_name] = new_charger
+
+            b["chargers"] = new_chargers
+
+            inactive_actions = b.get("inactive_actions", [])
+            ev_actions = ["electric_vehicle_storage", "electric_vehicle_charger"]
+            for ev_act in ev_actions:
+                if ev_act in inactive_actions:
+                    inactive_actions.remove(ev_act)
+            b["inactive_actions"] = inactive_actions
+
+            total_power = sum((row.get("power_kw", 2.0) * (row.get("sockets", 1) or 1)) for _, row in chargers_df.iterrows())
+            logger.info(f"Creados {total_devices} chargers (tomas individuales) desde chargers_citylearn.csv")
+            logger.info(f"Potencia total instalada: {total_power:.1f} kW")
+            logger.info(f"Total sockets: {total_devices}")
+        else:
+            logger.warning("No se pudo leer chargers_citylearn.csv; se mantiene la configuración existente.")
 
     if "charger_profile_variants" in artifacts:
         variant_meta = artifacts["charger_profile_variants"]
@@ -648,6 +654,11 @@ def build_citylearn_dataset(
             "electric_vehicle_estimated_soc_arrival": arr_soc,
         }
     )
+    
+    # Agregar una fila adicional al final para evitar indexación fuera de rango
+    # CityLearn intenta acceder a t+1 en el último timestep
+    last_row = charger_df.iloc[-1:].copy()
+    charger_df = pd.concat([charger_df, last_row], ignore_index=True)
 
     # === GENERAR CSVs PARA TODOS LOS CHARGERS DE OE2 ===
     n_chargers_oe2 = 31  # default
@@ -672,8 +683,10 @@ def build_citylearn_dataset(
             # Usar vectorización en lugar de bucle for (mucho más rápido)
             secondary_df = charger_df.copy()
             # Crear máscara para filas que deben estar desconectadas
-            t_arr = np.arange(len(secondary_df))
+            t_arr = np.arange(len(secondary_df) - 1)  # Excluir la fila adicional
             mask = ((t_arr // 2) % 2) == (charger_idx % 2)
+            # Extender mask para incluir la última fila
+            mask = np.concatenate([mask, [mask[-1] if len(mask) > 0 else False]])
             secondary_df.loc[mask, "electric_vehicle_charger_state"] = 3
             secondary_df.loc[mask, "electric_vehicle_id"] = np.nan
             secondary_df.loc[mask, "electric_vehicle_departure_time"] = np.nan
@@ -692,12 +705,12 @@ def build_citylearn_dataset(
         else:
             # Charger sin EV conectado (state=3, todo NaN)
             disconnected_df = pd.DataFrame({
-                "electric_vehicle_charger_state": np.full(n, 3, dtype=int),
-                "electric_vehicle_id": np.full(n, np.nan, dtype=object),
-                "electric_vehicle_departure_time": np.full(n, np.nan, dtype=float),
-                "electric_vehicle_required_soc_departure": np.full(n, np.nan, dtype=float),
-                "electric_vehicle_estimated_arrival_time": arr_time,
-                "electric_vehicle_estimated_soc_arrival": arr_soc,
+                "electric_vehicle_charger_state": np.full(n+1, 3, dtype=int),
+                "electric_vehicle_id": np.full(n+1, np.nan, dtype=object),
+                "electric_vehicle_departure_time": np.full(n+1, np.nan, dtype=float),
+                "electric_vehicle_required_soc_departure": np.full(n+1, np.nan, dtype=float),
+                "electric_vehicle_estimated_arrival_time": np.concatenate([arr_time, [arr_time[-1]]]),
+                "electric_vehicle_estimated_soc_arrival": np.concatenate([arr_soc, [arr_soc[-1]]]),
             })
             disconnected_df.to_csv(cp, index=False)
 

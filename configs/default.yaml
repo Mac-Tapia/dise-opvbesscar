@@ -1,8 +1,7 @@
 project:
   seed: 42
-  year: 2024  # Año de simulación (TMY)
+  year: 2024
   seconds_per_time_step: 3600
-
 paths:
   raw_dir: data/raw
   interim_dir: data/interim
@@ -10,7 +9,6 @@ paths:
   reports_dir: reports
   outputs_dir: outputs
   analyses_dir: analyses
-
 oe1:
   site:
     name: Mall de Iquitos
@@ -23,118 +21,155 @@ oe1:
     vehicles_peak_motos: 900
     vehicles_peak_mototaxis: 130
     dwell_hours_min: 4.0
-    access_notes: "Acceso vial y seguridad verificados en visita de campo."
-    security_notes: "Zona de estacionamiento con vigilancia."
-    restrictions_notes: "Sombras puntuales por equipos; sin arbolado alto."
+    access_notes: Acceso vial y seguridad verificados en visita de campo.
+    security_notes: Zona de estacionamiento con vigilancia.
+    restrictions_notes: Sombras puntuales por equipos; sin arbolado alto.
   grid_connection:
-    continuity: "sistema aislado termico"
+    continuity: sistema aislado termico
     power_factor: 0.95
     available_capacity_kva: null
-
 oe2:
   location:
     lat: -3.75
     lon: -73.25
-    alt: 104.0  # Altitud de Iquitos en metros
+    alt: 104.0
     tz: America/Lima
-
   mall:
     energy_kwh_day: 9202.4
     shape_24h: null
-
   solar:
-    # Capacidades base (Tabla 19 - 4.6.3) escaladas contra la energía objetivo real.
-    target_ac_kw: 3201.2  # Potencia AC nominal
-    target_dc_kw: 4162.0  # Potencia DC nominal
-    target_annual_kwh: 3972478  # Energía anual objetivo (kWh)
+    target_ac_kw: 3201.2
+    target_dc_kw: 4162.0
+    target_annual_kwh: 3972478
     use_pvlib: true
     scale_to_target_annual: true
-
-    # Parámetros Sandia para el diseño en Iquitos
     area_total_m2: 20637.0
     factor_diseno: 0.65
     surface_tilt: 10.0
     surface_azimuth: 0.0
-
-    # Componentes preseleccionados (referencia tesis)
-    module_name: SunPower_SPR_315E_WHT__2007__E__
-    inverter_name: Sungrow_Power_Supply_Co___Ltd___SG2500U__550V_
+    module_name: Kyocera_Solar_KS20__2008__E__
+    inverter_name: Eaton__Xpert1670
     selection_mode: auto_top5
     candidate_count: 5
     selection_metric: energy_per_m2
-
   ev_fleet:
     motos_count: 900
     mototaxis_count: 130
-    pe_motos: 1.00  # PE=100% según escenario recomendado
-    pe_mototaxis: 1.00
-    fc_motos: 1.00  # FC=100% en hora punta
-    fc_mototaxis: 1.00
-    daily_sessions_factor: 2.0
+    pe_motos: 0.9
+    pe_mototaxis: 0.9
+    fc_motos: 0.9
+    fc_mototaxis: 0.9
+    daily_sessions_factor: 1.0
     opening_hour: 9
-    closing_hour: 22
-    peak_hours: [18, 19, 20, 21]
-    peak_share_day: 0.50
-    session_minutes: 25
+    closing_hour: 21
+    peak_hours:
+      - 18
+      - 19
+      - 20
+      - 21
+    peak_share_day: 0.5
+    session_minutes: 30
     utilization: 0.92
     charger_power_kw_moto: 2.0
     charger_power_kw_mototaxi: 3.0
     sockets_per_charger: 4
-
   bess:
-    dod: 0.90
-    c_rate: 0.50
+    dod: 0.8
+    c_rate: 0.6
     efficiency_roundtrip: 0.95
-    round_kwh: 10
+    round_kwh: 100
     autonomy_hours: 4.0
-    sizing_mode: surplus_only
-    min_soc_percent: 10
-    load_scope: total
-    discharge_only_ev_hours: false
-    discharge_only_no_solar: false
+    sizing_mode: fixed
+    surplus_target_kwh_day: 0
+    min_soc_percent: 20
+    load_scope: ev_only
+    discharge_only_ev_hours: true
+    discharge_only_no_solar: true
     pv_night_threshold_kwh: 0.1
-
+    fixed_capacity_kwh: 2000
+    fixed_power_kw: 1200
 oe3:
   dataset:
     template_name: citylearn_challenge_2022_phase_all_plus_evs
     name: iquitos_ev_mall
     central_agent: true
-
   grid:
-    carbon_intensity_kg_per_kwh: 0.45
-    tariff_usd_per_kwh: 0.20
-
+    carbon_intensity_kg_per_kwh: 0.4521
+    tariff_usd_per_kwh: 0.2
   evaluation:
-    agents: ["SAC", "PPO", "A2C"]
+    agents:
+      - Uncontrolled
+      - SAC
+      - PPO
+      - A2C
+    resume_checkpoints: false
+    # Fijar pesos únicos para todos los agentes
+    multi_objective_priority: co2_focus
     sac:
-      episodes: 2
+      episodes: 5
+      resume_checkpoints: true
       deterministic_eval: true
       device: cuda
-      checkpoint_freq_steps: 8760
+      batch_size: 1024
+      log_interval: 500
+      use_amp: true
+      checkpoint_freq_steps: 1000
+      progress_interval_episodes: 1
+      save_final: true
       prefer_citylearn: false
+      reward_smooth_lambda: 0.01
+      # Pesos de recompensa (se mantienen igual en todos los perfiles)
+      multi_objective_weights:
+        co2: 0.50
+        cost: 0.15
+        solar: 0.20
+        ev: 0.10
+        grid: 0.05
     ppo:
-      episodes: 2
-      timesteps: 17520
-      checkpoint_freq_steps: 8760
+      episodes: 5
+      resume_checkpoints: true
+      timesteps: 43800
+      n_steps: 2048
+      batch_size: 128
+      use_amp: true
+      log_interval: 2000
+      checkpoint_freq_steps: 1000
+      progress_interval_episodes: 1
+      save_final: true
       device: cuda
       target_kl: 0.015
       kl_adaptive: true
-      log_interval: 1000
+      reward_smooth_lambda: 0.01
+      multi_objective_weights:
+        co2: 0.50
+        cost: 0.15
+        solar: 0.20
+        ev: 0.10
+        grid: 0.05
     a2c:
-      episodes: 2
-      timesteps: 17520
-      n_steps: 256
+      episodes: 5
+      resume_checkpoints: true
+      timesteps: 43800
+      n_steps: 1024
       learning_rate: 0.0003
       entropy_coef: 0.01
-      checkpoint_freq_steps: 8760
+      log_interval: 2000
+      checkpoint_freq_steps: 1000
+      progress_interval_episodes: 1
+      save_final: true
       device: cuda
-
+      reward_smooth_lambda: 0.01
+      multi_objective_weights:
+        co2: 0.50
+        cost: 0.15
+        solar: 0.20
+        ev: 0.10
+        grid: 0.05
   emissions:
     km_per_kwh: 35.0
     km_per_gallon: 120.0
     kgco2_per_gallon: 8.9
     project_life_years: 20
-
   city_baseline_tpy:
     transport: 258250.0
     electricity_generation: 275000.0
