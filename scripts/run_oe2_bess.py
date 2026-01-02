@@ -35,7 +35,7 @@ def main() -> None:
     # Rutas de entrada
     pv_profile_path = rp.interim_dir / "oe2" / "solar" / "pv_profile_24h.csv"
     ev_profile_path = rp.interim_dir / "oe2" / "chargers" / "perfil_horario_carga.csv"
-    demand_dir = rp.interim_dir / "oe2" / "demandamall"
+    demand_dir = rp.interim_dir / "oe2" / "demandamallkwh"
     mall_demand_candidates = [
         demand_dir / "demandamallkwh.csv",
         demand_dir / "demanda_mall_kwh.csv",
@@ -68,15 +68,18 @@ def main() -> None:
         autonomy_hours=float(bess_cfg.get("autonomy_hours", 4.0)),
         pv_dc_kw=float(solar_cfg["target_dc_kw"]),
         tz=str(location_cfg.get("tz")) if location_cfg.get("tz") else None,
-        sizing_mode=str(bess_cfg.get("sizing_mode", "max")),
+        sizing_mode=str(bess_cfg.get("sizing_mode", "ev_open_hours")),
         soc_min_percent=soc_min_percent,
         load_scope=str(bess_cfg.get("load_scope", "total")),
         discharge_hours=discharge_hours,
         discharge_only_no_solar=discharge_only_no_solar,
         pv_night_threshold_kwh=pv_night_threshold_kwh,
+        surplus_target_kwh_day=float(bess_cfg.get("surplus_target_kwh_day", 0) or 0),
         year=year,
         generate_plots=not args.no_plots,
         reports_dir=rp.reports_dir,
+        fixed_capacity_kwh=float(bess_cfg.get("fixed_capacity_kwh", 0) or 0),
+        fixed_power_kw=float(bess_cfg.get("fixed_power_kw", 0) or 0),
     )
     
     # Mostrar resumen

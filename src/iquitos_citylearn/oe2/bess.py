@@ -219,7 +219,8 @@ def load_ev_demand(ev_profile_path: Path, year: int = 2024) -> pd.DataFrame:
 
 def simulate_bess_operation(
     pv_kwh: np.ndarray,
-    load_kwh: np.ndarray,
+    ev_kwh: np.ndarray,
+    mall_kwh: np.ndarray,
     capacity_kwh: float,
     power_kw: float,
     dod: float,
@@ -228,15 +229,15 @@ def simulate_bess_operation(
     soc_min: Optional[float] = None,
     discharge_hours: Optional[set[int]] = None,
     hours: Optional[np.ndarray] = None,
+    discharge_to_mall: bool = True,
 ) -> Tuple[pd.DataFrame, Dict[str, float]]:
     """
-    Simula la operacion del BESS hora a hora.
-
-    Estrategia:
-    - Cargar bateria cuando hay excedente PV
-    - Descargar bateria cuando hay deficit (demanda > PV)
-    - Importar de red cuando BESS no puede cubrir deficit
-    - Exportar a red cuando BESS esta lleno y hay excedente
+    Simula la operacion del BESS hora a hora con cargas separadas (EV y mall) y prioridad:
+    1) PV -> EV
+    2) PV -> BESS (carga)
+    3) PV -> Mall
+    4) Sobrante PV -> export
+    5) Deficit -> descarga BESS (primero EV; opcional mall), luego import.
     """
     n_hours = len(pv_kwh)
 
@@ -251,28 +252,43 @@ def simulate_bess_operation(
     soc = np.zeros(n_hours)
     bess_charge = np.zeros(n_hours)
     bess_discharge = np.zeros(n_hours)
-    grid_import = np.zeros(n_hours)
+    grid_import_ev = np.zeros(n_hours)
+    grid_import_mall = np.zeros(n_hours)
     grid_export = np.zeros(n_hours)
+    pv_used_ev = np.zeros(n_hours)
+    pv_used_mall = np.zeros(n_hours)
 
     if capacity_kwh <= 0 or power_kw <= 0:
-        grid_import = np.maximum(load_kwh - pv_kwh, 0)
-        grid_export = np.maximum(pv_kwh - load_kwh, 0)
+        # Sin BESS: PV a EV primero, luego mall; resto export/import
+        pv_to_ev = np.minimum(pv_kwh, ev_kwh)
+        pv_after_ev = pv_kwh - pv_to_ev
+        pv_to_mall = np.minimum(pv_after_ev, mall_kwh)
+        pv_used_ev = pv_to_ev
+        pv_used_mall = pv_to_mall
+        grid_export = np.maximum(pv_after_ev - pv_to_mall, 0)
+        short_ev = ev_kwh - pv_to_ev
+        short_mall = mall_kwh - pv_to_mall
+        grid_import_ev = np.maximum(short_ev, 0)
+        grid_import_mall = np.maximum(short_mall, 0)
         soc = np.full(n_hours, initial_soc if capacity_kwh > 0 else 0.0)
         df = pd.DataFrame({
             'hour': np.arange(n_hours) % 24,
             'pv_kwh': pv_kwh,
-            'load_kwh': load_kwh,
-            'net_balance_kwh': pv_kwh - load_kwh,
+            'ev_kwh': ev_kwh,
+            'mall_kwh': mall_kwh,
+            'pv_used_ev_kwh': pv_used_ev,
+            'pv_used_mall_kwh': pv_used_mall,
             'bess_charge_kwh': bess_charge,
             'bess_discharge_kwh': bess_discharge,
-            'grid_import_kwh': grid_import,
+            'grid_import_ev_kwh': grid_import_ev,
+            'grid_import_mall_kwh': grid_import_mall,
             'grid_export_kwh': grid_export,
             'soc_percent': soc * 100,
             'soc_kwh': soc * capacity_kwh,
         })
         total_pv = float(pv_kwh.sum())
-        total_load = float(load_kwh.sum())
-        total_grid_import = float(grid_import.sum())
+        total_load = float(ev_kwh.sum() + mall_kwh.sum())
+        total_grid_import = float(grid_import_ev.sum() + grid_import_mall.sum())
         total_grid_export = float(grid_export.sum())
         metrics = {
             'total_pv_kwh': total_pv,
@@ -281,6 +297,10 @@ def simulate_bess_operation(
             'total_grid_export_kwh': total_grid_export,
             'total_bess_charge_kwh': 0.0,
             'total_bess_discharge_kwh': 0.0,
+            'pv_used_ev_kwh': float(pv_used_ev.sum()),
+            'pv_used_mall_kwh': float(pv_used_mall.sum()),
+            'grid_import_ev_kwh': float(grid_import_ev.sum()),
+            'grid_import_mall_kwh': float(grid_import_mall.sum()),
             'self_sufficiency': 1.0 - (total_grid_import / max(total_load, 1e-9)),
             'cycles_per_day': 0.0,
             'soc_min_percent': float(soc.min() * 100) if n_hours > 0 else 0.0,
@@ -291,65 +311,79 @@ def simulate_bess_operation(
     current_soc = initial_soc
 
     for h in range(n_hours):
-        net_balance = pv_kwh[h] - load_kwh[h]
+        hour = int(hours[h]) if hours is not None else int(h % 24)
 
-        if net_balance > 0:
-            energy_available = net_balance
+        # Paso 1: PV -> EV
+        pv_to_ev = min(pv_kwh[h], ev_kwh[h])
+        pv_used_ev[h] = pv_to_ev
+        remaining_pv = pv_kwh[h] - pv_to_ev
 
-            soc_headroom = soc_max - current_soc
-            max_charge_soc = soc_headroom * capacity_kwh
-            max_charge_power = power_kw
-            max_charge = min(max_charge_soc, max_charge_power, energy_available)
+        # Paso 2: PV -> BESS (carga)
+        soc_headroom = soc_max - current_soc
+        max_charge_soc = soc_headroom * capacity_kwh
+        max_charge_power = power_kw
+        max_charge = min(max_charge_soc, max_charge_power, remaining_pv)
+        actual_charge = max_charge * eff_charge
+        bess_charge[h] = max_charge
+        current_soc += actual_charge / capacity_kwh
+        remaining_pv -= max_charge
 
-            actual_charge = max_charge * eff_charge
-            bess_charge[h] = max_charge
-            current_soc += actual_charge / capacity_kwh
+        # Paso 3: PV -> Mall
+        pv_to_mall = min(remaining_pv, mall_kwh[h])
+        pv_used_mall[h] = pv_to_mall
+        remaining_pv -= pv_to_mall
 
-            remaining = energy_available - max_charge
-            grid_export[h] = remaining
-        else:
-            energy_needed = abs(net_balance)
+        # Export si aún sobra PV
+        grid_export[h] = max(remaining_pv, 0.0)
 
-            allow_discharge = True
-            if discharge_hours is not None:
-                hour = int(hours[h]) if hours is not None else int(h % 24)
-                allow_discharge = hour in discharge_hours
+        # Déficits EV y Mall tras PV
+        ev_deficit = ev_kwh[h] - pv_to_ev
+        mall_deficit = mall_kwh[h] - pv_to_mall
 
-            if not allow_discharge:
-                grid_import[h] = energy_needed
-                soc[h] = current_soc
-                continue
-
+        # Paso 4: Descarga BESS para EV (y opcional Mall)
+        allow_discharge = True
+        if discharge_hours is not None:
+            allow_discharge = hour in discharge_hours
+        if allow_discharge:
             soc_available = max(current_soc - soc_min, 0.0)
             max_discharge_soc = soc_available * capacity_kwh
             max_discharge_power = power_kw
-            max_discharge = min(max_discharge_soc, max_discharge_power, energy_needed / eff_discharge)
-
+            energy_needed = ev_deficit + (mall_deficit if discharge_to_mall else 0.0)
+            max_discharge = min(max_discharge_soc, max_discharge_power, energy_needed / eff_discharge if energy_needed>0 else 0.0)
             actual_discharge = max_discharge * eff_discharge
-            bess_discharge[h] = actual_discharge
+            # Priorizar EV en la descarga
+            ev_cover = min(actual_discharge, ev_deficit)
+            mall_cover = actual_discharge - ev_cover if discharge_to_mall else 0.0
+            ev_deficit -= ev_cover
+            mall_deficit -= mall_cover
+            bess_discharge[h] = ev_cover + mall_cover
             current_soc -= max_discharge / capacity_kwh
 
-            remaining = energy_needed - actual_discharge
-            grid_import[h] = remaining
+        # Paso 5: Importar lo que falte
+        grid_import_ev[h] = max(ev_deficit, 0.0)
+        grid_import_mall[h] = max(mall_deficit, 0.0)
 
         soc[h] = current_soc
 
     df = pd.DataFrame({
         'hour': np.arange(n_hours) % 24,
         'pv_kwh': pv_kwh,
-        'load_kwh': load_kwh,
-        'net_balance_kwh': pv_kwh - load_kwh,
+        'ev_kwh': ev_kwh,
+        'mall_kwh': mall_kwh,
+        'pv_used_ev_kwh': pv_used_ev,
+        'pv_used_mall_kwh': pv_used_mall,
         'bess_charge_kwh': bess_charge,
         'bess_discharge_kwh': bess_discharge,
-        'grid_import_kwh': grid_import,
+        'grid_import_ev_kwh': grid_import_ev,
+        'grid_import_mall_kwh': grid_import_mall,
         'grid_export_kwh': grid_export,
         'soc_percent': soc * 100,
         'soc_kwh': soc * capacity_kwh,
     })
 
     total_pv = float(pv_kwh.sum())
-    total_load = float(load_kwh.sum())
-    total_grid_import = float(grid_import.sum())
+    total_load = float(ev_kwh.sum() + mall_kwh.sum())
+    total_grid_import = float(grid_import_ev.sum() + grid_import_mall.sum())
     total_grid_export = float(grid_export.sum())
     total_bess_charge = float(bess_charge.sum())
     total_bess_discharge = float(bess_discharge.sum())
@@ -365,6 +399,10 @@ def simulate_bess_operation(
         'total_grid_export_kwh': total_grid_export,
         'total_bess_charge_kwh': total_bess_charge,
         'total_bess_discharge_kwh': total_bess_discharge,
+        'pv_used_ev_kwh': float(pv_used_ev.sum()),
+        'pv_used_mall_kwh': float(pv_used_mall.sum()),
+        'grid_import_ev_kwh': float(grid_import_ev.sum()),
+        'grid_import_mall_kwh': float(grid_import_mall.sum()),
         'self_sufficiency': self_sufficiency,
         'cycles_per_day': cycles_per_day,
         'soc_min_percent': float(soc.min() * 100),
@@ -382,7 +420,9 @@ def calculate_bess_capacity(
     autonomy_hours: float = 4.0,
     peak_load_kw: float = 0.0,
     round_kwh: float = 10.0,
-    sizing_mode: str = "max",
+    sizing_mode: str = "ev_open_hours",
+    fixed_capacity_kwh: float = 0.0,
+    fixed_power_kw: float = 0.0,
 ) -> Tuple[float, float]:
     """
     Calcula la capacidad optima del BESS.
@@ -391,15 +431,18 @@ def calculate_bess_capacity(
     - "max": usa el maximo entre excedente, deficit y autonomia
     - "surplus_only": usa solo el excedente FV
     - "ev_night_deficit": usa solo el deficit EV nocturno
+    - "ev_open_hours": deficit EV solo en horario de apertura (ej. 9-22)
     """
     cap_surplus = surplus_kwh_day / (dod * efficiency) if surplus_kwh_day > 0 else 0.0
     cap_deficit = deficit_kwh_day / (dod * efficiency) if deficit_kwh_day > 0 else 0.0
     cap_autonomy = (peak_load_kw * autonomy_hours) / (dod * efficiency) if peak_load_kw > 0 else 0.0
 
     mode = str(sizing_mode).lower()
+    if mode == "fixed" and fixed_capacity_kwh > 0 and fixed_power_kw > 0:
+        return float(fixed_capacity_kwh), float(fixed_power_kw)
     if mode in ("surplus_only", "surplus"):
         capacity = cap_surplus
-    elif mode in ("ev_night_deficit", "night_deficit"):
+    elif mode in ("ev_night_deficit", "night_deficit", "ev_open_hours"):
         capacity = cap_deficit
     elif mode in ("max", "default"):
         capacity = max(cap_surplus, cap_deficit, cap_autonomy)
@@ -466,9 +509,7 @@ def generate_bess_plots(
     soc = np.asarray(df_day['soc_percent'].values)
     charge = np.asarray(df_day['bess_charge_kwh'].values)
     discharge = np.asarray(df_day['bess_discharge_kwh'].values)
-    grid_import = np.asarray(df_day['grid_import_kwh'].values)
-    grid_export = np.asarray(df_day['grid_export_kwh'].values)
-    
+
     # Separar demanda Mall vs EV (proporcional)
     total_demand_day = mall_kwh_day + ev_kwh_day
     mall_ratio = mall_kwh_day / total_demand_day if total_demand_day > 0 else 0.5
@@ -476,6 +517,14 @@ def generate_bess_plots(
     
     mall_h = load * mall_ratio
     ev_h = load * ev_ratio
+    # PV aplicado al mall solo cuando hay generación solar (>0)
+    mall_solar_used = np.where(pv > 0, np.minimum(mall_h, pv), 0.0)
+
+    grid_import = np.asarray(df_day['grid_import_kwh'].values)
+    grid_export = np.asarray(df_day['grid_export_kwh'].values)
+    mall_grid = np.asarray(df_day['mall_grid_import_kwh'].values) if 'mall_grid_import_kwh' in df_day else np.maximum(mall_h - mall_solar_used, 0)
+    ev_grid = np.asarray(df_day['ev_grid_import_kwh'].values) if 'ev_grid_import_kwh' in df_day else np.maximum(grid_import - mall_grid, 0)
+    mall_solar_used_plot = np.asarray(df_day['mall_pv_used_kwh'].values) if 'mall_pv_used_kwh' in df_day else mall_solar_used
     
     # ===== Panel 1: Demanda Total =====
     ax1 = axes[0]
@@ -492,10 +541,22 @@ def generate_bess_plots(
     
     # ===== Panel 2: Balance Energético (PV vs Demanda) =====
     ax2 = axes[1]
-    ax2.fill_between(hours, 0, pv, color='yellow', alpha=0.7, label=f'Generación FV {pv.sum():.1f} kWh/día')
-    ax2.fill_between(hours, 0, load, color='salmon', alpha=0.5, label=f'Demanda Total {load.sum():.1f} kWh/día')
+    mall_pv_used = np.minimum(pv, mall_h)
+    surplus_pv_mall = np.maximum(pv - mall_h, 0.0)
+    ax2.fill_between(hours, 0, pv, color='yellow', alpha=0.45, label=f'Generación FV {pv.sum():.1f} kWh/día')
+    ax2.fill_between(hours, 0, load, color='salmon', alpha=0.3, label=f'Demanda Total {load.sum():.1f} kWh/día')
+    ax2.fill_between(hours, 0, mall_pv_used, color='yellowgreen', alpha=0.5, label='FV usada por mall')
+    ax2.fill_between(hours, mall_h, mall_h + surplus_pv_mall, color='gold', alpha=0.45, label='Excedente FV sobre demanda mall')
     ax2.plot(hours, pv, 'g-', linewidth=2, label='Generación FV')
     ax2.plot(hours, load, 'r-', linewidth=2, label='Demanda Total')
+    ax2.plot(hours, ev_h, 'm-.', linewidth=1.5, label='Carga EV (motos/mototaxis)')
+    ax2.plot(hours, mall_h, 'c:', linewidth=1.5, label='Demanda mall')
+    surplus_day = surplus_pv_mall.sum()
+    surplus_max = surplus_pv_mall.max()
+    mall_pv_used_day = mall_pv_used.sum()
+    ax2.annotate(f'FV → mall: {mall_pv_used_day:.0f} kWh/día\nExcedente FV diario: {surplus_day:.0f} kWh\nExcedente horario máx: {surplus_max:.0f} kWh',
+                 xy=(0.02, 0.98), xycoords='axes fraction', ha='left', va='top',
+                 fontsize=9, bbox=dict(boxstyle='round', facecolor='white', alpha=0.7))
     ax2.set_xlabel('Hora del Día', fontsize=10)
     ax2.set_ylabel('Energía (kWh)', fontsize=10)
     ax2.set_title(f'Balance Energético - Generación FV Iquitos: {pv.sum():.1f} kWh/día', fontsize=12, fontweight='bold')
@@ -538,11 +599,20 @@ def generate_bess_plots(
     # Barras para carga/descarga BESS
     ax4.bar(hours, charge, color='green', alpha=0.7, label='Carga BESS')
     ax4.bar(hours, -discharge, color='orange', alpha=0.7, label='Descarga BESS')
-    
-    # Líneas para red
-    ax4.plot(hours, -grid_import, 'r--', linewidth=2, marker='v', markersize=4, label='Toma de Red')
-    ax4.plot(hours, grid_export, 'b--', linewidth=2, marker='^', markersize=4, label='Inyección a Red')
-    
+
+    # Líneas de contexto: FV y demanda mall
+    ax4.plot(hours, pv, 'g-', linewidth=1.8, label='FV')
+    ax4.plot(hours, mall_h, 'c-', linewidth=1.5, label='Demanda mall')
+    # Áreas mall: solar vs red (la transición ocurre donde PV intercepta la demanda)
+    ax4.fill_between(hours, 0, mall_solar_used_plot, color='yellow', alpha=0.35, label='Solar al Mall')
+    ax4.fill_between(hours, mall_solar_used_plot, mall_h, color='cyan', alpha=0.45, label='Toma de Red Mall')
+
+    # Línea de red EV
+    ax4.plot(hours, -ev_grid, 'm:', linewidth=1.5, label='Toma de Red EV')
+    # Importación y exportación total
+    ax4.plot(hours, grid_import, 'k--', linewidth=1.2, label='Importación red')
+    ax4.bar(hours, -grid_export, color='gray', alpha=0.6, label='Exportación red')
+
     ax4.axhline(y=0, color='black', linewidth=0.5)
     ax4.set_xlabel('Hora del Día', fontsize=10)
     ax4.set_ylabel('Energía (kWh)', fontsize=10)
@@ -554,9 +624,10 @@ def generate_bess_plots(
     
     # Métricas de red
     grid_total = grid_import.sum()
-    export_total = grid_export.sum()
+    grid_mall_total = mall_grid.sum()
+    grid_ev_total = ev_grid.sum()
     self_suff = 1.0 - (grid_total / max(load.sum(), 1e-9))
-    ax4.annotate(f'Red tomada: {grid_total:.1f} kWh\nRed inyectada: {export_total:.1f} kWh\nAutosuficiencia: {self_suff*100:.1f}%',
+    ax4.annotate(f'Red total: {grid_total:.1f} kWh\n  Mall: {grid_mall_total:.1f} kWh\n  EV: {grid_ev_total:.1f} kWh\nAutosuficiencia: {self_suff*100:.1f}%',
                  xy=(0.98, 0.98), xycoords='axes fraction', ha='right', va='top',
                  fontsize=9, bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))
     
@@ -649,9 +720,7 @@ def prepare_citylearn_data(
     
     # Guardar timeseries de demanda para CityLearn (solo demanda del mall)
     # CityLearn espera: Hour, non_shiftable_load (kWh)
-    load_series = df_sim['load_kwh']
-    if 'mall_kwh' in df_sim.columns:
-        load_series = df_sim['mall_kwh']
+    load_series = df_sim['mall_kwh'] if 'mall_kwh' in df_sim.columns else df_sim['load_kwh']
     df_export = pd.DataFrame({
         'Hour': range(len(df_sim)),
         'non_shiftable_load': load_series.values,
@@ -709,15 +778,18 @@ def run_bess_sizing(
     autonomy_hours: float = 4.0,
     pv_dc_kw: float = 0.0,
     tz: Optional[str] = None,
-    sizing_mode: str = "max",
+    sizing_mode: str = "ev_open_hours",
     soc_min_percent: Optional[float] = None,
     load_scope: str = "total",
     discharge_hours: Optional[List[int]] = None,
     discharge_only_no_solar: bool = False,
     pv_night_threshold_kwh: float = 0.1,
+    surplus_target_kwh_day: float = 0.0,
     year: int = 2024,
     generate_plots: bool = True,
     reports_dir: Optional[Path] = None,
+    fixed_capacity_kwh: float = 0.0,
+    fixed_power_kw: float = 0.0,
 ) -> Dict[str, object]:
     """
     Ejecuta el dimensionamiento completo del BESS.
@@ -830,18 +902,8 @@ def run_bess_sizing(
     total_load_kwh = mall_kwh + ev_kwh
 
     bess_load_scope = str(load_scope).lower()
-    pv_available = pv_kwh
-    bess_load = total_load_kwh
-    mall_grid_import = None
-
-    if bess_load_scope == "ev_priority":
-        pv_available = pv_kwh
-        bess_load = ev_kwh
-    elif bess_load_scope == "ev_only":
-        pv_available = np.maximum(pv_kwh - mall_kwh, 0.0)
-        bess_load = ev_kwh
-        mall_grid_import = np.maximum(mall_kwh - pv_kwh, 0.0)
-    elif bess_load_scope != "total":
+    mall_grid_import = np.zeros_like(mall_kwh)
+    if bess_load_scope not in ("total", "ev_priority", "ev_only"):
         print(f"   load_scope desconocido: {load_scope}. Usando total")
         bess_load_scope = "total"
 
@@ -855,22 +917,31 @@ def run_bess_sizing(
     if discharge_hours_set is not None:
         sizing_mask = sizing_mask & np.isin(hours, list(discharge_hours_set))
 
+    # Horario de apertura de mall para EV (9 a 22)
+    open_start = 9
+    open_end = 22
+    open_mask = (hours >= open_start) & (hours < open_end)
+    ev_shortfall = np.maximum(ev_kwh - pv_kwh, 0.0)
+    ev_shortfall_open_day = float((ev_shortfall * open_mask).sum() / (min_len / 24))
+    peak_ev_shortfall_kw = float(ev_shortfall[open_mask].max()) if np.any(open_mask) else 0.0
+
     # ===========================================
     # 3. Calcular balance energetico
     # ===========================================
     print("")
     print("Calculando balance energetico...")
 
-    surplus = np.maximum(pv_available - bess_load, 0)
-    deficit = np.maximum(bess_load - pv_available, 0)
+    bess_load = total_load_kwh
+    surplus = np.maximum(pv_kwh - total_load_kwh, 0)
+    deficit = np.maximum(total_load_kwh - pv_kwh, 0)
 
     surplus_day = float(surplus.sum() / (min_len / 24))
     deficit_day = float(deficit.sum() / (min_len / 24))
     night_deficit_day = float((deficit * sizing_mask).sum() / (min_len / 24))
     pv_day = float(pv_kwh.sum() / (min_len / 24))
-    pv_available_day = float(pv_available.sum() / (min_len / 24))
+    pv_available_day = float(pv_kwh.sum() / (min_len / 24))
     load_day = float(total_load_kwh.sum() / (min_len / 24))
-    bess_load_day = float(bess_load.sum() / (min_len / 24))
+    bess_load_day = float(total_load_kwh.sum() / (min_len / 24))
 
     print(f"   Generacion PV: {pv_day:.0f} kWh/dia")
     if bess_load_scope in ("ev_only", "ev_priority"):
@@ -882,6 +953,8 @@ def run_bess_sizing(
     if night_hours:
         print(f"   Horas sin solar: {sorted(night_hours)}")
         print(f"   Deficit EV nocturno: {night_deficit_day:.0f} kWh/dia")
+    print(f"   Deficit EV horario abierto ({open_start}-{open_end}h): {ev_shortfall_open_day:.0f} kWh/dia")
+    print(f"   Pico deficit EV horario abierto: {peak_ev_shortfall_kw:.1f} kW")
 
     # ===========================================
     # 4. Dimensionar BESS
@@ -891,14 +964,28 @@ def run_bess_sizing(
 
     effective_dod = dod
     soc_min = None
+    # Para modo EV horario abierto, forzar reserva del 20% si no se especifica
+    mode_lower = str(sizing_mode).lower()
+    if soc_min_percent is None and mode_lower == "ev_open_hours":
+        soc_min_percent = 20.0
     if soc_min_percent is not None:
         soc_min = soc_min_percent / 100.0
         effective_dod = min(dod, 1.0 - soc_min)
 
+    # Seleccionar deficit y pico según modo
     peak_load = float(bess_load.max()) if len(bess_load) > 0 else 0.0
-    sizing_deficit = night_deficit_day if str(sizing_mode).lower() in ("ev_night_deficit", "night_deficit") else deficit_day
+    if mode_lower in ("ev_night_deficit", "night_deficit"):
+        sizing_deficit = night_deficit_day
+    elif mode_lower == "ev_open_hours":
+        sizing_deficit = ev_shortfall_open_day
+        peak_load = peak_ev_shortfall_kw
+    else:
+        sizing_deficit = deficit_day
+    # Limitar excedente usado para dimensionamiento si se indica (p.ej., capturar export diario)
+    surplus_for_sizing = min(surplus_day, surplus_target_kwh_day) if surplus_target_kwh_day > 0 else surplus_day
+
     capacity_kwh, power_kw = calculate_bess_capacity(
-        surplus_kwh_day=surplus_day,
+        surplus_kwh_day=surplus_for_sizing,
         deficit_kwh_day=sizing_deficit,
         dod=effective_dod,
         efficiency=efficiency_roundtrip,
@@ -906,6 +993,8 @@ def run_bess_sizing(
         peak_load_kw=peak_load,
         round_kwh=round_kwh,
         sizing_mode=sizing_mode,
+        fixed_capacity_kwh=fixed_capacity_kwh,
+        fixed_power_kw=fixed_power_kw,
     )
 
     power_kw = capacity_kwh * c_rate if capacity_kwh > 0 else 0.0
@@ -929,9 +1018,13 @@ def run_bess_sizing(
             discharge_hours_set = discharge_hours_set.intersection(night_set)
     if discharge_hours_set is not None and len(discharge_hours_set) == 0:
         print("   Aviso: no hay horas de descarga disponibles; BESS no descargara.")
+    ev_load_kwh = ev_kwh
+    mall_load_kwh = mall_kwh
+
     df_bess, metrics = simulate_bess_operation(
-        pv_kwh=pv_available,
-        load_kwh=bess_load,
+        pv_kwh=pv_kwh,
+        ev_kwh=ev_load_kwh,
+        mall_kwh=mall_load_kwh,
         capacity_kwh=capacity_kwh,
         power_kw=power_kw,
         dod=effective_dod,
@@ -940,16 +1033,19 @@ def run_bess_sizing(
         soc_min=soc_min,
         discharge_hours=discharge_hours_set,
         hours=hours,
+        discharge_to_mall=(bess_load_scope != "ev_only"),
     )
 
     if bess_load_scope == "ev_only":
-        grid_import_total = mall_grid_import + df_bess['grid_import_kwh'].values
+        grid_import_total = mall_grid_import + df_bess['grid_import_mall_kwh'].values + df_bess['grid_import_ev_kwh'].values
         df_sim = df_bess.copy()
         df_sim['pv_kwh'] = pv_kwh
         df_sim['load_kwh'] = total_load_kwh
         df_sim['net_balance_kwh'] = pv_kwh - total_load_kwh
         df_sim['grid_import_kwh'] = grid_import_total
         df_sim['grid_export_kwh'] = df_bess['grid_export_kwh'].values
+        df_sim['mall_grid_import_kwh'] = mall_grid_import + df_bess['grid_import_mall_kwh'].values
+        df_sim['ev_grid_import_kwh'] = df_bess['grid_import_ev_kwh'].values
 
         total_pv = float(pv_kwh.sum())
         total_load = float(total_load_kwh.sum())
@@ -964,11 +1060,8 @@ def run_bess_sizing(
         metrics['total_grid_export_kwh'] = total_grid_export
         metrics['self_sufficiency'] = self_sufficiency
     elif bess_load_scope == "ev_priority":
-        pv_surplus = df_bess['grid_export_kwh'].values
-        mall_pv_used = np.minimum(mall_kwh, pv_surplus)
-        mall_grid_import = mall_kwh - mall_pv_used
-        grid_export_total = pv_surplus - mall_pv_used
-        grid_import_total = df_bess['grid_import_kwh'].values + mall_grid_import
+        grid_import_total = df_bess['grid_import_ev_kwh'].values + df_bess['grid_import_mall_kwh'].values
+        grid_export_total = df_bess['grid_export_kwh'].values
 
         df_sim = df_bess.copy()
         df_sim['pv_kwh'] = pv_kwh
@@ -976,6 +1069,8 @@ def run_bess_sizing(
         df_sim['net_balance_kwh'] = pv_kwh - total_load_kwh
         df_sim['grid_import_kwh'] = grid_import_total
         df_sim['grid_export_kwh'] = grid_export_total
+        df_sim['mall_grid_import_kwh'] = df_bess['grid_import_mall_kwh'].values
+        df_sim['ev_grid_import_kwh'] = df_bess['grid_import_ev_kwh'].values
 
         total_pv = float(pv_kwh.sum())
         total_load = float(total_load_kwh.sum())
@@ -991,9 +1086,14 @@ def run_bess_sizing(
         metrics['self_sufficiency'] = self_sufficiency
     else:
         df_sim = df_bess
+        df_sim['load_kwh'] = total_load_kwh
 
     df_sim['mall_kwh'] = mall_kwh
     df_sim['ev_kwh'] = ev_kwh
+    if 'grid_import_kwh' not in df_sim.columns:
+        df_sim['grid_import_kwh'] = 0.0
+    if 'grid_import_ev_kwh' in df_sim.columns and 'grid_import_mall_kwh' in df_sim.columns:
+        df_sim['grid_import_kwh'] = df_sim['grid_import_ev_kwh'] + df_sim['grid_import_mall_kwh']
 
     print(f"   Autosuficiencia: {metrics['self_sufficiency']*100:.1f}%")
     print(f"   Ciclos/dia:      {metrics['cycles_per_day']:.2f}")

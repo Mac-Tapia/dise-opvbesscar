@@ -7,7 +7,7 @@ from typing import Any, Optional, Dict, List
 import numpy as np
 import logging
 
-from ..progress import append_progress_row
+from ..progress import append_progress_row, render_progress_plot
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ class SACConfig:
     """Configuración avanzada para SAC con soporte CUDA/GPU y multiobjetivo."""
     # Hiperparámetros de entrenamiento
     episodes: int = 10
-    batch_size: int = 256
+    batch_size: int = 512
     buffer_size: int = 100000
     learning_rate: float = 3e-4
     gamma: float = 0.99
@@ -142,7 +142,7 @@ class SACConfig:
     
     # === CONFIGURACIÓN GPU/CUDA ===
     device: str = "auto"  # "auto", "cuda", "cuda:0", "cuda:1", "mps", "cpu"
-    use_amp: bool = False  # Mixed precision (Automatic Mixed Precision)
+    use_amp: bool = True  # Mixed precision (Automatic Mixed Precision)
     pin_memory: bool = True  # Acelera transferencia CPU->GPU
     num_workers: int = 0  # DataLoader workers (0 para CityLearn)
     
@@ -155,7 +155,7 @@ class SACConfig:
     weight_grid_stability: float = 0.05   # Minimizar picos de demanda
     
     # Umbrales multicriterio
-    co2_target_kg_per_kwh: float = 0.45  # Factor emisión Iquitos
+    co2_target_kg_per_kwh: float = 0.4521  # Factor emisión Iquitos
     cost_target_usd_per_kwh: float = 0.20  # Tarifa objetivo
     ev_soc_target: float = 0.90          # SOC objetivo EVs al partir
     peak_demand_limit_kw: float = 200.0  # Límite demanda pico
@@ -166,13 +166,16 @@ class SACConfig:
     
     # Callbacks y logging
     verbose: int = 0
-    log_interval: int = 100
+    log_interval: int = 500
     checkpoint_dir: Optional[str] = None
-    checkpoint_freq_steps: int = 0
+    checkpoint_freq_steps: int = 1000  # MANDATORY: Default to 1000 for checkpoint generation
     save_final: bool = True
     progress_path: Optional[str] = None
     progress_interval_episodes: int = 1
     prefer_citylearn: bool = False
+    resume_path: Optional[str] = None  # Ruta a checkpoint SB3 para reanudar entrenamiento
+    # Suavizado de acciones (penaliza cambios bruscos)
+    reward_smooth_lambda: float = 0.0
 
 
 class SACAgent:
@@ -186,8 +189,11 @@ class SACAgent:
     """
     
     def __init__(self, env: Any, config: Optional[SACConfig] = None):
+        logger.info(f"[SACAgent.__init__] ENTRY: config type={type(config)}, config={config}")
+        logger.info(f"[SACAgent.__init__] ENTRY: config.checkpoint_dir={config.checkpoint_dir if config else 'None'}")
         self.env = env
         self.config = config or SACConfig()
+        logger.info(f"[SACAgent.__init__] AFTER ASSIGNMENT: self.config.checkpoint_dir={self.config.checkpoint_dir}, checkpoint_freq_steps={self.config.checkpoint_freq_steps}")
         self._citylearn_sac = None
         self._sb3_sac = None
         self._trained = False
@@ -366,6 +372,8 @@ class SACAgent:
                             }
                             if self.progress_path is not None:
                                 append_progress_row(self.progress_path, row, self.progress_headers)
+                                png_path = self.progress_path.with_suffix(".png")
+                                render_progress_plot(self.progress_path, png_path, "SAC progreso")
                         logger.info(
                             "[SAC] ep %d/%d terminado reward=%.4f pasos=%d",
                             self.episode,
@@ -423,6 +431,13 @@ class SACAgent:
     
     def _train_sb3_sac(self, total_timesteps: int):
         """Entrena usando Stable-Baselines3 SAC con optimizadores avanzados."""
+        # DIAGNOSTIC: Write to file to confirm method execution
+        with open("sac_training_test.txt", "w") as f:
+            f.write(f"_train_sb3_sac called with total_timesteps={total_timesteps}\n")
+            f.write(f"checkpoint_dir={self.config.checkpoint_dir}\n")
+            f.write(f"checkpoint_freq_steps={self.config.checkpoint_freq_steps}\n")
+        
+        logger.info("_train_sb3_sac: Iniciando entrenamiento SB3 con %d timesteps", total_timesteps)
         import gymnasium as gym
         from stable_baselines3 import SAC
         from stable_baselines3.common.callbacks import BaseCallback, CallbackList
@@ -430,36 +445,66 @@ class SACAgent:
         
         # Wrapper para compatibilidad
         class CityLearnWrapper(gym.Wrapper):
-            def __init__(self, env):
+            def __init__(self, env, smooth_lambda: float = 0.0):
                 super().__init__(env)
-                self._obs_dim = self._get_obs_dim()
-                self._act_dim = self._get_act_dim()
+                # calcular obs dim a partir del primer estado ya aplanado
+                obs0, _ = self.env.reset()
+                obs0_flat = self._flatten(obs0)
+                self.obs_dim = len(obs0_flat)
+                self.act_dim = self._get_act_dim()
+                self._smooth_lambda = smooth_lambda
+                self._prev_action = None
                 
                 # Redefinir espacios
                 self.observation_space = gym.spaces.Box(
                     low=-np.inf, high=np.inf, 
-                    shape=(self._obs_dim,), dtype=np.float32
+                    shape=(self.obs_dim,), dtype=np.float32
                 )
                 self.action_space = gym.spaces.Box(
                     low=-1.0, high=1.0,
-                    shape=(self._act_dim,), dtype=np.float32
+                    shape=(self.act_dim,), dtype=np.float32
                 )
             
-            def _get_obs_dim(self):
-                obs, _ = self.env.reset()
-                return len(self._flatten(obs))
-            
-            def _get_act_dim(self):
-                if isinstance(self.env.action_space, list):
-                    return sum(sp.shape[0] for sp in self.env.action_space)
-                return self.env.action_space.shape[0]
-            
-            def _flatten(self, obs):
+            def _flatten_base(self, obs):
                 if isinstance(obs, dict):
                     return np.concatenate([np.array(v, dtype=np.float32).ravel() for v in obs.values()])
                 elif isinstance(obs, (list, tuple)):
                     return np.concatenate([np.array(o, dtype=np.float32).ravel() for o in obs])
                 return np.array(obs, dtype=np.float32).ravel()
+
+            def _get_act_dim(self):
+                if isinstance(self.env.action_space, list):
+                    return sum(sp.shape[0] for sp in self.env.action_space)
+                return self.env.action_space.shape[0]
+            
+            def _get_pv_bess_feats(self):
+                """Deriva PV disponible y SOC BESS para enriquecer obs."""
+                pv_kw = 0.0
+                soc = 0.0
+                try:
+                    t = getattr(self.env, "time_step", 0)
+                    buildings = getattr(self.env, "buildings", [])
+                    for b in buildings:
+                        sg = getattr(b, "solar_generation", None)
+                        if sg is not None and len(sg) > t:
+                            pv_kw += float(max(0.0, sg[t]))
+                        es = getattr(b, "electrical_storage", None)
+                        if es is not None:
+                            soc = float(getattr(es, "state_of_charge", soc))
+                except Exception:
+                    pass
+                return np.array([pv_kw, soc], dtype=np.float32)
+
+            def _flatten(self, obs):
+                base = self._flatten_base(obs)
+                feats = self._get_pv_bess_feats()
+                arr = np.concatenate([base, feats])
+                target = getattr(self, "obs_dim", arr.size)
+                if arr.size < target:
+                    arr = np.pad(arr, (0, target - arr.size), mode="constant")
+                elif arr.size > target:
+                    arr = arr[: target]
+                return arr.astype(np.float32)
             
             def _unflatten_action(self, action):
                 if isinstance(self.env.action_space, list):
@@ -487,10 +532,17 @@ class SACAgent:
                 # Asegurar reward escalar
                 if isinstance(reward, (list, tuple)):
                     reward = sum(reward)
+
+                # Penalización por cambios bruscos de acción
+                flat_action = np.array(action, dtype=np.float32).ravel()
+                if self._prev_action is not None and self._smooth_lambda > 0.0:
+                    delta = flat_action - self._prev_action
+                    reward -= float(self._smooth_lambda * np.linalg.norm(delta))
+                self._prev_action = flat_action
                 
                 return self._flatten(obs), float(reward), terminated, truncated, info
         
-        wrapped = Monitor(CityLearnWrapper(self.env))
+        wrapped = Monitor(CityLearnWrapper(self.env, smooth_lambda=self.config.reward_smooth_lambda))
         
         # Configurar SAC con optimizadores avanzados
         policy_kwargs = {
@@ -499,22 +551,33 @@ class SACAgent:
         }
         
         target_entropy = self.config.target_entropy if self.config.target_entropy is not None else "auto"
-        self._sb3_sac = SAC(
-            "MlpPolicy",
-            wrapped,
-            learning_rate=self.config.learning_rate,
-            buffer_size=self.config.buffer_size,
-            batch_size=self.config.batch_size,
-            gamma=self.config.gamma,
-            tau=self.config.tau,
-            ent_coef=self.config.ent_coef,
-            target_entropy=target_entropy,
-            gradient_steps=self.config.gradient_steps,
-            policy_kwargs=policy_kwargs,
-            verbose=self.config.verbose,
-            seed=self.config.seed,
-            device=self.device,  # GPU/CUDA support
-        )
+
+        resume_path = Path(self.config.resume_path) if self.config.resume_path else None
+        resuming = resume_path is not None and resume_path.exists()
+        if resuming:
+            logger.info("Reanudando SAC desde checkpoint: %s", resume_path)
+            self._sb3_sac = SAC.load(
+                str(resume_path),
+                env=wrapped,
+                device=self.device,
+            )
+        else:
+            self._sb3_sac = SAC(
+                "MlpPolicy",
+                wrapped,
+                learning_rate=self.config.learning_rate,
+                buffer_size=self.config.buffer_size,
+                batch_size=self.config.batch_size,
+                gamma=self.config.gamma,
+                tau=self.config.tau,
+                ent_coef=self.config.ent_coef,
+                target_entropy=target_entropy,
+                gradient_steps=self.config.gradient_steps,
+                policy_kwargs=policy_kwargs,
+                verbose=self.config.verbose,
+                seed=self.config.seed,
+                device=self.device,  # GPU/CUDA support
+            )
         
         progress_path = Path(self.config.progress_path) if self.config.progress_path else None
         progress_headers = ("timestamp", "agent", "episode", "episode_reward", "episode_length", "global_step")
@@ -599,32 +662,61 @@ class SACAgent:
 
         checkpoint_dir = self.config.checkpoint_dir
         checkpoint_freq = int(self.config.checkpoint_freq_steps or 0)
+        logger.info(f"[SAC Checkpoint Config] dir={checkpoint_dir}, freq={checkpoint_freq}")
         if checkpoint_dir:
             Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
+            logger.info(f"[SAC] Checkpoint directory created: {checkpoint_dir}")
+        else:
+            logger.warning("[SAC] NO checkpoint directory configured!")
 
         class CheckpointCallback(BaseCallback):
             def __init__(self, save_dir: Optional[str], freq: int, verbose=0):
                 super().__init__(verbose)
                 self.save_dir = Path(save_dir) if save_dir else None
                 self.freq = freq
+                self.call_count = 0
+                logger.info(f"[SAC CheckpointCallback.__init__] save_dir={self.save_dir}, freq={self.freq}")
+                if self.save_dir and self.freq > 0:
+                    self.save_dir.mkdir(parents=True, exist_ok=True)
+                    logger.info(f"[SAC CheckpointCallback] Created directory: {self.save_dir}")
 
-            def _on_step(self):
+            def _on_step(self) -> bool:
+                self.call_count += 1
+                
+                # Log first call and every 1000 calls
+                if self.call_count == 1:
+                    logger.info(f"[SAC CheckpointCallback._on_step] FIRST CALL DETECTED! n_calls={self.n_calls}")
+                
+                if self.call_count % 1000 == 0:
+                    logger.info(f"[SAC CheckpointCallback._on_step] call #{self.call_count}, n_calls={self.n_calls}")
+                
                 if self.save_dir is None or self.freq <= 0:
                     return True
-                if self.n_calls % self.freq == 0:
+                
+                # MANDATORY: Check if we should save (every freq calls)
+                should_save = (self.n_calls > 0 and self.n_calls % self.freq == 0)
+                if should_save:
+                    self.save_dir.mkdir(parents=True, exist_ok=True)
                     save_path = self.save_dir / f"sac_step_{self.n_calls}"
                     try:
                         self.model.save(save_path)
-                        logger.info("Checkpoint SAC guardado en %s", save_path)
+                        logger.info(f"[SAC CHECKPOINT OK] Saved: {save_path}")
                     except Exception as exc:
-                        logger.warning("No se pudo guardar checkpoint SAC (%s)", exc)
+                        logger.error(f"[SAC CHECKPOINT ERROR] {exc}", exc_info=True)
+                
                 return True
 
         callback = CallbackList([
             TrainingCallback(self, progress_path, progress_headers, expected_episodes),
             CheckpointCallback(checkpoint_dir, checkpoint_freq),
         ])
-        self._sb3_sac.learn(total_timesteps=total_timesteps, callback=callback)
+        logger.info("[SAC] Starting model.learn() with callbacks")
+        self._sb3_sac.learn(
+            total_timesteps=total_timesteps,
+            callback=callback,
+            reset_num_timesteps=not resuming,
+        )
+        logger.info("[SAC] model.learn() completed successfully")
         self._trained = True
         self._use_sb3 = True
         self._wrapped_env = wrapped
@@ -634,9 +726,17 @@ class SACAgent:
             final_path = Path(checkpoint_dir) / "sac_final"
             try:
                 self._sb3_sac.save(final_path)
-                logger.info("Modelo SAC guardado en %s", final_path)
+                logger.info("[SAC FINAL OK] Modelo guardado en %s", final_path)
             except Exception as exc:
-                logger.warning("No se pudo guardar modelo SAC (%s)", exc)
+                logger.error("[SAC FINAL ERROR] %s", exc, exc_info=True)
+        
+        # MANDATORY: Verify checkpoints were created
+        if checkpoint_dir:
+            checkpoint_path = Path(checkpoint_dir)
+            zips = list(checkpoint_path.glob("*.zip"))
+            logger.info(f"[SAC VERIFICATION] Checkpoints created: {len(zips)} files")
+            for z in sorted(zips)[:5]:
+                logger.info(f"  - {z.name} ({z.stat().st_size / 1024:.1f} KB)")
     
     def _get_activation(self):
         """Obtiene función de activación."""
@@ -657,6 +757,16 @@ class SACAgent:
         
         if self._use_sb3 and self._sb3_sac is not None:
             obs = self._flatten_obs(observations)
+            # Asegurar shape exacta al espacio de obs de SB3
+            try:
+                target_dim = int(self._sb3_sac.observation_space.shape[0])
+                if obs.size < target_dim:
+                    obs = np.pad(obs, (0, target_dim - obs.size), mode="constant")
+                elif obs.size > target_dim:
+                    obs = obs[:target_dim]
+                obs = obs.astype(np.float32)
+            except Exception:
+                pass
             action, _ = self._sb3_sac.predict(obs, deterministic=deterministic)
             return self._unflatten_action(action)
         
@@ -667,10 +777,34 @@ class SACAgent:
     
     def _flatten_obs(self, obs):
         if isinstance(obs, dict):
-            return np.concatenate([np.array(v, dtype=np.float32).ravel() for v in obs.values()])
+            arr = np.concatenate([np.array(v, dtype=np.float32).ravel() for v in obs.values()])
         elif isinstance(obs, (list, tuple)):
-            return np.concatenate([np.array(o, dtype=np.float32).ravel() for o in obs])
-        return np.array(obs, dtype=np.float32).ravel()
+            arr = np.concatenate([np.array(o, dtype=np.float32).ravel() for o in obs])
+        else:
+            arr = np.array(obs, dtype=np.float32).ravel()
+        target_dim = None
+        # Priorizar el espacio de observaciГіn del modelo SB3 (que es el que valida dimensiones)
+        try:
+            if self._sb3_sac is not None and hasattr(self._sb3_sac, "observation_space"):
+                space = self._sb3_sac.observation_space
+                if space is not None and hasattr(space, "shape") and space.shape:
+                    target_dim = int(space.shape[0])
+        except Exception:
+            target_dim = None
+        # Si no se pudo, usar el espacio del env base
+        if target_dim is None:
+            try:
+                space = getattr(self.env, "observation_space", None)
+                if space is not None and hasattr(space, "shape") and space.shape:
+                    target_dim = int(space.shape[0])
+            except Exception:
+                target_dim = None
+        if target_dim is not None:
+            if arr.size < target_dim:
+                arr = np.pad(arr, (0, target_dim - arr.size), mode="constant")
+            elif arr.size > target_dim:
+                arr = arr[:target_dim]
+        return arr.astype(np.float32)
     
     def _unflatten_action(self, action):
         if isinstance(self.env.action_space, list):
@@ -706,5 +840,17 @@ class SACAgent:
 
 def make_sac(env: Any, config: Optional[SACConfig] = None, **kwargs) -> SACAgent:
     """Factory function para crear agente SAC robusto."""
-    cfg = config or SACConfig(**kwargs) if kwargs else SACConfig()
+    logger.info(f"[make_sac] ENTRY: config={config is not None}, kwargs_empty={not kwargs}")
+    
+    # CRITICAL FIX: Properly handle config vs kwargs priority
+    if config is not None:
+        cfg = config
+        logger.info(f"[make_sac] Using provided config: checkpoint_dir={cfg.checkpoint_dir}, checkpoint_freq_steps={cfg.checkpoint_freq_steps}")
+    elif kwargs:
+        cfg = SACConfig(**kwargs)
+        logger.info(f"[make_sac] Created config from kwargs: checkpoint_dir={cfg.checkpoint_dir}, checkpoint_freq_steps={cfg.checkpoint_freq_steps}")
+    else:
+        cfg = SACConfig()
+        logger.info(f"[make_sac] Created default config: checkpoint_dir={cfg.checkpoint_dir}, checkpoint_freq_steps={cfg.checkpoint_freq_steps}")
+    
     return SACAgent(env, cfg)

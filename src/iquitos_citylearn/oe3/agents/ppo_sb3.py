@@ -7,7 +7,7 @@ from typing import Any, Optional, Dict, List, Callable
 import numpy as np
 import logging
 
-from ..progress import append_progress_row
+from ..progress import append_progress_row, render_progress_plot
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +34,8 @@ class PPOConfig:
     """Configuración avanzada para PPO con soporte CUDA/GPU y multiobjetivo."""
     # Hiperparámetros de entrenamiento
     train_steps: int = 100000
-    n_steps: int = 2048  # Steps por update
-    batch_size: int = 64
+    n_steps: int = 1024  # Steps por update
+    batch_size: int = 128
     n_epochs: int = 10
     
     # Optimización
@@ -61,7 +61,7 @@ class PPOConfig:
     
     # === CONFIGURACIÓN GPU/CUDA ===
     device: str = "auto"  # "auto", "cuda", "cuda:0", "cuda:1", "mps", "cpu"
-    use_amp: bool = False  # Mixed precision training
+    use_amp: bool = True  # Mixed precision training
     pin_memory: bool = True  # Acelera CPU->GPU
     deterministic_cuda: bool = False  # True = reproducible pero más lento
     
@@ -74,7 +74,7 @@ class PPOConfig:
     weight_grid_stability: float = 0.05   # Minimizar picos de demanda
     
     # Umbrales multicriterio
-    co2_target_kg_per_kwh: float = 0.45
+    co2_target_kg_per_kwh: float = 0.4521
     cost_target_usd_per_kwh: float = 0.20
     ev_soc_target: float = 0.90
     peak_demand_limit_kw: float = 200.0
@@ -85,7 +85,7 @@ class PPOConfig:
     # Logging
     verbose: int = 0
     tensorboard_log: Optional[str] = None
-    log_interval: int = 1000
+    log_interval: int = 2000
     target_kl: Optional[float] = 0.02
     kl_adaptive: bool = True
     kl_adaptive_down: float = 0.5
@@ -93,10 +93,14 @@ class PPOConfig:
     kl_min_lr: float = 1e-6
     kl_max_lr: float = 1e-3
     checkpoint_dir: Optional[str] = None
-    checkpoint_freq_steps: int = 0
+    checkpoint_freq_steps: int = 1000  # MANDATORY: Default to 1000 for checkpoint generation
     save_final: bool = True
     progress_path: Optional[str] = None
     progress_interval_episodes: int = 1
+    resume_path: Optional[str] = None  # Ruta a checkpoint SB3 para reanudar
+    resume_path: Optional[str] = None  # Ruta a checkpoint SB3 para reanudar
+    # Suavizado de acciones
+    reward_smooth_lambda: float = 0.0
 
 
 class PPOAgent:
@@ -191,35 +195,63 @@ class PPOAgent:
         
         # Wrapper robusto para CityLearn
         class CityLearnWrapper(gym.Wrapper):
-            def __init__(self, env):
+            def __init__(self, env, smooth_lambda: float = 0.0):
                 super().__init__(env)
-                self._obs_dim = self._get_obs_dim()
-                self._act_dim = self._get_act_dim()
+                obs0, _ = self.env.reset()
+                obs0_flat = self._flatten(obs0)
+                self.obs_dim = len(obs0_flat)
+                self.act_dim = self._get_act_dim()
+                self._smooth_lambda = smooth_lambda
+                self._prev_action = None
                 
                 self.observation_space = gym.spaces.Box(
                     low=-np.inf, high=np.inf,
-                    shape=(self._obs_dim,), dtype=np.float32
+                    shape=(self.obs_dim,), dtype=np.float32
                 )
                 self.action_space = gym.spaces.Box(
                     low=-1.0, high=1.0,
-                    shape=(self._act_dim,), dtype=np.float32
+                    shape=(self.act_dim,), dtype=np.float32
                 )
-            
-            def _get_obs_dim(self):
-                obs, _ = self.env.reset()
-                return len(self._flatten(obs))
             
             def _get_act_dim(self):
                 if isinstance(self.env.action_space, list):
                     return sum(sp.shape[0] for sp in self.env.action_space)
                 return self.env.action_space.shape[0]
             
-            def _flatten(self, obs):
+            def _get_pv_bess_feats(self):
+                pv_kw = 0.0
+                soc = 0.0
+                try:
+                    t = getattr(self.env, "time_step", 0)
+                    buildings = getattr(self.env, "buildings", [])
+                    for b in buildings:
+                        sg = getattr(b, "solar_generation", None)
+                        if sg is not None and len(sg) > t:
+                            pv_kw += float(max(0.0, sg[t]))
+                        es = getattr(b, "electrical_storage", None)
+                        if es is not None:
+                            soc = float(getattr(es, "state_of_charge", soc))
+                except Exception:
+                    pass
+                return np.array([pv_kw, soc], dtype=np.float32)
+
+            def _flatten_base(self, obs):
                 if isinstance(obs, dict):
                     return np.concatenate([np.array(v, dtype=np.float32).ravel() for v in obs.values()])
                 elif isinstance(obs, (list, tuple)):
                     return np.concatenate([np.array(o, dtype=np.float32).ravel() for o in obs])
                 return np.array(obs, dtype=np.float32).ravel()
+
+            def _flatten(self, obs):
+                base = self._flatten_base(obs)
+                feats = self._get_pv_bess_feats()
+                arr = np.concatenate([base, feats])
+                target = getattr(self, "obs_dim", arr.size)
+                if arr.size < target:
+                    arr = np.pad(arr, (0, target - arr.size), mode="constant")
+                elif arr.size > target:
+                    arr = arr[: target]
+                return arr.astype(np.float32)
             
             def _unflatten_action(self, action):
                 if isinstance(self.env.action_space, list):
@@ -246,10 +278,16 @@ class PPOAgent:
 
                 if isinstance(reward, (list, tuple)):
                     reward = sum(reward)
+
+                flat_action = np.array(action, dtype=np.float32).ravel()
+                if self._prev_action is not None and self._smooth_lambda > 0.0:
+                    delta = flat_action - self._prev_action
+                    reward -= float(self._smooth_lambda * np.linalg.norm(delta))
+                self._prev_action = flat_action
                 
                 return self._flatten(obs), float(reward), terminated, truncated, info
         
-        self.wrapped_env = Monitor(CityLearnWrapper(self.env))
+        self.wrapped_env = Monitor(CityLearnWrapper(self.env, smooth_lambda=self.config.reward_smooth_lambda))
         
         # Crear ambiente vectorizado
         vec_env = make_vec_env(lambda: self.wrapped_env, n_envs=1, seed=self.config.seed)
@@ -267,30 +305,39 @@ class PPOAgent:
             "ortho_init": self.config.ortho_init,
         }
         
-        # Crear modelo PPO con configuración avanzada y GPU
-        logger.info("Creando modelo PPO en dispositivo: %s", self.device)
-        self.model = PPO(
-            "MlpPolicy",
-            vec_env,
-            learning_rate=lr_schedule,
-            n_steps=self.config.n_steps,
-            batch_size=self.config.batch_size,
-            n_epochs=self.config.n_epochs,
-            gamma=self.config.gamma,
-            gae_lambda=self.config.gae_lambda,
-            clip_range=self.config.clip_range,
-            clip_range_vf=self.config.clip_range_vf,
-            normalize_advantage=self.config.normalize_advantage,
-            ent_coef=self.config.ent_coef,
-            vf_coef=self.config.vf_coef,
-            max_grad_norm=self.config.max_grad_norm,
-            policy_kwargs=policy_kwargs,
-            verbose=self.config.verbose,
-            seed=self.config.seed,
-            tensorboard_log=self.config.tensorboard_log,
-            target_kl=self.config.target_kl,
-            device=self.device,  # GPU/CUDA support
-        )
+        # Crear o reanudar modelo PPO con configuración avanzada y GPU
+        resume_path = Path(self.config.resume_path) if self.config.resume_path else None
+        resuming = resume_path is not None and resume_path.exists()
+        logger.info("Creando modelo PPO en dispositivo: %s%s", self.device, " (resume)" if resuming else "")
+        if resuming:
+            self.model = PPO.load(
+                str(resume_path),
+                env=vec_env,
+                device=self.device,
+            )
+        else:
+            self.model = PPO(
+                "MlpPolicy",
+                vec_env,
+                learning_rate=lr_schedule,
+                n_steps=self.config.n_steps,
+                batch_size=self.config.batch_size,
+                n_epochs=self.config.n_epochs,
+                gamma=self.config.gamma,
+                gae_lambda=self.config.gae_lambda,
+                clip_range=self.config.clip_range,
+                clip_range_vf=self.config.clip_range_vf,
+                normalize_advantage=self.config.normalize_advantage,
+                ent_coef=self.config.ent_coef,
+                vf_coef=self.config.vf_coef,
+                max_grad_norm=self.config.max_grad_norm,
+                policy_kwargs=policy_kwargs,
+                verbose=self.config.verbose,
+                seed=self.config.seed,
+                tensorboard_log=self.config.tensorboard_log,
+                target_kl=self.config.target_kl,
+                device=self.device,  # GPU/CUDA support
+            )
         
         # Callback para logging
         progress_path = Path(self.config.progress_path) if self.config.progress_path else None
@@ -395,6 +442,8 @@ class PPOAgent:
                         }
                         if self.progress_path is not None:
                             append_progress_row(self.progress_path, row, self.progress_headers)
+                            png_path = self.progress_path.with_suffix(".png")
+                            render_progress_plot(self.progress_path, png_path, "PPO progreso")
                         if self.expected_episodes > 0:
                             logger.info(
                                 "[PPO] ep %d/%d reward=%.4f len=%d step=%d",
@@ -416,25 +465,46 @@ class PPOAgent:
 
         checkpoint_dir = self.config.checkpoint_dir
         checkpoint_freq = int(self.config.checkpoint_freq_steps or 0)
+        logger.info(f"[PPO Checkpoint Config] dir={checkpoint_dir}, freq={checkpoint_freq}")
         if checkpoint_dir:
             Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
+            logger.info(f"[PPO] Checkpoint directory created: {checkpoint_dir}")
+        else:
+            logger.warning("[PPO] NO checkpoint directory configured!")
 
         class CheckpointCallback(BaseCallback):
             def __init__(self, save_dir: Optional[str], freq: int, verbose=0):
                 super().__init__(verbose)
                 self.save_dir = Path(save_dir) if save_dir else None
                 self.freq = freq
+                self.call_count = 0
+                logger.info(f"[PPO CheckpointCallback.__init__] save_dir={self.save_dir}, freq={self.freq}")
+                if self.save_dir and self.freq > 0:
+                    self.save_dir.mkdir(parents=True, exist_ok=True)
+                    logger.info(f"[PPO CheckpointCallback] Created directory: {self.save_dir}")
 
-            def _on_step(self):
+            def _on_step(self) -> bool:
+                self.call_count += 1
+                
+                if self.call_count == 1:
+                    logger.info(f"[PPO CheckpointCallback._on_step] FIRST CALL DETECTED! n_calls={self.n_calls}")
+                
+                if self.call_count % 1000 == 0:
+                    logger.info(f"[PPO CheckpointCallback._on_step] call #{self.call_count}, n_calls={self.n_calls}")
+                
                 if self.save_dir is None or self.freq <= 0:
                     return True
-                if self.n_calls % self.freq == 0:
+                
+                should_save = (self.n_calls > 0 and self.n_calls % self.freq == 0)
+                if should_save:
+                    self.save_dir.mkdir(parents=True, exist_ok=True)
                     save_path = self.save_dir / f"ppo_step_{self.n_calls}"
                     try:
                         self.model.save(save_path)
-                        logger.info("Checkpoint PPO guardado en %s", save_path)
+                        logger.info(f"[PPO CHECKPOINT OK] Saved: {save_path}")
                     except Exception as exc:
-                        logger.warning("No se pudo guardar checkpoint PPO (%s)", exc)
+                        logger.error(f"[PPO CHECKPOINT ERROR] {exc}", exc_info=True)
+                
                 return True
 
         callback = CallbackList([
@@ -443,7 +513,13 @@ class PPOAgent:
         ])
 
         # Entrenar
-        self.model.learn(total_timesteps=int(steps), callback=callback)
+        logger.info("[PPO] Starting model.learn() with callbacks")
+        self.model.learn(
+            total_timesteps=int(steps),
+            callback=callback,
+            reset_num_timesteps=not resuming,
+        )
+        logger.info("[PPO] model.learn() completed successfully")
         self._trained = True
         logger.info("PPO entrenado con %d timesteps, lr_schedule=%s", steps, self.config.lr_schedule)
 
@@ -451,9 +527,17 @@ class PPOAgent:
             final_path = Path(checkpoint_dir) / "ppo_final"
             try:
                 self.model.save(final_path)
-                logger.info("Modelo PPO guardado en %s", final_path)
+                logger.info("[PPO FINAL OK] Modelo guardado en %s", final_path)
             except Exception as exc:
-                logger.warning("No se pudo guardar modelo PPO (%s)", exc)
+                logger.error("✗ [PPO FINAL ERROR] %s", exc, exc_info=True)
+        
+        # MANDATORY: Verify checkpoints were created
+        if checkpoint_dir:
+            checkpoint_path = Path(checkpoint_dir)
+            zips = list(checkpoint_path.glob("*.zip"))
+            logger.info(f"[PPO VERIFICATION] Checkpoints created: {len(zips)} files")
+            for z in sorted(zips)[:5]:
+                logger.info(f"  - {z.name} ({z.stat().st_size / 1024:.1f} KB)")
     
     def _get_lr_schedule(self, total_steps: int) -> Callable:
         """Crea scheduler de learning rate."""
@@ -487,15 +571,48 @@ class PPOAgent:
             return self._zero_action()
         
         obs = self._flatten_obs(observations)
+        # Ajustar a la dimensión esperada por el modelo
+        try:
+            target_dim = int(self.model.observation_space.shape[0])
+            if obs.size < target_dim:
+                obs = np.pad(obs, (0, target_dim - obs.size), mode="constant")
+            elif obs.size > target_dim:
+                obs = obs[:target_dim]
+            obs = obs.astype(np.float32)
+        except Exception:
+            pass
         action, _ = self.model.predict(obs, deterministic=deterministic)
         return self._unflatten_action(action)
-    
+
     def _flatten_obs(self, obs):
         if isinstance(obs, dict):
-            return np.concatenate([np.array(v, dtype=np.float32).ravel() for v in obs.values()])
+            arr = np.concatenate([np.array(v, dtype=np.float32).ravel() for v in obs.values()])
         elif isinstance(obs, (list, tuple)):
-            return np.concatenate([np.array(o, dtype=np.float32).ravel() for o in obs])
-        return np.array(obs, dtype=np.float32).ravel()
+            arr = np.concatenate([np.array(o, dtype=np.float32).ravel() for o in obs])
+        else:
+            arr = np.array(obs, dtype=np.float32).ravel()
+        target_dim = None
+        # Priorizar el espacio de obs del modelo SB3 si existe
+        try:
+            if self._model is not None and hasattr(self._model, "observation_space"):
+                space = self._model.observation_space
+                if space is not None and hasattr(space, "shape") and space.shape:
+                    target_dim = int(space.shape[0])
+        except Exception:
+            target_dim = None
+        if target_dim is None:
+            try:
+                space = getattr(self.env, "observation_space", None)
+                if space is not None and hasattr(space, "shape") and space.shape:
+                    target_dim = int(space.shape[0])
+            except Exception:
+                target_dim = None
+        if target_dim is not None:
+            if arr.size < target_dim:
+                arr = np.pad(arr, (0, target_dim - arr.size), mode="constant")
+            elif arr.size > target_dim:
+                arr = arr[:target_dim]
+        return arr.astype(np.float32)
     
     def _unflatten_action(self, action):
         if isinstance(self.env.action_space, list):
@@ -535,7 +652,16 @@ class PPOAgent:
 
 def make_ppo(env: Any, config: Optional[PPOConfig] = None, **kwargs) -> PPOAgent:
     """Factory function para crear agente PPO robusto."""
-    cfg = config or PPOConfig(**kwargs) if kwargs else PPOConfig()
+    # FIX CRÍTICO: Evaluación explícita para evitar bug con kwargs={}
+    if config is not None:
+        cfg = config
+        logger.info(f"[make_ppo] Using provided config: checkpoint_dir={cfg.checkpoint_dir}, checkpoint_freq_steps={cfg.checkpoint_freq_steps}")
+    elif kwargs:
+        cfg = PPOConfig(**kwargs)
+        logger.info(f"[make_ppo] Created PPOConfig from kwargs: checkpoint_dir={cfg.checkpoint_dir}")
+    else:
+        cfg = PPOConfig()
+        logger.info(f"[make_ppo] Created default PPOConfig: checkpoint_dir={cfg.checkpoint_dir}")
     return PPOAgent(env, cfg)
 
 

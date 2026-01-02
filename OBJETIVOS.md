@@ -57,6 +57,13 @@
 - BESS dimensionado para ≥ 1 día de autonomía
 - Cargadores dimensionados para picos de demanda
 
+#### 4.6.3 Dimensionamiento integrado FV–BESS–cargadores (OE2)
+
+- FV: ~4,162 kW DC (~3.2 MW AC) para maximizar autoconsumo diurno y aportar excedentes hacia carga EV; selección de módulos/inversores adaptada a clima tropical.
+- BESS: 2,000 kWh / 1,200 kW (DoD 80%, C-rate 0.6), descarga prioritaria a EV en horario sin sol (18:00–22:00) y amortiguación de picos/importación.
+- Cargadores: 32 equipos con tomas individuales (128 sockets), 2 kW por toma de moto y 3 kW por toma de mototaxi; potencia instalada ~272 kW, cubre pico de 4 h y operación 09:00–22:00.
+- Estrategia de reducción de CO2: uso directo de FV, respaldo BESS para EV nocturno y mínima importación; comparación contra escenario “grid-only + tailpipe diésel” para cuantificar la reducción.
+
 ---
 
 ### OE.3 - Algoritmos de Gestión de Carga

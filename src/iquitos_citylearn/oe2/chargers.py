@@ -153,6 +153,76 @@ def chargers_needed(
     return int(math.ceil(sessions_peak_per_hour / max(capacity_per_charger_per_hour, 1e-9)))
 
 
+def compute_capacity_breakdown(
+    chargers: int,
+    sockets_per_charger: int,
+    session_minutes: float,
+    opening_hour: int,
+    closing_hour: int,
+    peak_hours: List[int],
+) -> Dict[str, float]:
+    """Capacidad pico y total considerando horario de apertura y horas pico."""
+    hours_open = max(closing_hour - opening_hour, 0)
+    hours_peak = float(len(set(peak_hours)))
+    hours_offpeak = max(hours_open - hours_peak, 0.0)
+    sessions_per_socket_peak = hours_peak * (60.0 / session_minutes)
+    sessions_per_socket_offpeak = hours_offpeak * (60.0 / session_minutes)
+    sessions_per_charger_peak = sessions_per_socket_peak * sockets_per_charger
+    sessions_per_charger_offpeak = sessions_per_socket_offpeak * sockets_per_charger
+    peak_total = sessions_per_charger_peak * chargers
+    offpeak_total = sessions_per_charger_offpeak * chargers
+    return {
+        "hours_open": hours_open,
+        "hours_peak": hours_peak,
+        "hours_offpeak": hours_offpeak,
+        "sessions_peak_total": peak_total,
+        "sessions_offpeak_total": offpeak_total,
+        "sessions_day_total": peak_total + offpeak_total,
+        "sessions_per_charger_peak": sessions_per_charger_peak,
+        "sessions_per_charger_day": sessions_per_charger_peak + sessions_per_charger_offpeak,
+    }
+
+
+def compute_capacity_metrics(
+    chargers: int,
+    sockets_per_charger: int,
+    session_minutes: float,
+    opening_hour: int,
+    closing_hour: int,
+) -> Dict[str, float]:
+    """Calcula la capacidad de sesiones por hora y por día dada la infraestructura."""
+    hours_open = max(closing_hour - opening_hour, 0)
+    sessions_per_hour_capacity = chargers * sockets_per_charger * (60.0 / session_minutes)
+    sessions_per_day_capacity = sessions_per_hour_capacity * hours_open
+    return {
+        "sessions_per_hour_capacity": sessions_per_hour_capacity,
+        "sessions_per_day_capacity": sessions_per_day_capacity,
+    }
+
+
+def compute_co2_reduction(
+    energy_day_kwh: float,
+    grid_carbon_kg_per_kwh: float,
+    km_per_kwh: float,
+    km_per_gallon: float,
+    kgco2_per_gallon: float,
+) -> Dict[str, float]:
+    """Calcula reducción de CO2 al desplazar km eléctricos en lugar de gasolina."""
+    km_day = energy_day_kwh * km_per_kwh
+    gallons_day = km_day / km_per_gallon if km_per_gallon else 0.0
+    co2_gas_kg_day = gallons_day * kgco2_per_gallon
+    co2_ev_kg_day = energy_day_kwh * grid_carbon_kg_per_kwh
+    co2_reduction_kg_day = co2_gas_kg_day - co2_ev_kg_day
+    return {
+        "km_day": km_day,
+        "gallons_day": gallons_day,
+        "co2_gas_kg_day": co2_gas_kg_day,
+        "co2_ev_kg_day": co2_ev_kg_day,
+        "co2_reduction_kg_day": co2_reduction_kg_day,
+        "co2_reduction_kg_year": co2_reduction_kg_day * 365.0,
+    }
+
+
 def evaluate_scenario(
     scenario_id: int,
     pe_motos: float,
@@ -298,34 +368,67 @@ def build_hourly_profile(
     """
     Construye perfil de carga horario de 24h.
 
-    Distribuye la energía diaria entre horas pico y horas normales.
+    Distribuye la energía diaria con campana suave que encaja en el bloque pico:
+    - Subida progresiva (smoothstep) desde apertura hasta inicio de pico.
+    - Pico plano en la ventana definida.
+    - Bajada progresiva (smoothstep) hasta el cierre.
+    - Respeta peak_share_day para energía en pico vs. resto.
     """
     hours = list(range(24))
     operating_hours = [h for h in hours if opening_hour <= h <= closing_hour]
     hours_peak = [h for h in peak_hours if h in operating_hours]
     hours_day = len(operating_hours)
-    hours_peak_n = len(hours_peak)
-    hours_off = max(hours_day - hours_peak_n, 1)
 
     share_peak = peak_share_day
     share_off = 1.0 - share_peak
+    peak_start = min(hours_peak) if hours_peak else opening_hour
+    peak_end = max(hours_peak) if hours_peak else peak_start
 
+    def smoothstep(x: float) -> float:
+        # transición suave 0->1 sin quiebres
+        return x * x * (3 - 2 * x)
+
+    # Pesos base: pre-pico crece suave, pico plano, post-pico decrece suave
+    pre_peak = [h for h in operating_hours if h < peak_start]
+    post_peak = [h for h in operating_hours if h > peak_end]
+
+    weights_base: Dict[int, float] = {}
+    # Subida
+    for h in pre_peak:
+        t = (h - opening_hour) / max(len(pre_peak), 1)
+        weights_base[h] = max(0.0, smoothstep(t))
+    # Pico plano
+    for h in hours_peak:
+        weights_base[h] = 1.0
+    # Bajada
+    for h in post_peak:
+        t = (closing_hour - h) / max(len(post_peak), 1)
+        weights_base[h] = max(0.0, smoothstep(t))
+
+    base_peak_sum = sum(weights_base[h] for h in hours_peak) if hours_peak else 0.0
+    base_off_sum = sum(weights_base[h] for h in operating_hours if h not in hours_peak)
+
+    weights: Dict[int, float] = {}
+    for h in operating_hours:
+        if h in hours_peak and base_peak_sum > 0:
+            weights[h] = weights_base[h] * (share_peak / base_peak_sum)
+        elif h not in hours_peak and base_off_sum > 0:
+            weights[h] = weights_base[h] * (share_off / base_off_sum)
+        else:
+            weights[h] = 0.0
+
+    total_w = sum(weights.values()) if weights else 1.0
     factors = []
     is_peak = []
     for h in hours:
-        if h in hours_peak:
-            factors.append(share_peak / hours_peak_n)
-            is_peak.append(True)
-        elif h in operating_hours:
-            factors.append(share_off / hours_off)
-            is_peak.append(False)
+        if h in weights:
+            factors.append(weights[h] / total_w)
+            is_peak.append(h in hours_peak)
         else:
             factors.append(0.0)
             is_peak.append(False)
 
     factors = np.array(factors, dtype=float)
-    if factors.sum() > 0:
-        factors = factors / factors.sum()
 
     energy_h = energy_day_kwh * factors
     power_kw = energy_h  # 1-hour timestep: kWh == kW average
@@ -345,6 +448,8 @@ def create_individual_chargers(
     sockets_per_charger: int,
     daily_profile: pd.DataFrame,
     charger_type: str = "Level2",
+    prefix: str = "EV_CHARGER",
+    start_index: int = 1,
 ) -> List[IndividualCharger]:
     """
     Crea una lista de cargadores individuales para simulación en CityLearn.
@@ -370,10 +475,10 @@ def create_individual_chargers(
     chargers = []
     total_daily_energy = daily_profile['energy_kwh'].sum()
     energy_per_charger = total_daily_energy / n_chargers
-    
+
     # Perfil base por cargador
     base_profile = (daily_profile['power_kw'] / n_chargers).tolist()
-    
+
     for i in range(n_chargers):
         # Pequeña variación en el perfil (+/- 10%)
         rng = np.random.default_rng(42 + i)
@@ -386,7 +491,7 @@ def create_individual_chargers(
             individual_profile = [p * energy_per_charger / profile_sum for p in individual_profile]
         
         charger = IndividualCharger(
-            charger_id=f"EV_CHARGER_{i+1:03d}",
+            charger_id=f"{prefix}_{start_index + i:03d}",
             charger_type=charger_type,
             power_kw=charger_power_kw,
             sockets=sockets_per_charger,
@@ -509,8 +614,11 @@ def generate_charger_plots(
     if peak_start is not None and peak_end is not None:
         ax.axvspan(peak_start - 0.5, peak_end + 0.5, alpha=0.3, color='orange', label='Horas Pico')
     
-    # Línea de energía/potencia
-    ax.plot(hours, power, 'o-', color='steelblue', linewidth=2, markersize=6, label='Energía / Potencia')
+    # Línea suavizada de energía/potencia (sin alterar los valores originales)
+    x_fine = np.linspace(hours.min(), hours.max(), num=len(hours) * 4)
+    power_smooth = np.interp(x_fine, hours, power)
+    ax.plot(x_fine, power_smooth, '-', color='steelblue', linewidth=2, label='Energía / Potencia (suavizado)')
+    ax.plot(hours, power, 'o', color='steelblue', markersize=4, alpha=0.6)
     
     ax.set_xlabel('Hora', fontsize=11)
     ax.set_ylabel('Energía (kWh) / Potencia (kW)', fontsize=11)
@@ -666,6 +774,10 @@ def run_charger_sizing(
     sockets_per_charger: int,
     opening_hour: int,
     closing_hour: int,
+    km_per_kwh: float,
+    km_per_gallon: float,
+    kgco2_per_gallon: float,
+    grid_carbon_kg_per_kwh: float,
     peak_hours: List[int],
     n_scenarios: int = 100,
     generate_plots: bool = True,
@@ -769,6 +881,32 @@ def run_charger_sizing(
     
     # Usar el resultado como escenario recomendado
     esc_rec = pd.Series(res.__dict__)
+
+    # Ajustar vehículos diarios según capacidad total (9-22h) y mix motos/mototaxis
+    capacity_mix = compute_capacity_breakdown(
+        chargers=int(esc_rec["chargers_required"]),
+        sockets_per_charger=sockets_per_charger,
+        session_minutes=session_minutes,
+        opening_hour=opening_hour,
+        closing_hour=closing_hour,
+        peak_hours=peak_hours,
+    )
+    total_sessions_day = capacity_mix["sessions_day_total"]
+    share_motos = n_motos / max(n_motos + n_mototaxis, 1e-9)
+    share_mototaxis = 1.0 - share_motos
+    esc_rec["vehicles_day_motos"] = total_sessions_day * share_motos
+    esc_rec["vehicles_day_mototaxis"] = total_sessions_day * share_mototaxis
+    esc_rec["vehicles_month_motos"] = esc_rec["vehicles_day_motos"] * 30
+    esc_rec["vehicles_month_mototaxis"] = esc_rec["vehicles_day_mototaxis"] * 30
+    esc_rec["vehicles_year_motos"] = esc_rec["vehicles_day_motos"] * 365
+    esc_rec["vehicles_year_mototaxis"] = esc_rec["vehicles_day_mototaxis"] * 365
+    # Recalcular energía diaria usando todos los vehículos/día efectivos
+    ts_h = session_minutes / 60.0
+    energy_session_moto = charger_power_kw_moto * ts_h * fc_motos
+    energy_session_mototaxi = charger_power_kw_mototaxi * ts_h * fc_mototaxis
+    energy_day_total = esc_rec["vehicles_day_motos"] * energy_session_moto + esc_rec["vehicles_day_mototaxis"] * energy_session_mototaxi
+    esc_rec["energy_day_kwh"] = energy_day_total
+    res.energy_day_kwh = energy_day_total
     
     # También generar escenarios adicionales para análisis de sensibilidad
     pe_list, fc_list = generate_random_scenarios(seed=seed, n_scenarios=n_scenarios)
@@ -864,15 +1002,52 @@ def run_charger_sizing(
     print(f"   Mensual: {int(esc_rec['vehicles_month_motos']):,} motos + {int(esc_rec['vehicles_month_mototaxis']):,} mototaxis")
     print(f"   Anual:   {int(esc_rec['vehicles_year_motos']):,} motos + {int(esc_rec['vehicles_year_mototaxis']):,} mototaxis")
     
-    # Crear cargadores individuales para CityLearn
-    n_chargers_rec = esc_rec['chargers_required']
-    avg_charger_power = esc_rec['charger_power_kw']  # Potencia promedio ponderada
-    individual_chargers = create_individual_chargers(
-        n_chargers=n_chargers_rec,
-        charger_power_kw=avg_charger_power,
-        sockets_per_charger=sockets_per_charger,
-        daily_profile=profile,
-        charger_type="Level2_EV",
+    # Crear cargadores individuales para CityLearn (per-toma controlable)
+    # Reparto: 28 cargadores motos (2 kW) -> 112 tomas individuales
+    #          4 cargadores mototaxis (3 kW) -> 16 tomas individuales
+    n_moto_chargers = 28
+    n_mototaxi_chargers = 4
+    n_tomas_moto = n_moto_chargers * sockets_per_charger
+    n_tomas_mototaxi = n_mototaxi_chargers * sockets_per_charger
+
+    total_veh = esc_rec['vehicles_day_motos'] + esc_rec['vehicles_day_mototaxis']
+    frac_moto = esc_rec['vehicles_day_motos'] / total_veh if total_veh > 0 else 0.8
+    energy_moto = profile['energy_kwh'].sum() * frac_moto
+    energy_mototaxi = profile['energy_kwh'].sum() - energy_moto
+
+    profile_moto = build_hourly_profile(
+        energy_day_kwh=energy_moto,
+        opening_hour=opening_hour,
+        closing_hour=closing_hour,
+        peak_hours=peak_hours,
+        peak_share_day=peak_share_day,
+    )
+    profile_mototaxi = build_hourly_profile(
+        energy_day_kwh=energy_mototaxi,
+        opening_hour=opening_hour,
+        closing_hour=closing_hour,
+        peak_hours=peak_hours,
+        peak_share_day=peak_share_day,
+    )
+
+    individual_chargers = []
+    individual_chargers += create_individual_chargers(
+        n_chargers=n_tomas_moto,
+        charger_power_kw=charger_power_kw_moto,
+        sockets_per_charger=1,
+        daily_profile=profile_moto,
+        charger_type="Level2_MOTO",
+        prefix="MOTO_CH",
+        start_index=1,
+    )
+    individual_chargers += create_individual_chargers(
+        n_chargers=n_tomas_mototaxi,
+        charger_power_kw=charger_power_kw_mototaxi,
+        sockets_per_charger=1,
+        daily_profile=profile_mototaxi,
+        charger_type="Level2_MOTOTAXI",
+        prefix="MOTO_TAXI_CH",
+        start_index=n_tomas_moto + 1,
     )
     
     # Guardar datos de cargadores individuales
@@ -913,6 +1088,34 @@ def run_charger_sizing(
         print("\n[+] Generando graficas...")
         generate_charger_plots(df, esc_rec, profile, out_dir, reports_dir=reports_dir)
 
+    # Supuestos de SOC de llegada y energia/tiempo restante promedio
+    soc_arrival_pct = [20, 40, 50, 60]
+    soc_missing_pct = [80, 60, 50, 40]
+    avg_missing_frac = 0.575  # 57.5% de la energia de una sesion de 30 min
+    full_energy_per_session_kwh = esc_rec["charger_power_kw"] * (session_minutes / 60.0)
+    avg_energy_needed_kwh = full_energy_per_session_kwh * avg_missing_frac
+    avg_time_remaining_minutes = session_minutes * avg_missing_frac
+
+    co2_metrics = compute_co2_reduction(
+        energy_day_kwh=float(esc_rec['energy_day_kwh']),
+        grid_carbon_kg_per_kwh=float(grid_carbon_kg_per_kwh),
+        km_per_kwh=float(km_per_kwh),
+        km_per_gallon=float(km_per_gallon),
+        kgco2_per_gallon=float(kgco2_per_gallon),
+    )
+    print(f"   SOC llegada (supuesto): {soc_arrival_pct} % -> faltan {soc_missing_pct} %")
+    print(f"   Energia x sesion (30 min): {full_energy_per_session_kwh:.2f} kWh")
+    print(f"   Energia faltante promedio: {avg_energy_needed_kwh:.2f} kWh (~{avg_missing_frac*100:.1f}% de la sesion)")
+    print(f"   Tiempo restante promedio: {avg_time_remaining_minutes:.1f} min")
+
+    capacity = compute_capacity_metrics(
+        chargers=int(esc_rec.get("chargers_required", n_chargers_rec)),
+        sockets_per_charger=sockets_per_charger,
+        session_minutes=session_minutes,
+        opening_hour=opening_hour,
+        closing_hour=closing_hour,
+    )
+
     # Resumen JSON
     metadata_payload = {
         "profiles_dir": "charger_profile_variants",
@@ -938,6 +1141,19 @@ def run_charger_sizing(
         "n_chargers_recommended": n_chargers_rec,
         "total_daily_energy_kwh": profile['energy_kwh'].sum(),
         "peak_power_kw": profile['power_kw'].max(),
+        "avg_soc_arrival_pct": soc_arrival_pct,
+        "avg_soc_missing_pct": soc_missing_pct,
+        "avg_missing_energy_kwh": avg_energy_needed_kwh,
+        "avg_missing_time_minutes": avg_time_remaining_minutes,
+        "full_session_energy_kwh": full_energy_per_session_kwh,
+        "avg_missing_frac": avg_missing_frac,
+        "capacity_sessions_per_hour": capacity["sessions_per_hour_capacity"],
+        "capacity_sessions_per_day": capacity["sessions_per_day_capacity"],
+        "demand_sessions_per_day": float(esc_rec["vehicles_day_motos"] + esc_rec["vehicles_day_mototaxis"]),
+        "co2_gas_kg_day": co2_metrics["co2_gas_kg_day"],
+        "co2_ev_kg_day": co2_metrics["co2_ev_kg_day"],
+        "co2_reduction_kg_day": co2_metrics["co2_reduction_kg_day"],
+        "co2_reduction_kg_year": co2_metrics["co2_reduction_kg_year"],
         # Demanda total instalada
         "n_motos": n_motos,
         "n_mototaxis": n_mototaxis,

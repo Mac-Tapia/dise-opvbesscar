@@ -17,6 +17,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.cm as cm  # type: ignore[import-untyped]
+import pvlib
+from zoneinfo import ZoneInfo
 from matplotlib.gridspec import GridSpec
 from pathlib import Path
 from typing import Dict, Any, Optional, Tuple, TYPE_CHECKING
@@ -693,23 +695,36 @@ def plot_analisis_temporal_avanzado(df: pd.DataFrame, monthly: pd.DataFrame,
     # Panel 6: Performance Ratio mensual
     ax6 = fig.add_subplot(gs[1, 2])
     
-    # Calcular PR mensual (simplificado)
-    monthly_energy = monthly['ac_energy_kwh'].values
-    monthly_ghi = np.asarray(df.groupby(pd.to_datetime(df.index).month)['ghi_wm2'].sum().values) / 4 / 1000  # kWh/m²
-    
+    # Calcular PR mensual con POA (PVLIB, sin truncar a 100 %)
+    lat = results.get('lat', -3.75)
+    lon = results.get('lon', -73.25)
+    tz = results.get('tz', 'America/Lima')
+    tilt = results.get('tilt', 10.0)
+    azimuth = results.get('azimuth', 0.0)
     system_dc_kw = results.get('target_dc_kw', 4162)
-    pr_monthly = []
-    for e, g in zip(monthly_energy, monthly_ghi):
-        if g > 0:
-            pr = (e / system_dc_kw) / g * 100  # %
-            pr_monthly.append(min(pr, 100))  # Limitar a 100%
-        else:
-            pr_monthly.append(0)
+    location = pvlib.location.Location(latitude=lat, longitude=lon, tz=tz)
+    sp = location.get_solarposition(df.index)
+    irr = pvlib.irradiance.get_total_irradiance(
+        surface_tilt=tilt,
+        surface_azimuth=azimuth,
+        dni=df['dni_wm2'],
+        ghi=df['ghi_wm2'],
+        dhi=df['dhi_wm2'],
+        solar_zenith=sp['zenith'],
+        solar_azimuth=sp['azimuth']
+    )
+    poa = irr['poa_global'].fillna(0)
+    dt_hours = (df.index[1] - df.index[0]).total_seconds() / 3600
+    poa_kwh_m2 = poa * dt_hours / 1000  # kWh/m2 por paso
+    monthly_energy = monthly['ac_energy_kwh']
+    monthly_poa = poa_kwh_m2.resample('ME').sum()
+    pr_monthly_series = monthly_energy / (system_dc_kw * monthly_poa)
+    pr_monthly = pr_monthly_series.values * 100  # a porcentaje
     
     months_labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
                      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
     ax6.plot(months_labels, pr_monthly, 'go-', linewidth=2, markersize=8)
-    pr_mean = float(np.mean([p for p in pr_monthly if p > 0]))
+    pr_mean = float(np.mean(pr_monthly))
     ax6.axhline(y=pr_mean, color='red', linestyle='--', linewidth=1.5, 
                 label=f'PR anual: {pr_mean:.1f}%')
     
@@ -721,8 +736,8 @@ def plot_analisis_temporal_avanzado(df: pd.DataFrame, monthly: pd.DataFrame,
     ax6.grid(True, alpha=0.3)
     
     # Anotaciones min/max
-    pr_min = min([p for p in pr_monthly if p > 0])
-    pr_max = max(pr_monthly)
+    pr_min = float(np.min(pr_monthly))
+    pr_max = float(np.max(pr_monthly))
     ax6.annotate(f'Mín: {pr_min:.1f}%\nMáx: {pr_max:.1f}%\nPromedio: {pr_mean:.1f}%',
                  xy=(0.02, 0.05), xycoords='axes fraction', ha='left', va='bottom',
                  fontsize=8, bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))

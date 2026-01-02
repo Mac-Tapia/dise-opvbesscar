@@ -101,6 +101,7 @@ def compute_table(summary: Dict[str, Any], factors: EmissionsFactors,
     grid = summary.get("grid_only_result")
     baseline = summary.get("pv_bess_uncontrolled")
     best = summary["best_result"]
+    chargers = summary.get("chargers_results", {})
 
     # Annual energy terms (kWh/year)
     if baseline is not None:
@@ -169,6 +170,13 @@ def compute_table(summary: Dict[str, Any], factors: EmissionsFactors,
         "base_combustion_tco2_y": base,
         "reduction_tco2_y": base - (ctrl_kg_y / 1000.0),
     }
+    if chargers:
+        meta.update({
+            "oe2_capacity_sessions_per_day": chargers.get("capacity_sessions_per_day"),
+            "oe2_demand_sessions_per_day": chargers.get("demand_sessions_per_day"),
+            "oe2_co2_reduction_kg_day": chargers.get("co2_reduction_kg_day"),
+            "oe2_co2_reduction_tco2_y": float(chargers.get("co2_reduction_kg_year", 0.0)) / 1000.0,
+        })
     
     # Contexto ciudad Iquitos si está disponible
     if city_baseline:
@@ -362,6 +370,16 @@ def write_outputs(
     md.append(f"**Agente óptimo seleccionado:** `{best_agent}`\n")
     md.append("**Criterio de selección:** Mínimas emisiones de CO2 anuales y máxima autosuficiencia\n")
     md.append("**Baseline OE2:** PV+BESS conectados con carga EV sin control (Uncontrolled)\n")
+    cap = df.attrs.get("oe2_capacity_sessions_per_day")
+    if cap is not None:
+        demand = df.attrs.get("oe2_demand_sessions_per_day")
+        co2_oe2 = df.attrs.get("oe2_co2_reduction_tco2_y")
+        co2_day = df.attrs.get("oe2_co2_reduction_kg_day")
+        md.append("\n### Contexto OE2 (infraestructura de carga)\n")
+        md.append(f"- Capacidad diaria: {cap:,.0f} sesiones/día; demanda objetivo: {demand:,.0f} sesiones/día\n")
+        if co2_oe2 is not None:
+            md.append(f"- Reducción directa por electrificación (OE2): {co2_oe2:,.2f} tCO2/año ({co2_day:,.1f} kg/día)\n")
+        md.append("- Estos valores sirven como baseline operativo previo al control inteligente (OE3).\n")
     
     if agent_comparison is not None and len(agent_comparison) > 0:
         md.append("\n## 2. Comparación de Agentes Evaluados\n")
