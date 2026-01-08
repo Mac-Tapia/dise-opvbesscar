@@ -4,6 +4,19 @@
 
 2025-12-22
 
+## Línea Base de Emisiones CO₂ - Iquitos 2025
+
+Fuente: Plan de Desarrollo Concertado de la Provincia de Maynas 2025-2030 [4]
+
+| Sector | Detalle | Emisiones (tCO₂/año) |
+| ------ | ------- | ------------------- |
+| Transporte | 61,000 mototaxis | 152,500 |
+| Transporte | 70,500 motos lineales | 105,750 |
+| **Total transporte** | 95% del sector | **258,250** |
+| Generación eléctrica | Central térmica (22.5M gal/año) | **290,000** |
+
+---
+
 ## Schema: PV + BESS (schema_pv_bess.json)
 
 | Parametro | Valor |
@@ -65,7 +78,6 @@ Resumen num?rico (mejor y ?ltimo reward):
 - PPO: mejor=8142.5492, ?ltimo=8142.5492, pasos=17518
 - A2C: mejor=8040.8059, ?ltimo=8040.8059, pasos=17518
 
-
 - `../../analyses/oe3/training/SAC_training_metrics.csv`
 - `../../analyses/oe3/training/PPO_training_metrics.csv`
 - `../../analyses/oe3/training/A2C_training_metrics.csv`
@@ -81,8 +93,6 @@ Validación de reducción de CO2:
 - Emisiones de transporte: 111,761 kgCO2/año sin control vs 7,967 kgCO2/año con control (92.87% menos).
 
 El bloque anterior resume cómo A2C satisface OE.3 al controlar cargas EV, BESS y red para maximizar los excedentes solares y cuantificar las reducciones directas/indirectas de CO2.
-
-
 
 ## Perfiles estocásticos de cargadores (charger_profile_variants)
 

@@ -171,12 +171,27 @@ def compute_table(summary: Dict[str, Any], factors: EmissionsFactors,
         "reduction_tco2_y": base - (ctrl_kg_y / 1000.0),
     }
     if chargers:
-        meta.update({
-            "oe2_capacity_sessions_per_day": chargers.get("capacity_sessions_per_day"),
-            "oe2_demand_sessions_per_day": chargers.get("demand_sessions_per_day"),
-            "oe2_co2_reduction_kg_day": chargers.get("co2_reduction_kg_day"),
-            "oe2_co2_reduction_tco2_y": float(chargers.get("co2_reduction_kg_year", 0.0)) / 1000.0,
-        })
+        # Usar métricas OE3 si están disponibles, sino usar las tradicionales
+        if "oe3_net_avoided_tco2_year" in chargers:
+            meta.update({
+                "oe2_capacity_sessions_per_day": chargers.get("capacity_sessions_per_day"),
+                "oe2_demand_sessions_per_day": chargers.get("demand_sessions_per_day"),
+                "oe2_ev_fraction": chargers.get("oe3_ev_fraction"),
+                "oe2_ev_from_grid_kwh_year": chargers.get("oe3_ev_from_grid_kwh_year"),
+                "oe2_ev_from_pv_kwh_year": chargers.get("oe3_ev_from_pv_kwh_year"),
+                "oe2_direct_avoided_tco2_y": chargers.get("oe3_direct_avoided_tco2_year"),
+                "oe2_indirect_avoided_tco2_y": chargers.get("oe3_indirect_avoided_tco2_year"),
+                "oe2_net_avoided_tco2_y": chargers.get("oe3_net_avoided_tco2_year"),
+                "oe2_net_avoided_tco2_life": chargers.get("oe3_net_avoided_tco2_life"),
+            })
+        else:
+            # Fallback a métricas tradicionales
+            meta.update({
+                "oe2_capacity_sessions_per_day": chargers.get("capacity_sessions_per_day"),
+                "oe2_demand_sessions_per_day": chargers.get("demand_sessions_per_day"),
+                "oe2_co2_reduction_kg_day": chargers.get("co2_reduction_kg_day"),
+                "oe2_co2_reduction_tco2_y": float(chargers.get("co2_reduction_kg_year", 0.0)) / 1000.0,
+            })
     
     # Contexto ciudad Iquitos si está disponible
     if city_baseline:

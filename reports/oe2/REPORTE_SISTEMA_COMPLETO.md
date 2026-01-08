@@ -7,6 +7,19 @@
 
 ---
 
+## Línea Base de Emisiones CO₂ - Iquitos 2025
+
+Fuente: Plan de Desarrollo Concertado de la Provincia de Maynas 2025-2030 [4]
+
+| Sector | Detalle | Emisiones (tCO₂/año) |
+| ------ | ------- | ------------------- |
+| Transporte | 61,000 mototaxis | 152,500 |
+| Transporte | 70,500 motos lineales | 105,750 |
+| **Total transporte** | 95% del sector | **258,250** |
+| Generación eléctrica | Central térmica (22.5M gal/año) | **290,000** |
+
+---
+
 ## 1. SISTEMA FOTOVOLTAICO (PV)
 
 ### 1.1 Componentes Seleccionados
@@ -198,12 +211,9 @@ Resumen num?rico (mejor y ?ltimo reward):
 - PPO: mejor=8142.5492, ?ltimo=8142.5492, pasos=17518
 - A2C: mejor=8040.8059, ?ltimo=8040.8059, pasos=17518
 
-
 - `../../analyses/oe3/training/SAC_training_metrics.csv`
 - `../../analyses/oe3/training/PPO_training_metrics.csv`
 - `../../analyses/oe3/training/A2C_training_metrics.csv`
-
-
 
 ## 8. Validacion de reduccion de CO2 (OE2 -> OE3)
 

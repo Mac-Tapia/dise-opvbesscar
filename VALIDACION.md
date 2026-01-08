@@ -3,7 +3,21 @@
 Este archivo describe como validar el cumplimiento de la Tabla 9 y las
 hipotesis sin modificar el texto aprobado de la tesis.
 
+## Linea Base de Emisiones CO2 - Iquitos 2025
+
+Fuente: Plan de Desarrollo Concertado de la Provincia de Maynas 2025-2030 [4]
+
+| Sector | Detalle | Emisiones (tCO2/ano) |
+| ------ | ------- | ------------------- |
+| Transporte | 61,000 mototaxis | 152,500 |
+| Transporte | 70,500 motos lineales | 105,750 |
+| **Total transporte** | 95% del sector | **258,250** |
+| Generacion electrica | Central termica aislada (22.5M gal/ano) | **290,000** |
+
+Ver documento completo: `LINEA_BASE_EMISIONES.md`
+
 ## Flujo recomendado
+
 1) `python scripts/run_oe2_solar.py --config configs/default.yaml`
 2) `python scripts/run_oe2_chargers.py --config configs/default.yaml`
 3) `python scripts/run_oe1_location.py`
@@ -16,15 +30,18 @@ hipotesis sin modificar el texto aprobado de la tesis.
 ## Evidencia por objetivo e hipotesis
 
 ### HG (reduccion de CO2)
+
 - Archivo: `analyses/oe3/co2_breakdown.csv`
 - Criterio: `net_avoided_kgco2_y > 0`
 
 ### HE1 (ubicacion estrategica)
+
 - Archivo: `data/interim/oe1/location_summary.json`
 - Criterios: area techada, distancia a subestacion, flota en hora pico,
   tiempo de permanencia y capacidad de estacionamiento.
 
 ### HE2 (dimensionamiento PV, BESS y cargadores)
+
 - Archivos:
   - `data/interim/oe2/solar/solar_results.json`
   - `data/interim/oe2/bess/bess_results.json`
@@ -32,10 +49,12 @@ hipotesis sin modificar el texto aprobado de la tesis.
 - Criterios: potencia FV, capacidad BESS (autonomia/DoD), potencia pico EV.
 
 ### HE3 (agente inteligente de gestion)
+
 - Archivos:
   - `outputs/oe3/simulations/simulation_summary.json`
   - `analyses/oe3/agent_comparison.csv`
 - Criterio: agente con menor CO2 (ranking = 1) frente al baseline.
 
 ## Salida de validacion automatizada
+
 - `REPORTE_CUMPLIMIENTO.json` (resultado del script de validacion).
