@@ -72,27 +72,36 @@ Graficas individuales de aprendizaje por agente:
 
 CSV de metricas de entrenamiento:
 
-Resumen num?rico (mejor y ?ltimo reward):
+Resumen numérico (mejor reward por episodio):
 
-- SAC: mejor=15145.8391, ?ltimo=15145.8391, pasos=17518
-- PPO: mejor=8142.5492, ?ltimo=8142.5492, pasos=17518
-- A2C: mejor=8040.8059, ?ltimo=8040.8059, pasos=17518
+- SAC: reward_final=8,258.94, steps=87,595
+- PPO: reward_final=8,578.47, steps=88,851
+- A2C: reward_final=8,502.52, steps=96,531
 
 - `../../analyses/oe3/training/SAC_training_metrics.csv`
 - `../../analyses/oe3/training/PPO_training_metrics.csv`
 - `../../analyses/oe3/training/A2C_training_metrics.csv`
-Validación de reducción de CO2:
 
-- Agente seleccionado: A2C (SB3) — equilibrio entre cargadores, BESS y PV para cumplir OE.3.
-- CO2 sin control (PV+BESS): 103,184 kgCO2/año (línea base sin agentes inteligentes).
-- CO2 con control: 95,505 kgCO2/año (mejor escenario con A2C).
-- Reducción neta: 7,679 kgCO2/año (~7.45%) que acredita la contribución a OE.3.
-- Directa: 85,534 kgCO2/año (mejor uso de PV/BESS y menor dependencia de la matriz).
-- Indirecta: 9,971 kgCO2/año (mayor aprovechamiento de renovables).
-- Total: 95,504 kgCO2/año evitados con el agente A2C.
-- Emisiones de transporte: 111,761 kgCO2/año sin control vs 7,967 kgCO2/año con control (92.87% menos).
+## Validación de reducción de CO₂ (DATOS CORREGIDOS 2026-01-08)
 
-El bloque anterior resume cómo A2C satisface OE.3 al controlar cargas EV, BESS y red para maximizar los excedentes solares y cuantificar las reducciones directas/indirectas de CO2.
+**Línea Base Combinada:**
+
+- Grid-only (red térmica): 5,596.26 tCO₂/año
+- Tailpipe (gasolina evitada): 2,784.91 tCO₂/año
+- **TOTAL BASE: 8,381.16 tCO₂/año**
+
+**Resultados por Agente:**
+
+| Agente | Emisiones (tCO₂/año) | Reducción vs Base |
+| ------ | -------------------: | ----------------: |
+| Uncontrolled | 2,475.06 | 70.47% |
+| A2C | 2,476.32 | 70.45% |
+| PPO | 2,499.15 | 70.18% |
+| SAC | 2,657.36 | 68.29% |
+
+**Proyección 20 años:** ~118,000 tCO₂ evitados
+
+**Contribución al sector transporte de Iquitos:** 2.29% (5,906 / 258,250 tCO₂)
 
 ## Perfiles estocásticos de cargadores (charger_profile_variants)
 
