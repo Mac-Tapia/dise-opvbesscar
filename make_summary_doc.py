@@ -50,13 +50,13 @@ row = table.rows[0].cells
 row[0].text = 'Agente'
 row[1].text = 'Mejor reward'
 row[2].text = 'Pasos'
-for agent, reward, steps in [('SAC', '15,145', '17,518'), ('PPO', '8,142', '17,518'), ('A2C', '8,040', '17,518')]:
+for agent, reward, steps in [('SAC', '8,258.94', '87,595'), ('PPO', '8,578.47', '88,851'), ('A2C', '8,502.52', '96,531')]:
     cells = table.add_row().cells
     cells[0].text = agent
     cells[1].text = reward
     cells[2].text = steps
 
-doc.add_paragraph('Reducción de CO₂: baseline PV+BESS sin control 103,184 kgCO₂/año; con control (A2C) 95,505 kgCO₂/año; ahorro 7,679 kgCO₂/año (~7.45%). Emisiones transporte combustión 111,761 kg → control 7,967 kg (92.87% menos). Directa: 85,534 kg, indirecta: 9,971 kg. Reportes: analyses/oe3/co2_control_vs_uncontrolled.csv y analyses/oe3/co2_comparison_table.csv.')
+doc.add_paragraph('Reducción de CO₂ (DATOS CORREGIDOS 2026-01-08): Línea base Grid+Combustión 8,381.16 tCO₂/año. Con PV+BESS sin control (Uncontrolled): 2,475.06 tCO₂/año (reducción 70.47%). Con A2C: 2,476.32 tCO₂/año (reducción 70.45%). Proyección 20 años: ~118,000 tCO₂ evitados. Reportes actualizados: analyses/oe3/co2_comparison_table.csv y outputs/oe3/simulations/')
 
 doc.add_paragraph('Los agentes usan redes de CityLearn conectadas con citylearn/iquitos_ev_mall/schema_pv_bess.json y los perfiles estocásticos de `charger_profile_variants`. Se respeta la distinción entre emisiones directas e indirectas y se cuantifican tanto el escenario sin control (baseline) como el escenario controlado, ofreciendo así la contribución del proyecto al objetivo de reducción de CO₂.')
 
