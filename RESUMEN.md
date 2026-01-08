@@ -12,6 +12,28 @@
 
 ---
 
+## 📊 Línea Base de Emisiones CO₂ - Iquitos 2025
+
+Fuente: Plan de Desarrollo Concertado de la Provincia de Maynas 2025-2030 [4]
+
+### Sector Transporte
+
+| Tipo de Vehículo | Cantidad | Emisiones (tCO₂/año) |
+| ---------------- | -------- | ------------------- |
+| Mototaxis | 61,000 | 152,500 |
+| Motos lineales | 70,500 | 105,750 |
+| **Total transporte** | **131,500** | **258,250** (95% del sector) |
+
+### Sector Generación Eléctrica
+
+| Indicador | Valor |
+| --------- | ----- |
+| Sistema eléctrico | Central térmica aislada |
+| Consumo combustible | 22.5 millones galones/año |
+| **Emisiones** | **290,000 tCO₂/año** |
+
+---
+
 ## 🎯 Proyecto Completado
 
 **Dimensionamiento y Gestión de Carga para Reducción de Emisiones CO₂**  

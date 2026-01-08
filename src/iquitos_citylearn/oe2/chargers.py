@@ -207,7 +207,11 @@ def compute_co2_reduction(
     km_per_gallon: float,
     kgco2_per_gallon: float,
 ) -> Dict[str, float]:
-    """Calcula reducción de CO2 al desplazar km eléctricos en lugar de gasolina."""
+    """Calcula reducción de CO2 al desplazar km eléctricos en lugar de gasolina.
+    
+    NOTA: Esta función calcula la reducción DIRECTA (electrificación).
+    Para la metodología completa OE3, usar compute_co2_breakdown_oe3().
+    """
     km_day = energy_day_kwh * km_per_kwh
     gallons_day = km_day / km_per_gallon if km_per_gallon else 0.0
     co2_gas_kg_day = gallons_day * kgco2_per_gallon
@@ -220,6 +224,148 @@ def compute_co2_reduction(
         "co2_ev_kg_day": co2_ev_kg_day,
         "co2_reduction_kg_day": co2_reduction_kg_day,
         "co2_reduction_kg_year": co2_reduction_kg_day * 365.0,
+    }
+
+
+def allocate_grid_to_ev(grid_import_kwh: float, ev_kwh: float, building_kwh: float) -> float:
+    """Asigna proporcionalmente la importación de red a la carga EV.
+    
+    Metodología OE3: la fracción de EV sobre la demanda total determina
+    cuánta energía de red se asigna a la carga EV.
+    """
+    denom = max(ev_kwh + building_kwh, 1e-9)
+    return grid_import_kwh * (ev_kwh / denom)
+
+
+def compute_co2_breakdown_oe3(
+    ev_energy_kwh_day: float,
+    total_demand_kwh_day: float,
+    grid_import_kwh_day: float,
+    pv_generation_kwh_day: float,
+    grid_export_kwh_day: float,
+    grid_carbon_kg_per_kwh: float,
+    km_per_kwh: float,
+    km_per_gallon: float,
+    kgco2_per_gallon: float,
+    project_life_years: int = 20,
+) -> Dict[str, float]:
+    """Calcula breakdown completo de CO2 usando metodología OE3.
+    
+    Metodología:
+    1. Asigna energía de red a EV proporcionalmente (fracción EV/total)
+    2. Energía EV no-red = EV total - EV desde red (proviene de PV/BESS)
+    3. Reducción DIRECTA = Baseline gasolina - EV toda red
+    4. Reducción INDIRECTA = EV desde PV × factor red
+    5. NETO = Directa + Indirecta
+    
+    Args:
+        ev_energy_kwh_day: Energía diaria EV
+        total_demand_kwh_day: Demanda total diaria (EV + edificio)
+        grid_import_kwh_day: Importación diaria de red
+        pv_generation_kwh_day: Generación PV diaria
+        grid_export_kwh_day: Exportación diaria a red
+        grid_carbon_kg_per_kwh: Factor de emisión de red
+        km_per_kwh: Eficiencia EV (km/kWh)
+        km_per_gallon: Eficiencia gasolina (km/galón)
+        kgco2_per_gallon: Factor emisión gasolina
+        project_life_years: Vida útil del proyecto (años)
+    
+    Returns:
+        Diccionario con métricas diarias y anuales de reducción CO2
+    """
+    # Demanda de edificio (sin EV)
+    building_kwh_day = total_demand_kwh_day - ev_energy_kwh_day
+    
+    # Asignación de energía de red a EV (metodología OE3)
+    ev_from_grid_kwh_day = allocate_grid_to_ev(
+        grid_import_kwh_day, ev_energy_kwh_day, building_kwh_day
+    )
+    ev_from_pv_kwh_day = max(ev_energy_kwh_day - ev_from_grid_kwh_day, 0.0)
+    
+    # PV usado localmente
+    pv_used_kwh_day = max(pv_generation_kwh_day - grid_export_kwh_day, 0.0)
+    
+    # Valores anuales
+    ev_energy_kwh_year = ev_energy_kwh_day * 365
+    ev_from_grid_kwh_year = ev_from_grid_kwh_day * 365
+    ev_from_pv_kwh_year = ev_from_pv_kwh_day * 365
+    
+    # Servicio de transporte
+    km_day = ev_energy_kwh_day * km_per_kwh
+    km_year = ev_energy_kwh_year * km_per_kwh
+    gallons_day = km_day / max(km_per_gallon, 1e-9)
+    gallons_year = km_year / max(km_per_gallon, 1e-9)
+    
+    # 1. Baseline: CO2 si usaran gasolina
+    transport_base_kg_day = gallons_day * kgco2_per_gallon
+    transport_base_kg_year = gallons_year * kgco2_per_gallon
+    
+    # 2. CO2 si toda la carga EV fuera de red (escenario sin PV)
+    ev_all_grid_kg_day = ev_energy_kwh_day * grid_carbon_kg_per_kwh
+    ev_all_grid_kg_year = ev_energy_kwh_year * grid_carbon_kg_per_kwh
+    
+    # 3. Reducción DIRECTA: Gasolina → EV (aunque toda sea de red)
+    direct_avoided_kg_day = transport_base_kg_day - ev_all_grid_kg_day
+    direct_avoided_kg_year = transport_base_kg_year - ev_all_grid_kg_year
+    
+    # 4. Reducción INDIRECTA: EV alimentado por PV en lugar de red
+    indirect_avoided_kg_day = ev_from_pv_kwh_day * grid_carbon_kg_per_kwh
+    indirect_avoided_kg_year = ev_from_pv_kwh_year * grid_carbon_kg_per_kwh
+    
+    # 5. Reducción NETA
+    net_avoided_kg_day = direct_avoided_kg_day + indirect_avoided_kg_day
+    net_avoided_kg_year = direct_avoided_kg_year + indirect_avoided_kg_year
+    
+    # 6. CO2 residual (EV que aún viene de la red)
+    residual_grid_ev_kg_day = ev_from_grid_kwh_day * grid_carbon_kg_per_kwh
+    residual_grid_ev_kg_year = ev_from_grid_kwh_year * grid_carbon_kg_per_kwh
+    
+    # Fracción EV
+    ev_fraction = ev_energy_kwh_day / max(total_demand_kwh_day, 1e-9)
+    
+    return {
+        # Energía
+        "ev_energy_kwh_day": ev_energy_kwh_day,
+        "ev_energy_kwh_year": ev_energy_kwh_year,
+        "ev_from_grid_kwh_day": ev_from_grid_kwh_day,
+        "ev_from_grid_kwh_year": ev_from_grid_kwh_year,
+        "ev_from_pv_kwh_day": ev_from_pv_kwh_day,
+        "ev_from_pv_kwh_year": ev_from_pv_kwh_year,
+        "ev_fraction": ev_fraction,
+        "pv_used_kwh_day": pv_used_kwh_day,
+        # Transporte
+        "km_day": km_day,
+        "km_year": km_year,
+        "gallons_day": gallons_day,
+        "gallons_year": gallons_year,
+        # Baseline gasolina
+        "transport_base_kgco2_day": transport_base_kg_day,
+        "transport_base_kgco2_year": transport_base_kg_year,
+        "transport_base_tco2_year": transport_base_kg_year / 1000.0,
+        # Escenario solo red
+        "ev_all_grid_kgco2_day": ev_all_grid_kg_day,
+        "ev_all_grid_kgco2_year": ev_all_grid_kg_year,
+        "ev_all_grid_tco2_year": ev_all_grid_kg_year / 1000.0,
+        # Reducción DIRECTA (electrificación)
+        "direct_avoided_kgco2_day": direct_avoided_kg_day,
+        "direct_avoided_kgco2_year": direct_avoided_kg_year,
+        "direct_avoided_tco2_year": direct_avoided_kg_year / 1000.0,
+        # Reducción INDIRECTA (PV alimenta EV)
+        "indirect_avoided_kgco2_day": indirect_avoided_kg_day,
+        "indirect_avoided_kgco2_year": indirect_avoided_kg_year,
+        "indirect_avoided_tco2_year": indirect_avoided_kg_year / 1000.0,
+        # Reducción NETA
+        "net_avoided_kgco2_day": net_avoided_kg_day,
+        "net_avoided_kgco2_year": net_avoided_kg_year,
+        "net_avoided_tco2_year": net_avoided_kg_year / 1000.0,
+        # Residual
+        "residual_grid_ev_kgco2_day": residual_grid_ev_kg_day,
+        "residual_grid_ev_kgco2_year": residual_grid_ev_kg_year,
+        "residual_grid_ev_tco2_year": residual_grid_ev_kg_year / 1000.0,
+        # Proyección
+        "direct_avoided_tco2_life": direct_avoided_kg_year / 1000.0 * project_life_years,
+        "indirect_avoided_tco2_life": indirect_avoided_kg_year / 1000.0 * project_life_years,
+        "net_avoided_tco2_life": net_avoided_kg_year / 1000.0 * project_life_years,
     }
 
 

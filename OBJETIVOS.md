@@ -1,5 +1,27 @@
 # Verificación de Objetivos - DISEÑO DE INFRAESTRUCTURA DE CARGA INTELIGENTE DE MOTOS Y MOTOTAXIS ELÉCTRICAS PARA REDUCIR LAS EMISIONES DE DIÓXIDO DE CARBONO EN LA CIUDAD DE IQUITOS, 2025
 
+## Línea Base de Emisiones CO₂ - Iquitos 2025
+
+Fuente: Plan de Desarrollo Concertado de la Provincia de Maynas 2025-2030 [4]
+
+### Sector Transporte
+
+| Vehículo | Cantidad | Emisiones (tCO₂/año) |
+| -------- | -------- | ------------------- |
+| Mototaxis | 61,000 | 152,500 |
+| Motos lineales | 70,500 | 105,750 |
+| **Total** | **131,500** | **258,250** (95% del sector) |
+
+### Sector Generación Eléctrica
+
+| Indicador | Valor |
+| --------- | ----- |
+| Sistema | Central térmica aislada |
+| Consumo | 22.5 millones galones/año |
+| **Emisiones** | **290,000 tCO₂/año** |
+
+---
+
 ## Objetivo General
 
 **OG.** Diseñar la infraestructura de carga inteligente para motos y mototaxis eléctricas que reduzca las emisiones de dióxido de carbono en la ciudad de Iquitos, 2025.
@@ -137,7 +159,6 @@
 | OE.3 - Análisis | Cálculo de emisiones CO₂ | `oe3/co2_table.py` | `analyses/oe3/co2_comparison_table.csv/.md` |
 
 Nota: OE.3 usa insumos de OE.2 en `data/interim/oe2` (solar/bess/chargers) y los intermedios consolidados en `data/interim/oe2/citylearn` para construir `data/processed/citylearn/iquitos_ev_mall/schema_pv_bess.json`.
-
 
 ---
 

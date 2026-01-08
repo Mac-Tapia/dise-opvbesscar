@@ -171,5 +171,9 @@ oe3:
     kgco2_per_gallon: 8.9
     project_life_years: 20
   city_baseline_tpy:
-    transport: 258250.0
-    electricity_generation: 275000.0
+    # Fuente: Plan de Desarrollo de Maynas [4]
+    # - 61,000 mototaxis: 152,500 tCO2/año
+    # - 70,500 motos lineales: 105,750 tCO2/año
+    transport: 258250.0 # Total sector transporte (95% de emisiones)
+    # Sistema eléctrico aislado: 22.5 millones galones/año → 290,000 tCO2/año
+    electricity_generation: 290000.0

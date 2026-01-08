@@ -3,9 +3,34 @@
 Este documento mapea cada dimension e indicador de la Tabla 9 al codigo,
 parametros y salidas del proyecto. No modifica la redaccion aprobada en la tesis.
 
+## Linea Base de Emisiones - Iquitos 2025
+
+Fuente: Plan de Desarrollo Concertado de la Provincia de Maynas 2025-2030 [4]
+
+### Sector Transporte
+
+- 61,000 mototaxis: 152,500 tCO2/ano
+- 70,500 motos lineales: 105,750 tCO2/ano
+- **Total transporte: 258,250 tCO2/ano** (95% del sector)
+
+### Sector Generacion Electrica
+
+- Sistema aislado (central termica): 22.5 millones de galones/ano
+- **Total generacion: 290,000 tCO2/ano**
+
+### Parametros en configuracion
+
+- `configs/default.yaml` -> `oe3.city_baseline_tpy.transport: 258250.0`
+- `configs/default.yaml` -> `oe3.city_baseline_tpy.electricity_generation: 290000.0`
+
+Ver documento completo: `LINEA_BASE_EMISIONES.md`
+
+---
+
 ## Variable independiente: Diseno de la infraestructura de carga inteligente
 
 ### Dimension: Determinacion de la ubicacion estrategica
+
 - Indicadores: area disponible (m2), capacidad de estacionamiento, accesibilidad/seguridad.
 - Parametros: `configs/default.yaml` -> `oe1.site.*`
 - Script: `scripts/run_oe1_location.py`
@@ -14,6 +39,7 @@ parametros y salidas del proyecto. No modifica la redaccion aprobada en la tesis
   - `reports/oe1/location_summary.md`
 
 ### Dimension: Area techada y area de estacionamiento
+
 - Indicadores: area techada util, % cobertura, restricciones fisicas.
 - Parametros:
   - `configs/default.yaml` -> `oe1.site.coverage_required_pct`
@@ -24,6 +50,7 @@ parametros y salidas del proyecto. No modifica la redaccion aprobada en la tesis
   - `data/interim/oe2/solar/solar_technical_report.md`
 
 ### Dimension: Disponibilidad de red electrica
+
 - Indicadores: distancia a subestacion, capacidad estimada (kVA), continuidad.
 - Parametros:
   - `configs/default.yaml` -> `oe1.site.distance_to_substation_m`
@@ -35,6 +62,7 @@ parametros y salidas del proyecto. No modifica la redaccion aprobada en la tesis
 ## Dimensionamiento de capacidad (OE.2)
 
 ### Dimension: Potencia de generacion solar
+
 - Indicadores: potencia FV (kWp), energia anual, area requerida.
 - Codigo: `src/iquitos_citylearn/oe2/solar_pvlib.py`
 - Script: `scripts/run_oe2_solar.py`
@@ -45,6 +73,7 @@ parametros y salidas del proyecto. No modifica la redaccion aprobada en la tesis
   - `data/interim/oe2/solar/pv_candidates_inverters.csv`
 
 ### Dimension: Capacidad nominal de almacenamiento
+
 - Indicadores: autonomia, DoD, capacidad nominal, verificacion vs picos.
 - Codigo: `src/iquitos_citylearn/oe2/bess.py`
 - Script: `scripts/run_oe2_bess.py`
@@ -53,6 +82,7 @@ parametros y salidas del proyecto. No modifica la redaccion aprobada en la tesis
   - `data/interim/oe2/bess/bess_simulation_hourly.csv`
 
 ### Dimension: Cantidad de cargadores
+
 - Indicador: potencia simultanea maxima y cantidad de cargadores.
 - Codigo: `src/iquitos_citylearn/oe2/chargers.py`
 - Script: `scripts/run_oe2_chargers.py`
@@ -63,18 +93,21 @@ parametros y salidas del proyecto. No modifica la redaccion aprobada en la tesis
 ## Variable dependiente: Emisiones de CO2
 
 ### Dimension: Emisiones directas
+
 - Indicadores: actividad base, emisiones base, emisiones por carga electrica.
 - Codigo: `src/iquitos_citylearn/oe3/co2_table.py`
 - Script: `scripts/run_oe3_co2_table.py`
 - Salida: `analyses/oe3/co2_breakdown.csv` (direct_avoided_kgco2_y)
 
 ### Dimension: Emisiones indirectas
+
 - Indicadores: energia FV efectiva y CO2 evitado por desplazamiento.
 - Codigo: `src/iquitos_citylearn/oe3/co2_table.py`
 - Script: `scripts/run_oe3_co2_table.py`
 - Salida: `analyses/oe3/co2_breakdown.csv` (indirect_avoided_kgco2_y)
 
 ### Dimension: Reduccion neta de CO2
+
 - Indicadores: CO2 evitado total y proyeccion.
 - Codigo: `src/iquitos_citylearn/oe3/co2_table.py`
 - Script: `scripts/run_oe3_co2_table.py`
@@ -83,12 +116,14 @@ parametros y salidas del proyecto. No modifica la redaccion aprobada en la tesis
 ## Seleccion de agente inteligente de gestion de carga (OE.3)
 
 ### Dimension: Arquitectura de control
+
 - Indicadores: control centralizado y recursos controlables.
 - Codigo: `src/iquitos_citylearn/oe3/dataset_builder.py`
 - Script: `scripts/run_oe3_build_dataset.py`
 - Salida: `data/processed/citylearn/iquitos_ev_mall/schema.json`
 
 ### Dimension: Tipo de carga EV
+
 - Indicadores: compatibilidad de carga y perfiles horarios.
 - Codigo: `src/iquitos_citylearn/oe3/dataset_builder.py`
 - Salidas:
@@ -96,6 +131,7 @@ parametros y salidas del proyecto. No modifica la redaccion aprobada en la tesis
   - `data/interim/oe2/chargers/chargers_hourly_profiles.csv`
 
 ### Dimension: Algoritmo de optimizacion (comparativo)
+
 - Indicadores: KPIs y seleccion del agente con menor CO2.
 - Codigo: `src/iquitos_citylearn/oe3/simulate.py`
 - Script: `scripts/run_oe3_simulate.py`
@@ -104,5 +140,6 @@ parametros y salidas del proyecto. No modifica la redaccion aprobada en la tesis
   - `analyses/oe3/agent_comparison.csv`
 
 ## Validacion automatizada
+
 - Script: `scripts/VALIDAR_CUMPLIMIENTO_ESTRICTO.py`
 - Salida: `REPORTE_CUMPLIMIENTO.json`
