@@ -207,23 +207,40 @@ def build_citylearn_dataset(
     if electric_vehicles_def:
         logger.info(f"Preservando {len(electric_vehicles_def)} definiciones de EVs del template")
 
-    # Use only the first building to keep the district minimal
-    bname, b = _find_first_building(schema)
-    schema["buildings"] = {bname: b}
+    # === CREAR 2 BUILDINGS: Playa_Motos y Playa_Mototaxis ===
+    # Cada playa tiene su propia infraestructura de carga
+    bname_template, b_template = _find_first_building(schema)
+    
+    # Crear building para Playa de Motos
+    b_motos = json.loads(json.dumps(b_template))
+    b_motos["name"] = "Playa_Motos"
+    if isinstance(b_motos.get("electric_vehicle_storage"), dict):
+        b_motos["electric_vehicle_storage"]["active"] = True
+    else:
+        b_motos["electric_vehicle_storage"] = {"active": True}
+    
+    # Crear building para Playa de Mototaxis
+    b_mototaxis = json.loads(json.dumps(b_template))
+    b_mototaxis["name"] = "Playa_Mototaxis"
+    if isinstance(b_mototaxis.get("electric_vehicle_storage"), dict):
+        b_mototaxis["electric_vehicle_storage"]["active"] = True
+    else:
+        b_mototaxis["electric_vehicle_storage"] = {"active": True}
+    
+    # Configurar schema con ambos buildings
+    schema["buildings"] = {
+        "Playa_Motos": b_motos,
+        "Playa_Mototaxis": b_mototaxis,
+    }
+    logger.info("Creados 2 buildings separados: Playa_Motos y Playa_Mototaxis")
+    
+    # Referencia al primer building para compatibilidad (se usará para PV/BESS compartido)
+    b = b_motos
+    bname = "Playa_Motos"
     
     # Asegurar que electric_vehicles_def se mantiene en el schema
     if electric_vehicles_def:
         schema["electric_vehicles_def"] = electric_vehicles_def
-    
-    # === HABILITAR EV STORAGE EN BUILDING ===
-    # CityLearn requiere electric_vehicle_storage activo para que los chargers funcionen
-    if isinstance(b.get("electric_vehicle_storage"), dict):
-        b["electric_vehicle_storage"]["active"] = True
-        logger.info("Habilitado electric_vehicle_storage en building")
-    else:
-        # Crear configuración mínima de EV storage
-        b["electric_vehicle_storage"] = {"active": True}
-        logger.info("Creado electric_vehicle_storage en building")
 
     # Update PV + BESS sizes from OE2 artifacts
     pv_dc_kw = float(cfg["oe2"]["solar"]["target_dc_kw"])
@@ -249,49 +266,65 @@ def build_citylearn_dataset(
         bess_pow = float(bess_params.get("electrical_storage", {}).get("nominal_power", 0.0))
         logger.info(f"Usando parametros BESS de OE2 (schema): {bess_cap} kWh, {bess_pow} kW")
 
-    # Heuristic update for device keys
-    if isinstance(b, dict):
+    # === ACTUALIZAR PV Y BESS EN AMBOS BUILDINGS ===
+    # El sistema PV+BESS es compartido entre ambas playas
+    for building_name, building in schema["buildings"].items():
         # Actualizar/Crear PV - SIEMPRE crear si no existe y tenemos potencia > 0
         if pv_dc_kw > 0:
-            if not isinstance(b.get("pv"), dict):
+            # Distribuir PV proporcionalmente: 87.5% motos (112/128), 12.5% mototaxis (16/128)
+            pv_share = 0.875 if building_name == "Playa_Motos" else 0.125
+            building_pv_kw = pv_dc_kw * pv_share
+            
+            if not isinstance(building.get("pv"), dict):
                 # Crear configuración PV desde cero
-                b["pv"] = {
+                building["pv"] = {
                     "type": "citylearn.energy_model.PV",
                     "autosize": False,
-                    "nominal_power": pv_dc_kw,
+                    "nominal_power": building_pv_kw,
                     "attributes": {
-                        "nominal_power": pv_dc_kw,
+                        "nominal_power": building_pv_kw,
                     }
                 }
-                logger.info(f"CREADO pv con nominal_power = {pv_dc_kw} kWp")
+                logger.info(f"{building_name}: CREADO pv con nominal_power = {building_pv_kw:.1f} kWp")
             else:
                 # Actualizar existente
-                b["pv"]["nominal_power"] = pv_dc_kw
-                if isinstance(b["pv"].get("attributes"), dict):
-                    b["pv"]["attributes"]["nominal_power"] = pv_dc_kw
+                building["pv"]["nominal_power"] = building_pv_kw
+                if isinstance(building["pv"].get("attributes"), dict):
+                    building["pv"]["attributes"]["nominal_power"] = building_pv_kw
                 else:
-                    b["pv"]["attributes"] = {"nominal_power": pv_dc_kw}
-                logger.info(f"Actualizado pv.nominal_power = {pv_dc_kw}")
+                    building["pv"]["attributes"] = {"nominal_power": building_pv_kw}
+                logger.info(f"{building_name}: Actualizado pv.nominal_power = {building_pv_kw:.1f} kWp")
         
-        if isinstance(b.get("photovoltaic"), dict):
-            if isinstance(b["photovoltaic"].get("attributes"), dict):
-                b["photovoltaic"]["attributes"]["nominal_power"] = pv_dc_kw
-            b["photovoltaic"]["nominal_power"] = pv_dc_kw
-            logger.info(f"Actualizado photovoltaic.nominal_power = {pv_dc_kw}")
+        if isinstance(building.get("photovoltaic"), dict):
+            if isinstance(building["photovoltaic"].get("attributes"), dict):
+                building["photovoltaic"]["attributes"]["nominal_power"] = building_pv_kw
+            building["photovoltaic"]["nominal_power"] = building_pv_kw
         
-        # Actualizar BESS - IMPORTANTE: actualizar tanto root como attributes
-        if isinstance(b.get("electrical_storage"), dict) and bess_cap is not None:
-            b["electrical_storage"]["capacity"] = bess_cap
-            if bess_pow is not None:
-                b["electrical_storage"]["nominal_power"] = bess_pow
-            # También actualizar attributes si existe (CityLearn usa esto)
-            if isinstance(b["electrical_storage"].get("attributes"), dict):
-                b["electrical_storage"]["attributes"]["capacity"] = bess_cap
-                if bess_pow is not None:
-                    b["electrical_storage"]["attributes"]["nominal_power"] = bess_pow
-            logger.info(f"Actualizado electrical_storage: {bess_cap} kWh, {bess_pow} kW (root + attributes)")
+        # Actualizar BESS - Distribuir proporcionalmente entre playas
+        if bess_cap is not None and bess_cap > 0:
+            bess_share = 0.875 if building_name == "Playa_Motos" else 0.125
+            building_bess_cap = bess_cap * bess_share
+            building_bess_pow = bess_pow * bess_share if bess_pow else None
+            
+            if not isinstance(building.get("electrical_storage"), dict):
+                building["electrical_storage"] = {
+                    "type": "citylearn.energy_model.Battery",
+                    "autosize": False,
+                    "capacity": building_bess_cap,
+                    "attributes": {"capacity": building_bess_cap}
+                }
+            else:
+                building["electrical_storage"]["capacity"] = building_bess_cap
+                if building_bess_pow is not None:
+                    building["electrical_storage"]["nominal_power"] = building_bess_pow
+                if isinstance(building["electrical_storage"].get("attributes"), dict):
+                    building["electrical_storage"]["attributes"]["capacity"] = building_bess_cap
+                    if building_bess_pow is not None:
+                        building["electrical_storage"]["attributes"]["nominal_power"] = building_bess_pow
+            logger.info(f"{building_name}: BESS {building_bess_cap:.1f} kWh, {building_bess_pow:.1f} kW")
 
     # === CREAR CHARGERS DESDE OE2 (usando chargers_citylearn per-toma) ===
+    # Distribuir chargers entre Playa_Motos y Playa_Mototaxis
     if "chargers_results" in artifacts:
         chargers_cfg = artifacts["chargers_results"]
         citylearn_path = chargers_cfg.get("chargers_citylearn_path")
@@ -338,7 +371,10 @@ def build_citylearn_dataset(
             if existing_chargers:
                 charger_template = list(existing_chargers.values())[0]
 
-            new_chargers: Dict[str, Any] = {}
+            # === SEPARAR CHARGERS POR TIPO: MOTO vs MOTOTAXI ===
+            chargers_motos: Dict[str, Any] = {}
+            chargers_mototaxis: Dict[str, Any] = {}
+            
             for idx, row in chargers_df.iterrows():
                 charger_name = str(row.get("charger_id", f"charger_mall_{idx+1}"))
                 power_kw = float(row.get("power_kw", 2.0))
@@ -374,21 +410,36 @@ def build_citylearn_dataset(
                     new_charger["max_charging_power"] = power_kw * sockets
                     new_charger["num_sockets"] = sockets
 
-                new_chargers[charger_name] = new_charger
+                # Clasificar por tipo: MOTO (2kW) vs MOTOTAXI (3kW)
+                # Los chargers MOTO tienen nombres como MOTO_CH_* y power_kw=2.0
+                # Los chargers MOTOTAXI tienen nombres como MOTO_TAXI_CH_* y power_kw=3.0
+                if "TAXI" in charger_name.upper() or power_kw >= 2.5:
+                    chargers_mototaxis[charger_name] = new_charger
+                else:
+                    chargers_motos[charger_name] = new_charger
 
-            b["chargers"] = new_chargers
+            # Asignar chargers a cada building
+            b_motos = schema["buildings"]["Playa_Motos"]
+            b_mototaxis = schema["buildings"]["Playa_Mototaxis"]
+            
+            b_motos["chargers"] = chargers_motos
+            b_mototaxis["chargers"] = chargers_mototaxis
+            
+            # Limpiar inactive_actions en ambos buildings
+            for building in [b_motos, b_mototaxis]:
+                inactive_actions = building.get("inactive_actions", [])
+                ev_actions = ["electric_vehicle_storage", "electric_vehicle_charger"]
+                for ev_act in ev_actions:
+                    if ev_act in inactive_actions:
+                        inactive_actions.remove(ev_act)
+                building["inactive_actions"] = inactive_actions
 
-            inactive_actions = b.get("inactive_actions", [])
-            ev_actions = ["electric_vehicle_storage", "electric_vehicle_charger"]
-            for ev_act in ev_actions:
-                if ev_act in inactive_actions:
-                    inactive_actions.remove(ev_act)
-            b["inactive_actions"] = inactive_actions
-
-            total_power = sum((row.get("power_kw", 2.0) * (row.get("sockets", 1) or 1)) for _, row in chargers_df.iterrows())
-            logger.info(f"Creados {total_devices} chargers (tomas individuales) desde chargers_citylearn.csv")
-            logger.info(f"Potencia total instalada: {total_power:.1f} kW")
-            logger.info(f"Total sockets: {total_devices}")
+            power_motos = sum(c.get("attributes", {}).get("nominal_power", 0) for c in chargers_motos.values())
+            power_mototaxis = sum(c.get("attributes", {}).get("nominal_power", 0) for c in chargers_mototaxis.values())
+            
+            logger.info(f"Playa_Motos: {len(chargers_motos)} chargers, {power_motos:.1f} kW")
+            logger.info(f"Playa_Mototaxis: {len(chargers_mototaxis)} chargers, {power_mototaxis:.1f} kW")
+            logger.info(f"Total: {total_devices} chargers, {power_motos + power_mototaxis:.1f} kW")
         else:
             logger.warning("No se pudo leer chargers_citylearn.csv; se mantiene la configuración existente.")
 
@@ -660,40 +711,45 @@ def build_citylearn_dataset(
     last_row = charger_df.iloc[-1:].copy()
     charger_df = pd.concat([charger_df, last_row], ignore_index=True)
 
-    # === GENERAR CSVs PARA TODOS LOS CHARGERS DE OE2 ===
+    # === GENERAR CSVs PARA TODOS LOS CHARGERS DE TODOS LOS BUILDINGS ===
     n_chargers_oe2 = 31  # default
     if "chargers_results" in artifacts:
         n_chargers_oe2 = int(artifacts["chargers_results"].get("n_chargers_recommended", 31))
     
-    # Crear CSVs para cada charger definido en el schema
-    chargers_in_schema = b.get("chargers", {})
-    for charger_name, charger_cfg in chargers_in_schema.items():
-        charger_csv = charger_cfg.get("charger_simulation", f"{charger_name}.csv")
-        charger_path = out_dir / charger_csv
+    # Iterar sobre TODOS los buildings para generar CSVs de chargers
+    total_chargers_generated = 0
+    for building_name, building_cfg in schema["buildings"].items():
+        chargers_in_building = building_cfg.get("chargers", {})
+        for charger_name, charger_cfg in chargers_in_building.items():
+            charger_csv = charger_cfg.get("charger_simulation", f"{charger_name}.csv")
+            charger_path = out_dir / charger_csv
+            
+            # Distribuir EVs entre chargers - algunos activos, otros esperando
+            charger_idx = int(charger_name.split("_")[-1]) if "_" in charger_name else 1
+            
+            # Crear variación para simular distribución de carga
+            if charger_idx <= n_chargers_oe2 // 3:
+                # Chargers principales: más activos
+                charger_df.to_csv(charger_path, index=False)
+            else:
+                # Chargers secundarios: menos activos (estado alternado)
+                # Usar vectorización en lugar de bucle for (mucho más rápido)
+                secondary_df = charger_df.copy()
+                # Crear máscara para filas que deben estar desconectadas
+                t_arr = np.arange(len(secondary_df) - 1)  # Excluir la fila adicional
+                mask = ((t_arr // 2) % 2) == (charger_idx % 2)
+                # Extender mask para incluir la última fila
+                mask = np.concatenate([mask, [mask[-1] if len(mask) > 0 else False]])
+                secondary_df.loc[mask, "electric_vehicle_charger_state"] = 3
+                secondary_df.loc[mask, "electric_vehicle_id"] = np.nan
+                secondary_df.loc[mask, "electric_vehicle_departure_time"] = np.nan
+                secondary_df.loc[mask, "electric_vehicle_required_soc_departure"] = np.nan
+                secondary_df.to_csv(charger_path, index=False)
+            total_chargers_generated += 1
         
-        # Distribuir EVs entre chargers - algunos activos, otros esperando
-        charger_idx = int(charger_name.split("_")[-1]) if "_" in charger_name else 1
-        
-        # Crear variación para simular distribución de carga
-        if charger_idx <= n_chargers_oe2 // 3:
-            # Chargers principales: más activos
-            charger_df.to_csv(charger_path, index=False)
-        else:
-            # Chargers secundarios: menos activos (estado alternado)
-            # Usar vectorización en lugar de bucle for (mucho más rápido)
-            secondary_df = charger_df.copy()
-            # Crear máscara para filas que deben estar desconectadas
-            t_arr = np.arange(len(secondary_df) - 1)  # Excluir la fila adicional
-            mask = ((t_arr // 2) % 2) == (charger_idx % 2)
-            # Extender mask para incluir la última fila
-            mask = np.concatenate([mask, [mask[-1] if len(mask) > 0 else False]])
-            secondary_df.loc[mask, "electric_vehicle_charger_state"] = 3
-            secondary_df.loc[mask, "electric_vehicle_id"] = np.nan
-            secondary_df.loc[mask, "electric_vehicle_departure_time"] = np.nan
-            secondary_df.loc[mask, "electric_vehicle_required_soc_departure"] = np.nan
-            secondary_df.to_csv(charger_path, index=False)
+        logger.info(f"{building_name}: Generados {len(chargers_in_building)} archivos CSV de chargers")
     
-    logger.info(f"Generados {len(chargers_in_schema)} archivos CSV de simulación de chargers")
+    logger.info(f"Total: Generados {total_chargers_generated} archivos CSV de simulación de chargers")
 
     # También generar para chargers del template original si existen
     for i, cp in enumerate(charger_list):
@@ -724,28 +780,29 @@ def build_citylearn_dataset(
 
     # 2) Grid-only variant: disable PV and BESS by setting nominal values to 0.
     schema_grid = json.loads(json.dumps(schema))
-    bname2, b2 = _find_first_building(schema_grid)
     
-    # Desactivar photovoltaic (formato antiguo)
-    if isinstance(b2.get("photovoltaic"), dict):
-        b2["photovoltaic"]["nominal_power"] = 0.0
-    
-    # Desactivar pv (formato nuevo con attributes)
-    if isinstance(b2.get("pv"), dict):
-        if isinstance(b2["pv"].get("attributes"), dict):
-            b2["pv"]["attributes"]["nominal_power"] = 0.0
-        else:
-            b2["pv"]["nominal_power"] = 0.0
-    
-    # Desactivar electrical_storage
-    if isinstance(b2.get("electrical_storage"), dict):
-        b2["electrical_storage"]["capacity"] = 0.0
-        b2["electrical_storage"]["nominal_power"] = 0.0
-        if isinstance(b2["electrical_storage"].get("attributes"), dict):
-            b2["electrical_storage"]["attributes"]["capacity"] = 0.0
-            b2["electrical_storage"]["attributes"]["nominal_power"] = 0.0
+    # Desactivar PV y BESS en TODOS los buildings
+    for bname_grid, b_grid in schema_grid.get("buildings", {}).items():
+        # Desactivar photovoltaic (formato antiguo)
+        if isinstance(b_grid.get("photovoltaic"), dict):
+            b_grid["photovoltaic"]["nominal_power"] = 0.0
+        
+        # Desactivar pv (formato nuevo con attributes)
+        if isinstance(b_grid.get("pv"), dict):
+            if isinstance(b_grid["pv"].get("attributes"), dict):
+                b_grid["pv"]["attributes"]["nominal_power"] = 0.0
+            else:
+                b_grid["pv"]["nominal_power"] = 0.0
+        
+        # Desactivar electrical_storage
+        if isinstance(b_grid.get("electrical_storage"), dict):
+            b_grid["electrical_storage"]["capacity"] = 0.0
+            b_grid["electrical_storage"]["nominal_power"] = 0.0
+            if isinstance(b_grid["electrical_storage"].get("attributes"), dict):
+                b_grid["electrical_storage"]["attributes"]["capacity"] = 0.0
+                b_grid["electrical_storage"]["attributes"]["nominal_power"] = 0.0
     
     (out_dir / "schema_grid_only.json").write_text(json.dumps(schema_grid, indent=2), encoding="utf-8")
-    logger.info("Schema grid-only creado con PV=0 y BESS=0")
+    logger.info("Schema grid-only creado con PV=0 y BESS=0 en todos los buildings")
 
     return BuiltDataset(dataset_dir=out_dir, schema_path=schema_path, building_name=bname)
