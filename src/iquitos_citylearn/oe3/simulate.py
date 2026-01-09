@@ -32,25 +32,32 @@ from iquitos_citylearn.oe3.agents import (
 logger = logging.getLogger(__name__)
 
 def _latest_checkpoint(checkpoint_dir: Optional[Path], prefix: str) -> Optional[Path]:
-    """Retorna el checkpoint más reciente (final o mayor step) si existe."""
+    """Retorna el checkpoint más reciente por fecha de modificación (final o step)."""
     if checkpoint_dir is None or not checkpoint_dir.exists():
         return None
+    
+    # Buscar todos los checkpoints (final y step_*)
+    candidates: List[Path] = []
     final_path = checkpoint_dir / f"{prefix}_final.zip"
     if final_path.exists():
-        logger.info(f"[RESUME] Encontrado checkpoint final: {final_path}")
-        return final_path
-    best: Optional[Path] = None
-    best_step = -1
-    for p in checkpoint_dir.glob(f"{prefix}_step_*.zip"):
-        m = re.search(r"step_(\d+)", p.stem)
-        if not m:
-            continue
-        step = int(m.group(1))
-        if step > best_step:
-            best_step = step
-            best = p
-    if best:
-        logger.info(f"[RESUME] Encontrado checkpoint step {best_step}: {best}")
+        candidates.append(final_path)
+    candidates.extend(checkpoint_dir.glob(f"{prefix}_step_*.zip"))
+    
+    if not candidates:
+        return None
+    
+    # Ordenar por fecha de modificación (más reciente primero)
+    candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    best = candidates[0]
+    
+    # Log del checkpoint seleccionado
+    if "final" in best.name:
+        logger.info(f"[RESUME] Usando checkpoint final (más reciente): {best}")
+    else:
+        m = re.search(r"step_(\d+)", best.stem)
+        step = int(m.group(1)) if m else 0
+        logger.info(f"[RESUME] Usando checkpoint step {step} (más reciente): {best}")
+    
     return best
 
 @dataclass(frozen=True)
@@ -460,19 +467,24 @@ def simulate(
     out_dir.mkdir(parents=True, exist_ok=True)
     progress_dir = training_dir / "progress" if training_dir is not None else None
 
-    env = _make_env(schema_path)
+    raw_env = _make_env(schema_path)
     
     # Configurar recompensa multiobjetivo
     reward_tracker: Optional[MultiObjectiveReward] = None
+    env: Any = raw_env  # Por defecto usa el env sin wrapper
+    
     if use_multi_objective:
         weights = create_iquitos_reward_weights(multi_objective_priority)
         context = IquitosContext(
             co2_factor_kg_per_kwh=carbon_intensity_kg_per_kwh,
         )
-        reward_tracker = MultiObjectiveReward(weights, context)
+        # Aplicar wrapper multiobjetivo al environment
+        env = CityLearnMultiObjectiveWrapper(raw_env, weights, context)
+        reward_tracker = env.reward_fn  # Obtener el tracker del wrapper
         logger.info(f"[MULTIOBJETIVO] Prioridad: {multi_objective_priority}")
         logger.info(f"[MULTIOBJETIVO] Pesos: CO2={weights.co2:.2f}, Costo={weights.cost:.2f}, "
                    f"Solar={weights.solar:.2f}, EV={weights.ev_satisfaction:.2f}, Grid={weights.grid_stability:.2f}")
+        logger.info("[MULTIOBJETIVO] Wrapper aplicado - todos los agentes recibirán rewards multiobjetivo")
 
     # Choose agent
     agent: Any
