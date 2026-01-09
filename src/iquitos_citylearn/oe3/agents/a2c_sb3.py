@@ -246,20 +246,96 @@ class A2CAgent:
                 self.expected_episodes = expected_episodes
                 self.episode_count = 0
                 self.log_interval_steps = int(agent.config.log_interval or 0)
+                # Métricas acumuladas para promedios
+                self.reward_sum = 0.0
+                self.reward_count = 0
+                self.grid_energy_sum = 0.0  # kWh consumido de la red
+                self.solar_energy_sum = 0.0  # kWh de solar usado
+                self.co2_intensity = 0.4521  # kg CO2/kWh para Iquitos
 
             def _on_step(self):
                 infos = self.locals.get("infos", [])
                 if isinstance(infos, dict):
                     infos = [infos]
+                
+                # Acumular rewards y métricas de cada step
+                rewards = self.locals.get("rewards", [])
+                if rewards is not None:
+                    if hasattr(rewards, '__iter__'):
+                        for r in rewards:
+                            self.reward_sum += float(r)
+                            self.reward_count += 1
+                    else:
+                        self.reward_sum += float(rewards)
+                        self.reward_count += 1
+                
+                # Extraer métricas de energía del environment
+                try:
+                    env = self.training_env.envs[0] if hasattr(self.training_env, 'envs') else self.training_env
+                    if hasattr(env, 'unwrapped'):
+                        env = env.unwrapped
+                    if hasattr(env, 'buildings'):
+                        for b in env.buildings:
+                            if hasattr(b, 'net_electricity_consumption') and b.net_electricity_consumption:
+                                last_consumption = b.net_electricity_consumption[-1] if b.net_electricity_consumption else 0
+                                if last_consumption > 0:
+                                    self.grid_energy_sum += last_consumption
+                            if hasattr(b, 'solar_generation') and b.solar_generation:
+                                last_solar = b.solar_generation[-1] if b.solar_generation else 0
+                                self.solar_energy_sum += abs(last_solar)
+                except Exception:
+                    pass
+                
                 if not infos:
                     return True
                 if self.log_interval_steps > 0 and self.n_calls % self.log_interval_steps == 0:
                     approx_episode = max(1, int(self.model.num_timesteps // 8760) + 1)
+                    
+                    # Calcular reward promedio
+                    avg_reward = self.reward_sum / max(1, self.reward_count)
+                    
+                    # Calcular CO2 estimado
+                    co2_kg = self.grid_energy_sum * self.co2_intensity
+                    
+                    # Obtener métricas de entrenamiento del logger de SB3
+                    parts = []
+                    parts.append(f"reward_avg={avg_reward:.4f}")
+                    
+                    try:
+                        if hasattr(self.model, 'logger') and self.model.logger is not None:
+                            name_to_value = getattr(self.model.logger, 'name_to_value', {})
+                            if name_to_value:
+                                policy_loss = name_to_value.get('train/policy_loss', None)
+                                value_loss = name_to_value.get('train/value_loss', None)
+                                entropy_loss = name_to_value.get('train/entropy_loss', None)
+                                learning_rate = name_to_value.get('train/learning_rate', None)
+                                
+                                if policy_loss is not None:
+                                    parts.append(f"policy_loss={policy_loss:.2f}")
+                                if value_loss is not None:
+                                    parts.append(f"value_loss={value_loss:.2f}")
+                                if entropy_loss is not None:
+                                    parts.append(f"entropy={entropy_loss:.4f}")
+                                if learning_rate is not None:
+                                    parts.append(f"lr={learning_rate:.2e}")
+                    except Exception:
+                        pass
+                    
+                    # Agregar métricas de energía y CO2
+                    if self.grid_energy_sum > 0:
+                        parts.append(f"grid_kWh={self.grid_energy_sum:.1f}")
+                        parts.append(f"co2_kg={co2_kg:.1f}")
+                    if self.solar_energy_sum > 0:
+                        parts.append(f"solar_kWh={self.solar_energy_sum:.1f}")
+                    
+                    metrics_str = " | ".join(parts)
+                    
                     logger.info(
-                        "[A2C] paso %d | ep~%d | pasos_global=%d",
+                        "[A2C] paso %d | ep~%d | pasos_global=%d | %s",
                         self.n_calls,
                         approx_episode,
                         int(self.model.num_timesteps),
+                        metrics_str,
                     )
                     if self.progress_path is not None:
                         row = {
