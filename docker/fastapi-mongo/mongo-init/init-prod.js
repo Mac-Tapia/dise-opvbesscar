@@ -128,7 +128,7 @@ db.infrastructure.insertOne({
             pv_kwp: 3641.8,
             bess_kwh: 1750,
             vehicle_type: 'moto',
-            vehicles_served: 900
+            vehicles_peak_counted: 900  // Conteo hora pico para dimensionamiento
         },
         Playa_Mototaxis: {
             chargers: 16,
@@ -137,7 +137,7 @@ db.infrastructure.insertOne({
             pv_kwp: 520.2,
             bess_kwh: 250,
             vehicle_type: 'mototaxi',
-            vehicles_served: 130
+            vehicles_peak_counted: 130  // Conteo hora pico para dimensionamiento
         }
     },
     totals: {
@@ -145,7 +145,7 @@ db.infrastructure.insertOne({
         power_kw: 272,
         pv_kwp: 4162,
         bess_kwh: 2000,
-        vehicles: 1030
+        vehicles_peak_total: 1030  // Conteo pico (900+130) usado para dimensionar 128 cargadores
     },
     carbon_intensity_kg_kwh: 0.4521,
     tariff_usd_kwh: 0.20,

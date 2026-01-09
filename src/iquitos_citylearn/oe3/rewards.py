@@ -11,8 +11,8 @@ Objetivos optimizados:
 Basado en el contexto de Iquitos:
 - Factor emisión: 0.45 kg CO₂/kWh (central térmica)
 - Tarifa: 0.20 USD/kWh
-- 31 chargers x 4 sockets = 124 puntos de carga
-- 1030 vehículos (900 motos + 130 mototaxis)
+- 128 cargadores (112 motos @ 2kW + 16 mototaxis @ 3kW = 272 kW)
+- Conteo pico: 900 motos + 130 mototaxis (19:00h, 19-oct-2025) → usado para dimensionar cargadores
 """
 
 from __future__ import annotations

@@ -32,10 +32,10 @@ class RBCConfig:
     ev_max_rate: float = 1.0  # Tasa máxima de carga EV
     ev_min_rate: float = 0.2  # Tasa mínima de carga EV
     
-    # Configuración de chargers (OE2: 31 chargers x 4 sockets)
-    n_chargers: int = 31
-    sockets_per_charger: int = 4
-    charger_power_kw: float = 2.14  # Por socket
+    # Configuración de chargers (OE2: 128 cargadores = 112 motos @ 2kW + 16 mototaxis @ 3kW)
+    n_chargers: int = 128
+    sockets_per_charger: int = 1
+    charger_power_kw: float = 2.125  # Promedio ponderado (224+48)/128
     
     # Hora pico (para Iquitos: 18-22h)
     peak_hours: tuple = (18, 19, 20, 21)
@@ -61,7 +61,7 @@ class RBCConfig:
 class BasicRBCAgent:
     """Controlador RBC robusto para gestión de carga EV + BESS.
     
-    Controla 31 chargers x 4 sockets = 124 puntos de carga.
+    Controla 128 cargadores (112 motos @ 2kW + 16 mototaxis @ 3kW = 272 kW).
     
     Reglas implementadas:
     1. EV: Cargar al máximo cuando hay exceso solar, reducir en hora pico si BESS bajo
@@ -150,7 +150,7 @@ class BasicRBCAgent:
         return rates
     
     def predict(self, observations: Any, deterministic: bool = True) -> List[List[float]]:
-        """Genera acciones basadas en reglas multicriterio para 31 chargers.
+        """Genera acciones basadas en reglas multicriterio para 128 cargadores.
         
         Criterios de decisión (ponderados):
         1. CO₂: Reducir carga cuando factor de emisión alto
