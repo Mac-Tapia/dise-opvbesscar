@@ -606,11 +606,36 @@ class SACAgent:
                     return True
                 if self.log_interval_steps > 0 and self.n_calls % self.log_interval_steps == 0:
                     approx_episode = max(1, int(self.model.num_timesteps // 8760) + 1)
+                    
+                    # Obtener métricas de entrenamiento del logger de SB3
+                    metrics_str = ""
+                    try:
+                        if hasattr(self.model, 'logger') and self.model.logger is not None:
+                            # Intentar obtener las últimas métricas del buffer
+                            name_to_value = getattr(self.model.logger, 'name_to_value', {})
+                            if name_to_value:
+                                actor_loss = name_to_value.get('train/actor_loss', None)
+                                critic_loss = name_to_value.get('train/critic_loss', None)
+                                ent_coef = name_to_value.get('train/ent_coef', None)
+                                
+                                parts = []
+                                if actor_loss is not None:
+                                    parts.append(f"actor_loss={actor_loss:.4f}")
+                                if critic_loss is not None:
+                                    parts.append(f"critic_loss={critic_loss:.4f}")
+                                if ent_coef is not None:
+                                    parts.append(f"ent_coef={ent_coef:.4f}")
+                                if parts:
+                                    metrics_str = " | " + " | ".join(parts)
+                    except Exception:
+                        pass  # Si falla, simplemente no mostramos métricas adicionales
+                    
                     logger.info(
-                        "[SAC] paso %d | ep~%d | pasos_global=%d",
+                        "[SAC] paso %d | ep~%d | pasos_global=%d%s",
                         self.n_calls,
                         approx_episode,
                         int(self.model.num_timesteps),
+                        metrics_str,
                     )
                     if self.progress_path is not None:
                         row = {
