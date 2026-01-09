@@ -105,7 +105,7 @@ oe3:
     resume_checkpoints: true
     multi_objective_priority: co2_focus
     sac:
-      episodes: 1
+      episodes: 20
       resume_checkpoints: true
       deterministic_eval: true
       device: cuda
@@ -124,9 +124,9 @@ oe3:
         ev: 0.1
         grid: 0.05
     ppo:
-      episodes: 1
+      episodes: 20
       resume_checkpoints: true
-      timesteps: 8760
+      timesteps: 175200
       n_steps: 2048
       batch_size: 128
       use_amp: true
@@ -145,9 +145,9 @@ oe3:
         ev: 0.1
         grid: 0.05
     a2c:
-      episodes: 1
+      episodes: 20
       resume_checkpoints: true
-      timesteps: 8760
+      timesteps: 175200
       n_steps: 1024
       learning_rate: 0.0003
       entropy_coef: 0.01
