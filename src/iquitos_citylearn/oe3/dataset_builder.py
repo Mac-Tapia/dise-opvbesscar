@@ -425,14 +425,8 @@ def build_citylearn_dataset(
             b_motos["chargers"] = chargers_motos
             b_mototaxis["chargers"] = chargers_mototaxis
             
-            # Limpiar inactive_actions en ambos buildings
-            for building in [b_motos, b_mototaxis]:
-                inactive_actions = building.get("inactive_actions", [])
-                ev_actions = ["electric_vehicle_storage", "electric_vehicle_charger"]
-                for ev_act in ev_actions:
-                    if ev_act in inactive_actions:
-                        inactive_actions.remove(ev_act)
-                building["inactive_actions"] = inactive_actions
+            # MANTENER EVs ACTIVOS - Son el core del proyecto
+            # Los chargers están correctamente configurados con datos válidos (sin NaN)
 
             power_motos = sum(c.get("attributes", {}).get("nominal_power", 0) for c in chargers_motos.values())
             power_mototaxis = sum(c.get("attributes", {}).get("nominal_power", 0) for c in chargers_mototaxis.values())
@@ -658,14 +652,18 @@ def build_citylearn_dataset(
     departure_step = (closing + 1) * steps_per_hour  # depart after closing hour
     departure_step = min(departure_step, steps_per_day)  # clamp
 
-    # Build schedule arrays - usar NaN para valores no aplicables (formato CityLearn)
+    # Build schedule arrays - NO usar NaN, CityLearn requiere valores numéricos válidos
     state = np.full(n, 3, dtype=int)  # 3 = commuting/sin EV
     ev_names = list(schema.get("electric_vehicles_def", {}).keys())
-    ev_id = np.full(n, np.nan, dtype=object)  # NaN cuando no hay EV
-    dep_time = np.full(n, np.nan, dtype=float)  # NaN cuando no hay EV
-    req_soc = np.full(n, np.nan, dtype=float)  # NaN cuando no hay EV
-    arr_time = np.full(n, np.nan, dtype=float)  # NaN cuando hay EV conectado
-    arr_soc = np.full(n, np.nan, dtype=float)  # NaN cuando hay EV conectado
+    default_ev = ev_names[0] if ev_names else "EV_001"
+    
+    # Inicializar con valores por defecto (NO NaN)
+    # IMPORTANTE: ev_id debe tener el mismo EV siempre (CityLearn lo requiere)
+    ev_id = np.full(n, default_ev, dtype=object)  # Siempre el mismo EV ID
+    dep_time = np.zeros(n, dtype=float)  # 0 cuando no hay EV
+    req_soc = np.zeros(n, dtype=float)  # 0 cuando no hay EV
+    arr_time = np.zeros(n, dtype=float)  # 0 cuando hay EV conectado
+    arr_soc = np.zeros(n, dtype=float)  # 0 cuando hay EV conectado
 
     # SOC de llegada y salida requerido (en %)
     soc_arr = 20.0  # 20% SOC al llegar
@@ -676,18 +674,17 @@ def build_citylearn_dataset(
         if arrival_step <= day_step < departure_step:
             # EV conectado (state=1)
             state[t] = 1
-            if ev_names:
-                ev_id[t] = ev_names[t % len(ev_names)]
+            # ev_id ya tiene el valor por defecto
             dep_time[t] = float(departure_step - day_step)  # Horas hasta salida
             req_soc[t] = soc_req  # SOC requerido al salir (%)
-            arr_time[t] = np.nan  # No aplica cuando está conectado
-            arr_soc[t] = np.nan  # No aplica cuando está conectado
+            arr_time[t] = 0.0  # 0 = ya llegó
+            arr_soc[t] = soc_arr  # SOC con el que llegó
         else:
             # Sin EV (state=3 = commuting)
             state[t] = 3
-            ev_id[t] = np.nan  # NaN = sin EV
-            dep_time[t] = np.nan  # No aplica
-            req_soc[t] = np.nan  # No aplica
+            # ev_id mantiene el ID (CityLearn lo necesita para calcular SOC)
+            dep_time[t] = 0.0  # 0 = no aplica
+            req_soc[t] = 0.0  # 0 = no aplica
             # Tiempo estimado hasta próxima llegada
             if day_step < arrival_step:
                 arr_time[t] = float(arrival_step - day_step)
@@ -741,9 +738,9 @@ def build_citylearn_dataset(
                 # Extender mask para incluir la última fila
                 mask = np.concatenate([mask, [mask[-1] if len(mask) > 0 else False]])
                 secondary_df.loc[mask, "electric_vehicle_charger_state"] = 3
-                secondary_df.loc[mask, "electric_vehicle_id"] = np.nan
-                secondary_df.loc[mask, "electric_vehicle_departure_time"] = np.nan
-                secondary_df.loc[mask, "electric_vehicle_required_soc_departure"] = np.nan
+                # NO cambiar ev_id - CityLearn lo necesita siempre
+                secondary_df.loc[mask, "electric_vehicle_departure_time"] = 0.0
+                secondary_df.loc[mask, "electric_vehicle_required_soc_departure"] = 0.0
                 secondary_df.to_csv(charger_path, index=False)
             total_chargers_generated += 1
         
@@ -759,12 +756,12 @@ def build_citylearn_dataset(
         if i == 0:
             charger_df.to_csv(cp, index=False)
         else:
-            # Charger sin EV conectado (state=3, todo NaN)
+            # Charger sin EV conectado (state=3) - SIN NaN
             disconnected_df = pd.DataFrame({
                 "electric_vehicle_charger_state": np.full(n+1, 3, dtype=int),
-                "electric_vehicle_id": np.full(n+1, np.nan, dtype=object),
-                "electric_vehicle_departure_time": np.full(n+1, np.nan, dtype=float),
-                "electric_vehicle_required_soc_departure": np.full(n+1, np.nan, dtype=float),
+                "electric_vehicle_id": np.full(n+1, default_ev, dtype=object),  # Mismo EV ID siempre
+                "electric_vehicle_departure_time": np.zeros(n+1, dtype=float),
+                "electric_vehicle_required_soc_departure": np.zeros(n+1, dtype=float),
                 "electric_vehicle_estimated_arrival_time": np.concatenate([arr_time, [arr_time[-1]]]),
                 "electric_vehicle_estimated_soc_arrival": np.concatenate([arr_soc, [arr_soc[-1]]]),
             })

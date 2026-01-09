@@ -1,0 +1,21 @@
+# Docker Compose Override para Escalamiento Horizontal
+# Uso: docker compose -f docker-compose.yml -f docker-compose.scale.yml up -d
+
+services:
+  api:
+    container_name: ""
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: start-first
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
