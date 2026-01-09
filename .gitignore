@@ -88,22 +88,24 @@ cython_debug/
 # VS Code
 .vscode/
 
-# Project-specific
+# Project-specific - Ignore generated data (reproducible from pipeline)
 analyses/
 outputs/
 data/interim/
 data/processed/
-IT_TAPIA_COYSO_MAC_v6_final.docx
-tesisvefinal.pdf
-*.csv
-*.json
-*.md
-*.png
+reports/oe2/
+reports/oe3/
+
+# Logs temporales
 *.log
-*.pdf
-*.docx
-*.txt
-Deployment.pdf
-.env.example
-REPORTE_CUMPLIMIENTO.json
-extract_refs.txt
+*_log.txt
+serial_training_log.txt
+
+# Documentos de tesis (en docs/thesis/)
+docs/thesis/
+
+# Checkpoints de entrenamiento (muy grandes)
+*.zip
+
+# Docker local
+docker/
