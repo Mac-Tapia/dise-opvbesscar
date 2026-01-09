@@ -37,17 +37,20 @@ def _latest_checkpoint(checkpoint_dir: Optional[Path], prefix: str) -> Optional[
         return None
     final_path = checkpoint_dir / f"{prefix}_final.zip"
     if final_path.exists():
+        logger.info(f"[RESUME] Encontrado checkpoint final: {final_path}")
         return final_path
     best: Optional[Path] = None
     best_step = -1
     for p in checkpoint_dir.glob(f"{prefix}_step_*.zip"):
-        m = re.search(r"step_(\\d+)", p.stem)
+        m = re.search(r"step_(\d+)", p.stem)
         if not m:
             continue
         step = int(m.group(1))
         if step > best_step:
             best_step = step
             best = p
+    if best:
+        logger.info(f"[RESUME] Encontrado checkpoint step {best_step}: {best}")
     return best
 
 @dataclass(frozen=True)

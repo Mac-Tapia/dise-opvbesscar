@@ -102,11 +102,10 @@ oe3:
       - SAC
       - PPO
       - A2C
-    resume_checkpoints: false
-    # Fijar pesos únicos para todos los agentes
+    resume_checkpoints: true
     multi_objective_priority: co2_focus
     sac:
-      episodes: 15
+      episodes: 1
       resume_checkpoints: true
       deterministic_eval: true
       device: cuda
@@ -118,17 +117,16 @@ oe3:
       save_final: true
       prefer_citylearn: false
       reward_smooth_lambda: 0.01
-      # Pesos de recompensa (se mantienen igual en todos los perfiles)
       multi_objective_weights:
-        co2: 0.50
+        co2: 0.5
         cost: 0.15
-        solar: 0.20
-        ev: 0.10
+        solar: 0.2
+        ev: 0.1
         grid: 0.05
     ppo:
-      episodes: 15
+      episodes: 1
       resume_checkpoints: true
-      timesteps: 131400
+      timesteps: 8760
       n_steps: 2048
       batch_size: 128
       use_amp: true
@@ -141,15 +139,15 @@ oe3:
       kl_adaptive: true
       reward_smooth_lambda: 0.01
       multi_objective_weights:
-        co2: 0.50
+        co2: 0.5
         cost: 0.15
-        solar: 0.20
-        ev: 0.10
+        solar: 0.2
+        ev: 0.1
         grid: 0.05
     a2c:
-      episodes: 15
+      episodes: 1
       resume_checkpoints: true
-      timesteps: 131400
+      timesteps: 8760
       n_steps: 1024
       learning_rate: 0.0003
       entropy_coef: 0.01
@@ -160,10 +158,10 @@ oe3:
       device: cuda
       reward_smooth_lambda: 0.01
       multi_objective_weights:
-        co2: 0.50
+        co2: 0.5
         cost: 0.15
-        solar: 0.20
-        ev: 0.10
+        solar: 0.2
+        ev: 0.1
         grid: 0.05
   emissions:
     km_per_kwh: 35.0
@@ -171,9 +169,5 @@ oe3:
     kgco2_per_gallon: 8.9
     project_life_years: 20
   city_baseline_tpy:
-    # Fuente: Plan de Desarrollo de Maynas [4]
-    # - 61,000 mototaxis: 152,500 tCO2/año
-    # - 70,500 motos lineales: 105,750 tCO2/año
-    transport: 258250.0 # Total sector transporte (95% de emisiones)
-    # Sistema eléctrico aislado: 22.5 millones galones/año → 290,000 tCO2/año
+    transport: 258250.0
     electricity_generation: 290000.0
