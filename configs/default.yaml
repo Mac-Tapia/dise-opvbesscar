@@ -106,7 +106,7 @@ oe3:
     # Fijar pesos únicos para todos los agentes
     multi_objective_priority: co2_focus
     sac:
-      episodes: 5
+      episodes: 15
       resume_checkpoints: true
       deterministic_eval: true
       device: cuda
@@ -126,9 +126,9 @@ oe3:
         ev: 0.10
         grid: 0.05
     ppo:
-      episodes: 5
+      episodes: 15
       resume_checkpoints: true
-      timesteps: 43800
+      timesteps: 131400
       n_steps: 2048
       batch_size: 128
       use_amp: true
@@ -147,9 +147,9 @@ oe3:
         ev: 0.10
         grid: 0.05
     a2c:
-      episodes: 5
+      episodes: 15
       resume_checkpoints: true
-      timesteps: 43800
+      timesteps: 131400
       n_steps: 1024
       learning_rate: 0.0003
       entropy_coef: 0.01

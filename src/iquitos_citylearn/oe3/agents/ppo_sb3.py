@@ -31,9 +31,14 @@ def detect_device() -> str:
 
 @dataclass
 class PPOConfig:
-    """Configuración avanzada para PPO con soporte CUDA/GPU y multiobjetivo."""
+    """Configuración avanzada para PPO con soporte CUDA/GPU y multiobjetivo.
+    
+    Nota: train_steps=500000 es el mínimo recomendado para problemas de alta
+    dimensionalidad como CityLearn con ~900 obs dims × 126 action dims.
+    Para convergencia óptima, usar 1M+ pasos.
+    """
     # Hiperparámetros de entrenamiento
-    train_steps: int = 100000
+    train_steps: int = 500000  # 500k mínimo para alta dimensionalidad
     n_steps: int = 1024  # Steps por update
     batch_size: int = 128
     n_epochs: int = 10
