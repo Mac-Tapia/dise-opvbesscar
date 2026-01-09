@@ -57,6 +57,22 @@ class A2CConfig:
     progress_path: Optional[str] = None
     progress_interval_episodes: int = 1
     resume_path: Optional[str] = None  # Ruta a checkpoint SB3 para reanudar
+    
+    # === MULTIOBJETIVO / MULTICRITERIO ===
+    # Pesos para función de recompensa compuesta (deben sumar 1.0)
+    weight_co2: float = 0.35           # Minimizar emisiones CO₂
+    weight_cost: float = 0.25          # Minimizar costo eléctrico
+    weight_solar: float = 0.20         # Maximizar autoconsumo solar
+    weight_ev_satisfaction: float = 0.15  # Maximizar satisfacción carga EV
+    weight_grid_stability: float = 0.05   # Minimizar picos de demanda
+    
+    # Umbrales multicriterio
+    co2_target_kg_per_kwh: float = 0.4521  # Factor emisión Iquitos
+    cost_target_usd_per_kwh: float = 0.20  # Tarifa objetivo
+    ev_soc_target: float = 0.90          # SOC objetivo EVs al partir
+    peak_demand_limit_kw: float = 200.0  # Límite demanda pico
+    
+    # Suavizado de acciones (penaliza cambios bruscos)
     reward_smooth_lambda: float = 0.0
 
 
