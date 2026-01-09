@@ -42,7 +42,7 @@ Ver documento completo: `LINEA_BASE_EMISIONES.md`
 
 ### HE2 (dimensionamiento PV, BESS y cargadores)
 
-- Archivos:
+- Archivos
   - `data/interim/oe2/solar/solar_results.json`
   - `data/interim/oe2/bess/bess_results.json`
   - `data/interim/oe2/chargers/chargers_results.json`
@@ -50,7 +50,7 @@ Ver documento completo: `LINEA_BASE_EMISIONES.md`
 
 ### HE3 (agente inteligente de gestion)
 
-- Archivos:
+- Archivos
   - `outputs/oe3/simulations/simulation_summary.json`
   - `analyses/oe3/agent_comparison.csv`
 - Criterio: agente con menor CO2 (ranking = 1) frente al baseline.
