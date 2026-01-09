@@ -31,8 +31,12 @@ def detect_device() -> str:
 
 @dataclass
 class A2CConfig:
-    """Configuración para A2C (SB3) con soporte CUDA/GPU."""
-    train_steps: int = 100000
+    """Configuración para A2C (SB3) con soporte CUDA/GPU.
+    
+    Nota: train_steps=500000 es el mínimo recomendado para problemas de alta
+    dimensionalidad como CityLearn con ~900 obs dims × 126 action dims.
+    """
+    train_steps: int = 500000  # 500k mínimo para alta dimensionalidad
     n_steps: int = 512
     learning_rate: float = 3e-4
     lr_schedule: str = "constant"

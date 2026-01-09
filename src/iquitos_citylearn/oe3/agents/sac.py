@@ -119,9 +119,14 @@ def _patch_citylearn_sac_update() -> None:
 
 @dataclass
 class SACConfig:
-    """Configuración avanzada para SAC con soporte CUDA/GPU y multiobjetivo."""
+    """Configuración avanzada para SAC con soporte CUDA/GPU y multiobjetivo.
+    
+    Nota: episodes=50 es el mínimo recomendado para problemas de alta
+    dimensionalidad como CityLearn con ~900 obs dims × 126 action dims.
+    Para convergencia óptima, usar 100+ episodios.
+    """
     # Hiperparámetros de entrenamiento
-    episodes: int = 10
+    episodes: int = 50  # 50 mínimo para alta dimensionalidad (8760 pasos/ep)
     batch_size: int = 512
     buffer_size: int = 100000
     learning_rate: float = 3e-4
