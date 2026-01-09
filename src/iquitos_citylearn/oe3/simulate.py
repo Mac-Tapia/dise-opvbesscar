@@ -516,6 +516,8 @@ def simulate(
                 device=sac_device or "auto",
                 seed=seed if seed is not None else 42,
                 batch_size=int(sac_kwargs.pop("batch_size", sac_batch_size) if sac_kwargs else sac_batch_size),
+                buffer_size=int(sac_kwargs.pop("buffer_size", 500000) if sac_kwargs else 500000),
+                gradient_steps=int(sac_kwargs.pop("gradient_steps", 4) if sac_kwargs else 4),
                 learning_rate=3e-4,
                 gamma=0.99,
                 tau=0.005,

@@ -109,8 +109,12 @@ oe3:
       resume_checkpoints: true
       deterministic_eval: true
       device: cuda
-      batch_size: 1024
-      log_interval: 500
+      batch_size: 4096
+      buffer_size: 500000
+      gradient_steps: 4
+      learning_starts: 1000
+      train_freq: 1
+      log_interval: 200
       use_amp: true
       checkpoint_freq_steps: 1000
       progress_interval_episodes: 1
@@ -127,15 +131,16 @@ oe3:
       episodes: 10
       resume_checkpoints: true
       timesteps: 87600
-      n_steps: 2048
-      batch_size: 128
+      n_steps: 4096
+      batch_size: 512
+      n_epochs: 10
       use_amp: true
-      log_interval: 2000
+      log_interval: 500
       checkpoint_freq_steps: 1000
       progress_interval_episodes: 1
       save_final: true
       device: cuda
-      target_kl: 0.015
+      target_kl: 0.02
       kl_adaptive: true
       reward_smooth_lambda: 0.01
       multi_objective_weights:
@@ -148,10 +153,12 @@ oe3:
       episodes: 10
       resume_checkpoints: true
       timesteps: 87600
-      n_steps: 1024
-      learning_rate: 0.0003
+      n_steps: 2048
+      learning_rate: 0.0007
       entropy_coef: 0.01
-      log_interval: 2000
+      vf_coef: 0.5
+      max_grad_norm: 0.5
+      log_interval: 500
       checkpoint_freq_steps: 1000
       progress_interval_episodes: 1
       save_final: true
