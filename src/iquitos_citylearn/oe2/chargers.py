@@ -71,6 +71,7 @@ class IndividualCharger:
     charger_type: str
     power_kw: float
     sockets: int
+    playa: str = ""  # Playa_Motos o Playa_Mototaxis
     location_x: float = 0.0
     location_y: float = 0.0
     # Perfil de uso asignado
@@ -84,6 +85,7 @@ class IndividualCharger:
             'charger_type': self.charger_type,
             'power_kw': self.power_kw,
             'sockets': self.sockets,
+            'playa': self.playa,
             'location_x': self.location_x,
             'location_y': self.location_y,
             'daily_energy_kwh': self.daily_energy_kwh,
@@ -92,31 +94,78 @@ class IndividualCharger:
         }
 
 
+@dataclass
+class PlayaData:
+    """Datos de infraestructura para una playa de estacionamiento."""
+    name: str
+    vehicle_type: str  # moto o mototaxi
+    n_vehicles: int
+    pe: float
+    fc: float
+    battery_kwh: float
+    charger_power_kw: float
+    n_chargers: int
+    sockets_per_charger: int
+    total_sockets: int
+    vehicles_charging_day: int
+    energy_day_kwh: float
+    pv_kwp: float = 0.0
+    bess_kwh: float = 0.0
+    chargers: List[IndividualCharger] = field(default_factory=list)
+    hourly_profile: Optional[pd.DataFrame] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'name': self.name,
+            'vehicle_type': self.vehicle_type,
+            'n_vehicles': self.n_vehicles,
+            'pe': self.pe,
+            'fc': self.fc,
+            'battery_kwh': self.battery_kwh,
+            'charger_power_kw': self.charger_power_kw,
+            'n_chargers': self.n_chargers,
+            'sockets_per_charger': self.sockets_per_charger,
+            'total_sockets': self.total_sockets,
+            'vehicles_charging_day': self.vehicles_charging_day,
+            'energy_day_kwh': self.energy_day_kwh,
+            'pv_kwp': self.pv_kwp,
+            'bess_kwh': self.bess_kwh,
+            'n_individual_chargers': len(self.chargers),
+        }
+
+
 def calculate_vehicle_demand(
     n_motos: int,
     n_mototaxis: int,
     pe: float,
-    fc: float,
+    fc: float = 1.0,  # FC no afecta cantidad de vehículos, solo energía
     days_per_month: int = 30,
     days_per_year: int = 365,
 ) -> Dict[str, int]:
     """
     Calcula la cantidad de vehículos a cargar por período.
     
+    La cantidad de vehículos depende SOLO de PE (probabilidad de evento de carga).
+    FC (factor de carga) afecta la ENERGÍA por vehículo, no la cantidad.
+    
+    Fórmula: Vehículos/día = Flota × PE
+    
     Args:
         n_motos: Número total de motos en la flota
         n_mototaxis: Número total de mototaxis en la flota
-        pe: Probabilidad de evento de carga (0-1)
-        fc: Factor de carga (0-1)
+        pe: Probabilidad de evento de carga (0-1) - % de vehículos que cargan/día
+        fc: Factor de carga (0-1) - NO SE USA para contar vehículos
         days_per_month: Días por mes
         days_per_year: Días por año
     
     Returns:
         Diccionario con vehículos diarios, mensuales y anuales
     """
-    # Vehículos que cargan diariamente
-    vehicles_day_motos = int(round(n_motos * pe * fc))
-    vehicles_day_mototaxis = int(round(n_mototaxis * pe * fc))
+    # Vehículos que cargan diariamente = Flota × PE
+    # PE = probabilidad de que un vehículo venga a cargar ese día
+    # FC afecta cuánta energía necesita cada vehículo, NO cuántos vienen
+    vehicles_day_motos = int(round(n_motos * pe))
+    vehicles_day_mototaxis = int(round(n_mototaxis * pe))
     
     # Proyección mensual y anual
     vehicles_month_motos = vehicles_day_motos * days_per_month
@@ -383,12 +432,19 @@ def evaluate_scenario(
     charger_power_kw_moto: float,
     charger_power_kw_mototaxi: float,
     sockets_per_charger: int,
+    battery_kwh_moto: float = 2.0,
+    battery_kwh_mototaxi: float = 4.0,
 ) -> ChargerSizingResult:
     """
     Evalúa un escenario de dimensionamiento de cargadores Modo 3.
     
     Considera que durante las horas pico (4 horas: 18-22h) llegan
     todos los vehículos de la flota que necesitan cargar.
+    
+    La energía diaria se calcula basándose en:
+    - Capacidad de batería del vehículo (no potencia del cargador)
+    - FC = porcentaje de batería descargada que necesita recarga
+    - PE = probabilidad de que el vehículo venga a cargar
     
     Args:
         pe_motos: Probabilidad de evento de carga para motos (0-1)
@@ -403,6 +459,8 @@ def evaluate_scenario(
         charger_power_kw_moto: Potencia cargador motos (2 kW Modo 3)
         charger_power_kw_mototaxi: Potencia cargador mototaxis (3 kW Modo 3)
         sockets_per_charger: Sockets por cargador
+        battery_kwh_moto: Capacidad batería moto (default 2.0 kWh)
+        battery_kwh_mototaxi: Capacidad batería mototaxi (default 4.0 kWh)
     """
     # Vehículos efectivos que cargan (aplicando PE)
     motos_charging = n_motos * pe_motos
@@ -418,16 +476,15 @@ def evaluate_scenario(
     sessions_peak_mototaxis = mototaxis_charging / n_peak_hours
     sessions_peak_per_hour = sessions_peak_motos + sessions_peak_mototaxis
     
-    ts_h = session_minutes / 60.0
+    # Energía por vehículo basada en CAPACIDAD DE BATERÍA × FC
+    # FC = porcentaje de batería descargada que necesita recarga
+    # Esto es la energía real que necesita el vehículo, no lo que entrega el cargador
+    energy_per_moto_kwh = battery_kwh_moto * fc_motos
+    energy_per_mototaxi_kwh = battery_kwh_mototaxi * fc_mototaxis
     
-    # Energía por sesión (potencia × tiempo × factor de carga)
-    # FC indica qué porcentaje de la batería se recarga
-    energy_session_moto_kwh = charger_power_kw_moto * ts_h * fc_motos
-    energy_session_mototaxi_kwh = charger_power_kw_mototaxi * ts_h * fc_mototaxis
-    
-    # Energía diaria total (considera FC en la energía por sesión)
-    energy_motos_day = motos_charging * energy_session_moto_kwh
-    energy_mototaxis_day = mototaxis_charging * energy_session_mototaxi_kwh
+    # Energía diaria total = vehículos que cargan × energía por vehículo
+    energy_motos_day = motos_charging * energy_per_moto_kwh
+    energy_mototaxis_day = mototaxis_charging * energy_per_mototaxi_kwh
     energy_day = energy_motos_day + energy_mototaxis_day
     
     # Potencia promedio ponderada para cálculo de cargadores
@@ -596,6 +653,7 @@ def create_individual_chargers(
     charger_type: str = "Level2",
     prefix: str = "EV_CHARGER",
     start_index: int = 1,
+    playa: str = "",
 ) -> List[IndividualCharger]:
     """
     Crea una lista de cargadores individuales para simulación en CityLearn.
@@ -641,6 +699,7 @@ def create_individual_chargers(
             charger_type=charger_type,
             power_kw=charger_power_kw,
             sockets=sockets_per_charger,
+            playa=playa,
             location_x=(i % 10) * 5.0,  # Distribución en grid
             location_y=(i // 10) * 5.0,
             hourly_load_profile=individual_profile,
@@ -650,6 +709,200 @@ def create_individual_chargers(
         chargers.append(charger)
     
     return chargers
+
+
+def generate_annual_charger_profiles(
+    chargers: List[IndividualCharger],
+    opening_hour: int,
+    closing_hour: int,
+    peak_hours: List[int],
+    peak_share_day: float,
+    year: int = 2024,
+    seed: int = 42,
+) -> pd.DataFrame:
+    """
+    Genera perfiles anuales (8760 horas) para cada cargador individual.
+    
+    Replica el perfil diario para todo el año, añadiendo variación realista
+    por día de semana (menos carga fines de semana) y variación aleatoria.
+    
+    Args:
+        chargers: Lista de cargadores individuales con perfiles diarios.
+        opening_hour: Hora de apertura del mall.
+        closing_hour: Hora de cierre del mall.
+        peak_hours: Horas pico del día.
+        peak_share_day: Fracción de energía en horas pico.
+        year: Año para generar el índice temporal.
+        seed: Semilla para reproducibilidad.
+    
+    Returns:
+        DataFrame con 8760 filas (horas) y una columna por cargador.
+    """
+    # Crear índice temporal anual
+    start_date = pd.Timestamp(f'{year}-01-01 00:00:00')
+    hours_year = 8760
+    index = pd.date_range(start=start_date, periods=hours_year, freq='h')
+    
+    rng = np.random.default_rng(seed)
+    
+    # Generar todos los perfiles primero en un diccionario para evitar fragmentación
+    all_profiles = {}
+    
+    for charger in chargers:
+        daily_profile = np.array(charger.hourly_load_profile)
+        annual_profile = np.zeros(hours_year)
+        
+        for day in range(365):
+            day_start = day * 24
+            day_end = day_start + 24
+            
+            # Factor de variación por día de semana
+            day_of_week = (index[day_start].dayofweek)  # 0=Lunes, 6=Domingo
+            if day_of_week >= 5:  # Fin de semana
+                weekday_factor = 0.7 + rng.uniform(-0.05, 0.05)
+            else:  # Día laboral
+                weekday_factor = 1.0 + rng.uniform(-0.1, 0.1)
+            
+            # Aplicar perfil diario con variación
+            daily_variation = 1.0 + rng.uniform(-0.15, 0.15, 24)
+            day_profile = daily_profile * weekday_factor * daily_variation
+            
+            # Asegurar que no hay carga fuera del horario
+            for h in range(24):
+                if h < opening_hour or h >= closing_hour:
+                    day_profile[h] = 0.0
+            
+            annual_profile[day_start:day_end] = day_profile
+        
+        all_profiles[charger.charger_id] = annual_profile
+    
+    # Crear DataFrame de una sola vez (evita fragmentación)
+    profiles = pd.DataFrame(all_profiles, index=index)
+    profiles.index.name = 'timestamp'
+    
+    return profiles
+
+
+def generate_playa_annual_dataset(
+    playa_name: str,
+    chargers: List[IndividualCharger],
+    opening_hour: int,
+    closing_hour: int,
+    peak_hours: List[int],
+    peak_share_day: float,
+    out_dir: Path,
+    scenarios: List[str] = None,
+    year: int = 2024,
+) -> Dict[str, Any]:
+    """
+    Genera dataset anual completo para una playa de estacionamiento.
+    
+    Crea diferentes escenarios de utilización:
+    - base: Utilización normal según PE/FC configurados
+    - high: Alta demanda (+20%)
+    - low: Baja demanda (-20%)
+    - weekend_only: Solo fines de semana
+    
+    Args:
+        playa_name: Nombre de la playa (Playa_Motos o Playa_Mototaxis).
+        chargers: Lista de cargadores de esta playa.
+        opening_hour: Hora de apertura.
+        closing_hour: Hora de cierre.
+        peak_hours: Horas pico.
+        peak_share_day: Fracción de energía en pico.
+        out_dir: Directorio de salida.
+        scenarios: Lista de escenarios a generar.
+        year: Año para el dataset.
+    
+    Returns:
+        Diccionario con información del dataset generado.
+    """
+    if scenarios is None:
+        scenarios = ['base', 'high', 'low']
+    
+    playa_dir = out_dir / "annual_datasets" / playa_name
+    playa_dir.mkdir(parents=True, exist_ok=True)
+    
+    results = {
+        'playa': playa_name,
+        'n_chargers': len(chargers),
+        'scenarios': {},
+    }
+    
+    # Generar perfil base
+    print(f"   Generando perfiles anuales para {playa_name}...")
+    base_profiles = generate_annual_charger_profiles(
+        chargers=chargers,
+        opening_hour=opening_hour,
+        closing_hour=closing_hour,
+        peak_hours=peak_hours,
+        peak_share_day=peak_share_day,
+        year=year,
+        seed=42,
+    )
+    
+    for scenario in scenarios:
+        scenario_dir = playa_dir / scenario
+        scenario_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Aplicar factor de escenario
+        if scenario == 'base':
+            factor = 1.0
+        elif scenario == 'high':
+            factor = 1.2
+        elif scenario == 'low':
+            factor = 0.8
+        else:
+            factor = 1.0
+        
+        scenario_profiles = base_profiles * factor
+        
+        # Guardar CSV por cargador individual
+        for col in scenario_profiles.columns:
+            charger_df = pd.DataFrame({
+                'timestamp': scenario_profiles.index,
+                'power_kw': scenario_profiles[col].values,
+                'energy_kwh': scenario_profiles[col].values,  # 1h timestep
+            })
+            charger_df.to_csv(scenario_dir / f"{col}.csv", index=False)
+        
+        # Guardar perfil agregado
+        aggregated = scenario_profiles.sum(axis=1)
+        agg_df = pd.DataFrame({
+            'timestamp': scenario_profiles.index,
+            'total_power_kw': aggregated.values,
+            'total_energy_kwh': aggregated.values,
+        })
+        agg_df.to_csv(scenario_dir / "aggregated_profile.csv", index=False)
+        
+        # Estadísticas del escenario
+        results['scenarios'][scenario] = {
+            'path': str(scenario_dir.resolve()),
+            'n_files': len(chargers) + 1,
+            'total_energy_year_kwh': float(aggregated.sum()),
+            'peak_power_kw': float(aggregated.max()),
+            'avg_daily_energy_kwh': float(aggregated.sum() / 365),
+        }
+        
+        print(f"      [OK] Escenario '{scenario}': {len(chargers)} archivos, "
+              f"{aggregated.sum()/1000:.1f} MWh/año")
+    
+    # Guardar metadata
+    metadata = {
+        'playa': playa_name,
+        'year': year,
+        'n_chargers': len(chargers),
+        'charger_ids': [c.charger_id for c in chargers],
+        'opening_hour': opening_hour,
+        'closing_hour': closing_hour,
+        'peak_hours': peak_hours,
+        'scenarios': results['scenarios'],
+    }
+    (playa_dir / "metadata.json").write_text(
+        json.dumps(metadata, indent=2), encoding='utf-8'
+    )
+    
+    return results
 
 
 def generate_charger_plots(
@@ -1028,29 +1281,29 @@ def run_charger_sizing(
     # Usar el resultado como escenario recomendado
     esc_rec = pd.Series(res.__dict__)
 
-    # Ajustar vehículos diarios según capacidad total (9-22h) y mix motos/mototaxis
-    capacity_mix = compute_capacity_breakdown(
-        chargers=int(esc_rec["chargers_required"]),
-        sockets_per_charger=sockets_per_charger,
-        session_minutes=session_minutes,
-        opening_hour=opening_hour,
-        closing_hour=closing_hour,
-        peak_hours=peak_hours,
-    )
-    total_sessions_day = capacity_mix["sessions_day_total"]
-    share_motos = n_motos / max(n_motos + n_mototaxis, 1e-9)
-    share_mototaxis = 1.0 - share_motos
-    esc_rec["vehicles_day_motos"] = total_sessions_day * share_motos
-    esc_rec["vehicles_day_mototaxis"] = total_sessions_day * share_mototaxis
-    esc_rec["vehicles_month_motos"] = esc_rec["vehicles_day_motos"] * 30
-    esc_rec["vehicles_month_mototaxis"] = esc_rec["vehicles_day_mototaxis"] * 30
-    esc_rec["vehicles_year_motos"] = esc_rec["vehicles_day_motos"] * 365
-    esc_rec["vehicles_year_mototaxis"] = esc_rec["vehicles_day_mototaxis"] * 365
-    # Recalcular energía diaria usando todos los vehículos/día efectivos
-    ts_h = session_minutes / 60.0
-    energy_session_moto = charger_power_kw_moto * ts_h * fc_motos
-    energy_session_mototaxi = charger_power_kw_mototaxi * ts_h * fc_mototaxis
-    energy_day_total = esc_rec["vehicles_day_motos"] * energy_session_moto + esc_rec["vehicles_day_mototaxis"] * energy_session_mototaxi
+    # Vehículos que cargan diariamente (basado en flota × PE, no capacidad de cargadores)
+    # PE = probabilidad de evento de carga (% de vehículos que vienen a cargar)
+    motos_charging_day = int(round(n_motos * pe_motos))
+    mototaxis_charging_day = int(round(n_mototaxis * pe_mototaxis))
+    
+    # Actualizar vehículos/día usando los valores correctos
+    esc_rec["vehicles_day_motos"] = motos_charging_day
+    esc_rec["vehicles_day_mototaxis"] = mototaxis_charging_day
+    esc_rec["vehicles_month_motos"] = motos_charging_day * 30
+    esc_rec["vehicles_month_mototaxis"] = mototaxis_charging_day * 30
+    esc_rec["vehicles_year_motos"] = motos_charging_day * 365
+    esc_rec["vehicles_year_mototaxis"] = mototaxis_charging_day * 365
+    
+    # Energía diaria basada en CAPACIDAD DE BATERÍA × FC (no potencia × tiempo)
+    # FC = porcentaje de batería descargada que necesita recarga
+    battery_moto = 2.0  # kWh - batería típica moto eléctrica
+    battery_mototaxi = 4.0  # kWh - batería típica mototaxi
+    
+    energy_per_moto = battery_moto * fc_motos  # kWh por moto
+    energy_per_mototaxi = battery_mototaxi * fc_mototaxis  # kWh por mototaxi
+    
+    energy_day_total = (motos_charging_day * energy_per_moto + 
+                        mototaxis_charging_day * energy_per_mototaxi)
     esc_rec["energy_day_kwh"] = energy_day_total
     res.energy_day_kwh = energy_day_total
     
@@ -1148,19 +1401,33 @@ def run_charger_sizing(
     print(f"   Mensual: {int(esc_rec['vehicles_month_motos']):,} motos + {int(esc_rec['vehicles_month_mototaxis']):,} mototaxis")
     print(f"   Anual:   {int(esc_rec['vehicles_year_motos']):,} motos + {int(esc_rec['vehicles_year_mototaxis']):,} mototaxis")
     
-    # Crear cargadores individuales para CityLearn (per-toma controlable)
-    # Reparto: 28 cargadores motos (2 kW) -> 112 tomas individuales
-    #          4 cargadores mototaxis (3 kW) -> 16 tomas individuales
+    # =================================================================
+    # CREAR DATASETS SEPARADOS POR PLAYA DE ESTACIONAMIENTO
+    # =================================================================
+    # Playa_Motos: 28 cargadores (2 kW) -> 112 tomas individuales
+    # Playa_Mototaxis: 4 cargadores (3 kW) -> 16 tomas individuales
+    
+    print(f"\n[+] Generando datasets separados por playa de estacionamiento...")
+    
+    # Configuración por playa
     n_moto_chargers = 28
     n_mototaxi_chargers = 4
     n_tomas_moto = n_moto_chargers * sockets_per_charger
     n_tomas_mototaxi = n_mototaxi_chargers * sockets_per_charger
-
-    total_veh = esc_rec['vehicles_day_motos'] + esc_rec['vehicles_day_mototaxis']
-    frac_moto = esc_rec['vehicles_day_motos'] / total_veh if total_veh > 0 else 0.8
-    energy_moto = profile['energy_kwh'].sum() * frac_moto
-    energy_mototaxi = profile['energy_kwh'].sum() - energy_moto
-
+    
+    # Baterías
+    battery_moto = 2.0  # kWh
+    battery_mototaxi = 4.0  # kWh
+    
+    # Vehículos que cargan por día
+    motos_charging_day = int(esc_rec['vehicles_day_motos'])
+    mototaxis_charging_day = int(esc_rec['vehicles_day_mototaxis'])
+    
+    # Energía diaria por playa (basada en batería × FC × vehículos)
+    energy_moto = motos_charging_day * battery_moto * fc_motos
+    energy_mototaxi = mototaxis_charging_day * battery_mototaxi * fc_mototaxis
+    
+    # Perfiles horarios por playa
     profile_moto = build_hourly_profile(
         energy_day_kwh=energy_moto,
         opening_hour=opening_hour,
@@ -1175,9 +1442,9 @@ def run_charger_sizing(
         peak_hours=peak_hours,
         peak_share_day=peak_share_day,
     )
-
-    individual_chargers = []
-    individual_chargers += create_individual_chargers(
+    
+    # Crear cargadores individuales por playa
+    chargers_playa_motos = create_individual_chargers(
         n_chargers=n_tomas_moto,
         charger_power_kw=charger_power_kw_moto,
         sockets_per_charger=1,
@@ -1185,8 +1452,10 @@ def run_charger_sizing(
         charger_type="Level2_MOTO",
         prefix="MOTO_CH",
         start_index=1,
+        playa="Playa_Motos",
     )
-    individual_chargers += create_individual_chargers(
+    
+    chargers_playa_mototaxis = create_individual_chargers(
         n_chargers=n_tomas_mototaxi,
         charger_power_kw=charger_power_kw_mototaxi,
         sockets_per_charger=1,
@@ -1194,23 +1463,168 @@ def run_charger_sizing(
         charger_type="Level2_MOTOTAXI",
         prefix="MOTO_TAXI_CH",
         start_index=n_tomas_moto + 1,
+        playa="Playa_Mototaxis",
     )
     
-    # Guardar datos de cargadores individuales
+    individual_chargers = chargers_playa_motos + chargers_playa_mototaxis
+    
+    # =================================================================
+    # Crear objetos PlayaData para cada playa
+    # =================================================================
+    playa_motos = PlayaData(
+        name="Playa_Motos",
+        vehicle_type="moto",
+        n_vehicles=n_motos,
+        pe=pe_motos,
+        fc=fc_motos,
+        battery_kwh=battery_moto,
+        charger_power_kw=charger_power_kw_moto,
+        n_chargers=n_moto_chargers,
+        sockets_per_charger=sockets_per_charger,
+        total_sockets=n_tomas_moto,
+        vehicles_charging_day=motos_charging_day,
+        energy_day_kwh=energy_moto,
+        chargers=chargers_playa_motos,
+        hourly_profile=profile_moto,
+    )
+    
+    playa_mototaxis = PlayaData(
+        name="Playa_Mototaxis",
+        vehicle_type="mototaxi",
+        n_vehicles=n_mototaxis,
+        pe=pe_mototaxis,
+        fc=fc_mototaxis,
+        battery_kwh=battery_mototaxi,
+        charger_power_kw=charger_power_kw_mototaxi,
+        n_chargers=n_mototaxi_chargers,
+        sockets_per_charger=sockets_per_charger,
+        total_sockets=n_tomas_mototaxi,
+        vehicles_charging_day=mototaxis_charging_day,
+        energy_day_kwh=energy_mototaxi,
+        chargers=chargers_playa_mototaxis,
+        hourly_profile=profile_mototaxi,
+    )
+    
+    # =================================================================
+    # Guardar datasets separados por playa
+    # =================================================================
+    playas_dir = out_dir / "playas"
+    playas_dir.mkdir(parents=True, exist_ok=True)
+    
+    for playa in [playa_motos, playa_mototaxis]:
+        playa_subdir = playas_dir / playa.name
+        playa_subdir.mkdir(parents=True, exist_ok=True)
+        
+        # 1. Guardar perfil horario de la playa
+        if playa.hourly_profile is not None:
+            playa.hourly_profile.to_csv(playa_subdir / "perfil_horario.csv", index=False)
+        
+        # 2. Guardar lista de cargadores
+        chargers_data = [c.to_dict() for c in playa.chargers]
+        (playa_subdir / "chargers.json").write_text(
+            json.dumps(chargers_data, indent=2), encoding="utf-8"
+        )
+        
+        # 3. Guardar CSV de cargadores
+        chargers_df_playa = pd.DataFrame([{
+            'charger_id': c.charger_id,
+            'charger_type': c.charger_type,
+            'power_kw': c.power_kw,
+            'sockets': c.sockets,
+            'playa': c.playa,
+            'daily_energy_kwh': c.daily_energy_kwh,
+            'peak_power_kw': c.peak_power_kw,
+        } for c in playa.chargers])
+        chargers_df_playa.to_csv(playa_subdir / "chargers.csv", index=False)
+        
+        # 4. Guardar perfiles horarios individuales
+        hourly_profiles_playa = pd.DataFrame({
+            c.charger_id: c.hourly_load_profile for c in playa.chargers
+        })
+        hourly_profiles_playa.index.name = 'hour'
+        hourly_profiles_playa.to_csv(playa_subdir / "chargers_hourly_profiles.csv")
+        
+        # 5. Guardar resumen de la playa
+        playa_summary = playa.to_dict()
+        playa_summary['total_power_kw'] = playa.n_chargers * playa.charger_power_kw * playa.sockets_per_charger
+        (playa_subdir / "summary.json").write_text(
+            json.dumps(playa_summary, indent=2), encoding="utf-8"
+        )
+        
+        print(f"   [OK] {playa.name}: {playa.n_chargers} cargadores, {playa.total_sockets} tomas, "
+              f"{playa.energy_day_kwh:.1f} kWh/día")
+    
+    # Guardar resumen combinado de playas
+    playas_summary = {
+        "playas": {
+            playa_motos.name: playa_motos.to_dict(),
+            playa_mototaxis.name: playa_mototaxis.to_dict(),
+        },
+        "totals": {
+            "n_chargers": n_moto_chargers + n_mototaxi_chargers,
+            "total_sockets": n_tomas_moto + n_tomas_mototaxi,
+            "energy_day_kwh": energy_moto + energy_mototaxi,
+            "vehicles_charging_day": motos_charging_day + mototaxis_charging_day,
+        }
+    }
+    (playas_dir / "playas_summary.json").write_text(
+        json.dumps(playas_summary, indent=2), encoding="utf-8"
+    )
+    
+    # =================================================================
+    # GENERAR DATASETS ANUALES (8760 horas) POR PLAYA Y ESCENARIO
+    # =================================================================
+    print(f"\n[+] Generando datasets anuales por playa de estacionamiento...")
+    
+    annual_results = {}
+    for playa_data, playa_chargers in [(playa_motos, chargers_playa_motos), 
+                                        (playa_mototaxis, chargers_playa_mototaxis)]:
+        result = generate_playa_annual_dataset(
+            playa_name=playa_data.name,
+            chargers=playa_chargers,
+            opening_hour=opening_hour,
+            closing_hour=closing_hour,
+            peak_hours=peak_hours,
+            peak_share_day=peak_share_day,
+            out_dir=out_dir,
+            scenarios=['base', 'high', 'low'],
+            year=2024,
+        )
+        annual_results[playa_data.name] = result
+    
+    # Agregar rutas de datasets anuales al resumen
+    playas_summary['annual_datasets'] = {
+        'path': str((out_dir / "annual_datasets").resolve()),
+        'scenarios': ['base', 'high', 'low'],
+        'playas': annual_results,
+    }
+    
+    # Actualizar archivo de resumen con datasets anuales
+    (playas_dir / "playas_summary.json").write_text(
+        json.dumps(playas_summary, indent=2, default=str), encoding="utf-8"
+    )
+    
+    # =================================================================
+    # Guardar datos combinados (compatibilidad con código existente)
+    # =================================================================
+    
+    # Guardar datos de cargadores individuales (todos)
     chargers_data = [c.to_dict() for c in individual_chargers]
     try:
         (out_dir / "individual_chargers.json").write_text(
             json.dumps(chargers_data, indent=2), encoding="utf-8"
         )
-        print(f"\n[+] Cargadores individuales preparados: {len(individual_chargers)}")
+        print(f"\n[+] Cargadores individuales totales: {len(individual_chargers)}")
     except (IOError, OSError) as e:
         print(f"\n[ERROR] No se pudo guardar el archivo JSON de cargadores individuales: {e}")
     
     # Crear DataFrame de cargadores para CityLearn
     chargers_df = pd.DataFrame([{
         'charger_id': c.charger_id,
+        'charger_type': c.charger_type,
         'power_kw': c.power_kw,
         'sockets': c.sockets,
+        'playa': c.playa,
         'daily_energy_kwh': c.daily_energy_kwh,
         'peak_power_kw': c.peak_power_kw,
     } for c in individual_chargers])
@@ -1254,8 +1668,10 @@ def run_charger_sizing(
     print(f"   Energia faltante promedio: {avg_energy_needed_kwh:.2f} kWh (~{avg_missing_frac*100:.1f}% de la sesion)")
     print(f"   Tiempo restante promedio: {avg_time_remaining_minutes:.1f} min")
 
+    n_chargers_rec = int(esc_rec.get("chargers_required", 32))
+    
     capacity = compute_capacity_metrics(
-        chargers=int(esc_rec.get("chargers_required", n_chargers_rec)),
+        chargers=n_chargers_rec,
         sockets_per_charger=sockets_per_charger,
         session_minutes=session_minutes,
         opening_hour=opening_hour,
@@ -1311,6 +1727,27 @@ def run_charger_sizing(
         "charger_profile_variants_path": str(metadata_path.resolve()),
         "charger_profile_variants_dir": str(variant_dir.resolve()),
         "charger_profile_variants": variant_metadata,
+        # Datasets por playa de estacionamiento
+        "playas_dir": str(playas_dir.resolve()),
+        "playas_summary_path": str((playas_dir / "playas_summary.json").resolve()),
+        "playas": {
+            "Playa_Motos": {
+                "dir": str((playas_dir / "Playa_Motos").resolve()),
+                "n_chargers": n_moto_chargers,
+                "total_sockets": n_tomas_moto,
+                "power_kw": charger_power_kw_moto,
+                "vehicles_charging_day": motos_charging_day,
+                "energy_day_kwh": energy_moto,
+            },
+            "Playa_Mototaxis": {
+                "dir": str((playas_dir / "Playa_Mototaxis").resolve()),
+                "n_chargers": n_mototaxi_chargers,
+                "total_sockets": n_tomas_mototaxi,
+                "power_kw": charger_power_kw_mototaxi,
+                "vehicles_charging_day": mototaxis_charging_day,
+                "energy_day_kwh": energy_mototaxi,
+            },
+        },
     }
     
     try:

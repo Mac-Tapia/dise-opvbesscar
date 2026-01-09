@@ -61,7 +61,7 @@ oe2:
     fc_mototaxis: 0.9
     daily_sessions_factor: 1.0
     opening_hour: 9
-    closing_hour: 21
+    closing_hour: 22
     peak_hours:
       - 18
       - 19
@@ -105,7 +105,7 @@ oe3:
     resume_checkpoints: true
     multi_objective_priority: co2_focus
     sac:
-      episodes: 20
+      episodes: 10
       resume_checkpoints: true
       deterministic_eval: true
       device: cuda
@@ -124,9 +124,9 @@ oe3:
         ev: 0.1
         grid: 0.05
     ppo:
-      episodes: 20
+      episodes: 10
       resume_checkpoints: true
-      timesteps: 175200
+      timesteps: 87600
       n_steps: 2048
       batch_size: 128
       use_amp: true
@@ -145,9 +145,9 @@ oe3:
         ev: 0.1
         grid: 0.05
     a2c:
-      episodes: 20
+      episodes: 10
       resume_checkpoints: true
-      timesteps: 175200
+      timesteps: 87600
       n_steps: 1024
       learning_rate: 0.0003
       entropy_coef: 0.01

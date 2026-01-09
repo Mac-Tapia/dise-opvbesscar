@@ -108,19 +108,17 @@ def main() -> None:
 
     # Opcional: reutilizar baseline de un resumen previo
     summary_path = out_dir / "simulation_summary.json"
-    res_grid = None
     res_uncontrolled = None
     if args.skip_uncontrolled and summary_path.exists():
         prev = json.loads(summary_path.read_text(encoding="utf-8"))
-        if "grid_only_result" in prev:
-            res_grid = prev["grid_only_result"]
         if "pv_bess_uncontrolled" in prev:
             res_uncontrolled = prev["pv_bess_uncontrolled"]
 
-    # Scenario A: Electrified transport + grid only
-    if res_grid is None:
-        res_grid_obj = simulate(
-            schema_path=schema_grid,
+    # Baseline: Electrified transport + PV+BESS + no control (Uncontrolled)
+    # Este es el único baseline necesario - también se usa para calcular tailpipe
+    if res_uncontrolled is None:
+        res_uncontrolled_obj = simulate(
+            schema_path=schema_pv,
             agent_name="Uncontrolled",
             out_dir=out_dir,
             training_dir=training_dir,
@@ -130,6 +128,7 @@ def main() -> None:
             sac_batch_size=sac_batch_size,
             sac_log_interval=sac_log_interval,
             sac_use_amp=sac_use_amp,
+            ppo_timesteps=ppo_timesteps,
             deterministic_eval=True,
             sac_prefer_citylearn=sac_prefer_citylearn,
             sac_checkpoint_freq_steps=sac_checkpoint_freq,
@@ -153,16 +152,15 @@ def main() -> None:
             seed=project_seed,
             multi_objective_priority=mo_priority,
         )
-        res_grid = res_grid_obj.__dict__
+        res_uncontrolled = res_uncontrolled_obj.__dict__
 
     # Scenario B: Electrified transport + PV+BESS + control (evaluate candidate agents)
     agent_names = list(eval_cfg["agents"])
     results = {}
     for agent in agent_names:
+        # Skip Uncontrolled in this loop - it will be run in Scenario C as baseline
         if agent.lower() == "uncontrolled":
-            # Uncontrolled with PV+BESS is not the reporting scenario requested,
-            # but we keep it for diagnostics.
-            pass
+            continue
         
         try:
             res = simulate(
@@ -211,45 +209,6 @@ def main() -> None:
             print(f"[INFO] Continuando con los siguientes agentes...")
             continue
 
-    # Scenario C: Electrified transport + PV+BESS + no control (baseline)
-    if res_uncontrolled is None:
-        res_uncontrolled_obj = simulate(
-            schema_path=schema_pv,
-            agent_name="Uncontrolled",
-            out_dir=out_dir,
-            training_dir=training_dir,
-            carbon_intensity_kg_per_kwh=ci,
-            seconds_per_time_step=seconds_per_time_step,
-            sac_episodes=sac_episodes,
-            sac_batch_size=sac_batch_size,
-            sac_log_interval=sac_log_interval,
-            sac_use_amp=sac_use_amp,
-            ppo_timesteps=ppo_timesteps,
-            deterministic_eval=True,
-            sac_prefer_citylearn=sac_prefer_citylearn,
-            sac_checkpoint_freq_steps=sac_checkpoint_freq,
-            ppo_checkpoint_freq_steps=ppo_checkpoint_freq,
-            ppo_n_steps=ppo_n_steps,
-            ppo_batch_size=ppo_batch_size,
-            ppo_use_amp=ppo_use_amp,
-            ppo_target_kl=ppo_target_kl,
-            ppo_kl_adaptive=ppo_kl_adaptive,
-            ppo_log_interval=ppo_log_interval,
-            a2c_timesteps=a2c_timesteps,
-            a2c_checkpoint_freq_steps=a2c_checkpoint_freq,
-            a2c_n_steps=a2c_n_steps,
-            a2c_learning_rate=a2c_learning_rate,
-            a2c_entropy_coef=a2c_entropy_coef,
-            a2c_device=a2c_device,
-            a2c_log_interval=a2c_log_interval,
-            sac_resume_checkpoints=sac_resume,
-            ppo_resume_checkpoints=ppo_resume,
-            a2c_resume_checkpoints=a2c_resume,
-            seed=project_seed,
-            multi_objective_priority=mo_priority,
-        )
-        res_uncontrolled = res_uncontrolled_obj.__dict__
-
     # Pick best (lowest annualized carbon, then highest autosuficiencia)
     def annualized_carbon(r: dict) -> float:
         return r["carbon_kg"] / max(r["simulated_years"], 1e-9)
@@ -271,15 +230,15 @@ def main() -> None:
         )
 
     # Calcular tailpipe y reducciones
-    grid_only = res_grid
-    tailpipe_kg_y = _tailpipe_kg(cfg, float(grid_only["ev_charging_kwh"]), float(grid_only["simulated_years"]))
-    grid_only_total = float(grid_only["carbon_kg"]) + tailpipe_kg_y
+    # Usamos el baseline (Uncontrolled + PV+BESS) para calcular el tailpipe equivalente
     baseline = res_uncontrolled
+    tailpipe_kg_y = _tailpipe_kg(cfg, float(baseline["ev_charging_kwh"]), float(baseline["simulated_years"]))
+    grid_only_total = float(baseline["carbon_kg"]) + tailpipe_kg_y  # CO2 si no hubiera PV/BESS
     reductions = {}
     if baseline is not None:
         base_carbon = float(baseline["carbon_kg"])
-        reductions["oe2_reduction_kg"] = grid_only_total - base_carbon
-        reductions["oe2_reduction_pct"] = reductions["oe2_reduction_kg"] / max(grid_only_total, 1e-9)
+        reductions["oe2_reduction_kg"] = tailpipe_kg_y  # Reducción por electrificación
+        reductions["oe2_reduction_pct"] = tailpipe_kg_y / max(grid_only_total, 1e-9)
         for agent_name, res in results.items():
             agent_carbon = float(res["carbon_kg"])
             reductions[agent_name] = {
@@ -288,9 +247,7 @@ def main() -> None:
             }
 
     summary = {
-        "schema_grid_only": str(schema_grid.resolve()),
         "schema_pv_bess": str(schema_pv.resolve()),
-        "grid_only_result": res_grid,
         "pv_bess_results": results,
         "pv_bess_uncontrolled": res_uncontrolled,
         "best_agent": best_agent,

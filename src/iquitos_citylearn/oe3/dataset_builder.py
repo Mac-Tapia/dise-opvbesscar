@@ -103,6 +103,26 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
         artifacts["chargers_results"] = json.loads(chargers_results.read_text(encoding="utf-8"))
         logger.info(f"Cargados resultados de chargers OE2: {artifacts['chargers_results'].get('n_chargers_recommended', 0)} chargers")
     
+    # === DATASETS ANUALES POR PLAYA (8760 horas) ===
+    annual_datasets_dir = interim_dir / "oe2" / "chargers" / "annual_datasets"
+    if annual_datasets_dir.exists():
+        artifacts["annual_datasets_dir"] = annual_datasets_dir
+        artifacts["annual_datasets"] = {}
+        
+        for playa_name in ["Playa_Motos", "Playa_Mototaxis"]:
+            playa_dir = annual_datasets_dir / playa_name
+            if playa_dir.exists():
+                metadata_path = playa_dir / "metadata.json"
+                if metadata_path.exists():
+                    playa_meta = json.loads(metadata_path.read_text(encoding="utf-8"))
+                    artifacts["annual_datasets"][playa_name] = {
+                        "dir": playa_dir,
+                        "metadata": playa_meta,
+                        "base_dir": playa_dir / "base",
+                        "charger_ids": playa_meta.get("charger_ids", []),
+                    }
+                    logger.info(f"Cargados datasets anuales {playa_name}: {len(playa_meta.get('charger_ids', []))} chargers")
+    
     charger_profile_variants = interim_dir / "oe2" / "chargers" / "charger_profile_variants.json"
     if charger_profile_variants.exists():
         artifacts["charger_profile_variants"] = json.loads(charger_profile_variants.read_text(encoding="utf-8"))
@@ -708,34 +728,72 @@ def build_citylearn_dataset(
     last_row = charger_df.iloc[-1:].copy()
     charger_df = pd.concat([charger_df, last_row], ignore_index=True)
 
-    # === GENERAR CSVs PARA TODOS LOS CHARGERS DE TODOS LOS BUILDINGS ===
-    n_chargers_oe2 = 31  # default
-    if "chargers_results" in artifacts:
-        n_chargers_oe2 = int(artifacts["chargers_results"].get("n_chargers_recommended", 31))
-    
-    # Iterar sobre TODOS los buildings para generar CSVs de chargers
+    # === GENERAR CSVs PARA CHARGERS USANDO DATASETS ANUALES POR PLAYA ===
     total_chargers_generated = 0
+    annual_datasets = artifacts.get("annual_datasets", {})
+    
+    # Mapeo de building a playa para datasets anuales
+    playa_mapping = {
+        "Playa_Motos": "Playa_Motos",
+        "Playa_Mototaxis": "Playa_Mototaxis",
+    }
+    
     for building_name, building_cfg in schema["buildings"].items():
         chargers_in_building = building_cfg.get("chargers", {})
+        playa_name = playa_mapping.get(building_name, building_name)
+        playa_data = annual_datasets.get(playa_name, {})
+        playa_base_dir = playa_data.get("base_dir")
+        
         for charger_name, charger_cfg in chargers_in_building.items():
             charger_csv = charger_cfg.get("charger_simulation", f"{charger_name}.csv")
             charger_path = out_dir / charger_csv
             
-            # Distribuir EVs entre chargers - algunos activos, otros esperando
-            charger_idx = int(charger_name.split("_")[-1]) if "_" in charger_name else 1
+            # Intentar usar dataset anual si existe
+            if playa_base_dir and playa_base_dir.exists():
+                annual_csv = playa_base_dir / f"{charger_name}.csv"
+                if annual_csv.exists():
+                    # Cargar perfil anual de energía del charger
+                    annual_df = pd.read_csv(annual_csv)
+                    
+                    # Convertir perfil de energía a formato de simulación CityLearn
+                    # CityLearn necesita: state, ev_id, departure_time, req_soc, arrival_time, arrival_soc
+                    n_rows = len(annual_df)
+                    
+                    # Determinar estado basado en si hay energía (power_kw > 0)
+                    power_values = annual_df['power_kw'].values
+                    charger_state = np.where(power_values > 0, 1, 3)  # 1=conectado, 3=sin EV
+                    
+                    # Crear DataFrame para CityLearn
+                    citylearn_df = pd.DataFrame({
+                        "electric_vehicle_charger_state": charger_state,
+                        "electric_vehicle_id": np.full(n_rows, default_ev, dtype=object),
+                        "electric_vehicle_departure_time": np.where(charger_state == 1, 
+                            float(departure_step - arrival_step), 0.0),
+                        "electric_vehicle_required_soc_departure": np.where(charger_state == 1, 
+                            soc_req, 0.0),
+                        "electric_vehicle_estimated_arrival_time": np.where(charger_state == 3, 
+                            1.0, 0.0),
+                        "electric_vehicle_estimated_soc_arrival": np.full(n_rows, soc_arr),
+                    })
+                    
+                    # Agregar fila extra para CityLearn
+                    last_row_annual = citylearn_df.iloc[-1:].copy()
+                    citylearn_df = pd.concat([citylearn_df, last_row_annual], ignore_index=True)
+                    
+                    citylearn_df.to_csv(charger_path, index=False)
+                    total_chargers_generated += 1
+                    continue
             
-            # Crear variación para simular distribución de carga
+            # Fallback: usar template genérico
+            charger_idx = int(charger_name.split("_")[-1]) if "_" in charger_name else 1
+            n_chargers_oe2 = artifacts.get("chargers_results", {}).get("n_chargers_recommended", 128)
+            
             if charger_idx <= n_chargers_oe2 // 3:
-                # Chargers principales: más activos
                 charger_df.to_csv(charger_path, index=False)
             else:
-                # Chargers secundarios: menos activos (estado alternado)
-                # Usar vectorización en lugar de bucle for (mucho más rápido)
                 secondary_df = charger_df.copy()
-                # Crear máscara para filas que deben estar desconectadas
-                t_arr = np.arange(len(secondary_df) - 1)  # Excluir la fila adicional
+                t_arr = np.arange(len(secondary_df) - 1)
                 mask = ((t_arr // 2) % 2) == (charger_idx % 2)
-                # Extender mask para incluir la última fila
                 mask = np.concatenate([mask, [mask[-1] if len(mask) > 0 else False]])
                 secondary_df.loc[mask, "electric_vehicle_charger_state"] = 3
                 # NO cambiar ev_id - CityLearn lo necesita siempre
