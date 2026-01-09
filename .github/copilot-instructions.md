@@ -2,177 +2,187 @@
 
 ## Project Overview
 
-This is a **CO₂ emissions reduction pipeline** for electric vehicle (EV) charging infrastructure in Iquitos, Peru. It has two major objectives:
+CO₂ emissions reduction pipeline for EV charging infrastructure in Iquitos, Peru (lat=-3.75, lon=-73.25, tz=America/Lima). Three objectives:
 
-- **OE2**: Dimension solar PV, BESS (battery storage), and EV chargers for a moto/mototaxi fleet
-- **OE3**: Evaluate RL-based charging control algorithms using CityLearn simulations
+- **OE1**: Strategic location analysis (Mall de Iquitos site viability)
+- **OE2**: Dimension solar PV (4162 kW DC), BESS (2000 kWh), and chargers for 1030 vehicles (900 motos + 130 mototaxis)
+- **OE3**: Evaluate RL agents (SAC, PPO, A2C, Uncontrolled) using CityLearn with multi-objective rewards
 
-## Architecture
+## Architecture & Data Flow
 
 ```
-scripts/run_pipeline.py    → Orchestrates all stages sequentially
-    ├── run_oe2_solar.py   → PV generation (pvlib)
-    ├── run_oe2_chargers.py → Charger sizing
-    ├── run_oe2_bess.py    → Battery sizing
-    ├── run_oe3_build_dataset.py → CityLearn dataset creation
-    ├── run_oe3_simulate.py → Agent evaluation
-    └── run_oe3_co2_table.py → Final emissions report
+scripts/run_pipeline.py     → Orchestrates all stages
+    ├── run_oe1_location.py → Site viability (→ reports/oe1/)
+    ├── run_oe2_solar.py    → PV sizing via pvlib + PVGIS TMY
+    ├── run_oe2_chargers.py → 31 chargers × 4 sockets sizing
+    ├── run_oe2_bess.py     → Battery: 2000kWh/1200kW fixed mode
+    ├── run_oe3_build_dataset.py → CityLearn dataset from OE2
+    ├── run_oe3_simulate.py → Multi-agent training + evaluation
+    └── run_oe3_co2_table.py → Emissions comparison report
 ```
 
-### Key Data Flow
-1. **Config** (`configs/default.yaml`) → All parameters centralized here
-2. **OE2 artifacts** → `data/interim/oe2/` (JSON + CSV timeseries)
-3. **CityLearn dataset** → `data/processed/citylearn/<name>/`
-4. **Reports** → `reports/oe3/co2_comparison_table.{csv,md}`
+**Outputs**: `data/interim/oe2/` (JSON+CSV) → `data/processed/citylearn/iquitos_ev_mall/` → `analyses/oe3/`
 
 ## Critical Patterns
 
-### Configuration Loading
-Always use the centralized config system:
-```python
-from iquitos_citylearn.config import load_config, load_paths
-cfg = load_config(Path("configs/default.yaml"))
-rp = load_paths(cfg)  # Returns RuntimePaths dataclass
-```
+### Configuration & Script Entry
 
-### Script Pattern
-All `scripts/run_*.py` follow this structure:
 ```python
+# All scripts use _common.py (enforces Python 3.11)
 from scripts._common import load_all
-cfg, rp = load_all(args.config)
-# Access nested config: cfg["oe2"]["solar"]["target_dc_kw"]
+cfg, rp = load_all(args.config)  # cfg dict, rp = RuntimePaths dataclass
+
+# Nested access: cfg["oe2"]["solar"]["target_dc_kw"], cfg["oe3"]["evaluation"]["agents"]
 ```
 
 ### Output Dataclasses
-Each module returns a frozen dataclass (e.g., `SolarSizingOutput`, `BessSizingOutput`). Results are serialized to JSON via:
-```python
-pd.Series(output.__dict__).to_json()
-```
 
-## RL Agents (OE3) - Detailed Guide
+Each OE2/OE3 module returns a frozen dataclass serialized to JSON:
 
-Agents in `src/iquitos_citylearn/oe3/agents/` control EV charging decisions:
+- `SolarSizingOutput` → `data/interim/oe2/solar/solar_results.json`
+- `BessSizingOutput` → `data/interim/oe2/bess/bess_results.json`
+- `SimulationResult` → `outputs/oe3/simulations/<agent>_*.json`
 
-| Agent | File | Interface | Purpose |
-|-------|------|-----------|---------|
-| `UncontrolledChargingAgent` | `uncontrolled.py` | `predict(obs, deterministic)` | Baseline: charge EVs at max, BESS idle |
-| `BasicEVRBC` | `rbc.py` | CityLearn's RBC | Rule-based: prioritize solar hours |
-| `SAC` | `sac.py` | `learn(episodes)` + `predict()` | RL: Soft Actor-Critic from CityLearn |
+## RL Agents (OE3)
 
-### Agent Interface Contract
-```python
-# Option A: Stable Baselines3 style
-def predict(self, observations, deterministic=True) -> action
+Located in `src/iquitos_citylearn/oe3/agents/`:
 
-# Option B: Simple callable
-def act(self, observations) -> action
-```
+| Agent | Factory | Training | Purpose |
+|-------|---------|----------|---------|
+| `Uncontrolled` | `UncontrolledChargingAgent()` | None | Baseline: max charge |
+| `SAC` | `make_sac(env, cfg)` | `learn(episodes)` | Soft Actor-Critic |
+| `PPO` | `make_ppo(env, cfg)` | `learn(timesteps)` | Proximal Policy Opt. |
+| `A2C` | `make_a2c(env, cfg)` | `learn(timesteps)` | Advantage Actor-Critic |
 
-### SAC Training Flow (in `simulate.py`)
-```python
-agent = make_sac(env)
-agent.learn(episodes=5)  # Training phase
-_run_episode(env, agent, deterministic=True)  # Evaluation
+### Multi-Objective Rewards (`oe3/rewards.py`)
+
+Configured via `cfg["oe3"]["evaluation"]["sac"]["multi_objective_weights"]`:
+
+```yaml
+multi_objective_weights:
+  co2: 0.50      # Minimize emissions
+  cost: 0.15     # Minimize electricity cost
+  solar: 0.20    # Maximize self-consumption
+  ev: 0.10       # EV charging satisfaction
+  grid: 0.05     # Grid stability (peak shaving)
 ```
 
 ### Adding New Agents
-1. Create `src/iquitos_citylearn/oe3/agents/my_agent.py`
-2. Implement `predict()` or `act()` method
-3. Export in `agents/__init__.py`
-4. Add to `cfg["oe3"]["evaluation"]["agents"]` list
-5. Handle in `simulate.py` agent selection logic
 
-## CityLearn Dataset Integration
+1. Create `src/iquitos_citylearn/oe3/agents/my_agent.py` with `predict(obs, deterministic)` method
+2. Export in `agents/__init__.py`
+3. Add to `cfg["oe3"]["evaluation"]["agents"]` list
+4. Handle instantiation in `simulate.py`
 
-The dataset builder (`src/iquitos_citylearn/oe3/dataset_builder.py`) creates CityLearn-compatible datasets:
+## CityLearn Dataset
 
-### Strategy
-1. Downloads template from `citylearn.data.DataSet.get_dataset("citylearn_challenge_2022_phase_all_plus_evs")`
-2. Copies to `data/processed/citylearn/<name>/`
-3. Overwrites CSVs with OE2 results (PV, load, carbon intensity)
-4. Updates `schema.json` with PV/BESS capacities
+`dataset_builder.py` creates CityLearn-compatible datasets:
 
-### Schema Manipulation
-```python
-# Key schema updates
-schema["central_agent"] = True
-schema["seconds_per_time_step"] = 3600
-b["photovoltaic"]["nominal_power"] = pv_dc_kw
-b["electrical_storage"]["capacity"] = bess_cap_kwh
-```
+1. Downloads template: `citylearn_challenge_2022_phase_all_plus_evs`
+2. Overwrites CSVs with OE2 artifacts (PV timeseries, carbon intensity)
+3. Generates two schemas for comparison:
+   - `schema_grid_only.json` → No PV/BESS (grid-only baseline)
+   - `schema_pv_bess.json` → Full OE2 system
 
-### Two Schema Variants (for comparison)
-- `schema_grid_only.json` → No PV/BESS (baseline)
-- `schema_pv_bess.json` → Full system with OE2 sizing
-
-## Development Commands (Python 3.11)
-
-Activate the .venv first so all runs use Python 3.11.
+## Development Commands
 
 ```bash
+# Activate venv (Python 3.11 required - enforced at runtime)
+.venv\Scripts\activate  # Windows
+
 # Full pipeline
 python -m scripts.run_pipeline --config configs/default.yaml
 
-# Individual stages (useful for debugging)
+# Individual stages (for debugging)
 python -m scripts.run_oe2_solar --config configs/default.yaml
 python -m scripts.run_oe3_simulate --config configs/default.yaml
 
-# Install editable
+# Install as editable package
 pip install -e .
 ```
 
-## Validation & Testing Approach
+## Validation (No Test Suite)
 
-**No formal test suite** - validation is via strict runtime assertions:
+Validation via runtime assertions - **DO NOT REMOVE**:
 
-### Critical Assertions (DO NOT REMOVE)
-| File | Validation | Rationale |
-|------|------------|-----------|
-| `solar_pvlib.py` | `len(index) == 8760` | Hourly data for full year |
-| `solar_pvlib.py` | `annual_kwh >= target * 0.95` | Generation meets design target |
-| `bess.py` | `0.7 <= dod <= 0.95` | Realistic battery depth of discharge |
-| `bess.py` | `0.85 <= efficiency <= 0.98` | Valid round-trip efficiency |
-| `bess.py` | `autonomy_hours >= 24` | Minimum 1-day storage autonomy |
-
-### Manual Validation
-Run individual scripts and check outputs:
-```bash
-python -m scripts.run_oe2_solar --config configs/default.yaml
-# Check: data/interim/oe2/solar/solar_results.json
-```
-
-## Utility Scripts (LIMPIAR_*.py)
-
-Markdown cleanup utilities for documentation files - **not part of the main pipeline**:
-
-| Script | Purpose |
-|--------|---------|
-| `LIMPIAR_FINAL.py` | Remove punctuation from headings, fix empty code blocks |
-| `LIMPIAR_BACKTICKS.py` | Fix malformed markdown code fences |
-| `LIMPIAR_ESPACIOS.py` | Normalize whitespace |
-| `VALIDAR_CUMPLIMIENTO_ESTRICTO.py` | Verify project requirements compliance |
-
-Run only when editing documentation:
-```bash
-python scripts/LIMPIAR_FINAL.py
-```
+- `solar_pvlib.py`: `len(index) == 8760` (full year), `annual_kwh >= target * 0.95`
+- `bess.py`: DoD 0.7-0.95, efficiency 0.85-0.98
 
 ## Environment Variables
 
-Override config via `.env`:
-- `GRID_CARBON_INTENSITY_KG_PER_KWH` (default: 0.45)
+Override via `.env`:
+
+- `GRID_CARBON_INTENSITY_KG_PER_KWH` (default: 0.4521 kg/kWh - Iquitos thermal grid)
 - `TARIFF_USD_PER_KWH` (default: 0.20)
 
-## Dependencies
+## Key Dependencies
 
-Core: `pvlib` (solar), `citylearn>=2.5.0` (simulation), `torch` (RL agents), `gymnasium` (RL environments)
+`pvlib` (solar), `citylearn>=2.5.0` (simulation), `torch` (RL), `stable-baselines3` (PPO/A2C)
 
-## File Naming Conventions
+## Checkpoint & Resume Training
 
-- Scripts: `run_<stage>_<component>.py` (pipeline) or `LIMPIAR_*.py` (utilities)
-- Outputs: `*_results.json` (summary), `*_timeseries.csv` (hourly data)
-- Reports always include `.csv` + `.md` versions
+RL agents support checkpoint-based training recovery. Checkpoints are saved every N steps and can resume interrupted training.
 
-## Location Context
+**Config keys** (`cfg["oe3"]["evaluation"]["sac"]`):
+```yaml
+resume_checkpoints: true          # Enable resume from last checkpoint
+checkpoint_freq_steps: 1000       # Save every 1000 steps
+save_final: true                  # Save final model as <agent>_final.zip
+```
 
-All calculations assume Iquitos, Peru: **lat=-3.7437, lon=-73.2516, tz=America/Lima**
+**Checkpoint locations**: `outputs/oe3/checkpoints/<agent>/`
+- `sac_step_1000.zip`, `sac_step_2000.zip`, ... (incremental)
+- `sac_final.zip` (after training completes)
+
+**Resume logic** (`simulate.py` → `_latest_checkpoint()`): Automatically finds highest step checkpoint or `*_final.zip`.
+
+## GPU/CUDA Configuration
+
+Agents auto-detect GPU via `detect_device()` in `oe3/agents/sac.py`:
+- **CUDA** (NVIDIA): Preferred, set `device: cuda` in config
+- **MPS** (Apple Silicon): Auto-detected
+- **CPU**: Fallback when no GPU available
+
+**Config keys**:
+```yaml
+device: cuda          # Force CUDA (or "cpu", "mps", "auto")
+use_amp: true         # Mixed precision (faster on modern GPUs)
+batch_size: 1024      # Increase for GPU memory utilization
+```
+
+**Verify GPU**: Run `python -c "import torch; print(torch.cuda.is_available())"` before training.
+
+## Training Episodes & Recommendations
+
+**Current config** (`episodes: 5`) is for **quick testing/debugging**. For production results:
+
+| Agent | Testing | Production | Notes |
+|-------|---------|------------|-------|
+| SAC   | 5 eps   | 50-100 eps | `learn(episodes=N)` |
+| PPO   | 43800 steps | 438000 steps | `timesteps` param (10x) |
+| A2C   | 5 eps   | 50 eps | Similar to SAC |
+
+**Recommendation**: For final CO₂ comparison reports, increase `episodes` 10x and enable `resume_checkpoints: true` for fault tolerance.
+
+## LIMPIAR_*.py Scripts
+
+**Status**: Active utilities for documentation post-processing. **NOT part of main pipeline**.
+
+| Script | Purpose | When to use |
+|--------|---------|-------------|
+| `LIMPIAR_FINAL.py` | Remove punctuation from headings, fix code blocks | After generating reports |
+| `LIMPIAR_BACKTICKS.py` | Fix malformed markdown fences | Broken `.md` files |
+| `LIMPIAR_ESPACIOS.py` | Normalize whitespace | Before commits |
+| `LIMPIAR_CUMPLIMIENTO.py` | Clean compliance docs | Specific to `CUMPLIMIENTO*.md` |
+| `VALIDAR_CUMPLIMIENTO_ESTRICTO.py` | Verify project requirements | Before submission |
+
+**Usage**: Run manually when editing documentation:
+```bash
+python scripts/LIMPIAR_FINAL.py <file.md>
+```
+
+## File Conventions
+
+- Scripts: `run_<stage>_<component>.py` | `LIMPIAR_*.py` (doc cleanup utilities, not pipeline)
+- Outputs: `*_results.json` (summary) + `*_timeseries.csv` (hourly)
+- Reports: Always dual `.csv` + `.md` versions
