@@ -142,10 +142,10 @@ En la ciudad Iquitos, Electro Oriente S.A. (Elor) dispone de alimentadores de me
 ## determinación de la ubicación óptima de la infraestructura óptima de la carga inteligente que contribuye significativamente a la viabilidad de reducción cuantificable de las emisiones de dióxido de carbono al maximizar la cobertura de servicio y la demanda
 
 Para definir las coordenadas y condiciones técnicas de la infraestructura, se procesan los inventarios vehiculares y los registros de demanda eléctrica consolidados para Iquitos 2025. Se parte de los datos del Plan de Desarrollo Concertado de la Provincia de Maynas 2025‑2030 (flota mototaxis, motos lineales, microbuses, taxis y automóviles) y del contexto de emisiones por generación térmica (22.5 millones de galones; 290,000 tCO₂/año). Estos insumos se combinan con los perfiles horarios de carga y consumo en `data/interim/oe2/chargers` y `bess`, y los mapas de alimentadores SAL/ELOR para identificar zonas con mayor concentración de vehículos y capacidad de conexión media tensión. En la Tabla 10 se describe la propuesta de 10 ubicaciones; allí se corrigió la distancia SET para el Aeropuerto de Iquitos a 4,400 m, siguiendo la medición precisa hecha durante las visitas.
-Se consigna a continuaci?n la Tabla 10 como referencia de las ubicaciones evaluadas:
+Se consigna a continuación la Tabla 10 como referencia de las ubicaciones evaluadas:
 
-| ?tem | Lugar | ?rea techada (m?) | Distancia MT (m) | Distancia SET (m) | Motos/Mototaxis estacionados | Tiempo estacionamiento (h) |
-|------|-----------------------------------------|------------------|------------------|------------------|-------------------------------|----------------------------|
+| Ítem | Lugar | Área techada (m²) | Distancia MT (m) | Distancia SET (m) | Motos/Mototaxis estacionados | Tiempo estacionamiento (h) |
+| ------ | ------- | ------------------- | ------------------ | ------------------- | ------------------------------ | ---------------------------- |
 | 1 | Empresa Electro Oriente S.A. | 14,000 | 40 | 40 | 200 | 4 |
 | 2 | Complejo deportivo Champios | 8,000 | 40 | 1,300 | 300 | 4 |
 | 3 | Aeropuerto de Iquitos | 6,000 | 500 | 4,400 | 400 | 2 |
@@ -154,8 +154,8 @@ Se consigna a continuaci?n la Tabla 10 como referencia de las ubicaciones evalua
 | 6 | Grifo Atenas | 368 | 70 | 5,300 | 500 | 0.2 |
 | 7 | Mall de Iquitos | 20,637 | 60 | 60 | 900 | 4 |
 | 8 | Universidad Nacional Amazonia - Zungarococha | 8,300 | 200 | 16,000 | 100 | 4 |
-| 9 | Escuela t?cnica PNP | 21,000 | 100 | 9,000 | 200 | 4 |
-|10 | Complejo CNI | 3,500 | 100 | 2,200 | 300 | 4 |
+| 9 | Escuela técnica PNP | 21,000 | 100 | 9,000 | 200 | 4 |
+| 10 | Complejo CNI | 3,500 | 100 | 2,200 | 300 | 4 |
 
 Nota: Valores de área, distancias y tiempos de estacionamiento estimados durante visitas de campo y mediciones de Google Earth 2025.
 
