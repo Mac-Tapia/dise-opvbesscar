@@ -26,7 +26,7 @@
 ## 📦 Componentes del diseño
 
 - **OE1**: Análisis de ubicación estratégica (`scripts/run_oe1_location.py`) que determina viabilidad técnica y operativa del proyecto en Iquitos.
-- **OE2**: Perfil FV anual (pvlib/clear-sky), dimensionamiento BESS y configuración de cargadores para motos/mototaxis.
+- **OE2**: Perfil FV anual (pvlib/clear-sky), dimensionamiento BESS (2000 kWh) y configuración de 128 cargadores (112 motos + 16 mototaxis) en 2 playas separadas.
 - **OE3**: Dataset CityLearn consolidado (EV + FV + BESS), simulación multi-agente y análisis detallado de reducción CO₂ (anual + 20 años).
 
 ---
@@ -93,9 +93,12 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 ## 4) Notas operativas
 
 - **CityLearn dataset plantilla con EV**: se descarga automáticamente usando `citylearn.data.DataSet.get_dataset(...)` y luego se sobreescribe con perfiles OE2.
-- Se generan dos esquemas para la comparación de emisiones:
-  - `schema_grid_only.json`: sin FV ni BESS (solo red + EV).
-  - `schema_pv_bess.json`: con FV + BESS.
+- Se generan dos esquemas con **2 buildings separados** para la comparación de emisiones:
+  - `schema_grid_only.json`: sin FV ni BESS (solo red + EV) en ambos buildings.
+  - `schema_pv_bess.json`: con FV + BESS distribuido proporcionalmente.
+- **Arquitectura de 2 playas de estacionamiento:**
+  - `Playa_Motos`: 112 chargers (2 kW), 3641.8 kWp PV, 1750 kWh BESS
+  - `Playa_Mototaxis`: 16 chargers (3 kW), 520.2 kWp PV, 250 kWh BESS
 - La tabla CO₂ asigna emisiones de red al transporte electrificado mediante **reparto proporcional** entre consumo del edificio y consumo EV (ver `src/iquitos_citylearn/oe3/co2_table.py`).
 
 ---

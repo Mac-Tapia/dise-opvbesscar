@@ -5,8 +5,8 @@
 CO₂ emissions reduction pipeline for EV charging infrastructure in Iquitos, Peru (lat=-3.75, lon=-73.25, tz=America/Lima). Three objectives:
 
 - **OE1**: Strategic location analysis (Mall de Iquitos site viability)
-- **OE2**: Dimension solar PV (4162 kW DC), BESS (2000 kWh), and chargers for 1030 vehicles (900 motos + 130 mototaxis)
-- **OE3**: Evaluate RL agents (SAC, PPO, A2C, Uncontrolled) using CityLearn with multi-objective rewards
+- **OE2**: Dimension solar PV (4162 kW DC), BESS (2000 kWh), and 128 chargers for 1030 vehicles (900 motos + 130 mototaxis)
+- **OE3**: Evaluate RL agents (SAC, PPO, A2C, Uncontrolled) using CityLearn with 2 buildings (Playa_Motos, Playa_Mototaxis) and multi-objective rewards
 
 ## Architecture & Data Flow
 
@@ -14,7 +14,7 @@ CO₂ emissions reduction pipeline for EV charging infrastructure in Iquitos, Pe
 scripts/run_pipeline.py     → Orchestrates all stages
     ├── run_oe1_location.py → Site viability (→ reports/oe1/)
     ├── run_oe2_solar.py    → PV sizing via pvlib + PVGIS TMY
-    ├── run_oe2_chargers.py → 31 chargers × 4 sockets sizing
+    ├── run_oe2_chargers.py → 128 chargers (112 motos + 16 mototaxis) sizing
     ├── run_oe2_bess.py     → Battery: 2000kWh/1200kW fixed mode
     ├── run_oe3_build_dataset.py → CityLearn dataset from OE2
     ├── run_oe3_simulate.py → Multi-agent training + evaluation
@@ -76,13 +76,26 @@ multi_objective_weights:
 
 ## CityLearn Dataset
 
-`dataset_builder.py` creates CityLearn-compatible datasets:
+`dataset_builder.py` creates CityLearn-compatible datasets with **2 separate buildings**:
 
 1. Downloads template: `citylearn_challenge_2022_phase_all_plus_evs`
-2. Overwrites CSVs with OE2 artifacts (PV timeseries, carbon intensity)
-3. Generates two schemas for comparison:
+2. Creates 2 buildings representing separate parking areas ("playas"):
+   - **Playa_Motos**: 112 chargers (2 kW each), 3641.8 kWp PV, 1750 kWh BESS
+   - **Playa_Mototaxis**: 16 chargers (3 kW each), 520.2 kWp PV, 250 kWh BESS
+3. Overwrites CSVs with OE2 artifacts (PV timeseries, carbon intensity)
+4. Generates 128 charger simulation CSVs (112 MOTO + 16 MOTOTAXI)
+5. Generates two schemas for comparison:
    - `schema_grid_only.json` → No PV/BESS (grid-only baseline)
-   - `schema_pv_bess.json` → Full OE2 system
+   - `schema_pv_bess.json` → Full OE2 system with both buildings
+
+### Infrastructure Distribution (87.5% / 12.5%)
+
+| Component | Playa_Motos | Playa_Mototaxis | Total |
+|-----------|-------------|-----------------|-------|
+| Chargers | 112 (2 kW) | 16 (3 kW) | 128 |
+| Power | 224 kW | 48 kW | 272 kW |
+| PV | 3641.8 kWp | 520.2 kWp | 4162 kWp |
+| BESS | 1750 kWh | 250 kWh | 2000 kWh |
 
 ## Development Commands
 
