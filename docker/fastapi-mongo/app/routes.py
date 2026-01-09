@@ -2,9 +2,10 @@
 
 from pathlib import Path
 from datetime import datetime
-from typing import List
+from typing import List, Dict, Optional
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 
 from app.database import get_database
 from app.models import (
@@ -12,11 +13,57 @@ from app.models import (
     SimulationResult,
     AgentMetrics,
 )
+from app.inference import get_controller, load_controller
+from app.ev_simulator import EVChargerSimulator
 
 router = APIRouter()
 
 # Carbon intensity for Iquitos thermal grid (kg CO2/kWh)
 CARBON_INTENSITY = 0.4521
+
+# Global simulator instance for demo mode
+_simulator: Optional[EVChargerSimulator] = None
+
+
+def get_simulator() -> EVChargerSimulator:
+    """Get or create the global EV simulator."""
+    global _simulator
+    if _simulator is None:
+        _simulator = EVChargerSimulator()
+    return _simulator
+
+
+# =============================================
+# Real-Time Control Models
+# =============================================
+
+class ControlObservations(BaseModel):
+    """Current observations for real-time control."""
+    hour: int  # 0-23
+    month: int  # 1-12
+    carbon_intensity: float = 0.4521  # kg CO2/kWh
+    solar_generation_kw: float = 0.0
+    bess_soc: float = 0.5  # 0-1
+    grid_price: float = 0.20  # USD/kWh
+    ev_socs: Optional[Dict[str, float]] = None  # Charger ID -> SOC
+
+
+class ControlAction(BaseModel):
+    """Single control action."""
+    device: str
+    action: float  # -1 to 1
+    power_kw: float
+    recommendation: str
+
+
+class ControlResponse(BaseModel):
+    """Response from control endpoint."""
+    timestamp: datetime
+    bess: Dict
+    ev_chargers: List[Dict]
+    total_charge_power_kw: float
+    total_discharge_power_kw: float
+    model_loaded: bool
 
 # Paths to OE3 results (mounted from host)
 OE3_ANALYSES_PATH = Path("/data/analyses/oe3")
@@ -398,3 +445,363 @@ async def get_co2_breakdown():
             results.append(row)
     
     return {"breakdown": results}
+
+
+# =============================================
+# REAL-TIME CONTROL ENDPOINTS
+# =============================================
+
+@router.post("/control/load-model")
+async def load_control_model():
+    """
+    Load the trained A2C model for real-time control.
+    Call this endpoint once at system startup.
+    """
+    success = load_controller()
+    if success:
+        return {
+            "status": "ok",
+            "message": "A2C model loaded successfully",
+            "model": "a2c_final.zip",
+            "ready_for_control": True,
+        }
+    else:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to load A2C model. Check if model file exists."
+        )
+
+
+@router.get("/control/status")
+async def get_control_status():
+    """Check if the real-time controller is ready."""
+    controller = get_controller()
+    return {
+        "model_loaded": controller.model_loaded,
+        "model_path": str(controller.model_path),
+        "ready_for_control": controller.model_loaded,
+    }
+
+
+@router.post("/control/get-actions", response_model=ControlResponse)
+async def get_control_actions(observations: ControlObservations):
+    """
+    Get real-time control actions for BESS and all 128 EV chargers.
+    
+    This is the main endpoint for production control.
+    Send current observations, receive optimal actions.
+    
+    Example request:
+    ```json
+    {
+        "hour": 14,
+        "month": 6,
+        "carbon_intensity": 0.4521,
+        "solar_generation_kw": 2500.0,
+        "bess_soc": 0.65,
+        "grid_price": 0.20
+    }
+    ```
+    """
+    controller = get_controller()
+    
+    if not controller.model_loaded:
+        raise HTTPException(
+            status_code=503,
+            detail="Controller not ready. Call /control/load-model first."
+        )
+    
+    try:
+        obs_dict = observations.model_dump()
+        
+        # Get BESS command
+        bess_cmd = controller.get_bess_command(obs_dict)
+        
+        # Get EV charger commands
+        ev_cmds = controller.get_ev_charging_commands(obs_dict)
+        
+        # Calculate totals
+        total_charge = sum(c["power_kw"] for c in ev_cmds if c["power_kw"] > 0)
+        total_discharge = abs(sum(c["power_kw"] for c in ev_cmds if c["power_kw"] < 0))
+        
+        if bess_cmd["power_kw"] > 0:
+            total_charge += bess_cmd["power_kw"]
+        else:
+            total_discharge += abs(bess_cmd["power_kw"])
+        
+        # Store decision in database for audit trail
+        db = get_database()
+        await db.control_decisions.insert_one({
+            "timestamp": datetime.utcnow(),
+            "observations": obs_dict,
+            "bess_action": bess_cmd,
+            "total_charge_kw": total_charge,
+            "total_discharge_kw": total_discharge,
+        })
+        
+        return ControlResponse(
+            timestamp=datetime.utcnow(),
+            bess=bess_cmd,
+            ev_chargers=ev_cmds,
+            total_charge_power_kw=round(total_charge, 2),
+            total_discharge_power_kw=round(total_discharge, 2),
+            model_loaded=True,
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Control error: {str(e)}")
+
+
+@router.get("/control/bess")
+async def get_bess_status():
+    """Get BESS configuration and control info."""
+    return {
+        "device": "BESS",
+        "capacity_kwh": 2000,
+        "max_power_kw": 1200,
+        "location": "Centralized (serves both playas)",
+        "control": "Managed by A2C agent",
+        "action_range": {"min": -1, "max": 1},
+        "action_meaning": {
+            "+1": "Charge at max power (1200 kW)",
+            "0": "Hold / No action",
+            "-1": "Discharge at max power (1200 kW)",
+        },
+    }
+
+
+@router.get("/control/chargers")
+async def get_chargers_info():
+    """Get charger configuration."""
+    return {
+        "total_chargers": 128,
+        "playas": {
+            "Playa_Motos": {
+                "chargers": 112,
+                "power_per_charger_kw": 2,
+                "total_power_kw": 224,
+                "charger_ids": [f"MOTO_CH_{i:03d}" for i in range(1, 113)],
+            },
+            "Playa_Mototaxis": {
+                "chargers": 16,
+                "power_per_charger_kw": 3,
+                "total_power_kw": 48,
+                "charger_ids": [f"MOTOTAXI_CH_{i:03d}" for i in range(1, 17)],
+            },
+        },
+        "total_power_kw": 272,
+        "control": "Individual control per charger by A2C agent",
+    }
+
+
+@router.get("/control/decisions")
+async def get_control_decisions(limit: int = 100):
+    """Get recent control decisions for audit."""
+    db = get_database()
+    
+    cursor = db.control_decisions.find().sort("timestamp", -1).limit(limit)
+    
+    decisions = []
+    async for doc in cursor:
+        doc["_id"] = str(doc["_id"])
+        decisions.append(doc)
+    
+    return {"decisions": decisions, "count": len(decisions)}
+
+
+# =============================================
+# SIMULATION MODE ENDPOINTS (for demo without hardware)
+# =============================================
+
+@router.post("/simulation/reset")
+async def reset_simulation():
+    """
+    Reset the EV charger simulator to initial state.
+    Use this to start a fresh simulation.
+    """
+    global _simulator
+    _simulator = EVChargerSimulator()
+    return {
+        "status": "ok",
+        "message": "Simulator reset to initial state",
+        "chargers": 128,
+    }
+
+
+@router.post("/simulation/step")
+async def simulation_step(
+    hour: int = 12,
+    month: int = 1,
+    bess_soc: float = 0.5,
+    solar_generation_kw: float = 0.0,
+):
+    """
+    Advance simulation by one timestep and get control actions.
+    
+    This endpoint:
+    1. Updates simulated EV arrivals/departures based on hour
+    2. Generates synthetic sensor data
+    3. Gets control actions from A2C agent
+    4. Returns complete state and actions
+    
+    Use this for demo/testing without real hardware.
+    """
+    simulator = get_simulator()
+    controller = get_controller()
+    
+    # Update simulator state
+    simulator.update(hour=hour)
+    
+    # Get synthetic observations
+    obs = simulator.get_current_state(
+        hour=hour,
+        month=month,
+        bess_soc=bess_soc,
+        solar_generation_kw=solar_generation_kw,
+    )
+    
+    # Get summary
+    summary = simulator.get_summary()
+    
+    # Get actions if model loaded
+    actions = None
+    bess_cmd = None
+    if controller.model_loaded:
+        try:
+            bess_cmd = controller.get_bess_command(obs)
+            ev_cmds = controller.get_ev_charging_commands(obs)
+            
+            # Only include connected chargers in response
+            actions = [
+                cmd for cmd in ev_cmds 
+                if obs["ev_connected"].get(cmd["charger_id"], False)
+            ]
+        except Exception as e:
+            actions = {"error": str(e)}
+    
+    return {
+        "timestamp": datetime.utcnow().isoformat(),
+        "hour": hour,
+        "simulation_summary": summary,
+        "bess_command": bess_cmd,
+        "ev_commands": actions,
+        "observations_sample": {
+            "connected_evs": sum(obs["ev_connected"].values()),
+            "avg_soc": (
+                sum(obs["ev_socs"].values()) / max(1, len(obs["ev_socs"]))
+                if obs["ev_socs"] else 0
+            ),
+            "solar_kw": obs["solar_generation_kw"],
+            "bess_soc": obs["bess_soc"],
+        },
+        "model_loaded": controller.model_loaded,
+    }
+
+
+@router.get("/simulation/state")
+async def get_simulation_state():
+    """Get current state of the EV charger simulator."""
+    simulator = get_simulator()
+    summary = simulator.get_summary()
+    
+    # Get detailed charger states
+    charger_states = []
+    for charger in simulator.chargers:
+        if charger.connected:
+            charger_states.append({
+                "charger_id": charger.charger_id,
+                "type": charger.charger_type,
+                "connected": True,
+                "soc": round(charger.ev_soc, 3),
+                "capacity_kwh": round(charger.ev_capacity_kwh, 2),
+                "departure_hour": round(charger.departure_hour, 2),
+                "required_soc": round(charger.required_soc, 2),
+            })
+    
+    return {
+        "summary": summary,
+        "connected_chargers": charger_states,
+    }
+
+
+@router.post("/simulation/run-24h")
+async def run_24h_simulation(
+    month: int = 6,
+    initial_bess_soc: float = 0.5,
+):
+    """
+    Run a complete 24-hour simulation with A2C agent control.
+    
+    Returns hourly results including:
+    - Occupancy at each hour
+    - Control actions taken
+    - Energy flows
+    """
+    simulator = get_simulator()
+    controller = get_controller()
+    
+    # Reset simulator
+    global _simulator
+    _simulator = EVChargerSimulator()
+    simulator = _simulator
+    
+    results = []
+    bess_soc = initial_bess_soc
+    
+    for hour in range(24):
+        # Update simulator
+        simulator.update(hour=hour)
+        
+        # Estimate solar generation
+        if 6 <= hour <= 18:
+            hour_from_noon = abs(hour - 12)
+            solar_factor = max(0, 1 - (hour_from_noon / 6) ** 2)
+            solar_kw = 4162 * solar_factor * 0.8  # 80% of max
+        else:
+            solar_kw = 0
+        
+        # Get state and actions
+        obs = simulator.get_current_state(
+            hour=hour,
+            month=month,
+            bess_soc=bess_soc,
+            solar_generation_kw=solar_kw,
+        )
+        
+        summary = simulator.get_summary()
+        
+        hour_result = {
+            "hour": hour,
+            "occupancy": summary["total_connected"],
+            "moto_connected": summary["moto_connected"],
+            "mototaxi_connected": summary["mototaxi_connected"],
+            "solar_kw": round(solar_kw, 1),
+            "bess_soc": round(bess_soc, 3),
+        }
+        
+        if controller.model_loaded:
+            try:
+                bess_cmd = controller.get_bess_command(obs)
+                hour_result["bess_action"] = bess_cmd["recommendation"]
+                hour_result["bess_power_kw"] = bess_cmd["power_kw"]
+                
+                # Simulate BESS SOC change
+                bess_soc += bess_cmd["power_kw"] / 2000 * 0.95  # 95% efficiency
+                bess_soc = max(0.1, min(0.95, bess_soc))
+            except Exception as e:
+                hour_result["error"] = str(e)
+        
+        results.append(hour_result)
+    
+    # Calculate summary stats
+    peak_occupancy = max(r["occupancy"] for r in results)
+    peak_hour = next(r["hour"] for r in results if r["occupancy"] == peak_occupancy)
+    
+    return {
+        "simulation_complete": True,
+        "hours_simulated": 24,
+        "peak_occupancy": peak_occupancy,
+        "peak_hour": peak_hour,
+        "hourly_results": results,
+        "model_used": controller.model_loaded,
+    }

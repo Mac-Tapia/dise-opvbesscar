@@ -42,31 +42,32 @@ CSV: `data/interim/oe1/ubicacion_candidatos.csv`.
    - La superficie de 20,637 m2 es la base del dimensionamiento PV.
    - Se aplica factor de diseno 0.65: area util 13,413.344 m2.
    - Resultado OE2 (solar):
-     - DC: 2,591.15 kWp
-     - AC: 2,500.00 kW
-     - Energia anual: 3,298,753 kWh
+     - DC: 4,162 kWp
+     - AC: 4,000 kW
+     - Energia anual: 5,500,000 kWh aprox
    - Fuente: `data/interim/oe2/solar/solar_results.json`
 
 2) Flota real en hora pico -> cargadores (OE2)
-   - 900 motos y 130 mototaxis definen la demanda de carga.
+   - 900 motos y 130 mototaxis (conteo 19:00h, 19-oct-2025) definen la demanda de carga.
    - El horario de permanencia >= 4 h sustenta la ventana 18:00-22:00.
    - Resultado OE2 (chargers):
-     - 31 cargadores, 124 sockets
-     - Energia diaria EV: 644.4 kWh
+     - 128 cargadores (112 motos @ 2kW + 16 mototaxis @ 3kW = 272 kW)
+     - Energia diaria EV: 1,879 kWh
    - Fuente: `data/interim/oe2/chargers/chargers_results.json`
 
 3) Ubicacion y red -> BESS (OE2)
    - Proximidad a SET Santa Rosa (60 m) soporta conexion tecnica.
    - BESS se dimensiona para deficit EV nocturno con SOC minimo 20%.
    - Resultado OE2 (bess):
-     - Capacidad: 740 kWh
-     - Potencia: 370 kW
-     - PV diaria: 9,016 kWh
+     - Capacidad: 2,000 kWh
+     - Potencia: 1,200 kW
+     - PV diaria: ~15,000 kWh
    - Fuente: `data/interim/oe2/bess/bess_results.json`
 
 ## Trazabilidad en configuracion del proyecto
 
 Los datos reales del OE1 se reflejan en:
+
 - `configs/default.yaml` -> `oe1.site.*` (area techada, estacionamiento,
   distancia a subestacion, flota en hora pico, permanencia).
 

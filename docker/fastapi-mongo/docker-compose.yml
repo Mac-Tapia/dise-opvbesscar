@@ -17,6 +17,7 @@ services:
     volumes:
       - ./app:/app/app:ro
       - ../../analyses/oe3:/data/analyses/oe3:ro
+      - ../../analyses/oe3/training:/data/analyses/oe3/training:ro
       - ../../outputs/oe3:/data/outputs/oe3:ro
     restart: unless-stopped
     networks:

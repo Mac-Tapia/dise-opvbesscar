@@ -5,7 +5,7 @@
 CO₂ emissions reduction pipeline for EV charging infrastructure in Iquitos, Peru (lat=-3.75, lon=-73.25, tz=America/Lima). Three objectives:
 
 - **OE1**: Strategic location analysis (Mall de Iquitos site viability)
-- **OE2**: Dimension solar PV (4162 kW DC), BESS (2000 kWh), and 128 chargers for 1030 vehicles (900 motos + 130 mototaxis)
+- **OE2**: Dimension solar PV (4162 kW DC), BESS (2000 kWh), and 128 chargers sized from peak vehicle count (900 motos + 130 mototaxis observed at 19:00h)
 - **OE3**: Evaluate RL agents (SAC, PPO, A2C, Uncontrolled) using CityLearn with 2 buildings (Playa_Motos, Playa_Mototaxis) and multi-objective rewards
 
 ## Architecture & Data Flow
