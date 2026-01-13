@@ -806,24 +806,14 @@ def build_citylearn_dataset(
     
     logger.info(f"Total: Generados {total_chargers_generated} archivos CSV de simulación de chargers")
 
-    # También generar para chargers del template original si existen
-    for i, cp in enumerate(charger_list):
-        if not cp.exists():
-            continue
-        # If multiple chargers exist, only the first is active; others always disconnected.
-        if i == 0:
-            charger_df.to_csv(cp, index=False)
-        else:
-            # Charger sin EV conectado (state=3) - SIN NaN
-            disconnected_df = pd.DataFrame({
-                "electric_vehicle_charger_state": np.full(n+1, 3, dtype=int),
-                "electric_vehicle_id": np.full(n+1, default_ev, dtype=object),  # Mismo EV ID siempre
-                "electric_vehicle_departure_time": np.zeros(n+1, dtype=float),
-                "electric_vehicle_required_soc_departure": np.zeros(n+1, dtype=float),
-                "electric_vehicle_estimated_arrival_time": np.concatenate([arr_time, [arr_time[-1]]]),
-                "electric_vehicle_estimated_soc_arrival": np.concatenate([arr_soc, [arr_soc[-1]]]),
-            })
-            disconnected_df.to_csv(cp, index=False)
+    # NOTA: NO sobrescribir chargers del template original - ya generamos desde OE2
+    # El loop anterior ya generó todos los CSVs necesarios usando los datasets anuales
+    # El siguiente código está comentado para evitar sobrescribir los valores correctos
+    # 
+    # for i, cp in enumerate(charger_list):
+    #     if not cp.exists():
+    #         continue
+    #     ...
 
     # Save schema
     schema_path.write_text(json.dumps(schema, indent=2), encoding="utf-8")
