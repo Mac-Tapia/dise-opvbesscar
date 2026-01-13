@@ -98,7 +98,6 @@ oe3:
     tariff_usd_per_kwh: 0.2
   evaluation:
     agents:
-      - Uncontrolled
       - SAC
       - PPO
       - A2C

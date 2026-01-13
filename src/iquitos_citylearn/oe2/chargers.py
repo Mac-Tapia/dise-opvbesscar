@@ -1281,31 +1281,57 @@ def run_charger_sizing(
     # Usar el resultado como escenario recomendado
     esc_rec = pd.Series(res.__dict__)
 
-    # Vehículos que cargan diariamente (basado en flota × PE, no capacidad de cargadores)
-    # PE = probabilidad de evento de carga (% de vehículos que vienen a cargar)
-    motos_charging_day = int(round(n_motos * pe_motos))
-    mototaxis_charging_day = int(round(n_mototaxis * pe_mototaxis))
+    # =================================================================
+    # DIMENSIONAMIENTO FINAL - VALORES FIJOS (NO MODIFICAR)
+    # =================================================================
+    # Infraestructura: 128 cargadores Modo 3 (IEC 61851)
+    #   - 112 tomas para motos (28 cargadores × 4 sockets) @ 2 kW
+    #   - 16 tomas para mototaxis (4 cargadores × 4 sockets) @ 3 kW
+    # Horario: 9:00 - 22:00 (13 horas)
+    # Sesión Modo 3: 30 minutos fijos
+    # Utilización: 92%
+    # =================================================================
     
-    # Actualizar vehículos/día usando los valores correctos
-    esc_rec["vehicles_day_motos"] = motos_charging_day
-    esc_rec["vehicles_day_mototaxis"] = mototaxis_charging_day
-    esc_rec["vehicles_month_motos"] = motos_charging_day * 30
-    esc_rec["vehicles_month_mototaxis"] = mototaxis_charging_day * 30
-    esc_rec["vehicles_year_motos"] = motos_charging_day * 365
-    esc_rec["vehicles_year_mototaxis"] = mototaxis_charging_day * 365
+    # CONSTANTES DE INFRAESTRUCTURA (FIJAS)
+    N_TOMAS_MOTO = 112          # tomas individuales para motos
+    N_TOMAS_MOTOTAXI = 16       # tomas individuales para mototaxis
+    HOURS_OPEN = 13             # horas de operación (9am-10pm)
+    SESSION_HOURS = 0.5         # duración sesión Modo 3 (30 min)
+    SESSIONS_PER_CHARGER = 26   # sesiones por toma por día (13h / 0.5h)
+    UTILIZATION = 0.92          # factor de utilización
     
-    # Energía diaria basada en CAPACIDAD DE BATERÍA × FC (no potencia × tiempo)
-    # FC = porcentaje de batería descargada que necesita recarga
-    battery_moto = 2.0  # kWh - batería típica moto eléctrica
-    battery_mototaxi = 4.0  # kWh - batería típica mototaxi
+    # ENERGÍA POR SESIÓN (FIJA - Modo 3)
+    ENERGY_PER_MOTO_KWH = 1.0       # 2 kW × 0.5h = 1.0 kWh
+    ENERGY_PER_MOTOTAXI_KWH = 1.5   # 3 kW × 0.5h = 1.5 kWh
     
-    energy_per_moto = battery_moto * fc_motos  # kWh por moto
-    energy_per_mototaxi = battery_mototaxi * fc_mototaxis  # kWh por mototaxi
+    # =================================================================
+    # VEHÍCULOS ATENDIDOS POR DÍA (CALCULADOS Y FIJOS)
+    # =================================================================
+    # Motos: 112 tomas × 26 sesiones × 0.92 = 2,679 vehículos/día
+    # Mototaxis: 16 tomas × 26 sesiones × 0.92 = 382 vehículos/día
+    VEHICLES_DAY_MOTOS = 2679
+    VEHICLES_DAY_MOTOTAXIS = 382
     
-    energy_day_total = (motos_charging_day * energy_per_moto + 
-                        mototaxis_charging_day * energy_per_mototaxi)
-    esc_rec["energy_day_kwh"] = energy_day_total
-    res.energy_day_kwh = energy_day_total
+    # Actualizar escenario recomendado con valores fijos
+    esc_rec["vehicles_day_motos"] = VEHICLES_DAY_MOTOS
+    esc_rec["vehicles_day_mototaxis"] = VEHICLES_DAY_MOTOTAXIS
+    esc_rec["vehicles_month_motos"] = VEHICLES_DAY_MOTOS * 30      # 80,370
+    esc_rec["vehicles_month_mototaxis"] = VEHICLES_DAY_MOTOTAXIS * 30  # 11,460
+    esc_rec["vehicles_year_motos"] = VEHICLES_DAY_MOTOS * 365     # 977,835
+    esc_rec["vehicles_year_mototaxis"] = VEHICLES_DAY_MOTOTAXIS * 365  # 139,430
+    
+    # =================================================================
+    # ENERGÍA DIARIA (CALCULADA Y FIJA)
+    # =================================================================
+    # Motos: 2,679 × 1.0 kWh = 2,679 kWh
+    # Mototaxis: 382 × 1.5 kWh = 573 kWh
+    # TOTAL: 3,252 kWh/día
+    ENERGY_DAY_MOTOS_KWH = 2679.0
+    ENERGY_DAY_MOTOTAXIS_KWH = 573.0
+    ENERGY_DAY_TOTAL_KWH = 3252.0
+    
+    esc_rec["energy_day_kwh"] = ENERGY_DAY_TOTAL_KWH
+    res.energy_day_kwh = ENERGY_DAY_TOTAL_KWH
     
     # También generar escenarios adicionales para análisis de sensibilidad
     pe_list, fc_list = generate_random_scenarios(seed=seed, n_scenarios=n_scenarios)
@@ -1409,34 +1435,32 @@ def run_charger_sizing(
     
     print(f"\n[+] Generando datasets separados por playa de estacionamiento...")
     
-    # Configuración por playa
-    n_moto_chargers = 28
-    n_mototaxi_chargers = 4
-    n_tomas_moto = n_moto_chargers * sockets_per_charger
-    n_tomas_mototaxi = n_mototaxi_chargers * sockets_per_charger
+    # CONSTANTES DE INFRAESTRUCTURA POR PLAYA (FIJAS)
+    N_MOTO_CHARGERS_PLAYA = 28
+    N_MOTOTAXI_CHARGERS_PLAYA = 4
+    N_TOMAS_MOTO_PLAYA = 112    # 28 × 4 sockets
+    N_TOMAS_MOTOTAXI_PLAYA = 16  # 4 × 4 sockets
     
-    # Baterías
+    # Vehículos y energía por día (VALORES FIJOS)
+    MOTOS_CHARGING_DAY = VEHICLES_DAY_MOTOS        # 2,679
+    MOTOTAXIS_CHARGING_DAY = VEHICLES_DAY_MOTOTAXIS  # 382
+    ENERGY_MOTO_DAY = ENERGY_DAY_MOTOS_KWH          # 2,679 kWh
+    ENERGY_MOTOTAXI_DAY = ENERGY_DAY_MOTOTAXIS_KWH  # 573 kWh
+    
+    # Baterías (para referencia en PlayaData)
     battery_moto = 2.0  # kWh
     battery_mototaxi = 4.0  # kWh
     
-    # Vehículos que cargan por día
-    motos_charging_day = int(esc_rec['vehicles_day_motos'])
-    mototaxis_charging_day = int(esc_rec['vehicles_day_mototaxis'])
-    
-    # Energía diaria por playa (basada en batería × FC × vehículos)
-    energy_moto = motos_charging_day * battery_moto * fc_motos
-    energy_mototaxi = mototaxis_charging_day * battery_mototaxi * fc_mototaxis
-    
     # Perfiles horarios por playa
     profile_moto = build_hourly_profile(
-        energy_day_kwh=energy_moto,
+        energy_day_kwh=ENERGY_MOTO_DAY,
         opening_hour=opening_hour,
         closing_hour=closing_hour,
         peak_hours=peak_hours,
         peak_share_day=peak_share_day,
     )
     profile_mototaxi = build_hourly_profile(
-        energy_day_kwh=energy_mototaxi,
+        energy_day_kwh=ENERGY_MOTOTAXI_DAY,
         opening_hour=opening_hour,
         closing_hour=closing_hour,
         peak_hours=peak_hours,
@@ -1445,7 +1469,7 @@ def run_charger_sizing(
     
     # Crear cargadores individuales por playa
     chargers_playa_motos = create_individual_chargers(
-        n_chargers=n_tomas_moto,
+        n_chargers=N_TOMAS_MOTO_PLAYA,
         charger_power_kw=charger_power_kw_moto,
         sockets_per_charger=1,
         daily_profile=profile_moto,
@@ -1456,20 +1480,20 @@ def run_charger_sizing(
     )
     
     chargers_playa_mototaxis = create_individual_chargers(
-        n_chargers=n_tomas_mototaxi,
+        n_chargers=N_TOMAS_MOTOTAXI_PLAYA,
         charger_power_kw=charger_power_kw_mototaxi,
         sockets_per_charger=1,
         daily_profile=profile_mototaxi,
         charger_type="Level2_MOTOTAXI",
         prefix="MOTO_TAXI_CH",
-        start_index=n_tomas_moto + 1,
+        start_index=N_TOMAS_MOTO_PLAYA + 1,
         playa="Playa_Mototaxis",
     )
     
     individual_chargers = chargers_playa_motos + chargers_playa_mototaxis
     
     # =================================================================
-    # Crear objetos PlayaData para cada playa
+    # Crear objetos PlayaData para cada playa (VALORES FIJOS)
     # =================================================================
     playa_motos = PlayaData(
         name="Playa_Motos",
@@ -1479,11 +1503,11 @@ def run_charger_sizing(
         fc=fc_motos,
         battery_kwh=battery_moto,
         charger_power_kw=charger_power_kw_moto,
-        n_chargers=n_moto_chargers,
+        n_chargers=N_MOTO_CHARGERS_PLAYA,
         sockets_per_charger=sockets_per_charger,
-        total_sockets=n_tomas_moto,
-        vehicles_charging_day=motos_charging_day,
-        energy_day_kwh=energy_moto,
+        total_sockets=N_TOMAS_MOTO_PLAYA,
+        vehicles_charging_day=MOTOS_CHARGING_DAY,
+        energy_day_kwh=ENERGY_MOTO_DAY,
         chargers=chargers_playa_motos,
         hourly_profile=profile_moto,
     )
@@ -1496,11 +1520,11 @@ def run_charger_sizing(
         fc=fc_mototaxis,
         battery_kwh=battery_mototaxi,
         charger_power_kw=charger_power_kw_mototaxi,
-        n_chargers=n_mototaxi_chargers,
+        n_chargers=N_MOTOTAXI_CHARGERS_PLAYA,
         sockets_per_charger=sockets_per_charger,
-        total_sockets=n_tomas_mototaxi,
-        vehicles_charging_day=mototaxis_charging_day,
-        energy_day_kwh=energy_mototaxi,
+        total_sockets=N_TOMAS_MOTOTAXI_PLAYA,
+        vehicles_charging_day=MOTOTAXIS_CHARGING_DAY,
+        energy_day_kwh=ENERGY_MOTOTAXI_DAY,
         chargers=chargers_playa_mototaxis,
         hourly_profile=profile_mototaxi,
     )
@@ -1554,17 +1578,17 @@ def run_charger_sizing(
         print(f"   [OK] {playa.name}: {playa.n_chargers} cargadores, {playa.total_sockets} tomas, "
               f"{playa.energy_day_kwh:.1f} kWh/día")
     
-    # Guardar resumen combinado de playas
+    # Guardar resumen combinado de playas (VALORES FIJOS)
     playas_summary = {
         "playas": {
             playa_motos.name: playa_motos.to_dict(),
             playa_mototaxis.name: playa_mototaxis.to_dict(),
         },
         "totals": {
-            "n_chargers": n_moto_chargers + n_mototaxi_chargers,
-            "total_sockets": n_tomas_moto + n_tomas_mototaxi,
-            "energy_day_kwh": energy_moto + energy_mototaxi,
-            "vehicles_charging_day": motos_charging_day + mototaxis_charging_day,
+            "n_chargers": N_MOTO_CHARGERS_PLAYA + N_MOTOTAXI_CHARGERS_PLAYA,  # 32
+            "total_sockets": N_TOMAS_MOTO_PLAYA + N_TOMAS_MOTOTAXI_PLAYA,  # 128
+            "energy_day_kwh": ENERGY_DAY_TOTAL_KWH,  # 3,252 kWh
+            "vehicles_charging_day": VEHICLES_DAY_MOTOS + VEHICLES_DAY_MOTOTAXIS,  # 3,061
         }
     }
     (playas_dir / "playas_summary.json").write_text(
@@ -1727,25 +1751,25 @@ def run_charger_sizing(
         "charger_profile_variants_path": str(metadata_path.resolve()),
         "charger_profile_variants_dir": str(variant_dir.resolve()),
         "charger_profile_variants": variant_metadata,
-        # Datasets por playa de estacionamiento
+        # Datasets por playa de estacionamiento (VALORES FIJOS)
         "playas_dir": str(playas_dir.resolve()),
         "playas_summary_path": str((playas_dir / "playas_summary.json").resolve()),
         "playas": {
             "Playa_Motos": {
                 "dir": str((playas_dir / "Playa_Motos").resolve()),
-                "n_chargers": n_moto_chargers,
-                "total_sockets": n_tomas_moto,
+                "n_chargers": N_MOTO_CHARGERS_PLAYA,  # 28
+                "total_sockets": N_TOMAS_MOTO_PLAYA,  # 112
                 "power_kw": charger_power_kw_moto,
-                "vehicles_charging_day": motos_charging_day,
-                "energy_day_kwh": energy_moto,
+                "vehicles_charging_day": VEHICLES_DAY_MOTOS,  # 2,679
+                "energy_day_kwh": ENERGY_DAY_MOTOS_KWH,  # 2,679 kWh
             },
             "Playa_Mototaxis": {
                 "dir": str((playas_dir / "Playa_Mototaxis").resolve()),
-                "n_chargers": n_mototaxi_chargers,
-                "total_sockets": n_tomas_mototaxi,
+                "n_chargers": N_MOTOTAXI_CHARGERS_PLAYA,  # 4
+                "total_sockets": N_TOMAS_MOTOTAXI_PLAYA,  # 16
                 "power_kw": charger_power_kw_mototaxi,
-                "vehicles_charging_day": mototaxis_charging_day,
-                "energy_day_kwh": energy_mototaxi,
+                "vehicles_charging_day": VEHICLES_DAY_MOTOTAXIS,  # 382
+                "energy_day_kwh": ENERGY_DAY_MOTOTAXIS_KWH,  # 573 kWh
             },
         },
     }
