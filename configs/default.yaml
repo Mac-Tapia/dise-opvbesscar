@@ -101,11 +101,11 @@ oe3:
       - SAC
       - PPO
       - A2C
-    resume_checkpoints: true
+    resume_checkpoints: false
     multi_objective_priority: co2_focus
     sac:
       episodes: 2
-      resume_checkpoints: true
+      resume_checkpoints: false
       deterministic_eval: true
       device: cuda
       batch_size: 4096
@@ -128,7 +128,7 @@ oe3:
         grid: 0.05
     ppo:
       episodes: 2
-      resume_checkpoints: true
+      resume_checkpoints: false
       timesteps: 7008
       n_steps: 8192
       batch_size: 2048
@@ -150,7 +150,7 @@ oe3:
         grid: 0.05
     a2c:
       episodes: 2
-      resume_checkpoints: true
+      resume_checkpoints: false
       timesteps: 7008
       n_steps: 4096
       learning_rate: 0.0007

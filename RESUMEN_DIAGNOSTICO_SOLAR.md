@@ -3,7 +3,7 @@
 ## 📊 Tabla Comparativa
 
 | Aspecto | ANTES del Diagnóstico | DESPUÉS del Diagnóstico |
- | -------- | ---------------------- | ------------------------- |
+| -------- | ---------------------- | ------------------------- |
 | **OE2 Solar Generation** | ✅ Funciona | ✅ Verificado |
 | **OE3 Dataset Load** | ✅ Carga datos | ✅ Logging detallado |
 | **Building CSVs** | ❓ Incertidumbre | ✅ 1,927,391.6 W/kW.h en Building_1 |
@@ -126,7 +126,7 @@ if solar_col is not None:
 ### 2. Archivos Nuevos Creados
 
 | Archivo | Propósito |
- | --------- | ----------- |
+| --------- | ----------- |
 | `verify_solar_data.py` | Validar presencia de datos solares en Building CSVs |
 | `DIAGNOSTICO_SOLAR_PIPELINE.md` | Documentación técnica completa |
 | `EXPLICACION_SOLAR_ZERO.md` | Explicación sobre por qué SAC mostraba 0.0 |

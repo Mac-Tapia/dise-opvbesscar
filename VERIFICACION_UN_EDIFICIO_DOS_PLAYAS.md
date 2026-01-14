@@ -219,7 +219,7 @@ Total: 1 edificio + 128 chargers + datos compartidos
 ### **Tabla de Verificación**
 
 | Parámetro | Valor | Verificado |
- | ----------- | ------- | ----------- |
+| ----------- | ------- | ----------- |
 | **Edificios en schema** | 1 (Mall_Iquitos) | ✅ |
 | **Chargers** | 128 | ✅ |
 | **- Motos** | 112 | ✅ |
@@ -272,14 +272,14 @@ Total: 1 edificio + 128 chargers + datos compartidos
 │  ┌────────────────────────────────────────────────────┐  │
 │  │         AGENTE RL CENTRALIZADO (SAC/PPO/A2C)      │  │
 │  │                                                    │  │
-│  │  Optimiza: CO₂ ↓ | Costo ↓ | Solar ↑             │  │
+│  │  Optimiza: CO₂ ↓| Costo ↓ |Solar ↑             │  │
 │  │  Controla: BESS + 128 chargers                    │  │
 │  │                                                    │  │
 │  └────────────────────────────────────────────────────┘  │
 │                                                            │
 └──────────────────────────────────────────────────────────┘
 
-Total: 1 Edificio | 2 Playas | 128 Chargers | 1 Agente RL
+Total: 1 Edificio| 2 Playas | 128 Chargers |1 Agente RL
 ```text
 
 ---
@@ -374,7 +374,7 @@ Nota: Resultados basados en 1 edificio con
 ## 📞 Resumen Final
 
 | Requisito | Implementación | Status |
- | ----------- | ---------------- | --------- |
+| ----------- | ---------------- | --------- |
 | Un edificio | `Mall_Iquitos` (1 building) | ✅ |
 | Dos playas | 128 chargers separados lógicamente | ✅ |
 | PV compartido | 4162 kWp integrado | ✅ |

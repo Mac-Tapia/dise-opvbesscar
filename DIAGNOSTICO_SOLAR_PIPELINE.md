@@ -106,7 +106,7 @@ Ejecuté verificaciones cruzadas:
 ## 📊 Resultados de Diagnostico
 
 | Componente | Estado | Detalles |
- | ----------- | -------- | --------- |
+| ----------- | -------- | --------- |
 | OE2 Solar Generation | ✅ OK | 8760 filas, 1927.39 kWh/kWp |
 | Load Artifact | ✅ OK | Carga en memoria en dataset_builder |
 | Transformación | ✅ OK | Escala correctamente a W/kW |

@@ -7,7 +7,7 @@
 Todos los agentes (SAC, PPO, A2C) están configurados correctamente para guardar checkpoints y reanudar entrenamiento sin empezar desde cero.
 
 | Agente | resume_checkpoints | checkpoint_freq | save_final | Episodes |
- | -------- | ------------------- | ----------------- | ----------- | ---------- |
+| -------- | ------------------- | ----------------- | ----------- | ---------- |
 | **SAC** | ✅ True | Cada 500 pasos | ✅ True | 5 |
 | **PPO** | ✅ True | Cada 500 pasos | ✅ True | 5 |
 | **A2C** | ✅ True | Cada 500 pasos | ✅ True | 5 |
@@ -250,7 +250,7 @@ python show_training_status.py
 ## 📊 Tamaño Estimado de Checkpoints
 
 | Agente | Por Checkpoint | Total (5 ep) |
- | -------- | --------------- | -------------- |
+| -------- | --------------- | -------------- |
 | SAC | 100-150 MB | 500-750 MB |
 | PPO | 120-180 MB | 600-900 MB |
 | A2C | 120-180 MB | 600-900 MB |

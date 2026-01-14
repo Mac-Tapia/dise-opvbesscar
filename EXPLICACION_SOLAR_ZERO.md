@@ -109,7 +109,7 @@ Building_17.csv: 1,307,867.5 W/kW.h  ✅
 ### ¿Qué significa esto para el entrenamiento SAC?
 
 | Aspecto | Antes | Después |
- | -------- | ------- | --------- |
+| -------- | ------- | --------- |
 | Datos solares disponibles | ✅ (no mostrados en log) | ✅ (verificado con logging) |
 | SAC recibe señal solar | ✅ (implícito) | ✅ (comprobado) |
 | Recompensa solar (peso 0.20) | ✅ (efectivo) | ✅ (confirmado) |

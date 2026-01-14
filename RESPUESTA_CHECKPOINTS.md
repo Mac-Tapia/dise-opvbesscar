@@ -25,7 +25,7 @@ Los agentes RL (SAC, PPO, A2C) **ESTÁN COMPLETAMENTE PREPARADOS** para:
 ### 📊 Estado de Cada Agente
 
 | Aspecto | SAC | PPO | A2C | Estado |
- | --------- | ------- | ------- | ------- | -------- |
+| --------- | ------- | ------- | ------- | -------- |
 | **resume_checkpoints** | ✅ true | ✅ true | ✅ true | Habilitado |
 | **checkpoint_freq_steps** | ✅ 500 | ✅ 500 | ✅ 500 | Cada 500 pasos |
 | **save_final** | ✅ true | ✅ true | ✅ true | Sí |
@@ -167,7 +167,7 @@ sac:
 ## Archivos Relacionados
 
 | Archivo | Descripción |
- | --------- | ------------- |
+| --------- | ------------- |
 | `configs/default.yaml` | Define configuración checkpoints (resume_checkpoints, freq, etc.) |
 | `src/iquitos_citylearn/oe3/simulate.py` | Implementa lógica de reanudación (_latest_checkpoint) |
 | `outputs/oe3/checkpoints/` | Almacén de checkpoints (se crea automáticamente) |
@@ -263,10 +263,10 @@ Día 3: Reanudar + 5 episodios más (15 total)
 ## Tamaño Estimado de Checkpoints
 
 | Agente | Por Checkpoint | 5 Episodios (aprox) |
- | -------- | --------------- | ------------------- |
-| SAC    | 100-150 MB    | 500-750 MB        |
-| PPO    | 120-180 MB    | 600-900 MB        |
-| A2C    | 120-180 MB    | 600-900 MB        |
+| -------- | --------------- | ------------------- |
+| SAC | 100-150 MB | 500-750 MB |
+| PPO | 120-180 MB | 600-900 MB |
+| A2C | 120-180 MB | 600-900 MB |
 | **Total** | - | **1.7-2.6 GB** |
 
 *Estimaciones aproximadas, varían según batch_size y buffer_size*

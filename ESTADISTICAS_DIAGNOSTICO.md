@@ -5,7 +5,7 @@
 ### 📈 Volumen de Trabajo
 
 | Métrica | Valor |
- | --------- | ------- |
+| --------- | ------- |
 | **Archivos analizados** | 5 + (dataset_builder.py principal) |
 | **Líneas de código revisadas** | 500+ |
 | **Cambios implementados** | 7 modificaciones en dataset_builder.py |
@@ -22,7 +22,7 @@
 ### Fases de Diagnóstico
 
 | Fase | Duración | Resultado |
- | ------- | ---------- | ----------- |
+| ------- | ---------- | ----------- |
 | **Fase 1: Verificar OE2** | 10 min | ✅ OE2 genera datos correctamente |
 | **Fase 2: Verificar OE3 Load** | 15 min | ✅ dataset_builder carga correctamente |
 | **Fase 3: Verificar Output CSVs** | 20 min | ✅ Building CSVs contienen datos válidos |
@@ -113,7 +113,7 @@
 ### Pruebas Completadas
 
 | Prueba | Método | Resultado | Confianza |
- | -------- | -------- | ----------- | ----------- |
+| -------- | -------- | ----------- | ----------- |
 | OE2 genera datos | Inspeccionar CSV | ✅ 8760 registros válidos | 100% |
 | OE3 carga datos | Logging detallado | ✅ Artifact load exitoso | 100% |
 | OE3 transforma | Trazar transformación | ✅ 1927.4 → 1,927,391.6 | 99.9% |
@@ -132,7 +132,7 @@
 ### Magnitudes Numéricas
 
 | Parámetro | Valor | Unidad | Validación |
- | ----------- | ------- | -------- | ----------- |
+| ----------- | ------- | -------- | ----------- |
 | Generación OE2 | 1927.4 | kWh/kWp | ✅ |
 | Transformación | 1,927,391.6 | W/kW.h | ✅ |
 | Energía anual | 8,024 | MWh | ✅ |
@@ -151,7 +151,7 @@
 ### dataset_builder.py Modificaciones
 
 | Línea | Tipo | Cambio | Impacto |
- | ------- | ------- | -------- | -------- |
+| ------- | ------- | -------- | -------- |
 | 561 | Logging | Agregar info de load | Visibilidad de datos |
 | 568 | Logging | Agregar valores range | Validación de datos |
 | 589 | Logging | Before transformation | Trazabilidad |
@@ -228,7 +228,7 @@ RL (Agent Training)
 ## 📚 Documentación por Audiencia
 
 | Audiencia | Documentos Relevantes | Tiempo | Acción |
- | ----------- | ---------------------- | -------- | -------- |
+| ----------- | ---------------------- | -------- | -------- |
 | Usuario final | QUICK_START, RESUMEN_EJ | 8 min | Re-entrenar SAC |
 | Desarrollador | DIAGNOSTICO, ARQUITECTURA | 45 min | Revisar y continuar |
 | Auditor/Tesis | RESUMEN_DX, FAQ | 30 min | Validar y documentar |
@@ -279,7 +279,7 @@ Total: ~4,000 líneas de documentación + 110 líneas de código
 ## 🚀 Próximos Pasos (Estimados)
 
 | Paso | Duración | Comando |
- | ------- | ---------- | --------- |
+| ------- | ---------- | --------- |
 | Verificación | < 1 min | `python verify_solar_data.py` |
 | SAC re-entrenamiento | 5-15 min | `python -m scripts.continue_sac_training` |
 | PPO re-entrenamiento | 30-90 min | `python -m scripts.continue_ppo_training` |

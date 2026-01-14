@@ -51,13 +51,13 @@
 ### Scripts Modificados
 
 | Archivo | Cambios | Impacto |
- | --------- | --------- | -------- |
+| --------- | --------- | -------- |
 | `src/iquitos_citylearn/oe3/dataset_builder.py` | Logging detallado agregado (3 puntos) | Traceabilidad mejorada |
 
 ### Scripts Nuevos
 
 | Archivo | Propósito |
- | --------- | ----------- |
+| --------- | ----------- |
 | `verify_solar_data.py` | Validar presencia de datos solares |
 | `scripts/retrain_sac_with_solar.py` | Re-entrenar SAC (en desarrollo) |
 
@@ -93,7 +93,7 @@
 ## ✅ Validaciones Completadas
 
 | Item | Status | Evidencia |
- | ------- | -------- | ----------- |
+| ------- | -------- | ----------- |
 | OE2 genera datos solares | ✅ | solar_generation.csv con 8760 registros |
 | Datos tienen valores válidos | ✅ | Min: 0.0, Max: 0.6936, Sum: 1927.4 |
 | OE3 carga correctamente | ✅ | Logging muestra carga exitosa |
@@ -126,7 +126,7 @@
 ## 📊 Estadísticas del Diagnóstico
 
 | Métrica | Valor |
- | --------- | ------- |
+| --------- | ------- |
 | Archivos analizados | 3 principales |
 | Líneas de código revisadas | 500+ |
 | Puntos de logging agregados | 8 |

@@ -3,7 +3,7 @@
 ## Estado Actual (2026-01-13)
 
 | Componente | Estado |
- | ----------- | -------- |
+| ----------- | -------- |
 | **Checkpoints Configurados** | ✅ SÍ - Todos agentes |
 | **Auto-Reanudación** | ✅ SÍ - Habilitada |
 | **Guardado cada** | ✅ 500 pasos |
@@ -83,7 +83,7 @@ Guarda: Nuevos checkpoints incrementales
 ## Archivos Clave
 
 | Archivo | Propósito |
- | --------- | ----------- |
+| --------- | ----------- |
 | `configs/default.yaml` | Configuración checkpoint |
 | `src/iquitos_citylearn/oe3/simulate.py` | Lógica reanudación |
 | `outputs/oe3/checkpoints/` | Almacén checkpoints |

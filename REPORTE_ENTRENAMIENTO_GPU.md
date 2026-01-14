@@ -5,7 +5,7 @@
 **Status**: ✓ Entrenamiento SAC en progreso con **máxima utilización de GPU**
 
 | Métrica | Valor |
- | --------- | ------- |
+| --------- | ------- |
 | **Progreso SAC** | 6,000 / 43,800 pasos (13.7%) |
 | **Tiempo restante (SAC)** | **~4.0 horas** |
 | **Tiempo total (3 agentes)** | **~12 horas** |

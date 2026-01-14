@@ -41,7 +41,7 @@ Tu especificación **está 100% implementada y verificada**.
 ### Total
 
 ```text
-128 Chargers | 4162 kWp PV | 2000 kWh BESS
+128 Chargers| 4162 kWp PV |2000 kWh BESS
 Control: 1 Agente RL Centralizado
 ```text
 
@@ -50,7 +50,7 @@ Control: 1 Agente RL Centralizado
 ## ✅ Verificación Técnica
 
 | Parámetro | Valor | Status |
- | ----------- | ------- | -------- |
+| ----------- | ------- | -------- |
 | **Edificios** | 1 (Mall_Iquitos) | ✅ |
 | **Chargers Motos** | 112 | ✅ |
 | **Chargers Taxis** | 16 | ✅ |
@@ -122,7 +122,7 @@ print('✓ VERIFICADO EXITOSAMENTE')
 ## 💡 Resumen Conceptual
 
 | Aspecto | Antes (Conceptual) | Ahora ✅ | Ventaja |
- | --------- | ------------------- | --------- | --------- |
+| --------- | ------------------- | --------- | --------- |
 | Edificios | Potencialmente 2 | 1 (Mall_Iquitos) | Simplicidad |
 | Playas | Separadas | 2 integradas | Realismo físico |
 | PV | Duplicado | Compartido | Optimización |

@@ -141,7 +141,7 @@ Dos áreas **físicamente distintas** dentro del Mall, pero **lógicamente integ
 ### **PV Solar (Total: 4162 kWp)**
 
 | Métrica | Playa_Motos | Playa_Mototaxis | Total |
- | --------- | ------------- | ----------------- | ------- |
+| --------- | ------------- | ----------------- | ------- |
 | **kWp DC** | 3641.8 | 520.2 | 4162.0 |
 | **% Total** | 87.5% | 12.5% | 100% |
 | **Energía Anual** | 6,968 MWh | 997.8 MWh | 7,966 MWh |
@@ -152,7 +152,7 @@ Dos áreas **físicamente distintas** dentro del Mall, pero **lógicamente integ
 ### **BESS (Total: 2000 kWh / 1200 kW)**
 
 | Métrica | Playa_Motos | Playa_Mototaxis | Total |
- | --------- | ------------- | ----------------- | ------- |
+| --------- | ------------- | ----------------- | ------- |
 | **Capacidad (kWh)** | 1750 | 250 | 2000 |
 | **Potencia (kW)** | 1050 | 150 | 1200 |
 | **% Total** | 87.5% | 12.5% | 100% |
@@ -164,7 +164,7 @@ Dos áreas **físicamente distintas** dentro del Mall, pero **lógicamente integ
 ### **Chargers (Total: 128)**
 
 | Tipo | Cantidad | Potencia c/u | Potencia Total | % del Total |
- | ------- | ---------- | -------------- | ----------------- | ------------ |
+| ------- | ---------- | -------------- | ----------------- | ------------ |
 | **Motos** | 112 | 2 kW | 224 kW | 82.4% |
 | **Mototaxis** | 16 | 3 kW | 48 kW | 17.6% |
 | **TOTAL** | **128** | - | **272 kW** | **100%** |
@@ -444,7 +444,7 @@ Ventajas: Simplicidad, integración real de playas físicamente separadas
 ## ✅ Validación Final
 
 | Aspecto | Estado | Evidencia |
- | --------- | -------- | ----------- |
+| --------- | -------- | ----------- |
 | **1 Edificio** | ✅ | schema.json tiene solo `Mall_Iquitos` |
 | **2 Playas** | ✅ | 128 chargers nombrados por tipo (MOTO_CH_*, MOTO_TAXI_CH_*) |
 | **PV Integrado** | ✅ | 4162 kWp asignados a `Mall_Iquitos.pv` |

@@ -135,7 +135,7 @@
 ### ✅ ESTADO FINAL DEL SISTEMA
 
 | Componente | Estado | Verificado |
- | ----------- | -------- | ----------- |
+| ----------- | -------- | ----------- |
 | Checkpoints SAC | ✅ Configurados | ✓ |
 | Checkpoints PPO | ✅ Configurados | ✓ |
 | Checkpoints A2C | ✅ Configurados | ✓ |

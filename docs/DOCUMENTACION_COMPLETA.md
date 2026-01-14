@@ -270,7 +270,7 @@ Donde:
 ### 3.2 Variables Operacionalizadas
 
 | Variable | Tipo | Dimensiones | Indicadores | Escala |
-|----------|------|-------------|-------------|--------|
+| ---------- | ------ | ------------- | ------------- | -------- |
 | Ubicación | VI | Multicriterio | Score técnico/ambiental/social | 0-10 |
 | Capacidad PV | VI | Energía | kWp instalados | Razón |
 | Capacidad BESS | VI | Energía | kWh almacenables | Razón |
@@ -289,7 +289,7 @@ Donde:
 ### 3.4 Técnicas e Instrumentos
 
 | Técnica | Instrumento | Variable | Descripción |
-|---------|-------------|----------|-------------|
+| --------- | ------------- | ---------- | ------------- |
 | Observación directa | Conteo manual 5-min | Demanda EV | Visita campo 19/10/2025, 19:00-20:00h |
 | Análisis SIG | QGIS + Google Maps | Ubicación óptima | Evaluación multicriterio 10 sitios |
 | Simulación energética | pvlib-python + PVGIS | Generación FV | TMY descargado, 8,760 horas |
@@ -439,7 +439,7 @@ for agent_name, agent in agents.items():
 **Validación 2:** Convergencia RL
 
 - Gráficas reward medio por episodio (suave ascendente)
-- Verificar no divergencia (max |reward| < 1e6)
+- Verificar no divergencia (max| reward |< 1e6)
 
 **Validación 3:** Balances energéticos
 
@@ -455,7 +455,7 @@ for agent_name, agent in agents.items():
 **Tabla 1: Evaluación Multicriterio 10 Ubicaciones**
 
 | Sitio | Criterios Técnicos (40%) | Criterios Ambientales (35%) | Criterios Sociales (25%) | Score Final |
-|-------|-------------------------|---------------------------|-------------------------|------------|
+| ------- | ------------------------- | --------------------------- | ------------------------- | ------------ |
 | Mall de Iquitos | 9.8 | 9.2 | 9.4 | **9.45** |
 | Mercado Artesanal | 8.5 | 8.1 | 8.9 | 8.50 |
 | Plaza 28 de Julio | 7.8 | 8.4 | 8.2 | 8.13 |
@@ -476,7 +476,7 @@ for agent_name, agent in agents.items():
 **Tabla 2: Producción Anual PV por Ubicación**
 
 | Parámetro | Playa_Motos | Playa_Mototaxis | Total Sistema |
-|-----------|------------|-----------------|----------------|
+| ----------- | ------------ | ----------------- | ---------------- |
 | Potencia DC (kWp) | 3,641.8 | 520.2 | 4,162.0 |
 | Eficiencia Inversor | 96% | 96% | 96% |
 | Generación Anual (GWh) | 7.21 | 1.03 | 8.24 |
@@ -489,7 +489,7 @@ for agent_name, agent in agents.items():
 **Tabla 3: Especificaciones BESS**
 
 | Parámetro | Playa_Motos | Playa_Mototaxis | Total |
-|-----------|------------|-----------------|-------|
+| ----------- | ------------ | ----------------- | ------- |
 | Capacidad Nominal (kWh) | 1,750 | 250 | 2,000 |
 | Potencia Máxima Carga (kW) | 1,050 | 150 | 1,200 |
 | Potencia Máxima Descarga (kW) | 1,050 | 150 | 1,200 |
@@ -503,7 +503,7 @@ for agent_name, agent in agents.items():
 **Tabla 4: Configuración Chargers**
 
 | Parámetro | Motos | Mototaxis | Total |
-|-----------|-------|-----------|-------|
+| ----------- | ------- | ----------- | ------- |
 | Cantidad de Chargers | 112 | 16 | 128 |
 | Potencia por Charger (kW) | 2.0 | 3.0 | — |
 | Potencia Instalada Total (kW) | 224 | 48 | 272 |
@@ -516,7 +516,7 @@ for agent_name, agent in agents.items():
 **Tabla 5: Emisiones Anuales por Agente (tCO2/año)**
 
 | Escenario | Emisiones (tCO2/año) | Emisiones 20 años (tCO2) | Reducción vs Baseline | Reducción % |
-|-----------|----------------------|--------------------------|----------------------|-------------|
+| ----------- | ---------------------- | -------------------------- | ---------------------- | ------------- |
 | Línea Base: Grid + Combustión | 8,381.16 | 167,623.29 | 0.0 | 0.0% |
 | Grid-only (sin PV/BESS) | 5,596.26 | 111,925.16 | 2,784.91 | 33.23% |
 | FV+BESS + Uncontrolled | 2,475.06 | 49,501.29 | 5,906.10 | **70.47%** |
@@ -529,7 +529,7 @@ for agent_name, agent in agents.items():
 **Tabla 6: Análisis Detallado Emisiones SAC**
 
 | Métrica | Valor | Unidad |
-|---------|-------|--------|
+| --------- | ------- | -------- |
 | Transporte Baseline | 24,598.46 | kgCO2/año |
 | Energía EV Anual | 9,476.13 | kWh/año |
 | Energía EV desde Grid | 4,191.35 | kWh/año |
@@ -545,7 +545,7 @@ for agent_name, agent in agents.items():
 **Tabla 7: Evolución Reward Medio por Agente**
 
 | Agente | Steps Entrenamiento | Reward Promedio | Penalty Promedio | Estado |
-|--------|-------------------|-----------------|------------------|--------|
+| -------- | ------------------- | ----------------- | ------------------ | -------- |
 | A2C | 8,759 | 0.0435 | 0.6400 | Convergido ✓ |
 | PPO | 8,759 | 0.0379 | 0.6370 | Convergido ✓ |
 | SAC | 8,759 | 0.0112 | 0.6302 | Convergido ✓ |
@@ -556,7 +556,7 @@ for agent_name, agent in agents.items():
 **Tabla 8: Prueba HE3**
 
 | Hipótesis | Condición | Resultado | Validación |
-|-----------|-----------|-----------|-----------|
+| ----------- | ----------- | ----------- | ----------- |
 | HE3: SAC reduce ≥8.5% vs Uncontrolled | Δ% = (Uncontrolled - SAC) / Uncontrolled × 100 | 2.18% | ❌ NO CUMPLE |
 
 **Análisis:** SAC reduce solo 2.18% (2.18%) vs Uncontrolled (70.47%). La diferencia no es estadísticamente significativa en grid aislada amazónica.
@@ -566,7 +566,7 @@ for agent_name, agent in agents.items():
 **Tabla 9: Validación Integral de Hipótesis**
 
 | Hipótesis | Criterio | Logro | Validación |
-|-----------|----------|-------|-----------|
+| ----------- | ---------- | ------- | ----------- |
 | **HG: Reducción ≥50%** | Reducción CO2 ≥50% vs baseline combustión | 68.29% (SAC) | ✓ CUMPLE* |
 | **HE1: Score ubicación ≥8.5** | Mall Iquitos ≥8.5/10 | 9.45/10 | ✓ CUMPLE |
 | **HE2: Autosuficiencia ≥40%** | Gen.solar / Dem.total ≥40% | 59.2% | ✓ CUMPLE |
@@ -888,7 +888,7 @@ La pregunta ya no es **¿es posible?** sino **¿cuándo comenzamos?**
 **Metodología:** Conteo manual cada 5 minutos
 
 | Intervalo 5-min | Motos | Mototaxis | Total | Λ (eventos/hora) |
-|-----------------|-------|-----------|-------|-----------------|
+| ----------------- | ------- | ----------- | ------- | ----------------- |
 | 19:00-19:05 | 75 | 11 | 86 | 1,032 |
 | 19:05-19:10 | 73 | 10 | 83 | 996 |
 | 19:10-19:15 | 78 | 12 | 90 | 1,080 |
@@ -955,7 +955,7 @@ La pregunta ya no es **¿es posible?** sino **¿cuándo comenzamos?**
 
 **Estructura Repositorio GitHub:**
 
-```
+```text
 dise-opvbesscar/
 ├── scripts/
 │   ├── run_pipeline.py          # Orquestador

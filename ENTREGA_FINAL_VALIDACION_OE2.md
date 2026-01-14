@@ -63,7 +63,7 @@ Valores:
 He creado **11 documentos** (~5,000 líneas) con evidencia completa:
 
 | # | Documento | Lectura | Contenido |
- | ------- | ----------- | --------- | ---------- |
+| ------- | ----------- | --------- | ---------- |
 | 1 | [VALIDACION_DATOS_REALES_OE2.md](VALIDACION_DATOS_REALES_OE2.md) | 10 min | **NUEVO**: Validación datos reales + pvlib + edificio único |
 | 2 | [RESUMEN_EJECUTIVO_SOLAR.md](RESUMEN_EJECUTIVO_SOLAR.md) | 3 min | Respuesta a pregunta original |
 | 3 | [DIAGNOSTICO_SOLAR_PIPELINE.md](DIAGNOSTICO_SOLAR_PIPELINE.md) | 20 min | Diagnóstico completo del pipeline |
@@ -236,7 +236,7 @@ Los datos solares OE2 son:
 ## 📞 Referencia Rápida
 
 | Pregunta | Respuesta | Documento |
- | ---------- | ----------- | ----------- |
+| ---------- | ----------- | ----------- |
 | ¿Datos son reales? | Sí, 1927.39 kWh/kWp | [VALIDACION_DATOS_REALES_OE2.md](VALIDACION_DATOS_REALES_OE2.md) |
 | ¿Generados por pvlib? | Sí, con irradiancia solar | [DIAGNOSTICO_SOLAR_PIPELINE.md](DIAGNOSTICO_SOLAR_PIPELINE.md) |
 | ¿Un solo edificio? | Sí, Mall_Iquitos único | [VALIDACION_DATOS_REALES_OE2.md](VALIDACION_DATOS_REALES_OE2.md) |

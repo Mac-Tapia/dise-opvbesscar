@@ -198,7 +198,7 @@ python -m scripts.continue_sac_training --config configs/default.yaml
 **A:** Depende de `episodes` en config:
 
 | Episodios | Tipo | Tiempo |
- | ----------- | ------- | -------- |
+| ----------- | ------- | -------- |
 | 1 | Test | ~30 segundos |
 | 10 | Config default | 5-15 minutos |
 | 50 | Producción | 25-75 minutos |
