@@ -3,7 +3,7 @@
 ## 📊 RESUMEN EJECUTIVO
 
  Métrica | Valor |
-| --------- | ------- |
+--------- | ------- |
  **Agente** | SAC (Soft Actor-Critic) |
  **Status** | ✅ COMPLETADO |
  **Timesteps Entrenados** | 17,520 (2 episodios) |
@@ -22,10 +22,10 @@
 ```text
 Paso        Reward   Actor Loss   Critic Loss   Entropía   Status
 ─────────────────────────────────────────────────────────────────
-1,000       0.6000   -25,386.83   436,483.53   0.9326    ✓ 
-5,000       0.6000   -24,861.65   234,159.03   0.9500    ✓ 
-10,000      0.6000   -25,564.80   532,408.66   0.9906    ✓ 
-15,000      0.6000   -33,707.56   470,731.70   1.2721    ✓ 
+1,000       0.6000   -25,386.83   436,483.53   0.9326    ✓
+5,000       0.6000   -24,861.65   234,159.03   0.9500    ✓
+10,000      0.6000   -25,564.80   532,408.66   0.9906    ✓
+15,000      0.6000   -33,707.56   470,731.70   1.2721    ✓
 17,520 ✓    52.554   -40,016.34   405,612.04   1.5364    ✅ FINAL
 ```
 
@@ -96,7 +96,7 @@ Episodio 2: reward=52.554 (8759 timesteps)
 ## 📈 MÉTRICAS FINALES DEL EPISODIO
 
  Métrica | Valor | Interpretación |
-| --------- | ------- | ----------------- |
+--------- | ------- | ----------------- |
  **Reward Total** | 52.554 | ✅ Excelente (> 50) |
  **Duración** | 8,759 timesteps | ✅ Año completo |
  **CO₂ kg** | 220.17 | ℹ️ Consumo de red |
@@ -199,6 +199,7 @@ gradient_steps: 1
 
 ```yaml
 Pesos de recompensa:
+
   - CO₂: 50% (prioritario)
   - Costo: 15%
   - Solar: 20%
@@ -228,7 +229,7 @@ Normalización: Suma = 100%
 ## 🎉 ESTADO FINAL
 
  Componente | Estado | Evidencia |
-| ----------- | -------- | ----------- |
+----------- | -------- | ----------- |
  SAC Training | ✅ COMPLETO | 17,520 timesteps |
  Actor Learning | ✅ SÍ | Loss: -25k → -40k |
  Critic Learning | ✅ SÍ | Loss: 436k → 405k |
@@ -241,19 +242,23 @@ Normalización: Suma = 100%
 ## 🚀 PRÓXIMOS PASOS
 
 1.**PPO Training**(próximo agente)
+
 - Configuración: timesteps=87,600 (11 episodios)
 - Expected duration: ~2-3 horas
 
 2.**A2C Training**(después de PPO)
+
 - Configuración: episodios=50
 - Expected duration: ~2-3 horas
 
 3.**Generación de tabla CO₂**- Comparación final: SAC vs PPO vs A2C vs Uncontrolled
+
 - Resultado: Reducción CO₂ esperada 65-70%
 
 ---
 
 ## 📌 CONCLUSIÓN**El agente SAC está aprendiendo correctamente. Las métricas muestran:**- ✅ Mejora progresiva del actor
+
 - ✅ Convergencia del crítico
 - ✅ Exploración óptima
 - ✅ Rewards elevados y consistentes

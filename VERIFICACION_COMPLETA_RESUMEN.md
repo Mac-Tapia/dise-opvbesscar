@@ -109,7 +109,7 @@ ACTOR LOSS (más negativo = mejor)
         └──────────────────────────
          0    5k   10k   15k  17.5k
               Timesteps
-              
+
 Interpretación: Actor mejora continuamente
                Aceleración entre 10k-15k
                Convergencia a paso 17.5k
@@ -137,15 +137,18 @@ Interpretación: Fluctuaciones normales en SAC
 ## 🎯 CONCLUSIONES
 
 ### Pregunta 1: "¿Está entrenando el agente?"**Respuesta: ✅ SÍ**- SAC completó entrenamiento con 17,520 timesteps
+
 - PPO ya inició entrenamiento (12:09:33)
 - A2C pendiente después de PPO
 
 ### Pregunta 2: "¿Está aprendiendo el agente?"**Respuesta: ✅ SÍ, EXITOSAMENTE**- Actor loss mejora 57% (-25k → -40k)
+
 - Critic converge progresivamente
 - Entropía ajusta automáticamente
 - Reward alcanza 52.554 (excelente para SAC)
 
 ### Pregunta 3: "¿Qué tan bien aprendió?"**Respuesta: MUY BIEN**- Velocidad: ~2 episodios = 3.5 horas
+
 - Calidad: Métricas dentro de rango esperado
 - Estabilidad: Rewards consistentes
 - Políticas: Convergida exitosamente
@@ -176,7 +179,11 @@ Interpretación: Fluctuaciones normales en SAC
 
 ---
 
-## 🚀 SIGUIENTE PASO**PPO está entrenando ahora:**```text
+## 🚀 SIGUIENTE PASO
+
+**PPO está entrenando ahora:**
+
+```text
 Inicío:       12:09:33 (14 Enero 2026)
 Timesteps:    87,600 (11 episodios)
 ETA:          ~2.5-3 horas (fin ~14:30-15:00)
@@ -186,7 +193,11 @@ Status:       🔄 EN CURSO
 
 ---
 
-## 💾 CHECKPOINTS GUARDADOS**SAC: 36 archivos**```text
+## 💾 CHECKPOINTS GUARDADOS
+
+### SAC: 36 archivos
+
+```text
 sac_final.zip          ✅ (Mejor modelo)
 sac_step_1000.zip      ✅
 sac_step_5000.zip      ✅
@@ -194,7 +205,11 @@ sac_step_10000.zip     ✅
 sac_step_15000.zip     ✅
 sac_step_17500.zip     ✅
 [30 más]               ✅
-```**PPO: En progreso**```text
+```
+
+### PPO: En progreso
+
+```text
 [Primer checkpoint esperado en ~10 minutos]
 ```
 

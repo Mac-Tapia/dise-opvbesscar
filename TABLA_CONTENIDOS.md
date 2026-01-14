@@ -168,7 +168,7 @@
 - OE3 outputs (data/processed/citylearn/)
 - Entrenamiento (outputs/oe3/)
 - §3: Tabla de transformaciones
-- Paso | Input | Proceso | Output 
+- Paso | Input | Proceso | Output
 - 5 transformaciones principales
 - Validación esperada
 - §4: Números clave (consolidados)
@@ -300,7 +300,7 @@
 ### Por Necesidad
 
  Necesidad | Documento | Tiempo |
-| ----------- | ----------- | -------- |
+----------- | ----------- | -------- |
  "¿Qué debo leer?" | GUIA_NAVEGACION | 1 min |
  "Quiero todo" | CONSTRUCCION_DATASET_COMPLETA | 60 min |
  "Dame visual" | DIAGRAMA_TECNICO_OE2_OE3 | 20 min |
@@ -313,7 +313,7 @@
 ### Por Rol
 
  Rol | Documentos | Camino |
-| ----- | ----------- | -------- |
+----- | ----------- | -------- |
  **Desarrollador** | DIAGRAMA → CONSTRUCCION → REFERENCIA | 95 min |
  **DevOps** | REFERENCIA → DIAGRAMA → INDICE | 45 min |
  **Manager** | RESUMEN → ENTREGA → DIAGRAMA | 25 min |
@@ -322,7 +322,7 @@
 ### Por Tiempo
 
  Tiempo | Documentos | Duración Total |
-| -------- | ----------- | ----------------- |
+-------- | ----------- | ----------------- |
  2 min | RESUMEN_FINAL | 2 min |
  5 min | INDICE_VISUAL_DOCUMENTACION | 5 min |
  10 min | ENTREGA_DOCUMENTACION_DATOS | 10 min |
@@ -336,7 +336,7 @@
 ## 📊 ESTADÍSTICAS POR DOCUMENTO
 
  Archivo | Tipo | Palabras | Secciones | Tablas | Código |
-| --------- | ------ | ---------- | ----------- | -------- | -------- |
+--------- | ------ | ---------- | ----------- | -------- | -------- |
  CONSTRUCCION_DATASET_COMPLETA | Técnico | 15,000 | 9 | 10+ | 30+ |
  DIAGRAMA_TECNICO_OE2_OE3 | Técnico | 3,000 | 9 | 5 | 5 |
  REFERENCIA_RAPIDA_DATOS | Referencia | 2,000 | 9 | 8 | 2 |
@@ -347,13 +347,11 @@
  ENTREGA_FINAL | Resumen | 1,500 | 6 | 3 | - |
  RESUMEN_FINAL | Resumen | 800 | 3 | 1 | - |
  DOCUMENTACION_COMPLETADA | Informe | 2,000 | 5 | 3 | - |
-| VERIFICACION_FINAL_ENTREGA | Verificación | 2,000 | 8 | 8 | - |
+ VERIFICACION_FINAL_ENTREGA | Verificación | 2,000 | 8 | 8 | - |
 
-**TOTALES**: 39,300+ palabras, 85+ secciones, 56+ tablas, 37+ ejemplos código 
+**TOTALES**: 39,300+ palabras, 85+ secciones, 56+ tablas, 37+ ejemplos código
 
----
-
-## 🔗 REFERENCIAS CRUZADAS
+---## 🔗 REFERENCIAS CRUZADAS
 
 Cada documento referencia a otros:
 
