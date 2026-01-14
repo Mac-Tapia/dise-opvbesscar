@@ -242,7 +242,7 @@ Lectura: 2-3 minutos
 ## 📊 Estadísticas
 
 | Documento | Palabras | Secciones | Tablas | Diagramas |
- | ----------- | ---------- | ----------- | -------- | ----------- |
+| ----------- | ---------- | ----------- | -------- | ----------- |
 | Respuesta Requerimiento | 1,200 | 6 | 2 | 1 |
 | Arquitectura | 4,500 | 15+ | 5 | 6 |
 | Verificación | 2,200 | 10 | 3 | 3 |

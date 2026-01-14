@@ -249,7 +249,7 @@ oe3:
 ## 📁 Archivos y Ubicaciones
 
 | Archivo | Ubicación | Propósito | Reutilización |
- | --------- | ----------- | ----------- | --------------- |
+| --------- | ----------- | ----------- | --------------- |
 | `simulation_summary.json` | `outputs/oe3/simulations/` | Índice (contiene baseline) | ✅ Automática |
 | `uncontrolled_pv_bess.json` | `outputs/oe3/simulations/` | Baseline Uncontrolled | ✅ Referencia |
 | `sac_final.zip` | `outputs/oe3/checkpoints/sac/` | Checkpoint SAC | ✅ Automática |

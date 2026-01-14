@@ -114,7 +114,7 @@ Sesión 2: python -m scripts.run_oe3_simulate
 ## 📊 Comparación: Baseline vs Agentes RL
 
 | Aspecto | Baseline (Uncontrolled) | Agentes RL (SAC/PPO/A2C) |
- | --------- | ------------------------- | ------------------------- |
+| --------- | ------------------------- | ------------------------- |
 | **Cálculo** | UNA SOLA VEZ | Múltiples veces (si no hay checkpoint) |
 | **Reutilización** | Automática de `simulation_summary.json` | Automática desde checkpoints |
 | **Episodios** | No aplica (determinístico) | Acumulativos desde checkpoint |
@@ -294,7 +294,7 @@ python -m scripts.run_oe3_simulate --config configs/default.yaml
 ## ✅ Conclusión
 
 | Pregunta | Respuesta |
- | ---------- | ----------- |
+| ---------- | ----------- |
 | ¿Baseline se calcula 1 sola vez? | ✅ SÍ - Se reutiliza de `simulation_summary.json` |
 | ¿Agentes RL continúan desde checkpoint? | ✅ SÍ - Cargan desde `*_final.zip` o `*_step_XXXXX.zip` |
 | ¿Se acumulan episodios? | ✅ SÍ - Sesión 2 agrega episodios 6+ a los 5 previos |

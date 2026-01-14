@@ -48,7 +48,7 @@ python -m scripts.train_agents_serial --config configs/default.yaml
 python verify_solar_data.py
 
 # ¿Hay checkpoints SAC guardados?
-ls outputs/oe3/checkpoints/sac/ | grep -E "sac_step|sac_final"
+ls outputs/oe3/checkpoints/sac/| grep -E "sac_step |sac_final"
 
 # Ver últimas métricas de entrenamiento
 tail -20 analyses/oe3/training/sac_training_metrics.csv
@@ -64,7 +64,7 @@ En `analyses/oe3/agent_episode_summary.csv`:
 ## 🔍 Archivos Importantes
 
 | Archivo | Propósito |
- | --------- | ----------- |
+| --------- | ----------- |
 | `EXPLICACION_SOLAR_ZERO.md` | Explicación completa de qué pasó |
 | `DIAGNOSTICO_SOLAR_PIPELINE.md` | Detalles técnicos del pipeline |
 | `verify_solar_data.py` | Validar que datos solares existen |

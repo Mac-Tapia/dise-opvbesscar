@@ -11,7 +11,7 @@
 ## Hechos Verificados
 
 | Aspecto | Valor | Status |
- | -------- | ------- | -------- |
+| -------- | ------- | -------- |
 | OE2 generación solar | 8760 registros × 1927.4 kWh/kWp = 8,024 MWh/año | ✅ |
 | OE3 asignación a CSVs | Building_1.csv solar_generation = 1,927,391.6 W/kW.h | ✅ |
 | SAC recibe datos | obs["solar_generation"] disponible cada timestep | ✅ |
@@ -43,7 +43,7 @@ Después: Métricas correctas, logging trazable, 100% confianza para tesis.
 ## Documentación Disponible
 
 | Documento | Tiempo | Para Quién |
- | ----------- | -------- | ----------- |
+| ----------- | -------- | ----------- |
 | [QUICK_START_POST_SOLAR_FIX.md](QUICK_START_POST_SOLAR_FIX.md) | 5 min | Usuarios |
 | [EXPLICACION_SOLAR_ZERO.md](EXPLICACION_SOLAR_ZERO.md) | 10 min | Entendimiento |
 | [DIAGNOSTICO_SOLAR_PIPELINE.md](DIAGNOSTICO_SOLAR_PIPELINE.md) | 20 min | Desarrolladores |

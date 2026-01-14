@@ -165,7 +165,7 @@ python verify_solar_data.py
 python -m scripts.continue_sac_training --config configs/default.yaml
 
 # 3. Revisar métricas
-cat analyses/oe3/agent_episode_summary.csv | grep solar_kWh
+cat analyses/oe3/agent_episode_summary.csv|grep solar_kWh
 ```text
 
 ### Esta Semana
@@ -233,7 +233,7 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 ## 🔐 Validación de Integridad
 
 | Componente | Validación | Status |
- | ----------- | ----------- | -------- |
+| ----------- | ----------- | -------- |
 | OE2 datos | 8760 registros × 1927.4 kWh/kWp | ✅ |
 | OE3 load | Artifact["solar_generation_citylearn"] | ✅ |
 | Transform | 1927.4 → 1,927,391.6 (factor 1000) | ✅ |
@@ -284,7 +284,7 @@ Ver: [ARQUITECTURA_FLUJO_SOLAR.md](ARQUITECTURA_FLUJO_SOLAR.md)
 ## 📝 Métricas Finales
 
 | Métrica | Valor |
- | --------- | ------- |
+| --------- | ------- |
 | Archivos de documentación creados | 10 |
 | Líneas de documentación | ~4,000 |
 | Archivos de código modificados | 1 |

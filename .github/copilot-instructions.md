@@ -18,7 +18,7 @@ Pipeline científico para diseño de infraestructura de carga inteligente de mot
 
 Secuencia orquestada por [run_pipeline.py](../scripts/run_pipeline.py) ejecutando submódulos con `subprocess.check_call`:
 
-```
+```bash
 run_pipeline.py (usa sys.executable para garantizar Python 3.11)
     ├── run_oe2_solar.py       → Perfil PV anual (pvlib + PVGIS TMY) → data/interim/oe2/solar/
     ├── run_oe2_chargers.py    → 128 perfiles individuales de cargadores → data/interim/oe2/chargers/
@@ -33,7 +33,7 @@ run_pipeline.py (usa sys.executable para garantizar Python 3.11)
 
 ### Flujo de Artefactos y Transformaciones
 
-```
+```text
 OE2 Sizing (dimensionamiento técnico)
 │
 ├─ data/interim/oe2/solar/
@@ -106,7 +106,7 @@ Al agregar nuevas salidas, seguir este patrón: definir `@dataclass(frozen=True)
 Ubicados en `src/iquitos_citylearn/oe3/agents/`. Todos implementan `predict(obs, deterministic) -> action`.
 
 | Agente | Factory | Entrenamiento | Propósito |
-|--------|---------|---------------|-----------|
+| -------- | --------- | --------------- | ----------- |
 | `SAC` | `make_sac(env, cfg)` | `learn(episodes)` | Soft Actor-Critic (principal) |
 | `PPO` | `make_ppo(env, cfg)` | `learn(timesteps)` | Proximal Policy Opt. (stable-baselines3) |
 | `A2C` | `make_a2c(env, cfg)` | `learn(timesteps)` | Advantage Actor-Critic (stable-baselines3) |
@@ -151,7 +151,7 @@ multi_objective_weights:
 ### Distribución de Infraestructura (87.5% / 12.5%)
 
 | Componente | Playa_Motos | Playa_Mototaxis | Total |
-|------------|-------------|-----------------|-------|
+| ------------ | ------------- | ----------------- | ------- |
 | Cargadores | 112 (2 kW) | 16 (3 kW) | 128 |
 | Potencia | 224 kW | 48 kW | 272 kW |
 | PV | 3641.8 kWp | 520.2 kWp | 4162 kWp |
@@ -254,10 +254,10 @@ batch_size: 1024      # Aumentar para utilización de memoria GPU
 **Config actual** (`episodes: 10`) es para **pruebas rápidas/debugging**. Para resultados de producción:
 
 | Agente | Pruebas | Producción | Notas |
-|--------|---------|------------|-------|
-| SAC    | 10 eps  | 50-100 eps | `learn(episodes=N)` |
-| PPO    | 87600 pasos | 438000 pasos | parámetro `timesteps` (5x) |
-| A2C    | 10 eps  | 50 eps | Similar a SAC |
+| -------- | --------- | ------------ | ------- |
+| SAC | 10 eps | 50-100 eps | `learn(episodes=N)` |
+| PPO | 87600 pasos | 438000 pasos | parámetro `timesteps` (5x) |
+| A2C | 10 eps | 50 eps | Similar a SAC |
 
 **Scripts de continuación** (`scripts/continue_<agent>_training.py`): Reanudar entrenamiento interrumpido desde checkpoints.
 
@@ -278,7 +278,7 @@ Endpoints principales:
 
 ## Convenciones de Archivos
 
-- Scripts: `run_<etapa>_<componente>.py` (pipeline principal) | `continue_<agent>_training.py` (reanudación)
+- Scripts: `run_<etapa>_<componente>.py` (pipeline principal)|`continue_<agent>_training.py` (reanudación)
 - Salidas: `*_results.json` (resumen) + `*_timeseries.csv` (horario)
 - Reportes: Siempre versiones duales `.csv` + `.md`
 - Logs de entrenamiento: `analyses/oe3/training/<AGENT>_training_metrics.csv`

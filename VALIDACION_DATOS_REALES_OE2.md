@@ -37,23 +37,23 @@ Registros = 0:  4,293 (49.03%) → Noches
 ### Generación por Hora del Día (Media Anual)
 
 ```text
-Hora | Generación (kWh/kWp) | Interpretación
- | ------- | ---------------------- | --------------------------- |
-0-9  | 0.000000             | NOCHE (sin generación)
-10   | 0.002700             | Amanecer
-11   | 0.098376             | Mañana (7% del pico)
-12   | 0.334798             | Mediodía (48% del pico)
-13   | 0.537198             | Tarde temprano
-14   | 0.619322             | Tarde (89% del pico)
-15   | 0.648275             | Tarde-2 (93% del pico)
-16   | 0.658933             | PICO (93% del máximo)
-17   | 0.657029             | Tarde-3
-18   | 0.631210             | Atardecer
-19   | 0.556773             | Atardecer-2
-20   | 0.368686             | Crepúsculo (53%)
-21   | 0.149694             | Anochecer (22%)
-22   | 0.017531             | Casi noche
-23   | 0.000000             | NOCHE (sin generación)
+Hora| Generación (kWh/kWp) |Interpretación
+| ------- | ---------------------- | --------------------------- |
+0-9| 0.000000 |NOCHE (sin generación)
+10| 0.002700 |Amanecer
+11| 0.098376 |Mañana (7% del pico)
+12| 0.334798 |Mediodía (48% del pico)
+13| 0.537198 |Tarde temprano
+14| 0.619322 |Tarde (89% del pico)
+15| 0.648275 |Tarde-2 (93% del pico)
+16| 0.658933 |PICO (93% del máximo)
+17| 0.657029 |Tarde-3
+18| 0.631210 |Atardecer
+19| 0.556773 |Atardecer-2
+20| 0.368686 |Crepúsculo (53%)
+21| 0.149694 |Anochecer (22%)
+22| 0.017531 |Casi noche
+23| 0.000000 |NOCHE (sin generación)
 ```text
 
 **PATRÓN REALISTA**:
@@ -200,7 +200,7 @@ Verificación (Performance Ratio):
 ## 🎯 RESUMEN: VALIDACIÓN COMPLETA
 
 | Aspecto | Evidencia | Status |
- | --------- | ----------- | -------- |
+| --------- | ----------- | -------- |
 | **Datos REALES** | Patrón diurno realista, no ceros | ✅ CONFIRMADO |
 | **Origen pvlib** | Archivo pvlib con irradiancia | ✅ CONFIRMADO |
 | **Un edificio** | Un archivo, un sitio, un año | ✅ CONFIRMADO |

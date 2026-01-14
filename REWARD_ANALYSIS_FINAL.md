@@ -11,16 +11,16 @@
 ### Observación en Logs (Stepwise)
 
 ```text
-paso 100  | reward_avg=0.5940
-paso 200  | reward_avg=0.5940
-paso 300  | reward_avg=0.5940
-paso 400  | reward_avg=0.5970
-paso 500  | reward_avg=0.6000
-paso 600  | reward_avg=0.6000
-paso 700  | reward_avg=0.6000
+paso 100|reward_avg=0.5940
+paso 200|reward_avg=0.5940
+paso 300|reward_avg=0.5940
+paso 400|reward_avg=0.5970
+paso 500|reward_avg=0.6000
+paso 600|reward_avg=0.6000
+paso 700|reward_avg=0.6000
 ...
-paso 6100 | reward_avg=0.5970
-paso 6200 | reward_avg=0.5940
+paso 6100|reward_avg=0.5970
+paso 6200|reward_avg=0.5940
 ```text
 
 **Rango observado:** 0.5910 a 0.6000 (variación mínima)
@@ -29,7 +29,7 @@ paso 6200 | reward_avg=0.5940
 ### Resultados Finales en simulation_summary.json
 
 | Métrica | Baseline (Grid-only) | SAC (con PV+BESS) | Mejora |
- | --------- | ---------------------- | ------------------- | -------- |
+| --------- | ---------------------- | ------------------- | -------- |
 | **CO₂ anual** | 11,282,201 kg | 7,547,022 kg | **-33.1%** ✅ |
 | **Importación red** | 24,955,100 kWh | 16,693,258 kWh | -33.1% ✅ |
 | **Carga EV optimizada** | 217,320 kWh | 6,285 kWh | -97.1% ✅ |
@@ -86,13 +86,13 @@ Esto es **completamente normal** en RL determinístico:
 ### Métrica 1: Actor Loss Disminuye (Optimización Activa)
 
 ```text
-paso 100   | actor_loss=-141.16
-paso 500   | actor_loss=-568.16
-paso 1000  | actor_loss=-1320.69
-paso 2000  | actor_loss=-2650.43
-paso 4000  | actor_loss=-5915.40
-paso 6000  | actor_loss=-10237.03
-paso 6200  | actor_loss=-10611.11
+paso 100|actor_loss=-141.16
+paso 500|actor_loss=-568.16
+paso 1000|actor_loss=-1320.69
+paso 2000|actor_loss=-2650.43
+paso 4000|actor_loss=-5915.40
+paso 6000|actor_loss=-10237.03
+paso 6200|actor_loss=-10611.11
 ```text
 
 **Tendencia:** Baja significativa (-141 → -10611) = **Actor está mejorando**
@@ -100,15 +100,15 @@ paso 6200  | actor_loss=-10611.11
 ### Métrica 2: Entropy Disminuye (Exploración → Explotación)
 
 ```text
-paso 100   | ent_coef=0.9882
-paso 500   | ent_coef=0.9541
-paso 1000  | ent_coef=0.9004
-paso 2000  | ent_coef=0.8033
-paso 3000  | ent_coef=0.7191
-paso 4000  | ent_coef=0.6540
-paso 5000  | ent_coef=0.5914
-paso 6000  | ent_coef=0.5422
-paso 6200  | ent_coef=0.5334
+paso 100|ent_coef=0.9882
+paso 500|ent_coef=0.9541
+paso 1000|ent_coef=0.9004
+paso 2000|ent_coef=0.8033
+paso 3000|ent_coef=0.7191
+paso 4000|ent_coef=0.6540
+paso 5000|ent_coef=0.5914
+paso 6000|ent_coef=0.5422
+paso 6200|ent_coef=0.5334
 ```text
 
 **Tendencia:** Disminuye (0.99 → 0.53) = **Agente pasa de explorar a explotar**
@@ -116,12 +116,12 @@ paso 6200  | ent_coef=0.5334
 ### Métrica 3: Critic Loss Fluctúa (Normal)
 
 ```text
-paso 100   | critic_loss=2273.06
-paso 500   | critic_loss=763.16
-paso 1000  | critic_loss=1934.39
-paso 2000  | critic_loss=6151.86
-paso 6000  | critic_loss=173846.51
-paso 6200  | critic_loss=80456.91
+paso 100|critic_loss=2273.06
+paso 500|critic_loss=763.16
+paso 1000|critic_loss=1934.39
+paso 2000|critic_loss=6151.86
+paso 6000|critic_loss=173846.51
+paso 6200|critic_loss=80456.91
 ```text
 
 **Comportamiento:** Fluctuación normal = **Crítico está refinando estimaciones**
@@ -236,7 +236,7 @@ Resultado final: Promedio sube (0.65 → 0.75 → 0.82)
 ## 7. Conclusión: COMPORTAMIENTO CORRECTO ✓
 
 | Aspecto | Observación | Conclusión |
- | --------- | ------------- | ----------- |
+| --------- | ------------- | ----------- |
 | **reward_avg constante** | 0.5910-0.6000 | ✓ Normal en RL determinístico |
 | **Actor loss bajando** | -141 → -10611 | ✓ Agente optimizando |
 | **Entropy decreciente** | 0.99 → 0.53 | ✓ Convergencia esperada |

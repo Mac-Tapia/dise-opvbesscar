@@ -78,7 +78,7 @@ BESS: 2000 kWh (compartido entre playas)
 ## 📊 Tabla de Validación
 
 | Aspecto | Implementado | Verificado | Archivo |
- | --------- | ------------- | ----------- | --------- |
+| --------- | ------------- | ----------- | --------- |
 | **1 Edificio** | ✅ | ✅ | schema.json |
 | **2 Playas** | ✅ | ✅ | 128 chargers CSV |
 | **PV 4162 kWp** | ✅ | ✅ | schema.json |
@@ -92,7 +92,7 @@ BESS: 2000 kWh (compartido entre playas)
 ## 📁 Documentación Creada
 
 | Documento | Propósito | Estado |
- | ----------- | ---------- | -------- |
+| ----------- | ---------- | -------- |
 | [ARQUITECTURA_UN_EDIFICIO_DOS_PLAYAS.md](ARQUITECTURA_UN_EDIFICIO_DOS_PLAYAS.md) | Arquitectura técnica completa | ✅ |
 | [VERIFICACION_UN_EDIFICIO_DOS_PLAYAS.md](VERIFICACION_UN_EDIFICIO_DOS_PLAYAS.md) | Verificación y checklists | ✅ |
 | [ENTREGA_FINAL_VALIDACION_OE2.md](ENTREGA_FINAL_VALIDACION_OE2.md) | Validación datos solares | ✅ |

@@ -1,16 +1,69 @@
 # DISEÑO DE INFRAESTRUCTURA DE CARGA INTELIGENTE DE MOTOS Y MOTOTAXIS ELÉCTRICAS PARA REDUCIR LAS EMISIONES DE DIÓXIDO DE CARBONO EN LA CIUDAD DE IQUITOS, 2025
 
-## 🔔 Actualización: Pipeline Solar OE2→OE3 Verificado ✅
+## 🔔 Actualización: Documentación Exhaustiva + Entrenamiento RL (14 Enero 2026)
 
-**Estado**: El pipeline de datos solares OE2→OE3 está 100% funcional.
+**Estado**: ✅ Documentación 100% completa|🔄 Entrenamiento en curso
 
-- ✅ OE2 genera: 1927.4 kWh/kWp anual (8.04 GWh con 4162 kWp)
-- ✅ OE3 asigna: Datos correctos a Building_*.csv (solar_generation > 0)
-- ✅ SAC recibe: Señal solar en rewards multiobjetivo (peso 0.20)
+---
 
-Para details ver: [`EXPLICACION_SOLAR_ZERO.md`](EXPLICACION_SOLAR_ZERO.md), [`DIAGNOSTICO_SOLAR_PIPELINE.md`](DIAGNOSTICO_SOLAR_PIPELINE.md)
+## 📖 **DOCUMENTACIÓN COMPLETA (39,300+ PALABRAS)**
 
-**Próximo paso**: `python -m scripts.continue_sac_training` para re-entrenar con logging mejorado.
+### 🎯 **¿POR DÓNDE EMPEZAR?**
+
+**Tengo 1 minuto:** [`GUIA_NAVEGACION.md`](GUIA_NAVEGACION.md) - Te dice qué documento leer  
+**Tengo 5 minutos:** [`TABLA_CONTENIDOS.md`](TABLA_CONTENIDOS.md) - Tabla completa de todos los documentos  
+**Quiero todo:** [`CONSTRUCCION_DATASET_COMPLETA.md`](docs/CONSTRUCCION_DATASET_COMPLETA.md) - Guía técnica (60 min)
+
+### 📚 ACCESO RÁPIDO POR NECESIDAD
+
+| Necesidad | Documento | Tiempo |
+| --------- | --------- | ------ |
+| 🏃 **Ultra-conciso** | [`RESUMEN_FINAL.md`](RESUMEN_FINAL.md) | 2 min |
+| 📊 **Ver diagrama** | [`DIAGRAMA_TECNICO_OE2_OE3.md`](docs/DIAGRAMA_TECNICO_OE2_OE3.md) | 20 min |
+| 📖 **Aprender TODO** | [`CONSTRUCCION_DATASET_COMPLETA.md`](docs/CONSTRUCCION_DATASET_COMPLETA.md) | 60 min |
+| 🔢 **Números + comandos** | [`REFERENCIA_RAPIDA_DATOS.md`](docs/REFERENCIA_RAPIDA_DATOS.md) | 10 min |
+| 🧭 **Navegación** | [`INDICE_DOCUMENTACION_DATOS.md`](docs/INDICE_DOCUMENTACION_DATOS.md) | 15 min |
+| ✅ **Checklist formal** | [`ENTREGA_DOCUMENTACION_DATOS.md`](ENTREGA_DOCUMENTACION_DATOS.md) | 10 min |
+| 🗺️ **Mapa visual** | [`INDICE_VISUAL_DOCUMENTACION.md`](INDICE_VISUAL_DOCUMENTACION.md) | 5 min |
+
+### 📌 DOCUMENTOS DISPONIBLES
+
+**Navegación** (comienza aquí):
+
+- [`GUIA_NAVEGACION.md`](GUIA_NAVEGACION.md) - Decidir qué leer (1 min)
+- [`TABLA_CONTENIDOS.md`](TABLA_CONTENIDOS.md) - Tabla completa (5 min)
+- [`INDICE_VISUAL_DOCUMENTACION.md`](INDICE_VISUAL_DOCUMENTACION.md) - Mapa visual (5 min)
+
+**Técnicos** (aprende aquí):
+
+- [`docs/CONSTRUCCION_DATASET_COMPLETA.md`](docs/CONSTRUCCION_DATASET_COMPLETA.md) - TODO (15,000 palabras)
+- [`docs/DIAGRAMA_TECNICO_OE2_OE3.md`](docs/DIAGRAMA_TECNICO_OE2_OE3.md) - Flujos visuales
+- [`docs/REFERENCIA_RAPIDA_DATOS.md`](docs/REFERENCIA_RAPIDA_DATOS.md) - Números + comandos
+- [`docs/INDICE_DOCUMENTACION_DATOS.md`](docs/INDICE_DOCUMENTACION_DATOS.md) - Búsqueda
+
+**Resúmenes** (visión general):
+
+- [`ENTREGA_FINAL.md`](ENTREGA_FINAL.md) - Ejecutivo
+- [`ENTREGA_DOCUMENTACION_DATOS.md`](ENTREGA_DOCUMENTACION_DATOS.md) - Formal
+- [`RESUMEN_FINAL.md`](RESUMEN_FINAL.md) - Ultra-conciso (2 min)
+
+---
+
+### 🎯 Relanzamiento Completo - Nuevos Datos PV (14 Enero 2026)
+
+- ✅ OE2 Solar: 8.042 GWh/año (4162 kWp) - **NUEVOS DATOS**
+- ✅ OE2 Chargers: 128 perfiles (112 motos + 16 mototaxis)
+- ✅ OE2 BESS: 2000 kWh / 1200 kW (fijo)
+- ✅ OE3 Dataset: Construcción completada (128 chargers + 2 schemas)
+- 🔄 OE3 Training: SAC, PPO, A2C **entrenando desde cero** (sin checkpoints previos)
+
+### 🚀 Monitoreo Entrenamiento
+
+```bash
+python monitor_checkpoints.py  # Ver progreso en vivo (actualiza cada 5s)
+```
+
+**Status**: Uncontrolled ✅| SAC 🔄 | PPO ⏳ |A2C ⏳
 
 ---
 
@@ -59,16 +112,18 @@ python -m venv .venv
 # Linux/Mac: source .venv/bin/activate
 pip install -r requirements.txt
 pip install -e .
+```
 
 Activar la venv antes de ejecutar el pipeline (para asegurar Python 3.11).
-```text
+
 ---
 
-## 2) Ejecutar el pipeline completo
+## 2️⃣ Ejecutar el pipeline completo
 
 ```bash
 python -m scripts.run_pipeline --config configs/default.yaml
-```text
+```
+
 Salida principal:
 
 - OE2 artefactos: `data/interim/oe2/...`
@@ -84,7 +139,7 @@ Salida principal:
 Se ejecutó diagnóstico completo del pipeline de datos solares. Ver:
 
 | Documento | Lectura | Contenido |
- | ----------- | --------- | ---------- |
+| --------- | ------- | --------- |
 | [RESUMEN_EJECUTIVO_SOLAR.md](RESUMEN_EJECUTIVO_SOLAR.md) | ⚡ 3 min | Resumen ejectuvo del diagnóstico |
 | [QUICK_START_POST_SOLAR_FIX.md](QUICK_START_POST_SOLAR_FIX.md) | ⚡ 5 min | Qué hacer ahora (re-entrenamiento) |
 | [EXPLICACION_SOLAR_ZERO.md](EXPLICACION_SOLAR_ZERO.md) | 📖 10 min | Por qué SAC mostraba 0.0 kWh solar |
@@ -101,7 +156,8 @@ Se ejecutó diagnóstico completo del pipeline de datos solares. Ver:
 python verify_solar_data.py
 
 # Salida esperada: "RESULTADO: ✅ TODOS LOS DATOS SOLARES SON VÁLIDOS"
-```text
+```
+
 ### Estado del Pipeline
 
 - ✅ OE2 genera datos solares: 1927.4 kWh/kWp anual
@@ -111,13 +167,7 @@ python verify_solar_data.py
 
 ---
 
-- Dataset CityLearn generado: `data/processed/citylearn/<name>/`
-- Simulaciones OE3: `outputs/oe3/simulations/`
-- Tablas comparativas OE3: `analyses/oe3/co2_comparison_table.csv` y `analyses/oe3/co2_comparison_table.md`
-
----
-
-## 3) Ejecutar por etapas
+## 3️⃣ Ejecutar por etapas
 
 ### OE2
 
@@ -125,17 +175,19 @@ python verify_solar_data.py
 python -m scripts.run_oe2_solar --config configs/default.yaml
 python -m scripts.run_oe2_chargers --config configs/default.yaml
 python -m scripts.run_oe2_bess --config configs/default.yaml
-```text
+```
+
 ### OE3
 
 ```bash
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 python -m scripts.run_oe3_simulate --config configs/default.yaml
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
-```text
+```
+
 ---
 
-## 4) Notas operativas
+## 4️⃣ Notas operativas
 
 - **CityLearn dataset plantilla con EV**: se descarga automáticamente usando `citylearn.data.DataSet.get_dataset(...)` y luego se sobreescribe con perfiles OE2.
 - Se generan dos esquemas con **2 buildings separados** para la comparación de emisiones:
@@ -148,7 +200,7 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 
 ---
 
-## 5) Configuración
+## 5️⃣ Configuración
 
 Ajusta parámetros en `configs/default.yaml`:
 
@@ -190,7 +242,7 @@ Para definir las coordenadas y condiciones técnicas de la infraestructura, se p
 Se consigna a continuación la Tabla 10 como referencia de las ubicaciones evaluadas:
 
 | Ítem | Lugar | Área techada (m²) | Distancia MT (m) | Distancia SET (m) | Motos/Mototaxis estacionados | Tiempo estacionamiento (h) |
- | ------- | ------- | ------------------- | ------------------ | ------------------- | ------------------------------ | ---------------------------- |
+| ------- | ------- | ------------------- | ------------------ | ------------------- | ------------------------------ | ---------------------------- |
 | 1 | Empresa Electro Oriente S.A. | 14,000 | 40 | 40 | 200 | 4 |
 | 2 | Complejo deportivo Champios | 8,000 | 40 | 1,300 | 300 | 4 |
 | 3 | Aeropuerto de Iquitos | 6,000 | 500 | 4,400 | 400 | 2 |
