@@ -104,18 +104,18 @@ oe3:
     resume_checkpoints: true
     multi_objective_priority: co2_focus
     sac:
-      episodes: 10
+      episodes: 2
       resume_checkpoints: true
       deterministic_eval: true
       device: cuda
       batch_size: 4096
       buffer_size: 500000
       gradient_steps: 4
-      learning_starts: 1000
+      learning_starts: 500
       train_freq: 1
-      log_interval: 200
+      log_interval: 100
       use_amp: true
-      checkpoint_freq_steps: 1000
+      checkpoint_freq_steps: 500
       progress_interval_episodes: 1
       save_final: true
       prefer_citylearn: false
@@ -127,15 +127,15 @@ oe3:
         ev: 0.1
         grid: 0.05
     ppo:
-      episodes: 10
+      episodes: 2
       resume_checkpoints: true
-      timesteps: 87600
-      n_steps: 4096
-      batch_size: 512
-      n_epochs: 10
+      timesteps: 7008
+      n_steps: 8192
+      batch_size: 2048
+      n_epochs: 3
       use_amp: true
-      log_interval: 500
-      checkpoint_freq_steps: 1000
+      log_interval: 250
+      checkpoint_freq_steps: 500
       progress_interval_episodes: 1
       save_final: true
       device: cuda
@@ -149,16 +149,16 @@ oe3:
         ev: 0.1
         grid: 0.05
     a2c:
-      episodes: 10
+      episodes: 2
       resume_checkpoints: true
-      timesteps: 87600
-      n_steps: 2048
+      timesteps: 7008
+      n_steps: 4096
       learning_rate: 0.0007
       entropy_coef: 0.01
       vf_coef: 0.5
       max_grad_norm: 0.5
-      log_interval: 500
-      checkpoint_freq_steps: 1000
+      log_interval: 250
+      checkpoint_freq_steps: 500
       progress_interval_episodes: 1
       save_final: true
       device: cuda
