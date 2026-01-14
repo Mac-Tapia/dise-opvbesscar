@@ -492,13 +492,17 @@ class PPOAgent:
                         env = env.unwrapped
                     if hasattr(env, 'buildings'):
                         for b in env.buildings:
+                            # Acumular consumo neto de la red (positivo = consumo, negativo = exportación)
                             if hasattr(b, 'net_electricity_consumption') and b.net_electricity_consumption:
                                 last_consumption = b.net_electricity_consumption[-1] if b.net_electricity_consumption else 0
-                                if last_consumption > 0:
-                                    self.grid_energy_sum += last_consumption
+                                # Acumular valor absoluto para contabilizar importación desde red
+                                if last_consumption != 0:  # FIJO: Ahora acumula tanto + como -
+                                    self.grid_energy_sum += abs(last_consumption)
+                            # Acumular generación solar
                             if hasattr(b, 'solar_generation') and b.solar_generation:
                                 last_solar = b.solar_generation[-1] if b.solar_generation else 0
-                                self.solar_energy_sum += abs(last_solar)
+                                if last_solar != 0:  # FIJO: Acumula valores no-cero
+                                    self.solar_energy_sum += abs(last_solar)
                 except Exception:
                     pass
                 
