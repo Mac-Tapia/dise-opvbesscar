@@ -227,36 +227,28 @@ def build_citylearn_dataset(
     if electric_vehicles_def:
         logger.info(f"Preservando {len(electric_vehicles_def)} definiciones de EVs del template")
 
-    # === CREAR 2 BUILDINGS: Playa_Motos y Playa_Mototaxis ===
-    # Cada playa tiene su propia infraestructura de carga
+    # === UN SOLO BUILDING: Mall_Iquitos (unifica ambas playas de estacionamiento) ===
+    # Arquitectura: 1 edificio Mall con 2 áreas de estacionamiento (motos + mototaxis)
+    # Todos los 128 chargers, PV y BESS se gestionan como una única unidad
     bname_template, b_template = _find_first_building(schema)
     
-    # Crear building para Playa de Motos
-    b_motos = json.loads(json.dumps(b_template))
-    b_motos["name"] = "Playa_Motos"
-    if isinstance(b_motos.get("electric_vehicle_storage"), dict):
-        b_motos["electric_vehicle_storage"]["active"] = True
+    # Crear building unificado para el Mall
+    b_mall = json.loads(json.dumps(b_template))
+    b_mall["name"] = "Mall_Iquitos"
+    if isinstance(b_mall.get("electric_vehicle_storage"), dict):
+        b_mall["electric_vehicle_storage"]["active"] = True
     else:
-        b_motos["electric_vehicle_storage"] = {"active": True}
+        b_mall["electric_vehicle_storage"] = {"active": True}
     
-    # Crear building para Playa de Mototaxis
-    b_mototaxis = json.loads(json.dumps(b_template))
-    b_mototaxis["name"] = "Playa_Mototaxis"
-    if isinstance(b_mototaxis.get("electric_vehicle_storage"), dict):
-        b_mototaxis["electric_vehicle_storage"]["active"] = True
-    else:
-        b_mototaxis["electric_vehicle_storage"] = {"active": True}
-    
-    # Configurar schema con ambos buildings
+    # Configurar schema con UN SOLO building
     schema["buildings"] = {
-        "Playa_Motos": b_motos,
-        "Playa_Mototaxis": b_mototaxis,
+        "Mall_Iquitos": b_mall,
     }
-    logger.info("Creados 2 buildings separados: Playa_Motos y Playa_Mototaxis")
+    logger.info("Creado building unificado: Mall_Iquitos (128 chargers, 4162 kWp PV, 2000 kWh BESS)")
     
-    # Referencia al primer building para compatibilidad (se usará para PV/BESS compartido)
-    b = b_motos
-    bname = "Playa_Motos"
+    # Referencia al building único
+    b = b_mall
+    bname = "Mall_Iquitos"
     
     # Asegurar que electric_vehicles_def se mantiene en el schema
     if electric_vehicles_def:
@@ -286,65 +278,57 @@ def build_citylearn_dataset(
         bess_pow = float(bess_params.get("electrical_storage", {}).get("nominal_power", 0.0))
         logger.info(f"Usando parametros BESS de OE2 (schema): {bess_cap} kWh, {bess_pow} kW")
 
-    # === ACTUALIZAR PV Y BESS EN AMBOS BUILDINGS ===
-    # El sistema PV+BESS es compartido entre ambas playas
+    # === ACTUALIZAR PV Y BESS EN EL BUILDING UNIFICADO ===
+    # Todo el sistema PV+BESS se asigna al único building Mall_Iquitos
     for building_name, building in schema["buildings"].items():
-        # Actualizar/Crear PV - SIEMPRE crear si no existe y tenemos potencia > 0
+        # Actualizar/Crear PV - TODO el sistema solar al building único
         if pv_dc_kw > 0:
-            # Distribuir PV proporcionalmente: 87.5% motos (112/128), 12.5% mototaxis (16/128)
-            pv_share = 0.875 if building_name == "Playa_Motos" else 0.125
-            building_pv_kw = pv_dc_kw * pv_share
-            
             if not isinstance(building.get("pv"), dict):
                 # Crear configuración PV desde cero
                 building["pv"] = {
                     "type": "citylearn.energy_model.PV",
                     "autosize": False,
-                    "nominal_power": building_pv_kw,
+                    "nominal_power": pv_dc_kw,
                     "attributes": {
-                        "nominal_power": building_pv_kw,
+                        "nominal_power": pv_dc_kw,
                     }
                 }
-                logger.info(f"{building_name}: CREADO pv con nominal_power = {building_pv_kw:.1f} kWp")
+                logger.info(f"{building_name}: CREADO pv con nominal_power = {pv_dc_kw:.1f} kWp")
             else:
                 # Actualizar existente
-                building["pv"]["nominal_power"] = building_pv_kw
+                building["pv"]["nominal_power"] = pv_dc_kw
                 if isinstance(building["pv"].get("attributes"), dict):
-                    building["pv"]["attributes"]["nominal_power"] = building_pv_kw
+                    building["pv"]["attributes"]["nominal_power"] = pv_dc_kw
                 else:
-                    building["pv"]["attributes"] = {"nominal_power": building_pv_kw}
-                logger.info(f"{building_name}: Actualizado pv.nominal_power = {building_pv_kw:.1f} kWp")
+                    building["pv"]["attributes"] = {"nominal_power": pv_dc_kw}
+                logger.info(f"{building_name}: Actualizado pv.nominal_power = {pv_dc_kw:.1f} kWp")
         
         if isinstance(building.get("photovoltaic"), dict):
             if isinstance(building["photovoltaic"].get("attributes"), dict):
-                building["photovoltaic"]["attributes"]["nominal_power"] = building_pv_kw
-            building["photovoltaic"]["nominal_power"] = building_pv_kw
+                building["photovoltaic"]["attributes"]["nominal_power"] = pv_dc_kw
+            building["photovoltaic"]["nominal_power"] = pv_dc_kw
         
-        # Actualizar BESS - Distribuir proporcionalmente entre playas
+        # Actualizar BESS - TODO el sistema de almacenamiento al building único
         if bess_cap is not None and bess_cap > 0:
-            bess_share = 0.875 if building_name == "Playa_Motos" else 0.125
-            building_bess_cap = bess_cap * bess_share
-            building_bess_pow = bess_pow * bess_share if bess_pow else None
-            
             if not isinstance(building.get("electrical_storage"), dict):
                 building["electrical_storage"] = {
                     "type": "citylearn.energy_model.Battery",
                     "autosize": False,
-                    "capacity": building_bess_cap,
-                    "attributes": {"capacity": building_bess_cap}
+                    "capacity": bess_cap,
+                    "attributes": {"capacity": bess_cap}
                 }
             else:
-                building["electrical_storage"]["capacity"] = building_bess_cap
-                if building_bess_pow is not None:
-                    building["electrical_storage"]["nominal_power"] = building_bess_pow
+                building["electrical_storage"]["capacity"] = bess_cap
+                if bess_pow is not None:
+                    building["electrical_storage"]["nominal_power"] = bess_pow
                 if isinstance(building["electrical_storage"].get("attributes"), dict):
-                    building["electrical_storage"]["attributes"]["capacity"] = building_bess_cap
-                    if building_bess_pow is not None:
-                        building["electrical_storage"]["attributes"]["nominal_power"] = building_bess_pow
-            logger.info(f"{building_name}: BESS {building_bess_cap:.1f} kWh, {building_bess_pow:.1f} kW")
+                    building["electrical_storage"]["attributes"]["capacity"] = bess_cap
+                    if bess_pow is not None:
+                        building["electrical_storage"]["attributes"]["nominal_power"] = bess_pow
+            logger.info(f"{building_name}: BESS {bess_cap:.1f} kWh, {bess_pow:.1f} kW")
 
     # === CREAR CHARGERS DESDE OE2 (usando chargers_citylearn per-toma) ===
-    # Distribuir chargers entre Playa_Motos y Playa_Mototaxis
+    # Todos los 128 chargers van al building unificado Mall_Iquitos
     if "chargers_results" in artifacts:
         chargers_cfg = artifacts["chargers_results"]
         citylearn_path = chargers_cfg.get("chargers_citylearn_path")
@@ -391,9 +375,12 @@ def build_citylearn_dataset(
             if existing_chargers:
                 charger_template = list(existing_chargers.values())[0]
 
-            # === SEPARAR CHARGERS POR TIPO: MOTO vs MOTOTAXI ===
-            chargers_motos: Dict[str, Any] = {}
-            chargers_mototaxis: Dict[str, Any] = {}
+            # === TODOS LOS CHARGERS VAN AL BUILDING UNIFICADO ===
+            all_chargers: Dict[str, Any] = {}
+            n_motos = 0
+            n_mototaxis = 0
+            power_motos = 0.0
+            power_mototaxis = 0.0
             
             for idx, row in chargers_df.iterrows():
                 charger_name = str(row.get("charger_id", f"charger_mall_{idx+1}"))
@@ -430,30 +417,23 @@ def build_citylearn_dataset(
                     new_charger["max_charging_power"] = power_kw * sockets
                     new_charger["num_sockets"] = sockets
 
-                # Clasificar por tipo: MOTO (2kW) vs MOTOTAXI (3kW)
-                # Los chargers MOTO tienen nombres como MOTO_CH_* y power_kw=2.0
-                # Los chargers MOTOTAXI tienen nombres como MOTO_TAXI_CH_* y power_kw=3.0
+                # Agregar a la lista unificada y contar por tipo
+                all_chargers[charger_name] = new_charger
                 if "TAXI" in charger_name.upper() or power_kw >= 2.5:
-                    chargers_mototaxis[charger_name] = new_charger
+                    n_mototaxis += 1
+                    power_mototaxis += power_kw * sockets
                 else:
-                    chargers_motos[charger_name] = new_charger
+                    n_motos += 1
+                    power_motos += power_kw * sockets
 
-            # Asignar chargers a cada building
-            b_motos = schema["buildings"]["Playa_Motos"]
-            b_mototaxis = schema["buildings"]["Playa_Mototaxis"]
-            
-            b_motos["chargers"] = chargers_motos
-            b_mototaxis["chargers"] = chargers_mototaxis
+            # Asignar TODOS los chargers al building unificado Mall_Iquitos
+            b_mall = schema["buildings"]["Mall_Iquitos"]
+            b_mall["chargers"] = all_chargers
             
             # MANTENER EVs ACTIVOS - Son el core del proyecto
-            # Los chargers están correctamente configurados con datos válidos (sin NaN)
-
-            power_motos = sum(c.get("attributes", {}).get("nominal_power", 0) for c in chargers_motos.values())
-            power_mototaxis = sum(c.get("attributes", {}).get("nominal_power", 0) for c in chargers_mototaxis.values())
-            
-            logger.info(f"Playa_Motos: {len(chargers_motos)} chargers, {power_motos:.1f} kW")
-            logger.info(f"Playa_Mototaxis: {len(chargers_mototaxis)} chargers, {power_mototaxis:.1f} kW")
-            logger.info(f"Total: {total_devices} chargers, {power_motos + power_mototaxis:.1f} kW")
+            total_power = power_motos + power_mototaxis
+            logger.info(f"Mall_Iquitos: {n_motos} motos ({power_motos:.1f} kW) + {n_mototaxis} mototaxis ({power_mototaxis:.1f} kW)")
+            logger.info(f"Total: {total_devices} chargers, {total_power:.1f} kW en building unificado")
         else:
             logger.warning("No se pudo leer chargers_citylearn.csv; se mantiene la configuración existente.")
 
@@ -490,7 +470,11 @@ def build_citylearn_dataset(
         raise FileNotFoundError("Could not locate energy_simulation CSV in template dataset.")
 
     df_energy = pd.read_csv(energy_path)
-    n = len(df_energy)
+    logger.info(f"[DEBUG] energy_simulation path: {energy_path}, shape: {df_energy.shape}")
+    # Truncar a 8760 timesteps (365 días * 24 horas = 1 año de datos horarios)
+    # El template original puede tener múltiples observaciones por hora
+    n = min(len(df_energy), 8760)
+    df_energy = df_energy.iloc[:n].reset_index(drop=True)
 
     # Build mall load and PV generation series for length n
     # Usar datos de CityLearn preparados si existen
@@ -575,7 +559,8 @@ def build_citylearn_dataset(
         solar_gen = artifacts["solar_generation_citylearn"]
         if 'solar_generation' in solar_gen.columns:
             pv_per_kwp = solar_gen['solar_generation'].values
-            logger.info(f"Usando solar_generation preparado: {len(pv_per_kwp)} registros")
+            logger.info(f"[PV] Usando solar_generation preparado: {len(pv_per_kwp)} registros")
+            logger.info(f"   Min: {pv_per_kwp.min():.6f}, Max: {pv_per_kwp.max():.6f}, Mean: {pv_per_kwp.mean():.6f}, Sum: {pv_per_kwp.sum():.1f}")
     
     if pv_per_kwp is None and "solar_ts" in artifacts:
         solar_ts = artifacts["solar_ts"]
@@ -589,18 +574,22 @@ def build_citylearn_dataset(
                 if len(pv_per_kwp) > n:
                     ratio = len(pv_per_kwp) // n
                     pv_per_kwp = np.array([pv_per_kwp[i*ratio:(i+1)*ratio].sum() for i in range(n)])
-                logger.info(f"Usando solar_ts [{col}]: {len(pv_per_kwp)} registros")
+                logger.info(f"✅ [PV] Usando solar_ts [{col}]: {len(pv_per_kwp)} registros")
+                logger.info(f"   Min: {pv_per_kwp.min():.6f}, Max: {pv_per_kwp.max():.6f}, Mean: {pv_per_kwp.mean():.6f}, Sum: {pv_per_kwp.sum():.1f}")
                 break
     
     if pv_per_kwp is None or len(pv_per_kwp) < n:
         # fallback: repeat mean 24h from template solar column if it exists
         pv_per_kwp = np.zeros(n, dtype=float)
-        logger.warning("No se encontraron datos solares de OE2, usando ceros")
+        logger.warning("[PV] No se encontraron datos solares de OE2, usando ceros")
 
     pv_per_kwp = pv_per_kwp[:n]
+    logger.info(f"[PV] ANTES transformación: {len(pv_per_kwp)} registros, suma={pv_per_kwp.sum():.1f}")
+    
     # CityLearn expects inverter AC power per kW in W/kW.
     if dt_hours > 0:
         pv_per_kwp = pv_per_kwp / dt_hours * 1000.0
+        logger.info(f"[PV] DESPUES transformación (dt_hours={dt_hours}): suma={pv_per_kwp.sum():.1f}")
 
     # Identify columns to overwrite in energy_simulation (template-dependent names)
     def find_col(regex_list: List[str]) -> Optional[str]:
@@ -616,12 +605,16 @@ def build_citylearn_dataset(
     if load_col is None:
         raise ValueError("Template energy_simulation file does not include a non_shiftable_load-like column.")
     df_energy[load_col] = mall_series
+    logger.info(f"[ENERGY] Asignada carga: {load_col} = {mall_series.sum():.1f} kWh")
 
     if solar_col is not None:
         df_energy[solar_col] = pv_per_kwp
+        logger.info(f"[ENERGY] Asignada generacion solar: {solar_col} = {pv_per_kwp.sum():.1f} (W/kW.h)")
+        logger.info(f"   Primeros 5 valores: {pv_per_kwp[:5]}")
+        logger.info(f"   Ultimos 5 valores: {pv_per_kwp[-5:]}")
     else:
         # If no solar column exists, leave template as-is (PV device may be absent).
-        logger.warning("No solar_generation-like column found; PV may be ignored by this dataset.")
+        logger.warning("[ENERGY] No solar_generation-like column found; PV may be ignored by this dataset.")
 
     # Zero-out other end-uses if present to isolate the problem to electricity + EV + PV + BESS
     for col in df_energy.columns:
@@ -755,17 +748,24 @@ def build_citylearn_dataset(
                     # Cargar perfil anual de energía del charger
                     annual_df = pd.read_csv(annual_csv)
                     
+                    # Truncar a exactamente n timesteps (8760 horarios)
+                    annual_df = annual_df.iloc[:n].reset_index(drop=True)
+                    
                     # Convertir perfil de energía a formato de simulación CityLearn
                     # CityLearn necesita: state, ev_id, departure_time, req_soc, arrival_time, arrival_soc
-                    n_rows = len(annual_df)
+                    n_rows = len(annual_df)  # Ahora n_rows == n == 8760
                     
                     # Determinar estado basado en si hay energía (power_kw > 0)
                     power_values = annual_df['power_kw'].values
                     charger_state = np.where(power_values > 0, 1, 3)  # 1=conectado, 3=sin EV
                     
+                    # Get power rating from charger specs
+                    power_kw = 3.0 if 'MOTO_TAXI' in charger_name else 2.0
+                    
                     # Crear DataFrame para CityLearn
                     citylearn_df = pd.DataFrame({
                         "electric_vehicle_charger_state": charger_state,
+                        "electric_vehicle_charger_power": np.where(charger_state == 1, power_kw, 0.0),
                         "electric_vehicle_id": np.full(n_rows, default_ev, dtype=object),
                         "electric_vehicle_departure_time": np.where(charger_state == 1, 
                             float(departure_step - arrival_step), 0.0),
@@ -776,7 +776,11 @@ def build_citylearn_dataset(
                         "electric_vehicle_estimated_soc_arrival": np.full(n_rows, soc_arr),
                     })
                     
-                    # Agregar fila extra para CityLearn
+                    # Truncar a exactamente 8760 timesteps (1 por hora en un año)
+                    # y agregar 1 fila extra para CityLearn (para acceso a t+1)
+                    if len(citylearn_df) > 8760:
+                        citylearn_df = citylearn_df.iloc[:8760].reset_index(drop=True)
+                    
                     last_row_annual = citylearn_df.iloc[-1:].copy()
                     citylearn_df = pd.concat([citylearn_df, last_row_annual], ignore_index=True)
                     
@@ -787,9 +791,12 @@ def build_citylearn_dataset(
             # Fallback: usar template genérico
             charger_idx = int(charger_name.split("_")[-1]) if "_" in charger_name else 1
             n_chargers_oe2 = artifacts.get("chargers_results", {}).get("n_chargers_recommended", 128)
+            logger.info(f"[DEBUG FALLBACK] {charger_name}: len(charger_df)={len(charger_df)}, n={n}, n+1={n+1}")
             
             if charger_idx <= n_chargers_oe2 // 3:
-                charger_df.to_csv(charger_path, index=False)
+                # Truncar a n+1 antes de guardar
+                charger_df_save = charger_df.iloc[:n+1].copy()
+                charger_df_save.to_csv(charger_path, index=False)
             else:
                 secondary_df = charger_df.copy()
                 t_arr = np.arange(len(secondary_df) - 1)
@@ -799,6 +806,8 @@ def build_citylearn_dataset(
                 # NO cambiar ev_id - CityLearn lo necesita siempre
                 secondary_df.loc[mask, "electric_vehicle_departure_time"] = 0.0
                 secondary_df.loc[mask, "electric_vehicle_required_soc_departure"] = 0.0
+                # Truncar a n+1 antes de guardar
+                secondary_df = secondary_df.iloc[:n+1].copy()
                 secondary_df.to_csv(charger_path, index=False)
             total_chargers_generated += 1
         

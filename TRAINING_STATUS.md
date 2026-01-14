@@ -14,7 +14,7 @@ El sistema RL ha sido entrenado con:
 ### 📊 Resultados de Reducción de CO₂
 
 | Escenario | Emisiones Anuales (tCO2) | Reducción vs Baseline | % Reducción |
-|-----------|--------------------------|----------------------|------------|
+ | ----------- | -------------------------- | ---------------------- | ------------ |
 | **Línea Base** (Grid + Combustión) | 8,381.16 | 0 | 0.0% |
 | Grid-only (sin PV/BESS) | 5,596.26 | -2,784.91 | 33.2% |
 | **FV+BESS + Uncontrolled** | 2,475.06 | -5,906.10 | **70.47%** |
@@ -53,7 +53,7 @@ python show_training_status.py
 
 # Opción 3: Monitorear checkpoints en vivo
 python monitor_checkpoints.py
-```
+```text
 
 ### 📈 Configuración para Máximo Rendimiento GPU
 
@@ -68,12 +68,12 @@ sac:
   use_amp: true             # Automatic Mixed Precision
   checkpoint_freq_steps: 1000  # Guardar cada 1000 steps
   resume_checkpoints: true     # Reanudar desde checkpoints
-```
+```text
 
 ### 📋 Archivos Clave
 
 | Archivo | Propósito |
-|---------|-----------|
+ | --------- | ----------- |
 | `outputs/oe3/simulations/` | Resultados de simulación (JSON + CSV) |
 | `outputs/oe3/training/` | Métricas de entrenamiento (CSV + gráficas) |
 | `outputs/oe3/checkpoints/` | Modelos entrenados (ZIP) |

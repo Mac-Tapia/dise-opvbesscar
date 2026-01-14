@@ -103,9 +103,13 @@ class PPOConfig:
     progress_path: Optional[str] = None
     progress_interval_episodes: int = 1
     resume_path: Optional[str] = None  # Ruta a checkpoint SB3 para reanudar
-    resume_path: Optional[str] = None  # Ruta a checkpoint SB3 para reanudar
     # Suavizado de acciones
     reward_smooth_lambda: float = 0.0
+    # === NORMALIZACIÓN (crítico para estabilidad) ===
+    normalize_observations: bool = True  # Normalizar obs a media=0, std=1
+    normalize_rewards: bool = True       # Escalar rewards
+    reward_scale: float = 0.01           # Factor de escala para rewards
+    clip_obs: float = 10.0               # Clipear obs normalizadas
 
 
 class PPOAgent:
@@ -200,14 +204,32 @@ class PPOAgent:
         
         # Wrapper robusto para CityLearn
         class CityLearnWrapper(gym.Wrapper):
-            def __init__(self, env, smooth_lambda: float = 0.0):
+            def __init__(self, env, smooth_lambda: float = 0.0,
+                         normalize_obs: bool = True, normalize_rewards: bool = True,
+                         reward_scale: float = 0.01, clip_obs: float = 10.0):
                 super().__init__(env)
                 obs0, _ = self.env.reset()
-                obs0_flat = self._flatten(obs0)
-                self.obs_dim = len(obs0_flat)
+                obs0_flat = self._flatten_base(obs0)
+                feats = self._get_pv_bess_feats()
+                self.obs_dim = len(obs0_flat) + len(feats)
                 self.act_dim = self._get_act_dim()
                 self._smooth_lambda = smooth_lambda
                 self._prev_action = None
+                
+                # Normalización
+                self._normalize_obs = normalize_obs
+                self._normalize_rewards = normalize_rewards
+                self._reward_scale = reward_scale  # 0.01
+                self._clip_obs = clip_obs
+                self._reward_count = 1e-4
+                
+                # PRE-ESCALADO: kW/kWh / 1000 → rango ~1-5
+                self._obs_prescale = np.ones(self.obs_dim, dtype=np.float32) * 0.001
+                
+                # Running stats para normalización
+                self._obs_mean = np.zeros(self.obs_dim, dtype=np.float64)
+                self._obs_var = np.ones(self.obs_dim, dtype=np.float64)
+                self._obs_count = 1e-4
                 
                 self.observation_space = gym.spaces.Box(
                     low=-np.inf, high=np.inf,
@@ -217,6 +239,37 @@ class PPOAgent:
                     low=-1.0, high=1.0,
                     shape=(self.act_dim,), dtype=np.float32
                 )
+            
+            def _update_obs_stats(self, obs: np.ndarray):
+                """Actualiza estadísticas de observación con Welford's algorithm."""
+                delta = obs - self._obs_mean
+                self._obs_count += 1
+                self._obs_mean = self._obs_mean + delta / self._obs_count
+                delta2 = obs - self._obs_mean
+                self._obs_var = self._obs_var + (delta * delta2 - self._obs_var) / self._obs_count
+            
+            def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
+                if not self._normalize_obs:
+                    return obs
+                # Pre-escalar + running stats + clip
+                prescaled = obs * self._obs_prescale
+                self._update_obs_stats(prescaled)
+                normalized = (prescaled - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
+                return np.clip(normalized, -self._clip_obs, self._clip_obs).astype(np.float32)
+            
+            def _update_reward_stats(self, reward: float):
+                delta = reward - self._reward_mean
+                self._reward_count += 1
+                self._reward_mean += delta / self._reward_count
+                delta2 = reward - self._reward_mean
+                self._reward_var += (delta * delta2 - self._reward_var) / self._reward_count
+            
+            def _normalize_reward(self, reward: float) -> float:
+                if not self._normalize_rewards:
+                    return reward
+                scaled = reward * self._reward_scale
+                return float(np.clip(scaled, -10.0, 10.0))
+                return float(np.clip(scaled, -10.0, 10.0))
             
             def _get_act_dim(self):
                 if isinstance(self.env.action_space, list):
@@ -256,7 +309,7 @@ class PPOAgent:
                     arr = np.pad(arr, (0, target - arr.size), mode="constant")
                 elif arr.size > target:
                     arr = arr[: target]
-                return arr.astype(np.float32)
+                return self._normalize_observation(arr.astype(np.float32))
             
             def _unflatten_action(self, action):
                 if isinstance(self.env.action_space, list):
@@ -271,6 +324,7 @@ class PPOAgent:
             
             def reset(self, **kwargs):
                 obs, info = self.env.reset(**kwargs)
+                self._prev_action = None
                 return self._flatten(obs), info
             
             def step(self, action):
@@ -290,9 +344,17 @@ class PPOAgent:
                     reward -= float(self._smooth_lambda * np.linalg.norm(delta))
                 self._prev_action = flat_action
                 
-                return self._flatten(obs), float(reward), terminated, truncated, info
+                normalized_reward = self._normalize_reward(float(reward))
+                return self._flatten(obs), normalized_reward, terminated, truncated, info
         
-        self.wrapped_env = Monitor(CityLearnWrapper(self.env, smooth_lambda=self.config.reward_smooth_lambda))
+        self.wrapped_env = Monitor(CityLearnWrapper(
+            self.env, 
+            smooth_lambda=self.config.reward_smooth_lambda,
+            normalize_obs=self.config.normalize_observations,
+            normalize_rewards=self.config.normalize_rewards,
+            reward_scale=self.config.reward_scale,
+            clip_obs=self.config.clip_obs,
+        ))
         
         # Crear ambiente vectorizado
         vec_env = make_vec_env(lambda: self.wrapped_env, n_envs=1, seed=self.config.seed)
@@ -359,6 +421,12 @@ class PPOAgent:
                 self.episode_count = 0
                 self.log_interval_steps = int(agent.config.log_interval or 0)
                 self._last_kl_update = 0
+                # Métricas acumuladas para promedios
+                self.reward_sum = 0.0
+                self.reward_count = 0
+                self.grid_energy_sum = 0.0  # kWh consumido de la red
+                self.solar_energy_sum = 0.0  # kWh de solar usado
+                self.co2_intensity = 0.4521  # kg CO2/kWh para Iquitos
 
             def _get_approx_kl(self) -> Optional[float]:
                 logger_obj = getattr(self.model, "logger", None)
@@ -399,15 +467,53 @@ class PPOAgent:
                 infos = self.locals.get("infos", [])
                 if isinstance(infos, dict):
                     infos = [infos]
+                
+                # Acumular NORMALIZED rewards (después de escala, no raw)
+                # Los raw rewards están en [-0.5, 0.5], muy pequeños
+                # Necesitamos acumular los scaled rewards para métricas significativas
+                rewards = self.locals.get("rewards", [])
+                if rewards is not None:
+                    if hasattr(rewards, '__iter__'):
+                        for r in rewards:
+                            # Aplicar misma escala que en training: reward * 0.01 * 100 = reward
+                            # (escala de 100x para logging significativo)
+                            scaled_r = float(r) * 100.0  # Amplificar para visibilidad en logs
+                            self.reward_sum += scaled_r
+                            self.reward_count += 1
+                    else:
+                        scaled_r = float(rewards) * 100.0  # Amplificar para visibilidad en logs
+                        self.reward_sum += scaled_r
+                        self.reward_count += 1
+                
+                # Extraer métricas de energía del environment
+                try:
+                    env = self.training_env.envs[0] if hasattr(self.training_env, 'envs') else self.training_env
+                    if hasattr(env, 'unwrapped'):
+                        env = env.unwrapped
+                    if hasattr(env, 'buildings'):
+                        for b in env.buildings:
+                            if hasattr(b, 'net_electricity_consumption') and b.net_electricity_consumption:
+                                last_consumption = b.net_electricity_consumption[-1] if b.net_electricity_consumption else 0
+                                if last_consumption > 0:
+                                    self.grid_energy_sum += last_consumption
+                            if hasattr(b, 'solar_generation') and b.solar_generation:
+                                last_solar = b.solar_generation[-1] if b.solar_generation else 0
+                                self.solar_energy_sum += abs(last_solar)
+                except Exception:
+                    pass
+                
                 if not infos:
                     return True
                 if self.log_interval_steps > 0 and self.n_calls % self.log_interval_steps == 0:
                     approx_episode = max(1, int(self.model.num_timesteps // 8760) + 1)
+                    co2_kg = self.grid_energy_sum * self.co2_intensity
                     logger.info(
-                        "[PPO] paso %d | ep~%d | pasos_global=%d",
+                        "[PPO] paso %d | ep~%d | pasos_global=%d | grid_kWh=%.1f | co2_kg=%.1f",
                         self.n_calls,
                         approx_episode,
                         int(self.model.num_timesteps),
+                        self.grid_energy_sum,
+                        co2_kg,
                     )
                     if self.progress_path is not None:
                         row = {
@@ -430,9 +536,18 @@ class PPOAgent:
                     self.episode_count += 1
                     reward = float(episode.get("r", 0.0))
                     length = int(episode.get("l", 0))
+                    
+                    # Calcular métricas finales del episodio ANTES de reiniciar
+                    episode_co2_kg = self.grid_energy_sum * self.co2_intensity
+                    episode_grid_kwh = self.grid_energy_sum
+                    episode_solar_kwh = self.solar_energy_sum
+                    
                     self.agent.training_history.append({
                         "step": int(self.model.num_timesteps),
                         "mean_reward": reward,
+                        "episode_co2_kg": episode_co2_kg,
+                        "episode_grid_kwh": episode_grid_kwh,
+                        "episode_solar_kwh": episode_solar_kwh,
                     })
                     if self.agent.config.progress_interval_episodes > 0 and (
                         self.episode_count % self.agent.config.progress_interval_episodes == 0
@@ -451,21 +566,34 @@ class PPOAgent:
                             render_progress_plot(self.progress_path, png_path, "PPO progreso")
                         if self.expected_episodes > 0:
                             logger.info(
-                                "[PPO] ep %d/%d reward=%.4f len=%d step=%d",
+                                "[PPO] ep %d/%d | reward=%.4f len=%d step=%d | co2_kg=%.1f grid_kWh=%.1f solar_kWh=%.1f",
                                 self.episode_count,
                                 self.expected_episodes,
                                 reward,
                                 length,
                                 int(self.model.num_timesteps),
+                                episode_co2_kg,
+                                episode_grid_kwh,
+                                episode_solar_kwh,
                             )
                         else:
                             logger.info(
-                                "[PPO] ep %d reward=%.4f len=%d step=%d",
+                                "[PPO] ep %d | reward=%.4f len=%d step=%d | co2_kg=%.1f grid_kWh=%.1f solar_kWh=%.1f",
                                 self.episode_count,
                                 reward,
                                 length,
                                 int(self.model.num_timesteps),
+                                episode_co2_kg,
+                                episode_grid_kwh,
+                                episode_solar_kwh,
                             )
+                    
+                    # REINICIAR métricas para el siguiente episodio
+                    self.reward_sum = 0.0
+                    self.reward_count = 0
+                    self.grid_energy_sum = 0.0
+                    self.solar_energy_sum = 0.0
+                    
                 return True
 
         checkpoint_dir = self.config.checkpoint_dir

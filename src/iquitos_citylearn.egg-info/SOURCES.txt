@@ -6,6 +6,8 @@ src/iquitos_citylearn.egg-info/PKG-INFO
 src/iquitos_citylearn.egg-info/SOURCES.txt
 src/iquitos_citylearn.egg-info/dependency_links.txt
 src/iquitos_citylearn.egg-info/top_level.txt
+src/iquitos_citylearn/oe1/__init__.py
+src/iquitos_citylearn/oe1/location.py
 src/iquitos_citylearn/oe2/__init__.py
 src/iquitos_citylearn/oe2/bess.py
 src/iquitos_citylearn/oe2/chargers.py
@@ -14,8 +16,11 @@ src/iquitos_citylearn/oe2/solar_pvlib.py
 src/iquitos_citylearn/oe3/__init__.py
 src/iquitos_citylearn/oe3/co2_table.py
 src/iquitos_citylearn/oe3/dataset_builder.py
+src/iquitos_citylearn/oe3/progress.py
+src/iquitos_citylearn/oe3/rewards.py
 src/iquitos_citylearn/oe3/simulate.py
 src/iquitos_citylearn/oe3/agents/__init__.py
+src/iquitos_citylearn/oe3/agents/a2c_sb3.py
 src/iquitos_citylearn/oe3/agents/no_control.py
 src/iquitos_citylearn/oe3/agents/ppo_sb3.py
 src/iquitos_citylearn/oe3/agents/rbc.py

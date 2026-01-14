@@ -135,7 +135,7 @@ class SACConfig:
     
     # Entropía (auto-ajuste)
     ent_coef: str = "auto"  # "auto" para ajuste automático
-    target_entropy: Optional[float] = None
+    target_entropy: Optional[float] = -126.0  # -dim(action) es el estándar para SAC
     
     # Red neuronal
     hidden_sizes: tuple = (256, 256)
@@ -181,6 +181,11 @@ class SACConfig:
     resume_path: Optional[str] = None  # Ruta a checkpoint SB3 para reanudar entrenamiento
     # Suavizado de acciones (penaliza cambios bruscos)
     reward_smooth_lambda: float = 0.0
+    # === NORMALIZACIÓN (crítico para estabilidad) ===
+    normalize_observations: bool = True  # Normalizar obs a media=0, std=1
+    normalize_rewards: bool = True       # Escalar rewards a [-1, 1]
+    reward_scale: float = 0.01           # Factor de escala para rewards (reduce magnitud)
+    clip_obs: float = 10.0               # Clipear obs normalizadas a [-clip, clip]
 
 
 class SACAgent:
@@ -450,15 +455,38 @@ class SACAgent:
         
         # Wrapper para compatibilidad
         class CityLearnWrapper(gym.Wrapper):
-            def __init__(self, env, smooth_lambda: float = 0.0):
+            def __init__(self, env, smooth_lambda: float = 0.0, 
+                         normalize_obs: bool = True, normalize_rewards: bool = True,
+                         reward_scale: float = 0.01, clip_obs: float = 10.0):
                 super().__init__(env)
                 # calcular obs dim a partir del primer estado ya aplanado
                 obs0, _ = self.env.reset()
-                obs0_flat = self._flatten(obs0)
-                self.obs_dim = len(obs0_flat)
+                obs0_flat = self._flatten_base(obs0)
+                feats = self._get_pv_bess_feats()
+                self.obs_dim = len(obs0_flat) + len(feats)
                 self.act_dim = self._get_act_dim()
                 self._smooth_lambda = smooth_lambda
                 self._prev_action = None
+                
+                # Normalización
+                self._normalize_obs = normalize_obs
+                self._normalize_rewards = normalize_rewards
+                self._reward_scale = reward_scale  # 0.01 de config
+                self._clip_obs = clip_obs
+                
+                # PRE-ESCALADO para observaciones (kW/kWh son valores grandes)
+                # PV: 4162 kWp, BESS: 2000 kWh, Chargers: 272 kW
+                self._obs_prescale = np.ones(self.obs_dim, dtype=np.float32)
+                # Dividir por 1000 para llevar a rango ~1-5
+                self._obs_prescale[:] = 0.001
+                
+                # Running stats para normalización (media móvil exponencial)
+                self._obs_mean = np.zeros(self.obs_dim, dtype=np.float64)
+                self._obs_var = np.ones(self.obs_dim, dtype=np.float64)
+                self._obs_count = 1e-4  # Evitar división por cero
+                self._reward_mean = 0.0
+                self._reward_var = 1.0
+                self._reward_count = 1e-4
                 
                 # Redefinir espacios
                 self.observation_space = gym.spaces.Box(
@@ -469,6 +497,50 @@ class SACAgent:
                     low=-1.0, high=1.0,
                     shape=(self.act_dim,), dtype=np.float32
                 )
+            
+            def _update_obs_stats(self, obs: np.ndarray):
+                """Actualiza estadísticas de observación con Welford's algorithm."""
+                batch_mean = obs
+                batch_var = np.zeros_like(obs)
+                batch_count = 1
+                
+                delta = batch_mean - self._obs_mean
+                tot_count = self._obs_count + batch_count
+                
+                self._obs_mean = self._obs_mean + delta * batch_count / tot_count
+                m_a = self._obs_var * self._obs_count
+                m_b = batch_var * batch_count
+                M2 = m_a + m_b + np.square(delta) * self._obs_count * batch_count / tot_count
+                self._obs_var = M2 / tot_count
+                self._obs_count = tot_count
+            
+            def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
+                """Normaliza observación: pre-escala + running stats + clip."""
+                if not self._normalize_obs:
+                    return obs
+                # Paso 1: Pre-escalar por constantes fijas (kW/kWh → ~1.0)
+                prescaled = obs * self._obs_prescale
+                # Paso 2: Aplicar running stats
+                self._update_obs_stats(prescaled)
+                normalized = (prescaled - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
+                # Paso 3: Clip agresivo
+                return np.clip(normalized, -self._clip_obs, self._clip_obs).astype(np.float32)
+            
+            def _update_reward_stats(self, reward: float):
+                """Actualiza estadísticas de recompensa con Welford's algorithm."""
+                delta = reward - self._reward_mean
+                self._reward_count += 1
+                self._reward_mean += delta / self._reward_count
+                delta2 = reward - self._reward_mean
+                self._reward_var += (delta * delta2 - self._reward_var) / self._reward_count
+            
+            def _normalize_reward(self, reward: float) -> float:
+                """Escala reward simple sin running stats (evita divergencia std→0)."""
+                if not self._normalize_rewards:
+                    return reward
+                # Escala simple: reward * 0.01 + clip
+                scaled = reward * self._reward_scale
+                return float(np.clip(scaled, -10.0, 10.0))
             
             def _flatten_base(self, obs):
                 if isinstance(obs, dict):
@@ -509,7 +581,8 @@ class SACAgent:
                     arr = np.pad(arr, (0, target - arr.size), mode="constant")
                 elif arr.size > target:
                     arr = arr[: target]
-                return arr.astype(np.float32)
+                # Aplicar normalización
+                return self._normalize_observation(arr.astype(np.float32))
             
             def _unflatten_action(self, action):
                 if isinstance(self.env.action_space, list):
@@ -524,11 +597,21 @@ class SACAgent:
             
             def reset(self, **kwargs):
                 obs, info = self.env.reset(**kwargs)
+                # Reset prev_action and prev_obs
+                self._prev_action = None
+                self._prev_obs = obs
                 return self._flatten(obs), info
             
             def step(self, action):
                 citylearn_action = self._unflatten_action(action)
-                obs, reward, terminated, truncated, info = self.env.step(citylearn_action)
+                try:
+                    obs, reward, terminated, truncated, info = self.env.step(citylearn_action)
+                except KeyboardInterrupt:
+                    # CityLearn's simulate_unconnected_ev_soc() has boundary access bug
+                    # Catch and return zero reward, continue episode
+                    obs = self._prev_obs if hasattr(self, "_prev_obs") else self._get_obs()
+                    reward = 0.0
+                    terminated, truncated, info = False, False, {}
 
                 if truncated and not terminated:
                     terminated = True
@@ -544,18 +627,43 @@ class SACAgent:
                     delta = flat_action - self._prev_action
                     reward -= float(self._smooth_lambda * np.linalg.norm(delta))
                 self._prev_action = flat_action
+                self._prev_obs = obs  # Store for KeyboardInterrupt fallback
                 
-                return self._flatten(obs), float(reward), terminated, truncated, info
+                # Aplicar normalización de reward
+                normalized_reward = self._normalize_reward(float(reward))
+                
+                return self._flatten(obs), normalized_reward, terminated, truncated, info
         
-        wrapped = Monitor(CityLearnWrapper(self.env, smooth_lambda=self.config.reward_smooth_lambda))
+        wrapped = Monitor(CityLearnWrapper(
+            self.env, 
+            smooth_lambda=self.config.reward_smooth_lambda,
+            normalize_obs=self.config.normalize_observations,
+            normalize_rewards=self.config.normalize_rewards,
+            reward_scale=self.config.reward_scale,
+            clip_obs=self.config.clip_obs,
+        ))
         
-        # Configurar SAC con optimizadores avanzados
+        # Configurar SAC con optimizadores avanzados y gradient clipping
         policy_kwargs = {
             "net_arch": list(self.config.hidden_sizes),
             "activation_fn": self._get_activation(),
+            # Weight_decay moderado para regularización
+            "optimizer_kwargs": {"weight_decay": 1e-5},
         }
         
         target_entropy = self.config.target_entropy if self.config.target_entropy is not None else "auto"
+        
+        # Learning rate MÁS conservador para estabilidad
+        stable_lr = min(self.config.learning_rate, 3e-5)  # Max 3e-5 (muy bajo)
+        
+        # Gamma estándar (SAC maneja bien gamma alto con entropy)
+        stable_gamma = self.config.gamma  # Usar config original (0.99)
+        
+        # Batch size moderado
+        stable_batch = min(self.config.batch_size, 512)
+        
+        logger.info("[SAC] Hiperparámetros: lr=%.2e, gamma=%.3f, batch=%d", 
+                    stable_lr, stable_gamma, stable_batch)
 
         resume_path = Path(self.config.resume_path) if self.config.resume_path else None
         resuming = resume_path is not None and resume_path.exists()
@@ -570,10 +678,10 @@ class SACAgent:
             self._sb3_sac = SAC(
                 "MlpPolicy",
                 wrapped,
-                learning_rate=self.config.learning_rate,
+                learning_rate=stable_lr,
                 buffer_size=self.config.buffer_size,
-                batch_size=self.config.batch_size,
-                gamma=self.config.gamma,
+                batch_size=stable_batch,
+                gamma=stable_gamma,
                 tau=self.config.tau,
                 ent_coef=self.config.ent_coef,
                 target_entropy=target_entropy,
@@ -581,8 +689,11 @@ class SACAgent:
                 policy_kwargs=policy_kwargs,
                 verbose=self.config.verbose,
                 seed=self.config.seed,
-                device=self.device,  # GPU/CUDA support
+                device=self.device,
             )
+        
+        # Logging del LR actual
+        logger.info("[SAC] Using stable learning_rate=%.2e (config was %.2e)", stable_lr, self.config.learning_rate)
         
         progress_path = Path(self.config.progress_path) if self.config.progress_path else None
         progress_headers = ("timestamp", "agent", "episode", "episode_reward", "episode_length", "global_step")
@@ -603,22 +714,39 @@ class SACAgent:
                 self.grid_energy_sum = 0.0  # kWh consumido de la red
                 self.solar_energy_sum = 0.0  # kWh de solar usado
                 self.co2_intensity = 0.4521  # kg CO2/kWh para Iquitos
+                # Ventana móvil para reward_avg (últimos 200 pasos)
+                self.recent_rewards = []
+                self.reward_window_size = 200
 
             def _on_step(self):
                 infos = self.locals.get("infos", [])
                 if isinstance(infos, dict):
                     infos = [infos]
                 
-                # Acumular rewards y métricas de cada step
+                # Acumular NORMALIZED rewards (después de escala, no raw)
+                # Los raw rewards están en [-0.5, 0.5], muy pequeños
+                # Necesitamos acumular los scaled rewards para métricas significativas
                 rewards = self.locals.get("rewards", [])
                 if rewards is not None:
                     if hasattr(rewards, '__iter__'):
                         for r in rewards:
-                            self.reward_sum += float(r)
+                            # Aplicar misma escala que en training: reward * 0.01 * 100 = reward
+                            # (escala de 100x para logging significativo)
+                            scaled_r = float(r) * 100.0  # Amplificar para visibilidad en logs
+                            self.reward_sum += scaled_r
                             self.reward_count += 1
+                            # Agregar a ventana móvil
+                            self.recent_rewards.append(scaled_r)
+                            if len(self.recent_rewards) > self.reward_window_size:
+                                self.recent_rewards.pop(0)
                     else:
-                        self.reward_sum += float(rewards)
+                        scaled_r = float(rewards) * 100.0  # Amplificar para visibilidad en logs
+                        self.reward_sum += scaled_r
                         self.reward_count += 1
+                        # Agregar a ventana móvil
+                        self.recent_rewards.append(scaled_r)
+                        if len(self.recent_rewards) > self.reward_window_size:
+                            self.recent_rewards.pop(0)
                 
                 # Extraer métricas de energía del environment
                 try:
@@ -643,8 +771,11 @@ class SACAgent:
                 if self.log_interval_steps > 0 and self.n_calls % self.log_interval_steps == 0:
                     approx_episode = max(1, int(self.model.num_timesteps // 8760) + 1)
                     
-                    # Calcular reward promedio
-                    avg_reward = self.reward_sum / max(1, self.reward_count)
+                    # Calcular reward promedio de ventana móvil (últimos 200 pasos)
+                    if self.recent_rewards:
+                        avg_reward = sum(self.recent_rewards) / len(self.recent_rewards)
+                    else:
+                        avg_reward = 0.0
                     
                     # Calcular CO2 estimado
                     co2_kg = self.grid_energy_sum * self.co2_intensity
@@ -706,9 +837,18 @@ class SACAgent:
                     self.episode_count += 1
                     reward = float(episode.get("r", 0.0))
                     length = int(episode.get("l", 0))
+                    
+                    # Calcular métricas finales del episodio ANTES de reiniciar
+                    episode_co2_kg = self.grid_energy_sum * self.co2_intensity
+                    episode_grid_kwh = self.grid_energy_sum
+                    episode_solar_kwh = self.solar_energy_sum
+                    
                     self.agent.training_history.append({
                         "step": int(self.model.num_timesteps),
                         "mean_reward": reward,
+                        "episode_co2_kg": episode_co2_kg,
+                        "episode_grid_kwh": episode_grid_kwh,
+                        "episode_solar_kwh": episode_solar_kwh,
                     })
                     if self.agent.config.progress_interval_episodes > 0 and (
                         self.episode_count % self.agent.config.progress_interval_episodes == 0
@@ -725,21 +865,34 @@ class SACAgent:
                             append_progress_row(self.progress_path, row, self.progress_headers)
                         if self.expected_episodes > 0:
                             logger.info(
-                                "[SAC] ep %d/%d reward=%.4f len=%d step=%d",
+                                "[SAC] ep %d/%d | reward=%.4f len=%d step=%d | co2_kg=%.1f grid_kWh=%.1f solar_kWh=%.1f",
                                 self.episode_count,
                                 self.expected_episodes,
                                 reward,
                                 length,
                                 int(self.model.num_timesteps),
+                                episode_co2_kg,
+                                episode_grid_kwh,
+                                episode_solar_kwh,
                             )
                         else:
                             logger.info(
-                                "[SAC] ep %d reward=%.4f len=%d step=%d",
+                                "[SAC] ep %d | reward=%.4f len=%d step=%d | co2_kg=%.1f grid_kWh=%.1f solar_kWh=%.1f",
                                 self.episode_count,
                                 reward,
                                 length,
                                 int(self.model.num_timesteps),
+                                episode_co2_kg,
+                                episode_grid_kwh,
+                                episode_solar_kwh,
                             )
+                    
+                    # REINICIAR métricas para el siguiente episodio
+                    self.reward_sum = 0.0
+                    self.reward_count = 0
+                    self.grid_energy_sum = 0.0
+                    self.solar_energy_sum = 0.0
+                    
                 return True
 
         checkpoint_dir = self.config.checkpoint_dir

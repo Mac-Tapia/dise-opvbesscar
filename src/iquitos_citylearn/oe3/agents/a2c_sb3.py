@@ -74,6 +74,11 @@ class A2CConfig:
     
     # Suavizado de acciones (penaliza cambios bruscos)
     reward_smooth_lambda: float = 0.0
+    # === NORMALIZACIÓN (crítico para estabilidad) ===
+    normalize_observations: bool = True
+    normalize_rewards: bool = True
+    reward_scale: float = 0.01
+    clip_obs: float = 10.0
 
 
 class A2CAgent:
@@ -107,14 +112,31 @@ class A2CAgent:
         steps = total_timesteps or self.config.train_steps
 
         class CityLearnWrapper(gym.Wrapper):
-            def __init__(self, env, smooth_lambda: float = 0.0):
+            def __init__(self, env, smooth_lambda: float = 0.0,
+                         normalize_obs: bool = True, normalize_rewards: bool = True,
+                         reward_scale: float = 0.01, clip_obs: float = 10.0):
                 super().__init__(env)
                 obs0, _ = self.env.reset()
-                obs0_flat = self._flatten(obs0)
-                self.obs_dim = len(obs0_flat)
+                obs0_flat = self._flatten_base(obs0)
+                feats = self._get_pv_bess_feats()
+                self.obs_dim = len(obs0_flat) + len(feats)
                 self.act_dim = self._get_act_dim()
                 self._smooth_lambda = smooth_lambda
                 self._prev_action = None
+                
+                # Normalización
+                self._normalize_obs = normalize_obs
+                self._normalize_rewards = normalize_rewards
+                self._reward_scale = reward_scale  # 0.01
+                self._clip_obs = clip_obs
+                
+                # PRE-ESCALADO: kW/kWh / 1000 → rango ~1-5
+                self._obs_prescale = np.ones(self.obs_dim, dtype=np.float32) * 0.001
+                
+                # Running stats
+                self._obs_mean = np.zeros(self.obs_dim, dtype=np.float64)
+                self._obs_var = np.ones(self.obs_dim, dtype=np.float64)
+                self._obs_count = 1e-4
 
                 self.observation_space = gym.spaces.Box(
                     low=-np.inf, high=np.inf, shape=(self.obs_dim,), dtype=np.float32
@@ -122,6 +144,35 @@ class A2CAgent:
                 self.action_space = gym.spaces.Box(
                     low=-1.0, high=1.0, shape=(self.act_dim,), dtype=np.float32
                 )
+            
+            def _update_obs_stats(self, obs: np.ndarray):
+                delta = obs - self._obs_mean
+                self._obs_count += 1
+                self._obs_mean = self._obs_mean + delta / self._obs_count
+                delta2 = obs - self._obs_mean
+                self._obs_var = self._obs_var + (delta * delta2 - self._obs_var) / self._obs_count
+            
+            def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
+                if not self._normalize_obs:
+                    return obs
+                # Pre-escalar + running stats + clip
+                prescaled = obs * self._obs_prescale
+                self._update_obs_stats(prescaled)
+                normalized = (prescaled - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
+                return np.clip(normalized, -self._clip_obs, self._clip_obs).astype(np.float32)
+            
+            def _update_reward_stats(self, reward: float):
+                delta = reward - self._reward_mean
+                self._reward_count += 1
+                self._reward_mean += delta / self._reward_count
+                delta2 = reward - self._reward_mean
+                self._reward_var += (delta * delta2 - self._reward_var) / self._reward_count
+            
+            def _normalize_reward(self, reward: float) -> float:
+                if not self._normalize_rewards:
+                    return reward
+                scaled = reward * self._reward_scale
+                return float(np.clip(scaled, -10.0, 10.0))
 
             def _get_act_dim(self):
                 if isinstance(self.env.action_space, list):
@@ -161,7 +212,7 @@ class A2CAgent:
                     arr = np.pad(arr, (0, target - arr.size), mode="constant")
                 elif arr.size > target:
                     arr = arr[: target]
-                return arr.astype(np.float32)
+                return self._normalize_observation(arr.astype(np.float32))
 
             def _unflatten_action(self, action):
                 if isinstance(self.env.action_space, list):
@@ -176,6 +227,7 @@ class A2CAgent:
 
             def reset(self, **kwargs):
                 obs, info = self.env.reset(**kwargs)
+                self._prev_action = None
                 return self._flatten(obs), info
 
             def step(self, action):
@@ -195,9 +247,17 @@ class A2CAgent:
                     reward -= float(self._smooth_lambda * np.linalg.norm(delta))
                 self._prev_action = flat_action
 
-                return self._flatten(obs), float(reward), terminated, truncated, info
+                normalized_reward = self._normalize_reward(float(reward))
+                return self._flatten(obs), normalized_reward, terminated, truncated, info
 
-        self.wrapped_env = Monitor(CityLearnWrapper(self.env, smooth_lambda=self.config.reward_smooth_lambda))
+        self.wrapped_env = Monitor(CityLearnWrapper(
+            self.env, 
+            smooth_lambda=self.config.reward_smooth_lambda,
+            normalize_obs=self.config.normalize_observations,
+            normalize_rewards=self.config.normalize_rewards,
+            reward_scale=self.config.reward_scale,
+            clip_obs=self.config.clip_obs,
+        ))
         vec_env = make_vec_env(lambda: self.wrapped_env, n_envs=1, seed=self.config.seed)
 
         lr_schedule = self._get_lr_schedule(steps)
@@ -258,15 +318,21 @@ class A2CAgent:
                 if isinstance(infos, dict):
                     infos = [infos]
                 
-                # Acumular rewards y métricas de cada step
+                # Acumular NORMALIZED rewards (después de escala, no raw)
+                # Los raw rewards están en [-0.5, 0.5], muy pequeños
+                # Necesitamos acumular los scaled rewards para métricas significativas
                 rewards = self.locals.get("rewards", [])
                 if rewards is not None:
                     if hasattr(rewards, '__iter__'):
                         for r in rewards:
-                            self.reward_sum += float(r)
+                            # Aplicar misma escala que en training: reward * 0.01 * 100 = reward
+                            # (escala de 100x para logging significativo)
+                            scaled_r = float(r) * 100.0  # Amplificar para visibilidad en logs
+                            self.reward_sum += scaled_r
                             self.reward_count += 1
                     else:
-                        self.reward_sum += float(rewards)
+                        scaled_r = float(rewards) * 100.0  # Amplificar para visibilidad en logs
+                        self.reward_sum += scaled_r
                         self.reward_count += 1
                 
                 # Extraer métricas de energía del environment
@@ -354,9 +420,18 @@ class A2CAgent:
                     self.episode_count += 1
                     reward = float(episode.get("r", 0.0))
                     length = int(episode.get("l", 0))
+                    
+                    # Calcular métricas finales del episodio ANTES de reiniciar
+                    episode_co2_kg = self.grid_energy_sum * self.co2_intensity
+                    episode_grid_kwh = self.grid_energy_sum
+                    episode_solar_kwh = self.solar_energy_sum
+                    
                     self.agent.training_history.append({
                         "step": int(self.model.num_timesteps),
                         "mean_reward": reward,
+                        "episode_co2_kg": episode_co2_kg,
+                        "episode_grid_kwh": episode_grid_kwh,
+                        "episode_solar_kwh": episode_solar_kwh,
                     })
                     if self.agent.config.progress_interval_episodes > 0 and (
                         self.episode_count % self.agent.config.progress_interval_episodes == 0
@@ -375,21 +450,34 @@ class A2CAgent:
                             render_progress_plot(self.progress_path, png_path, "A2C progreso")
                         if self.expected_episodes > 0:
                             logger.info(
-                                "[A2C] ep %d/%d reward=%.4f len=%d step=%d",
+                                "[A2C] ep %d/%d | reward=%.4f len=%d step=%d | co2_kg=%.1f grid_kWh=%.1f solar_kWh=%.1f",
                                 self.episode_count,
                                 self.expected_episodes,
                                 reward,
                                 length,
                                 int(self.model.num_timesteps),
+                                episode_co2_kg,
+                                episode_grid_kwh,
+                                episode_solar_kwh,
                             )
                         else:
                             logger.info(
-                                "[A2C] ep %d reward=%.4f len=%d step=%d",
+                                "[A2C] ep %d | reward=%.4f len=%d step=%d | co2_kg=%.1f grid_kWh=%.1f solar_kWh=%.1f",
                                 self.episode_count,
                                 reward,
                                 length,
                                 int(self.model.num_timesteps),
+                                episode_co2_kg,
+                                episode_grid_kwh,
+                                episode_solar_kwh,
                             )
+                    
+                    # REINICIAR métricas para el siguiente episodio
+                    self.reward_sum = 0.0
+                    self.reward_count = 0
+                    self.grid_energy_sum = 0.0
+                    self.solar_energy_sum = 0.0
+                    
                 return True
 
         checkpoint_dir = self.config.checkpoint_dir
