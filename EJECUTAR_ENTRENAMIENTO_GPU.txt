@@ -1,0 +1,234 @@
+# EJECUTAR ENTRENAMIENTO - GPU al Máximo
+
+## Inicio Rápido (1 comando)
+
+```bash
+cd d:\diseñopvbesscar
+python -m scripts.run_pipeline --config configs/default.yaml
+```
+
+**Eso es todo.** El pipeline ejecutará:
+1. SAC (15-20 min)
+2. PPO (40-50 min)
+3. A2C (35-45 min)
+4. Tabla CO₂ final
+
+**Total**: ~90-115 minutos (~1.5-2 horas)
+
+---
+
+## Monitoreo GPU (Opcional)
+
+**En otra terminal**, monitorea GPU en tiempo real:
+
+### Opción 1: nvidia-smi (recomendado)
+```bash
+nvidia-smi -l 1
+# Se actualiza cada segundo, muestra:
+# - GPU Utilization: debe ser 80-95%
+# - Memory: debe ser 5-8 GB
+# - Temp: debe ser <80°C
+```
+
+### Opción 2: PowerShell avanzado
+```powershell
+# Opción A: Simple loop
+while($true) { 
+    Clear-Host
+    nvidia-smi
+    Start-Sleep -Seconds 1
+}
+
+# Opción B: Solo datos GPU
+while($true) {
+    nvidia-smi --query-gpu=index,utilization.gpu,utilization.memory,memory.used,memory.total,temperature.gpu --format=csv,noheader
+    Start-Sleep -Seconds 1
+}
+```
+
+### Opción 3: Ver memoria disponible
+```bash
+nvidia-smi --query-gpu=memory.free,memory.total --format=csv,noheader
+```
+
+---
+
+## Procesos Esperados
+
+### Terminal 1: Entrenamiento
+```
+INFO:iquitos_citylearn.oe3.simulate:[MULTIOBJETIVO] Prioridad: co2_focus
+INFO:iquitos_citylearn.oe3.simulate:Building CityLearn environment...
+INFO:iquitos_citylearn.oe3.agents.sac:SAC training starting...
+[SAC] paso 500 | ep~1 | grid_kWh=156.3 | co2_kg=70.5
+[SAC] paso 1000 | ep~2 | grid_kWh=312.6 | co2_kg=141.0
+...
+[SAC] Entrenamiento completado en 15 min
+[PPO] Entrenamiento comenzando...
+[PPO] paso 500 | ep~1 | grid_kWh=145.7 | co2_kg=65.8
+...
+```
+
+**Indicadores de éxito**:
+- ✅ `grid_kWh` > 0 (no cero)
+- ✅ `co2_kg` > 0 (no cero)
+- ✅ `paso` incrementando continuamente
+- ✅ Sin `OutOfMemoryError`
+
+**Si ves ceros**:
+- ❌ Métrica aún no arreglada
+- → Re-ejecutar: `pip install -e .`
+
+---
+
+## Parámetros Clave (GPU Optimizado)
+
+```yaml
+# Archivo: configs/default.yaml
+
+sac:
+  device: cuda          # ← GPU
+  batch_size: 8192      # ← Máximo para 8GB
+  use_amp: true         # ← Mixed Precision (2x rápido)
+  episodes: 10          # ← 5x más que antes
+
+ppo:
+  device: cuda          # ← GPU
+  timesteps: 87600      # ← AÑO COMPLETO (365 días)
+  batch_size: 4096      # ← 2x que antes
+  use_amp: true         # ← Mixed Precision
+  n_epochs: 5           # ← 5x refinamiento
+
+a2c:
+  device: cuda          # ← GPU
+  timesteps: 87600      # ← AÑO COMPLETO
+  n_steps: 8192         # ← Máximo buffer
+  learning_rate: 0.001  # ← 1.4x más rápido
+```
+
+---
+
+## Timeline Esperado
+
+```
+Hora 0:00 - SAC inicia
+Hora 0:20 - SAC termina, PPO comienza
+Hora 1:10 - PPO termina, A2C comienza
+Hora 1:50 - A2C termina, tabla CO₂ se genera
+Hora 2:00 - ✅ COMPLETADO
+```
+
+**Tiempos reales pueden variar ±10 minutos dependiendo de:**
+- GPU load actual
+- Dataset complexity
+- Checkpoint I/O speed
+
+---
+
+## Si Algo Sale Mal
+
+### Error: "CUDA out of memory"
+**Solución**: Reducir batch_size en config
+```yaml
+sac:
+  batch_size: 4096       # Reducir de 8192
+ppo:
+  batch_size: 2048       # Reducir de 4096
+```
+
+### Error: "Métrica grid_kWh aún en cero"
+**Solución**: Reinstalar paquete
+```bash
+pip install -e .
+```
+
+### Error: "File not found" en dataset
+**Solución**: Reconstruir dataset
+```bash
+python -m scripts.run_oe3_build_dataset --config configs/default.yaml
+```
+
+### Training muy lento (GPU util < 30%)
+**Posible causa**: GPU no detectada correctamente
+```bash
+# Verificar GPU
+python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
+
+# Si False, revisar:
+nvidia-smi  # ¿NVIDIA driver activo?
+```
+
+---
+
+## Verificar Resultados
+
+Cuando termine (esperar ~2 horas):
+
+```bash
+# 1. Ver archivo resumen
+type outputs/oe3/simulations/simulation_summary.json
+
+# 2. Ver tabla CO₂ comparativa
+type analyses/oe3/co2_comparison_table.csv
+
+# 3. Ver tabla en formato markdown
+type analyses/oe3/co2_comparison_table.md
+```
+
+**Archivo esperado**: `analyses/oe3/co2_comparison_table.csv`
+
+```
+Agent,CO2 Reduction %,Grid Energy kWh,Average Reward,Episode Count
+SAC,22.5,5234.1,54.2,10
+PPO,18.3,6102.4,49.7,10
+A2C,15.8,6891.2,44.3,10
+Uncontrolled,0.0,9812.3,0.0,1
+```
+
+---
+
+## Cleanup (Opcional)
+
+Si quieres borrar checkpoints viejos y empezar de cero:
+
+```bash
+# Eliminar checkpoints y resultados viejos
+remove-item -Path "outputs/oe3" -Recurse -Force -ErrorAction SilentlyContinue
+remove-item -Path "analyses/oe3/training/checkpoints" -Recurse -Force -ErrorAction SilentlyContinue
+Write-Host "Checkpoints limpios. Listo para relanzar desde cero."
+
+# Luego ejecutar:
+python -m scripts.run_pipeline --config configs/default.yaml
+```
+
+---
+
+## Resumen Rápido
+
+| Paso | Comando | Duración |
+|------|---------|----------|
+| 1 | `cd d:\diseñopvbesscar` | < 1 seg |
+| 2 | `python -m scripts.run_pipeline --config configs/default.yaml` | ~2 horas |
+| 3 | `type analyses/oe3/co2_comparison_table.csv` | < 1 seg |
+
+**Total**: ~2 horas de espera (+ 2 seg de comandos)
+
+---
+
+## Configuración Respaldada
+
+✅ Configuración guardada en git:
+- Commit: d8dc912d
+- Archivo: configs/default.yaml
+- Optimizaciones: SAC/PPO/A2C GPU al máximo
+
+---
+
+**¡Listo para entrenar!**
+
+Ejecuta:
+```bash
+python -m scripts.run_pipeline --config configs/default.yaml
+```
+
+Y relájate mientras GPU entrena durante 2 horas.
