@@ -158,21 +158,21 @@ Interpretación: Fluctuaciones normales en SAC
 
 1.**[`VERIFICACION_ENTRENAMIENTO_SAC.md`](VERIFICACION_ENTRENAMIENTO_SAC.md)**✅
 
-   - Reporte técnico completo de SAC
-   - Métricas por etapa
-   - Análisis de convergencia
+- Reporte técnico completo de SAC
+- Métricas por etapa
+- Análisis de convergencia
 
 2.**[`ANALISIS_VISUAL_APRENDIZAJE_SAC.md`](ANALISIS_VISUAL_APRENDIZAJE_SAC.md)**✅
 
-   - Curvas de aprendizaje visuales
-   - Análisis por fase
-   - Indicadores de éxito
+- Curvas de aprendizaje visuales
+- Análisis por fase
+- Indicadores de éxito
 
 3.**[`ESTADO_ENTRENAMIENTO_VIVO.md`](ESTADO_ENTRENAMIENTO_VIVO.md)**✅
 
-   - Estado actual en tiempo real
-   - Cronograma de agentes
-   - ETA para completación
+- Estado actual en tiempo real
+- Cronograma de agentes
+- ETA para completación
 
 ---
 

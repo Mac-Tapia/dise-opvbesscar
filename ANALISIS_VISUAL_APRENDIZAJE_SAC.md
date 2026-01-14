@@ -4,8 +4,7 @@
 
 ## 🎯 CURVA DE APRENDIZAJE - ACTOR LOSS
 
-```text
-Actor Loss por Etapa:
+```textActor Loss por Etapa:
 
 Paso 1000:    -25,386 ████████████░░░░░░░░░░░░░░░
 Paso 5000:    -24,861 ███████████░░░░░░░░░░░░░░░░░
@@ -27,8 +26,7 @@ MEJORA TOTAL: -40,016 es más negativo = MEJOR
 
 ## 🎯 CURVA DE APRENDIZAJE - CRITIC LOSS
 
-```text
-Critic Loss por Etapa:
+```textCritic Loss por Etapa:
 
 Paso 1000:    436,483 ▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░
 Paso 5000:    234,159 ▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░
@@ -51,8 +49,7 @@ RANGO: 234k - 532k (convergiendo a 405k)
 
 ## 🔄 CURVA DE APRENDIZAJE - ENTROPÍA (Exploración)
 
-```text
-Entropía por Etapa:
+```textEntropía por Etapa:
 
 Paso 1000:    0.933  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 Paso 5000:    0.950  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -93,8 +90,7 @@ AUTOMÁTICO: Coef_ent ajustado automáticamente
 
 ### FASE 1: Primeros 2,000 pasos (Exploración inicial)
 
-```text
-Objetivo: Llenar replay buffer, exploración inicial
+```textObjetivo: Llenar replay buffer, exploración inicial
 Característica: Variabilidad alta
 
 Actor Loss:   -25,386 → -24,861  (mejora marginal)
@@ -106,8 +102,7 @@ Status: 🟡 Exploración, sin aprendizaje significativo aún
 
 ### FASE 2: Pasos 2,001 - 10,000 (Mejora temprana)
 
-```text
-Objetivo: Aprender política, ajustar redes
+```textObjetivo: Aprender política, ajustar redes
 Característica: Fluctuaciones normales
 
 Actor Loss:   -24,861 → -25,564  (mejora gradual)
@@ -119,8 +114,7 @@ Status: 🟡 Aprendizaje lento, convergencia en progreso
 
 ### FASE 3: Pasos 10,001 - 15,000 (Mejora acelerada)
 
-```text
-Objetivo: Convergencia de redes
+```textObjetivo: Convergencia de redes
 Característica: Mejora consistente
 
 Actor Loss:   -25,564 → -33,707  (mejora 32%)
@@ -132,8 +126,7 @@ Status: 🟢 Aprendizaje acelerado, convergencia clara
 
 ### FASE 4: Pasos 15,001 - 17,520 (Especialización)
 
-```text
-Objetivo: Refinar política
+```textObjetivo: Refinar política
 Característica: Máxima mejora
 
 Actor Loss:   -33,707 → -40,016  (mejora 19%)
@@ -149,8 +142,7 @@ Status: 🟢 Convergencia final, política especializada
 
 ### Actor Network
 
-```text
-Métrica                  Cambio              Evaluación
+```textMétrica                  Cambio              Evaluación
 ─────────────────────────────────────────────────────
 Pérdida Final           -40,016             ✅ Excelente
 Mejora Total            57% más negativo    ✅ Fuerte
@@ -160,8 +152,7 @@ Volatilidad             Media               ✅ Controlada
 
 ### Critic Network
 
-```text
-Métrica                  Cambio              Evaluación
+```textMétrica                  Cambio              Evaluación
 ─────────────────────────────────────────────────────
 Pérdida Final           405,612             ✅ Bajo
 Mejora Total            7% reducción        ✅ Convergencia
@@ -171,8 +162,7 @@ Volatilidad             Alta pero mejora    ✅ Esperado
 
 ### Exploración
 
-```text
-Métrica                  Cambio              Evaluación
+```textMétrica                  Cambio              Evaluación
 ─────────────────────────────────────────────────────
 Entropía Final          1.536               ✅ Óptima
 Ajuste                  +64% del inicial    ✅ Significativo
@@ -186,8 +176,7 @@ Balance Expl/Explot     Equilibrado         ✅ Correcto
 
 ### ¿Converge el Actor
 
-```text
-Derivada de Actor Loss (últimos 5,000 pasos):
+```textDerivada de Actor Loss (últimos 5,000 pasos):
 Paso 12,500 → 17,500: -26,645 → -40,016
 Cambio: -13,371 en 5,000 pasos
 Promedio: -2.67 por 100 pasos
@@ -197,8 +186,7 @@ Conclusión: ✅ Sí, con aceleración
 
 ### ¿Converge el Critic
 
-```text
-Varianza de Critic Loss (últimos 1,000 pasos):
+```textVarianza de Critic Loss (últimos 1,000 pasos):
 Rango: 243,113 - 855,239
 Promedio: 500,000
 Volatilidad: Alta pero tendencia ↓
@@ -207,8 +195,7 @@ Conclusión: ✅ Parcialmente, pero mejorando
 
 ### ¿Exploración está equilibrada
 
-```text
-Entropía final: 1.536 de 2.0 máximo
+```textEntropía final: 1.536 de 2.0 máximo
 Ratio: 77% del máximo teórico
 Ajuste: Automático funcionando
 Conclusión: ✅ Equilibrio exploración-explotación logrado
@@ -218,27 +205,23 @@ Conclusión: ✅ Equilibrio exploración-explotación logrado
 
 ## 🏆 CONCLUSIONES
 
-### ¿Está aprendiendo SAC**✅ SÍ, DEFINITIVAMENTE**```text
-Evidencia 1: Actor loss → más negativo (-25k → -40k)
+### ¿Está aprendiendo SAC**✅ SÍ, DEFINITIVAMENTE**```textEvidencia 1: Actor loss → más negativo (-25k → -40k)
 Evidencia 2: Critic loss → convergencia (436k → 405k)
 Evidencia 3: Entropía → óptima (0.93 → 1.53)
 Evidencia 4: Reward → consistente (52.554)
 ```
 
-### Velocidad de Aprendizaje**EXCELENTE - Curva S típica**```text
-Fase 1-2: Aprendizaje lento (buffer lleno, ajustes)
+### Velocidad de Aprendizaje**EXCELENTE - Curva S típica**```textFase 1-2: Aprendizaje lento (buffer lleno, ajustes)
 Fase 3-4: Aceleración (32% + 19% mejora)
 Convergencia: A paso 17,500 (2 episodios)
 ```
 
-### Calidad de la Política**ALTA - Metrics válidas**```text
-Reward final: 52.554 ✅
+### Calidad de la Política**ALTA - Metrics válidas**```textReward final: 52.554 ✅
 CO₂ episodio: 220.17 kg ✅
 Consistencia: Ambos episodios igual ✅
 ```
 
-### Recomendación**✅ MODELO LISTO PARA PRODUCCIÓN**```text
-- Entrenamiento completado exitosamente
+### Recomendación**✅ MODELO LISTO PARA PRODUCCIÓN**```text- Entrenamiento completado exitosamente
 - Métricas dentro de rangos esperados
 - Política aprendida y convergida
 - Modelo final guardado (sac_final.zip)

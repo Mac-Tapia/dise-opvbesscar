@@ -168,7 +168,7 @@
 - OE3 outputs (data/processed/citylearn/)
 - Entrenamiento (outputs/oe3/)
 - §3: Tabla de transformaciones
- - Paso | Input | Proceso | Output 
+- Paso | Input | Proceso | Output 
 - 5 transformaciones principales
 - Validación esperada
 - §4: Números clave (consolidados)
@@ -347,7 +347,9 @@
  ENTREGA_FINAL | Resumen | 1,500 | 6 | 3 | - |
  RESUMEN_FINAL | Resumen | 800 | 3 | 1 | - |
  DOCUMENTACION_COMPLETADA | Informe | 2,000 | 5 | 3 | - |
- VERIFICACION_FINAL_ENTREGA | Verificación | 2,000 | 8 | 8 | - | **TOTALES**: 39,300+ palabras, 85+ secciones, 56+ tablas, 37+ ejemplos código 
+| VERIFICACION_FINAL_ENTREGA | Verificación | 2,000 | 8 | 8 | - |
+
+**TOTALES**: 39,300+ palabras, 85+ secciones, 56+ tablas, 37+ ejemplos código 
 
 ---
 

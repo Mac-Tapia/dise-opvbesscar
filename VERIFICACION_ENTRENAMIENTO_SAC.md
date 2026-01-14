@@ -45,13 +45,17 @@ Paso        Reward   Actor Loss   Critic Loss   Entropía   Status
 -**Tendencia**: ↔️ Fluctuante (normal en SAC)
 -**Interpretación**: ✅ El crítico está convergiendo
 
-#### 3.**Entropía (Exploration)**-**Inicial**: 0.9326
+#### 3.**Entropía (Exploration)**
+
+- **Inicial**: 0.9326
 -**Final**: 1.5364
 -**Rango Válido**: 0.0 - 2.0
 -**Tendencia**: ⬆️ Creciente (aumenta exploración)
 -**Interpretación**: ✅ El agente está explorando más (ajuste automático de entropía)
 
-#### 4.**Reward Promedio**-**Valor Estable**: 0.6000 (durante entrenamiento)
+#### 4.**Reward Promedio**
+
+- **Valor Estable**: 0.6000 (durante entrenamiento)
 -**Reward Final**: 52.554 (episodio final)
 -**Interpretación**: ✅ El agente alcanzó un reward elevado en el episodio 2
 
