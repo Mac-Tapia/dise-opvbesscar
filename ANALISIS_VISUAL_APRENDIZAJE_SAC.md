@@ -14,7 +14,7 @@ Paso 17520:   -40,016 ██████████████████░�
 
 MEJORA TOTAL: -40,016 es más negativo = MEJOR
              (Maximiza Q-values)
-```
+```text
 
 ### Interpretación
 
@@ -36,7 +36,7 @@ Paso 17520:   405,612 ▓▓▓▓▓▓░░░░░░░░░░░░░�
 
 TENDENCIA: Fluctuante (normal) → Estabilización
 RANGO: 234k - 532k (convergiendo a 405k)
-```
+```text
 
 ### Interpretación (2)
 
@@ -60,7 +60,7 @@ Paso 17520:   1.536  ░░░░░░░░░░░░░░░░░░░�
 RANGO VÁLIDO: 0.0 - 2.0
 PROGRESIÓN: 0.933 → 1.536 (+64% exploración)
 AUTOMÁTICO: Coef_ent ajustado automáticamente
-```
+```text
 
 ### Interpretación (3)
 
@@ -98,7 +98,7 @@ Critic Loss:  436k → 234k        (mejora rápida)
 Entropía:     0.933 → 0.942      (ajuste inicial)
 
 Status: 🟡 Exploración, sin aprendizaje significativo aún
-```
+```text
 
 ### FASE 2: Pasos 2,001 - 10,000 (Mejora temprana)
 
@@ -110,7 +110,7 @@ Critic Loss:  234k → 532k        (fluctúa)
 Entropía:     0.942 → 0.991      (sigue subiendo)
 
 Status: 🟡 Aprendizaje lento, convergencia en progreso
-```
+```text
 
 ### FASE 3: Pasos 10,001 - 15,000 (Mejora acelerada)
 
@@ -122,7 +122,7 @@ Critic Loss:  532k → 470k        (mejora)
 Entropía:     0.991 → 1.272      (exploración aumenta)
 
 Status: 🟢 Aprendizaje acelerado, convergencia clara
-```
+```text
 
 ### FASE 4: Pasos 15,001 - 17,520 (Especialización)
 
@@ -134,7 +134,7 @@ Critic Loss:  470k → 405k        (mejora)
 Entropía:     1.272 → 1.536      (exploración óptima)
 
 Status: 🟢 Convergencia final, política especializada
-```
+```text
 
 ---
 
@@ -148,7 +148,7 @@ Pérdida Final           -40,016             ✅ Excelente
 Mejora Total            57% más negativo    ✅ Fuerte
 Velocidad               Lineal con aceleración ✅ Normal
 Volatilidad             Media               ✅ Controlada
-```
+```text
 
 ### Critic Network
 
@@ -158,7 +158,7 @@ Pérdida Final           405,612             ✅ Bajo
 Mejora Total            7% reducción        ✅ Convergencia
 Velocidad               Inicial rápida      ✅ Normal
 Volatilidad             Alta pero mejora    ✅ Esperado
-```
+```text
 
 ### Exploración
 
@@ -168,7 +168,7 @@ Entropía Final          1.536               ✅ Óptima
 Ajuste                  +64% del inicial    ✅ Significativo
 Automático              Sí (auto coef)      ✅ Funcionando
 Balance Expl/Explot     Equilibrado         ✅ Correcto
-```
+```text
 
 ---
 
@@ -182,7 +182,7 @@ Cambio: -13,371 en 5,000 pasos
 Promedio: -2.67 por 100 pasos
 Tendencia: ⬇️ Consistentemente negativa (mejora)
 Conclusión: ✅ Sí, con aceleración
-```
+```text
 
 ### ¿Converge el Critic
 
@@ -191,7 +191,7 @@ Rango: 243,113 - 855,239
 Promedio: 500,000
 Volatilidad: Alta pero tendencia ↓
 Conclusión: ✅ Parcialmente, pero mejorando
-```
+```text
 
 ### ¿Exploración está equilibrada
 
@@ -199,33 +199,43 @@ Conclusión: ✅ Parcialmente, pero mejorando
 Ratio: 77% del máximo teórico
 Ajuste: Automático funcionando
 Conclusión: ✅ Equilibrio exploración-explotación logrado
-```
+```text
 
 ---
 
 ## 🏆 CONCLUSIONES
 
-### ¿Está aprendiendo SAC**✅ SÍ, DEFINITIVAMENTE**```textEvidencia 1: Actor loss → más negativo (-25k → -40k)
+### ¿Está aprendiendo SAC?
+
+**✅ SÍ, DEFINITIVAMENTE**
+
+```text
+Evidencia 1: Actor loss → más negativo (-25k → -40k)
 Evidencia 2: Critic loss → convergencia (436k → 405k)
 Evidencia 3: Entropía → óptima (0.93 → 1.53)
 Evidencia 4: Reward → consistente (52.554)
-```
+```text
 
 ### Velocidad de Aprendizaje**EXCELENTE - Curva S típica**```textFase 1-2: Aprendizaje lento (buffer lleno, ajustes)
 Fase 3-4: Aceleración (32% + 19% mejora)
 Convergencia: A paso 17,500 (2 episodios)
-```
+```text
 
-### Calidad de la Política**ALTA - Metrics válidas**```textReward final: 52.554 ✅
+### Calidad de la Política
+
+**ALTA - Metrics válidas**
+
+```text
+Reward final: 52.554 ✅
 CO₂ episodio: 220.17 kg ✅
 Consistencia: Ambos episodios igual ✅
-```
+```text
 
 ### Recomendación**✅ MODELO LISTO PARA PRODUCCIÓN**```text- Entrenamiento completado exitosamente
 - Métricas dentro de rangos esperados
 - Política aprendida y convergida
 - Modelo final guardado (sac_final.zip)
-```
+```text
 
 ---
 
@@ -239,5 +249,5 @@ Consistencia: Ambos episodios igual ✅
 
 ---
 
-*Generado: 14 Enero 2026, 12:15 PM*  
+*Generado: 14 Enero 2026, 12:15 PM*
 *Análisis SAC: COMPLETO Y VERIFICADO*

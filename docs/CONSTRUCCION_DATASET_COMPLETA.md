@@ -7,13 +7,13 @@
 
 ## 📋 Tabla de Contenidos
 
-1. [Pipeline General](#pipeline-general)
-2. [Fase OE2: Datos Base](#fase-oe2-datos-base)
-3. [Fase OE3: Construcción del Dataset](#fase-oe3-construccion-del-dataset)
-4. [Estructura de Archivos](#estructura-de-archivos)
-5. [Dataclasses y Schemas](#dataclasses-y-schemas)
-6. [Validaciones](#validaciones)
-7. [Configuración](#configuracion)
+1. Pipeline General
+2. Fase OE2: Datos Base
+3. Fase OE3: Construccion Dataset
+4. Estructura de Archivos
+5. Dataclasses y Schemas
+6. Validaciones
+7. Configuracion
 
 ---
 
