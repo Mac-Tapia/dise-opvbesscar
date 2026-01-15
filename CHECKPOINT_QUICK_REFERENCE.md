@@ -1,17 +1,15 @@
 # 🟢 QUICK REFERENCE: Checkpoints & Training Resumption
 
-## Estado Actual (2026-01-13)
+## Estado Actual (2026-01-15) ✅ VERIFICADO
 
 | Componente | Estado |
 | ----------- | -------- |
-| **Checkpoints Configurados** | ✅ SÍ - Todos agentes |
-| **Auto-Reanudación** | ✅ SÍ - Habilitada |
-| **Guardado cada** | ✅ 500 pasos |
-| **Guardado final** | ✅ SÍ - Ambos formatos |
-| **Directorio** | `outputs/oe3/checkpoints/` |
-| **Penalizaciones** | ✅ ACTIVAS - Multiobjetivo |
-| **Recompensas** | ✅ ACTIVAS - 5 objetivos |
-| **Ganancias** | ✅ ACTIVAS - CO2 focus |
+| **Agentes Verificados** | ✅ SAC, PPO, A2C, Uncontrolled, NoControl |
+| **Código Corregido** | ✅ Bug `_model→model` resuelto en PPO/A2C |
+| **Simulaciones** | ✅ 4 resultados en `outputs/oe3/simulations/` |
+| **Directorio Checkpoints** | `outputs/oe3/checkpoints/` |
+| **Recompensas Multiobjetivo** | ✅ 5 objetivos (CO2 50%, Cost 15%, Solar 20%, EV 10%, Grid 5%) |
+| **Dataset CityLearn** | ✅ 128 chargers + 2 schemas |
 
 ---
 
