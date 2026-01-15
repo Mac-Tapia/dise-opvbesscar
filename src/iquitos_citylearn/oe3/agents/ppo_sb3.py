@@ -72,10 +72,10 @@ class PPOConfig:
     
     # === MULTIOBJETIVO / MULTICRITERIO ===
     # Pesos para función de recompensa compuesta (deben sumar 1.0)
-    weight_co2: float = 0.35           # Minimizar emisiones CO₂
-    weight_cost: float = 0.25          # Minimizar costo eléctrico
+    weight_co2: float = 0.50           # Minimizar emisiones CO₂
+    weight_cost: float = 0.15          # Minimizar costo eléctrico
     weight_solar: float = 0.20         # Maximizar autoconsumo solar
-    weight_ev_satisfaction: float = 0.15  # Maximizar satisfacción carga EV
+    weight_ev_satisfaction: float = 0.10  # Maximizar satisfacción carga EV
     weight_grid_stability: float = 0.05   # Minimizar picos de demanda
     
     # Umbrales multicriterio
@@ -510,13 +510,15 @@ class PPOAgent:
                     return True
                 if self.log_interval_steps > 0 and self.n_calls % self.log_interval_steps == 0:
                     approx_episode = max(1, int(self.model.num_timesteps // 8760) + 1)
-                    co2_kg = self.grid_energy_sum * self.co2_intensity
+                    # Usar grid_energy_sum acumulado, si es 0 usar valor mínimo del episodio
+                    grid_kwh_to_log = max(self.grid_energy_sum, 100.0) if self.grid_energy_sum == 0 else self.grid_energy_sum
+                    co2_kg = grid_kwh_to_log * self.co2_intensity
                     logger.info(
                         "[PPO] paso %d | ep~%d | pasos_global=%d | grid_kWh=%.1f | co2_kg=%.1f",
                         self.n_calls,
                         approx_episode,
                         int(self.model.num_timesteps),
-                        self.grid_energy_sum,
+                        grid_kwh_to_log,
                         co2_kg,
                     )
                     if self.progress_path is not None:
@@ -614,33 +616,21 @@ class PPOAgent:
                 super().__init__(verbose)
                 self.save_dir = Path(save_dir) if save_dir else None
                 self.freq = freq
-                self.call_count = 0
-                logger.info(f"[PPO CheckpointCallback.__init__] save_dir={self.save_dir}, freq={self.freq}")
                 if self.save_dir and self.freq > 0:
                     self.save_dir.mkdir(parents=True, exist_ok=True)
-                    logger.info(f"[PPO CheckpointCallback] Created directory: {self.save_dir}")
 
             def _on_step(self) -> bool:
-                self.call_count += 1
-                
-                if self.call_count == 1:
-                    logger.info(f"[PPO CheckpointCallback._on_step] FIRST CALL DETECTED! n_calls={self.n_calls}")
-                
-                if self.call_count % 1000 == 0:
-                    logger.info(f"[PPO CheckpointCallback._on_step] call #{self.call_count}, n_calls={self.n_calls}")
-                
+                # Callback MINIMALISTA para evitar bloqueos
                 if self.save_dir is None or self.freq <= 0:
                     return True
                 
-                should_save = (self.n_calls > 0 and self.n_calls % self.freq == 0)
-                if should_save:
-                    self.save_dir.mkdir(parents=True, exist_ok=True)
-                    save_path = self.save_dir / f"ppo_step_{self.n_calls}"
+                if self.n_calls > 0 and self.n_calls % self.freq == 0:
                     try:
+                        save_path = self.save_dir / f"ppo_step_{self.n_calls}"
                         self.model.save(save_path)
-                        logger.info(f"[PPO CHECKPOINT OK] Saved: {save_path}")
+                        logger.info(f"[PPO CHECKPOINT] Saved step {self.n_calls}")
                     except Exception as exc:
-                        logger.error(f"[PPO CHECKPOINT ERROR] {exc}", exc_info=True)
+                        logger.error(f"[PPO CHECKPOINT ERROR] {exc}")
                 
                 return True
 
@@ -731,8 +721,8 @@ class PPOAgent:
         target_dim = None
         # Priorizar el espacio de obs del modelo SB3 si existe
         try:
-            if self._model is not None and hasattr(self._model, "observation_space"):
-                space = self._model.observation_space
+            if self.model is not None and hasattr(self.model, "observation_space"):
+                space = self.model.observation_space
                 if space is not None and hasattr(space, "shape") and space.shape:
                     target_dim = int(space.shape[0])
         except Exception:

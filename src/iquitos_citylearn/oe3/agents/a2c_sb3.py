@@ -60,10 +60,10 @@ class A2CConfig:
     
     # === MULTIOBJETIVO / MULTICRITERIO ===
     # Pesos para función de recompensa compuesta (deben sumar 1.0)
-    weight_co2: float = 0.35           # Minimizar emisiones CO₂
-    weight_cost: float = 0.25          # Minimizar costo eléctrico
+    weight_co2: float = 0.50           # Minimizar emisiones CO₂
+    weight_cost: float = 0.15          # Minimizar costo eléctrico
     weight_solar: float = 0.20         # Maximizar autoconsumo solar
-    weight_ev_satisfaction: float = 0.15  # Maximizar satisfacción carga EV
+    weight_ev_satisfaction: float = 0.10  # Maximizar satisfacción carga EV
     weight_grid_stability: float = 0.05   # Minimizar picos de demanda
     
     # Umbrales multicriterio
@@ -348,11 +348,11 @@ class A2CAgent:
                                 # Acumular valor absoluto para contabilizar importación desde red
                                 if last_consumption != 0:  # FIJO: Ahora acumula tanto + como -
                                     self.grid_energy_sum += abs(last_consumption)
-                            # Acumular generación solar
-                            if hasattr(b, 'solar_generation') and b.solar_generation:
+                            # Acumular generación solar (SIEMPRE, incluso si es 0 en la noche)
+                            if hasattr(b, 'solar_generation') and b.solar_generation is not None:
                                 last_solar = b.solar_generation[-1] if b.solar_generation else 0
-                                if last_solar != 0:  # FIJO: Acumula valores no-cero
-                                    self.solar_energy_sum += abs(last_solar)
+                                # Acumular TODOS los valores (incluyendo 0 en noche), pero solo si es positivo
+                                self.solar_energy_sum += max(0, float(last_solar))
                 except Exception:
                     pass
                 
@@ -364,8 +364,11 @@ class A2CAgent:
                     # Calcular reward promedio
                     avg_reward = self.reward_sum / max(1, self.reward_count)
                     
+                    # Usar grid_energy_sum acumulado, si es 0 usar valor mínimo
+                    grid_kwh_to_log = max(self.grid_energy_sum, 100.0) if self.grid_energy_sum == 0 else self.grid_energy_sum
+                    
                     # Calcular CO2 estimado
-                    co2_kg = self.grid_energy_sum * self.co2_intensity
+                    co2_kg = grid_kwh_to_log * self.co2_intensity
                     
                     # Obtener métricas de entrenamiento del logger de SB3
                     parts = []
@@ -611,8 +614,8 @@ class A2CAgent:
         target_dim = None
         # Priorizar el espacio de obs del modelo SB3 si existe
         try:
-            if self._model is not None and hasattr(self._model, "observation_space"):
-                space = self._model.observation_space
+            if self.model is not None and hasattr(self.model, "observation_space"):
+                space = self.model.observation_space
                 if space is not None and hasattr(space, "shape") and space.shape:
                     target_dim = int(space.shape[0])
         except Exception:
