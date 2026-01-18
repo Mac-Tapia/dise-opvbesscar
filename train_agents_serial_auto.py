@@ -22,11 +22,11 @@ def detect_device():
         device_count = torch.cuda.device_count()
         device_name = torch.cuda.get_device_name(0)
         mem_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
-        compute_cap = torch.cuda.get_device_properties(0)
+        _compute_cap = torch.cuda.get_device_properties(0)
         return "cuda", device_name, mem_gb, device_count
     else:
         import platform
-        import psutil
+        # import psutil
         cpu_count = psutil.cpu_count(logical=False) or 1
         mem_gb = psutil.virtual_memory().total / 1e9
         return "cpu", f"{platform.processor()} ({cpu_count} cores)", mem_gb, cpu_count
@@ -144,12 +144,12 @@ def train_agent(agent_name, config_path, device):
         "scripts.run_oe3_simulate",
         "--config",
         config_path,
-        "--skip-dataset",
     ]
     
     # Skip previous baselines si existen (excepto primer agente)
     if agent_name != "SAC":
         cmd.append("--skip-uncontrolled")
+        cmd.append("--skip-dataset")
     
     print(f"\nComando: {' '.join(cmd)}\n")
     
@@ -213,8 +213,15 @@ def main():
     # Configurar entorno
     configure_environment(device)
     
+    # Obtener mem_gb del device
+    if device == "cuda":
+        mem_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
+    else:
+        import psutil
+        mem_gb = psutil.virtual_memory().total / 1e9
+    
     # Optimizar config según device
-    config_path = optimize_config(device, mem_gb=mem_gb if device == "cuda" else 0)
+    config_path = optimize_config(device, mem_gb=mem_gb)
     
     # Entrenamiento
     agents = ["SAC", "PPO", "A2C"]

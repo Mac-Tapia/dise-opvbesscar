@@ -228,15 +228,15 @@ oe3:
       co2_indirect_weight: 0.08 # Scope 1 (BESS efficiency)
     multi_objective_priority: co2_focus
     sac:
-      episodes: 5
-      resume_checkpoints: true
+      episodes: 2
+      resume_checkpoints: false
       deterministic_eval: true
       device: cuda
-      batch_size: 65536
-      buffer_size: 4000000
-      gradient_steps: 64
+      batch_size: 32768
+      buffer_size: 8000000
+      gradient_steps: 256
       learning_starts: 50
-      train_freq: 8
+      train_freq: 4
       log_interval: 25
       use_amp: true
       checkpoint_freq_steps: 100
@@ -244,18 +244,20 @@ oe3:
       save_final: true
       prefer_citylearn: false
       reward_smooth_lambda: 0.01
+      learning_rate: 0.001
+      target_entropy_scale: 1.0
       multi_objective_weights:
-        co2: 0.5
+        co2: 0.45
         cost: 0.15
-        solar: 0.2
-        ev: 0.1
-        grid: 0.05
+        solar: 0.15
+        ev: 0.05
+        grid: 0.20
     ppo:
-      episodes: 5
-      resume_checkpoints: true
-      timesteps: 43800
-      n_steps: 16384
-      batch_size: 16384
+      episodes: 2
+      resume_checkpoints: false
+      timesteps: 17520
+      n_steps: 32768
+      batch_size: 32768
       n_epochs: 10
       use_amp: true
       log_interval: 250
@@ -266,17 +268,18 @@ oe3:
       target_kl: 0.02
       kl_adaptive: true
       reward_smooth_lambda: 0.01
+      learning_rate: 0.001
       multi_objective_weights:
-        co2: 0.5
+        co2: 0.45
         cost: 0.15
-        solar: 0.2
-        ev: 0.1
-        grid: 0.05
+        solar: 0.15
+        ev: 0.05
+        grid: 0.20
     a2c:
-      episodes: 5
-      resume_checkpoints: true
-      timesteps: 43800
-      n_steps: 32768
+      episodes: 2
+      resume_checkpoints: false
+      timesteps: 17520
+      n_steps: 65536
       learning_rate: 0.001
       entropy_coef: 0.01
       vf_coef: 0.5
@@ -288,11 +291,11 @@ oe3:
       device: cuda
       reward_smooth_lambda: 0.01
       multi_objective_weights:
-        co2: 0.5
+        co2: 0.45
         cost: 0.15
-        solar: 0.2
-        ev: 0.1
-        grid: 0.05
+        solar: 0.15
+        ev: 0.05
+        grid: 0.20
   emissions:
     km_per_kwh: 35.0
     km_per_gallon: 120.0

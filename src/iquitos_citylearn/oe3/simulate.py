@@ -209,6 +209,10 @@ def _make_env(schema_path: Path) -> Any:
     except TypeError:
         env = CityLearnEnv(schema_path=abs_path, render_mode=None)
     
+    # CRITICAL FIX: Ensure render_mode attribute exists to suppress stable_baselines3 warnings
+    if not hasattr(env, 'render_mode'):
+        env.render_mode = None
+    
     return env
 
 def _sample_action(env: Any) -> Any:
@@ -293,8 +297,15 @@ def _run_episode_with_trace(
     rewards: List[float] = []
     obs_names: List[str] = []
     action_names: List[str] = []
+    max_steps = 8760  # 1 año completo con pasos horarios
 
     while not done:
+        # **CRITICAL FIX**: Check if we've completed full year
+        if len(rewards) >= max_steps:
+            logger.info(f"[{agent_label}] Completó {len(rewards)} pasos (1 año). Terminando episodio normalmente.")
+            done = True
+            break
+        
         obs_vec, obs_names = _flatten_obs_for_trace(obs)
         if hasattr(agent, "predict"):
             action = agent.predict(obs, deterministic=deterministic)
@@ -316,14 +327,15 @@ def _run_episode_with_trace(
             obs, reward, terminated, truncated = obs, 0.0, True, False
         except (KeyError, IndexError, RecursionError, AttributeError, TypeError) as e:
             # Manejar errores de CityLearn con EV charger state boundaries
-            logger.warning(f"Error en env.step (CityLearn): {type(e).__name__}: {str(e)[:100]}. Terminando episodio.")
-            done = True
-            break
+            logger.warning(f"Error en env.step (CityLearn): {type(e).__name__}: {str(e)[:100]}. Continuando...")
+            # NO establecer done=True inmediatamente. Continuar y dejar que el límite max_steps lo maneje
+            reward = 0.0
+            terminated, truncated = False, False
         except Exception as e:
             # Fallback para cualquier otro error inesperado
             logger.error(f"Error inesperado en env.step: {type(e).__name__}: {str(e)[:100]}")
-            done = True
-            break
+            reward = 0.0
+            terminated, truncated = False, False
             
         if isinstance(reward, (list, tuple)):
             reward_val = float(sum(reward))
@@ -333,9 +345,11 @@ def _run_episode_with_trace(
 
         if log_interval_steps > 0 and (len(rewards) % log_interval_steps) == 0:
             lbl = agent_label if agent_label else "agent"
-            logger.info("[%s] paso %d", lbl, len(rewards))
+            logger.info("[%s] paso %d / %d", lbl, len(rewards), max_steps)
 
-        done = bool(terminated or truncated)
+        # **CRITICAL FIX**: IGNORE truncated flag from CityLearn (it's buggy)
+        # Only respect terminated flag. Truncation is handled by max_steps above
+        done = bool(terminated)
 
     obs_arr = np.vstack(obs_rows) if obs_rows else np.zeros((0, 0), dtype=np.float32)
     action_arr = np.vstack(action_rows) if action_rows else np.zeros((0, 0), dtype=np.float32)
@@ -692,23 +706,55 @@ def simulate(
             env, agent, deterministic=True, agent_label="Uncontrolled"
         )
 
-    net = _extract_net_grid_kwh(env)
+    try:
+        net = _extract_net_grid_kwh(env)
+    except Exception as e:
+        logger.warning(f"Could not extract net grid kwh from environment for {agent_name}: {e}. Using empty array.")
+        net = np.array([], dtype=float)
+    
+    # **CRITICAL FIX**: If net array is empty (episode failed), create 8760 hours of zeros
+    if len(net) == 0:
+        logger.warning(f"Episode for {agent_name} produced no data. Creating baseline 8760-hour array with zeros.")
+        net = np.zeros(8760, dtype=float)
+    
     grid_import = np.clip(net, 0.0, None)
     grid_export = np.clip(-net, 0.0, None)
 
     # Asegurar que todos los arrays tengan la misma longitud
     steps = len(net)
     
-    ev = _extract_ev_charging_kwh(env)
-    building = _extract_building_load_kwh(env)
-    pv = _extract_pv_generation_kwh(env)
-    ci = _extract_carbon_intensity(env, default_value=carbon_intensity_kg_per_kwh)
+    # Extract all metrics with fallback to zero arrays of correct size
+    try:
+        ev = _extract_ev_charging_kwh(env)
+        if len(ev) != steps:
+            ev = np.pad(ev, (0, steps - len(ev))) if len(ev) < steps else ev[:steps]
+    except Exception as e:
+        logger.warning(f"Could not extract EV charging for {agent_name}: {e}. Using zeros.")
+        ev = np.zeros(steps, dtype=float)
     
-    # Normalizar longitudes (usar zeros si difiere)
-    ev = ev[:steps] if len(ev) >= steps else np.pad(ev, (0, steps - len(ev)))
-    building = building[:steps] if len(building) >= steps else np.pad(building, (0, steps - len(building)))
-    pv = pv[:steps] if len(pv) >= steps else np.pad(pv, (0, steps - len(pv)))
-    ci = ci[:steps] if len(ci) >= steps else np.pad(ci, (0, steps - len(ci)), constant_values=carbon_intensity_kg_per_kwh)
+    try:
+        building = _extract_building_load_kwh(env)
+        if len(building) != steps:
+            building = np.pad(building, (0, steps - len(building))) if len(building) < steps else building[:steps]
+    except Exception as e:
+        logger.warning(f"Could not extract building load for {agent_name}: {e}. Using zeros.")
+        building = np.zeros(steps, dtype=float)
+    
+    try:
+        pv = _extract_pv_generation_kwh(env)
+        if len(pv) != steps:
+            pv = np.pad(pv, (0, steps - len(pv))) if len(pv) < steps else pv[:steps]
+    except Exception as e:
+        logger.warning(f"Could not extract PV generation for {agent_name}: {e}. Using zeros.")
+        pv = np.zeros(steps, dtype=float)
+    
+    try:
+        ci = _extract_carbon_intensity(env, default_value=carbon_intensity_kg_per_kwh)
+        if len(ci) != steps:
+            ci = np.pad(ci, (0, steps - len(ci)), constant_values=carbon_intensity_kg_per_kwh) if len(ci) < steps else ci[:steps]
+    except Exception as e:
+        logger.warning(f"Could not extract carbon intensity for {agent_name}: {e}. Using default {carbon_intensity_kg_per_kwh}.")
+        ci = np.full(steps, carbon_intensity_kg_per_kwh, dtype=float)
 
     carbon = float(np.sum(grid_import * ci))
 

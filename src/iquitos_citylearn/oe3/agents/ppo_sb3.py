@@ -4,8 +4,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Dict, List, Callable
+import warnings
 import numpy as np
 import logging
+
+# Suppress stable_baselines3 render_mode warning
+warnings.filterwarnings("ignore", message=".*render_mode.*")
 
 from ..progress import append_progress_row, render_progress_plot
 
@@ -193,8 +197,7 @@ class PPOAgent:
             import gymnasium as gym
             from stable_baselines3 import PPO
             from stable_baselines3.common.env_util import make_vec_env
-            from stable_baselines3.common.vec_env import VecNormalize
-            from stable_baselines3.common.callbacks import BaseCallback, CallbackList
+                        from stable_baselines3.common.callbacks import BaseCallback, CallbackList
             from stable_baselines3.common.monitor import Monitor
         except ImportError as e:
             logger.warning("stable_baselines3 no disponible: %s", e)

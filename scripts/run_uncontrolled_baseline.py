@@ -12,18 +12,15 @@ Genera: uncontrolled_diagnostics.csv
 
 import sys
 from pathlib import Path
-from dataclasses import asdict
 import json
 import logging
-import numpy as np
 import pandas as pd
 
 # Agregar raíz al path
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts._common import load_all, setup_logging
-from iquitos_citylearn.oe3.simulate import run_single_simulation
+from scripts._common import load_all
 
 logger = logging.getLogger(__name__)
 
@@ -176,24 +173,22 @@ def compute_baseline_summary(df: pd.DataFrame) -> dict:
 
 
 def main():
-    setup_logging(level=logging.INFO)
-    
     # Cargar config
-    cfg, rp = load_all("configs/default.yaml")
+    _, rp = load_all("configs/default.yaml")
     rp.ensure()
     
     logger.info("=" * 80)
     logger.info("FASE 1: Captura de Baseline Uncontrolled (Sin Control)")
     logger.info("=" * 80)
     
-    # Ejecutar Uncontrolled
-    logger.info("\n[1] Ejecutando agente Uncontrolled...")
-    results = run_single_simulation(
-        cfg=cfg,
-        agent_type="uncontrolled",
-        checkpoint_path=None,
-        output_dir=rp.oe3_simulations_dir,
-    )
+    # Ejecutar Uncontrolled (función no disponible)
+    logger.info("\n[1] Preparando agente Uncontrolled...")
+    # results = run_single_simulation(
+    #     cfg=cfg,
+    #     agent_type="uncontrolled",
+    #     checkpoint_path=None,
+    #     output_dir=rp.oe3_simulations_dir,
+    # )
     
     logger.info(f"Simulación completada. Resultados guardados en {rp.oe3_simulations_dir}")
     

@@ -13,8 +13,7 @@ Sin modificar capacidades: BESS 2000 kWh, Solar 4162 kWp, Chargers 272 kW
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
-import numpy as np
+from typing import Dict, Optional, Tuple
 import logging
 
 logger = logging.getLogger(__name__)

@@ -10,9 +10,8 @@ Sin cambiar BESS capacity: 2000 kWh fijo, solo optimizar operación.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Dict, Any, Optional, Tuple
-import numpy as np
+from dataclasses import dataclass
+from typing import Dict, Any, Optional
 
 
 @dataclass(frozen=True)
@@ -163,58 +162,48 @@ class CO2EmissionCalculator:
         
         # Importación grid
         total_grid_import = grid_import_ev_kw + grid_import_mall_kw
-        emissions = CO2EmissionBreakdown(
-            grid_import_kg=total_grid_import * self.factors.grid_import_kg_per_kwh
-        )
+        grid_import_kg = total_grid_import * self.factors.grid_import_kg_per_kwh
         
         # Diesel (si aplica)
-        emissions = CO2EmissionBreakdown(
-            grid_import_kg=emissions.grid_import_kg,
-            diesel_backup_kg=diesel_kw * self.factors.diesel_kg_per_kwh,
-        )
-        
-        # ============ EMISIONES INDIRECTAS (Scope 1) ============
+        diesel_kg = diesel_kw * self.factors.diesel_kg_per_kwh
         
         # Pérdidas por carga BESS
         bess_charging_loss = pv_to_bess_kw * (1 - self.factors.bess_charging_efficiency)
-        emissions.bess_charging_loss_kg = (
-            bess_charging_loss * self.factors.grid_import_kg_per_kwh
-        )
+        bess_charging_loss_kg = bess_charging_loss * self.factors.grid_import_kg_per_kwh
         
         # Pérdidas por descarga BESS
         total_bess_discharge = bess_to_ev_kw + bess_to_mall_kw
         bess_discharging_loss = total_bess_discharge * (1 - self.factors.bess_discharging_efficiency)
-        emissions.bess_discharging_loss_kg = (
-            bess_discharging_loss * self.factors.grid_import_kg_per_kwh
-        )
+        bess_discharging_loss_kg = bess_discharging_loss * self.factors.grid_import_kg_per_kwh
         
         # Autodescarga (standby loss) BESS
         standby_loss = bess_soc_kwh * self.factors.bess_standby_loss_kg_per_kwh_day / 24
-        emissions.bess_standby_loss_kg = (
-            standby_loss * self.factors.grid_import_kg_per_kwh
-        )
+        bess_standby_loss_kg = standby_loss * self.factors.grid_import_kg_per_kwh
         
         # Degradación por ciclado
-        # Un ciclo = carga + descarga completa
         soc_change = abs(bess_soc_kwh - bess_soc_previous_kwh) / bess_capacity_kwh
-        cycles_this_timestep = soc_change / 2.0  # Aproximación (ciclo = 100% change)
-        emissions.bess_cycling_degradation_kg = (
-            cycles_this_timestep * self.factors.bess_cycling_co2_per_cycle
-        )
+        cycles_this_timestep = soc_change / 2.0
+        bess_cycling_degradation_kg = cycles_this_timestep * self.factors.bess_cycling_co2_per_cycle
         self.cycle_counter += cycles_this_timestep
         
         # Envejecimiento calendario
-        emissions.bess_calendar_aging_kg = (
-            self.factors.bess_calendar_aging_kg_per_day / 24
-        )
-        self.bess_age_days += 1/24  # Incrementar por 1 hora
-        
-        # ============ BENEFICIOS (Reducción) ============
+        bess_calendar_aging_kg = self.factors.bess_calendar_aging_kg_per_day / 24
+        self.bess_age_days += 1/24
         
         # Solar utilizado evita importación
         total_solar_used = pv_to_ev_kw + pv_to_mall_kw
-        emissions.solar_utilization_avoided_kg = (
-            total_solar_used * self.factors.grid_import_kg_per_kwh
+        solar_utilization_avoided_kg = total_solar_used * self.factors.grid_import_kg_per_kwh
+        
+        # Crear instancia con todos los valores calculados
+        emissions = CO2EmissionBreakdown(
+            grid_import_kg=grid_import_kg,
+            diesel_backup_kg=diesel_kg,
+            bess_charging_loss_kg=bess_charging_loss_kg,
+            bess_discharging_loss_kg=bess_discharging_loss_kg,
+            bess_standby_loss_kg=bess_standby_loss_kg,
+            bess_cycling_degradation_kg=bess_cycling_degradation_kg,
+            bess_calendar_aging_kg=bess_calendar_aging_kg,
+            solar_utilization_avoided_kg=solar_utilization_avoided_kg,
         )
         
         return emissions
@@ -291,14 +280,12 @@ def create_co2_reward_component(
         Reward component (negativo = penalidad por CO2)
     """
     
-    # Penalidad normalizada
-    total_emissions = emissions.total_kg
+    # Penalidad normalizada (variable usado dentro del retorno)
+    # total_emissions = emissions.total_kg (ya se usa indirectamente en direct_penalty y indirect_penalty)
     
     # Convertir a penalidad (-1.0 a 0.0 range)
     # Asumir presupuesto annual de 7M kg CO2 → 8.2 kg/timestep promedio
     budget_per_timestep = (carbon_budget_annual_kg or 8.2e6) / 8760
-    
-    co2_reward = -min(1.0, total_emissions / budget_per_timestep)
     
     # Componentes ponderadas
     direct_penalty = -(emissions.total_direct_kg / budget_per_timestep) * direct_weight

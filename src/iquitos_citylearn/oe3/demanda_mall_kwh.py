@@ -14,8 +14,8 @@ visualizar cómo interactúan:
 Mantiene frozen dataclasses como patrón del proyecto.
 """
 
-from dataclasses import dataclass, asdict, field
-from typing import Optional, List, Dict, Tuple
+from dataclasses import dataclass
+from typing import Optional, List, Dict
 from pathlib import Path
 import json
 import pandas as pd
@@ -239,13 +239,15 @@ class AnalizadorDemandaMallKwh:
         
         # Llenar año completo si falta
         if len(df_hourly) < 8760:
-            df_hourly['hora'] = df_hourly.index.hour
+            # Usar conversion para acceder a las horas de forma segura
+            index_as_datetime = pd.to_datetime(df_hourly.index)
+            df_hourly['hora'] = index_as_datetime.hour
             hourly_profile = df_hourly.groupby('hora')['demanda_mall_kwh'].mean()
             
-            full_idx = pd.date_range(start=f'{df_hourly.index[0].year}-01-01',
+            full_idx = pd.date_range(start=f'{pd.to_datetime(df_hourly.index[0]).year}-01-01',
                                      periods=8760, freq='h')
             df_full = pd.DataFrame(index=full_idx)
-            df_full['hora'] = df_full.index.hour
+            df_full['hora'] = full_idx.hour
             df_full['demanda_mall_kwh'] = df_full['hora'].map(hourly_profile)
             df_hourly = df_full.drop(columns=['hora'])
         

@@ -11,13 +11,10 @@ Valida:
 
 import json
 import logging
-from typing import List, Dict, Any
 
 from src.iquitos_citylearn.oe3.dispatch_priorities import (
     EnergyDispatcher,
     DispatchState,
-    DispatchPriorities,
-    DispatchPlan,
     validate_dispatch_plan,
     compute_dispatch_reward_bonus,
 )
@@ -405,7 +402,7 @@ class DispatchTest:
             )
             
             plan = self.dispatcher.dispatch(state)
-            is_valid, msg = validate_dispatch_plan(plan, state, self.dispatcher.priorities)
+            is_valid, _ = validate_dispatch_plan(plan, state, self.dispatcher.priorities)
             
             logger.info(
                 f"H{hour}: PV={pv:.0f}kW SOC={state.bess_soc_percent:.0f}% "
@@ -433,7 +430,7 @@ class DispatchTest:
             )
             
             plan = self.dispatcher.dispatch(state)
-            is_valid, msg = validate_dispatch_plan(plan, state, self.dispatcher.priorities)
+            is_valid, _ = validate_dispatch_plan(plan, state, self.dispatcher.priorities)
             
             logger.info(
                 f"H{hour}: SOC={state.bess_soc_percent:.0f}% EV_dem={state.ev_demand_kw:.0f}kW "
