@@ -9,7 +9,7 @@ Shows CO2, cost, and EV satisfaction improvements
 import json
 from pathlib import Path
 from dataclasses import dataclass, asdict
-from typing import List
+# from typing import List
 import pandas as pd
 
 @dataclass(frozen=True)

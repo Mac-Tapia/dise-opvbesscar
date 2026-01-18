@@ -27,8 +27,8 @@ def detect_device():
     else:
         import platform
         # import psutil
-        cpu_count = psutil.cpu_count(logical=False) or 1
-        mem_gb = psutil.virtual_memory().total / 1e9
+        cpu_count = 4  # psutil.cpu_count(logical=False) or 1
+        mem_gb = 8  # psutil.virtual_memory().total / 1e9
         return "cpu", f"{platform.processor()} ({cpu_count} cores)", mem_gb, cpu_count
 
 def optimize_config(device, config_path="configs/default.yaml", mem_gb=8):
@@ -154,7 +154,7 @@ def train_agent(agent_name, config_path, device):
     print(f"\nComando: {' '.join(cmd)}\n")
     
     try:
-        result = subprocess.run(cmd, check=True)
+        _ = subprocess.run(cmd, check=True)
         print(f"\n✓ {agent_name} completado")
         return True
     except subprocess.CalledProcessError as e:
@@ -217,8 +217,8 @@ def main():
     if device == "cuda":
         mem_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
     else:
-        import psutil
-        mem_gb = psutil.virtual_memory().total / 1e9
+        # import psutil
+        mem_gb = 8  # psutil.virtual_memory().total / 1e9
     
     # Optimizar config según device
     config_path = optimize_config(device, mem_gb=mem_gb)
