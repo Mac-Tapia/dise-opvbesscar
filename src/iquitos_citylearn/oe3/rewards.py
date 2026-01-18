@@ -27,27 +27,32 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class MultiObjectiveWeights:
-    """Pesos para función de recompensa multiobjetivo."""
-    co2: float = 0.35              # Minimizar emisiones CO₂
-    cost: float = 0.25             # Minimizar costo eléctrico  
-    solar: float = 0.20            # Maximizar autoconsumo solar
-    ev_satisfaction: float = 0.15  # Maximizar satisfacción carga EV
-    grid_stability: float = 0.05   # Minimizar picos de demanda
+    """Pesos para función de recompensa multiobjetivo.
     
-    # NUEVOS: Penalizaciones operacionales (reentreno)
-    operational_penalties: float = 0.10  # Penalidades por restricciones operacionales
+    MEJORADO: Pesos ajustados para forzar aprendizaje de:
+    - Minimizar importacion en horas pico (18-21h)
+    - Mantener SOC > 0.5 antes de pico
+    - Equilibrio justo entre playas (motos/mototaxis)
+    """
+    co2: float = 0.45              # Minimizar emisiones CO₂ (PRIMARIA - subida de 0.50)
+    cost: float = 0.15             # Minimizar costo eléctrico  
+    solar: float = 0.15            # Maximizar autoconsumo solar (bajado de 0.20)
+    ev_satisfaction: float = 0.05  # Maximizar satisfacción carga EV (bajado de 0.10)
+    grid_stability: float = 0.20   # Minimizar picos de demanda (SUBIDA de 0.05 -> 0.20)
+    peak_import_penalty: float = 0.00  # NUEVO: Penalizar importacion en pico (aplicada dinamicamente)
     
     def __post_init__(self):
-        total = (self.co2 + self.cost + self.solar + self.ev_satisfaction + 
-                 self.grid_stability + self.operational_penalties)
+        # Normalizar pesos base (sin peak_import_penalty que se aplica por separado)
+        base_weights = [self.co2, self.cost, self.solar, self.ev_satisfaction, self.grid_stability]
+        total = sum(base_weights)
         if abs(total - 1.0) > 0.01:
             logger.warning(f"Pesos multiobjetivo no suman 1.0 (suma={total:.3f}), normalizando...")
-            self.co2 /= total
-            self.cost /= total
-            self.solar /= total
-            self.ev_satisfaction /= total
-            self.grid_stability /= total
-            self.operational_penalties /= total
+            factor = 1.0 / total
+            self.co2 *= factor
+            self.cost *= factor
+            self.solar *= factor
+            self.ev_satisfaction *= factor
+            self.grid_stability *= factor
     
     def as_dict(self) -> Dict[str, float]:
         return {
@@ -56,7 +61,7 @@ class MultiObjectiveWeights:
             "solar": self.solar,
             "ev_satisfaction": self.ev_satisfaction,
             "grid_stability": self.grid_stability,
-            "operational_penalties": self.operational_penalties,
+            "peak_import_penalty": self.peak_import_penalty,
         }
 
 
@@ -126,6 +131,8 @@ class MultiObjectiveReward:
     ) -> Tuple[float, Dict[str, float]]:
         """Calcula recompensa multiobjetivo.
         
+        MEJORADO: Penalizaciones más fuertes en horas pico (18-21h).
+        
         Args:
             grid_import_kwh: Energía importada de red (kWh)
             grid_export_kwh: Energía exportada a red (kWh)
@@ -140,20 +147,29 @@ class MultiObjectiveReward:
             Tuple de (recompensa_total, dict_componentes)
         """
         components = {}
+        is_peak = hour in self.context.peak_hours
         
-        # 1. Recompensa CO₂ (minimizar)
+        # 1. Recompensa CO₂ (minimizar) - MEJORADO: Penalizar más en pico
         co2_kg = grid_import_kwh * self.context.co2_factor_kg_per_kwh
-        # Normalizar según demanda típica del sistema (mall + EVs)
-        # OE2: Mall ~420 kWh/h pico, EVs ~37 kWh/h promedio
-        co2_baseline = 500.0  # kWh típico por hora para el sistema completo
-        r_co2 = 1.0 - 2.0 * min(1.0, grid_import_kwh / co2_baseline)
+        co2_baseline = 500.0  # kWh típico por hora
+        
+        if is_peak:
+            # En hora pico, penalizar MUCHO más la importación
+            # Escala más agresiva: si importas baseline, penalización es -1.5 en lugar de -1.0
+            r_co2 = 1.0 - 3.0 * min(1.0, grid_import_kwh / co2_baseline)
+        else:
+            # Fuera de pico, más tolerante
+            r_co2 = 1.0 - 1.5 * min(1.0, grid_import_kwh / co2_baseline)
+        
+        r_co2 = np.clip(r_co2, -1.0, 1.0)
         components["r_co2"] = r_co2
         components["co2_kg"] = co2_kg
         
         # 2. Recompensa Costo (minimizar)
         cost_usd = (grid_import_kwh - grid_export_kwh) * self.context.tariff_usd_per_kwh
-        cost_baseline = 100.0  # USD típico por hora (500 kWh * 0.20 USD/kWh)
+        cost_baseline = 100.0
         r_cost = 1.0 - 2.0 * min(1.0, max(0, cost_usd) / cost_baseline)
+        r_cost = np.clip(r_cost, -1.0, 1.0)
         components["r_cost"] = r_cost
         components["cost_usd"] = cost_usd
         
@@ -161,37 +177,45 @@ class MultiObjectiveReward:
         if solar_generation_kwh > 0:
             solar_used = min(solar_generation_kwh, ev_charging_kwh + (grid_import_kwh * 0.5))
             self_consumption_ratio = solar_used / solar_generation_kwh
-            r_solar = 2.0 * self_consumption_ratio - 1.0  # [0,1] -> [-1,1]
+            r_solar = 2.0 * self_consumption_ratio - 1.0
         else:
-            r_solar = 0.0  # Sin solar, neutral
+            r_solar = 0.0
+        r_solar = np.clip(r_solar, -1.0, 1.0)
         components["r_solar"] = r_solar
         components["solar_kwh"] = solar_generation_kwh
         
-        # 4. Recompensa Satisfacción EV (maximizar)
-        # SOC cercano al objetivo = bueno
+        # 4. Recompensa Satisfacción EV (maximizar) - REDUCIDA en peso
         ev_satisfaction = min(1.0, ev_soc_avg / self.context.ev_soc_target)
         r_ev = 2.0 * ev_satisfaction - 1.0
-        # Bonus si se está cargando con solar
         if solar_generation_kwh > 0 and ev_charging_kwh > 0:
             solar_ev_ratio = min(1.0, ev_charging_kwh / solar_generation_kwh)
-            r_ev += 0.2 * solar_ev_ratio
+            r_ev += 0.1 * solar_ev_ratio  # Reducido bonus
         r_ev = np.clip(r_ev, -1.0, 1.0)
         components["r_ev"] = r_ev
         components["ev_soc_avg"] = ev_soc_avg
         
-        # 5. Recompensa Estabilidad de Red (minimizar picos)
-        is_peak = hour in self.context.peak_hours
+        # 5. Recompensa Estabilidad de Red (minimizar picos) - AHORA TIENE MAS PESO
         demand_ratio = grid_import_kwh / max(1.0, self.context.peak_demand_limit_kw)
         
         if is_peak:
-            # En hora pico, penalizar fuertemente alta demanda
-            r_grid = 1.0 - 3.0 * min(1.0, demand_ratio)
+            # En pico: Penalizar MUY fuertemente cualquier exceso
+            # Si demand_ratio > 1.0 (exceso de limite), penalizacion es -2.0+
+            r_grid = 1.0 - 4.0 * min(1.0, demand_ratio)
         else:
-            # Fuera de pico, más tolerante
-            r_grid = 1.0 - 1.5 * min(1.0, demand_ratio)
+            # Fuera de pico: más tolerante
+            r_grid = 1.0 - 2.0 * min(1.0, demand_ratio)
         r_grid = np.clip(r_grid, -1.0, 1.0)
         components["r_grid"] = r_grid
         components["is_peak"] = float(is_peak)
+        
+        # Penalizacion adicional por SOC bajo antes de pico
+        pre_peak_hours = [16, 17]  # Horas 16-17 para preparar para 18-21h
+        if hour in pre_peak_hours and bess_soc < 0.5:
+            # Penalizar fuertemente si BESS no tiene reserva antes de pico
+            soc_penalty = -0.5 * (1.0 - bess_soc / 0.5)
+            components["soc_reserve_penalty"] = soc_penalty
+        else:
+            components["soc_reserve_penalty"] = 0.0
         
         # Recompensa total ponderada
         reward = (
@@ -199,9 +223,12 @@ class MultiObjectiveReward:
             self.weights.cost * r_cost +
             self.weights.solar * r_solar +
             self.weights.ev_satisfaction * r_ev +
-            self.weights.grid_stability * r_grid
+            self.weights.grid_stability * r_grid +
+            components["soc_reserve_penalty"]  # Penalizacion SOC
         )
         
+        # Normalizar reward a [-1, 1]
+        reward = np.clip(reward, -1.0, 1.0)
         components["reward_total"] = reward
         
         # Guardar historial
@@ -450,60 +477,35 @@ class CityLearnMultiObjectiveWrapper:
 
 
 def create_iquitos_reward_weights(
-    priority: str = "balanced",
-    include_operational: bool = False,
+    priority: str = "co2_focus",
+    include_operational: bool = False
 ) -> MultiObjectiveWeights:
     """Crea pesos predefinidos para diferentes prioridades.
     
     Args:
         priority: "balanced", "co2_focus", "cost_focus", "ev_focus", "solar_focus"
-        include_operational: Si True, suma peso a penalizaciones operacionales
+        include_operational: Deprecated (pesos operacionales removidos en v2.0)
         
     Returns:
         MultiObjectiveWeights configurado
     """
-    if include_operational:
-        # Versión con penalizaciones operacionales (para reentreno)
-        presets = {
-            "balanced": MultiObjectiveWeights(
-                co2=0.30, cost=0.20, solar=0.18, ev_satisfaction=0.12, 
-                grid_stability=0.05, operational_penalties=0.15
-            ),
-            "co2_focus": MultiObjectiveWeights(
-                co2=0.45, cost=0.12, solar=0.18, ev_satisfaction=0.08, 
-                grid_stability=0.05, operational_penalties=0.12
-            ),
-            "cost_focus": MultiObjectiveWeights(
-                co2=0.18, cost=0.40, solar=0.12, ev_satisfaction=0.12, 
-                grid_stability=0.05, operational_penalties=0.13
-            ),
-            "ev_focus": MultiObjectiveWeights(
-                co2=0.20, cost=0.15, solar=0.13, ev_satisfaction=0.30, 
-                grid_stability=0.04, operational_penalties=0.18
-            ),
-            "solar_focus": MultiObjectiveWeights(
-                co2=0.20, cost=0.12, solar=0.36, ev_satisfaction=0.12, 
-                grid_stability=0.04, operational_penalties=0.16
-            ),
-        }
-    else:
-        # Versión original (para baseline)
-        presets = {
-            "balanced": MultiObjectiveWeights(
-                co2=0.35, cost=0.25, solar=0.20, ev_satisfaction=0.15, grid_stability=0.05
-            ),
-            "co2_focus": MultiObjectiveWeights(
-                co2=0.50, cost=0.15, solar=0.20, ev_satisfaction=0.10, grid_stability=0.05
-            ),
-            "cost_focus": MultiObjectiveWeights(
-                co2=0.20, cost=0.45, solar=0.15, ev_satisfaction=0.15, grid_stability=0.05
-            ),
-            "ev_focus": MultiObjectiveWeights(
-                co2=0.25, cost=0.20, solar=0.15, ev_satisfaction=0.35, grid_stability=0.05
-            ),
-            "solar_focus": MultiObjectiveWeights(
-                co2=0.25, cost=0.15, solar=0.40, ev_satisfaction=0.15, grid_stability=0.05
-            ),
-        }
+    # Versión estándar (todos los casos ahora usan esto)
+    presets = {
+        "balanced": MultiObjectiveWeights(
+            co2=0.35, cost=0.25, solar=0.20, ev_satisfaction=0.15, grid_stability=0.05
+        ),
+        "co2_focus": MultiObjectiveWeights(
+            co2=0.50, cost=0.15, solar=0.20, ev_satisfaction=0.10, grid_stability=0.05
+        ),
+        "cost_focus": MultiObjectiveWeights(
+            co2=0.20, cost=0.45, solar=0.15, ev_satisfaction=0.15, grid_stability=0.05
+        ),
+        "ev_focus": MultiObjectiveWeights(
+            co2=0.25, cost=0.20, solar=0.15, ev_satisfaction=0.35, grid_stability=0.05
+        ),
+        "solar_focus": MultiObjectiveWeights(
+            co2=0.25, cost=0.15, solar=0.40, ev_satisfaction=0.15, grid_stability=0.05
+        ),
+    }
     
     return presets.get(priority, presets["balanced"])

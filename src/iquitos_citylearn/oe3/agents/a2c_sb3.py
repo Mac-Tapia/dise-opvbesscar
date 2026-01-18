@@ -4,8 +4,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Dict, List, Callable
+import warnings
 import numpy as np
 import logging
+
+# Suppress stable_baselines3 render_mode warning
+warnings.filterwarnings("ignore", message=".*render_mode.*")
 
 from ..progress import append_progress_row, render_progress_plot
 

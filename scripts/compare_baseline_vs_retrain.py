@@ -10,24 +10,20 @@ Genera:
 
 import sys
 from pathlib import Path
-from dataclasses import asdict
 import json
 import logging
 import numpy as np
 import pandas as pd
-from typing import Dict, Tuple, Optional
+from typing import Tuple
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 # Agregar raíz al path
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts._common import load_all, setup_logging
+from scripts._common import load_all
 
 logger = logging.getLogger(__name__)
-
-sns.set_style("whitegrid")
 plt.rcParams["figure.figsize"] = (14, 6)
 
 
@@ -179,7 +175,7 @@ def create_power_profile_plot(
 ) -> None:
     """Grafica perfil de potencia EV: baseline vs retrain."""
     
-    fig, axes = plt.subplots(2, 2, figsize=(16, 10))
+    _, axes = plt.subplots(2, 2, figsize=(16, 10))
     
     # Subgráfico 1: Potencia total EV
     ax = axes[0, 0]
@@ -251,7 +247,7 @@ def create_soc_evolution_plot(
 ) -> None:
     """Grafica evolución de SOC BESS: baseline vs retrain."""
     
-    fig, ax = plt.subplots(figsize=(16, 6))
+    _, ax = plt.subplots(figsize=(16, 6))
     
     ax.plot(df_baseline["hour_of_year"], df_baseline["bess_soc_percent"], 
             label="Uncontrolled", linewidth=1, alpha=0.7, color="red")
@@ -288,7 +284,7 @@ def create_grid_import_plot(
 ) -> None:
     """Grafica importación de red: baseline vs retrain."""
     
-    fig, axes = plt.subplots(2, 1, figsize=(16, 10))
+    _, axes = plt.subplots(2, 1, figsize=(16, 10))
     
     # Subgráfico 1: Importación horaria
     ax = axes[0]
@@ -322,10 +318,8 @@ def create_grid_import_plot(
 
 
 def main():
-    setup_logging(level=logging.INFO)
-    
     # Cargar config
-    cfg, rp = load_all("configs/default.yaml")
+    _, rp = load_all("configs/default.yaml")
     rp.ensure()
     
     logger.info("=" * 80)

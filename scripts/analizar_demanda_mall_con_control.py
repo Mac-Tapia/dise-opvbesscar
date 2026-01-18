@@ -11,11 +11,10 @@ Muestra:
 
 from pathlib import Path
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import timedelta
 from scripts._common import load_all
 from src.iquitos_citylearn.oe3.demanda_mall_kwh import (
     create_demanda_mall_analyzer,
-    HoraConControlInsertado,
 )
 
 
@@ -81,7 +80,9 @@ def simular_despacho_24h_ejemplo():
         print("⚠️  PV no encontrado, usando perfil sintético")
         
         dates = df_mall.index
-        hora_dia = dates.hour
+        # Convertir a DatetimeIndex para acceder a propiedades de hora
+        dates_dt = pd.to_datetime(dates)
+        hora_dia = dates_dt.hour
         
         # Perfil solar: máximo mediodía (13-14h)
         def pv_profile(h):
@@ -124,7 +125,7 @@ def simular_despacho_24h_ejemplo():
         pv_disponible = df_pv_dia.iloc[i, 0] if i < len(df_pv_dia) else 0.0
         
         # Simular despacho heurístico
-        hora = ts.hour
+        hora = int(ts) if isinstance(ts, (int, float)) else 0  # Fallback a hora 0
         
         # Estrategia simple:
         # P1: Aprovechar PV directo a EV hasta 100 kWh

@@ -3,7 +3,6 @@
 
 import re
 import os
-from pathlib import Path
 
 def fix_markdown_file(filepath):
     """Corrige problemas MD040 y MD060 en un archivo Markdown."""

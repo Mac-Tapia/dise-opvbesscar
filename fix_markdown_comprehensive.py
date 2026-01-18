@@ -85,7 +85,7 @@ def fix_md060_table_separators(content: str) -> str:
                 
                 # Filtrar partes vacías y arreglar espacios
                 fixed_parts = []
-                for i, part in enumerate(parts):
+                for _, part in enumerate(parts):
                     part = part.strip()
                     
                     # Para separadores (partes que solo contienen guiones)
