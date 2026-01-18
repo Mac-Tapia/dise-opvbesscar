@@ -158,7 +158,7 @@ def check_config() -> bool:
     if not config_path.exists():
         print_error(f"Config file not found: {CONFIG_FILE}")
         return False
-    onfig_data
+    
     print_success(f"Config found: {config_path}")
     
     # Validate YAML

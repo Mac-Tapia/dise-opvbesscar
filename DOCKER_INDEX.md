@@ -28,7 +28,7 @@
 
 ### Docker
 
-```
+```text
 Dockerfile                 Multi-stage build optimizado (Python 3.11)
 docker-compose.yml         Stack CPU (servicios pipeline + monitor)
 docker-compose.gpu.yml     Stack GPU (NVIDIA runtime)
@@ -46,7 +46,7 @@ launch_docker.py           Python launcher con validaciones interactivas
 
 ### Configuración del Proyecto
 
-```
+```text
 configs/default.yaml       Parámetros OE2 + OE3 (editable)
 pyproject.toml            Dependencias Python
 requirements.txt          Packages necesarios
@@ -56,7 +56,7 @@ requirements.txt          Packages necesarios
 
 ## 🎯 FLUJO DE EJECUCIÓN
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │ 1. PREPARACIÓN                                          │
 │    - Verificar Docker instalado y corriendo            │
@@ -351,7 +351,7 @@ OE2 no se ejecutó. Ejecutar sin -SkipOE2:
 ## 📞 REFERENCIAS RÁPIDAS
 
 | Necesidad | Archivo |
-|-----------|---------|
+| --------- | ------- |
 | Ejecutar pipeline | [EJECUTAR_DOCKER.md](./EJECUTAR_DOCKER.md) ⭐ |
 | Documentación técnica | [DOCKER_GUIDE.md](./DOCKER_GUIDE.md) |
 | Editar parámetros | [configs/default.yaml](./configs/default.yaml) |
