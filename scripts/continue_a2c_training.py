@@ -69,6 +69,9 @@ def main():
     a2c_cfg = cfg["oe3"]["evaluation"]["a2c"]
     total_timesteps = args.episodes * 8760
     
+    # Leer pesos multiobjetivo del YAML
+    multi_obj_weights = a2c_cfg.get("multi_objective_weights", {})
+    
     config = A2CConfig(
         train_steps=total_timesteps,
         n_steps=a2c_cfg.get("n_steps", 2048),
@@ -85,6 +88,12 @@ def main():
         checkpoint_dir=str(checkpoint_dir),
         checkpoint_freq_steps=a2c_cfg.get("checkpoint_freq_steps", 1000),
         resume_path=str(resume_checkpoint) if resume_checkpoint else None,
+        # Pesos multiobjetivo desde YAML
+        weight_co2=float(multi_obj_weights.get("co2", 0.50)),
+        weight_cost=float(multi_obj_weights.get("cost", 0.15)),
+        weight_solar=float(multi_obj_weights.get("solar", 0.20)),
+        weight_ev_satisfaction=float(multi_obj_weights.get("ev", 0.10)),
+        weight_grid_stability=float(multi_obj_weights.get("grid", 0.05)),
     )
     
     logger.info(f"Configuración A2C:")

@@ -81,6 +81,9 @@ def main():
     # SAC Config from yaml
     sac_cfg = cfg["oe3"]["evaluation"]["sac"]
     
+    # Leer pesos multiobjetivo del YAML
+    multi_obj_weights = sac_cfg.get("multi_objective_weights", {})
+    
     config = SACConfig(
         episodes=args.episodes,
         device=sac_cfg.get("device", "cuda"),
@@ -99,6 +102,12 @@ def main():
         progress_path=None,
         prefer_citylearn=sac_cfg.get("prefer_citylearn", True),
         resume_path=str(checkpoint_path) if checkpoint_path else None,
+        # Pesos multiobjetivo desde YAML
+        weight_co2=float(multi_obj_weights.get("co2", 0.50)),
+        weight_cost=float(multi_obj_weights.get("cost", 0.15)),
+        weight_solar=float(multi_obj_weights.get("solar", 0.20)),
+        weight_ev_satisfaction=float(multi_obj_weights.get("ev", 0.10)),
+        weight_grid_stability=float(multi_obj_weights.get("grid", 0.05)),
     )
     
     logger.info(f"Configuración SAC:")

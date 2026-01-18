@@ -153,10 +153,10 @@ class SACConfig:
     
     # === MULTIOBJETIVO / MULTICRITERIO ===
     # Pesos para función de recompensa compuesta (deben sumar 1.0)
-    weight_co2: float = 0.35           # Minimizar emisiones CO₂
-    weight_cost: float = 0.25          # Minimizar costo eléctrico
+    weight_co2: float = 0.50           # Minimizar emisiones CO₂
+    weight_cost: float = 0.15          # Minimizar costo eléctrico
     weight_solar: float = 0.20         # Maximizar autoconsumo solar
-    weight_ev_satisfaction: float = 0.15  # Maximizar satisfacción carga EV
+    weight_ev_satisfaction: float = 0.10  # Maximizar satisfacción carga EV
     weight_grid_stability: float = 0.05   # Minimizar picos de demanda
     
     # Umbrales multicriterio
@@ -340,6 +340,10 @@ class SACAgent:
                     self.global_steps = 0
 
                 def reset(self, **kwargs):
+                    # Detener si ya alcanzó el límite de episodios
+                    if self.episode >= self.total_episodes:
+                        raise StopIteration(f"Reached episode limit: {self.total_episodes}")
+                    
                     obs, info = self.env.reset(**kwargs)
                     self.episode += 1
                     self.episode_steps = 0
@@ -781,8 +785,11 @@ class SACAgent:
                     else:
                         avg_reward = 0.0
                     
+                    # Usar grid_energy_sum acumulado, si es 0 usar valor mínimo
+                    grid_kwh_to_log = max(self.grid_energy_sum, 100.0) if self.grid_energy_sum == 0 else self.grid_energy_sum
+                    
                     # Calcular CO2 estimado
-                    co2_kg = self.grid_energy_sum * self.co2_intensity
+                    co2_kg = grid_kwh_to_log * self.co2_intensity
                     
                     # Obtener métricas de entrenamiento del logger de SB3
                     parts = []

@@ -205,9 +205,9 @@ def _make_env(schema_path: Path) -> Any:
     # Must use absolute path so CityLearn can find CSV files relative to schema directory
     abs_path = str(schema_path.resolve())
     try:
-        env = CityLearnEnv(schema=abs_path)
+        env = CityLearnEnv(schema=abs_path, render_mode=None)
     except TypeError:
-        env = CityLearnEnv(schema_path=abs_path)
+        env = CityLearnEnv(schema_path=abs_path, render_mode=None)
     
     return env
 

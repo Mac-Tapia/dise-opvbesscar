@@ -561,6 +561,23 @@ for agent_name, agent in agents.items():
 
 **Análisis:** SAC reduce solo 2.18% (2.18%) vs Uncontrolled (70.47%). La diferencia no es estadísticamente significativa en grid aislada amazónica.
 
+#### Subsección 4.3.5: Impacto CO2 por horizonte temporal
+
+**Tabla 16: Valores de CO2 por horizonte temporal**
+
+| Flota | CO2 Diario (t) | CO2 Mensual (t) | CO2 Anual (t) | Participación % |
+| ----- | -------------- | --------------- | -------------- | ---------------- |
+| Motos | 3.89 | 116.81 | 1,421.22 | 82.2% |
+| Mototaxis | 0.84 | 25.31 | 307.93 | 17.8% |
+| **Total** | **4.74** | **142.12** | **1,729.15** | **100.0%** |
+
+Nota: Los valores están expresados en toneladas de CO2. Se asume operación continua durante 30 días al mes y 365 días al año. Fuente: elaboración propia en base al código de Google Colab.
+
+- Motos: Representan el 82.2% de la reducción total, evitando aproximadamente 1,421.2 toneladas de CO2 al año.
+- Mototaxis: A pesar de ser una flota menor, contribuyen con el 17.8% del impacto, evitando 307.9 toneladas de CO2 anualmente.
+
+Conclusión final: El proyecto en su conjunto evitará la emisión de 1,729.1 toneladas de CO2 por año, consolidándose como una estrategia clave para la mitigación del cambio climático local.
+
 ### 4.4 Síntesis de Resultados y Validación de Hipótesis
 
 **Tabla 9: Validación Integral de Hipótesis**
