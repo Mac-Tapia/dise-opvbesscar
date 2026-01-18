@@ -1,0 +1,71 @@
+{
+  "passed": 13,
+  "failed": 0,
+  "tests": [
+    {
+      "name": "P1: FV directo a EVs cuando hay sol y demanda",
+      "status": "\u2713 PASS",
+      "passed": true
+    },
+    {
+      "name": "P1: Inactiva de noche (sin sol)",
+      "status": "\u2713 PASS",
+      "passed": true
+    },
+    {
+      "name": "P2: Cargar BESS con PV excedente",
+      "status": "\u2713 PASS",
+      "passed": true
+    },
+    {
+      "name": "P2: Inactiva cuando BESS saturada (SOC > 95%)",
+      "status": "\u2713 PASS",
+      "passed": true
+    },
+    {
+      "name": "P3: BESS a EVs en noche",
+      "status": "\u2713 PASS",
+      "passed": true
+    },
+    {
+      "name": "P3: Inactiva cuando BESS depleted (SOC < 20%)",
+      "status": "\u2713 PASS",
+      "passed": true
+    },
+    {
+      "name": "P4: Cargar mall cuando BESS saturada y sobra FV",
+      "status": "\u2713 PASS",
+      "passed": true
+    },
+    {
+      "name": "P5: Importar grid cuando hay d\u00e9ficit",
+      "status": "\u2713 PASS",
+      "passed": true
+    },
+    {
+      "name": "Cascada P1\u2192P5 completa en escenario mixto",
+      "status": "\u2713 PASS",
+      "passed": true
+    },
+    {
+      "name": "L\u00edmite: EV limit 150 kW",
+      "status": "\u2713 PASS",
+      "passed": true
+    },
+    {
+      "name": "L\u00edmite: BESS max power 1200 kW",
+      "status": "\u2713 PASS",
+      "passed": true
+    },
+    {
+      "name": "L\u00edmite: BESS SOC min 20%",
+      "status": "\u2713 PASS",
+      "passed": true
+    },
+    {
+      "name": "Recompensas: Total no-negativo en despacho optimal",
+      "status": "\u2713 PASS",
+      "passed": true
+    }
+  ]
+}

@@ -88,6 +88,81 @@ oe2:
     pv_night_threshold_kwh: 0.1
     fixed_capacity_kwh: 2000
     fixed_power_kw: 1200
+  operational_control:
+    # Límites operacionales por playa (sin cambiar capacidad)
+    peak_hours:
+      - 18
+      - 19
+      - 20
+      - 21
+    valley_hours:
+      - 9
+      - 10
+      - 11
+      - 12
+    # Límites de potencia por playa para throttling
+    power_limits_kw:
+      playa_motos: 120.0 # 112 cargadores × 2 kW nominal, pero operativo límite
+      playa_mototaxis: 48.0 # 16 cargadores × 3 kW nominal, pero operativo límite
+      total_aggregate: 150.0 # Límite máximo agregado
+    # Reserva dinámica de SOC pre-pico
+    bess_soc_target:
+      normal_hours: 0.60 # Mantener al menos 60% fuera de pico
+      pre_peak_hours: 0.85 # Elevar a 85% a las 16-17h
+      during_peak_hours: 0.40 # Permitir descender a 40% durante pico
+    # Parámetros de penalización en rewards
+    peak_cost_multiplier: 1.5 # Costo 50% mayor en pico (18-21h)
+    import_penalty_weight: 0.30 # Peso adicional para importación en pico
+    fairness_penalty_weight: 0.15 # Penalizar desequilibrio entre playas
+    soc_reserve_penalty: 0.20 # Penalizar incumplimiento de reserva SOC
+
+  dispatch_rules:
+    # Despacho de energía con prioridades ordenadas
+    enabled: true
+    description: "Cubrir bloque pico (18-21h) con prioridades: FV→EV → FV→BESS → BESS→EV(noche) → BESS→MALL(saturada)"
+
+    # Prioridad 1: FV → EV (directo a vehículos)
+    priority_1_pv_to_ev:
+      enabled: true
+      description: "FV directamente a EVs (máxima prioridad)"
+      pv_threshold_kwh: 0.5 # Considerar sol activo si PV ≥ esto
+      ev_power_limit_kw: 150.0 # Límite de despacho para EVs
+
+    # Prioridad 2: FV excedente → BESS
+    priority_2_pv_to_bess:
+      enabled: true
+      description: "FV excedente a BESS (cargar reserva para pico)"
+      bess_soc_max_percent: 95.0 # No cargar si BESS > 95%
+      bess_soc_target_percent: 85.0 # Objetivo en pre-pico (16-17h)
+      bess_power_max_kw: 1200.0 # Límite potencia carga BESS
+
+    # Prioridad 3: BESS → EV (especialmente noche)
+    priority_3_bess_to_ev:
+      enabled: true
+      description: "BESS a EVs cuando cae el sol (noche)"
+      pv_night_threshold_kwh: 0.1 # Considerar noche si PV < esto
+      bess_soc_min_percent: 20.0 # No descargar bajo 20%
+      bess_power_max_kw: 1200.0 # Límite potencia descarga BESS
+
+    # Prioridad 4: BESS saturada → MALL
+    priority_4_bess_to_mall:
+      enabled: true
+      description: "BESS saturada + FV excedente → Mall (descargar exceso)"
+      bess_saturation_percent: 95.0 # Considerar saturada si SOC > esto
+      mall_power_max_kw: 500.0 # Límite potencia para mall
+
+    # Prioridad 5: Grid Import (último recurso)
+    priority_5_grid_import:
+      enabled: true
+      description: "Importar desde red si es necesario cubrir déficit"
+      allowed: true
+      cost_multiplier_peak: 2.0 # Costo 2x mayor en pico (18-21h)
+
+    # Recompensas por cumplimiento de prioridades
+    reward_bonuses:
+      direct_solar_bonus_weight: 0.01 # Bonus por usar FV directo
+      battery_charge_bonus_weight: 0.005 # Bonus por cargar BESS eficientemente
+      grid_import_penalty_weight: 0.0001 # Penalidad por importación (CO₂)
 oe3:
   dataset:
     template_name: citylearn_challenge_2022_phase_all_plus_evs
@@ -96,11 +171,61 @@ oe3:
   grid:
     carbon_intensity_kg_per_kwh: 0.4521
     tariff_usd_per_kwh: 0.2
+
+  co2_emissions:
+    # Emisiones Directas (Scope 2)
+    grid_import_factor_kg_kwh: 0.4521 # Matriz Iquitos (térmica)
+    diesel_backup_factor_kg_kwh: 0.2667 # Si hay generación diesel
+
+    # Emisiones Indirectas (Scope 1)
+    bess_charging_efficiency: 0.95 # 5% pérdidas en carga
+    bess_discharging_efficiency: 0.95 # 5% pérdidas en descarga
+    bess_standby_loss_percent_day: 0.1 # Autodescarga 0.1% diaria
+
+    # Degradación BESS por uso
+    bess_cycling_co2_per_cycle: 0.05 # kg CO2 por ciclo completo
+    bess_calendar_aging_kg_per_day: 0.01 # Degradación por tiempo
+
+    # Estrategias de reducción de CO2
+    reduction_strategies:
+      direct_solar_maximization:
+        enabled: true
+        weight: 0.50 # 50% del objetivo CO2
+        description: "Maximizar FV directo a EVs (P1 despacho)"
+        co2_avoided_per_kwh: 0.4521
+
+      grid_import_minimization:
+        enabled: true
+        weight: 0.30 # 30% del objetivo CO2
+        description: "Minimizar importación desde grid"
+        penalty_multiplier_peak_hours: 2.0 # 2x penalidad en 18-21h
+
+      bess_efficiency_optimization:
+        enabled: true
+        weight: 0.15 # 15% del objetivo CO2
+        description: "Optimizar ciclos y conversiones BESS"
+        max_cycles_per_year: 200
+
+      cost_reduction:
+        enabled: true
+        weight: 0.05 # 5% del objetivo
+        description: "Minimizar costo operativo (colateral)"
+
+    # Carbon budget anual (target)
+    annual_co2_budget_kg: 7000000 # 7M kg/año (38% reduction vs baseline)
+
   evaluation:
     agents:
+      - SAC # Primary agent with dispatch + CO2 reduction
       - PPO
       - A2C
     resume_checkpoints: true
+
+    co2_tracking: true # Track direct + indirect emissions
+    reward_components:
+      base_weight: 0.80
+      co2_direct_weight: 0.12 # Scope 2 (grid import)
+      co2_indirect_weight: 0.08 # Scope 1 (BESS efficiency)
     multi_objective_priority: co2_focus
     sac:
       episodes: 5
