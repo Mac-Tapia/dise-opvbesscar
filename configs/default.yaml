@@ -98,7 +98,6 @@ oe3:
     tariff_usd_per_kwh: 0.2
   evaluation:
     agents:
-      - SAC
       - PPO
       - A2C
     resume_checkpoints: true
@@ -108,14 +107,14 @@ oe3:
       resume_checkpoints: true
       deterministic_eval: true
       device: cuda
-      batch_size: 8192
-      buffer_size: 1000000
-      gradient_steps: 8
-      learning_starts: 250
-      train_freq: 1
-      log_interval: 50
+      batch_size: 65536
+      buffer_size: 4000000
+      gradient_steps: 64
+      learning_starts: 50
+      train_freq: 8
+      log_interval: 25
       use_amp: true
-      checkpoint_freq_steps: 500
+      checkpoint_freq_steps: 100
       progress_interval_episodes: 1
       save_final: true
       prefer_citylearn: false
@@ -129,13 +128,13 @@ oe3:
     ppo:
       episodes: 5
       resume_checkpoints: true
-      timesteps: 87600
-      n_steps: 8192
-      batch_size: 4096
-      n_epochs: 5
+      timesteps: 43800
+      n_steps: 16384
+      batch_size: 16384
+      n_epochs: 10
       use_amp: true
-      log_interval: 500
-      checkpoint_freq_steps: 1000
+      log_interval: 250
+      checkpoint_freq_steps: 500
       progress_interval_episodes: 1
       save_final: true
       device: cuda
@@ -151,14 +150,14 @@ oe3:
     a2c:
       episodes: 5
       resume_checkpoints: true
-      timesteps: 87600
-      n_steps: 8192
+      timesteps: 43800
+      n_steps: 32768
       learning_rate: 0.001
       entropy_coef: 0.01
       vf_coef: 0.5
       max_grad_norm: 0.5
-      log_interval: 500
-      checkpoint_freq_steps: 1000
+      log_interval: 250
+      checkpoint_freq_steps: 500
       progress_interval_episodes: 1
       save_final: true
       device: cuda

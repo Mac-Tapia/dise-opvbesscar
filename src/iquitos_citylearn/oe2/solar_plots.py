@@ -156,7 +156,8 @@ def plot_dia_representativo(df: pd.DataFrame, date_str: str, day_type: str,
     
     ax1.set_ylabel('Potencia (kW)', fontsize=11, color='blue')
     ax1.tick_params(axis='y', labelcolor='blue')
-    ax1.set_ylim(0, day_data['ac_power_kw'].max() * 1.15)
+    max_power = day_data['ac_power_kw'].max()
+    ax1.set_ylim(0, max(max_power * 1.15, 1.0))
     
     # Eje derecho: POA
     ax1_r = ax1.twinx()

@@ -1,0 +1,78 @@
+version: '3.9'
+
+services:
+  # OE2→OE3 Pipeline with GPU Support
+  iquitos-pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      cache_from:
+        - iquitos-citylearn:latest
+    image: iquitos-citylearn:latest
+    container_name: iquitos-citylearn-gpu
+    
+    volumes:
+      - ./data:/app/data
+      - ./outputs:/app/outputs
+      - ./configs:/app/configs:ro
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - OMP_NUM_THREADS=8
+      - CUDA_VISIBLE_DEVICES=0
+      - TORCH_HOME=/app/.torch
+    
+    # GPU runtime
+    runtime: nvidia
+    
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+          cpus: '8'
+          memory: 32G
+        limits:
+          cpus: '16'
+          memory: 64G
+    
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # Training monitor
+  training-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: iquitos-citylearn:latest
+    container_name: iquitos-monitor-gpu
+    
+    depends_on:
+      iquitos-pipeline:
+        condition: service_started
+    
+    volumes:
+      - ./outputs:/app/outputs:ro
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+    
+    command: ["python", "monitor_checkpoints.py"]
+    
+    restart: unless-stopped
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"

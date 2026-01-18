@@ -162,6 +162,31 @@ def main() -> None:
         if agent.lower() == "uncontrolled":
             continue
         
+        # Skip if results already exist
+        results_json = out_dir / f"{agent.lower()}_results.json"
+        if results_json.exists():
+            with open(results_json) as f:
+                res = json.load(f)
+            
+            # Verificar si SAC o PPO ya completaron 5 episodios
+            if agent.lower() in ["sac", "ppo"]:
+                # Verificar si tiene al menos 5 episodios (simulated_years >= 5.0)
+                if res.get("simulated_years", 0) >= 5.0:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.info(f"[SKIP] {agent.upper()} - Ya completó 5 episodios ({res.get('simulated_years')} años simulados)")
+                    print(f"\n{'='*80}")
+                    print(f"✓ {agent.upper()} ya completó {int(res.get('simulated_years', 0))} episodios - SALTANDO")
+                    print(f"{'='*80}\n")
+                    results[agent] = res
+                    continue
+            
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"[SKIP] {agent} - resultados ya existen en {results_json}")
+            results[agent] = res
+            continue
+        
         try:
             res = simulate(
                 schema_path=schema_pv,
@@ -214,10 +239,12 @@ def main() -> None:
         return r["carbon_kg"] / max(r["simulated_years"], 1e-9)
 
     def autosuficiencia(r: dict) -> float:
-        ev_kwh_y = r["ev_charging_kwh"] / max(r["simulated_years"], 1e-9)
-        build_kwh_y = r["building_load_kwh"] / max(r["simulated_years"], 1e-9)
-        import_kwh_y = r["grid_import_kwh"] / max(r["simulated_years"], 1e-9)
-        return 1.0 - import_kwh_y / max(ev_kwh_y + build_kwh_y, 1e-9)
+        # Manejar claves faltantes con get() para compatibilidad
+        ev_kwh_y = r.get("ev_charging_kwh", 0) / max(r.get("simulated_years", 1), 1e-9)
+        build_kwh_y = r.get("building_load_kwh", 0) / max(r.get("simulated_years", 1), 1e-9)
+        import_kwh_y = r.get("grid_import_kwh", 0) / max(r.get("simulated_years", 1), 1e-9)
+        total_load = max(ev_kwh_y + build_kwh_y, 1e-9)
+        return 1.0 - import_kwh_y / total_load
 
     # Manejar caso cuando no hay resultados de agentes
     if not results:

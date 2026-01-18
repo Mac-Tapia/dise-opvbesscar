@@ -66,6 +66,9 @@ def main():
     ppo_cfg = cfg["oe3"]["evaluation"]["ppo"]
     total_timesteps = args.episodes * 8760
     
+    # Leer pesos multiobjetivo del YAML
+    multi_obj_weights = ppo_cfg.get("multi_objective_weights", {})
+    
     config = PPOConfig(
         train_steps=total_timesteps,
         n_steps=ppo_cfg.get("n_steps", 4096),
@@ -85,6 +88,12 @@ def main():
         checkpoint_dir=str(checkpoint_dir),
         checkpoint_freq_steps=ppo_cfg.get("checkpoint_freq_steps", 1000),
         resume_path=str(find_latest_checkpoint(checkpoint_dir, "ppo")) if find_latest_checkpoint(checkpoint_dir, "ppo") else None,
+        # Pesos multiobjetivo desde YAML
+        weight_co2=float(multi_obj_weights.get("co2", 0.50)),
+        weight_cost=float(multi_obj_weights.get("cost", 0.15)),
+        weight_solar=float(multi_obj_weights.get("solar", 0.20)),
+        weight_ev_satisfaction=float(multi_obj_weights.get("ev", 0.10)),
+        weight_grid_stability=float(multi_obj_weights.get("grid", 0.05)),
     )
     
     logger.info(f"Configuración PPO:")

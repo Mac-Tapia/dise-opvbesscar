@@ -540,6 +540,15 @@ class PPOAgent:
                     if not episode:
                         continue
                     self.episode_count += 1
+                    
+                    # VERIFICAR LÍMITE DE EPISODIOS - DETENER SI SE ALCANZÓ
+                    if self.expected_episodes > 0 and self.episode_count >= self.expected_episodes:
+                        logger.warning(
+                            "[PPO EPISODE LIMIT] Alcanzado límite de %d episodios - DETENIENDO entrenamiento",
+                            self.expected_episodes
+                        )
+                        return False  # Detener entrenamiento inmediatamente
+                    
                     reward = float(episode.get("r", 0.0))
                     length = int(episode.get("l", 0))
                     

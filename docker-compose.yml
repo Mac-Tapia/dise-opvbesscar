@@ -1,0 +1,78 @@
+version: '3.9'
+
+services:
+  # OE2→OE3 Pipeline Execution
+  iquitos-pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iquitos-citylearn-pipeline
+    
+    # Mount volumes for persistence
+    volumes:
+      - ./data:/app/data                    # Input/Output data
+      - ./outputs:/app/outputs              # Results & checkpoints
+      - ./configs:/app/configs:ro           # Configuration (read-only)
+    
+    # Environment variables
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - OMP_NUM_THREADS=4
+      # GPU support (uncomment if available)
+      # - CUDA_VISIBLE_DEVICES=0
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 32G
+        reservations:
+          cpus: '4'
+          memory: 16G
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Interactive terminal (for debugging)
+    stdin_open: true
+    tty: true
+
+  # Optional: Monitoring service
+  training-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iquitos-monitor
+    
+    depends_on:
+      - iquitos-pipeline
+    
+    volumes:
+      - ./outputs:/app/outputs:ro
+      - ./monitor_logs:/app/monitor_logs
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+    
+    command: ["python", "monitor_checkpoints.py"]
+    
+    restart: unless-stopped
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+volumes:
+  pipeline_data:
+  training_results:
