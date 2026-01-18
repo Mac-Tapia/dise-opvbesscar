@@ -132,7 +132,7 @@ oe3:
 
 ## 📁 DIRECTORIOS Y SALIDAS
 
-```
+```text
 d:\diseñopvbesscar/
 ├── data/
 │   └── interim/
