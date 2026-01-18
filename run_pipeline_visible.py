@@ -118,7 +118,7 @@ print(f"    CO2 anual: {result.carbon_kg:.0f} kg")
     ]
     
     try:
-        result = subprocess.run(cmd, capture_output=False, text=True)
+        _ = subprocess.run(cmd, capture_output=False, text=True)
         success("Baseline calculado exitosamente")
         return True
     except Exception as e:
@@ -146,7 +146,7 @@ def run_sac():
     ]
     
     try:
-        result = subprocess.run(cmd, capture_output=False, text=True)
+        _ = subprocess.run(cmd, capture_output=False, text=True)
         success("SAC entrenamiento completado")
         return True
     except Exception as e:

@@ -124,7 +124,7 @@ def run_ppo_with_cached_baseline():
     ]
     
     try:
-        result = subprocess.run(cmd, capture_output=False, text=True)
+        _ = subprocess.run(cmd, capture_output=False, text=True)
         success("PPO completado")
         return True
     except Exception as e:
@@ -149,7 +149,7 @@ def run_a2c_with_cached_baseline():
     ]
     
     try:
-        result = subprocess.run(cmd, capture_output=False, text=True)
+        _ = subprocess.run(cmd, capture_output=False, text=True)
         success("A2C completado")
         return True
     except Exception as e:
