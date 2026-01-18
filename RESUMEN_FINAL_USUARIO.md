@@ -10,7 +10,7 @@ He actualizado completamente la construcción de imágenes Docker y la ejecució
 
 ### Core Docker (5 archivos - Infraestructura)
 
-```
+```text
 ✅ Dockerfile                   Multi-stage Python 3.11-slim build
 ✅ docker-compose.yml           Stack CPU (servicios + monitoreo)
 ✅ docker-compose.gpu.yml       Stack GPU (NVIDIA runtime, 4-6x más rápido)
@@ -20,7 +20,7 @@ He actualizado completamente la construcción de imágenes Docker y la ejecució
 
 ### Scripts de Ejecución (3 archivos - Control)
 
-```
+```text
 ✅ launch_docker.py             Python launcher interactivo ⭐ RECOMENDADO
 ✅ docker-run.ps1               PowerShell con control completo
 ✅ iniciar_docker.bat           Batch con menú interactivo
@@ -28,7 +28,7 @@ He actualizado completamente la construcción de imágenes Docker y la ejecució
 
 ### Documentación (6 archivos - Guías)
 
-```
+```text
 ✅ COMIENZA_AQUI.md             👈 LEE ESTO PRIMERO
 ✅ EJECUTAR_DOCKER.md           Guía rápida en español 🇪🇸
 ✅ DOCKER_GUIDE.md              Documentación técnica completa
@@ -39,7 +39,7 @@ He actualizado completamente la construcción de imágenes Docker y la ejecució
 
 ### Archivos de Verificación (2 archivos)
 
-```
+```text
 ✅ SETUP_DOCKER_COMPLETADO.txt  Checklist de verificación
 ✅ INSTRUCCIONES_FINALES.txt    Quick reference
 ✅ ACTUALIZACION_COMPLETADA.txt Este resumen visual
@@ -74,7 +74,7 @@ iniciar_docker.bat
 
 ## 📊 Flujo de Ejecución Automatizado
 
-```
+```text
 1. Verificaciones (1 min)
    → Docker corriendo, disk space, config válida
 
@@ -105,7 +105,7 @@ iniciar_docker.bat
 ### Comparativa de Agentes
 
 | Agent | CO₂ (kg) | Reducción |
-|-------|----------|-----------|
+| --- | --- | --- |
 | Baseline | 11,282,200 | 0% |
 | SAC ⭐ | 7,547,021 | -33.1% |
 | PPO | 7,578,734 | -32.8% |
@@ -122,7 +122,7 @@ iniciar_docker.bat
 ## ⚡ Requisitos
 
 | Componente | Mínimo | Recomendado |
-|-----------|--------|-----------|
+| --- | --- | --- |
 | RAM | 8 GB | 32 GB |
 | Disk | 30 GB | 50+ GB |
 | CPU | 4 cores | 8 cores |

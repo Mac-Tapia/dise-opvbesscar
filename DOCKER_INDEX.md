@@ -33,7 +33,7 @@ Dockerfile                 Multi-stage build optimizado (Python 3.11)
 docker-compose.yml         Stack CPU (servicios pipeline + monitor)
 docker-compose.gpu.yml     Stack GPU (NVIDIA runtime)
 .dockerignore              Optimización de build
-```
+```bash
 
 ### Scripts de Lanzamiento
 
@@ -42,7 +42,7 @@ docker-run.ps1             PowerShell (RECOMENDADO para Windows) ⭐
 docker-run.bat             Batch alternativo (Windows)
 docker-entrypoint.sh       Script de entrada del contenedor
 launch_docker.py           Python launcher con validaciones interactivas
-```
+```bash
 
 ### Configuración del Proyecto
 
@@ -50,7 +50,7 @@ launch_docker.py           Python launcher con validaciones interactivas
 configs/default.yaml       Parámetros OE2 + OE3 (editable)
 pyproject.toml            Dependencias Python
 requirements.txt          Packages necesarios
-```
+```bash
 
 ---
 
@@ -98,7 +98,7 @@ requirements.txt          Packages necesarios
 │    - *.zip checkpoints (modelos entrenados)            │
 │    - Gráficas: reward curves, CO₂ impact              │
 └─────────────────────────────────────────────────────────┘
-```
+```bash
 
 ---
 
@@ -131,7 +131,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 # ➤ Parar
 .\docker-run.ps1 -Action stop
-```
+```bash
 
 ### **OPCIÓN B: Docker Compose**
 
@@ -147,7 +147,7 @@ docker-compose logs -f iquitos-pipeline
 
 # Parar
 docker-compose down
-```
+```bash
 
 ### **OPCIÓN C: Python Launcher**
 
@@ -157,7 +157,7 @@ python launch_docker.py
 
 # Auto-run (sin prompts)
 python launch_docker.py --auto --gpu
-```
+```bash
 
 ---
 
@@ -170,7 +170,7 @@ python launch_docker.py --auto --gpu
 ✓ Annual generation: 8.042 GWh
 ✓ Chargers: 128 demand profiles loaded
 ✓ BESS: 2000 kWh configured (DoD=0.7-0.95)
-```
+```bash
 
 ### Salida OE3 - Tabla Comparativa Agentes
 
@@ -187,7 +187,7 @@ python launch_docker.py --auto --gpu
 └────────────────────┴────────────────────┴──────────────┘
 
 Ahorros económicos: ~$1.2M/año @ $0.16/kWh
-```
+```bash
 
 ### Archivos de Salida
 
@@ -206,7 +206,7 @@ outputs/oe3/
     ├── reward_curves.png
     ├── co2_impact_comparison.png
     └── cumulative_emission_reduction.png
-```
+```bash
 
 ---
 
@@ -247,7 +247,7 @@ oe3:
     solar: 0.20        # Maximizar auto-consumo
     ev: 0.10           # Satisfacción carga EV
     grid: 0.05         # Estabilidad red
-```
+```bash
 
 ---
 
@@ -264,17 +264,17 @@ oe3:
 
 # Terminal 3: Monitorear checkpoints
 docker exec iquitos-pipeline python monitor_checkpoints.py
-```
+```bash
 
 ### Archivo de log en vivo
 
-```
+```bash
 outputs/oe3/training_logs/
 ├── SAC_episode_rewards.log
 ├── PPO_episode_rewards.log
 ├── A2C_episode_rewards.log
 └── checkpoint_progression.json
-```
+```bash
 
 ---
 
@@ -285,7 +285,7 @@ outputs/oe3/training_logs/
 ```powershell
 # Windows: Iniciar Docker Desktop
 # Mac/Linux: sudo systemctl start docker
-```
+```bash
 
 ### GPU no detectada
 
@@ -294,7 +294,7 @@ outputs/oe3/training_logs/
 nvidia-docker run --rm nvidia/cuda:11.8.0-runtime-ubuntu22.04 nvidia-smi
 
 # Si falla: usar CPU en docker-compose.yml
-```
+```bash
 
 ### Memoria insuficiente
 
@@ -303,14 +303,14 @@ nvidia-docker run --rm nvidia/cuda:11.8.0-runtime-ubuntu22.04 nvidia-smi
 oe3:
   episode_timesteps: 4380    # Mitad del año
   batch_size: 32             # Reducir batch
-```
+```bash
 
 ### FileNotFoundError: data/interim/oe2/
 
-```
+```yaml
 OE2 no se ejecutó. Ejecutar sin -SkipOE2:
 .\docker-run.ps1 -Action run
-```
+```bash
 
 ---
 
@@ -351,7 +351,7 @@ OE2 no se ejecutó. Ejecutar sin -SkipOE2:
 ## 📞 REFERENCIAS RÁPIDAS
 
 | Necesidad | Archivo |
-| --------- | ------- |
+|| --------- | ------- ||
 | Ejecutar pipeline | [EJECUTAR_DOCKER.md](./EJECUTAR_DOCKER.md) ⭐ |
 | Documentación técnica | [DOCKER_GUIDE.md](./DOCKER_GUIDE.md) |
 | Editar parámetros | [configs/default.yaml](./configs/default.yaml) |
@@ -368,6 +368,6 @@ OE2 no se ejecutó. Ejecutar sin -SkipOE2:
 ```powershell
 # Windows PowerShell (Administrador)
 .\docker-run.ps1 -Action run -GPU
-```
+```bash
 
 ¡El pipeline hará el resto automáticamente! ✨

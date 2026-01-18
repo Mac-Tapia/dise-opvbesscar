@@ -20,10 +20,10 @@ def main():
     
     # Leer datos
     with open(results_dir / 'simulation_summary.json') as f:
-        summary = json.load(f)
+        json.load(f)  # Load pero no guardar en variable
     
     with open(results_dir / 'co2_comparison.md') as f:
-        co2_data = f.read()
+        f.read()  # Read pero no guardar en variable
     
     # Crear HTML
     html_content = f"""

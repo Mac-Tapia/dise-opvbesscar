@@ -4,9 +4,8 @@
 Write-Host "🐳 Iniciando Docker con DATOS EXISTENTES" -ForegroundColor Green
 Write-Host "📁 Datos disponibles en: d:\diseñopvbesscar\outputs\oe3\simulations" -ForegroundColor Cyan
 
-# Verificar Docker
-$docker_check = docker ps 2>&1
-if ($LASTEXITCODE -ne 0) {
+# Verificar Docker está corriendo
+if (-not (docker ps 2>&1)) {
     Write-Host "❌ Docker no está corriendo" -ForegroundColor Red
     exit 1
 }

@@ -12,7 +12,7 @@
 ### Core Docker
 
 | Archivo | Tamaño | Propósito | Status |
-|---------|--------|----------|--------|
+| --- | --- | --- | --- |
 | `Dockerfile` | 1.2 KB | Multi-stage build Python 3.11 | ✅ |
 | `docker-compose.yml` | 2.3 KB | Stack CPU (pipeline + monitor) | ✅ |
 | `docker-compose.gpu.yml` | 2.1 KB | Stack GPU (NVIDIA runtime) | ✅ |
@@ -22,7 +22,7 @@
 ### Scripts de Ejecución
 
 | Archivo | Tipo | Plataforma | Recomendación |
-|---------|------|------------|---------------|
+| --- | --- | --- | --- |
 | `launch_docker.py` | Python | Windows/Linux/Mac | ⭐ **MEJOR** |
 | `docker-run.ps1` | PowerShell | Windows | ✅ Bueno |
 | `iniciar_docker.bat` | Batch | Windows | ✅ Alternativa |
@@ -30,7 +30,7 @@
 ### Documentación
 
 | Archivo | Audiencia | Inicio |
-|---------|-----------|--------|
+| --- | --- | --- |
 | `COMIENZA_AQUI.md` | Todos | 👈 **AQUÍ** |
 | `EJECUTAR_DOCKER.md` | Usuarios español | 🇪🇸 |
 | `DOCKER_GUIDE.md` | Técnicos | 🔧 |
@@ -67,7 +67,7 @@ iniciar_docker.bat
 
 ## 📈 FLUJO AUTOMATIZADO
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │ 1. VERIFICACIONES (1 min)              │
 │   ✓ Docker instalado                   │
@@ -114,7 +114,7 @@ iniciar_docker.bat
 
 ### Comparativa Agentes RL
 
-```
+```text
 ┌─────────────────────┬──────────────────┬─────────────┐
 │ Agent               │ CO₂ (kg)         │ Reduction   │
 ├─────────────────────┼──────────────────┼─────────────┤
@@ -133,7 +133,7 @@ iniciar_docker.bat
 
 ### Archivos de Salida
 
-```
+```text
 outputs/oe3/
 ├── results/
 │   ├── simulation_summary.json
@@ -197,7 +197,7 @@ oe3:
 ### Ejecución
 
 | Comando | Efecto | Tiempo |
-|---------|--------|--------|
+| --- | --- | --- |
 | `python launch_docker.py` | Auto-launcher interactivo | 2-6h (GPU) |
 | `.\docker-run.ps1 -Action run -GPU` | Pipeline con GPU | 2-6h |
 | `.\docker-run.ps1 -Action run -SkipOE2` | Solo OE3 | 1-3h |
@@ -208,7 +208,7 @@ oe3:
 ### Mantenimiento
 
 | Comando | Propósito |
-|---------|-----------|
+| --- | --- |
 | `docker images \| grep iquitos` | Ver imagen creada |
 | `docker ps` | Ver containers |
 | `docker logs -f iquitos-pipeline` | Logs en vivo |
@@ -220,7 +220,7 @@ oe3:
 ## ⚡ REQUISITOS Y TIEMPOS
 
 | Componente | Mínimo | Recomendado | Impacto |
-|-----------|--------|------------|---------|
+| --- | --- | --- | --- |
 | **RAM** | 8 GB | 32 GB | +100% velocidad |
 | **Disk** | 30 GB | 50+ GB | Necesario |
 | **CPU** | 4 cores | 8 cores | +50% velocidad |
@@ -234,7 +234,7 @@ oe3:
 ## 🆘 TROUBLESHOOTING
 
 | Problema | Solución | Estado |
-|----------|----------|--------|
+| --- | --- | --- |
 | Docker no instalado | Descargar Desktop desde docker.com | Resuelt |
 | GPU no detectada | Instalar NVIDIA Container Toolkit | Opcional |
 | "Out of Memory" | Reducir episode_timesteps en config | Config |
@@ -297,7 +297,7 @@ iniciar_docker.bat
 ## 💾 ARCHIVOS IMPORTANTES
 
 | Ruta | Propósito |
-|------|-----------|
+| --- | --- |
 | `Dockerfile` | Build definition |
 | `docker-compose.yml` | Stack CPU |
 | `docker-compose.gpu.yml` | Stack GPU |
@@ -311,7 +311,7 @@ iniciar_docker.bat
 ## 📈 IMPACTO ECONÓMICO
 
 | Métrica | Valor | Impacto |
-|---------|-------|--------|
+| --- | --- | --- |
 | CO₂ reducido/año (SAC) | 3.7M kg | 33% menos |
 | Costo electricidad | -$1.2M | 33% ahorro |
 | Autoconsumo solar | +45% | Más eficiente |
@@ -333,7 +333,7 @@ iniciar_docker.bat
 
 ## 📞 REFERENCIAS RÁPIDAS
 
-```
+```text
 Empezar              → COMIENZA_AQUI.md
 Guía español         → EJECUTAR_DOCKER.md
 Técnica              → DOCKER_GUIDE.md
