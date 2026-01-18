@@ -27,9 +27,11 @@
       └─ solar_results.json (4162 kWp, 8.042 GWh/año)
       
       data/interim/oe2/chargers/
-      ├─ charger_MOTO_CH_001.csv ... (112)
-      ├─ charger_MOTO_TAXI_CH_113.csv ... (16)
-      └─ chargers_results.json (128 cargadores, 272 kW)
+      ?? charger_MOTO_CH_001.csv ... (112)
+      ?? charger_MOTO_TAXI_CH_113.csv ... (16)
+      ?? perfil_horario_carga.csv (perfil agregado diario)
+      ?? demand_scenarios.csv (80/100/120% demanda diaria)
+      ?? chargers_results.json (128 cargadores, 272 kW)
       
       data/interim/oe2/bess/
       ├─ bess_soc_timeseries.csv

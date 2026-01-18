@@ -45,159 +45,14 @@ run_pipeline.py (secuencia orquestada)
 
 ## 🔆 Fase OE2: Datos Base
 
-### 1. **Generación Solar (run_oe2_solar.py)**
-
-#### Entrada
-
-- Archivo de configuración: `configs/default.yaml`
-
-- Parámetros clave:
-
-  ```yaml
-  oe2:
-    location:
-      lat: -3.75
-      lon: -73.25
-      tz: America/Lima
-    solar:
-      target_dc_kw: 4162.0
-      target_annual_kwh: 3972478
-      use_pvlib: true
-      scale_to_target_annual: true
-      module_name: Kyocera_Solar_KS20__2008__E__
-      inverter_name: Eaton__Xpert1670
-  ```
-
-#### Proceso
-
-1. **Descarga TMY (Typical Meteorological Year)**
-
-- Fuente: PVGIS (Copernicus)
-
-- Período: 2024 (8760 registros horarios)
-
-- Variables: GHI, DNI, DHI, temperatura ambiente, velocidad viento
-
-1. **Selección de Componentes**
+### 1. **C?lculo de Demanda Diaria**
 
 ```text
-   Módulos PV: Base Sandia (523 disponibles)
-   └─ Selección: Kyocera_Solar_KS20__2008__E__
-
-- Potencia: 20.18 W
-
-- Área: 0.0720 m²
-
-- Densidad: 280.3 W/m²
-
-   Inversores: Base CEC (3264 disponibles)
-   └─ Selección: Eaton__Xpert1670
-
-- Potencia AC nominal: 1671.0 kW
-
-- Eficiencia: 0.985
-
-- Número requerido: 2
-   ```
-
-1. **Dimensionamiento de Arrays**
-
-- Área disponible: 13,414 m² (65% de 20,637 m² totales)
-
-- Módulos totales: 186,279
-
-- Cadenas (strings): 6,009 en paralelo
-
-- Módulos por cadena: 31
-
-1. **Simulación PV (ModelChain)**
-
-   ```python
-   # Entrada: Datos TMY + configuración de módulos
-   # Cálculo:
-   #   1. Posición solar (latitud, longitud, hora)
-   #   2. Ángulo de incidencia
-   #   3. Irradiancia en plano inclinado (POA)
-   #   4. Modelo de temperatura (SAPM)
-   #   5. Potencia DC (módulos)
-   #   6. Inversión DC→AC
-   #   7. Pérdidas (cableado, soiling, etc.)
-   # Salida: Generación horaria AC (kW)
-   ```
-
-#### Salidas
-
-**Ubicación**: `data/interim/oe2/solar/`
-
-| Archivo | Descripción | Registros |
-| --------- | ------------- | ----------- |
-| `pv_generation_timeseries.csv` | Potencia AC horaria | 8760 |
-| `pv_profile_24h.csv` | Perfil promedio diario | 24 horas |
-| `solar_results.json` | Resumen ejecutivo | - |
-| `solar_schema_params.json` | Parámetros para CityLearn | - |
-
-**Ejemplo de salida (pv_generation_timeseries.csv)**:
-
-```text
-timestamp,ac_power_kw
-2024-01-01 00:00:00,0.0
-2024-01-01 01:00:00,0.0
-...
-2024-01-01 12:00:00,1856.3
-2024-01-01 13:00:00,1998.5
-...
+Demanda base (escenario recomendado pe=0.9, fc=0.9):
+- Sesiones/d?a: 3,061 (2,679 motos + 382 mototaxis)
+- Energ?a/d?a: 3,252 kWh
+- Energ?a por sesi?n (30 min): 1.063 kWh promedio (motos 2 kW ? 1.0 kWh; mototaxis 3 kW ? 1.5 kWh)
 ```
-
-**Resumen solar (solar_results.json)**:
-
-```json
-{
-  "location": "Iquitos, Perú (-3.75, -73.25)",
-  "pv_config": {
-    "modules_total": 186279,
-    "dc_kw": 3759.86,
-    "ac_kw": 3201.2
-  },
-  "annual": {
-    "energy_ac_kwh": 8042399,
-    "capacity_factor_percent": 28.6,
-    "performance_ratio_percent": 128.5
-  }
-}
-```
-
----
-
-### 2. **Generación de Cargadores (run_oe2_chargers.py)**
-
-#### Entrada (2)
-
-```yaml
-oe2:
-  ev_fleet:
-    motos_count: 900          # Vehículos pico a las 19:00h
-    mototaxis_count: 130
-    charger_power_kw_moto: 2.0
-    charger_power_kw_mototaxi: 3.0
-    session_minutes: 30
-    peak_share_day: 0.5       # 50% de energía en horas pico
-```
-
-#### Proceso (2)
-
-1. **Cálculo de Demanda Diaria**
-
-```text
-   Motos:
-
-- Demanda daily: 9202.4 kWh/día
-
-- 900 motos × ~10 kWh/día/moto
-   
-   Mototaxis:
-
-- ~13 kWh/día/mototaxi
-   ```
 
 1. **Distribución Temporal**
 
@@ -225,6 +80,48 @@ oe2:
 | ... | ... (16 totales mototaxis) |
 | `chargers_results.json` | Resumen (128 cargadores, 272 kW) |
 | `perfil_horario_carga.csv` | Perfil agregado diario |
+| `demand_scenarios.csv` | Tres escenarios de demanda (80%, 100%, 120%) |
+
+**Escenarios de demanda (demand_scenarios.csv):**
+
+| Escenario | Sesiones/d?a | Energ?a/d?a (kWh) | Potencia pico (kW) |
+|-----------|--------------|--------------------|--------------------|
+| Bajo 80% | 2,448.8 | 2,603.336 | 325.417 |
+| Base 100% | 3,061.0 | 3,254.170 | 406.771 |
+| Alto 120% | 3,673.2 | 3,905.004 | 488.125 |
+
+**Escenarios representativos PE/FC (tomados de 101 variantes):**
+
+| Escenario | Penetración (pe) | Factor Carga (fc) | Cargadores (4 tomas) | Total Tomas | Energía Día (kWh) |
+|-----------|------------------|-------------------|----------------------|-------------|--------------------|
+| CONSERVADOR | 0.10 | 0.80 | 4 | 16 | 185.6 |
+| MEDIANO | 0.55 | 0.60 | 20 | 80 | 765.6 |
+| RECOMENDADO* | 0.90 | 0.90 | 32 | 128 | 3,252.0 |
+| OPTIMISTA | 0.90 | 0.90 | 32 | 128 | 3,252.0 |
+| MÁXIMO | 1.00 | 1.00 | 36 | 144 | 4,013.6 |
+
+| Escenario | Penetraci?n (pe) | Factor Carga (fc) | Cargadores (4 tomas) | Total Tomas | Energ?a D?a (kWh) |
+|-----------|------------------|-------------------|----------------------|-------------|--------------------|
+| CONSERVADOR | 0.10 | 0.80 | 4 | 16 | 185.6 |
+| MEDIANO | 0.55 | 0.60 | 20 | 80 | 765.6 |
+| RECOMENDADO* | 0.90 | 0.90 | 32 | 128 | 3,252.0 |
+| M?XIMO (N?) | 1.00 | 0.60 | 35 | 140 | 1,392.0 |
+| OPTIMISTA (recalc) | 1.00 | 1.00 | 36 | 144 | 4,013.6 |
+
+**Estad?sticas de 101 variantes PE/FC (chargers_results.json):**
+
+| M?trica | M?nimo | M?ximo | Promedio | Mediana | Desv_Std |
+|---------|--------|--------|----------|---------|----------|
+| M?trica | M?nimo | M?ximo | Promedio | Mediana | Desv_Std |
+|---------|--------|--------|----------|---------|----------|
+| Cargadores (4 tomas) [unid] | 4.00 | 35.00 | 20.61 | 20.00 | 9.19 |
+| Tomas totales [tomas] | 16.00 | 140.00 | 82.46 | 80.00 | 36.76 |
+| Sesiones pico 4h [sesiones] | 103.00 | 1030.00 | 593.52 | 566.50 | 272.09 |
+| Cargas día total [cargas] | 87.29 | 3,058.96 | 849.83 | 785.62 | 538.12 |
+| Energía día [kWh] | 92.80 | 3,252.00 | 903.46 | 835.20 | 572.07 |
+| Potencia pico agregada [kW]* | 11.60 | 406.50 | 112.93 | 104.40 | 71.51 |
+
+*Potencia pico agregada = Energ?a d?a ? 0.125 (perfil: 50% de la energ?a en el bloque de 4 horas pico).
 
 **Ejemplo charger_MOTO_CH_001.csv**:
 

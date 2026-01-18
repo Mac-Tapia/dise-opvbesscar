@@ -34,8 +34,12 @@ class MultiObjectiveWeights:
     ev_satisfaction: float = 0.15  # Maximizar satisfacción carga EV
     grid_stability: float = 0.05   # Minimizar picos de demanda
     
+    # NUEVOS: Penalizaciones operacionales (reentreno)
+    operational_penalties: float = 0.10  # Penalidades por restricciones operacionales
+    
     def __post_init__(self):
-        total = self.co2 + self.cost + self.solar + self.ev_satisfaction + self.grid_stability
+        total = (self.co2 + self.cost + self.solar + self.ev_satisfaction + 
+                 self.grid_stability + self.operational_penalties)
         if abs(total - 1.0) > 0.01:
             logger.warning(f"Pesos multiobjetivo no suman 1.0 (suma={total:.3f}), normalizando...")
             self.co2 /= total
@@ -43,6 +47,7 @@ class MultiObjectiveWeights:
             self.solar /= total
             self.ev_satisfaction /= total
             self.grid_stability /= total
+            self.operational_penalties /= total
     
     def as_dict(self) -> Dict[str, float]:
         return {
@@ -51,6 +56,7 @@ class MultiObjectiveWeights:
             "solar": self.solar,
             "ev_satisfaction": self.ev_satisfaction,
             "grid_stability": self.grid_stability,
+            "operational_penalties": self.operational_penalties,
         }
 
 
@@ -205,6 +211,110 @@ class MultiObjectiveReward:
         
         return reward, components
     
+    def compute_with_operational_penalties(
+        self,
+        grid_import_kwh: float,
+        grid_export_kwh: float,
+        solar_generation_kwh: float,
+        ev_charging_kwh: float,
+        ev_soc_avg: float,
+        bess_soc: float,
+        hour: int,
+        ev_demand_kwh: float = 0.0,
+        operational_state: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[float, Dict[str, float]]:
+        """Computa recompensa multiobjetivo CON penalizaciones operacionales.
+        
+        Similar a compute() pero añade penalizaciones por:
+        - Incumplimiento de reserva SOC pre-pico
+        - Exceso de potencia en pico
+        - Desequilibrio de fairness entre playas
+        - Importación alta en hora pico
+        
+        Args:
+            operational_state: Dict con claves opcionales:
+                - bess_soc_target: SOC objetivo
+                - is_peak_hour: bool
+                - ev_power_motos_kw: potencia motos
+                - ev_power_mototaxis_kw: potencia mototaxis
+                - power_limit_total_kw: límite agregado
+        """
+        # Primero computar recompensa base
+        reward_base, components = self.compute(
+            grid_import_kwh=grid_import_kwh,
+            grid_export_kwh=grid_export_kwh,
+            solar_generation_kwh=solar_generation_kwh,
+            ev_charging_kwh=ev_charging_kwh,
+            ev_soc_avg=ev_soc_avg,
+            bess_soc=bess_soc,
+            hour=hour,
+            ev_demand_kwh=ev_demand_kwh,
+        )
+        
+        if operational_state is None or self.weights.operational_penalties <= 0:
+            return reward_base, components
+        
+        # Computar penalizaciones operacionales
+        penalties = {}
+        
+        # 1. Penalidad por reserva SOC incumplida
+        soc_target = operational_state.get("bess_soc_target", 0.60)
+        soc_deficit = max(0.0, soc_target - bess_soc)
+        penalties["r_soc_reserve"] = -soc_deficit  # [-1, 0]
+        
+        # 2. Penalidad por potencia en pico
+        is_peak = operational_state.get("is_peak_hour", False)
+        if is_peak:
+            power_total = (operational_state.get("ev_power_motos_kw", 0.0) + 
+                          operational_state.get("ev_power_mototaxis_kw", 0.0))
+            power_limit = operational_state.get("power_limit_total_kw", 150.0)
+            if power_total > power_limit:
+                power_excess_ratio = (power_total - power_limit) / power_limit
+                penalties["r_peak_power"] = -min(1.0, power_excess_ratio * 2.0)  # [-2, 0] -> [-1, 0]
+            else:
+                penalties["r_peak_power"] = 0.0
+        else:
+            penalties["r_peak_power"] = 0.0
+        
+        # 3. Penalidad por desequilibrio fairness
+        power_motos = operational_state.get("ev_power_motos_kw", 0.0)
+        power_mototaxis = operational_state.get("ev_power_mototaxis_kw", 0.0)
+        if power_motos > 0 or power_mototaxis > 0:
+            max_p = max(power_motos, power_mototaxis)
+            min_p = min(power_motos, power_mototaxis)
+            if min_p > 0:
+                fairness_ratio = max_p / min_p
+                fairness_penalty = -min(1.0, (fairness_ratio - 1.0) / 2.0)  # [-1, 0]
+                penalties["r_fairness"] = fairness_penalty
+            else:
+                penalties["r_fairness"] = 0.0
+        else:
+            penalties["r_fairness"] = 0.0
+        
+        # 4. Penalidad por importación en pico
+        if is_peak and grid_import_kwh > 50.0:
+            import_excess = min(1.0, (grid_import_kwh - 50.0) / 100.0)
+            penalties["r_import_peak"] = -import_excess * 0.8  # [-0.8, 0]
+        else:
+            penalties["r_import_peak"] = 0.0
+        
+        # Sumar penalizaciones
+        r_operational = sum(penalties.values())
+        r_operational = np.clip(r_operational, -1.0, 0.0)
+        
+        # Recompensa total ponderada incluyendo penalizaciones
+        reward_total = (
+            (1.0 - self.weights.operational_penalties) * reward_base +
+            self.weights.operational_penalties * r_operational
+        )
+        
+        # Agregar a componentes
+        components["r_operational"] = r_operational
+        components.update({f"r_penalty_{k}": v for k, v in penalties.items()})
+        components["reward_total_with_penalties"] = reward_total
+        
+        return reward_total, components
+    
     def get_pareto_metrics(self) -> Dict[str, float]:
         """Retorna métricas para análisis de Pareto."""
         if not self._reward_history:
@@ -340,36 +450,60 @@ class CityLearnMultiObjectiveWrapper:
 
 
 def create_iquitos_reward_weights(
-    priority: str = "balanced"
+    priority: str = "balanced",
+    include_operational: bool = False,
 ) -> MultiObjectiveWeights:
     """Crea pesos predefinidos para diferentes prioridades.
     
     Args:
         priority: "balanced", "co2_focus", "cost_focus", "ev_focus", "solar_focus"
+        include_operational: Si True, suma peso a penalizaciones operacionales
         
     Returns:
         MultiObjectiveWeights configurado
     """
-    presets = {
-        "balanced": MultiObjectiveWeights(
-            co2=0.35, cost=0.25, solar=0.20, ev_satisfaction=0.15, grid_stability=0.05
-        ),
-        "co2_focus": MultiObjectiveWeights(
-            co2=0.50, cost=0.15, solar=0.20, ev_satisfaction=0.10, grid_stability=0.05
-        ),
-        "cost_focus": MultiObjectiveWeights(
-            co2=0.20, cost=0.45, solar=0.15, ev_satisfaction=0.15, grid_stability=0.05
-        ),
-        "ev_focus": MultiObjectiveWeights(
-            co2=0.25, cost=0.20, solar=0.15, ev_satisfaction=0.35, grid_stability=0.05
-        ),
-        "solar_focus": MultiObjectiveWeights(
-            co2=0.25, cost=0.15, solar=0.40, ev_satisfaction=0.15, grid_stability=0.05
-        ),
-    }
+    if include_operational:
+        # Versión con penalizaciones operacionales (para reentreno)
+        presets = {
+            "balanced": MultiObjectiveWeights(
+                co2=0.30, cost=0.20, solar=0.18, ev_satisfaction=0.12, 
+                grid_stability=0.05, operational_penalties=0.15
+            ),
+            "co2_focus": MultiObjectiveWeights(
+                co2=0.45, cost=0.12, solar=0.18, ev_satisfaction=0.08, 
+                grid_stability=0.05, operational_penalties=0.12
+            ),
+            "cost_focus": MultiObjectiveWeights(
+                co2=0.18, cost=0.40, solar=0.12, ev_satisfaction=0.12, 
+                grid_stability=0.05, operational_penalties=0.13
+            ),
+            "ev_focus": MultiObjectiveWeights(
+                co2=0.20, cost=0.15, solar=0.13, ev_satisfaction=0.30, 
+                grid_stability=0.04, operational_penalties=0.18
+            ),
+            "solar_focus": MultiObjectiveWeights(
+                co2=0.20, cost=0.12, solar=0.36, ev_satisfaction=0.12, 
+                grid_stability=0.04, operational_penalties=0.16
+            ),
+        }
+    else:
+        # Versión original (para baseline)
+        presets = {
+            "balanced": MultiObjectiveWeights(
+                co2=0.35, cost=0.25, solar=0.20, ev_satisfaction=0.15, grid_stability=0.05
+            ),
+            "co2_focus": MultiObjectiveWeights(
+                co2=0.50, cost=0.15, solar=0.20, ev_satisfaction=0.10, grid_stability=0.05
+            ),
+            "cost_focus": MultiObjectiveWeights(
+                co2=0.20, cost=0.45, solar=0.15, ev_satisfaction=0.15, grid_stability=0.05
+            ),
+            "ev_focus": MultiObjectiveWeights(
+                co2=0.25, cost=0.20, solar=0.15, ev_satisfaction=0.35, grid_stability=0.05
+            ),
+            "solar_focus": MultiObjectiveWeights(
+                co2=0.25, cost=0.15, solar=0.40, ev_satisfaction=0.15, grid_stability=0.05
+            ),
+        }
     
-    if priority not in presets:
-        logger.warning(f"Prioridad '{priority}' no reconocida, usando 'balanced'")
-        priority = "balanced"
-    
-    return presets[priority]
+    return presets.get(priority, presets["balanced"])
