@@ -452,7 +452,7 @@ for agent_name, agent in agents.items():
 
 ### 4.1 OE1: Ubicación Estratégica
 
-**Tabla 1: Evaluación Multicriterio 10 Ubicaciones**
+#### Tabla 1: Evaluación Multicriterio 10 Ubicaciones
 
 | Sitio | Criterios Técnicos (40%) | Criterios Ambientales (35%) | Criterios Sociales (25%) | Score Final |
 | ------- | ------------------------- | --------------------------- | ------------------------- | ------------ |
@@ -473,7 +473,7 @@ for agent_name, agent in agents.items():
 
 #### Subsección 4.2.1: Generación Solar FV
 
-**Tabla 2: Producción Anual PV por Ubicación**
+#### Tabla 2: Producción Anual PV por Ubicación**
 
 | Parámetro | Playa_Motos | Playa_Mototaxis | Total Sistema |
 | ----------- | ------------ | ----------------- | ---------------- |
@@ -486,7 +486,7 @@ for agent_name, agent in agents.items():
 
 #### Subsección 4.2.2: Almacenamiento en Baterías
 
-**Tabla 3: Especificaciones BESS**
+#### Tabla 3: Especificaciones BESS**
 
 | Parámetro | Playa_Motos | Playa_Mototaxis | Total |
 | ----------- | ------------ | ----------------- | ------- |
@@ -500,7 +500,7 @@ for agent_name, agent in agents.items():
 
 #### Subsección 4.2.3: Infraestructura de Carga
 
-**Tabla 4: Configuración Chargers**
+#### Tabla 4: Configuración Chargers**
 
 | Parámetro | Motos | Mototaxis | Total |
 | ----------- | ------- | ----------- | ------- |
@@ -513,7 +513,7 @@ for agent_name, agent in agents.items():
 
 #### Subsección 4.3.1: Comparación de Emisiones
 
-**Tabla 5: Emisiones Anuales por Agente (tCO2/año)**
+#### Tabla 5: Emisiones Anuales por Agente (tCO2/año)**
 
 | Escenario | Emisiones (tCO2/año) | Emisiones 20 años (tCO2) | Reducción vs Baseline | Reducción % |
 | ----------- | ---------------------- | -------------------------- | ---------------------- | ------------- |
@@ -526,7 +526,7 @@ for agent_name, agent in agents.items():
 
 #### Subsección 4.3.2: Desglose de Emisiones (Caso SAC)
 
-**Tabla 6: Análisis Detallado Emisiones SAC**
+#### Tabla 6: Análisis Detallado Emisiones SAC**
 
 | Métrica | Valor | Unidad |
 | --------- | ------- | -------- |
@@ -542,7 +542,7 @@ for agent_name, agent in agents.items():
 
 #### Subsección 4.3.3: Métricas de Convergencia RL
 
-**Tabla 7: Evolución Reward Medio por Agente**
+#### Tabla 7: Evolución Reward Medio por Agente**
 
 | Agente | Steps Entrenamiento | Reward Promedio | Penalty Promedio | Estado |
 | -------- | ------------------- | ----------------- | ------------------ | -------- |
@@ -553,7 +553,7 @@ for agent_name, agent in agents.items():
 
 #### Subsección 4.3.4: Validación de Hipótesis OE3
 
-**Tabla 8: Prueba HE3**
+#### Tabla 8: Prueba HE3**
 
 | Hipótesis | Condición | Resultado | Validación |
 | ----------- | ----------- | ----------- | ----------- |
@@ -563,7 +563,7 @@ for agent_name, agent in agents.items():
 
 #### Subsección 4.3.5: Impacto CO2 por horizonte temporal
 
-**Tabla 16: Valores de CO2 por horizonte temporal**
+#### Tabla 16: Valores de CO2 por horizonte temporal**
 
 | Flota | CO2 Diario (t) | CO2 Mensual (t) | CO2 Anual (t) | Participación % |
 | ----- | -------------- | --------------- | -------------- | ---------------- |
@@ -580,7 +580,7 @@ Conclusión final: El proyecto en su conjunto evitará la emisión de 1,729.1 to
 
 ### 4.4 Síntesis de Resultados y Validación de Hipótesis
 
-**Tabla 9: Validación Integral de Hipótesis**
+#### Tabla 9: Validación Integral de Hipótesis**
 
 | Hipótesis | Criterio | Logro | Validación |
 | ----------- | ---------- | ------- | ----------- |
@@ -609,50 +609,50 @@ Conclusión final: El proyecto en su conjunto evitará la emisión de 1,729.1 to
 
 ### 5.2 Limitaciones de Investigación
 
-**Limitación 1: Escala Reducida**
+#### Limitación 1: Escala Reducida**
 
 - Muestra: 0.78% flota Iquitos (~128 de 16,500 motos)
 - Impacto: Resultados no necesariamente extrapolables a 100% adopción
 
-**Limitación 2: Factor Emisión Fijo**
+#### Limitación 2: Factor Emisión Fijo**
 
 - Asumimos 0.4521 kg CO2/kWh (Electro Oriente térmica constante)
 - Realidad: Varía por hora (hidro picos nocturnos vs térmico diurnos)
 
-**Limitación 3: Demanda Simplificada**
+#### Limitación 3: Demanda Simplificada**
 
 - Poisson con λ=1,030 eventos/hora
 - Realidad: Patrones día/semana/estación no capturados
 
-**Limitación 4: Entrenamiento RL Limitado**
+#### Limitación 4: Entrenamiento RL Limitado**
 
 - 50 episodios = 435,000 steps
 - Benchmarks industriales: 1-10 millones de steps
 
-**Limitación 5: Dinámicas BESS Complejas Ignoradas**
+#### Limitación 5: Dinámicas BESS Complejas Ignoradas**
 
 - No modelamos envejecimiento (cycle degradation)
 - No incluimos self-discharge
 
 ### 5.3 Fortalezas del Estudio
 
-**Fortaleza 1: Datos Primarios Locales**
+#### Fortaleza 1: Datos Primarios Locales**
 
 - Observación campo directa Iquitos 19/10/2025
 - 900 motos + 130 mototaxis contabilizadas en vivo
 
-**Fortaleza 2: Pipeline Reproducible**
+#### Fortaleza 2: Pipeline Reproducible**
 
 - Código GitHub públicamente disponible
 - Docker containerizado
 - Comando único: `python scripts/run_pipeline.py`
 
-**Fortaleza 3: Multi-Objetivo Integrado**
+#### Fortaleza 3: Multi-Objetivo Integrado**
 
 - 5 objetivos simultáneamente optimizados (CO2, costo, solar, EV, grid)
 - Ponderaciones IEEE transparentes
 
-**Fortaleza 4: Benchmark Estándar**
+#### Fortaleza 4: Benchmark Estándar**
 
 - CityLearn es plataforma oficial MIT-IBM
 - Resultados comparables globalmente
@@ -693,27 +693,27 @@ La aparente "falla" de HE3 (RL no mejora sobre Uncontrolled) no es debilidad sin
 
 ### 6.1 Conclusiones Generales
 
-**Conclusión 1: Viabilidad Técnica Confirmada**
+#### Conclusión 1: Viabilidad Técnica Confirmada**
 
 - Mall de Iquitos obtiene score 9.45/10
 - Localización óptima para infraestructura EV regional
 
-**Conclusión 2: Reducción de Emisiones Significativa**
+#### Conclusión 2: Reducción de Emisiones Significativa**
 
 - Logro de 68.29% - 70.47% (SAC vs Uncontrolled)
 - Supera meta inicial 50% establecida en hipótesis general
 
-**Conclusión 3: Infraestructura Principal Domina Beneficio**
+#### Conclusión 3: Infraestructura Principal Domina Beneficio**
 
 - 99.95% reducción emisiones proviene de generación solar + batería
 - Control RL contribuye < 1%
 
-**Conclusión 4: Ineficacia RL en Grid Aislada**
+#### Conclusión 4: Ineficacia RL en Grid Aislada**
 
 - Ausencia tarificación dinámica elimina oportunidad arbitraje precio
 - Carga inmediata es estrategia dominante
 
-**Conclusión 5: Escala y Conexión SEIN son Limitantes**
+#### Conclusión 5: Escala y Conexión SEIN son Limitantes**
 
 - Reducción máxima posible 78.2% (si conectamos SEIN con baja emisión)
 - Mejora marginal por RL disponible solo post-conexión
@@ -728,24 +728,24 @@ La aparente "falla" de HE3 (RL no mejora sobre Uncontrolled) no es debilidad sin
 
 ### 6.3 Recomendaciones Técnicas
 
-**Recomendación T1: Fase Piloto 2026-2030**
+#### Recomendación T1: Fase Piloto 2026-2030**
 
 - Inversión: USD 2.75M (PV 65%, BESS 25%, chargers 10%)
 - Timeline: 18 meses ingeniería + 12 meses construcción
 - Operación: 4 años monitoreo KPIs
 
-**Recomendación T2: Monitoreo Real-Time con Métricas**
+#### Recomendación T2: Monitoreo Real-Time con Métricas**
 
 - Instalación SCADA (Supervisory Control and Data Acquisition)
 - Dashboard público: `iquitos-ev.energy-peru.org`
 - Reporte mensual Municipalidad + Electro Oriente
 
-**Recomendación T3: Escalado 10 Ubicaciones**
+#### Recomendación T3: Escalado 10 Ubicaciones**
 
 - Portafolio: 41.62 MW FV + 20 MWh BESS
 - Meta 10 años: 10,000 motos eléctricas = 70% flota activa
 
-**Recomendación T4: Preparación Conexión SEIN**
+#### Recomendación T4: Preparación Conexión SEIN**
 
 - Estudios viabilidad línea transmisión Iquitos-Nauta
 - Pre-inversión: USD 80M
@@ -753,24 +753,24 @@ La aparente "falla" de HE3 (RL no mejora sobre Uncontrolled) no es debilidad sin
 
 ### 6.4 Recomendaciones de Política Pública
 
-**Recomendación P1: Incentivos Electrificación EV**
+#### Recomendación P1: Incentivos Electrificación EV**
 
 - Subsidio compra moto eléctrica: 20% precio
 - Meta: 500 motos/año
 - Presupuesto: USD 2.5M/año
 
-**Recomendación P2: Obligatoriedad Chargers en Nuevas Construcciones**
+#### Recomendación P2: Obligatoriedad Chargers en Nuevas Construcciones**
 
 - Decreto municipal: +1 charger por 50 estacionamientos
 - Aplicable edificios comerciales, residenciales, públicos
 
-**Recomendación P3: Tarifa Diferenciada Carga Nocturna**
+#### Recomendación P3: Tarifa Diferenciada Carga Nocturna**
 
 - Tarifa diurna: 0.20 USD/kWh (actual)
 - Tarifa nocturna: 0.15 USD/kWh (incentivo)
 - Beneficio: Carga diferida → mejor autosuficiencia solar
 
-**Recomendación P4: Plan Capacitación Técnica**
+#### Recomendación P4: Plan Capacitación Técnica**
 
 - Formación 50 técnicos/año en mantenimiento PV+BESS
 - Instituto técnico regional: Centro Amazónico Energía Limpia
@@ -778,28 +778,28 @@ La aparente "falla" de HE3 (RL no mejora sobre Uncontrolled) no es debilidad sin
 
 ### 6.5 Recomendaciones de Investigación Futura
 
-**Línea 1: Análisis Económico Completo (VAN/TIR)**
+#### Línea 1: Análisis Económico Completo (VAN/TIR)**
 
 - Incluir financiamiento (BNDES, IDB)
 - Sensibilidad precio diesel vs electricidad
 - Punto equilibrio financiero
 
-**Línea 2: Impacto Confiabilidad de Red**
+#### Línea 2: Impacto Confiabilidad de Red**
 
 - Variabilidad PV + BESS en frecuencia/voltaje
 - Necesidad capacidad sincronización (90-180 MVA)
 
-**Línea 3: Análisis V2G (Vehicle-to-Grid)**
+#### Línea 3: Análisis V2G (Vehicle-to-Grid)**
 
 - Baterías motos como capacidad respaldo
 - Potencial: 128 × 50 kWh = 6.4 MWh adicionales
 
-**Línea 4: Modelamiento Social/Aceptación**
+#### Línea 4: Modelamiento Social/Aceptación**
 
 - Encuestas percepción usuarios EV
 - Análisis género (motos/mototaxis usan principalmente hombres)
 
-**Línea 5: Optimización Portfolio Sitios Amazónicos**
+#### Línea 5: Optimización Portfolio Sitios Amazónicos**
 
 - Modelo similar para Iquitos, Pucallpa, Puerto Maldonado
 - Sinergia recursos (PV, BESS, talento técnico)
@@ -896,7 +896,7 @@ La pregunta ya no es **¿es posible?** sino **¿cuándo comenzamos?**
 
 ### ANEXO A: Datos Brutos de Campo
 
-**Levantamiento de Datos: 19 octubre 2025**
+#### Levantamiento de Datos: 19 octubre 2025
 
 **Hora:** 19:00 - 20:00 (pico demanda motos)
 

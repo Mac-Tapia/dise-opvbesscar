@@ -10,29 +10,29 @@
 
 ### Core Docker (4 archivos)
 
-```
+```text
 ✅ Dockerfile              1.2 KB    Multi-stage build optimizado (Python 3.11-slim)
 ✅ docker-compose.yml      2.3 KB    Stack CPU con servicios
 ✅ docker-compose.gpu.yml  2.1 KB    Stack GPU (NVIDIA runtime)
 ✅ .dockerignore           1.5 KB    Optimización de build
 ✅ docker-entrypoint.sh    1.8 KB    Script entrada contenedor (bash)
-```
+```bash
 
 ### Scripts de Lanzamiento (3 archivos)
 
-```
+```text
 ✅ docker-run.ps1          8.5 KB    PowerShell (RECOMENDADO) ⭐
 ✅ docker-run.bat          4.2 KB    Batch alternativo (Windows)
 ✅ launch_docker.py        12 KB     Python launcher interactivo
-```
+```bash
 
 ### Documentación (3 archivos)
 
-```
+```text
 ✅ EJECUTAR_DOCKER.md      5.8 KB    Guía rápida en español 🚀
 ✅ DOCKER_GUIDE.md         7.2 KB    Documentación técnica completa
 ✅ DOCKER_INDEX.md         8.1 KB    Índice maestro con referencias
-```
+```bash
 
 ---
 
@@ -47,13 +47,13 @@
 
 ### ✅ Ejecución OE2→OE3 Automatizada
 
-```
+```bash
 OE2 (15-30 min)           OE3 (2-6h GPU | 12-24h CPU)
 ├─ solar profiles         ├─ dataset_builder
 ├─ chargers demand        ├─ SAC training (PyTorch)
 └─ BESS config            ├─ PPO training (stable-b3)
                           └─ A2C training (stable-b3)
-```
+```bash
 
 ### ✅ Soporte Multiplataforma
 
@@ -74,16 +74,16 @@ OE2 (15-30 min)           OE3 (2-6h GPU | 12-24h CPU)
 
 ### Paso 1: Abrir PowerShell como Administrador
 
-```
+```bash
 Click derecho en PowerShell → "Run as Administrator"
 cd d:\diseñopvbesscar
-```
+```bash
 
 ### Paso 2: Permitir scripts
 
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-```
+```bash
 
 ### Paso 3: Ejecutar
 
@@ -96,7 +96,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 # Opción C: Solo OE3 (si OE2 ya completado)
 .\docker-run.ps1 -Action run -SkipOE2 -Detach
-```
+```bash
 
 ---
 
@@ -104,16 +104,16 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 ### Salida OE2 (15-30 min)
 
-```
+```text
 ✓ data/interim/oe2/solar/      8760 hourly profiles
 ✓ data/interim/oe2/chargers/   128 CSV demand files
 ✓ data/interim/oe2/bess/       Battery configuration
 ✓ Annual solar generation: 8.042 GWh
-```
+```bash
 
 ### Salida OE3 (2-6h GPU)
 
-```
+```text
 ┌─────────────────┬────────────────┬──────────────┐
 │ Agent           │ CO₂ (kg)       │ Reduction    │
 ├─────────────────┼────────────────┼──────────────┤
@@ -125,11 +125,11 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 💰 Ahorro económico: ~$1.2M/año
 🌍 Reducción CO₂: 3,735,179 kg/año (SAC)
-```
+```bash
 
 ### Archivos de Salida
 
-```
+```bash
 outputs/oe3/
 ├── results/
 │   ├── simulation_summary.json       (métricas finales)
@@ -144,7 +144,7 @@ outputs/oe3/
     ├── reward_curves.png
     ├── co2_comparison.png
     └── cumulative_reduction.png
-```
+```bash
 
 ---
 
@@ -167,14 +167,14 @@ oe3:
   episodes: 5
   device: cuda                   # cuda | cpu
   use_amp: true                  # Mixed precision
-```
+```bash
 
 ---
 
 ## 📋 GUÍAS DE REFERENCIA
 
 | Necesidad | Archivo | Descripción |
-|-----------|---------|-------------|
+|| ----------- | --------- | ------------- ||
 | **Empezar aquí** | [EJECUTAR_DOCKER.md](./EJECUTAR_DOCKER.md) | Guía rápida 🚀 |
 | **Documentación técnica** | [DOCKER_GUIDE.md](./DOCKER_GUIDE.md) | Detalles completos |
 | **Índice master** | [DOCKER_INDEX.md](./DOCKER_INDEX.md) | Referencias y flujo |
@@ -203,7 +203,7 @@ oe3:
 
 # Parar
 .\docker-run.ps1 -Action stop
-```
+```bash
 
 ### Monitoreo
 
@@ -219,14 +219,14 @@ docker stats
 
 # Limpiar resources
 docker system prune -a
-```
+```bash
 
 ---
 
 ## ⚡ REQUISITOS MÍNIMOS
 
 | Componente | Mínimo | Recomendado |
-|------------|--------|-------------|
+|| ------------ | -------- | ------------- ||
 | **RAM** | 8 GB | 32 GB (GPU) |
 | **Disk** | 30 GB | 50+ GB |
 | **CPU** | 4 cores | 8+ cores |
@@ -238,7 +238,7 @@ docker system prune -a
 ## 🐛 TROUBLESHOOTING RÁPIDO
 
 | Problema | Solución |
-|----------|----------|
+|| ---------- | ---------- ||
 | Docker no encontrado | Instalar Docker Desktop |
 | GPU no detectada | Usar CPU en docker-compose.yml |
 | Memoria insuficiente | Reducir episode_timesteps en config |
@@ -258,7 +258,7 @@ docker system prune -a
 # 4. .\docker-run.ps1 -Action run -GPU
 
 # ¡El pipeline hará el resto automáticamente! ✨
-```
+```bash
 
 ---
 
@@ -266,25 +266,25 @@ docker system prune -a
 
 ### Arquitectura OE2
 
-```
+```bash
 solar_pvlib.py (8760h × 4162 kW)
 chargers.py (128 profiles: 112×2kW + 16×3kW)
 bess.py (2000 kWh, DoD 0.7-0.95, η 0.88)
-```
+```bash
 
 ### Arquitectura OE3
 
-```
+```yaml
 SAC Agent: 1000+ líneas PyTorch puro ⭐ (MEJOR)
 PPO Agent: stable-baselines3 wrapper
 A2C Agent: stable-baselines3 wrapper
-```
+```bash
 
 ### Reward Function (5 objetivos normalizados)
 
-```
+```bash
 Total = 0.50×CO2 + 0.15×Cost + 0.20×Solar + 0.10×EV + 0.05×Grid
-```
+```bash
 
 ---
 

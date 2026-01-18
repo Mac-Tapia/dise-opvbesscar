@@ -10,16 +10,16 @@
 
 ### PASO 1️⃣: Abre Command Prompt/PowerShell
 
-```
+```yaml
 Windows: Click en Start → cmd.exe o powershell.exe
 Ejecuta como Administrador
-```
+```bash
 
 ### PASO 2️⃣: Navega al proyecto
 
 ```bash
 cd d:\diseñopvbesscar
-```
+```bash
 
 ### PASO 3️⃣: Ejecuta el pipeline
 
@@ -32,7 +32,7 @@ python launch_docker.py
 
 # OPCIÓN C: Script automático que inicia Docker
 .\iniciar_docker.bat
-```
+```bash
 
 ✨ **¡El sistema hace el resto automáticamente!**
 
@@ -42,30 +42,30 @@ python launch_docker.py
 
 ### Core Docker (4 archivos - NO EDITAR)
 
-```
+```bash
 Dockerfile                Multi-stage Python 3.11 build
 docker-compose.yml        Stack de servicios (CPU)
 docker-compose.gpu.yml    Stack de servicios (GPU NVIDIA)
 .dockerignore             Optimización de build
-```
+```bash
 
 ### Scripts de Ejecución (3 opciones)
 
-```
+```text
 ✅ launch_docker.py              Python launcher interactivo ⭐ RECOMENDADO
 ✅ docker-run.ps1                PowerShell con control completo
 ✅ iniciar_docker.bat            Batch con menú interactivo
    docker-entrypoint.sh          Script entrada contenedor (interno)
-```
+```bash
 
 ### Documentación
 
-```
+```bash
 📖 RESUMEN_DOCKER.md             ESTE ARCHIVO - Start Here
 📖 EJECUTAR_DOCKER.md            Guía rápida en español 🇪🇸
 📖 DOCKER_GUIDE.md               Documentación técnica completa
 📖 DOCKER_INDEX.md               Índice master con referencias
-```
+```bash
 
 ---
 
@@ -82,7 +82,7 @@ python launch_docker.py
 # ✓ GPU detectada (si disponible)
 # ✓ Configuración válida
 # Luego ejecuta el pipeline
-```
+```bash
 
 ### 🥈 PowerShell (Control total)
 
@@ -95,7 +95,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 .\docker-run.ps1 -Action run -GPU         # GPU (4-6x más rápido)
 .\docker-run.ps1 -Action run -SkipOE2     # Solo OE3 (si OE2 ya hecho)
 .\docker-run.ps1 -Action run -Detach      # En background
-```
+```bash
 
 ### 🥉 Batch (Menú interactivo)
 
@@ -106,7 +106,7 @@ iniciar_docker.bat
 # 2. Solo OE3
 # 3. Con GPU
 # 4. Ver logs
-```
+```bash
 
 ---
 
@@ -114,35 +114,35 @@ iniciar_docker.bat
 
 ### Fase 1: Verificaciones (1 min)
 
-```
+```text
 ✓ Docker instalado
 ✓ Daemon corriendo
 ✓ Disk space >= 30 GB
 ✓ Configuración válida
 ✓ GPU (si disponible)
-```
+```bash
 
 ### Fase 2: Build de Imagen (3-5 min, solo primera vez)
 
-```
+```text
 ✓ Multi-stage build: builder → runtime
 ✓ Python 3.11-slim base
 ✓ Caché optimizado para builds posteriores
 ✓ Tamaño final: ~800 MB
-```
+```bash
 
 ### Fase 3: OE2 - Dimensionamiento Técnico (15-30 min)
 
-```
+```text
 ✓ solar_pvlib.py     → 8760 hourly solar profiles
 ✓ chargers.py        → 128 EV charger demand profiles
 ✓ bess.py            → 2000 kWh battery configuration
 OUTPUT: data/interim/oe2/{solar,chargers,bess}/
-```
+```bash
 
 ### Fase 4: OE3 - Entrenamiento RL (2-6h GPU | 12-24h CPU)
 
-```
+```text
 ✓ dataset_builder.py → CityLearn schema validation
 ✓ simulate.py        → Train SAC | PPO | A2C agents
   ├─ SAC  (PyTorch 1000+ líneas) → MEJOR: 33.1% CO₂ ↓
@@ -150,7 +150,7 @@ OUTPUT: data/interim/oe2/{solar,chargers,bess}/
   └─ A2C  (stable-baselines3)    → 32.5% CO₂ ↓
 ✓ co2_table.py       → Generate comparison report
 OUTPUT: outputs/oe3/{checkpoints,results,visualizations}/
-```
+```bash
 
 ---
 
@@ -158,16 +158,16 @@ OUTPUT: outputs/oe3/{checkpoints,results,visualizations}/
 
 ### Salida OE2
 
-```
+```text
 ✓ Solar annual generation: 8.042 GWh
 ✓ Chargers: 128 demand profiles loaded
 ✓ BESS: 2000 kWh configured
 ✓ Storage: data/interim/oe2/ (CSV files)
-```
+```bash
 
 ### Salida OE3 - Comparativa Final
 
-```
+```yaml
 RESULTADOS DE ENTRENAMIENTO RL:
 
 Baseline (Sin PV)           : 11,282,200 kg CO₂  (0%)
@@ -185,7 +185,7 @@ ARCHIVOS DE SALIDA:
 📁 outputs/oe3/results/co2_comparison.json        (tabla CSV)
 📁 outputs/oe3/checkpoints/SAC/*_final.zip        (modelo)
 📁 outputs/oe3/visualizations/*.png               (gráficas)
-```
+```bash
 
 ---
 
@@ -208,7 +208,7 @@ oe3:
   episodes: 5                    # Episodios por agente
   device: cuda                   # cuda (GPU) | cpu
   use_amp: true                  # Mixed precision (GPU)
-```
+```bash
 
 ---
 
@@ -225,24 +225,24 @@ oe3:
 
 # Terminal 3: ejecutar monitor
 python monitor_checkpoints.py
-```
+```bash
 
 ### Archivos de log disponibles
 
-```
+```bash
 outputs/oe3/training_logs/
 ├── SAC_episode_rewards.log
 ├── PPO_episode_rewards.log
 ├── A2C_episode_rewards.log
 └── checkpoint_progression.json
-```
+```bash
 
 ---
 
 ## ⚡ REQUISITOS MÍNIMOS
 
 | Componente | Mínimo | Recomendado |
-|-----------|--------|------------|
+|| ----------- | -------- | ------------ ||
 | **RAM** | 8 GB | 32 GB |
 | **Disk** | 30 GB | 50+ GB |
 | **CPU** | 4 cores | 8 cores |
@@ -256,17 +256,17 @@ outputs/oe3/training_logs/
 
 ### Docker no encontrado
 
-```
+```bash
 → Instalar desde: https://www.docker.com/products/docker-desktop
 → Reiniciar sistema
-```
+```bash
 
 ### GPU no detectada
 
-```
+```bash
 → Instalar NVIDIA Container Toolkit
 → O usar CPU (más lento): device: cpu en config
-```
+```bash
 
 ### Memoria insuficiente ("Out of Memory")
 
@@ -275,22 +275,22 @@ outputs/oe3/training_logs/
 oe3:
   episode_timesteps: 4380    # Reducir de 8760
   batch_size: 32             # Reducir batch
-```
+```bash
 
 ### Script PowerShell no ejecuta
 
 ```powershell
 # Ejecutar como ADMINISTRADOR y luego:
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-```
+```bash
 
 ### "FileNotFoundError" en data/interim/oe2/
 
-```
+```bash
 → OE2 no se ejecutó
 → NO USAR -SkipOE2 en el primer run
 → Ejecutar sin SkipOE2 para completar OE2 primero
-```
+```bash
 
 ---
 
@@ -314,7 +314,7 @@ docker system prune -a
 
 # Reconstruir desde cero
 docker build --no-cache -t iquitos-citylearn:latest .
-```
+```bash
 
 ---
 
@@ -329,14 +329,14 @@ El sistema **auto-detecta** el último checkpoint:
 # Sistema retoma desde el checkpoint más reciente
 # Ver checkpoints disponibles:
 dir outputs/oe3/checkpoints/SAC/
-```
+```bash
 
 ---
 
 ## 📚 DOCUMENTACIÓN COMPLETA
 
 | Documento | Para qué |
-|-----------|----------|
+|| ----------- | ---------- ||
 | **RESUMEN_DOCKER.md** | Resumen ejecutivo (este archivo) |
 | **EJECUTAR_DOCKER.md** | Guía detallada en español 🇪🇸 |
 | **DOCKER_GUIDE.md** | Documentación técnica avanzada |
@@ -366,7 +366,7 @@ python launch_docker.py
 
 # Opción C: Batch interactivo
 iniciar_docker.bat
-```
+```bash
 
 **¡El sistema hará el resto automáticamente!** ✨
 
