@@ -133,9 +133,9 @@ class SACConfig:
     gamma: float = 0.99
     tau: float = 0.005
     
-    # Entropía (auto-ajuste)
-    ent_coef: str = "auto"  # "auto" para ajuste automático
-    target_entropy: Optional[float] = -126.0  # -dim(action) es el estándar para SAC
+    # Entropía - TIER 2 FIX: Reducida para evitar exploración excesiva
+    ent_coef: float = 0.01         # Fijo (no auto): reduce ruido innecesario
+    target_entropy: Optional[float] = -50.0  # Menos exploración que -126.0 (-dim/2.5 approx)
     
     # Red neuronal
     hidden_sizes: tuple = (256, 256)

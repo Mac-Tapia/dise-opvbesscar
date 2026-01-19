@@ -27,19 +27,20 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class MultiObjectiveWeights:
-    """Pesos para función de recompensa multiobjetivo.
+    """Pesos para función de recompensa multiobjetivo - TIER 1 FIXES APPLIED.
     
-    MEJORADO: Pesos ajustados para forzar aprendizaje de:
-    - Minimizar importacion en horas pico (18-21h)
-    - Mantener SOC > 0.5 antes de pico
-    - Equilibrio justo entre playas (motos/mototaxis)
+    Rebalanced para Iquitos (matriz térmica aislada):
+    - CO₂ PRIMARY 0.50: minimizar importación grid
+    - Solar SECONDARY 0.20: maximizar autoconsumo (FV limpio disponible)
+    - Costo REDUCIDO 0.10: tarifa baja, no es constraint
+    - Grid & EV 0.20 total: baseline de operación
     """
-    co2: float = 0.45              # Minimizar emisiones CO₂ (PRIMARIA - subida de 0.50)
-    cost: float = 0.15             # Minimizar costo eléctrico  
-    solar: float = 0.15            # Maximizar autoconsumo solar (bajado de 0.20)
-    ev_satisfaction: float = 0.05  # Maximizar satisfacción carga EV (bajado de 0.10)
-    grid_stability: float = 0.20   # Minimizar picos de demanda (SUBIDA de 0.05 -> 0.20)
-    peak_import_penalty: float = 0.00  # NUEVO: Penalizar importacion en pico (aplicada dinamicamente)
+    co2: float = 0.50              # PRIMARY: Minimizar CO₂ (0.45 kg/kWh térmica)
+    cost: float = 0.10             # REDUCIDO: costo no es bottleneck
+    solar: float = 0.20            # SECUNDARIO: autoconsumo solar limpio
+    ev_satisfaction: float = 0.10  # Satisfacción básica de carga
+    grid_stability: float = 0.10   # REDUCIDO: implícito en CO₂+solar
+    peak_import_penalty: float = 0.00  # Dinámico en compute(), no como peso fijo
     
     def __post_init__(self):
         # Normalizar pesos base (sin peak_import_penalty que se aplica por separado)
@@ -149,17 +150,24 @@ class MultiObjectiveReward:
         components = {}
         is_peak = hour in self.context.peak_hours
         
-        # 1. Recompensa CO₂ (minimizar) - MEJORADO: Penalizar más en pico
+        # 1. Recompensa CO₂ (minimizar) - TIER 1 FIX: Baselines Realistas
         co2_kg = grid_import_kwh * self.context.co2_factor_kg_per_kwh
-        co2_baseline = 500.0  # kWh típico por hora
+        
+        # Baselines basados en operación real Iquitos:
+        # Off-peak: mall ~100 kW avg + chargers ~30 kW = 130 kWh/hora típico
+        # Peak (18-21h): mall ~150 kW + chargers ~100 kW = 250 kWh/hora target
+        co2_baseline_offpeak = 130.0  # kWh/hora típico off-peak
+        co2_baseline_peak = 250.0     # kWh/hora target with BESS support en pico
         
         if is_peak:
-            # En hora pico, penalizar MUCHO más la importación
-            # Escala más agresiva: si importas baseline, penalización es -1.5 en lugar de -1.0
-            r_co2 = 1.0 - 3.0 * min(1.0, grid_import_kwh / co2_baseline)
+            # En pico: penalizar fuertemente si superas target
+            # Si importas 250 (target), reward = 1 - 2*(250/250) = -1 (penalty)
+            # Si importas 100 (good), reward = 1 - 2*(100/250) = 0.2 (bonus)
+            # Rango [-1, 1] con gradientes claros
+            r_co2 = 1.0 - 2.0 * min(1.0, grid_import_kwh / co2_baseline_peak)
         else:
-            # Fuera de pico, más tolerante
-            r_co2 = 1.0 - 1.5 * min(1.0, grid_import_kwh / co2_baseline)
+            # Off-peak: más tolerante pero aún penaliza exceso
+            r_co2 = 1.0 - 1.0 * min(1.0, grid_import_kwh / co2_baseline_offpeak)
         
         r_co2 = np.clip(r_co2, -1.0, 1.0)
         components["r_co2"] = r_co2
@@ -208,26 +216,36 @@ class MultiObjectiveReward:
         components["r_grid"] = r_grid
         components["is_peak"] = float(is_peak)
         
-        # Penalizacion adicional por SOC bajo antes de pico
+        # Penalizacion adicional por SOC bajo antes de pico - TIER 1 FIX: Normalizado correctamente
         pre_peak_hours = [16, 17]  # Horas 16-17 para preparar para 18-21h
-        if hour in pre_peak_hours and bess_soc < 0.5:
-            # Penalizar fuertemente si BESS no tiene reserva antes de pico
-            soc_penalty = -0.5 * (1.0 - bess_soc / 0.5)
-            components["soc_reserve_penalty"] = soc_penalty
+        if hour in pre_peak_hours:
+            soc_target_prepeak = 0.65  # Meta: 65% antes de pico
+            if bess_soc < soc_target_prepeak:
+                # Penalizar deficit (0 a -1)
+                soc_deficit = soc_target_prepeak - bess_soc
+                r_soc_reserve = 1.0 - (soc_deficit / soc_target_prepeak)  # [0, 1]
+                components["r_soc_reserve"] = r_soc_reserve
+            else:
+                # Bonus si cumples target
+                r_soc_reserve = 1.0
+                components["r_soc_reserve"] = r_soc_reserve
         else:
-            components["soc_reserve_penalty"] = 0.0
+            # Off pre-peak: sin penalización especial
+            components["r_soc_reserve"] = 1.0
         
-        # Recompensa total ponderada
+        soc_penalty = (components["r_soc_reserve"] - 1.0) * 0.5  # Escala [-0.5, 0]
+        
+        # Recompensa total ponderada - TIER 1 FIX: SOC penalty ahora ponderada
         reward = (
             self.weights.co2 * r_co2 +
             self.weights.cost * r_cost +
             self.weights.solar * r_solar +
             self.weights.ev_satisfaction * r_ev +
             self.weights.grid_stability * r_grid +
-            components["soc_reserve_penalty"]  # Penalizacion SOC
+            0.10 * soc_penalty  # SOC penalty ponderada (0.10 weight)
         )
         
-        # Normalizar reward a [-1, 1]
+        # Normalizar reward a [-1, 1] con clipping
         reward = np.clip(reward, -1.0, 1.0)
         components["reward_total"] = reward
         
