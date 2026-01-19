@@ -81,8 +81,6 @@ All:
 
 ### Monitoreo en Vivo
 
-### Monitoreo en Vivo
-
 ```bash
 Terminal 1 (PID: 56e33e6d): Entrenamiento en ejecución
 Terminal 2 (PID: cf2cec8e): Monitor de progreso
@@ -131,7 +129,7 @@ Output: outputs/oe3/simulations/simulation_summary.json
 
 ## 📊 Comandos Útiles
 
-#### Monitorear Progreso
+### Monitorear Progreso
 
 ```bash
 python monitor_training_progress.py
