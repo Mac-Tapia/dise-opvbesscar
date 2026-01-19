@@ -111,7 +111,7 @@ action = {"MOTO_CH_001": 0.5,  # 1 kW en lugar de 2 kW
 
 ---
 
-| Hora | Sesión | Motos Activas | Potencia Playa Motos | Potencia Playa Taxis | Total |
+| Hora | Sesión | Motos Activas | Potencia Playa Motos | Potencia Playa Mototaxis | Total |
 |------|--------|---------------|---------------------|---------------------|-------|
 | 9:00-9:30 | 1 | 35-40 | 224 kW | 0 kW | 224 kW |
 | 9:30-10:00 | 2 | 35-40 | 224 kW | 0 kW | 224 kW |
@@ -144,7 +144,7 @@ action = {"MOTO_CH_001": 0.5,  # 1 kW en lugar de 2 kW
 **A nivel de playa**:
 
 - Limitar potencia agregada: Playa Motos máx 200 kW (en lugar de 224)
-- Limitar potencia agregada: Playa Taxis máx 40 kW (en lugar de 48)
+- Limitar potencia agregada: Playa Mototaxis máx 40 kW (en lugar de 48)
 - CityLearn distribuye internamente entre los chargers
 
 **Control RL esperado**:
@@ -202,21 +202,16 @@ action = {"MOTO_CH_001": 0.5,  # 1 kW en lugar de 2 kW
 
 ### Dimensionamiento OE2 ✅
 
-| Métrica | Playa Motos | Playa Taxis | Total |
-|---------|------------|-------------|-------|
-
-## Dimensionamiento OE2 ✅
-
-| Métrica | Playa Motos | Playa Taxis | Total |
-|---------|------------|-------------|-------|
+| Métrica | Playa Motos | Playa Mototaxis | Total |
+|---------|------------|-----------------|-------|
 | **Chargers Físicos** | 112 | 16 | **128** |
 | **Sockets Totales** | 112 (4 por charger) | 16 (4 por charger) | **128** |
 | **Potencia/Socket** | 2 kW | 3 kW | - |
 | **Potencia Pico** | 224 kW | 48 kW | **272 kW** |
-| **PICO (4 horas)** | 900 motos | 130 taxis | **1030 veh** |
+| **PICO (4 horas)** | 900 motos | 130 mototaxis | **1030 veh** |
 | **Función 1030** | Para dimensionar chargers | Para dimensionar chargers | **Cálculo de capacidad** |
 | **Sesiones/Día** | 30 min | 30 min | 30 min |
-| **Total diario (13h)** | 1600+ motos | 600+ taxis | **2200+ veh** |
+| **Total diario (13h)** | 1600+ motos | 600+ mototaxis | **2200+ veh** |
 | **Horas Operación** | 9am-10pm (13h) | 9am-10pm (13h) | 9am-10pm |
 
 ---
