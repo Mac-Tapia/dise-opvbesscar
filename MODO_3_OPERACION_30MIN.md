@@ -58,9 +58,58 @@
 
 ---
 
-## Comportamiento de Observables en CityLearn
+## Arquitectura de Control - Chargers Individuales
 
-### Observable: `ev_charging_power_playa_motos_kw`
+### 🎮 Controlabilidad por Charger
+
+Cada **charger es una unidad controlable independiente** en el momento de carga:
+
+**Playa Motos**:
+
+- 112 chargers = 112 tomas controlables
+- Cada toma: potencia 0-2 kW (reducción de velocidad, pausa, etc.)
+- Control granular: decidir qué chargers cargan a potencia máxima vs reducida
+- Observable: `charger_MOTO_CH_001_power_kw`, ..., `charger_MOTO_CH_112_power_kw`
+
+**Playa Mototaxis**:
+
+- 16 chargers = 16 tomas controlables
+- Cada toma: potencia 0-3 kW (reducción de velocidad, pausa, etc.)
+- Control granular: decidir qué chargers cargan a potencia máxima vs reducida
+- Observable: `charger_MOTO_TAXI_CH_113_power_kw`, ..., `charger_MOTO_TAXI_CH_128_power_kw`
+
+### 📊 Niveles de Control en CityLearn
+
+| Nivel | Observable | Rango | Control |
+|-------|-----------|-------|---------|
+| **Agregado Total** | `ev_charging_power_total_kw` | 0-272 kW | Potencia global |
+| **Playa** | `ev_charging_power_playa_motos_kw` | 0-224 kW | Suma de 112 chargers |
+| **Playa** | `ev_charging_power_playa_mototaxis_kw` | 0-48 kW | Suma de 16 chargers |
+| **Individual** | `charger_MOTO_CH_001_power_kw` | 0-2 kW | 1 charger específico |
+| **Individual** | `charger_MOTO_TAXI_CH_128_power_kw` | 0-3 kW | 1 charger específico |
+
+### Acción RL: Control Individual vs Agregado
+
+**Opción 1: Control por playa** (agregado):
+
+```python
+# Agent decide: reducir potencia playa motos a 160 kW
+action = {"playa_motos_power": 0.71}  # 160/224 = 71%
+# CityLearn distribuye entre 112 chargers proporcionalmente
+```
+
+**Opción 2: Control individual** (granular):
+
+```python
+# Agent decide: reducir solo 20 chargers, dejar 92 a máximo
+action = {"MOTO_CH_001": 0.5,  # 1 kW en lugar de 2 kW
+          "MOTO_CH_002": 0.5,  # ... y así 20 chargers
+          ...
+          "MOTO_CH_021": 0.5}
+# Resultado: 92 chargers × 2kW + 20 chargers × 1kW = 204 kW (en lugar de 224)
+```
+
+---
 
 | Hora | Sesión | Motos Activas | Potencia Playa Motos | Potencia Playa Taxis | Total |
 |------|--------|---------------|---------------------|---------------------|-------|
@@ -83,11 +132,26 @@
 - `charger_MOTO_TAXI_CH_113_power_kw`: Empieza a las 14:00, 3 kW/socket
 - ... (16 chargers en Playa Mototaxis)
 
-**Control RL**:
+**Control RL - Acciones disponibles**:
 
-- Puede reducir potencia de Playa Motos: 224 kW → 150 kW (ej: cargar a menor velocidad)
-- Puede reducir potencia de Playa Taxis: 48 kW → 30 kW
-- Objetivo: Evitar pico de 272 kW (18:00-20:00)
+**A nivel de charger individual**:
+
+- Reducir potencia: 2 kW (Motos) → 1 kW, 0.5 kW, o pausa
+- Reducir potencia: 3 kW (Taxis) → 1.5 kW, 0.75 kW, o pausa
+- Seleccionar qué chargers operan a máxima velocidad vs reducida
+- Objetivo: Distribuir carga sin exceder 272 kW pico
+
+**A nivel de playa**:
+
+- Limitar potencia agregada: Playa Motos máx 200 kW (en lugar de 224)
+- Limitar potencia agregada: Playa Taxis máx 40 kW (en lugar de 48)
+- CityLearn distribuye internamente entre los chargers
+
+**Control RL esperado**:
+
+- Monitorear power por charger individual
+- Tomar decisiones de control por charger individual durante sesión
+- Evitar exceso total sin sacrificar servicio (fairness entre vehículos)
 
 ---
 
@@ -118,16 +182,18 @@
 "ev_charging_power_playa_motos_kw"              # 0-224 kW  
 "ev_charging_power_playa_mototaxis_kw"          # 0-48 kW
 
-# Individuales (monitoreo detallado)
-"charger_MOTO_CH_001_power_kw"      # 0-8 kW
-"charger_MOTO_CH_002_power_kw"      # 0-8 kW
+# Individuales (control GRANULAR - cada charger)
+"charger_MOTO_CH_001_power_kw"      # 0-2 kW (1 toma)
+"charger_MOTO_CH_002_power_kw"      # 0-2 kW (1 toma)
 ...
-"charger_MOTO_CH_112_power_kw"      # 0-8 kW
+"charger_MOTO_CH_112_power_kw"      # 0-2 kW (1 toma)
 
-"charger_MOTO_TAXI_CH_113_power_kw" # 0-12 kW
-"charger_MOTO_TAXI_CH_114_power_kw" # 0-12 kW
+"charger_MOTO_TAXI_CH_113_power_kw" # 0-3 kW (1 toma)
+"charger_MOTO_TAXI_CH_114_power_kw" # 0-3 kW (1 toma)
 ...
-"charger_MOTO_TAXI_CH_128_power_kw" # 0-12 kW
+"charger_MOTO_TAXI_CH_128_power_kw" # 0-3 kW (1 toma)
+
+# TOTAL: 3 agregados + 128 individuales = 131 observables EV
 ```
 
 ---
@@ -184,16 +250,20 @@
 
 ## Conclusión
 
-✅ **128 chargers = capacidad fija (272 kW pico)**  
-✅ **900 + 130 = 1030 veh pico (4 horas)** → Dimensionamiento de hardware  
-✅ **2200+ veh totales (13 horas)** → Verdadera demanda diaria  
-✅ **30 min por sesión = Modo 3 IEC 61851**  
-✅ **No simultáneo: secuencial, multiplex, reutilizable**  
+✅ **128 tomas controlables** (112 Motos + 16 Taxis)  
+✅ **Cada toma es charger individual controlable en tiempo real**  
+✅ **Pico 1030 veh (4h 9am-1pm)** → dimensiona 272 kW  
+✅ **Total 2200+ veh (13h 9am-10pm)** → multiplex de 30 min  
+✅ **Control: agregado por playa O individual por charger**  
+✅ **Modo 3 IEC 61851: carga lenta, segura, estacionamiento**  
 
-**Importancia para CityLearn**:
+**Para CityLearn**:
 
-- El pico de 1030 veh en 4 horas determina qué potencia necesitas (272 kW)
-- El total de 2200+ veh en 13 horas es lo que los chargers realmente atienden
-- El agente RL ve potencia instantánea (0-272 kW) y optimiza scheduling de carga
+- 3 observables agregados (total, motos, taxis)
+- 128 observables individuales (cada charger/toma)
+- Acciones RL: decidir potencia de chargers individuales
+- Evitar exceso de potencia sin sacrificar fairness
+
+Este es el **MODELO CORRECTO** para control granular en RL.
 
 Este es el **MODELO CORRECTO** para entrenamiento RL.

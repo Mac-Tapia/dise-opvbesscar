@@ -24,7 +24,8 @@ print("""
 │  IDs chargers:     MOTO_CH_001 → MOTO_CH_112                              │
 │                                                                              │
 │  Observable en CityLearn:  ev_charging_power_playa_motos_kw (0-224 kW)   │
-│  Control RL:       Poder controlar hasta 224 kW de potencia (multiplex)    │
+│  Control RL:       Agregado: reducir potencia total de playa              │
+│                    Individual: controlar cada charger/toma (0-2 kW)       │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 
@@ -40,7 +41,8 @@ print("""
 │  IDs chargers:     MOTO_TAXI_CH_113 → MOTO_TAXI_CH_128                    │
 │                                                                              │
 │  Observable en CityLearn:  ev_charging_power_playa_mototaxis_kw (0-48 kW) │
-│  Control RL:       Poder controlar hasta 48 kW de potencia (multiplex)     │
+│  Control RL:       Agregado: reducir potencia total de playa              │
+│                    Individual: controlar cada charger/toma (0-3 kW)       │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 
@@ -166,7 +168,12 @@ print("""
 ║    • Total:            128 chargers, 272 kW pico, 3252 kWh/día          ║
 ║                        2200+ sesiones diarias (9am-10pm)                 ║
 ║                                                                            ║
-║  ✓ 128 PERFILES HORARIOS DE CARGA GENERADOS                             ║
+║  ✓ 128 TOMAS DE CARGA CONTROLABLES (INDIVIDUALES)                        ║
+║                                                                            ║
+║    • Playa Motos:      112 tomas (chargers individuales @ 0-2 kW c/u)    ║
+║    • Playa Mototaxis:  16 tomas (chargers individuales @ 0-3 kW c/u)     ║
+║                                                                            ║
+║    Cada toma es controlable independientemente en CityLearn               ║
 ║                                                                            ║
 ║  ✓ SCHEMA CITYLEARN CON 131 NUEVOS OBSERVABLES                          ║
 ║                                                                            ║
