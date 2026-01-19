@@ -15,7 +15,7 @@ Se identificaron y **corrigieron 4 problemas críticos** que impedían que SAC a
 **Archivo**: [src/iquitos_citylearn/oe3/rewards.py](src/iquitos_citylearn/oe3/rewards.py#L30)
 
 | Métrica | Antes | Después | Razón |
-|---------|-------|---------|-------|
+| --- | --- | --- | --- |
 | **CO₂** | 0.45 | **0.50** | PRIMARY: matriz térmica 0.45 kg/kWh (aislada) |
 | **Solar** | 0.15 | **0.20** | SECONDARY: FV limpia disponible en Iquitos |
 | **Costo** | 0.15 | **0.10** | REDUCIDO: tarifa baja, no es bottleneck |
@@ -30,7 +30,7 @@ Se identificaron y **corrigieron 4 problemas críticos** que impedían que SAC a
 
 **Archivo**: [src/iquitos_citylearn/oe3/rewards.py](src/iquitos_citylearn/oe3/rewards.py#L152-L165)
 
-#### ❌ PROBLEMA ORIGINAL
+#### ❌ PROBLEMA ORIGINAL - Issue
 
 ```python
 co2_baseline = 500.0  # ¡¡¡ARBITRARIO!!!
@@ -39,7 +39,7 @@ co2_baseline = 500.0  # ¡¡¡ARBITRARIO!!!
 # Resultado: reward casi siempre positivo → SIN GRADIENTES para learning
 ```
 
-#### ✅ SOLUCIÓN APLICADA
+#### ✅ SOLUCIÓN APLICADA - Fix
 
 ```python
 # Baselines reales de Iquitos:
@@ -58,8 +58,8 @@ else:
 
 **Impacto esperado**:
 
-- Paso 100: r_co2 mejora de -0.05 a +0.15 (visible learning)
-- Paso 500: r_co2 mejora a +0.25+ (convergencia)
+1. Paso 100: r_co2 mejora de -0.05 a +0.15 (visible learning)
+2. Paso 500: r_co2 mejora a +0.25+ (convergencia)
 
 ---
 
@@ -67,7 +67,7 @@ else:
 
 **Archivo**: [src/iquitos_citylearn/oe3/rewards.py](src/iquitos_citylearn/oe3/rewards.py#L215-L230)
 
-#### ❌ PROBLEMA ORIGINAL
+#### ❌ PROBLEMA ORIGINAL - Issue
 
 ```python
 # Penalización sumada SIN ponderación
@@ -78,7 +78,7 @@ if hour in pre_peak_hours and bess_soc < 0.5:
 # ¡SOC tiene IGUAL peso que CO₂ a pesar de ser mucho menos importante!
 ```
 
-#### ✅ SOLUCIÓN APLICADA
+#### ✅ SOLUCIÓN APLICADA - Fix
 
 ```python
 # Ahora normalizado con peso explícito
@@ -103,12 +103,12 @@ reward = (
 
 ---
 
-### 4️⃣ Entropía Reducida (SAC TIER 2)
+### 4️⃣ Entropía Reducida (SAC - PARTE DE TIER 1)
 
 **Archivo**: [src/iquitos_citylearn/oe3/agents/sac.py](src/iquitos_citylearn/oe3/agents/sac.py#L136-L138)
 
 | Parámetro | Antes | Después | Razón |
-|-----------|-------|---------|-------|
+| --- | --- | --- | --- |
 | `ent_coef` | `"auto"` | **`0.01`** | Fijo: evita exploración EXCESIVA |
 | `target_entropy` | `-126.0` | **`-50.0`** | Menos ruido, más EXPLOTACIÓN |
 
@@ -124,7 +124,7 @@ reward = (
 
 #### 1. Componente `r_co2` (CRÍTICO)
 
-```
+```text
 Paso 25:   r_co2 = -0.2 a 0.0   (baseline, learning iniciado)
 Paso 100:  r_co2 = +0.1 a +0.2  (clara MEJORA vs antes -0.1)
 Paso 250:  r_co2 = +0.2 a +0.3  (convergencia visible)
@@ -133,28 +133,28 @@ Paso 500:  r_co2 = +0.3+        (estable alto)
 
 #### 2. Componente `r_grid` (INDICADOR)
 
-```
+```text
 Antes:  r_grid variaba wildly [-1, +1] (mal escalado)
 Ahora:  r_grid variará [-0.8, +0.4] (rango controlado)
 ```
 
 #### 3. `reward_total` Mean
 
-```
+```text
 Paso 100:  reward_total = 0.56-0.60  (mejora vs 0.5600 plano)
 Paso 500:  reward_total = 0.60-0.65  (tendencia CLARA al alza)
 ```
 
 #### 4. `grid_import` en Peak Hours (18-21h)
 
-```
+```text
 Baseline SAC paso 500: ~180 kWh/hora pico
 Esperado con TIER 1:   ~150 kWh/hora pico (25% reduction)
 ```
 
 #### 5. `bess_soc` Pre-Peak (horas 16-17)
 
-```
+```text
 Actual: ~0.50 (justo target)
 Esperado: ~0.65-0.70 (agente entiende prepeak charging)
 ```
@@ -195,30 +195,32 @@ Si TIER 1 muestra mejora clara (r_co2 subiendo), implementar TIER 2:
 ### TIER 1 - YA APLICADO
 
 - ✅ [src/iquitos_citylearn/oe3/rewards.py](src/iquitos_citylearn/oe3/rewards.py)
-  - Lines 30-45: Pesos rebalanceados
-  - Lines 152-165: CO₂ baselines realistas
-  - Lines 215-230: SOC penalty normalizada
-  
+  1. Lines 30-45: Pesos rebalanceados
+  2. Lines 152-165: CO₂ baselines realistas
+  3. Lines 215-230: SOC penalty normalizada
+
 - ✅ [src/iquitos_citylearn/oe3/agents/sac.py](src/iquitos_citylearn/oe3/agents/sac.py)
-  - Lines 136-138: Entropía reducida
+  1. Lines 136-138: Entropía reducida
 
 ### DOCUMENTACIÓN
 
 - ✅ [AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md](AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md)
-- ✅ [SAC_LEARNING_RATE_FIX_REPORT.md](SAC_LEARNING_RATE_FIX_REPORT.md)
+
+1. ✅ [AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md](AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md)
+2.
 
 ---
 
 ## Comando para Relanzar
 
 ```bash
-.\\.venv\\Scripts\\python.exe -m scripts.run_oe3_simulate --config configs/default.yaml
+```powershellv\\Scripts\\python.exe -m scripts.run_oe3_simulate --config configs/default.yaml
 ```
 
 **Nota**: Checkpoints SAC anterior (con valores malos) pueden ser ignorados automáticamente o limpiados:
 
 ```bash
-Remove-Item -Path "d:\diseñopvbesscar\analyses\oe3\training\checkpoints\sac" -Recurse -Force
+RempowershellItem -Path "d:\diseñopvbesscar\analyses\oe3\training\checkpoints\sac" -Recurse -Force
 ```
 
 ---
@@ -227,18 +229,18 @@ Remove-Item -Path "d:\diseñopvbesscar\analyses\oe3\training\checkpoints\sac" -R
 
 **Si r_co2 sigue PLANO después de TIER 1**:
 
-- ❌ Problema: Hay otro bug oculto en observable o env.step()
-- Acción: Investigar función compute() en wrapper
+1. ❌ Problema: Hay otro bug oculto en observable o env.step()
+2. Acción: Investigar función compute() en wrapper
 
 **Si r_co2 MEJORA CLARO**:
 
-- ✅ TIER 1 funciona correctamente
-- Acción: Proceder a TIER 2 (observables, batch size reduction)
+1. ✅ TIER 1 funciona correctamente
+2. Acción: Proceder a TIER 2 (observables, batch size reduction)
 
 **Si reward_total cae**:
 
-- ⚠️ Pesos pueden necesitar ajuste fino
-- Verificar: ¿Cuál componente está siendo penalizado? (r_cost?, r_ev?)
+1. ⚠️ Pesos pueden necesitar ajuste fino
+2. Verificar: ¿Cuál componente está siendo penalizado? (r_cost?, r_ev?)
 
 ---
 

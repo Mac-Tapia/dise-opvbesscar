@@ -13,7 +13,7 @@
 
 ### Dataset Reutilizado
 
-```
+```text
 ✓ Datos construidos: 128 cargadores (112 motos + 16 mototaxis)
 ✓ PV: 4,162 kWp nominal (generación escalada a objetivo)
 ✓ BESS: 2,000 kWh, 1,200 kW
@@ -23,7 +23,7 @@
 
 ### Baseline Calculado (SIN recalcular)
 
-```
+```text
 ✓ Cacheado en: analyses/oe3/training/checkpoints/baseline_metrics.json
 ✓ Energía solar: ~1,927,391 kWh
 ✓ Importación grid: Baseline estimado
@@ -81,7 +81,9 @@ All:
 
 ### Monitoreo en Vivo
 
-```
+### Monitoreo en Vivo
+
+```bash
 Terminal 1 (PID: 56e33e6d): Entrenamiento en ejecución
 Terminal 2 (PID: cf2cec8e): Monitor de progreso
 Log file: training_log.txt
@@ -89,7 +91,7 @@ Log file: training_log.txt
 
 ### Ubicaciones de Checkpoints
 
-```
+```bash
 SAC:  analyses/oe3/training/checkpoints/sac_step_*.zip
 PPO:  analyses/oe3/training/checkpoints/ppo_step_*.zip
 A2C:  analyses/oe3/training/checkpoints/a2c_step_*.zip
@@ -97,7 +99,7 @@ A2C:  analyses/oe3/training/checkpoints/a2c_step_*.zip
 
 ### Resultados
 
-```
+```text
 Output: outputs/oe3/simulations/simulation_summary.json
 ```
 
@@ -129,25 +131,25 @@ Output: outputs/oe3/simulations/simulation_summary.json
 
 ## 📊 Comandos Útiles
 
-### Monitorear Progreso
+#### Monitorear Progreso
 
 ```bash
 python monitor_training_progress.py
 ```
 
-### Ver Log en Vivo
+#### Ver Log en Vivo
 
 ```bash
 type training_log.txt | Select-Object -Last 100
 ```
 
-### Contar Checkpoints
+#### Contar Checkpoints
 
 ```bash
 dir analyses/oe3/training/checkpoints/
 ```
 
-### Verificar Tamaño GPU
+#### Verificar Tamaño GPU
 
 ```bash
 python -c "import torch; print(f'GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB')"
@@ -157,7 +159,7 @@ python -c "import torch; print(f'GPU Memory: {torch.cuda.get_device_properties(0
 
 ## ✅ Historial de Cambios Recientes
 
-```
+```bash
 ff457493 - feat: launch training with constructed dataset and cached baseline
 01b7e2f1 - fix: resolve remaining 9 linting errors (from 293 to 9)
 c22ed9b7 - fix: optimize GPU training config for PPO/A2C and fix 293 linting errors

@@ -39,7 +39,7 @@ grid_stability: float = 0.10   # REDUCIDO: picos se controlan por CO₂
 
 ### 1.2 Componentes de Recompensa Mal Escalados
 
-**Líneas 150-195 en rewards.py**
+### Líneas 150-195 en rewards.py
 
 ```python
 # ❌ PROBLEMA 1: CO₂ no distingue pico vs off-peak bastante
@@ -79,7 +79,7 @@ else:
 
 ### 1.3 Falta Penalización Explícita de Potencia Pico
 
-**Línea 200 en rewards.py**
+### Línea 200 en rewards.py
 
 ```python
 # ❌ ACTUAL
@@ -101,7 +101,7 @@ if is_peak:
 
 ### 1.4 Mal Escalado de Penalización SOC Reserva
 
-**Línea 215 en rewards.py**
+### Línea 215 en rewards.py
 
 ```python
 # ❌ ACTUAL
@@ -131,7 +131,7 @@ else:
 
 ### 1.5 Suma de Componentes Sin Normalización Correcta
 
-**Línea 220 en rewards.py**
+### Línea 220 en rewards.py
 
 ```python
 # ❌ ACTUAL
@@ -269,7 +269,7 @@ target_entropy: Optional[float] = -50.0  # Menos exploración (-dim/2 o menos)
 
 ### 3.2 Learning Rate Ahora Corregido Pero Gradient Steps Bajo
 
-**Línea 140 en sac.py**
+### Línea 140 en sac.py
 
 ```python
 # ✅ YA FIXED
@@ -304,7 +304,7 @@ train_freq: int = 4             # Update cada 4 timesteps (unchanged)
 
 ### 3.3 Normalización de Recompensa Falta
 
-**Línea 230 en rewards.py**
+### Línea 230 en rewards.py
 
 ```python
 # ❌ ACTUAL
@@ -330,9 +330,9 @@ return reward_normalized, components  # Retornar normalizado
 
 ### 3.4 Batch Size Extremadamente Alto
 
-**Línea 138 en sac.py (YAML)**
+### Línea 138 en sac.py (YAML)
 
-```python
+```yaml
 # ✅ ACTUAL (después del fix)
 batch_size: int = 32768         # 32K ejemplos por update
 
@@ -393,7 +393,7 @@ train_freq: int = 4             # Unchanged
 
 ### TIER 2 (IMPORTANTE - Implement después de validar TIER 1)
 
-5. ✅ **Entropía SAC** → sac.py línea 135
+1. ✅ **Entropía SAC** → sac.py línea 135
 
    ```python
    ent_coef=0.01 (fixed, no auto), target_entropy=-50 (vs -126)
@@ -417,7 +417,7 @@ train_freq: int = 4             # Unchanged
 
 **Después de TIER 1 changes**:
 
-```
+```text
 Paso 100:  reward debe subir a 0.60+  (vs plano 0.56 antes)
 Paso 500:  reward debe subir a 0.65+  (clara tendencia)
 Paso 1000: reward debe subir a 0.70+  (convergencia visible)
@@ -425,10 +425,10 @@ Paso 1000: reward debe subir a 0.70+  (convergencia visible)
 
 **Métricas a monitorear**:
 
-- `r_co2` mean (debe subir de -0.1 a 0.2+)
-- `r_grid` std (debe BAJAR, menos varianza)
-- `bess_soc` en pre-peak (debe estar 0.60+)
-- `grid_import` en pico (debe bajar vs baseline)
+1. `r_co2` mean (debe subir de -0.1 a 0.2+)
+2. `r_grid` std (debe BAJAR, menos varianza)
+3. `bess_soc` en pre-peak (debe estar 0.60+)
+4. `grid_import` en pico (debe bajar vs baseline)
 
 ---
 

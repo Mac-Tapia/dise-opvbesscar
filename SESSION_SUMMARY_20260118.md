@@ -31,7 +31,7 @@
 
 ### Identificación
 
-```log
+```text
 SAC paso 500: lr=3.00e-05 (mostrado en logs)
 Config YAML: learning_rate: 0.001
 Factor: 33.3x más bajo
@@ -64,7 +64,7 @@ stable_batch = self.config.batch_size        # Usar config: 32,768
 
 ### Validación
 
-```
+```text
 Antes:  step 500, lr=3.00e-05, reward_avg=0.5600 (PLANO)
 Ahora:  step 500, lr=1.00e-03, reward_avg=??? (esperado mejora)
 ```
@@ -73,7 +73,7 @@ Ahora:  step 500, lr=1.00e-03, reward_avg=??? (esperado mejora)
 
 ## Problema 2: Reward Engineering (CRÍTICO)
 
-### Identificación
+### Identificación de Cambios
 
 **4 problemas interconectados** en función de recompensa:
 
@@ -91,7 +91,7 @@ Ahora:  step 500, lr=1.00e-03, reward_avg=??? (esperado mejora)
 #### 1. Pesos Rebalanceados
 
 | Métrica | Antes | Ahora | Razón |
-|---------|-------|-------|-------|
+| --- | --- | --- | --- |
 | CO₂ | 0.45 | **0.50** | PRIMARY (matriz térmica aislada) |
 | Solar | 0.15 | **0.20** | SECONDARY (FV limpia disponible) |
 | Cost | 0.15 | **0.10** | REDUCIDO (tarifa baja) |
@@ -140,7 +140,7 @@ reward = (
 
 ## Commits History
 
-```
+```bash
 1bc4ff9c - Documentation: TIER1 fixes summary and audit results
 3d41ca7f - TIER 1: Reward rebalance (CO2=0.50, Solar=0.20), CO2 baselines fix (130/250 vs 500), SOC penalty normalized, entropy reduced
 488bb413 - Fix SAC learning rate & batch size caps - enabling 0.001 LR and 32k batch for GPU optimization

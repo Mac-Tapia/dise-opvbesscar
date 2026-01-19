@@ -288,7 +288,7 @@ dropout_rate: float = 0.1         # 10% regularización
 ## 📊 MÉTRICAS ÉXITO TIER 2
 
 | Métrica | Baseline | Target TIER 2 | Cómo Medir |
-|---------|----------|---------------|-----------|
+| --- |----------| --- |-----------|
 | **Importación Pico (kWh/hora)** | 280-300 | <250 | Promedio horas 18-21 |
 | **Importación Off-Peak (kWh/hora)** | 120-140 | <130 | Promedio horas 0-8 |
 | **SOC Pre-Pico (16-17h)** | 0.45-0.55 | >0.65 | Promedio horas 16-17 |

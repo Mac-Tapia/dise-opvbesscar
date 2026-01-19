@@ -1,6 +1,6 @@
 # 🚀 STATUS DASHBOARD - SAC Training Session 2026-01-18
 
-```
+```text
 ╔════════════════════════════════════════════════════════════════════════════╗
 ║                    SAC LEARNING - CRITICAL AUDIT COMPLETE                  ║
 ╚════════════════════════════════════════════════════════════════════════════╝
@@ -12,7 +12,7 @@
 
 ### Bug #1: Learning Rate Capped to 3e-05
 
-```
+```text
 Status:     ✅ FIXED (Commit 488bb413)
 Severity:   🔴 CRITICAL - 100x reduction in gradient magnitude
 Location:   src/iquitos_citylearn/oe3/agents/sac.py:661
@@ -24,7 +24,7 @@ Impact:     Reward_avg step 500: 0.5550 (plano) → Expected 0.65+ (learning)
 
 ### Bug #2: Reward Poorly Scaled
 
-```
+```text
 Status:     ✅ FIXED - TIER 1 Applied (Commit 3d41ca7f)
 Severity:   🔴 CRITICAL - No gradient variation
 Location:   src/iquitos_citylearn/oe3/rewards.py (multiple)
@@ -43,7 +43,7 @@ Impact:     Reward range [-0.3, 0.5] (narrow) → [-1, 1] (full range)
 ## ✅ TIER 1 FIXES APPLIED
 
 | Component | Before | After | Benefit |
-|-----------|--------|-------|---------|
+| --- | --- | --- | --- |
 | **CO₂ Weight** | 0.45 | 0.50 | PRIMARY focus: minimize grid import |
 | **Solar Weight** | 0.15 | 0.20 | Maximize PV autoconsumo |
 | **Cost Weight** | 0.15 | 0.10 | Reduce secondary objectives |
@@ -77,7 +77,7 @@ IMPROVEMENT: +0.30 to +0.35 improvement in r_co2
 
 ### Grid Import Reduction (Peak Hours 18-21h)
 
-```
+```text
 Baseline:           ~250 kWh/hora
 SAC Step 500 (old): ~180 kWh/hora (28% reduction attempted but unstable)
 SAC Step 500 (NEW): ~150 kWh/hora (40% reduction EXPECTED with stable learning)
@@ -85,7 +85,7 @@ SAC Step 500 (NEW): ~150 kWh/hora (40% reduction EXPECTED with stable learning)
 
 ### BESS SOC Pre-Peak
 
-```
+```text
 Horas 16-17:        Target = 0.65 (for peak support)
 Current behavior:   ~0.50 (just meets minimum)
 Expected after fix: ~0.65-0.70 (agente entiende pre-peak charging)
@@ -131,7 +131,7 @@ Expected after fix: ~0.65-0.70 (agente entiende pre-peak charging)
 
 ### Code Changes
 
-```
+```text
 ✅ src/iquitos_citylearn/oe3/rewards.py
    └─ Lines 30-45:   Weights (0.50, 0.10, 0.20, 0.10, 0.10)
    └─ Lines 152-165: CO₂ baselines (130/250)
@@ -144,7 +144,7 @@ Expected after fix: ~0.65-0.70 (agente entiende pre-peak charging)
 
 ### Documentation
 
-```
+```text
 ✅ SAC_LEARNING_RATE_FIX_REPORT.md (root cause analysis)
 ✅ AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md (detailed audit)
 ✅ TIER1_FIXES_SUMMARY.md (implementation guide)
@@ -157,7 +157,7 @@ Expected after fix: ~0.65-0.70 (agente entiende pre-peak charging)
 
 ### TIER 1 VALIDATION (IN PROGRESS)
 
-```
+```text
 19:35  SAC Phase Starts
        Monitor: r_co2 trend
        
@@ -172,7 +172,7 @@ Expected after fix: ~0.65-0.70 (agente entiende pre-peak charging)
 
 ### TIER 2 (IF TIER 1 SUCCEEDS)
 
-```
+```text
 Observable Enhancement:
   ├─ Add: is_peak_hour flag
   ├─ Add: pv_available_kw
@@ -196,7 +196,7 @@ Hyperparameter Tuning:
 
 ### Issue: "r_co2 still flat at step 500"
 
-```
+```text
 Likely cause: Reward computation not using new code
 Solution:
   1. Verify sac.py line 661 shows stable_lr = self.config.learning_rate
@@ -206,7 +206,7 @@ Solution:
 
 ### Issue: "LR shows 3e-05 still in logs"
 
-```
+```text
 Cause: Old terminal still running old code
 Solution:
   1. Kill python process: taskkill /F /IM python.exe
@@ -216,7 +216,7 @@ Solution:
 
 ### Issue: "Training runs but reward_avg keeps dropping"
 
-```
+```text
 Cause: Weights might need fine-tuning
 Solution:
   1. Check: which r_component is penalizing most? (r_cost? r_ev?)
@@ -243,7 +243,7 @@ But **TIER 1 is designed to improve**, not regress. Regression would indicate de
 ## 📈 SUCCESS METRICS
 
 | Metric | Target | Expected | Criterion |
-|--------|--------|----------|-----------|
+| --- | --- | --- | --- |
 | r_co2 @ step 500 | > +0.25 | +0.30+ | Learning visible |
 | reward_total @ step 500 | > 0.60 | 0.62+ | Avg improvement |
 | grid_import peak | < 150 kWh/h | 160 kWh/h | Grid load reduction |
@@ -256,7 +256,7 @@ But **TIER 1 is designed to improve**, not regress. Regression would indicate de
 
 ### Why Learning Rate Was Capped
 
-```
+```text
 Historical: "conservative for stability"
 Reality: Prevents convergence entirely
 Lesson: Review all min/max caps in RL code annually
@@ -264,7 +264,7 @@ Lesson: Review all min/max caps in RL code annually
 
 ### Why Reward Baseline Mattered
 
-```
+```text
 Wrong baseline (500) → reward range [-0.3, 0.5]
 Right baseline (130/250) → reward range [-1, 1]
 Lesson: Baseline should reflect actual problem scale
@@ -272,7 +272,7 @@ Lesson: Baseline should reflect actual problem scale
 
 ### Why Weights Normalization Failed
 
-```
+```text
 Problem: sum != 1.0 properly, and SOC not weighted
 Solution: Explicit ponderación in computation
 Lesson: Always weight all penalty components consistently
