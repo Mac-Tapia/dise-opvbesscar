@@ -44,29 +44,33 @@ class PPOConfig:
     # Hiperparámetros de entrenamiento
     train_steps: int = 500000  # 500k mínimo para alta dimensionalidad
     n_steps: int = 1024  # Steps por update
-    batch_size: int = 128
-    n_epochs: int = 10
+    batch_size: int = 256           # TIER 2 FIX: ↑ de 128 (más estable)
+    n_epochs: int = 15              # TIER 2 FIX: ↑ de 10 (más updates)
     
     # Optimización
-    learning_rate: float = 3e-4
-    lr_schedule: str = "constant"  # "constant", "linear", "cosine"
+    learning_rate: float = 2.5e-4   # TIER 2 FIX: ↓ de 3e-4 (convergencia suave)
+    lr_schedule: str = "linear"     # TIER 2 FIX: cambio de "constant" (decay LR)
     gamma: float = 0.99
     gae_lambda: float = 0.95
     
     # Clipping y regularización
     clip_range: float = 0.2
     clip_range_vf: Optional[float] = None
-    ent_coef: float = 0.01  # Coeficiente de entropía
+    ent_coef: float = 0.02          # TIER 2 FIX: ↑ de 0.01 (2x exploración)
     vf_coef: float = 0.5  # Coeficiente value function
     max_grad_norm: float = 0.5
     
     # Red neuronal
-    hidden_sizes: tuple = (256, 256)
-    activation: str = "tanh"
+    hidden_sizes: tuple = (512, 512)  # TIER 2 FIX: ↑ de (256, 256) (capacidad)
+    activation: str = "relu"        # TIER 2 FIX: cambio de "tanh" (ReLU mejor)
     ortho_init: bool = True
     
     # Normalización (mejora estabilidad)
     normalize_advantage: bool = True
+    
+    # === EXPLORACIÓN MEJORADA (TIER 2) ===
+    use_sde: bool = True            # NEW: Stochastic Delta Exploration
+    sde_sample_freq: int = -1       # Sample every step
     
     # === CONFIGURACIÓN GPU/CUDA ===
     device: str = "auto"  # "auto", "cuda", "cuda:0", "cuda:1", "mps", "cpu"
