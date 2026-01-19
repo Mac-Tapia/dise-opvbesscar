@@ -12,7 +12,7 @@
 - **Sockets**: 112 tomas de carga (4 por charger)
 - **Potencia**: 224 kW total (2 kW por socket)
 - **Energia diaria**: 2679 kWh
-- **Flota soportada**: 900 motos electricas
+- **Flota soportada**: 900 motos electricas a cargar diariamente (9am-10pm)
 - **IDs**: MOTO_CH_001 → MOTO_CH_112
 - **Horas pico**: 14-20h (carga principal)
 - **Observable control**: `ev_charging_power_playa_motos_kw` (0-224 kW)
@@ -23,7 +23,7 @@
 - **Sockets**: 16 tomas de carga (4 por charger)
 - **Potencia**: 48 kW total (3 kW por socket)
 - **Energia diaria**: 573 kWh
-- **Flota soportada**: 130 mototaxis
+- **Flota soportada**: 130 mototaxis a cargar diariamente (9am-10pm)
 - **IDs**: MOTO_TAXI_CH_113 → MOTO_TAXI_CH_128
 - **Horas pico**: 18-21h (uso tarde-noche)
 - **Observable control**: `ev_charging_power_playa_mototaxis_kw` (0-48 kW)
@@ -34,7 +34,9 @@
 - **Sockets**: 128 tomas
 - **Potencia**: 272 kW total
 - **Energia**: 3252 kWh/dia
-- **Flota**: 1030 vehículos (900 motos + 130 mototaxis)
+- **Vehiculos a cargar/día**: 1030 vehículos durante horario 9am-10pm
+  - 900 motos (múltiples sesiones reutilizando 112 chargers)
+  - 130 mototaxis (múltiples sesiones reutilizando 16 chargers)
 
 ---
 

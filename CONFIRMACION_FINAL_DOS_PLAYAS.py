@@ -18,7 +18,7 @@ print("""
 │  Sockets:          112 tomas de carga (4 por charger × 28)                 │
 │  Potencia:         224 kW total (2 kW por socket)                          │
 │  Energia diaria:   2679 kWh                                                │
-│  Flota soportada:  900 motos electricas                                    │
+│  Flota soportada:  900 motos a cargar (9am-10pm, multiples sesiones)
 │  Horas pico:       14-20h (carga principal)                                │
 │  IDs chargers:     MOTO_CH_001 → MOTO_CH_112                              │
 │                                                                              │
@@ -33,7 +33,7 @@ print("""
 │  Sockets:          16 tomas de carga (4 por charger × 4)                   │
 │  Potencia:         48 kW total (3 kW por socket)                           │
 │  Energia diaria:   573 kWh                                                 │
-│  Flota soportada:  130 mototaxis                                           │
+│  Flota soportada:  130 mototaxis a cargar (9am-10pm, multiples sesiones)  │
 │  Horas pico:       18-21h (uso tarde-noche)                               │
 │  IDs chargers:     MOTO_TAXI_CH_113 → MOTO_TAXI_CH_128                    │
 │                                                                              │
@@ -48,7 +48,7 @@ print("""
 │  Sockets totales:  128 tomas de carga                                      │
 │  Potencia total:   272 kW                                                  │
 │  Energia diaria:   3252 kWh                                                │
-│  Flota EV total:   1030 vehículos (900 motos + 130 mototaxis)            │
+│  Flota EV total:   1030 vehículos/día durante 9am-10pm (reutilizan chargers)│
 │                                                                              │
 │  Observables control TOTAL: ev_charging_power_total_kw                    │
 │  Observables por playa: 2 (motos y mototaxis)                             │

@@ -32,6 +32,8 @@ print(f'\nTOTAL SISTEMA:')
 print(f'  Chargers: {len(motos) + len(taxis)}')
 print(f'  Sockets: {sum(c["sockets"] for c in motos) + sum(c["sockets"] for c in taxis)}')
 print(f'  Potencia: {sum(c["power_kw"] * c["sockets"] for c in motos) + sum(c["power_kw"] * c["sockets"] for c in taxis):.0f} kW')
+print(f'\n  Nota: Los {len(motos) + len(taxis)} chargers atienden múltiples sesiones')
+print(f'        de 900 motos + 130 mototaxis = 1030 veh/día (9am-10pm)')
 
 print('\n' + '='*80)
 print('ARCHIVOS POR PLAYA')
