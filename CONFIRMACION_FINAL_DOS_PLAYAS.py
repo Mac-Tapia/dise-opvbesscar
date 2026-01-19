@@ -18,12 +18,12 @@ print("""
 │  Sockets:          112 tomas de carga (4 por charger × 28)                 │
 │  Potencia:         224 kW total (2 kW por socket)                          │
 │  Energia diaria:   2679 kWh                                                │
-│  Flota soportada:  900 motos a cargar (9am-10pm, multiples sesiones)
+│  Sesiones diarias: 900 motos (Modo 3, 30 min/sesión, 9am-10pm)
 │  Horas pico:       14-20h (carga principal)                                │
 │  IDs chargers:     MOTO_CH_001 → MOTO_CH_112                              │
 │                                                                              │
 │  Observable en CityLearn:  ev_charging_power_playa_motos_kw (0-224 kW)   │
-│  Control RL:       Poder controlar hasta 224 kW de potencia                │
+│  Control RL:       Poder controlar hasta 224 kW de potencia (multiplex)    │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 
@@ -33,12 +33,12 @@ print("""
 │  Sockets:          16 tomas de carga (4 por charger × 4)                   │
 │  Potencia:         48 kW total (3 kW por socket)                           │
 │  Energia diaria:   573 kWh                                                 │
-│  Flota soportada:  130 mototaxis a cargar (9am-10pm, multiples sesiones)  │
+│  Sesiones diarias: 130 mototaxis (Modo 3, 30 min/sesión, 9am-10pm)
 │  Horas pico:       18-21h (uso tarde-noche)                               │
 │  IDs chargers:     MOTO_TAXI_CH_113 → MOTO_TAXI_CH_128                    │
 │                                                                              │
 │  Observable en CityLearn:  ev_charging_power_playa_mototaxis_kw (0-48 kW) │
-│  Control RL:       Poder controlar hasta 48 kW de potencia                 │
+│  Control RL:       Poder controlar hasta 48 kW de potencia (multiplex)     │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
 
@@ -153,9 +153,14 @@ print("""
 ║                                                                            ║
 ║  ✓ DOS PLAYAS DE ESTACIONAMIENTO CONSTRUIDAS SEGUN OE2                   ║
 ║                                                                            ║
-║    • Playa Motos:      112 chargers, 224 kW, 2679 kWh/dia               ║
-║    • Playa Mototaxis:  16 chargers, 48 kW, 573 kWh/dia                 ║
+║    • Playa Motos:      112 chargers (900 sesiones/día, 30 min c/u)      ║
+║      Modo 3 IEC 61851: 2 kW/socket, 224 kW total                        ║
+║                                                                            ║
+║    • Playa Mototaxis:  16 chargers (130 sesiones/día, 30 min c/u)       ║
+║      Modo 3 IEC 61851: 3 kW/socket, 48 kW total                         ║
+║                                                                            ║
 ║    • Total:            128 chargers, 272 kW, 3252 kWh/dia               ║
+║                        1030 sesiones diarias (9am-10pm)                  ║
 ║                                                                            ║
 ║  ✓ 128 PERFILES HORARIOS DE CARGA GENERADOS                             ║
 ║                                                                            ║
