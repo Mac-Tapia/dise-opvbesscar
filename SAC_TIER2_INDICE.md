@@ -8,9 +8,9 @@
 
 Si **ACABAS DE LLEGAR**, empieza por:
 
-1. [SAC_TIER2_RESUMEN_EJECUTIVO.md](#sac_tier2_resumen_ejecutivocmd) (5 min) - Visión de alto nivel
+1. [SAC_TIER2_RESUMEN_EJECUTIVO.md](#sac_tier2_resumen_ejecutivomd) (5 min) - Visión de alto nivel
 2. [SAC_TIER2_OPTIMIZATION.md](#sac_tier2_optimizationmd) (15 min) - Explicación completa
-3. [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](#sac_tier2_implementation_step_by_stepcmd) (ejecutar - 2h)
+3. [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](#sac_tier2_implementation_step_by_stepmd) (ejecutar - 2h)
 
 ---
 
@@ -116,7 +116,7 @@ Si **ACABAS DE LLEGAR**, empieza por:
 **Quiero...** → **Lee esto:**
 
 | Necesidad | Documento | Sección |
-|-----------|-----------|---------|
+| --- |-----------| --- |
 | Entender qué cambios | RESUMEN | "CAMBIOS CLAVE" |
 | Saber por qué funciona | OPTIMIZATION | "REFERENCIAS TEÓRICAS" |
 | Ver código exacto | STEP_BY_STEP | "CAMBIO 1", "CAMBIO 2" |
@@ -135,7 +135,7 @@ Si **ACABAS DE LLEGAR**, empieza por:
 ## 📊 ESTADÍSTICAS DOCUMENTACIÓN
 
 | Documento | Tipo | Palabras | Tiempo Lectura | Audiencia |
-|-----------|------|----------|----------------|-----------|
+| --- |------| --- |----------------| --- |
 | RESUMEN_EJECUTIVO | Summary | 2000 | 5-10 min | Todos |
 | OPTIMIZATION | Technical | 5000 | 20-30 min | Scientists/Researchers |
 | STEP_BY_STEP | Implementation | 3000 | 2-3 h (ejecutar) | Engineers |
@@ -182,7 +182,7 @@ Día 4 (2h):
 ## 📞 TROUBLESHOOTING
 
 | Problema | Solución | Documento |
-|----------|----------|-----------|
+| --- |----------| --- |
 | No entiendo cambios | Leer OPTIMIZATION parte "POR QUÉ" | OPTIMIZATION.md |
 | Errores sintaxis Python | Leer paso-a-paso STEP_BY_STEP | STEP_BY_STEP.md |
 | Reward sigue diverge | Ver "Si Reward diverge" | OPTIMIZATION.md |

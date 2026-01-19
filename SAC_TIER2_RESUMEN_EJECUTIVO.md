@@ -72,7 +72,7 @@
 ## 📈 RESULTADOS ESPERADOS
 
 | Métrica | Antes | Después | Mejora |
-|---------|-------|---------|--------|
+| --- |-------| --- |--------|
 | **Importación Pico (kWh/h)** | 280-300 | <250 | -12% |
 | **Importación Off-Peak (kWh/h)** | 120-140 | <130 | -8% |
 | **SOC Pre-Pico (16-17h)** | 0.45-0.55 | >0.65 | +20% |
