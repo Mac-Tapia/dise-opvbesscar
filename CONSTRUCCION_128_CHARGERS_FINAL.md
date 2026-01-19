@@ -34,10 +34,11 @@
 - **Sockets**: 128 tomas
 - **Potencia**: 272 kW total
 - **Energia**: 3252 kWh/dia
-- **Vehiculos a cargar/día**: 1030 sesiones durante horario 9am-10pm
+- **Vehiculos a cargar/pico (4h)**: 1030 sesiones pico (9am-1pm)
   - 900 motos (sesiones de 30 min, reutilizando 112 chargers)
   - 130 mototaxis (sesiones de 30 min, reutilizando 16 chargers)
-  - **Modo 3 (IEC 61851)**: Cada charger atiende múltiples vehículos por turno de 30 min
+  - **Total diario (13h)**: 2200+ vehículos atendidos en multiplex
+  - **Modo 3 (IEC 61851)**: Cada charger atiende ~17 vehículos diferentes por día
 
 ---
 

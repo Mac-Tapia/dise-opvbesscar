@@ -4,16 +4,17 @@
 
 ### ❌ Interpretación INCORRECTA
 
-- "1030 vehículos simultáneamente cargando" ← **FALSO**
-- "Cada charger tiene su propia flota" ← **FALSO**
-- "Necesito 1030 enchufes" ← **FALSO**
+- "1030 vehículos simultáneamente cargando durante 13 horas" ← **FALSO**
+- "Los chargers solo atienden 1030 vehículos al día" ← **FALSO**
+- "Cada charger tiene su propia flota fija" ← **FALSO**
 
 ### ✅ Interpretación CORRECTA
 
 - **128 chargers físicos** = 272 kW total
-- **1030 vehículos/día** = sesiones secuenciales de 30 minutos
+- **Pico de 4 horas**: 900 motos + 130 mototaxis = 1030 veh (para DIMENSIONAR)
+- **Operación TOTAL**: Los MISMOS 128 chargers atienden MUCHO MÁS durante 13 horas (9am-10pm)
 - **Modo 3 (IEC 61851)**: Carga lenta, segura, cada 30 min → nuevo vehículo
-- **Operación**: 9am-10pm = 13 horas = ~26 intervalos de 30 min × 40 vehículos/intervalo ≈ 1040 sesiones
+- **Multiplex**: 13 horas = 26 intervalos de 30 min → muchos más vehículos por charger
 
 ---
 
@@ -22,30 +23,35 @@
 ```
 ╔═══════════════════════════════════════════════════════════════════════════╗
 ║                    PLAYA MOTOS: 112 CHARGERS (224 kW)                    ║
+║                        DURANTE 13 HORAS (9am-10pm)                       ║
 ╠═══════════════════════════════════════════════════════════════════════════╣
 ║                                                                           ║
-║  9:00-9:30 am   │ Sesión 1: ~40 motos en los 112 chargers               ║
-║                 │ Estado: CH_001-CH_112 ocupados @ 2 kW c/u              ║
-║                 │ Potencia: 224 kW                                        ║
-║  ────────────────────────────────────────────────────────────────────────║
+║  HORAS 9-13 (PICO - 4H): Máxima demanda = 900 motos                     ║
+║  ─────────────────────────────────────────────────────────────────────────║
 ║                                                                           ║
-║  9:30-10:00 am  │ Sesión 2: ~40 motos DIFERENTES en los 112 chargers    ║
-║                 │ Estado: CH_001-CH_112 ocupados @ 2 kW c/u              ║
-║                 │ Potencia: 224 kW                                        ║
-║                 │ (Los chargers se limpian, preparan, nuevo vehículo)    ║
-║  ────────────────────────────────────────────────────────────────────────║
+║  9:00-9:30 am   │ Sesión 1: ~115 motos en los 112 chargers @ 224 kW   ║
+║  9:30-10:00 am  │ Sesión 2: ~115 motos DIFERENTES @ 224 kW              ║
+║  10:00-10:30 am │ Sesión 3: ~115 motos DIFERENTES @ 224 kW              ║
+║  10:30-11:00 am │ Sesión 4: ~115 motos DIFERENTES @ 224 kW              ║
+║  11:00-11:30 am │ Sesión 5: ~115 motos DIFERENTES @ 224 kW              ║
+║  11:30-12:00 pm │ Sesión 6: ~115 motos DIFERENTES @ 224 kW              ║
+║  12:00-12:30 pm │ Sesión 7: ~115 motos DIFERENTES @ 224 kW              ║
+║  12:30-1:00 pm  │ Sesión 8: ~115 motos DIFERENTES @ 224 kW              ║
+║                 │ SUBTOTAL PICO (4H): 8 sesiones × 115 = ~920 motos    ║
+║  ─────────────────────────────────────────────────────────────────────────║
 ║                                                                           ║
-║  10:00-10:30 am │ Sesión 3: ~40 motos DIFERENTES en los 112 chargers    ║
-║                 │ Estado: CH_001-CH_112 ocupados @ 2 kW c/u              ║
-║                 │ Potencia: 224 kW                                        ║
-║  ────────────────────────────────────────────────────────────────────────║
+║  HORAS 13-21 (TARDE/NOCHE - 9H): Demanda variable                       ║
+║  ─────────────────────────────────────────────────────────────────────────║
 ║                                                                           ║
-║  [CONTINÚA CADA 30 MINUTOS HASTA LAS 10 PM]                             ║
+║  1:00-1:30 pm   │ Sesión 9: ~50 motos @ 160 kW                          ║
+║  1:30-2:00 pm   │ Sesión 10: ~50 motos @ 160 kW                         ║
+║  ...            │ ... (Continúa con demanda decreciente)                 ║
+║  9:30-10:00 pm  │ Sesión 26: ~20 motos @ 65 kW                          ║
+║                 │ SUBTOTAL TARDE (9H): 18 sesiones × ~40 = ~720 motos  ║
 ║                                                                           ║
-║  9:30-10:00 pm  │ Sesión 26: ~40 motos en los 112 chargers              ║
-║                 │ Estado: CH_001-CH_112 ocupados @ 2 kW c/u              ║
-║                 │ Potencia: 224 kW                                        ║
-║                 │ TOTAL MOTOS ATENDIDAS: 26 sesiones × 35 = 910 ≈ 900  ║
+║  ─────────────────────────────────────────────────────────────────────────║
+║  TOTAL 13 HORAS: ~1640 motos atendidas                                   ║
+║  (Mucho más que pico de 900 motos para dimensionamiento)                 ║
 ║                                                                           ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
 ```
@@ -132,12 +138,19 @@
 
 | Métrica | Playa Motos | Playa Taxis | Total |
 |---------|------------|-------------|-------|
+
+## Dimensionamiento OE2 ✅
+
+| Métrica | Playa Motos | Playa Taxis | Total |
+|---------|------------|-------------|-------|
 | **Chargers Físicos** | 112 | 16 | **128** |
 | **Sockets Totales** | 112 (4 por charger) | 16 (4 por charger) | **128** |
 | **Potencia/Socket** | 2 kW | 3 kW | - |
 | **Potencia Pico** | 224 kW | 48 kW | **272 kW** |
-| **Sesiones/Día** | ~900 motos | ~130 taxis | **~1030 sesiones** |
-| **Duración/Sesión** | 30 min | 30 min | 30 min |
+| **PICO (4 horas)** | 900 motos | 130 taxis | **1030 veh** |
+| **Función 1030** | Para dimensionar chargers | Para dimensionar chargers | **Cálculo de capacidad** |
+| **Sesiones/Día** | 30 min | 30 min | 30 min |
+| **Total diario (13h)** | 1600+ motos | 600+ taxis | **2200+ veh** |
 | **Horas Operación** | 9am-10pm (13h) | 9am-10pm (13h) | 9am-10pm |
 
 ---
@@ -171,9 +184,16 @@
 
 ## Conclusión
 
-✅ **128 chargers = capacidad fija**  
-✅ **1030 sesiones/día = demanda variable repartida**  
-✅ **30 min por sesión = parámetro de Modo 3 IEC 61851**  
+✅ **128 chargers = capacidad fija (272 kW pico)**  
+✅ **900 + 130 = 1030 veh pico (4 horas)** → Dimensionamiento de hardware  
+✅ **2200+ veh totales (13 horas)** → Verdadera demanda diaria  
+✅ **30 min por sesión = Modo 3 IEC 61851**  
 ✅ **No simultáneo: secuencial, multiplex, reutilizable**  
 
-Este es el **MODELO CORRECTO** para CityLearn y para entrenamiento RL.
+**Importancia para CityLearn**:
+
+- El pico de 1030 veh en 4 horas determina qué potencia necesitas (272 kW)
+- El total de 2200+ veh en 13 horas es lo que los chargers realmente atienden
+- El agente RL ve potencia instantánea (0-272 kW) y optimiza scheduling de carga
+
+Este es el **MODELO CORRECTO** para entrenamiento RL.
