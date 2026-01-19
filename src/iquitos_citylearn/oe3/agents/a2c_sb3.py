@@ -41,16 +41,16 @@ class A2CConfig:
     dimensionalidad como CityLearn con ~900 obs dims × 126 action dims.
     """
     train_steps: int = 500000  # 500k mínimo para alta dimensionalidad
-    n_steps: int = 512
-    learning_rate: float = 3e-4
-    lr_schedule: str = "constant"
+    n_steps: int = 1024            # TIER 2 FIX: ↑ de 512 (más steps/update)
+    learning_rate: float = 2.5e-4  # TIER 2 FIX: ↓ de 3e-4 (convergencia suave)
+    lr_schedule: str = "linear"    # TIER 2 FIX: cambio de "constant" (decay)
     gamma: float = 0.99
     gae_lambda: float = 1.0
-    ent_coef: float = 0.01
+    ent_coef: float = 0.02         # TIER 2 FIX: ↑ de 0.01 (2x exploración)
     vf_coef: float = 0.5
     max_grad_norm: float = 0.5
-    hidden_sizes: tuple = (256, 256)
-    activation: str = "tanh"
+    hidden_sizes: tuple = (512, 512)  # TIER 2 FIX: ↑ de (256, 256) (capacidad)
+    activation: str = "relu"       # TIER 2 FIX: cambio de "tanh"
     device: str = "auto"
     seed: int = 42
     verbose: int = 0
