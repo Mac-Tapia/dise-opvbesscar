@@ -657,14 +657,14 @@ class SACAgent:
         
         target_entropy = self.config.target_entropy if self.config.target_entropy is not None else "auto"
         
-        # Learning rate MÁS conservador para estabilidad
-        stable_lr = min(self.config.learning_rate, 3e-5)  # Max 3e-5 (muy bajo)
+        # Use configured learning rate (not capped anymore)
+        stable_lr = self.config.learning_rate
         
         # Gamma estándar (SAC maneja bien gamma alto con entropy)
         stable_gamma = self.config.gamma  # Usar config original (0.99)
         
-        # Batch size moderado
-        stable_batch = min(self.config.batch_size, 512)
+        # Use configured batch size (not capped anymore - GPU can handle 32k)
+        stable_batch = self.config.batch_size
         
         logger.info("[SAC] Hiperparámetros: lr=%.2e, gamma=%.3f, batch=%d", 
                     stable_lr, stable_gamma, stable_batch)
