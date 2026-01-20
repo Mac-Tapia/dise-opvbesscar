@@ -1,0 +1,74 @@
+services:
+  # FastAPI Application
+  fastapi-app:
+    image: fastapi-mongo-api
+    container_name: fastapi-app
+    build:
+      context: .
+      dockerfile: Dockerfile.fastapi
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URL=mongodb://mongodb:27017
+      - MONGODB_DB=pvbesscar
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - pvbesscar-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: pvbesscar
+    restart: unless-stopped
+    networks:
+      - pvbesscar-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Mongo Express - MongoDB GUI
+  mongo-admin:
+    image: mongo-express:latest
+    container_name: mongo-admin
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://admin:password@mongodb:27017/
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+    networks:
+      - pvbesscar-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+
+networks:
+  pvbesscar-network:
+    driver: bridge
