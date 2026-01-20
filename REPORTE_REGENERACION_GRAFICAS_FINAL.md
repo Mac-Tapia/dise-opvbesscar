@@ -111,16 +111,16 @@ sac/sac_final.zip
 
 ## ✅ VERIFICACIONES REALIZADAS
 
- | Verificación | Status | Detalles |
- | --- | --- | --- |
- | Carga de PPO | ✅ | 18,432 timesteps confirmados |
- | Carga de A2C | ✅ | 17,536 timesteps confirmados |
- | Carga de SAC | ✅ | 17,520 timesteps confirmados |
- | Generación de gráficas | ✅ | 26 archivos creados |
- | Integridad de archivos | ✅ | Todos > 45 KB |
- | Eliminación de antiguos | ✅ | 4 versiones previas removidas |
- | Total final | ✅ | 25 gráficas PNG |
- | Consolidación | ✅ | 100% en `analyses/oe3/training/plots/` |
+| Verificación | Status | Detalles |
+| --- | --- | --- |
+| Carga de PPO | ✅ | 18,432 timesteps confirmados |
+| Carga de A2C | ✅ | 17,536 timesteps confirmados |
+| Carga de SAC | ✅ | 17,520 timesteps confirmados |
+| Generación de gráficas | ✅ | 26 archivos creados |
+| Integridad de archivos | ✅ | Todos > 45 KB |
+| Eliminación de antiguos | ✅ | 4 versiones previas removidas |
+| Total final | ✅ | 25 gráficas PNG |
+| Consolidación | ✅ | 100% en `analyses/oe3/training/plots/` |
 
 ---
 
@@ -163,14 +163,14 @@ generate_remaining_graphics()   # Métricas adicionales
 
 ## 📊 CAMBIOS DE CONTENIDO
 
- | Tipo | Anterior | Nuevo | Mejora |
- | --- | --- | --- | --- |
- | Fuente de datos | Simulado/Estimado | Real (Checkpoints) | ✅ 100% real |
- | Timesteps PPO | Estimado | 18,432 real | ✅ Verificado |
- | Timesteps A2C | Estimado | 17,536 real | ✅ Verificado |
- | Timesteps SAC | Estimado | 17,520 real | ✅ Verificado |
- | Arquitecturas | Genéricas | Reales confirmadas | ✅ Confirmado |
- | Consolidación | Múltiples carpetas | Single plots/ | ✅ Centralizado |
+| Tipo | Anterior | Nuevo | Mejora |
+| --- | --- | --- | --- |
+| Fuente de datos | Simulado/Estimado | Real (Checkpoints) | ✅ 100% real |
+| Timesteps PPO | Estimado | 18,432 real | ✅ Verificado |
+| Timesteps A2C | Estimado | 17,536 real | ✅ Verificado |
+| Timesteps SAC | Estimado | 17,520 real | ✅ Verificado |
+| Arquitecturas | Genéricas | Reales confirmadas | ✅ Confirmado |
+| Consolidación | Múltiples carpetas | Single plots/ | ✅ Centralizado |
 
 ---
 

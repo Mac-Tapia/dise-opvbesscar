@@ -84,7 +84,7 @@ python EVALUACION_METRICAS_COMPLETAS.py
 
 ## 📝 Requisitos
 
-```
+```text
 python >= 3.10
 stable-baselines3 >= 2.0
 gymnasium >= 0.28

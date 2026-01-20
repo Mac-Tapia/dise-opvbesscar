@@ -14,7 +14,7 @@
 ### URLs Disponibles
 
 | Servicio | Local | Red Local |
-|----------|-------|-----------|
+| ---------- | ------- | ----------- |
 | **Docker Manager** | <http://localhost:5000> | <http://192.168.43.30:5000> |
 | **Jupyter Lab (CPU)** | <http://localhost:8888> | <http://192.168.43.30:8888> |
 | **Jupyter Lab (GPU)** | <http://localhost:8889> | <http://192.168.43.30:8889> |
@@ -47,7 +47,7 @@ http://192.168.43.30:5000
 
 ### 3. **Control de Servicios**
 
-```
+```text
 CPU Mode:
   ✅ Build CPU
   ✅ Start CPU services
@@ -81,7 +81,7 @@ Dev Mode:
 
 ## 🎨 Interfaz Visual
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │  🐳 PVBESSCAR Docker Manager           │
 │  Web interface para gestionar Docker    │
@@ -206,7 +206,7 @@ py -3.11 docker_web_interface.py
 
 ### Scenario 1: Desarrollo Local CPU
 
-```
+```text
 1. Abre http://localhost:5000
 2. Click en tab "CPU"
 3. Click "Build CPU" → espera construcción
@@ -216,7 +216,7 @@ py -3.11 docker_web_interface.py
 
 ### Scenario 2: Producción GPU
 
-```
+```text
 1. Abre http://localhost:5000
 2. Click en tab "GPU"
 3. Click "Build GPU" → construye imagen
@@ -227,7 +227,7 @@ py -3.11 docker_web_interface.py
 
 ### Scenario 3: Testing Completo
 
-```
+```text
 1. Abre http://localhost:5000
 2. Click en tab "Dev"
 3. Click "Build Dev" → crea imagen dev
@@ -241,7 +241,7 @@ py -3.11 docker_web_interface.py
 
 ### En otra máquina de la red local
 
-```
+```text
 http://192.168.43.30:5000
 ```
 
@@ -330,7 +330,7 @@ ipconfig
 
 ### Flask debug mode warnings
 
-```
+```text
 ⚠️ Solo desarrollo
 ✅ Cambios en código = reload automático
 ✅ Debugger PIN para debugging remoto
@@ -385,7 +385,7 @@ ipconfig
 
 ### Al Iniciar
 
-```
+```text
 ✓ Servidor: 127.0.0.1:5000
 ✓ Network: 192.168.43.30:5000
 ✓ Flask Debug: Habilitado
@@ -406,28 +406,28 @@ ipconfig
 
 ### 1. Mantén abierto en una pestaña
 
-```
+```text
 Abre en una pestaña y deja abierto
 Auto-refresh mantiene status actualizado
 ```
 
 ### 2. Usa logs en paralelo
 
-```
+```text
 Abre logs en otra pestaña mientras ejecutas acciones
 Ver en tiempo real qué ocurre
 ```
 
 ### 3. Monitorea desde otra máquina
 
-```
+```text
 Usa http://192.168.43.30:5000
 Excelente para monitoreo remoto
 ```
 
 ### 4. Combina con terminal
 
-```
+```text
 Abre terminal CMD + Web Interface en paralelo
 Más control y flexibilidad
 ```
@@ -458,7 +458,7 @@ Más control y flexibilidad
 
 ## 📚 Archivos Relacionados
 
-```
+```text
 docker_web_interface.py    (Esta interfaz)
 docker-compose.yml         (CPU services)
 docker-compose.gpu.yml     (GPU services)
@@ -489,7 +489,7 @@ DOCKER_BUILD_GUIDE.md      (Documentación Docker)
 
 ## 🎉 Status Final
 
-```
+```text
 ✅ Web Interface:        RUNNING
 ✅ Python 3.11:          ACTIVE
 ✅ Flask Server:         LISTENING (0.0.0.0:5000)

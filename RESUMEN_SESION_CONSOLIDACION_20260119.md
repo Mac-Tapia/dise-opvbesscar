@@ -48,7 +48,7 @@
 #### Errores corregidos por tipo
 
 | Tipo | Inicial | Final | Causa | Solución |
-|------|---------|-------|-------|----------|
+| --- | --- | --- | --- | --- |
 | MD060 | 351 | 0 | Pipes de tabla sin espacios | Regex para agregar espacios |
 | MD009 | 50+ | 0 | Trailing spaces | Script para remover espacios finales |
 | MD040 | 116 | 0 | Fenced code sin language | Agregar ````text` |
@@ -97,7 +97,7 @@
 ## 📊 Estadísticas Finales del Proyecto
 
 | Métrica | Valor |
-|---------|-------|
+| --- | --- |
 | Archivos Python (productivos) | 45 en raíz |
 | Archivos Python (total) | 10,444 en workspace |
 | Archivos Markdown | 63 (todos formateados) |

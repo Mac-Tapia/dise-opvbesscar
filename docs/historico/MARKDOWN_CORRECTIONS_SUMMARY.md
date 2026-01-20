@@ -77,14 +77,14 @@
 
 ## 📈 Resumen de Errores Corregidos
 
- | Error Type | Cantidad | Archivos Afectados | Estado |
- | --- | --- | --- | --- |
- | **MD001** (Heading levels) | 1 | ENTRENAMIENTO_LANZADO_2026_01_18.md | ✅ |
- | **MD036** (Emphasis instead of heading) | 7 | AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md | ✅ |
- | **MD024** (Duplicate headings) | 3 | TIER1_FIXES_SUMMARY.md, SESSION_SUMMARY_20260118.md | ✅ |
- | **MD040** (Code blocks without language) | ~352 | STATUS_DASHBOARD_TIER1.md, SESSION_SUMMARY_20260118.md | ✅ |
- | **MD060** (Table spacing) | 3 | STATUS_DASHBOARD_TIER1.md, SESSION_SUMMARY_20260118.md | ✅ |
- | **TOTAL** | **~366** | **5 archivos** | ✅ COMPLETADO |
+| Error Type | Cantidad | Archivos Afectados | Estado |
+| --- | --- | --- | --- |
+| **MD001** (Heading levels) | 1 | ENTRENAMIENTO_LANZADO_2026_01_18.md | ✅ |
+| **MD036** (Emphasis instead of heading) | 7 | AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md | ✅ |
+| **MD024** (Duplicate headings) | 3 | TIER1_FIXES_SUMMARY.md, SESSION_SUMMARY_20260118.md | ✅ |
+| **MD040** (Code blocks without language) | ~352 | STATUS_DASHBOARD_TIER1.md, SESSION_SUMMARY_20260118.md | ✅ |
+| **MD060** (Table spacing) | 3 | STATUS_DASHBOARD_TIER1.md, SESSION_SUMMARY_20260118.md | ✅ |
+| **TOTAL** | **~366** | **5 archivos** | ✅ COMPLETADO |
 
 ---
 

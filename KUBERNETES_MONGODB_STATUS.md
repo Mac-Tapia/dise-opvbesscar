@@ -14,7 +14,7 @@
 Se creó configuración **completa** de Kubernetes + MongoDB para PVBESSCAR:
 
 | Componente | Estado | Detalles |
-|-----------|--------|----------|
+| ----------- | -------- | ---------- |
 | **K8s Manifest** | ✅ Creado | k8s-deployment.yaml (300+ líneas) |
 | **MongoDB** | ✅ Configurado | 7.0, 10Gi storage, autenticación |
 | **Pipeline** | ✅ Configurado | Deployment, Service, LoadBalancer |
@@ -76,7 +76,7 @@ Documentación:
 
 ## 🎯 Arquitectura Kubernetes
 
-```
+```text
 ┌─────────────────────────────────────────────┐
 │         PVBESSCAR Namespace                 │
 ├─────────────────────────────────────────────┤
@@ -218,7 +218,7 @@ python k8s_manager.py delete
 ## 🌐 Acceso Web Después de Deployar
 
 | Servicio | URL Local | URL Network |
-|----------|-----------|-------------|
+| ---------- | ----------- | ------------- |
 | Web Interface | <http://localhost:5000> | <http://192.168.43.30:5000> |
 | Jupyter Lab | <http://localhost:8888> | <http://192.168.43.30:8888> |
 | MongoDB | localhost:27017 | 192.168.43.30:27017 |
@@ -356,7 +356,7 @@ kubectl logs -f mongodb-0 -n pvbesscar
 
 ### Métricas Prometheus
 
-```
+```text
 /metrics endpoint en puerto 5000
 Scrape interval: 30s
 Métricas incluidas:
@@ -407,7 +407,7 @@ Métricas incluidas:
 
 ### 6. **Acceder**
 
-   ```
+```text
    http://localhost:5000
    ```
 
@@ -492,7 +492,7 @@ python k8s_manager.py deploy      # Deploy a K8s
 
 ## ✨ Features Kubernetes
 
-```
+```text
 ✅ Multi-container pods
 ✅ StatefulSets (MongoDB)
 ✅ Deployments (Pipeline)
@@ -512,7 +512,7 @@ python k8s_manager.py deploy      # Deploy a K8s
 
 ## 📦 Stack Completo
 
-```
+```text
 Local Development:
   ✅ Docker Compose (CPU/GPU/Dev)
   ✅ Web Interface Flask

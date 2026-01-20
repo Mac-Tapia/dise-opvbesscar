@@ -10,7 +10,7 @@
 
 **1. Matriz de Desempeño en Escenarios**
 
-```
+```text
 Modelo  │ Escenarios │ Avg Reward │ Reward ± │ Inferencia │ Estabilidad │ Éxito
 ────────┼────────────┼────────────┼──────────┼────────────┼─────────────┼──────
 PPO     │     6      │  -0.126575 │ 0.039025 │   30.53 ms │   0.8059    │ 50.0%
@@ -21,7 +21,7 @@ SAC     │     6      │  -0.113933 │ 0.044066 │   28.22 ms │   0.8196  
 **2. Rankings de Validación**
 
 | Métrica | Ganador | Valor |
-|---------|---------|-------|
+| --------- | --------- | ------- |
 | **Mejor Reward** | A2C | -0.049390 |
 | **Mayor Estabilidad** | A2C | 0.8220 |
 | **Más Rápido** | SAC | 28.22 ms |
@@ -53,7 +53,7 @@ SAC     │     6      │  -0.113933 │ 0.044066 │   28.22 ms │   0.8196  
 
 **1. Reducción de Consumo Energético (Anual)**
 
-```
+```text
 Modelo  │ Consumo Grid │ Reducción │ % Reducción
 ────────┼──────────────┼───────────┼─────────────
 Base    │   71,175 kWh │    --     │    --
@@ -64,7 +64,7 @@ SAC     │   56,940 kWh │ 14,235 kWh│  20.0% ↓
 
 **2. Emisiones CO2 (Anual)**
 
-```
+```text
 Modelo  │ Emisiones CO2 │ Reducción  │ Árboles Equivalentes
 ────────┼───────────────┼────────────┼───────────────────
 Base    │    27,402 kg  │     --     │        --
@@ -75,7 +75,7 @@ SAC     │    21,922 kg  │  5,480 kg  │    261 árboles ✓
 
 **3. Beneficios Económicos (Anual)**
 
-```
+```text
 Modelo  │ Ahorro Electricidad │ Ahorro Picos │ Total Ahorros
 ────────┼────────────────────┼──────────────┼──────────────
 Base    │    $8,541.00       │  $26,842.76  │  $35,383.76
@@ -91,7 +91,7 @@ SAC     │    $6,832.80       │  $22,319.53  │  $29,152.33
 
 **4. Reducción de Picos de Demanda**
 
-```
+```text
 Modelo  │ Peak Demand │ Reducción │ % Reducción │ Ahorro por Costo
 ────────┼─────────────┼───────────┼─────────────┼──────────────────
 Base    │   47.82 kW  │    --     │     --      │      --
@@ -105,7 +105,7 @@ SAC     │   37.20 kW  │  10.62 kW │   22.2% ↓   │  $4,523.23/año
 Asumiendo costo sistema: **$50,000**
 
 | Modelo | Ahorro Anual | Años para ROI | Beneficio 10 Años |
-|--------|--------------|---------------|-------------------|
+| -------- | -------------- | --------------- | ------------------- |
 | PPO | $5,419.64 | 9.2 años | $4,196.45 |
 | A2C | $4,438.14 | 11.3 años | -$5,618.62 |
 | **SAC** | **$6,231.43** | **8.0 años** | **$12,314.32** ✓ |
@@ -114,7 +114,7 @@ Asumiendo costo sistema: **$50,000**
 
 **6. Rankings de Beneficios**
 
-```
+```text
 🥇 Mayor Ahorro Económico:   SAC    ($6,231.43/año)
 🥇 Mayor Reducción CO2:      SAC    (5,480 kg)
 🥇 Mayor Reducción de Picos: SAC    (10.62 kW)
@@ -133,7 +133,7 @@ Asumiendo costo sistema: **$50,000**
 ### Desempeño Integral
 
 | Aspecto | PPO | A2C | SAC | Ganador |
-|--------|-----|-----|-----|---------|
+| -------- | ----- | ----- | ----- | --------- |
 | **Reward en Validación** | -0.126575 | **-0.049390** | -0.113933 | A2C |
 | **Estabilidad** | 0.8059 | **0.8220** | 0.8196 | A2C |
 | **Tasa Éxito** | 50.0% | 50.0% | **83.3%** | SAC |
@@ -165,7 +165,7 @@ Asumiendo costo sistema: **$50,000**
 
 **2. Configuración Sugerida**
 
-   ```
+```text
    - Modelo primario: SAC (mayor desempeño general)
    - Fallback: A2C (si SAC falla - más estable)
    - Monitoreo: PPO (análisis comparativo)
@@ -191,7 +191,7 @@ Asumiendo costo sistema: **$50,000**
 ### Cifras Consolidadas (OPCIÓN 1 + 4 + C + E)
 
 | Métrica | Valor |
-|---------|-------|
+| --------- | ------- |
 | Scripts de análisis creados | 4 (OPCIÓN 1,4,C,E) |
 | Modelos analizados | 3 (PPO, A2C, SAC) |
 | Escenarios validados | 101 |

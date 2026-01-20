@@ -12,11 +12,11 @@
 - KPIs esperados (por agente, 2 episodios): CO₂ < 1.8–2.0M kg, Peak Import < 250–290 kWh/h, Avg Reward 0.40–0.65, Grid Stability 0.70–0.90.
 
 ## Resultados observados
- | Agente | Pasos | Mean Reward | CO2 episodio (kg) | Grid (kWh) | Solar (kWh) | Fuente |
- | --- | --- | --- | --- | --- | --- | --- |
- | PPO | 44,295 | 52.554 | 220.17 | 487.0 | 0.0 | `analyses/oe3/training/PPO_training_metrics.csv` (última fila) |
- | SAC | 17,518 | 52.189 | 220.17 | 487.0 | 0.0 | `analyses/oe3/training/SAC_training_metrics.csv` (última fila) |
- | A2C | — | — | — | — | — | Sin métricas finales (solo `progress/a2c_progress.csv`) |
+| Agente | Pasos | Mean Reward | CO2 episodio (kg) | Grid (kWh) | Solar (kWh) | Fuente |
+| --- | --- | --- | --- | --- | --- | --- |
+| PPO | 44,295 | 52.554 | 220.17 | 487.0 | 0.0 | `analyses/oe3/training/PPO_training_metrics.csv` (última fila) |
+| SAC | 17,518 | 52.189 | 220.17 | 487.0 | 0.0 | `analyses/oe3/training/SAC_training_metrics.csv` (última fila) |
+| A2C | — | — | — | — | — | Sin métricas finales (solo `progress/a2c_progress.csv`) |
 
 ## Conclusión
 - PPO y SAC no muestran aprendizaje: reward constante, CO2 y grid sin mejora, solar = 0.

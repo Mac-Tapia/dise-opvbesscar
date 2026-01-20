@@ -6,20 +6,20 @@ Documentación especializada para el algoritmo SAC (Soft Actor-Critic) en TIER 2
 
 ### Principal
 
- | Archivo | Descripción |
- | --------- | ------------- |
- | **SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md** | 🔧 Implementación detallada paso-a-paso |
- | **SAC_TIER2_OPTIMIZATION.md** | ⚙️ Optimizaciones específicas SAC |
- | **SAC_TIER2_QUICK_START.md** | 🚀 Inicio rápido SAC TIER 2 |
+| Archivo | Descripción |
+| --------- | ------------- |
+| **SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md** | 🔧 Implementación detallada paso-a-paso |
+| **SAC_TIER2_OPTIMIZATION.md** | ⚙️ Optimizaciones específicas SAC |
+| **SAC_TIER2_QUICK_START.md** | 🚀 Inicio rápido SAC TIER 2 |
 
 ### Referencias
 
- | Archivo | Descripción |
- | --------- | ------------- |
- | SAC_TIER2_INDICE.md | 📖 Índice de contenidos SAC |
- | SAC_TIER2_START_HERE.md | 🎯 Comienza aquí SAC |
- | SAC_TIER2_RESUMEN_EJECUTIVO.md | 📊 Resumen ejecutivo |
- | SAC_LEARNING_RATE_FIX_REPORT.md | 🔨 Reporte de corrección LR |
+| Archivo | Descripción |
+| --------- | ------------- |
+| SAC_TIER2_INDICE.md | 📖 Índice de contenidos SAC |
+| SAC_TIER2_START_HERE.md | 🎯 Comienza aquí SAC |
+| SAC_TIER2_RESUMEN_EJECUTIVO.md | 📊 Resumen ejecutivo |
+| SAC_LEARNING_RATE_FIX_REPORT.md | 🔨 Reporte de corrección LR |
 
 ## 📌 Características SAC TIER 2
 

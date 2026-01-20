@@ -29,8 +29,9 @@ print(f"  ✓ Central agent: {schema['central_agent']}")
 print("\n[2] BUILDING & PARKING LOTS")
 print(f"  ✓ Building: {env.buildings[0].name}")
 building = env.buildings[0]
-print(f"  ✓ Zones: {len(building.zones)}")
-for i, zone in enumerate(building.zones[:5]):
+zones = getattr(building, "zones", [])
+print(f"  ✓ Zones: {len(zones)}")
+for i, zone in enumerate(zones[:5]):
     print(f"    Zone {i}: {zone.name if hasattr(zone, 'name') else f'Zone_{i}'}")
 
 print("\n[3] SIMULATION - Primeros 5 timesteps")

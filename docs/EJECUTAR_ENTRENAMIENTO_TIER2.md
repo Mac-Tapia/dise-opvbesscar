@@ -188,11 +188,11 @@ while($true) { nvidia-smi; Start-Sleep 5 }
 
 ### Métricas a Esperar
 
- | Agente | Ep 1 Reward | Ep 2 Reward | Trend |
- | -------- | ------------- | ------------- | ------- |
- | **A2C** | -0.5 a 0.0 | -0.2 a 0.1 | ↑ Mejorando |
- | **PPO** | -0.3 a 0.1 | 0.0 a 0.3 | ↑ Mejorando |
- | **SAC** | 0.0 a 0.3 | 0.2 a 0.5 | ↑↑ Rápido |
+| Agente | Ep 1 Reward | Ep 2 Reward | Trend |
+| -------- | ------------- | ------------- | ------- |
+| **A2C** | -0.5 a 0.0 | -0.2 a 0.1 | ↑ Mejorando |
+| **PPO** | -0.3 a 0.1 | 0.0 a 0.3 | ↑ Mejorando |
+| **SAC** | 0.0 a 0.3 | 0.2 a 0.5 | ↑↑ Rápido |
 
 **SAC debería convergir más rápido** (reward mejor en menos episodios)
 

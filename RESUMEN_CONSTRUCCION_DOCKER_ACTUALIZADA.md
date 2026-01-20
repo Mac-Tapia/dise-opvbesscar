@@ -90,7 +90,7 @@ dev-type-check:    # MyPy type checking
 ### 🆕 Archivos Nuevos (5)
 
 | Archivo | Tipo | Propósito |
-|---------|------|----------|
+| --------- | ------ | ---------- |
 | **DOCKER_BUILD_GUIDE.md** | Documentación | Guía completa de uso Docker (250+ líneas) |
 | **docker_manager.py** | Utilidad Python | CLI para gestionar imágenes/contenedores |
 | **docker_quick.bat** | Script Windows | Comandos rápidos batch |
@@ -173,7 +173,7 @@ python docker_manager.py health --gpu
 
 ### Dockerfile
 
-```
+```text
 Líneas antes:   50 líneas
 Líneas ahora:  120 líneas (+140%)
 - Multi-stage build: +50 líneas
@@ -185,7 +185,7 @@ Líneas ahora:  120 líneas (+140%)
 
 ### docker-compose.yml
 
-```
+```text
 Servicios antes: 2 (pipeline, monitor)
 Servicios ahora: 3 (+ jupyter)
 Nuevas features:
@@ -197,7 +197,7 @@ Nuevas features:
 
 ### docker-compose.gpu.yml
 
-```
+```text
 Nombres antes: iquitos-*
 Nombres ahora: pvbesscar-*-gpu
 Servicios: 3 (+ jupyter GPU)
@@ -206,7 +206,7 @@ GPU config: nvidia-docker2 completo
 
 ### docker-compose.dev.yml
 
-```
+```text
 Servicios antes: 2 (notebook, tests)
 Servicios ahora: 4 (+ lint, type-check)
 Nuevo:
@@ -253,7 +253,7 @@ pvbesscar-jupyter      2.3%    1.2GB / 8GB
 ## 💡 Beneficios Clave
 
 | Beneficio | Impacto |
-|-----------|--------|
+| ----------- | -------- |
 | **BuildKit cache** | -60% build time en rebuilds |
 | **Health checks** | ✅ Auto-restart unhealthy containers |
 | **Tini init** | ✅ Proper signal handling |
@@ -267,7 +267,7 @@ pvbesscar-jupyter      2.3%    1.2GB / 8GB
 
 ## 📋 Git Commit
 
-```
+```text
 Commit: 1839140d
 Message: feat: actualización construcción Docker con BuildKit, 
          Tini, health checks y servicios integrados
@@ -315,7 +315,7 @@ Status: ✅ Pushed to origin/main
 
 4. **Access Jupyter:**
 
-   ```
+```text
    http://localhost:8888
    ```
 

@@ -20,13 +20,13 @@ Se completó exitosamente la limpieza de archivos redundantes en la raíz del pr
 
 ## 📈 Comparativa
 
- | Métrica | Antes | Después | Reducción |
- | --------- | ------- | --------- | ----------- |
- | **Archivos .py** | 114 | 38 | 77 eliminados (-67.5%) |
- | **Categoría BASELINE** | 5 | 0 | ✅ Eliminada |
- | **Categoría TRAINING** | 26 | 0 | ✅ Eliminada |
- | **Categoría CONFIG** | 11 | 1 | ✅ 10 eliminados |
- | **Categoría CLEANUP** | 36 | 0 | ✅ Eliminada |
+| Métrica | Antes | Después | Reducción |
+| --------- | ------- | --------- | ----------- |
+| **Archivos .py** | 114 | 38 | 77 eliminados (-67.5%) |
+| **Categoría BASELINE** | 5 | 0 | ✅ Eliminada |
+| **Categoría TRAINING** | 26 | 0 | ✅ Eliminada |
+| **Categoría CONFIG** | 11 | 1 | ✅ 10 eliminados |
+| **Categoría CLEANUP** | 36 | 0 | ✅ Eliminada |
 
 ---
 

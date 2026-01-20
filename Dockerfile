@@ -64,15 +64,7 @@ RUN mkdir -p /app/data/interim/oe2/{solar,chargers,bess} \
     && mkdir -p /app/configs
 
 # Verify Python version and key dependencies
-RUN python -c "
-import sys
-assert sys.version_info >= (3,11), 'Python 3.11+ required'
-import stable_baselines3
-import gymnasium
-import numpy
-import pandas
-print('✓ All dependencies verified')
-"
+RUN python -c "import sys; assert sys.version_info >= (3,11), 'Python 3.11+ required'; import stable_baselines3; import gymnasium; import numpy; import pandas; print('✓ All dependencies verified')"
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

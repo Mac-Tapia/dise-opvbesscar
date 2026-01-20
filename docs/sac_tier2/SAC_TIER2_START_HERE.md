@@ -66,24 +66,24 @@
 
 ## ✅ RESULTADO ESPERADO
 
- | Métrica | Antes | Después |
- | --------- | ------- | --------- |
- | Importación pico | 280 kWh/h | <250 kWh/h |
- | Convergencia | 30-40 ep | 15-20 ep |
- | CO₂ anual | 1.8M kg | <1.7M kg |
+| Métrica | Antes | Después |
+| --------- | ------- | --------- |
+| Importación pico | 280 kWh/h | <250 kWh/h |
+| Convergencia | 30-40 ep | 15-20 ep |
+| CO₂ anual | 1.8M kg | <1.7M kg |
 
 ---
 
 ## 📚 TODOS LOS DOCUMENTOS
 
- | Archivo | Tipo | Duración | Para |
- | --------- | ------ | ---------- | ------ |
- | [SAC_TIER2_QUICK_START.md](SAC_TIER2_QUICK_START.md) | 1-pager | 5 min | Impatient |
- | [SAC_TIER2_RESUMEN_EJECUTIVO.md](SAC_TIER2_RESUMEN_EJECUTIVO.md) | Summary | 5-10 min | Execs |
- | [SAC_TIER2_OPTIMIZATION.md](SAC_TIER2_OPTIMIZATION.md) | Technical | 20-30 min | Scientists |
- | [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md) | Code | 2-3 h | Devs |
- | [SAC_TIER2_INDICE.md](SAC_TIER2_INDICE.md) | Index | 5 min | Navigation |
- | [SESION_SAC_TIER2_COMPLETADA.md](SESION_SAC_TIER2_COMPLETADA.md) | Report | 10 min | Verification |
+| Archivo | Tipo | Duración | Para |
+| --------- | ------ | ---------- | ------ |
+| [SAC_TIER2_QUICK_START.md](SAC_TIER2_QUICK_START.md) | 1-pager | 5 min | Impatient |
+| [SAC_TIER2_RESUMEN_EJECUTIVO.md](SAC_TIER2_RESUMEN_EJECUTIVO.md) | Summary | 5-10 min | Execs |
+| [SAC_TIER2_OPTIMIZATION.md](SAC_TIER2_OPTIMIZATION.md) | Technical | 20-30 min | Scientists |
+| [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md) | Code | 2-3 h | Devs |
+| [SAC_TIER2_INDICE.md](SAC_TIER2_INDICE.md) | Index | 5 min | Navigation |
+| [SESION_SAC_TIER2_COMPLETADA.md](SESION_SAC_TIER2_COMPLETADA.md) | Report | 10 min | Verification |
 
 ---
 

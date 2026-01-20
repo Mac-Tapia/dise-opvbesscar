@@ -57,12 +57,12 @@ stable_batch = self.config.batch_size        # Usar config completo: 32,768
 
 ## Impacto de la Corrección
 
- | Métrica | Antes | Después | Mejora |
- | --- | ------- | --- | -------- |
- | Learning Rate | 3.00e-05 | 1.00e-03 | **33.3x más rápido** |
- | Batch Size | 512 | 32,768 | **64x más grande** |
- | Gradient Quality | Muy bajo | Óptimo para GPU | **Mejor convergencia** |
- | Esperado: Reward 500 pasos | 0.5550 (plano) | 0.6x+ (creciente) | **Aprendizaje real** |
+| Métrica | Antes | Después | Mejora |
+| --- | ------- | --- | -------- |
+| Learning Rate | 3.00e-05 | 1.00e-03 | **33.3x más rápido** |
+| Batch Size | 512 | 32,768 | **64x más grande** |
+| Gradient Quality | Muy bajo | Óptimo para GPU | **Mejor convergencia** |
+| Esperado: Reward 500 pasos | 0.5550 (plano) | 0.6x+ (creciente) | **Aprendizaje real** |
 
 ---
 
