@@ -1,8 +1,14 @@
 # 🚀 COMIENZA AQUI - TIER 2 (FINAL)
 
 **Sesión**: TIER 2 PPO & A2C Equivalence + Serial 2-Episode Test Run  
-**Fecha**: 18 Enero 2026  
-**Estado**: 🟢 ENTRENAMIENTO EN PROGRESO (A2C iniciado, PPO/SAC en cola)
+**Fecha**: 19 Enero 2026  
+**Estado**: ⚠️ Entrenamientos recientes sin convergencia (PPO/SAC recompensas planas; ver métricas)
+
+## Resultados rápidos entrenamientos (19 Ene 2026)
+
+- SAC (pasos 8,759–17,518): reward medio 52.189 (plano), CO₂ episodio 220.17 kg, grid 487 kWh, solar 0 kWh; entropía al alza → no aprendizaje.
+- PPO (pasos 9,259–44,295): reward medio 52.554 (plano), CO₂ episodio 220.17 kg, grid 487 kWh, solar 0 kWh; sin mejora.
+- Conclusión: la señal/observables actuales no inducen aprendizaje; es necesario ajustar recompensas (CO₂/importación pico, potencia pico, SOC reserva) y observaciones (hora pico, SOC, colas por playa) antes de nuevas corridas.
 
 ---
 
@@ -43,7 +49,7 @@
 
 ### 🟢 En Ejecución
 
-```
+```text
 [1/3] A2C - ENTRENAMIENTO EN PROGRESO (iniciado 19:26:54)
 [2/3] PPO - EN COLA
 [3/3] SAC - EN COLA
@@ -58,7 +64,7 @@
 ### Mapping Multiobjetivo (Balanced Priority)
 
 | Componente | Peso | Descripción |
-|-----------|------|-------------|
+| ----------- | ------ | ------------- |
 | CO2 | 0.35 | Primario - Emisiones carbono |
 | Costo | 0.25 | Costo energético |
 | Solar | 0.20 | Aprovechamiento solar |
@@ -237,7 +243,7 @@ idx = min(idx, len(self.capacity_power_curve) - 1)  # ← SAFE
 
 ## 📂 ARCHIVOS CLAVE
 
-```
+```text
 src/iquitos_citylearn/oe3/
 ├── agents/
 │   ├── ppo_sb3.py          ✅ TIER 2 (config actualizada)
@@ -263,20 +269,36 @@ outputs/oe3/training/tier2_2ep_serial/
 
 ## 🎓 METRICAS ESPERADAS FINALES
 
+### Status de Cálculo de Métricas
+
+**✅ MÉTRICAS CALCULADAS EN EVALUACIÓN POST-TRAINING:**
+
+Script: `EVALUACION_METRICAS_COMPLETAS.py` (ejecutar después del entrenamiento)
+
+Calcula para cada agente (2 episodios):
+
+- ✅ **Avg Reward**: Recompensa promedio del agente
+- ✅ **CO2 (kg)**: Emisiones de carbono estimadas (~0.4 kg CO2/kWh importado)
+- ✅ **Peak Import (kWh/h)**: Pico máximo de energía importada de la red
+- ✅ **Grid Stability**: Estabilidad de la red (0-1, donde 1 = perfecta)
+- ✅ **Convergence Speed**: Velocidad en minutos de GPU
+
 ### Convergencia Típica (benchmarks indicativos)
 
 | Métrica | A2C | PPO | SAC | Mejor |
-|---------|-----|-----|-----|-------|
+| --------- | ----- | ----- | ----- | ------- |
 | Avg Reward (2ep) | 0.45-0.55 | 0.40-0.50 | 0.55-0.65 | 🥇 SAC |
 | CO2 (kg) | 1.75-1.85M | 1.85-2.0M | 1.65-1.80M | 🥇 SAC |
 | Peak Import (kWh/h) | 240-260 | 260-290 | 220-250 | 🥇 SAC |
 | Grid Stability | 0.70-0.80 | 0.75-0.85 | 0.80-0.90 | 🥇 SAC |
 | Convergence Speed | Fast | Medium | Medium | 🥇 A2C |
 
+**Salida**: `analyses/oe3/training/RESULTADOS_METRICAS_COMPLETAS.json`
+
 ### Velocidad Entrenamiento (wall-clock)
 
 | Agente | Tipo | GPU | CPU |
-|--------|------|-----|-----|
+| -------- | ------ | ----- | ----- |
 | A2C | On-policy | ~18 min | ~45 min |
 | PPO | On-policy | ~22 min | ~55 min |
 | SAC | Off-policy | ~12 min | ~30 min |
@@ -285,7 +307,7 @@ outputs/oe3/training/tier2_2ep_serial/
 
 ## 📝 GIT COMMITS
 
-```
+```text
 7061b76c - Training: CityLearn patches + fixed serial script + status doc
 b4c36887 - TIER 2 DOCS: Updated COMPARATIVA, EJECUTAR_ENTRENAMIENTO
 d13d39da - PPO & A2C TIER 2: Updated configs (LR, batch, ent, hidden, etc)
@@ -327,7 +349,7 @@ O via terminal VS Code:
 
 **Archivo de salida**:
 
-```
+```text
 outputs/oe3/training/tier2_2ep_serial/
 ├── a2c/results_summary.json
 ├── ppo/results_summary.json
