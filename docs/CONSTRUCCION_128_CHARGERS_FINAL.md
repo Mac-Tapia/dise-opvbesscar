@@ -46,7 +46,7 @@
 
 ### Archivos Generados
 
-```
+```text
 data/interim/oe2/chargers/
 ├── individual_chargers.json           (128 chargers con perfiles)
 ├── chargers_citylearn.csv             (Formato CityLearn)
@@ -63,7 +63,7 @@ data/interim/oe2/chargers/
             ├── base/      (16 chargers)
             ├── high/      (escenario)
             └── low/       (escenario)
-```
+```text
 
 ### Perfiles de Carga
 
@@ -79,7 +79,7 @@ data/interim/oe2/chargers/
 
 ### Schema Enriquecido
 
-```
+```text
 File: data/processed/citylearn/iquitos_ev_mall/schema_with_128_chargers.json
 
 Observables nuevos:
@@ -90,11 +90,11 @@ Observables nuevos:
   • charger_MOTO_TAXI_CH_113_power_kw ... charger_MOTO_TAXI_CH_128_power_kw (16)
 
 Total observables: 179 (50 base + 131 nuevos EV)
-```
+```text
 
 ### Metadata de 128 Chargers
 
-```
+```text
 File: data/processed/citylearn/iquitos_ev_mall/charger_metadata.json
 
 Estructura:
@@ -103,13 +103,13 @@ Estructura:
     - 112 sockets
     - 224 kW potencia
     - IDs: [MOTO_CH_001, ..., MOTO_CH_112]
-  
+
   • Playa_Mototaxis:
     - 16 chargers
     - 16 sockets
     - 48 kW potencia
     - IDs: [MOTO_TAXI_CH_113, ..., MOTO_TAXI_CH_128]
-```
+```text
 
 ---
 
@@ -176,7 +176,7 @@ El agente RL controla:
 
 ```bash
 python train_v2_fresh.py
-```
+```text
 
 ### Fases de Entrenamiento
 
@@ -200,7 +200,7 @@ python train_v2_fresh.py
 
 ## GIT COMMIT
 
-```
+```text
 commit 2a09a7c7
 Author: Automated System
 Date: 2026-01-18
@@ -214,7 +214,7 @@ Feat: Construccion de 128 chargers en 2 playas segun OE2
 - Control por playa: ev_charging_power_playa_motos_kw y ev_charging_power_playa_mototaxis_kw
 - Metadata de distribucion de chargers
 - Scripts de validacion completados
-```
+```text
 
 ---
 

@@ -20,7 +20,7 @@
 
 ## Timeline Operativo - Playa Motos (Ejemplo)
 
-```
+```text
 ╔═══════════════════════════════════════════════════════════════════════════╗
 ║                    PLAYA MOTOS: 112 CHARGERS (224 kW)                    ║
 ║                        DURANTE 13 HORAS (9am-10pm)                       ║
@@ -54,7 +54,7 @@
 ║  (Mucho más que pico de 900 motos para dimensionamiento)                 ║
 ║                                                                           ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
-```
+```text
 
 ---
 
@@ -80,13 +80,13 @@ Cada **charger es una unidad controlable independiente** en el momento de carga:
 
 ### 📊 Niveles de Control en CityLearn
 
-| Nivel | Observable | Rango | Control |
-|-------|-----------|-------|---------|
-| **Agregado Total** | `ev_charging_power_total_kw` | 0-272 kW | Potencia global |
-| **Playa** | `ev_charging_power_playa_motos_kw` | 0-224 kW | Suma de 112 chargers |
-| **Playa** | `ev_charging_power_playa_mototaxis_kw` | 0-48 kW | Suma de 16 chargers |
-| **Individual** | `charger_MOTO_CH_001_power_kw` | 0-2 kW | 1 charger específico |
-| **Individual** | `charger_MOTO_TAXI_CH_128_power_kw` | 0-3 kW | 1 charger específico |
+ | Nivel | Observable | Rango | Control |
+ | ------- | ----------- | ------- | --------- |
+ | **Agregado Total** | `ev_charging_power_total_kw` | 0-272 kW | Potencia global |
+ | **Playa** | `ev_charging_power_playa_motos_kw` | 0-224 kW | Suma de 112 chargers |
+ | **Playa** | `ev_charging_power_playa_mototaxis_kw` | 0-48 kW | Suma de 16 chargers |
+ | **Individual** | `charger_MOTO_CH_001_power_kw` | 0-2 kW | 1 charger específico |
+ | **Individual** | `charger_MOTO_TAXI_CH_128_power_kw` | 0-3 kW | 1 charger específico |
 
 ### Acción RL: Control Individual vs Agregado
 
@@ -96,7 +96,7 @@ Cada **charger es una unidad controlable independiente** en el momento de carga:
 # Agent decide: reducir potencia playa motos a 160 kW
 action = {"playa_motos_power": 0.71}  # 160/224 = 71%
 # CityLearn distribuye entre 112 chargers proporcionalmente
-```
+```text
 
 **Opción 2: Control individual** (granular):
 
@@ -107,22 +107,22 @@ action = {"MOTO_CH_001": 0.5,  # 1 kW en lugar de 2 kW
           ...
           "MOTO_CH_021": 0.5}
 # Resultado: 92 chargers × 2kW + 20 chargers × 1kW = 204 kW (en lugar de 224)
-```
+```text
 
 ---
 
-| Hora | Sesión | Motos Activas | Potencia Playa Motos | Potencia Playa Mototaxis | Total |
-|------|--------|---------------|---------------------|---------------------|-------|
-| 9:00-9:30 | 1 | 35-40 | 224 kW | 0 kW | 224 kW |
-| 9:30-10:00 | 2 | 35-40 | 224 kW | 0 kW | 224 kW |
-| 10:00-10:30 | 3 | 35-40 | 224 kW | 15 kW | 239 kW |
-| ... | ... | ... | ... | ... | ... |
-| 18:00-18:30 | 17 | 35-40 | 224 kW | 32 kW | 256 kW (PICO) |
-| 18:30-19:00 | 18 | 35-40 | 224 kW | 48 kW | 272 kW (MÁXIMO) |
-| 19:00-19:30 | 19 | 35-40 | 224 kW | 48 kW | 272 kW (MÁXIMO) |
-| 19:30-20:00 | 20 | 35-40 | 224 kW | 48 kW | 272 kW (MÁXIMO) |
-| 20:00-20:30 | 21 | 20-30 | 160 kW | 48 kW | 208 kW (descenso) |
-| 20:30-21:00 | 22 | 15-20 | 120 kW | 45 kW | 165 kW |
+ | Hora | Sesión | Motos Activas | Potencia Playa Motos | Potencia Playa Mototaxis | Total |
+ | ------ | -------- | --------------- | --------------------- | --------------------- | ------- |
+ | 9:00-9:30 | 1 | 35-40 | 224 kW | 0 kW | 224 kW |
+ | 9:30-10:00 | 2 | 35-40 | 224 kW | 0 kW | 224 kW |
+ | 10:00-10:30 | 3 | 35-40 | 224 kW | 15 kW | 239 kW |
+ | ... | ... | ... | ... | ... | ... |
+ | 18:00-18:30 | 17 | 35-40 | 224 kW | 32 kW | 256 kW (PICO) |
+ | 18:30-19:00 | 18 | 35-40 | 224 kW | 48 kW | 272 kW (MÁXIMO) |
+ | 19:00-19:30 | 19 | 35-40 | 224 kW | 48 kW | 272 kW (MÁXIMO) |
+ | 19:30-20:00 | 20 | 35-40 | 224 kW | 48 kW | 272 kW (MÁXIMO) |
+ | 20:00-20:30 | 21 | 20-30 | 160 kW | 48 kW | 208 kW (descenso) |
+ | 20:30-21:00 | 22 | 15-20 | 120 kW | 45 kW | 165 kW |
 
 ### Observables Individuales
 
@@ -172,14 +172,14 @@ action = {"MOTO_CH_001": 0.5,  # 1 kW en lugar de 2 kW
   "daily_sessions": "~26 sesiones",
   "annual_profile": "chargers_hourly_profiles.csv"
 }
-```
+```text
 
 ### Schema Observables
 
 ```python
 # Agregados (control de playas)
 "ev_charging_power_total_kw"                    # 0-272 kW
-"ev_charging_power_playa_motos_kw"              # 0-224 kW  
+"ev_charging_power_playa_motos_kw"              # 0-224 kW
 "ev_charging_power_playa_mototaxis_kw"          # 0-48 kW
 
 # Individuales (control GRANULAR - cada charger)
@@ -194,7 +194,7 @@ action = {"MOTO_CH_001": 0.5,  # 1 kW en lugar de 2 kW
 "charger_MOTO_TAXI_CH_128_power_kw" # 0-3 kW (1 toma)
 
 # TOTAL: 3 agregados + 128 individuales = 131 observables EV
-```
+```text
 
 ---
 
@@ -202,17 +202,17 @@ action = {"MOTO_CH_001": 0.5,  # 1 kW en lugar de 2 kW
 
 ### Dimensionamiento OE2 ✅
 
-| Métrica | Playa Motos | Playa Mototaxis | Total |
-|---------|------------|-----------------|-------|
-| **Chargers Físicos** | 112 | 16 | **128** |
-| **Sockets Totales** | 112 (4 por charger) | 16 (4 por charger) | **128** |
-| **Potencia/Socket** | 2 kW | 3 kW | - |
-| **Potencia Pico** | 224 kW | 48 kW | **272 kW** |
-| **PICO (4 horas)** | 900 motos | 130 mototaxis | **1030 veh** |
-| **Función 1030** | Para dimensionar chargers | Para dimensionar chargers | **Cálculo de capacidad** |
-| **Sesiones/Día** | 30 min | 30 min | 30 min |
-| **Total diario (13h)** | 1600+ motos | 600+ mototaxis | **2200+ veh** |
-| **Horas Operación** | 9am-10pm (13h) | 9am-10pm (13h) | 9am-10pm |
+ | Métrica | Playa Motos | Playa Mototaxis | Total |
+ | --------- | ------------ | ----------------- | ------- |
+ | **Chargers Físicos** | 112 | 16 | **128** |
+ | **Sockets Totales** | 112 (4 por charger) | 16 (4 por charger) | **128** |
+ | **Potencia/Socket** | 2 kW | 3 kW | - |
+ | **Potencia Pico** | 224 kW | 48 kW | **272 kW** |
+ | **PICO (4 horas)** | 900 motos | 130 mototaxis | **1030 veh** |
+ | **Función 1030** | Para dimensionar chargers | Para dimensionar chargers | **Cálculo de capacidad** |
+ | **Sesiones/Día** | 30 min | 30 min | 30 min |
+ | **Total diario (13h)** | 1600+ motos | 600+ mototaxis | **2200+ veh** |
+ | **Horas Operación** | 9am-10pm (13h) | 9am-10pm (13h) | 9am-10pm |
 
 ---
 
@@ -245,12 +245,12 @@ action = {"MOTO_CH_001": 0.5,  # 1 kW en lugar de 2 kW
 
 ## Conclusión
 
-✅ **128 tomas controlables** (112 Motos + 16 Taxis)  
-✅ **Cada toma es charger individual controlable en tiempo real**  
-✅ **Pico 1030 veh (4h 9am-1pm)** → dimensiona 272 kW  
-✅ **Total 2200+ veh (13h 9am-10pm)** → multiplex de 30 min  
-✅ **Control: agregado por playa O individual por charger**  
-✅ **Modo 3 IEC 61851: carga lenta, segura, estacionamiento**  
+✅ **128 tomas controlables** (112 Motos + 16 Taxis)
+✅ **Cada toma es charger individual controlable en tiempo real**
+✅ **Pico 1030 veh (4h 9am-1pm)** → dimensiona 272 kW
+✅ **Total 2200+ veh (13h 9am-10pm)** → multiplex de 30 min
+✅ **Control: agregado por playa O individual por charger**
+✅ **Modo 3 IEC 61851: carga lenta, segura, estacionamiento**
 
 **Para CityLearn**:
 

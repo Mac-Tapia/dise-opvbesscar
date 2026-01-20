@@ -1,7 +1,7 @@
 # ✅ VERIFICACIÓN: ENTRENAMIENTO EN 2 EPISODIOS EN SERIE
 
-**Fecha**: 2026-01-18  
-**Estado**: ✅ CONFIRMADO  
+**Fecha**: 2026-01-18
+**Estado**: ✅ CONFIRMADO
 **Verificación**: Completada exitosamente
 
 ---
@@ -17,7 +17,7 @@ gradient_steps: 256
 train_freq: 4
 learning_rate: 0.001
 → Total timesteps: 2 × 8,760 = 17,520 pasos
-```
+```text
 
 ### PPO (Proximal Policy Optimization)
 
@@ -27,7 +27,7 @@ n_steps: 32,768
 batch_size: 32,768
 n_epochs: 10
 → Total timesteps: 2 × 8,760 = 17,520 pasos
-```
+```text
 
 ### A2C (Advantage Actor-Critic)
 
@@ -36,7 +36,7 @@ episodes: 2
 n_steps: 65,536
 learning_rate: 0.0007
 → Total timesteps: 2 × 8,760 = 17,520 pasos
-```
+```text
 
 ---
 
@@ -44,7 +44,7 @@ learning_rate: 0.0007
 
 **Orden ejecutado en `scripts/run_oe3_simulate.py`:**
 
-```
+```text
 1️⃣ BASELINE (Uncontrolled)
    ├─ Tipo: PV+BESS sin control
    ├─ Episodios: 1
@@ -68,19 +68,19 @@ learning_rate: 0.0007
    ├─ Timesteps: 2 × 8,760 = 17,520 pasos
    ├─ n_steps: 65,536
    └─ Status: Secuencial después de PPO
-```
+```text
 
 ---
 
 ## 📊 Estadísticas Totales
 
-| Agente | Episodios | Timesteps | Batch Size | Status |
-| --- | --- | --- | --- | --- |
-| **Baseline** | 1 | 8,760 | N/A | ✅ |
-| **SAC** | 2 | 17,520 | 32,768 | ✅ |
-| **PPO** | 2 | 17,520 | 32,768 | ✅ |
-| **A2C** | 2 | 17,520 | 65,536 | ✅ |
-| **TOTAL** | 7 | **61,320** | Var. | ✅ |
+ | Agente | Episodios | Timesteps | Batch Size | Status |
+ | --- | --- | --- | --- | --- |
+ | **Baseline** | 1 | 8,760 | N/A | ✅ |
+ | **SAC** | 2 | 17,520 | 32,768 | ✅ |
+ | **PPO** | 2 | 17,520 | 32,768 | ✅ |
+ | **A2C** | 2 | 17,520 | 65,536 | ✅ |
+ | **TOTAL** | 7 | **61,320** | Var. | ✅ |
 
 ### Duración Estimada
 
@@ -95,11 +95,11 @@ learning_rate: 0.0007
 
 ### Memoria Utilizada
 
-```
+```text
 SAC:   batch_size=32,768  → ~7.2 GB
 PPO:   batch_size=32,768  → ~6.8 GB
 A2C:   n_steps=65,536     → ~7.5 GB
-```
+```text
 
 ### Ventajas de la Configuración
 
@@ -125,7 +125,7 @@ A2C:   n_steps=65,536     → ~7.5 GB
 
 ## 📁 Archivos Verificados
 
-```
+```text
 configs/default.yaml
 ├── oe3.evaluation.agents: [SAC, PPO, A2C]
 ├── oe3.evaluation.sac.episodes: 2 ✅
@@ -136,14 +136,14 @@ scripts/run_oe3_simulate.py
 ├── for agent in agent_names: ✅ (línea ~165)
 ├── simulate(...) call ✅ (línea ~200)
 └── Serial execution ✅ (Secuencial, no paralelo)
-```
+```text
 
 ---
 
 ## 🚀 Status Actual
 
-**Entrenamiento**: 🟢 EN PROGRESO  
-**Última actualización**: 2026-01-18 18:15:00  
+**Entrenamiento**: 🟢 EN PROGRESO
+**Última actualización**: 2026-01-18 18:15:00
 **Próximo checkpoint**: En ~5 minutos (si en rango 500 pasos)
 
 ---

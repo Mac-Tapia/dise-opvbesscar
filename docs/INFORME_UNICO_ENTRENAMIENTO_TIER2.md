@@ -12,11 +12,11 @@
 - KPIs esperados (por agente, 2 episodios): CO₂ < 1.8–2.0M kg, Peak Import < 250–290 kWh/h, Avg Reward 0.40–0.65, Grid Stability 0.70–0.90.
 
 ## Resultados observados
-| Agente | Pasos | Mean Reward | CO2 episodio (kg) | Grid (kWh) | Solar (kWh) | Fuente |
-| --- | --- | --- | --- | --- | --- | --- |
-| PPO | 44,295 | 52.554 | 220.17 | 487.0 | 0.0 | `analyses/oe3/training/PPO_training_metrics.csv` (última fila) |
-| SAC | 17,518 | 52.189 | 220.17 | 487.0 | 0.0 | `analyses/oe3/training/SAC_training_metrics.csv` (última fila) |
-| A2C | — | — | — | — | — | Sin métricas finales (solo `progress/a2c_progress.csv`) |
+ | Agente | Pasos | Mean Reward | CO2 episodio (kg) | Grid (kWh) | Solar (kWh) | Fuente |
+ | --- | --- | --- | --- | --- | --- | --- |
+ | PPO | 44,295 | 52.554 | 220.17 | 487.0 | 0.0 | `analyses/oe3/training/PPO_training_metrics.csv` (última fila) |
+ | SAC | 17,518 | 52.189 | 220.17 | 487.0 | 0.0 | `analyses/oe3/training/SAC_training_metrics.csv` (última fila) |
+ | A2C | — | — | — | — | — | Sin métricas finales (solo `progress/a2c_progress.csv`) |
 
 ## Conclusión
 - PPO y SAC no muestran aprendizaje: reward constante, CO2 y grid sin mejora, solar = 0.
@@ -29,18 +29,18 @@
 - KPIs esperados: **No alcanzados**. CO₂ y Peak Import no mejoran, Grid Stability no calculada.
 
 ## Procedimiento recomendado para cumplimiento
-1. **Evaluar corridas actuales**  
-   - Ejecutar `python EVALUACION_METRICAS_COMPLETAS.py` y generar `analyses/oe3/training/RESULTADOS_METRICAS_COMPLETAS.json`.  
+1. **Evaluar corridas actuales**
+   - Ejecutar `python EVALUACION_METRICAS_COMPLETAS.py` y generar `analyses/oe3/training/RESULTADOS_METRICAS_COMPLETAS.json`.
    - Exportar `results_summary.json` por agente en `outputs/oe3/training/tier2_2ep_serial/` (o la ruta activa).
-2. **Revisar señal de aprendizaje**  
-   - Ajustar recompensas: penalizar CO₂ pico/importación pico, incluir potencia pico y reserva de SOC.  
+2. **Revisar señal de aprendizaje**
+   - Ajustar recompensas: penalizar CO₂ pico/importación pico, incluir potencia pico y reserva de SOC.
    - Ajustar observables: hora pico, SOC actual y target, colas por playa, precio horario.
-3. **Relanzar TIER 2**  
-   - Reentrenar A2C, PPO, SAC con las recompensas y observables corregidos (2 episodios seriales).  
+3. **Relanzar TIER 2**
+   - Reentrenar A2C, PPO, SAC con las recompensas y observables corregidos (2 episodios seriales).
    - Registrar métricas post-entrenamiento (reward, CO₂, Peak Import, Grid Stability, solar).
-4. **Validar contra KPIs**  
-   - Comparar métricas obtenidas vs KPIs esperados.  
+4. **Validar contra KPIs**
+   - Comparar métricas obtenidas vs KPIs esperados.
    - Documentar en este informe las cifras finales y marcar cumplimiento/no cumplimiento.
-5. **Actualizar documentación**  
-   - Sincronizar `COMIENZA_AQUI_TIER2_FINAL.md` y `COMPARATIVA_AGENTES_FINAL_TIER2.md` con los resultados finales.  
+5. **Actualizar documentación**
+   - Sincronizar `COMIENZA_AQUI_TIER2_FINAL.md` y `COMPARATIVA_AGENTES_FINAL_TIER2.md` con los resultados finales.
    - Dejar trazabilidad de pesos de recompensa y cambios de observables para la tesis.

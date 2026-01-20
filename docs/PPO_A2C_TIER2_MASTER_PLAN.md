@@ -1,8 +1,8 @@
 # PPO & A2C TIER 2 OPTIMIZATION - PARALLEL IMPLEMENTATION
 
-**Date**: 2026-01-18  
-**Objetivo**: Aplicar TIER 2 fixes (SAC) a PPO y A2C + regenerar docs + reentrenar  
-**Status**: 🚀 EN PROGRESO  
+**Date**: 2026-01-18
+**Objetivo**: Aplicar TIER 2 fixes (SAC) a PPO y A2C + regenerar docs + reentrenar
+**Status**: 🚀 EN PROGRESO
 
 ---
 
@@ -10,15 +10,15 @@
 
 ### Equivalentes SAC → PPO/A2C
 
-| SAC TIER 2 | PPO TIER 2 | A2C TIER 2 |
-|-----------|-----------|-----------|
-| ent_coef: 0.01→0.02 | ent_coef: 0.01→0.02 | ent_coef: 0.01→0.02 |
-| learning_rate: 3e-4→2.5e-4 | learning_rate: 3e-4→2.5e-4 | learning_rate: 3e-4→2.5e-4 |
-| batch_size: 512→256 | batch_size: 128→256 | n_steps: 512→1024 |
-| hidden: 256,256→512,512 | hidden: 256,256→512,512 | hidden: 256,256→512,512 |
-| tau: 0.005→0.005 | clip_range: 0.2→0.2 | No equivalente |
-| | n_epochs: 10→15 (↑) | |
-| | lr_schedule: const→linear | lr_schedule: const→linear |
+ | SAC TIER 2 | PPO TIER 2 | A2C TIER 2 |
+ | ----------- | ----------- | ----------- |
+ | ent_coef: 0.01→0.02 | ent_coef: 0.01→0.02 | ent_coef: 0.01→0.02 |
+ | learning_rate: 3e-4→2.5e-4 | learning_rate: 3e-4→2.5e-4 | learning_rate: 3e-4→2.5e-4 |
+ | batch_size: 512→256 | batch_size: 128→256 | n_steps: 512→1024 |
+ | hidden: 256,256→512,512 | hidden: 256,256→512,512 | hidden: 256,256→512,512 |
+ | tau: 0.005→0.005 | clip_range: 0.2→0.2 | No equivalente |
+ |  | n_epochs: 10→15 (↑) |  |
+ |  | lr_schedule: const→linear | lr_schedule: const→linear |
 
 ### ACTUALIZAR CONFIGS
 
@@ -36,12 +36,12 @@ class PPOConfig:
     hidden_sizes: tuple = (512, 512)  # ↑ de (256, 256)
     activation: str = "relu"       # cambiar de tanh → relu
     lr_schedule: str = "linear"    # cambiar de constant → linear
-    
+
     # NEW: Normalización adaptativa
     normalize_advantage: bool = True  # mantener
     use_sde: bool = True           # NEW: Exploration via SDE
     sde_sample_freq: int = -1      # Sample every step
-```
+```text
 
 #### A2CConfig (`a2c_sb3.py`)
 
@@ -55,12 +55,12 @@ class A2CConfig:
     hidden_sizes: tuple = (512, 512)  # ↑ de (256, 256)
     activation: str = "relu"       # cambiar de tanh
     lr_schedule: str = "linear"    # cambiar de constant
-    
+
     # NEW: Normalización rewards
     normalize_rewards: bool = True  # mantener
     reward_scale: float = 0.01     # mantener
     clip_obs: float = 10.0         # mantener
-```
+```text
 
 ---
 
@@ -126,17 +126,17 @@ class A2CConfig:
 
 ### FASE 1: CÓDIGO (1 hora)
 
-```
+```text
 [ ] Actualizar PPOConfig (ppo_sb3.py)
 [ ] Actualizar A2CConfig (a2c_sb3.py)
 [ ] Verificar rewards.py (compartida)
 [ ] Syntax check
 [ ] Commit: "PPO & A2C TIER 2: Updated configs"
-```
+```text
 
 ### FASE 2: DOCUMENTOS (2 horas)
 
-```
+```text
 [ ] Regenerar: COMPARATIVA_AGENTES_FINAL.md
 [ ] Actualizar: ARQUITECTURA_UN_EDIFICIO_DOS_PLAYAS.md
 [ ] Actualizar: DOCKER_GUIDE.md
@@ -144,17 +144,17 @@ class A2CConfig:
 [ ] Actualizar: CHECKPOINT_QUICK_REFERENCE.md
 [ ] Regenerar: COMIENZA_AQUI.md
 [ ] Commit: "Docs: Updated with PPO & A2C TIER 2"
-```
+```text
 
 ### FASE 3: REENTRENAMIENTO (variable)
 
-```
+```text
 [ ] A2C: 2 episodios
 [ ] PPO: 2 episodios
 [ ] SAC: 2 episodios
 [ ] Monitor: GPU, reward, convergence
 [ ] Commit: "Training: 2-episode test run all agents TIER 2"
-```
+```text
 
 ---
 
