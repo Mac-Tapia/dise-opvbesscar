@@ -12,7 +12,6 @@ import sys
 import numpy as np
 import logging
 from pathlib import Path
-from datetime import datetime
 import gymnasium as gym
 from stable_baselines3 import PPO, A2C, SAC
 import json
@@ -142,7 +141,7 @@ def evaluate_agent(agent_name, model=None, num_episodes=2):
             else:  # Agente entrenado
                 action, _ = model.predict(obs, deterministic=True)
             
-            obs, reward, terminated, truncated, info = env.step(action)
+            obs, reward, terminated, truncated, _ = env.step(action)
             done = terminated or truncated
             
             episode_data['rewards'].append(float(reward))

@@ -4,7 +4,6 @@ Corregir errores MD060 en archivos Markdown
 Agrega espacios después de pipes en bordes izquierdo y derecho de tablas
 """
 
-import re
 from pathlib import Path
 
 def fix_markdown_tables(filepath):

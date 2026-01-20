@@ -6,7 +6,6 @@ Calcula métricas basadas en características del modelo entrenado
 import sys
 import logging
 from pathlib import Path
-from datetime import datetime
 from stable_baselines3 import PPO, A2C, SAC
 import json
 
@@ -40,7 +39,7 @@ def evaluate_model_properties(agent_name, model_path, ModelClass):
         
         # Extraer información del modelo
         num_timesteps = model.num_timesteps
-        learning_rate = model.learning_rate
+        _ = model.learning_rate
         
         # Estimar métricas basadas en características del modelo
         # Estos son estimadores razonables basados en convergencia y estructura
