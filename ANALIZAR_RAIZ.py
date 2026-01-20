@@ -5,7 +5,6 @@ Analizar archivos en la raíz para detectar:
 2. Archivos vinculados a baseline, entrenamiento, configuración
 """
 
-import os
 import hashlib
 from pathlib import Path
 from collections import defaultdict

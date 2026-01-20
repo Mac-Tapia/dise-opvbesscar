@@ -3,7 +3,6 @@
 Limpiar gráficas regeneradas: eliminar duplicados y mantener las nuevas
 """
 
-import os
 import hashlib
 from pathlib import Path
 from collections import defaultdict
