@@ -14,7 +14,7 @@ Generación de datasets anuales **101 escenarios** (baseline + 100 variaciones) 
 
 ### Ubicación
 
-```
+```text
 data/interim/oe2/chargers/annual_datasets/
 ├── Playa_Motos/
 │   ├── 0/               (Baseline: demanda típica determinística)
@@ -40,7 +40,7 @@ data/interim/oe2/chargers/annual_datasets/
     ├── ...
     └── 100/             (Escenario MC 100)
         └── [16 chargers anuales]
-```
+```text
 
 ---
 
@@ -48,14 +48,14 @@ data/interim/oe2/chargers/annual_datasets/
 
 ### Conteo Total
 
-| Elemento | Cantidad |
-|----------|----------|
-| **Playa Motos** | 112 chargers |
-| **Playa Mototaxis** | 16 chargers |
-| **Total Chargers** | **128** |
-| **Escenarios** | **101** (0 baseline + 1-100 variaciones MC) |
-| **Archivos por escenario** | 128 × 2 playas = 256 CSVs |
-| **Total Archivos** | 101 escenarios × 256 CSVs = **25,856 archivos** |
+ | Elemento | Cantidad |
+ | ---------- | ---------- |
+ | **Playa Motos** | 112 chargers |
+ | **Playa Mototaxis** | 16 chargers |
+ | **Total Chargers** | **128** |
+ | **Escenarios** | **101** (0 baseline + 1-100 variaciones MC) |
+ | **Archivos por escenario** | 128 × 2 playas = 256 CSVs |
+ | **Total Archivos** | 101 escenarios × 256 CSVs = **25,856 archivos** |
 
 ### Datos por Charger - 101 Escenarios
 
@@ -90,7 +90,7 @@ timestamp,power_kw,energy_kwh
 2024-01-01 09:00:00,2.0,2.0    (ejemplo: cargando a 2 kW en Playa Motos)
 ...
 2024-12-31 23:00:00,0.0,0.0
-```
+```text
 
 ### Campos
 
@@ -111,7 +111,7 @@ Cada observable individual en CityLearn:
 "charger_MOTO_CH_002_power_kw"      # Leer de MOTO_CH_002.csv
 ...
 "charger_MOTO_TAXI_CH_128_power_kw" # Leer de MOTO_TAXI_CH_128.csv
-```
+```text
 
 CityLearn **en cada timestep (1 hora)**:
 
@@ -133,10 +133,10 @@ El agente puede entrenarse en:
 
 ## Listo para Entrenamiento
 
-✅ **128 chargers** → 128 datasets anuales individuales  
-✅ **101 escenarios** → 1 baseline + 100 variaciones Monte Carlo  
-✅ **8760 timesteps/charger** → Cobertura anual completa  
-✅ **113 M puntos de datos** → Suficiente para RL robusto  
+✅ **128 chargers** → 128 datasets anuales individuales
+✅ **101 escenarios** → 1 baseline + 100 variaciones Monte Carlo
+✅ **8760 timesteps/charger** → Cobertura anual completa
+✅ **113 M puntos de datos** → Suficiente para RL robusto
 
 ### Próximo Paso
 
@@ -146,7 +146,7 @@ Ejecutar entrenamiento con múltiples escenarios:
 python train_v2_fresh.py --scenario 0 --num-episodes 2  # Baseline
 python train_v2_fresh.py --scenario 1 --num-episodes 2  # MC 1
 python train_v2_fresh.py --scenario 50 --num-episodes 2 # MC 50
-```
+```text
 
 CityLearn cargará automáticamente para cada escenario:
 
@@ -166,7 +166,7 @@ CityLearn cargará automáticamente para cada escenario:
 # - Secuencia temporal continua (sin saltos)
 
 Verificación: ✅ COMPLETADA
-```
+```text
 
 ---
 

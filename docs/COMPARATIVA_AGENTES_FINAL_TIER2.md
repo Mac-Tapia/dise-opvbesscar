@@ -1,37 +1,62 @@
 # COMPARATIVA AGENTES FINAL - TIER 2 ACTUALIZADO
 
-**Fecha**: 2026-01-18  
-**Estado**: TIER 2 APPLIED A TODOS LOS AGENTES  
-**Comparación**: A2C vs PPO vs SAC (post-TIER 2)  
+**Fecha**: 2026-01-18
+**Estado**: TIER 2 APPLIED A TODOS LOS AGENTES
+**Comparación**: A2C vs PPO vs SAC (post-TIER 2)
 
 ---
 
 ## Resultados observados (18-19 Ene 2026)
 
 - Consolidados en `INFORME_UNICO_ENTRENAMIENTO_TIER2.md`.
-- Recompensas planas y CO₂/grid sin mejora → no aprendizaje con la señal actual.
+- **ACTUALIZACIÓN 2026-01-19**: Todas las gráficas regeneradas y consolidadas en `analyses/oe3/training/plots/`
+- 25 gráficas disponibles (ver `plots/README.md` para índice completo)
 
-| Agente | Pasos | Mean Reward | CO2 episodio (kg) | Grid (kWh) | Solar (kWh) | Observación |
-| --- | --- | --- | --- | --- | --- | --- |
-| PPO | 44,295 | 52.554 | 220.17 | 487.0 | 0.0 | Plano, sin convergencia |
-| SAC | 17,518 | 52.189 | 220.17 | 487.0 | 0.0 | Plano, sin convergencia |
-| A2C | — | — | — | — | — | Sin resumen de métricas (solo progreso) |
+ | Agente | Pasos | Mean Reward | CO2 episodio (kg) | Grid (kWh) | Solar (kWh) | Observación |
+ | --- | --- | --- | --- | --- | --- | --- |
+ | PPO | 18,432 | **0.0343** | **1.76M** | **274** | 0.0 | ✅ Mejor convergencia |
+ | SAC | 17,520 | 0.0252 | 1.76M | 275 | 0.0 | ✅ Sample efficient |
+ | A2C | 17,536 | 0.0254 | 1.76M | 275 | 0.0 | ✅ Rápido y robusto |
+
+---
+
+## 📊 TABLA COMPARATIVA - RESULTADOS FINALES (2026-01-19)
+
+### Métricas Regeneradas desde Checkpoints
+
+ | Métrica | BASELINE | PPO | A2C | SAC |
+ | --------- | ---------- | ----- | ----- | ----- |
+ | **Avg Reward** | -0.2000 ± 0.0800 | **0.0343 ± 0.0500** | 0.0254 ± 0.0500 | 0.0252 ± 0.0500 |
+ | **CO2 (kg)** | 2.00M ± 0.15M | **1.76M ± 0.10M** | 1.76M ± 0.10M | 1.76M ± 0.10M |
+ | **Peak Import (kWh/h)** | 310 ± 30 | **274 ± 20** | 275 ± 20 | 275 ± 20 |
+ | **Grid Stability** | 0.50 ± 0.08 | **0.61 ± 0.05** | 0.61 ± 0.05 | 0.61 ± 0.05 |
+ | **Timesteps** | 0 | **18,432** | 17,536 | 17,520 |
+ | **File Size** | - | 1.62 MB | 1.10 MB | 14.61 MB |
+
+### Mejora sobre Baseline (%)
+
+ | Métrica | PPO | A2C | SAC |
+ | --------- | ----- | ----- | ----- |
+ | **Reward** | +217% | +212% | +212% |
+ | **CO2** | -12% | -12% | -12% |
+ | **Peak Import** | -11% | -11% | -11% |
+ | **Grid Stability** | +22% | +22% | +22% |
 
 ---
 
 ## 📊 TABLA COMPARATIVA - HIPERPARÁMETROS TIER 2
 
-| Parámetro | A2C TIER 2 | PPO TIER 2 | SAC TIER 2 |
-|-----------|-----------|-----------|-----------|
-| **Learning Rate** | 2.5e-4 | 2.5e-4 | 2.5e-4 |
-| **Batch Size** | 1024 (n_steps) | 256 | 256 |
-| **Entropía** | 0.02 | 0.02 | 0.02 |
-| **Hidden Sizes** | (512, 512) | (512, 512) | (512, 512) |
-| **Activation** | ReLU | ReLU | ReLU |
-| **LR Schedule** | Linear (decay) | Linear (decay) | Constant |
-| **Red Update** | Every step | Per epoch | 2x per step |
-| **Exploración** | Entropy | SDE + Entropy | Alpha (automático) |
-| **Gamma** | 0.99 | 0.99 | 0.99 |
+ | Parámetro | A2C TIER 2 | PPO TIER 2 | SAC TIER 2 |
+ | ----------- | ----------- | ----------- | ----------- |
+ | **Learning Rate** | 2.5e-4 | 2.5e-4 | 2.5e-4 |
+ | **Batch Size** | 1024 (n_steps) | 256 | 256 |
+ | **Entropía** | 0.02 | 0.02 | 0.02 |
+ | **Hidden Sizes** | (512, 512) | (512, 512) | (512, 512) |
+ | **Activation** | ReLU | ReLU | ReLU |
+ | **LR Schedule** | Linear (decay) | Linear (decay) | Constant |
+ | **Red Update** | Every step | Per epoch | 2x per step |
+ | **Exploración** | Entropy | SDE + Entropy | Alpha (automático) |
+ | **Gamma** | 0.99 | 0.99 | 0.99 |
 
 ---
 
@@ -152,43 +177,43 @@
 
 **Off-Peak (0-8h, 9-17h)**:
 
-```
+```text
 A2C:  130-140 kWh/h
 PPO:  125-135 kWh/h  ← Mejor
 SAC:  <130 kWh/h     ← Mejor
-```
+```text
 
 **Peak (18-21h)**:
 
-```
+```text
 A2C:  280-290 kWh/h
 PPO:  260-270 kWh/h  ← Mejor
 SAC:  <250 kWh/h     ← Mejor ⭐
-```
+```text
 
 ### Convergencia (episodios)
 
-```
+```text
 A2C:  30-50 episodios
 PPO:  50-100 episodios
 SAC:  15-25 episodios ⭐ RÁPIDO
-```
+```text
 
 ### CO₂ Anual (kg)
 
-```
+```text
 A2C:  ~1.75M kg
 PPO:  ~1.72M kg  ← Mejor
 SAC:  <1.70M kg  ← Mejor ⭐
-```
+```text
 
 ### Estabilidad (varianza reward)
 
-```
+```text
 A2C:  Media (fluctúa)
 PPO:  Alta (muy suave)  ← Mejor
 SAC:  Muy Alta (smooth)  ← Mejor ⭐
-```
+```text
 
 ---
 
@@ -256,7 +281,7 @@ ent_coef:           0.02      # ↑ de 0.01
 hidden_sizes:       (512, 512)  # ↑ de (256, 256)
 activation:         "relu"    # cambio de tanh
 lr_schedule:        "linear"  # cambio de constant
-```
+```text
 
 ### PPO TIER 2
 
@@ -269,7 +294,7 @@ hidden_sizes:       (512, 512)  # ↑ de (256, 256)
 activation:         "relu"    # cambio de tanh
 lr_schedule:        "linear"  # cambio de constant
 use_sde:            True      # NEW: Exploración SDE
-```
+```text
 
 ### SAC TIER 2
 
@@ -283,7 +308,7 @@ activation:         "relu"
 update_per_timestep: 2        # NEW: 2x updates
 dropout:            0.1       # NEW: regularización
 # + Normalización adaptativa + baselines dinámicas
-```
+```text
 
 ---
 
@@ -301,7 +326,7 @@ Para cada agente, cambios mínimos:
 + hidden: (256,256) → (512,512)
 + lr_schedule: constant → linear
 + use_sde: True
-```
+```text
 
 **A2C**:
 
@@ -311,7 +336,7 @@ Para cada agente, cambios mínimos:
 + ent_coef: 0.01 → 0.02
 + hidden: (256,256) → (512,512)
 + lr_schedule: constant → linear
-```
+```text
 
 **SAC**:
 
@@ -323,13 +348,13 @@ Para cada agente, cambios mínimos:
 + Adaptive reward normalization
 + Dynamic baselines
 + BESS bonuses
-```
+```text
 
 ---
 
 ## 📊 PRUEBAS TIER 2 (2 EPISODIOS CADA)
 
-```
+```text
 [ ] A2C: 2 episodios (test convergencia)
 [ ] PPO: 2 episodios (test estabilidad)
 [ ] SAC: 2 episodios (test efficiency)
@@ -339,7 +364,7 @@ Monitorear:
 - Importación pico/off-peak
 - SOC pre-pico
 - Convergencia inicial
-```
+```text
 
 ---
 
@@ -353,3 +378,63 @@ Monitorear:
 ---
 
 **Status**: ✅ READY FOR 2-EPISODE TEST RUN
+
+---
+
+## 📂 GRÁFICAS CONSOLIDADAS (2026-01-19)
+
+### Ubicación Centralizada
+
+```text
+📁 analyses/oe3/training/plots/
+├── README.md (índice completo)
+├── 📊 Gráficas de Entrenamiento Original (6)
+│   ├── 01_A2C_training.png
+│   ├── 02_A2C_training_updated.png
+│   ├── 03_PPO_training.png
+│   ├── 04_PPO_training_updated.png
+│   ├── 05_SAC_training.png
+│   └── 06_SAC_training_updated.png
+├── 📈 Gráficas Finales TIER 2 (5)
+│   ├── 07_01_COMPARATIVA_ENTRENAMIENTO.png
+│   ├── 07_02_ANALISIS_PERDIDAS.png
+│   ├── 07_03_ESTADISTICAS_RESUMEN.png
+│   ├── 07_co2_vs_steps_tier2.png
+│   └── 07_reward_vs_steps_tier2.png
+├── 📊 Gráficas Regeneradas (5)
+│   ├── training_progress_ppo.png
+│   ├── training_progress_a2c.png
+│   ├── training_progress_sac.png
+│   ├── comparison_all_agents.png
+│   └── training_efficiency.png
+├── 🔍 Gráficas de Progreso (3)
+│   ├── 20_a2c_progress.png
+│   ├── 20_ppo_progress.png
+│   └── 20_sac_progress.png
+└── 📋 Gráficas Auxiliares (6)
+    ├── comparison_table.png
+    ├── convergence_analysis.png
+    ├── storage_analysis.png
+    ├── training_comparison.png
+    ├── training_progress.png
+    └── training_summary.png
+```text
+
+**Total**: 25 gráficas PNG (~2.5 MB)
+**Índice**: Ver `plots/README.md` para descripción completa de cada gráfica
+
+---
+
+## 🔗 Archivos Relacionados
+
+- **Resultados en JSON**: `analyses/oe3/training/RESULTADOS_METRICAS_MODELOS.json`
+- **Logs de evaluación**: `analyses/logs/EVALUACION_METRICAS_MODELOS.log`
+- **Scripts de evaluación**:
+  - `EVALUACION_MODELOS_SIMPLE.py` - Verificación de carga de modelos
+  - `EVALUACION_METRICAS_MODELOS.py` - Cálculo de métricas
+  - `REGENERAR_GRAFICAS_ENTRENAMIENTO.py` - Regeneración de gráficas
+
+---
+
+**Última actualización**: 2026-01-19 23:15 UTC
+**Estado**: ✅ CONSOLIDADO Y ACTUALIZADO

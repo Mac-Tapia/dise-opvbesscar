@@ -1,7 +1,7 @@
 # 🚀 COMIENZA AQUI - TIER 2 (FINAL)
 
-**Sesión**: TIER 2 PPO & A2C Equivalence + Serial 2-Episode Test Run  
-**Fecha**: 19 Enero 2026  
+**Sesión**: TIER 2 PPO & A2C Equivalence + Serial 2-Episode Test Run
+**Fecha**: 19 Enero 2026
 **Estado**: ⚠️ Entrenamientos recientes sin convergencia (PPO/SAC recompensas planas; ver métricas)
 
 ## Resultados rápidos entrenamientos (19 Ene 2026)
@@ -55,7 +55,7 @@
 [1/3] A2C - ENTRENAMIENTO EN PROGRESO (iniciado 19:26:54)
 [2/3] PPO - EN COLA
 [3/3] SAC - EN COLA
-```
+```text
 
 **Monitor**: Terminal ID: `90da3439-e423-4dee-a54d-11c354a9ed96`
 
@@ -65,13 +65,13 @@
 
 ### Mapping Multiobjetivo (Balanced Priority)
 
-| Componente | Peso | Descripción |
-| ----------- | ------ | ------------- |
-| CO2 | 0.35 | Primario - Emisiones carbono |
-| Costo | 0.25 | Costo energético |
-| Solar | 0.20 | Aprovechamiento solar |
-| EV | 0.15 | Satisfacción EV |
-| Grid | 0.05 | Estabilidad red |
+ | Componente | Peso | Descripción |
+ | ----------- | ------ | ------------- |
+ | CO2 | 0.35 | Primario - Emisiones carbono |
+ | Costo | 0.25 | Costo energético |
+ | Solar | 0.20 | Aprovechamiento solar |
+ | EV | 0.15 | Satisfacción EV |
+ | Grid | 0.05 | Estabilidad red |
 
 ### Parámetros TIER 2 por Agente
 
@@ -86,7 +86,7 @@ hidden_sizes = (512, 512)       # ↑ (256,256)
 activation = "relu"             # ↑ tanh
 lr_schedule = "linear"          # ↑ constant
 use_sde = True                  # NEW
-```
+```text
 
 #### A2C (`a2c_sb3.py`)
 
@@ -97,7 +97,7 @@ ent_coef = 0.02                 # ↑ 0.01
 hidden_sizes = (512, 512)       # ↑ (256,256)
 activation = "relu"             # ↑ tanh
 lr_schedule = "linear"          # ↑ constant
-```
+```text
 
 #### SAC (`sac.py`) - Previo
 
@@ -108,7 +108,7 @@ ent_coef = 0.02                 # ↑ 0.01
 hidden_sizes = (512, 512)       # ↑ (256,256)
 update_per_timestep = 2         # ↑ 1
 dropout = 0.1                   # ↑ 0
-```
+```text
 
 ---
 
@@ -116,8 +116,8 @@ dropout = 0.1                   # ↑ 0
 
 ### [1/3] A2C TIER 2 (2 Episodios)
 
-**Iniciado**: 2026-01-18 19:26:54  
-**Status**: 🟢 Entrenando  
+**Iniciado**: 2026-01-18 19:26:54
+**Status**: 🟢 Entrenando
 **Parámetros**:
 
 - LR: 2.5e-4
@@ -141,7 +141,7 @@ dropout = 0.1                   # ↑ 0
 
 ### [2/3] PPO TIER 2 (2 Episodios)
 
-**Status**: ⏳ EN COLA  
+**Status**: ⏳ EN COLA
 **Parámetros**:
 
 - LR: 2.5e-4
@@ -167,7 +167,7 @@ dropout = 0.1                   # ↑ 0
 
 ### [3/3] SAC TIER 2 (2 Episodios)
 
-**Status**: ⏳ EN COLA  
+**Status**: ⏳ EN COLA
 **Parámetros**:
 
 - LR: 2.5e-4
@@ -228,11 +228,11 @@ result_sac = simulate(
     sac_batch_size=256,
     use_multi_objective=True,
 )
-```
+```text
 
 ### CityLearn Patches Applied
 
-**Problema**: Array indexing error en `Battery.get_max_input_power()`  
+**Problema**: Array indexing error en `Battery.get_max_input_power()`
 **Solución**: Clamping de índices + validación de SOC
 
 ```python
@@ -242,7 +242,7 @@ idx = max(0, np.argmax(soc <= self.capacity_power_curve[0]) - 1)  # ← CRASH
 # Después:
 idx = max(0, np.argmax(comparison) - 1)
 idx = min(idx, len(self.capacity_power_curve) - 1)  # ← SAFE
-```
+```text
 
 ---
 
@@ -268,7 +268,7 @@ outputs/oe3/training/tier2_2ep_serial/
 ├── a2c/                    ← ENTRENANDO AHORA
 ├── ppo/                    ← EN COLA
 └── sac/                    ← EN COLA
-```
+```text
 
 ---
 
@@ -290,23 +290,23 @@ Calcula para cada agente (2 episodios):
 
 ### Convergencia Típica (benchmarks indicativos)
 
-| Métrica | A2C | PPO | SAC | Mejor |
-| --------- | ----- | ----- | ----- | ------- |
-| Avg Reward (2ep) | 0.45-0.55 | 0.40-0.50 | 0.55-0.65 | 🥇 SAC |
-| CO2 (kg) | 1.75-1.85M | 1.85-2.0M | 1.65-1.80M | 🥇 SAC |
-| Peak Import (kWh/h) | 240-260 | 260-290 | 220-250 | 🥇 SAC |
-| Grid Stability | 0.70-0.80 | 0.75-0.85 | 0.80-0.90 | 🥇 SAC |
-| Convergence Speed | Fast | Medium | Medium | 🥇 A2C |
+ | Métrica | A2C | PPO | SAC | Mejor |
+ | --------- | ----- | ----- | ----- | ------- |
+ | Avg Reward (2ep) | 0.45-0.55 | 0.40-0.50 | 0.55-0.65 | 🥇 SAC |
+ | CO2 (kg) | 1.75-1.85M | 1.85-2.0M | 1.65-1.80M | 🥇 SAC |
+ | Peak Import (kWh/h) | 240-260 | 260-290 | 220-250 | 🥇 SAC |
+ | Grid Stability | 0.70-0.80 | 0.75-0.85 | 0.80-0.90 | 🥇 SAC |
+ | Convergence Speed | Fast | Medium | Medium | 🥇 A2C |
 
 **Salida**: `analyses/oe3/training/RESULTADOS_METRICAS_COMPLETAS.json`
 
 ### Velocidad Entrenamiento (wall-clock)
 
-| Agente | Tipo | GPU | CPU |
-| -------- | ------ | ----- | ----- |
-| A2C | On-policy | ~18 min | ~45 min |
-| PPO | On-policy | ~22 min | ~55 min |
-| SAC | Off-policy | ~12 min | ~30 min |
+ | Agente | Tipo | GPU | CPU |
+ | -------- | ------ | ----- | ----- |
+ | A2C | On-policy | ~18 min | ~45 min |
+ | PPO | On-policy | ~22 min | ~55 min |
+ | SAC | Off-policy | ~12 min | ~30 min |
 
 ---
 
@@ -316,7 +316,7 @@ Calcula para cada agente (2 episodios):
 7061b76c - Training: CityLearn patches + fixed serial script + status doc
 b4c36887 - TIER 2 DOCS: Updated COMPARATIVA, EJECUTAR_ENTRENAMIENTO
 d13d39da - PPO & A2C TIER 2: Updated configs (LR, batch, ent, hidden, etc)
-```
+```text
 
 ---
 
@@ -328,7 +328,7 @@ Para ver el entrenamiento en tiempo real:
 
 ```powershell
 Get-Content -Path "path/to/training.log" -Tail 20 -Wait
-```
+```text
 
 O via terminal VS Code:
 
@@ -359,7 +359,7 @@ outputs/oe3/training/tier2_2ep_serial/
 ├── a2c/results_summary.json
 ├── ppo/results_summary.json
 └── sac/results_summary.json
-```
+```text
 
 **Comparativa final esperada**:
 
@@ -383,6 +383,6 @@ outputs/oe3/training/tier2_2ep_serial/
 
 ---
 
-**Status Final**: 🟢 EN EJECUCIÓN  
-**Última actualización**: 2026-01-18 19:27:01  
+**Status Final**: 🟢 EN EJECUCIÓN
+**Última actualización**: 2026-01-18 19:27:01
 **Siguiente check**: En 5-10 minutos

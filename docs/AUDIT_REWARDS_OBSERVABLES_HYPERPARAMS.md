@@ -1,6 +1,6 @@
 # 🔍 AUDIT: Recompensas, Observables e Hiperparámetros SAC
 
-**Fecha**: 2026-01-18 19:10  
+**Fecha**: 2026-01-18 19:10
 **Status**: 🟡 CRÍTICO - Identifi­cados 8 problemas de escalado y señal
 
 ---
@@ -18,7 +18,7 @@ cost: float = 0.15
 solar: float = 0.15            # Comentario dice bajado, ambiguo
 ev_satisfaction: float = 0.05  # Bajado OK
 grid_stability: float = 0.20   # Subido de 0.05 (CONTRAPRODUCENTE)
-```
+```text
 
 **Problema**: grid_stability=0.20 es excesivo. Con peak_hours=(18,19,20,21) y 4 horas de 24, solo 16% del día está en pico. Darle 20% de peso a penalidad general es **excesivo** cuando se necesita **CO₂/importación en pico**.
 
@@ -31,7 +31,7 @@ cost: float = 0.10             # Reducido (costo es secundario)
 solar: float = 0.20            # Maximizar solar es CRÍTICO para CO₂
 ev_satisfaction: float = 0.10  # Satisfacción básica de EVs
 grid_stability: float = 0.10   # REDUCIDO: picos se controlan por CO₂
-```
+```text
 
 **Por qué**: grid_stability ya está implícito en CO₂ (importación en pico = CO₂ alto). Duplicar peso causa conflicto.
 
@@ -51,7 +51,7 @@ else:
 # PROBLEMA: ¿Por qué 500.0? Eso es ~5x la demanda típica de mall (100 kW avg)
 # En pico real (18-21h) con 128 chargers @ max = 272 kW + mall load...
 # 500.0 es MUY ALTO → reward casi siempre positivo → sin gradiente de learning
-```
+```text
 
 **Baseline debería ser**:
 
@@ -71,7 +71,7 @@ if is_peak:
 else:
     # Off-peak más tolerante pero aún penaliza exceso
     r_co2 = 1.0 - 1.0 * min(1.0, grid_import_kwh / co2_baseline_offpeak)
-```
+```text
 
 **Impacto**: Da **RANGO de variación** en reward (-1 a +1 vs -0.5 a +0.8 antes) → gradientes mejores.
 
@@ -87,7 +87,7 @@ demand_ratio = grid_import_kwh / max(1.0, self.context.peak_demand_limit_kw)
 
 if is_peak:
     r_grid = 1.0 - 4.0 * min(1.0, demand_ratio)  # Penaliza por ENERGÍA, no POTENCIA
-```
+```text
 
 **Problema**:
 
@@ -112,7 +112,7 @@ if hour in pre_peak_hours and bess_soc < 0.5:
 # PROBLEMA: Si SOC=0.0, penalty = -0.5 * 1.0 = -0.5
 # Pero reward total es suma ponderada. Si soc_penalty suma directamente (NO ponderado),
 # puede ser -0.5 cuando reward debería ser [-1, +1]
-```
+```text
 
 **Mejor**:
 
@@ -125,7 +125,7 @@ if hour in pre_peak_hours and bess_soc < 0.65:  # Target 65% (no 50%)
     components["r_soc_reserve"] = r_soc_reserve
 else:
     components["r_soc_reserve"] = 1.0  # Bonus si cumples
-```
+```text
 
 ---
 
@@ -148,11 +148,11 @@ reward = (
 # Si weight_co2=0.50, entonces co2 contribuye 0.50 * r_co2
 # Pero soc_penalty contribuye sin factor → DESBALANCEADO
 
-# Ejemplo: 
+# Ejemplo:
 # r_co2=-1 → contribuye -0.50
-# r_soc=-0.5 → contribuye -0.5 
+# r_soc=-0.5 → contribuye -0.5
 # ¡TRES VECES MÁS PESO para SOC que para CO₂!
-```
+```text
 
 **Solución**:
 
@@ -169,7 +169,7 @@ reward = (
 
 # Luego normalizar
 reward = np.clip(reward, -1.0, 1.0)
-```
+```text
 
 ---
 
@@ -190,7 +190,7 @@ reward = np.clip(reward, -1.0, 1.0)
 obs = env.reset()  # obs es solo estado de CityLearn
 # obs contiene: building loads, solar gen, BESS SOC, ev_state, etc.
 # PERO NO flags útiles para tomar decisión
-```
+```text
 
 **Solución**: Agregar observables contextuales:
 
@@ -206,7 +206,7 @@ additional_obs = np.array([
 ], dtype=np.float32)
 
 obs_extended = np.concatenate([obs_original, additional_obs])
-```
+```text
 
 **Beneficio**: SAC ve explícitamente **cuándo es pico**, **cuánta energía solar**, **cuántas colas hay**.
 
@@ -214,7 +214,7 @@ obs_extended = np.concatenate([obs_original, additional_obs])
 
 ### 2.2 Falta Potencia Instantánea vs Energía
 
-**Problema**: CityLearn reporta energía (kWh) en cada timestep.  
+**Problema**: CityLearn reporta energía (kWh) en cada timestep.
 SAC NO ve la **tasa de cambio** (potencia = dE/dt en kW).
 
 ```python
@@ -227,9 +227,9 @@ if t > 0:
     power_grid_kw = (grid_import[t] - grid_import[t-1]) / (timestep_hours)
 else:
     power_grid_kw = 0
-    
+
 additional_obs.append(np.clip(power_grid_kw / 200.0, -1, 1))  # Normalizado
-```
+```text
 
 ---
 
@@ -244,13 +244,13 @@ additional_obs.append(np.clip(power_grid_kw / 200.0, -1, 1))  # Normalizado
 ent_coef: str = "auto"          # Auto-ajusta entropía
 target_entropy: Optional[float] = -126.0  # -dim(action) = -126
 
-# PROBLEMA: 
+# PROBLEMA:
 # - target_entropy = -126 es BAJO (mucha exploración)
 # - "auto" ajusta ent_coef para mantenerlo, pero esto significa:
 #   "Mantén exploración tan alta que entropy sea siempre -126"
 # - Con reward signal débil (como vimos), SAC prefiere EXPLORAR
 #   en lugar de EXPLOTAR buenas acciones
-```
+```text
 
 **Solución**:
 
@@ -259,9 +259,9 @@ target_entropy: Optional[float] = -126.0  # -dim(action) = -126
 ent_coef: float = 0.01          # Fijo, NO auto (reduce exploración innecesaria)
 target_entropy: Optional[float] = -50.0  # Menos exploración (-dim/2 o menos)
 
-# Con esto, SAC dedica menos capacidad a "hacer ruido" 
+# Con esto, SAC dedica menos capacidad a "hacer ruido"
 # y más a "aprender patrones"
-```
+```text
 
 **Por qué**: Early training necesita exploración, pero con reward mal escalada, SAC explora demasiado.
 
@@ -284,7 +284,7 @@ gradient_steps: int = 256       # (en config YAML)
 #   - Necesita ~256 timesteps para llenar primer batch
 #   - Luego 256 updates × 32,768 examples = 8M ejemplos procesados
 #   - ESTO ES MUCHÍSIMO para episodios de 8,760 pasos
-```
+```text
 
 **Solución**:
 
@@ -298,7 +298,7 @@ train_freq: int = 4             # Update cada 4 timesteps (unchanged)
 # - gradient_steps=64: cada update procesa 64 minibatches
 # - Total: 4 * 64 = 256 ejemplos procesados por step env
 #   (vs 256*32768 antes = overkill)
-```
+```text
 
 ---
 
@@ -322,7 +322,7 @@ else:
 
 components["reward_normalized"] = reward_normalized
 return reward_normalized, components  # Retornar normalizado
-```
+```text
 
 **Beneficio**: SAC ve recompensas con media ~0 y varianza ~1 → mejor convergencia.
 
@@ -346,7 +346,7 @@ batch_size: int = 32768         # 32K ejemplos por update
 # PERO:
 # - Minibatch tan grande pierde flexibility
 # - Mejor: múltiples updates pequeños que 1 update gigante
-```
+```text
 
 **Alternativa**:
 
@@ -359,7 +359,7 @@ train_freq: int = 4             # Unchanged
 # LÓGICA:
 # 4,096 × 256 = 1M ejemplos por ciclo (vs 32,768 × 256 = 8M)
 # Menos "shock" de grandebatch, más exploración de direcciones
-```
+```text
 
 ---
 
@@ -371,25 +371,25 @@ train_freq: int = 4             # Unchanged
 
    ```python
    co2=0.50, cost=0.10, solar=0.20, ev_satisfaction=0.10, grid_stability=0.10
-   ```
+   ```text
 
-2. ✅ **Baselines CO₂** → Línea 150  
+2. ✅ **Baselines CO₂** → Línea 150
 
    ```python
    co2_baseline_offpeak=130, co2_baseline_peak=250  (vs 500 ahora)
-   ```
+   ```text
 
 3. ✅ **Normalización de SOC Penalty** → Línea 215-230
 
    ```python
    r_soc_reserve normalizado a [0,1], luego multiplicado por peso
-   ```
+   ```text
 
 4. ✅ **Agregar Observables de Contexto** → simulate.py
 
    ```python
    is_peak, bess_soc, bess_soc_target, pv_available, queue_motos, queue_mototaxis
-   ```
+   ```text
 
 ### TIER 2 (IMPORTANTE - Implement después de validar TIER 1)
 
@@ -397,19 +397,19 @@ train_freq: int = 4             # Unchanged
 
    ```python
    ent_coef=0.01 (fixed, no auto), target_entropy=-50 (vs -126)
-   ```
+   ```text
 
 2. ✅ **Gradient Steps & Batch** → sac.py línea 138-140
 
    ```python
    batch_size=4096, gradient_steps=256 (vs 32768, 256)
-   ```
+   ```text
 
 3. ✅ **Normalización de Reward** → rewards.py línea 230
 
    ```python
    reward_normalized usando rolling mean/std
-   ```
+   ```text
 
 ---
 
@@ -421,7 +421,7 @@ train_freq: int = 4             # Unchanged
 Paso 100:  reward debe subir a 0.60+  (vs plano 0.56 antes)
 Paso 500:  reward debe subir a 0.65+  (clara tendencia)
 Paso 1000: reward debe subir a 0.70+  (convergencia visible)
-```
+```text
 
 **Métricas a monitorear**:
 

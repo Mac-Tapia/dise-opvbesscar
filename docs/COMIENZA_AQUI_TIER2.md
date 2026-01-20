@@ -1,14 +1,14 @@
 # 🚀 COMIENZA AQUÍ - TIER 2 FULL STACK ACTUALIZADO
 
-**Fecha**: 2026-01-18  
-**Status**: ✅ TODOS AGENTES TIER 2 APLICADO  
-**Próximo**: 2 EPISODIOS TEST RUN  
+**Fecha**: 2026-01-18
+**Status**: ✅ TODOS AGENTES TIER 2 APLICADO
+**Próximo**: 2 EPISODIOS TEST RUN
 
 ---
 
 ## 📍 ¿DÓNDE ESTAMOS?
 
-```
+```text
 TIER 1 ✅
 ├─ Fixes iniciales: rewards, observables, hiperparámetros
 ├─ SAC relanzado con LR 3e-4
@@ -25,7 +25,7 @@ TIER 2 ✅ ← AQUÍ ESTAMOS
       ↓↓↓
 
 PRÓXIMO: ENTRENAMIENTO 2 EPISODIOS C/AGENTE
-```
+```text
 
 ---
 
@@ -64,11 +64,11 @@ PRÓXIMO: ENTRENAMIENTO 2 EPISODIOS C/AGENTE
 
 ## 📊 COMPARATIVA RÁPIDA
 
-| Agente | Convergencia | Estabilidad | Eficiencia | Recomendación |
-|--------|-------------|------------|-----------|--------------|
-| **A2C** | 30-50 ep | Media | 1.75M kg CO₂ | Prototyping |
-| **PPO** | 50-100 ep | ⭐ Muy Alta | 1.72M kg CO₂ | Producción |
-| **SAC** | **15-25 ep ⭐** | Muy Alta | **<1.70M kg CO₂ ⭐** | **Óptimo** |
+ | Agente | Convergencia | Estabilidad | Eficiencia | Recomendación |
+ | -------- | ------------- | ------------ | ----------- | -------------- |
+ | **A2C** | 30-50 ep | Media | 1.75M kg CO₂ | Prototyping |
+ | **PPO** | 50-100 ep | ⭐ Muy Alta | 1.72M kg CO₂ | Producción |
+ | **SAC** | **15-25 ep ⭐** | Muy Alta | **<1.70M kg CO₂ ⭐** | **Óptimo** |
 
 ---
 
@@ -87,7 +87,7 @@ python -m src.train_ppo_cuda --episodes=2 --verbose=1
 
 # SAC
 python -m src.train_sac_cuda --episodes=2 --verbose=1
-```
+```text
 
 **Duración esperada**: 40-60 minutos total (GPU CUDA)
 
@@ -117,14 +117,14 @@ python -m src.train_sac_cuda --episodes=2 --verbose=1
 
 ## ✅ CHECKLIST PRE-ENTRENAMIENTO
 
-```
+```text
 [ ] GPU CUDA disponible (nvidia-smi)
 [ ] Archivos ppo_sb3.py y a2c_sb3.py actualizados con TIER 2
 [ ] Syntax test pasado (python -m py_compile)
 [ ] Git clean (sin cambios pendientes)
 [ ] ~10GB GPU memory disponible
 [ ] ~60 minutos de GPU time disponible
-```
+```text
 
 ---
 
@@ -169,7 +169,7 @@ python -m src.train_sac_cuda --episodes=2 --verbose=1
 
 ## 🔄 GIT HISTORY
 
-```
+```text
 [ACTUAL] PPO & A2C TIER 2: Updated configs...
          ├─ ppo_sb3.py: batch, LR, epochs, ent, hidden, lr_sched, SDE
          ├─ a2c_sb3.py: LR, n_steps, ent, hidden, lr_sched
@@ -178,7 +178,7 @@ python -m src.train_sac_cuda --episodes=2 --verbose=1
          ↓ (anterior)
 
 [PREVIO] SAC TIER 2: Normalization + baselines + bonuses
-```
+```text
 
 ---
 
@@ -205,13 +205,13 @@ python -m src.train_sac_cuda --episodes=2 --verbose=1
 
 ## 📞 QUICK HELP
 
-| Pregunta | Respuesta |
-|----------|-----------|
-| ¿Qué cambió? | LR, ent, hidden, activation en PPO/A2C |
-| ¿Por qué? | TIER 2 fixes (convergencia 2x, estabilidad) |
-| ¿Qué esperar? | SAC mejor (15-25 ep, <1.7M kg CO₂) |
-| ¿Cuánto tarda? | 40-60 min (2ep × 3 agentes GPU) |
-| ¿Es reversible? | SÍ (git revert disponible) |
+ | Pregunta | Respuesta |
+ | ---------- | ----------- |
+ | ¿Qué cambió? | LR, ent, hidden, activation en PPO/A2C |
+ | ¿Por qué? | TIER 2 fixes (convergencia 2x, estabilidad) |
+ | ¿Qué esperar? | SAC mejor (15-25 ep, <1.7M kg CO₂) |
+ | ¿Cuánto tarda? | 40-60 min (2ep × 3 agentes GPU) |
+ | ¿Es reversible? | SÍ (git revert disponible) |
 
 ---
 
@@ -228,10 +228,10 @@ python -m src.train_sac_cuda --episodes=2 --verbose=1
 ```powershell
 cd "d:\diseñopvbesscar"
 python -m src.train_a2c_cuda --episodes=2 --verbose=1
-```
+```text
 
 ---
 
-*TIER 2 Full Stack Activation: 2026-01-18*  
-*A2C ✅ | PPO ✅ | SAC ✅ (previo) | REWARDS ✅*  
+*TIER 2 Full Stack Activation: 2026-01-18*
+*A2C ✅ | PPO ✅ | SAC ✅ (previo) | REWARDS ✅*
 *Ready to Train: ✅*

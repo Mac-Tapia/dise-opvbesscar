@@ -134,8 +134,9 @@ def evaluate_agent(agent_name, model=None, num_episodes=2):
         
         done = False
         timestep = 0
+        max_timesteps = 8760  # 1 año = 8760 horas (límite de episodio)
         
-        while not done:
+        while not done and timestep < max_timesteps:
             if model is None:  # Baseline random
                 action = env.action_space.sample()
             else:  # Agente entrenado
@@ -146,6 +147,10 @@ def evaluate_agent(agent_name, model=None, num_episodes=2):
             
             episode_data['rewards'].append(float(reward))
             timestep += 1
+        
+        # Si alcanzó max_timesteps, marcar como completado
+        if timestep >= max_timesteps:
+            logger.info(f"    Episodio alcanzó límite de {max_timesteps} timesteps")
         
         # Calcular métricas del episodio
         avg_reward = np.mean(episode_data['rewards'])
@@ -224,14 +229,16 @@ def main():
     ppo_path = Path("analyses/oe3/training/checkpoints/ppo_gpu/ppo_final.zip")
     if ppo_path.exists():
         try:
+            logger.info(f"Cargando modelo PPO desde: {ppo_path}")
             ppo_model = PPO.load(str(ppo_path))
+            logger.info("✓ PPO cargado exitosamente")
             ppo_results = evaluate_agent("PPO", model=ppo_model, num_episodes=2)
             all_results['ppo'] = ppo_results
         except Exception as e:
-            logger.error(f"Error cargando PPO: {e}")
+            logger.error(f"❌ Error cargando PPO: {e}", exc_info=True)
             all_results['ppo'] = None
     else:
-        logger.warning(f"PPO no encontrado: {ppo_path}")
+        logger.warning(f"❌ PPO no encontrado: {ppo_path}")
         all_results['ppo'] = None
     
     # 3. A2C
@@ -239,29 +246,33 @@ def main():
     a2c_path = Path("analyses/oe3/training/checkpoints/a2c_gpu/a2c_final.zip")
     if a2c_path.exists():
         try:
+            logger.info(f"Cargando modelo A2C desde: {a2c_path}")
             a2c_model = A2C.load(str(a2c_path))
+            logger.info("✓ A2C cargado exitosamente")
             a2c_results = evaluate_agent("A2C", model=a2c_model, num_episodes=2)
             all_results['a2c'] = a2c_results
         except Exception as e:
-            logger.error(f"Error cargando A2C: {e}")
+            logger.error(f"❌ Error cargando A2C: {e}", exc_info=True)
             all_results['a2c'] = None
     else:
-        logger.warning(f"A2C no encontrado: {a2c_path}")
+        logger.warning(f"❌ A2C no encontrado: {a2c_path}")
         all_results['a2c'] = None
     
     # 4. SAC (si existe)
     logger.info("\n[4/4] SAC (17,500 timesteps - Histórico)")
-    sac_path = Path("analyses/oe3/training/checkpoints/sac_gpu/sac_final.zip")
+    sac_path = Path("analyses/oe3/training/checkpoints/sac/sac_final.zip")
     if sac_path.exists():
         try:
+            logger.info(f"Cargando modelo SAC desde: {sac_path}")
             sac_model = SAC.load(str(sac_path))
+            logger.info("✓ SAC cargado exitosamente")
             sac_results = evaluate_agent("SAC", model=sac_model, num_episodes=2)
             all_results['sac'] = sac_results
         except Exception as e:
-            logger.error(f"Error cargando SAC: {e}")
+            logger.error(f"❌ Error cargando SAC: {e}", exc_info=True)
             all_results['sac'] = None
     else:
-        logger.info(f"SAC no encontrado (esperado)")
+        logger.warning(f"❌ SAC no encontrado: {sac_path}")
         all_results['sac'] = None
     
     # TABLA COMPARATIVA
