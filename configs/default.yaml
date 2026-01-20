@@ -1,67 +1,89 @@
-project:
-  seed: 42
-  year: 2024
-  seconds_per_time_step: 3600
-paths:
-  raw_dir: data/raw
-  interim_dir: data/interim
-  processed_dir: data/processed
-  reports_dir: reports
-  outputs_dir: outputs
-  analyses_dir: analyses
 oe1:
+  grid_connection:
+    available_capacity_kva: null
+    continuity: sistema aislado termico
+    power_factor: 0.95
   site:
-    name: Mall de Iquitos
-    area_techada_m2: 20637.0
+    access_notes: Acceso vial y seguridad verificados en visita de campo.
     area_estacionamiento_m2: 957.0
     area_per_moto_m2: 2.0
     area_per_mototaxi_m2: 4.0
+    area_techada_m2: 20637.0
     coverage_required_pct: 0.65
     distance_to_substation_m: 60.0
+    dwell_hours_min: 4.0
+    name: Mall de Iquitos
+    restrictions_notes: Sombras puntuales por equipos; sin arbolado alto.
+    security_notes: Zona de estacionamiento con vigilancia.
     vehicles_peak_motos: 900
     vehicles_peak_mototaxis: 130
-    dwell_hours_min: 4.0
-    access_notes: Acceso vial y seguridad verificados en visita de campo.
-    security_notes: Zona de estacionamiento con vigilancia.
-    restrictions_notes: Sombras puntuales por equipos; sin arbolado alto.
-  grid_connection:
-    continuity: sistema aislado termico
-    power_factor: 0.95
-    available_capacity_kva: null
 oe2:
-  location:
-    lat: -3.75
-    lon: -73.25
-    alt: 104.0
-    tz: America/Lima
-  mall:
-    energy_kwh_day: 9202.4
-    shape_24h: null
-  solar:
-    target_ac_kw: 3201.2
-    target_dc_kw: 4162.0
-    target_annual_kwh: 3972478
-    use_pvlib: true
-    scale_to_target_annual: true
-    area_total_m2: 20637.0
-    factor_diseno: 0.65
-    surface_tilt: 10.0
-    surface_azimuth: 0.0
-    module_name: Kyocera_Solar_KS20__2008__E__
-    inverter_name: Eaton__Xpert1670
-    selection_mode: auto_top5
-    candidate_count: 5
-    selection_metric: energy_per_m2
+  bess:
+    autonomy_hours: 4.0
+    c_rate: 0.6
+    discharge_only_ev_hours: true
+    discharge_only_no_solar: true
+    dod: 0.8
+    efficiency_roundtrip: 0.95
+    fixed_capacity_kwh: 2000
+    fixed_power_kw: 1200
+    load_scope: ev_only
+    min_soc_percent: 20
+    pv_night_threshold_kwh: 0.1
+    round_kwh: 100
+    sizing_mode: fixed
+    surplus_target_kwh_day: 0
+  dispatch_rules:
+    description:
+      "Cubrir bloque pico (18-21h) con prioridades: FV\xE2\u2020\u2019\
+      EV \xE2\u2020\u2019 FV\xE2\u2020\u2019BESS \xE2\u2020\u2019 BESS\xE2\u2020\u2019\
+      EV(noche) \xE2\u2020\u2019 BESS\xE2\u2020\u2019MALL(saturada)"
+    enabled: true
+    priority_1_pv_to_ev:
+      description: "FV directamente a EVs (m\xC3\xA1xima prioridad)"
+      enabled: true
+      ev_power_limit_kw: 150.0
+      pv_threshold_kwh: 0.5
+    priority_2_pv_to_bess:
+      bess_power_max_kw: 1200.0
+      bess_soc_max_percent: 95.0
+      bess_soc_target_percent: 85.0
+      description: FV excedente a BESS (cargar reserva para pico)
+      enabled: true
+    priority_3_bess_to_ev:
+      bess_power_max_kw: 1200.0
+      bess_soc_min_percent: 20.0
+      description: BESS a EVs cuando cae el sol (noche)
+      enabled: true
+      pv_night_threshold_kwh: 0.1
+    priority_4_bess_to_mall:
+      bess_saturation_percent: 95.0
+      description:
+        "BESS saturada + FV excedente \xE2\u2020\u2019 Mall (descargar\
+        \ exceso)"
+      enabled: true
+      mall_power_max_kw: 500.0
+    priority_5_grid_import:
+      allowed: true
+      cost_multiplier_peak: 2.0
+      description: "Importar desde red si es necesario cubrir d\xC3\xA9ficit"
+      enabled: true
+    reward_bonuses:
+      battery_charge_bonus_weight: 0.005
+      direct_solar_bonus_weight: 0.01
+      grid_import_penalty_weight: 0.0001
   ev_fleet:
-    motos_count: 900
-    mototaxis_count: 130
-    pe_motos: 0.9
-    pe_mototaxis: 0.9
+    charger_power_kw_moto: 2.0
+    charger_power_kw_mototaxi: 3.0
+    closing_hour: 22
+    daily_sessions_factor: 1.0
     fc_motos: 0.9
     fc_mototaxis: 0.9
-    daily_sessions_factor: 1.0
+    motos_count: 900
+    mototaxis_count: 130
     opening_hour: 9
-    closing_hour: 22
+    pe_motos: 0.9
+    pe_mototaxis: 0.9
     peak_hours:
       - 18
       - 19
@@ -69,238 +91,189 @@ oe2:
       - 21
     peak_share_day: 0.5
     session_minutes: 30
-    utilization: 0.92
-    charger_power_kw_moto: 2.0
-    charger_power_kw_mototaxi: 3.0
     sockets_per_charger: 4
-  bess:
-    dod: 0.8
-    c_rate: 0.6
-    efficiency_roundtrip: 0.95
-    round_kwh: 100
-    autonomy_hours: 4.0
-    sizing_mode: fixed
-    surplus_target_kwh_day: 0
-    min_soc_percent: 20
-    load_scope: ev_only
-    discharge_only_ev_hours: true
-    discharge_only_no_solar: true
-    pv_night_threshold_kwh: 0.1
-    fixed_capacity_kwh: 2000
-    fixed_power_kw: 1200
+    utilization: 0.92
+  location:
+    alt: 104.0
+    lat: -3.75
+    lon: -73.25
+    tz: America/Lima
+  mall:
+    energy_kwh_day: 9202.4
+    shape_24h: null
   operational_control:
-    # Límites operacionales por playa (sin cambiar capacidad)
+    bess_soc_target:
+      during_peak_hours: 0.4
+      normal_hours: 0.6
+      pre_peak_hours: 0.85
+    fairness_penalty_weight: 0.15
+    import_penalty_weight: 0.3
+    peak_cost_multiplier: 1.5
     peak_hours:
       - 18
       - 19
       - 20
       - 21
+    power_limits_kw:
+      playa_motos: 120.0
+      playa_mototaxis: 48.0
+      total_aggregate: 150.0
+    soc_reserve_penalty: 0.2
     valley_hours:
       - 9
       - 10
       - 11
       - 12
-    # Límites de potencia por playa para throttling
-    power_limits_kw:
-      playa_motos: 120.0 # 112 cargadores × 2 kW nominal, pero operativo límite
-      playa_mototaxis: 48.0 # 16 cargadores × 3 kW nominal, pero operativo límite
-      total_aggregate: 150.0 # Límite máximo agregado
-    # Reserva dinámica de SOC pre-pico
-    bess_soc_target:
-      normal_hours: 0.60 # Mantener al menos 60% fuera de pico
-      pre_peak_hours: 0.85 # Elevar a 85% a las 16-17h
-      during_peak_hours: 0.40 # Permitir descender a 40% durante pico
-    # Parámetros de penalización en rewards
-    peak_cost_multiplier: 1.5 # Costo 50% mayor en pico (18-21h)
-    import_penalty_weight: 0.30 # Peso adicional para importación en pico
-    fairness_penalty_weight: 0.15 # Penalizar desequilibrio entre playas
-    soc_reserve_penalty: 0.20 # Penalizar incumplimiento de reserva SOC
-
-  dispatch_rules:
-    # Despacho de energía con prioridades ordenadas
-    enabled: true
-    description: "Cubrir bloque pico (18-21h) con prioridades: FV→EV → FV→BESS → BESS→EV(noche) → BESS→MALL(saturada)"
-
-    # Prioridad 1: FV → EV (directo a vehículos)
-    priority_1_pv_to_ev:
-      enabled: true
-      description: "FV directamente a EVs (máxima prioridad)"
-      pv_threshold_kwh: 0.5 # Considerar sol activo si PV ≥ esto
-      ev_power_limit_kw: 150.0 # Límite de despacho para EVs
-
-    # Prioridad 2: FV excedente → BESS
-    priority_2_pv_to_bess:
-      enabled: true
-      description: "FV excedente a BESS (cargar reserva para pico)"
-      bess_soc_max_percent: 95.0 # No cargar si BESS > 95%
-      bess_soc_target_percent: 85.0 # Objetivo en pre-pico (16-17h)
-      bess_power_max_kw: 1200.0 # Límite potencia carga BESS
-
-    # Prioridad 3: BESS → EV (especialmente noche)
-    priority_3_bess_to_ev:
-      enabled: true
-      description: "BESS a EVs cuando cae el sol (noche)"
-      pv_night_threshold_kwh: 0.1 # Considerar noche si PV < esto
-      bess_soc_min_percent: 20.0 # No descargar bajo 20%
-      bess_power_max_kw: 1200.0 # Límite potencia descarga BESS
-
-    # Prioridad 4: BESS saturada → MALL
-    priority_4_bess_to_mall:
-      enabled: true
-      description: "BESS saturada + FV excedente → Mall (descargar exceso)"
-      bess_saturation_percent: 95.0 # Considerar saturada si SOC > esto
-      mall_power_max_kw: 500.0 # Límite potencia para mall
-
-    # Prioridad 5: Grid Import (último recurso)
-    priority_5_grid_import:
-      enabled: true
-      description: "Importar desde red si es necesario cubrir déficit"
-      allowed: true
-      cost_multiplier_peak: 2.0 # Costo 2x mayor en pico (18-21h)
-
-    # Recompensas por cumplimiento de prioridades
-    reward_bonuses:
-      direct_solar_bonus_weight: 0.01 # Bonus por usar FV directo
-      battery_charge_bonus_weight: 0.005 # Bonus por cargar BESS eficientemente
-      grid_import_penalty_weight: 0.0001 # Penalidad por importación (CO₂)
+  solar:
+    area_total_m2: 20637.0
+    candidate_count: 5
+    factor_diseno: 0.65
+    inverter_name: Eaton__Xpert1670
+    module_name: Kyocera_Solar_KS20__2008__E__
+    scale_to_target_annual: true
+    selection_metric: energy_per_m2
+    selection_mode: auto_top5
+    surface_azimuth: 0.0
+    surface_tilt: 10.0
+    target_ac_kw: 3201.2
+    target_annual_kwh: 3972478
+    target_dc_kw: 4162.0
+    use_pvlib: true
 oe3:
+  city_baseline_tpy:
+    electricity_generation: 290000.0
+    transport: 258250.0
+  co2_emissions:
+    annual_co2_budget_kg: 7000000
+    bess_calendar_aging_kg_per_day: 0.01
+    bess_charging_efficiency: 0.95
+    bess_cycling_co2_per_cycle: 0.05
+    bess_discharging_efficiency: 0.95
+    bess_standby_loss_percent_day: 0.1
+    diesel_backup_factor_kg_kwh: 0.2667
+    grid_import_factor_kg_kwh: 0.4521
+    reduction_strategies:
+      bess_efficiency_optimization:
+        description: Optimizar ciclos y conversiones BESS
+        enabled: true
+        max_cycles_per_year: 200
+        weight: 0.15
+      cost_reduction:
+        description: Minimizar costo operativo (colateral)
+        enabled: true
+        weight: 0.05
+      direct_solar_maximization:
+        co2_avoided_per_kwh: 0.4521
+        description: Maximizar FV directo a EVs (P1 despacho)
+        enabled: true
+        weight: 0.5
+      grid_import_minimization:
+        description: "Minimizar importaci\xC3\xB3n desde grid"
+        enabled: true
+        penalty_multiplier_peak_hours: 2.0
+        weight: 0.3
   dataset:
-    template_name: citylearn_challenge_2022_phase_all_plus_evs
-    name: iquitos_ev_mall
     central_agent: true
+    name: iquitos_ev_mall
+    template_name: citylearn_challenge_2022_phase_all_plus_evs
+  emissions:
+    kgco2_per_gallon: 8.9
+    km_per_gallon: 120.0
+    km_per_kwh: 35.0
+    project_life_years: 20
+  evaluation:
+    a2c:
+      checkpoint_freq_steps: 500
+      device: cuda
+      entropy_coef: 0.01
+      episodes: 2
+      learning_rate: 0.001
+      log_interval: 250
+      max_grad_norm: 0.5
+      multi_objective_weights:
+        co2: 0.45
+        cost: 0.15
+        ev: 0.05
+        grid: 0.2
+        solar: 0.15
+      n_steps: 65536
+      progress_interval_episodes: 1
+      resume_checkpoints: false
+      reward_smooth_lambda: 0.01
+      save_final: true
+      timesteps: 17520
+      vf_coef: 0.5
+    agents:
+      - SAC
+      - PPO
+      - A2C
+    co2_tracking: true
+    multi_objective_priority: co2_focus
+    ppo:
+      batch_size: 512
+      checkpoint_freq_steps: 500
+      device: cpu
+      episodes: 2
+      ent_coef: 0.005
+      kl_adaptive: true
+      learning_rate: 2.5e-4
+      log_interval: 250
+      multi_objective_weights:
+        co2: 0.50
+        cost: 0.15
+        ev: 0.10
+        grid: 0.05
+        solar: 0.20
+      n_epochs: 20
+      n_steps: 2048
+      progress_interval_episodes: 1
+      resume_checkpoints: false
+      reward_smooth_lambda: 0.01
+      save_final: true
+      target_kl: 0.02
+      timesteps: 17520
+      use_amp: false
+    resume_checkpoints: true
+    reward_components:
+      base_weight: 0.8
+      co2_direct_weight: 0.12
+      co2_indirect_weight: 0.08
+    sac:
+      batch_size: 32768
+      buffer_size: 8000000
+      checkpoint_freq_steps: 100
+      deterministic_eval: true
+      device: cuda
+      episodes: 2
+      gradient_steps: 256
+      learning_rate: 0.001
+      learning_starts: 50
+      log_interval: 25
+      multi_objective_weights:
+        co2: 0.45
+        cost: 0.15
+        ev: 0.05
+        grid: 0.2
+        solar: 0.15
+      prefer_citylearn: false
+      progress_interval_episodes: 1
+      resume_checkpoints: false
+      reward_smooth_lambda: 0.01
+      save_final: true
+      target_entropy_scale: 1.0
+      train_freq: 4
+      use_amp: true
   grid:
     carbon_intensity_kg_per_kwh: 0.4521
     tariff_usd_per_kwh: 0.2
-
-  co2_emissions:
-    # Emisiones Directas (Scope 2)
-    grid_import_factor_kg_kwh: 0.4521 # Matriz Iquitos (térmica)
-    diesel_backup_factor_kg_kwh: 0.2667 # Si hay generación diesel
-
-    # Emisiones Indirectas (Scope 1)
-    bess_charging_efficiency: 0.95 # 5% pérdidas en carga
-    bess_discharging_efficiency: 0.95 # 5% pérdidas en descarga
-    bess_standby_loss_percent_day: 0.1 # Autodescarga 0.1% diaria
-
-    # Degradación BESS por uso
-    bess_cycling_co2_per_cycle: 0.05 # kg CO2 por ciclo completo
-    bess_calendar_aging_kg_per_day: 0.01 # Degradación por tiempo
-
-    # Estrategias de reducción de CO2
-    reduction_strategies:
-      direct_solar_maximization:
-        enabled: true
-        weight: 0.50 # 50% del objetivo CO2
-        description: "Maximizar FV directo a EVs (P1 despacho)"
-        co2_avoided_per_kwh: 0.4521
-
-      grid_import_minimization:
-        enabled: true
-        weight: 0.30 # 30% del objetivo CO2
-        description: "Minimizar importación desde grid"
-        penalty_multiplier_peak_hours: 2.0 # 2x penalidad en 18-21h
-
-      bess_efficiency_optimization:
-        enabled: true
-        weight: 0.15 # 15% del objetivo CO2
-        description: "Optimizar ciclos y conversiones BESS"
-        max_cycles_per_year: 200
-
-      cost_reduction:
-        enabled: true
-        weight: 0.05 # 5% del objetivo
-        description: "Minimizar costo operativo (colateral)"
-
-    # Carbon budget anual (target)
-    annual_co2_budget_kg: 7000000 # 7M kg/año (38% reduction vs baseline)
-
-  evaluation:
-    agents:
-      - SAC # Primary agent with dispatch + CO2 reduction
-      - PPO
-      - A2C
-    resume_checkpoints: true
-
-    co2_tracking: true # Track direct + indirect emissions
-    reward_components:
-      base_weight: 0.80
-      co2_direct_weight: 0.12 # Scope 2 (grid import)
-      co2_indirect_weight: 0.08 # Scope 1 (BESS efficiency)
-    multi_objective_priority: co2_focus
-    sac:
-      episodes: 2
-      resume_checkpoints: false
-      deterministic_eval: true
-      device: cuda
-      batch_size: 32768
-      buffer_size: 8000000
-      gradient_steps: 256
-      learning_starts: 50
-      train_freq: 4
-      log_interval: 25
-      use_amp: true
-      checkpoint_freq_steps: 100
-      progress_interval_episodes: 1
-      save_final: true
-      prefer_citylearn: false
-      reward_smooth_lambda: 0.01
-      learning_rate: 0.001
-      target_entropy_scale: 1.0
-      multi_objective_weights:
-        co2: 0.45
-        cost: 0.15
-        solar: 0.15
-        ev: 0.05
-        grid: 0.20
-    ppo:
-      episodes: 2
-      resume_checkpoints: false
-      timesteps: 17520
-      n_steps: 32768
-      batch_size: 32768
-      n_epochs: 10
-      use_amp: true
-      log_interval: 250
-      checkpoint_freq_steps: 500
-      progress_interval_episodes: 1
-      save_final: true
-      device: cuda
-      target_kl: 0.02
-      kl_adaptive: true
-      reward_smooth_lambda: 0.01
-      learning_rate: 0.001
-      multi_objective_weights:
-        co2: 0.45
-        cost: 0.15
-        solar: 0.15
-        ev: 0.05
-        grid: 0.20
-    a2c:
-      episodes: 2
-      resume_checkpoints: false
-      timesteps: 17520
-      n_steps: 65536
-      learning_rate: 0.001
-      entropy_coef: 0.01
-      vf_coef: 0.5
-      max_grad_norm: 0.5
-      log_interval: 250
-      checkpoint_freq_steps: 500
-      progress_interval_episodes: 1
-      save_final: true
-      device: cuda
-      reward_smooth_lambda: 0.01
-      multi_objective_weights:
-        co2: 0.45
-        cost: 0.15
-        solar: 0.15
-        ev: 0.05
-        grid: 0.20
-  emissions:
-    km_per_kwh: 35.0
-    km_per_gallon: 120.0
-    kgco2_per_gallon: 8.9
-    project_life_years: 20
-  city_baseline_tpy:
-    transport: 258250.0
-    electricity_generation: 290000.0
+paths:
+  analyses_dir: analyses
+  interim_dir: data/interim
+  outputs_dir: outputs
+  processed_dir: data/processed
+  raw_dir: data/raw
+  reports_dir: reports
+project:
+  seconds_per_time_step: 3600
+  seed: 42
+  year: 2024

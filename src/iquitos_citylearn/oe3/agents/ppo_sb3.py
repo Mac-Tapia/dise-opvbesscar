@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Dict, List, Callable
+from typing import Any, Optional, Dict, List, Callable, Union
 import warnings
 import numpy as np
 import logging
@@ -188,7 +188,8 @@ class PPOAgent:
             info["torch_version"] = torch.__version__
             info["cuda_available"] = torch.cuda.is_available()
             if torch.cuda.is_available():
-                info["cuda_version"] = torch.version.cuda
+                torch_version = torch.__dict__.get("version")
+                info["cuda_version"] = getattr(torch_version, "cuda", None) if torch_version is not None else None
                 info["gpu_name"] = torch.cuda.get_device_name(0)
                 info["gpu_memory_gb"] = torch.cuda.get_device_properties(0).total_memory / 1e9
         except ImportError:
@@ -276,12 +277,14 @@ class PPOAgent:
                     return reward
                 scaled = reward * self._reward_scale
                 return float(np.clip(scaled, -10.0, 10.0))
-                return float(np.clip(scaled, -10.0, 10.0))
             
             def _get_act_dim(self):
-                if isinstance(self.env.action_space, list):
-                    return sum(sp.shape[0] for sp in self.env.action_space)
-                return self.env.action_space.shape[0]
+                action_space = getattr(self.env, "action_space", None)
+                if isinstance(action_space, list):
+                    return sum(sp.shape[0] for sp in action_space)
+                if action_space is not None and hasattr(action_space, "shape"):
+                    return int(action_space.shape[0])
+                return 0
             
             def _get_pv_bess_feats(self):
                 pv_kw = 0.0
@@ -494,11 +497,19 @@ class PPOAgent:
                 
                 # Extraer métricas de energía del environment
                 try:
-                    env = self.training_env.envs[0] if hasattr(self.training_env, 'envs') else self.training_env
-                    if hasattr(env, 'unwrapped'):
+                    env = None
+                    training_env = getattr(self, "training_env", None)
+                    if training_env is not None:
+                        envs = getattr(training_env, "envs", None)
+                        if envs and len(envs) > 0:
+                            env = envs[0]
+                        else:
+                            env = training_env
+                    if env is not None and hasattr(env, "unwrapped"):
                         env = env.unwrapped
-                    if hasattr(env, 'buildings'):
-                        for b in env.buildings:
+                    buildings = getattr(env, "buildings", None) if env is not None else None
+                    if buildings:
+                        for b in buildings:
                             # Acumular consumo neto de la red (positivo = consumo, negativo = exportación)
                             if hasattr(b, 'net_electricity_consumption') and b.net_electricity_consumption:
                                 last_consumption = b.net_electricity_consumption[-1] if b.net_electricity_consumption else 0
@@ -682,7 +693,7 @@ class PPOAgent:
             for z in sorted(zips)[:5]:
                 logger.info(f"  - {z.name} ({z.stat().st_size / 1024:.1f} KB)")
     
-    def _get_lr_schedule(self, total_steps: int) -> Callable:
+    def _get_lr_schedule(self, total_steps: int) -> Union[Callable[[float], float], float]:
         """Crea scheduler de learning rate."""
         from stable_baselines3.common.utils import get_linear_fn
         
@@ -712,16 +723,19 @@ class PPOAgent:
         """Predice acción dado el estado."""
         if self.model is None:
             return self._zero_action()
+        assert self.model is not None
         
         obs = self._flatten_obs(observations)
         # Ajustar a la dimensión esperada por el modelo
         try:
-            target_dim = int(self.model.observation_space.shape[0])
-            if obs.size < target_dim:
-                obs = np.pad(obs, (0, target_dim - obs.size), mode="constant")
-            elif obs.size > target_dim:
-                obs = obs[:target_dim]
-            obs = obs.astype(np.float32)
+            space = getattr(self.model, "observation_space", None)
+            if space is not None and getattr(space, "shape", None):
+                target_dim = int(space.shape[0])
+                if obs.size < target_dim:
+                    obs = np.pad(obs, (0, target_dim - obs.size), mode="constant")
+                elif obs.size > target_dim:
+                    obs = obs[:target_dim]
+                obs = obs.astype(np.float32)
         except Exception:
             pass
         action, _ = self.model.predict(obs, deterministic=deterministic)
@@ -758,10 +772,11 @@ class PPOAgent:
         return arr.astype(np.float32)
     
     def _unflatten_action(self, action):
-        if isinstance(self.env.action_space, list):
+        action_space = getattr(self.env, "action_space", None)
+        if isinstance(action_space, list):
             result = []
             idx = 0
-            for sp in self.env.action_space:
+            for sp in action_space:
                 dim = sp.shape[0]
                 result.append(action[idx:idx+dim].tolist())
                 idx += dim

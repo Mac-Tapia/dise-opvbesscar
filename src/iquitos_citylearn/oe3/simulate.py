@@ -300,7 +300,8 @@ def _run_episode_with_trace(
     max_steps = 8760  # 1 año completo con pasos horarios
 
     while not done:
-        # **CRITICAL FIX**: Check if we've completed full year
+        # **CRITICAL FIX**: Check if we've completed full year BEFORE attempting env.step()
+        # This prevents IndexError when CityLearn data arrays end at index 8759 (for 8760 elements)
         if len(rewards) >= max_steps:
             logger.info(f"[{agent_label}] Completó {len(rewards)} pasos (1 año). Terminando episodio normalmente.")
             done = True
@@ -347,9 +348,10 @@ def _run_episode_with_trace(
             lbl = agent_label if agent_label else "agent"
             logger.info("[%s] paso %d / %d", lbl, len(rewards), max_steps)
 
-        # **CRITICAL FIX**: IGNORE truncated flag from CityLearn (it's buggy)
-        # Only respect terminated flag. Truncation is handled by max_steps above
-        done = bool(terminated)
+        # **CRITICAL FIX**: IGNORE both terminated AND truncated flags from CityLearn (they are unreliable)
+        # Episode duration is controlled ONLY by max_steps (8760 hours)
+        # This ensures we get complete yearly episodes for accurate baseline calculation
+        done = False  # Never terminate early - let max_steps control duration
 
     obs_arr = np.vstack(obs_rows) if obs_rows else np.zeros((0, 0), dtype=np.float32)
     action_arr = np.vstack(action_rows) if action_rows else np.zeros((0, 0), dtype=np.float32)
@@ -706,22 +708,36 @@ def simulate(
             env, agent, deterministic=True, agent_label="Uncontrolled"
         )
 
+    # **CRITICAL FIX**: Use trace_rewards length as the SOURCE OF TRUTH for steps
+    # because it represents actual episode execution. Environment data extraction is unreliable.
+    if len(trace_rewards) > 0:
+        steps = len(trace_rewards)
+        logger.info(f"[EPISODE] Ejecutó {steps} pasos (episodio completo). Usando datos de traza.")
+    else:
+        logger.warning(f"[EPISODE] Traza vacía para {agent_name}. Intentando extraer del environment...")
+        try:
+            net = _extract_net_grid_kwh(env)
+        except Exception as e:
+            logger.warning(f"Could not extract net grid kwh from environment for {agent_name}: {e}. Using empty array.")
+            net = np.array([], dtype=float)
+        
+        if len(net) == 0:
+            logger.warning(f"Episode for {agent_name} produced no data. Creating baseline 8760-hour array with zeros.")
+            net = np.zeros(8760, dtype=float)
+        steps = len(net)
+    
+    # Create baseline arrays of correct size
     try:
         net = _extract_net_grid_kwh(env)
+        if len(net) != steps:
+            logger.warning(f"Net grid array size mismatch: expected {steps}, got {len(net)}. Padding/truncating.")
+            net = np.pad(net, (0, steps - len(net))) if len(net) < steps else net[:steps]
     except Exception as e:
-        logger.warning(f"Could not extract net grid kwh from environment for {agent_name}: {e}. Using empty array.")
-        net = np.array([], dtype=float)
-    
-    # **CRITICAL FIX**: If net array is empty (episode failed), create 8760 hours of zeros
-    if len(net) == 0:
-        logger.warning(f"Episode for {agent_name} produced no data. Creating baseline 8760-hour array with zeros.")
-        net = np.zeros(8760, dtype=float)
+        logger.warning(f"Could not extract net grid kwh from environment for {agent_name}: {e}. Using zeros.")
+        net = np.zeros(steps, dtype=float)
     
     grid_import = np.clip(net, 0.0, None)
     grid_export = np.clip(-net, 0.0, None)
-
-    # Asegurar que todos los arrays tengan la misma longitud
-    steps = len(net)
     
     # Extract all metrics with fallback to zero arrays of correct size
     try:
@@ -773,11 +789,28 @@ def simulate(
     
     reward_components: List[Dict[str, float]] = []
     if use_multi_objective and reward_tracker is not None:
-        # Calcular recompensas para cada timestep
+        # CRÍTICO: Crear una nueva instancia limpia para calcular métricas desde cero
+        # La instancia anterior puede estar contaminada con estados previos
+        try:
+            from src.iquitos_citylearn.oe3.rewards import MultiObjectiveReward, MultiObjectiveWeights
+            # Recrear el tracker con la configuración correcta usando los pesos multiobjetivo
+            weights = MultiObjectiveWeights(
+                co2=0.50,
+                cost=0.15,
+                solar=0.20,
+                ev_satisfaction=0.10,
+                grid_stability=0.05
+            )
+            clean_tracker = MultiObjectiveReward(weights=weights)
+        except Exception as e:
+            logger.warning(f"Could not recreate MultiObjectiveReward: {e}. Using existing tracker.")
+            clean_tracker = reward_tracker
+        
+        # Calcular recompensas para cada timestep con datos REALES del episodio
         for t in range(steps):
             hour = t % 24
             ev_t = float(ev[t]) if t < len(ev) else 0.0
-            _, comps = reward_tracker.compute(
+            _, comps = clean_tracker.compute(
                 grid_import_kwh=float(grid_import[t]),
                 grid_export_kwh=float(grid_export[t]),
                 solar_generation_kwh=float(pv[t]) if t < len(pv) else 0.0,
@@ -788,7 +821,8 @@ def simulate(
             )
             reward_components.append(comps)
         
-        pareto = reward_tracker.get_pareto_metrics()
+        # Obtener métricas desde el tracker limpio
+        pareto = clean_tracker.get_pareto_metrics()
         mo_metrics = {
             "priority": multi_objective_priority,
             "r_co2_mean": pareto.get("r_co2_mean", 0.0),
@@ -800,7 +834,7 @@ def simulate(
             "co2_total_kg": pareto.get("co2_total_kg", carbon),
             "cost_total_usd": pareto.get("cost_total_usd", 0.0),
         }
-        logger.info(f"[MULTIOBJETIVO] Métricas: R_total={mo_metrics['reward_total_mean']:.4f}, "
+        logger.info(f"[MULTIOBJETIVO] Métricas (CLEAN): R_total={mo_metrics['reward_total_mean']:.4f}, "
                    f"R_CO2={mo_metrics['r_co2_mean']:.4f}, R_cost={mo_metrics['r_cost_mean']:.4f}")
 
     ts = pd.DataFrame(

@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 from datetime import datetime
 import logging
+from typing import Any, Dict
 
 # Optimización GPU
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
@@ -67,7 +68,7 @@ seconds_per_step = int(cfg["project"]["seconds_per_time_step"])
 training_dir = rp.outputs_dir / "oe3" / "training" / "tier2_v2_2ep_gpu"
 training_dir.mkdir(parents=True, exist_ok=True)
 
-results = {}
+results: Dict[str, Any] = {}
 
 # ============ A2C TIER 2 V2 - 2 EPISODES ============
 print("\n" + "=" * 80)
@@ -76,7 +77,7 @@ print("=" * 80)
 print(f"Config: entropy=0.01 (fijo), lr_base={config_v2.learning_rate_base:.2e}, lr_pico={config_v2.learning_rate_peak:.2e}\n")
 
 try:
-    result_a2c = simulate(
+    result_a2c: Any = simulate(  # type: ignore[arg-type]
         schema_path=schema_pv,
         agent_name="A2C",
         out_dir=training_dir / "a2c",
@@ -97,7 +98,11 @@ try:
         seed=2022,
     )
     results["A2C"] = result_a2c
-    logger.info(f"[OK] A2C Complete - CO2: {result_a2c.carbon_kg:.2f}kg, Reward: {result_a2c.reward:.3f}")
+    logger.info(
+        "[OK] A2C Complete - CO2: %.2fkg, Reward: %.3f",
+        float(getattr(result_a2c, "carbon_kg", 0.0)),
+        float(getattr(result_a2c, "reward", 0.0)),
+    )
     
 except Exception as e:
     logger.error(f"[FAIL] A2C: {type(e).__name__}: {str(e)[:120]}")
@@ -112,7 +117,7 @@ print("=" * 80)
 print(f"Config: entropy=0.01 (fijo), lr_base={config_v2.learning_rate_base:.2e}, lr_pico={config_v2.learning_rate_peak:.2e}\n")
 
 try:
-    result_ppo = simulate(
+    result_ppo: Any = simulate(  # type: ignore[arg-type]
         schema_path=schema_pv,
         agent_name="PPO",
         out_dir=training_dir / "ppo",
@@ -138,7 +143,11 @@ try:
         seed=2022,
     )
     results["PPO"] = result_ppo
-    logger.info(f"[OK] PPO Complete - CO2: {result_ppo.carbon_kg:.2f}kg, Reward: {result_ppo.reward:.3f}")
+    logger.info(
+        "[OK] PPO Complete - CO2: %.2fkg, Reward: %.3f",
+        float(getattr(result_ppo, "carbon_kg", 0.0)),
+        float(getattr(result_ppo, "reward", 0.0)),
+    )
     
 except Exception as e:
     logger.error(f"[FAIL] PPO: {type(e).__name__}: {str(e)[:120]}")
@@ -153,7 +162,7 @@ print("=" * 80)
 print(f"Config: entropy=0.01 (fijo), lr_base={config_v2.learning_rate_base:.2e}, lr_pico={config_v2.learning_rate_peak:.2e}\n")
 
 try:
-    result_sac = simulate(
+    result_sac: Any = simulate(  # type: ignore[arg-type]
         schema_path=schema_pv,
         agent_name="SAC",
         out_dir=training_dir / "sac",
@@ -174,7 +183,11 @@ try:
         seed=2022,
     )
     results["SAC"] = result_sac
-    logger.info(f"[OK] SAC Complete - CO2: {result_sac.carbon_kg:.2f}kg, Reward: {result_sac.reward:.3f}")
+    logger.info(
+        "[OK] SAC Complete - CO2: %.2fkg, Reward: %.3f",
+        float(getattr(result_sac, "carbon_kg", 0.0)),
+        float(getattr(result_sac, "reward", 0.0)),
+    )
     
 except Exception as e:
     logger.error(f"[FAIL] SAC: {type(e).__name__}: {str(e)[:120]}")
@@ -190,7 +203,9 @@ print("=" * 80)
 for agent in ["A2C", "PPO", "SAC"]:
     result = results.get(agent)
     if result:
-        print(f"[OK] {agent:4} | CO2: {result.carbon_kg:8.2f} kg | Reward: {result.reward:7.3f}")
+        carbon = float(getattr(result, "carbon_kg", 0.0))
+        reward = float(getattr(result, "reward", 0.0))
+        print(f"[OK] {agent:4} | CO2: {carbon:8.2f} kg | Reward: {reward:7.3f}")
     else:
         print(f"[FAIL] {agent}")
 
@@ -217,7 +232,9 @@ with open(summary_path, "w") as f:
     for agent in ["A2C", "PPO", "SAC"]:
         result = results.get(agent)
         if result:
-            f.write(f"  {agent}: CO2={result.carbon_kg:.2f}kg, Reward={result.reward:.3f}\n")
+            carbon = float(getattr(result, "carbon_kg", 0.0))
+            reward = float(getattr(result, "reward", 0.0))
+            f.write(f"  {agent}: CO2={carbon:.2f}kg, Reward={reward:.3f}\n")
         else:
             f.write(f"  {agent}: FAILED\n")
     f.write(f"\nSuccess: {success_count}/3 agents\n")

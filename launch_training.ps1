@@ -66,9 +66,9 @@ else {
 Write-Host ("=" * 70) -ForegroundColor Cyan
 
 Write-Host "`nResultados en:" -ForegroundColor Cyan
-Write-Host "  📊 outputs/oe3/simulations/simulation_summary.json" -ForegroundColor Green
-Write-Host "  📈 outputs/oe3/simulations/co2_comparison.md" -ForegroundColor Green
-Write-Host "  💾 outputs/oe3/checkpoints/" -ForegroundColor Green
+Write-Host "  Outputs/oe3/simulations/simulation_summary.json" -ForegroundColor Green
+Write-Host "  Outputs/oe3/simulations/co2_comparison.md" -ForegroundColor Green
+Write-Host "  Outputs/oe3/checkpoints/" -ForegroundColor Green
 
 Write-Host "`nVer resultados:" -ForegroundColor Cyan
 Write-Host "  cat outputs/oe3/simulations/simulation_summary.json | python -m json.tool" -ForegroundColor Gray
