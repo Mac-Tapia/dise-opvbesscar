@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
-"""
-Robust CityLearn Patching for EV Charger Issues
-Handles all known bugs in simulate_unconnected_ev_soc and charge methods
-"""
+"""Robust CityLearn Patching for EV Charger Issues.
+Handles all known bugs in simulate_unconnected_ev_soc and charge methods."""
 
-import sys
 import numpy as np
-from pathlib import Path
+from importlib import import_module
+from typing import Any
 
 def apply_robust_citylearn_patches():
     """Apply comprehensive patches to CityLearn to fix EV charger bugs."""
     
     try:
-        from citylearn.data import Data
-        from citylearn.energy_model import Battery
+        citylearn_data = import_module("citylearn.data")
+        citylearn_energy_model = import_module("citylearn.energy_model")
+        Data: Any = getattr(citylearn_data, "Data")
+        Battery: Any = getattr(citylearn_energy_model, "Battery")
         
         print("[INFO] Applying robust CityLearn patches...")
         
         # ===== PATCH 1: Data.__getattr__ - Prevent infinite recursion =====
         original_data_getattr = Data.__getattr__
         
-        def patched_data_getattr(self, name):
+        def patched_data_getattr(self: Any, name: str):
             """Prevent __getattr__ recursion on missing attributes."""
             if name.startswith('_') or name in ['start_time_step', 'end_time_step']:
                 raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
@@ -33,12 +33,10 @@ def apply_robust_citylearn_patches():
         print("[OK] Patched Data.__getattr__")
         
         # ===== PATCH 2: Battery.charge - Safe energy addition =====
-        original_charge = Battery.charge
-        
-        def patched_charge(self, energy_kwh):
+        def patched_charge(self: Any, energy):
             """Safe charge method with bounds checking."""
             try:
-                if energy_kwh <= 0:
+                if energy <= 0:
                     return
                 
                 # Ensure _soc is in valid range
@@ -51,20 +49,18 @@ def apply_robust_citylearn_patches():
                     return
                     
                 available_kwh = self.capacity * (1.0 - self._soc)
-                energy_to_add = min(energy_kwh, available_kwh)
+                energy_to_add = min(energy, available_kwh)
                 
                 if energy_to_add > 0:
                     self._soc = min(1.0, self._soc + energy_to_add / self.capacity)
-            except Exception as e:
+            except Exception:
                 pass  # Silent fail
         
-        Battery.charge = patched_charge
+        setattr(Battery, "charge", patched_charge)
         print("[OK] Patched Battery.charge")
         
         # ===== PATCH 3: Battery.get_max_input_power - Safe indexing =====
-        original_get_max_input_power = Battery.get_max_input_power
-        
-        def patched_get_max_input_power(self):
+        def patched_get_max_input_power(self: Any):
             """Safe max input power calculation."""
             try:
                 if not hasattr(self, '_soc') or self._soc is None:
@@ -87,7 +83,7 @@ def apply_robust_citylearn_patches():
             except Exception:
                 return getattr(self, 'power', 10.0)
         
-        Battery.get_max_input_power = patched_get_max_input_power
+        setattr(Battery, "get_max_input_power", patched_get_max_input_power)
         print("[OK] Patched Battery.get_max_input_power")
         
         return True

@@ -16,7 +16,7 @@ from datetime import datetime
 import logging
 import json
 import numpy as np
-from typing import Dict, Any
+from typing import Dict, Any, cast
 
 # ============ SETUP GPU ============
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
@@ -152,12 +152,14 @@ try:
         use_multi_objective=False
     )
     
-    if result_baseline:
+    baseline_raw: Dict[str, Any] = cast(Dict[str, Any], result_baseline or {})
+    
+    if baseline_raw:
         baseline_results = {
-            "co2_total_kg": float(np.mean(result_baseline.get("co2_total_kg", [0]))),
-            "cost_total_usd": float(np.mean(result_baseline.get("cost_total_usd", [0]))),
-            "peak_import_kw": float(np.max(result_baseline.get("peak_import_kw", [0]))),
-            "solar_used_kwh": float(np.mean(result_baseline.get("solar_used_kwh", [0]))),
+            "co2_total_kg": float(np.mean(baseline_raw.get("co2_total_kg", [0]))),
+            "cost_total_usd": float(np.mean(baseline_raw.get("cost_total_usd", [0]))),
+            "peak_import_kw": float(np.max(baseline_raw.get("peak_import_kw", [0]))),
+            "solar_used_kwh": float(np.mean(baseline_raw.get("solar_used_kwh", [0]))),
         }
         
         with open(baseline_file, 'w') as f:
