@@ -1,23 +1,138 @@
-version: '3.8'
+version: '3.9'
 
 services:
-  notebook:
+  # Development Jupyter Lab
+  dev-notebook:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: pvbesscar:dev
+    container_name: pvbesscar-dev-notebook
+    hostname: pvbesscar-dev-notebook
+    
     ports:
       - "8888:8888"
+    
     volumes:
       - .:/workspace
+      - ./outputs:/workspace/outputs
+      - jupyter_data:/root/.jupyter
+    
     environment:
       - JUPYTER_ENABLE_LAB=yes
-    command: jupyter lab --ip=0.0.0.0 --allow-root --no-browser
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/workspace
     
-  tests:
+    command: jupyter lab --ip=0.0.0.0 --allow-root --no-browser --NotebookApp.token='' --NotebookApp.password=''
+    
+    restart: unless-stopped
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 16G
+        reservations:
+          cpus: '4'
+          memory: 8G
+  
+  # Unit tests
+  dev-tests:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: pvbesscar:dev
+    container_name: pvbesscar-dev-tests
+    hostname: pvbesscar-dev-tests
+    
     volumes:
       - .:/workspace
+      - test_results:/workspace/test_results
+    
     working_dir: /workspace
-    command: pytest -v
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/workspace
+    
+    command: pytest -v --cov=. --cov-report=html:test_results/coverage
+    
+    restart: "no"
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+  
+  # Linting and formatting
+  dev-lint:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: pvbesscar:dev
+    container_name: pvbesscar-dev-lint
+    hostname: pvbesscar-dev-lint
+    
+    volumes:
+      - .:/workspace
+    
+    working_dir: /workspace
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+    
+    command: sh -c "pylint **/*.py && black --check . && isort --check-only ."
+    
+    restart: "no"
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "1"
+  
+  # Type checking
+  dev-type-check:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: pvbesscar:dev
+    container_name: pvbesscar-dev-type-check
+    hostname: pvbesscar-dev-type-check
+    
+    volumes:
+      - .:/workspace
+    
+    working_dir: /workspace
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+    
+    command: mypy . --ignore-missing-imports
+    
+    restart: "no"
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "1"
+
+volumes:
+  jupyter_data:
+  test_results:

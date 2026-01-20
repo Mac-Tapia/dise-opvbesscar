@@ -1,26 +1,30 @@
 version: '3.9'
 
 services:
-  # OE2→OE3 Pipeline Execution
-  iquitos-pipeline:
+  # CPU Pipeline Execution
+  pvbesscar-pipeline:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: iquitos-citylearn-pipeline
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: pvbesscar:latest
+    container_name: pvbesscar-pipeline
+    hostname: pvbesscar-pipeline
     
     # Mount volumes for persistence
     volumes:
       - ./data:/app/data                    # Input/Output data
       - ./outputs:/app/outputs              # Results & checkpoints
       - ./configs:/app/configs:ro           # Configuration (read-only)
+      - pipeline_cache:/app/.cache          # Pip cache for faster rebuilds
     
     # Environment variables
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
       - OMP_NUM_THREADS=4
-      # GPU support (uncomment if available)
-      # - CUDA_VISIBLE_DEVICES=0
+      - PYTHONPATH=/app
     
     # Resource limits
     deploy:
@@ -35,26 +39,38 @@ services:
     # Restart policy
     restart: unless-stopped
     
-    # Logging
+    # Logging with rotation
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
-        max-file: "3"
+        max-file: "5"
+        labels: "service=pipeline"
     
     # Interactive terminal (for debugging)
     stdin_open: true
     tty: true
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import stable_baselines3; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
 
-  # Optional: Monitoring service
-  training-monitor:
+  # Checkpoint monitoring service
+  pvbesscar-monitor:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: iquitos-monitor
+    image: pvbesscar:latest
+    container_name: pvbesscar-monitor
+    hostname: pvbesscar-monitor
     
     depends_on:
-      - iquitos-pipeline
+      pvbesscar-pipeline:
+        condition: service_healthy
     
     volumes:
       - ./outputs:/app/outputs:ro
@@ -62,6 +78,7 @@ services:
     
     environment:
       - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
     
     command: ["python", "monitor_checkpoints.py"]
     
@@ -71,8 +88,58 @@ services:
       driver: "json-file"
       options:
         max-size: "5m"
+        max-file: "3"
+        labels: "service=monitor"
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 8G
+        reservations:
+          cpus: '1'
+          memory: 2G
+
+  # Jupyter Lab for interactive analysis
+  pvbesscar-jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pvbesscar:latest
+    container_name: pvbesscar-jupyter
+    hostname: pvbesscar-jupyter
+    
+    ports:
+      - "8888:8888"
+    
+    volumes:
+      - .:/workspace
+      - ./outputs:/workspace/outputs
+    
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - PYTHONUNBUFFERED=1
+    
+    command: jupyter lab --ip=0.0.0.0 --allow-root --no-browser
+    
+    restart: unless-stopped
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
         max-file: "2"
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 16G
+        reservations:
+          cpus: '2'
+          memory: 8G
 
 volumes:
   pipeline_data:
   training_results:
+  pipeline_cache:
