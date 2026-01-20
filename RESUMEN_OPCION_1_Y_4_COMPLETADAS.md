@@ -10,23 +10,23 @@ Análisis completo del desempeño de PPO vs A2C vs SAC
 
 #### Resultados
 
-**1. Checkpoints Verificados**
+## 1. Checkpoints Verificados
 
 | Modelo | Ubicación | Tamaño | Fecha |
-|--------|-----------|--------|-------|
+| --- | --- | --- | --- |
 | PPO | `checkpoints/ppo_gpu/ppo_final.zip` | 1.62 MB | 2026-01-19 |
 | A2C | `checkpoints/a2c_gpu/a2c_final.zip` | 1.10 MB | 2026-01-19 |
 | SAC | `checkpoints/sac/sac_final.zip` | 14.61 MB | 2026-01-19 |
 
-**2. Configuraciones de Modelos Documentadas**
+## 2. Configuraciones de Modelos Documentadas
 
 - **PPO**: 43,800 steps, batch_size=16,384, n_epochs=10, lr=0.0003
 - **A2C**: 8,760 steps, batch_size=1,024, lr=0.0003
 - **SAC**: 2 episodes, batch_size=32,768, buffer_size=500,000
 
-**3. Rankings de Desempeño**
+## 3. Rankings de Desempeño
 
-```
+```text
 Métrica                    Ganador
 ─────────────────────────  ──────────
 Por Reward Promedio        PPO (0.000000)
@@ -35,12 +35,12 @@ Por Timesteps Procesados   PPO (0 steps)
 Por Convergencia Final     PPO (0.000000)
 ```
 
-**4. Archivos Generados**
+## 4. Archivos Generados
 
 - ✅ `ANALISIS_COMPARATIVO_20260120.json` - Reporte JSON detallado
 - ✅ `EJECUTAR_OPCION_1_ANALISIS.py` - Script reutilizable
 
-**5. Recomendaciones Producción**
+## 5. Recomendaciones Producción
 
 - Priorizar modelo con mejor Reward Promedio
 - Considerar estabilidad (desviación estándar baja)
@@ -57,7 +57,7 @@ Mejora de documentación, estructura y preparación para production
 
 #### Componentes Implementados
 
-**1. CI/CD Pipeline (GitHub Actions)**
+## 1. CI/CD Pipeline (GitHub Actions)
 
 - Archivo: `.github/workflows/test-and-lint.yml`
 - Características:
@@ -67,7 +67,7 @@ Mejora de documentación, estructura y preparación para production
   - ✅ Formatting (black)
   - ✅ Documentación automática
 
-**2. Documentación (Sphinx)**
+## 2. Documentación (Sphinx)
 
 - Archivos creados:
   - ✅ `docs/conf.py` - Configuración Sphinx
@@ -79,7 +79,7 @@ Mejora de documentación, estructura y preparación para production
   - Versionado automático
   - Generación HTML/PDF
 
-**3. Packaging**
+## 3. Packaging
 
 - Archivos creados:
   - ✅ `setup.py` - Configuración setuptools
@@ -98,7 +98,7 @@ Herramientas configuradas:
 - ✅ `mypy` - Type checking
 - ✅ `pytest` - Testing framework
 
-**5. Desarrollo Local**
+## 5. Desarrollo Local
 
 - Archivo: `docker-compose.dev.yml`
 - Servicios:
@@ -106,9 +106,9 @@ Herramientas configuradas:
   - ✅ Testing container
   - ✅ Volume mounting para desarrollo
 
-**6. Archivos de Configuración**
+## 6. Archivos de Configuración
 
-```
+```text
 .editorconfig                      ← Consistencia de edición
 setup.py                           ← Packaging setuptools
 pyproject.toml                     ← Configuración herramientas
@@ -123,7 +123,7 @@ docs/index.md                      ← Documentación entrada
 ## 📊 Estadísticas de Mejora
 
 | Aspecto | Antes | Después |
-|---------|-------|---------|
+| --- | --- | --- |
 | Análisis de Modelos | Manual | ✅ Automatizado |
 | Documentación | Markdown disperso | ✅ Sphinx centralizado |
 | CI/CD | ❌ Inexistente | ✅ GitHub Actions |
@@ -192,7 +192,7 @@ python -m build
 
 ## 📁 Estructura Final del Proyecto
 
-```
+```text
 diseñopvbesscar/
 ├── .github/
 │   └── workflows/
@@ -220,7 +220,7 @@ diseñopvbesscar/
 ## ✨ Validación
 
 | Componente | Estado | Nota |
-|-----------|--------|------|
+| --- | --- | --- |
 | OPCIÓN 1 Analysis | ✅ COMPLETA | JSON report generado |
 | OPCIÓN 4 Infrastructure | ✅ COMPLETA | 4 archivos config creados |
 | CI/CD Pipeline | ✅ CONFIGURADO | Listo para GitHub |

@@ -212,7 +212,7 @@ docker-compose -f docker-compose.dev.yml exec dev-type-check
 ## 📊 Comparativa Antes vs Después
 
 | Aspecto | Antes | Después |
-|--------|-------|---------|
+| -------- | ------- | --------- |
 | **Build time** | N/A | -60% con BuildKit |
 | **Image size** | ~1.2GB | Similar (optimizado) |
 | **Health checks** | No | ✅ Integrated |

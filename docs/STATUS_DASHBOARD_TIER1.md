@@ -42,15 +42,15 @@ Impact:     Reward range [-0.3, 0.5] (narrow) → [-1, 1] (full range)
 
 ## ✅ TIER 1 FIXES APPLIED
 
- | Component | Before | After | Benefit |
- | --- | --- | --- | --- |
- | **CO₂ Weight** | 0.45 | 0.50 | PRIMARY focus: minimize grid import |
- | **Solar Weight** | 0.15 | 0.20 | Maximize PV autoconsumo |
- | **Cost Weight** | 0.15 | 0.10 | Reduce secondary objectives |
- | **Grid Weight** | 0.20 | 0.10 | Implicit in CO₂ |
- | **CO₂ Baseline** | 500.0 | 130/250 | Realistic Iquitos demand |
- | **LR Cap** | 3e-05 | 1e-03 | 33x faster gradients |
- | **Entropy** | auto/-126 | 0.01/-50 | Less noise, more learn |
+| Component | Before | After | Benefit |
+| --- | --- | --- | --- |
+| **CO₂ Weight** | 0.45 | 0.50 | PRIMARY focus: minimize grid import |
+| **Solar Weight** | 0.15 | 0.20 | Maximize PV autoconsumo |
+| **Cost Weight** | 0.15 | 0.10 | Reduce secondary objectives |
+| **Grid Weight** | 0.20 | 0.10 | Implicit in CO₂ |
+| **CO₂ Baseline** | 500.0 | 130/250 | Realistic Iquitos demand |
+| **LR Cap** | 3e-05 | 1e-03 | 33x faster gradients |
+| **Entropy** | auto/-126 | 0.01/-50 | Less noise, more learn |
 
 ---
 
@@ -242,13 +242,13 @@ But **TIER 1 is designed to improve**, not regress. Regression would indicate de
 
 ## 📈 SUCCESS METRICS
 
- | Metric | Target | Expected | Criterion |
- | --- | --- | --- | --- |
- | r_co2 @ step 500 | > +0.25 | +0.30+ | Learning visible |
- | reward_total @ step 500 | > 0.60 | 0.62+ | Avg improvement |
- | grid_import peak | < 150 kWh/h | 160 kWh/h | Grid load reduction |
- | bess_soc pre-peak | 0.65 | 0.65+ | Reserve strategy learned |
- | actor_loss trend | Decreasing | -1000→-500 | Policy improving |
+| Metric | Target | Expected | Criterion |
+| --- | --- | --- | --- |
+| r_co2 @ step 500 | > +0.25 | +0.30+ | Learning visible |
+| reward_total @ step 500 | > 0.60 | 0.62+ | Avg improvement |
+| grid_import peak | < 150 kWh/h | 160 kWh/h | Grid load reduction |
+| bess_soc pre-peak | 0.65 | 0.65+ | Reserve strategy learned |
+| actor_loss trend | Decreasing | -1000→-500 | Policy improving |
 
 ---
 

@@ -64,11 +64,11 @@ PRÓXIMO: ENTRENAMIENTO 2 EPISODIOS C/AGENTE
 
 ## 📊 COMPARATIVA RÁPIDA
 
- | Agente | Convergencia | Estabilidad | Eficiencia | Recomendación |
- | -------- | ------------- | ------------ | ----------- | -------------- |
- | **A2C** | 30-50 ep | Media | 1.75M kg CO₂ | Prototyping |
- | **PPO** | 50-100 ep | ⭐ Muy Alta | 1.72M kg CO₂ | Producción |
- | **SAC** | **15-25 ep ⭐** | Muy Alta | **<1.70M kg CO₂ ⭐** | **Óptimo** |
+| Agente | Convergencia | Estabilidad | Eficiencia | Recomendación |
+| -------- | ------------- | ------------ | ----------- | -------------- |
+| **A2C** | 30-50 ep | Media | 1.75M kg CO₂ | Prototyping |
+| **PPO** | 50-100 ep | ⭐ Muy Alta | 1.72M kg CO₂ | Producción |
+| **SAC** | **15-25 ep ⭐** | Muy Alta | **<1.70M kg CO₂ ⭐** | **Óptimo** |
 
 ---
 
@@ -205,13 +205,13 @@ python -m src.train_sac_cuda --episodes=2 --verbose=1
 
 ## 📞 QUICK HELP
 
- | Pregunta | Respuesta |
- | ---------- | ----------- |
- | ¿Qué cambió? | LR, ent, hidden, activation en PPO/A2C |
- | ¿Por qué? | TIER 2 fixes (convergencia 2x, estabilidad) |
- | ¿Qué esperar? | SAC mejor (15-25 ep, <1.7M kg CO₂) |
- | ¿Cuánto tarda? | 40-60 min (2ep × 3 agentes GPU) |
- | ¿Es reversible? | SÍ (git revert disponible) |
+| Pregunta | Respuesta |
+| ---------- | ----------- |
+| ¿Qué cambió? | LR, ent, hidden, activation en PPO/A2C |
+| ¿Por qué? | TIER 2 fixes (convergencia 2x, estabilidad) |
+| ¿Qué esperar? | SAC mejor (15-25 ep, <1.7M kg CO₂) |
+| ¿Cuánto tarda? | 40-60 min (2ep × 3 agentes GPU) |
+| ¿Es reversible? | SÍ (git revert disponible) |
 
 ---
 

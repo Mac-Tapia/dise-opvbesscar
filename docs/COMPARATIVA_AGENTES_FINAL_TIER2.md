@@ -12,11 +12,11 @@
 - **ACTUALIZACIÓN 2026-01-19**: Todas las gráficas regeneradas y consolidadas en `analyses/oe3/training/plots/`
 - 25 gráficas disponibles (ver `plots/README.md` para índice completo)
 
- | Agente | Pasos | Mean Reward | CO2 episodio (kg) | Grid (kWh) | Solar (kWh) | Observación |
- | --- | --- | --- | --- | --- | --- | --- |
- | PPO | 18,432 | **0.0343** | **1.76M** | **274** | 0.0 | ✅ Mejor convergencia |
- | SAC | 17,520 | 0.0252 | 1.76M | 275 | 0.0 | ✅ Sample efficient |
- | A2C | 17,536 | 0.0254 | 1.76M | 275 | 0.0 | ✅ Rápido y robusto |
+| Agente | Pasos | Mean Reward | CO2 episodio (kg) | Grid (kWh) | Solar (kWh) | Observación |
+| --- | --- | --- | --- | --- | --- | --- |
+| PPO | 18,432 | **0.0343** | **1.76M** | **274** | 0.0 | ✅ Mejor convergencia |
+| SAC | 17,520 | 0.0252 | 1.76M | 275 | 0.0 | ✅ Sample efficient |
+| A2C | 17,536 | 0.0254 | 1.76M | 275 | 0.0 | ✅ Rápido y robusto |
 
 ---
 
@@ -24,39 +24,39 @@
 
 ### Métricas Regeneradas desde Checkpoints
 
- | Métrica | BASELINE | PPO | A2C | SAC |
- | --------- | ---------- | ----- | ----- | ----- |
- | **Avg Reward** | -0.2000 ± 0.0800 | **0.0343 ± 0.0500** | 0.0254 ± 0.0500 | 0.0252 ± 0.0500 |
- | **CO2 (kg)** | 2.00M ± 0.15M | **1.76M ± 0.10M** | 1.76M ± 0.10M | 1.76M ± 0.10M |
- | **Peak Import (kWh/h)** | 310 ± 30 | **274 ± 20** | 275 ± 20 | 275 ± 20 |
- | **Grid Stability** | 0.50 ± 0.08 | **0.61 ± 0.05** | 0.61 ± 0.05 | 0.61 ± 0.05 |
- | **Timesteps** | 0 | **18,432** | 17,536 | 17,520 |
- | **File Size** | - | 1.62 MB | 1.10 MB | 14.61 MB |
+| Métrica | BASELINE | PPO | A2C | SAC |
+| --------- | ---------- | ----- | ----- | ----- |
+| **Avg Reward** | -0.2000 ± 0.0800 | **0.0343 ± 0.0500** | 0.0254 ± 0.0500 | 0.0252 ± 0.0500 |
+| **CO2 (kg)** | 2.00M ± 0.15M | **1.76M ± 0.10M** | 1.76M ± 0.10M | 1.76M ± 0.10M |
+| **Peak Import (kWh/h)** | 310 ± 30 | **274 ± 20** | 275 ± 20 | 275 ± 20 |
+| **Grid Stability** | 0.50 ± 0.08 | **0.61 ± 0.05** | 0.61 ± 0.05 | 0.61 ± 0.05 |
+| **Timesteps** | 0 | **18,432** | 17,536 | 17,520 |
+| **File Size** | - | 1.62 MB | 1.10 MB | 14.61 MB |
 
 ### Mejora sobre Baseline (%)
 
- | Métrica | PPO | A2C | SAC |
- | --------- | ----- | ----- | ----- |
- | **Reward** | +217% | +212% | +212% |
- | **CO2** | -12% | -12% | -12% |
- | **Peak Import** | -11% | -11% | -11% |
- | **Grid Stability** | +22% | +22% | +22% |
+| Métrica | PPO | A2C | SAC |
+| --------- | ----- | ----- | ----- |
+| **Reward** | +217% | +212% | +212% |
+| **CO2** | -12% | -12% | -12% |
+| **Peak Import** | -11% | -11% | -11% |
+| **Grid Stability** | +22% | +22% | +22% |
 
 ---
 
 ## 📊 TABLA COMPARATIVA - HIPERPARÁMETROS TIER 2
 
- | Parámetro | A2C TIER 2 | PPO TIER 2 | SAC TIER 2 |
- | ----------- | ----------- | ----------- | ----------- |
- | **Learning Rate** | 2.5e-4 | 2.5e-4 | 2.5e-4 |
- | **Batch Size** | 1024 (n_steps) | 256 | 256 |
- | **Entropía** | 0.02 | 0.02 | 0.02 |
- | **Hidden Sizes** | (512, 512) | (512, 512) | (512, 512) |
- | **Activation** | ReLU | ReLU | ReLU |
- | **LR Schedule** | Linear (decay) | Linear (decay) | Constant |
- | **Red Update** | Every step | Per epoch | 2x per step |
- | **Exploración** | Entropy | SDE + Entropy | Alpha (automático) |
- | **Gamma** | 0.99 | 0.99 | 0.99 |
+| Parámetro | A2C TIER 2 | PPO TIER 2 | SAC TIER 2 |
+| ----------- | ----------- | ----------- | ----------- |
+| **Learning Rate** | 2.5e-4 | 2.5e-4 | 2.5e-4 |
+| **Batch Size** | 1024 (n_steps) | 256 | 256 |
+| **Entropía** | 0.02 | 0.02 | 0.02 |
+| **Hidden Sizes** | (512, 512) | (512, 512) | (512, 512) |
+| **Activation** | ReLU | ReLU | ReLU |
+| **LR Schedule** | Linear (decay) | Linear (decay) | Constant |
+| **Red Update** | Every step | Per epoch | 2x per step |
+| **Exploración** | Entropy | SDE + Entropy | Alpha (automático) |
+| **Gamma** | 0.99 | 0.99 | 0.99 |
 
 ---
 

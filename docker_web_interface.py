@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.11
 """
-PVBESSCAR Docker Web Interface
-Interfaz web para gestionar contenedores Docker
+PVBESSCAR Docker Web Interface - MEJORADA
+Interfaz web para gestionar contenedores Docker con manejo robusto de errores
 """
 
 from flask import Flask, render_template_string, jsonify, request
@@ -12,6 +12,7 @@ import socket
 from pathlib import Path
 from datetime import datetime
 import os
+import sys
 
 app = Flask(__name__)
 CORS(app)
@@ -24,7 +25,7 @@ DOCKER_COMPOSE_FILES = {
     'dev': 'docker-compose.dev.yml',
 }
 
-# HTML Template
+# HTML Template mejorado
 TEMPLATE = """
 <!DOCTYPE html>
 <html>
@@ -69,6 +70,37 @@ TEMPLATE = """
             font-size: 14px;
         }
         
+        .alert {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .alert.error {
+            background-color: #fee;
+            border-left: 4px solid #f44;
+            color: #c33;
+        }
+        
+        .alert.warning {
+            background-color: #ffeaa7;
+            border-left: 4px solid #fdcb6e;
+            color: #d63031;
+        }
+        
+        .alert.success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+        
+        .alert.info {
+            background-color: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            color: #0c5460;
+        }
+        
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -92,55 +124,59 @@ TEMPLATE = """
             gap: 10px;
         }
         
-        .card.status {
-            border-left: 4px solid #667eea;
-        }
+        .card.status { border-left: 4px solid #667eea; }
+        .card.actions { border-left: 4px solid #f39c12; }
+        .card.web { border-left: 4px solid #27ae60; }
         
         .status-item {
             display: flex;
             justify-content: space-between;
-            align-items: center;
             padding: 8px 0;
             border-bottom: 1px solid #eee;
         }
         
-        .status-item:last-child {
-            border-bottom: none;
-        }
+        .status-item:last-child { border-bottom: none; }
         
-        .badge {
+        .status-badge {
             display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
+            padding: 4px 8px;
+            border-radius: 3px;
             font-size: 12px;
             font-weight: bold;
         }
         
-        .badge.running {
-            background: #d4edda;
-            color: #155724;
+        .status-badge.running { background-color: #d4edda; color: #155724; }
+        .status-badge.stopped { background-color: #f8d7da; color: #721c24; }
+        .status-badge.error { background-color: #fee; color: #c33; }
+        
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #eee;
         }
         
-        .badge.stopped {
-            background: #f8d7da;
-            color: #721c24;
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            color: #666;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
         }
         
-        .badge.error {
-            background: #f8d7da;
-            color: #721c24;
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
         }
         
-        .badge.healthy {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .button-group {
+        .action-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 10px;
-            margin-top: 15px;
+            margin-bottom: 15px;
         }
         
         button {
@@ -148,117 +184,25 @@ TEMPLATE = """
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
             font-size: 14px;
-            font-weight: bold;
-            transition: all 0.3s;
         }
         
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
+        .btn-primary { background-color: #667eea; color: white; }
+        .btn-primary:hover { background-color: #5568d3; transform: translateY(-2px); }
         
-        .btn-primary:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
+        .btn-success { background-color: #27ae60; color: white; }
+        .btn-success:hover { background-color: #229954; transform: translateY(-2px); }
         
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
+        .btn-danger { background-color: #e74c3c; color: white; }
+        .btn-danger:hover { background-color: #c0392b; transform: translateY(-2px); }
         
-        .btn-success:hover {
-            background: #218838;
-        }
+        .btn-secondary { background-color: #95a5a6; color: white; }
+        .btn-secondary:hover { background-color: #7f8c8d; transform: translateY(-2px); }
         
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-        
-        .btn-danger:hover {
-            background: #c82333;
-        }
-        
-        .btn-warning {
-            background: #ffc107;
-            color: black;
-        }
-        
-        .btn-warning:hover {
-            background: #e0a800;
-        }
-        
-        .btn-info {
-            background: #17a2b8;
-            color: white;
-        }
-        
-        .btn-info:hover {
-            background: #138496;
-        }
-        
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #eee;
-        }
-        
-        .tab-button {
-            background: transparent;
-            border: none;
-            padding: 10px 15px;
-            color: #666;
-            font-weight: bold;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-        
-        .tab-button.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .log-container {
-            background: #1e1e1e;
-            color: #0f0;
-            padding: 15px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            max-height: 400px;
-            overflow-y: auto;
-            margin-top: 10px;
-        }
-        
-        .log-line {
-            padding: 2px 0;
-        }
-        
-        .spinner {
+        .loading {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
             animation: spin 1s linear infinite;
         }
         
@@ -267,61 +211,34 @@ TEMPLATE = """
             100% { transform: rotate(360deg); }
         }
         
-        .loading {
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .alert {
+        .log-viewer {
+            background-color: #1e1e1e;
+            color: #0f0;
             padding: 15px;
             border-radius: 4px;
-            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
         }
         
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .log-viewer.active {
+            display: block;
         }
         
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .alert-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-        
-        .port-info {
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 4px;
-            margin: 10px 0;
+        .link-button {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 0;
             font-size: 14px;
         }
         
-        .port-link {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        
-        .port-link:hover {
-            text-decoration: underline;
-        }
-        
-        footer {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            color: #666;
-            font-size: 12px;
-            margin-top: 20px;
+        .link-button:hover {
+            color: #5568d3;
         }
     </style>
 </head>
@@ -332,394 +249,444 @@ TEMPLATE = """
             <p>Web interface para gestionar contenedores Docker</p>
         </header>
         
+        <div id="alerts"></div>
+        
         <div class="grid">
             <!-- Status Card -->
             <div class="card status">
-                <h2>📊 Status</h2>
-                <div id="status-content" class="loading">
-                    <div class="spinner"></div>
+                <h2>📊 Estado</h2>
+                <div id="status-content">
+                    <div style="text-align: center; padding: 20px;">
+                        <div class="loading">⏳</div>
+                        <p>Cargando estado...</p>
+                    </div>
                 </div>
             </div>
             
-            <!-- Quick Actions -->
-            <div class="card">
+            <!-- Actions Card -->
+            <div class="card actions">
                 <h2>⚡ Acciones Rápidas</h2>
                 <div class="tabs">
-                    <button class="tab-button active" onclick="switchTab('cpu', this)">CPU</button>
-                    <button class="tab-button" onclick="switchTab('gpu', this)">GPU</button>
-                    <button class="tab-button" onclick="switchTab('dev', this)">Dev</button>
+                    <button class="tab-btn active" onclick="switchTab('cpu-actions')">CPU</button>
+                    <button class="tab-btn" onclick="switchTab('gpu-actions')">GPU</button>
+                    <button class="tab-btn" onclick="switchTab('dev-actions')">Dev</button>
                 </div>
                 
-                <div id="cpu" class="tab-content active">
-                    <div class="button-group">
-                        <button class="btn-primary" onclick="buildImage('cpu')">Build CPU</button>
-                        <button class="btn-success" onclick="startServices('cpu')">Start CPU</button>
-                        <button class="btn-danger" onclick="stopServices('cpu')">Stop</button>
-                    </div>
+                <div id="cpu-actions" class="action-grid">
+                    <button class="btn-primary" onclick="buildImage('cpu')">Build CPU</button>
+                    <button class="btn-success" onclick="startService('cpu')">Start CPU</button>
+                    <button class="btn-danger" onclick="stopService('cpu')">Stop</button>
                 </div>
                 
-                <div id="gpu" class="tab-content">
-                    <div class="button-group">
-                        <button class="btn-primary" onclick="buildImage('gpu')">Build GPU</button>
-                        <button class="btn-success" onclick="startServices('gpu')">Start GPU</button>
-                        <button class="btn-danger" onclick="stopServices('gpu')">Stop</button>
-                    </div>
+                <div id="gpu-actions" class="action-grid" style="display:none;">
+                    <button class="btn-primary" onclick="buildImage('gpu')">Build GPU</button>
+                    <button class="btn-success" onclick="startService('gpu')">Start GPU</button>
+                    <button class="btn-danger" onclick="stopService('gpu')">Stop</button>
                 </div>
                 
-                <div id="dev" class="tab-content">
-                    <div class="button-group">
-                        <button class="btn-primary" onclick="buildImage('dev')">Build Dev</button>
-                        <button class="btn-success" onclick="startServices('dev')">Start Dev</button>
-                        <button class="btn-danger" onclick="stopServices('dev')">Stop</button>
-                    </div>
+                <div id="dev-actions" class="action-grid" style="display:none;">
+                    <button class="btn-primary" onclick="buildImage('dev')">Build Dev</button>
+                    <button class="btn-success" onclick="startService('dev')">Start Dev</button>
+                    <button class="btn-danger" onclick="stopService('dev')">Stop</button>
                 </div>
             </div>
             
-            <!-- Services Info -->
-            <div class="card">
+            <!-- Web Access Card -->
+            <div class="card web">
                 <h2>🌐 Acceso Web</h2>
-                <div class="port-info">
-                    <strong>Jupyter Lab (CPU):</strong><br>
-                    <a href="http://localhost:8888" class="port-link" target="_blank">http://localhost:8888</a>
+                <div class="status-item">
+                    <span>Jupyter Lab (CPU):</span>
+                    <a href="http://localhost:8888" target="_blank" class="link-button">http://localhost:8888</a>
                 </div>
-                <div class="port-info">
-                    <strong>Jupyter Lab (GPU):</strong><br>
-                    <a href="http://localhost:8889" class="port-link" target="_blank">http://localhost:8889</a>
+                <div class="status-item">
+                    <span>Jupyter Lab (GPU):</span>
+                    <a href="http://localhost:8889" target="_blank" class="link-button">http://localhost:8889</a>
                 </div>
-                <div class="port-info">
-                    <strong>Docker Manager:</strong><br>
-                    <a href="http://localhost:5000" class="port-link" target="_blank">http://localhost:5000</a>
+                <div class="status-item">
+                    <span>Docker Manager:</span>
+                    <a href="http://localhost:5000" target="_blank" class="link-button">http://localhost:5000</a>
                 </div>
             </div>
         </div>
         
-        <!-- Main Logs Area -->
+        <!-- Logs Card -->
         <div class="card">
-            <h2>📋 Logs & Output</h2>
-            <div class="button-group">
-                <button class="btn-info" onclick="viewLogs('all')">Ver Logs</button>
-                <button class="btn-info" onclick="viewLogs('pipeline')">Pipeline</button>
-                <button class="btn-info" onclick="viewLogs('jupyter')">Jupyter</button>
-                <button class="btn-warning" onclick="clearLogs()">Limpiar</button>
+            <h2>📋 Logs y Output</h2>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchLogs('ver-logs')">Ver Logs</button>
+                <button class="tab-btn" onclick="switchLogs('pipeline')">Pipeline</button>
+                <button class="tab-btn" onclick="switchLogs('jupyter')">Jupyter</button>
+                <button class="tab-btn" onclick="switchLogs('limpiar')">Limpiar</button>
             </div>
-            <div id="logs" class="log-container">
-                <div class="log-line">Sistema listo...</div>
-            </div>
+            <div id="ver-logs" class="log-viewer active"></div>
+            <div id="pipeline" class="log-viewer"></div>
+            <div id="jupyter" class="log-viewer"></div>
+            <div id="limpiar" class="log-viewer"></div>
         </div>
-        
-        <footer>
-            <p>PVBESSCAR Docker Manager v1.0.0 | Python 3.11 | Flask + Docker Compose</p>
-        </footer>
     </div>
     
     <script>
-        let currentMode = 'cpu';
+        // Estado global
+        let currentTab = 'cpu-actions';
+        let currentLogTab = 'ver-logs';
         
-        function switchTab(mode, button) {
-            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
-            button.classList.add('active');
-            document.getElementById(mode).classList.add('active');
-            currentMode = mode;
-        }
-        
-        function addLog(message, type = 'info') {
-            const logsDiv = document.getElementById('logs');
-            const timestamp = new Date().toLocaleTimeString();
-            const line = document.createElement('div');
-            line.className = 'log-line';
-            line.textContent = `[${timestamp}] ${message}`;
-            logsDiv.appendChild(line);
-            logsDiv.scrollTop = logsDiv.scrollHeight;
-        }
-        
-        function clearLogs() {
-            document.getElementById('logs').innerHTML = '';
-        }
-        
+        // Mostrar alerta
         function showAlert(message, type = 'info') {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.textContent = message;
-            document.querySelector('.container').prepend(alertDiv);
-            setTimeout(() => alertDiv.remove(), 5000);
-        }
-        
-        async function buildImage(mode) {
-            addLog(`🔨 Building ${mode} image...`);
-            showAlert(`Building ${mode} image...`, 'info');
+            const alerts = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert ${type}`;
+            alert.textContent = message;
+            alert.style.display = 'block';
+            alerts.appendChild(alert);
             
-            try {
-                const response = await fetch(`/api/build`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({mode})
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    addLog(`✅ Image ${mode} built successfully`);
-                    showAlert(`✅ Image ${mode} built successfully`, 'success');
-                } else {
-                    addLog(`❌ Error building image: ${data.error}`);
-                    showAlert(`❌ Error: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                addLog(`❌ Error: ${error.message}`);
-                showAlert(`❌ Error: ${error.message}`, 'error');
-            }
+            setTimeout(() => alert.remove(), 5000);
         }
         
-        async function startServices(mode) {
-            addLog(`🚀 Starting ${mode} services...`);
-            showAlert(`Starting ${mode} services...`, 'info');
+        // Cambiar tab de acciones
+        function switchTab(tab) {
+            document.getElementById(currentTab).style.display = 'none';
+            document.getElementById(tab).style.display = 'grid';
             
-            try {
-                const response = await fetch(`/api/start`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({mode})
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    addLog(`✅ Services ${mode} started`);
-                    showAlert(`✅ Services ${mode} started`, 'success');
-                    updateStatus();
-                } else {
-                    addLog(`❌ Error: ${data.error}`);
-                    showAlert(`❌ Error: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                addLog(`❌ Error: ${error.message}`);
-                showAlert(`❌ Error: ${error.message}`, 'error');
-            }
-        }
-        
-        async function stopServices(mode) {
-            addLog(`⏹️  Stopping ${mode} services...`);
-            showAlert(`Stopping ${mode} services...`, 'info');
+            // Actualizar botones activos
+            document.querySelectorAll('.tabs .tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
             
-            try {
-                const response = await fetch(`/api/stop`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({mode})
-                });
-                
-                const data = await response.json();
-                if (data.success) {
-                    addLog(`✅ Services ${mode} stopped`);
-                    showAlert(`✅ Services ${mode} stopped`, 'success');
-                    updateStatus();
-                } else {
-                    addLog(`❌ Error: ${data.error}`);
-                    showAlert(`❌ Error: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                addLog(`❌ Error: ${error.message}`);
-                showAlert(`❌ Error: ${error.message}`, 'error');
-            }
+            currentTab = tab;
         }
         
-        async function updateStatus() {
-            try {
-                const response = await fetch('/api/status');
-                const data = await response.json();
-                
-                let html = '';
-                for (const [name, status] of Object.entries(data.containers || {})) {
-                    const badge = status.running ? 'running' : 'stopped';
-                    html += `
-                        <div class="status-item">
-                            <span>${name}</span>
-                            <span class="badge ${badge}">${status.running ? 'RUNNING' : 'STOPPED'}</span>
-                        </div>
-                    `;
-                }
-                
-                document.getElementById('status-content').innerHTML = html || 'No containers found';
-            } catch (error) {
-                console.error('Error updating status:', error);
-            }
-        }
-        
-        async function viewLogs(service) {
-            addLog(`📜 Loading ${service} logs...`);
+        // Cambiar tab de logs
+        function switchLogs(tab) {
+            document.getElementById(currentLogTab).classList.remove('active');
+            document.getElementById(tab).classList.add('active');
             
-            try {
-                const response = await fetch(`/api/logs?service=${service}`);
-                const data = await response.json();
-                
-                document.getElementById('logs').innerHTML = '';
-                const lines = data.logs.split('\\n');
-                lines.forEach(line => {
-                    if (line.trim()) {
-                        addLog(line);
+            // Actualizar botones activos
+            document.querySelectorAll('.tabs .tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            currentLogTab = tab;
+        }
+        
+        // Obtener estado
+        function getStatus() {
+            fetch('/api/status')
+                .then(r => r.json())
+                .then(data => {
+                    let html = '<div class="status-item"><strong>Docker Daemon:</strong>';
+                    html += data.docker_running ? 
+                        '<span class="status-badge running">✓ Corriendo</span>' :
+                        '<span class="status-badge error">✗ No disponible</span>';
+                    html += '</div>';
+                    
+                    if (Object.keys(data.containers).length === 0) {
+                        html += '<p style="margin-top: 10px; color: #666;">No hay contenedores</p>';
+                    } else {
+                        for (const [name, info] of Object.entries(data.containers)) {
+                            const badge = info.running ? 'running' : 'stopped';
+                            const text = info.running ? '✓ Corriendo' : '✗ Detenido';
+                            html += `<div class="status-item"><strong>${name}</strong><span class="status-badge ${badge}">${text}</span></div>`;
+                        }
                     }
+                    
+                    document.getElementById('status-content').innerHTML = html;
+                })
+                .catch(err => {
+                    document.getElementById('status-content').innerHTML = 
+                        '<p style="color: red;">Error: ' + err.message + '</p>';
                 });
-            } catch (error) {
-                addLog(`❌ Error loading logs: ${error.message}`);
-            }
         }
         
-        // Auto-update status every 5 seconds
-        setInterval(updateStatus, 5000);
+        // Build imagen
+        function buildImage(mode) {
+            showAlert(`🔨 Construyendo imagen ${mode}...`, 'info');
+            fetch('/api/build', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({mode: mode})
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert(`✓ Imagen ${mode} construida exitosamente`, 'success');
+                    } else {
+                        showAlert(`✗ Error: ${data.error || data.message}`, 'error');
+                    }
+                    getStatus();
+                })
+                .catch(err => showAlert(`✗ Error: ${err.message}`, 'error'));
+        }
         
-        // Initial status
-        updateStatus();
-        addLog('🟢 Docker Manager iniciado');
+        // Iniciar servicio
+        function startService(mode) {
+            showAlert(`▶️ Iniciando servicios ${mode}...`, 'info');
+            fetch('/api/start', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({mode: mode})
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert(`✓ Servicios ${mode} iniciados`, 'success');
+                    } else {
+                        showAlert(`✗ Error: ${data.error || data.message}`, 'error');
+                    }
+                    getStatus();
+                })
+                .catch(err => showAlert(`✗ Error: ${err.message}`, 'error'));
+        }
+        
+        // Detener servicio
+        function stopService(mode) {
+            showAlert(`⏹️  Deteniendo servicios ${mode}...`, 'info');
+            fetch('/api/stop', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({mode: mode})
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert(`✓ Servicios ${mode} detenidos`, 'success');
+                    } else {
+                        showAlert(`⚠️  ${data.message || 'Servicios no estaban corriendo'}`, 'warning');
+                    }
+                    getStatus();
+                })
+                .catch(err => showAlert(`✗ Error: ${err.message}`, 'error'));
+        }
+        
+        // Ver logs
+        function viewLogs(service) {
+            fetch(`/api/logs?service=${service}`)
+                .then(r => r.json())
+                .then(data => {
+                    const viewer = document.getElementById(service);
+                    viewer.textContent = data.logs || 'No hay logs disponibles';
+                })
+                .catch(err => {
+                    document.getElementById(service).textContent = 'Error: ' + err.message;
+                });
+        }
+        
+        // Inicializar
+        window.onload = () => {
+            getStatus();
+            setInterval(getStatus, 10000); // Actualizar cada 10 segundos
+        };
     </script>
 </body>
 </html>
 """
 
-def run_command(cmd, shell=False):
-    """Execute command and capture output"""
+def run_command(cmd, shell=False, timeout=30):
+    """Execute command and capture output con mejor manejo de errores"""
     try:
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
             shell=shell,
-            timeout=30
+            timeout=timeout,
+            cwd=str(PROJECT_ROOT)
         )
         return {
             'success': result.returncode == 0,
             'stdout': result.stdout,
             'stderr': result.stderr,
-            'returncode': result.returncode
+            'returncode': result.returncode,
+            'command': ' '.join(cmd) if isinstance(cmd, list) else cmd
         }
     except subprocess.TimeoutExpired:
         return {
             'success': False,
-            'error': 'Command timeout',
+            'error': 'Timeout',
             'stdout': '',
-            'stderr': 'Command exceeded 30 seconds'
+            'stderr': f'Comando excedió {timeout} segundos',
+            'command': ' '.join(cmd) if isinstance(cmd, list) else cmd
+        }
+    except FileNotFoundError as e:
+        return {
+            'success': False,
+            'error': 'Comando no encontrado',
+            'stdout': '',
+            'stderr': f'{cmd[0] if isinstance(cmd, list) else cmd} no está instalado',
+            'command': ' '.join(cmd) if isinstance(cmd, list) else cmd
         }
     except Exception as e:
         return {
             'success': False,
-            'error': str(e),
+            'error': str(type(e).__name__),
             'stdout': '',
-            'stderr': str(e)
+            'stderr': str(e),
+            'command': ' '.join(cmd) if isinstance(cmd, list) else cmd
         }
 
 def check_docker():
-    """Check if Docker is running"""
-    result = run_command(['docker', 'ps'], shell=True)
+    """Verificar si Docker está corriendo"""
+    result = run_command('docker ps', shell=True)
     return result['success']
 
 @app.route('/')
 def index():
-    """Main page"""
+    """Página principal"""
     return render_template_string(TEMPLATE)
 
 @app.route('/api/status')
 def api_status():
-    """Get containers status"""
-    result = run_command(['docker', 'ps', '-a', '--format', '{{.Names}}|{{.State}}'], shell=True)
-    
+    """Obtener estado de contenedores"""
+    docker_running = check_docker()
     containers = {}
-    if result['success']:
-        lines = result['stdout'].strip().split('\n')
-        for line in lines:
-            if line.strip():
-                parts = line.split('|')
-                if len(parts) == 2:
-                    containers[parts[0]] = {
-                        'running': parts[1] == 'running',
-                        'state': parts[1]
-                    }
+    
+    if docker_running:
+        result = run_command('docker ps -a --format "{{.Names}}|{{.State}}"', shell=True)
+        if result['success']:
+            lines = result['stdout'].strip().split('\n')
+            for line in lines:
+                if line.strip():
+                    parts = line.split('|')
+                    if len(parts) == 2:
+                        containers[parts[0]] = {
+                            'running': parts[1] == 'running',
+                            'state': parts[1]
+                        }
     
     return jsonify({
         'success': True,
         'containers': containers,
-        'docker_running': check_docker(),
+        'docker_running': docker_running,
         'timestamp': datetime.now().isoformat()
     })
 
 @app.route('/api/build', methods=['POST'])
 def api_build():
-    """Build Docker image"""
-    mode = request.json.get('mode', 'cpu')
-    
-    tag = {
-        'cpu': 'pvbesscar:latest',
-        'gpu': 'pvbesscar:latest-gpu',
-        'dev': 'pvbesscar:dev'
-    }.get(mode, 'pvbesscar:latest')
-    
-    cmd = [
-        'docker', 'build',
-        '--build-arg', 'BUILDKIT_INLINE_CACHE=1',
-        '-t', tag,
-        '.'
-    ]
-    
-    result = run_command(cmd, shell=True)
-    
-    return jsonify({
-        'success': result['success'],
-        'message': f"Image {tag} built",
-        'error': result['stderr'] if not result['success'] else None,
-        'output': result['stdout']
-    })
+    """Construir imagen Docker"""
+    try:
+        data = request.get_json() or {}
+        mode = data.get('mode', 'cpu')
+        
+        if not check_docker():
+            return jsonify({
+                'success': False,
+                'message': 'Docker daemon no disponible',
+                'error': 'Inicia Docker Desktop o Docker Engine',
+                'mode': mode
+            }), 503
+        
+        compose_file = DOCKER_COMPOSE_FILES.get(mode, 'docker-compose.yml')
+        cmd = f'docker-compose -f {compose_file} build'
+        result = run_command(cmd, shell=True, timeout=300)
+        
+        return jsonify({
+            'success': result['success'],
+            'message': f"Imagen {mode} {'construida' if result['success'] else 'error al construir'}",
+            'error': result.get('stderr', ''),
+            'output': result.get('stdout', ''),
+            'mode': mode
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': 'Error interno',
+            'error': str(e),
+            'mode': mode
+        }), 500
 
 @app.route('/api/start', methods=['POST'])
 def api_start():
-    """Start services"""
-    mode = request.json.get('mode', 'cpu')
-    
-    compose_file = DOCKER_COMPOSE_FILES.get(mode, 'docker-compose.yml')
-    
-    cmd = ['docker-compose', '-f', compose_file, 'up', '-d']
-    
-    result = run_command(cmd, shell=True)
-    
-    return jsonify({
-        'success': result['success'],
-        'message': f"Services {mode} started",
-        'error': result['stderr'] if not result['success'] else None,
-        'output': result['stdout']
-    })
+    """Iniciar servicios Docker"""
+    try:
+        data = request.get_json() or {}
+        mode = data.get('mode', 'cpu')
+        
+        if not check_docker():
+            return jsonify({
+                'success': False,
+                'message': 'Docker daemon no disponible',
+                'error': 'Inicia Docker Desktop o Docker Engine',
+                'mode': mode
+            }), 503
+        
+        compose_file = DOCKER_COMPOSE_FILES.get(mode, 'docker-compose.yml')
+        cmd = f'docker-compose -f {compose_file} up -d'
+        result = run_command(cmd, shell=True)
+        
+        return jsonify({
+            'success': result['success'],
+            'message': f"Servicios {mode} {'iniciados' if result['success'] else 'error'}",
+            'error': result.get('stderr', ''),
+            'output': result.get('stdout', ''),
+            'mode': mode
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': 'Error interno',
+            'error': str(e),
+            'mode': mode
+        }), 500
 
 @app.route('/api/stop', methods=['POST'])
 def api_stop():
-    """Stop services"""
-    mode = request.json.get('mode', 'cpu')
-    
-    compose_file = DOCKER_COMPOSE_FILES.get(mode, 'docker-compose.yml')
-    
-    cmd = ['docker-compose', '-f', compose_file, 'down']
-    
-    result = run_command(cmd, shell=True)
-    
-    return jsonify({
-        'success': result['success'],
-        'message': f"Services {mode} stopped",
-        'error': result['stderr'] if not result['success'] else None,
-        'output': result['stdout']
-    })
+    """Detener servicios Docker"""
+    try:
+        data = request.get_json() or {}
+        mode = data.get('mode', 'cpu')
+        
+        if not check_docker():
+            return jsonify({
+                'success': False,
+                'message': 'Docker daemon no disponible',
+                'error': 'Inicia Docker Desktop o Docker Engine',
+                'mode': mode
+            }), 503
+        
+        compose_file = DOCKER_COMPOSE_FILES.get(mode, 'docker-compose.yml')
+        cmd = f'docker-compose -f {compose_file} down'
+        result = run_command(cmd, shell=True)
+        
+        return jsonify({
+            'success': result['success'],
+            'message': f"Servicios {mode} detenidos",
+            'error': result.get('stderr', '') if not result['success'] else None,
+            'output': result.get('stdout', ''),
+            'mode': mode
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': 'Error interno',
+            'error': str(e),
+            'mode': mode
+        }), 500
 
 @app.route('/api/logs')
 def api_logs():
-    """Get container logs"""
-    service = request.args.get('service', 'all')
-    
-    if service == 'all':
-        cmd = ['docker-compose', 'logs', '--tail=100']
-    else:
-        cmd = ['docker', 'logs', f'pvbesscar-{service}', '--tail=100']
-    
-    result = run_command(cmd, shell=True)
-    
-    return jsonify({
-        'success': result['success'],
-        'logs': result['stdout'] if result['success'] else result['stderr'],
-        'service': service
-    })
+    """Obtener logs"""
+    try:
+        service = request.args.get('service', 'all')
+        
+        if service == 'all':
+            cmd = 'docker-compose logs --tail=100 2>&1 || echo "No logs available"'
+        else:
+            cmd = f'docker logs pvbesscar-{service} --tail=100 2>&1 || echo "Container not found"'
+        
+        result = run_command(cmd, shell=True)
+        
+        return jsonify({
+            'success': True,
+            'logs': result['stdout'] or result['stderr'] or 'No hay logs',
+            'service': service
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'logs': f'Error: {str(e)}',
+            'service': 'error'
+        }), 500
 
 @app.route('/api/health')
 def api_health():
@@ -731,7 +698,7 @@ def api_health():
     })
 
 def get_local_ip():
-    """Get local IP address"""
+    """Obtener IP local"""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         s.connect(('10.255.255.255', 1))
@@ -744,19 +711,22 @@ def get_local_ip():
 
 if __name__ == '__main__':
     print("""
-    ╔═══════════════════════════════════════════╗
-    ║  🐳 PVBESSCAR Docker Web Interface       ║
-    ║  Python 3.11 + Flask                    ║
-    ╚═══════════════════════════════════════════╝
+    ╔════════════════════════════════════════════════╗
+    ║  🐳 PVBESSCAR Docker Web Interface - MEJORADA  ║
+    ║  Python 3.11 + Flask                          ║
+    ║  Version 2.0 - Error Handling Mejorado        ║
+    ╚════════════════════════════════════════════════╝
     """)
     
     local_ip = get_local_ip()
-    print(f"\n🌐 Web Interface Available:")
+    print(f"\n🌐 Interfaz Web Disponible:")
     print(f"   Local:    http://localhost:5000")
     print(f"   Network:  http://{local_ip}:5000")
-    print(f"\n✨ Jupyter Lab (when running):")
+    print(f"\n✨ Jupyter Lab (cuando esté corriendo):")
     print(f"   CPU:  http://localhost:8888")
     print(f"   GPU:  http://localhost:8889")
-    print(f"\n📝 Press Ctrl+C to stop the server\n")
+    print(f"\n⚠️  REQUISITO: Docker Desktop debe estar corriendo")
+    print(f"   Descarga: https://www.docker.com/products/docker-desktop")
+    print(f"\n📝 Presiona Ctrl+C para detener el servidor\n")
     
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)

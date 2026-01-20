@@ -152,16 +152,16 @@ update_per_timestep: NEW → 2              (entrenamiento x2)
 
 ## 📊 RESULTADOS ESPERADOS
 
- | Métrica | Antes (Baseline) | Después (TIER 2) | Mejora |
- | --------- | ------------------ | ------------------ | -------- |
- | **Importación Pico (kWh/h)** | 280-300 | <250 | -12% |
- | **Importación Off-Peak** | 120-140 | <130 | -8% |
- | **SOC Pre-Pico (16-17h)** | 0.45-0.55 | >0.65 | +20% |
- | **SOC Pico (18-21h)** | 0.20-0.30 | >0.35 | +15% |
- | **Reward Convergencia (episodios)** | 30-40 | 15-20 | 2x ↑ |
- | **CO₂ Anual (kg)** | ~1.8e6 | <1.7e6 | -5% |
- | **Varianza Reward** | Alto | Bajo | -40% |
- | **Fairness (motos/mototaxis)** | 1.2-1.5 | <1.1 | Mejor coordinación |
+| Métrica | Antes (Baseline) | Después (TIER 2) | Mejora |
+| --------- | ------------------ | ------------------ | -------- |
+| **Importación Pico (kWh/h)** | 280-300 | <250 | -12% |
+| **Importación Off-Peak** | 120-140 | <130 | -8% |
+| **SOC Pre-Pico (16-17h)** | 0.45-0.55 | >0.65 | +20% |
+| **SOC Pico (18-21h)** | 0.20-0.30 | >0.35 | +15% |
+| **Reward Convergencia (episodios)** | 30-40 | 15-20 | 2x ↑ |
+| **CO₂ Anual (kg)** | ~1.8e6 | <1.7e6 | -5% |
+| **Varianza Reward** | Alto | Bajo | -40% |
+| **Fairness (motos/mototaxis)** | 1.2-1.5 | <1.1 | Mejor coordinación |
 
 ---
 
@@ -260,15 +260,15 @@ DESPUÉS DE IMPLEMENTAR:
 
 ## 📞 TROUBLESHOOTING RÁPIDO
 
- | Problema | Solución |
- | ---------- | ---------- |
- | No entiendo cambios | → Lee OPTIMIZATION.md parte "POR QUÉ" |
- | Error Python sintaxis | → Copia-pega código STEP_BY_STEP.md |
- | Reward diverge | → Bajar `ent_coef` a 0.01 o LR a 2e-4 |
- | Importación sigue alta | → Bajar baseline pico de 250 a 220 |
- | SOC se drena | → Aumentar bonus BESS de 0.3 a 0.5 |
- | Convergencia lenta | → Aumentar update_per_timestep a 3 |
- | Quiero revertir | → `git checkout HEAD -- src/...` |
+| Problema | Solución |
+| ---------- | ---------- |
+| No entiendo cambios | → Lee OPTIMIZATION.md parte "POR QUÉ" |
+| Error Python sintaxis | → Copia-pega código STEP_BY_STEP.md |
+| Reward diverge | → Bajar `ent_coef` a 0.01 o LR a 2e-4 |
+| Importación sigue alta | → Bajar baseline pico de 250 a 220 |
+| SOC se drena | → Aumentar bonus BESS de 0.3 a 0.5 |
+| Convergencia lenta | → Aumentar update_per_timestep a 3 |
+| Quiero revertir | → `git checkout HEAD -- src/...` |
 
 ---
 

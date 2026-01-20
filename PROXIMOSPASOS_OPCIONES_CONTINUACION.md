@@ -25,7 +25,7 @@ Generar análisis comparativo detallado entre los 3 agentes (PPO, A2C, SAC)
 
 **Tarea específica**:
 
-```
+```text
 "Analizar y comparar desempeño de PPO vs A2C vs SAC en:
 - Reward promedio durante entrenamiento
 - Estabilidad de convergencia
@@ -49,7 +49,7 @@ Ejecutar un nuevo ciclo de entrenamiento con parámetros mejorados
 
 **Tarea específica**:
 
-```
+```text
 "Entrenar nuevamente PPO/A2C/SAC con timesteps optimizados
 para conseguir mejor convergencia y reward"
 ```
@@ -68,7 +68,7 @@ Ejecutar modelos entrenados en diferentes escenarios de demanda
 
 **Tarea específica**:
 
-```
+```text
 "Validar modelos PPO/A2C/SAC en los 101 escenarios
 y generar matriz de evaluación de desempeño"
 ```
@@ -101,7 +101,7 @@ Análisis detallado del consumo de energía y emisiones CO2
 
 **Tarea específica**:
 
-```
+```text
 "Cuantificar ahorros de energía logrados con RL vs baseline:
 - Reducción CO2 (kg)
 - Picos evitados (kW)
@@ -125,7 +125,7 @@ Análisis detallado del consumo de energía y emisiones CO2
 ## 📍 Estado Actual para Referencia
 
 | Recurso | Estado | Ubicación |
-|---------|--------|-----------|
+| --- | --- | --- |
 | Checkpoints | ✅ 197 disponibles | `analyses/oe3/training/checkpoints/` |
 | Gráficas | ✅ 25 con datos reales | `analyses/oe3/training/plots/` |
 | Datasets | ✅ 476 CSV | `data/interim/oe2/` |
@@ -150,13 +150,13 @@ Análisis detallado del consumo de energía y emisiones CO2
 
 Cuando esté listo para continuar, dígame:
 
-```
+```text
 "Quiero [OPCIÓN X] porque [MOTIVO]"
 ```
 
 Ejemplo:
 
-```
+```text
 "Quiero OPCIÓN A porque necesito entender qué tan bien 
 están entrenados los modelos actuales"
 ```

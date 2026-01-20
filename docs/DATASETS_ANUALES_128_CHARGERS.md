@@ -48,14 +48,14 @@ data/interim/oe2/chargers/annual_datasets/
 
 ### Conteo Total
 
- | Elemento | Cantidad |
- | ---------- | ---------- |
- | **Playa Motos** | 112 chargers |
- | **Playa Mototaxis** | 16 chargers |
- | **Total Chargers** | **128** |
- | **Escenarios** | **101** (0 baseline + 1-100 variaciones MC) |
- | **Archivos por escenario** | 128 × 2 playas = 256 CSVs |
- | **Total Archivos** | 101 escenarios × 256 CSVs = **25,856 archivos** |
+| Elemento | Cantidad |
+| ---------- | ---------- |
+| **Playa Motos** | 112 chargers |
+| **Playa Mototaxis** | 16 chargers |
+| **Total Chargers** | **128** |
+| **Escenarios** | **101** (0 baseline + 1-100 variaciones MC) |
+| **Archivos por escenario** | 128 × 2 playas = 256 CSVs |
+| **Total Archivos** | 101 escenarios × 256 CSVs = **25,856 archivos** |
 
 ### Datos por Charger - 101 Escenarios
 

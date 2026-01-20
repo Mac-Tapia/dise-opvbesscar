@@ -8,25 +8,25 @@
 
 Se realizó una limpieza completa de archivos redundantes en la raíz del proyecto:
 
- | Métrica | Valor |
- | --------- | ------- |
- | **Archivos Analizados** | 114 |
- | **Archivos Eliminados** | 77 |
- | **Archivos Conservados** | 38 |
- | **Reducción** | 67.5% |
- | **Status** | ✅ 100% Exitoso |
+| Métrica | Valor |
+| --------- | ------- |
+| **Archivos Analizados** | 114 |
+| **Archivos Eliminados** | 77 |
+| **Archivos Conservados** | 38 |
+| **Reducción** | 67.5% |
+| **Status** | ✅ 100% Exitoso |
 
 ---
 
 ### 🗑️ Archivos Eliminados por Categoría
 
- | Categoría | Cantidad | Tipo |
- | ----------- | ---------- | ------ |
- | **BASELINE** | 5 | Comparaciones con baseline |
- | **TRAINING** | 26 | Entrenamiento de agentes |
- | **CONFIG** | 10 | Configuraciones del sistema |
- | **CLEANUP** | 36 | Scripts de limpieza/fix |
- | **TOTAL** | **77** | **Eliminados exitosamente** |
+| Categoría | Cantidad | Tipo |
+| ----------- | ---------- | ------ |
+| **BASELINE** | 5 | Comparaciones con baseline |
+| **TRAINING** | 26 | Entrenamiento de agentes |
+| **CONFIG** | 10 | Configuraciones del sistema |
+| **CLEANUP** | 36 | Scripts de limpieza/fix |
+| **TOTAL** | **77** | **Eliminados exitosamente** |
 
 ---
 
@@ -150,13 +150,13 @@ Clasificados por función:
 
 ### 📊 Impacto
 
- | Aspecto | Antes | Después | Mejora |
- | --------- | ------- | --------- | -------- |
- | Archivos .py | 114 | 38 | 67.5% ↓ |
- | Organización | Caótica | Limpia | ✅ |
- | Navegabilidad | Difícil | Fácil | ✅ |
- | Mantenimiento | Complejo | Simple | ✅ |
- | Espacio disco | ~1.5 MB | ~1.1 MB | 380 KB ↓ |
+| Aspecto | Antes | Después | Mejora |
+| --------- | ------- | --------- | -------- |
+| Archivos .py | 114 | 38 | 67.5% ↓ |
+| Organización | Caótica | Limpia | ✅ |
+| Navegabilidad | Difícil | Fácil | ✅ |
+| Mantenimiento | Complejo | Simple | ✅ |
+| Espacio disco | ~1.5 MB | ~1.1 MB | 380 KB ↓ |
 
 ---
 

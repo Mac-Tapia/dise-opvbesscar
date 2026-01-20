@@ -14,7 +14,7 @@ Push: ✅ GitHub sincronizado
 Se actualizó completamente la infraestructura Docker de PVBESSCAR con:
 
 | Mejora | Antes | Ahora | Impacto |
-|--------|-------|-------|---------|
+| -------- | ------- | ------- | --------- |
 | **Build time** | Variable | -60% BuildKit | ⚡ Más rápido |
 | **Health checks** | No | ✅ Automáticos | 🛡️ Autorecuperación |
 | **Signal handling** | Manual | ✅ Tini | 🎯 Limpio |
@@ -29,7 +29,7 @@ Se actualizó completamente la infraestructura Docker de PVBESSCAR con:
 
 ### 1. `Dockerfile` (+70 líneas)
 
-```
+```text
 ✅ Multi-stage build optimizado
 ✅ BuildKit inline cache
 ✅ Tini init para signal handling
@@ -48,7 +48,7 @@ Se actualizó completamente la infraestructura Docker de PVBESSCAR con:
 
 ### 2. `docker-compose.yml` (+60 líneas)
 
-```
+```text
 Servicios:
   ✅ pvbesscar-pipeline (pipeline)
   ✅ pvbesscar-monitor (checkpoints)
@@ -65,7 +65,7 @@ Features:
 
 ### 3. `docker-compose.gpu.yml` (+80 líneas)
 
-```
+```text
 Servicios GPU:
   ✅ pvbesscar-pipeline-gpu
   ✅ pvbesscar-monitor-gpu
@@ -82,7 +82,7 @@ GPU Config:
 
 ### 4. `docker-compose.dev.yml` (+80 líneas)
 
-```
+```text
 Servicios Desarrollo:
   ✅ dev-notebook (Jupyter)
   ✅ dev-tests (Pytest)
@@ -202,7 +202,7 @@ docker-compose -f docker-compose.dev.yml up -d
 
 ### Build Performance
 
-```
+```text
 Antes: ~3-5 min primera vez, ~2-3 min rebuild
 Ahora: ~3-5 min primera vez, ~30-60 seg rebuild (-60%)
        Gracias a BuildKit inline cache
@@ -210,7 +210,7 @@ Ahora: ~3-5 min primera vez, ~30-60 seg rebuild (-60%)
 
 ### Image Size
 
-```
+```text
 CPU image: ~1.2GB (optimizado, no cambio significativo)
 GPU image: ~2.1GB (nvidia/cuda base larger)
 Dev image: ~1.3GB (pytest, pylint, mypy added)
@@ -218,7 +218,7 @@ Dev image: ~1.3GB (pytest, pylint, mypy added)
 
 ### Features
 
-```
+```text
 Antes:
   ✗ Sin health checks
   ✗ Sin signal handling
@@ -334,7 +334,7 @@ pvbesscar-jupyter:
 
 ### Commit 1: 1839140d
 
-```
+```text
 feat: actualización construcción Docker con BuildKit, 
       Tini, health checks y servicios integrados
 
@@ -352,7 +352,7 @@ feat: actualización construcción Docker con BuildKit,
 
 ### Commit 2: 56852630
 
-```
+```text
 docs: agregar resumen de actualización Docker 
       con benchmarks y next steps
 
@@ -362,7 +362,7 @@ docs: agregar resumen de actualización Docker
 
 ### Push
 
-```
+```text
 ✅ Pushed to https://github.com/Mac-Tapia/dise-opvbesscar
    1839140d..56852630  main -> main
 ```
@@ -419,7 +419,7 @@ docker inspect --format='{{json .State.Health}}' pvbesscar-pipeline
 
 ### 4. Access
 
-```
+```text
 Jupyter: http://localhost:8888
 Logs:    docker-compose logs -f
 Stats:   docker stats
@@ -429,7 +429,7 @@ Stats:   docker stats
 
 ## 📚 Documentation Structure
 
-```
+```text
 DOCKER_BUILD_GUIDE.md (Principal)
 ├── Quick Start
 ├── Build Commands
@@ -455,7 +455,7 @@ RESUMEN_CONSTRUCCION_DOCKER_ACTUALIZADA.md (Validación)
 
 ## ✨ Características Principales
 
-```
+```text
 🏗️  Multi-stage build
     - Builder stage
     - Runtime stage

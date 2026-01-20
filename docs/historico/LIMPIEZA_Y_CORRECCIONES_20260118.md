@@ -96,10 +96,10 @@ oe3:
 
 ## ARCHIVOS IMPORTANTES
 
- | Archivo | Propósito |
- | --------- | ----------- |
- | `scripts/run_oe3_simulate.py` | Script oficial de entrenamiento |
- | `train_gpu_robusto.py` | Script simplificado con verificaciones |
- | `test_citylearn_env.py` | Prueba del entorno |
- | `configs/default.yaml` | Configuración principal |
- | `data/interim/oe2/chargers/individual_chargers.json` | 128 cargadores |
+| Archivo | Propósito |
+| --------- | ----------- |
+| `scripts/run_oe3_simulate.py` | Script oficial de entrenamiento |
+| `train_gpu_robusto.py` | Script simplificado con verificaciones |
+| `test_citylearn_env.py` | Prueba del entorno |
+| `configs/default.yaml` | Configuración principal |
+| `data/interim/oe2/chargers/individual_chargers.json` | 128 cargadores |
