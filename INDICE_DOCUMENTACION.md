@@ -90,6 +90,19 @@
 
 ---
 
+### 7. **COMPARACION_BASELINE_VS_RL.txt** ← 🧠 RESULTADOS + ARQUITECTURAS RL
+
+- Tablas comparativas (Baseline vs PPO/A2C/SAC) con métricas anuales (CO₂, costo, solar, picos, satisfacción EV, energía perdida).
+- Versión CityLearn v2 de los mismos agentes y métricas.
+- Arquitectura de cada agente:
+  - SAC: actor estocástico, doble crítico con redes objetivo y soft update (τ), replay buffer off-policy, loss α·logπ−Q, normalización de obs/reward.
+  - PPO: actor-crítico con clipping y GAE, actualizaciones on-policy por minibatch, entropía fija 0.02.
+  - A2C: actor-crítico on-policy, actualización síncrona cada n_steps, entropía para exploración, sin replay buffer.
+
+**Lectura:** 5-10 min | **Dificultad:** Intermedio | **Mejor para:** Comparar desempeño y entender diseño de agentes
+
+---
+
 ## 🎮 Programas/Scripts
 
 ### **simulador_interactivo.py** ← 🎮 PROGRAMA INTERACTIVO
