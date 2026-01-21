@@ -141,7 +141,7 @@ python k8s_manager.py forward mongodb  # 27017
 python k8s_manager.py scale 3
 ```
 
-### MongoDB
+### MongoDB (CLI)
 
 ```bash
 python k8s_manager.py mongo status
@@ -214,7 +214,7 @@ http://pvbesscar.local
 https://pvbesscar.local (con TLS)
 ```
 
-### Port Forward
+### Port Forward (Ingress/Servicios)
 
 ```bash
 # Terminal 1: Web
@@ -334,7 +334,7 @@ Mounts: /app/outputs
 
 ## 🧪 Health Checks
 
-### MongoDB
+### MongoDB Health Checks
 
 ```yaml
 Liveness:

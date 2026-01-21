@@ -186,7 +186,7 @@ python k8s_manager.py logs
 python k8s_manager.py logs --pod pvbesscar-pipeline-0
 ```
 
-### Port Forward
+### Port Forward (básico)
 
 ```bash
 python k8s_manager.py forward web      # 5000
@@ -224,7 +224,7 @@ python k8s_manager.py delete
 | MongoDB | localhost:27017 | 192.168.43.30:27017 |
 | Ingress | <http://pvbesscar.local> | (requiere DNS) |
 
-### Port Forward
+### Port Forward (diagnóstico)
 
 ```bash
 # Terminal 1
@@ -399,7 +399,7 @@ Métricas incluidas:
    kubectl get all -n pvbesscar
    ```
 
-### 5. **Port Forward**
+### 5. **Port Forward (guía rápida)**
 
    ```bash
    python k8s_manager.py forward web

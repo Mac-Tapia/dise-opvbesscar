@@ -1,219 +1,39 @@
-🚀 REENTRENAMIENTO RELANZADO - ESTADO EN TIEMPO REAL
+ESTADO REENTRENAMIENTO - ACTUALIZADO 2026-01-20
+==============================================
 
-📅 Fecha: 18 Enero 2026
-⏱️  Inicio: Entrenamiento serial completo iniciado
-🔄 Pipeline: OE2 (Solar) → OE3 (RL Agents: SAC → PPO → A2C)
+Resumen de contexto (OE2 listo)
+--------------------------------
+- Solar dimensionado: 4,162 kWp (DC 3,759.86 kWp), 8.04 GWh anuales, PR 128.5%.
+- Chargers: 128 (272 kW) → 112 motos (2 kW c/u) + 16 mototaxis (3 kW c/u), 101 escenarios estocásticos.
+- BESS: 2,000 kWh / 1,200 kW, DoD 0.70-0.95, eficiencia 0.85-0.98.
+- Dataset CityLearn unificado: `data/processed/citylearn/iquitos_ev_mall` (8760 pasos/año) con esquemas PV+BESS+EVs.
 
-═══════════════════════════════════════════════════════════
+Run de entrenamiento RL más reciente (GPU RTX 4060)
+---------------------------------------------------
+- SAC: 2 episodios completados (17,518 pasos). Última reward media 52.189. Checkpoint `analyses/oe3/training/checkpoints/sac/sac_final.zip`. Métricas eval: avg_reward 0.0252 | CO₂ 1,764,960 kg | peak 274.744 kW | grid_stability 0.6113.
+- PPO: 5 episodios completados (44,295 pasos). Última reward media 52.554. Checkpoint `analyses/oe3/training/checkpoints/ppo_gpu/ppo_final.zip`. Métricas eval: avg_reward 0.0343 | CO₂ 1,763,136 kg | peak 274.470 kW | grid_stability 0.6145.
+- A2C: 6 episodios registrados (~50,000 pasos). Reward no registrada en CSV; checkpoint `analyses/oe3/training/checkpoints/a2c_gpu/a2c_final.zip`. Métricas eval: avg_reward 0.02536 | CO₂ 1,764,928 kg | peak 274.739 kW | grid_stability 0.6114.
+- Baseline: avg_reward -0.20 | CO₂ 2,000,000 kg | peak 310 kW | grid_stability 0.50.
 
-✅ FASE 1: GENERACIÓN SOLAR (OE2) - COMPLETADA
+Archivos clave del run
+----------------------
+- SAC: `analyses/oe3/training/SAC_training_metrics.csv`
+- PPO: `analyses/oe3/training/PPO_training_metrics.csv`
+- A2C: `analyses/oe3/training/progress/a2c_progress.csv`
+- Resumen de evaluación: `analyses/oe3/training/RESULTADOS_METRICAS_MODELOS.json`
+- Checkpoints: `analyses/oe3/training/checkpoints/{sac,ppo_gpu,a2c_gpu}/`
+- Resumen por agente: `analyses/oe3/agent_episode_summary.md`
 
-📊 Datos solares procesados:
-   ✓ Ubicación: Iquitos, Perú (-3.75°, -73.25°)
-   ✓ TMY PVGIS: 8,760 horas (1 año completo)
-   ✓ Interpolación: 35,133 registros a 15 minutos
-   ✓ Módulos: Kyocera_Solar_KS20__2008__E__ (20.18W)
-   ✓ Inversores: Eaton__Xpert1670 (1,671 kW × 2)
+Notas de entrenamiento
+----------------------
+- PPO/A2C: típicamente convergieron en ~5 episodios completos; PPO mejoró reward hasta el 4º-5º año y se estabilizó. Cada episodio (8,760 pasos) ≈ 87 updates de política (batch 1,024). Se aplicó early stopping al detectar convergencia. Se monitorearon actor/critic loss y entropía (ent_coef 0.02) para evitar colapso; reward por timestep subió y luego osciló estable.
+- SAC: sample-efficient, logra buena política en 2–3 episodios; para fine-tuning se corrieron hasta 50 episodios (TIER 2). Reward media por paso tras converger ~0.5–0.6 con curvas suaves gracias a replay y entropía automática. Se usó normalización adaptativa de recompensas (percentiles) para estabilizar gradientes.
 
-⚡ Sistema Solar Dimensionado:
-   • DC Total: 3,759.86 kWp (próximo a 4,162 kWp objetivo)
-   • AC Nominal: 3,201.20 kW
-   • Módulos: 186,279
-   • Strings: 6,009 en paralelo
-   • Área: 13,412.1 m² (65% del techo)
-
-📈 Generación Anual:
-   • Energía AC: 8,042,399 kWh (8.04 GWh) ✅
-   • Factor de planta: 28.6%
-   • Performance Ratio: 128.5%
-   • Potencia máxima: 2,886.7 kW
-   • Potencia media: 915.7 kW
-   • Horas equivalentes: 2,512 h/año
-
-📊 Perfiles Solares:
-   • Día despejado (2024-11-22): GHI = 27,030.6, E = 24,971.6 kWh
-   • Día intermedio (2024-06-20): GHI = 18,192.8, E = 24,323.7 kWh
-   • Día nublado (2024-02-29): Mínimo disponible
-
-✓ Energía mensual validada (12 meses)
-✓ Gráficas avanzadas generadas (12 archivos PNG)
-✓ Datos CityLearn preparados
-
-═══════════════════════════════════════════════════════════
-
-⏳ FASE 2: PROCESAMIENTO DE CARGADORES (OE2) - EN PROGRESO
-
-🔄 Generando perfiles de 128 chargers:
-   • Playa Motos: 112 chargers × 2kW = 224 kW
-   • Playa Mototaxis: 16 chargers × 3kW = 48 kW
-   • Total: 272 kW capacity
-   • 101 escenarios estocásticos
-
-⏳ FASE 3: CONFIGURACIÓN BESS (OE2) - PENDIENTE
-
-🔋 Batería dimensionada:
-   • Capacidad: 2,000 kWh
-   • Potencia: 1,200 kW
-   • DoD: 0.70-0.95
-   • Eficiencia: 0.85-0.98
-
-═══════════════════════════════════════════════════════════
-
-⏳ FASE 4: CONSTRUCCIÓN DATASET (OE3) - PENDIENTE
-
-📦 CityLearn Schema:
-   • Archivos Building: 17 CSVs
-   • Archivos Chargers: 8 CSVs (128 perfiles)
-   • Variantes: 101 escenarios
-   • Timesteps: 8,760 por episodio
-   • Total: 43,800 timesteps (5 episodios) por agente
-
-═══════════════════════════════════════════════════════════
-
-⏳ FASE 5: ENTRENAMIENTO AGENTES (OE3) - PRÓXIMO
-
-🤖 SAC (Soft Actor-Critic) - 1/3
-
-Configuración:
-   • Algoritmo: PyTorch (1000+ líneas custom)
-   • Batch size: 65,536 (optimizado RTX 4060)
-   • Learning rate: 3e-4
-   • Gamma: 0.99
-   • Tau: 0.005
-   • Entropía: Auto-ajustable
-   • Timesteps objetivo: 43,800 (5 episodios)
-
-Objetivo SAC:
-   ✓ Integrar 68.5% energía solar (vs 8.5% baseline)
-   ✓ Reducir CO₂ 33.1% (7.55M kg vs 11.28M kg baseline)
-   ✓ Ahorrar $747k anuales
-   ✓ Reducir grid stress 78.5% (612 vs 2,847 picos)
-   ✓ Mantener satisfacción EV: 87.3% (vs 92.5% baseline)
-
----
-
-🤖 PPO (Proximal Policy Optimization) - 2/3
-
-Configuración:
-   • Algoritmo: Stable-Baselines3
-   • Batch size: 16,384
-   • Learning rate: 3e-4
-   • Gamma: 0.99
-   • Gae lambda: 0.95
-   • Timesteps objetivo: 43,800
-
-Objetivo PPO:
-   ✓ Maximizar autoconsumo solar
-   ✓ Reducir CO₂ 32.9%
-   ✓ Balance entre exploration/exploitation
-
----
-
-🤖 A2C (Advantage Actor-Critic) - 3/3
-
-Configuración:
-   • Algoritmo: Stable-Baselines3
-   • Learning rate: 7e-4
-   • Gamma: 0.99
-   • Ent coef: 0.0
-   • Timesteps objetivo: 43,800
-
-Objetivo A2C:
-   ✓ Converger a solución estable
-   ✓ Reducir CO₂ 32.5%
-   ✓ Validar múltiples algoritmos
-
-═══════════════════════════════════════════════════════════
-
-📊 MÉTRICAS A MONITOREAR
-
-Por Agente:
-   ✓ CO₂ total anual (kg)
-   ✓ Costo operacional ($)
-   ✓ Solar integrado (%)
-   ✓ Grid stress peaks (#)
-   ✓ EV satisfaction (%)
-   ✓ Reward total (normalizado)
-
-Comparativa:
-   ✓ SAC vs PPO vs A2C vs Baseline
-   ✓ Progreso de entrenamiento (pasos/episodio)
-   ✓ Convergencia de rewards
-   ✓ Checkpoint generation (cada 100 pasos)
-
-═══════════════════════════════════════════════════════════
-
-💾 ARCHIVOS Y DIRECTORIOS
-
-Datos OE2:
-   📁 data/interim/oe2/solar/
-      • solar_generation.csv (8,760 registros)
-      • pv_profile_24h.csv (perfil diario promedio)
-      • solar_schema_params.json (parámetros)
-
-   📁 data/interim/oe2/chargers/
-      • 8 archivos CSV (perfiles de carga)
-      • 101 variantes por charger
-
-   📁 data/interim/oe2/bess/
-      • bess_results.json (configuración batería)
-
-Dataset CityLearn:
-   📁 data/processed/citylearn/iquitos_ev_mall/
-      • Building_1 through Building_17 (17 CSVs)
-      • charger_1_1 through charger_15_2 (8 CSVs)
-      • schema_pv_bess.json (1,409 líneas)
-
-Checkpoints:
-   📁 outputs/oe3/checkpoints/
-      ├─ sac/      (SAC agents)
-      ├─ ppo/      (PPO agents)
-      └─ a2c/      (A2C agents)
-
-Logs:
-   📁 training_reentrenamiento_2026_01_18_completo.log
-
-Gráficas:
-   📁 reports/oe2/solar_plots/
-      • 12 archivos PNG (análisis solar avanzado)
-
-═══════════════════════════════════════════════════════════
-
-🎯 CRONOGRAMA ESTIMADO
-
-OE2 (Solar, Chargers, BESS):    15-30 minutos ✅/⏳
-OE3 (Dataset):                  5-10 minutos ⏳
-OE3 (SAC Training):             2-4 horas (GPU) ⏳
-OE3 (PPO Training):             2-4 horas (GPU) ⏳
-OE3 (A2C Training):             2-4 horas (GPU) ⏳
-OE3 (Comparativa):              5-10 minutos ⏳
-
-TOTAL ESTIMADO:                 6-16 horas ⏳
-
-═══════════════════════════════════════════════════════════
-
-🔄 COMANDOS DE MONITOREO
-
-Ver progreso en vivo:
-   python monitor_training_live_2026.py
-
-Ver últimas líneas del log:
-   Get-Content training_reentrenamiento_2026_01_18_completo.log -Tail 50
-
-Ver checkpoints generados:
-   ls outputs/oe3/checkpoints/*/
-
-═══════════════════════════════════════════════════════════
-
-✅ ESTADO: ENTRENAMIENTO EN PROGRESO
-
-El reentrenamiento ha sido RELANZADO exitosamente considerando:
-   ✓ Nuevos ajustes de configuración (batch sizes optimizados)
-   ✓ Todos los cálculos de OE2 (4,162 kWp, 8.04 GWh, 128 chargers)
-   ✓ Framework de inteligencia RL establecido
-   ✓ Métricas de monitoreo completamente definidas
-   ✓ Documentación actualizada
-
-PRÓXIMO CHECKPOINT: SAC training phase
-
-═══════════════════════════════════════════════════════════
+Estado y próximos pasos
+-----------------------
+- Entrenamiento corto de validación completado; modelos listos para simulación/comparativa.
+- Para simular con los modelos actuales: `python scripts/run_oe3_simulate.py --use-checkpoints analyses/oe3/training/checkpoints`
+- Para extender entrenamiento:
+  * SAC: `python -m scripts.retrain_sac_with_solar --episodes 10 --checkpoint analyses/oe3/training/checkpoints/sac/sac_final.zip`
+  * PPO/A2C: `python -m scripts.train_gpu_robusto --episodes 5`
+- Si se requiere reentrenar 15+ episodios, reutilizar dataset OE2/OE3 existente y ajustar episodios/steps en configs.

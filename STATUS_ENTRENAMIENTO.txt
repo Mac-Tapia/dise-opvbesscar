@@ -1,224 +1,39 @@
-╔════════════════════════════════════════════════════════════════════════════════╗
-║                                                                                ║
-║                  ✅ ENTRENAMIENTO SERIAL LANZADO EXITOSAMENTE                 ║
-║                                                                                ║
-╚════════════════════════════════════════════════════════════════════════════════╝
+ESTADO ENTRENAMIENTO RL - ACTUALIZACIÓN 2026-01-20
+==================================================
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 ESTADO ACTUAL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Resumen del run más reciente (GPU RTX 4060, logs en analyses/oe3/training)
+----------------------------------------------------------------------------
+Agente | Episodios | Pasos    | Última reward media | Checkpoint final
+SAC    | 2         | 17,518   | 52.189              | analyses/oe3/training/checkpoints/sac/sac_final.zip
+PPO    | 5         | 44,295   | 52.554              | analyses/oe3/training/checkpoints/ppo_gpu/ppo_final.zip
+A2C    | 6         | 50,000   | s/d (no log)        | analyses/oe3/training/checkpoints/a2c_gpu/a2c_final.zip
 
-Agente Entrenando:    🔴 SAC (Episodio 1/5)
-Inicio:               2026-01-18 12:31:03
-GPU:                  NVIDIA GeForce RTX 4060 (8.6 GB VRAM)
-Python:               3.11.9 + PyTorch CUDA ✅
-Checkpoints:          Guardándose cada 100 steps ✅
+Métricas de evaluación (analyses/oe3/training/RESULTADOS_METRICAS_MODELOS.json)
+-------------------------------------------------------------------------------
+- SAC: avg_reward 0.0252 | CO₂ 1,764,960 kg | peak 274.744 kW | grid_stability 0.6113
+- PPO: avg_reward 0.0343 | CO₂ 1,763,136 kg | peak 274.470 kW | grid_stability 0.6145
+- A2C: avg_reward 0.02536 | CO₂ 1,764,928 kg | peak 274.739 kW | grid_stability 0.6114
+- Baseline: avg_reward -0.20 | CO₂ 2,000,000 kg | peak 310 kW | grid_stability 0.50
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 FLUJO AUTOMÁTICO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Logs y progresos de referencia
+------------------------------
+- SAC: analyses/oe3/training/SAC_training_metrics.csv (episodios 2 @ 17,518 pasos)
+- PPO: analyses/oe3/training/PPO_training_metrics.csv (episodios 5 @ 44,295 pasos)
+- A2C: analyses/oe3/training/progress/a2c_progress.csv (último registro: episodio 6 @ 50,000 pasos)
+- Resumen por agente: analyses/oe3/agent_episode_summary.md
 
-1. SAC Entrenando (1-2 horas)
-   ├─ Episodios: 5
-   ├─ Timesteps: 43,800 (8,760 × 5)
-   ├─ Checkpoints: Cada 100 steps (sac_step_*.zip)
-   └─ Reward Multi-Objetivo: CO₂(45%) + Cost(14%) + Solar(18%) + EV(9%) + Grid(5%)
+Estado actual
+-------------
+- Entrenamiento corto de validación completado con checkpoints consolidados.
+- Modelos listos para simulación y comparativas: `analyses/oe3/training/checkpoints/(sac|ppo_gpu|a2c_gpu)`.
+- Dataset CityLearn y perfiles EV se mantienen sin cambios respecto a OE2/OE3.
 
-2. PPO Iniciará Automáticamente (2-3 horas)
-   ├─ Detectado: SAC completado
-   ├─ Inicia: Automático (sin intervención)
-   └─ Checkpoints: Cada 500 steps
-
-3. A2C Iniciará Automáticamente (1-2 horas)
-   ├─ Detectado: PPO completado
-   ├─ Inicia: Automático (sin intervención)
-   └─ Checkpoints: Cada 500 steps
-
-TOTAL: 5-7 HORAS ⏱️
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📈 PROGRESO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-SAC  : ████████░░░░░░░░░░░░ (20% - Episodio 1/5)
-PPO  : ░░░░░░░░░░░░░░░░░░░░ (0% - Esperando...)
-A2C  : ░░░░░░░░░░░░░░░░░░░░ (0% - Esperando...)
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✨ CARACTERÍSTICAS HABILITADAS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-✅ Entrenamiento Serial: SAC → PPO → A2C (uno tras otro)
-✅ Checkpoints Automáticos: Guardando cada 100-500 steps
-✅ Resume Automático: Detecta último checkpoint al relanzar
-✅ Paso Automático: Pasa al siguiente agente sin intervención
-✅ GPU Optimizada: Batch sizes adaptados a RTX 4060
-✅ Multi-Objetivo: CO₂ prioritario (45%)
-✅ Logging Detallado: Progreso en CSV + JSON
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 ARCHIVOS GENERADOS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Checkpoints:
-  outputs/oe3/checkpoints/SAC/
-    ├─ sac_step_100.zip
-    ├─ sac_step_200.zip
-    └─ sac_final.zip (cuando SAC termine)
-
-Resultados:
-  outputs/oe3/simulations/
-    ├─ result_SAC.json
-    ├─ result_PPO.json
-    └─ result_A2C.json
-
-Reportes:
-  outputs/oe3/
-    ├─ training_summary.json
-    └─ plots/
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 CÓMO MONITOREAR
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-OPCIÓN 1: Monitor EN VIVO (Recomendado)
-────────────────────────────────────────
-Abre otra terminal y ejecuta:
-
-  .venv\Scripts\Activate.ps1
-  python monitor_live.py
-
-Mostrará:
-  Agent     | Episodes | Timesteps | Checkpoint      | Status
-  SAC       | 1        | 8,760     | sac_step_*.zip  | 🔄 20%
-  PPO       | 0        | 0         | -               | ⏳ Esperando
-  A2C       | 0        | 0         | -               | ⏳ Esperando
-
-
-OPCIÓN 2: Ver Logs en Terminal Original
-──────────────────────────────────────────
-Observa la terminal donde corre:
-  python train_agents_serial_auto.py
-
-Verás logs en tiempo real del entrenamiento.
-
-
-OPCIÓN 3: Checkpoints en Sistema de Archivos
-──────────────────────────────────────────────
-  dir outputs/oe3/checkpoints/SAC/
-
-Deberías ver archivos como:
-  sac_step_100.zip
-  sac_step_200.zip
-  sac_step_300.zip
-  ... etc
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⏱️ TIMELINE ESTIMADO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Fase    Agente  Episodios  Horas Est.  Fin Aproximado
-────────────────────────────────────────────────────────
-  1       SAC       5        1.5-2h     ~14:30
-  2       PPO       5        2-3h       ~17:00
-  3       A2C       5        1.5-2h     ~19:30
-────────────────────────────────────────────────────────
-TOTAL              15        5-7h       ~19:30
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 LO QUE SE LANZÓ
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-✅ Script Principal: train_agents_serial_auto.py
-✅ Configuración Optimizada: configs/default_optimized.yaml
-✅ Entorno: Python 3.11.9 + PyTorch + CUDA
-✅ GPU: RTX 4060 detectada y optimizada
-✅ Dataset: CityLearn schemas validados
-✅ Agentes: SAC, PPO, A2C configurados
-✅ Checkpoints: Sistema de guardado automático
-✅ Rewards: Multi-objetivo CO₂-prioritario compilado
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🛑 SI ALGO FALLA
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Opción 1: Presiona Ctrl+C y relanza
-────────────────────────────────────
-  python train_agents_serial_auto.py
-
-El script detectará el último checkpoint y continuará desde ahí.
-
-
-Opción 2: Continuar desde punto específico
-────────────────────────────────────────────
-# Continuar SAC con 10 más episodios
-  python -m scripts.continue_sac_training \
-    --config configs/default_optimized.yaml \
-    --episodes 10
-
-
-Opción 3: Ver documentación
-────────────────────────────
-  ENTRENAMIENTO_EN_PROGRESO.md
-  ENTRENAMIENTO_LANZADO.md
-  GUIA_VER_PROGRESO.md
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 RESULTADOS ESPERADOS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Métrica                    SAC        PPO        A2C        Baseline
-─────────────────────────────────────────────────────────────────────
-CO₂ Reducción         38-40% ✨   35-37%     32-35%        0%
-Avg Reward            50-55      45-50      40-45       20-25
-Grid Import Mín       Mín        Moderado   Moderado      Máx
-Solar Usado           75%        70%        65%          40%
-Estabilidad Training  Muy Alto   Alto       Medio-Alto    -
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ CHECKLIST: TODO LISTO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-[✓] train_agents_serial_auto.py ejecutándose
-[✓] GPU (RTX 4060) detectada
-[✓] Configuración optimizada generada
-[✓] 3 agentes listos (SAC, PPO, A2C)
-[✓] Checkpoints guardándose
-[✓] Paso automático entre agentes
-[✓] Rewards multiobjetivo compilados
-[✓] Resume automático configurado
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📖 PRÓXIMOS PASOS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-AHORA (Sin intervención manual):
-  1️⃣  SAC entrena automáticamente
-  2️⃣  Cuando SAC termine → PPO inicia
-  3️⃣  Cuando PPO termine → A2C inicia
-  4️⃣  Cuando A2C termine → Reporte final
-
-MONITOREO (Opcional):
-  🔍 Terminal nueva: python monitor_live.py
-
-CUANDO TERMINEN TODOS (5-7 horas):
-  📊 Ver resultados: outputs/oe3/
-  📈 Analizar gráficos: outputs/oe3/plots/
-  📋 Comparar: python scripts/compare_baseline_vs_retrain.py
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🎉 ¡ENTRENAMIENTO LANZADO EXITOSAMENTE!
-
-Script Ejecutando:  train_agents_serial_auto.py
-Inicio:             2026-01-18 12:31:03
-Duración Est.:      5-7 horas
-Fin Estimado:       ~19:30
-
-✨ TODO ESTÁ AUTOMATIZADO - No requiere intervención manual ✨
-
-╔════════════════════════════════════════════════════════════════════════════════╗
-║                                                                                ║
-║               🟢 ESTADO: EN PROGRESO - SAC ENTRENANDO (1/5)                    ║
-║                                                                                ║
-╚════════════════════════════════════════════════════════════════════════════════╝
+Siguientes acciones recomendadas
+--------------------------------
+1) Simular con checkpoints actuales:
+   `python scripts/run_oe3_simulate.py --use-checkpoints analyses/oe3/training/checkpoints`
+2) Extender entrenamiento:
+   - SAC: `python -m scripts.retrain_sac_with_solar --episodes 10 --checkpoint analyses/oe3/training/checkpoints/sac/sac_final.zip`
+   - PPO/A2C: `python -m scripts.train_gpu_robusto --episodes 5`
+3) Ver métricas rápidas:
+   `python EVALUACION_METRICAS_MODELOS.py`

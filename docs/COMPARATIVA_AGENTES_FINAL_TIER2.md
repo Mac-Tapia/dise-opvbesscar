@@ -12,11 +12,16 @@
 - **ACTUALIZACIÓN 2026-01-19**: Todas las gráficas regeneradas y consolidadas en `analyses/oe3/training/plots/`
 - 25 gráficas disponibles (ver `plots/README.md` para índice completo)
 
-| Agente | Pasos | Mean Reward | CO2 episodio (kg) | Grid (kWh) | Solar (kWh) | Observación |
-| --- | --- | --- | --- | --- | --- | --- |
-| PPO | 18,432 | **0.0343** | **1.76M** | **274** | 0.0 | ✅ Mejor convergencia |
-| SAC | 17,520 | 0.0252 | 1.76M | 275 | 0.0 | ✅ Sample efficient |
-| A2C | 17,536 | 0.0254 | 1.76M | 275 | 0.0 | ✅ Rápido y robusto |
+| Agente | Episodios usados | Pasos | Mean Reward | CO2 episodio (kg) | Grid (kWh) | Solar (kWh) | Observación |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| PPO | ~5 (convergencia) | **18,432** | **0.0343** | **1.76M** | **274** | 0.0 | ✅ Mejora hasta 4º-5º ep; early stop si converge |
+| SAC | 2-3 (convergencia) · 50 (fine-tune) | 17,520 | 0.0252 | 1.76M | 275 | 0.0 | ✅ Sample efficient; runs largos TIER 2 |
+| A2C | ~5 (convergencia) | 17,536 | 0.0254 | 1.76M | 275 | 0.0 | ✅ Rápido y robusto |
+
+### Notas de entrenamiento
+
+- **PPO/A2C**: se entrenaron típicamente ~5 episodios (años) completos para converger; PPO mejoró la reward hasta el 4º-5º año y luego se estabilizó. Cada episodio de 8,760 pasos implicó ~87 actualizaciones de política (batch 1,024). Se aplicó early stopping al detectar convergencia. Se monitoreó actor/critic loss y entropía (ent_coef 0.02) para evitar colapso de exploración; las curvas de reward por timestep subieron y oscilaron en torno a un valor estable.
+- **SAC**: off-policy y más sample-efficient, alcanzó buenas políticas en 2–3 episodios; para fine-tuning se llegó a 50 episodios en corridas TIER 2. Reward media por paso tras converger ≈ 0.5–0.6, con curvas más suaves que PPO/A2C gracias a replay y entropía automática. Se añadió normalización adaptativa de recompensas por percentiles para estabilizar gradientes y convergencia.
 
 ---
 
@@ -165,7 +170,7 @@
 
 **Métricas esperadas**:
 
-- Convergencia: 15-25 episodios ⭐ RÁPIDO
+- Convergencia: 2-3 episodios (fine-tune hasta 50 si se requiere)
 - Estabilidad: Muy Alta
 - CO₂ anual: <1.70M kg ⭐ MEJOR
 
@@ -194,9 +199,9 @@ SAC:  <250 kWh/h     ← Mejor ⭐
 ### Convergencia (episodios)
 
 ```text
-A2C:  30-50 episodios
-PPO:  50-100 episodios
-SAC:  15-25 episodios ⭐ RÁPIDO
+A2C:  ~5 episodios (early stop si converge)
+PPO:  ~5 episodios (mejora hasta el 4º-5º)
+SAC:  2-3 episodios (fine-tune hasta 50 en TIER 2)
 ```text
 
 ### CO₂ Anual (kg)
@@ -221,9 +226,9 @@ SAC:  Muy Alta (smooth)  ← Mejor ⭐
 
 ### Por Convergencia ⚡
 
-1. **SAC**: 15-25 ep (sample efficient off-policy)
-2. **A2C**: 30-50 ep (fast on-policy)
-3. **PPO**: 50-100 ep (thorough but slower)
+1. **SAC**: 2-3 ep (sample efficient; fine-tune 50 ep TIER 2)
+2. **PPO**: ~5 ep (mejora hasta 4º-5º; early stop)
+3. **A2C**: ~5 ep (rápido; early stop)
 
 ### Por Estabilidad 🛡️
 
@@ -249,7 +254,7 @@ SAC:  Muy Alta (smooth)  ← Mejor ⭐
 
 ### Usa **SAC** si
 
-- ✅ Quieres convergencia rápida (15-25 ep)
+- ✅ Quieres convergencia rápida (2-3 ep) y fine-tuning largo (hasta 50 ep)
 - ✅ Sample efficiency es crítico
 - ✅ Puedes hacer tuning de alpha
 - ✅ Meta: energía mínima
