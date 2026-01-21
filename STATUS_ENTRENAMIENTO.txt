@@ -5,8 +5,8 @@ Resumen del run más reciente (GPU RTX 4060, logs en analyses/oe3/training)
 ----------------------------------------------------------------------------
 Agente | Episodios | Pasos    | Última reward media | Checkpoint final
 SAC    | 2         | 17,518   | 52.189              | analyses/oe3/training/checkpoints/sac/sac_final.zip
-PPO    | 5         | 44,295   | 52.554              | analyses/oe3/training/checkpoints/ppo_gpu/ppo_final.zip
-A2C    | 6         | 50,000   | s/d (no log)        | analyses/oe3/training/checkpoints/a2c_gpu/a2c_final.zip
+PPO    | 2         | 17,520   | 52.554              | analyses/oe3/training/checkpoints/ppo_gpu/ppo_final.zip
+A2C    | 2         | 17,536   | s/d (no log)        | analyses/oe3/training/checkpoints/a2c_gpu/a2c_final.zip
 
 Métricas de evaluación (analyses/oe3/training/RESULTADOS_METRICAS_MODELOS.json)
 -------------------------------------------------------------------------------
