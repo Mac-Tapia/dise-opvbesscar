@@ -20,13 +20,13 @@ checkpoints = sorted(
 if checkpoints:
     latest = checkpoints[-1]
     step_num = int(latest.stem.split("_")[-1])
-    total_steps = 5 * 8760  # 5 episodios x 8760 timesteps
+    total_steps = 2 * 8760  # 2 episodios x 8760 timesteps
     
     print("┌─────────────────────────────────────────────────────────────────────────────┐")
     print("│  ⚙️  CONFIGURACIÓN DEL ENTRENAMIENTO                                         │")
     print("├─────────────────────────────────────────────────────────────────────────────┤")
     print(f"│  Agente:                 SAC (Soft Actor-Critic)                            │")
-    print(f"│  Episodios:              5 (8760 timesteps c/u = 43,800 pasos totales)     │")
+    print(f"│  Episodios:              2 (8760 timesteps c/u = 17,520 pasos totales)     │")
     print(f"│  GPU:                    NVIDIA T4 (8.6 GB VRAM)                            │")
     print(f"│  Mixed Precision (AMP):  ✓ HABILITADO (2x más rápido)                      │")
     print(f"│  Batch Size:             8192 (máximo para T4)                              │")

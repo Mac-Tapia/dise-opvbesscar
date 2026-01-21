@@ -20,8 +20,8 @@ Análisis completo del desempeño de PPO vs A2C vs SAC
 
 ## 2. Configuraciones de Modelos Documentadas
 
-- **PPO**: 43,800 steps, batch_size=16,384, n_epochs=10, lr=0.0003
-- **A2C**: 8,760 steps, batch_size=1,024, lr=0.0003
+- **PPO**: 17,520 steps, batch_size=16,384, n_epochs=10, lr=0.0003
+- **A2C**: 17,520 steps, batch_size=1,024, lr=0.0003
 - **SAC**: 2 episodes, batch_size=32,768, buffer_size=500,000
 
 ## 3. Rankings de Desempeño

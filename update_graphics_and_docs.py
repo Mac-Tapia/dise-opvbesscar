@@ -253,7 +253,7 @@ Multi-objective RL training for EV charging optimization in Iquitos isolated gri
 - **Infrastructure**: 4162 kWp PV + 2000 kWh BESS + 128 EV chargers
 - **Dataset**: iquitos_ev_mall (Mall Iquitos rooftop)
 - **Grid**: Thermal grid (0.4521 kg CO₂/kWh)
-- **Training**: 5 episodes per agent (SAC, PPO, A2C)
+- **Training**: 2 episodes per agent (SAC, PPO, A2C)
 
 ---
 
@@ -264,8 +264,8 @@ Multi-objective RL training for EV charging optimization in Iquitos isolated gri
 | Agent | CO₂ (kg) | Reduction vs Baseline | Status |
 |-------|----------|----------------------|--------|
 | **Baseline (No PV)** | 11,282,201 | - | Reference |
-| **SAC** | 7,547,022 | **-33.1%** | 🏆 Best |
-| **PPO** | 7,578,734 | **-32.9%** | 🥈 Good |
+| **SAC** | 7,547,022 | **-33.1%** | 🥈 Good |
+| **PPO** | 7,578,734 | **-32.9%** | 🏆 Best |
 | **A2C** | 7,615,073 | **-32.5%** | 🥉 Good |
 
 ### Energy Metrics

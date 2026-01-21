@@ -132,7 +132,7 @@ def run_sac():
     status("Inicializando SAC (Soft Actor-Critic)...")
     status("- Algoritmo: Aprendizaje por refuerzo")
     status("- Batch size: 65536 (GPU optimizado)")
-    status("- Episodios: 5 (43,800 timesteps)")
+    status("- Episodios: 2 (17,520 timesteps)")
     status("- Metrica: Minimizar CO2 + maximizar autoconsumo solar")
     
     cmd = [

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script para lanzar A2C después de que PPO completar sus 5 episodios.
+Script para lanzar A2C después de que PPO complete sus 2 episodios.
 Monitorea el progreso de PPO y lanza A2C automáticamente cuando termina.
 
 Uso: python scripts/launch_a2c_after_ppo.py
@@ -28,13 +28,13 @@ def get_latest_checkpoint(checkpoint_dir: Path) -> dict | None:
     
     return None
 
-def is_ppo_finished(checkpoint_dir: Path, target_timesteps: int = 43800) -> bool:
+def is_ppo_finished(checkpoint_dir: Path, target_timesteps: int = 17520) -> bool:
     """
     Verifica si PPO ha completado entrenamiento.
     
-    PPO: 5 episodios = 43,800 timesteps
+    PPO: 2 episodios = 17,520 timesteps
     Checkpoint se guarda cada 1,000 pasos
-    → Si checkpoint_step >= 43,000 → probable que haya terminado
+    → Si checkpoint_step >= 17,000 → probable que haya terminado
     """
     latest = get_latest_checkpoint(checkpoint_dir)
     if not latest:
@@ -43,7 +43,7 @@ def is_ppo_finished(checkpoint_dir: Path, target_timesteps: int = 43800) -> bool
     step = latest["step"]
     logger.info(f"📊 PPO Checkpoint más reciente: paso {step}/{target_timesteps}")
     
-    return step >= (target_timesteps - 800)  # Margen de 800 pasos
+    return step >= (target_timesteps - 500)  # Margen de 500 pasos
 
 def wait_for_ppo_completion(checkpoint_dir: Path, config: str, poll_interval: int = 30) -> None:
     """
@@ -51,7 +51,7 @@ def wait_for_ppo_completion(checkpoint_dir: Path, config: str, poll_interval: in
     
     Poll cada N segundos para revisar progreso.
     """
-    logger.info("⏳ Esperando que PPO complete 5 episodios (43,800 timesteps)...")
+    logger.info("⏳ Esperando que PPO complete 2 episodios (17,520 timesteps)...")
     
     prev_step = 0
     stalled_count = 0
@@ -80,10 +80,10 @@ def wait_for_ppo_completion(checkpoint_dir: Path, config: str, poll_interval: in
         prev_step = current_step
         
         if is_ppo_finished(checkpoint_dir):
-            logger.info("✅ PPO HA COMPLETADO 5 EPISODIOS!")
+            logger.info("✅ PPO HA COMPLETADO 2 EPISODIOS!")
             break
         
-        logger.info(f"📈 Progreso: {current_step} / 43,800 pasos")
+        logger.info(f"📈 Progreso: {current_step} / 17,520 pasos")
         time.sleep(poll_interval)
 
 def launch_a2c_training(config: str) -> None:
@@ -104,7 +104,7 @@ def launch_a2c_training(config: str) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(
-        description="Lanza A2C después de que PPO complete sus 5 episodios"
+        description="Lanza A2C después de que PPO complete sus 2 episodios"
     )
     ap.add_argument("--config", default="configs/default.yaml", help="Path a config YAML")
     ap.add_argument("--poll-interval", type=int, default=30, help="Intervalo de polling en segundos")

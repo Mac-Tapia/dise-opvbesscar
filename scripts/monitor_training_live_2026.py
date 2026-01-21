@@ -71,7 +71,7 @@ def display_progress():
         
         if info:
             print(f"  📦 Checkpoint: {info['name']}")
-            print(f"  📊 Progreso: {info['progress_pct']}% ({info['steps']}/43,800 pasos)")
+            print(f"  📊 Progreso: {info['progress_pct']}% ({info['steps']}/17,520 pasos)")
             print(f"  💾 Tamaño: {info['size_mb']} MB")
             total_progress += info['progress_pct'] / 3
             

@@ -122,12 +122,12 @@ def generate_markdown_summary(all_data):
 
 ## Overview
 This document reconstructs the training checkpoint progression from available CSV timeseries data.
-All three agents successfully completed 5 episodes of training.
+All three agents successfully completed 2 episodes of training.
 
 ## Data Source
 - **Source**: CSV timeseries files from simulation outputs
 - **Method**: Episode-level metrics extracted from 8760 hourly timesteps per episode
-- **Validation**: All agents completed 5 full episodes (one year each)
+- **Validation**: All agents completed 2 full episodes (one year each)
 
 ---
 
@@ -140,7 +140,7 @@ All three agents successfully completed 5 episodes of training.
         data = all_data[agent]
         
         md += f"\n## {agent} Agent\n\n"
-        md += f"### Final Metrics (5 Episodes)\n"
+        md += f"### Final Metrics (2 Episodes)\n"
         md += f"- **Total Steps**: {data['total_steps']:,}\n"
         md += f"- **Total CO₂ Emissions**: {data['total_co2_kg']:,.0f} kg\n"
         md += f"- **Grid Import**: {data['total_grid_import_kwh']:,.0f} kWh\n"
@@ -168,13 +168,13 @@ All three agents successfully completed 5 episodes of training.
     md += """## Checkpoint Status
 
 ### Preserved Checkpoints
-- ✅ **SAC**: `sac_final.zip` (14.61 MB) - Represents episode 5 completion
-- ✅ **PPO**: `ppo_final.zip` (7.41 MB) - Represents episode 5 completion
-- ✅ **A2C**: `a2c_final.zip` (4.95 MB) - Represents episode 5 completion
+- ✅ **SAC**: `sac_final.zip` (14.61 MB) - Represents episode 2 completion
+- ✅ **PPO**: `ppo_final.zip` (7.41 MB) - Represents episode 2 completion
+- ✅ **A2C**: `a2c_final.zip` (4.95 MB) - Represents episode 2 completion
 
 ### Reconstruction Capability
 Since intermediate checkpoints (step_*.zip files) were deleted, the following analysis is based on:
-1. **Final checkpoint files** containing episode 5 states
+1. **Final checkpoint files** containing episode 2 states
 2. **CSV timeseries data** containing complete hourly trajectories
 3. **Episode counting** from timestep analysis
 
