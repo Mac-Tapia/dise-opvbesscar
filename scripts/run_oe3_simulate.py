@@ -168,13 +168,13 @@ def main() -> None:
             with open(results_json) as f:
                 res = json.load(f)
             
-            # Verificar si SAC o PPO ya completaron 5 episodios
+            # Verificar si SAC o PPO ya completaron 2 episodios
             if agent.lower() in ["sac", "ppo"]:
-                # Verificar si tiene al menos 5 episodios (simulated_years >= 5.0)
-                if res.get("simulated_years", 0) >= 5.0:
+                # Verificar si tiene al menos 2 episodios (simulated_years >= 2.0)
+                if res.get("simulated_years", 0) >= 2.0:
                     import logging
                     logger = logging.getLogger(__name__)
-                    logger.info(f"[SKIP] {agent.upper()} - Ya completó 5 episodios ({res.get('simulated_years')} años simulados)")
+                    logger.info(f"[SKIP] {agent.upper()} - Ya completó 2 episodios ({res.get('simulated_years')} años simulados)")
                     print(f"\n{'='*80}")
                     print(f"✓ {agent.upper()} ya completó {int(res.get('simulated_years', 0))} episodios - SALTANDO")
                     print(f"{'='*80}\n")

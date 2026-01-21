@@ -350,7 +350,7 @@ FASE 3: ENTRENAMIENTO
 ---
 [ ] Ejecutar: python -m src.train_sac_cuda --episodes=50
 [ ] Monitorear GPU: nvidia-smi
-[ ] Graficar progreso cada 5 episodios
+[ ] Graficar progreso cada 2 episodios
 [ ] Checkpoint cada episodio
 
 FASE 4: ANÁLISIS
