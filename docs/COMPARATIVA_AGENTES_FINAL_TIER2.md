@@ -20,7 +20,7 @@
 
 ### Notas de entrenamiento
 
-- **PPO/A2C**: se entrenaron típicamente ~5 episodios (años) completos para converger; PPO mejoró la reward hasta el 4º-5º año y luego se estabilizó. Cada episodio de 8,760 pasos implicó ~87 actualizaciones de política (batch 1,024). Se aplicó early stopping al detectar convergencia. Se monitoreó actor/critic loss y entropía (ent_coef 0.02) para evitar colapso de exploración; las curvas de reward por timestep subieron y oscilaron en torno a un valor estable.
+- **PPO/A2C**: se entrenaron con 2 episodios efectivos y convergieron; PPO mostró mejora de reward hasta el 2º episodio, estabilizando luego. Cada episodio de 8,760 pasos implicó ~87 actualizaciones de política (batch 1,024). Se aplicó early stopping al detectar convergencia. Se monitoreó actor/critic loss y entropía (ent_coef 0.02) para evitar colapso; las curvas de reward subieron y luego oscilaron estables.
 - **SAC**: off-policy y más sample-efficient, alcanzó buenas políticas en 2–3 episodios; para fine-tuning se llegó a 50 episodios en corridas TIER 2. Reward media por paso tras converger ≈ 0.5–0.6, con curvas más suaves que PPO/A2C gracias a replay y entropía automática. Se añadió normalización adaptativa de recompensas por percentiles para estabilizar gradientes y convergencia.
 
 ---
@@ -199,9 +199,9 @@ SAC:  <250 kWh/h     ← Mejor ⭐
 ### Convergencia (episodios)
 
 ```text
-A2C:  ~5 episodios (early stop si converge)
-PPO:  ~5 episodios (mejora hasta el 4º-5º)
-SAC:  2-3 episodios (fine-tune hasta 50 en TIER 2)
+A2C:  2 episodios (checkpoint actual)
+PPO:  2 episodios (checkpoint actual)
+SAC:  2-3 episodios (checkpoint actual; fine-tune hasta 50 en TIER 2)
 ```text
 
 ### CO₂ Anual (kg)
@@ -227,8 +227,8 @@ SAC:  Muy Alta (smooth)  ← Mejor ⭐
 ### Por Convergencia ⚡
 
 1. **SAC**: 2-3 ep (sample efficient; fine-tune 50 ep TIER 2)
-2. **PPO**: ~5 ep (mejora hasta 4º-5º; early stop)
-3. **A2C**: ~5 ep (rápido; early stop)
+2. **PPO**: 2 ep (convergencia alcanzada; checkpoints a 2 ep)
+3. **A2C**: 2 ep (convergencia alcanzada; checkpoints a 2 ep)
 
 ### Por Estabilidad 🛡️
 

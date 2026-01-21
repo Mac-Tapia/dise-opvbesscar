@@ -11,8 +11,8 @@ Resumen de contexto (OE2 listo)
 Run de entrenamiento RL más reciente (GPU RTX 4060)
 ---------------------------------------------------
 - SAC: 2 episodios completados (17,518 pasos). Última reward media 52.189. Checkpoint `analyses/oe3/training/checkpoints/sac/sac_final.zip`. Métricas eval: avg_reward 0.0252 | CO₂ 1,764,960 kg | peak 274.744 kW | grid_stability 0.6113.
-- PPO: 5 episodios completados (44,295 pasos). Última reward media 52.554. Checkpoint `analyses/oe3/training/checkpoints/ppo_gpu/ppo_final.zip`. Métricas eval: avg_reward 0.0343 | CO₂ 1,763,136 kg | peak 274.470 kW | grid_stability 0.6145.
-- A2C: 6 episodios registrados (~50,000 pasos). Reward no registrada en CSV; checkpoint `analyses/oe3/training/checkpoints/a2c_gpu/a2c_final.zip`. Métricas eval: avg_reward 0.02536 | CO₂ 1,764,928 kg | peak 274.739 kW | grid_stability 0.6114.
+- PPO: 2 episodios completados (17,520 pasos). Última reward media 52.554. Checkpoint `analyses/oe3/training/checkpoints/ppo_gpu/ppo_final.zip`. Métricas eval: avg_reward 0.0343 | CO₂ 1,763,136 kg | peak 274.470 kW | grid_stability 0.6145.
+- A2C: 2 episodios completados (17,536 pasos). Reward no registrada en CSV; checkpoint `analyses/oe3/training/checkpoints/a2c_gpu/a2c_final.zip`. Métricas eval: avg_reward 0.02536 | CO₂ 1,764,928 kg | peak 274.739 kW | grid_stability 0.6114.
 - Baseline: avg_reward -0.20 | CO₂ 2,000,000 kg | peak 310 kW | grid_stability 0.50.
 
 Archivos clave del run
@@ -26,7 +26,7 @@ Archivos clave del run
 
 Notas de entrenamiento
 ----------------------
-- PPO/A2C: típicamente convergieron en ~5 episodios completos; PPO mejoró reward hasta el 4º-5º año y se estabilizó. Cada episodio (8,760 pasos) ≈ 87 updates de política (batch 1,024). Se aplicó early stopping al detectar convergencia. Se monitorearon actor/critic loss y entropía (ent_coef 0.02) para evitar colapso; reward por timestep subió y luego osciló estable.
+- PPO/A2C: convergieron con 2 episodios efectivos; PPO mostró mejora hasta el 2º episodio y luego se estabilizó. Cada episodio (8,760 pasos) ≈ 87 updates de política (batch 1,024). Se aplicó early stopping al detectar convergencia. Se monitorearon actor/critic loss y entropía (ent_coef 0.02) para evitar colapso; reward por timestep subió y luego osciló estable.
 - SAC: sample-efficient, logra buena política en 2–3 episodios; para fine-tuning se corrieron hasta 50 episodios (TIER 2). Reward media por paso tras converger ~0.5–0.6 con curvas suaves gracias a replay y entropía automática. Se usó normalización adaptativa de recompensas (percentiles) para estabilizar gradientes.
 
 Estado y próximos pasos

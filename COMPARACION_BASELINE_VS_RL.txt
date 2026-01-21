@@ -137,7 +137,7 @@ COMO FUNCIONA SAC (MEJOR AGENT):
 │ OUTPUT (Acciones por charger):               │
 │  • action ∈ [0, 1] (0=off, 1=max charge)    │
 │  • Se obtimiza cada 100 timesteps           │
-│  • Aprende en 43,800 timesteps (5 episodios)│
+│  • Aprende en 17,520 timesteps (2 episodios)│
 ├──────────────────────────────────────────────┤
 │ REWARD (Multi-Objetivo):                     │
 │  R = 0.50 × R_CO2 + 0.20 × R_solar +         │
