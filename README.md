@@ -41,6 +41,19 @@ python run_pipeline_visible.py
 - Solar (Eaton Xpert1670): `data/interim/oe2/solar/solar_results.json` y `solar_technical_report.md`
 - Documentación RL: `docs/INFORME_UNICO_ENTRENAMIENTO_TIER2.md`, `COMPARACION_BASELINE_VS_RL.txt`
 
+## Documentación detallada (índice rápido)
+- `COMPARACION_BASELINE_VS_RL.txt`: resumen cuantitativo baseline vs RL (CO₂, costo, picos, uso solar).
+- `reports/oe2/co2_breakdown/oe2_co2_breakdown.{json,csv}`: tabla de reducción directa/indirecta/netas (capacidad OE2).
+- `data/interim/oe2/solar/solar_technical_report.md`: reporte técnico PV (módulos, inversores, strings, métricas anuales).
+- `docs/INFORME_UNICO_ENTRENAMIENTO_TIER2.md`: estado de entrenamiento RL, KPIs y pendientes.
+- `VERIFICACION_COMPLETA_SOLAR_PVLIB.txt`: verificación de flujo pvlib/PVGIS y configuración de strings.
+- `GUIA_FUNCIONAMIENTO_SIMULACION.md`: cómo ejecutar la simulación y visualizar resultados.
+- `DASHBOARD_PRO_DOCUMENTACION.md` y `dashboard_pro.py`: dashboard de monitoreo.
+- `docker/`, `docker-compose*.yml`, `DOCKER_SETUP_GUIDE.md`: despliegue en contenedores.
+- `k8s-deployment.yaml`, `k8s_manager.py`, `KUBERNETES_MONGODB_GUIDE.md`: despliegue en Kubernetes.
+- `configs/default.yaml`: parámetros OE2/OE3 (PV/BESS, flota, recompensas).
+- `run_pipeline_visible.py` y `scripts/`: orquestación del pipeline y utilidades.
+
 ## Despliegue
 - Docker: `docker/` y `docker-compose*.yml`
 - Kubernetes: `k8s-deployment.yaml`, `k8s_manager.py`
