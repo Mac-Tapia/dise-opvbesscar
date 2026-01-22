@@ -39,6 +39,8 @@
 │ │                                                                             │
 │ └─ Inversor seleccionado:                                                    │
 │    └─ Eaton__Xpert1670 (3201 kW AC nominal)                                 │
+│       • 2 inversores en paralelo                                            │
+│       • 31 módulos por string, 6,009 strings (186,279 módulos totales)      │
 └──────────────────────────────────────────────────────────────────────────────┘
 
 3️⃣ PARÁMETROS DE DISEÑO IQUITOS (OE2)
