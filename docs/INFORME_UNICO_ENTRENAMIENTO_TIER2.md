@@ -11,6 +11,14 @@
 - Función multiobjetivo (pesos balanceados actuales): CO2 0.35, Costo 0.25, Solar 0.20, EV 0.15, Grid 0.05 (`COMIENZA_AQUI_TIER2_FINAL.md`).
 - KPIs esperados (por agente, 2 episodios): CO₂ < 1.8–2.0M kg, Peak Import < 250–290 kWh/h, Avg Reward 0.40–0.65, Grid Stability 0.70–0.90.
 
+## Reducción anual de CO₂ (infraestructura OE2, referencia)
+- Reducción directa (gasolina → EV): **3,081.20 tCO₂/año**
+- Reducción indirecta (PV+BESS desplaza red): **3,626.66 tCO₂/año**
+- Reducción neta anual: **6,707.86 tCO₂/año**
+- Emisiones EV si todo fuera red: 536.63 tCO₂/año
+- Emisiones reales con PV+BESS: 2,501.49 tCO₂/año
+- Origen: `reports/oe2/co2_breakdown/oe2_co2_breakdown.json` (capacidad diaria 2,679 motos + 382 mototaxis, inversor Eaton Xpert1670 regenerado).
+
 ## Resultados observados
 | Agente | Pasos | Mean Reward | CO2 episodio (kg) | Grid (kWh) | Solar (kWh) | Fuente |
 | --- | --- | --- | --- | --- | --- | --- |

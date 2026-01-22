@@ -60,6 +60,20 @@ Desglose CO₂ directo / indirecto (OE2)
 | Emisiones EV si todo fuera red        | 536,634 kg  | `ev_all_grid_kgco2_year` |
 | CO₂ real con PV+BESS                  | 2,501,491 kg | `real_grid_kgco2_year` |
 
+Nota: la reducción directa está calculada con la capacidad diaria dimensionada (2,679 motos + 382 mototaxis ≈ 3,061 vehículos/día) según OE2; refleja el potencial máximo de la infraestructura instalada.
+
+Carga atendida (capacidad OE2)
+------------------------------
+- Motos: 2,679 vehículos/día | 80,370/mes | 977,835/año
+- Mototaxis: 382 vehículos/día | 11,460/mes | 139,430/año
+- Total: 3,061 vehículos/día | 91,830/mes | 1,117,265/año
+
+Objetivo anual de reducción de CO₂ (capacidad OE2)
+--------------------------------------------------
+- Reducción directa (gasolina → EV): 3,081.20 tCO₂/año
+- Reducción indirecta (PV+BESS desplaza red): 3,626.66 tCO₂/año
+- Reducción neta: 6,707.86 tCO₂/año
+
 ==============================================================================
 1. BASELINE: EL PROBLEMA
 ==============================================================================

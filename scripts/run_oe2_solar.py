@@ -42,7 +42,7 @@ def main() -> None:
         'tilt': float(solar.get("surface_tilt", 10.0)),
         'azimuth': float(solar.get("surface_azimuth", 0.0)),
         'module_name': str(solar.get("module_name", "Kyocera_Solar_KS20__2008__E__")),
-        'inverter_name': str(solar.get("inverter_name", "Power_Electronics__FS3000CU15__690V_")),
+        'inverter_name': str(solar.get("inverter_name", "Eaton__Xpert1670")),
     }
 
     # Usar intervalo de 15 minutos por defecto para mayor precisión

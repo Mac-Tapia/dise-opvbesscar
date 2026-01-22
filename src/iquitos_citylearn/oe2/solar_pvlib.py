@@ -22,7 +22,7 @@ Parámetros de diseño Iquitos:
 
 Componentes seleccionados (máximo kWp en techo):
     Módulo: Kyocera_Solar_KS20__2008__E__ (20.2W, 0.072m², 280.3 W/m²)
-    Inversor: Power_Electronics__FS3000CU15__690V_ (3201.17 kW)
+    Inversor: Eaton__Xpert1670 (3201.2 kW AC nominal)
 
 Referencias:
 - PVGIS: https://re.jrc.ec.europa.eu/pvg_tools/
@@ -144,8 +144,8 @@ class PVSystemConfig:
     # Módulo PV - Kyocera KS20 (máxima densidad de potencia)
     module_name: str = "Kyocera_Solar_KS20__2008__E__"
     
-    # Inversor - Power Electronics FS3000CU15 (inversor central)
-    inverter_name: str = "Power_Electronics__FS3000CU15__690V_"
+    # Inversor - Eaton Xpert1670 (inversor central)
+    inverter_name: str = "Eaton__Xpert1670"
     
     # Pérdidas del sistema (%) - valores típicos para clima tropical húmedo
     soiling_loss: float = 3.0
@@ -1232,7 +1232,7 @@ def run_solar_sizing(
         tilt=kwargs.get('tilt', IQUITOS_PARAMS['surface_tilt']),
         azimuth=kwargs.get('azimuth', IQUITOS_PARAMS['surface_azimuth']),
         module_name=kwargs.get('module_name', "Kyocera_Solar_KS20__2008__E__"),
-        inverter_name=kwargs.get('inverter_name', "Power_Electronics__FS3000CU15__690V_"),
+        inverter_name=kwargs.get('inverter_name', "Eaton__Xpert1670"),
     )
     
     # Ejecutar simulación
