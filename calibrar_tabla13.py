@@ -83,7 +83,7 @@ def evaluate(pe, fc):
     }
 
 # Verificar extremos
-print(f"\nVerificación de extremos:")
+print("\nVerificación de extremos:")
 e_min = evaluate(pe_min, fc_min)
 e_max = evaluate(pe_max, fc_max)
 
@@ -167,7 +167,7 @@ for _ in range(101):
 
 df = pd.DataFrame(scenarios)
 
-print(f"\nParámetros finales:")
+print("\nParámetros finales:")
 print(f"  n_total = {n_total} vehículos")
 print(f"  bat_avg = {bat_final:.4f} kWh")
 print(f"  PE values = {list(pe_values)}")
@@ -176,9 +176,9 @@ print(f"  utilization = {utilization}")
 
 print(f"\n{'='*70}")
 print("ESTADÍSTICAS CALIBRADAS (101 escenarios)")
-print('='*70)
-print(f"Métrica                     |    Min |    Max |   Prom | Mediana | Desv_Std")
-print('-'*70)
+print("="*70)
+print("Métrica                     |    Min |    Max |   Prom | Mediana | Desv_Std")
+print("-"*70)
 print(f"Cargadores [unid]           | {df['chargers'].min():6.2f} | {df['chargers'].max():6.2f} | {df['chargers'].mean():6.2f} | {df['chargers'].median():7.2f} | {df['chargers'].std():6.2f}")
 print(f"Tomas totales [tomas]       | {df['sockets'].min():6.2f} | {df['sockets'].max():6.2f} | {df['sockets'].mean():6.2f} | {df['sockets'].median():7.2f} | {df['sockets'].std():6.2f}")
 print(f"Sesiones pico 4h [sesiones] | {df['sessions_4h'].min():6.2f} | {df['sessions_4h'].max():6.2f} | {df['sessions_4h'].mean():6.2f} | {df['sessions_4h'].median():7.2f} | {df['sessions_4h'].std():6.2f}")
@@ -188,10 +188,10 @@ print(f"Potencia pico [kW]          | {df['potencia_pico'].min():6.2f} | {df['po
 
 print(f"\n{'='*70}")
 print("VALORES ESPERADOS TABLA 13")
-print('='*70)
-print(f"Cargadores [unid]           |   4.00 |  35.00 |  20.61 |   20.00 |    9.19")
-print(f"Tomas totales [tomas]       |  16.00 | 140.00 |  82.46 |   80.00 |   36.76")
-print(f"Sesiones pico 4h [sesiones] | 103.00 |1030.00 | 593.52 |  566.50 |  272.09")
-print(f"Cargas día total [cargas]   |  87.29 |3058.96 | 849.83 |  785.62 |  538.12")
-print(f"Energía día [kWh]           |  92.80 |3252.00 | 903.46 |  835.20 |  572.07")
-print(f"Potencia pico [kW]          |  11.60 | 406.50 | 112.93 |  104.40 |   71.51")
+print("="*70)
+print("Cargadores [unid]           |   4.00 |  35.00 |  20.61 |   20.00 |    9.19")
+print("Tomas totales [tomas]       |  16.00 | 140.00 |  82.46 |   80.00 |   36.76")
+print("Sesiones pico 4h [sesiones] | 103.00 |1030.00 | 593.52 |  566.50 |  272.09")
+print("Cargas día total [cargas]   |  87.29 |3058.96 | 849.83 |  785.62 |  538.12")
+print("Energía día [kWh]           |  92.80 |3252.00 | 903.46 |  835.20 |  572.07")
+print("Potencia pico [kW]          |  11.60 | 406.50 | 112.93 |  104.40 |   71.51")

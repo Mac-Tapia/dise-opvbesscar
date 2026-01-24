@@ -13,7 +13,6 @@ Para todos los escenarios de la Tabla 13 OE2.
 ESCENARIO RECOMENDADO: Se usa para el entrenamiento del agente OE3.
 """
 
-import numpy as np
 import pandas as pd
 from pathlib import Path
 
@@ -116,7 +115,7 @@ def generate_scenarios() -> pd.DataFrame:
     energia_rec = motos_dia_rec * ENERGY_PER_SESSION_MOTO + mototaxis_dia_rec * ENERGY_PER_SESSION_MOTOTAXI
     # ~2,250 × 1.0 + ~325 × 1.5 = ~2,737.5 kWh/día
 
-    print(f"\n[CÁLCULO CORREGIDO]")
+    print("\n[CÁLCULO CORREGIDO]")
     print(f"  Horas pico (6pm-10pm): ~{MOTOS_PICO_RECOMENDADO} motos + ~{MOTOTAXIS_PICO_RECOMENDADO} mototaxis")
     print(f"  Factor pico: {FACTOR_PICO:.0%} de demanda diaria")
     print(f"  Día completo: {motos_dia_rec:,} motos + {mototaxis_dia_rec:,} mototaxis = {motos_dia_rec + mototaxis_dia_rec:,} total")

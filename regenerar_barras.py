@@ -10,7 +10,7 @@ df = pd.read_csv(
     index_col='timestamp'
 )
 
-with open('d:/diseñopvbesscar/data/interim/oe2/solar/solar_results.json', 'r') as f:
+with open('d:/diseñopvbesscar/data/interim/oe2/solar/solar_results.json', 'r', encoding='utf-8') as f:
     results = json.load(f)
 
 date_str = results['despejado_date']

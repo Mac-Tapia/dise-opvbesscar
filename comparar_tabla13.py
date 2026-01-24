@@ -2,7 +2,6 @@
 Comparación de valores generados vs Tabla 13 OE2
 """
 import pandas as pd
-import numpy as np
 
 # Cargar datos generados
 df = pd.read_csv('data/oe2/escenarios_tabla13_exactos.csv')
