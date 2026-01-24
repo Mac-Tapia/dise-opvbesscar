@@ -216,11 +216,11 @@ n_total_adj = n_motos_adj + n_mototaxis_adj
 pe_values_adj = np.array([0.08, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95, 1.0])
 
 # Recalcular con valores ajustados
-def evaluate_scenario_adj(pe, fc, n_motos, n_mototaxis):
-    total_vehicles = (n_motos + n_mototaxis) * pe
+def evaluate_scenario_adj(pe_v, fc_v, n_motos_v, n_mototaxis_v):
+    total_vehicles = (n_motos_v + n_mototaxis_v) * pe_v
 
     # Energía basada en batería (como en Tabla 13)
-    energy_day = n_motos * pe * fc * bat_moto + n_mototaxis * pe * fc * bat_mototaxi
+    energy_day = n_motos_v * pe_v * fc_v * bat_moto + n_mototaxis_v * pe_v * fc_v * bat_mototaxi
 
     # Sesiones por hora pico (todos los vehículos llegan en 4 horas pico)
     sessions_peak_hour = total_vehicles / peak_hours
@@ -236,7 +236,7 @@ def evaluate_scenario_adj(pe, fc, n_motos, n_mototaxis):
     potencia_pico = energy_day * 0.125
 
     return {
-        'pe': pe, 'fc': fc,
+        'pe': pe_v, 'fc': fc_v,
         'chargers': chargers,
         'sockets_total': sockets_total,
         'sessions_4h': sessions_4h,

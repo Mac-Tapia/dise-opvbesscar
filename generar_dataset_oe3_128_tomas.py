@@ -16,7 +16,7 @@ Cada toma es un punto de control independiente para el agente OE3.
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple, Optional, Any
 import json
 from datetime import datetime, timedelta
 
@@ -133,6 +133,16 @@ def generate_ev_arrivals_30min(
     """
     Genera matriz de llegadas de EVs con sesiones de 30 minutos.
 
+    Args:
+        n_tomas: Número de tomas a simular
+        n_hours: Número de horas a simular
+        base_probability: Probabilidad base de llegada
+        power_kw: Potencia nominal de carga (kW)
+        battery_kwh: Capacidad de batería (kWh) - para referencia
+        session_minutes: Duración de sesión en minutos
+        sessions_per_hour: Máximo sesiones por hora (capacidad)
+        seed: Semilla para reproducción
+
     Modelo de carga:
     - Horario: 9 AM - 10 PM (13 horas de operación)
     - Sesiones de 30 minutos (0.5 horas)
@@ -142,6 +152,11 @@ def generate_ev_arrivals_30min(
     Returns:
         Tuple (states, power) - Arrays (n_hours, n_tomas)
     """
+    # Nota: battery_kwh y sessions_per_hour se documentan pero la lógica
+    # de carga se basa en duración fija de 30 min a potencia nominal
+    _ = battery_kwh  # Documentado para referencia de capacidad
+    _ = sessions_per_hour  # Documentado para capacidad máxima
+
     np.random.seed(seed)
 
     # Crear timestamps para el año
@@ -204,10 +219,18 @@ def generate_citylearn_charger_csv(
     power: np.ndarray,
     power_kw: float,
     battery_kwh: float,
-    n_hours: int = N_HOURS_YEAR
+    n_hours: int = N_HOURS_YEAR  # pylint: disable=unused-argument
 ) -> pd.DataFrame:
     """
     Genera DataFrame en formato CityLearn para una toma específica.
+
+    Args:
+        toma_id: Identificador de la toma
+        states: Array de estados por hora
+        power: Array de potencia por hora
+        power_kw: Potencia nominal (documentación)
+        battery_kwh: Capacidad batería (documentación)
+        n_hours: Número de horas (para firma consistente)
 
     CityLearn requiere:
     - electric_vehicle_charger_state: 1=conectado, 3=sin EV
@@ -217,6 +240,10 @@ def generate_citylearn_charger_csv(
     - electric_vehicle_estimated_arrival_time: Horas hasta próxima llegada
     - electric_vehicle_estimated_soc_arrival: SOC esperado al llegar
     """
+    # Documentar parámetros de referencia
+    _ = power_kw  # Potencia nominal para metadata
+    _ = battery_kwh  # Capacidad para referencia
+
     n = len(states)
 
     # Generar IDs de vehículos (nuevo ID cada vez que llega un EV)
@@ -397,19 +424,26 @@ def generate_playa_datasets(
 
 
 def generate_schema_with_tomas(
-    playas_stats: Dict[str, Dict],
+    playas_stats: Dict[str, Dict[str, Any]],
     output_dir: Path,
-    schema_template_path: Path = None
-) -> Dict:
+    schema_template_path: Optional[Path] = None
+) -> Dict[str, Any]:
     """
     Genera el schema CityLearn v2 con las 128 tomas como chargers controlables.
+
+    Args:
+        playas_stats: Estadísticas de cada playa
+        output_dir: Directorio de salida
+        schema_template_path: Template opcional (no usado actualmente)
     """
+    _ = schema_template_path  # Reservado para futuro uso
+
     print(f"\n{'='*70}")
     print("Generando Schema CityLearn v2 para OE3")
     print(f"{'='*70}")
 
-    # Schema base
-    schema = {
+    # Schema base - tipo explícito para asignación dinámica
+    schema: Dict[str, Any] = {
         "root_directory": str(output_dir),
         "central_agent": True,
         "seconds_per_time_step": 3600,  # 1 hora
@@ -435,15 +469,21 @@ def generate_schema_with_tomas(
         "electric_vehicles_def": {},
     }
 
+    # Variables tipadas para subdiccionarios
+    observations: Dict[str, Any] = schema["observations"]
+    actions: Dict[str, Any] = schema["actions"]
+    buildings: Dict[str, Any] = schema["buildings"]
+    ev_defs: Dict[str, Any] = schema["electric_vehicles_def"]
+
     # Agregar observables para cada toma
     for playa_name, stats in playas_stats.items():
         for toma in stats["tomas"]:
             toma_id = toma["toma_id"]
-            schema["observations"][f"charger_{toma_id}_state"] = {
+            observations[f"charger_{toma_id}_state"] = {
                 "active": True,
                 "shared_in_central_agent": True
             }
-            schema["observations"][f"charger_{toma_id}_power_kw"] = {
+            observations[f"charger_{toma_id}_power_kw"] = {
                 "active": True,
                 "shared_in_central_agent": True
             }
@@ -452,7 +492,7 @@ def generate_schema_with_tomas(
     for playa_name, stats in playas_stats.items():
         for toma in stats["tomas"]:
             toma_id = toma["toma_id"]
-            schema["actions"][f"charger_{toma_id}_control"] = {"active": True}
+            actions[f"charger_{toma_id}_control"] = {"active": True}
 
     # Crear buildings (uno por playa)
     for playa_name, stats in playas_stats.items():
@@ -475,7 +515,7 @@ def generate_schema_with_tomas(
                 }
             }
 
-        schema["buildings"][playa_name] = {
+        buildings[playa_name] = {
             "name": playa_name,
             "include": True,
             "energy_simulation": f"{playa_name}/energy.csv",
@@ -510,7 +550,7 @@ def generate_schema_with_tomas(
         battery_kwh = PLAYAS_CONFIG[playa_name]["battery_kwh"]
         for toma in stats["tomas"]:
             ev_name = f"EV_{toma['toma_id']}"
-            schema["electric_vehicles_def"][ev_name] = {
+            ev_defs[ev_name] = {
                 "include": True,
                 "battery": {
                     "type": "citylearn.energy_model.Battery",
@@ -531,9 +571,10 @@ def generate_schema_with_tomas(
         json.dump(schema, f, indent=2, ensure_ascii=False)
 
     print(f"  ✅ Schema guardado: {schema_path}")
-    print(f"  ✅ Total observables: {len(schema['observations'])}")
-    print(f"  ✅ Total acciones: {len(schema['actions'])}")
-    print(f"  ✅ Total chargers: {sum(len(b.get('chargers', {})) for b in schema['buildings'].values())}")
+    print(f"  ✅ Total observables: {len(observations)}")
+    print(f"  ✅ Total acciones: {len(actions)}")
+    total_chargers = sum(len(b.get('chargers', {})) for b in buildings.values())
+    print(f"  ✅ Total chargers: {total_chargers}")
 
     return schema
 
@@ -572,7 +613,7 @@ def main():
         playas_stats[playa_name] = stats
 
     # Generar schema CityLearn
-    schema = generate_schema_with_tomas(playas_stats, output_dir)
+    _schema = generate_schema_with_tomas(playas_stats, output_dir)
 
     # Resumen final
     print("\n" + "=" * 70)
@@ -594,14 +635,14 @@ def main():
         total_energy += stats["total_energy_year_kwh"]
         total_power += stats["total_power_kw"]
 
-    print(f"\n{'='*70}")
-    print(f"TOTALES:")
-    print(f"  Cargadores: 32")
+    print("\n" + "=" * 70)
+    print("TOTALES:")
+    print("  Cargadores: 32")
     print(f"  Tomas controlables: {total_tomas}")
     print(f"  Potencia instalada: {total_power:.1f} kW")
     print(f"  Energía anual estimada: {total_energy:,.0f} kWh")
     print(f"  Energía diaria promedio: {total_energy/365:,.0f} kWh/día")
-    print(f"{'='*70}")
+    print("=" * 70)
 
     # Guardar resumen general
     summary = {
@@ -626,4 +667,4 @@ def main():
 
 
 if __name__ == "__main__":
-    summary = main()
+    main()

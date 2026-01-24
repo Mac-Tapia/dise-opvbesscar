@@ -1,5 +1,7 @@
 """Verificar horario de generación solar real."""
 import pandas as pd
+import json
+import numpy as np
 
 # Cargar datos
 df = pd.read_csv(
@@ -7,6 +9,9 @@ df = pd.read_csv(
     parse_dates=['timestamp'],
     index_col='timestamp'
 )
+
+# Asegurar que el índice es DatetimeIndex
+df.index = pd.DatetimeIndex(df.index)
 
 print("=" * 60)
 print("VERIFICACIÓN DE HORARIO DE GENERACIÓN SOLAR")
@@ -24,8 +29,11 @@ print("\n=== Horario de generación solar (potencia > 10 kW) ===")
 print(f"Primera hora con generación: {gen_data.index[0].hour}:{gen_data.index[0].minute:02d}")
 print(f"Última hora con generación: {gen_data.index[-1].hour}:{gen_data.index[-1].minute:02d}")
 
-# Potencia promedio por hora
-hourly = df.groupby(df.index.hour)['ac_power_kw'].mean()
+# Potencia promedio por hora usando hora del índice
+hours_array = np.array([t.hour for t in df.index])
+df_temp = df.copy()
+df_temp['hour_col'] = hours_array
+hourly = df_temp.groupby('hour_col')['ac_power_kw'].mean()
 print("\n=== Potencia promedio por hora del día ===")
 for h in range(24):
     val = hourly.get(h, 0)
@@ -34,26 +42,30 @@ for h in range(24):
 
 # Identificar horas con generación significativa
 threshold = 50  # kW
-gen_hours = hourly[hourly > threshold].index.tolist()
+gen_hours_list = hourly[hourly > threshold].index.tolist()
 print(f"\n=== Horas con generación > {threshold} kW ===")
-print(f"Rango: {min(gen_hours):02d}:00 a {max(gen_hours):02d}:00")
+print(f"Rango: {min(gen_hours_list):02d}:00 a {max(gen_hours_list):02d}:00")
 
 # Verificar día típico
 print("\n=== Análisis de días representativos ===")
 daily_energy = df['ac_energy_kwh'].resample('D').sum()
-daily_pmax = df['ac_power_kw'].resample('D').max()
+_daily_pmax = df['ac_power_kw'].resample('D').max()
 
 # Día con más energía
-max_energy_day = daily_energy.idxmax()
+max_energy_day_idx = daily_energy.idxmax()
+max_energy_day = pd.Timestamp(max_energy_day_idx)
 print(f"Día con máxima energía: {max_energy_day.strftime('%Y-%m-%d')}")
 print(f"  Energía: {daily_energy[max_energy_day]:.0f} kWh")
 
 # Perfil horario del día con más energía
-day_data = df[df.index.date == max_energy_day.date()]
+day_dates = np.array([t.date() for t in df.index])
+day_mask = day_dates == max_energy_day.date()
+day_data = df[day_mask]
 print(f"\nPerfil del día {max_energy_day.strftime('%Y-%m-%d')}:")
 for idx, row in day_data.iterrows():
+    ts = pd.Timestamp(idx)
     if row['ac_power_kw'] > 10:
-        print(f"  {idx.hour:02d}:{idx.minute:02d} -> {row['ac_power_kw']:.0f} kW")
+        print(f"  {ts.hour:02d}:{ts.minute:02d} -> {row['ac_power_kw']:.0f} kW")
 
 # Verificar coordenadas y zona horaria usadas
 print("\n=== Parámetros de ubicación (Iquitos) ===")
@@ -70,7 +82,6 @@ print("  Generación significativa: ~06:00 a ~18:00")
 print("  (Iquitos está cerca del ecuador, días de ~12 horas todo el año)")
 
 # Verificar días representativos
-import json
 with open('d:/diseñopvbesscar/data/interim/oe2/solar/solar_results.json', 'r', encoding='utf-8') as f:
     results = json.load(f)
 
@@ -86,12 +97,14 @@ dias = {
 
 for nombre, fecha in dias.items():
     if fecha:
-        day_data = df[df.index.date == pd.to_datetime(fecha).date()]
+        all_dates = np.array([t.date() for t in df.index])
+        fecha_dt = pd.to_datetime(fecha).date()
+        day_data = df[all_dates == fecha_dt]
         gen_mask = day_data['ac_power_kw'] > 10
-        gen_hours = day_data[gen_mask]
-        if len(gen_hours) > 0:
-            first_gen = gen_hours.index[0]
-            last_gen = gen_hours.index[-1]
+        gen_hours_data = day_data[gen_mask]
+        if len(gen_hours_data) > 0:
+            first_gen = gen_hours_data.index[0]
+            last_gen = gen_hours_data.index[-1]
             total_energy = day_data['ac_energy_kwh'].sum()
             max_power = day_data['ac_power_kw'].max()
             print(f"\n{nombre} ({fecha}):")
