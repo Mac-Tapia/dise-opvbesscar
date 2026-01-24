@@ -1,6 +1,5 @@
 """Verificar horario de generación solar real."""
 import pandas as pd
-import numpy as np
 
 # Cargar datos
 df = pd.read_csv(
@@ -21,7 +20,7 @@ print(f"Total de registros: {len(df)}")
 mask = df['ac_power_kw'] > 10
 gen_data = df[mask]
 
-print(f"\n=== Horario de generación solar (potencia > 10 kW) ===")
+print("\n=== Horario de generación solar (potencia > 10 kW) ===")
 print(f"Primera hora con generación: {gen_data.index[0].hour}:{gen_data.index[0].minute:02d}")
 print(f"Última hora con generación: {gen_data.index[-1].hour}:{gen_data.index[-1].minute:02d}")
 
@@ -72,7 +71,7 @@ print("  (Iquitos está cerca del ecuador, días de ~12 horas todo el año)")
 
 # Verificar días representativos
 import json
-with open('d:/diseñopvbesscar/data/interim/oe2/solar/solar_results.json', 'r') as f:
+with open('d:/diseñopvbesscar/data/interim/oe2/solar/solar_results.json', 'r', encoding='utf-8') as f:
     results = json.load(f)
 
 print("\n" + "=" * 60)

@@ -6,7 +6,7 @@ Análisis de discrepancias y ajuste fino de parámetros.
 
 import numpy as np
 import pandas as pd
-from typing import Tuple
+from typing import Optional
 
 # ============================================================================
 # VALORES ESPERADOS TABLA 13
@@ -21,7 +21,7 @@ TABLA_13 = {
 }
 
 
-def reverse_engineer_parameters() -> dict:
+def reverse_engineer_parameters() -> Optional[dict]:
     """
     Ingeniería inversa de los parámetros a partir de la Tabla 13.
 
@@ -37,47 +37,47 @@ def reverse_engineer_parameters() -> dict:
 
     # Verificar relación Potencia/Energía
     ratio_pot_energia = TABLA_13["potencia_pico"]["max"] / TABLA_13["energia_dia"]["max"]
-    print(f"\n1. Relación Potencia/Energía:")
+    print("\n1. Relación Potencia/Energía:")
     print(f"   Max: {TABLA_13['potencia_pico']['max']} / {TABLA_13['energia_dia']['max']} = {ratio_pot_energia:.4f}")
-    print(f"   Esperado: 0.125 (50% energía en 4h pico)")
+    print("   Esperado: 0.125 (50% energía en 4h pico)")
 
     # Verificar relación Cargas/Energía
     kwh_per_carga = TABLA_13["energia_dia"]["max"] / TABLA_13["cargas_dia"]["max"]
-    print(f"\n2. kWh por carga:")
+    print("\n2. kWh por carga:")
     print(f"   Max: {TABLA_13['energia_dia']['max']} / {TABLA_13['cargas_dia']['max']:.2f} = {kwh_per_carga:.4f} kWh")
     print(f"   Min: {TABLA_13['energia_dia']['min']} / {TABLA_13['cargas_dia']['min']:.2f} = {TABLA_13['energia_dia']['min']/TABLA_13['cargas_dia']['min']:.4f} kWh")
 
     # Verificar relación Tomas/Cargadores
     tomas_per_cargador = TABLA_13["tomas"]["max"] / TABLA_13["cargadores"]["max"]
-    print(f"\n3. Tomas por cargador:")
+    print("\n3. Tomas por cargador:")
     print(f"   {TABLA_13['tomas']['max']} / {TABLA_13['cargadores']['max']} = {tomas_per_cargador:.1f}")
 
     # Deducir vehículos totales
     # Con PE=1.0, FC=1.0: Energía = n × bat_avg × FC × PE
     # 3252 = n × bat_avg × 1.0 × 1.0
-    print(f"\n4. Deducción de n_total:")
-    print(f"   Energía_max = n_total × bat_avg × FC_max × PE_max")
-    print(f"   3252 = n_total × bat_avg × 1.0 × 1.0")
+    print("\n4. Deducción de n_total:")
+    print("   Energía_max = n_total × bat_avg × FC_max × PE_max")
+    print("   3252 = n_total × bat_avg × 1.0 × 1.0")
 
     # Deducir desde cargas máximas
     # Sesiones_max / factor_pico = cargas_max
     factor_concentracion = TABLA_13["sesiones_pico"]["max"] / TABLA_13["cargas_dia"]["max"]
-    print(f"\n5. Factor concentración pico:")
+    print("\n5. Factor concentración pico:")
     print(f"   {TABLA_13['sesiones_pico']['max']} / {TABLA_13['cargas_dia']['max']:.2f} = {factor_concentracion:.4f}")
 
     # Deducir PE_min desde energía mínima
     # Con PE_min=0.1: Energía_min = n × bat_avg × FC_min × 0.1
     # Relación min/max: 92.80 / 3252 = 0.02853
     ratio_energia = TABLA_13["energia_dia"]["min"] / TABLA_13["energia_dia"]["max"]
-    print(f"\n6. Ratio energía min/max:")
+    print("\n6. Ratio energía min/max:")
     print(f"   {TABLA_13['energia_dia']['min']} / {TABLA_13['energia_dia']['max']} = {ratio_energia:.5f}")
-    print(f"   Si PE varía 0.1-1.0 y FC varía X-1.0:")
+    print("   Si PE varía 0.1-1.0 y FC varía X-1.0:")
     print(f"   0.1 × FC_min = {ratio_energia:.5f} × 1.0")
     fc_min_deducido = ratio_energia / 0.1
     print(f"   FC_min = {fc_min_deducido:.4f}")
 
     # Pero eso daría FC_min muy bajo. Revisemos la distribución
-    print(f"\n7. Análisis de distribución de PE y FC:")
+    print("\n7. Análisis de distribución de PE y FC:")
 
     # Probar diferentes combinaciones
     results = []
@@ -122,11 +122,11 @@ def calculate_scenarios_with_exact_distribution() -> pd.DataFrame:
     bat_avg = 3252 / n_total  # ≈ 3.157 kWh
     fc_min = 0.285  # Calibrado para E_min ≈ 92.80
 
-    print(f"\nParámetros base:")
+    print("\nParámetros base:")
     print(f"  n_total = {n_total}")
     print(f"  bat_avg = {bat_avg:.4f} kWh")
     print(f"  FC: {fc_min:.3f} - 1.00")
-    print(f"  PE: 0.10 - 1.00")
+    print("  PE: 0.10 - 1.00")
 
     # Para 101 escenarios con mediana < promedio, usar distribución beta
     np.random.seed(42)
@@ -200,7 +200,7 @@ def adjust_for_exact_match() -> pd.DataFrame:
     # Parametrización: exp(mu) = mediana, sigma controla asimetría
     mediana_energia = 835.20
     prom_energia = 903.46
-    std_energia = 572.07
+    # std_energia = 572.07  # Referencia Tabla 13
 
     # Para lognormal: mediana = exp(mu), promedio = exp(mu + sigma²/2)
     # Entonces: prom/mediana = exp(sigma²/2)
@@ -210,7 +210,7 @@ def adjust_for_exact_match() -> pd.DataFrame:
     sigma = np.sqrt(sigma_sq)
     mu = np.log(mediana_energia)
 
-    print(f"\nDistribución lognormal para energía:")
+    print("\nDistribución lognormal para energía:")
     print(f"  mu = {mu:.4f}, sigma = {sigma:.4f}")
 
     # Generar energías
@@ -234,7 +234,7 @@ def adjust_for_exact_match() -> pd.DataFrame:
     current_median = np.median(energias)
     current_mean = np.mean(energias)
 
-    print(f"\nAntes de ajuste:")
+    print("\nAntes de ajuste:")
     print(f"  Min: {energias.min():.2f}, Max: {energias.max():.2f}")
     print(f"  Promedio: {current_mean:.2f}, Mediana: {current_median:.2f}")
 
@@ -320,7 +320,7 @@ def generate_final_calibrated_scenarios() -> pd.DataFrame:
     pe_min = 0.1
     pe_max = 1.0
 
-    print(f"\nParámetros calibrados:")
+    print("\nParámetros calibrados:")
     print(f"  n_total = {n_total} vehículos")
     print(f"  bat_avg = {bat_avg:.4f} kWh")
     print(f"  FC: {fc_min:.4f} - {fc_max:.4f}")
@@ -507,11 +507,13 @@ def generate_exact_table_13() -> pd.DataFrame:
     np.random.seed(2024)
     energias_raw = stats.gamma.rvs(k, scale=theta, size=n * 10)
 
-    # Filtrar al rango
+    # Filtrar al rango - asegurar que es array
+    energias_raw = np.asarray(energias_raw)
     energias = energias_raw[(energias_raw >= 92.80) & (energias_raw <= 3252.00)][:n]
 
     while len(energias) < n:
         extras = stats.gamma.rvs(k, scale=theta, size=1000)
+        extras = np.asarray(extras)
         extras = extras[(extras >= 92.80) & (extras <= 3252.00)]
         energias = np.concatenate([energias, extras])[:n]
 
@@ -522,7 +524,7 @@ def generate_exact_table_13() -> pd.DataFrame:
     # Ajustar para mediana exacta (índice 50)
     energias[50] = 835.20
 
-    print(f"\nEnergía generada:")
+    print("\nEnergía generada:")
     print(f"  Min: {energias[0]:.2f}, Max: {energias[-1]:.2f}")
     print(f"  Promedio: {energias.mean():.2f}, Mediana: {np.median(energias):.2f}")
     print(f"  Std: {energias.std():.2f}")
@@ -584,28 +586,28 @@ if __name__ == "__main__":
     print_table_13()
 
     # 3. Generar escenarios calibrados
-    df = generate_exact_table_13()
+    df_result = generate_exact_table_13()
 
     # 4. Mostrar estadísticas
-    print_statistics(df, "\nESTADÍSTICAS ESCENARIOS GENERADOS")
+    print_statistics(df_result, "\nESTADÍSTICAS ESCENARIOS GENERADOS")
 
     # 5. Comparar con Tabla 13
     print("\n" + "=" * 70)
     print("COMPARACIÓN CON TABLA 13")
     print("=" * 70)
 
-    for col, nombre in [
+    for col_name, nombre_col in [
         ("cargadores", "Cargadores"),
         ("energia_dia", "Energía día"),
         ("potencia_pico", "Potencia pico")
     ]:
-        key = col if col != "energia_dia" else "energia_dia"
-        gen_mean = df[col].mean()
-        gen_median = df[col].median()
-        exp_mean = TABLA_13[key]["prom"]
-        exp_median = TABLA_13[key]["mediana"]
+        key_col = col_name if col_name != "energia_dia" else "energia_dia"
+        gen_mean = df_result[col_name].mean()
+        gen_median = df_result[col_name].median()
+        exp_mean = TABLA_13[key_col]["prom"]
+        exp_median = TABLA_13[key_col]["mediana"]
 
-        print(f"\n{nombre}:")
+        print(f"\n{nombre_col}:")
         print(f"  Promedio:  generado={gen_mean:.2f}, esperado={exp_mean:.2f}, error={abs(gen_mean-exp_mean):.2f}")
         print(f"  Mediana:   generado={gen_median:.2f}, esperado={exp_median:.2f}, error={abs(gen_median-exp_median):.2f}")
 
@@ -613,5 +615,5 @@ if __name__ == "__main__":
     output_path = "d:/diseñopvbesscar/data/oe2/escenarios_tabla13_calibrados.csv"
     import os
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    df.to_csv(output_path, index=False)
+    df_result.to_csv(output_path, index=False)
     print(f"\n✅ Escenarios guardados en: {output_path}")

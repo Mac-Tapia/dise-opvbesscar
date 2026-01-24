@@ -55,23 +55,24 @@ energy_per_moto_session = power_moto * (session_minutes / 60)  # 1.0 kWh
 energy_per_mototaxi_session = power_mototaxi * (session_minutes / 60)  # 1.5 kWh
 energy_avg_session = (energy_per_moto_session + energy_per_mototaxi_session) / 2  # 1.25 kWh
 
-print(f"\nEnergía por sesión:")
+print("\nEnergía por sesión:")
 print(f"  Moto (30min @ 2kW): {energy_per_moto_session:.2f} kWh")
 print(f"  Mototaxi (30min @ 3kW): {energy_per_mototaxi_session:.2f} kWh")
 print(f"  Promedio: {energy_avg_session:.2f} kWh")
-print(f"  Nota Tabla 13 usa 1.06 kWh (ajustado por FC)")
+print("  Nota Tabla 13 usa 1.06 kWh (ajustado por FC)")
+
 
 # Función para evaluar escenario
-def evaluate_scenario(pe, fc):
+def evaluate_scenario(pe_val, fc_val):
     # Vehículos que cargan
-    motos_charging = n_motos * pe
-    mototaxis_charging = n_mototaxis * pe
+    motos_charging = n_motos * pe_val
+    mototaxis_charging = n_mototaxis * pe_val
     total_vehicles = motos_charging + mototaxis_charging
 
     # Energía (basada en capacidad de batería × FC, no potencia del cargador)
     # El FC representa el % de batería descargada que necesita recarga
-    energy_motos = motos_charging * bat_moto * fc
-    energy_mototaxis = mototaxis_charging * bat_mototaxi * fc
+    energy_motos = motos_charging * bat_moto * fc_val
+    energy_mototaxis = mototaxis_charging * bat_mototaxi * fc_val
     energy_day = energy_motos + energy_mototaxis
 
     # Sesiones por hora pico
@@ -89,8 +90,8 @@ def evaluate_scenario(pe, fc):
     potencia_pico = energy_day * 0.125  # Según nota Tabla 13
 
     return {
-        'pe': pe,
-        'fc': fc,
+        'pe': pe_val,
+        'fc': fc_val,
         'chargers': chargers,
         'sockets_total': sockets_total,
         'sessions_4h': sessions_4h,
@@ -130,10 +131,10 @@ for pe, fc in selected_pairs[:101]:
 
 df = pd.DataFrame(scenarios)
 
-print(f"\n{'='*60}")
+print("\n" + '='*60)
 print("ESTADÍSTICAS SIMULADAS (101 escenarios)")
 print('='*60)
-print(f"Métrica                     |    Min |    Max |   Prom | Mediana")
+print("Métrica                     |    Min |    Max |   Prom | Mediana")
 print('-'*60)
 print(f"Cargadores [unid]           | {df['chargers'].min():6.2f} | {df['chargers'].max():6.2f} | {df['chargers'].mean():6.2f} | {df['chargers'].median():6.2f}")
 print(f"Tomas totales [tomas]       | {df['sockets_total'].min():6.2f} | {df['sockets_total'].max():6.2f} | {df['sockets_total'].mean():6.2f} | {df['sockets_total'].median():6.2f}")
@@ -142,18 +143,18 @@ print(f"Cargas día total [cargas]   | {df['cargas_dia'].min():6.2f} | {df['carg
 print(f"Energía día [kWh]           | {df['energy_day'].min():6.2f} | {df['energy_day'].max():6.2f} | {df['energy_day'].mean():6.2f} | {df['energy_day'].median():6.2f}")
 print(f"Potencia pico [kW]          | {df['potencia_pico'].min():6.2f} | {df['potencia_pico'].max():6.2f} | {df['potencia_pico'].mean():6.2f} | {df['potencia_pico'].median():6.2f}")
 
-print(f"\n{'='*60}")
+print("\n" + '='*60)
 print("VALORES ESPERADOS TABLA 13")
 print('='*60)
-print(f"Cargadores [unid]           |   4.00 |  35.00 |  20.61 |  20.00")
-print(f"Tomas totales [tomas]       |  16.00 | 140.00 |  82.46 |  80.00")
-print(f"Sesiones pico 4h [sesiones] | 103.00 |1030.00 | 593.52 | 566.50")
-print(f"Cargas día total [cargas]   |  87.29 |3058.96 | 849.83 | 785.62")
-print(f"Energía día [kWh]           |  92.80 |3252.00 | 903.46 | 835.20")
-print(f"Potencia pico [kW]          |  11.60 | 406.50 | 112.93 | 104.40")
+print("Cargadores [unid]           |   4.00 |  35.00 |  20.61 |  20.00")
+print("Tomas totales [tomas]       |  16.00 | 140.00 |  82.46 |  80.00")
+print("Sesiones pico 4h [sesiones] | 103.00 |1030.00 | 593.52 | 566.50")
+print("Cargas día total [cargas]   |  87.29 |3058.96 | 849.83 | 785.62")
+print("Energía día [kWh]           |  92.80 |3252.00 | 903.46 | 835.20")
+print("Potencia pico [kW]          |  11.60 | 406.50 | 112.93 | 104.40")
 
 # Calcular qué combinación produce energía máxima de 3252 kWh
-print(f"\n{'='*60}")
+print("\n" + '='*60)
 print("ANÁLISIS PARA ALCANZAR VALORES MÁXIMOS")
 print('='*60)
 
@@ -181,15 +182,15 @@ print(f"Factor requerido: {target_energy_max / base_energy:.3f}")
 # Otra opción: la flota es mayor
 # 3252 = N × 3 (promedio) × 1 × 1 => N = 1084 vehículos
 
-print(f"\nOpciones para alcanzar 3252 kWh:")
-print(f"  1. Usar batería promedio de 3.252 kWh")
-print(f"  2. Usar flota de 1084 vehículos con bat_avg=3 kWh")
-print(f"  3. Ajustar n_motos=542, n_mototaxis=542 (1084 total)")
+print("\nOpciones para alcanzar 3252 kWh:")
+print("  1. Usar batería promedio de 3.252 kWh")
+print("  2. Usar flota de 1084 vehículos con bat_avg=3 kWh")
+print("  3. Ajustar n_motos=542, n_mototaxis=542 (1084 total)")
 
 # ============================================================
 # AJUSTE PARA COINCIDIR CON TABLA 13
 # ============================================================
-print(f"\n{'='*60}")
+print("\n" + '='*60)
 print("SIMULACIÓN AJUSTADA PARA TABLA 13")
 print('='*60)
 
@@ -257,11 +258,11 @@ df_adj = pd.DataFrame(scenarios_adj)
 
 print(f"\nUsando n_motos={n_motos_adj}, n_mototaxis={n_mototaxis_adj}")
 print(f"PE values: {pe_values_adj}")
-print(f"\n{'='*60}")
+print("\n" + '='*60)
 print("ESTADÍSTICAS AJUSTADAS (101 escenarios)")
-print('='*60)
-print(f"Métrica                     |    Min |    Max |   Prom | Mediana")
-print('-'*60)
+print("="*60)
+print("Métrica                     |    Min |    Max |   Prom | Mediana")
+print("-"*60)
 print(f"Cargadores [unid]           | {df_adj['chargers'].min():6.2f} | {df_adj['chargers'].max():6.2f} | {df_adj['chargers'].mean():6.2f} | {df_adj['chargers'].median():6.2f}")
 print(f"Tomas totales [tomas]       | {df_adj['sockets_total'].min():6.2f} | {df_adj['sockets_total'].max():6.2f} | {df_adj['sockets_total'].mean():6.2f} | {df_adj['sockets_total'].median():6.2f}")
 print(f"Sesiones pico 4h [sesiones] | {df_adj['sessions_4h'].min():6.2f} | {df_adj['sessions_4h'].max():6.2f} | {df_adj['sessions_4h'].mean():6.2f} | {df_adj['sessions_4h'].median():6.2f}")
