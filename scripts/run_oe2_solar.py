@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 import shutil
-from pathlib import Path
 
 from iquitos_citylearn.utils.logging import setup_logging
 from iquitos_citylearn.oe2.solar_pvlib import run_solar_sizing, prepare_solar_for_citylearn
@@ -75,7 +74,7 @@ def main() -> None:
         src = out_dir / name
         if src.exists():
             shutil.copy2(src, analyses_dir / name)
-    
+
     # Preparar datos para CityLearn (OE3)
     pv_timeseries_path = out_dir / "pv_generation_timeseries.csv"
     if pv_timeseries_path.exists():
@@ -86,12 +85,12 @@ def main() -> None:
             pv_ac_kw=float(solar["target_ac_kw"]),
             year=int(cfg["project"]["year"]),
         )
-    
+
     # Generar gráficas avanzadas
     if not args.no_plots:
         plots_dir = rp.reports_dir / "oe2" / "solar_plots"
         generate_all_solar_plots(out_dir, plots_dir)
-    
+
     # Mostrar resumen final
     print("\nRESUMEN FINAL SOLAR:")
     print(f"   Capacidad DC: {result['target_dc_kw']:,.0f} kWp")

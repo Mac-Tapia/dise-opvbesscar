@@ -114,15 +114,30 @@ Informes técnicos y análisis
 
 #### 📍 [CONSTRUCCION_128_CHARGERS_FINAL.md](CONSTRUCCION_128_CHARGERS_FINAL.md)
 
-- Construcción del schema con 128 cargadores
-- Validación de datos
-- Verificación completada
+- Construcción del schema con 128 tomas (32 cargadores × 4 tomas)
+- Tabla 13 OE2 completa con 4 escenarios
+- Vehículos y energía por día/mes/año/20 años
 
 #### 📍 [DATASETS_ANUALES_128_CHARGERS.md](DATASETS_ANUALES_128_CHARGERS.md)
 
 - Datasets anuales (Solar, Grid, Demand)
-- Especificaciones técnicas
-- Ubicación de archivos
+- Tabla 13 OE2 con todos los escenarios
+- Vehículos cargados hasta 20 años
+
+#### 📍 [DATASETS_OE3_RESUMEN_2026_01_24.md](DATASETS_OE3_RESUMEN_2026_01_24.md) 🆕
+
+- **Datasets OE3 CityLearn v2** (2026-01-24)
+- 128 tomas controlables (32 cargadores × 4 tomas)
+- Tabla 13 OE2 completa: CONSERVADOR, MEDIANO, RECOMENDADO, MÁXIMO
+- Vehículos: hasta 18.8M en 20 años (escenario MÁXIMO)
+- Energía: hasta 42,340 MWh en 20 años (escenario MÁXIMO)
+
+#### 📍 [MODO_3_OPERACION_30MIN.md](MODO_3_OPERACION_30MIN.md)
+
+- Operación Modo 3 IEC 61851
+- Sesiones de 30 minutos
+- Tabla 13 OE2 con 4 escenarios
+- RECOMENDADO: 1,672 vehículos/día, 12.2M en 20 años
 
 #### 📍 [AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md](AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md)
 

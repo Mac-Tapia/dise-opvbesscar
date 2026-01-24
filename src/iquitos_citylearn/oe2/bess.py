@@ -13,14 +13,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any, TYPE_CHECKING
+from typing import Dict, List, Optional, Tuple, Any, Type
 import json
 import math
 import numpy as np
 import pandas as pd
-
-if TYPE_CHECKING:
-    pass
+from matplotlib import pyplot as plt
 
 
 @dataclass(frozen=True)
@@ -77,14 +75,14 @@ def load_mall_demand_real(
 ) -> pd.DataFrame:
     """
     Carga la demanda real del mall desde CSV.
-    
+
     Los datos del archivo están en kW (potencia) a intervalos de 15 minutos.
     Se convierten a kWh (energía) horaria.
-    
+
     Args:
         mall_demand_path: Ruta al archivo CSV con demanda del mall
         year: Año de simulación
-    
+
     Returns:
         DataFrame con demanda horaria del mall en kWh (8760 filas)
     """
@@ -94,6 +92,8 @@ def load_mall_demand_real(
 
     def find_col(candidates: list[str]) -> Optional[str]:
         for col in df.columns:
+            if not isinstance(col, str):
+                continue
             col_norm = col.strip().lower()
             for cand in candidates:
                 if col_norm == cand or cand in col_norm:
@@ -110,13 +110,13 @@ def load_mall_demand_real(
         demand_col = candidates[-1] if candidates else df.columns[0]
 
     df = df.rename(columns={date_col: "datetime", demand_col: "power_kw"})
-    
+
     # Asegurar índice datetime
     df['datetime'] = pd.to_datetime(df['datetime'], dayfirst=True, errors='coerce')
     df['power_kw'] = pd.to_numeric(df['power_kw'], errors='coerce')
     df = df.dropna(subset=['datetime', 'power_kw'])
     df = df.set_index('datetime')
-    
+
     # Detectar intervalo de tiempo
     if len(df) > 1:
         time_diff = (df.index[1] - df.index[0]).total_seconds() / 60  # en minutos
@@ -147,7 +147,7 @@ def load_mall_demand_real(
         # Calcular perfil promedio diario
         df_hourly['hour'] = pd.to_datetime(df_hourly.index).hour  # type: ignore[union-attr]
         hourly_profile = df_hourly.groupby('hour')['mall_kwh'].mean()
-        
+
         # Crear índice de año completo
         idx = pd.date_range(start=f'{year}-01-01', periods=8760, freq='h')
         df_full = pd.DataFrame(index=idx)
@@ -155,38 +155,38 @@ def load_mall_demand_real(
         df_full['mall_kwh'] = df_full['hour'].map(hourly_profile)
         df_full = df_full.drop(columns=['hour'])
         return df_full
-    
+
     return df_hourly[['mall_kwh']]
 
 
 def load_pv_generation(pv_timeseries_path: Path) -> pd.DataFrame:
     """Carga la generación PV desde timeseries."""
     df = pd.read_csv(pv_timeseries_path)
-    
+
     # Detectar columna de tiempo
     time_col = None
     for col in ['datetime', 'timestamp', 'time', 'Timestamp']:
         if col in df.columns:
             time_col = col
             break
-    
+
     if time_col:
         df[time_col] = pd.to_datetime(df[time_col])
         df = df.set_index(time_col)
-    
+
     # Resamplear a horario si es subhorario
     if len(df) > 8760:
         df_hourly = df.resample('h').sum()
     else:
         df_hourly = df
-    
+
     # Buscar columna de generación PV
     pv_col = None
     for col in ['pv_kwh', 'ac_energy_kwh', 'ac_power_kw', 'p_ac']:
         if col in df_hourly.columns:
             pv_col = col
             break
-    
+
     if pv_col:
         if 'power' in pv_col.lower() or 'p_ac' in pv_col.lower():
             # Si es potencia, convertir a energía (kW -> kWh para 1 hora)
@@ -195,14 +195,14 @@ def load_pv_generation(pv_timeseries_path: Path) -> pd.DataFrame:
             df_hourly['pv_kwh'] = df_hourly[pv_col]
     else:
         df_hourly['pv_kwh'] = 0.0
-    
+
     return df_hourly[['pv_kwh']]
 
 
 def load_ev_demand(ev_profile_path: Path, year: int = 2024) -> pd.DataFrame:
     """Carga el perfil de demanda EV."""
     df = pd.read_csv(ev_profile_path)
-    
+
     # Verificar columnas
     if 'hour' in df.columns and 'energy_kwh' in df.columns:
         # Perfil de 24 horas, expandir a año
@@ -213,7 +213,7 @@ def load_ev_demand(ev_profile_path: Path, year: int = 2024) -> pd.DataFrame:
         df_full['ev_kwh'] = df_full['hour'].map(hourly_profile)
         df_full = df_full.drop(columns=['hour'])
         return df_full
-    
+
     return df
 
 
@@ -470,7 +470,7 @@ def generate_bess_plots(
 ) -> None:
     """
     Genera las 4 gráficas del sistema FV + BESS.
-    
+
     Args:
         df_sim: DataFrame con simulación
         capacity_kwh: Capacidad BESS
@@ -483,26 +483,25 @@ def generate_bess_plots(
         out_dir: Directorio de datos interim
         reports_dir: Directorio de reportes (opcional)
     """
-    import matplotlib.pyplot as plt
-    
     plots_dir = out_dir / "plots"
     if reports_dir is not None:
         plots_dir = reports_dir / "oe2" / "bess"
     plots_dir.mkdir(parents=True, exist_ok=True)
-    
+
     def save_plot(filename: str):
         """Guarda plot en un solo directorio."""
         plt.savefig(plots_dir / filename, dpi=150, bbox_inches='tight')
-    
+
     # Obtener datos de un día representativo (promedio)
     df_day = df_sim.groupby('hour').mean().reset_index()
     hours = df_day['hour'].values
-    
+    total_pv_label = pv_kwh_day if pv_kwh_day > 0 else float(df_day['pv_kwh'].sum())
+
     # ===========================================================
     # Figura principal con 4 paneles
     # ===========================================================
     _, axes = plt.subplots(4, 1, figsize=(14, 16))
-    
+
     # Datos - convertir a numpy arrays para compatibilidad de tipos
     pv = np.asarray(df_day['pv_kwh'].values)
     load = np.asarray(df_day['load_kwh'].values)
@@ -514,7 +513,7 @@ def generate_bess_plots(
     total_demand_day = mall_kwh_day + ev_kwh_day
     mall_ratio = mall_kwh_day / total_demand_day if total_demand_day > 0 else 0.5
     ev_ratio = ev_kwh_day / total_demand_day if total_demand_day > 0 else 0.5
-    
+
     mall_h = load * mall_ratio
     ev_h = load * ev_ratio
     # PV aplicado al mall solo cuando hay generación solar (>0)
@@ -525,7 +524,7 @@ def generate_bess_plots(
     mall_grid = np.asarray(df_day['mall_grid_import_kwh'].values) if 'mall_grid_import_kwh' in df_day else np.maximum(mall_h - mall_solar_used, 0)
     ev_grid = np.asarray(df_day['ev_grid_import_kwh'].values) if 'ev_grid_import_kwh' in df_day else np.maximum(grid_import - mall_grid, 0)
     mall_solar_used_plot = np.asarray(df_day['mall_pv_used_kwh'].values) if 'mall_pv_used_kwh' in df_day else mall_solar_used
-    
+
     # ===== Panel 1: Demanda Total =====
     ax1 = axes[0]
     ax1.bar(hours, mall_h, color='steelblue', label='Mall', alpha=0.9)
@@ -538,7 +537,7 @@ def generate_bess_plots(
     ax1.set_xticks(range(24))
     ax1.legend(loc='upper left', fontsize=9)
     ax1.grid(True, alpha=0.3)
-    
+
     # ===== Panel 2: Balance Energético (PV vs Demanda) =====
     ax2 = axes[1]
     mall_pv_used = np.minimum(pv, mall_h)
@@ -559,32 +558,36 @@ def generate_bess_plots(
                  fontsize=9, bbox=dict(boxstyle='round', facecolor='white', alpha=0.7))
     ax2.set_xlabel('Hora del Día', fontsize=10)
     ax2.set_ylabel('Energía (kWh)', fontsize=10)
-    ax2.set_title(f'Balance Energético - Generación FV Iquitos: {pv.sum():.1f} kWh/día', fontsize=12, fontweight='bold')
+    ax2.set_title(
+        f'Balance Energético - Generación FV Iquitos: {total_pv_label:.1f} kWh/día',
+        fontsize=12,
+        fontweight='bold',
+    )
     ax2.set_xlim(-0.5, 23.5)
     ax2.set_xticks(range(24))
     ax2.legend(loc='upper left', fontsize=9)
     ax2.grid(True, alpha=0.3)
-    
+
     # ===== Panel 3: Estado de Carga Batería =====
     ax3 = axes[2]
     soc_min_limit = (1.0 - dod) * 100
     soc_max_limit = 100.0
-    
+
     ax3.fill_between(hours, soc_min_limit, soc, color='lightgreen', alpha=0.7, label='SOC BESS')
     ax3.plot(hours, soc, 'g-', linewidth=2, marker='o', markersize=4, label='SOC BESS')
     ax3.axhline(y=soc_min_limit, color='green', linestyle='--', linewidth=1.5, label=f'SOC mínimo ({soc_min_limit:.0f}%)')
     ax3.axhline(y=soc_max_limit, color='blue', linestyle='--', linewidth=1.5, label=f'SOC máximo ({soc_max_limit:.0f}%)')
-    
+
     ax3.set_xlabel('Hora del Día', fontsize=10)
     ax3.set_ylabel('Estado de Carga (%)', fontsize=10)
-    ax3.set_title(f'Estado de Carga Batería - {capacity_kwh:.0f} kWh / {power_kw:.0f} kW (DoD {dod*100:.0f}%, {c_rate}C)', 
+    ax3.set_title(f'Estado de Carga Batería - {capacity_kwh:.0f} kWh / {power_kw:.0f} kW (DoD {dod*100:.0f}%, {c_rate}C)',
                   fontsize=12, fontweight='bold')
     ax3.set_xlim(-0.5, 23.5)
     ax3.set_ylim(0, 110)
     ax3.set_xticks(range(24))
     ax3.legend(loc='upper left', fontsize=9)
     ax3.grid(True, alpha=0.3)
-    
+
     # Agregar anotaciones de SOC
     soc_min_val = soc.min()
     soc_max_val = soc.max()
@@ -592,10 +595,10 @@ def generate_bess_plots(
     ax3.annotate(f'SOC min: {soc_min_val:.1f}%\nSOC máx: {soc_max_val:.1f}%\nCiclos/día: {cycles_day:.2f}',
                  xy=(0.02, 0.98), xycoords='axes fraction', ha='left', va='top',
                  fontsize=9, bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.8))
-    
+
     # ===== Panel 4: Flujos de Energía =====
     ax4 = axes[3]
-    
+
     # Barras para carga/descarga BESS
     ax4.bar(hours, charge, color='green', alpha=0.7, label='Carga BESS')
     ax4.bar(hours, -discharge, color='orange', alpha=0.7, label='Descarga BESS')
@@ -621,7 +624,7 @@ def generate_bess_plots(
     ax4.set_xticks(range(24))
     ax4.legend(loc='upper right', fontsize=9)
     ax4.grid(True, alpha=0.3)
-    
+
     # Métricas de red
     grid_total = grid_import.sum()
     grid_mall_total = mall_grid.sum()
@@ -630,25 +633,25 @@ def generate_bess_plots(
     ax4.annotate(f'Red total: {grid_total:.1f} kWh\n  Mall: {grid_mall_total:.1f} kWh\n  EV: {grid_ev_total:.1f} kWh\nAutosuficiencia: {self_suff*100:.1f}%',
                  xy=(0.98, 0.98), xycoords='axes fraction', ha='right', va='top',
                  fontsize=9, bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))
-    
+
     # Título principal
     plt.suptitle('Sistema FV + BESS - Mall Iquitos, Loreto, Perú', fontsize=14, fontweight='bold', y=1.01)
     plt.tight_layout()
     save_plot('bess_sistema_completo.png')
     plt.close()
     print("  OK Grafica: Sistema FV + BESS Completo")
-    
+
     # ===========================================================
     # Gráfica adicional: Análisis mensual
     # ===========================================================
     if len(df_sim) >= 720:  # Al menos un mes de datos
-        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-        
+        _, axes = plt.subplots(2, 2, figsize=(14, 10))
+
         # Agregar por mes
         df_sim_copy = df_sim.copy()
         df_sim_copy['month'] = (df_sim_copy.index // 720) % 12 + 1 if len(df_sim) > 720 else 1
         monthly = df_sim_copy.groupby('month').sum()
-        
+
         # Panel 1: Energía mensual
         ax1 = axes[0, 0]
         months = monthly.index.values
@@ -659,7 +662,7 @@ def generate_bess_plots(
         ax1.set_title('Energía Mensual', fontsize=11, fontweight='bold')
         ax1.legend()
         ax1.grid(True, alpha=0.3)
-        
+
         # Panel 2: Flujos de red mensual
         ax2 = axes[0, 1]
         ax2.bar(months - 0.2, monthly['grid_import_kwh'] / 1000, width=0.4, color='red', label='Import Red')
@@ -669,7 +672,7 @@ def generate_bess_plots(
         ax2.set_title('Intercambio con Red Mensual', fontsize=11, fontweight='bold')
         ax2.legend()
         ax2.grid(True, alpha=0.3)
-        
+
         # Panel 3: Ciclos BESS
         ax3 = axes[1, 0]
         monthly_cycles = (monthly['bess_charge_kwh'] / capacity_kwh) / 30  # Ciclos/día promedio
@@ -680,7 +683,7 @@ def generate_bess_plots(
         ax3.set_title('Ciclos BESS por Mes', fontsize=11, fontweight='bold')
         ax3.legend()
         ax3.grid(True, alpha=0.3)
-        
+
         # Panel 4: Autosuficiencia mensual
         ax4 = axes[1, 1]
         self_suff_monthly = 1.0 - (monthly['grid_import_kwh'] / monthly['load_kwh'].replace(0, 1))
@@ -692,13 +695,13 @@ def generate_bess_plots(
         ax4.set_ylim(0, 100)
         ax4.legend()
         ax4.grid(True, alpha=0.3)
-        
+
         plt.suptitle('Análisis Mensual del Sistema', fontsize=13, fontweight='bold')
         plt.tight_layout()
         save_plot('bess_analisis_mensual.png')
         plt.close()
         print("  OK Grafica: Analisis Mensual")
-    
+
     print(f"  OK Plots guardados en: {plots_dir}")
 
 
@@ -711,13 +714,13 @@ def prepare_citylearn_data(
 ) -> Dict[str, Any]:
     """
     Prepara los datos del BESS para el schema de CityLearn.
-    
+
     Returns:
         Diccionario con parámetros para schema.json
     """
     citylearn_dir = out_dir.parent / "citylearn"
     citylearn_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Guardar timeseries de demanda para CityLearn (solo demanda del mall)
     # CityLearn espera: Hour, non_shiftable_load (kWh)
     load_series = df_sim['mall_kwh'] if 'mall_kwh' in df_sim.columns else df_sim['load_kwh']
@@ -726,14 +729,14 @@ def prepare_citylearn_data(
         'non_shiftable_load': load_series.values,
     })
     df_export.to_csv(citylearn_dir / "building_load.csv", index=False)
-    
+
     # Guardar generación PV
     df_pv = pd.DataFrame({
         'Hour': range(len(df_sim)),
         'solar_generation': df_sim['pv_kwh'].values,
     })
     df_pv.to_csv(citylearn_dir / "bess_solar_generation.csv", index=False)
-    
+
     # Parámetros para schema
     schema_params = {
         "electrical_storage": {
@@ -754,14 +757,14 @@ def prepare_citylearn_data(
         "building_load_path": str((citylearn_dir / "building_load.csv").resolve()),
         "solar_generation_path": str((citylearn_dir / "bess_solar_generation.csv").resolve()),
     }
-    
+
     # Guardar parámetros
     (citylearn_dir / "bess_schema_params.json").write_text(
         json.dumps(schema_params, indent=2), encoding="utf-8"
     )
-    
+
     print(f"\nDatos CityLearn guardados en: {citylearn_dir}")
-    
+
     return schema_params
 
 
@@ -886,13 +889,22 @@ def run_bess_sizing(
     pv_kwh = np.asarray(df_pv['pv_kwh'].values[:min_len])
     pv_shift_hours = 0
     if tz:
+        zoneinfo_cls: Optional[Type[Any]] = None
         try:
-            from zoneinfo import ZoneInfo
-            offset = ZoneInfo(tz).utcoffset(pd.Timestamp(year, 6, 1))
+            from zoneinfo import ZoneInfo as ZoneInfoClass
+        except ImportError:
+            pass
+        else:
+            zoneinfo_cls = ZoneInfoClass
+
+        if zoneinfo_cls is not None:
+            offset = None
+            try:
+                offset = zoneinfo_cls(tz).utcoffset(pd.Timestamp(year, 6, 1))
+            except LookupError:
+                offset = None
             if offset is not None:
                 pv_shift_hours = int(offset.total_seconds() / 3600)
-        except Exception:
-            pv_shift_hours = 0
     if pv_shift_hours:
         pv_kwh = np.roll(pv_kwh, pv_shift_hours)
 
@@ -1049,8 +1061,8 @@ def run_bess_sizing(
 
         total_pv = float(pv_kwh.sum())
         total_load = float(total_load_kwh.sum())
-        total_grid_import = float(grid_import_total.sum())
-        total_grid_export = float(df_sim['grid_export_kwh'].sum())
+        total_grid_import = float(np.sum(grid_import_total))
+        total_grid_export = float(np.sum(df_sim['grid_export_kwh'].to_numpy()))
         self_sufficiency = 1.0 - (total_grid_import / max(total_load, 1e-9))
 
         metrics = metrics.copy()
@@ -1074,8 +1086,8 @@ def run_bess_sizing(
 
         total_pv = float(pv_kwh.sum())
         total_load = float(total_load_kwh.sum())
-        total_grid_import = float(grid_import_total.sum())
-        total_grid_export = float(grid_export_total.sum())
+        total_grid_import = float(np.asarray(grid_import_total).sum())
+        total_grid_export = float(np.asarray(grid_export_total).sum())
         self_sufficiency = 1.0 - (total_grid_import / max(total_load, 1e-9))
 
         metrics = metrics.copy()
@@ -1143,7 +1155,7 @@ def run_bess_sizing(
         json.dumps(result_dict, indent=2), encoding="utf-8"
     )
 
-    citylearn_params = prepare_citylearn_data(
+    prepare_citylearn_data(
         df_sim=df_sim,
         capacity_kwh=capacity_kwh,
         power_kw=power_kw,
