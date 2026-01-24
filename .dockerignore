@@ -53,6 +53,7 @@ Thumbs.db
 *.md
 docs/
 *.txt
+!README.md
 !requirements*.txt
 
 # Large data (only if needed - adjust as necessary)

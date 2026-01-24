@@ -22,7 +22,7 @@ services:
       - OMP_NUM_THREADS=8
       - CUDA_VISIBLE_DEVICES=0
       - TORCH_HOME=/app/.torch
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app/src:/app
     
     # GPU runtime
     runtime: nvidia
@@ -77,9 +77,11 @@ services:
     
     environment:
       - PYTHONUNBUFFERED=1
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app/src:/app
+      - CHECKPOINT_DIR=/app/outputs/oe3/checkpoints
+      - TERM=xterm
     
-    command: ["python", "monitor_checkpoints.py"]
+    command: ["python", "scripts/monitor_checkpoints.py"]
     
     runtime: nvidia
     
@@ -125,6 +127,7 @@ services:
       - JUPYTER_ENABLE_LAB=yes
       - PYTHONUNBUFFERED=1
       - CUDA_VISIBLE_DEVICES=0
+      - PYTHONPATH=/app/src:/app
     
     command: jupyter lab --ip=0.0.0.0 --allow-root --no-browser
     
