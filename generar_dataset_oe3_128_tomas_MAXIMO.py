@@ -22,7 +22,7 @@ Cada toma es un punto de control independiente para el agente OE3.
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional, Any
 import json
 from datetime import datetime, timedelta
 
@@ -114,6 +114,10 @@ def generate_ev_arrivals_30min(
     Genera matriz de llegadas de EVs con sesiones de 30 minutos.
     ESCENARIO MÁXIMO: Alta ocupación para diseño.
     """
+    # Documentar parámetros de referencia
+    _ = battery_kwh  # Capacidad para referencia
+    _ = sessions_per_hour  # Capacidad máxima por hora
+
     np.random.seed(seed)
 
     start_date = datetime(2024, 1, 1, 0, 0)
@@ -163,6 +167,10 @@ def generate_citylearn_charger_csv(
     n_hours: int = N_HOURS_YEAR
 ) -> pd.DataFrame:
     """Genera DataFrame con formato CityLearn para una toma."""
+    # Documentar parámetros de referencia
+    _ = toma_id  # Identificador para metadata
+    _ = power_kw  # Potencia nominal
+    _ = battery_kwh  # Capacidad batería
 
     start_date = datetime(2024, 1, 1, 0, 0)
     timestamps = [start_date + timedelta(hours=h) for h in range(n_hours)]
@@ -171,8 +179,8 @@ def generate_citylearn_charger_csv(
     days = np.array([ts.timetuple().tm_yday for ts in timestamps])
     months = np.array([ts.month for ts in timestamps])
 
-    charging_hours = (states == 1).astype(int)
-    energy = power.copy()
+    # Energía acumulada por hora
+    energy = power.copy()  # kWh = kW * 1h
 
     soc = np.zeros(n_hours)
     for t in range(n_hours):
@@ -191,6 +199,7 @@ def generate_citylearn_charger_csv(
         "Month": months,
         "charger_state": states,
         "charger_power_kw": power,
+        "charger_energy_kwh": energy,  # Usar variable energy
         "electric_vehicle_soc": soc,
         "electric_vehicle_required_soc_departure": req_soc,
         "electric_vehicle_estimated_arrival_time": arrival_times,
@@ -300,17 +309,19 @@ def generate_playa_datasets(
 
 
 def generate_schema_with_tomas(
-    playas_stats: Dict,
+    playas_stats: Dict[str, Any],
     output_dir: Path,
-    schema_template_path: Path = None
-) -> dict:
+    schema_template_path: Optional[Path] = None
+) -> Dict[str, Any]:
     """Genera schema CityLearn v2 con todas las tomas."""
+    _ = schema_template_path  # Reservado para futuro uso
 
     print(f"\n{'='*70}")
     print("Generando Schema CityLearn v2 para OE3 - ESCENARIO MÁXIMO")
     print(f"{'='*70}")
 
-    schema = {
+    # Schema tipado explícitamente
+    schema: Dict[str, Any] = {
         "root_directory": str(output_dir),
         "simulation_end_time_step": N_HOURS_YEAR - 1,
         "central_agent": True,
@@ -328,19 +339,25 @@ def generate_schema_with_tomas(
         "electric_vehicles_def": {}
     }
 
+    # Variables tipadas para acceso
+    observations: Dict[str, Any] = schema["observations"]
+    actions: Dict[str, Any] = schema["actions"]
+    buildings: Dict[str, Any] = schema["buildings"]
+    ev_defs: Dict[str, Any] = schema["electric_vehicles_def"]
+
     charger_idx = 0
     for playa_name, stats in playas_stats.items():
         for toma in stats["tomas"]:
             toma_id = toma["toma_id"]
 
-            schema["observations"][f"charger_{toma_id}_state"] = {
+            observations[f"charger_{toma_id}_state"] = {
                 "active": True, "shared_in_central_agent": True
             }
-            schema["observations"][f"charger_{toma_id}_power_kw"] = {
+            observations[f"charger_{toma_id}_power_kw"] = {
                 "active": True, "shared_in_central_agent": True
             }
 
-            schema["actions"][f"charger_{toma_id}_control"] = {"active": True}
+            actions[f"charger_{toma_id}_control"] = {"active": True}
 
             charger_idx += 1
 
@@ -354,7 +371,7 @@ def generate_schema_with_tomas(
             for toma in stats["tomas"]
         }
 
-        schema["buildings"][playa_name] = {
+        buildings[playa_name] = {
             "type": "ev_charging_station",
             "include": True,
             "chargers": chargers_in_playa,
@@ -363,7 +380,7 @@ def generate_schema_with_tomas(
 
         for toma in stats["tomas"]:
             ev_name = f"ev_{toma['toma_id']}"
-            schema["electric_vehicles_def"][ev_name] = {
+            ev_defs[ev_name] = {
                 "charger": toma["toma_id"],
                 "battery_capacity_kwh": stats.get("battery_kwh", 2.0),
                 "charging_efficiency": 0.95,
@@ -372,12 +389,12 @@ def generate_schema_with_tomas(
             }
 
     schema_path = output_dir / "schema_128_tomas_maximo.json"
-    with open(schema_path, "w") as f:
+    with open(schema_path, "w", encoding="utf-8") as f:
         json.dump(schema, f, indent=2)
 
     print(f"  ✅ Schema guardado: {schema_path}")
-    print(f"  ✅ Total observables: {len(schema['observations'])}")
-    print(f"  ✅ Total acciones: {len(schema['actions'])}")
+    print(f"  ✅ Total observables: {len(observations)}")
+    print(f"  ✅ Total acciones: {len(actions)}")
     print(f"  ✅ Total chargers: {charger_idx}")
 
     return schema
@@ -392,8 +409,8 @@ def main():
     print("="*70)
     print(f"\nFecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"Período: {N_HOURS_YEAR} horas (1 año)")
-    print(f"\n⚠️  ESCENARIO: MÁXIMO (PE=1.0, FC=1.0)")
-    print(f"⚠️  Objetivo: ~2,228 kWh/día (Capacidad máxima 128 tomas)")
+    print("\n⚠️  ESCENARIO: MÁXIMO (PE=1.0, FC=1.0)")
+    print("⚠️  Objetivo: ~2,228 kWh/día (Capacidad máxima 128 tomas)")
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     print(f"\nDirectorio de salida: {OUTPUT_DIR.absolute()}")
@@ -416,11 +433,11 @@ def main():
         total_tomas += stats["n_tomas"]
         total_power += stats["total_power_kw"]
 
-    schema = generate_schema_with_tomas(playas_stats, OUTPUT_DIR)
+    _schema = generate_schema_with_tomas(playas_stats, OUTPUT_DIR)
 
-    print(f"\n{'='*70}")
+    print("\n" + "=" * 70)
     print("RESUMEN FINAL - ESCENARIO MÁXIMO (DISEÑO)")
-    print(f"{'='*70}")
+    print("=" * 70)
 
     for playa_name, stats in playas_stats.items():
         print(f"\n{playa_name}:")
@@ -432,15 +449,15 @@ def main():
     energia_diaria = total_energy / 365
     print(f"\n{'='*70}")
     print("TOTALES:")
-    print(f"  Cargadores: 32")
+    print("  Cargadores: 32")
     print(f"  Tomas controlables: {total_tomas}")
     print(f"  Potencia instalada: {total_power} kW")
     print(f"  Energía anual estimada: {total_energy:,.0f} kWh")
     print(f"  Energía diaria promedio: {energia_diaria:,.0f} kWh/día")
-    print(f"  ✅  Objetivo MÁXIMO alcanzado: ~2,228 kWh/día")
-    print(f"{'='*70}")
+    print("  ✅  Objetivo MÁXIMO alcanzado: ~2,228 kWh/día")
+    print("=" * 70)
 
-    summary = {
+    main_summary = {
         "escenario": "MÁXIMO (DISEÑO)",
         "fecha_generacion": datetime.now().isoformat(),
         "n_hours": N_HOURS_YEAR,
@@ -462,14 +479,14 @@ def main():
     }
 
     summary_path = OUTPUT_DIR / "dataset_summary_maximo.json"
-    with open(summary_path, "w") as f:
-        json.dump(summary, f, indent=2)
+    with open(summary_path, "w", encoding="utf-8") as f:
+        json.dump(main_summary, f, indent=2)
 
     print(f"\n✅ Dataset MÁXIMO generado en: {OUTPUT_DIR}")
     print(f"✅ Resumen guardado en: {summary_path}")
 
-    return summary
+    return main_summary
 
 
 if __name__ == "__main__":
-    summary = main()
+    main()

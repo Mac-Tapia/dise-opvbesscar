@@ -62,9 +62,9 @@ pe_max = 1.00
 fc_min = 0.40
 fc_max = 1.00
 
-def evaluate(pe, fc):
-    energy = n_total * pe * fc * bat_avg
-    vehicles = n_total * pe
+def evaluate(pe_v, fc_v):
+    energy = n_total * pe_v * fc_v * bat_avg
+    vehicles = n_total * pe_v
     sessions_4h = vehicles  # Todos cargan en 4 horas pico
     sessions_hour = sessions_4h / peak_hours
 
@@ -73,7 +73,7 @@ def evaluate(pe, fc):
     chargers = math.ceil(sessions_hour / max(cap_per_charger, 1e-9))
 
     return {
-        'pe': pe, 'fc': fc,
+        'pe': pe_v, 'fc': fc_v,
         'chargers': chargers,
         'sockets': chargers * sockets_per_charger,
         'sessions_4h': sessions_4h,
@@ -136,9 +136,9 @@ print("=" * 70)
 pe_values = np.array([0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.00])
 fc_values = np.array([0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.00])
 
-def evaluate_calibrated(pe, fc):
-    energy = n_total * pe * fc * bat_final
-    vehicles = n_total * pe
+def evaluate_calibrated(pe_c, fc_c):
+    energy = n_total * pe_c * fc_c * bat_final
+    vehicles = n_total * pe_c
     sessions_4h = vehicles
     sessions_hour = sessions_4h / peak_hours
 
@@ -147,7 +147,7 @@ def evaluate_calibrated(pe, fc):
     chargers = math.ceil(sessions_hour / max(cap_per_charger, 1e-9))
 
     return {
-        'pe': pe, 'fc': fc,
+        'pe': pe_c, 'fc': fc_c,
         'chargers': chargers,
         'sockets': chargers * sockets_per_charger,
         'sessions_4h': sessions_4h,

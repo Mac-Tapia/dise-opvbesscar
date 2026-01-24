@@ -31,17 +31,17 @@ def generate_distribution(
     np.random.seed(42)
 
     # Generar muchos valores y filtrar dentro del rango
-    all_values = []
-    while len(all_values) < n * 10:
+    all_values_list: list[float] = []
+    while len(all_values_list) < n * 10:
         raw = np.random.lognormal(mu, sigma, n * 100)
         valid = raw[(raw >= target_min) & (raw <= target_max)]
-        all_values.extend(valid.tolist())
+        all_values_list.extend(valid.tolist())
 
-    all_values = np.array(sorted(all_values))
+    all_values_arr = np.array(sorted(all_values_list))
 
     # Muestrear uniformemente para obtener n valores
-    indices = np.linspace(0, len(all_values) - 1, n).astype(int)
-    valores = all_values[indices]
+    indices = np.linspace(0, len(all_values_arr) - 1, n).astype(int)
+    valores = all_values_arr[indices]
 
     # Forzar valores exactos en extremos y mediana
     idx_med = n // 2  # índice 50 para n=101
@@ -78,7 +78,7 @@ def generate_distribution(
     print(f"  Resultado: Min={valores.min():.2f}, Max={valores.max():.2f}, " +
           f"Prom={valores.mean():.2f}, Med={np.median(valores):.2f}")
 
-    return valores
+    return np.asarray(valores)  # Asegurar tipo ndarray
 
 
 def generate_discrete_distribution(
@@ -321,15 +321,15 @@ def print_comparison(df: pd.DataFrame):
 
 if __name__ == "__main__":
     # Generar escenarios
-    df = generate_tabla13_exact()
+    tabla_df = generate_tabla13_exact()
 
     # Comparar con Tabla 13
-    all_match = print_comparison(df)
+    all_match = print_comparison(tabla_df)
 
     # Guardar CSV
     output_path = Path("d:/diseñopvbesscar/data/oe2/escenarios_tabla13_exactos.csv")
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(output_path, index=False)
+    tabla_df.to_csv(output_path, index=False)
     print(f"\n✅ Escenarios guardados en: {output_path}")
 
     if all_match:

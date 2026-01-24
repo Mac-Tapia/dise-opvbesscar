@@ -5,7 +5,7 @@ from pathlib import Path
 
 # Cargar resumen
 summary_path = Path("d:/diseñopvbesscar/data/processed/citylearn/iquitos_128_tomas/dataset_summary.json")
-with open(summary_path) as f:
+with open(summary_path, encoding='utf-8') as f:
     summary = json.load(f)
 
 print("=" * 80)

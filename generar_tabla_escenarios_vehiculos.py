@@ -15,6 +15,7 @@ ESCENARIO RECOMENDADO: Se usa para el entrenamiento del agente OE3.
 
 import pandas as pd
 from pathlib import Path
+from typing import Any, Dict, List
 
 # ============================================================================
 # CONSTANTES - TABLA 13 OE2
@@ -121,8 +122,8 @@ def generate_scenarios() -> pd.DataFrame:
     print(f"  Día completo: {motos_dia_rec:,} motos + {mototaxis_dia_rec:,} mototaxis = {motos_dia_rec + mototaxis_dia_rec:,} total")
     print(f"  Energía calculada: {energia_rec:,.0f} kWh/día")
 
-    # Definir escenarios escalando desde RECOMENDADO
-    escenarios = [
+    # Definir escenarios escalando desde RECOMENDADO con tipos explícitos
+    escenarios: List[Dict[str, Any]] = [
         {
             "escenario": "CONSERVADOR",
             "PE": 0.10,
@@ -164,7 +165,7 @@ def generate_scenarios() -> pd.DataFrame:
     results = []
 
     for esc in escenarios:
-        factor = esc["factor_vs_rec"]
+        factor = float(esc["factor_vs_rec"])
 
         # Escalar vehículos desde RECOMENDADO
         motos_dia = int(round(motos_dia_rec * factor))
@@ -217,7 +218,7 @@ def main():
     print(f"  Energía/sesión Mototaxi: {ENERGY_PER_SESSION_MOTOTAXI} kWh")
 
     # Generar tabla de escenarios
-    df = generate_scenarios()
+    scenarios_df = generate_scenarios()
 
     # Mostrar tabla principal
     print("\n" + "-"*100)
@@ -228,7 +229,7 @@ def main():
     print("\n[TABLA 13 - ESCENARIOS]")
     print(f"{'Escenario':<15} {'PE':>6} {'FC':>6} {'Cargadores':>12} {'Tomas':>8} {'Energía/Día':>14}")
     print("-"*65)
-    for _, row in df.iterrows():
+    for _, row in scenarios_df.iterrows():
         print(f"{row['Escenario']:<15} {row['PE']:>6.2f} {row['FC']:>6.2f} "
               f"{row['Cargadores']:>12} {row['Tomas']:>8} {row['Energía/Día (kWh)']:>14,.2f}")
 
@@ -236,25 +237,25 @@ def main():
     print("\n[VEHÍCULOS CARGADOS POR DÍA]")
     print(f"{'Escenario':<15} {'Motos/Día':>12} {'Mototaxis/Día':>15} {'Total/Día':>12}")
     print("-"*58)
-    for _, row in df.iterrows():
+    for _, row in scenarios_df.iterrows():
         print(f"{row['Escenario']:<15} {row['Motos/Día']:>12,} {row['Mototaxis/Día']:>15,} {row['Total/Día']:>12,}")
 
     # Tabla de vehículos por mes
     print("\n[VEHÍCULOS CARGADOS POR MES]")
     print(f"{'Escenario':<15} {'Motos/Mes':>12} {'Mototaxis/Mes':>15} {'Total/Mes':>12}")
     print("-"*58)
-    for _, row in df.iterrows():
+    for _, row in scenarios_df.iterrows():
         print(f"{row['Escenario']:<15} {row['Motos/Mes']:>12,} {row['Mototaxis/Mes']:>15,} {row['Total/Mes']:>12,}")
 
     # Tabla de vehículos por año
     print("\n[VEHÍCULOS CARGADOS POR AÑO]")
     print(f"{'Escenario':<15} {'Motos/Año':>12} {'Mototaxis/Año':>15} {'Total/Año':>12}")
     print("-"*58)
-    for _, row in df.iterrows():
+    for _, row in scenarios_df.iterrows():
         print(f"{row['Escenario']:<15} {row['Motos/Año']:>12,} {row['Mototaxis/Año']:>15,} {row['Total/Año']:>12,}")
 
     # Resumen escenario RECOMENDADO
-    rec = df[df["Escenario"] == "RECOMENDADO*"].iloc[0]
+    rec = scenarios_df[scenarios_df["Escenario"] == "RECOMENDADO*"].iloc[0]
 
     print("\n" + "="*100)
     print("✅ ESCENARIO RECOMENDADO - PARA ENTRENAMIENTO OE3")
@@ -285,11 +286,11 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     csv_path = output_dir / "tabla_escenarios_vehiculos.csv"
-    df.to_csv(csv_path, index=False)
+    scenarios_df.to_csv(csv_path, index=False)
     print(f"\n✅ Tabla guardada en: {csv_path}")
 
-    return df
+    return scenarios_df
 
 
 if __name__ == "__main__":
-    df = main()
+    main()
