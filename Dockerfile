@@ -56,7 +56,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     OMP_NUM_THREADS=4 \
-    PYTHONPATH=/app:$PYTHONPATH
+    PYTHONPATH=/app/src:/app:$PYTHONPATH
 
 # Create data directories
 RUN mkdir -p /app/data/interim/oe2/{solar,chargers,bess} \
