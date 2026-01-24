@@ -103,6 +103,32 @@
 
 ---
 
+### 8. **docs/DATASETS_OE3_RESUMEN_2026_01_24.md** ← 📊 DATASETS OE3 🆕
+
+- Datasets CityLearn v2 para entrenamiento OE3
+- **128 tomas controlables** (32 cargadores × 4 tomas)
+- Tabla 13 OE2: Escenarios de dimensionamiento
+- Vehículos cargados por día/mes/año
+- Escenario RECOMENDADO: ~905 kWh/día, ~2,575 vehículos/día
+- Escenario MÁXIMO: ~2,298 kWh/día, ~9,269 vehículos/día
+- Scripts de generación y formato de archivos
+
+**Lectura:** 10 min | **Dificultad:** Intermedio | **Mejor para:** Entender datasets de entrenamiento
+
+---
+
+### 9. **docs/MODO_3_OPERACION_30MIN.md** ← ⚡ OPERACIÓN MODO 3
+
+- Operación Modo 3 IEC 61851
+- Sesiones de carga de 30 minutos
+- Clarificación capacidad vs demanda
+- Arquitectura de control por toma
+- Timeline operativo
+
+**Lectura:** 15 min | **Dificultad:** Intermedio | **Mejor para:** Entender operación de carga
+
+---
+
 ## 🎮 Programas/Scripts
 
 ### **simulador_interactivo.py** ← 🎮 PROGRAMA INTERACTIVO
