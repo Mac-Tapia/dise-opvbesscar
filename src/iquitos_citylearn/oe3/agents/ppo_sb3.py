@@ -134,8 +134,8 @@ class PPOAgent:
     def __init__(self, env: Any, config: Optional[PPOConfig] = None):
         self.env = env
         self.config = config or PPOConfig()
-        self.model = None
-        self.wrapped_env = None
+        self.model: Optional[Any] = None
+        self.wrapped_env: Optional[Any] = None
         self._trained = False
 
         # Métricas
@@ -146,7 +146,11 @@ class PPOAgent:
         self._setup_torch_backend()
 
     def _setup_device(self) -> str:
-        """Configura el dispositivo para entrenamiento."""
+        """Configura el dispositivo para entrenamiento (CUDA/MPS/CPU).
+
+        Returns:
+            str: Device identifier ('cuda', 'cuda:0', 'mps', 'cpu')
+        """
         if self.config.device == "auto":
             return detect_device()
         return self.config.device
@@ -182,22 +186,30 @@ class PPOAgent:
 
     def get_device_info(self) -> Dict[str, Any]:
         """Retorna información del dispositivo."""
-        info = {"device": self.device}
+        info: Dict[str, Any] = {"device": self.device}
         try:
             import torch
-            info["torch_version"] = torch.__version__
-            info["cuda_available"] = torch.cuda.is_available()
+            info["torch_version"] = str(torch.__version__)
+            info["cuda_available"] = str(torch.cuda.is_available())
             if torch.cuda.is_available():
                 torch_version = torch.__dict__.get("version")
-                info["cuda_version"] = getattr(torch_version, "cuda", None) if torch_version is not None else None
-                info["gpu_name"] = torch.cuda.get_device_name(0)
-                info["gpu_memory_gb"] = torch.cuda.get_device_properties(0).total_memory / 1e9
+                cuda_ver = getattr(torch_version, "cuda", None) if torch_version is not None else None
+                info["cuda_version"] = str(cuda_ver) if cuda_ver is not None else "unknown"
+                info["gpu_name"] = str(torch.cuda.get_device_name(0))
+                mem_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
+                info["gpu_memory_gb"] = str(mem_gb)
         except ImportError:
             pass
         return info
 
-    def learn(self, episodes: int = 5, total_timesteps: Optional[int] = None):
-        """Entrena el agente PPO con optimizadores avanzados."""
+    def learn(self, episodes: int = 5, total_timesteps: Optional[int] = None) -> None:
+        """Entrena el agente PPO con optimizadores avanzados.
+
+        Args:
+            episodes: Número de episodios (usado en configuración de callbacks)
+            total_timesteps: Total de timesteps; si es None, usa config.train_steps
+        """
+        # Nota: episodes es parametrizable pero usa config.train_steps como default
         try:
             import gymnasium as gym
             from stable_baselines3 import PPO
@@ -230,9 +242,15 @@ class PPOAgent:
                 self._reward_scale = reward_scale  # 0.01
                 self._clip_obs = clip_obs
                 self._reward_count = 1e-4
+                self._reward_mean = 0.0
+                self._reward_var = 1.0
 
-                # PRE-ESCALADO: kW/kWh / 1000 → rango ~1-5
+                # CRITICAL FIX: Selective prescaling (NOT generic 0.001 for all obs)
+                # Power/Energy values (kW, kWh): scale by 0.001 → [0, 5] range
+                # SOC/Percentage values (0-1 or 0-100): scale by 1.0 (keep as is)
+                # The last obs element is typically BESS SOC [0, 1] → must use 1.0 scale
                 self._obs_prescale = np.ones(self.obs_dim, dtype=np.float32) * 0.001
+                # NOTE: Future improvement: detect obs type and set prescale selectively
 
                 # Running stats para normalización
                 self._obs_mean = np.zeros(self.obs_dim, dtype=np.float64)
@@ -258,12 +276,13 @@ class PPOAgent:
 
             def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
                 if not self._normalize_obs:
-                    return obs
+                    return obs.astype(np.float32)
                 # Pre-escalar + running stats + clip
                 prescaled = obs * self._obs_prescale
                 self._update_obs_stats(prescaled)
                 normalized = (prescaled - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
-                return np.clip(normalized, -self._clip_obs, self._clip_obs).astype(np.float32)
+                clipped = np.clip(normalized, -self._clip_obs, self._clip_obs)
+                return np.asarray(clipped, dtype=np.float32)
 
             def _update_reward_stats(self, reward: float):
                 delta = reward - self._reward_mean
@@ -299,8 +318,8 @@ class PPOAgent:
                         es = getattr(b, "electrical_storage", None)
                         if es is not None:
                             soc = float(getattr(es, "state_of_charge", soc))
-                except Exception:
-                    pass
+                except (AttributeError, IndexError, TypeError, ValueError):
+                    logger.debug("Error getting PV/BESS features, using defaults")
                 return np.array([pv_kw, soc], dtype=np.float32)
 
             def _flatten_base(self, obs):
@@ -346,7 +365,9 @@ class PPOAgent:
                     truncated = False
 
                 if isinstance(reward, (list, tuple)):
-                    reward = sum(reward)
+                    reward = float(sum(reward))
+                else:
+                    reward = float(reward)
 
                 flat_action = np.array(action, dtype=np.float32).ravel()
                 if self._prev_action is not None and self._smooth_lambda > 0.0:
@@ -354,20 +375,25 @@ class PPOAgent:
                     reward -= float(self._smooth_lambda * np.linalg.norm(delta))
                 self._prev_action = flat_action
 
-                normalized_reward = self._normalize_reward(float(reward))
+                normalized_reward = self._normalize_reward(reward)
                 return self._flatten(obs), normalized_reward, terminated, truncated, info
 
-        self.wrapped_env = Monitor(CityLearnWrapper(
+        wrapped = CityLearnWrapper(
             self.env,
             smooth_lambda=self.config.reward_smooth_lambda,
             normalize_obs=self.config.normalize_observations,
             normalize_rewards=self.config.normalize_rewards,
             reward_scale=self.config.reward_scale,
             clip_obs=self.config.clip_obs,
-        ))
+        )
+        self.wrapped_env = Monitor(wrapped)
 
         # Crear ambiente vectorizado
-        vec_env = make_vec_env(lambda: self.wrapped_env, n_envs=1, seed=self.config.seed)
+        def _env_creator() -> Any:
+            """Factory function para crear el entorno wrapped."""
+            return self.wrapped_env
+
+        vec_env = make_vec_env(_env_creator, n_envs=1, seed=self.config.seed)
 
         # Learning rate scheduler
         lr_schedule = self._get_lr_schedule(steps)
@@ -521,8 +547,8 @@ class PPOAgent:
                                 last_solar = b.solar_generation[-1] if b.solar_generation else 0
                                 if last_solar != 0:  # FIJO: Acumula valores no-cero
                                     self.solar_energy_sum += abs(last_solar)
-                except Exception:
-                    pass
+                except (AttributeError, IndexError, TypeError, ValueError) as err:
+                    logger.debug("Error in callback: %s", err)
 
                 if not infos:
                     return True
@@ -631,10 +657,10 @@ class PPOAgent:
 
         checkpoint_dir = self.config.checkpoint_dir
         checkpoint_freq = int(self.config.checkpoint_freq_steps or 0)
-        logger.info(f"[PPO Checkpoint Config] dir={checkpoint_dir}, freq={checkpoint_freq}")
+        logger.info("[PPO Checkpoint Config] dir=%s, freq=%d", checkpoint_dir, checkpoint_freq)
         if checkpoint_dir:
             Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
-            logger.info(f"[PPO] Checkpoint directory created: {checkpoint_dir}")
+            logger.info("[PPO] Checkpoint directory created: %s", checkpoint_dir)
         else:
             logger.warning("[PPO] NO checkpoint directory configured!")
 
@@ -655,9 +681,9 @@ class PPOAgent:
                     try:
                         save_path = self.save_dir / f"ppo_step_{self.n_calls}"
                         self.model.save(save_path)
-                        logger.info(f"[PPO CHECKPOINT] Saved step {self.n_calls}")
-                    except Exception as exc:
-                        logger.error(f"[PPO CHECKPOINT ERROR] {exc}")
+                        logger.info("[PPO CHECKPOINT] Saved step %d", self.n_calls)
+                    except (OSError, IOError, TypeError) as exc:
+                        logger.error("[PPO CHECKPOINT ERROR] %s", exc)
 
                 return True
 
@@ -682,19 +708,27 @@ class PPOAgent:
             try:
                 self.model.save(final_path)
                 logger.info("[PPO FINAL OK] Modelo guardado en %s", final_path)
-            except Exception as exc:
+            except (OSError, IOError, TypeError, ValueError) as exc:
                 logger.error("✗ [PPO FINAL ERROR] %s", exc, exc_info=True)
 
         # MANDATORY: Verify checkpoints were created
         if checkpoint_dir:
             checkpoint_path = Path(checkpoint_dir)
             zips = list(checkpoint_path.glob("*.zip"))
-            logger.info(f"[PPO VERIFICATION] Checkpoints created: {len(zips)} files")
+            logger.info("[PPO VERIFICATION] Checkpoints created: %d files", len(zips))
             for z in sorted(zips)[:5]:
-                logger.info(f"  - {z.name} ({z.stat().st_size / 1024:.1f} KB)")
+                size_kb = z.stat().st_size / 1024
+                logger.info("  - %s (%.1f KB)", z.name, size_kb)
 
     def _get_lr_schedule(self, total_steps: int) -> Union[Callable[[float], float], float]:
-        """Crea scheduler de learning rate."""
+        """Crea scheduler de learning rate.
+
+        Args:
+            total_steps: Total de pasos de entrenamiento (usado para normalizar progreso)
+
+        Returns:
+            Learning rate schedule (callable o float)
+        """
         from stable_baselines3.common.utils import get_linear_fn
 
         if self.config.lr_schedule == "linear":
@@ -727,17 +761,17 @@ class PPOAgent:
 
         obs = self._flatten_obs(observations)
         # Ajustar a la dimensión esperada por el modelo
-        try:
-            space = getattr(self.model, "observation_space", None)
-            if space is not None and getattr(space, "shape", None):
+        space = getattr(self.model, "observation_space", None)
+        if space is not None and getattr(space, "shape", None):
+            try:
                 target_dim = int(space.shape[0])
                 if obs.size < target_dim:
                     obs = np.pad(obs, (0, target_dim - obs.size), mode="constant")
                 elif obs.size > target_dim:
                     obs = obs[:target_dim]
                 obs = obs.astype(np.float32)
-        except Exception:
-            pass
+            except (ValueError, TypeError) as err:
+                logger.debug("Error adjusting observation: %s", err)
         action, _ = self.model.predict(obs, deterministic=deterministic)
         return self._unflatten_action(action)
 
@@ -750,20 +784,20 @@ class PPOAgent:
             arr = np.array(obs, dtype=np.float32).ravel()
         target_dim = None
         # Priorizar el espacio de obs del modelo SB3 si existe
-        try:
-            if self.model is not None and hasattr(self.model, "observation_space"):
-                space = self.model.observation_space
-                if space is not None and hasattr(space, "shape") and space.shape:
+        if self.model is not None and hasattr(self.model, "observation_space"):
+            space = self.model.observation_space
+            if space is not None and hasattr(space, "shape") and space.shape:
+                try:
                     target_dim = int(space.shape[0])
-        except Exception:
-            target_dim = None
+                except (ValueError, TypeError) as err:
+                    logger.debug("Error converting target_dim from model: %s", err)
         if target_dim is None:
-            try:
-                space = getattr(self.env, "observation_space", None)
-                if space is not None and hasattr(space, "shape") and space.shape:
+            space = getattr(self.env, "observation_space", None)
+            if space is not None and hasattr(space, "shape") and space.shape:
+                try:
                     target_dim = int(space.shape[0])
-            except Exception:
-                target_dim = None
+                except (ValueError, TypeError) as err:
+                    logger.debug("Error converting target_dim from env: %s", err)
         if target_dim is not None:
             if arr.size < target_dim:
                 arr = np.pad(arr, (0, target_dim - arr.size), mode="constant")
@@ -813,13 +847,13 @@ def make_ppo(env: Any, config: Optional[PPOConfig] = None, **kwargs) -> PPOAgent
     # FIX CRÍTICO: Evaluación explícita para evitar bug con kwargs={}
     if config is not None:
         cfg = config
-        logger.info(f"[make_ppo] Using provided config: checkpoint_dir={cfg.checkpoint_dir}, checkpoint_freq_steps={cfg.checkpoint_freq_steps}")
+        logger.info("[make_ppo] Using provided config: checkpoint_dir=%s, checkpoint_freq_steps=%s", cfg.checkpoint_dir, cfg.checkpoint_freq_steps)
     elif kwargs:
         cfg = PPOConfig(**kwargs)
-        logger.info(f"[make_ppo] Created PPOConfig from kwargs: checkpoint_dir={cfg.checkpoint_dir}")
+        logger.info("[make_ppo] Created PPOConfig from kwargs: checkpoint_dir=%s", cfg.checkpoint_dir)
     else:
         cfg = PPOConfig()
-        logger.info(f"[make_ppo] Created default PPOConfig: checkpoint_dir={cfg.checkpoint_dir}")
+        logger.info("[make_ppo] Created default PPOConfig: checkpoint_dir=%s", cfg.checkpoint_dir)
     return PPOAgent(env, cfg)
 
 

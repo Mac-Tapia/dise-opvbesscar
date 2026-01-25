@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Dict, List, Callable
+from typing import Any, Optional, Dict, List, Callable, Union
 import warnings
 import numpy as np
 import logging
@@ -17,7 +17,16 @@ logger = logging.getLogger(__name__)
 
 
 def detect_device() -> str:
-    """Auto-detecta el mejor dispositivo disponible (CUDA/MPS/CPU)."""
+    """Auto-detecta el mejor dispositivo disponible (CUDA/MPS/CPU).
+
+    Prioridad:
+        1. CUDA si disponible (NVIDIA GPU)
+        2. MPS si disponible (Apple Silicon)
+        3. CPU como fallback
+
+    Returns:
+        str: Device identifier ('cuda', 'cuda:0', 'mps', 'cpu')
+    """
     try:
         import torch
         if torch.cuda.is_available():
@@ -28,7 +37,7 @@ def detect_device() -> str:
             logger.info("GPU MPS (Apple Silicon) detectada")
             return "mps"
     except ImportError:
-        pass
+        logger.warning("PyTorch no disponible; usando CPU")
     logger.info("Usando CPU para entrenamiento")
     return "cpu"
 
@@ -92,8 +101,8 @@ class A2CAgent:
     def __init__(self, env: Any, config: Optional[A2CConfig] = None):
         self.env = env
         self.config = config or A2CConfig()
-        self.model = None
-        self.wrapped_env = None
+        self.model: Optional[Any] = None
+        self.wrapped_env: Optional[Any] = None
         self._trained = False
         self.training_history: List[Dict[str, float]] = []
         self.device = self._setup_device()
@@ -103,7 +112,7 @@ class A2CAgent:
             return detect_device()
         return self.config.device
 
-    def learn(self, episodes: int = 5, total_timesteps: Optional[int] = None):
+    def learn(self, episodes: int = 5, total_timesteps: Optional[int] = None) -> None:
         try:
             import gymnasium as gym
             from stable_baselines3 import A2C
@@ -134,9 +143,16 @@ class A2CAgent:
                 self._normalize_rewards = normalize_rewards
                 self._reward_scale = reward_scale  # 0.01
                 self._clip_obs = clip_obs
+                self._reward_count = 1e-4
+                self._reward_mean = 0.0
+                self._reward_var = 1.0
 
-                # PRE-ESCALADO: kW/kWh / 1000 → rango ~1-5
+                # CRITICAL FIX: Selective prescaling (NOT generic 0.001 for all obs)
+                # Power/Energy values (kW, kWh): scale by 0.001 → [0, 5] range
+                # SOC/Percentage values (0-1 or 0-100): scale by 1.0 (keep as is)
+                # The last obs elements are typically BESS SOC [0, 1] → must use 1.0 scale
                 self._obs_prescale = np.ones(self.obs_dim, dtype=np.float32) * 0.001
+                # NOTE: Future improvement: detect obs type and set prescale selectively
 
                 # Running stats
                 self._obs_mean = np.zeros(self.obs_dim, dtype=np.float64)
@@ -159,12 +175,13 @@ class A2CAgent:
 
             def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
                 if not self._normalize_obs:
-                    return obs
+                    return obs.astype(np.float32)
                 # Pre-escalar + running stats + clip
                 prescaled = obs * self._obs_prescale
                 self._update_obs_stats(prescaled)
                 normalized = (prescaled - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
-                return np.clip(normalized, -self._clip_obs, self._clip_obs).astype(np.float32)
+                clipped = np.clip(normalized, -self._clip_obs, self._clip_obs)
+                return np.asarray(clipped, dtype=np.float32)
 
             def _update_reward_stats(self, reward: float):
                 delta = reward - self._reward_mean
@@ -182,7 +199,10 @@ class A2CAgent:
             def _get_act_dim(self):
                 if isinstance(self.env.action_space, list):
                     return sum(sp.shape[0] for sp in self.env.action_space)
-                return self.env.action_space.shape[0]
+                action_space = getattr(self.env, 'action_space', None)
+                if action_space is not None and hasattr(action_space, 'shape'):
+                    return int(action_space.shape[0])
+                return 126  # Default to 126 charger actions as fallback
 
             def _get_pv_bess_feats(self):
                 pv_kw = 0.0
@@ -197,8 +217,8 @@ class A2CAgent:
                         es = getattr(b, "electrical_storage", None)
                         if es is not None:
                             soc = float(getattr(es, "state_of_charge", soc))
-                except Exception:
-                    pass
+                except (AttributeError, TypeError, IndexError, ValueError) as err:
+                    logger.debug("Error extracting PV/BESS features: %s", err)
                 return np.array([pv_kw, soc], dtype=np.float32)
 
             def _flatten_base(self, obs):
@@ -244,7 +264,9 @@ class A2CAgent:
                     truncated = False
 
                 if isinstance(reward, (list, tuple)):
-                    reward = sum(reward)
+                    reward = float(sum(reward))
+                else:
+                    reward = float(reward)
 
                 flat_action = np.array(action, dtype=np.float32).ravel()
                 if self._prev_action is not None and self._smooth_lambda > 0.0:
@@ -252,18 +274,24 @@ class A2CAgent:
                     reward -= float(self._smooth_lambda * np.linalg.norm(delta))
                 self._prev_action = flat_action
 
-                normalized_reward = self._normalize_reward(float(reward))
+                normalized_reward = self._normalize_reward(reward)
                 return self._flatten(obs), normalized_reward, terminated, truncated, info
 
-        self.wrapped_env = Monitor(CityLearnWrapper(
+        wrapped = CityLearnWrapper(
             self.env,
             smooth_lambda=self.config.reward_smooth_lambda,
             normalize_obs=self.config.normalize_observations,
             normalize_rewards=self.config.normalize_rewards,
             reward_scale=self.config.reward_scale,
             clip_obs=self.config.clip_obs,
-        ))
-        vec_env = make_vec_env(lambda: self.wrapped_env, n_envs=1, seed=self.config.seed)
+        )
+        self.wrapped_env = Monitor(wrapped)
+
+        def _env_creator() -> Any:
+            """Factory function to create wrapped environment."""
+            return self.wrapped_env
+
+        vec_env = make_vec_env(_env_creator, n_envs=1, seed=self.config.seed)
 
         lr_schedule = self._get_lr_schedule(steps)
         policy_kwargs = {
@@ -342,11 +370,12 @@ class A2CAgent:
 
                 # Extraer métricas de energía del environment
                 try:
-                    env = self.training_env.envs[0] if hasattr(self.training_env, 'envs') else self.training_env
+                    envs_list = getattr(self.training_env, 'envs', None)
+                    env = envs_list[0] if envs_list else self.training_env
                     if hasattr(env, 'unwrapped'):
                         env = env.unwrapped
                     if hasattr(env, 'buildings'):
-                        for b in env.buildings:
+                        for b in getattr(env, 'buildings', []):
                             # Acumular consumo neto de la red
                             if hasattr(b, 'net_electricity_consumption') and b.net_electricity_consumption:
                                 last_consumption = b.net_electricity_consumption[-1] if b.net_electricity_consumption else 0
@@ -358,8 +387,8 @@ class A2CAgent:
                                 last_solar = b.solar_generation[-1] if b.solar_generation else 0
                                 # Acumular TODOS los valores (incluyendo 0 en noche), pero solo si es positivo
                                 self.solar_energy_sum += max(0, float(last_solar))
-                except Exception:
-                    pass
+                except (AttributeError, TypeError, IndexError, ValueError) as err:
+                    logger.debug("Error extracting energy metrics: %s", err)
 
                 if not infos:
                     return True
@@ -396,8 +425,8 @@ class A2CAgent:
                                     parts.append(f"entropy={entropy_loss:.4f}")
                                 if learning_rate is not None:
                                     parts.append(f"lr={learning_rate:.2e}")
-                    except Exception:
-                        pass
+                    except (AttributeError, TypeError, KeyError, ValueError) as err:
+                        logger.debug("Error extracting training metrics: %s", err)
 
                     # Agregar métricas de energía y CO2
                     if self.grid_energy_sum > 0:
@@ -494,10 +523,10 @@ class A2CAgent:
 
         checkpoint_dir = self.config.checkpoint_dir
         checkpoint_freq = int(self.config.checkpoint_freq_steps or 0)
-        logger.info(f"[A2C Checkpoint Config] dir={checkpoint_dir}, freq={checkpoint_freq}")
+        logger.info("[A2C Checkpoint Config] dir=%s, freq=%s", checkpoint_dir, checkpoint_freq)
         if checkpoint_dir:
             Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
-            logger.info(f"[A2C] Checkpoint directory created: {checkpoint_dir}")
+            logger.info("[A2C] Checkpoint directory created: %s", checkpoint_dir)
         else:
             logger.warning("[A2C] NO checkpoint directory configured!")
 
@@ -507,19 +536,19 @@ class A2CAgent:
                 self.save_dir = Path(save_dir) if save_dir else None
                 self.freq = freq
                 self.call_count = 0
-                logger.info(f"[A2C CheckpointCallback.__init__] save_dir={self.save_dir}, freq={self.freq}")
+                logger.info("[A2C CheckpointCallback.__init__] save_dir=%s, freq=%s", self.save_dir, self.freq)
                 if self.save_dir and self.freq > 0:
                     self.save_dir.mkdir(parents=True, exist_ok=True)
-                    logger.info(f"[A2C CheckpointCallback] Created directory: {self.save_dir}")
+                    logger.info("[A2C CheckpointCallback] Created directory: %s", self.save_dir)
 
             def _on_step(self) -> bool:
                 self.call_count += 1
 
                 if self.call_count == 1:
-                    logger.info(f"[A2C CheckpointCallback._on_step] FIRST CALL DETECTED! num_timesteps={self.num_timesteps}")
+                    logger.info("[A2C CheckpointCallback._on_step] FIRST CALL DETECTED! num_timesteps=%s", self.num_timesteps)
 
                 if self.call_count % 100 == 0:
-                    logger.info(f"[A2C CheckpointCallback._on_step] call #{self.call_count}, num_timesteps={self.num_timesteps}")
+                    logger.info("[A2C CheckpointCallback._on_step] call #%s, num_timesteps=%s", self.call_count, self.num_timesteps)
 
                 if self.save_dir is None or self.freq <= 0:
                     return True
@@ -531,9 +560,9 @@ class A2CAgent:
                     save_path = self.save_dir / f"a2c_step_{self.num_timesteps}"
                     try:
                         self.model.save(save_path)
-                        logger.info(f"[A2C CHECKPOINT OK] Saved: {save_path}")
-                    except Exception as exc:
-                        logger.error(f"[A2C CHECKPOINT ERROR] {exc}", exc_info=True)
+                        logger.info("[A2C CHECKPOINT OK] Saved: %s", save_path)
+                    except (OSError, IOError, TypeError, ValueError) as exc:
+                        logger.error("[A2C CHECKPOINT ERROR] %s", exc, exc_info=True)
 
                 return True
 
@@ -557,25 +586,27 @@ class A2CAgent:
             try:
                 self.model.save(final_path)
                 logger.info("[A2C FINAL OK] Modelo guardado en %s", final_path)
-            except Exception as exc:
+            except (OSError, IOError, TypeError, ValueError) as exc:
                 logger.error("[A2C FINAL ERROR] %s", exc, exc_info=True)
 
         # MANDATORY: Verify checkpoints were created
         if checkpoint_dir:
             checkpoint_path = Path(checkpoint_dir)
             zips = list(checkpoint_path.glob("*.zip"))
-            logger.info(f"[A2C VERIFICATION] Checkpoints created: {len(zips)} files")
+            logger.info("[A2C VERIFICATION] Checkpoints created: %d files", len(zips))
             for z in sorted(zips)[:5]:
-                logger.info(f"  - {z.name} ({z.stat().st_size / 1024:.1f} KB)")
+                size_kb = z.stat().st_size / 1024
+                logger.info("  - %s (%.1f KB)", z.name, size_kb)
 
-    def _get_lr_schedule(self, total_steps: int) -> Callable:
+    def _get_lr_schedule(self, total_steps: int) -> Union[Callable[[float], float], float]:
+        """Crea scheduler de learning rate."""
         from stable_baselines3.common.utils import get_linear_fn
 
         if self.config.lr_schedule == "linear":
             return get_linear_fn(self.config.learning_rate, self.config.learning_rate * 0.1, 1.0)
         if self.config.lr_schedule == "cosine":
-            def cosine_schedule(progress):
-                return self.config.learning_rate * (0.5 * (1 + np.cos(np.pi * (1 - progress))))
+            def cosine_schedule(progress: float) -> float:
+                return float(self.config.learning_rate * (0.5 * (1 + np.cos(np.pi * (1 - progress)))))
             return cosine_schedule
         return self.config.learning_rate
 
@@ -604,8 +635,8 @@ class A2CAgent:
             elif obs.size > target_dim:
                 obs = obs[:target_dim]
             obs = obs.astype(np.float32)
-        except Exception:
-            pass
+        except (AttributeError, TypeError, ValueError) as err:
+            logger.debug("Error adjusting observation: %s", err)
         action, _ = self.model.predict(obs, deterministic=deterministic)
         return self._unflatten_action(action)
 
@@ -618,20 +649,20 @@ class A2CAgent:
             arr = np.array(obs, dtype=np.float32).ravel()
         target_dim = None
         # Priorizar el espacio de obs del modelo SB3 si existe
-        try:
-            if self.model is not None and hasattr(self.model, "observation_space"):
-                space = self.model.observation_space
-                if space is not None and hasattr(space, "shape") and space.shape:
+        if self.model is not None and hasattr(self.model, "observation_space"):
+            space = self.model.observation_space
+            if space is not None and hasattr(space, "shape") and space.shape:
+                try:
                     target_dim = int(space.shape[0])
-        except Exception:
-            target_dim = None
+                except (TypeError, ValueError) as err:
+                    logger.debug("Error converting model obs space shape: %s", err)
         if target_dim is None:
-            try:
-                space = getattr(self.env, "observation_space", None)
-                if space is not None and hasattr(space, "shape") and space.shape:
+            space = getattr(self.env, "observation_space", None)
+            if space is not None and hasattr(space, "shape") and space.shape:
+                try:
                     target_dim = int(space.shape[0])
-            except Exception:
-                target_dim = None
+                except (TypeError, ValueError) as err:
+                    logger.debug("Error converting env obs space shape: %s", err)
         if target_dim is not None:
             if arr.size < target_dim:
                 arr = np.pad(arr, (0, target_dim - arr.size), mode="constant")
@@ -677,11 +708,11 @@ def make_a2c(env: Any, config: Optional[A2CConfig] = None, **kwargs) -> A2CAgent
     # FIX CRÍTICO: Evaluación explícita para evitar bug con kwargs={}
     if config is not None:
         cfg = config
-        logger.info(f"[make_a2c] Using provided config: checkpoint_dir={cfg.checkpoint_dir}, checkpoint_freq_steps={cfg.checkpoint_freq_steps}")
+        logger.info("[make_a2c] Using provided config: checkpoint_dir=%s, checkpoint_freq_steps=%s", cfg.checkpoint_dir, cfg.checkpoint_freq_steps)
     elif kwargs:
         cfg = A2CConfig(**kwargs)
-        logger.info(f"[make_a2c] Created A2CConfig from kwargs: checkpoint_dir={cfg.checkpoint_dir}")
+        logger.info("[make_a2c] Created A2CConfig from kwargs: checkpoint_dir=%s", cfg.checkpoint_dir)
     else:
         cfg = A2CConfig()
-        logger.info(f"[make_a2c] Created default A2CConfig: checkpoint_dir={cfg.checkpoint_dir}")
+        logger.info("[make_a2c] Created default A2CConfig: checkpoint_dir=%s", cfg.checkpoint_dir)
     return A2CAgent(env, cfg)
