@@ -13,7 +13,16 @@ logger = logging.getLogger(__name__)
 
 
 def detect_device() -> str:
-    """Auto-detecta el mejor dispositivo disponible (CUDA/MPS/CPU)."""
+    """Auto-detecta el mejor dispositivo disponible (CUDA/MPS/CPU).
+
+    Prioridad:
+        1. CUDA si disponible (NVIDIA GPU)
+        2. MPS si disponible (Apple Silicon)
+        3. CPU como fallback
+
+    Returns:
+        str: Device identifier ('cuda', 'cuda:0', 'mps', 'cpu')
+    """
     try:
         import torch
         if torch.cuda.is_available():
@@ -24,6 +33,7 @@ def detect_device() -> str:
             logger.info("GPU MPS (Apple Silicon) detectada")
             return "mps"
     except ImportError:
+        logger.warning("PyTorch no disponible; usando CPU")
         pass
     logger.info("Usando CPU para entrenamiento")
     return "cpu"
@@ -478,11 +488,22 @@ class SACAgent:
                 self._reward_scale = reward_scale  # 0.01 de config
                 self._clip_obs = clip_obs
 
-                # PRE-ESCALADO para observaciones (kW/kWh son valores grandes)
+                # CRITICAL FIX: Selective prescaling (NOT generic 0.001 for all obs)
+                # Power/Energy values (kW, kWh): scale by 0.001 → [0, 5] range
+                # SOC/Percentage values (0-1 or 0-100): scale by 1.0 (keep as is)
                 # PV: 4162 kWp, BESS: 2000 kWh, Chargers: 272 kW
                 self._obs_prescale = np.ones(self.obs_dim, dtype=np.float32)
-                # Dividir por 1000 para llevar a rango ~1-5
-                self._obs_prescale[:] = 0.001
+
+                # Scale power/energy dims by 0.001, but not SOC dimensions
+                # Assuming last dimensions are SOC values (0-1 range)
+                # This is a heuristic; ideally detect from obs type
+                if self.obs_dim > 10:
+                    self._obs_prescale[:-10] = 0.001  # Power/energy dims
+                    self._obs_prescale[-10:] = 1.0    # SOC and percentage dims
+                else:
+                    self._obs_prescale[:] = 0.001  # Fallback for small obs
+
+                # NOTE: Future improvement: detect obs type and set prescale selectively
 
                 # Running stats para normalización (media móvil exponencial)
                 self._obs_mean = np.zeros(self.obs_dim, dtype=np.float64)

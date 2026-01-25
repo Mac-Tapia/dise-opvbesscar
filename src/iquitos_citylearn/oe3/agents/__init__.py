@@ -1,9 +1,15 @@
+"""Agents module for RL-based energy management.
+
+Provides three main RL agents (SAC, PPO, A2C) plus baselines (NoControl, UncontrolledCharging).
+All agents compatible with CityLearn v2 and multi-objective reward optimization.
+"""
+
 from .uncontrolled import UncontrolledChargingAgent
 from .rbc import make_basic_ev_rbc, BasicRBCAgent, RBCConfig
 from .sac import make_sac, SACAgent, SACConfig, detect_device as _detect_sac
 from .no_control import NoControlAgent, make_no_control
-from .ppo_sb3 import make_ppo, PPOAgent, PPOConfig
-from .a2c_sb3 import make_a2c, A2CAgent, A2CConfig
+from .ppo_sb3 import make_ppo, PPOAgent, PPOConfig, detect_device as _detect_ppo
+from .a2c_sb3 import make_a2c, A2CAgent, A2CConfig, detect_device as _detect_a2c
 from ..rewards import (
     MultiObjectiveReward,
     MultiObjectiveWeights,
@@ -12,8 +18,28 @@ from ..rewards import (
     create_iquitos_reward_weights,
 )
 
-# Re-export device detection
-detect_device = _detect_sac
+# Re-export device detection (unified)
+def detect_device() -> str:
+    """Unified device detection across all agents.
+
+    Fallback priority: SAC → PPO → A2C → CPU
+    """
+    try:
+        return _detect_sac()
+    except (ImportError, AttributeError, RuntimeError):
+        pass
+
+    try:
+        return _detect_ppo()
+    except (ImportError, AttributeError, RuntimeError):
+        pass
+
+    try:
+        return _detect_a2c()
+    except (ImportError, AttributeError, RuntimeError):
+        pass
+
+    return "cpu"
 
 __all__ = [
     # Agentes
