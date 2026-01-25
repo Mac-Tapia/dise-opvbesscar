@@ -221,7 +221,7 @@ def load_ev_demand(ev_profile_path: Path, year: int = 2024) -> pd.DataFrame:
 
             # Expandir a 365 dias (8,760 horas)
             df_annual = []
-            for day in range(365):
+            for _ in range(365):
                 for _, row in df_hourly.iterrows():
                     df_annual.append({'hour': int(row['hour']), 'ev_kwh': float(row['ev_kwh'])})
             return pd.DataFrame(df_annual)
@@ -234,7 +234,7 @@ def load_ev_demand(ev_profile_path: Path, year: int = 2024) -> pd.DataFrame:
         # Perfil de 24 horas, expandir a año
         hourly_profile = df.set_index('hour')['energy_kwh']
         df_full = []
-        for day in range(365):
+        for _ in range(365):
             for hour in range(24):
                 ev_kwh = hourly_profile.get(hour, 0.0)
                 df_full.append({'hour': hour, 'ev_kwh': ev_kwh})
@@ -1068,14 +1068,14 @@ def run_bess_sizing(
     deficit_day = ev_shortfall_discharge_total  # Deficit calculado de 15 min
 
     surplus_day = float(surplus.sum() / (min_len / 24))
-    pv_day = float(pv_kwh.sum() / (min_len / 24))
+    pv_day_value = float(pv_kwh.sum() / (min_len / 24))
     # Variables diarias no usadas: mall_day, ev_day
     load_day = float(total_load_kwh.sum() / (min_len / 24))
     bess_load_day = float(bess_load.sum() / (min_len / 24))
     pv_to_ev_day = float(pv_to_ev.sum() / (min_len / 24))
 
     print("\n[HORARIO BESS - Basado en cruce de curvas]")
-    print(f"   Generacion solar: 5h-17h (~{pv_day:.0f} kWh/dia)")
+    print(f"   Generacion solar: 5h-17h (~{pv_day_value:.0f} kWh/dia)")
     print(f"   PRIORIDAD: Solar → EV ({pv_to_ev_day:.0f} kWh/dia) → BESS → Mall")
     print(f"   Descarga BESS: {discharge_start}h - {closing_hour}h ({len(bess_discharge_hours)} horas)")
     print("   BESS activado cuando solar no puede cubrir demanda EV hasta cierre")
@@ -1236,12 +1236,12 @@ def run_bess_sizing(
         surplus_kwh_day=surplus_day,
         deficit_kwh_day=deficit_day,
         night_deficit_kwh_day=deficit_day,  # Mismo valor que deficit_day (deficit en descarga)
-        pv_generation_kwh_day=pv_day,
+        pv_generation_kwh_day=pv_day_value,
         total_demand_kwh_day=load_day,
         mall_demand_kwh_day=mall_kwh_day,
         ev_demand_kwh_day=ev_kwh_day,
         bess_load_scope=bess_load_scope,
-        pv_available_kwh_day=pv_day,  # Total PV disponible
+        pv_available_kwh_day=pv_day_value,  # Total PV disponible
         bess_load_kwh_day=bess_load_day,
         sizing_mode=str(sizing_mode),
         grid_import_kwh_day=metrics['total_grid_import_kwh'] / (min_len / 24),
@@ -1278,10 +1278,10 @@ def run_bess_sizing(
             c_rate=c_rate,
             mall_kwh_day=mall_kwh_day,
             ev_kwh_day=ev_kwh_day,
-            pv_kwh_day=pv_day,
+            pv_kwh_day=pv_day_value,
             out_dir=out_dir,
             reports_dir=reports_dir,
-            df_ev_15min=df_ev_15min_day,  # Pasar perfil de 15 min original
+            df_ev_15min=None,  # Perfil de 15 min no disponible aqui
         )
 
     print("")

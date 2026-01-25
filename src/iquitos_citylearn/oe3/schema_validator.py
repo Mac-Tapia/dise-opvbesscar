@@ -387,8 +387,11 @@ class CityLearnSchemaValidator:
 
             logger.info("✅ CityLearn load successful, obs_dim=%d", obs_dim)
 
-            # Try one step
-            action = env.action_space.sample()
+            # Try one step (action_space is a list of Boxes for multi-agent)
+            if isinstance(env.action_space, list):
+                action = [space.sample() for space in env.action_space]
+            else:
+                action = env.action_space.sample()
             _obs, _reward, _terminated, _truncated, _info = env.step(action)
 
             logger.info("✅ CityLearn step() successful")

@@ -2,7 +2,6 @@
 """
 Corrige problemas de encoding en bess.py
 """
-import re
 from pathlib import Path
 
 # Diccionario de reemplazos: caracteres problemáticos -> ASCII

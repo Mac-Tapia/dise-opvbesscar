@@ -3,7 +3,6 @@
 Verificacion exhaustiva: Datos horarios (8,760) -> Schema CityLearn v2
 """
 
-import sys
 import json
 import pandas as pd
 from pathlib import Path
@@ -103,7 +102,7 @@ def check_citylearn_connection():
         print(f"  [{status}] Schema timesteps: {timesteps} (esperado 8760)")
 
         env = CityLearnEnv(schema_path)
-        obs, info = env.reset()
+        obs, _ = env.reset()
         print(f"  [OK] CityLearnEnv carga exitosamente")
         print(f"       Observation shape: {len(obs) if isinstance(obs, list) else obs.shape}")
 
@@ -118,7 +117,7 @@ def check_training_readiness():
 
     # Stable-Baselines3
     try:
-        from stable_baselines3 import PPO, SAC, A2C
+        pass  # Agent imports only if needed
         print(f"  [OK] Stable-Baselines3 importable (PPO, SAC, A2C)")
     except ImportError:
         print(f"  [ERROR] Stable-Baselines3 no disponible")

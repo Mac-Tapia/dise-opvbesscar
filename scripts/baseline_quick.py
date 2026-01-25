@@ -34,7 +34,7 @@ def main():
     env = CityLearnEnv(schema=str(schema_path))
 
     logger.info("\n[Baseline] Corriendo 1 episodio completo...")
-    obs, info = env.reset()
+    _, _ = env.reset()
 
     # Determinar número de acciones
     num_actions = 130  # Fixed: 128 chargers + 2 reservados
@@ -46,7 +46,7 @@ def main():
     max_steps = 8760
 
     while step < max_steps:
-        obs, reward, terminated, truncated, info = env.step(actions)
+        _, _, terminated, truncated, _ = env.step(actions)
         step += 1
 
         # Extraer métricas del info

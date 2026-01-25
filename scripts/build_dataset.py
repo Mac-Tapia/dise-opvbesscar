@@ -14,7 +14,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.iquitos_citylearn.config import load_config, load_paths
+from src.iquitos_citylearn.config import load_config
 from src.iquitos_citylearn.oe3.dataset_builder import build_citylearn_dataset
 
 logging.basicConfig(

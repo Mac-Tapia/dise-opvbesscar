@@ -27,7 +27,7 @@ def fix_simulate_bess_docstring():
             # Cerrar el docstring aquí
             new_lines.append('    """\n')
             # Ahora las variables deben inicializarse
-            n_hours = 'int(len(pv_kwh))'  # Calculado
+            _ = 'int(len(pv_kwh))'  # Calculado
             new_lines.append(f'    n_hours = len(pv_kwh)\n')
             new_lines.append('    grid_import_mall = np.zeros(n_hours)\n')
             new_lines.append('    grid_export = np.zeros(n_hours)\n')
