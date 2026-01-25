@@ -120,37 +120,37 @@ def _patch_citylearn_sac_update() -> None:
 @dataclass
 class SACConfig:
     """Configuración avanzada para SAC con soporte CUDA/GPU y multiobjetivo.
-    
+
     Nota: episodes=50 es el mínimo recomendado para problemas de alta
     dimensionalidad como CityLearn con ~900 obs dims × 126 action dims.
     Para convergencia óptima, usar 100+ episodios.
     """
-    # Hiperparámetros de entrenamiento
+    # Hiperparámetros de entrenamiento - TIER 2 OPTIMIZED
     episodes: int = 50  # 50 mínimo para alta dimensionalidad (8760 pasos/ep)
-    batch_size: int = 512
+    batch_size: int = 256                    # TIER 2 FIX: ↓ de 512 (más estable)
     buffer_size: int = 100000
-    learning_rate: float = 3e-4
+    learning_rate: float = 2.5e-4            # TIER 2 FIX: ↓ de 3e-4 (convergencia suave)
     gamma: float = 0.99
     tau: float = 0.005
-    
-    # Entropía - TIER 2 FIX: Reducida para evitar exploración excesiva
-    ent_coef: float = 0.01         # Fijo (no auto): reduce ruido innecesario
+
+    # Entropía - TIER 2 FIX: Aumentada para mejor exploración
+    ent_coef: float = 0.02                   # TIER 2 FIX: ↑ de 0.01 (2x exploración)
     target_entropy: Optional[float] = -50.0  # Menos exploración que -126.0 (-dim/2.5 approx)
-    
-    # Red neuronal
-    hidden_sizes: tuple = (256, 256)
-    activation: str = "relu"
-    
+
+    # Red neuronal - TIER 2 FIX: Ampliada
+    hidden_sizes: tuple = (512, 512)         # TIER 2 FIX: ↑ de (256, 256) (capacidad)
+    activation: str = "relu"                 # ✅ Óptimo para SAC
+
     # Escalabilidad
     n_steps: int = 1
     gradient_steps: int = 1
-    
+
     # === CONFIGURACIÓN GPU/CUDA ===
     device: str = "auto"  # "auto", "cuda", "cuda:0", "cuda:1", "mps", "cpu"
     use_amp: bool = True  # Mixed precision (Automatic Mixed Precision)
     pin_memory: bool = True  # Acelera transferencia CPU->GPU
     num_workers: int = 0  # DataLoader workers (0 para CityLearn)
-    
+
     # === MULTIOBJETIVO / MULTICRITERIO ===
     # Pesos para función de recompensa compuesta (deben sumar 1.0)
     weight_co2: float = 0.50           # Minimizar emisiones CO₂
@@ -158,17 +158,17 @@ class SACConfig:
     weight_solar: float = 0.20         # Maximizar autoconsumo solar
     weight_ev_satisfaction: float = 0.10  # Maximizar satisfacción carga EV
     weight_grid_stability: float = 0.05   # Minimizar picos de demanda
-    
+
     # Umbrales multicriterio
     co2_target_kg_per_kwh: float = 0.4521  # Factor emisión Iquitos
     cost_target_usd_per_kwh: float = 0.20  # Tarifa objetivo
     ev_soc_target: float = 0.90          # SOC objetivo EVs al partir
     peak_demand_limit_kw: float = 200.0  # Límite demanda pico
-    
+
     # Reproducibilidad
     seed: int = 42
     deterministic_cuda: bool = False  # True = reproducible pero más lento
-    
+
     # Callbacks y logging
     verbose: int = 0
     log_interval: int = 500
@@ -190,14 +190,14 @@ class SACConfig:
 
 class SACAgent:
     """Agente SAC robusto y escalable con optimizadores avanzados.
-    
+
     Características:
     - Soft Actor-Critic con ajuste automático de entropía
     - Replay buffer eficiente
     - Redes duales Q para estabilidad
     - Compatible con CityLearn centralizado/descentralizado
     """
-    
+
     def __init__(self, env: Any, config: Optional[SACConfig] = None):
         logger.info(f"[SACAgent.__init__] ENTRY: config type={type(config)}, config={config}")
         logger.info(f"[SACAgent.__init__] ENTRY: config.checkpoint_dir={config.checkpoint_dir if config else 'None'}")
@@ -208,49 +208,49 @@ class SACAgent:
         self._sb3_sac = None
         self._trained = False
         self._use_sb3 = False
-        
+
         # Métricas de entrenamiento
         self.training_history: List[Dict[str, float]] = []
-        
+
         # === Configurar dispositivo GPU/CUDA ===
         self.device = self._setup_device()
         self._setup_torch_backend()
-    
+
     def _setup_device(self) -> str:
         """Configura el dispositivo para entrenamiento."""
         if self.config.device == "auto":
             return detect_device()
         return self.config.device
-    
+
     def _setup_torch_backend(self):
         """Configura PyTorch para máximo rendimiento."""
         try:
             import torch
-            
+
             # Seed para reproducibilidad
             torch.manual_seed(self.config.seed)
-            
+
             if "cuda" in self.device:
                 torch.cuda.manual_seed_all(self.config.seed)
-                
+
                 # Optimizaciones CUDA
                 if not self.config.deterministic_cuda:
                     torch.backends.cudnn.benchmark = True  # Auto-tune kernels
                 else:
                     torch.backends.cudnn.deterministic = True
                     torch.backends.cudnn.benchmark = False
-                
+
                 # Logging de GPU
                 if torch.cuda.is_available():
                     gpu_mem = torch.cuda.get_device_properties(0).total_memory / 1e9
                     logger.info("CUDA memoria disponible: %.2f GB", gpu_mem)
-            
+
             if self.config.use_amp and "cuda" in self.device:
                 logger.info("Mixed Precision (AMP) habilitado para entrenamiento acelerado")
-                
+
         except ImportError:
             logger.warning("PyTorch no instalado, usando configuración por defecto")
-    
+
     def get_device_info(self) -> Dict[str, Any]:
         """Retorna información detallada del dispositivo."""
         info = {"device": self.device, "backend": "unknown"}
@@ -266,12 +266,12 @@ class SACAgent:
         except ImportError:
             pass
         return info
-    
+
     def learn(self, episodes: Optional[int] = None, total_timesteps: Optional[int] = None):
         """Entrena el agente SAC con el mejor backend disponible."""
         logger.info("Iniciando entrenamiento SAC en dispositivo: %s", self.device)
         eps = episodes or self.config.episodes
-        
+
         # Intentar CityLearn SAC solo si está habilitado explícitamente
         if self.config.prefer_citylearn:
             try:
@@ -279,14 +279,14 @@ class SACAgent:
                 return
             except Exception as e:
                 logger.exception("CityLearn SAC no disponible (%s), usando SB3...", e)
-        
+
         # Fallback a Stable-Baselines3 SAC
         try:
             steps = total_timesteps or (eps * 8760)  # 1 año = 8760 horas
             self._train_sb3_sac(steps)
         except Exception as e:
             logger.exception("SB3 SAC falló (%s). Agente sin entrenar.", e)
-    
+
     def _train_citylearn_sac(self, episodes: int):
         """Entrena usando CityLearn's native SAC con progress tracking."""
         from citylearn.agents.sac import SAC  # type: ignore
@@ -343,7 +343,7 @@ class SACAgent:
                     # Detener si ya alcanzó el límite de episodios
                     if self.episode >= self.total_episodes:
                         raise StopIteration(f"Reached episode limit: {self.total_episodes}")
-                    
+
                     obs, info = self.env.reset(**kwargs)
                     self.episode += 1
                     self.episode_steps = 0
@@ -408,9 +408,9 @@ class SACAgent:
             )
 
         _patch_citylearn_sac_update()
-        
+
         self._citylearn_sac = SAC(train_env)
-        
+
         # Configurar hiperparámetros si es posible
         if hasattr(self._citylearn_sac, 'batch_size'):
             self._citylearn_sac.batch_size = self.config.batch_size
@@ -434,15 +434,15 @@ class SACAgent:
             self._citylearn_sac.learn(episodes=episodes)
         except TypeError:
             self._citylearn_sac.learn(episodes)
-        
+
         elapsed = time.time() - start_time
         logger.info("=" * 50)
         logger.info("SAC entrenado en %.1f segundos (%.1f min)", elapsed, elapsed / 60)
         logger.info("=" * 50)
-        
+
         self._trained = True
         self._use_sb3 = False
-    
+
     def _train_sb3_sac(self, total_timesteps: int):
         """Entrena usando Stable-Baselines3 SAC con optimizadores avanzados."""
         # DIAGNOSTIC: Write to file to confirm method execution
@@ -450,16 +450,16 @@ class SACAgent:
             f.write(f"_train_sb3_sac called with total_timesteps={total_timesteps}\n")
             f.write(f"checkpoint_dir={self.config.checkpoint_dir}\n")
             f.write(f"checkpoint_freq_steps={self.config.checkpoint_freq_steps}\n")
-        
+
         logger.info("_train_sb3_sac: Iniciando entrenamiento SB3 con %d timesteps", total_timesteps)
         import gymnasium as gym
         from stable_baselines3 import SAC
         from stable_baselines3.common.callbacks import BaseCallback, CallbackList
         from stable_baselines3.common.monitor import Monitor
-        
+
         # Wrapper para compatibilidad
         class CityLearnWrapper(gym.Wrapper):
-            def __init__(self, env, smooth_lambda: float = 0.0, 
+            def __init__(self, env, smooth_lambda: float = 0.0,
                          normalize_obs: bool = True, normalize_rewards: bool = True,
                          reward_scale: float = 0.01, clip_obs: float = 10.0):
                 super().__init__(env)
@@ -471,19 +471,19 @@ class SACAgent:
                 self.act_dim = self._get_act_dim()
                 self._smooth_lambda = smooth_lambda
                 self._prev_action = None
-                
+
                 # Normalización
                 self._normalize_obs = normalize_obs
                 self._normalize_rewards = normalize_rewards
                 self._reward_scale = reward_scale  # 0.01 de config
                 self._clip_obs = clip_obs
-                
+
                 # PRE-ESCALADO para observaciones (kW/kWh son valores grandes)
                 # PV: 4162 kWp, BESS: 2000 kWh, Chargers: 272 kW
                 self._obs_prescale = np.ones(self.obs_dim, dtype=np.float32)
                 # Dividir por 1000 para llevar a rango ~1-5
                 self._obs_prescale[:] = 0.001
-                
+
                 # Running stats para normalización (media móvil exponencial)
                 self._obs_mean = np.zeros(self.obs_dim, dtype=np.float64)
                 self._obs_var = np.ones(self.obs_dim, dtype=np.float64)
@@ -491,33 +491,33 @@ class SACAgent:
                 self._reward_mean = 0.0
                 self._reward_var = 1.0
                 self._reward_count = 1e-4
-                
+
                 # Redefinir espacios
                 self.observation_space = gym.spaces.Box(
-                    low=-np.inf, high=np.inf, 
+                    low=-np.inf, high=np.inf,
                     shape=(self.obs_dim,), dtype=np.float32
                 )
                 self.action_space = gym.spaces.Box(
                     low=-1.0, high=1.0,
                     shape=(self.act_dim,), dtype=np.float32
                 )
-            
+
             def _update_obs_stats(self, obs: np.ndarray):
                 """Actualiza estadísticas de observación con Welford's algorithm."""
                 batch_mean = obs
                 batch_var = np.zeros_like(obs)
                 batch_count = 1
-                
+
                 delta = batch_mean - self._obs_mean
                 tot_count = self._obs_count + batch_count
-                
+
                 self._obs_mean = self._obs_mean + delta * batch_count / tot_count
                 m_a = self._obs_var * self._obs_count
                 m_b = batch_var * batch_count
                 M2 = m_a + m_b + np.square(delta) * self._obs_count * batch_count / tot_count
                 self._obs_var = M2 / tot_count
                 self._obs_count = tot_count
-            
+
             def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
                 """Normaliza observación: pre-escala + running stats + clip."""
                 if not self._normalize_obs:
@@ -529,7 +529,7 @@ class SACAgent:
                 normalized = (prescaled - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
                 # Paso 3: Clip agresivo
                 return np.clip(normalized, -self._clip_obs, self._clip_obs).astype(np.float32)
-            
+
             def _update_reward_stats(self, reward: float):
                 """Actualiza estadísticas de recompensa con Welford's algorithm."""
                 delta = reward - self._reward_mean
@@ -537,7 +537,7 @@ class SACAgent:
                 self._reward_mean += delta / self._reward_count
                 delta2 = reward - self._reward_mean
                 self._reward_var += (delta * delta2 - self._reward_var) / self._reward_count
-            
+
             def _normalize_reward(self, reward: float) -> float:
                 """Escala reward simple sin running stats (evita divergencia std→0)."""
                 if not self._normalize_rewards:
@@ -545,7 +545,7 @@ class SACAgent:
                 # Escala simple: reward * 0.01 + clip
                 scaled = reward * self._reward_scale
                 return float(np.clip(scaled, -10.0, 10.0))
-            
+
             def _flatten_base(self, obs):
                 if isinstance(obs, dict):
                     return np.concatenate([np.array(v, dtype=np.float32).ravel() for v in obs.values()])
@@ -557,7 +557,7 @@ class SACAgent:
                 if isinstance(self.env.action_space, list):
                     return sum(sp.shape[0] for sp in self.env.action_space)
                 return self.env.action_space.shape[0]
-            
+
             def _get_pv_bess_feats(self):
                 """Deriva PV disponible y SOC BESS para enriquecer obs."""
                 pv_kw = 0.0
@@ -587,7 +587,7 @@ class SACAgent:
                     arr = arr[: target]
                 # Aplicar normalización
                 return self._normalize_observation(arr.astype(np.float32))
-            
+
             def _unflatten_action(self, action):
                 if isinstance(self.env.action_space, list):
                     result = []
@@ -598,14 +598,14 @@ class SACAgent:
                         idx += dim
                     return result
                 return [action.tolist()]
-            
+
             def reset(self, **kwargs):
                 obs, info = self.env.reset(**kwargs)
                 # Reset prev_action and prev_obs
                 self._prev_action = None
                 self._prev_obs = obs
                 return self._flatten(obs), info
-            
+
             def step(self, action):
                 citylearn_action = self._unflatten_action(action)
                 try:
@@ -632,21 +632,21 @@ class SACAgent:
                     reward -= float(self._smooth_lambda * np.linalg.norm(delta))
                 self._prev_action = flat_action
                 self._prev_obs = obs  # Store for KeyboardInterrupt fallback
-                
+
                 # Aplicar normalización de reward
                 normalized_reward = self._normalize_reward(float(reward))
-                
+
                 return self._flatten(obs), normalized_reward, terminated, truncated, info
-        
+
         wrapped = Monitor(CityLearnWrapper(
-            self.env, 
+            self.env,
             smooth_lambda=self.config.reward_smooth_lambda,
             normalize_obs=self.config.normalize_observations,
             normalize_rewards=self.config.normalize_rewards,
             reward_scale=self.config.reward_scale,
             clip_obs=self.config.clip_obs,
         ))
-        
+
         # Configurar SAC con optimizadores avanzados y gradient clipping
         policy_kwargs = {
             "net_arch": list(self.config.hidden_sizes),
@@ -654,19 +654,19 @@ class SACAgent:
             # Weight_decay moderado para regularización
             "optimizer_kwargs": {"weight_decay": 1e-5},
         }
-        
+
         target_entropy = self.config.target_entropy if self.config.target_entropy is not None else "auto"
-        
+
         # Use configured learning rate (not capped anymore)
         stable_lr = self.config.learning_rate
-        
+
         # Gamma estándar (SAC maneja bien gamma alto con entropy)
         stable_gamma = self.config.gamma  # Usar config original (0.99)
-        
+
         # Use configured batch size (not capped anymore - GPU can handle 32k)
         stable_batch = self.config.batch_size
-        
-        logger.info("[SAC] Hiperparámetros: lr=%.2e, gamma=%.3f, batch=%d", 
+
+        logger.info("[SAC] Hiperparámetros: lr=%.2e, gamma=%.3f, batch=%d",
                     stable_lr, stable_gamma, stable_batch)
 
         resume_path = Path(self.config.resume_path) if self.config.resume_path else None
@@ -695,10 +695,10 @@ class SACAgent:
                 seed=self.config.seed,
                 device=self.device,
             )
-        
+
         # Logging del LR actual
         logger.info("[SAC] Using stable learning_rate=%.2e (config was %.2e)", stable_lr, self.config.learning_rate)
-        
+
         progress_path = Path(self.config.progress_path) if self.config.progress_path else None
         progress_headers = ("timestamp", "agent", "episode", "episode_reward", "episode_length", "global_step")
         expected_episodes = int(total_timesteps // 8760) if total_timesteps > 0 else 0
@@ -726,7 +726,7 @@ class SACAgent:
                 infos = self.locals.get("infos", [])
                 if isinstance(infos, dict):
                     infos = [infos]
-                
+
                 # Acumular NORMALIZED rewards (después de escala, no raw)
                 # Los raw rewards están en [-0.5, 0.5], muy pequeños
                 # Necesitamos acumular los scaled rewards para métricas significativas
@@ -751,7 +751,7 @@ class SACAgent:
                         self.recent_rewards.append(scaled_r)
                         if len(self.recent_rewards) > self.reward_window_size:
                             self.recent_rewards.pop(0)
-                
+
                 # Extraer métricas de energía del environment
                 try:
                     env = self.training_env.envs[0] if hasattr(self.training_env, 'envs') else self.training_env
@@ -773,28 +773,28 @@ class SACAgent:
                                     self.solar_energy_sum += abs(last_solar)
                 except Exception:
                     pass
-                
+
                 if not infos:
                     return True
                 if self.log_interval_steps > 0 and self.n_calls % self.log_interval_steps == 0:
                     approx_episode = max(1, int(self.model.num_timesteps // 8760) + 1)
-                    
+
                     # Calcular reward promedio de ventana móvil (últimos 200 pasos)
                     if self.recent_rewards:
                         avg_reward = sum(self.recent_rewards) / len(self.recent_rewards)
                     else:
                         avg_reward = 0.0
-                    
+
                     # Usar grid_energy_sum acumulado, si es 0 usar valor mínimo
                     grid_kwh_to_log = max(self.grid_energy_sum, 100.0) if self.grid_energy_sum == 0 else self.grid_energy_sum
-                    
+
                     # Calcular CO2 estimado
                     co2_kg = grid_kwh_to_log * self.co2_intensity
-                    
+
                     # Obtener métricas de entrenamiento del logger de SB3
                     parts = []
                     parts.append(f"reward_avg={avg_reward:.4f}")
-                    
+
                     try:
                         if hasattr(self.model, 'logger') and self.model.logger is not None:
                             name_to_value = getattr(self.model.logger, 'name_to_value', {})
@@ -803,7 +803,7 @@ class SACAgent:
                                 critic_loss = name_to_value.get('train/critic_loss', None)
                                 ent_coef = name_to_value.get('train/ent_coef', None)
                                 learning_rate = name_to_value.get('train/learning_rate', None)
-                                
+
                                 if actor_loss is not None:
                                     parts.append(f"actor_loss={actor_loss:.2f}")
                                 if critic_loss is not None:
@@ -814,16 +814,16 @@ class SACAgent:
                                     parts.append(f"lr={learning_rate:.2e}")
                     except Exception:
                         pass
-                    
+
                     # Agregar métricas de energía y CO2
                     if self.grid_energy_sum > 0:
                         parts.append(f"grid_kWh={self.grid_energy_sum:.1f}")
                         parts.append(f"co2_kg={co2_kg:.1f}")
                     if self.solar_energy_sum > 0:
                         parts.append(f"solar_kWh={self.solar_energy_sum:.1f}")
-                    
+
                     metrics_str = " | ".join(parts)
-                    
+
                     logger.info(
                         "[SAC] paso %d | ep~%d | pasos_global=%d | %s",
                         self.n_calls,
@@ -848,12 +848,12 @@ class SACAgent:
                     self.episode_count += 1
                     reward = float(episode.get("r", 0.0))
                     length = int(episode.get("l", 0))
-                    
+
                     # Calcular métricas finales del episodio ANTES de reiniciar
                     episode_co2_kg = self.grid_energy_sum * self.co2_intensity
                     episode_grid_kwh = self.grid_energy_sum
                     episode_solar_kwh = self.solar_energy_sum
-                    
+
                     self.agent.training_history.append({
                         "step": int(self.model.num_timesteps),
                         "mean_reward": reward,
@@ -897,13 +897,13 @@ class SACAgent:
                                 episode_grid_kwh,
                                 episode_solar_kwh,
                             )
-                    
+
                     # REINICIAR métricas para el siguiente episodio
                     self.reward_sum = 0.0
                     self.reward_count = 0
                     self.grid_energy_sum = 0.0
                     self.solar_energy_sum = 0.0
-                    
+
                 return True
 
         checkpoint_dir = self.config.checkpoint_dir
@@ -928,17 +928,17 @@ class SACAgent:
 
             def _on_step(self) -> bool:
                 self.call_count += 1
-                
+
                 # Log first call and every 1000 calls
                 if self.call_count == 1:
                     logger.info(f"[SAC CheckpointCallback._on_step] FIRST CALL DETECTED! n_calls={self.n_calls}")
-                
+
                 if self.call_count % 1000 == 0:
                     logger.info(f"[SAC CheckpointCallback._on_step] call #{self.call_count}, n_calls={self.n_calls}")
-                
+
                 if self.save_dir is None or self.freq <= 0:
                     return True
-                
+
                 # MANDATORY: Check if we should save (every freq calls)
                 should_save = (self.n_calls > 0 and self.n_calls % self.freq == 0)
                 if should_save:
@@ -949,7 +949,7 @@ class SACAgent:
                         logger.info(f"[SAC CHECKPOINT OK] Saved: {save_path}")
                     except Exception as exc:
                         logger.error(f"[SAC CHECKPOINT ERROR] {exc}", exc_info=True)
-                
+
                 return True
 
         callback = CallbackList([
@@ -975,7 +975,7 @@ class SACAgent:
                 logger.info("[SAC FINAL OK] Modelo guardado en %s", final_path)
             except Exception as exc:
                 logger.error("[SAC FINAL ERROR] %s", exc, exc_info=True)
-        
+
         # MANDATORY: Verify checkpoints were created
         if checkpoint_dir:
             checkpoint_path = Path(checkpoint_dir)
@@ -983,7 +983,7 @@ class SACAgent:
             logger.info(f"[SAC VERIFICATION] Checkpoints created: {len(zips)} files")
             for z in sorted(zips)[:5]:
                 logger.info(f"  - {z.name} ({z.stat().st_size / 1024:.1f} KB)")
-    
+
     def _get_activation(self):
         """Obtiene función de activación."""
         import torch.nn as nn
@@ -995,12 +995,12 @@ class SACAgent:
             "gelu": nn.GELU,
         }
         return activations.get(self.config.activation, nn.ReLU)
-    
+
     def predict(self, observations: Any, deterministic: bool = True):
         """Predice acción dado el estado."""
         if not self._trained:
             return self._zero_action()
-        
+
         if self._use_sb3 and self._sb3_sac is not None:
             obs = self._flatten_obs(observations)
             # Asegurar shape exacta al espacio de obs de SB3
@@ -1015,12 +1015,12 @@ class SACAgent:
                 pass
             action, _ = self._sb3_sac.predict(obs, deterministic=deterministic)
             return self._unflatten_action(action)
-        
+
         if self._citylearn_sac is not None:
             return self._citylearn_sac.predict(observations, deterministic=deterministic)
-        
+
         return self._zero_action()
-    
+
     def _flatten_obs(self, obs):
         if isinstance(obs, dict):
             arr = np.concatenate([np.array(v, dtype=np.float32).ravel() for v in obs.values()])
@@ -1051,7 +1051,7 @@ class SACAgent:
             elif arr.size > target_dim:
                 arr = arr[:target_dim]
         return arr.astype(np.float32)
-    
+
     def _unflatten_action(self, action):
         if isinstance(self.env.action_space, list):
             result = []
@@ -1062,19 +1062,19 @@ class SACAgent:
                 idx += dim
             return result
         return [action.tolist()]
-    
+
     def _zero_action(self):
         """Devuelve acción cero."""
         if isinstance(self.env.action_space, list):
             return [[0.0] * sp.shape[0] for sp in self.env.action_space]
         return [[0.0] * self.env.action_space.shape[0]]
-    
+
     def save(self, path: str):
         """Guarda el modelo entrenado."""
         if self._sb3_sac is not None:
             self._sb3_sac.save(path)
             logger.info("Modelo SAC guardado en %s", path)
-    
+
     def load(self, path: str):
         """Carga un modelo previamente entrenado."""
         from stable_baselines3 import SAC
@@ -1087,7 +1087,7 @@ class SACAgent:
 def make_sac(env: Any, config: Optional[SACConfig] = None, **kwargs) -> SACAgent:
     """Factory function para crear agente SAC robusto."""
     logger.info(f"[make_sac] ENTRY: config={config is not None}, kwargs_empty={not kwargs}")
-    
+
     # CRITICAL FIX: Properly handle config vs kwargs priority
     if config is not None:
         cfg = config
@@ -1098,5 +1098,5 @@ def make_sac(env: Any, config: Optional[SACConfig] = None, **kwargs) -> SACAgent
     else:
         cfg = SACConfig()
         logger.info(f"[make_sac] Created default config: checkpoint_dir={cfg.checkpoint_dir}, checkpoint_freq_steps={cfg.checkpoint_freq_steps}")
-    
+
     return SACAgent(env, cfg)
