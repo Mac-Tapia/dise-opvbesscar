@@ -221,8 +221,8 @@ class SACAgent:
         self.env = env
         self.config = config or SACConfig()
         logger.info("[SACAgent.__init__] AFTER ASSIGNMENT: self.config.checkpoint_dir=%s, checkpoint_freq_steps=%s", self.config.checkpoint_dir, self.config.checkpoint_freq_steps)
-        self._citylearn_sac = None
-        self._sb3_sac = None
+        self._citylearn_sac: Any = None
+        self._sb3_sac: Any = None  # type: ignore
         self._trained = False
         self._use_sb3 = False
         self._prev_obs: Any = None  # type: ignore
@@ -311,15 +311,17 @@ class SACAgent:
     def _train_citylearn_sac(self, episodes: int):
         """Entrena usando CityLearn's native SAC con progress tracking."""
         from citylearn.agents.sac import SAC  # type: ignore
+        gym_available = False
         try:
-            import gymnasium as gym
+            import gymnasium as gym  # type: ignore
+            gym_available = True
         except ImportError:
-            gym = None
+            gym = None  # type: ignore
         import time
 
         # CityLearn's Agent.learn ignores `truncated`, so ensure truncation ends episodes.
         train_env = self.env
-        if gym is not None:
+        if gym_available:
             class _TerminateOnTruncate(gym.Wrapper):
                 def __getattr__(self, name: str):
                     return getattr(self.env, name)
@@ -587,7 +589,9 @@ class SACAgent:
 
             def _get_act_dim(self):
                 if isinstance(self.env.action_space, list):
-                    return sum(sp.shape[0] for sp in self.env.action_space)
+                    return sum(sp.shape[0] if sp.shape else 1 for sp in self.env.action_space)
+                if self.env.action_space.shape is None or len(self.env.action_space.shape) == 0:
+                    return 1
                 return self.env.action_space.shape[0]
 
             def _get_pv_bess_feats(self):
@@ -671,7 +675,7 @@ class SACAgent:
 
                 return self._flatten(obs), normalized_reward, terminated, truncated, info
 
-        wrapped = Monitor(CityLearnWrapper(
+        wrapped: Any = Monitor(CityLearnWrapper(
             self.env,
             smooth_lambda=self.config.reward_smooth_lambda,
             normalize_obs=self.config.normalize_observations,
@@ -787,12 +791,12 @@ class SACAgent:
 
                 # Extraer métricas de energía del environment
                 try:
-                    env = self.training_env.envs[0] if hasattr(self.training_env, 'envs') else self.training_env
+                    env = self.training_env  # type: ignore
                     if hasattr(env, 'unwrapped'):
-                        env = env.unwrapped
+                        env = env.unwrapped  # type: ignore
                     # CityLearn buildings tienen net_electricity_consumption
                     if hasattr(env, 'buildings'):
-                        for b in env.buildings:
+                        for b in env.buildings:  # type: ignore
                             # Acumular consumo neto de la red
                             if hasattr(b, 'net_electricity_consumption') and b.net_electricity_consumption:
                                 last_consumption = b.net_electricity_consumption[-1] if b.net_electricity_consumption else 0
@@ -1044,11 +1048,13 @@ class SACAgent:
             obs = self._flatten_obs(observations)
             # Asegurar shape exacta al espacio de obs de SB3
             try:
-                target_dim = int(self._sb3_sac.observation_space.shape[0])
-                if obs.size < target_dim:
-                    obs = np.pad(obs, (0, target_dim - obs.size), mode="constant")
-                elif obs.size > target_dim:
-                    obs = obs[:target_dim]
+                obs_space_shape = self._sb3_sac.observation_space.shape
+                if obs_space_shape is not None and len(obs_space_shape) > 0:
+                    target_dim = int(obs_space_shape[0])
+                    if obs.size < target_dim:
+                        obs = np.pad(obs, (0, target_dim - obs.size), mode="constant")
+                    elif obs.size > target_dim:
+                        obs = obs[:target_dim]
                 obs = obs.astype(np.float32)
             except (ImportError, ModuleNotFoundError, AttributeError):
                 pass

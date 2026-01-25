@@ -603,16 +603,17 @@ class A2CAgent:
     def _get_lr_schedule(self) -> Union[Callable[[float], float], float]:
         """Crea scheduler de learning rate."""
         try:
-            from stable_baselines3.common.utils import get_linear_fn  # type: ignore[import]
+            from stable_baselines3.common.utils import get_linear_fn as sb3_get_linear_fn  # type: ignore[import]
+            linear_fn = sb3_get_linear_fn
         except ImportError:
             # Fallback implementation
-            def get_linear_fn(init_val: float, final_val: float, _total: float) -> Callable[[float], float]:
+            def linear_fn(init_val: float, final_val: float, _total: float) -> Callable[[float], float]:
                 def fn(progress: float) -> float:
                     return init_val + (final_val - init_val) * progress
                 return fn
 
         if self.config.lr_schedule == "linear":
-            result: Union[Callable[[float], float], float] = get_linear_fn(self.config.learning_rate, self.config.learning_rate * 0.1, 1.0)
+            result: Union[Callable[[float], float], float] = linear_fn(self.config.learning_rate, self.config.learning_rate * 0.1, 1.0)
             return result
         if self.config.lr_schedule == "cosine":
             def cosine_schedule(progress: float) -> float:

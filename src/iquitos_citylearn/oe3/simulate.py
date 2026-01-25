@@ -191,11 +191,11 @@ def _make_env(schema_path: Path) -> Any:
         from citylearn.building import Building
 
         # Replace the problematic method with a no-op at class level
-        def _patched_simulate_unconnected_ev_soc(self):
+        def _patched_simulate_unconnected_ev_soc(self):  # type: ignore
             """Disabled: This method in CityLearn 2.5.0 has a boundary access bug."""
             pass
 
-        Building.simulate_unconnected_ev_soc = _patched_simulate_unconnected_ev_soc
+        setattr(Building, 'simulate_unconnected_ev_soc', _patched_simulate_unconnected_ev_soc)
         logger.debug("Patched Building.simulate_unconnected_ev_soc at class level")
     except Exception as e:
         logger.debug(f"Optional patch skipped (no impact on training): {e}")
@@ -205,7 +205,7 @@ def _make_env(schema_path: Path) -> Any:
     try:
         env = CityLearnEnv(schema=abs_path, render_mode=None)
     except TypeError:
-        env = CityLearnEnv(schema_path=abs_path, render_mode=None)
+        env = CityLearnEnv(schema=abs_path, render_mode=None)
 
     # CRITICAL FIX: Ensure render_mode attribute exists to suppress stable_baselines3 warnings
     if not hasattr(env, 'render_mode'):
