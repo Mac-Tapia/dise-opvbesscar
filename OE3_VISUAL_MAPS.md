@@ -322,7 +322,8 @@ v1 ACTIVE (rewards.py):
    └─ Used in: simulate.py (MAIN PIPELINE)
 
 v2 ARCHIVED (rewards_improved_v2.py):
-├─ ImprovedWeights [co2, solar, cost, ev_satisfaction, grid_stability + peak_import_penalty]
+├─ ImprovedWeights [co2 \
+    , solar, cost, ev_satisfaction, grid_stability + peak_import_penalty]
 ├─ IquitosContextV2 [adds grid_stability_threshold]
 ├─ ImprovedMultiObjectiveReward [compute_detailed() method]
 └─ ImprovedRewardWrapper [Alternative Gymnasium wrapper]

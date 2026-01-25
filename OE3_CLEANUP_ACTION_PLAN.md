@@ -139,7 +139,8 @@ imports
 5. **Commit**:
 
    ```bash
-   git commit -m "Refactor: Consolidate co2_emissions.py into co2_table.py; remove unused dataclass definitions"
+   git commit -m "Refactor: Consolidate co2_emissions.py into"
+       "co2_table.py; remove unused dataclass definitions"
 ```bash
 
 **Verification**:
@@ -211,7 +212,8 @@ src/iquitos_citylearn/oe3/
 4. **Commit**:
 
    ```bash
-   git commit -m "Archive: Move rewards_improved_v2.py to experimental/ (v2 iteration reference)"
+   git commit -m "Archive: Move rewards_improved_v2.py to"
+       "experimental/ (v2 iteration reference)"
 ```bash
 
 ---
@@ -351,7 +353,8 @@ scripts/experimental/
 6. **Commit**:
 
    ```bash
-   git commit -m "Archive: Move rewards_dynamic.py and train_ppo_dynamic.py to experimental/"
+   git commit -m "Archive: Move rewards_dynamic.py and"
+       "train_ppo_dynamic.py to experimental/"
 ```bash
 
 ---
@@ -373,7 +376,8 @@ scripts/experimental/
 - **rewards.py** (529 lines)
   - Multi-objective reward system (TIER 1 fixes applied)
   - Used in all agent training
-  - Implements: MultiObjectiveWeights, IquitosContext, MultiObjectiveReward, CityLearnMultiObjectiveWrapper
+  - Implements: MultiObjectiveWeights \
+      , IquitosContext, MultiObjectiveReward, CityLearnMultiObjectiveWrapper
   
 - **co2_table.py** (469 lines, consolidated from co2_emissions.py)
   - CO₂ evaluation and agent comparison
@@ -541,7 +545,8 @@ python scripts/run_full_pipeline_visible.py
 ## Last Updated
 
 - **Date**: 2026-01-25
-- **Changes**: Consolidated co2_emissions.py, archived v2 reward modules, deleted orphaned demanda_mall_kwh.py
+- **Changes**: Consolidated co2_emissions.py \
+    , archived v2 reward modules, deleted orphaned demanda_mall_kwh.py
 - **Author**: Code Cleanup Initiative
 
 ```bash

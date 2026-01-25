@@ -83,7 +83,10 @@ comparison
 ### Current Approach (Problematic)
 
 ```bash
-Raw observation (534 dims): Mix of kW (0-4162), kWh (0-2000), SOC (0-1), cost (0-1)
+Raw observation (534 dims): Mix of kW (0-4162),
+    kWh (0-2000),
+    SOC (0-1),
+    cost (0-1)
          ↓
 Prescaling (multiply by 0.001): [0, 4162] → [0, 4.162]
          ↓
