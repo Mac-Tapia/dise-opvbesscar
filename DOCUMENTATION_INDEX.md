@@ -23,12 +23,12 @@ validación
 
 ## 📚 DOCUMENTACIÓN PRINCIPAL
 
-| Documento | Propósito | Tiempo |
+  | Documento | Propósito | Tiempo |  
 |-----------|-----------|--------|
-| [TRAINING_READY.md](TRAINING_READY.md) | Resumen ejecutivo y estado actual | 5 min |
-| [TRAINING_CHECKLIST.md](TRAINING_CHECKLIST.md) | Validación paso-a-paso (10 pasos) | 10-20 min |
-| [QUICK_REFERENCE_TRAINING.py](QUICK_REFERENCE_TRAINING.py) | Copy-paste commands + FAQ | 5 min |
-| [AGENTS_IMPROVEMENTS_SUMMARY.md](AGENTS_IMPROVEMENTS_SUMMARY.md) | Changelog detallado de cambios | 10 min |
+  | [TRAINING_READY.md](TRAINING_READY.md) | Resumen ejecutivo y estado actual | 5 min |  
+  | [TRAINING_CHECKLIST.md](TRAINING_CHECKLIST.md) | Validación paso-a-paso (10 pasos) | 10-20 min |  
+  | [QUICK_REFERENCE_TRAINING.py](QUICK_REFERENCE_TRAINING.py) | Copy-paste commands + FAQ | 5 min |  
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 ---
 
@@ -179,7 +179,7 @@ sección "PARÁMETROS AJUSTABLES"
   - Agentes RL
 - [src/iquitos_citylearn/oe3/rewards.py](src/iquitos_citylearn/oe3/rewards.py)
   - - Función de recompensas
-- [src/iquitos_citylearn/oe3/dataset_builder.py](src/iquitos_citylearn/oe3/dataset_builder.py)
+- [src/iquitos_citylearn/oe3/dataset_builder.py][url1]
 - - Constructor de dataset
 
 ### Scripts Útiles
@@ -232,12 +232,12 @@ Archivo: `scripts/train_quick.py`
 
 Después de entrenamiento con 50 episodios:
 
-| Métrica | Baseline | SAC | PPO | A2C |
+  | Métrica | Baseline | SAC | PPO | A2C |  
 |---------|----------|-----|-----|-----|
-| CO₂ emissions | 10,200 kg | 7,500 kg | 7,200 kg | 7,800 kg |
-| Reducción CO₂ | 0% | -26% | -29% | -24% |
-| Solar utilization | 40% | 65% | 68% | 60% |
-| Training time/ep | N/A | 1 hr | 1 hr | 45 min |
+  | CO₂ emissions | 10,200 kg | 7,500 kg | 7,200 kg | 7,800 kg |  
+  | Reducción CO₂ | 0% | -26% | -29% | -24% |  
+  | Solar utilization | 40% | 65% | 68% | 60% |  
+  | Training time/ep | N/A | 1 hr | 1 hr | 45 min |  
 
 ---
 
@@ -264,3 +264,6 @@ python -m venv .venv && .venv\Scripts\Activate.ps1 && pip install -r requirement
 **Estado**: ✅ **LISTO PARA ENTRENAMIENTO**
 
 Consulta [TRAINING_READY.md](TRAINING_READY.md) para comenzar ahora.
+
+
+[url1]: src/iquitos_citylearn/oe3/dataset_builder.py

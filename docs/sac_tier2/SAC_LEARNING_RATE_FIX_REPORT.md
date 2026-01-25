@@ -59,12 +59,12 @@ stable_batch = self.config.batch_size        # Usar config completo: 32,768
 
 ## Impacto de la Corrección
 
-| Métrica | Antes | Después | Mejora |
+  | Métrica | Antes | Después | Mejora |  
 | --- | ------- | --- | -------- |
-| Learning Rate | 3.00e-05 | 1.00e-03 | **33.3x más rápido** |
-| Batch Size | 512 | 32,768 | **64x más grande** |
-| Gradient Quality | Muy bajo | Óptimo para GPU | **Mejor convergencia** |
-| Esperado: Reward 500 pasos | 0.5550 (plano) | 0.6x+ (creciente) | **Aprendizaje real** |
+  | Learning Rate | 3.00e-05 | 1.00e-03 | **33.3x más rápido** |  
+  | Batch Size | 512 | 32,768 | **64x más grande** |  
+  | Gradient Quality | Muy bajo | Óptimo para GPU | **Mejor convergencia** |  
+  | Esperado: Reward 500 pasos | 0.5550 (plano) | 0.6x+ (creciente) | **Aprendizaje real** |  
 
 ---
 
@@ -110,7 +110,8 @@ actor_loss y critic_loss.
 [ref]: src/iquitos_citylearn/oe3/agents/sac.py#L659-L667
 
 ```diff
-  target_entropy = self.config.target_entropy if self.config.target_entropy is not None else "auto"
+  target_entropy = self.config.target_entropy \
+          if self.config.target_entropy is not None else "auto"
 
 - # Learning rate MÁS conservador para estabilidad
 - stable_lr = min(self.config.learning_rate, 3e-5)  # Max 3e-5 (muy bajo)

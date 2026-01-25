@@ -13,11 +13,11 @@
 
 ### URLs Disponibles
 
-| Servicio | Local | Red Local |
+  | Servicio | Local | Red Local |  
 | ---------- | ------- | ----------- |
-| **Docker Manager** | <http://localhost:5000> | <http://192.168.43.30:5000> |
-| **Jupyter Lab (CPU)** | <http://localhost:8888> | <http://192.168.43.30:8888> |
-| **Jupyter Lab (GPU)** | <http://localhost:8889> | <http://192.168.43.30:8889> |
+  | **Docker Manager** | <http://localhost:5000> | <http://192.168.43.30:5000> |  
+  | **Jupyter Lab (CPU)** | <http://localhost:8888> | <http://192.168.43.30:8888> |  
+  | **Jupyter Lab (GPU)** | <http://localhost:8889> | <http://192.168.43.30:8889> |  
 
 ### Acceso Rápido
 
@@ -89,7 +89,7 @@ Dev Mode:
 │                                         │
 │  📊 Status          ⚡ Acciones        │
 │  ─────────────────  ────────────────  │
-│  Contenedores      CPU | GPU | Dev   │
+ │  Contenedores      CPU | GPU | Dev   │ 
 │  • pipeline         [Build] [Start]   │
 │  • monitor          [Stop]            │
 │  • jupyter                            │
@@ -132,7 +132,7 @@ Response:
 ```bash
 Construir imagen Docker
 
-Request: {"mode": "cpu|gpu|dev"}
+ Request: {"mode": "cpu | gpu | dev"} 
 Response: {"success": true, "message": "Image built", "output": "..."}
 ```bash
 
@@ -141,7 +141,7 @@ Response: {"success": true, "message": "Image built", "output": "..."}
 ```bash
 Iniciar servicios
 
-Request: {"mode": "cpu|gpu|dev"}
+ Request: {"mode": "cpu | gpu | dev"} 
 Response: {"success": true, "message": "Services started"}
 ```bash
 
@@ -150,7 +150,7 @@ Response: {"success": true, "message": "Services started"}
 ```bash
 Detener servicios
 
-Request: {"mode": "cpu|gpu|dev"}
+ Request: {"mode": "cpu | gpu | dev"} 
 Response: {"success": true, "message": "Services stopped"}
 ```bash
 
@@ -159,7 +159,7 @@ Response: {"success": true, "message": "Services stopped"}
 ```bash
 Obtener logs de contenedores
 
-Query: ?service=all|pipeline|jupyter
+ Query: ?service=all | pipeline | jupyter 
 Response: {"success": true, "logs": "..."}
 ```bash
 

@@ -13,15 +13,15 @@ Push: ✅ GitHub sincronizado
 
 Se actualizó completamente la infraestructura Docker de PVBESSCAR con:
 
-| Mejora | Antes | Ahora | Impacto |
+  | Mejora | Antes | Ahora | Impacto |  
 | -------- | ------- | ------- | --------- |
-| **Build time** | Variable | -60% BuildKit | ⚡ Más rápido |
-| **Health checks** | No | ✅ Automáticos | 🛡️ Autorecuperación |
-| **Signal handling** | Manual | ✅ Tini | 🎯 Limpio |
-| **Jupyter** | Separado | ✅ Integrado | 🔬 Mejor DX |
-| **Dev services** | Mínimos | ✅ Completos | 🧪 Testing/Lint |
-| **GPU support** | Básico | ✅ Optimizado | 🚀 Producción |
-| **Caching** | No | ✅ Volume cache | 📦 Más rápido |
+  | **Build time** | Variable | -60% BuildKit | ⚡ Más rápido |  
+  | **Health checks** | No | ✅ Automáticos | 🛡️ Autorecuperación |  
+  | **Signal handling** | Manual | ✅ Tini | 🎯 Limpio |  
+  | **Jupyter** | Separado | ✅ Integrado | 🔬 Mejor DX |  
+  | **Dev services** | Mínimos | ✅ Completos | 🧪 Testing/Lint |  
+  | **GPU support** | Básico | ✅ Optimizado | 🚀 Producción |  
+  | **Caching** | No | ✅ Volume cache | 📦 Más rápido |  
 
 ---
 
@@ -138,11 +138,11 @@ Features:
 2. **docker_quick.bat** (Windows Batch)
 
    ```batch
-   docker_quick.bat build-cpu|gpu|dev
-   docker_quick.bat up-cpu|gpu|dev
+ docker_quick.bat build-cpu | gpu | dev 
+ docker_quick.bat up-cpu | gpu | dev 
    docker_quick.bat down
    docker_quick.bat logs-pipeline|monitor
-   docker_quick.bat stats|health|clean
+ docker_quick.bat stats | health | clean 
 ```bash
 
 3. **docker_quick.ps1** (PowerShell)

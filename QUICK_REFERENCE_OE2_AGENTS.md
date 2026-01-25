@@ -6,13 +6,13 @@
 
 ## 🎯 Bottom Line
 
-| Aspect | Status | Issue |
+  | Aspect | Status | Issue |  
 |--------|--------|-------|
-| **OE2 data loading** | ✓ Works | None |
-| **128 chargers** | ✓ Works (126 actions) | Documentation missing |
-| **Solar (8,760 hrs)** | ✓ Works | Prescaling hardcoded |
-| **BESS (2 MWh/1.2 MW)** | ⚠ Partial | **SOC invisible to agent** |
-| **Agent training** | ⚠ Suboptimal | Can't control BESS |
+  | **OE2 data loading** | ✓ Works | None |  
+  | **128 chargers** | ✓ Works (126 actions) | Documentation missing |  
+  | **Solar (8,760 hrs)** | ✓ Works | Prescaling hardcoded |  
+  | **BESS (2 MWh/1.2 MW)** | ⚠ Partial | **SOC invisible to agent** |  
+  | **Agent training** | ⚠ Suboptimal | Can't control BESS |  
 
 ---
 
@@ -171,14 +171,14 @@ from .citylearn_wrapper import CityLearnWrapper
 
 ## Files Modified by Fix
 
-| File | Change | Lines | Time |
+  | File | Change | Lines | Time |  
 |------|--------|-------|------|
-| sac.py | prescale[-1] = 1.0 | ~520 | 1 min |
-| ppo_sb3.py | prescale[-1] = 1.0 | ~260 | 1 min |
-| a2c_sb3.py | prescale[-1] = 1.0 | ~180 | 1 min |
-| SACConfig | Add prescale fields | ~10 | 5 min |
-| PPOConfig | Add prescale fields | ~10 | 5 min |
-| A2CConfig | Add prescale fields | ~10 | 5 min |
+  | sac.py | prescale[-1] = 1.0 | ~520 | 1 min |  
+  | ppo_sb3.py | prescale[-1] = 1.0 | ~260 | 1 min |  
+  | a2c_sb3.py | prescale[-1] = 1.0 | ~180 | 1 min |  
+  | SACConfig | Add prescale fields | ~10 | 5 min |  
+  | PPOConfig | Add prescale fields | ~10 | 5 min |  
+  | A2CConfig | Add prescale fields | ~10 | 5 min |  
 
 **Total**: 15 minutes for critical fix
 
@@ -200,14 +200,14 @@ After applying BESS SOC fix:
 
 ## Performance Expected After Fix
 
-| Metric | Before | After | Evidence |
+  | Metric | Before | After | Evidence |  
 |--------|--------|-------|----------|
-| BESS utilization | Low (agent ignores BESS) |
- High (agent learns control) | Agent learns when to charge/discharge |
-| CO₂ reduction | ~6-8% | ~15-20% | BESS buffers solar for evening peak |
-| Peak shaving | Poor | Good | Agent offloads evening peak to BESS |
-| Training convergence | Slow (reward plateau) |
- Fast (reward improves) | Agent sees BESS state changes |
+  | BESS utilization | Low (agent ignores BESS) |  
+ High (agent learns control) | Agent learns when to charge/discharge |  
+  | CO₂ reduction | ~6-8% | ~15-20% | BESS buffers solar for evening peak |  
+  | Peak shaving | Poor | Good | Agent offloads evening peak to BESS |  
+  | Training convergence | Slow (reward plateau) |  
+ Fast (reward improves) | Agent sees BESS state changes |  
 
 ---
 
@@ -230,13 +230,13 @@ After applying BESS SOC fix:
 
 ## Documentation Files Created
 
-| File | Purpose | Read time |
+  | File | Purpose | Read time |  
 |------|---------|-----------|
-| `TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md` |
- Complete 9-section analysis | 30 min |
-| `CODE_FIXES_OE2_DATA_FLOW.md` | Implementation guide with code | 20 min |
-| `ANALYSIS_SUMMARY_OE2_AGENTS.md` | Executive brief | 10 min |
-| **This file** | One-page reference | 5 min |
+  | `TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md` |  
+ Complete 9-section analysis | 30 min |  
+  | `CODE_FIXES_OE2_DATA_FLOW.md` | Implementation guide with code | 20 min |  
+  | `ANALYSIS_SUMMARY_OE2_AGENTS.md` | Executive brief | 10 min |  
+  | **This file** | One-page reference | 5 min |  
 
 ---
 

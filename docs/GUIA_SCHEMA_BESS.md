@@ -10,34 +10,34 @@
 
 ### Dimensionamiento del BESS
 
-| Parámetro | Valor |
+  | Parámetro | Valor |  
 |-----------|-------|
-| **Capacidad Nominal** | **1,712 kWh** |
-| **Potencia Nominal** | **622 kW** |
-| Tecnología | Litio-Ion |
-| Profundidad de Descarga (DoD) | 80% |
-| SOC Operacional | 20% - 100% |
-| Eficiencia Round-trip | 95% |
-| C-rate | 0.60 |
+  | **Capacidad Nominal** | **1,712 kWh** |  
+  | **Potencia Nominal** | **622 kW** |  
+  | Tecnología | Litio-Ion |  
+  | Profundidad de Descarga (DoD) | 80% |  
+  | SOC Operacional | 20% - 100% |  
+  | Eficiencia Round-trip | 95% |  
+  | C-rate | 0.60 |  
 
 ### Demanda EV
 
-| Parámetro | Valor |
+  | Parámetro | Valor |  
 |-----------|-------|
-| Energía Total Diaria | 3,252 kWh |
-| Potencia Máxima | 502 kW (17:15h) |
-| Potencia Promedio (operación) | 255 kW |
-| Horario Operación | 9h - 22h (13 horas) |
-| Resolución Temporal | 15 minutos |
+  | Energía Total Diaria | 3,252 kWh |  
+  | Potencia Máxima | 502 kW (17:15h) |  
+  | Potencia Promedio (operación) | 255 kW |  
+  | Horario Operación | 9h - 22h (13 horas) |  
+  | Resolución Temporal | 15 minutos |  
 
 ### Déficit Energético (requiere BESS)
 
-| Parámetro | Valor |
+  | Parámetro | Valor |  
 |-----------|-------|
-| Energía Déficit | 1,301 kWh/día |
-| Horario Déficit | 18h - 22h (5 horas) |
-| Potencia Pico Déficit | 373 kW |
-| % del total demanda | 40% |
+  | Energía Déficit | 1,301 kWh/día |  
+  | Horario Déficit | 18h - 22h (5 horas) |  
+  | Potencia Pico Déficit | 373 kW |  
+  | % del total demanda | 40% |  
 
 ---
 
@@ -109,22 +109,22 @@ CIERRE (22:00h):
 
 ### Distribución Horaria de Energía
 
-| Hora | Energía (kWh) | Pot. Máx (kW) | Estado |
+  | Hora | Energía (kWh) | Pot. Máx (kW) | Estado |  
 |------|---------------|---------------|--------|
-| 9h   | 3.73          | 9.49          | Apertura (cero) |
-| 10h  | 28.70         | 48.76         | Crecimiento |
-| 11h  | 76.21         | 95.97         | Crecimiento |
-| 12h  | 135.31        | 188.34        | Crecimiento |
-| 13h  | 213.71        | 225.88        | Crecimiento |
-| 14h  | 288.58        | 319.05        | Crecimiento |
-| 15h  | 365.58        | 380.12        | Crecimiento |
-| 16h  | 397.02        | 459.10        | Crecimiento |
-| 17h  | 442.36        | 501.91        | **Pico máximo** |
-| 18h  | 368.11        | 373.45        | Pico (déficit) |
-| 19h  | 360.04        | 368.39        | Pico (déficit) |
-| 20h  | 350.15        | 358.24        | Pico (déficit) |
-| 21h  | 222.51        | 356.01        | Rampa cierre |
-| 22h  | 0.00          | 0.00          | **Cierre (cero)** |
+  | 9h | 3.73 | 9.49 | Apertura (cero) |  
+  | 10h | 28.70 | 48.76 | Crecimiento |  
+  | 11h | 76.21 | 95.97 | Crecimiento |  
+  | 12h | 135.31 | 188.34 | Crecimiento |  
+  | 13h | 213.71 | 225.88 | Crecimiento |  
+  | 14h | 288.58 | 319.05 | Crecimiento |  
+  | 15h | 365.58 | 380.12 | Crecimiento |  
+  | 16h | 397.02 | 459.10 | Crecimiento |  
+  | 17h | 442.36 | 501.91 | **Pico máximo** |  
+  | 18h | 368.11 | 373.45 | Pico (déficit) |  
+  | 19h | 360.04 | 368.39 | Pico (déficit) |  
+  | 20h | 350.15 | 358.24 | Pico (déficit) |  
+  | 21h | 222.51 | 356.01 | Rampa cierre |  
+  | 22h | 0.00 | 0.00 | **Cierre (cero)** |  
 
 ---
 
@@ -160,16 +160,16 @@ CIERRE (22:00h):
 
 ### Perfil de SOC Esperado
 
-| Hora | SOC (%) | Estado | Actividad |
+  | Hora | SOC (%) | Estado | Actividad |  
 |------|---------|--------|-----------|
-| 0h-5h | 20% | Reposo | - |
-| 5h-17h | 20%→100% | Carga | Carga desde solar |
-| 17h | 100% | Listo | Máxima carga alcanzada |
-| 18h | 78.5% | Descarga | Cubriendo déficit EV |
-| 19h | 57.5% | Descarga | Cubriendo déficit EV |
-| 20h | 37.0% | Descarga | Cubriendo déficit EV |
-| 21h | 24.0% | Descarga | Cubriendo déficit EV |
-| 22h | 24.0%* | Reposo | *Debe llegar a 20% |
+  | 0h-5h | 20% | Reposo | - |  
+  | 5h-17h | 20%→100% | Carga | Carga desde solar |  
+  | 17h | 100% | Listo | Máxima carga alcanzada |  
+  | 18h | 78.5% | Descarga | Cubriendo déficit EV |  
+  | 19h | 57.5% | Descarga | Cubriendo déficit EV |  
+  | 20h | 37.0% | Descarga | Cubriendo déficit EV |  
+  | 21h | 24.0% | Descarga | Cubriendo déficit EV |  
+  | 22h | 24.0%* | Reposo | *Debe llegar a 20% |  
 
 > **Nota:** La simulación muestra SOC final de 24% (ligeramente sobre el
 objetivo de 20%). Esto indica que el BESS está correctamente dimensionado con
@@ -301,12 +301,12 @@ DESCARGA BESS:
 
 ### Distribución de Fuentes
 
-| Fuente | Energía (kWh) | % del Total EV |
+  | Fuente | Energía (kWh) | % del Total EV |  
 |--------|---------------|----------------|
-| Solar Directa (9h-17h) | 577 | 18% |
-| BESS (18h-22h) | 1,301 | 40% |
-| Red (respaldo) | 1,374* | 42% |
-| **TOTAL** | **3,252** | **100%** |
+  | Solar Directa (9h-17h) | 577 | 18% |  
+  | BESS (18h-22h) | 1,301 | 40% |  
+  | Red (respaldo) | 1,374* | 42% |  
+  | **TOTAL** | **3,252** | **100%** |  
 
 > **Nota:** *La red cubre períodos cuando solar+BESS no pueden cubrir demanda
 completa o como respaldo. Revisar con análisis detallado de excedente solar.

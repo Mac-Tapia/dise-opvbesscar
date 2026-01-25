@@ -134,12 +134,12 @@ Día nublado (invierno):
 
 ## 💡 Endpoints Disponibles
 
-| Endpoint | Método | Descripción | Respuesta |
+  | Endpoint | Método | Descripción | Respuesta |  
 | ---------- | -------- | ------------- | ----------- |
-| `/health` | GET | ¿Está vivo? | `{"status":"healthy"}` |
-| `/api/status` | GET | Estado componentes | Componentes conectados |
-| `/api/metrics` | GET | Datos en tiempo real | Consumo, solar, batería, costo |
-| `/api/control` | POST | Ejecutar acción | Acción ejecutada |
+  | `/health` | GET | ¿Está vivo? | `{"status":"healthy"}` |  
+  | `/api/status` | GET | Estado componentes | Componentes conectados |  
+  | `/api/metrics` | GET | Datos en tiempo real | Consumo, solar, batería, costo |  
+  | `/api/control` | POST | Ejecutar acción | Acción ejecutada |  
 
 ### **Ejemplo: Ejecutar Acción**
 
@@ -222,13 +222,13 @@ d:\diseñopvbesscar\
 
 ## 🌐 Accesos Disponibles
 
-| Servicio | URL | Usuario | Contraseña |
+  | Servicio | URL | Usuario | Contraseña |  
 | ---------- | ----- | --------- | ----------- |
-| **API Swagger** | <http://localhost:8000/docs> | - | - |
-| **API ReDoc** | <http://localhost:8000/redoc> | - | - |
-| **Docker Manager** | <http://localhost:5000> | - | - |
-| **MongoDB Admin** | <http://localhost:8081> | admin | password |
-| **MongoDB** | localhost:27017 | admin | password |
+  | **API Swagger** | <http://localhost:8000/docs> | - | - |  
+  | **API ReDoc** | <http://localhost:8000/redoc> | - | - |  
+  | **Docker Manager** | <http://localhost:5000> | - | - |  
+  | **MongoDB Admin** | <http://localhost:8081> | admin | password |  
+  | **MongoDB** | localhost:27017 | admin | password |  
 
 ---
 

@@ -17,13 +17,13 @@ aprendiera:
 
 [ref]: src/iquitos_citylearn/oe3/rewards.py#L30
 
-| Métrica | Antes | Después | Razón |
+  | Métrica | Antes | Después | Razón |  
 | --- | --- | --- | --- |
-| **CO₂** | 0.45 | **0.50** | PRIMARY: matriz térmica 0.45 kg/kWh (aislada) |
-| **Solar** | 0.15 | **0.20** | SECONDARY: FV limpia disponible en Iquitos |
-| **Costo** | 0.15 | **0.10** | REDUCIDO: tarifa baja, no es bottleneck |
-| **Grid Stability** | 0.20 | **0.10** | REDUCIDO: implícito en CO₂ + Solar |
-| **EV Satisfaction** | 0.05 | **0.10** | Aumentado: operación balanceada |
+  | **CO₂** | 0.45 | **0.50** | PRIMARY: matriz térmica... |  
+  | **Solar** | 0.15 | **0.20** | SECONDARY: FV limpia... |  
+  | **Costo** | 0.15 | **0.10** | REDUCIDO: tarifa baja, no es bottleneck |  
+  | **Grid Stability** | 0.20 | **0.10** | REDUCIDO: implícito en CO₂ + Solar |  
+  | **EV Satisfaction** | 0.05 | **0.10** | Aumentado: operación balanceada |  
 
 **Beneficio**: Agente ahora enfoca en **minimizar importación de grid** (CO₂)
 **maximizando solar**.
@@ -118,10 +118,10 @@ reward = (
 
 [ref]: src/iquitos_citylearn/oe3/agents/sac.py#L136-L138
 
-| Parámetro | Antes | Después | Razón |
+  | Parámetro | Antes | Después | Razón |  
 | --- | --- | --- | --- |
-| `ent_coef` | `"auto"` | **`0.01`** | Fijo: evita exploración EXCESIVA |
-| `target_entropy` | `-126.0` | **`-50.0`** | Menos ruido, más EXPLOTACIÓN |
+  | `ent_coef` | `"auto"` | **`0.01`** | Fijo: evita exploración EXCESIVA |  
+  | `target_entropy` | `-126.0` | **`-50.0`** | Menos ruido, más EXPLOTACIÓN |  
 
 **Por qué**: Con rewards bien escalados ahora, SAC NO necesita exploración
 salvaje. Entropy bajo = más focus en políticas buenas.
@@ -213,13 +213,13 @@ Si TIER 1 muestra mejora clara (r_co2 subiendo), implementar TIER 2:
   3. Lines 215-230: SOC penalty normalizada
 
 - ✅
-  - [src/iquitos_citylearn/oe3/agents/sac.py](src/iquitos_citylearn/oe3/agents/sac.py)
+  - [src/iquitos_citylearn/oe3/agents/sac.py][url1]
   1. Lines 136-138: Entropía reducida
 
 ### DOCUMENTACIÓN
 
 - ✅
-  - [AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md](AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md)
+  - [AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md][url2]
 
 1. ✅ [AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md][ref]
 
@@ -265,3 +265,6 @@ RempowershellItem -Path
 **Estado**: 🟢 **TIER 1 COMPLETE - LISTO PARA VALIDAR EN PRÓXIMO ENTRENAMIENTO (estimado 4-5 horas)**
 
 **Próximo checkpoint**: Esperar a que SAC complete paso 500, verificar `r_co2` trend
+
+[url1]: src/iquitos_citylearn/oe3/agents/sac.py
+[url2]: AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md

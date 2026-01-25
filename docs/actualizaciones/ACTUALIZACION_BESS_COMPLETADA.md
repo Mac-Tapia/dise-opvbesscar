@@ -52,12 +52,12 @@ OPERACIÓN:
 
 #### Comparación con análisis inicial (perfil 15 min):
 
-| Parámetro | Análisis 15 min | BESS Simulado | Diferencia |
+  | Parámetro | Análisis 15 min | BESS Simulado | Diferencia |  
 |-----------|-----------------|---------------|------------|
-| Déficit EV | 1,301 kWh/día | 2,211 kWh/día | +70% |
-| Capacidad | 1,712 kWh | 2,910 kWh | +70% |
-| Potencia | 622 kW | 1,746 kW | +181% |
-| Horario descarga | 18h-22h (5h) | 9h-22h (14h) | +9 horas |
+  | Déficit EV | 1,301 kWh/día | 2,211 kWh/día | +70% |  
+  | Capacidad | 1,712 kWh | 2,910 kWh | +70% |  
+  | Potencia | 622 kW | 1,746 kW | +181% |  
+  | Horario descarga | 18h-22h (5h) | 9h-22h (14h) | +9 horas |  
 
 #### Razones de la diferencia:
 
@@ -206,14 +206,14 @@ if len(df_ev) == 35040:
 
 ### Estado Final
 
-| Componente | Estado | Notas |
+  | Componente | Estado | Notas |  
 |-----------|--------|-------|
-| Perfil EV 15 min | ✅ Completo | 96 intervalos, 3,252 kWh/día |
-| Perfil Solar | ✅ Completo | 22,036 kWh/día |
-| Código bess.py | ✅ Actualizado | Soporta 15 min + horario |
-| Simulación BESS | ✅ Funcional | Genera resultados |
-| Gráficas | ✅ Generadas | 2 archivos PNG |
-| CityLearn data | ✅ Exportado | Schema + CSVs |
+  | Perfil EV 15 min | ✅ Completo | 96 intervalos, 3,252 kWh/día |  
+  | Perfil Solar | ✅ Completo | 22,036 kWh/día |  
+  | Código bess.py | ✅ Actualizado | Soporta 15 min + horario |  
+  | Simulación BESS | ✅ Funcional | Genera resultados |  
+  | Gráficas | ✅ Generadas | 2 archivos PNG |  
+  | CityLearn data | ✅ Exportado | Schema + CSVs |  
 
 ---
 

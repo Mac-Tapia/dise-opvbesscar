@@ -31,17 +31,17 @@
 
 ## 🔧 MEJORAS PRINCIPALES
 
-| Aspecto | Mejora |
+  | Aspecto | Mejora |  
 |---------|--------|
-| **Device Detection** | ✅ Unificada con fallbacks múltiples... |
-| **Validación Pre-Entrenamiento** | ✅ Automatizada + checklist visual |
-| **Utilidades Compartidas** | ✅ Centralizadas en `agent_utils.py` |
-| **Wrapping** | ✅ `ListToArrayWrapper` para compatibilidad SB3 |
-| **Normalización** | ✅ Funciones centralizadas para scaling/clipping |
-| **Documentación** | ✅ Exhaustiva con ejemplos y troubleshooting |
-| **Entrenamiento** | ✅ Script `train_quick.py` con validación integrada |
-| **Checkpoints** | ✅ Manejo robusto con validación de integridad |
-| **Error Handling** | ✅ Logging mejorado en todos los agentes |
+  | **Device Detection** | ✅ Unificada con fallbacks múltiples... |  
+  | **Validación Pre-Entrenamiento** | ✅ Automatizada + checklist visual |  
+  | **Utilidades Compartidas** | ✅ Centralizadas en `agent_utils.py` |  
+  | **Wrapping** | ✅ `ListToArrayWrapper` para... |  
+  | **Normalización** | ✅ Funciones centralizadas... |  
+  | **Documentación** | ✅ Exhaustiva con... |  
+  | **Entrenamiento** | ✅ Script `train_quick.py`... |  
+  | **Checkpoints** | ✅ Manejo robusto... |  
+  | **Error Handling** | ✅ Logging mejorado en todos los agentes |  
 
 ---
 
@@ -118,7 +118,7 @@ python scripts/train_agents_serial.py --device cuda --episodes 50
 python scripts/monitor_training_live_2026.py
 ```bash
 
-**Muestra**: Agent | Episode | Reward | Total Timesteps
+ **Muestra**: Agent | Episode | Reward | Total Timesteps 
 
 ### Paso 6: Ver Resultados
 
@@ -132,23 +132,23 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 
 ## 📈 RESULTADOS ESPERADOS
 
-| Agente | CO₂ Reducción | Utilización Solar | Tiempo/Episodio |
+  | Agente | CO₂ Reducción | Utilización Solar | Tiempo/Episodio |  
 |--------|---------------|------------------|-----------------|
-| **Baseline** | 0% | ~40% | N/A |
-| **SAC** | -26% | ~65% | ~1 hour |
-| **PPO** | -29% | ~68% | ~1 hour |
-| **A2C** | -24% | ~60% | ~45 min |
+  | **Baseline** | 0% | ~40% | N/A |  
+  | **SAC** | -26% | ~65% | ~1 hour |  
+  | **PPO** | -29% | ~68% | ~1 hour |  
+  | **A2C** | -24% | ~60% | ~45 min |  
 
 ---
 
 ## 📚 DOCUMENTACIÓN DISPONIBLE
 
-| Documento | Contenido |
+  | Documento | Contenido |  
 |-----------|----------|
-| **TRAINING_CHECKLIST.md** | ✅ Pre-training validation (10 pasos) |
-| **QUICK_REFERENCE_TRAINING.py** | 📋 Copy-paste commands + FAQ |
-| **AGENTS_IMPROVEMENTS_SUMMARY.md** | 📖 Detailed changelog |
-| **.github/copilot-instructions.md** | 🤖 AI agent guidance (630 líneas) |
+  | **TRAINING_CHECKLIST.md** | ✅ Pre-training validation (10 pasos) |  
+  | **QUICK_REFERENCE_TRAINING.py** | 📋 Copy-paste commands + FAQ |  
+  | **AGENTS_IMPROVEMENTS_SUMMARY.md** | 📖 Detailed changelog |  
+  | **.github/copilot-instructions.md** | 🤖 AI agent guidance (630 líneas) |  
 
 ---
 
@@ -211,13 +211,13 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 
 ## 📞 SOPORTE RÁPIDO
 
-| Problema | Solución |
+  | Problema | Solución |  
 |----------|----------|
-| Schema not found | `python -m... |
-| GPU out of memory | Use `--device cpu` or reduce `n_steps` |
-| Rewards are NaN | Check MultiObjectiveWeights sum = 1.0 |
-| Import error | Verify `src/` in PYTHONPATH |
-| Checkpoint load failed | Delete `checkpoints/` and restart |
+  | Schema not found | `python -m... |  
+  | GPU out of memory | Use `--device cpu` or reduce `n_steps` |  
+  | Rewards are NaN | Check MultiObjectiveWeights sum = 1.0 |  
+  | Import error | Verify `src/` in PYTHONPATH |  
+  | Checkpoint load failed | Delete `checkpoints/` and restart |  
 
 ---
 

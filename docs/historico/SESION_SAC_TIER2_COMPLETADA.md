@@ -68,7 +68,7 @@ con LR corregido.
   - Validación post-cambios (3 tests)
   - Rollback instructions
 - **Link**:
-  - [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md)
+  - [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md][url1]
 
 ### 5. **SAC_TIER2_INDICE.md** 📑 NAVEGACIÓN
 
@@ -155,16 +155,16 @@ update_per_timestep: NEW → 2              (entrenamiento x2)
 
 ## 📊 RESULTADOS ESPERADOS
 
-| Métrica | Antes (Baseline) | Después (TIER 2) | Mejora |
+  | Métrica | Antes (Baseline) | Después (TIER 2) | Mejora |  
 | --------- | ------------------ | ------------------ | -------- |
-| **Importación Pico (kWh/h)** | 280-300 | <250 | -12% |
-| **Importación Off-Peak** | 120-140 | <130 | -8% |
-| **SOC Pre-Pico (16-17h)** | 0.45-0.55 | >0.65 | +20% |
-| **SOC Pico (18-21h)** | 0.20-0.30 | >0.35 | +15% |
-| **Reward Convergencia (episodios)** | 30-40 | 15-20 | 2x ↑ |
-| **CO₂ Anual (kg)** | ~1.8e6 | <1.7e6 | -5% |
-| **Varianza Reward** | Alto | Bajo | -40% |
-| **Fairness (motos/mototaxis)** | 1.2-1.5 | <1.1 | Mejor coordinación |
+  | **Importación Pico (kWh/h)** | 280-300 | <250 | -12% |  
+  | **Importación Off-Peak** | 120-140 | <130 | -8% |  
+  | **SOC Pre-Pico (16-17h)** | 0.45-0.55 | >0.65 | +20% |  
+  | **SOC Pico (18-21h)** | 0.20-0.30 | >0.35 | +15% |  
+  | **Reward Convergencia (episodios)** | 30-40 | 15-20 | 2x ↑ |  
+  | **CO₂ Anual (kg)** | ~1.8e6 | <1.7e6 | -5% |  
+  | **Varianza Reward** | Alto | Bajo | -40% |  
+  | **Fairness (motos/mototaxis)** | 1.2-1.5 | <1.1 | Mejor coordinación |  
 
 ---
 
@@ -248,7 +248,7 @@ DESPUÉS DE IMPLEMENTAR:
 ### 🛠️ Developer/Engineer
 
 - Leer:
-  - [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md)
+  - [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md][url2]
 - Copiar-pegar código (paso 1.1, 1.2, 1.3, 2.1, 2.2, 3.1)
 - Ejecutar tests
 - Commit & push
@@ -264,15 +264,15 @@ DESPUÉS DE IMPLEMENTAR:
 
 ## 📞 TROUBLESHOOTING RÁPIDO
 
-| Problema | Solución |
+  | Problema | Solución |  
 | ---------- | ---------- |
-| No entiendo cambios | → Lee OPTIMIZATION.md parte "POR QUÉ" |
-| Error Python sintaxis | → Copia-pega código STEP_BY_STEP.md |
-| Reward diverge | → Bajar `ent_coef` a 0.01 o LR a 2e-4 |
-| Importación sigue alta | → Bajar baseline pico de 250 a 220 |
-| SOC se drena | → Aumentar bonus BESS de 0.3 a 0.5 |
-| Convergencia lenta | → Aumentar update_per_timestep a 3 |
-| Quiero revertir | → `git checkout HEAD -- src/...` |
+  | No entiendo cambios | → Lee OPTIMIZATION.md parte "POR QUÉ" |  
+  | Error Python sintaxis | → Copia-pega código STEP_BY_STEP.md |  
+  | Reward diverge | → Bajar `ent_coef` a 0.01 o LR a 2e-4 |  
+  | Importación sigue alta | → Bajar baseline pico de 250 a 220 |  
+  | SOC se drena | → Aumentar bonus BESS de 0.3 a 0.5 |  
+  | Convergencia lenta | → Aumentar update_per_timestep a 3 |  
+  | Quiero revertir | → `git checkout HEAD -- src/...` |  
 
 ---
 
@@ -459,3 +459,6 @@ importación pico -15%.
 *Preparado por: GitHub Copilot (Claude Haiku 4.5)*
 *Para: Proyecto Iquitos SAC Optimization*
 *Validado contra: SAC theory, CityLearn requirements, Iquitos context*
+
+[url1]: SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md
+[url2]: SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md

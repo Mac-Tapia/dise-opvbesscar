@@ -22,9 +22,9 @@
    └─ Meta A2C: 300-400 kg (30% mejora)
 
 ✅ FASE 4: ENTRENAR 5 EPISODIOS
-   ├─ A2C (5 ep): ✅ Completado | CO₂: 365 kg | Reward: -947
-   ├─ SAC (5 ep): ✅ Completado | CO₂: 301 kg | Reward: -973  ← MEJOR
-   └─ PPO (5 ep): ✅ Completado | CO₂: 291 kg | Reward: -503  ← MEJOR
+ ├─ A2C (5 ep): ✅ Completado | CO₂: 365 kg | Reward: -947 
+ ├─ SAC (5 ep): ✅ Completado | CO₂: 301 kg | Reward: -973  ← MEJOR 
+ └─ PPO (5 ep): ✅ Completado | CO₂: 291 kg | Reward: -503  ← MEJOR 
 
 GPU DISPONIBLE: NVIDIA RTX 4060 (8.6 GB)
 Tiempo Total: 3.0 segundos
@@ -32,11 +32,11 @@ Tiempo Total: 3.0 segundos
 
 ## Métricas de Entrenamiento
 
-| Agente | Episodios | CO₂ (kg) | Reward | Status |
+  | Agente | Episodios | CO₂ (kg) | Reward | Status |  
 |--------|-----------|---------|--------|--------|
-| **A2C** | 5 | 365 | -947 | ✅ Baseline |
-| **SAC** | 5 | 301 | -973 | ✅ Baseline |
-| **PPO** | 5 | 291 | -503 | ✅ Baseline |
+  | **A2C** | 5 | 365 | -947 | ✅ Baseline |  
+  | **SAC** | 5 | 301 | -973 | ✅ Baseline |  
+  | **PPO** | 5 | 291 | -503 | ✅ Baseline |  
 
 **Observación**: PPO mostró mejor rendimiento en CO₂ con primeros 5 episodios.
 

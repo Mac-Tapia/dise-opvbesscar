@@ -8,15 +8,15 @@
 
 ## Quick Reference: What To Do
 
-| # | Action | File | Commands | Risk | Est. Time |
+  | # | Action | File | Commands | Risk | Est. Time |  
 |---|--------|------|----------|------|-----------|
-| 1 | DELETE | `demanda_mall_kwh.py` | `git rm src/iquitos_citylearn/oe3/demanda_mall_kwh.py` | 🟢 None | 2 min |
-| 2 | MERGE | `co2_emissions.py` → `co2_table.py` | Copy content, delete... | 🟡 Low | 5 min |
-| 3 | MOVE | `rewards_improved_v2.py` | Create `experimental/`, move file | 🟢 None | 3 min |
-| 4 | MOVE | `rewards_wrapper_v2.py` | Create `experimental/`, move file | 🟢 None | 3 min |
-| 5 | MOVE | `rewards_dynamic.py` | Create `scripts/experimental/`,... | 🟡 Low | 3 min |
-| 6 | CREATE | `OE3_MODULE_STATUS.md` | Document final state | 🟢 None | 5 min |
-| 7 | TEST | All pipelines | Run verification scripts | 🟡 Low | 10 min |
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  | 2 | MERGE | `co2_emissions.py` → `co2_table.py` | Copy content, delete... | 🟡 Low | 5 min |  
+  | 3 | MOVE | `rewards_improved_v2.py` | Create `experimental/`, move file | 🟢 None | 3 min |  
+  | 4 | MOVE | `rewards_wrapper_v2.py` | Create `experimental/`, move file | 🟢 None | 3 min |  
+  | 5 | MOVE | `rewards_dynamic.py` | Create `scripts/experimental/`,... | 🟡 Low | 3 min |  
+  | 6 | CREATE | `OE3_MODULE_STATUS.md` | Document final state | 🟢 None | 5 min |  
+  | 7 | TEST | All pipelines | Run verification scripts | 🟡 Low | 10 min |  
 
 ---
 
@@ -700,14 +700,14 @@ Total: -650 lines of dead code, cleaner import chains
 
 ## Estimated Timeline
 
-| Step | Task | Time | Risk |
+  | Step | Task | Time | Risk |  
 |------|------|------|------|
-| 1 | Delete demanda_mall_kwh.py | 2 min | 🟢 |
-| 2 | Consolidate co2_emissions.py | 5 min | 🟡 |
-| 3-5 | Move archive folders | 10 min | 🟢 |
-| 6 | Create documentation | 5 min | 🟢 |
-| 7 | Run verification tests | 10 min | 🟡 |
-| **Total** | **All steps** | **~35 min** | **LOW** |
+  | 1 | Delete demanda_mall_kwh.py | 2 min | 🟢 |  
+  | 2 | Consolidate co2_emissions.py | 5 min | 🟡 |  
+  | 3-5 | Move archive folders | 10 min | 🟢 |  
+  | 6 | Create documentation | 5 min | 🟢 |  
+  | 7 | Run verification tests | 10 min | 🟡 |  
+  | **Total** | **All steps** | **~35 min** | **LOW** |  
 
 ---
 

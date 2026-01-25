@@ -136,14 +136,14 @@ issues.
 
 ### Orphaned Files
 
-| File | Lines | Status | Impact |
+  | File | Lines | Status | Impact |  
 |------|-------|--------|--------|
-| demanda_mall_kwh.py | 507 | ❌ Orphaned (0 imports) | DELETE |
-| rewards_dynamic.py | 80 | ⚠️ Dev-only | ARCHIVE |
-| co2_emissions.py | 358 | ⚠️ Unused classes | CONSOLIDATE |
-| rewards_improved_v2.py | 410 | ⚠️ v2 iteration unused | ARCHIVE |
-| rewards_wrapper_v2.py | 180 | ⚠️ Wrapper unused | ARCHIVE |
-| **TOTAL** | **1,535 lines** | | |
+  | demanda_mall_kwh.py | 507 | ❌ Orphaned (0 imports) | DELETE |  
+  | rewards_dynamic.py | 80 | ⚠️ Dev-only | ARCHIVE |  
+  | co2_emissions.py | 358 | ⚠️ Unused classes | CONSOLIDATE |  
+  | rewards_improved_v2.py | 410 | ⚠️ v2 iteration unused | ARCHIVE |  
+  | rewards_wrapper_v2.py | 180 | ⚠️ Wrapper unused | ARCHIVE |  
+  | **TOTAL** | **1,535 lines** |  |  |  
 
 **Space Savings**: Removing these files saves ~1,500 lines of code (40% of
 module size)
@@ -154,12 +154,12 @@ module size)
 
 ### Reward System Duplication
 
-| Aspect | v1 (Active) | v2 (Backup) | Conflict? |
+  | Aspect | v1 (Active) | v2 (Backup) | Conflict? |  
 |--------|-----------|-----------|-----------|
-| Weights class | MultiObjectiveWeights | ImprovedWeights | ⚠️ Yes, different fields |
-| Reward computation | MultiObjectiveReward.compute() | ImprovedMultiObjectiveReward.compute() | ⚠️ Yes, different logic |
-| Context class | IquitosContext | IquitosContextV2 | ⚠️ Yes, v2 has extra fields |
-| Wrapper | CityLearnMultiObjectiveWrapper | ImprovedRewardWrapper | ⚠️ Yes, different implementation |
+  | Weights class | MultiObjectiveWeights | ImprovedWeights | ⚠️ Yes, different fields |  
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  | Context class | IquitosContext | IquitosContextV2 | ⚠️ Yes, v2 has extra fields |  
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 **Risk**: If v2 accidentally imported without updating agents/**init**.py, it
 would break training.
@@ -167,11 +167,11 @@ would break training.
 
 ### CO₂ Calculation Duplication
 
-| Aspect | co2_emissions.py | co2_table.py | Duplication? |
+  | Aspect | co2_emissions.py | co2_table.py | Duplication? |  
 |--------|-----------------|-------------|-------------|
-| EmissionFactors | ✅ Defined | ❌ Not used | ⚠️ Yes, unused |
-| CO2EmissionBreakdown | ✅ Defined | ❌ Not used | ⚠️ Yes, unused |
-| compute_table() | ❌ No | ✅ Defined | ✓ Single source |
+  | EmissionFactors | ✅ Defined | ❌ Not used | ⚠️ Yes, unused |  
+  | CO2EmissionBreakdown | ✅ Defined | ❌ Not used | ⚠️ Yes, unused |  
+  | compute_table() | ❌ No | ✅ Defined | ✓ Single source |  
 
 **Issue**: co2_emissions.py defines classes that co2_table.py imports but
 doesn't use.

@@ -2,11 +2,11 @@
 
 ## 📋 Archivos Creados para Guía y Simulación
 
-| Archivo | Descripción | Ubicación |
+  | Archivo | Descripción | Ubicación |  
 | --------- | ------------- | ----------- |
-| **GUIA_FUNCIONAMIENTO_SIMULACION.md** | Guía completa del funcionamiento | d:\diseñopvbesscar\ |
-| **simulador_interactivo.py** | Programa interactivo para simular | d:\diseñopvbesscar\ |
-| **FASTAPI_RUNNING_STATUS.md** | Estado actual de servicios | d:\diseñopvbesscar\ |
+  | **GUIA_FUNCIONAMIENTO_SIMULACION.md** | Guía completa del funcionamiento | d:\diseñopvbesscar\ |  
+  | **simulador_interactivo.py** | Programa interactivo para simular | d:\diseñopvbesscar\ |  
+  | **FASTAPI_RUNNING_STATUS.md** | Estado actual de servicios | d:\diseñopvbesscar\ |  
 
 ---
 
@@ -129,21 +129,21 @@ HORA: 11:00 (Mediodía soleado)
 
 ### **Entrada de Sensores (Automática)**
 
-| Parámetro | Rango | Unidad | Actualización |
+  | Parámetro | Rango | Unidad | Actualización |  
 | ----------- | ------- | -------- | --------------- |
-| building_load | 0 - 500 | kW | Cada 5 min |
-| pv_generation | 0 - 100 | kW | Cada 5 min |
-| battery_soc | 0 - 100 | % | Cada 5 min |
-| electricity_price | 0 - 1.0 | €/kWh | Cada hora |
+  | building_load | 0 - 500 | kW | Cada 5 min |  
+  | pv_generation | 0 - 100 | kW | Cada 5 min |  
+  | battery_soc | 0 - 100 | % | Cada 5 min |  
+  | electricity_price | 0 - 1.0 | €/kWh | Cada hora |  
 
 ### **Salida de Decisión (API)**
 
-| Parámetro | Valores | Unidad |
+  | Parámetro | Valores | Unidad |  
 | ----------- | --------- | -------- |
-| action | charge / discharge / idle | - |
-| value | 0 - 100 | kW |
-| timestamp | 2026-01-20T... | ISO 8601 |
-| status | executed | - |
+  | action | charge / discharge / idle | - |  
+  | value | 0 - 100 | kW |  
+  | timestamp | 2026-01-20T... | ISO 8601 |  
+  | status | executed | - |  
 
 ---
 
@@ -335,14 +335,14 @@ fetch(`${BASE}/api/control`, {
 
 ## 🌐 Accesos Disponibles
 
-| Servicio | URL | Descripción |
+  | Servicio | URL | Descripción |  
 | ---------- | ----- | ------------- |
-| **Swagger UI** | <http://localhost:8000/docs> | Documentación interactiva |
-| **ReDoc** | <http://localhost:8000/redoc> | Documentación alternativa |
-| **FastAPI** | <http://localhost:8000> | API REST |
-| **Docker Manager** | <http://localhost:5000> | Panel de control Docker |
-| **Mongo Admin** | <http://localhost:8081> | Administración MongoDB |
-| **MongoDB** | localhost:27017 | Base de datos |
+  | **Swagger UI** | <http://localhost:8000/docs> | Documentación interactiva |  
+  | **ReDoc** | <http://localhost:8000/redoc> | Documentación alternativa |  
+  | **FastAPI** | <http://localhost:8000> | API REST |  
+  | **Docker Manager** | <http://localhost:5000> | Panel de control Docker |  
+  | **Mongo Admin** | <http://localhost:8081> | Administración MongoDB |  
+  | **MongoDB** | localhost:27017 | Base de datos |  
 
 ---
 

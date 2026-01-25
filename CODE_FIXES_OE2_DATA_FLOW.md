@@ -257,7 +257,8 @@ def _get_pv_bess_feats(self):
             elif not isinstance(sg, (list, np.ndarray)) or len(sg) <= t:
                 logger.debug("Building %d solar_generation"
                     "invalid (len=%s, t=%d)",
-                            b_idx, len(sg) if hasattr(sg, '__len__') else 'unknown', t)
+                            b_idx, len(sg) \
+                                    if hasattr(sg, '__len__') else 'unknown', t)
                 pv_missing = True
             else:
                 try:
@@ -285,7 +286,9 @@ def _get_pv_bess_feats(self):
                         soc = \
                             float(soc_val)  # Take last (should be same for all buildings)
                 except (ValueError, TypeError, AttributeError) as e:
-                    logger.debug("Error reading BESS at building %d: %s", b_idx, e)
+                    logger.debug("Error reading BESS at building %d: %s",
+                        b_idx,
+                        e)
                     soc_missing = True
         
         # Warn if critical features missing
@@ -569,14 +572,14 @@ wrapped = CityLearnWrapper(
 
 ## Summary of Changes
 
-| File | Change | Impact |
+  | File | Change | Impact |  
 |------|--------|--------|
-| sac.py | Remove hardcoded 0.001; use config fields | MEDIUM |
-| sac.py | Fix BESS SOC prescaling (use 1.0) | **HIGH** |
-| ppo_sb3.py | Same as SAC | MEDIUM / **HIGH** |
-| a2c_sb3.py | Same as SAC | MEDIUM / **HIGH** |
-| agent_utils.py | Add CityLearnWrapper class | LOW (extraction) |
-| All configs | Add prescale_* fields to dataclasses | LOW (config) |
+  | sac.py | Remove hardcoded 0.001;... | MEDIUM |  
+  | sac.py | Fix BESS SOC prescaling (use 1.0) | **HIGH** |  
+  | ppo_sb3.py | Same as SAC | MEDIUM / **HIGH** |  
+  | a2c_sb3.py | Same as SAC | MEDIUM / **HIGH** |  
+  | agent_utils.py | Add CityLearnWrapper class | LOW (extraction) |  
+  | All configs | Add prescale_* fields to dataclasses | LOW (config) |  
 
 ---
 

@@ -121,31 +121,31 @@ FONDO
 
 **Quiero...** → **Lee esto:**
 
-| Necesidad | Documento | Sección |
+  | Necesidad | Documento | Sección |  
 | --- | ----------- | --- |
-| Entender qué cambios | RESUMEN | "CAMBIOS CLAVE" |
-| Saber por qué funciona | OPTIMIZATION | "REFERENCIAS TEÓRICAS" |
-| Ver código exacto | STEP_BY_STEP | "CAMBIO 1", "CAMBIO 2" |
-| Resultados esperados | RESUMEN | "RESULTADOS ESPERADOS" |
-| Implementar Paso 1 | STEP_BY_STEP | "CAMBIO 1: rewards.py" |
-| Implementar Paso 2 | STEP_BY_STEP | "CAMBIO 2: sac.py" |
-| Validar después | STEP_BY_STEP | "VALIDACIÓN POST-CAMBIOS" |
-| Debuggear problema | OPTIMIZATION | "DEBUGGING ESPERADO" |
-| Revertir cambios | RESUMEN o STEP_BY_STEP | "ROLLBACK" |
-| Entrenamiento | OPTIMIZATION | "PLAN IMPLEMENTACIÓN" |
-| Métricas éxito | RESUMEN | "MÉTRICAS ÉXITO" |
-| FAQ | RESUMEN | "FAQ" |
+  | Entender qué cambios | RESUMEN | "CAMBIOS CLAVE" |  
+  | Saber por qué funciona | OPTIMIZATION | "REFERENCIAS TEÓRICAS" |  
+  | Ver código exacto | STEP_BY_STEP | "CAMBIO 1", "CAMBIO 2" |  
+  | Resultados esperados | RESUMEN | "RESULTADOS ESPERADOS" |  
+  | Implementar Paso 1 | STEP_BY_STEP | "CAMBIO 1: rewards.py" |  
+  | Implementar Paso 2 | STEP_BY_STEP | "CAMBIO 2: sac.py" |  
+  | Validar después | STEP_BY_STEP | "VALIDACIÓN POST-CAMBIOS" |  
+  | Debuggear problema | OPTIMIZATION | "DEBUGGING ESPERADO" |  
+  | Revertir cambios | RESUMEN o STEP_BY_STEP | "ROLLBACK" |  
+  | Entrenamiento | OPTIMIZATION | "PLAN IMPLEMENTACIÓN" |  
+  | Métricas éxito | RESUMEN | "MÉTRICAS ÉXITO" |  
+  | FAQ | RESUMEN | "FAQ" |  
 
 ---
 
 ## 📊 ESTADÍSTICAS DOCUMENTACIÓN
 
-| Documento | Tipo | Palabras | Tiempo Lectura | Audiencia |
+  | Documento | Tipo | Palabras | Tiempo Lectura | Audiencia |  
 | --- | ------ | --- | ---------------- | --- |
-| RESUMEN_EJECUTIVO | Summary | 2000 | 5-10 min | Todos |
-| OPTIMIZATION | Technical | 5000 | 20-30 min | Scientists/Researchers |
-| STEP_BY_STEP | Implementation | 3000 | 2-3 h (ejecutar) | Engineers |
-| **Total** |  | **10000** | **30 min + 3h trabajo** |  |
+  | RESUMEN_EJECUTIVO | Summary | 2000 | 5-10 min | Todos |  
+  | OPTIMIZATION | Technical | 5000 | 20-30 min | Scientists/Researchers |  
+  | STEP_BY_STEP | Implementation | 3000 | 2-3 h (ejecutar) | Engineers |  
+  | **Total** |  | **10000** | **30 min + 3h trabajo** |  |  
 
 ---
 
@@ -187,15 +187,15 @@ Día 4 (2h):
 
 ## 📞 TROUBLESHOOTING
 
-| Problema | Solución | Documento |
+  | Problema | Solución | Documento |  
 | --- | ---------- | --- |
-| No entiendo cambios | Leer OPTIMIZATION parte "POR QUÉ" | OPTIMIZATION.md |
-| Errores sintaxis Python | Leer paso-a-paso STEP_BY_STEP | STEP_BY_STEP.md |
-| Reward sigue diverge | Ver "Si Reward diverge" | OPTIMIZATION.md |
-| Importación sigue alta | Ver "Si Importación sigue alta" | OPTIMIZATION.md |
-| SOC se drena | Ver "Si SOC se drena" | OPTIMIZATION.md |
-| Convergencia lenta | Ver "Si converge muy lento" | OPTIMIZATION.md |
-| Revertir cambios | Ver "ROLLBACK" | RESUMEN o STEP_BY_STEP |
+  | No entiendo cambios | Leer OPTIMIZATION parte "POR QUÉ" | OPTIMIZATION.md |  
+  | Errores sintaxis Python | Leer paso-a-paso STEP_BY_STEP | STEP_BY_STEP.md |  
+  | Reward sigue diverge | Ver "Si Reward diverge" | OPTIMIZATION.md |  
+  | Importación sigue alta | Ver "Si Importación sigue alta" | OPTIMIZATION.md |  
+  | SOC se drena | Ver "Si SOC se drena" | OPTIMIZATION.md |  
+  | Convergencia lenta | Ver "Si converge muy lento" | OPTIMIZATION.md |  
+  | Revertir cambios | Ver "ROLLBACK" | RESUMEN o STEP_BY_STEP |  
 
 ---
 
@@ -252,7 +252,7 @@ Si TIER 2 tiene éxito (convergencia 2x + CO₂ -15%):
 
 ---
 
-**Creado**: 2025-02-13 | **Status**: ✅ LISTO | **Duración total**: 5 horas (30 min lectura + 3... 
+ **Creado**: 2025-02-13 | **Status**: ✅ LISTO | **Duración total**: 5... 
 
 **¿Preguntas?** Ver FAQ en RESUMEN_EJECUTIVO.md
 

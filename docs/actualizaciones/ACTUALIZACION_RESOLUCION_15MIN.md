@@ -24,7 +24,8 @@ total_intervals = 24 * intervals_per_hour  # 96
 intervals = list(range(total_intervals))
 opening_interval = opening_hour * intervals_per_hour
 closing_interval = (closing_hour + 1) * intervals_per_hour - 1
-operating_intervals = [i for i in intervals if opening_interval <= i <= closing_interval]
+operating_intervals = [i for i in intervals \
+        if opening_interval <= i <= closing_interval]
 ```bash
 
 #### Cálculo de energía y potencia:
@@ -89,15 +90,15 @@ for day in range(365):
 
 **Archivo:** `data/oe2/perfil_horario_carga.csv`
 
-| Columna | Tipo | Descripción | Ejemplo |
+  | Columna | Tipo | Descripción | Ejemplo |  
 |---------|------|-------------|---------|
-| `interval` | int | Índice del intervalo (0-95) | 72 |
-| `time_of_day` | float | Hora decimal del día | 18.00 |
-| `hour` | int | Hora del día (0-23) | 18 |
-| `minute` | int | Minuto del intervalo (0, 15, 30, 45) | 0 |
-| `energy_kwh` | float | Energía en kWh para 15 min | 81.3 |
-| `power_kw` | float | Potencia promedio en kW | 325.2 |
-| `is_peak` | bool | Indica si es hora pico | True |
+  | `interval` | int | Índice del intervalo (0-95) | 72 |  
+  | `time_of_day` | float | Hora decimal del día | 18.00 |  
+  | `hour` | int | Hora del día (0-23) | 18 |  
+  | `minute` | int | Minuto del intervalo (0, 15, 30, 45) | 0 |  
+  | `energy_kwh` | float | Energía en kWh para 15 min | 81.3 |  
+  | `power_kw` | float | Potencia promedio en kW | 325.2 |  
+  | `is_peak` | bool | Indica si es hora pico | True |  
 
 ## Verificación de Datos
 
@@ -113,12 +114,12 @@ Energía fuera pico: 1,951.20 kWh
 
 ### Muestra de Datos - Hora Pico (18h)
 
-| interval | time_of_day | hour | minute | energy_kwh | power_kw | is_peak |
+  | interval | time_of_day | hour | minute | energy_kwh | power_kw | is_peak |  
 |----------|-------------|------|--------|------------|----------|---------|
-| 72 | 18.00 | 18 | 0 | 81.3 | 325.2 | True |
-| 73 | 18.25 | 18 | 15 | 81.3 | 325.2 | True |
-| 74 | 18.50 | 18 | 30 | 81.3 | 325.2 | True |
-| 75 | 18.75 | 18 | 45 | 81.3 | 325.2 | True |
+  | 72 | 18.00 | 18 | 0 | 81.3 | 325.2 | True |  
+  | 73 | 18.25 | 18 | 15 | 81.3 | 325.2 | True |  
+  | 74 | 18.50 | 18 | 30 | 81.3 | 325.2 | True |  
+  | 75 | 18.75 | 18 | 45 | 81.3 | 325.2 | True |  
 
 #### Verificación energía en 1 hora pico:
 

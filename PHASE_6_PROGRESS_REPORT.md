@@ -110,13 +110,13 @@ buildings/Mall_Iquitos/charger_simulation_001.csv through 128.csv
 
 ## 🔴 IDENTIFIED CRITICAL ISSUES (SOLVED)
 
-| Issue | Severity | Status | Solution |
+  | Issue | Severity | Status | Solution |  
 |-------|----------|--------|----------|
-| **Charger CSVs missing** | BLOCKER | ✅ FIXED | New function generates... |
-| **Daily→Annual expansion unclear** | CRITICAL | ✅ FIXED | Charger profiles... |
-| **OE2 data validation missing** | CRITICAL | ✅ FIXED | Created comprehensive... |
-| **Schema validation missing** | HIGH | ✅ FIXED | Created validator with 7 checks |
-| **Data integration not explicit** | HIGH | ✅ FIXED | Clear data flow in dataset_builder |
+  | **Charger CSVs missing** | BLOCKER | ✅ FIXED | New function generates... |  
+  | **Daily→Annual expansion unclear** | CRITICAL | ✅ FIXED | Charger profiles... |  
+  | **OE2 data validation missing** | CRITICAL | ✅ FIXED | Created comprehensive... |  
+  | **Schema validation missing** | HIGH | ✅ FIXED | Created validator with 7 checks |  
+  | **Data integration not explicit** | HIGH | ✅ FIXED | Clear data flow in dataset_builder |  
 
 ---
 

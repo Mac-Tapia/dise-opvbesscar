@@ -99,10 +99,14 @@ else:
 
 ```python
 # ❌ ANTES - f-strings en logger
-logger.info(f"[PPO Checkpoint Config] dir={checkpoint_dir}, freq={checkpoint_freq}")
+logger.info(f"[PPO Checkpoint Config] dir={checkpoint_dir},
+    freq={checkpoint_freq}")
 
 # ✅ DESPUÉS - Lazy formatting
-logger.info("[PPO Checkpoint Config] dir=%s, freq=%d", checkpoint_dir, checkpoint_freq)
+logger.info("[PPO Checkpoint Config] dir=%s,
+    freq=%d",
+    checkpoint_dir,
+    checkpoint_freq)
 ```bash
 
 #### 7. Logging Format en make_ppo
@@ -112,7 +116,8 @@ logger.info("[PPO Checkpoint Config] dir=%s, freq=%d", checkpoint_dir, checkpoin
 logger.info(f"[make_ppo] Using provided config: checkpoint_dir={cfg.checkpoint_dir}")
 
 # ✅ DESPUÉS (6)
-logger.info("[make_ppo] Using provided config: checkpoint_dir=%s", cfg.checkpoint_dir)
+logger.info("[make_ppo] Using provided config: checkpoint_dir=%s",
+    cfg.checkpoint_dir)
 ```bash
 
 #### 8. Método learn() - Parámetro Utilizado
@@ -219,15 +224,15 @@ for z in sorted(zips)[:5]:
 
 ## 📊 ESTADÍSTICAS DE CAMBIOS
 
-| Aspecto | Cantidad |
+  | Aspecto | Cantidad |  
 |---------|----------|
-| Tipo Hints Corregidos | 4 |
-| Atributos Inicializados | 3 |
-| Conversiones de Tipo Explícitas | 5 |
-| Formateos de Logger Arreglados | 15+ |
-| Imports Agregados | 1 (Union en a2c_sb3.py) |
-| Líneas Analizadas | 1,500+ |
-| Errores Críticos Resueltos | 25+ |
+  | Tipo Hints Corregidos | 4 |  
+  | Atributos Inicializados | 3 |  
+  | Conversiones de Tipo Explícitas | 5 |  
+  | Formateos de Logger Arreglados | 15+ |  
+  | Imports Agregados | 1 (Union en a2c_sb3.py) |  
+  | Líneas Analizadas | 1,500+ |  
+  | Errores Críticos Resueltos | 25+ |  
 
 ---
 
@@ -296,7 +301,9 @@ en `_get_lr_schedule`.
 2. **Validar imports**:
 
    ```bash
-   python -c "from src.iquitos_citylearn.oe3.agents import PPOAgent, SACAgent, A2CAgent; print('✓ All agents importable')"
+   python -c "from src.iquitos_citylearn.oe3.agents import PPOAgent,
+       SACAgent,
+       A2CAgent; print('✓ All agents importable')"
 ```bash
 
 3. **Entrenar agentes**:

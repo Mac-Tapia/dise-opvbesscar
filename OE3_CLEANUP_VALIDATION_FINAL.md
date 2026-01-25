@@ -156,36 +156,36 @@ OE2 BESS (data/interim/oe2/bess/)
 
 ### Active Production Files
 
-| File | Lines | Status | Purpose |
+  | File | Lines | Status | Purpose |  
 |------|-------|--------|---------|
-| **agents/ppo_sb3.py** | 868 | ✅ PRODUCTION | PPO agent (stable-baselines3) |
-| **agents/a2c_sb3.py** | 715 | ✅ PRODUCTION | A2C agent (stable-baselines3) |
-| **agents/sac.py** | 1,113 | ✅ FUNCTIONAL | SAC agent (off-policy) |
-| **rewards.py** | 529 | ✅ ACTIVE PRIMARY | Multi-objective reward calculation |
-| **co2_table.py** | 201 | ✅ ACTIVE PRIMARY | CO2 emissions tracking & analysis |
-| **dataset_builder.py** | 687 | ✅ ACTIVE PRIMARY | OE2→OE3 data conversion |
-| **simulate.py** | 912 | ✅ ACTIVE PRIMARY | Episode runner... |
-| **progress.py** | 156 | ✅ ACTIVE PRIMARY | Training metrics... |
-| **validate_training_env.py** | 137 | ✅ ACTIVE PRIMARY | Environment validation |
-| **agent_utils.py** | 189 | ✅ ACTIVE PRIMARY | Utility functions |
+  | **agents/ppo_sb3.py** | 868 | ✅ PRODUCTION | PPO agent (stable-baselines3) |  
+  | **agents/a2c_sb3.py** | 715 | ✅ PRODUCTION | A2C agent (stable-baselines3) |  
+  | **agents/sac.py** | 1,113 | ✅ FUNCTIONAL | SAC agent (off-policy) |  
+  | **rewards.py** | 529 | ✅ ACTIVE PRIMARY | Multi-objective reward calculation |  
+  | **co2_table.py** | 201 | ✅ ACTIVE PRIMARY | CO2 emissions tracking & analysis |  
+  | **dataset_builder.py** | 687 | ✅ ACTIVE PRIMARY | OE2→OE3 data conversion |  
+  | **simulate.py** | 912 | ✅ ACTIVE PRIMARY | Episode runner... |  
+  | **progress.py** | 156 | ✅ ACTIVE PRIMARY | Training metrics... |  
+  | **validate_training_env.py** | 137 | ✅ ACTIVE PRIMARY | Environment validation |  
+  | **agent_utils.py** | 189 | ✅ ACTIVE PRIMARY | Utility functions |  
 
 ### Deleted Files (Orphaned Code)
 
-| File | Lines | Reason | Git Status |
+  | File | Lines | Reason | Git Status |  
 |------|-------|--------|-----------|
-| rewards_dynamic.py | 309 | 0 references in pipeline | ✅ REMOVED |
-| rewards_improved_v2.py | 306 | Superseded by rewards.py | ✅ REMOVED |
-| rewards_wrapper_v2.py | 180 | Depends on v2 (removed) | ✅ REMOVED |
-| co2_emissions.py | 507 | 100% orphaned,... | ✅ REMOVED |
+  | rewards_dynamic.py | 309 | 0 references in pipeline | ✅ REMOVED |  
+  | rewards_improved_v2.py | 306 | Superseded by rewards.py | ✅ REMOVED |  
+  | rewards_wrapper_v2.py | 180 | Depends on v2 (removed) | ✅ REMOVED |  
+  | co2_emissions.py | 507 | 100% orphaned,... | ✅ REMOVED |  
 
 ### Archived Files (Legacy)
 
-| File | Location | Reason |
+  | File | Location | Reason |  
 |------|----------|--------|
-| tier2_v2_config.py | experimental/deprecated_v2_configs/ | Old v2 configuration |
-| demanda_mall_kwh.py | experimental/deprecated_v2_configs/ | Unused helper |
-| dispatch_priorities.py | experimental/deprecated_v2_configs/ | Legacy config |
-| train_ppo_dynamic.py | experimental/legacy_scripts/ | Deprecated training... |
+  | tier2_v2_config.py | experimental/deprecated_v2_configs/ | Old v2 configuration |  
+  | demanda_mall_kwh.py | experimental/deprecated_v2_configs/ | Unused helper |  
+  | dispatch_priorities.py | experimental/deprecated_v2_configs/ | Legacy config |  
+  | train_ppo_dynamic.py | experimental/legacy_scripts/ | Deprecated training... |  
 
 ---
 

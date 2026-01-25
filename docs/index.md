@@ -74,9 +74,9 @@ python EVALUACION_METRICAS_COMPLETAS.py
 
 ## 📖 Documentación Disponible
 
-- [RESUMEN_SESION_CONSOLIDACION_20260119.md](../RESUMEN_SESION_CONSOLIDACION_20260119.md):
+- [RESUMEN_SESION_CONSOLIDACION_20260119.md][url1]:
 - Resumen de limpieza del proyecto
-- [PROXIMOSPASOS_OPCIONES_CONTINUACION.md](../PROXIMOSPASOS_OPCIONES_CONTINUACION.md):
+- [PROXIMOSPASOS_OPCIONES_CONTINUACION.md][url2]:
 - Opciones de continuación
 - [plots/README.md](../analyses/oe3/training/plots/README.md): Índice de
   - gráficas
@@ -106,3 +106,6 @@ Para consultas sobre el proyecto, contactar al equipo de investigación.
 
 **Última actualización**: 2026-01-20
 **Estado**: ✅ Proyecto estable y consolidado
+
+[url1]: ../RESUMEN_SESION_CONSOLIDACION_20260119.md
+[url2]: ../PROXIMOSPASOS_OPCIONES_CONTINUACION.md

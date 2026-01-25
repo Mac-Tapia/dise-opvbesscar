@@ -11,7 +11,7 @@
 ### If You're Just Starting Phase 8
 
 1. **READ THIS FIRST** (5 minutes)
-   - [VISUAL_PROJECT_STATUS_PHASE8_READY.txt](VISUAL_PROJECT_STATUS_PHASE8_READY.txt)
+   - [VISUAL_PROJECT_STATUS_PHASE8_READY.txt][url1]
    - Visual overview of everything you need to know
 
 2. **INSTALL PYTHON 3.11** (10 minutes)
@@ -37,21 +37,21 @@
 
 ### Core Phase 8 Documents
 
-| Document | Purpose | Read Time | Size |
+  | Document | Purpose | Read Time | Size |  
 |----------|---------|-----------|------|
-| **PHASE_8_COMPLETE_GUIDE.md** | Comprehensive training guide... | 30 min | 2,500 lines |
-| **AGENT_TRAINING_CONFIG_PHASE8.yaml** | All agent... | 15 min | 400 lines |
-| **PHASE_8_READINESS_CHECKLIST.md** | Pre-training verification checklist | 10 min | 500 lines |
-| **VISUAL_PROJECT_STATUS_PHASE8_READY.txt** | ASCII art summary of everything | 5 min | 400 lines |
+  | **PHASE_8_COMPLETE_GUIDE.md** | Comprehensive training guide... | 30 min | 2,500 lines |  
+  | **AGENT_TRAINING_CONFIG_PHASE8.yaml** | All agent... | 15 min | 400 lines |  
+  | **PHASE_8_READINESS_CHECKLIST.md** | Pre-training verification checklist | 10 min | 500 lines |  
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 ### Supporting Reference Documents
 
-| Document | Purpose | When to Use |
+  | Document | Purpose | When to Use |  
 |----------|---------|------------|
-| **PYTHON_3.11_SETUP_GUIDE.md** | Install Python 3.11 | Before Phase 8 start |
-| **SESSION_COMPLETE_PHASE7_TO8_TRANSITION.md** | Session summary & achievements | Reference/history |
-| **PHASE_7_FINAL_COMPLETION.md** | Phase 7 completion status | Reference |
-| **phase7_validation_complete.py** | Data validation script | If verification needed |
+  | **PYTHON_3.11_SETUP_GUIDE.md** | Install Python 3.11 | Before Phase 8 start |  
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  | **PHASE_7_FINAL_COMPLETION.md** | Phase 7 completion status | Reference |  
+  | **phase7_validation_complete.py** | Data validation script | If verification needed |  
 
 ---
 
@@ -108,16 +108,16 @@ Specifications → PPO section
 
 ### PHASE_8_COMPLETE_GUIDE.md Contents
 
-| Section | Page | Duration | Key Topics |
+  | Section | Page | Duration | Key Topics |  
 |---------|------|----------|-----------|
-| **1. Quick Start** | 1 | 5 min | Prerequisites, Step-by-step, Command |
-| **2. Detailed Walkthrough** | 2 | 10 min | What is Phase 8,... |
-| **3. Agent Specifications** | 3-7 | 20 min | SAC, PPO, A2C detailed specs |
-| **4. Training Execution** | 8-10 | 20 min | Options A-D, Resume, Quick test |
-| **5. Monitoring & Troubleshooting** | 11-15 | 30 min | Real-time monitoring, 5+... |
-| **6. Performance Evaluation** | 16-18 | 20 min | During training,... |
-| **7. Results Analysis** | 19-20 | 15 min | Interpreting results,... |
-| **8. Next Steps** | 21-23 | 10 min | Immediate, Short-term,... |
+  | **1. Quick Start** | 1 | 5 min | Prerequisites, Step-by-step, Command |  
+  | **2. Detailed Walkthrough** | 2 | 10 min | What is Phase 8,... |  
+  | **3. Agent Specifications** | 3-7 | 20 min | SAC, PPO, A2C detailed specs |  
+  | **4. Training Execution** | 8-10 | 20 min | Options A-D, Resume, Quick test |  
+  | **5. Monitoring & Troubleshooting** | 11-15 | 30 min | Real-time monitoring, 5+... |  
+  | **6. Performance Evaluation** | 16-18 | 20 min | During training,... |  
+  | **7. Results Analysis** | 19-20 | 15 min | Interpreting results,... |  
+  | **8. Next Steps** | 21-23 | 10 min | Immediate, Short-term,... |  
 
 ---
 
@@ -211,11 +211,11 @@ python scripts/train_quick.py --episodes 1 --agent PPO
 
 ### After Training (Expected)
 
-| Agent | CO₂ Reduction | Solar Util | Status |
+  | Agent | CO₂ Reduction | Solar Util | Status |  
 |-------|---------------|-----------|--------|
-| SAC | 20-26% | 60-65% | Good |
-| PPO | 25-29% | 65-70% | **BEST** ⭐ |
-| A2C | 20-25% | 60-65% | Good |
+  | SAC | 20-26% | 60-65% | Good |  
+  | PPO | 25-29% | 65-70% | **BEST** ⭐ |  
+  | A2C | 20-25% | 60-65% | Good |  
 
 ---
 
@@ -260,9 +260,9 @@ python scripts/train_quick.py --episodes 1 --agent PPO
 
 ### Reference Materials
 
-- [SESSION_COMPLETE_PHASE7_TO8_TRANSITION.md](SESSION_COMPLETE_PHASE7_TO8_TRANSITION.md)
+- [SESSION_COMPLETE_PHASE7_TO8_TRANSITION.md][url2]
 - - Session summary
-- [VISUAL_PROJECT_STATUS_PHASE8_READY.txt](VISUAL_PROJECT_STATUS_PHASE8_READY.txt)
+- [VISUAL_PROJECT_STATUS_PHASE8_READY.txt][url3]
 - - Visual overview
 - [PHASE_7_FINAL_COMPLETION.md](PHASE_7_FINAL_COMPLETION.md) - Phase 7 status
 
@@ -276,13 +276,13 @@ python scripts/train_quick.py --episodes 1 --agent PPO
 
 ## 📞 TROUBLESHOOTING QUICK INDEX
 
-| Error | Guide Location | Solution |
+  | Error | Guide Location | Solution |  
 |-------|----------------|----------|
-| ImportError: citylearn | [Guide](PHASE_8_COMPLETE_GUIDE.md#issue-1) | Install Python 3.11 |
-| CUDA out of memory | [Guide](PHASE_8_COMPLETE_GUIDE.md#issue-2) | Reduce batch_size |
-| Agent not learning | [Guide](PHASE_8_COMPLETE_GUIDE.md#issue-3) | Build dataset |
-| gymnasium version error | [Guide](PHASE_8_COMPLETE_GUIDE.md#issue-4) | pip install gymnasium==0.28.1 |
-| Checkpoint incompatible | [Guide](PHASE_8_COMPLETE_GUIDE.md#issue-5) | Delete old checkpoints |
+  | ImportError: citylearn | [Guide][url4] | Install Python 3.11 |  
+  | CUDA out of memory | [Guide][url5] | Reduce batch_size |  
+  | Agent not learning | [Guide][url6] | Build dataset |  
+  | gymnasium version error | [Guide][url7] | pip install gymnasium==0.28.1 |  
+  | Checkpoint incompatible | [Guide][url8] | Delete old checkpoints |  
 
 ---
 
@@ -414,3 +414,13 @@ After Phase 8 completes:
 [ref]: VISUAL_PROJECT_STATUS_PHASE8_READY.txt
 
 🚀 **Ready to train agents!**
+
+
+[url1]: VISUAL_PROJECT_STATUS_PHASE8_READY.txt
+[url2]: SESSION_COMPLETE_PHASE7_TO8_TRANSITION.md
+[url3]: VISUAL_PROJECT_STATUS_PHASE8_READY.txt
+[url4]: PHASE_8_COMPLETE_GUIDE.md#issue-1
+[url5]: PHASE_8_COMPLETE_GUIDE.md#issue-2
+[url6]: PHASE_8_COMPLETE_GUIDE.md#issue-3
+[url7]: PHASE_8_COMPLETE_GUIDE.md#issue-4
+[url8]: PHASE_8_COMPLETE_GUIDE.md#issue-5

@@ -209,7 +209,7 @@ python train_tier2_v2_gpu.py
 ### 2. Monitorear Salida
 
 ```text
-[Step 1000] Hour=19 | CO2=0.850 | Reward=0.123 | Peak=1
+ [Step 1000] Hour=19 | CO2=0.850 | Reward=0.123 | Peak=1 
 → Indica agente aprendiendo en hora pico
 ```text
 
@@ -224,13 +224,13 @@ python train_tier2_v2_gpu.py
 
 ## 📈 Métricas Esperadas
 
-| Métrica | V1 (Anterior) | V2 (Esperado) | Mejora |
+  | Métrica | V1 (Anterior) | V2 (Esperado) | Mejora |  
 | --------- | --------------- | --------------- | -------- |
-| Importación pico | 200-300 kWh/h | 150-200 kWh/h | ↓ 25-40% |
-| SOC pre-pico | 60-70% | 85-95% | ↑ 20-30% |
-| Fairness playas | Bajo control | >0.67 | ↑ Mejor |
-| Convergencia | Lenta | Rápida | ↑ 2-3x |
-| Estabilidad | Inestable post-pico | Muy estable | ↑↑ |
+  | Importación pico | 200-300 kWh/h | 150-200 kWh/h | ↓ 25-40% |  
+  | SOC pre-pico | 60-70% | 85-95% | ↑ 20-30% |  
+  | Fairness playas | Bajo control | >0.67 | ↑ Mejor |  
+  | Convergencia | Lenta | Rápida | ↑ 2-3x |  
+  | Estabilidad | Inestable post-pico | Muy estable | ↑↑ |  
 
 ---
 

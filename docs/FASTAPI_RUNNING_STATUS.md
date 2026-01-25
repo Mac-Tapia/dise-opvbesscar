@@ -9,38 +9,38 @@
 
 ### Aplicación FastAPI
 
-| Componente | Estado | Puerto | URL | Comando |
+  | Componente | Estado | Puerto | URL | Comando |  
 | ----------- | -------- | -------- | ----- | --------- |
-| **fastapi-app** | ✅ Healthy (corriendo) | 8000 | <http://localhost:8000> | `docker ps` |
-| API Documentation | ✅ Disponible | 8000 | <http://localhost:8000/docs> | Swagger UI |
-| Health Check | ✅ OK | 8000 | <http://localhost:8000/health> | `curl http://localhost:8000/health` |
+  | **fastapi-app** | ✅ Healthy (corriendo) | 8000 | <http://localhost:8000> | `docker ps` |  
+  | API Documentation | ✅ Disponible | 8000 | <http://localhost:8000/docs> | Swagger UI |  
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 ### Base de Datos
 
-| Componente | Estado | Puerto | URL |
+  | Componente | Estado | Puerto | URL |  
 | ----------- | -------- | -------- | ----- |
-| **mongodb** | ✅ Healthy | 27017 | localhost:27017 |
-| **mongo-admin** | ✅ Up | 8081 | <http://localhost:8081> |
+  | **mongodb** | ✅ Healthy | 27017 | localhost:27017 |  
+  | **mongo-admin** | ✅ Up | 8081 | <http://localhost:8081> |  
 
 ### Interfaces Web
 
-| Componente | Estado | Puerto | URL |
+  | Componente | Estado | Puerto | URL |  
 | ----------- | -------- | -------- | ----- |
-| **Docker Manager** | ✅ Running | 5000 | <http://localhost:5000> |
-| **FastAPI Server (nativo)** | ✅ Running | 8000 | <http://localhost:8000> |
+  | **Docker Manager** | ✅ Running | 5000 | <http://localhost:5000> |  
+  | **FastAPI Server (nativo)** | ✅ Running | 8000 | <http://localhost:8000> |  
 
 ### Kubernetes (Docker Desktop)
 
-| Componente | Estado |
+  | Componente | Estado |  
 | ----------- | -------- |
-| **kube-system** | ✅ Up (5 horas) |
-| **storage-provisioner** | ✅ Running |
-| **coredns** | ✅ Running (x2) |
-| **kube-proxy** | ✅ Running |
-| **etcd** | ✅ Running |
-| **kube-scheduler** | ✅ Running |
-| **kube-controller-manager** | ✅ Running |
-| **kube-apiserver** | ✅ Running |
+  | **kube-system** | ✅ Up (5 horas) |  
+  | **storage-provisioner** | ✅ Running |  
+  | **coredns** | ✅ Running (x2) |  
+  | **kube-proxy** | ✅ Running |  
+  | **etcd** | ✅ Running |  
+  | **kube-scheduler** | ✅ Running |  
+  | **kube-controller-manager** | ✅ Running |  
+  | **kube-apiserver** | ✅ Running |  
 
 ---
 
@@ -89,15 +89,15 @@ http://localhost:8081
 
 ## 📝 Endpoints FastAPI Disponibles
 
-| Método | Ruta | Descripción |
+  | Método | Ruta | Descripción |  
 | -------- | ------ | ------------- |
-| GET | `/` | Root endpoint |
-| GET | `/health` | Health check |
-| GET | `/api/status` | Estado del sistema |
-| GET | `/api/metrics` | Métricas actuales |
-| POST | `/api/control` | Control del sistema |
-| GET | `/docs` | Swagger UI (documentación) |
-| GET | `/redoc` | ReDoc (documentación alternativa) |
+  | GET | `/` | Root endpoint |  
+  | GET | `/health` | Health check |  
+  | GET | `/api/status` | Estado del sistema |  
+  | GET | `/api/metrics` | Métricas actuales |  
+  | POST | `/api/control` | Control del sistema |  
+  | GET | `/docs` | Swagger UI (documentación) |  
+  | GET | `/redoc` | ReDoc (documentación alternativa) |  
 
 ---
 

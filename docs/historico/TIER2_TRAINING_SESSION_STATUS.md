@@ -147,12 +147,12 @@ result_a2c = simulate(
 
 **Esperadas tras 2 episodios** (benchmarks indicativos):
 
-| Métrica | A2C | PPO | SAC | Target |
+  | Métrica | A2C | PPO | SAC | Target |  
 | --------- | ----- | ----- | ----- | -------- |
-| Avg Reward | 0.45-0.55 | 0.40-0.50 | 0.55-0.65 | SAC > PPO > A2C |
-| CO2 (kg) | 1.75-1.85M | 1.85-2.0M | 1.65-1.80M | SAC < A2C < PPO |
-| Peak Import (kWh/h) | 240-260 | 260-290 | 220-250 | SAC < A2C < PPO |
-| Grid Stability | 0.70-0.80 | 0.75-0.85 | 0.80-0.90 | ↑ (TIER 2 benefit) |
+  | Avg Reward | 0.45-0.55 | 0.40-0.50 | 0.55-0.65 | SAC > PPO > A2C |  
+  | CO2 (kg) | 1.75-1.85M | 1.85-2.0M | 1.65-1.80M | SAC < A2C < PPO |  
+  | Peak Import (kWh/h) | 240-260 | 260-290 | 220-250 | SAC < A2C < PPO |  
+  | Grid Stability | 0.70-0.80 | 0.75-0.85 | 0.80-0.90 | ↑ (TIER 2 benefit) |  
 
 ---
 

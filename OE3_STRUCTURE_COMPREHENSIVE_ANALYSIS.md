@@ -24,19 +24,19 @@ orphaned files, import chains, data flow, and version conflicts.
 
 ### 1.1 Reward Modules (4 files with overlapping purposes)
 
-| File | Purpose | Status | Lines | Used Where |
+  | File | Purpose | Status | Lines | Used Where |  
 |------|---------|--------|-------|-----------|
-| `rewards.py` | **ACTIVE** - Core multi-objective... | ✅ Primary | 529 | `agents/__init__.py`, `simulate.py`,... |
-| `rewards_improved_v2.py` | **v2 ITERATION** -... | ⚠️ Secondary | 410 | Only in `rewards_wrapper_v2.py` |
-| `rewards_wrapper_v2.py` | **WRAPPER** - Gymnasium... | ⚠️ Tertiary | 180 | Not imported anywhere... |
-| `rewards_dynamic.py` | **EXPERIMENTAL** - Hour-based... | ❌ Orphaned | 80 | Only in... |
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  | `rewards_dynamic.py` | **EXPERIMENTAL** - Hour-based... | ❌ Orphaned | 80 | Only in... |  
 
 ### 1.2 CO₂ Calculation Modules (2 files, different scope)
 
-| File | Purpose | Status | Lines | Used Where |
+  | File | Purpose | Status | Lines | Used Where |  
 |------|---------|--------|-------|-----------|
-| `co2_emissions.py` | **Data structure** -... | ⚠️ Unused | 358 | Imported but NOT used... |
-| `co2_table.py` | **ACTIVE** - Compute agent... | ✅ Primary | 469 | `scripts/run_oe3_co2_table.py`, pipeline scripts |
+  | `co2_emissions.py` | **Data structure** -... | ⚠️ Unused | 358 | Imported but NOT used... |  
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 ---
 
@@ -144,13 +144,13 @@ ENTRY POINTS:
 
 ### 3.3 Unused Exports in Key Files
 
-| Module | Exports | Actually Used | Status |
+  | Module | Exports | Actually Used | Status |  
 |--------|---------|---------------|--------|
-| `rewards.py` | `MultiObjectiveWeights`, `IquitosContext`,... | ✅ All used in agents/**init**.py | ✓ |
-| `co2_emissions.py` | `CO2EmissionFactors`, `CO2EmissionBreakdown` | ❌ Never instantiated | ❌ |
-| `demanda_mall_kwh.py` | 6 classes, 10+ functions | ❌ Zero usages | ❌ |
-| `rewards_dynamic.py` | `DynamicReward` class | ❌ Only in dev script | ⚠️ |
-| `enriched_observables.py` | `EnrichedObservableWrapper` | ❓ Unclear (not in simulate.py) | ⚠️ |
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  | `co2_emissions.py` | `CO2EmissionFactors`, `CO2EmissionBreakdown` | ❌ Never instantiated | ❌ |  
+  | `demanda_mall_kwh.py` | 6 classes, 10+ functions | ❌ Zero usages | ❌ |  
+  | `rewards_dynamic.py` | `DynamicReward` class | ❌ Only in dev script | ⚠️ |  
+  | `enriched_observables.py` | `EnrichedObservableWrapper` | ❓ Unclear (not in simulate.py) | ⚠️ |  
 
 ---
 
@@ -338,12 +338,12 @@ from iquitos_citylearn.oe3.co2_emissions import (...)
 
 ## 6. VERSION CONFLICT MATRIX
 
-| Aspect | v1 (Active) | v2 (Backup) | Status |
+  | Aspect | v1 (Active) | v2 (Backup) | Status |  
 |--------|------------|-----------|--------|
-| **Weights class** | `MultiObjectiveWeights` (rewards.py) | `ImprovedWeights` (rewards_improved_v2.py) | Both exist, different schemas |
-| **Reward compute** | `MultiObjectiveReward` (rewards.py... | `ImprovedMultiObjectiveReward` (rewards_improved_v2.py... | Both implement same interface |
-| **Context class** | `IquitosContext` (rewards.py... | `IquitosContextV2` (rewards_improved_v2.py... | v2 has... |
-| **Wrapper class** | `CityLearnMultiObjectiveWrapper` (rewards.py) | `ImprovedRewardWrapper` (rewards_wrapper_v2.py) | Different wrappers, only v1 used |
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 **Risk Assessment**: 🟡 MEDIUM
 
@@ -435,39 +435,39 @@ from iquitos_citylearn.oe3.co2_emissions import (...)
 
 ### 🟢 KEEP (Production)
 
-| File | Reason | Actions |
+  | File | Reason | Actions |  
 |------|--------|---------|
-| `rewards.py` | Core multi-objective system, all... | Keep as-is (TIER... |
-| `co2_table.py` | Main CO₂ evaluation module | Keep as-is (or... |
-| `dataset_builder.py` | Only module for... | Keep as-is |
-| `simulate.py` | Central orchestrator for agent training | Keep as-is |
-| `agents/__init__.py` | Agent factory and multiobjetivo imports | Keep as-is |
-| All `agents/*.py` | 7 agent implementations (SAC,... | Keep all |
-| `progress.py` | Training progress utilities | Keep as-is |
-| `enriched_observables.py` | Observable wrapper... | Keep; check if needed |
-| `dispatch_priorities.py` | BESS dispatch logic | Keep as-is |
-| `tier2_v2_config.py` | Training configuration | Keep as-is |
+  | `rewards.py` | Core multi-objective system, all... | Keep as-is (TIER... |  
+  | `co2_table.py` | Main CO₂ evaluation module | Keep as-is (or... |  
+  | `dataset_builder.py` | Only module for... | Keep as-is |  
+  | `simulate.py` | Central orchestrator for agent training | Keep as-is |  
+  | `agents/__init__.py` | Agent factory and multiobjetivo imports | Keep as-is |  
+  | All `agents/*.py` | 7 agent implementations (SAC,... | Keep all |  
+  | `progress.py` | Training progress utilities | Keep as-is |  
+  | `enriched_observables.py` | Observable wrapper... | Keep; check if needed |  
+  | `dispatch_priorities.py` | BESS dispatch logic | Keep as-is |  
+  | `tier2_v2_config.py` | Training configuration | Keep as-is |  
 
 ### 🟡 CONDITIONAL KEEP
 
-| File | Condition | Action |
+  | File | Condition | Action |  
 |------|-----------|--------|
-| `enriched_observables.py` | If not used in simulate.py | Check usage; archive if dead code |
-| `co2_emissions.py` | If co2_table.py... | Merge into co2_table.py, delete |
+  | `enriched_observables.py` | If not used in simulate.py | Check usage; archive if dead code |  
+  | `co2_emissions.py` | If co2_table.py... | Merge into co2_table.py, delete |  
 
 ### 🔴 DELETE
 
-| File | Reason | Impact |
+  | File | Reason | Impact |  
 |------|--------|--------|
-| `demanda_mall_kwh.py` | 100% orphaned, zero imports | None - dev code, no dependencies |
-| `rewards_dynamic.py` | Only in dev script, not active | Move to scripts/experimental/ |
+  | `demanda_mall_kwh.py` | 100% orphaned, zero imports | None - dev code, no dependencies |  
+  | `rewards_dynamic.py` | Only in dev script, not active | Move to scripts/experimental/ |  
 
 ### 🟠 ARCHIVE (Move to experimental/)
 
-| File | Reason | Archive Path |
+  | File | Reason | Archive Path |  
 |------|--------|--------------|
-| `rewards_improved_v2.py` | v2 iteration, not in main pipeline | `src/iquitos_citylearn/experimental/` |
-| `rewards_wrapper_v2.py` | Experimental wrapper, unused | `src/iquitos_citylearn/experimental/` |
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  | `rewards_wrapper_v2.py` | Experimental wrapper, unused | `src/iquitos_citylearn/experimental/` |  
 
 ---
 
@@ -573,14 +573,14 @@ python -c "from iquitos_citylearn.oe3.rewards import *; print('✓')"
 
 ### Summary Table
 
-| Category | Finding | Action | Priority |
+  | Category | Finding | Action | Priority |  
 |----------|---------|--------|----------|
-| **Duplicates** | 4 reward modules | Consolidate to 1 active + archive 2 | 🟡 Medium |
-| **Orphaned** | demanda_mall_kwh.py (507 lines) | DELETE | 🔴 High |
-| **Version Conflict** | v1 vs v2 rewards | Document, don't mix | 🟡 Medium |
-| **Import Errors** | co2_emissions.py unused | Merge into co2_table.py | 🟡 Medium |
-| **Data Flow** | OE2 → OE3 clear | ✓ No changes needed | ✓ None |
-| **Agent Connection** | All agents properly linked | ✓ No changes needed | ✓ None |
+  | **Duplicates** | 4 reward modules | Consolidate to 1 active + archive 2 | 🟡 Medium |  
+  | **Orphaned** | demanda_mall_kwh.py (507 lines) | DELETE | 🔴 High |  
+  | **Version Conflict** | v1 vs v2 rewards | Document, don't mix | 🟡 Medium |  
+  | **Import Errors** | co2_emissions.py unused | Merge into co2_table.py | 🟡 Medium |  
+  | **Data Flow** | OE2 → OE3 clear | ✓ No changes needed | ✓ None |  
+  | **Agent Connection** | All agents properly linked | ✓ No changes needed | ✓ None |  
 
 ### Recommended Execution Order
 

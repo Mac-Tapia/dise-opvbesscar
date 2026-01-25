@@ -64,14 +64,14 @@ agentes (PPO, A2C, SAC).
 
 ## 🔍 Verificación de Integridad
 
-| Métrica | Valor | Status |
+  | Métrica | Valor | Status |  
 | --------- | ------- | -------- |
-| **Total PNG** | 25 | ✅ |
-| **Tamaño Promedio** | 57.6 KB | ✅ |
-| **Mínimo** | 19.9 KB | ✅ |
-| **Máximo** | 84.5 KB | ✅ |
-| **Sin vacíos** | 100% | ✅ |
-| **Con datos reales** | 100% | ✅ |
+  | **Total PNG** | 25 | ✅ |  
+  | **Tamaño Promedio** | 57.6 KB | ✅ |  
+  | **Mínimo** | 19.9 KB | ✅ |  
+  | **Máximo** | 84.5 KB | ✅ |  
+  | **Sin vacíos** | 100% | ✅ |  
+  | **Con datos reales** | 100% | ✅ |  
 
 ---
 
@@ -79,11 +79,11 @@ agentes (PPO, A2C, SAC).
 
 ### Checkpoints Utilizados
 
-| Agente | Checkpoint | Timesteps | Policy | Status |
+  | Agente | Checkpoint | Timesteps | Policy | Status |  
 | -------- | ----------- | ----------- | -------- | -------- |
-| **PPO** | `checkpoints/ppo_gpu/ppo_final.zip` | 18,432 | ActorCriticPolicy | ✅ Real |
-| **A2C** | `checkpoints/a2c_gpu/a2c_final.zip` | 17,536 | ActorCriticPolicy | ✅ Real |
-| **SAC** | `checkpoints/sac/sac_final.zip` | 17,520 | SACPolicy | ✅ Real |
+  | **PPO** | `checkpoints/ppo_gpu/ppo_final.zip` | 18,432 | ActorCriticPolicy | ✅ Real |  
+  | **A2C** | `checkpoints/a2c_gpu/a2c_final.zip` | 17,536 | ActorCriticPolicy | ✅ Real |  
+  | **SAC** | `checkpoints/sac/sac_final.zip` | 17,520 | SACPolicy | ✅ Real |  
 
 ### Validación de Arquitecturas
 

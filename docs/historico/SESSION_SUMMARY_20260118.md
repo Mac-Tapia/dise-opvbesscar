@@ -94,13 +94,13 @@ Ahora:  step 500, lr=1.00e-03, reward_avg=??? (esperado mejora)
 
 #### 1. Pesos Rebalanceados
 
-| Métrica | Antes | Ahora | Razón |
+  | Métrica | Antes | Ahora | Razón |  
 | --- | --- | --- | --- |
-| CO₂ | 0.45 | **0.50** | PRIMARY (matriz térmica aislada) |
-| Solar | 0.15 | **0.20** | SECONDARY (FV limpia disponible) |
-| Cost | 0.15 | **0.10** | REDUCIDO (tarifa baja) |
-| Grid | 0.20 | **0.10** | REDUCIDO (implícito en CO₂) |
-| EV | 0.05 | **0.10** | AUMENTADO (balance) |
+  | CO₂ | 0.45 | **0.50** | PRIMARY (matriz térmica aislada) |  
+  | Solar | 0.15 | **0.20** | SECONDARY (FV limpia disponible) |  
+  | Cost | 0.15 | **0.10** | REDUCIDO (tarifa baja) |  
+  | Grid | 0.20 | **0.10** | REDUCIDO (implícito en CO₂) |  
+  | EV | 0.05 | **0.10** | AUMENTADO (balance) |  
 
 Commit: `3d41ca7f` (TIER 1)
 
@@ -163,14 +163,14 @@ en lugar de explorar ruido.
   - Lines 152-165: Baselines (130/250)
   - Lines 215-235: SOC penalty ponderada
 
-- [src/iquitos_citylearn/oe3/agents/sac.py](src/iquitos_citylearn/oe3/agents/sac.py)
+- [src/iquitos_citylearn/oe3/agents/sac.py][url1]
   - Lines 136-138: Entropía (0.01, -50)
   - Lines 659-668: LR & batch no capped
 
 ### Documentation
 
 - [SAC_LEARNING_RATE_FIX_REPORT.md](SAC_LEARNING_RATE_FIX_REPORT.md)
-- [AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md](AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md)
+- [AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md][url2]
 - [TIER1_FIXES_SUMMARY.md](TIER1_FIXES_SUMMARY.md)
 
 ---
@@ -276,3 +276,6 @@ from -0.05 to +0.30+).
 **Status**: 🟢 READY FOR TIER 1 VALIDATION
 **ETA SAC Phase Start**: ~19:35 (waiting for baseline to complete ~17 min)
 **Expected Result Time**: ~23:50 (4-5 hours total)
+
+[url1]: src/iquitos_citylearn/oe3/agents/sac.py
+[url2]: AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md
