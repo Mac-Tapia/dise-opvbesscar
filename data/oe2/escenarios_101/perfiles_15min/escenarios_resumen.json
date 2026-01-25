@@ -1,0 +1,2331 @@
+{
+  "motos": {
+    "1": {
+      "archivo": "escenario_001_motos.csv",
+      "energia_anual_kwh": 7024.028846612058,
+      "energia_diaria_kwh": 19.243914648252215,
+      "potencia_max_kw": 3.0117423334869904,
+      "potencia_promedio_kw": 0.801829777010509
+    },
+    "2": {
+      "archivo": "escenario_002_motos.csv",
+      "energia_anual_kwh": 7070.359167210796,
+      "energia_diaria_kwh": 19.370847033454236,
+      "potencia_max_kw": 2.864654151681963,
+      "potencia_promedio_kw": 0.8071186263939265
+    },
+    "3": {
+      "archivo": "escenario_003_motos.csv",
+      "energia_anual_kwh": 7214.662834259446,
+      "energia_diaria_kwh": 19.76619954591629,
+      "potencia_max_kw": 2.9213390968799566,
+      "potencia_promedio_kw": 0.8235916477465121
+    },
+    "4": {
+      "archivo": "escenario_004_motos.csv",
+      "energia_anual_kwh": 7779.327352385165,
+      "energia_diaria_kwh": 21.313225622973054,
+      "potencia_max_kw": 3.3509639384428747,
+      "potencia_promedio_kw": 0.8880510676238772
+    },
+    "5": {
+      "archivo": "escenario_005_motos.csv",
+      "energia_anual_kwh": 7838.426596855833,
+      "energia_diaria_kwh": 21.47514136124886,
+      "potencia_max_kw": 3.1698632544758034,
+      "potencia_promedio_kw": 0.8947975567187024
+    },
+    "6": {
+      "archivo": "escenario_006_motos.csv",
+      "energia_anual_kwh": 7707.019223004921,
+      "energia_diaria_kwh": 21.115121158917592,
+      "potencia_max_kw": 3.2562850467109477,
+      "potencia_promedio_kw": 0.8797967149548996
+    },
+    "7": {
+      "archivo": "escenario_007_motos.csv",
+      "energia_anual_kwh": 8988.067792274729,
+      "energia_diaria_kwh": 24.624843266506108,
+      "potencia_max_kw": 3.658851622128783,
+      "potencia_promedio_kw": 1.026035136104421
+    },
+    "8": {
+      "archivo": "escenario_008_motos.csv",
+      "energia_anual_kwh": 9360.995089861495,
+      "energia_diaria_kwh": 25.646561890031492,
+      "potencia_max_kw": 4.019491353317415,
+      "potencia_promedio_kw": 1.0686067454179788
+    },
+    "9": {
+      "archivo": "escenario_009_motos.csv",
+      "energia_anual_kwh": 10041.188302370248,
+      "energia_diaria_kwh": 27.51010493800068,
+      "potencia_max_kw": 4.184958775521204,
+      "potencia_promedio_kw": 1.146254372416695
+    },
+    "10": {
+      "archivo": "escenario_010_motos.csv",
+      "energia_anual_kwh": 11043.721688215575,
+      "energia_diaria_kwh": 30.256771748535822,
+      "potencia_max_kw": 4.488284289168125,
+      "potencia_promedio_kw": 1.2606988228556593
+    },
+    "11": {
+      "archivo": "escenario_011_motos.csv",
+      "energia_anual_kwh": 12023.619544230636,
+      "energia_diaria_kwh": 32.94142340885106,
+      "potencia_max_kw": 4.640809018988724,
+      "potencia_promedio_kw": 1.3725593087021275
+    },
+    "12": {
+      "archivo": "escenario_012_motos.csv",
+      "energia_anual_kwh": 13524.104883086475,
+      "energia_diaria_kwh": 37.052342145442395,
+      "potencia_max_kw": 5.903808443102542,
+      "potencia_promedio_kw": 1.5438475893934331
+    },
+    "13": {
+      "archivo": "escenario_013_motos.csv",
+      "energia_anual_kwh": 14250.479586118574,
+      "energia_diaria_kwh": 39.04240982498239,
+      "potencia_max_kw": 6.159639887545853,
+      "potencia_promedio_kw": 1.626767076040933
+    },
+    "14": {
+      "archivo": "escenario_014_motos.csv",
+      "energia_anual_kwh": 15047.749437480186,
+      "energia_diaria_kwh": 41.22671078761695,
+      "potencia_max_kw": 6.090626275154398,
+      "potencia_promedio_kw": 1.7177796161507064
+    },
+    "15": {
+      "archivo": "escenario_015_motos.csv",
+      "energia_anual_kwh": 15556.594771697091,
+      "energia_diaria_kwh": 42.620807593690664,
+      "potencia_max_kw": 6.247869732072031,
+      "potencia_promedio_kw": 1.7758669830704443
+    },
+    "16": {
+      "archivo": "escenario_016_motos.csv",
+      "energia_anual_kwh": 16572.67640842028,
+      "energia_diaria_kwh": 45.40459289978159,
+      "potencia_max_kw": 7.033126894508094,
+      "potencia_promedio_kw": 1.8918580374908995
+    },
+    "17": {
+      "archivo": "escenario_017_motos.csv",
+      "energia_anual_kwh": 19038.747728001275,
+      "energia_diaria_kwh": 52.16095267945555,
+      "potencia_max_kw": 8.1528148317914,
+      "potencia_promedio_kw": 2.173373028310648
+    },
+    "18": {
+      "archivo": "escenario_018_motos.csv",
+      "energia_anual_kwh": 21472.16273521973,
+      "energia_diaria_kwh": 58.82784311019104,
+      "potencia_max_kw": 9.65560064309214,
+      "potencia_promedio_kw": 2.4511601295912935
+    },
+    "19": {
+      "archivo": "escenario_019_motos.csv",
+      "energia_anual_kwh": 21760.06011094237,
+      "energia_diaria_kwh": 59.61660304367773,
+      "potencia_max_kw": 9.606043866750019,
+      "potencia_promedio_kw": 2.484025126819905
+    },
+    "20": {
+      "archivo": "escenario_020_motos.csv",
+      "energia_anual_kwh": 23139.863920996973,
+      "energia_diaria_kwh": 63.39688745478623,
+      "potencia_max_kw": 9.375927348739273,
+      "potencia_promedio_kw": 2.6415369772827595
+    },
+    "21": {
+      "archivo": "escenario_021_motos.csv",
+      "energia_anual_kwh": 25573.44040257905,
+      "energia_diaria_kwh": 70.06422028103849,
+      "potencia_max_kw": 11.300016846944551,
+      "potencia_promedio_kw": 2.919342511709937
+    },
+    "22": {
+      "archivo": "escenario_022_motos.csv",
+      "energia_anual_kwh": 24564.18990069784,
+      "energia_diaria_kwh": 67.29915041287079,
+      "potencia_max_kw": 9.669385428353689,
+      "potencia_promedio_kw": 2.8041312672029495
+    },
+    "23": {
+      "archivo": "escenario_023_motos.csv",
+      "energia_anual_kwh": 27660.453188216085,
+      "energia_diaria_kwh": 75.78206352935914,
+      "potencia_max_kw": 11.245726821966212,
+      "potencia_promedio_kw": 3.157585980389964
+    },
+    "24": {
+      "archivo": "escenario_024_motos.csv",
+      "energia_anual_kwh": 30644.302119025,
+      "energia_diaria_kwh": 83.95699210691781,
+      "potencia_max_kw": 12.8230283670651,
+      "potencia_promedio_kw": 3.498208004454909
+    },
+    "25": {
+      "archivo": "escenario_025_motos.csv",
+      "energia_anual_kwh": 33147.04873622337,
+      "energia_diaria_kwh": 90.81383215403663,
+      "potencia_max_kw": 13.771382329067144,
+      "potencia_promedio_kw": 3.78390967308486
+    },
+    "26": {
+      "archivo": "escenario_026_motos.csv",
+      "energia_anual_kwh": 33321.01449623935,
+      "energia_diaria_kwh": 91.29045067462836,
+      "potencia_max_kw": 14.168159570350593,
+      "potencia_promedio_kw": 3.803768778109515
+    },
+    "27": {
+      "archivo": "escenario_027_motos.csv",
+      "energia_anual_kwh": 36260.13585894954,
+      "energia_diaria_kwh": 99.34283796972477,
+      "potencia_max_kw": 14.405346007612463,
+      "potencia_promedio_kw": 4.139284915405199
+    },
+    "28": {
+      "archivo": "escenario_028_motos.csv",
+      "energia_anual_kwh": 38178.21534463947,
+      "energia_diaria_kwh": 104.59785025928623,
+      "potencia_max_kw": 16.480950206893038,
+      "potencia_promedio_kw": 4.358243760803593
+    },
+    "29": {
+      "archivo": "escenario_029_motos.csv",
+      "energia_anual_kwh": 41263.8504553534,
+      "energia_diaria_kwh": 113.05164508316,
+      "potencia_max_kw": 17.534154276079988,
+      "potencia_promedio_kw": 4.710485211798333
+    },
+    "30": {
+      "archivo": "escenario_030_motos.csv",
+      "energia_anual_kwh": 39451.70961016934,
+      "energia_diaria_kwh": 108.08687564429955,
+      "potencia_max_kw": 16.94408609602968,
+      "potencia_promedio_kw": 4.503619818512481
+    },
+    "31": {
+      "archivo": "escenario_031_motos.csv",
+      "energia_anual_kwh": 45134.34587411076,
+      "energia_diaria_kwh": 123.6557421208514,
+      "potencia_max_kw": 18.476841207996507,
+      "potencia_promedio_kw": 5.152322588368809
+    },
+    "32": {
+      "archivo": "escenario_032_motos.csv",
+      "energia_anual_kwh": 42575.50943058895,
+      "energia_diaria_kwh": 116.64523131668206,
+      "potencia_max_kw": 19.64123941072675,
+      "potencia_promedio_kw": 4.860217971528419
+    },
+    "33": {
+      "archivo": "escenario_033_motos.csv",
+      "energia_anual_kwh": 42024.33686443374,
+      "energia_diaria_kwh": 115.13516949159929,
+      "potencia_max_kw": 18.260851740739433,
+      "potencia_promedio_kw": 4.797298728816637
+    },
+    "34": {
+      "archivo": "escenario_034_motos.csv",
+      "energia_anual_kwh": 49179.26477327632,
+      "energia_diaria_kwh": 134.73771170760637,
+      "potencia_max_kw": 19.979733814300594,
+      "potencia_promedio_kw": 5.6140713211502655
+    },
+    "35": {
+      "archivo": "escenario_035_motos.csv",
+      "energia_anual_kwh": 50571.503370514234,
+      "energia_diaria_kwh": 138.55206402880611,
+      "potencia_max_kw": 20.479954594904388,
+      "potencia_promedio_kw": 5.773002667866922
+    },
+    "36": {
+      "archivo": "escenario_036_motos.csv",
+      "energia_anual_kwh": 57753.71196718358,
+      "energia_diaria_kwh": 158.22934785529748,
+      "potencia_max_kw": 23.72207533500597,
+      "potencia_promedio_kw": 6.592889493970728
+    },
+    "37": {
+      "archivo": "escenario_037_motos.csv",
+      "energia_anual_kwh": 59341.84644536784,
+      "energia_diaria_kwh": 162.58040122018585,
+      "potencia_max_kw": 23.934990003313548,
+      "potencia_promedio_kw": 6.77418338417441
+    },
+    "38": {
+      "archivo": "escenario_038_motos.csv",
+      "energia_anual_kwh": 56209.77148198784,
+      "energia_diaria_kwh": 153.99937392325435,
+      "potencia_max_kw": 23.88057553291242,
+      "potencia_promedio_kw": 6.416640580135598
+    },
+    "39": {
+      "archivo": "escenario_039_motos.csv",
+      "energia_anual_kwh": 64743.918452262136,
+      "energia_diaria_kwh": 177.3805984993483,
+      "potencia_max_kw": 25.68474626203792,
+      "potencia_promedio_kw": 7.39085827080618
+    },
+    "40": {
+      "archivo": "escenario_040_motos.csv",
+      "energia_anual_kwh": 61269.800207566666,
+      "energia_diaria_kwh": 167.86246632210046,
+      "potencia_max_kw": 25.23716352281199,
+      "potencia_promedio_kw": 6.9942694300875194
+    },
+    "41": {
+      "archivo": "escenario_041_motos.csv",
+      "energia_anual_kwh": 66901.54841091167,
+      "energia_diaria_kwh": 183.2919134545525,
+      "potencia_max_kw": 28.432732217695065,
+      "potencia_promedio_kw": 7.637163060606355
+    },
+    "42": {
+      "archivo": "escenario_042_motos.csv",
+      "energia_anual_kwh": 68267.17605996403,
+      "energia_diaria_kwh": 187.0333590683946,
+      "potencia_max_kw": 29.03450905275384,
+      "potencia_promedio_kw": 7.793056627849775
+    },
+    "43": {
+      "archivo": "escenario_043_motos.csv",
+      "energia_anual_kwh": 72779.84386013713,
+      "energia_diaria_kwh": 199.39683249352638,
+      "potencia_max_kw": 28.956441304178128,
+      "potencia_promedio_kw": 8.308201353896932
+    },
+    "44": {
+      "archivo": "escenario_044_motos.csv",
+      "energia_anual_kwh": 77673.4764138795,
+      "energia_diaria_kwh": 212.80404496953287,
+      "potencia_max_kw": 31.872027008030724,
+      "potencia_promedio_kw": 8.86683520706387
+    },
+    "45": {
+      "archivo": "escenario_045_motos.csv",
+      "energia_anual_kwh": 79724.2916290417,
+      "energia_diaria_kwh": 218.42271679189508,
+      "potencia_max_kw": 32.42867776061064,
+      "potencia_promedio_kw": 9.100946532995629
+    },
+    "46": {
+      "archivo": "escenario_046_motos.csv",
+      "energia_anual_kwh": 81035.99981000245,
+      "energia_diaria_kwh": 222.01643783562315,
+      "potencia_max_kw": 33.974666546125114,
+      "potencia_promedio_kw": 9.25068490981763
+    },
+    "47": {
+      "archivo": "escenario_047_motos.csv",
+      "energia_anual_kwh": 84423.07158373467,
+      "energia_diaria_kwh": 231.29608653077992,
+      "potencia_max_kw": 35.2437705526733,
+      "potencia_promedio_kw": 9.637336938782497
+    },
+    "48": {
+      "archivo": "escenario_048_motos.csv",
+      "energia_anual_kwh": 86564.35741158435,
+      "energia_diaria_kwh": 237.1626230454366,
+      "potencia_max_kw": 37.14730595733059,
+      "potencia_promedio_kw": 9.881775960226525
+    },
+    "49": {
+      "archivo": "escenario_049_motos.csv",
+      "energia_anual_kwh": 84166.84022792573,
+      "energia_diaria_kwh": 230.59408281623487,
+      "potencia_max_kw": 33.46047397213681,
+      "potencia_promedio_kw": 9.608086784009787
+    },
+    "50": {
+      "archivo": "escenario_050_motos.csv",
+      "energia_anual_kwh": 86404.50369992317,
+      "energia_diaria_kwh": 236.7246676710224,
+      "potencia_max_kw": 37.69894922226517,
+      "potencia_promedio_kw": 9.863527819625933
+    },
+    "51": {
+      "archivo": "escenario_051_motos.csv",
+      "energia_anual_kwh": 90128.01636832069,
+      "energia_diaria_kwh": 246.9260722419745,
+      "potencia_max_kw": 39.31780569982606,
+      "potencia_promedio_kw": 10.288586343415604
+    },
+    "52": {
+      "archivo": "escenario_052_motos.csv",
+      "energia_anual_kwh": 97025.6670785662,
+      "energia_diaria_kwh": 265.8237454207293,
+      "potencia_max_kw": 39.30841911176814,
+      "potencia_promedio_kw": 11.075989392530388
+    },
+    "53": {
+      "archivo": "escenario_053_motos.csv",
+      "energia_anual_kwh": 96164.08963226888,
+      "energia_diaria_kwh": 263.46325926649007,
+      "potencia_max_kw": 39.21169748872595,
+      "potencia_promedio_kw": 10.97763580277042
+    },
+    "54": {
+      "archivo": "escenario_054_motos.csv",
+      "energia_anual_kwh": 111919.96492370983,
+      "energia_diaria_kwh": 306.63004088687626,
+      "potencia_max_kw": 44.71559119054417,
+      "potencia_promedio_kw": 12.776251703619844
+    },
+    "55": {
+      "archivo": "escenario_055_motos.csv",
+      "energia_anual_kwh": 98531.6599935409,
+      "energia_diaria_kwh": 269.9497534069614,
+      "potencia_max_kw": 40.91879955878614,
+      "potencia_promedio_kw": 11.247906391956725
+    },
+    "56": {
+      "archivo": "escenario_056_motos.csv",
+      "energia_anual_kwh": 99581.43423378635,
+      "energia_diaria_kwh": 272.825847215853,
+      "potencia_max_kw": 41.10706614555195,
+      "potencia_promedio_kw": 11.367743633993875
+    },
+    "57": {
+      "archivo": "escenario_057_motos.csv",
+      "energia_anual_kwh": 111721.88314020501,
+      "energia_diaria_kwh": 306.0873510690548,
+      "potencia_max_kw": 45.56328790862475,
+      "potencia_promedio_kw": 12.753639627877284
+    },
+    "58": {
+      "archivo": "escenario_058_motos.csv",
+      "energia_anual_kwh": 118208.69752687008,
+      "energia_diaria_kwh": 323.8594452790961,
+      "potencia_max_kw": 48.156726095640764,
+      "potencia_promedio_kw": 13.494143553295672
+    },
+    "59": {
+      "archivo": "escenario_059_motos.csv",
+      "energia_anual_kwh": 115640.14378890774,
+      "energia_diaria_kwh": 316.82231175043216,
+      "potencia_max_kw": 46.89150615035242,
+      "potencia_promedio_kw": 13.200929656268007
+    },
+    "60": {
+      "archivo": "escenario_060_motos.csv",
+      "energia_anual_kwh": 119548.06026059735,
+      "energia_diaria_kwh": 327.5289322208147,
+      "potencia_max_kw": 48.11422114405154,
+      "potencia_promedio_kw": 13.647038842533945
+    },
+    "61": {
+      "archivo": "escenario_061_motos.csv",
+      "energia_anual_kwh": 125808.02690890442,
+      "energia_diaria_kwh": 344.67952577782034,
+      "potencia_max_kw": 49.13349351697315,
+      "potencia_promedio_kw": 14.361646907409181
+    },
+    "62": {
+      "archivo": "escenario_062_motos.csv",
+      "energia_anual_kwh": 119423.57096906558,
+      "energia_diaria_kwh": 327.1878656686728,
+      "potencia_max_kw": 50.49187092190511,
+      "potencia_promedio_kw": 13.6328277361947
+    },
+    "63": {
+      "archivo": "escenario_063_motos.csv",
+      "energia_anual_kwh": 113680.04824493088,
+      "energia_diaria_kwh": 311.45218697241336,
+      "potencia_max_kw": 45.4074446605461,
+      "potencia_promedio_kw": 12.97717445718389
+    },
+    "64": {
+      "archivo": "escenario_064_motos.csv",
+      "energia_anual_kwh": 121672.4225663918,
+      "energia_diaria_kwh": 333.3491029216214,
+      "potencia_max_kw": 51.77207570450469,
+      "potencia_promedio_kw": 13.88954595506756
+    },
+    "65": {
+      "archivo": "escenario_065_motos.csv",
+      "energia_anual_kwh": 133112.78000757427,
+      "energia_diaria_kwh": 364.6925479659569,
+      "potencia_max_kw": 57.1035739771101,
+      "potencia_promedio_kw": 15.195522831914872
+    },
+    "66": {
+      "archivo": "escenario_066_motos.csv",
+      "energia_anual_kwh": 120397.95261110754,
+      "energia_diaria_kwh": 329.85740441399327,
+      "potencia_max_kw": 48.62305008592014,
+      "potencia_promedio_kw": 13.74405851724972
+    },
+    "67": {
+      "archivo": "escenario_067_motos.csv",
+      "energia_anual_kwh": 132488.39998798902,
+      "energia_diaria_kwh": 362.98191777531235,
+      "potencia_max_kw": 57.4542368966367,
+      "potencia_promedio_kw": 15.124246573971348
+    },
+    "68": {
+      "archivo": "escenario_068_motos.csv",
+      "energia_anual_kwh": 135689.46079554266,
+      "energia_diaria_kwh": 371.75194738504837,
+      "potencia_max_kw": 58.24650521181988,
+      "potencia_promedio_kw": 15.489664474377015
+    },
+    "69": {
+      "archivo": "escenario_069_motos.csv",
+      "energia_anual_kwh": 133957.42025028568,
+      "energia_diaria_kwh": 367.0066308227005,
+      "potencia_max_kw": 55.81861828306826,
+      "potencia_promedio_kw": 15.291942950945854
+    },
+    "70": {
+      "archivo": "escenario_070_motos.csv",
+      "energia_anual_kwh": 143090.8809549109,
+      "energia_diaria_kwh": 392.02981083537236,
+      "potencia_max_kw": 59.96532046589481,
+      "potencia_promedio_kw": 16.33457545147385
+    },
+    "71": {
+      "archivo": "escenario_071_motos.csv",
+      "energia_anual_kwh": 144253.76682940897,
+      "energia_diaria_kwh": 395.21579953262733,
+      "potencia_max_kw": 62.18441803298108,
+      "potencia_promedio_kw": 16.46732498052614
+    },
+    "72": {
+      "archivo": "escenario_072_motos.csv",
+      "energia_anual_kwh": 158889.37134039393,
+      "energia_diaria_kwh": 435.3133461380656,
+      "potencia_max_kw": 65.38436170730246,
+      "potencia_promedio_kw": 18.138056089086067
+    },
+    "73": {
+      "archivo": "escenario_073_motos.csv",
+      "energia_anual_kwh": 148855.9119671617,
+      "energia_diaria_kwh": 407.8244163483882,
+      "potencia_max_kw": 61.68270308878366,
+      "potencia_promedio_kw": 16.992684014516175
+    },
+    "74": {
+      "archivo": "escenario_074_motos.csv",
+      "energia_anual_kwh": 143314.43689333455,
+      "energia_diaria_kwh": 392.64229285845084,
+      "potencia_max_kw": 57.577132425218544,
+      "potencia_promedio_kw": 16.360095535768785
+    },
+    "75": {
+      "archivo": "escenario_075_motos.csv",
+      "energia_anual_kwh": 144678.0657931601,
+      "energia_diaria_kwh": 396.3782624470139,
+      "potencia_max_kw": 63.47099551160747,
+      "potencia_promedio_kw": 16.515760935292246
+    },
+    "76": {
+      "archivo": "escenario_076_motos.csv",
+      "energia_anual_kwh": 144825.89245152686,
+      "energia_diaria_kwh": 396.78326699048455,
+      "potencia_max_kw": 57.71400897886148,
+      "potencia_promedio_kw": 16.532636124603524
+    },
+    "77": {
+      "archivo": "escenario_077_motos.csv",
+      "energia_anual_kwh": 161150.86566193835,
+      "energia_diaria_kwh": 441.5092209916119,
+      "potencia_max_kw": 65.76864792483723,
+      "potencia_promedio_kw": 18.396217541317164
+    },
+    "78": {
+      "archivo": "escenario_078_motos.csv",
+      "energia_anual_kwh": 150876.89656642728,
+      "energia_diaria_kwh": 413.36136045596515,
+      "potencia_max_kw": 62.86149227112033,
+      "potencia_promedio_kw": 17.223390018998547
+    },
+    "79": {
+      "archivo": "escenario_079_motos.csv",
+      "energia_anual_kwh": 155711.75105437113,
+      "energia_diaria_kwh": 426.6075371352633,
+      "potencia_max_kw": 62.20230948542475,
+      "potencia_promedio_kw": 17.77531404730264
+    },
+    "80": {
+      "archivo": "escenario_080_motos.csv",
+      "energia_anual_kwh": 164496.69889391065,
+      "energia_diaria_kwh": 450.67588738057714,
+      "potencia_max_kw": 70.0742434999549,
+      "potencia_promedio_kw": 18.778161974190713
+    },
+    "81": {
+      "archivo": "escenario_081_motos.csv",
+      "energia_anual_kwh": 154195.75229477667,
+      "energia_diaria_kwh": 422.45411587610045,
+      "potencia_max_kw": 64.82468853038124,
+      "potencia_promedio_kw": 17.602254828170853
+    },
+    "82": {
+      "archivo": "escenario_082_motos.csv",
+      "energia_anual_kwh": 159240.86911980945,
+      "energia_diaria_kwh": 436.2763537529026,
+      "potencia_max_kw": 66.46681324636323,
+      "potencia_promedio_kw": 18.178181406370943
+    },
+    "83": {
+      "archivo": "escenario_083_motos.csv",
+      "energia_anual_kwh": 148144.26450377642,
+      "energia_diaria_kwh": 405.87469727062035,
+      "potencia_max_kw": 64.49323207669684,
+      "potencia_promedio_kw": 16.91144571960918
+    },
+    "84": {
+      "archivo": "escenario_084_motos.csv",
+      "energia_anual_kwh": 155509.36761688293,
+      "energia_diaria_kwh": 426.0530619640628,
+      "potencia_max_kw": 61.319062401740005,
+      "potencia_promedio_kw": 17.752210915169282
+    },
+    "85": {
+      "archivo": "escenario_085_motos.csv",
+      "energia_anual_kwh": 161079.727227974,
+      "energia_diaria_kwh": 441.31432117253155,
+      "potencia_max_kw": 65.6256705117418,
+      "potencia_promedio_kw": 18.38809671552215
+    },
+    "86": {
+      "archivo": "escenario_086_motos.csv",
+      "energia_anual_kwh": 170638.9318370682,
+      "energia_diaria_kwh": 467.50392284128276,
+      "potencia_max_kw": 72.586047633847,
+      "potencia_promedio_kw": 19.47933011838678
+    },
+    "87": {
+      "archivo": "escenario_087_motos.csv",
+      "energia_anual_kwh": 178175.5482317237,
+      "energia_diaria_kwh": 488.15218693622927,
+      "potencia_max_kw": 67.78249717694851,
+      "potencia_promedio_kw": 20.33967445567622
+    },
+    "88": {
+      "archivo": "escenario_088_motos.csv",
+      "energia_anual_kwh": 168651.23205146982,
+      "energia_diaria_kwh": 462.0581700040269,
+      "potencia_max_kw": 70.0852181530267,
+      "potencia_promedio_kw": 19.25242375016779
+    },
+    "89": {
+      "archivo": "escenario_089_motos.csv",
+      "energia_anual_kwh": 172717.53221746042,
+      "energia_diaria_kwh": 473.19871840400117,
+      "potencia_max_kw": 71.815091522704,
+      "potencia_promedio_kw": 19.71661326683338
+    },
+    "90": {
+      "archivo": "escenario_090_motos.csv",
+      "energia_anual_kwh": 173321.2378148434,
+      "energia_diaria_kwh": 474.8527063420367,
+      "potencia_max_kw": 69.29178042403095,
+      "potencia_promedio_kw": 19.785529430918196
+    },
+    "91": {
+      "archivo": "escenario_091_motos.csv",
+      "energia_anual_kwh": 182763.74898169035,
+      "energia_diaria_kwh": 500.7225999498366,
+      "potencia_max_kw": 77.60447730671567,
+      "potencia_promedio_kw": 20.863441664576523
+    },
+    "92": {
+      "archivo": "escenario_092_motos.csv",
+      "energia_anual_kwh": 180867.17144191044,
+      "energia_diaria_kwh": 495.5264971011245,
+      "potencia_max_kw": 76.94043140078031,
+      "potencia_promedio_kw": 20.646937379213522
+    },
+    "93": {
+      "archivo": "escenario_093_motos.csv",
+      "energia_anual_kwh": 176993.83917683628,
+      "energia_diaria_kwh": 484.91462788174323,
+      "potencia_max_kw": 77.89174454093103,
+      "potencia_promedio_kw": 20.2047761617393
+    },
+    "94": {
+      "archivo": "escenario_094_motos.csv",
+      "energia_anual_kwh": 166578.16815010883,
+      "energia_diaria_kwh": 456.3785428770105,
+      "potencia_max_kw": 71.26657579444257,
+      "potencia_promedio_kw": 19.015772619875438
+    },
+    "95": {
+      "archivo": "escenario_095_motos.csv",
+      "energia_anual_kwh": 183761.52635840245,
+      "energia_diaria_kwh": 503.45623659836286,
+      "potencia_max_kw": 78.32423087679135,
+      "potencia_promedio_kw": 20.977343191598454
+    },
+    "96": {
+      "archivo": "escenario_096_motos.csv",
+      "energia_anual_kwh": 180145.9655403569,
+      "energia_diaria_kwh": 493.55059052152575,
+      "potencia_max_kw": 76.84123612161818,
+      "potencia_promedio_kw": 20.564607938396907
+    },
+    "97": {
+      "archivo": "escenario_097_motos.csv",
+      "energia_anual_kwh": 187762.59372852408,
+      "energia_diaria_kwh": 514.418065009655,
+      "potencia_max_kw": 77.56536791637751,
+      "potencia_promedio_kw": 21.43408604206896
+    },
+    "98": {
+      "archivo": "escenario_098_motos.csv",
+      "energia_anual_kwh": 176160.7826627286,
+      "energia_diaria_kwh": 482.6322812677496,
+      "potencia_max_kw": 73.69125966578568,
+      "potencia_promedio_kw": 20.109678386156233
+    },
+    "99": {
+      "archivo": "escenario_099_motos.csv",
+      "energia_anual_kwh": 195122.83346153866,
+      "energia_diaria_kwh": 534.5831053740785,
+      "potencia_max_kw": 82.71340569885663,
+      "potencia_promedio_kw": 22.27429605725327
+    },
+    "100": {
+      "archivo": "escenario_100_motos.csv",
+      "energia_anual_kwh": 174008.40759010866,
+      "energia_diaria_kwh": 476.73536326057166,
+      "potencia_max_kw": 72.09161132201781,
+      "potencia_promedio_kw": 19.863973469190487
+    },
+    "101": {
+      "archivo": "escenario_101_motos.csv",
+      "energia_anual_kwh": 191888.6998020321,
+      "energia_diaria_kwh": 525.7224652110468,
+      "potencia_max_kw": 80.32298563909133,
+      "potencia_promedio_kw": 21.90510271712695
+    }
+  },
+  "mototaxis": {
+    "1": {
+      "archivo": "escenario_001_mototaxis.csv",
+      "energia_anual_kwh": 1310.5295259955153,
+      "energia_diaria_kwh": 3.5904918520425078,
+      "potencia_max_kw": 0.6836093183294014,
+      "potencia_promedio_kw": 0.14960382716843781
+    },
+    "2": {
+      "archivo": "escenario_002_mototaxis.csv",
+      "energia_anual_kwh": 1315.5086175352158,
+      "energia_diaria_kwh": 3.6041331987266187,
+      "potencia_max_kw": 0.7576431433017731,
+      "potencia_promedio_kw": 0.1501722166136091
+    },
+    "3": {
+      "archivo": "escenario_003_mototaxis.csv",
+      "energia_anual_kwh": 1352.1871021656068,
+      "energia_diaria_kwh": 3.704622197713991,
+      "potencia_max_kw": 0.7355596357552613,
+      "potencia_promedio_kw": 0.15435925823808297
+    },
+    "4": {
+      "archivo": "escenario_004_mototaxis.csv",
+      "energia_anual_kwh": 1455.2629421838972,
+      "energia_diaria_kwh": 3.9870217594079373,
+      "potencia_max_kw": 0.8112310273572988,
+      "potencia_promedio_kw": 0.1661259066419974
+    },
+    "5": {
+      "archivo": "escenario_005_mototaxis.csv",
+      "energia_anual_kwh": 1460.0930423270536,
+      "energia_diaria_kwh": 4.000254910485078,
+      "potencia_max_kw": 0.7860529274298906,
+      "potencia_promedio_kw": 0.16667728793687828
+    },
+    "6": {
+      "archivo": "escenario_006_mototaxis.csv",
+      "energia_anual_kwh": 1429.3321274687491,
+      "energia_diaria_kwh": 3.9159784314212307,
+      "potencia_max_kw": 0.8038164509223253,
+      "potencia_promedio_kw": 0.1631657679758846
+    },
+    "7": {
+      "archivo": "escenario_007_mototaxis.csv",
+      "energia_anual_kwh": 1675.9679571381162,
+      "energia_diaria_kwh": 4.591693033255113,
+      "potencia_max_kw": 0.9219254928709304,
+      "potencia_promedio_kw": 0.19132054305229637
+    },
+    "8": {
+      "archivo": "escenario_008_mototaxis.csv",
+      "energia_anual_kwh": 1745.4397510455678,
+      "energia_diaria_kwh": 4.782026715193337,
+      "potencia_max_kw": 0.9526362869202818,
+      "potencia_promedio_kw": 0.19925111313305569
+    },
+    "9": {
+      "archivo": "escenario_009_mototaxis.csv",
+      "energia_anual_kwh": 1874.346899702255,
+      "energia_diaria_kwh": 5.1351969854856305,
+      "potencia_max_kw": 1.0846332650969825,
+      "potencia_promedio_kw": 0.21396654106190127
+    },
+    "10": {
+      "archivo": "escenario_010_mototaxis.csv",
+      "energia_anual_kwh": 2065.128888099559,
+      "energia_diaria_kwh": 5.657887364656326,
+      "potencia_max_kw": 1.120586629117928,
+      "potencia_promedio_kw": 0.23574530686068026
+    },
+    "11": {
+      "archivo": "escenario_011_mototaxis.csv",
+      "energia_anual_kwh": 2235.970184245394,
+      "energia_diaria_kwh": 6.125945710261354,
+      "potencia_max_kw": 1.1770692349558307,
+      "potencia_promedio_kw": 0.25524773792755645
+    },
+    "12": {
+      "archivo": "escenario_012_mototaxis.csv",
+      "energia_anual_kwh": 2521.201701879483,
+      "energia_diaria_kwh": 6.907401922957488,
+      "potencia_max_kw": 1.3582352302807745,
+      "potencia_promedio_kw": 0.287808413456562
+    },
+    "13": {
+      "archivo": "escenario_013_mototaxis.csv",
+      "energia_anual_kwh": 2671.3178595077297,
+      "energia_diaria_kwh": 7.318679067144465,
+      "potencia_max_kw": 1.4606279212443427,
+      "potencia_promedio_kw": 0.3049449611310194
+    },
+    "14": {
+      "archivo": "escenario_014_mototaxis.csv",
+      "energia_anual_kwh": 2811.399361645733,
+      "energia_diaria_kwh": 7.702464004508857,
+      "potencia_max_kw": 1.562207685738709,
+      "potencia_promedio_kw": 0.32093600018786905
+    },
+    "15": {
+      "archivo": "escenario_015_mototaxis.csv",
+      "energia_anual_kwh": 2903.16154769549,
+      "energia_diaria_kwh": 7.953867253960246,
+      "potencia_max_kw": 1.6049875691880295,
+      "potencia_promedio_kw": 0.33141113558167695
+    },
+    "16": {
+      "archivo": "escenario_016_mototaxis.csv",
+      "energia_anual_kwh": 3084.220456785742,
+      "energia_diaria_kwh": 8.449919059686964,
+      "potencia_max_kw": 1.832152899803189,
+      "potencia_promedio_kw": 0.3520799608202902
+    },
+    "17": {
+      "archivo": "escenario_017_mototaxis.csv",
+      "energia_anual_kwh": 3557.316457086938,
+      "energia_diaria_kwh": 9.746072485169693,
+      "potencia_max_kw": 1.8603359312617196,
+      "potencia_promedio_kw": 0.4060863535487372
+    },
+    "18": {
+      "archivo": "escenario_018_mototaxis.csv",
+      "energia_anual_kwh": 4026.965636126723,
+      "energia_diaria_kwh": 11.032782564730748,
+      "potencia_max_kw": 2.1285273077704456,
+      "potencia_promedio_kw": 0.45969927353044787
+    },
+    "19": {
+      "archivo": "escenario_019_mototaxis.csv",
+      "energia_anual_kwh": 4048.907466511406,
+      "energia_diaria_kwh": 11.092897168524399,
+      "potencia_max_kw": 2.214423399061966,
+      "potencia_promedio_kw": 0.4622040486885166
+    },
+    "20": {
+      "archivo": "escenario_020_mototaxis.csv",
+      "energia_anual_kwh": 4294.329127436152,
+      "energia_diaria_kwh": 11.76528528064699,
+      "potencia_max_kw": 2.2765348225890416,
+      "potencia_promedio_kw": 0.4902202200269579
+    },
+    "21": {
+      "archivo": "escenario_021_mototaxis.csv",
+      "energia_anual_kwh": 4728.725134670819,
+      "energia_diaria_kwh": 12.955411327865258,
+      "potencia_max_kw": 2.5895946555977045,
+      "potencia_promedio_kw": 0.5398088053277191
+    },
+    "22": {
+      "archivo": "escenario_022_mototaxis.csv",
+      "energia_anual_kwh": 4580.711955319994,
+      "energia_diaria_kwh": 12.549895767999983,
+      "potencia_max_kw": 2.4310441128712754,
+      "potencia_promedio_kw": 0.522912323666666
+    },
+    "23": {
+      "archivo": "escenario_023_mototaxis.csv",
+      "energia_anual_kwh": 5181.432415289416,
+      "energia_diaria_kwh": 14.195705247368263,
+      "potencia_max_kw": 2.9385301342211556,
+      "potencia_promedio_kw": 0.5914877186403443
+    },
+    "24": {
+      "archivo": "escenario_024_mototaxis.csv",
+      "energia_anual_kwh": 5721.017650594868,
+      "energia_diaria_kwh": 15.674020960533886,
+      "potencia_max_kw": 3.1596049268671518,
+      "potencia_promedio_kw": 0.6530842066889119
+    },
+    "25": {
+      "archivo": "escenario_025_mototaxis.csv",
+      "energia_anual_kwh": 6181.760556659307,
+      "energia_diaria_kwh": 16.93633029221728,
+      "potencia_max_kw": 3.4723677891443505,
+      "potencia_promedio_kw": 0.7056804288423867
+    },
+    "26": {
+      "archivo": "escenario_026_mototaxis.csv",
+      "energia_anual_kwh": 6197.059951455547,
+      "energia_diaria_kwh": 16.978246442343963,
+      "potencia_max_kw": 3.302595954986408,
+      "potencia_promedio_kw": 0.7074269350976651
+    },
+    "27": {
+      "archivo": "escenario_027_mototaxis.csv",
+      "energia_anual_kwh": 6789.483204289713,
+      "energia_diaria_kwh": 18.601323847369077,
+      "potencia_max_kw": 3.5328982984792408,
+      "potencia_promedio_kw": 0.7750551603070449
+    },
+    "28": {
+      "archivo": "escenario_028_mototaxis.csv",
+      "energia_anual_kwh": 7124.242120563907,
+      "energia_diaria_kwh": 19.518471563188786,
+      "potencia_max_kw": 4.304023017514451,
+      "potencia_promedio_kw": 0.8132696484661994
+    },
+    "29": {
+      "archivo": "escenario_029_mototaxis.csv",
+      "energia_anual_kwh": 7707.750167287094,
+      "energia_diaria_kwh": 21.11712374599204,
+      "potencia_max_kw": 4.280880374315414,
+      "potencia_promedio_kw": 0.8798801560830016
+    },
+    "30": {
+      "archivo": "escenario_030_mototaxis.csv",
+      "energia_anual_kwh": 7332.917246711785,
+      "energia_diaria_kwh": 20.090184237566536,
+      "potencia_max_kw": 4.160138144672399,
+      "potencia_promedio_kw": 0.8370910098986056
+    },
+    "31": {
+      "archivo": "escenario_031_mototaxis.csv",
+      "energia_anual_kwh": 8417.545926027207,
+      "energia_diaria_kwh": 23.061769660348514,
+      "potencia_max_kw": 4.581095979794422,
+      "potencia_promedio_kw": 0.9609070691811881
+    },
+    "32": {
+      "archivo": "escenario_032_mototaxis.csv",
+      "energia_anual_kwh": 7954.3889633791005,
+      "energia_diaria_kwh": 21.792846475011235,
+      "potencia_max_kw": 4.354872877913831,
+      "potencia_promedio_kw": 0.9080352697921348
+    },
+    "33": {
+      "archivo": "escenario_033_mototaxis.csv",
+      "energia_anual_kwh": 7838.31303349905,
+      "energia_diaria_kwh": 21.47483022876452,
+      "potencia_max_kw": 4.073768940299618,
+      "potencia_promedio_kw": 0.8947845928651884
+    },
+    "34": {
+      "archivo": "escenario_034_mototaxis.csv",
+      "energia_anual_kwh": 9126.805542225226,
+      "energia_diaria_kwh": 25.004946691028014,
+      "potencia_max_kw": 5.254356179635144,
+      "potencia_promedio_kw": 1.041872778792834
+    },
+    "35": {
+      "archivo": "escenario_035_mototaxis.csv",
+      "energia_anual_kwh": 9361.464742869484,
+      "energia_diaria_kwh": 25.647848610601326,
+      "potencia_max_kw": 5.049983342084098,
+      "potencia_promedio_kw": 1.0686603587750552
+    },
+    "36": {
+      "archivo": "escenario_036_mototaxis.csv",
+      "energia_anual_kwh": 10691.737179549062,
+      "energia_diaria_kwh": 29.29243062890154,
+      "potencia_max_kw": 5.661493878336627,
+      "potencia_promedio_kw": 1.2205179428708974
+    },
+    "37": {
+      "archivo": "escenario_037_mototaxis.csv",
+      "energia_anual_kwh": 11139.095695528062,
+      "energia_diaria_kwh": 30.518070398707017,
+      "potencia_max_kw": 6.0412983695823765,
+      "potencia_promedio_kw": 1.2715862666127924
+    },
+    "38": {
+      "archivo": "escenario_038_mototaxis.csv",
+      "energia_anual_kwh": 10485.45437194468,
+      "energia_diaria_kwh": 28.72727225190323,
+      "potencia_max_kw": 5.495564464047033,
+      "potencia_promedio_kw": 1.1969696771626346
+    },
+    "39": {
+      "archivo": "escenario_039_mototaxis.csv",
+      "energia_anual_kwh": 12142.066709088675,
+      "energia_diaria_kwh": 33.26593618928404,
+      "potencia_max_kw": 6.5614903016808235,
+      "potencia_promedio_kw": 1.3860806745535017
+    },
+    "40": {
+      "archivo": "escenario_040_mototaxis.csv",
+      "energia_anual_kwh": 11472.40894979748,
+      "energia_diaria_kwh": 31.431257396705426,
+      "potencia_max_kw": 6.3071444323640415,
+      "potencia_promedio_kw": 1.3096357248627262
+    },
+    "41": {
+      "archivo": "escenario_041_mototaxis.csv",
+      "energia_anual_kwh": 12471.499026327054,
+      "energia_diaria_kwh": 34.168490483087815,
+      "potencia_max_kw": 7.148830198626462,
+      "potencia_promedio_kw": 1.4236871034619922
+    },
+    "42": {
+      "archivo": "escenario_042_mototaxis.csv",
+      "energia_anual_kwh": 12779.935867811033,
+      "energia_diaria_kwh": 35.013522925509676,
+      "potencia_max_kw": 6.538542125153413,
+      "potencia_promedio_kw": 1.4588967885629032
+    },
+    "43": {
+      "archivo": "escenario_043_mototaxis.csv",
+      "energia_anual_kwh": 13497.51711226112,
+      "energia_diaria_kwh": 36.9794989377017,
+      "potencia_max_kw": 7.3945092124657315,
+      "potencia_promedio_kw": 1.5408124557375709
+    },
+    "44": {
+      "archivo": "escenario_044_mototaxis.csv",
+      "energia_anual_kwh": 14387.343783627697,
+      "energia_diaria_kwh": 39.41738022911698,
+      "potencia_max_kw": 7.789940170822037,
+      "potencia_promedio_kw": 1.6423908428798741
+    },
+    "45": {
+      "archivo": "escenario_045_mototaxis.csv",
+      "energia_anual_kwh": 14828.041185297412,
+      "energia_diaria_kwh": 40.624770370677844,
+      "potencia_max_kw": 7.774039624714394,
+      "potencia_promedio_kw": 1.6926987654449102
+    },
+    "46": {
+      "archivo": "escenario_046_mototaxis.csv",
+      "energia_anual_kwh": 15053.839776019455,
+      "energia_diaria_kwh": 41.243396646628646,
+      "potencia_max_kw": 8.24108020250022,
+      "potencia_promedio_kw": 1.7184748602761937
+    },
+    "47": {
+      "archivo": "escenario_047_mototaxis.csv",
+      "energia_anual_kwh": 15829.520434125536,
+      "energia_diaria_kwh": 43.36854913459051,
+      "potencia_max_kw": 8.718799669341994,
+      "potencia_promedio_kw": 1.8070228806079378
+    },
+    "48": {
+      "archivo": "escenario_048_mototaxis.csv",
+      "energia_anual_kwh": 16216.872333854451,
+      "energia_diaria_kwh": 44.42978721603959,
+      "potencia_max_kw": 8.896634734100667,
+      "potencia_promedio_kw": 1.8512411340016497
+    },
+    "49": {
+      "archivo": "escenario_049_mototaxis.csv",
+      "energia_anual_kwh": 15685.758987927225,
+      "energia_diaria_kwh": 42.97468215870473,
+      "potencia_max_kw": 8.44804800880617,
+      "potencia_promedio_kw": 1.7906117566126971
+    },
+    "50": {
+      "archivo": "escenario_050_mototaxis.csv",
+      "energia_anual_kwh": 16101.876362920122,
+      "energia_diaria_kwh": 44.11472976142499,
+      "potencia_max_kw": 8.589499535829578,
+      "potencia_promedio_kw": 1.8381137400593746
+    },
+    "51": {
+      "archivo": "escenario_051_mototaxis.csv",
+      "energia_anual_kwh": 16885.34722415766,
+      "energia_diaria_kwh": 46.26122527166482,
+      "potencia_max_kw": 9.413921303927248,
+      "potencia_promedio_kw": 1.9275510529860342
+    },
+    "52": {
+      "archivo": "escenario_052_mototaxis.csv",
+      "energia_anual_kwh": 18173.288138857875,
+      "energia_diaria_kwh": 49.789830517418835,
+      "potencia_max_kw": 10.349573406751087,
+      "potencia_promedio_kw": 2.0745762715591183
+    },
+    "53": {
+      "archivo": "escenario_053_mototaxis.csv",
+      "energia_anual_kwh": 17904.249384982526,
+      "energia_diaria_kwh": 49.052738041048016,
+      "potencia_max_kw": 9.497665955534124,
+      "potencia_promedio_kw": 2.0438640850436673
+    },
+    "54": {
+      "archivo": "escenario_054_mototaxis.csv",
+      "energia_anual_kwh": 20873.1190193397,
+      "energia_diaria_kwh": 57.18662745024576,
+      "potencia_max_kw": 11.463237285848912,
+      "potencia_promedio_kw": 2.38277614376024
+    },
+    "55": {
+      "archivo": "escenario_055_mototaxis.csv",
+      "energia_anual_kwh": 18429.666150043904,
+      "energia_diaria_kwh": 50.49223602751754,
+      "potencia_max_kw": 9.74900260806394,
+      "potencia_promedio_kw": 2.1038431678132308
+    },
+    "56": {
+      "archivo": "escenario_056_mototaxis.csv",
+      "energia_anual_kwh": 18529.974930724253,
+      "energia_diaria_kwh": 50.76705460472398,
+      "potencia_max_kw": 10.421911873120607,
+      "potencia_promedio_kw": 2.115293941863499
+    },
+    "57": {
+      "archivo": "escenario_057_mototaxis.csv",
+      "energia_anual_kwh": 20863.069713389057,
+      "energia_diaria_kwh": 57.159095105175496,
+      "potencia_max_kw": 11.571311764599534,
+      "potencia_promedio_kw": 2.3816289627156455
+    },
+    "58": {
+      "archivo": "escenario_058_mototaxis.csv",
+      "energia_anual_kwh": 21963.91117488364,
+      "energia_diaria_kwh": 60.17509910927025,
+      "potencia_max_kw": 12.157401107951541,
+      "potencia_promedio_kw": 2.507295796219594
+    },
+    "59": {
+      "archivo": "escenario_059_mototaxis.csv",
+      "energia_anual_kwh": 21552.7512822778,
+      "energia_diaria_kwh": 59.04863365007617,
+      "potencia_max_kw": 11.55474626584428,
+      "potencia_promedio_kw": 2.4603597354198405
+    },
+    "60": {
+      "archivo": "escenario_060_mototaxis.csv",
+      "energia_anual_kwh": 22488.573444605532,
+      "energia_diaria_kwh": 61.61252998522063,
+      "potencia_max_kw": 12.12816950783132,
+      "potencia_promedio_kw": 2.567188749384193
+    },
+    "61": {
+      "archivo": "escenario_061_mototaxis.csv",
+      "energia_anual_kwh": 23481.54133574917,
+      "energia_diaria_kwh": 64.33298996095664,
+      "potencia_max_kw": 13.126502956061344,
+      "potencia_promedio_kw": 2.6805412483731934
+    },
+    "62": {
+      "archivo": "escenario_062_mototaxis.csv",
+      "energia_anual_kwh": 22298.564738758356,
+      "energia_diaria_kwh": 61.09195818837906,
+      "potencia_max_kw": 11.513592862605568,
+      "potencia_promedio_kw": 2.5454982578491276
+    },
+    "63": {
+      "archivo": "escenario_063_mototaxis.csv",
+      "energia_anual_kwh": 21168.266242821235,
+      "energia_diaria_kwh": 57.995249980332154,
+      "potencia_max_kw": 11.390189817325492,
+      "potencia_promedio_kw": 2.4164687491805066
+    },
+    "64": {
+      "archivo": "escenario_064_mototaxis.csv",
+      "energia_anual_kwh": 22682.880408403926,
+      "energia_diaria_kwh": 62.14487783124363,
+      "potencia_max_kw": 12.494308056053448,
+      "potencia_promedio_kw": 2.5893699096351512
+    },
+    "65": {
+      "archivo": "escenario_065_mototaxis.csv",
+      "energia_anual_kwh": 24710.80575997749,
+      "energia_diaria_kwh": 67.70083769856846,
+      "potencia_max_kw": 13.308473669926775,
+      "potencia_promedio_kw": 2.8208682374403526
+    },
+    "66": {
+      "archivo": "escenario_066_mototaxis.csv",
+      "energia_anual_kwh": 22315.74157118892,
+      "energia_diaria_kwh": 61.13901800325731,
+      "potencia_max_kw": 13.21518661177408,
+      "potencia_promedio_kw": 2.5474590834690547
+    },
+    "67": {
+      "archivo": "escenario_067_mototaxis.csv",
+      "energia_anual_kwh": 24689.271067576206,
+      "energia_diaria_kwh": 67.64183854130468,
+      "potencia_max_kw": 13.599298691521089,
+      "potencia_promedio_kw": 2.8184099392210284
+    },
+    "68": {
+      "archivo": "escenario_068_mototaxis.csv",
+      "energia_anual_kwh": 25258.072462337925,
+      "energia_diaria_kwh": 69.20019852695322,
+      "potencia_max_kw": 13.645096066843221,
+      "potencia_promedio_kw": 2.883341605289717
+    },
+    "69": {
+      "archivo": "escenario_069_mototaxis.csv",
+      "energia_anual_kwh": 25168.2129221038,
+      "energia_diaria_kwh": 68.95400800576384,
+      "potencia_max_kw": 13.66616541971757,
+      "potencia_promedio_kw": 2.8730836669068265
+    },
+    "70": {
+      "archivo": "escenario_070_mototaxis.csv",
+      "energia_anual_kwh": 26782.228424368826,
+      "energia_diaria_kwh": 73.375968285942,
+      "potencia_max_kw": 14.228392354921302,
+      "potencia_promedio_kw": 3.0573320119142497
+    },
+    "71": {
+      "archivo": "escenario_071_mototaxis.csv",
+      "energia_anual_kwh": 27012.93609357572,
+      "energia_diaria_kwh": 74.00804409198828,
+      "potencia_max_kw": 14.430835374051815,
+      "potencia_promedio_kw": 3.083668503832845
+    },
+    "72": {
+      "archivo": "escenario_072_mototaxis.csv",
+      "energia_anual_kwh": 29756.41665184498,
+      "energia_diaria_kwh": 81.52442918313693,
+      "potencia_max_kw": 16.31046436182119,
+      "potencia_promedio_kw": 3.396851215964039
+    },
+    "73": {
+      "archivo": "escenario_073_mototaxis.csv",
+      "energia_anual_kwh": 27789.493672410073,
+      "energia_diaria_kwh": 76.13559910249336,
+      "potencia_max_kw": 14.830551706246984,
+      "potencia_promedio_kw": 3.1723166292705565
+    },
+    "74": {
+      "archivo": "escenario_074_mototaxis.csv",
+      "energia_anual_kwh": 26556.580239433828,
+      "energia_diaria_kwh": 72.75775408064062,
+      "potencia_max_kw": 15.060886369629698,
+      "potencia_promedio_kw": 3.0315730866933595
+    },
+    "75": {
+      "archivo": "escenario_075_mototaxis.csv",
+      "energia_anual_kwh": 26849.261307986606,
+      "energia_diaria_kwh": 73.55962002188112,
+      "potencia_max_kw": 14.447135413848265,
+      "potencia_promedio_kw": 3.06498416757838
+    },
+    "76": {
+      "archivo": "escenario_076_mototaxis.csv",
+      "energia_anual_kwh": 27019.68605008744,
+      "energia_diaria_kwh": 74.02653712352723,
+      "potencia_max_kw": 14.552193542400639,
+      "potencia_promedio_kw": 3.084439046813635
+    },
+    "77": {
+      "archivo": "escenario_077_mototaxis.csv",
+      "energia_anual_kwh": 29853.32345008637,
+      "energia_diaria_kwh": 81.7899272605106,
+      "potencia_max_kw": 16.331655627333426,
+      "potencia_promedio_kw": 3.4079136358546083
+    },
+    "78": {
+      "archivo": "escenario_078_mototaxis.csv",
+      "energia_anual_kwh": 28141.23197183087,
+      "energia_diaria_kwh": 77.09926567624896,
+      "potencia_max_kw": 15.641992373052634,
+      "potencia_promedio_kw": 3.21246940317704
+    },
+    "79": {
+      "archivo": "escenario_079_mototaxis.csv",
+      "energia_anual_kwh": 28998.85672949504,
+      "energia_diaria_kwh": 79.44892254656176,
+      "potencia_max_kw": 16.36283068959822,
+      "potencia_promedio_kw": 3.3103717727734066
+    },
+    "80": {
+      "archivo": "escenario_080_mototaxis.csv",
+      "energia_anual_kwh": 30583.393404229,
+      "energia_diaria_kwh": 83.79011891569588,
+      "potencia_max_kw": 16.880812925823324,
+      "potencia_promedio_kw": 3.4912549548206617
+    },
+    "81": {
+      "archivo": "escenario_081_mototaxis.csv",
+      "energia_anual_kwh": 28727.886856208504,
+      "energia_diaria_kwh": 78.7065393320781,
+      "potencia_max_kw": 15.754282563160663,
+      "potencia_promedio_kw": 3.279439138836587
+    },
+    "82": {
+      "archivo": "escenario_082_mototaxis.csv",
+      "energia_anual_kwh": 29713.300403314588,
+      "energia_diaria_kwh": 81.40630247483449,
+      "potencia_max_kw": 16.542556573686575,
+      "potencia_promedio_kw": 3.3919292697847703
+    },
+    "83": {
+      "archivo": "escenario_083_mototaxis.csv",
+      "energia_anual_kwh": 27582.694599525887,
+      "energia_diaria_kwh": 75.56902630007092,
+      "potencia_max_kw": 14.281213639304271,
+      "potencia_promedio_kw": 3.1487094291696214
+    },
+    "84": {
+      "archivo": "escenario_084_mototaxis.csv",
+      "energia_anual_kwh": 28960.25861140175,
+      "energia_diaria_kwh": 79.34317427781302,
+      "potencia_max_kw": 16.080873260764925,
+      "potencia_promedio_kw": 3.305965594908876
+    },
+    "85": {
+      "archivo": "escenario_085_mototaxis.csv",
+      "energia_anual_kwh": 30032.64833042018,
+      "energia_diaria_kwh": 82.28122830252104,
+      "potencia_max_kw": 16.394240286494494,
+      "potencia_promedio_kw": 3.4283845126050436
+    },
+    "86": {
+      "archivo": "escenario_086_mototaxis.csv",
+      "energia_anual_kwh": 31901.85299268583,
+      "energia_diaria_kwh": 87.40233696626254,
+      "potencia_max_kw": 16.94424805566383,
+      "potencia_promedio_kw": 3.6417640402609393
+    },
+    "87": {
+      "archivo": "escenario_087_mototaxis.csv",
+      "energia_anual_kwh": 33204.88068224333,
+      "energia_diaria_kwh": 90.97227584176255,
+      "potencia_max_kw": 18.59571443716999,
+      "potencia_promedio_kw": 3.790511493406773
+    },
+    "88": {
+      "archivo": "escenario_088_mototaxis.csv",
+      "energia_anual_kwh": 31489.204520620904,
+      "energia_diaria_kwh": 86.27179320718056,
+      "potencia_max_kw": 17.565383415473647,
+      "potencia_promedio_kw": 3.59465805029919
+    },
+    "89": {
+      "archivo": "escenario_089_mototaxis.csv",
+      "energia_anual_kwh": 32241.02949823752,
+      "energia_diaria_kwh": 88.33158766640416,
+      "potencia_max_kw": 17.522075177312576,
+      "potencia_promedio_kw": 3.680482819433507
+    },
+    "90": {
+      "archivo": "escenario_090_mototaxis.csv",
+      "energia_anual_kwh": 32288.079755959792,
+      "energia_diaria_kwh": 88.46049248208162,
+      "potencia_max_kw": 18.114537190624542,
+      "potencia_promedio_kw": 3.6858538534200673
+    },
+    "91": {
+      "archivo": "escenario_091_mototaxis.csv",
+      "energia_anual_kwh": 33837.640624123946,
+      "energia_diaria_kwh": 92.70586472362724,
+      "potencia_max_kw": 18.280749852903494,
+      "potencia_promedio_kw": 3.8627443634844685
+    },
+    "92": {
+      "archivo": "escenario_092_mototaxis.csv",
+      "energia_anual_kwh": 33846.28866685114,
+      "energia_diaria_kwh": 92.72955799137299,
+      "potencia_max_kw": 18.304300977596064,
+      "potencia_promedio_kw": 3.8637315829738745
+    },
+    "93": {
+      "archivo": "escenario_093_mototaxis.csv",
+      "energia_anual_kwh": 32852.45334096458,
+      "energia_diaria_kwh": 90.00672148209475,
+      "potencia_max_kw": 17.590611303227217,
+      "potencia_promedio_kw": 3.750280061753948
+    },
+    "94": {
+      "archivo": "escenario_094_mototaxis.csv",
+      "energia_anual_kwh": 30924.214184919954,
+      "energia_diaria_kwh": 84.72387447923275,
+      "potencia_max_kw": 16.46759140016633,
+      "potencia_promedio_kw": 3.530161436634698
+    },
+    "95": {
+      "archivo": "escenario_095_mototaxis.csv",
+      "energia_anual_kwh": 34224.13936490523,
+      "energia_diaria_kwh": 93.764765383302,
+      "potencia_max_kw": 18.07412789661596,
+      "potencia_promedio_kw": 3.90686522430425
+    },
+    "96": {
+      "archivo": "escenario_096_mototaxis.csv",
+      "energia_anual_kwh": 33445.86380836252,
+      "energia_diaria_kwh": 91.63250358455485,
+      "potencia_max_kw": 18.02112020076267,
+      "potencia_promedio_kw": 3.8180209826897857
+    },
+    "97": {
+      "archivo": "escenario_097_mototaxis.csv",
+      "energia_anual_kwh": 34949.32903777219,
+      "energia_diaria_kwh": 95.75158640485532,
+      "potencia_max_kw": 19.2014890938234,
+      "potencia_promedio_kw": 3.989649433535638
+    },
+    "98": {
+      "archivo": "escenario_098_mototaxis.csv",
+      "energia_anual_kwh": 33093.37847673338,
+      "energia_diaria_kwh": 90.66679034721473,
+      "potencia_max_kw": 16.96239841496319,
+      "potencia_promedio_kw": 3.777782931133947
+    },
+    "99": {
+      "archivo": "escenario_099_mototaxis.csv",
+      "energia_anual_kwh": 36295.546565410725,
+      "energia_diaria_kwh": 99.439853603865,
+      "potencia_max_kw": 19.123391791393068,
+      "potencia_promedio_kw": 4.143327233494375
+    },
+    "100": {
+      "archivo": "escenario_100_mototaxis.csv",
+      "energia_anual_kwh": 32524.53018841751,
+      "energia_diaria_kwh": 89.10830188607537,
+      "potencia_max_kw": 18.04350916836831,
+      "potencia_promedio_kw": 3.712845911919807
+    },
+    "101": {
+      "archivo": "escenario_101_mototaxis.csv",
+      "energia_anual_kwh": 35716.89844400248,
+      "energia_diaria_kwh": 97.8545162849383,
+      "potencia_max_kw": 19.066536529190326,
+      "potencia_promedio_kw": 4.077271511872429
+    }
+  },
+  "resumen": [
+    {
+      "escenario_id": 1,
+      "escenario_nombre": "Escenario_001",
+      "chargers": 4,
+      "sockets": 16,
+      "energia_total_kwh": 8334.558372607573,
+      "energia_motos_kwh": 7024.028846612058,
+      "energia_mototaxis_kwh": 1310.5295259955153
+    },
+    {
+      "escenario_id": 2,
+      "escenario_nombre": "Escenario_002",
+      "chargers": 4,
+      "sockets": 16,
+      "energia_total_kwh": 8385.867784746011,
+      "energia_motos_kwh": 7070.359167210796,
+      "energia_mototaxis_kwh": 1315.5086175352158
+    },
+    {
+      "escenario_id": 3,
+      "escenario_nombre": "Escenario_003",
+      "chargers": 4,
+      "sockets": 16,
+      "energia_total_kwh": 8566.849936425053,
+      "energia_motos_kwh": 7214.662834259446,
+      "energia_mototaxis_kwh": 1352.1871021656068
+    },
+    {
+      "escenario_id": 4,
+      "escenario_nombre": "Escenario_004",
+      "chargers": 4,
+      "sockets": 16,
+      "energia_total_kwh": 9234.590294569061,
+      "energia_motos_kwh": 7779.327352385165,
+      "energia_mototaxis_kwh": 1455.2629421838972
+    },
+    {
+      "escenario_id": 5,
+      "escenario_nombre": "Escenario_005",
+      "chargers": 4,
+      "sockets": 16,
+      "energia_total_kwh": 9298.519639182887,
+      "energia_motos_kwh": 7838.426596855833,
+      "energia_mototaxis_kwh": 1460.0930423270536
+    },
+    {
+      "escenario_id": 6,
+      "escenario_nombre": "Escenario_006",
+      "chargers": 4,
+      "sockets": 16,
+      "energia_total_kwh": 9136.35135047367,
+      "energia_motos_kwh": 7707.019223004921,
+      "energia_mototaxis_kwh": 1429.3321274687491
+    },
+    {
+      "escenario_id": 7,
+      "escenario_nombre": "Escenario_007",
+      "chargers": 4,
+      "sockets": 17,
+      "energia_total_kwh": 10664.035749412846,
+      "energia_motos_kwh": 8988.067792274729,
+      "energia_mototaxis_kwh": 1675.9679571381162
+    },
+    {
+      "escenario_id": 8,
+      "escenario_nombre": "Escenario_008",
+      "chargers": 4,
+      "sockets": 17,
+      "energia_total_kwh": 11106.434840907063,
+      "energia_motos_kwh": 9360.995089861495,
+      "energia_mototaxis_kwh": 1745.4397510455678
+    },
+    {
+      "escenario_id": 9,
+      "escenario_nombre": "Escenario_009",
+      "chargers": 4,
+      "sockets": 18,
+      "energia_total_kwh": 11915.535202072504,
+      "energia_motos_kwh": 10041.188302370248,
+      "energia_mototaxis_kwh": 1874.346899702255
+    },
+    {
+      "escenario_id": 10,
+      "escenario_nombre": "Escenario_010",
+      "chargers": 4,
+      "sockets": 18,
+      "energia_total_kwh": 13108.850576315133,
+      "energia_motos_kwh": 11043.721688215575,
+      "energia_mototaxis_kwh": 2065.128888099559
+    },
+    {
+      "escenario_id": 11,
+      "escenario_nombre": "Escenario_011",
+      "chargers": 4,
+      "sockets": 19,
+      "energia_total_kwh": 14259.58972847603,
+      "energia_motos_kwh": 12023.619544230636,
+      "energia_mototaxis_kwh": 2235.970184245394
+    },
+    {
+      "escenario_id": 12,
+      "escenario_nombre": "Escenario_012",
+      "chargers": 5,
+      "sockets": 20,
+      "energia_total_kwh": 16045.306584965958,
+      "energia_motos_kwh": 13524.104883086475,
+      "energia_mototaxis_kwh": 2521.201701879483
+    },
+    {
+      "escenario_id": 13,
+      "escenario_nombre": "Escenario_013",
+      "chargers": 5,
+      "sockets": 20,
+      "energia_total_kwh": 16921.797445626304,
+      "energia_motos_kwh": 14250.479586118574,
+      "energia_mototaxis_kwh": 2671.3178595077297
+    },
+    {
+      "escenario_id": 14,
+      "escenario_nombre": "Escenario_014",
+      "chargers": 5,
+      "sockets": 21,
+      "energia_total_kwh": 17859.14879912592,
+      "energia_motos_kwh": 15047.749437480186,
+      "energia_mototaxis_kwh": 2811.399361645733
+    },
+    {
+      "escenario_id": 15,
+      "escenario_nombre": "Escenario_015",
+      "chargers": 5,
+      "sockets": 22,
+      "energia_total_kwh": 18459.75631939258,
+      "energia_motos_kwh": 15556.594771697091,
+      "energia_mototaxis_kwh": 2903.16154769549
+    },
+    {
+      "escenario_id": 16,
+      "escenario_nombre": "Escenario_016",
+      "chargers": 5,
+      "sockets": 23,
+      "energia_total_kwh": 19656.89686520602,
+      "energia_motos_kwh": 16572.67640842028,
+      "energia_mototaxis_kwh": 3084.220456785742
+    },
+    {
+      "escenario_id": 17,
+      "escenario_nombre": "Escenario_017",
+      "chargers": 6,
+      "sockets": 24,
+      "energia_total_kwh": 22596.064185088213,
+      "energia_motos_kwh": 19038.747728001275,
+      "energia_mototaxis_kwh": 3557.316457086938
+    },
+    {
+      "escenario_id": 18,
+      "escenario_nombre": "Escenario_018",
+      "chargers": 6,
+      "sockets": 25,
+      "energia_total_kwh": 25499.12837134645,
+      "energia_motos_kwh": 21472.16273521973,
+      "energia_mototaxis_kwh": 4026.965636126723
+    },
+    {
+      "escenario_id": 19,
+      "escenario_nombre": "Escenario_019",
+      "chargers": 6,
+      "sockets": 26,
+      "energia_total_kwh": 25808.967577453775,
+      "energia_motos_kwh": 21760.06011094237,
+      "energia_mototaxis_kwh": 4048.907466511406
+    },
+    {
+      "escenario_id": 20,
+      "escenario_nombre": "Escenario_020",
+      "chargers": 6,
+      "sockets": 27,
+      "energia_total_kwh": 27434.193048433124,
+      "energia_motos_kwh": 23139.863920996973,
+      "energia_mototaxis_kwh": 4294.329127436152
+    },
+    {
+      "escenario_id": 21,
+      "escenario_nombre": "Escenario_021",
+      "chargers": 7,
+      "sockets": 28,
+      "energia_total_kwh": 30302.165537249868,
+      "energia_motos_kwh": 25573.44040257905,
+      "energia_mototaxis_kwh": 4728.725134670819
+    },
+    {
+      "escenario_id": 22,
+      "escenario_nombre": "Escenario_022",
+      "chargers": 7,
+      "sockets": 30,
+      "energia_total_kwh": 29144.90185601783,
+      "energia_motos_kwh": 24564.18990069784,
+      "energia_mototaxis_kwh": 4580.711955319994
+    },
+    {
+      "escenario_id": 23,
+      "escenario_nombre": "Escenario_023",
+      "chargers": 7,
+      "sockets": 31,
+      "energia_total_kwh": 32841.8856035055,
+      "energia_motos_kwh": 27660.453188216085,
+      "energia_mototaxis_kwh": 5181.432415289416
+    },
+    {
+      "escenario_id": 24,
+      "escenario_nombre": "Escenario_024",
+      "chargers": 8,
+      "sockets": 32,
+      "energia_total_kwh": 36365.31976961987,
+      "energia_motos_kwh": 30644.302119025,
+      "energia_mototaxis_kwh": 5721.017650594868
+    },
+    {
+      "escenario_id": 25,
+      "escenario_nombre": "Escenario_025",
+      "chargers": 8,
+      "sockets": 33,
+      "energia_total_kwh": 39328.80929288267,
+      "energia_motos_kwh": 33147.04873622337,
+      "energia_mototaxis_kwh": 6181.760556659307
+    },
+    {
+      "escenario_id": 26,
+      "escenario_nombre": "Escenario_026",
+      "chargers": 8,
+      "sockets": 35,
+      "energia_total_kwh": 39518.074447694904,
+      "energia_motos_kwh": 33321.01449623935,
+      "energia_mototaxis_kwh": 6197.059951455547
+    },
+    {
+      "escenario_id": 27,
+      "escenario_nombre": "Escenario_027",
+      "chargers": 9,
+      "sockets": 36,
+      "energia_total_kwh": 43049.61906323925,
+      "energia_motos_kwh": 36260.13585894954,
+      "energia_mototaxis_kwh": 6789.483204289713
+    },
+    {
+      "escenario_id": 28,
+      "escenario_nombre": "Escenario_028",
+      "chargers": 9,
+      "sockets": 38,
+      "energia_total_kwh": 45302.45746520338,
+      "energia_motos_kwh": 38178.21534463947,
+      "energia_mototaxis_kwh": 7124.242120563907
+    },
+    {
+      "escenario_id": 29,
+      "escenario_nombre": "Escenario_029",
+      "chargers": 9,
+      "sockets": 39,
+      "energia_total_kwh": 48971.60062264049,
+      "energia_motos_kwh": 41263.8504553534,
+      "energia_mototaxis_kwh": 7707.750167287094
+    },
+    {
+      "escenario_id": 30,
+      "escenario_nombre": "Escenario_030",
+      "chargers": 10,
+      "sockets": 41,
+      "energia_total_kwh": 46784.62685688112,
+      "energia_motos_kwh": 39451.70961016934,
+      "energia_mototaxis_kwh": 7332.917246711785
+    },
+    {
+      "escenario_id": 31,
+      "escenario_nombre": "Escenario_031",
+      "chargers": 10,
+      "sockets": 42,
+      "energia_total_kwh": 53551.891800137964,
+      "energia_motos_kwh": 45134.34587411076,
+      "energia_mototaxis_kwh": 8417.545926027207
+    },
+    {
+      "escenario_id": 32,
+      "escenario_nombre": "Escenario_032",
+      "chargers": 11,
+      "sockets": 44,
+      "energia_total_kwh": 50529.89839396805,
+      "energia_motos_kwh": 42575.50943058895,
+      "energia_mototaxis_kwh": 7954.3889633791005
+    },
+    {
+      "escenario_id": 33,
+      "escenario_nombre": "Escenario_033",
+      "chargers": 11,
+      "sockets": 45,
+      "energia_total_kwh": 49862.64989793279,
+      "energia_motos_kwh": 42024.33686443374,
+      "energia_mototaxis_kwh": 7838.31303349905
+    },
+    {
+      "escenario_id": 34,
+      "escenario_nombre": "Escenario_034",
+      "chargers": 11,
+      "sockets": 47,
+      "energia_total_kwh": 58306.07031550155,
+      "energia_motos_kwh": 49179.26477327632,
+      "energia_mototaxis_kwh": 9126.805542225226
+    },
+    {
+      "escenario_id": 35,
+      "escenario_nombre": "Escenario_035",
+      "chargers": 12,
+      "sockets": 49,
+      "energia_total_kwh": 59932.968113383715,
+      "energia_motos_kwh": 50571.503370514234,
+      "energia_mototaxis_kwh": 9361.464742869484
+    },
+    {
+      "escenario_id": 36,
+      "escenario_nombre": "Escenario_036",
+      "chargers": 12,
+      "sockets": 50,
+      "energia_total_kwh": 68445.44914673264,
+      "energia_motos_kwh": 57753.71196718358,
+      "energia_mototaxis_kwh": 10691.737179549062
+    },
+    {
+      "escenario_id": 37,
+      "escenario_nombre": "Escenario_037",
+      "chargers": 13,
+      "sockets": 52,
+      "energia_total_kwh": 70480.9421408959,
+      "energia_motos_kwh": 59341.84644536784,
+      "energia_mototaxis_kwh": 11139.095695528062
+    },
+    {
+      "escenario_id": 38,
+      "escenario_nombre": "Escenario_038",
+      "chargers": 13,
+      "sockets": 54,
+      "energia_total_kwh": 66695.22585393251,
+      "energia_motos_kwh": 56209.77148198784,
+      "energia_mototaxis_kwh": 10485.45437194468
+    },
+    {
+      "escenario_id": 39,
+      "escenario_nombre": "Escenario_039",
+      "chargers": 14,
+      "sockets": 56,
+      "energia_total_kwh": 76885.9851613508,
+      "energia_motos_kwh": 64743.918452262136,
+      "energia_mototaxis_kwh": 12142.066709088675
+    },
+    {
+      "escenario_id": 40,
+      "escenario_nombre": "Escenario_040",
+      "chargers": 14,
+      "sockets": 57,
+      "energia_total_kwh": 72742.20915736415,
+      "energia_motos_kwh": 61269.800207566666,
+      "energia_mototaxis_kwh": 11472.40894979748
+    },
+    {
+      "escenario_id": 41,
+      "escenario_nombre": "Escenario_041",
+      "chargers": 14,
+      "sockets": 59,
+      "energia_total_kwh": 79373.04743723873,
+      "energia_motos_kwh": 66901.54841091167,
+      "energia_mototaxis_kwh": 12471.499026327054
+    },
+    {
+      "escenario_id": 42,
+      "escenario_nombre": "Escenario_042",
+      "chargers": 15,
+      "sockets": 61,
+      "energia_total_kwh": 81047.11192777505,
+      "energia_motos_kwh": 68267.17605996403,
+      "energia_mototaxis_kwh": 12779.935867811033
+    },
+    {
+      "escenario_id": 43,
+      "escenario_nombre": "Escenario_043",
+      "chargers": 15,
+      "sockets": 63,
+      "energia_total_kwh": 86277.36097239825,
+      "energia_motos_kwh": 72779.84386013713,
+      "energia_mototaxis_kwh": 13497.51711226112
+    },
+    {
+      "escenario_id": 44,
+      "escenario_nombre": "Escenario_044",
+      "chargers": 16,
+      "sockets": 65,
+      "energia_total_kwh": 92060.8201975072,
+      "energia_motos_kwh": 77673.4764138795,
+      "energia_mototaxis_kwh": 14387.343783627697
+    },
+    {
+      "escenario_id": 45,
+      "escenario_nombre": "Escenario_045",
+      "chargers": 16,
+      "sockets": 66,
+      "energia_total_kwh": 94552.33281433911,
+      "energia_motos_kwh": 79724.2916290417,
+      "energia_mototaxis_kwh": 14828.041185297412
+    },
+    {
+      "escenario_id": 46,
+      "escenario_nombre": "Escenario_046",
+      "chargers": 17,
+      "sockets": 68,
+      "energia_total_kwh": 96089.8395860219,
+      "energia_motos_kwh": 81035.99981000245,
+      "energia_mototaxis_kwh": 15053.839776019455
+    },
+    {
+      "escenario_id": 47,
+      "escenario_nombre": "Escenario_047",
+      "chargers": 17,
+      "sockets": 70,
+      "energia_total_kwh": 100252.5920178602,
+      "energia_motos_kwh": 84423.07158373467,
+      "energia_mototaxis_kwh": 15829.520434125536
+    },
+    {
+      "escenario_id": 48,
+      "escenario_nombre": "Escenario_048",
+      "chargers": 18,
+      "sockets": 72,
+      "energia_total_kwh": 102781.2297454388,
+      "energia_motos_kwh": 86564.35741158435,
+      "energia_mototaxis_kwh": 16216.872333854451
+    },
+    {
+      "escenario_id": 49,
+      "escenario_nombre": "Escenario_049",
+      "chargers": 18,
+      "sockets": 74,
+      "energia_total_kwh": 99852.59921585296,
+      "energia_motos_kwh": 84166.84022792573,
+      "energia_mototaxis_kwh": 15685.758987927225
+    },
+    {
+      "escenario_id": 50,
+      "escenario_nombre": "Escenario_050",
+      "chargers": 19,
+      "sockets": 76,
+      "energia_total_kwh": 102506.3800628433,
+      "energia_motos_kwh": 86404.50369992317,
+      "energia_mototaxis_kwh": 16101.876362920122
+    },
+    {
+      "escenario_id": 51,
+      "escenario_nombre": "Escenario_051",
+      "chargers": 19,
+      "sockets": 78,
+      "energia_total_kwh": 107013.36359247836,
+      "energia_motos_kwh": 90128.01636832069,
+      "energia_mototaxis_kwh": 16885.34722415766
+    },
+    {
+      "escenario_id": 52,
+      "escenario_nombre": "Escenario_052",
+      "chargers": 19,
+      "sockets": 79,
+      "energia_total_kwh": 115198.95521742408,
+      "energia_motos_kwh": 97025.6670785662,
+      "energia_mototaxis_kwh": 18173.288138857875
+    },
+    {
+      "escenario_id": 53,
+      "escenario_nombre": "Escenario_053",
+      "chargers": 20,
+      "sockets": 81,
+      "energia_total_kwh": 114068.3390172514,
+      "energia_motos_kwh": 96164.08963226888,
+      "energia_mototaxis_kwh": 17904.249384982526
+    },
+    {
+      "escenario_id": 54,
+      "escenario_nombre": "Escenario_054",
+      "chargers": 20,
+      "sockets": 83,
+      "energia_total_kwh": 132793.08394304954,
+      "energia_motos_kwh": 111919.96492370983,
+      "energia_mototaxis_kwh": 20873.1190193397
+    },
+    {
+      "escenario_id": 55,
+      "escenario_nombre": "Escenario_055",
+      "chargers": 21,
+      "sockets": 85,
+      "energia_total_kwh": 116961.32614358481,
+      "energia_motos_kwh": 98531.6599935409,
+      "energia_mototaxis_kwh": 18429.666150043904
+    },
+    {
+      "escenario_id": 56,
+      "escenario_nombre": "Escenario_056",
+      "chargers": 21,
+      "sockets": 87,
+      "energia_total_kwh": 118111.40916451061,
+      "energia_motos_kwh": 99581.43423378635,
+      "energia_mototaxis_kwh": 18529.974930724253
+    },
+    {
+      "escenario_id": 57,
+      "escenario_nombre": "Escenario_057",
+      "chargers": 22,
+      "sockets": 89,
+      "energia_total_kwh": 132584.95285359406,
+      "energia_motos_kwh": 111721.88314020501,
+      "energia_mototaxis_kwh": 20863.069713389057
+    },
+    {
+      "escenario_id": 58,
+      "escenario_nombre": "Escenario_058",
+      "chargers": 22,
+      "sockets": 90,
+      "energia_total_kwh": 140172.60870175372,
+      "energia_motos_kwh": 118208.69752687008,
+      "energia_mototaxis_kwh": 21963.91117488364
+    },
+    {
+      "escenario_id": 59,
+      "escenario_nombre": "Escenario_059",
+      "chargers": 23,
+      "sockets": 92,
+      "energia_total_kwh": 137192.89507118554,
+      "energia_motos_kwh": 115640.14378890774,
+      "energia_mototaxis_kwh": 21552.7512822778
+    },
+    {
+      "escenario_id": 60,
+      "escenario_nombre": "Escenario_060",
+      "chargers": 23,
+      "sockets": 94,
+      "energia_total_kwh": 142036.6337052029,
+      "energia_motos_kwh": 119548.06026059735,
+      "energia_mototaxis_kwh": 22488.573444605532
+    },
+    {
+      "escenario_id": 61,
+      "escenario_nombre": "Escenario_061",
+      "chargers": 24,
+      "sockets": 96,
+      "energia_total_kwh": 149289.56824465358,
+      "energia_motos_kwh": 125808.02690890442,
+      "energia_mototaxis_kwh": 23481.54133574917
+    },
+    {
+      "escenario_id": 62,
+      "escenario_nombre": "Escenario_062",
+      "chargers": 24,
+      "sockets": 98,
+      "energia_total_kwh": 141722.13570782394,
+      "energia_motos_kwh": 119423.57096906558,
+      "energia_mototaxis_kwh": 22298.564738758356
+    },
+    {
+      "escenario_id": 63,
+      "escenario_nombre": "Escenario_063",
+      "chargers": 24,
+      "sockets": 99,
+      "energia_total_kwh": 134848.3144877521,
+      "energia_motos_kwh": 113680.04824493088,
+      "energia_mototaxis_kwh": 21168.266242821235
+    },
+    {
+      "escenario_id": 64,
+      "escenario_nombre": "Escenario_064",
+      "chargers": 25,
+      "sockets": 101,
+      "energia_total_kwh": 144355.30297479572,
+      "energia_motos_kwh": 121672.4225663918,
+      "energia_mototaxis_kwh": 22682.880408403926
+    },
+    {
+      "escenario_id": 65,
+      "escenario_nombre": "Escenario_065",
+      "chargers": 25,
+      "sockets": 103,
+      "energia_total_kwh": 157823.58576755176,
+      "energia_motos_kwh": 133112.78000757427,
+      "energia_mototaxis_kwh": 24710.80575997749
+    },
+    {
+      "escenario_id": 66,
+      "escenario_nombre": "Escenario_066",
+      "chargers": 26,
+      "sockets": 105,
+      "energia_total_kwh": 142713.69418229646,
+      "energia_motos_kwh": 120397.95261110754,
+      "energia_mototaxis_kwh": 22315.74157118892
+    },
+    {
+      "escenario_id": 67,
+      "escenario_nombre": "Escenario_067",
+      "chargers": 26,
+      "sockets": 106,
+      "energia_total_kwh": 157177.67105556524,
+      "energia_motos_kwh": 132488.39998798902,
+      "energia_mototaxis_kwh": 24689.271067576206
+    },
+    {
+      "escenario_id": 68,
+      "escenario_nombre": "Escenario_068",
+      "chargers": 27,
+      "sockets": 108,
+      "energia_total_kwh": 160947.5332578806,
+      "energia_motos_kwh": 135689.46079554266,
+      "energia_mototaxis_kwh": 25258.072462337925
+    },
+    {
+      "escenario_id": 69,
+      "escenario_nombre": "Escenario_069",
+      "chargers": 27,
+      "sockets": 110,
+      "energia_total_kwh": 159125.63317238947,
+      "energia_motos_kwh": 133957.42025028568,
+      "energia_mototaxis_kwh": 25168.2129221038
+    },
+    {
+      "escenario_id": 70,
+      "escenario_nombre": "Escenario_070",
+      "chargers": 27,
+      "sockets": 111,
+      "energia_total_kwh": 169873.10937927975,
+      "energia_motos_kwh": 143090.8809549109,
+      "energia_mototaxis_kwh": 26782.228424368826
+    },
+    {
+      "escenario_id": 71,
+      "escenario_nombre": "Escenario_071",
+      "chargers": 28,
+      "sockets": 113,
+      "energia_total_kwh": 171266.7029229847,
+      "energia_motos_kwh": 144253.76682940897,
+      "energia_mototaxis_kwh": 27012.93609357572
+    },
+    {
+      "escenario_id": 72,
+      "escenario_nombre": "Escenario_072",
+      "chargers": 28,
+      "sockets": 114,
+      "energia_total_kwh": 188645.7879922389,
+      "energia_motos_kwh": 158889.37134039393,
+      "energia_mototaxis_kwh": 29756.41665184498
+    },
+    {
+      "escenario_id": 73,
+      "escenario_nombre": "Escenario_073",
+      "chargers": 29,
+      "sockets": 116,
+      "energia_total_kwh": 176645.40563957178,
+      "energia_motos_kwh": 148855.9119671617,
+      "energia_mototaxis_kwh": 27789.493672410073
+    },
+    {
+      "escenario_id": 74,
+      "escenario_nombre": "Escenario_074",
+      "chargers": 29,
+      "sockets": 117,
+      "energia_total_kwh": 169871.01713276838,
+      "energia_motos_kwh": 143314.43689333455,
+      "energia_mototaxis_kwh": 26556.580239433828
+    },
+    {
+      "escenario_id": 75,
+      "escenario_nombre": "Escenario_075",
+      "chargers": 29,
+      "sockets": 119,
+      "energia_total_kwh": 171527.3271011467,
+      "energia_motos_kwh": 144678.0657931601,
+      "energia_mototaxis_kwh": 26849.261307986606
+    },
+    {
+      "escenario_id": 76,
+      "escenario_nombre": "Escenario_076",
+      "chargers": 30,
+      "sockets": 120,
+      "energia_total_kwh": 171845.5785016143,
+      "energia_motos_kwh": 144825.89245152686,
+      "energia_mototaxis_kwh": 27019.68605008744
+    },
+    {
+      "escenario_id": 77,
+      "escenario_nombre": "Escenario_077",
+      "chargers": 30,
+      "sockets": 122,
+      "energia_total_kwh": 191004.18911202473,
+      "energia_motos_kwh": 161150.86566193835,
+      "energia_mototaxis_kwh": 29853.32345008637
+    },
+    {
+      "escenario_id": 78,
+      "escenario_nombre": "Escenario_078",
+      "chargers": 30,
+      "sockets": 123,
+      "energia_total_kwh": 179018.12853825814,
+      "energia_motos_kwh": 150876.89656642728,
+      "energia_mototaxis_kwh": 28141.23197183087
+    },
+    {
+      "escenario_id": 79,
+      "escenario_nombre": "Escenario_079",
+      "chargers": 31,
+      "sockets": 124,
+      "energia_total_kwh": 184710.60778386617,
+      "energia_motos_kwh": 155711.75105437113,
+      "energia_mototaxis_kwh": 28998.85672949504
+    },
+    {
+      "escenario_id": 80,
+      "escenario_nombre": "Escenario_080",
+      "chargers": 31,
+      "sockets": 125,
+      "energia_total_kwh": 195080.09229813964,
+      "energia_motos_kwh": 164496.69889391065,
+      "energia_mototaxis_kwh": 30583.393404229
+    },
+    {
+      "escenario_id": 81,
+      "escenario_nombre": "Escenario_081",
+      "chargers": 31,
+      "sockets": 127,
+      "energia_total_kwh": 182923.63915098517,
+      "energia_motos_kwh": 154195.75229477667,
+      "energia_mototaxis_kwh": 28727.886856208504
+    },
+    {
+      "escenario_id": 82,
+      "escenario_nombre": "Escenario_082",
+      "chargers": 32,
+      "sockets": 128,
+      "energia_total_kwh": 188954.16952312403,
+      "energia_motos_kwh": 159240.86911980945,
+      "energia_mototaxis_kwh": 29713.300403314588
+    },
+    {
+      "escenario_id": 83,
+      "escenario_nombre": "Escenario_083",
+      "chargers": 32,
+      "sockets": 129,
+      "energia_total_kwh": 175726.9591033023,
+      "energia_motos_kwh": 148144.26450377642,
+      "energia_mototaxis_kwh": 27582.694599525887
+    },
+    {
+      "escenario_id": 84,
+      "escenario_nombre": "Escenario_084",
+      "chargers": 32,
+      "sockets": 130,
+      "energia_total_kwh": 184469.62622828467,
+      "energia_motos_kwh": 155509.36761688293,
+      "energia_mototaxis_kwh": 28960.25861140175
+    },
+    {
+      "escenario_id": 85,
+      "escenario_nombre": "Escenario_085",
+      "chargers": 32,
+      "sockets": 131,
+      "energia_total_kwh": 191112.37555839418,
+      "energia_motos_kwh": 161079.727227974,
+      "energia_mototaxis_kwh": 30032.64833042018
+    },
+    {
+      "escenario_id": 86,
+      "escenario_nombre": "Escenario_086",
+      "chargers": 33,
+      "sockets": 132,
+      "energia_total_kwh": 202540.78482975403,
+      "energia_motos_kwh": 170638.9318370682,
+      "energia_mototaxis_kwh": 31901.85299268583
+    },
+    {
+      "escenario_id": 87,
+      "escenario_nombre": "Escenario_087",
+      "chargers": 33,
+      "sockets": 133,
+      "energia_total_kwh": 211380.428913967,
+      "energia_motos_kwh": 178175.5482317237,
+      "energia_mototaxis_kwh": 33204.88068224333
+    },
+    {
+      "escenario_id": 88,
+      "escenario_nombre": "Escenario_088",
+      "chargers": 33,
+      "sockets": 134,
+      "energia_total_kwh": 200140.43657209072,
+      "energia_motos_kwh": 168651.23205146982,
+      "energia_mototaxis_kwh": 31489.204520620904
+    },
+    {
+      "escenario_id": 89,
+      "escenario_nombre": "Escenario_089",
+      "chargers": 33,
+      "sockets": 135,
+      "energia_total_kwh": 204958.56171569793,
+      "energia_motos_kwh": 172717.53221746042,
+      "energia_mototaxis_kwh": 32241.02949823752
+    },
+    {
+      "escenario_id": 90,
+      "escenario_nombre": "Escenario_090",
+      "chargers": 33,
+      "sockets": 135,
+      "energia_total_kwh": 205609.3175708032,
+      "energia_motos_kwh": 173321.2378148434,
+      "energia_mototaxis_kwh": 32288.079755959792
+    },
+    {
+      "escenario_id": 91,
+      "escenario_nombre": "Escenario_091",
+      "chargers": 34,
+      "sockets": 136,
+      "energia_total_kwh": 216601.3896058143,
+      "energia_motos_kwh": 182763.74898169035,
+      "energia_mototaxis_kwh": 33837.640624123946
+    },
+    {
+      "escenario_id": 92,
+      "escenario_nombre": "Escenario_092",
+      "chargers": 34,
+      "sockets": 137,
+      "energia_total_kwh": 214713.4601087616,
+      "energia_motos_kwh": 180867.17144191044,
+      "energia_mototaxis_kwh": 33846.28866685114
+    },
+    {
+      "escenario_id": 93,
+      "escenario_nombre": "Escenario_093",
+      "chargers": 34,
+      "sockets": 137,
+      "energia_total_kwh": 209846.29251780087,
+      "energia_motos_kwh": 176993.83917683628,
+      "energia_mototaxis_kwh": 32852.45334096458
+    },
+    {
+      "escenario_id": 94,
+      "escenario_nombre": "Escenario_094",
+      "chargers": 34,
+      "sockets": 138,
+      "energia_total_kwh": 197502.3823350288,
+      "energia_motos_kwh": 166578.16815010883,
+      "energia_mototaxis_kwh": 30924.214184919954
+    },
+    {
+      "escenario_id": 95,
+      "escenario_nombre": "Escenario_095",
+      "chargers": 34,
+      "sockets": 138,
+      "energia_total_kwh": 217985.6657233077,
+      "energia_motos_kwh": 183761.52635840245,
+      "energia_mototaxis_kwh": 34224.13936490523
+    },
+    {
+      "escenario_id": 96,
+      "escenario_nombre": "Escenario_096",
+      "chargers": 34,
+      "sockets": 139,
+      "energia_total_kwh": 213591.82934871942,
+      "energia_motos_kwh": 180145.9655403569,
+      "energia_mototaxis_kwh": 33445.86380836252
+    },
+    {
+      "escenario_id": 97,
+      "escenario_nombre": "Escenario_097",
+      "chargers": 34,
+      "sockets": 139,
+      "energia_total_kwh": 222711.92276629628,
+      "energia_motos_kwh": 187762.59372852408,
+      "energia_mototaxis_kwh": 34949.32903777219
+    },
+    {
+      "escenario_id": 98,
+      "escenario_nombre": "Escenario_098",
+      "chargers": 34,
+      "sockets": 139,
+      "energia_total_kwh": 209254.16113946197,
+      "energia_motos_kwh": 176160.7826627286,
+      "energia_mototaxis_kwh": 33093.37847673338
+    },
+    {
+      "escenario_id": 99,
+      "escenario_nombre": "Escenario_099",
+      "chargers": 34,
+      "sockets": 139,
+      "energia_total_kwh": 231418.3800269494,
+      "energia_motos_kwh": 195122.83346153866,
+      "energia_mototaxis_kwh": 36295.546565410725
+    },
+    {
+      "escenario_id": 100,
+      "escenario_nombre": "Escenario_100",
+      "chargers": 34,
+      "sockets": 139,
+      "energia_total_kwh": 206532.93777852616,
+      "energia_motos_kwh": 174008.40759010866,
+      "energia_mototaxis_kwh": 32524.53018841751
+    },
+    {
+      "escenario_id": 101,
+      "escenario_nombre": "Escenario_101",
+      "chargers": 35,
+      "sockets": 140,
+      "energia_total_kwh": 227605.59824603458,
+      "energia_motos_kwh": 191888.6998020321,
+      "energia_mototaxis_kwh": 35716.89844400248
+    }
+  ]
+}

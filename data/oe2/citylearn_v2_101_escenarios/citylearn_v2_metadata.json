@@ -1,0 +1,1022 @@
+{
+  "total_escenarios": 101,
+  "resolucion_minutos": 15,
+  "timesteps_por_escenario": 35037,
+  "dias": 365,
+  "a\u00f1o": 2024,
+  "generacion_solar_unica": true,
+  "directorio_salida": "D:\\dise\u00f1opvbesscar\\data\\oe2\\citylearn_v2_101_escenarios",
+  "descripcion": "101 escenarios con MISMO perfil solar \u00fanico y DIFERENTE demanda de cargadores",
+  "escenarios": [
+    {
+      "numero": 1,
+      "nombre": "Escenario_001",
+      "demanda_anual_kwh": 7024.0347,
+      "demanda_max_kw": 3.0117,
+      "demanda_promedio_kw": 0.8018295747716895,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_001_citylearn.csv"
+    },
+    {
+      "numero": 2,
+      "nombre": "Escenario_002",
+      "demanda_anual_kwh": 7070.359,
+      "demanda_max_kw": 2.8647,
+      "demanda_promedio_kw": 0.8071185787671233,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_002_citylearn.csv"
+    },
+    {
+      "numero": 3,
+      "nombre": "Escenario_003",
+      "demanda_anual_kwh": 7214.6678,
+      "demanda_max_kw": 2.9213,
+      "demanda_promedio_kw": 0.8235917009132421,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_003_citylearn.csv"
+    },
+    {
+      "numero": 4,
+      "nombre": "Escenario_004",
+      "demanda_anual_kwh": 7779.333,
+      "demanda_max_kw": 3.351,
+      "demanda_promedio_kw": 0.8880508647260273,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_004_citylearn.csv"
+    },
+    {
+      "numero": 5,
+      "nombre": "Escenario_005",
+      "demanda_anual_kwh": 7838.4277999999995,
+      "demanda_max_kw": 3.1699,
+      "demanda_promedio_kw": 0.8947976683789954,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_005_citylearn.csv"
+    },
+    {
+      "numero": 6,
+      "nombre": "Escenario_006",
+      "demanda_anual_kwh": 7707.0221,
+      "demanda_max_kw": 3.2563,
+      "demanda_promedio_kw": 0.8797966723744293,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_006_citylearn.csv"
+    },
+    {
+      "numero": 7,
+      "nombre": "Escenario_007",
+      "demanda_anual_kwh": 8988.061300000001,
+      "demanda_max_kw": 3.6589,
+      "demanda_promedio_kw": 1.0260350542237444,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_007_citylearn.csv"
+    },
+    {
+      "numero": 8,
+      "nombre": "Escenario_008",
+      "demanda_anual_kwh": 9360.9948,
+      "demanda_max_kw": 4.0195,
+      "demanda_promedio_kw": 1.0686066210045664,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_008_citylearn.csv"
+    },
+    {
+      "numero": 9,
+      "nombre": "Escenario_009",
+      "demanda_anual_kwh": 10041.1833,
+      "demanda_max_kw": 4.185,
+      "demanda_promedio_kw": 1.1462542865296805,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_009_citylearn.csv"
+    },
+    {
+      "numero": 10,
+      "nombre": "Escenario_010",
+      "demanda_anual_kwh": 11043.7258,
+      "demanda_max_kw": 4.4883,
+      "demanda_promedio_kw": 1.260699098173516,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_010_citylearn.csv"
+    },
+    {
+      "numero": 11,
+      "nombre": "Escenario_011",
+      "demanda_anual_kwh": 12023.618599999998,
+      "demanda_max_kw": 4.6408,
+      "demanda_promedio_kw": 1.3725592694063928,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_011_citylearn.csv"
+    },
+    {
+      "numero": 12,
+      "nombre": "Escenario_012",
+      "demanda_anual_kwh": 13524.1149,
+      "demanda_max_kw": 5.9038,
+      "demanda_promedio_kw": 1.5438475399543379,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_012_citylearn.csv"
+    },
+    {
+      "numero": 13,
+      "nombre": "Escenario_013",
+      "demanda_anual_kwh": 14250.478299999999,
+      "demanda_max_kw": 6.1596,
+      "demanda_promedio_kw": 1.626767029109589,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_013_citylearn.csv"
+    },
+    {
+      "numero": 14,
+      "nombre": "Escenario_014",
+      "demanda_anual_kwh": 15047.7535,
+      "demanda_max_kw": 6.0906,
+      "demanda_promedio_kw": 1.7177794377853883,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_014_citylearn.csv"
+    },
+    {
+      "numero": 15,
+      "nombre": "Escenario_015",
+      "demanda_anual_kwh": 15556.5988,
+      "demanda_max_kw": 6.2479,
+      "demanda_promedio_kw": 1.7758668692922375,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_015_citylearn.csv"
+    },
+    {
+      "numero": 16,
+      "nombre": "Escenario_016",
+      "demanda_anual_kwh": 16572.674,
+      "demanda_max_kw": 7.0331,
+      "demanda_promedio_kw": 1.8918578966894977,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_016_citylearn.csv"
+    },
+    {
+      "numero": 17,
+      "nombre": "Escenario_017",
+      "demanda_anual_kwh": 19038.7514,
+      "demanda_max_kw": 8.1528,
+      "demanda_promedio_kw": 2.173373142123288,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_017_citylearn.csv"
+    },
+    {
+      "numero": 18,
+      "nombre": "Escenario_018",
+      "demanda_anual_kwh": 21472.1628,
+      "demanda_max_kw": 9.6556,
+      "demanda_promedio_kw": 2.4511602654109588,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_018_citylearn.csv"
+    },
+    {
+      "numero": 19,
+      "nombre": "Escenario_019",
+      "demanda_anual_kwh": 21760.057,
+      "demanda_max_kw": 9.606,
+      "demanda_promedio_kw": 2.484025099885845,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_019_citylearn.csv"
+    },
+    {
+      "numero": 20,
+      "nombre": "Escenario_020",
+      "demanda_anual_kwh": 23139.8661,
+      "demanda_max_kw": 9.3759,
+      "demanda_promedio_kw": 2.6415371432648405,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_020_citylearn.csv"
+    },
+    {
+      "numero": 21,
+      "nombre": "Escenario_021",
+      "demanda_anual_kwh": 25573.4366,
+      "demanda_max_kw": 11.3,
+      "demanda_promedio_kw": 2.919342654109589,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_021_citylearn.csv"
+    },
+    {
+      "numero": 22,
+      "nombre": "Escenario_022",
+      "demanda_anual_kwh": 24564.185299999997,
+      "demanda_max_kw": 9.6694,
+      "demanda_promedio_kw": 2.804131258561644,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_022_citylearn.csv"
+    },
+    {
+      "numero": 23,
+      "nombre": "Escenario_023",
+      "demanda_anual_kwh": 27660.457000000002,
+      "demanda_max_kw": 11.2457,
+      "demanda_promedio_kw": 3.1575858875570777,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_023_citylearn.csv"
+    },
+    {
+      "numero": 24,
+      "nombre": "Escenario_024",
+      "demanda_anual_kwh": 30644.304,
+      "demanda_max_kw": 12.823,
+      "demanda_promedio_kw": 3.498208133561644,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_024_citylearn.csv"
+    },
+    {
+      "numero": 25,
+      "nombre": "Escenario_025",
+      "demanda_anual_kwh": 33147.0501,
+      "demanda_max_kw": 13.7714,
+      "demanda_promedio_kw": 3.7839095519406385,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_025_citylearn.csv"
+    },
+    {
+      "numero": 26,
+      "nombre": "Escenario_026",
+      "demanda_anual_kwh": 33321.0131,
+      "demanda_max_kw": 14.1682,
+      "demanda_promedio_kw": 3.8037686786529687,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_026_citylearn.csv"
+    },
+    {
+      "numero": 27,
+      "nombre": "Escenario_027",
+      "demanda_anual_kwh": 36260.138699999996,
+      "demanda_max_kw": 14.4053,
+      "demanda_promedio_kw": 4.1392848573059355,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_027_citylearn.csv"
+    },
+    {
+      "numero": 28,
+      "nombre": "Escenario_028",
+      "demanda_anual_kwh": 38178.220400000006,
+      "demanda_max_kw": 16.481,
+      "demanda_promedio_kw": 4.358243858447489,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_028_citylearn.csv"
+    },
+    {
+      "numero": 29,
+      "nombre": "Escenario_029",
+      "demanda_anual_kwh": 41263.8485,
+      "demanda_max_kw": 17.5342,
+      "demanda_promedio_kw": 4.710485342465754,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_029_citylearn.csv"
+    },
+    {
+      "numero": 30,
+      "nombre": "Escenario_030",
+      "demanda_anual_kwh": 39451.7068,
+      "demanda_max_kw": 16.9441,
+      "demanda_promedio_kw": 4.503620039954338,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_030_citylearn.csv"
+    },
+    {
+      "numero": 31,
+      "nombre": "Escenario_031",
+      "demanda_anual_kwh": 45134.3449,
+      "demanda_max_kw": 18.4768,
+      "demanda_promedio_kw": 5.15232265696347,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_031_citylearn.csv"
+    },
+    {
+      "numero": 32,
+      "nombre": "Escenario_032",
+      "demanda_anual_kwh": 42575.5071,
+      "demanda_max_kw": 19.6412,
+      "demanda_promedio_kw": 4.860218122146119,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_032_citylearn.csv"
+    },
+    {
+      "numero": 33,
+      "nombre": "Escenario_033",
+      "demanda_anual_kwh": 42024.340500000006,
+      "demanda_max_kw": 18.2609,
+      "demanda_promedio_kw": 4.797298604452055,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_033_citylearn.csv"
+    },
+    {
+      "numero": 34,
+      "nombre": "Escenario_034",
+      "demanda_anual_kwh": 49179.2645,
+      "demanda_max_kw": 19.9797,
+      "demanda_promedio_kw": 5.614071549657534,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_034_citylearn.csv"
+    },
+    {
+      "numero": 35,
+      "nombre": "Escenario_035",
+      "demanda_anual_kwh": 50571.5035,
+      "demanda_max_kw": 20.48,
+      "demanda_promedio_kw": 5.773002779680366,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_035_citylearn.csv"
+    },
+    {
+      "numero": 36,
+      "nombre": "Escenario_036",
+      "demanda_anual_kwh": 57753.695,
+      "demanda_max_kw": 23.7221,
+      "demanda_promedio_kw": 6.5928893664383565,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_036_citylearn.csv"
+    },
+    {
+      "numero": 37,
+      "nombre": "Escenario_037",
+      "demanda_anual_kwh": 59341.837400000004,
+      "demanda_max_kw": 23.935,
+      "demanda_promedio_kw": 6.774183119292238,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_037_citylearn.csv"
+    },
+    {
+      "numero": 38,
+      "nombre": "Escenario_038",
+      "demanda_anual_kwh": 56209.7766,
+      "demanda_max_kw": 23.8806,
+      "demanda_promedio_kw": 6.416640590753425,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_038_citylearn.csv"
+    },
+    {
+      "numero": 39,
+      "nombre": "Escenario_039",
+      "demanda_anual_kwh": 64743.917,
+      "demanda_max_kw": 25.6847,
+      "demanda_promedio_kw": 7.390858239155251,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_039_citylearn.csv"
+    },
+    {
+      "numero": 40,
+      "nombre": "Escenario_040",
+      "demanda_anual_kwh": 61269.797099999996,
+      "demanda_max_kw": 25.2372,
+      "demanda_promedio_kw": 6.994269337899544,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_040_citylearn.csv"
+    },
+    {
+      "numero": 41,
+      "nombre": "Escenario_041",
+      "demanda_anual_kwh": 66901.5517,
+      "demanda_max_kw": 28.4327,
+      "demanda_promedio_kw": 7.637163096461188,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_041_citylearn.csv"
+    },
+    {
+      "numero": 42,
+      "nombre": "Escenario_042",
+      "demanda_anual_kwh": 68267.17189999999,
+      "demanda_max_kw": 29.0345,
+      "demanda_promedio_kw": 7.793056666666666,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_042_citylearn.csv"
+    },
+    {
+      "numero": 43,
+      "nombre": "Escenario_043",
+      "demanda_anual_kwh": 72779.8505,
+      "demanda_max_kw": 28.9564,
+      "demanda_promedio_kw": 8.308201221461188,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_043_citylearn.csv"
+    },
+    {
+      "numero": 44,
+      "nombre": "Escenario_044",
+      "demanda_anual_kwh": 77673.4844,
+      "demanda_max_kw": 31.872,
+      "demanda_promedio_kw": 8.866835117009131,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_044_citylearn.csv"
+    },
+    {
+      "numero": 45,
+      "nombre": "Escenario_045",
+      "demanda_anual_kwh": 79724.2908,
+      "demanda_max_kw": 32.4287,
+      "demanda_promedio_kw": 9.100946578196348,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_045_citylearn.csv"
+    },
+    {
+      "numero": 46,
+      "nombre": "Escenario_046",
+      "demanda_anual_kwh": 81035.99160000001,
+      "demanda_max_kw": 33.9747,
+      "demanda_promedio_kw": 9.250685211187214,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_046_citylearn.csv"
+    },
+    {
+      "numero": 47,
+      "nombre": "Escenario_047",
+      "demanda_anual_kwh": 84423.0757,
+      "demanda_max_kw": 35.2438,
+      "demanda_promedio_kw": 9.637336857876713,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_047_citylearn.csv"
+    },
+    {
+      "numero": 48,
+      "nombre": "Escenario_048",
+      "demanda_anual_kwh": 86564.35549999999,
+      "demanda_max_kw": 37.1473,
+      "demanda_promedio_kw": 9.88177580194064,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_048_citylearn.csv"
+    },
+    {
+      "numero": 49,
+      "nombre": "Escenario_049",
+      "demanda_anual_kwh": 84166.84270000001,
+      "demanda_max_kw": 33.4605,
+      "demanda_promedio_kw": 9.608086886415526,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_049_citylearn.csv"
+    },
+    {
+      "numero": 50,
+      "nombre": "Escenario_050",
+      "demanda_anual_kwh": 86404.5079,
+      "demanda_max_kw": 37.6989,
+      "demanda_promedio_kw": 9.863527782534247,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_050_citylearn.csv"
+    },
+    {
+      "numero": 51,
+      "nombre": "Escenario_051",
+      "demanda_anual_kwh": 90128.0066,
+      "demanda_max_kw": 39.3178,
+      "demanda_promedio_kw": 10.288586081621004,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_051_citylearn.csv"
+    },
+    {
+      "numero": 52,
+      "nombre": "Escenario_052",
+      "demanda_anual_kwh": 97025.66960000001,
+      "demanda_max_kw": 39.3084,
+      "demanda_promedio_kw": 11.075989637557077,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_052_citylearn.csv"
+    },
+    {
+      "numero": 53,
+      "nombre": "Escenario_053",
+      "demanda_anual_kwh": 96164.0855,
+      "demanda_max_kw": 39.2117,
+      "demanda_promedio_kw": 10.977636104452055,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_053_citylearn.csv"
+    },
+    {
+      "numero": 54,
+      "nombre": "Escenario_054",
+      "demanda_anual_kwh": 111919.9654,
+      "demanda_max_kw": 44.7156,
+      "demanda_promedio_kw": 12.776251772260276,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_054_citylearn.csv"
+    },
+    {
+      "numero": 55,
+      "nombre": "Escenario_055",
+      "demanda_anual_kwh": 98531.6597,
+      "demanda_max_kw": 40.9188,
+      "demanda_promedio_kw": 11.247906167237442,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_055_citylearn.csv"
+    },
+    {
+      "numero": 56,
+      "nombre": "Escenario_056",
+      "demanda_anual_kwh": 99581.43729999999,
+      "demanda_max_kw": 41.1071,
+      "demanda_promedio_kw": 11.367743861301369,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_056_citylearn.csv"
+    },
+    {
+      "numero": 57,
+      "nombre": "Escenario_057",
+      "demanda_anual_kwh": 111721.87849999999,
+      "demanda_max_kw": 45.5633,
+      "demanda_promedio_kw": 12.753639648972603,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_057_citylearn.csv"
+    },
+    {
+      "numero": 58,
+      "nombre": "Escenario_058",
+      "demanda_anual_kwh": 118208.69690000001,
+      "demanda_max_kw": 48.1567,
+      "demanda_promedio_kw": 13.49414364155251,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_058_citylearn.csv"
+    },
+    {
+      "numero": 59,
+      "nombre": "Escenario_059",
+      "demanda_anual_kwh": 115640.1497,
+      "demanda_max_kw": 46.8915,
+      "demanda_promedio_kw": 13.200929340753426,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_059_citylearn.csv"
+    },
+    {
+      "numero": 60,
+      "nombre": "Escenario_060",
+      "demanda_anual_kwh": 119548.06460000001,
+      "demanda_max_kw": 48.1142,
+      "demanda_promedio_kw": 13.647039075342464,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_060_citylearn.csv"
+    },
+    {
+      "numero": 61,
+      "nombre": "Escenario_061",
+      "demanda_anual_kwh": 125808.02470000001,
+      "demanda_max_kw": 49.1335,
+      "demanda_promedio_kw": 14.361647146118722,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_061_citylearn.csv"
+    },
+    {
+      "numero": 62,
+      "nombre": "Escenario_062",
+      "demanda_anual_kwh": 119423.5752,
+      "demanda_max_kw": 50.4919,
+      "demanda_promedio_kw": 13.632827594178083,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_062_citylearn.csv"
+    },
+    {
+      "numero": 63,
+      "nombre": "Escenario_063",
+      "demanda_anual_kwh": 113680.04639999999,
+      "demanda_max_kw": 45.4074,
+      "demanda_promedio_kw": 12.977174492009134,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_063_citylearn.csv"
+    },
+    {
+      "numero": 64,
+      "nombre": "Escenario_064",
+      "demanda_anual_kwh": 121672.4265,
+      "demanda_max_kw": 51.7721,
+      "demanda_promedio_kw": 13.889545776255709,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_064_citylearn.csv"
+    },
+    {
+      "numero": 65,
+      "nombre": "Escenario_065",
+      "demanda_anual_kwh": 133112.7882,
+      "demanda_max_kw": 57.1036,
+      "demanda_promedio_kw": 15.195522739726027,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_065_citylearn.csv"
+    },
+    {
+      "numero": 66,
+      "nombre": "Escenario_066",
+      "demanda_anual_kwh": 120397.9543,
+      "demanda_max_kw": 48.6231,
+      "demanda_promedio_kw": 13.744058647260273,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_066_citylearn.csv"
+    },
+    {
+      "numero": 67,
+      "nombre": "Escenario_067",
+      "demanda_anual_kwh": 132488.3968,
+      "demanda_max_kw": 57.4542,
+      "demanda_promedio_kw": 15.124246444063926,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_067_citylearn.csv"
+    },
+    {
+      "numero": 68,
+      "nombre": "Escenario_068",
+      "demanda_anual_kwh": 135689.45519999997,
+      "demanda_max_kw": 58.2465,
+      "demanda_promedio_kw": 15.489664440639269,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_068_citylearn.csv"
+    },
+    {
+      "numero": 69,
+      "nombre": "Escenario_069",
+      "demanda_anual_kwh": 133957.41629999998,
+      "demanda_max_kw": 55.8186,
+      "demanda_promedio_kw": 15.291943047945203,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_069_citylearn.csv"
+    },
+    {
+      "numero": 70,
+      "nombre": "Escenario_070",
+      "demanda_anual_kwh": 143090.8878,
+      "demanda_max_kw": 59.9653,
+      "demanda_promedio_kw": 16.33457558219178,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_070_citylearn.csv"
+    },
+    {
+      "numero": 71,
+      "nombre": "Escenario_071",
+      "demanda_anual_kwh": 144253.766,
+      "demanda_max_kw": 62.1844,
+      "demanda_promedio_kw": 16.467325099885848,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_071_citylearn.csv"
+    },
+    {
+      "numero": 72,
+      "nombre": "Escenario_072",
+      "demanda_anual_kwh": 158889.3758,
+      "demanda_max_kw": 65.3844,
+      "demanda_promedio_kw": 18.13805613869863,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_072_citylearn.csv"
+    },
+    {
+      "numero": 73,
+      "nombre": "Escenario_073",
+      "demanda_anual_kwh": 148855.90850000002,
+      "demanda_max_kw": 61.6827,
+      "demanda_promedio_kw": 16.992684052511414,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_073_citylearn.csv"
+    },
+    {
+      "numero": 74,
+      "nombre": "Escenario_074",
+      "demanda_anual_kwh": 143314.4469,
+      "demanda_max_kw": 57.5771,
+      "demanda_promedio_kw": 16.360095610730593,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_074_citylearn.csv"
+    },
+    {
+      "numero": 75,
+      "nombre": "Escenario_075",
+      "demanda_anual_kwh": 144678.06670000002,
+      "demanda_max_kw": 63.471,
+      "demanda_promedio_kw": 16.515760958904114,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_075_citylearn.csv"
+    },
+    {
+      "numero": 76,
+      "nombre": "Escenario_076",
+      "demanda_anual_kwh": 144825.8971,
+      "demanda_max_kw": 57.714,
+      "demanda_promedio_kw": 16.532635819063927,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_076_citylearn.csv"
+    },
+    {
+      "numero": 77,
+      "nombre": "Escenario_077",
+      "demanda_anual_kwh": 161150.8663,
+      "demanda_max_kw": 65.7686,
+      "demanda_promedio_kw": 18.39621743436073,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_077_citylearn.csv"
+    },
+    {
+      "numero": 78,
+      "nombre": "Escenario_078",
+      "demanda_anual_kwh": 150876.9007,
+      "demanda_max_kw": 62.8615,
+      "demanda_promedio_kw": 17.22338984018265,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_078_citylearn.csv"
+    },
+    {
+      "numero": 79,
+      "nombre": "Escenario_079",
+      "demanda_anual_kwh": 155711.7484,
+      "demanda_max_kw": 62.2023,
+      "demanda_promedio_kw": 17.775314189497717,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_079_citylearn.csv"
+    },
+    {
+      "numero": 80,
+      "nombre": "Escenario_080",
+      "demanda_anual_kwh": 164496.7016,
+      "demanda_max_kw": 70.0742,
+      "demanda_promedio_kw": 18.77816199200913,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_080_citylearn.csv"
+    },
+    {
+      "numero": 81,
+      "nombre": "Escenario_081",
+      "demanda_anual_kwh": 154195.7483,
+      "demanda_max_kw": 64.8247,
+      "demanda_promedio_kw": 17.602254551940636,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_081_citylearn.csv"
+    },
+    {
+      "numero": 82,
+      "nombre": "Escenario_082",
+      "demanda_anual_kwh": 159240.8641,
+      "demanda_max_kw": 66.4668,
+      "demanda_promedio_kw": 18.178181401255706,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_082_citylearn.csv"
+    },
+    {
+      "numero": 83,
+      "nombre": "Escenario_083",
+      "demanda_anual_kwh": 148144.26390000002,
+      "demanda_max_kw": 64.4932,
+      "demanda_promedio_kw": 16.91144584760274,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_083_citylearn.csv"
+    },
+    {
+      "numero": 84,
+      "nombre": "Escenario_084",
+      "demanda_anual_kwh": 155509.37039999999,
+      "demanda_max_kw": 61.3191,
+      "demanda_promedio_kw": 17.752210702054793,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_084_citylearn.csv"
+    },
+    {
+      "numero": 85,
+      "nombre": "Escenario_085",
+      "demanda_anual_kwh": 161079.7208,
+      "demanda_max_kw": 65.6257,
+      "demanda_promedio_kw": 18.388097017694065,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_085_citylearn.csv"
+    },
+    {
+      "numero": 86,
+      "nombre": "Escenario_086",
+      "demanda_anual_kwh": 170638.93929999997,
+      "demanda_max_kw": 72.586,
+      "demanda_promedio_kw": 19.47933002283105,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_086_citylearn.csv"
+    },
+    {
+      "numero": 87,
+      "nombre": "Escenario_087",
+      "demanda_anual_kwh": 178175.5463,
+      "demanda_max_kw": 67.7825,
+      "demanda_promedio_kw": 20.339674591894976,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_087_citylearn.csv"
+    },
+    {
+      "numero": 88,
+      "nombre": "Escenario_088",
+      "demanda_anual_kwh": 168651.227,
+      "demanda_max_kw": 70.0852,
+      "demanda_promedio_kw": 19.25242388413242,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_088_citylearn.csv"
+    },
+    {
+      "numero": 89,
+      "nombre": "Escenario_089",
+      "demanda_anual_kwh": 172717.5369,
+      "demanda_max_kw": 71.8151,
+      "demanda_promedio_kw": 19.71661343321918,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_089_citylearn.csv"
+    },
+    {
+      "numero": 90,
+      "nombre": "Escenario_090",
+      "demanda_anual_kwh": 173321.22989999998,
+      "demanda_max_kw": 69.2918,
+      "demanda_promedio_kw": 19.78552950342466,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_090_citylearn.csv"
+    },
+    {
+      "numero": 91,
+      "nombre": "Escenario_091",
+      "demanda_anual_kwh": 182763.7533,
+      "demanda_max_kw": 77.6045,
+      "demanda_promedio_kw": 20.863441509703193,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_091_citylearn.csv"
+    },
+    {
+      "numero": 92,
+      "nombre": "Escenario_092",
+      "demanda_anual_kwh": 180867.1717,
+      "demanda_max_kw": 76.9404,
+      "demanda_promedio_kw": 20.646937448630137,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_092_citylearn.csv"
+    },
+    {
+      "numero": 93,
+      "nombre": "Escenario_093",
+      "demanda_anual_kwh": 176993.8399,
+      "demanda_max_kw": 77.8917,
+      "demanda_promedio_kw": 20.20477629280822,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_093_citylearn.csv"
+    },
+    {
+      "numero": 94,
+      "nombre": "Escenario_094",
+      "demanda_anual_kwh": 166578.1616,
+      "demanda_max_kw": 71.2666,
+      "demanda_promedio_kw": 19.015772505707762,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_094_citylearn.csv"
+    },
+    {
+      "numero": 95,
+      "nombre": "Escenario_095",
+      "demanda_anual_kwh": 183761.531,
+      "demanda_max_kw": 78.3242,
+      "demanda_promedio_kw": 20.97734327910959,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_095_citylearn.csv"
+    },
+    {
+      "numero": 96,
+      "nombre": "Escenario_096",
+      "demanda_anual_kwh": 180145.9646,
+      "demanda_max_kw": 76.8412,
+      "demanda_promedio_kw": 20.564607639840183,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_096_citylearn.csv"
+    },
+    {
+      "numero": 97,
+      "nombre": "Escenario_097",
+      "demanda_anual_kwh": 187762.6007,
+      "demanda_max_kw": 77.5654,
+      "demanda_promedio_kw": 21.434085953196348,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_097_citylearn.csv"
+    },
+    {
+      "numero": 98,
+      "nombre": "Escenario_098",
+      "demanda_anual_kwh": 176160.7819,
+      "demanda_max_kw": 73.6913,
+      "demanda_promedio_kw": 20.10967838755708,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_098_citylearn.csv"
+    },
+    {
+      "numero": 99,
+      "nombre": "Escenario_099",
+      "demanda_anual_kwh": 195122.8285,
+      "demanda_max_kw": 82.7134,
+      "demanda_promedio_kw": 22.274296015981736,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_099_citylearn.csv"
+    },
+    {
+      "numero": 100,
+      "nombre": "Escenario_100",
+      "demanda_anual_kwh": 174008.4055,
+      "demanda_max_kw": 72.0916,
+      "demanda_promedio_kw": 19.86397328481735,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_100_citylearn.csv"
+    },
+    {
+      "numero": 101,
+      "nombre": "Escenario_101",
+      "demanda_anual_kwh": 191888.7096,
+      "demanda_max_kw": 80.323,
+      "demanda_promedio_kw": 21.905102882420092,
+      "generacion_solar_kwh": 763786.688733423,
+      "timesteps": 35040,
+      "archivo": "escenario_101_citylearn.csv"
+    }
+  ]
+}

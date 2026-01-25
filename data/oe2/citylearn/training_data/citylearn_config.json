@@ -1,0 +1,70 @@
+{
+  "schema_version": "v2",
+  "simulation": {
+    "timestep_duration_seconds": 3600,
+    "start_date": "2024-01-01",
+    "end_date": "2024-12-31",
+    "total_timesteps": 8760,
+    "frequency": "hourly"
+  },
+  "building": {
+    "name": "Mall Dos Playas",
+    "location": {
+      "city": "Iquitos",
+      "state": "Loreto",
+      "country": "Peru",
+      "latitude": -3.7492,
+      "longitude": -73.2345,
+      "timezone": "America/Lima",
+      "altitude": 106
+    }
+  },
+  "electrical_loads": {
+    "mall_load": {
+      "data_file": "demand_profile.csv",
+      "column": "Mall_Load_kWh",
+      "description": "Non-shiftable load (Mall Dos Playas)"
+    },
+    "ev_charging": {
+      "data_file": "demand_profile.csv",
+      "column": "EV_Demand_kWh",
+      "description": "Electric vehicle charging demand (32 chargers)"
+    }
+  },
+  "renewable_energy": {
+    "photovoltaic": {
+      "data_file": "solar_generation_profile.csv",
+      "column": "PV_Generation_kW",
+      "nominal_power": 3000,
+      "capacity": 3000,
+      "technology": "Monocrystalline"
+    }
+  },
+  "electrical_storage": {
+    "battery": {
+      "data_file": "bess_parameters.csv",
+      "type": "Lithium-ion",
+      "capacity_kwh": 1711.6,
+      "nominal_power_kw": 622.4,
+      "dod_percent": 80.0,
+      "efficiency_roundtrip": 0.95,
+      "initial_soc_percent": 50
+    }
+  },
+  "grid": {
+    "grid_import": {
+      "available": true,
+      "dynamic_pricing": false
+    },
+    "grid_export": {
+      "available": true,
+      "export_rate_method": "net_metering"
+    }
+  },
+  "control_objectives": [
+    "minimize_grid_imports",
+    "maximize_self_consumption",
+    "maintain_battery_health",
+    "ensure_ev_charging"
+  ]
+}
