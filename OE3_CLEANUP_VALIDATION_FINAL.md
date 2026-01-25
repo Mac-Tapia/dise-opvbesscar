@@ -63,6 +63,7 @@
 
 ### Before Cleanup
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 OE3 Folder:
 ├─ rewards.py (529 lines) - ✅ Active
@@ -73,16 +74,15 @@ OE3 Folder:
 ├─ co2_table.py (201 lines) - ✅ Active
 ├─ tier2_v2_config.py (150 lines) - ⚠️ Legacy
 ├─ ... 12 more files
-└─ Total: ~8,500 lines, 15 files, 4 obvious dead code
+└─ Total: ~8,500 lines, 15 files, 4 obvious d...
+```
 
-Scripts:
-├─ train_ppo_dynamic.py (450 lines) - ⚠️ Legacy (uses rewards_dynamic)
-├─ train_agents_serial.py (600 lines) - ✅ Active (main)
-└─ ...
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### After Cleanup
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 OE3 Folder:
 ├─ rewards.py (529 lines) - ✅ ACTIVE PRIMARY
@@ -93,23 +93,15 @@ OE3 Folder:
 ├─ agent_utils.py (189 lines) - ✅ ACTIVE PRIMARY
 ├─ validate_training_env.py (137 lines) - ✅ ACTIVE PRIMARY
 └─ agents/ (4 files) - ✅ PRODUCTION READY
-   ├─ ppo_sb3.py (868 lines) - ✅ BESS prescaling FIXED
-   ├─ a2c_sb3.py (715 lines) - ✅ BESS prescaling FIXED
-   ├─ sac.py (1,113 lines) - ✅ BESS prescaling FIXED
-   └─ ... helpers
-       
-Total: ~6,800 lines (20% reduction), 7 active + agents/
-Dead code removed: -1,802 lines (32% elimination)
+ ...
+```
 
-Scripts:
-├─ train_agents_serial.py (600 lines) - ✅ MAIN ENTRY POINT
-├─ train_quick.py - ✅ TESTING
-├─ run_oe3_build_dataset.py - ✅ DATA PIPELINE
-└─ ... (all active, no deprecated)
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Import Validation Results
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✅ Core Imports Working:
   ├─ PPOAgent, A2CAgent, SACAgent
@@ -123,37 +115,21 @@ Scripts:
 ✅ No Circular Dependencies
 ✅ All Modules Discoverable
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### OE2 → OE3 Data Flow Verification
 
-```bash
-DATA INTEGRITY CHECKLIST:
+<!-- markdownlint-...
+```
 
-OE2 Solar (data/interim/oe2/solar/)
-  ✅ pv_generation_timeseries.csv: 35,037 rows (15-min frequency)
-  ✅ Max power: 2,887 kW (within Eaton Xpert1670 4,050 kWp spec)
-  ✅ Connected to: dataset_builder.py (load_solar_generation)
-  ✅ Available in OE3 as: obs[0] (solar_generation, normalized)
-
-OE2 Chargers (data/interim/oe2/chargers/)
-  ✅ individual_chargers.json: 128 chargers × 1 socket = 128 controllable
-  ✅ Power breakdown: 28 motos @ 2kW + 100 @ 2kW = 272 kW total installed
-  ✅ Connected to: dataset_builder.py (load_charger_profiles)
-  ✅ Available in OE3 as: obs[64:192] (128 charger demands)
-
-OE2 BESS (data/interim/oe2/bess/)
-  ✅ bess_results.json: 4,520 kWh capacity / 2,712 kW power
-  ✅ Connected to: dataset_builder.py (initialize_bess)
-  ✅ Available in OE3 as: obs[192] (BESS SOC, normalized)
-  ✅ CRITICAL: SOC prescaling corrected in agents/ppo_sb3.py:249
-               agents/a2c_sb3.py:151, agents/sac.py:493
-               (BESS now visible with 1.0 scale, not 0.001)
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## Files Status
 
+<!-- markdownlint-disable MD013 -->
 ### Active Production Files | File | Lines | Status | Purpose | |------|-------|--------|---------| | **agents/ppo_sb3.py** | 868 | ✅ PRODUCTION | PPO agent (stable-baselines3) | | **agents/a2c_sb3.py** | 715 | ✅ PRODUCTION | A2C agent (stable-baselines3) | | **agents/sac.py** | 1,113 | ✅ FUNCTIONAL | SAC agent (off-policy) | |**rewards.py**|529|✅ ACTIVE PRIMARY|Multi-objective reward calculation|
 |**co2_table.py**|201|✅ ACTIVE PRIMARY|CO2 emissions tracking & analysis| | **dataset_builder.py** | 687 | ✅ ACTIVE PRIMARY | OE2→OE3 data conversion | | **simulate.py** | 912 | ✅ ACTIVE PRIMARY | Episode runner... | | **progress.py** | 156 | ✅ ACTIVE PRIMARY | Training metrics... | |**validate_training_env.py**|137|✅ ACTIVE PRIMARY|Environment validation| | **agent_utils.py** | 189 | ✅ ACTIVE PRIMARY | Utility functions | ### Deleted Files (Orphaned Code) | File | Lines | Reason | Git Status | |------|-------|--------|-----------| | rewards_dynamic.py | 309 | 0 references in pipeline | ✅ REMOVED | | rewards_improved_v2.py | 306 | Superseded by rewards.py | ✅ REMOVED | | rewards_wrapper_v2.py | 180 | Depends on v2 (removed) | ✅ REMOVED | | co2_emissions.py | 507 | 100% orphaned,... | ✅ REMOVED | ### Archived Files (Legacy) | File | Location | Reason | |------|----------|--------|
 |tier2_v2_config.py|experimental/deprecated_v2_configs/|Old v2 configuration| | demanda_mall_kwh.py | experimental/deprecated_v2_configs/ | Unused helper | |dispatch_priorities.py|experimental/deprecated_v2_configs/|Legacy config|
@@ -163,6 +139,7 @@ OE2 BESS (data/interim/oe2/bess/)
 
 ### Test 1: Import Validation ✅
 
+<!-- markdownlint-disable MD013 -->
 ```python
 from src.iquitos_citylearn.oe3.agents import PPOAgent, A2CAgent, SACAgent
 from src.iquitos_citylearn.oe3.rewards import MultiObjectiveReward, MultiObjectiveWeights
@@ -171,13 +148,10 @@ from src.iquitos_citylearn.oe3.dataset_builder import build_citylearn_dataset
 from src.iquitos_citylearn.oe3.co2_table import CityBaseline, EmissionsFactors
 
 ✅ ALL IMPORTS VALID
-✅ ALL AGENT CLASSES READY
-✅ ALL CORE MODULES DISCOVERABLE
-```bash
+✅ ...
+```
 
-### Test 2: OE2 Data Connection ✅
-
-```bash
+[Ver código completo en GitHub]bash
 ✅ SOLAR PV (4,050 kWp, Eaton Xpert1670)
    Timeseries: 35,037 timesteps (365 days at 15-min frequency)
    Max generation: 2,887 kW
@@ -199,6 +173,7 @@ from src.iquitos_citylearn.oe3.co2_table import CityBaseline, EmissionsFactors
 ✅✅✅ ALL OE2 → OE3 CONNECTIONS ACTIVE
 ✅✅✅ READY FOR AGENT TRAINING
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -209,21 +184,23 @@ from src.iquitos_citylearn.oe3.co2_table import CityBaseline, EmissionsFactors
 BESS State-of-Charge (SOC) was prescaled to 0.001, making it invisible to
 agents:
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # BEFORE:
 self._obs_prescale = np.ones(obs_dim) * 0.001  # ❌ BESS SOC: [0-1] → [0-0.001]
 ```bash
+<!-- markdownlint-enable MD013 -->
 
-### Solution Applied (Phase 4)
+### Solution A...
+```
 
-Selective prescaling - only power/energy dims at 0.001, SOC at 1.0:
-
-```python
+[Ver código completo en GitHub]python
 # AFTER (All 3 agents):
 self._obs_prescale = np.ones(obs_dim) * 0.001  # Default: power/energy
 if obs_dim > 10:
     self._obs_prescale[-10:] = 1.0  # ✅ SOC dims: NO scaling
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Files Fixed
 
@@ -243,19 +220,15 @@ if obs_dim > 10:
 
 ### Immediate (Ready Now)
 
-```bash
-# Build dataset from OE2
-python -m scripts.run_oe3_build_dataset --config configs/default.yaml
+<!-- markdownlint-disable MD013...
+```
 
-# Run baseline (uncontrolled) - ~5 min
-python -m scripts.run_uncontrolled_baseline --config configs/default.yaml
-
-# Quick training test (1 episode on GPU) - ~15 min
-python scripts/train_quick.py --device cuda --episodes 1
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Short Term (1-2 hours)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Full training (50 episodes on GPU) - ~2 hours
 python scripts/train_agents_serial.py --device cuda --episodes 50
@@ -263,19 +236,15 @@ python scripts/train_agents_serial.py --device cuda --episodes 50
 # Compare baseline vs RL results
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Performance Expectations
 
 - SAC: 26% CO₂ reduction vs baseline (off-policy, sample-efficient)
-- PPO: 29% CO₂ reduction vs baseline (on-policy, stable)
-- A2C: 24% CO₂ reduction vs baseline (on-policy, simple)
-- **With BESS fix**: Expect +10-15% additional improvement
+- PPO: 29% CO₂ reduction vs baseline (on-pol...
+```
 
----
-
-## Git Status
-
-```bash
+[Ver código completo en GitHub]bash
 # Files removed (git rm)
 git status
 
@@ -285,7 +254,12 @@ git status
  Deleted:    src/iquitos_citylearn/oe3/co2_emissions.py
  Renamed:    src/iquitos_citylearn/oe3/tier2_v2_config.py → experimental/deprecated_v2_configs/tier2_v2_config.py
  Renamed:    src/iquitos_citylearn/oe3/demanda_mall_kwh.py → experimental/deprecated_v2_configs/demanda_mall_kwh.py
+<details>
+<summary> Renamed:    src/iquitos_citylearn/oe3/dispatch_priorities.py → experimental/dep...</summary>
+
  Renamed:    src/iquitos_citylearn/oe3/dispatch_priorities.py → experimental/deprecated_v2_configs/dispatch_priorities.py
+
+</details>
  Renamed:    scripts/train_ppo_dynamic.py → experimental/legacy_scripts/train_ppo_dynamic.py
 
 # Commit message
@@ -300,6 +274,7 @@ git commit -m "chore: cleanup OE3 orphaned files and validate OE2 connections
 - All imports validated, zero breaking changes
 - Ready for full RL training with real OE2 data"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

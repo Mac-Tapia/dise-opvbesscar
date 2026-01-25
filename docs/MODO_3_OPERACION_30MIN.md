@@ -2,8 +2,10 @@
 
 ## Actualización: 2026-01-24
 
+<!-- markdownlint-disable MD013 -->
 ### Configuración de Infraestructura | Parámetro | Valor | |-----------|-------| | Cargadores físicos | 32 (28 motos + 4 mototaxis) | | Tomas por cargador | 4 | | **Total tomas** | **128** (112 motos + 16 mototaxis) | | Potencia motos | 2.0 kW/toma | | Potencia mototaxis | 3.0 kW/toma | | **Potencia total** | **272 kW** (224 + 48) | | Horario operación | 9 AM - 10 PM (13 horas) | | Duración sesión | 30 minutos (Modo 3) | ---
 
+<!-- markdownlint-disable MD013 -->
 ## Tabla 13 OE2 - Escenarios de Dimensionamiento |Escenario|PE|FC|Cargadores|Tomas|Energía/Día|Vehíc/Día|Vehíc/20años|
 |-----------|---:|---:|----------:|------:|------------:|----------:|-------------:| | CONSERVADOR | 0.10 | 0.40 | 4 | 16 | 231 kWh | 257 | 1,876,100 | | MEDIANO | 0.50 | 0.60 | 20 | 80 | 1,739 kWh | 1,287 | 9,395,100 | |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| | MÁXIMO | 1.00 | 1.00 | 35 | 140 | 5,800 kWh | 2,575 | 18,797,500 | > **Nota**: PE = Probabilidad de Evento de carga, FC = Factor de Carga (% de
 batería a recargar)
@@ -19,6 +21,7 @@ batería a recargar)
 - Factor pico: 40% de demanda diaria
 - Escenario RECOMENDADO usa PE=0.65
 
+<!-- markdownlint-disable MD013 -->
 ### Vehículos Cargados por Período (RECOMENDADO PE=0.65) | Período | Motos | Mototaxis | Total | |---------|------:|----------:|------:| | **Día** | 1,462 | 210 | **1,672** | | **Mes** | 43,860 | 6,300 | **50,160** | | **Año** | 533,630 | 76,650 | **610,280** | | **20 años** | 10,672,600 | 1,533,000 | **12,205,600** | ### Energía Cargada por Período (RECOMENDADO) | Período | Motos | Mototaxis | Total | |---------|------:|----------:|------:| | **Día** | 2,193 kWh | 630 kWh | **2,823 kWh** | | **Mes** | 65,790 kWh | 18,900 kWh | **84,690 kWh** | | **Año** | 800,445 kWh | 229,950 kWh | **1,030,395 kWh** | | **20 años** | 16,009 MWh | 4,599 MWh | **20,608 MWh** | ---
 
 ## Clarificación de Capacidad vs Demanda
@@ -44,39 +47,18 @@ batería a recargar)
 
 ## Timeline Operativo - Playa Motos (Ejemplo)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ╔═══════════════════════════════════════════════════════════════════════════╗
 ║             PLAYA MOTOS: 28 CARGADORES × 4 TOMAS = 112 TOMAS             ║
 ║                        DURANTE 13 HORAS (9am-10pm)                       ║
 ╠═══════════════════════════════════════════════════════════════════════════╣
 ║                                                                           ║
-║  HORAS PICO (6pm-10pm - 4H): ~900 motos (40% de demanda diaria)         ║
-║  ─────────────────────────────────────────────────────────────────────────║
-║                                                                           ║
-║  6:00-6:30 pm   │ Sesión 1: ~115 motos en las 112 tomas @ 224 kW       ║
-║  6:30-7:00 pm   │ Sesión 2: ~115 motos DIFERENTES @ 224 kW              ║
-║  7:00-7:30 pm   │ Sesión 3: ~115 motos DIFERENTES @ 224 kW              ║
-║  7:30-8:00 pm   │ Sesión 4: ~115 motos DIFERENTES @ 224 kW              ║
-║  8:00-8:30 pm   │ Sesión 5: ~115 motos DIFERENTES @ 224 kW              ║
-║  8:30-9:00 pm   │ Sesión 6: ~115 motos DIFERENTES @ 224 kW              ║
-║  9:00-9:30 pm   │ Sesión 7: ~115 motos DIFERENTES @ 224 kW              ║
-║  9:30-10:00 pm  │ Sesión 8: ~115 motos DIFERENTES @ 224 kW              ║
-║                 │ SUBTOTAL PICO (4H): 8 sesiones × 115 = ~900 motos     ║
-║  ─────────────────────────────────────────────────────────────────────────║
-║                                                                           ║
-║  HORAS FUERA PICO (9am-6pm - 9H): ~1,350 motos (60% de demanda diaria) ║
-║  ─────────────────────────────────────────────────────────────────────────║
-║                                                                           ║
-║  9:00-9:30 am   │ Sesión: ~80 motos @ 160 kW                            ║
-║  ...            │ ... (Continúa con demanda variable)                    ║
-║  5:30-6:00 pm   │ Sesión: ~75 motos @ 150 kW                            ║
-║                 │ SUBTOTAL FUERA PICO (9H): ~1,350 motos                ║
-║                                                                           ║
-║  ─────────────────────────────────────────────────────────────────────────║
-║  TOTAL 13 HORAS: ~2,250 motos atendidas (RECOMENDADO)                    ║
-║                                                                           ║
-╚═══════════════════════════════════════════════════════════════════════════╝
-```bash
+║  HORAS PIC...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -102,6 +84,7 @@ Cada **toma es una unidad controlable independiente** en el momento de carga:
 - Observable: `MOTO_TAXI_CH_113_ev_charging_power`, ...,
   - `MOTO_TAXI_CH_128_ev_charging_power`
 
+<!-- markdownlint-disable MD013 -->
 ### 📊 Niveles de Control en CityLearn | Nivel | Observable | Rango | Control | | ------- | ----------- | ------- | --------- |
 |**Agregado Total**|`ev_charging_power_total_kw`|0-272 kW|Potencia global|
 |**Playa**|`ev_charging_power_playa_motos_kw`|0-224 kW|Suma de 112 tomas|
@@ -111,6 +94,7 @@ Cada **toma es una unidad controlable independiente** en el momento de carga:
 
 **Arquitectura OE3: 128 acciones individuales**:
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # Agent decide: controlar cada toma independientemente
 action = {"action_charger_1": 0.5,   # MOTO_CH_001: 1 kW
@@ -119,15 +103,15 @@ action = {"action_charger_1": 0.5,   # MOTO_CH_001: 1 kW
           "action_charger_128": 0.7} # MOTO_TAXI_CH_128: 2.1 kW
 # Total 128 acciones + 1 BESS = 129 acciones
 ```bash
+<!-- markdownlint-enable MD013 -->
 
           "MOTO_CH_002": 0.5,  # ... y así 20 chargers
-          ...
-          "MOTO_CH_021": 0.5}
+   ...
+```
 
-# Resultado: 92 chargers × 2kW + 20 chargers × 1kW = 204 kW (en lugar de 224)
+[Ver código completo en GitHub]text
 
-```text
-
+<!-- markdownlint-disable MD013 -->
 --- |Hora|Sesión|Motos Activas|Potencia Playa Motos|Potencia Playa Mototaxis|Total|
 |------|--------|---------------|---------------------|---------------------|-------| | 9:00-9:30 | 1 | 35-40 | 70 kW | 0 kW | 70 kW | | 9:30-10:00 | 2 | 40-50 | 90 kW | 0 kW | 90 kW | | 10:00-10:30 | 3 | 50-60 | 110 kW | 15 kW | 125 kW | | ... | ... | ... | ... | ... | ... | | 18:00-18:30 | 17 | 100-112 | 224 kW | 32 kW | 256 kW (PICO) | | 18:30-19:00 | 18 | 112 | 224 kW | 48 kW | 272 kW (MÁXIMO) | | 19:00-19:30 | 19 | 112 | 224 kW | 48 kW | 272 kW (MÁXIMO) | | 19:30-20:00 | 20 | 112 | 224 kW | 48 kW | 272 kW (MÁXIMO) | | 20:00-20:30 | 21 | 80-100 | 180 kW | 48 kW | 228 kW (descenso) | | 21:30-22:00 | 26 | 20-30 | 50 kW | 20 kW | 70 kW | ### Observables Individuales (OE3: 264 observables)
 
@@ -165,6 +149,7 @@ action = {"action_charger_1": 0.5,   # MOTO_CH_001: 1 kW
 ### Chargers en schema_with_128_chargers.json
 
 ```json
+<!-- markdownlint-enable MD013 -->
 {
   "charger_id": "MOTO_CH_001",
   "playa": "Playa_Motos",
@@ -177,34 +162,17 @@ action = {"action_charger_1": 0.5,   # MOTO_CH_001: 1 kW
   "daily_sessions": "~26 sesiones",
   "annual_profile": "chargers_hourly_profiles.csv"
 }
-```text
+<!-- markdownlint-disable MD013 -->
+```te...
+```
 
-### Schema Observables
-
-```python
-# Agregados (control de playas)
-"ev_charging_power_total_kw"                    # 0-272 kW
-"ev_charging_power_playa_motos_kw"              # 0-224 kW
-"ev_charging_power_playa_mototaxis_kw"          # 0-48 kW
-
-# Individuales (control GRANULAR - cada charger)
-"charger_MOTO_CH_001_power_kw"      # 0-2 kW (1 toma)
-"charger_MOTO_CH_002_power_kw"      # 0-2 kW (1 toma)
-...
-"charger_MOTO_CH_112_power_kw"      # 0-2 kW (1 toma)
-
-"charger_MOTO_TAXI_CH_113_power_kw" # 0-3 kW (1 toma)
-"charger_MOTO_TAXI_CH_114_power_kw" # 0-3 kW (1 toma)
-...
-"charger_MOTO_TAXI_CH_128_power_kw" # 0-3 kW (1 toma)
-
-# TOTAL: 3 agregados + 128 individuales = 131 observables EV
-```text
+[Ver código completo en GitHub]text
 
 ---
 
 ## Capacidad Real vs Demanda
 
+<!-- markdownlint-disable MD013 -->
 ### Dimensionamiento OE2 ✅ | Métrica | Playa Motos | Playa Mototaxis | Total | | --------- | ------------ | ----------------- | ------- | | **Chargers Físicos** | 112 | 16 | **128** | | **Sockets Totales** | 112 (4 por charger) | 16 (4 por charger) | **128** | | **Potencia/Socket** | 2 kW | 3 kW | - | | **Potencia Pico** | 224 kW | 48 kW | **272 kW** | | **PICO (4 horas)** | 900 motos | 130 mototaxis | **1030 veh** | |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| | **Sesiones/Día** | 30 min | 30 min | 30 min | | **Total diario (13h)** | 1600+ motos | 600+ mototaxis | **2200+ veh** | | **Horas Operación** | 9am-10pm (13h) | 9am-10pm (13h) | 9am-10pm | ---
 
 ## Importancia para Entrenamiento RL

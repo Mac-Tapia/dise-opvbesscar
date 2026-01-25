@@ -19,30 +19,31 @@
 
 ### 3. **Capacidad Real**
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Capacidad Total = 128 tomas × 26 sesiones/día × 92% = 3,062 vehículos/día
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ## CAMBIOS REALIZADOS EN EL CÓDIGO
 
 ### `calculate_vehicle_demand()` (Líneas 137-185)
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # ANTES (INCORRECTO):
 # - Documentación decía "HORA PICO" pero no era claro el uso
 # - Comentarios mencionaban "flota diaria total"
 
-# AHORA (CORRECTO):
-"""
-IMPORTANTE: n_motos y n_mototaxis son vehículos en HORA PICO (6pm-10pm, 4h).
-Estos valores se usan SOLO para dimensionar cargadores.
+# AHORA (CORRECT...
+```
 
-Fórmula: Vehículos efectivos = Vehículos_hora_pico × PE
-"""
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### `evaluate_scenario()` (Líneas 460-560)
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # ANTES (INCORRECTO): (2)
 # Comentarios decían "ya tienen PE aplicado implícitamente"
@@ -53,21 +54,11 @@ Fórmula: Vehículos efectivos = Vehículos_hora_pico × PE
 # Estos valores se usan SOLO para dimensionar los cargadores.
 # PE y FC se aplican para calcular la energía y el número de cargadores.
 ```bash
+<!-- markdownlint-enabl...
+```
 
-### `run_charger_sizing()` (Líneas 1290-1650)
-
-```python
-# ANTES (INCORRECTO): (3)
-# - Calculaba "motos_dia_total" y "mototaxis_dia_total"
-# - Usaba peak_share_day para derivar "flota diaria"
-# - Guardaba variables n_motos_dia_total en JSON
-
-# AHORA (CORRECTO): (3)
-# - NO calcula "flota diaria total"
-# - Elimina variables n_motos_dia_total y n_mototaxis_dia_total del JSON
-# - Elimina peak_share_day del JSON
-# - Solo muestra parámetros de hora pico y capacidad de infraestructura
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ## ARCHIVOS ACTUALIZADOS
 
@@ -94,6 +85,7 @@ Fórmula: Vehículos efectivos = Vehículos_hora_pico × PE
 
 ## VERIFICACIÓN FINAL
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✅ REGLA 1: 900+130 vehículos en hora pico → Dimensionan 32 cargadores
 ✅ REGLA 2: Potencia instalada 272 kW (28×4×2 + 4×4×3)
@@ -101,6 +93,7 @@ Fórmula: Vehículos efectivos = Vehículos_hora_pico × PE
 ✅ REGLA 4: Capacidad 3,062 vehículos/día (128 × 26 × 0.92)
 ✅ Variables eliminadas: n_motos_dia_total, n_mototaxis_dia_total, peak_share_day
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ## RESULTADOS FINALES
 
@@ -117,6 +110,7 @@ Fórmula: Vehículos efectivos = Vehículos_hora_pico × PE
 - **Anual**: 1,117,630 vehículos (365 días)
 - **20 años**: 22,352,600 vehículos
 
+<!-- markdownlint-disable MD013 -->
 ### Escenarios de Sensibilidad | Escenario | PE | FC | Cargadores | Energía (kWh/día) | |-----------|----|----|------------|-------------------| | CONSERVADOR | 0.10 | 0.29 | 4 | 66 | | MEDIANO | 0.50 | 0.40 | 18 | 464 | | **RECOMENDADO** | **0.90** | **0.90** | **32** | **3,252** | | MÁXIMO | 1.00 | 0.90 | 35 | 2,088 | ## DOCUMENTOS GENERADOS
 
 1. **Código fuente actualizado**: `chargers.py`

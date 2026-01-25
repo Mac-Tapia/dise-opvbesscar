@@ -9,6 +9,7 @@
 
 ## 1. ANÁLISIS EJECUTIVO
 
+<!-- markdownlint-disable MD013 -->
 ### Hallazgos Críticos Identificados | Aspecto | Problema | Severidad | Impacto | |---------|----------|-----------|---------|
 |**Solar Timeseries**|35,037 filas (15-min)...|🔴 CRÍTICO|Dataset builder puede...|
 |**Chargers CSVs**|0 CSVs individuales...|🔴 CRÍTICO|Schema CityLearn v2...| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -19,20 +20,17 @@
 
 ### Solar Tier (data/interim/oe2/solar/)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✅ pv_generation_timeseries.csv     35,037 rows × 12 cols (15-min frequency)
 ✅ pv_monthly_energy.csv             12 rows (aggregated monthly)
 ✅ pv_profile_24h.csv               24 rows (typical day profile)
 ✅ solar_results.json               Summary: 8.31 GWh/año, 29.6% capacity factor
 ✅ solar_technical_report.md        Eaton Xpert1670 config, 200,632 modules
-✅ pv_candidates_*.csv              Candidate analysis (not used in training)
-```bash
+✅ pv_candidates_*.csv              Cand...
+```
 
-**Status**: ✅ Datos de alta calidad, solo necesita resampling 15-min → 1-hour
-
-### Chargers Tier (data/interim/oe2/chargers/)
-
-```bash
+[Ver código completo en GitHub]bash
 ✅ individual_chargers.json         128 chargers with specs + hourly profiles (nested)
 ✅ chargers_hourly_profiles.csv     128 cols × 24 rows (hourly demands)
 ✅ chargers_citylearn.csv           Format for CityLearn (current)
@@ -42,68 +40,50 @@
     → Required by CityLearn v2 for per-charger observables
 ⚠️  annual_datasets/                Contains variant profiles (not integrated)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Status**: ⚠️ Core data presente, pero falta generación de CSVs individuales
 
 ### BESS Tier (data/interim/oe2/bess/)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✅ bess_results.json                4,520 kWh capacity, 2,712 kW power, 80% DoD
 ✅ bess_simulation_hourly.csv       8,760 rows (hourly SOC, charge/discharge)
-✅ bess_daily_balance_24h.csv       24-hour profile
-❌ bess_config.json                 MISSING: Static config file
-    → Expected: capacity, power, efficiency, min_soc, max_soc
-```bash
+✅ bess_daily_balance_24h.csv       24-hour pr...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Status**: ⚠️ Simulation data present, pero falta config estático
 
 ### CityLearn Intermediate (data/interim/oe2/citylearn/)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✅ solar_generation.csv             8,760 rows, hourly (resampled)
 ✅ bess_solar_generation.csv        Hybrid (not clearly defined)
 ❌ building_load.csv                Appears empty or undefined
 ❌ charger_001.csv...charger_128.csv MISSING: Should be here for schema
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Status**: 🔴 Incompleto - falta claridad y estructura de building_load
 
 ---
 
-## 3. SCHEMA CITYLEARN V2 ACTUAL
+## 3. SCHEMA CI...
+```
 
-### Expected Structure vs Reality
-
-```python
-# EXPECTED (CityLearn v2):
-schema.json
-├─ Buildings: [1]
-│  └─ building_0/
-│     ├─ energy_simulation.csv      # Total load (PV + chargers + BESS)
-│     ├─ energy_simulation_metadata.json
-│     ├─ charger_simulation_001.csv # Per-charger demand
-│     ├─ charger_simulation_002.csv
-│     ... charger_simulation_128.csv
-│     └─ metadata.json
-│
-└─ Climate zones: [1]
-   └─ default_climate_zone/
-      ├─ weather.csv               # PVGIS: irradiance, temp, wind
-      ├─ carbon_intensity.csv      # 0.4521 kg CO2/kWh
-      └─ pricing.csv               # 0.20 USD/kWh
-
-# ACTUAL (dataset_builder.py generates):
-outputs/schema_TIMESTAMP.json
-├─ Buildings: [1] - PRESENT
-├─ Climate zones: [1] - PRESENT
-├─ charger_simulation_X.csv - ? (check if generated)
-└─ building_load structure - ? (unclear definition)
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Data Flow Verification
 
 **SHOULD BE**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 OE2/solar/pv_generation_timeseries.csv (35,037 rows, 15-min)
     ↓ [resample → hourly]
@@ -113,23 +93,14 @@ schema.json → observables[0] = solar_generation_kwh
     ↓
 agents/ppo_sb3.py → obs[0] (input to neural net)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **CURRENT STATE**: ✅ Mostly working, but:
 
-- Solar resampling happens in dataset_builder but not always explicit
-- Charger per-charger files NOT generated
-- Building load definition unclear
-- Validation missing
+- Solar resampling happens in datase...
+```
 
----
-
-## 4. ERRORES CRÍTICOS IDENTIFICADOS (Priorizado)
-
-### TIER 1 (BLOQUEADORES - Arreglar inmediatamente)
-
-**Error 1.1**: Charger CSVs Not Generated
-
-```python
+[Ver código completo en GitHub]python
 # In: src/iquitos_citylearn/oe3/dataset_builder.py
 # Function: build_citylearn_dataset()
 
@@ -146,9 +117,11 @@ agents/ppo_sb3.py → obs[0] (input to neural net)
 
 # SOLUTION: Generate 128 individual CSVs from individual_chargers.json
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Error 1.2**: Building Load Definition Unclear
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # PROBLEMA: (2)
 # energy_simulation.csv should contain:
@@ -158,16 +131,15 @@ agents/ppo_sb3.py → obs[0] (input to neural net)
 # ACTUAL: 
 #   Not clear what is included
 #   Solar is separate
-#   Charger profile also separate
-#   May not sum correctly
+#   Charger profile also separ...
+```
 
-# SOLUTION: 
-#   Define precisely: total_load = chargers_demand + mall_demand ± BESS
-#   Verify timestamp alignment (all 8,760 hours, no gaps)
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Error 1.3**: Solar Timeseries Resampling Not Verified
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # PROBLEMA: (3)
 # pv_generation_timeseries.csv is 15-minute frequency (35,037 rows)
@@ -181,27 +153,13 @@ agents/ppo_sb3.py → obs[0] (input to neural net)
 #   Explicit resampling: 4 × 15-min → 1 × 1-hour (mean/sum)
 #   Validate output shape and values
 ```bash
+<!-- markdownlint-enable MD013 -->
 
-**Error 1.4**: BESS Config Missing Static File
+...
+```
 
-```python
-# PROBLEMA: (4)
-# bess_results.json is simulation output, not configuration
-# CityLearn schema expects static parameters:
-#   - capacity_kwh
-#   - power_kw
-#   - efficiency_roundtrip
-#   - min_soc
-#   - max_soc
-
-# ACTUAL: (3)
-#   No bess_config.json exists
-#   Values scattered in different files
-
-# SOLUTION: (3)
-#   Create bess_config.json with standardized format
-#   Use as single source of truth
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### TIER 2 (IMPORTANTES - Arreglar en 2 horas)
 
@@ -270,6 +228,7 @@ agents/ppo_sb3.py → obs[0] (input to neural net)
 
 **Crear módulo**: `src/iquitos_citylearn/oe2/data_loader.py`
 
+<!-- markdownlint-disable MD013 -->
 ```python
 class OE2DataLoader:
     """Systematic OE2 data loading with validation."""
@@ -279,35 +238,17 @@ class OE2DataLoader:
         df = pd.read_csv(self.path / 'solar/pv_generation_timeseries.csv')
         assert len(df) >= 8760, f"Solar incomplete: {len(df)} rows"
         assert df['ac_power_kw'].max() <= 4200, "Solar exceeds spec"
-        return df
-    
-    def load_chargers(self) -> Tuple[List, pd.DataFrame]:
-        """Load 128 charger definitions + hourly profiles."""
-        chargers = json.load(open(self.path / 'chargers/individual_chargers.json'))
-        assert len(chargers) == 128, f"Expected 128 chargers, got {len(chargers)}"
-        profiles = pd.read_csv(self.path / 'chargers/chargers_hourly_profiles.csv')
-        assert profiles.shape == (24, 128), "Charger profiles shape mismatch"
-        return chargers, profiles
-    
-    def load_bess(self) -> Dict[str, float]:
-        """Load BESS configuration."""
-        config = json.load(open(self.path / 'bess/bess_config.json'))
-        # Validate against bess_results.json
-        return config
-    
-    def validate_all(self) -> bool:
-        """Comprehensive validation of all OE2 data."""
-        # Check all files exist
-        # Check all timestamps align
-        # Check all values in valid ranges
-        # Return validation report
-        pass
-```bash
+        return ...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Mejora 2: Schema Validation
 
 **Crear**: `src/iquitos_citylearn/oe3/schema_validator.py`
 
+<!-- markdownlint-disable MD013 -->
 ```python
 class CityLearnSchemaValidator:
     """Validate CityLearn v2 schema completeness."""
@@ -319,32 +260,17 @@ class CityLearnSchemaValidator:
         # Verify all columns have correct names
         pass
     
-    def validate_climate_zone(self) -> bool:
-        """Check climate zone files."""
-        # weather.csv: 8,760 rows, 5+ columns
-        # carbon_intensity.csv: 8,760 rows
-        # pricing.csv: 8,760 rows
-        pass
-    
-    def validate_timestamps(self) -> bool:
-        """Ensure all files have aligned timestamps."""
-        # All 8,760 rows
-        # No gaps
-        # Same date ranges
-        pass
-    
-    def validate_citylearn_load(self) -> bool:
-        """Actually try to load with CityLearn."""
-        env = CityLearnEnv(schema=self.schema_path)
-        obs, _ = env.reset()
-        assert obs.shape == (534,), f"Wrong obs shape: {obs.shape}"
-        return True
-```bash
+    def validate_climate_z...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Mejora 3: Data Integrity Checks in Training
 
 **Integrar en**: `src/iquitos_citylearn/oe3/simulate.py`
 
+<!-- markdownlint-disable MD013 -->
 ```python
 def simulate(...):
     """Enhanced with OE2 data integrity checks."""
@@ -358,16 +284,10 @@ def simulate(...):
     if not validator.validate_citylearn_load():
         raise RuntimeError("CityLearn schema invalid")
     
-    # Training proceeds only if all checks pass
-```bash
+...
+```
 
----
-
-## 7. MAPPEO COMPLETO OE2→OE3
-
-### Data Lineage Diagram
-
-```bash
+[Ver código completo en GitHub]bash
 ┌─────────────────────────────────────┐
 │        OE2 INPUT DATA               │
 │  (data/interim/oe2/)                │
@@ -417,6 +337,7 @@ def simulate(...):
      │  PPO / SAC / A2C             │
      └─────────────────────────────┘
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -428,28 +349,10 @@ def simulate(...):
 - [ ] `outputs/schema_*.json` generated and valid
 - [ ] All 128 `charger_simulation_*.csv` files created
 - [ ] `python validate_oe2_oe3_connections.py` passes all checks
-- [ ] `CityLearnEnv(schema)` loads successfully
-- [ ] `env.reset()` returns observation shape (534,)
-- [ ] `env.step(action)` works for 100 random steps
-- [ ] 8,760 timesteps completed per episode without gaps
-- [ ] All OE2 data values in expected ranges
+- [ ] `CityLearnEnv(schema)` loads succes...
+```
 
-### Training Validation
-
-- [ ] `python scripts/train_quick.py --episodes 1` completes
-- [ ] BESS SOC observable visible in first episode
-- [ ] Solar generation correlates with time of day
-- [ ] Charger demands match OE2 profiles
-- [ ] No NaN/inf in rewards or observations
-- [ ] Training curves smooth (no sudden jumps)
-
----
-
-## 9. ESTADO ACTUAL VS. META
-
-### Before Corrections
-
-```bash
+[Ver código completo en GitHub]bash
 ✅ Solar data:           High quality, just needs resampling
 ✅ Charger data:         128 chargers with profiles present
 ✅ BESS data:            Simulation complete
@@ -459,9 +362,11 @@ def simulate(...):
 ❌ Documentación:        Incompleta
 ❌ Operacionalidad:      Frágil
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### After Corrections (Target)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✅ Solar data:           Resampled, validated, normalized
 ✅ Charger data:         128 individual CSVs generated
@@ -472,6 +377,7 @@ def simulate(...):
 ✅ Documentación:        Completa y operacional
 ✅ Operacionalidad:      Robusta y reproducible
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

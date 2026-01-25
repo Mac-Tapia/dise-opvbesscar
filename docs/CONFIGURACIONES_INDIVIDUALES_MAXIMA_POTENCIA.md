@@ -23,6 +23,7 @@ Cada agente está optimizado **individualmente** para explotar sus fortalezas
 
 ### Configuración Óptima SAC
 
+<!-- markdownlint-disable MD013 -->
 ```python
 @dataclass
 class SACConfig:
@@ -32,26 +33,16 @@ class SACConfig:
     buffer_size: int = 1000000         # ↑↑↑ 10x más memoria! (crucial SAC)
     learning_rate: float = 1.5e-4      # ↓↓ Extremadamente suave
     gamma: float = 0.999               # ↑ Horizonte MUY largo
-    tau: float = 0.001                 # ↓↓ Soft updates SUAVÍSIMOS
-    
-    # === ENTROPÍA - SAC DINÁMICO ===
-    ent_coef: float = 0.01             # Bajo pero adaptativo
-    target_entropy: Optional[float] = None  # Auto-calcula
-    
-    # === RED NEURONAL - SAC GRANDE ===
-    hidden_sizes: tuple = (1024, 1024) # ↑↑ GRANDE (4M parámetros)
-    activation: str = "relu"
-    gradient_steps: int = 1            # 1 update por step (estándar SAC)
-    n_steps: int = 1                   # Off-policy
-    
-    # === GPU OPTIMIZATION ===
-    device: str = "auto"
-    use_amp: bool = True               # Mixed precision
-    pin_memory: bool = True
-```bash
+    tau: float = 0.001       ...
+```
 
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
+
+<!-- markdownlint-disable MD013 -->
 ### Justificación SAC | Parámetro | Valor | Razón | |-----------|-------|-------| | **Batch Size** | 512 | SAC es off-policy, puede... | | **Buffer Size** | 1M | Más experiencias diversas... | | **Learning Rate** | 1.5e-4 | SAC es sensible a... | | **Gamma** | 0.999 | Horizonte largo (8760... | | **Tau** | 0.001 | Soft updates lentos... | | **Hidden (1024,1024)** | 4M params | Capacidad para 900 obs... | | **Entropy auto** | Adaptivo | Ajusta exploración dinámicamente | ### Rendimiento Esperado SAC
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Episodios:          50 entrenamiento
 Convergencia:       ~10-15 episodios
@@ -61,16 +52,16 @@ EV Satisfacción:    90-95%
 Tiempo:             ~3 horas
 Estabilidad:        ⭐⭐⭐⭐⭐ (máxima)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🟢 PPO (Proximal Policy Optimization) - MÁXIMA CONVERGENCIA
 
-**Especialidad**: Convergencia estable, balance perfecto exploración-explotación
+**Especialidad**: Convergenc...
+```
 
-### Configuración Óptima PPO
-
-```python
+[Ver código completo en GitHub]python
 @dataclass
 class PPOConfig:
     # === ENTRENAMIENTO - PPO POTENTE ===
@@ -104,10 +95,13 @@ class PPOConfig:
     use_amp: bool = True
     normalize_advantage: bool = True
 ```bash
+<!-- markdownlint-enable MD013 -->
 
-### Justificación PPO | Parámetro | Valor | Razón | |-----------|-------|-------| | **Train Steps** | 1M | 2x de 500k para... | | **N Steps** | 2048 | On-policy necesita MUCHAS... | | **Batch Size** | 128 | Pequeño para PPO,... | | **N Epochs** | 20 | 20 updates ×... | | **LR** | 2.0e-4 | Suave pero no... | | **Clip Range** | 0.1 | MÁS restrictivo que... | | **GAE Lambda** | 0.98 | Estimación advantage de alta calidad | | **Hidden (1024,1024)** | 4M params | Igual que SAC | | **SDE** | ✅ | Exploración mejorada | ### Rendimiento Esperado PPO
+<!-- markdownlint-disable MD013 -->
+### Justificación PPO | Parámetro | Valor | Razón | |-----------|-------|-------| | **Train Steps** | 1M | 2x de 500k para... | | **N Steps** | 2048 | On-policy necesita MUCHAS... | | **Batch Size** | 128 | Pequeño para PPO,... | | **N Epochs** | 20 | 20 updates ×... | | **LR** | 2.0e-4 | Suave pero no... | | **Clip Range** | ...
+```
 
-```bash
+[Ver código completo en GitHub]bash
 Episodios:          57 (500k steps)
 Convergencia:       ~20-30 episodios
 Reward Final:       -50 a +300 (EXCELENTE)
@@ -117,6 +111,7 @@ Tiempo:             ~5-6 horas (más lento pero MEJOR)
 Estabilidad:        ⭐⭐⭐⭐ (muy buena)
 Convergencia:       ⭐⭐⭐⭐⭐ (óptima)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -126,37 +121,22 @@ Convergencia:       ⭐⭐⭐⭐⭐ (óptima)
 
 ### Configuración Óptima A2C
 
+<!-- markdownlint-disable MD013 -->
 ```python
 @dataclass
 class A2CConfig:
     # === ENTRENAMIENTO - A2C RÁPIDO ===
     train_steps: int = 1000000         # ↑↑ 2x más pasos
-    n_steps: int = 2048                # ↑↑ MUCHAS experiencias
-    learning_rate: float = 1.5e-4      # ↓ Suave como SAC
-    lr_schedule: str = "linear"        # Decay automático
-    gamma: float = 0.999               # ↑ Horizonte MUY largo
-    gae_lambda: float = 0.95           # ✅ Óptimo para A2C
-    ent_coef: float = 0.01             # ↓ Menos ruido
-    vf_coef: float = 0.7               # ↑ Value function importante
-    max_grad_norm: float = 1.0         # ↑ Menos agresivo
-    
-    # === RED NEURONAL - A2C GRANDE ===
-    hidden_sizes: tuple = (1024, 1024) # ↑↑ GRANDE como SAC
-    activation: str = "relu"
-    
-    # === GPU OPTIMIZATION ===
-    device: str = "auto"
-    # NO mixed precision (A2C funciona mejor sin AMP)
-    
-    # === NORMALIZACIÓN ===
-    normalize_observations: bool = True
-    normalize_rewards: bool = True
-    reward_scale: float = 0.01
-    clip_obs: float = 10.0
-```bash
+    n_steps: int = 2048                # ↑↑...
+```
 
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
+
+<!-- markdownlint-disable MD013 -->
 ### Justificación A2C | Parámetro | Valor | Razón | |-----------|-------|-------| | **Train Steps** | 1M | 2x para mejor convergencia | | **N Steps** | 2048 | Recolecta MUCHAS experiencias... | | **LR** | 1.5e-4 | Igual que SAC (suave) | | **GAE Lambda** | 0.95 | Standard A2C (mejor que 1.0) | | **Gamma** | 0.999 | Largo plazo | | **Hidden (1024,1024)** | 4M params | Capacidad similar a otros | | **VF Coef** | 0.7 | Value function crítica en A2C | | **Simplicity** | ✅ | A2C es simple pero efectivo | ### Rendimiento Esperado A2C
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Episodios:          57 (500k steps)
 Convergencia:       ~15-20 episodios
@@ -167,41 +147,44 @@ Tiempo:             ~2.5-3 horas (RÁPIDO)
 Estabilidad:        ⭐⭐⭐⭐ (buena)
 Velocidad:          ⭐⭐⭐⭐⭐ (máxima)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
-## 📊 TABLA COMPARATIVA - CONFIGURACIONES INDIVIDUALES | Parámetro | **SAC** | **PPO** | **A2C** | Mejor Para | |-----------|---------|---------|---------|-----------| | **Learning Rate** | 1.5e-4 | 2.0e-4 | 1.5e-4 | SAC/A2C más suave | | **Batch Size** | 512 | 128 | N/A | SAC masivo (off-policy) | | **N Steps** | 1 | 2048 | 2048 | PPO/A2C recopilan | | **N Epochs** | N/A | 20 | N/A | PPO múltiples updates | | **Buffer Size** | **1M** | N/A | N/A | SAC con experiencia | | **Hidden Sizes** | (1024,1024) | (1024,1024) | (1024,1024) | Todos grandes | | **Gamma** | 0.999 | 0.999 | 0.999 | Todos horizonte largo | | **Tau** | **0.001** | N/A | N/A | SAC soft updates | | **Clip Range** | N/A | **0.1** | N/A | PPO restrictivo | | **GAE Lambda** | N/A | 0.98 | 0.95 | PPO más fino | | **Entropy Coef** | 0.01 | 0.01 | 0.01 | Todos bajo | | **VF Coef** | N/A | 0.7 | 0.7 | Todos value importante | | **Train Steps** | 50 ep | 1M | 1M | PPO/A2C más largo | |**Especialidad**|Estabilidad|Convergencia|Velocidad|Diferentes fuerzas| ---
+<!-- markdownlint-disable MD013 -->
+## 📊 TABLA COMPARA...
+```
 
-## 🚀 INSTRUCCIONES DE ENTRENAMIENTO
-
-### Entrenamiento Individual Optimizado
-
-**SAC (Máxima Estabilidad)**:
-
-```bash
+[Ver código completo en GitHub]bash
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ⏱️ Duración: ~3 horas | 🎯 Mejor para: Precisión máxima
 
 **PPO (Máxima Convergencia)**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent PPO --episodes 57 --device cuda
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ⏱️ Duración: ~5-6 horas | 🎯 Mejor para: Rendimiento general
 
 **A2C (Máxima Velocidad)**:
 
-```bash
-& .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent A2C --episodes 57 --device cuda
-```bash
+<!...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ⏱️ Duración: ~2.5-3 horas | 🎯 Mejor para: Prototipado rápido
 
 ### Entrenar Todos en Paralelo (Recomendado)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Terminal 1:
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda
@@ -212,30 +195,21 @@ Velocidad:          ⭐⭐⭐⭐⭐ (máxima)
 # Terminal 3 (mientras PPO en CPU):
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent A2C --episodes 57 --device cpu
 ```bash
+<!-...
+```
 
-**O secuencial** (más seguro):
-
-```bash
+[Ver código completo en GitHub]bash
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 50
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
-## 💾 COMPARACIÓN MEMORIA GPU REQUERIDA | Agente | Batch | Buffer | Hidden | Requerido | RTX 4060 (8GB) | |--------|-------|--------|--------|-----------|----------------| | **SAC** | 512 | 1M | 1024x1024 | ~5-6 GB | ✅ Ajustado | | **PPO** | 128 | N/A | 1024x1024 | ~3-4 GB | ✅ Cómodo | | **A2C** | N/A | N/A | 1024x1024 | ~2-3 GB | ✅ Muy cómodo | **Nota**: Si tienes OOM (Out of Memory):
+<!-- markdownlint-disable MD013 -->
+## 💾 COMPARACIÓN MEMORIA GPU REQUERIDA | Agente | Batch | Buffer | Hidden | Requerido | RTX 4060 (8GB) | |--------|-------|--------|--------|-----------|----------------| | **SAC** | 512 | 1M | 1024x1024 | ~5-6 GB | ✅ Ajustado | | **PPO** | 128 | N/A | 1024x1024 | ~3-4 GB | ✅ Cómodo | | **A2C** | N/A | N/A | 1024x1024 | ~...
+```
 
-1. Reducir `batch_size` a la mitad
-2. Reducir `hidden_sizes` a (512, 512)
-3. Usar `device="cpu"` para ese agente
-
----
-
-## 📈 RESULTADOS ESPERADOS - CONVERGENCIA
-
-### Después de 10 episodios (prueba) | Métrica | SAC | PPO | A2C | |---------|-----|-----|-----| | **Reward Promedio** | -800 a -500 | -900 a -600 | -1000 a -700 | | **Trend** | ↗ Mejorando | ↗ Mejorando | ↗ Mejorando | | **Estabilidad** | Muy buena | Moderada | Buena | ### Después de 30 episodios (a mitad) | Métrica | SAC | PPO | A2C | |---------|-----|-----|-----| | **Reward Promedio** | -300 a -100 | -400 a -200 | -500 a -300 | | **Trend** | ↗ Convergiendo | ↗ Convergiendo | ↗ Convergiendo | | **CO₂** | 400-500 kg | 450-550 kg | 400-500 kg | ### Después de 50 episodios (FINAL) | Métrica | SAC | PPO | A2C | |---------|-----|-----|-----| | **Reward Final** | -100 a +200 | -50 a +300 | -150 a +100 | | **CO₂ Final** | 250-350 kg | 200-300 kg | 300-400 kg | | **EV Satisfacción** | 90-95% | 88-93% | 85-90% | | **Status** | ✅ Óptimo | ✅✅ Excelente | ✅ Bueno | ---
-
-## ✅ VERIFICACIÓN COMPLETADA
-
-```bash
+[Ver código completo en GitHub]bash
  🟢 SAC:     Learning Rate 1.5e-4 | Batch 512 | Buffer 1M | Hidden 1024x1024 
  🟢 PPO:     Learning Rate 2.0e-4 | Batch 128 | N Steps 2048 | Hidden 1024x1024 
  🟢 A2C:     Learning Rate 1.5e-4 | N Steps 2048 | Hidden 1024x1024 
@@ -243,6 +217,7 @@ Velocidad:          ⭐⭐⭐⭐⭐ (máxima)
 🟢 Datos:   128 cargadores | 5 schemas
 🟢 Listo:   ✅ MÁXIMA POTENCIA INDIVIDUAL
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

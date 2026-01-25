@@ -1,5 +1,6 @@
 # 🚀 ESTRATEGIA DE ENTRENAMIENTO RECOMENDADA
 
+<!-- markdownlint-disable MD013 -->
  **Fecha**: 2026-01-24 | **Versión**: MÁXIMA POTENCIA INDIVIDUAL | **Estado**: ✅ 
 
 ---
@@ -37,6 +38,7 @@
 
 ### Comando
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Verificar primero
 .\verificar_agentes.ps1
@@ -44,36 +46,24 @@
 # Entrenar todos en serie
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 50
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Detalle de Ejecución
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ┌─ A2C (Rápido) ─────────────────────────┐
 │ Duración: 2.5-3 horas                  │
 │ Episodes: 57 (~500k steps)             │
-│ GPU Memory: 2-3 GB                     │
-│ Expected Reward: -150 a +100           │
-└────────────────────────────────────────┘
-         ↓ (A2C terminada)
-┌─ SAC (Estable) ────────────────────────┐
-│ Duración: 3 horas                      │
-│ Episodes: 50                           │
-│ GPU Memory: 5-6 GB                     │
-│ Expected Reward: -100 a +200           │
-└────────────────────────────────────────┘
-         ↓ (SAC terminada)
-┌─ PPO (Convergencia) ───────────────────┐
-│ Duración: 5-6 horas                    │
-│ Episodes: 57 (~1M steps)               │
-│ GPU Memory: 3-4 GB                     │
-│ Expected Reward: -50 a +300            │
-└────────────────────────────────────────┘
-         ↓
-✅ TOTAL: ~11 horas para 3 agentes
-```bash
+...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Logs Esperados
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 [Inicio] A2C Entrenamiento
  Episode 1/57 | Reward: -1200 | CO₂: 600 kg 
@@ -85,14 +75,11 @@
  Episode 1/50 | Reward: -1100 | CO₂: 580 kg 
  Episode 5/50 | Reward: -700 | CO₂: 450 kg 
  Episode 20/50 | Reward: -200 | CO₂: 280 kg 
- Episode 50/50 | Reward: +100 | CO₂: 250 kg ✅✅ 
+ Episode 50/50 | Reward: +100...
+```
 
-[Inicio] PPO Entrenamiento
- Episode 1/57 | Reward: -1300 | CO₂: 620 kg 
- Episode 15/57 | Reward: -400 | CO₂: 380 kg 
- Episode 40/57 | Reward: +50 | CO₂: 220 kg 
- Episode 57/57 | Reward: +250 | CO₂: 200 kg ✅✅✅ 
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -119,6 +106,7 @@
 
 ### Comando Opción 2A: SAC+A2C en GPU
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Terminal 1 (GPU)
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
@@ -130,14 +118,10 @@
 
 # Terminal 3 (CPU mientras GPU está ocupada)
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
-  --agent PPO --episodes 57 --device cpu
-```bash
+  --agent PPO --episo...
+```
 
-**Tiempo Total**: ~7-8 horas
-
-### Comando Opción 2B: Uno por uno en GPU
-
-```bash
+[Ver código completo en GitHub]bash
 # Más seguro y controlado
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
   --agent SAC --episodes 50 --device cuda
@@ -148,6 +132,7 @@
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
   --agent A2C --episodes 57 --device cuda
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Tiempo Total**: ~11 horas (igual que secuencial, pero control fino)
 
@@ -159,26 +144,19 @@
 
 ### Solo SAC (Máxima Estabilidad)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # 3 horas, máxima estabilidad
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
-  --agent SAC --episodes 50 --device cuda
-```bash
+  -...
+```
 
-**Resultado Esperado**:
-
-- Convergencia: ~10-15 episodios
-- Reward Final: -100 a +200
-- CO₂: 250-350 kg/episodio
-- Demostración de estabilidad
-
-### Solo A2C (Rápido para prototipado)
-
-```bash
+[Ver código completo en GitHub]bash
 # 2.5 horas, prototipado rápido
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
   --agent A2C --episodes 57 --device cuda
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Resultado Esperado**:
 
@@ -189,56 +167,46 @@
 
 ### Solo PPO (Mejor rendimiento)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # 5-6 horas, mejor rendimiento final
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
   --agent PPO --episodes 57 --device cuda
 ```bash
+<!-- m...
+```
 
-**Resultado Esperado**:
-
-- Convergencia: ~20-30 episodios
-- Reward Final: -50 a +300
-- CO₂: 200-300 kg/episodio
-- Rendimiento óptimo
-
----
-
-## OPCIÓN 4: ENTRENAMIENTO DE PRUEBA (5 episodios)
-
-**Descripción**: Prueba rápida para verificar que todo funciona sin esperar.
-
-### Prueba Rápida de Todos
-
-```bash
+[Ver código completo en GitHub]bash
 # ~30 minutos
 & .venv/Scripts/python.exe scripts/train_agents_serial.py ^
   --device cuda --episodes 5
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Prueba Individual SAC
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # ~10 minutos
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
   --agent SAC --episodes 5 --device cuda
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Prueba Individual PPO
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # ~15 minutos
-& .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
-  --agent PPO --episodes 5 --device cuda
-```bash
+& .venv/Scripts/python.exe scripts/train_gpu_robust...
+```
 
-### Prueba Individual A2C
-
-```bash
+[Ver código completo en GitHub]bash
 # ~8 minutos
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
   --agent A2C --episodes 5 --device cuda
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -246,6 +214,7 @@
 
 ### Archivos de Salida Generados
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 results/
 ├── SAC/
@@ -257,26 +226,17 @@ results/
 │   ├── logs/
 │   │   ├── training_log.txt
 │   │   ├── metrics.csv
-│   │   └── performance.json
-│   └── plots/
-│       ├── reward_convergence.png
-│       ├── co2_reduction.png
-│       ├── ev_satisfaction.png
-│       └── ...
-├── PPO/
-│   ├── checkpoints/
-│   ├── logs/
-│   └── plots/
-└── A2C/
-    ├── checkpoints/
-    ├── logs/
-    └── plots/
-```bash
+│   │   └── performance...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Métricas Clave a Monitorear
 
 #### 1. Reward Convergencia
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 SAC:
   Episode 1:    -1100  (inicio caótico)
@@ -293,13 +253,10 @@ PPO:
 A2C:
   Episode 1:    -1200  (inicio)
   Episode 15:   -500   (rápida mejora)
-  Episode 30:   -150   (convergencia rápida)
-  Episode 57:   -50    ✅ (bueno pero no óptimo)
-```bash
+  Episo...
+```
 
-#### 2. CO₂ Reducción
-
-```bash
+[Ver código completo en GitHub]bash
 SAC:
   Initial: ~600 kg/episodio
   Final:   250-350 kg/episodio (EXCELENTE)
@@ -312,27 +269,30 @@ A2C:
   Initial: ~600 kg/episodio
   Final:   300-400 kg/episodio (BUENO)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### 3. EV Satisfacción
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 SAC:  90-95% (ALTA)
 PPO:  88-93% (ALTA)
 A2C:  85-90% (BUENA)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Herramientas de Monitoreo
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Ver métricas en tiempo real
 tail -f results/SAC/logs/training_log.txt
 
-# Generar gráficos después del entrenamiento
-& .venv/Scripts/python.exe scripts/plot_results.py --agent SAC
+# Generar gráficos después del entrenamien...
+```
 
-# Comparar los 3 agentes
-& .venv/Scripts/python.exe scripts/compare_agents.py
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -342,9 +302,11 @@ tail -f results/SAC/logs/training_log.txt
 
 **Opción 1 (Secuencial)** ← RECOMENDADO
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 50
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 - ✅ Simple (un comando)
 - ✅ Controlado (no OOM)
@@ -355,26 +317,19 @@ tail -f results/SAC/logs/training_log.txt
 
 #### Opción 3B (Solo A2C)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-& .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent A2C --episodes 57 --device cuda
-```bash
+& .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent A...
+```
 
-- ✅ Rápido (2.5-3h)
-- ✅ Baseline funcional
-- ✅ Bajo consumo GPU
-- ✅ Prueba de concepto
-
-### Para Mejor Rendimiento Final
-
-#### Opción 1 Completo + PPO
-
-```bash
+[Ver código completo en GitHub]bash
 # Entrenar todos 3 agentes
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 50
 
 # Luego reentrenar PPO con más episodios
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent PPO --episodes 100 --device cuda
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 - ✅ Todos los agentes entrenados
 - ✅ PPO con entrenamiento extra
@@ -386,48 +341,45 @@ tail -f results/SAC/logs/training_log.txt
 
 ### Si tienes OOM (Out of Memory)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Reducir batch size para SAC
 # Cambiar en sac.py: batch_size = 256 (desde 512)
 
 # O usar CPU para un agente
-& .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent SAC --device cpu
-```bash
+& .venv/Scripts/python.exe scripts/train_gpu_robust...
+```
 
-### Si la convergencia es lenta
-
-```bash
+[Ver código completo en GitHub]bash
 # Aumentar learning rate (ligeramente)
 # SAC:  1.5e-4 → 2.0e-4
 # PPO:  2.0e-4 → 2.5e-4
 # A2C:  1.5e-4 → 2.0e-4
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Si el reward es muy negativo después de 20 episodios
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Checkear normalización de observaciones
 # Checkear pesos multiobjetivo
 # Considerar reducir hidden_sizes a (512, 512)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 📈 ROADMAP DE ENTRENAMIENTO
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 DÍA 1 (Mañana):
-  09:00 - Verificación ✅
-  09:15 - Inicio A2C (2.5h)
-  11:45 - Fin A2C + Inicio SAC (3h)
-  14:45 - Fin SAC + Inicio PPO (5-6h)
+  ...
+```
 
-DÍA 2 (Madrugada):
-  19:45 - Fin PPO ✅
-  
-  → TODOS LOS 3 AGENTES ENTRENADOS
-  → 11 HORAS DE ENTRENAMIENTO TOTAL
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -449,9 +401,11 @@ Todos los agentes están optimizados al máximo nivel individual.
 
 #### Opción recomendada:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 50
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Tiempo estimado**: 11 horas  
 **Resultado esperado**: 3 agentes entrenados, converging, listos para producción

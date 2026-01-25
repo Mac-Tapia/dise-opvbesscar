@@ -21,6 +21,7 @@ validación
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📚 DOCUMENTACIÓN PRINCIPAL | Documento | Propósito | Tiempo | |-----------|-----------|--------|
 |[TRAINING_READY.md](TRAINING_READY.md)|Resumen ejecutivo y estado actual|5 min|
 |[TRAINING_CHECKLIST.md](TRAINING_CHECKLIST.md)|Validación paso-a-paso (10 pasos)|10-20 min|
@@ -30,6 +31,7 @@ validación
 
 ### Archivos Mejorados
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✓ src/iquitos_citylearn/oe3/agents/__init__.py
   - Device detection unificada
@@ -46,30 +48,11 @@ validación
   - Logging mejorado
   - Error handling robusto
 ```bash
+<!-- markdownlint-enable MD013 -->...
+```
 
-### Archivos Nuevos
-
-```bash
-✓ src/iquitos_citylearn/oe3/agents/agent_utils.py
-  - Utilidades centralizadas
-  - ListToArrayWrapper para CityLearn
-  - Validación de espacios
-  - Normalización/scaling
-
-✓ src/iquitos_citylearn/oe3/agents/validate_training_env.py
-  - Pre-training validation
-  - Reportes visuales
-
-✓ scripts/train_quick.py
-  - Quick training entrypoint
-  - Validación integrada
-  - Reporte detallado
-
-✓ TRAINING_CHECKLIST.md
-✓ AGENTS_IMPROVEMENTS_SUMMARY.md
-✓ QUICK_REFERENCE_TRAINING.py
-✓ TRAINING_READY.md
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -77,47 +60,52 @@ validación
 
 ### Validación Pre-Entrenamiento
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python src/iquitos_citylearn/oe3/agents/validate_training_env.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Entrenamiento Rápido (5 episodios, ~5 min)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python scripts/train_quick.py --device cuda --episodes 5
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Entrenamiento Completo (50 episodios, ~1-2 horas)
 
-```bash
-python scripts/train_agents_serial.py --device cuda --episodes 50
-```bash
+<!-- markdownlint-disable MD013 -->
+```bash...
+```
 
-### Monitoreo en Tiempo Real
-
-```bash
+[Ver código completo en GitHub]bash
 python scripts/monitor_training_live_2026.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Ver Resultados
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 📊 ESTADO ACTUAL
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✅ Agentes importables: PPOAgent, SACAgent, A2CAgent
 ✅ Device detection: CUDA/MPS/CPU auto-detect
-✅ Rewards normalizados: CO2=0.50, Solar=0.20, Cost=0.10, EV=0.10, Grid=0.10
-✅ Validación pre-entrenamiento: Automatizada
-✅ Scripts de entrenamiento: Listos
-✅ Documentación: Exhaustiva
-✅ Troubleshooting: Incluido
-```bash
+✅ Rewards normalizados: ...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -224,13 +212,21 @@ Archivo: `scripts/train_quick.py`
 
 ## 📈 MÉTRICAS ESPERADAS
 
+<!-- markdownlint-disable MD013 -->
 Después de entrenamiento con 50 episodios: | Métrica | Baseline | SAC | PPO | A2C | |---------|----------|-----|-----|-----| | CO₂ emissions | 10,200 kg | 7,500 kg | 7,200 kg | 7,800 kg | | Reducción CO₂ | 0% | -26% | -29% | -24% | | Solar utilization | 40% | 65% | 68% | 60% | | Training time/ep | N/A | 1 hr | 1 hr | 45 min | ---
 
 ## ⚡ QUICK START (Una Línea)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
+<details>
+<summary>python -m venv .venv && .venv\Scripts\Activate.ps1 && pip install -r requirement...</summary>
+
 python -m venv .venv && .venv\Scripts\Activate.ps1 && pip install -r requirements.txt -q && python src/iquitos_citylearn/oe3/agents/validate_training_env.py && python scripts/train_quick.py --device cuda --episodes 5
+
+</details>
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

@@ -86,6 +86,7 @@ Guía paso a paso para entrenamiento:
 
 ### Detección de Dispositivo Unificada
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # Antes: Cada agente tenía su propia función
 # Ahora: Función centralizada con fallbacks
@@ -98,55 +99,41 @@ def detect_device() -> str:
             try: return _detect_a2c()
             except: return "cpu"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Validación Pre-Entrenamiento
 
-- Verifica 5 puntos clave antes de iniciar
-- Reporta errores específicos
-- Sale con código de error si hay problemas
+- Verifica 5 puntos clave antes de inic...
+```
 
-### Manejo de Checkpoints Mejorado
-
-- Función centralizada para validar directorios
-- Auto-creación si no existe
-- Validación de integridad de archivos
-
-### Normalización y Escalado
-
-- Funciones centralizadas para clip, normalize, scale
-- Consistencia entre agentes
-- Fácil de ajustar globalmente
-
----
-
-## 🚀 Cómo Usar
-
-### Validación Rápida
-
-```bash
+[Ver código completo en GitHub]bash
 python src/iquitos_citylearn/oe3/agents/validate_training_env.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Entrenar (Opción 1: Rápido)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python scripts/train_quick.py --device cuda --episodes 5
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Entrenar (Opción 2: Completo)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python scripts/train_agents_serial.py --device cuda --episodes 50
 ```bash
+<!-- markdownlint-enable MD013 --...
+```
 
-### Monitorear Entrenamiento
-
-```bash
-python scripts/monitor_training_live_2026.py
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## ✨ Ventajas | Aspecto | Antes | Después | |--------|--------|---------| | **Detección GPU** | Duplicada en 3 agentes | Centralizada + fallbacks | | **Validación** | Manual (riesgo de olvidos) | Automática + checklist | | **Documentación** | Mínima | Exhaustiva con ejemplos | | **Entrenamiento** | Sin reportes claros | Reporte detallado + JSON | | **Troubleshooting** | Buscar en docs | Tabla de problemas/soluciones | | **Manejo Errores** | Básico | Robusto con logging | | **Compatibilidad** | Con CityLearn | Verificada + wrapping | ---
 
 ## 🎯 Estado Actual
@@ -164,9 +151,11 @@ Todos los agentes están:
 
 Puedes empezar entrenamiento ahora:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python scripts/train_quick.py --device cuda --episodes 5
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

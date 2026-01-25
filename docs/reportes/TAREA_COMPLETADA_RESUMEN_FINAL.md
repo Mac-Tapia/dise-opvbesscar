@@ -119,6 +119,7 @@ Contiene:
 
 Programa Python con menú interactivo que permite:
 
+<!-- markdownlint-disable MD013 -->
 ```text
 1. ✅ Health Check             → Verifica que el sistema está vivo
 2. 📊 Ver Estado Sistema       → Muestra estado de componentes
@@ -127,15 +128,13 @@ Programa Python con menú interactivo que permite:
 5. ⚡ Ejecutar Acción         → Envía comando
 6. 🔄 Ciclo Completo          → Ejecuta pasos 1-5
 7. 🌅 Simular Día Completo    → Simula 24 horas ← RECOMENDADO
-8. 📖 Ver Guía                → Muestra guía integrada
-9. ❌ Salir                    → Exit
-```bash
+8. 📖...
+```
 
-#### Cómo usar:
-
-```powershell
+[Ver código completo en GitHub]powershell
 py -3.11 simulador_interactivo.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -143,17 +142,21 @@ py -3.11 simulador_interactivo.py
 
 ### **El Sistema en 5 Pasos**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ENTRADA (Sensores) → PREDICCIÓN (ML) → DECISIÓN (IA) → EJECUCIÓN → RESULTADO
      ↓                   ↓                ↓              ↓            ↓
 45 kW consumo      ¿Futuro?        CHARGE/          Inversor    Ahorro
-12.5 kW solar      ¿Solar?         DISCHARGE/       Batería     20-75%
-87% batería        ¿Precio?        IDLE             Controler   Costo -
-€0.28/kWh          ¿Óptimo?        valor: X kW      Hardware    CO2 -
-```bash
+12.5 kW solar      ¿Sola...
+```
 
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
+
+<!-- markdownlint-disable MD013 -->
 ### **Las 3 Acciones** | Acción | Cuándo | Ahorro | | -------- | -------- | -------- | | **CHARGE** | Solar alto + Batería baja | €2-5 | | **DISCHARGE** | Solar bajo + Batería alta + Pico | €3-8 | | **IDLE** | Sistema equilibrado | €0 | ### **Valores que Proporciona**
 
+<!-- markdownlint-disable MD013 -->
 ```json
 {
   "timestamp": "2026-01-20T11:08:09",
@@ -164,14 +167,15 @@ ENTRADA (Sensores) → PREDICCIÓN (ML) → DECISIÓN (IA) → EJECUCIÓN → RE
   "total_cost": 156.45               // Costo (€)
 }
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
-## 🌐 Accesos Disponibles | Servicio | URL | Estado | | ---------- | ----- | -------- | | **Swagger UI** | <http://localhost:8000/docs> | ✅ | | **API** | <http://localhost:8000> | ✅ | | **Docker Manager** | <http://localhost:5000> | ✅ | | **MongoDB Admin** | <http://localhost:8081> | ✅ | | **MongoDB** | localhost:27017 | ✅ | ---
+<!-- markdownlint-disable MD013 -->
+## 🌐 Accesos Dispo...
+```
 
-## 📈 Ejemplo de Simulación - Día Soleado
-
-```text
+[Ver código completo en GitHub]text
 HORA  │ CONSUMO │ SOLAR │ ACCIÓN    │ RESULTADO
 ──────┼─────────┼───────┼───────────┼──────────────
 05:00 │  35 kW  │   2 kW│   IDLE    │ Noche
@@ -186,6 +190,7 @@ Costo total: €50/día
 Sin IA sería: €200/día
 AHORRO: 75% ✅ = €54,750/año
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -193,6 +198,7 @@ AHORRO: 75% ✅ = €54,750/año
 
 ### **Opción 1: Lea Primero (Recomendado)**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 1. README_GUIA.md (10 min)
 2. DIAGRAMAS_VISUALIZACION.md (10 min)
@@ -200,25 +206,25 @@ AHORRO: 75% ✅ = €54,750/año
 4. Ejecute simulador (20 min)
 Total: ~70 minutos
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### **Opción 2: Aprenda Haciendo**
 
-```text
-1. Ejecute simulador:
-   py -3.11 simulador_interactivo.py
-   
-2. Seleccione opción 7 (Simular Día Completo)
+<!-- mark...
+```
 
-3. Lea documentación según necesidad
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### **Opción 3: API Interactiva**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 1. Abra: http://localhost:8000/docs
 2. Pruebe cada endpoint
 3. Lea documentación integrada
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

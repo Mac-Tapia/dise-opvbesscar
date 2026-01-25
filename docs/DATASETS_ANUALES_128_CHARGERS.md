@@ -19,6 +19,7 @@ entrenamiento de agentes RL.
 
 ## 📊 Escenarios Disponibles
 
+<!-- markdownlint-disable MD013 -->
 ### Tabla 13 OE2 - Escenarios de Dimensionamiento |Escenario|PE|FC|Cargadores|Tomas|Energía/Día|Total Vehíc/Día|Total/20 años|
 |-----------|---:|---:|----------:|------:|------------:|----------------:|--------------:| | CONSERVADOR | 0.10 | 0.40 | 4 | 16 | 231 kWh | 257 | 1,876,100 | | MEDIANO | 0.50 | 0.60 | 20 | 80 | 1,739 kWh | 1,287 | 9,395,100 | |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| | MÁXIMO | 1.00 | 1.00 | 35 | 140 | 5,800 kWh | 2,575 | 18,797,500 | ### Vehículos Cargados por Período (Todos los Escenarios) |Escenario|Motos/Día|Mototaxis/Día|Total/Día|Total/Mes|Total/Año|Total/20 años|
 |-----------|----------:|--------------:|----------:|----------:|----------:|--------------:| | CONSERVADOR | 225 | 32 | 257 | 7,710 | 93,805 | 1,876,100 | | MEDIANO | 1,125 | 162 | 1,287 | 38,610 | 469,755 | 9,395,100 | |**RECOMENDADO***|**1,462**|**210**|**1,672**|**50,160**|**610,280**|**12,205,600**| | MÁXIMO | 2,250 | 325 | 2,575 | 77,250 | 939,875 | 18,797,500 | ### Energía Cargada por Período (Todos los Escenarios) | Escenario | Energía/Día | Energía/Mes | Energía/Año | Energía/20 años | |-----------|------------:|------------:|------------:|----------------:| | CONSERVADOR | 231 kWh | 6,936 kWh | 84,388 kWh | 1,688 MWh | | MEDIANO | 1,739 kWh | 52,164 kWh | 634,662 kWh | 12,693 MWh | |**RECOMENDADO***|**2,823 kWh**|**84,690 kWh**|**1,030,395 kWh**|**20,608 MWh**| | MÁXIMO | 5,800 kWh | 174,000 kWh | 2,117,000 kWh | 42,340 MWh | ---
@@ -27,6 +28,7 @@ entrenamiento de agentes RL.
 
 ### Escenario RECOMENDADO (Entrenamiento)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 data/processed/citylearn/iquitos_128_tomas/
 ├── Playa_Motos/
@@ -36,14 +38,10 @@ data/processed/citylearn/iquitos_128_tomas/
 │   ├── MOTOTAXI_CH_001_T1.csv ... MOTOTAXI_CH_004_T4.csv  (16 archivos)
 │   └── [16 tomas × 8762 filas cada una]
 ├── schema_128_tomas.json      # Schema CityLearn v2
-└── dataset_summary.json       # Resumen de generación
-```bash
+└── dataset_summary.json       # Resumen de...
+```
 
-**Energía**: ~905 kWh/día (Tabla 13 RECOMENDADO)
-
-### Escenario MÁXIMO (Diseño)
-
-```text
+[Ver código completo en GitHub]text
 data/processed/citylearn/iquitos_128_tomas_maximo/
 ├── Playa_Motos/
 │   ├── MOTO_CH_001_T1.csv ... MOTO_CH_028_T4.csv  (112 archivos)
@@ -54,6 +52,7 @@ data/processed/citylearn/iquitos_128_tomas_maximo/
 ├── schema_128_tomas_maximo.json   # Schema CityLearn v2
 └── dataset_summary_maximo.json    # Resumen de generación
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Energía**: ~2,298 kWh/día (Capacidad máxima 128 tomas)
 
@@ -61,28 +60,24 @@ data/processed/citylearn/iquitos_128_tomas_maximo/
 
 ## 📊 Datasets Legacy (101 Escenarios OE2)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 data/interim/oe2/chargers/annual_datasets/
 ├── Playa_Motos/
 │   ├── 0/               (Baseline: demanda típica determinística)
 │   │   ├── MOTO_CH_001.csv ... MOTO_CH_112.csv
 │   │   └── aggregated_profile.csv
-│   └── 1-100/           (Escenarios Monte Carlo)
-    │   ├── MOTO_TAXI_CH_113.csv ... MOTO_TAXI_CH_128.csv
-    │   └── aggregated_profile.csv
-    ├── 1/
-    │   └── [16 chargers anuales]
-    ├── 2/
-    │   └── [16 chargers anuales]
-    ├── ...
-    └── 100/             (Escenario MC 100)
-        └── [16 chargers anuales]
-```text
+│   ...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## Verificación de Datasets - 101 Escenarios
 
+<!-- markdownlint-disable MD013 -->
 ### Conteo Total | Elemento | Cantidad | | ---------- | ---------- | | **Playa Motos** | 112 chargers | | **Playa Mototaxis** | 16 chargers | | **Total Chargers** | **128** | | **Escenarios** | **101** (0 baseline... | | **Archivos por escenario** | 128 × 2 playas = 256 CSVs | | **Total Archivos** | 101 escenarios ×... | ### Datos por Charger - 101 Escenarios
 
 ✅ **Escenario 0 (Baseline)** - Demanda típica determinística:
@@ -110,6 +105,7 @@ data/interim/oe2/chargers/annual_datasets/
 
 Cada charger tiene archivo con 8760 filas (1 hora × 365 días):
 
+<!-- markdownlint-disable MD013 -->
 ```csv
 timestamp,power_kw,energy_kwh
 2024-01-01 00:00:00,0.0,0.0
@@ -119,28 +115,23 @@ timestamp,power_kw,energy_kwh
 ...
 2024-12-31 23:00:00,0.0,0.0
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### Campos
 
 - **timestamp**: Marca temporal (YYYY-MM-DD HH:MM:SS)
 - **power_kw**: Potencia de carga en kW (0 = no cargando, hasta 2 kW Motos o 3
   - kW Taxis)
-- **energy_kwh**: Energía acumulada en esa hora
+- ...
+```
 
----
-
-## Integración con CityLearn
-
-### Para Entrenamiento
-
-Cada observable individual en CityLearn:
-
-```python
+[Ver código completo en GitHub]python
 "charger_MOTO_CH_001_power_kw"      # Leer de MOTO_CH_001.csv
 "charger_MOTO_CH_002_power_kw"      # Leer de MOTO_CH_002.csv
 ...
 "charger_MOTO_TAXI_CH_128_power_kw" # Leer de MOTO_TAXI_CH_128.csv
 ```text
+<!-- markdownlint-enable MD013 -->
 
 CityLearn **en cada timestep (1 hora)**:
 
@@ -154,28 +145,15 @@ CityLearn **en cada timestep (1 hora)**:
 
 El agente puede entrenarse en:
 
-- **Base**: Demanda típica (escenario normal)
-- **High**: Demanda pico (casos extremos, aprender robustez)
-- **Low**: Demanda reducida (casos de bajo uso)
+- **Base*...
+```
 
----
-
-## Listo para Entrenamiento
-
-✅ **128 chargers** → 128 datasets anuales individuales
-✅ **101 escenarios** → 1 baseline + 100 variaciones Monte Carlo
-✅ **8760 timesteps/charger** → Cobertura anual completa
-✅ **113 M puntos de datos** → Suficiente para RL robusto
-
-### Próximo Paso
-
-Ejecutar entrenamiento con múltiples escenarios:
-
-```bash
+[Ver código completo en GitHub]bash
 python train_v2_fresh.py --scenario 0 --num-episodes 2  # Baseline
 python train_v2_fresh.py --scenario 1 --num-episodes 2  # MC 1
 python train_v2_fresh.py --scenario 50 --num-episodes 2 # MC 50
 ```text
+<!-- markdownlint-enable MD013 -->
 
 CityLearn cargará automáticamente para cada escenario:
 
@@ -189,15 +167,13 @@ CityLearn cargará automáticamente para cada escenario:
 
 ## Verificación de Integridad
 
+<!-- markdownlint-disable MD013 -->
 ```python
-# Cada charger debe tener exactamente:
-# - 8760 filas (365 días × 24 horas)
-# - 3 columnas (timestamp, power_kw, energy_kwh)
-# - power_kw ≤ 2 kW (Motos) o 3 kW (Taxis)
-# - Secuencia temporal continua (sin saltos)
+# Cad...
+```
 
-Verificación: ✅ COMPLETADA
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 

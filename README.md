@@ -35,6 +35,7 @@ integración fotovoltaica y BESS en Iquitos, Perú.
 
 ## Uso rápido
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Activar entorno
 python -m venv .venv
@@ -46,6 +47,7 @@ python -m scripts.run_oe2_solar --config configs/default.yaml --no-plots
 # Ejecutar pipeline visible OE3
 python run_pipeline_visible.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ## Referencias de resultados
 

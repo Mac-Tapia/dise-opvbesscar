@@ -151,6 +151,7 @@ structure
 
 ## 🎯 Decision Tree
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 START: "I want to understand the OE3 module structure"
 │
@@ -163,33 +164,11 @@ START: "I want to understand the OE3 module structure"
 │      [Technical depth: All duplicates, orphaned files, data flow]
 │
 ├─ "I am a visual learner"
-│  └─→ Read: OE3_VISUAL_MAPS.md (All 7 maps)
-│      [Diagrams: Structure, dependencies, data flow, rewards, agents]
-│
-├─ "I want to clean up the code"
-│  ├─→ First: OE3_STRUCTURE_COMPREHENSIVE_ANALYSIS.md (Sections 7-8)
-│  │   [Understand why each action is needed]
-│  ├─→ Then: OE3_CLEANUP_ACTION_PLAN.md (All steps)
-│  │   [Execute cleanup with exact commands]
-│  └─→ Finally: Verification checklist (both documents)
-│       [Confirm everything still works]
-│
-├─ "I want architecture details"
-│  ├─→ OE3_VISUAL_MAPS.md (Maps 3-5)
-│  │   [Data flow, rewards, agents]
-│  └─→ OE3_STRUCTURE_COMPREHENSIVE_ANALYSIS.md (Section 4-5)
-│      [Deep analysis]
-│
-├─ "I want import validation"
-│  └─→ OE3_STRUCTURE_COMPREHENSIVE_ANALYSIS.md (Section 3)
-│      [All imports checked, complete chain verified]
-│
-└─ "I want risk assessment"
-   ├─→ OE3_ANALYSIS_SUMMARY.md (Section 8)
-   │   [Quick risk matrix]
-   └─→ OE3_CLEANUP_ACTION_PLAN.md (Risk levels for each step)
-       [Detailed rollback procedures]
-```bash
+│  └─→ Read:...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -203,6 +182,7 @@ START: "I want to understand the OE3 module structure"
 - **Unused/orphaned code**: ~865 lines (9%)
 - **Space savings from cleanup**: ~1,500 lines (16%)
 
+<!-- markdownlint-disable MD013 -->
 ### Issues Found | Severity | Count | Examples | Action | |----------|-------|----------|--------| | 🔴 Critical | 1 | demanda_mall_kwh.py (100% orphaned) | DELETE | | 🟡 Medium | 3 | co2_emissions, v2 rewards, dynamic | ARCHIVE/MERGE | | 🟢 Low | 0 | N/A | N/A | ### Risk Assessment | Operation | Risk | Rollback | Impact | |-----------|------|----------|--------| | Delete demanda_mall_kwh.py | 🟢 None | 1 min | Zero | | Consolidate co2_emissions | 🟡 Low | 2 min | Test required | | Archive v2 rewards | 🟢 None | 1 min | Zero | | Archive v2 wrapper | 🟢 None | 1 min | Zero | | Archive dynamic reward | 🟡 Low | 1 min | Dev script only | | **Overall** | **🟢 LOW** | **~15 min** | **All reversible** | ### Timeline
 
 - **Analysis completed**: 35 minutes
@@ -311,18 +291,17 @@ OE3_CLEANUP_ACTION_PLAN.md contains:
 
 All analysis documents in workspace root:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 d:\diseñopvbesscar\
 ├── OE3_ANALYSIS_SUMMARY.md                          ← START HERE (5 min read)
 ├── OE3_STRUCTURE_COMPREHENSIVE_ANALYSIS.md          ← DETAILED ANALYSIS (20 min)
 ├── OE3_CLEANUP_ACTION_PLAN.md                       ← IMPLEMENTATION GUIDE (35 min)
 ├── OE3_VISUAL_MAPS.md                               ← DIAGRAMS & MAPS (10 min)
-└── OE3_ANALYSIS_INDEX.md                            ← THIS FILE (navigation)
-```bash
+└── OE3_ANALYSIS_INDEX.md                            ←...
+```
 
-Source code analyzed:
-
-```bash
+[Ver código completo en GitHub]bash
 d:\diseñopvbesscar\src\iquitos_citylearn\oe3\
 ├── rewards.py                  (529 lines) - ACTIVE
 ├── co2_table.py                (469 lines) - ACTIVE
@@ -335,6 +314,7 @@ d:\diseñopvbesscar\src\iquitos_citylearn\oe3\
 ├── co2_emissions.py            (358 lines) - UNUSED (to merge)
 └── demanda_mall_kwh.py         (507 lines) - ORPHANED (to delete)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

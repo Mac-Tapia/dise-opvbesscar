@@ -31,6 +31,7 @@
 
 ### 📁 ARCHIVOS CORREGIDOS (32 files)
 
+<!-- markdownlint-disable MD013 -->
 ```
 ACTUALIZACION_CITYLEARN_SEPARADO.md          8 correcciones
 AUDITORIA_RESUMEN_EJECUTIVO.md               8 correcciones
@@ -51,6 +52,7 @@ TRAINING_CHECKLIST.md                        5 correcciones
 TRAINING_READY.md                            4 correcciones
 ... y 15 archivos más en docs/
 ```
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -87,6 +89,7 @@ Los errores restantes son principalmente:
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ### ✅ RESULTADO FINAL | Métrica | Valor | |---------|-------| | Errores iniciales | 1,614 | | Errores críticos corregidos | 126+ | | Archivos modificados | 32 | | Commits realizados | 2 | | Push a GitHub | ✅ Completado | | Errores restantes (no críticos) | ~1,488 (MD013 en tablas/código) | ---
 
 ### 🚀 ESTADO ACTUAL

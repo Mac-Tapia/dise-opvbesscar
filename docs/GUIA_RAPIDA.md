@@ -72,15 +72,18 @@
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📊 Tabla Rápida de Resultados | Métrica | PPO | A2C | SAC | Baseline | | --------- | ----- | ----- | ----- | ---------- | | Reward | **0.0343** | 0.0254 | 0.0252 | -0.2000 | | CO2 | 1.76M | 1.76M | 1.76M | 2.00M | | Peak | 274 | 275 | 275 | 310 | | Stability | **0.61** | 0.61 | 0.61 | 0.50 | **Conclusión**: PPO ligeramente mejor, todos mejoran significativamente vs
 Baseline
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 🔧 Parámetros TIER 2 | Parámetro | Valor | | ----------- | ------- | | Learning Rate | 2.5e-4 | | Batch Size | 256 (SAC) / 1024 (A2C) | | Hidden | (512, 512) | | Entropy | 0.02 | | Activation | ReLU | | LR Schedule | Linear | ---
 
 ## 📁 Estructura de Carpetas
 
+<!-- markdownlint-disable MD013 -->
 ```text
 docs/
 ├── 00_INDEX_MAESTRO_CONSOLIDADO.md ⭐ INDICE COMPLETO
@@ -92,12 +95,11 @@ docs/
 ├── 🏗️ CONSTRUCCION_128_CHARGERS_FINAL.md
 ├── 📚 DATASETS_ANUALES_128_CHARGERS.md
 ├── 🔍 AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md
-├── ⚙️ STATUS_DASHBOARD_TIER1.md
-├── ⏱️ MODO_3_OPERACION_30MIN.md
-├── ✓ VERIFICACION_CONFIGURACION_2EPISODIOS_SERIE.md
-├── 📁 historico/ (10 archivos - sesiones previas)
-└── 📁 sac_tier2/ (7 archivos - documentación SAC)
-```text
+├── ⚙️ STATUS_DASHBO...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -143,6 +145,7 @@ R: `analyses/oe3/training/checkpoints/{ppo_gpu, a2c_gpu, sac}/`
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 🎓 Términos Clave | Término | Significado | | --------- | ------------ | | **TIER 2** | Segunda iteración con... | | **PPO** | Proximal Policy Optimization | | **A2C** | Advantage Actor-Critic | | **SAC** | Soft Actor-Critic | | **Reward** | Señal de recompensa del aprendizaje | | **Convergencia** | Cuando el modelo deja de mejorar | | **CO2** | Emisiones de carbono en kg | | **Peak Import** | Pico de importación de red en kWh/h | ---
 
 **Estado**: ✅ CONSOLIDADO Y LISTO

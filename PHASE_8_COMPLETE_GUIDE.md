@@ -24,6 +24,7 @@
 
 ### Prerequisites Check (1 minute)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Verify Python 3.11
 python --version  # Should output: Python 3.11.x
@@ -35,43 +36,44 @@ python -c "import citylearn; print('✅ CityLearn ready')"
 ls -la src/iquitos_citylearn/oe3/agents/
 # Should show: sac.py, ppo_sb3.py, a2c_sb3.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Step 1: Build Dataset (15-30 minutes)
 
-```bash
-python -m scripts.run_oe3_build_dataset --config configs/default.yaml
+<!-- markdownlint-disable MD013 -->
+```ba...
+```
 
-# Expected output:
-# ✅ Loading OE2 artifacts...
-# ✅ Validating solar, chargers, BESS...
-# ✅ Generating 128 charger_simulation_*.csv files...
-# ✅ Building schema.json...
-# ✅ Complete dataset generated: data/processed/citylearnv2_dataset/
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Step 2: Quick Test (5 minutes - OPTIONAL)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Test one agent for 1 episode (verify no errors)
 python scripts/train_quick.py --episodes 1 --agent PPO
 
 # Expected: Completes in ~5 min without errors
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Step 3: Full Training (4-5 hours)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Train all 3 agents sequentially
 python scripts/train_agents_serial.py --device cuda --episodes 50
 
-# Or individual agents:
-python -m scripts.run_oe3_sac_training --episodes 50 --device cuda
-python -m scripts.run_oe3_ppo_training --episodes 50 --device cuda
-python -m scripts.run_oe3_a2c_training --episodes 50 --device cuda
-```bash
+# Or individual age...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Step 4: View Results (1 minute)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Show CO2 comparison
 cat COMPARACION_BASELINE_VS_RL.txt
@@ -79,6 +81,7 @@ cat COMPARACION_BASELINE_VS_RL.txt
 # View training logs
 tail -50 analyses/logs/ppo_training.log
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -89,18 +92,10 @@ tail -50 analyses/logs/ppo_training.log
 Phase 8 trains **three reinforcement learning agents** (SAC, PPO, A2C) to
 optimize EV charger scheduling:
 
-**Problem**: 128 chargers × 8,760 hourly decisions = 1.1M control points/year  
-**Solution**: Train neural network policies to minimize CO₂ + maximize solar +
-reduce costs
+**Problem**: 128 chargers × 8,760 hourly decisions =...
+```
 
-**Input**: OE2 infrastructure (4 MWp PV, 2 MWh BESS, 128 chargers)  
-**Output**: Trained agents that reduce CO₂ by 20-30% vs uncontrolled charging
-
-### Why Three Agents? | Agent | Approach | Strength | |-------|----------|----------| | **SAC** | Off-policy, entropy-regularized | Handles exploration... | | **PPO** | On-policy, stable | Best performance, most... | | **A2C** | On-policy, simple | Fast training, good baseline | **Goal**: Compare performance, determine best for production deployment
-
-### Architecture Overview
-
-```bash
+[Ver código completo en GitHub]bash
 CityLearn Environment (534 dims in, 126 dims out)
     ↓
  RL Agent (PPO/SAC/A2C)
@@ -116,9 +111,11 @@ CityLearn Environment (534 dims in, 126 dims out)
   - EV: -0.10 × max(0, demand - supply)
   - Grid: -0.10 × max(0, peak - baseline)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Data Flow (Phase 7 → Phase 8)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Phase 7 Outputs                Phase 8 Execution
     ↓                               ↓
@@ -126,19 +123,11 @@ data/interim/oe2/          Build Dataset
   - solar_ts.csv      →    (dataset_builder.py)
   - chargers/              ↓
   - bess_config.json   outputs/schema.json
-    ↓                      + charger_sim_*.csv
-                               ↓
-                         Train Agents
-                         (train_agents_serial.py)
-                               ↓
-                         checkpoints/
-                         {SAC,PPO,A2C}/
-                               ↓
-                         Evaluate Performance
-                         (co2_table.py)
-                               ↓
-                         COMPARACION_BASELINE_VS_RL.txt
-```bash
+    ↓                      + charger_...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -161,6 +150,7 @@ data/interim/oe2/          Build Dataset
 
 **Hyperparameters**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 learning_rate: 2.0e-4
 batch_size: 256 (large for stability)
@@ -170,39 +160,16 @@ target_update_interval: 1
 use_sde: true (stochastic dynamics exploration)
 use_amp: true (mixed precision)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Expected Performance**:
 
 - **Convergence**: 20-30 episodes
 - **CO₂ Reduction**: 20-26% vs baseline
-- **Solar Utilization**: 60-65%
-- **Final Reward**: -800 to -500 (stable)
-- **Training Time**: 60-90 min
+- **Solar Utilization**: 60-65%...
+```
 
-**When to Use**: When you need sample-efficiency and exploration
-
----
-
-### PPO (Proximal Policy Optimization)
-
-**Type**: On-policy trust-region actor-critic  
-**Key Innovation**: Clips policy updates to trust region (prevents large
-updates)
-**Pros**:
-
-- Most stable and reliable convergence
-- Easy to tune and implement
-- Works well with continuous actions
-- Best reproducibility
-
-**Cons**:
-
-- Less sample-efficient than SAC
-- Requires larger batch sizes
-
-**Hyperparameters**:
-
-```bash
+[Ver código completo en GitHub]bash
 learning_rate: 2.0e-4 (linear decay)
 batch_size: 128
 n_epochs: 20 (repeated gradient updates)
@@ -211,6 +178,7 @@ clip_range: 0.1 (conservative clipping)
 gae_lambda: 0.98 (generalized advantage estimation)
 use_amp: true
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Expected Performance**:
 
@@ -226,23 +194,10 @@ use_amp: true
 
 ### A2C (Advantage Actor-Critic)
 
-**Type**: On-policy advantage-based actor-critic  
-**Key Innovation**: Multi-step advantage estimation + simpler than PPO  
-**Pros**:
+**Type**: On-...
+```
 
-- Fast training (simple algorithm)
-- Decent performance with minimal tuning
-- Good baseline for comparison
-
-**Cons**:
-
-- Less stable than PPO
-- Can have higher variance
-- May not reach as high final performance
-
-**Hyperparameters**:
-
-```bash
+[Ver código completo en GitHub]bash
 learning_rate: 2.0e-4 (linear decay)
 n_steps: 2048 (multi-step advantage)
 batch_size: 64 (smaller batches)
@@ -250,6 +205,7 @@ gae_lambda: 1.0 (Monte Carlo)
 use_rms_prop: true (RMSProp instead of Adam)
 normalize_advantage: true
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Expected Performance**:
 
@@ -265,25 +221,11 @@ normalize_advantage: true
 
 ### Common Architecture (All Agents)
 
-```bash
-Input Layer: 534 dimensions
-  ├─ Building state (solar, demand, grid import, BESS SOC)
-  ├─ Charger states × 128 (power, occupancy, battery level)
-  ├─ Time features (hour, month, day-of-week, peak indicator)
-  └─ Grid state (carbon intensity, tariff)
+<!-- markdownlint-d...
+```
 
-Hidden Layer 1: Dense(1024)
-  └─ Activation: ReLU
-
-Hidden Layer 2: Dense(1024)
-  └─ Activation: ReLU
-
-Output Layer (Policy): Dense(126)
-  └─ Activation: Tanh (outputs [-1, 1], mapped to [0, 1] action)
-
-Output Layer (Value): Dense(1) [for policy gradient]
-  └─ Linear output (unbounded)
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Total Parameters**: ~1.3M per agent
 
@@ -293,6 +235,7 @@ Output Layer (Value): Dense(1) [for policy gradient]
 
 ### Pre-Training Checklist
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # 1. Verify Python version
 python --version  # → Python 3.11.x ✓
@@ -308,12 +251,10 @@ mkdir -p checkpoints/{SAC,PPO,A2C}
 mkdir -p analyses/logs/
 
 # 5. Verify dataset exists
-ls data/processed/citylearnv2_dataset/schema.json  # Should exist
-```bash
+ls data/processed/citylearnv2_dataset/schema...
+```
 
-### Option A: Full Training (Recommended)
-
-```bash
+[Ver código completo en GitHub]bash
 # One command trains all 3 agents sequentially
 python scripts/train_agents_serial.py \
   --device cuda \
@@ -337,6 +278,7 @@ python scripts/train_agents_serial.py \
 #
 # All agents trained. Results in COMPARACION_BASELINE_VS_RL.txt
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Expected Duration**: 4-5 hours on GPU
 
@@ -344,6 +286,7 @@ python scripts/train_agents_serial.py \
 
 ### Option B: Individual Agent Training
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Train SAC only
 python -m scripts.run_oe3_sac_training \
@@ -356,16 +299,11 @@ python -m scripts.run_oe3_sac_training \
 python -m scripts.run_oe3_ppo_training \
   --episodes 50 \
   --device cuda \
-  --learning_rate 2e-4 \
-  --batch_size 128
+...
+```
 
-# Train A2C only
-python -m scripts.run_oe3_a2c_training \
-  --episodes 50 \
-  --device cuda \
-  --learning_rate 2e-4 \
-  --batch_size 64
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Pros**: Can run in parallel on different GPUs  
 **Cons**: More manual management
@@ -374,6 +312,7 @@ python -m scripts.run_oe3_a2c_training \
 
 ### Option C: Quick Test (1 episode, 5 minutes)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Verify everything works before full training
 python scripts/train_quick.py \
@@ -385,21 +324,19 @@ python scripts/train_quick.py \
 # If successful, proceed to full training
 # If fails, check error message and troubleshoot
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ### Option D: Resume from Checkpoint
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-# If training interrupted, resume from checkpoint
-python scripts/train_agents_serial.py \
-  --device cuda \
-  --episodes 50 \
-  --resume checkpoints/PPO/latest.zip \
-  --reset_num_timesteps false
+# If training...
+```
 
-# Important: reset_num_timesteps=false ensures timesteps accumulate
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -409,6 +346,7 @@ python scripts/train_agents_serial.py \
 
 **In a separate terminal (while training runs)**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Watch training progress (updates every 5 seconds)
 python scripts/monitor_training_live_2026.py
@@ -420,16 +358,11 @@ python scripts/monitor_training_live_2026.py
 # PPO       0/50     -       0             0%
 # A2C       0/50     -       0             0%
 ```bash
+<!-- markdownlint-enable MD013...
+```
 
-Or use TensorBoard:
-
-```bash
-# Start TensorBoard server
-tensorboard --logdir analyses/logs/
-
-# Open browser: http://localhost:6006
-# Watch: Training reward, loss curves, learning progress
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -437,6 +370,7 @@ tensorboard --logdir analyses/logs/
 
 **Where to find logs**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 analyses/logs/
 ├── SAC_training_20260125.log      # Detailed SAC logs
@@ -446,19 +380,17 @@ analyses/logs/
 ├── PPO/events.out.tfevents.*
 └── A2C/events.out.tfevents.*
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **View logs**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-# See last 100 lines of PPO training
-tail -100 analyses/logs/PPO_training_20260125.log
+...
+```
 
-# Follow logs in real-time
-tail -f analyses/logs/SAC_training_20260125.log
-
-# Search for errors
-grep "ERROR\|Warning" analyses/logs/*.log
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -470,6 +402,7 @@ grep "ERROR\|Warning" analyses/logs/*.log
 
 **Solution**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Verify Python 3.11 (2)
 python --version  # Must be 3.11.x
@@ -480,6 +413,7 @@ pip install citylearn>=2.5.0
 # Verify
 python -c "import citylearn; print('✅ Ready')"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -489,24 +423,13 @@ python -c "import citylearn; print('✅ Ready')"
 
 **Solutions** (try in order):
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-# 1. Reduce batch size in AGENT_TRAINING_CONFIG_PHASE8.yaml
-#    PPO: batch_size 128 → 64
-#    SAC: batch_size 256 → 128
+# 1. Reduce ...
+```
 
-# 2. Reduce hidden layer sizes
-#    hidden_sizes: [1024, 1024] → [512, 512]
-
-# 3. Reduce rollout length (PPO n_steps)
-#    n_steps: 2048 → 1024
-
-# 4. Use CPU instead
-python scripts/train_agents_serial.py --device cpu --episodes 50
-#    (Much slower: ~12-18 hours instead of 4-6)
-
-# 5. Check GPU memory
-nvidia-smi  # Should show GPU utilization and available memory
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -516,6 +439,7 @@ nvidia-smi  # Should show GPU utilization and available memory
 
 **Solution**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Regenerate dataset
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
@@ -530,22 +454,21 @@ ls data/processed/citylearnv2_dataset/buildings/*/charger_simulation_*.csv|wc -l
 # Try training again
 python scripts/train_quick.py --episodes 1
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
-#### Issue 4: "AttributeError: module 'gymnasium' has no attribute 'Env'"
+#### Is...
+```
 
-**Cause**: gymnasium version incompatibility
-
-**Solution**:
-
-```bash
+[Ver código completo en GitHub]bash
 # Update gymnasium to compatible version
 pip install gymnasium==0.28.1
 
 # Verify (2)
 python -c "import gymnasium; print(gymnasium.__version__)"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -555,6 +478,7 @@ python -c "import gymnasium; print(gymnasium.__version__)"
 
 **Solution**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Delete old checkpoints
 rm -rf checkpoints/PPO/*
@@ -562,23 +486,16 @@ rm -rf checkpoints/SAC/*
 rm -rf checkpoints/A2C/*
 
 # Restart training from scratch
-python scripts/train_agents_serial.py --device cuda --episodes 50
-```bash
+python scripts/train_agents_s...
+```
 
----
-
-## 📈 PERFORMANCE EVALUATION {#evaluation}
-
-### During Training
-
-**Key metrics to monitor**:
-
-```bash
+[Ver código completo en GitHub]bash
 Episode Reward: Total reward accumulated (should increase/stabilize)
 CO2 Reduction: Percentage vs baseline (target: ≥20%)
 Solar Utilization: Percentage of PV used (target: ≥60%)
 Grid Stability: Peak demand reduction (target: ≥15%)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Healthy training curves**:
 
@@ -592,15 +509,10 @@ Grid Stability: Peak demand reduction (target: ≥15%)
 - Reward stays flat (agent not learning)
 - Reward decreases over time (wrong configuration)
 - Huge variance (unstable learning)
-- NaN values (numerical error)
+- NaN values (numeric...
+```
 
----
-
-### After Training
-
-#### 1. Generate Comparison Table
-
-```bash
+[Ver código completo en GitHub]bash
 # Automatic (part of training script output)
 cat COMPARACION_BASELINE_VS_RL.txt
 
@@ -614,11 +526,13 @@ cat COMPARACION_BASELINE_VS_RL.txt
 # │ A2C    │ 22%          │ 62%    │ 6%    │
 # └─────────────────────────────────────────┘
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 #### 2. Analyze Training Logs
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Extract key metrics
 python -c "
@@ -628,15 +542,10 @@ for agent in logs:
     print(f\"{agent['agent']}: \")
     print(f\"  Episodes: {agent['episode']}\")
     print(f\"  Total steps: {agent['total_steps']}\")
-    print(f\"  Best reward: {agent['best_reward']}\")
-"
-```bash
+    print(f\"  Best r...
+```
 
----
-
-#### 3. Generate Performance Plots
-
-```bash
+[Ver código completo en GitHub]bash
 # Create visualization (if implemented)
 python scripts/plot_training_results.py
 
@@ -646,11 +555,13 @@ python scripts/plot_training_results.py
 # analyses/plots/solar_utilization.png    # Solar usage
 # analyses/plots/grid_stability.png       # Peak demand reduction
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 #### 4. Detailed Agent Comparison
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Compare agents side-by-side
 python scripts/agent_comparison_report.py
@@ -662,67 +573,10 @@ python scripts/agent_comparison_report.py
 # - Robustness analysis
 # - Recommendations for production
 ```bash
+<!-- mark...
+```
 
----
-
-## 📊 RESULTS ANALYSIS {#results-analysis}
-
-### Interpreting Results
-
-#### CO₂ Reduction (Primary Metric)
-
-**Baseline**: 10,200 kg CO₂/year (diesel import during peak)  
-**Target**: ≥20% reduction = ≤8,160 kg CO₂/year
-
-#### What reduces CO₂?
-
-- Shifting EV charging to sunny hours (solar generation up)
-- Using BESS during evening peak (avoid grid import)
-- Load smoothing (flatten peaks, reduce curtailment)
-
----
-
-#### Solar Utilization (Secondary Metric)
-
-**Baseline**: 40% (much PV wasted)  
-**Target**: ≥60% (good)  
-**Excellent**: ≥70%
-
-**How to improve**:
-
-- Increase solar reward weight (currently 0.20)
-- Add charger battery level to observations
-- Implement demand forecasting
-
----
-
-#### Cost Savings (Economic Impact)
-
-**Baseline**: $8,260/year (grid import at $0.20/kWh)  
-**Target**: ≥5% savings = ≤$7,847/year
-
-**Note**: Low priority in Iquitos (tariffs already low)
-
----
-
-#### Grid Stability (System Reliability)
-
-**Baseline**: 1.2 MW peak during evening (risk of blackouts)  
-**Target**: ≤1.0 MW peak (safe margin)
-
-**How to achieve**:
-
-- Increase grid_stability weight
-- Implement demand response
-- Add peak detection to observation space
-
----
-
-### Expected Final Performance
-
-After 50 episodes training:
-
-```bash
+[Ver código completo en GitHub]bash
 ┌──────────────────────────────────────────────────────────┐
 │ AGENT PERFORMANCE AFTER 50 EPISODES                     │
 ├──────────────────────────────────────────────────────────┤
@@ -739,6 +593,7 @@ After 50 episodes training:
 
 RECOMMENDATION: Use PPO for production (best performance + stability)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -748,22 +603,21 @@ RECOMMENDATION: Use PPO for production (best performance + stability)
 
 1. **Review Results**
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    cat COMPARACION_BASELINE_VS_RL.txt
    # Verify CO2 reduction ≥20% and solar ≥60%
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 2. **Document Findings**
    - Create final performance report
    - Screenshot key metrics
-   - Document hyperparameters used
+...
+```
 
-3. **Commit Results**
-
-   ```bash
-   git add .
-   git commit -m "feat: Phase 8 complete - Agent training results (PPO best: 29% CO2 reduction)"
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -776,9 +630,11 @@ RECOMMENDATION: Use PPO for production (best performance + stability)
 
 2. **Extended Training** (if convergence incomplete)
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    python scripts/train_agents_serial.py --episodes 100  # Double training
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 3. **Agent Comparison**
    - Run same test episode for all 3 agents
@@ -792,64 +648,13 @@ RECOMMENDATION: Use PPO for production (best performance + stability)
 1. **Production Selection**
    - Select best agent (likely PPO)
    - Export model weights
-   - Implement in controller
+   -...
+```
 
-2. **Real-World Testing** (optional)
-   - Deploy to test chargers
-   - Compare vs simulation
-   - Collect real performance data
-
-3. **Continuous Improvement**
-   - Monitor actual CO₂ reduction
-   - Update model periodically
-   - Incorporate new data
-
----
-
-### Documentation to Create
-
-- [ ] `PHASE_8_RESULTS_SUMMARY.md` - Final results and findings
-- [ ] `AGENT_PERFORMANCE_COMPARISON.txt` - Side-by-side metrics
-- [ ] `DEPLOYMENT_RECOMMENDATION.md` - Which agent to use
-- [ ] `TRAINING_LOGS_ANALYSIS.md` - Deep dive into training process
-- [ ] `NEXT_IMPROVEMENTS_PHASE_9.md` - Ideas for optimization
-
----
-
-## 🎯 SUCCESS CRITERIA
-
-Phase 8 is complete when:
-
-- ✅ All 3 agents trained for 50+ episodes without crashes
-- ✅ Training converges (reward stabilizes by episode 30)
-- ✅ CO₂ reduction ≥20% for at least one agent
-- ✅ Solar utilization ≥60% for at least one agent
-- ✅ Final comparison report generated
-- ✅ Results documented and committed to git
-
----
-
-## 📞 TROUBLESHOOTING SUMMARY | Problem | Cause | Solution | |---------|-------|----------| | ImportError: citylearn | Python 3.13 | Install Python 3.11 | | CUDA OOM | Batch too large | Reduce batch_size/n_steps | | Reward not learning | Dataset not built | Run dataset_builder | | NaN in training | Numerical error | Check reward normalization | | GPU not detected | No CUDA available | Use --device cpu | |Checkpoint incompatible|Old code + checkpoint|Delete checkpoints, restart| | Training slow | CPU mode | Use --device cuda | | Permission denied | File access | Check write permissions | ---
-
-## 📞 HELP & SUPPORT
-
-- Check logs: `analyses/logs/*.log`
-- View TensorBoard: `tensorboard --logdir analyses/logs/`
-- Monitor live: `python scripts/monitor_training_live_2026.py`
-- Error search: Search this document for error message
-
----
-
-**Phase 8 Ready Status**: 🟢 **READY TO BEGIN**  
-**Expected Start**: After Python 3.11 installation + CityLearn install  
-**Expected Duration**: 4-6 hours  
-**Estimated Completion**: Today (same calendar day)
-
-**Next Command**:
-
-```bash
+[Ver código completo en GitHub]bash
 # Once Python 3.11 installed and CityLearn installed:
 python scripts/train_agents_serial.py --device cuda --episodes 50
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 Good luck! 🚀

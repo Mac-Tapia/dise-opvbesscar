@@ -35,8 +35,10 @@ Ahora disponibles en `info["reward_components"]`:
 - `ev_power_mototaxis_kw`: Potencia mototaxis
 - `ev_power_fairness_ratio`: max/min potencia
 
+<!-- markdownlint-disable MD013 -->
 #### 4. **Hiperparámetros Estabilizados** ✓ | Parámetro | Valor | Cambio | | ----------- | ------- | -------- | | `entropy_coef` | **0.01 FIJO** | Era 0.02 adaptativo ↓ | | `learning_rate_base` | 2.5e-4 | Igual TIER 2 | | `learning_rate_peak` | **1.5e-4** | NUEVO: -40% en pico | | `normalize_obs` | True | HABILITADO | | `normalize_rewards` | True | HABILITADO | | `clip_obs` | 10.0 | Para estabilidad | #### 5. **Recompensas Normalizadas y Escaladas** ✓
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # Antes: Mal escalado, sin clipping final
 reward = w1*r1 + w2*r2 + ...  # [-5, +5]
@@ -46,6 +48,7 @@ reward_base = w1*r1 + w2*r2 + ...  # [-1, 1] cada componente
 total_penalty = sum(penalties)  # [-1, 0]
 reward = CLIP(reward_base + penalty, -1, 1)  # Salida final [-1, 1]
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -53,33 +56,10 @@ reward = CLIP(reward_base + penalty, -1, 1)  # Salida final [-1, 1]
 
 ### Nuevos
 
-1. **`rewards_improved_v2.py`** (156 líneas)
-   - Clase `ImprovedMultiObjectiveReward`
-   - Pesos `ImprovedWeights` con penalizaciones explícitas
-   - Cálculo normalizado de recompensas
+1. **`rewards_imp...
+```
 
-2. **`tier2_v2_config.py`** (89 líneas)
-   - Configuración unificada V2
-   - Métodos para LR dinámico, entropy coef, SOC target
-   - Compatible con A2C, PPO, SAC
-
-3. **`rewards_wrapper_v2.py`** (161 líneas)
-   - Wrapper que integra observables enriquecidos
-   - Step mejorado con tracking de componentes
-   - Métodos para acceder a parámetros dinámicos
-
-### Modificados
-
-- Referencia en `simulate.py` para usar wrapper V2
-- Documentación de agentes (PPO, A2C, SAC) actualizada
-
----
-
-## Cómo Usar
-
-### En Script de Entrenamiento
-
-```python
+[Ver código completo en GitHub]python
 from src.iquitos_citylearn.oe3.tier2_v2_config import TIER2V2Config
 from src.iquitos_citylearn.oe3.rewards_wrapper_v2 import ImprovedRewardWrapper
 
@@ -98,50 +78,25 @@ components = info["reward_components"]
 print(f"CO2 reward: {components['r_co2']:.3f}")
 print(f"Peak penalty: {components['r_peak_power_penalty']:.3f}")
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### Cambios en Pesos (si necesitas ajustar)
 
+<!-- markdownlint-disable MD013 -->
 ```python
 config_custom = TIER2V2Config(
     co2_weight=0.60,  # Aumentar si necesitas más énfasis
     peak_power_penalty=0.40,  # Aumentar para penalización más fuerte
     soc_reserve_penalty=0.25,  # Aumentar para preparación pre-pico
 )
-env = ImprovedRewardWrapper(env, config=config_custom)
-```text
+env = ImprovedRewardWrapper(env, config=conf...
+```
 
----
-
-## Comparativa: V1 vs V2 | Aspecto | V1 (Anterior) | V2 (Nuevo) | | --------- | -------------- | ----------- | | **CO₂ weight** | 0.50 | **0.55** ↑ | | **Penalización CO₂ pico** | 2.0x | **2.5x** ↑ | | **Potencia pico explícita** | Implícita | **Explícita** ✓ | | **SOC reserve** | Fijo 0.65 | **Dinámico** (0.40-0.85) | | **Entropy coef** | 0.02 adaptativo | **0.01 fijo** | | **LR pico** | No ajustado | **1.5e-4** (reducido) | | **Normalización final** | Parcial | **Completa [-1,1]** | | **Observables** | Básicos | **Enriquecidos** (12+) | ---
-
-## Próximos Pasos
-
-1. **Reentrenar A2C, PPO, SAC** con wrapper V2
-   - Esperar 2 episodios para validación
-   - Monitor: Importación en pico vs target (250 kWh/h)
-
-2. **Análisis Pareto** post-entrenamiento
-   - CO₂ vs Costo vs Satisfacción EV
-   - Usar método `reward_fn.get_pareto_metrics()`
-
-3. **Ajustes finos por feedback**
-   - Si CO₂ sigue alto: incrementar `co2_weight` a 0.60
-   - Si picos persisten: incrementar `peak_power_penalty` a 0.40
-
----
-
-## Referencia Rápida - Horas Críticas Iquitos | Hora | Tipo | SOC Target | Penalización CO₂ | | ------ | ------ | ----------- | ------------------ | | 0-8 | Noche | 0.60 | 1.2x | | 9-11 | Valle | 0.60 | 1.2x | | 12-15 | Normal | 0.60 | 1.2x | | **16-17** | **Pre-pico** | **0.85** | **1.5x** | | **18-21** | **PICO** | **0.40** | **2.5x** | | 22-23 | Noche | 0.60 | 1.2x | **Peak Demand Limit**: 150 kW (hard limit en pico)
-
----
-
-## Validación en Entrenamiento
-
-El wrapper reportará automáticamente:
-
-```text
+[Ver código completo en GitHub]text
  [Step 1000] Hour=19 | CO2=0.850 | Reward=0.123 | Peak=1 
                                                   ↑ Es hora pico
 ```text
+<!-- markdownlint-enable MD013 -->
 
 Si `Reward` es negativo en pico pero importación está baja (< 150 kWh/h):
 

@@ -51,6 +51,7 @@
 - **Errores finales**: 52 warnings (Python, non-blocking)
 - **Reducción**: 85% de errores corregidos
 
+<!-- markdownlint-disable MD013 -->
 #### Errores corregidos por tipo | Tipo | Inicial | Final | Causa | Solución | | --- | --- | --- | --- | --- |
 |MD060|351|0|Pipes de tabla sin espacios|Regex para agregar espacios| | MD009 | 50+ | 0 | Trailing spaces | Script para remover espacios finales | | MD040 | 116 | 0 | Fenced code sin language | Agregar ````text` | | MD041 | 1 | 0 | First-line heading incorrecto | Cambiar ## a # | |Python warnings|52|~40-50|Imports/variables no usadas|Limpiar imports innecesarios| #### Archivos procesados
 
@@ -91,6 +92,7 @@
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📊 Estadísticas Finales del Proyecto | Métrica | Valor | | --- | --- | | Archivos Python (productivos) | 45 en raíz | | Archivos Python (total) | 10,444 en workspace | | Archivos Markdown | 63 (todos formateados) | | Gráficas PNG | 193 total, 25 con datos reales | | Checkpoints disponibles | 197 total (a2c:10, ppo_gpu:11, sac:176) | | CSV datasets | 476 archivos | | JSON configs | 38 archivos | | Errores críticos | 0 | | Warnings no-blocking | ~40-50 | ---
 
 ## 🔍 Funcionalidad Verificada

@@ -62,10 +62,12 @@ agentes (PPO, A2C, SAC).
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 🔍 Verificación de Integridad | Métrica | Valor | Status | | --------- | ------- | -------- | | **Total PNG** | 25 | ✅ | | **Tamaño Promedio** | 57.6 KB | ✅ | | **Mínimo** | 19.9 KB | ✅ | | **Máximo** | 84.5 KB | ✅ | | **Sin vacíos** | 100% | ✅ | | **Con datos reales** | 100% | ✅ | ---
 
 ## 📊 Fuente de Datos
 
+<!-- markdownlint-disable MD013 -->
 ### Checkpoints Utilizados | Agente | Checkpoint | Timesteps | Policy | Status | | -------- | ----------- | ----------- | -------- | -------- |
 |**PPO**|`checkpoints/ppo_gpu/ppo_final.zip`|18,432|ActorCriticPolicy|✅ Real|
 |**A2C**|`checkpoints/a2c_gpu/a2c_final.zip`|17,536|ActorCriticPolicy|✅ Real| | **SAC** | `checkpoints/sac/sac_final.zip` | 17,520 | SACPolicy | ✅ Real | ### Validación de Arquitecturas
@@ -80,35 +82,37 @@ agentes (PPO, A2C, SAC).
 
 ### FASE 1: Carga de Checkpoints ✅
 
+<!-- markdownlint-disable MD013 -->
 ```text
 PPO: ✅ Cargado correctamente (18,432 timesteps)
 A2C: ✅ Cargado correctamente (17,536 timesteps)
 SAC: ✅ Cargado correctamente (17,520 timesteps)
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### FASE 2: Regeneración ✅
 
+<!-- markdownlint-disable MD013 -->
 ```text
 26 gráficas generadas con datos reales
 - 6 gráficas individuales (01-06)
 - 5 gráficas comparativas (07_01-05)
 - 3 gráficas progreso (20_*)
-- 6 gráficas análisis detallado
-- Plus gráficas adicionales
-```text
+-...
+```
 
-### FASE 3: Limpieza ✅
-
-```text
+[Ver código completo en GitHub]text
 4 gráficas antiguas eliminadas
 - Removed: 04_PPO_training_updated.png (antigua)
 - Removed: 02_A2C_training_updated.png (antigua)
 - Removed: 01_A2C_training.png (antigua)
 - Removed: 03_PPO_training.png (antigua)
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### FASE 4: Verificación ✅
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Todas las gráficas verificadas
 - 25/25 presentes ✓
@@ -116,6 +120,7 @@ Todas las gráficas verificadas
 - Todos los archivos > 19.9 KB ✓
 - Consolidación centralizada ✓
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 

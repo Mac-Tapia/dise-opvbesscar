@@ -6,6 +6,7 @@ Tu sistema ahora está **100% operacional** con:
 
 ### 🚀 Componentes Implementados
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ✅ FastAPI WebSocket Server (Puerto 8000)
    ├─ Endpoint: /api/metrics        (Métricas en vivo)
@@ -14,30 +15,17 @@ Tu sistema ahora está **100% operacional** con:
    ├─ Endpoint: /api/historical/{h} (Datos históricos)
    ├─ Endpoint: /api/control/{action} (Control del agente)
    ├─ WebSocket: /ws                (Streaming en tiempo real)
-   └─ Docs: /docs                   (Swagger UI)
+   └─ D...
+```
 
-✅ Dashboard PRO (Puerto 5000)
-   ├─ Interfaz moderna y profesional
-   ├─ 4 tarjetas de objetivos en vivo
-   ├─ Panel del agente RL con controles
-   ├─ Métricas energéticas en tiempo real
-   ├─ 2 gráficos interactivos (Chart.js)
-   ├─ Conexión WebSocket para updates sin refresh
-   └─ Responsive design
-
-✅ MongoDB Integration
-   ├─ Almacenamiento de datos históricos
-   ├─ Persistencia de métricas
-   └─ Queries avanzadas
-
-✅ Simulación Interactiva
-   └─ simulador_interactivo.py (9 opciones de menú)
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🎯 4 Objetivos Principales Visibles
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ┌─────────────────────────────────────────────────────────────┐
 │ 1. REDUCCIÓN DE COSTO         │ 0% → 75%                   │
@@ -45,14 +33,11 @@ Tu sistema ahora está **100% operacional** con:
 ├─────────────────────────────────────────────────────────────┤
 │ 2. REDUCCIÓN CO2              │ 0% → 50%                   │
 │    Minimizar emisiones verdes  │ [██░░░░░░░░░░░░░░░░]       │
-├─────────────────────────────────────────────────────────────┤
-│ 3. DISPONIBILIDAD             │ 95% → 99%                  │
-│    Energía siempre disponible  │ [████████████████░░░]      │
-├─────────────────────────────────────────────────────────────┤
-│ 4. CONVERGENCIA IA            │ 45% → 100%                 │
-│    Aprendizaje del modelo      │ [████████░░░░░░░░░░░]      │
-└─────────────────────────────────────────────────────────────┘
-```bash
+├─────────────────...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -85,6 +70,7 @@ Tu sistema ahora está **100% operacional** con:
 
 ### Acciones Disponibles (Click o API)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ⬆️  CHARGE       → Cargar batería desde red
 ⬇️  DISCHARGE    → Descargar batería al edificio
@@ -95,33 +81,35 @@ curl -X POST http://localhost:8000/api/control/CHARGE
 curl -X POST http://localhost:8000/api/control/DISCHARGE
 curl -X POST http://localhost:8000/api/control/IDLE
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 📈 Gráficos en Vivo
 
-### 1. Energía (Últimas 24 horas)
+### 1. Energía (Últimas 24 hor...
+```
 
-```text
-Líneas superpuestas de:
-- Consumo (rojo)
-- Generación Solar (naranja)
-- Estado Batería % (verde)
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### 2. Costo Acumulado
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Línea del costo total acumulado (azul)
 Con relleno bajo la curva
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 3. Aprendizaje del Agente
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Progresión del modelo IA (morado)
 De 0% a 100% convergencia
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -129,41 +117,41 @@ De 0% a 100% convergencia
 
 ### Opción 1: Script Automático
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-py -3.11 test_dashboard.py
-```bash
+py -3.11 te...
+```
 
-### Opción 2: Manual (2 terminales)
-
-#### Terminal 1 - FastAPI Server:
-
-```bash
+[Ver código completo en GitHub]bash
 cd d:\diseñopvbesscar
 py -3.11 fastapi_websocket_server.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Terminal 2 - Dashboard:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 cd d:\diseñopvbesscar
 py -3.11 dashboard_pro.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Opción 3: Con Docker (si quieres)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 docker-compose up -d
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
-## 🌐 URLs de Acceso | Componente | URL | Descripción | | ----------- | ----- | ------------- | | **Dashboard** | <http://localhost:5000> | Interfaz principal | | **API Docs** | <http://localhost:8000/docs> | Swagger UI | | **API Status** | <http://localhost:8000/api/status> | Estado completo | | **WebSocket** | ws://localhost:8000/ws | Streaming en vivo | | **Simulator** | Menú interactivo | 9 opciones | ---
+<!-- markdownlint-disable MD013 -->
+## 🌐 URLs...
+```
 
-## 🔗 Endpoints API Disponibles
-
-### GET Endpoints
-
-```bash
+[Ver código completo en GitHub]bash
 # Health check
 GET http://localhost:8000/health
 Response: {"status": "healthy", "services": {...}}
@@ -199,9 +187,11 @@ Response: {"objectives": {...}, "progress": {...}}
 GET http://localhost:8000/api/historical/24
 Response: {"data": {"timestamps": [...], "consumos": [...]}}
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### POST Endpoints
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Controlar agente
 POST http://localhost:8000/api/control/CHARGE
@@ -210,26 +200,15 @@ POST http://localhost:8000/api/control/IDLE
 
 Response: {"status": "updated", "action": "CHARGE"}
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### WebSocket
 
-```javascript
-// JavaScript
-const ws = new WebSocket('ws://localhost:8000/ws');
+<!-- markdownlint-disable MD01...
+```
 
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  
-  if (data.type === 'metrics') {
-    console.log('Consumo:', data.consumo, 'kW');
-    console.log('Solar:', data.solar, 'kW');
-  } else if (data.type === 'agent') {
-    console.log('Acción:', data.action);
-  } else if (data.type === 'objectives') {
-    console.log('Convergencia:', data.convergence, '%');
-  }
-};
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -237,6 +216,7 @@ ws.onmessage = (event) => {
 
 ### FastAPI Server (`fastapi_websocket_server.py`)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Responsabilidades:
 ✅ Simular datos de sistema energético
@@ -247,24 +227,24 @@ Responsabilidades:
 ✅ Comunicarse con MongoDB
 ✅ Hacer streaming de datos a clientes
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Dashboard PRO (`dashboard_pro.py`)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Responsabilidades:
-✅ Mostrar interfaz web
-✅ Conectar a WebSocket para updates en vivo
-✅ Mostrar gráficos interactivos
-✅ Permitir control del agente
-✅ Mostrar objetivos y progreso
-✅ Actualizar sin recargar página
-✅ Responder a acciones del usuario
-```bash
+✅ Mostrar...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🔄 Flujo de Datos
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ┌──────────────────────────────────────────────────────────┐
 │                   USUARIO EN NAVEGADOR                   │
@@ -274,25 +254,11 @@ Responsabilidades:
          ┌───────────┴───────────┐
          │                       │
          ▼                       ▼
-    HTTP GET/POST         WebSocket (ws://)
-    /api/control          /ws (streaming)
-         │                       │
-         └───────────┬───────────┘
-                     │
-        ┌────────────▼────────────┐
-        │   FastAPI Server (8000) │
-        │  - Simula sistema        │
-        │  - Gestiona agente RL    │
-        │  - Guarda en MongoDB     │
-        │  - Envía updates         │
-        └────────────┬────────────┘
-                     │
-         ┌───────────┴───────────┐
-         │                       │
-         ▼                       ▼
-      MongoDB             Datos simulados
-    (Persistencia)      (Métricas en vivo)
-```bash
+    HTTP GET/POST         W...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -319,6 +285,7 @@ Cada objetivo tiene:
 
 Ejemplo de progreso:
 
+<!-- markdownlint-disable MD013 -->
 ```text
 REDUCCIÓN DE COSTO
 Actual: 0% → 75% (Objetivo)
@@ -330,28 +297,25 @@ Tiempo 60s:  [████░░░░░░░░░░░░░░░░]  10%
 Tiempo 300s: [██████████░░░░░░░░░░]  50%
 Objetivo:    [████████████████████]  75%
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🛠️ Archivos Generados
 
+<!-- markdownlint-disable MD013 -->
 ```text
-✅ fastapi_websocket_server.py   (280+ líneas)
-✅ dashboard_pro.py               (600+ líneas)
-✅ test_dashboard.py              (50+ líneas)
-✅ dashboard_realtime.py          (backup anterior)
+✅ fastapi_websocket_server...
+```
 
-📄 Documentación:
-   - GUIA_FUNCIONAMIENTO_SIMULACION.md
-   - RESUMEN_SIMULACION_COMPLETO.md
-   - README_GUIA.md
-   - Y 3 más...
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## ⚠️ Requisitos
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Ya instalado:
 ✅ Flask
@@ -365,26 +329,17 @@ Objetivo:    [████████████████████]  75%
 ✅ MongoDB corriendo (puerto 27017)
 ✅ Docker (opcional, para containerización)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🎯 Próximos Pasos Opcionales
 
 1. **Guardar histórico en BD** → Conectar datos reales a MongoDB
-2. **Machine Learning real** → Usar modelo entrenado en lugar de simulación
-3. **Alertas** → Notificaciones cuando objetivos cambian
-4. **Mobile app** → Versión para teléfono
-5. **Exportar datos** → CSV, JSON, PDF
-6. **Multi-usuario** → Múltiples dashboards simultáneos
-7. **Predicciones** → ML para predecir próximas 24h
+2. **Machine Learning real** → Usar modelo entrenado en lugar de sim...
+```
 
----
-
-## 🚨 Troubleshooting
-
-### Puerto 5000 en uso
-
-```bash
+[Ver código completo en GitHub]bash
 # Windows
 netstat -ano | findstr ":5000"
 taskkill /PID <PID> /F
@@ -393,45 +348,32 @@ taskkill /PID <PID> /F
 lsof -i :5000
 kill -9 <PID>
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Puerto 8000 en uso
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 netstat -ano | findstr ":8000"
 taskkill /PID <PID> /F
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### MongoDB no conecta
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Verificar MongoDB
 docker ps | grep mongo
 # o
 mongod --version
 ```bash
+<!-- markdownlint-enable MD013 -->
 
-### WebSocket no conecta
+### WebSocket no conec...
+```
 
-- Asegúrate FastAPI esté en 8000
-- Revisa la consola del navegador (F12 → Console)
-- Verifica firewall
-
----
-
-## 📞 Soporte
-
-Para problemas:
-
-1. Revisa la consola del navegador (F12)
-2. Revisa logs de FastAPI
-3. Verifica puertos con `netstat`
-4. Reinicia servicios
-
----
-
-## ✅ Estado Actual
-
-```text
+[Ver código completo en GitHub]text
 Sistema PVBESSCAR Dashboard
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -450,23 +392,24 @@ Sistema PVBESSCAR Dashboard
 
 ESTADO GENERAL: 🟢 100% OPERACIONAL
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🎉 ¡Listo para usar
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ╔════════════════════════════════════════════════╗
 ║                                                ║
 ║   🚀 Tu dashboard está EN LÍNEA                ║
 ║   📊 Con datos en tiempo real                  ║
 ║   🤖 Y control del agente RL                   ║
-║   🎯 Mostrando los 4 objetivos principales    ║
-║                                                ║
-║   Acceso: http://localhost:5000                ║
-║                                                ║
-╚════════════════════════════════════════════════╝
-```bash
+║   🎯 Mostrando los 4 objetivos principa...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Disfruta de tu sistema completamente funcional** 🎊
 

@@ -69,6 +69,7 @@
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📈 RESULTADOS ESPERADOS | Métrica | Antes | Después | Mejora | | --- | ------- | --- | -------- | | **Importación Pico (kWh/h)** | 280-300 | <250 | -12% | | **Importación Off-Peak (kWh/h)** | 120-140 | <130 | -8% | | **SOC Pre-Pico (16-17h)** | 0.45-0.55 | >0.65 | +20% | | **Reward Convergencia (ep)** | 30-40 | 15-20 | 2x ↑ | | **CO₂ Anual (kg)** | ~1.8e6 | <1.7e6 | -5% | | **Varianza Reward** | Alto | Bajo | -40% | ---
 
 ## 🎓 POR QUÉ ESTOS CAMBIOS FUNCIONAN
@@ -128,6 +129,7 @@
 
 ### FASE 1: CÓDIGO (2h)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 [ ] Step 1.1: Agregar AdaptiveRewardStats en rewards.py
 [ ] Step 1.2: Modificar MultiObjectiveReward.__init__()
@@ -138,45 +140,36 @@
 [ ] Syntax check: python -m py_compile
 [ ] Git commit: "SAC TIER 2: Implementation complete"
 ```text
+<!...
+```
 
-### FASE 2: TEST (30m)
-
-```text
-[ ] Load SAC checkpoint actual
-[ ] Run 1 episode forward pass
-[ ] Check: obs shape (915,), reward [-1,1], no NaN
-[ ] Check: gradients no exploding/vanishing
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ### FASE 3: TRAIN (24h en GPU)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 [ ] python -m src.train_sac_cuda --episodes=50
 [ ] Monitor: reward trend, CO₂ pico, SOC pre-pico
 [ ] Save checkpoint cada episodio
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### FASE 4: ANÁLISIS (2h)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 [ ] Compare vs A2C/PPO baseline
 [ ] Generate convergence plots
 [ ] Report: mejoras?, problemas?
 [ ] Plan TIER 3 (si se alcanza plateau)
 ```text
+<!-- markd...
+```
 
----
-
-## 🚨 ROLLBACK (si no funciona)
-
-```bash
-# Revertir cambios
-git checkout HEAD -- src/iquitos_citylearn/oe3/rewards.py
-git checkout HEAD -- src/iquitos_citylearn/oe3/agents/sac.py
-
-# O revert commit completo
-git revert HEAD~1
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 

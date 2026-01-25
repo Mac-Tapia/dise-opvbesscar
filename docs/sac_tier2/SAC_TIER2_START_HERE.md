@@ -7,6 +7,7 @@
 
 ## 📍 ¿QUÉ NECESITO?
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ┌─────────────────────────────────────────────────────┐
 │ Soy ejecutivo/gerente                               │
@@ -15,29 +16,11 @@
 └─────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────┐
-│ Soy data scientist / ML engineer                    │
-│ → [SAC_TIER2_OPTIMIZATION.md](SAC_TIER2_OPTIMIZATION.md)       │
-│   (30 min, explicación técnica completa + debugging)│
-└─────────────────────────────────────────────────────┘
+│ Soy data scientist / ML engineer              ...
+```
 
-┌─────────────────────────────────────────────────────┐
-│ Soy desarrollador / voy a implementar              │
-│ → [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md][url1]  │
-│   (2-3h, código paso-a-paso listo copiar-pegar)   │
-└─────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────┐
-│ Tengo poco tiempo / resumen ultra-rápido            │
-│ → [SAC_TIER2_QUICK_START.md](SAC_TIER2_QUICK_START.md)         │
-│   (5 min, 3 cambios + tabla + checklist)           │
-└─────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────┐
-│ No sé dónde buscar / necesito índice                │
-│ → [SAC_TIER2_INDICE.md](SAC_TIER2_INDICE.md)                   │
-│   (búsqueda rápida, flujos por rol, navegación)    │
-└─────────────────────────────────────────────────────┘
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -68,8 +51,10 @@
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## ✅ RESULTADO ESPERADO | Métrica | Antes | Después | | --------- | ------- | --------- | | Importación pico | 280 kWh/h | <250 kWh/h | | Convergencia | 30-40 ep | 15-20 ep | | CO₂ anual | 1.8M kg | <1.7M kg | ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📚 TODOS LOS DOCUMENTOS | Archivo | Tipo | Duración | Para | | --------- | ------ | ---------- | ------ |
 |[SAC_TIER2_QUICK_START.md](SAC_TIER2_QUICK_START.md)|1-pager|5 min|Impatient|
 |[SAC_TIER2_RESUMEN_EJECUTIVO.md](SAC_TIER2_RESUMEN_EJECUTIVO.md)|Summary|5-10 min|Execs|
@@ -77,6 +62,7 @@
 
 ## 🎓 3 CAMBIOS CLAVE
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # 1. rewards.py
 - Normalización adaptativa (percentiles p25-p75)
@@ -91,16 +77,17 @@
 - hidden_sizes: 256,256 → 512,512 (capacidad)
 = Convergencia 2x más rápida
 
-# 3. enriched_observables.py
-- Verificar 15 features: is_peak_hour, bess_soc_target, etc.
-- Observation shape: (915,)
-= Red aprende scheduling
-```text
+# 3. enriched_observables.p...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## ⏱️ TIMELINE
 
+<!-- markdownlint-disable MD013 -->
 ```text
 TODAY:
   [30 min] Leer documentación
@@ -111,6 +98,7 @@ MAÑANA-PASADO:
   [24 h]   Entrenar GPU
   [2 h]    Analizar resultados
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 

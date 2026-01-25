@@ -52,6 +52,7 @@
 4. **Collect training logs** and performance data
 5. **Prepare final results reports**
 
+<!-- markdownlint-disable MD013 -->
 ### Expected Agents | Agent | Type | Framework | Expected Training Time | |-------|------|-----------|----------------------| | SAC | Off-policy | Stable-Baselines3 | 60-90 min | | PPO | On-policy | Stable-Baselines3 | 90-120 min | | A2C | On-policy | Stable-Baselines3 | 60-90 min | ### Key Metrics to Track | Metric | Source | Purpose | |--------|--------|---------| | CO₂ Reduction | rewards.py | Primary objective | | Solar Utilization | rewards.py | Secondary objective | | Cost Savings | rewards.py | Economic impact | | Grid Stability | rewards.py | System reliability | | Episode Reward | training logs | Training progress | ---
 
 ## Phase 8 Prerequisites
@@ -66,6 +67,7 @@
 
 ### ⏳ Needed for Phase 8 (Python 3.11 only)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Install Python 3.11 first!
 # Then install CityLearn:
@@ -77,45 +79,43 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 # Run Phase 8 training:
 python scripts/train_agents_serial.py --device cuda --episodes 50
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## Phase 8 Quick Start (After Python 3.11)
 
-### Step 1: Verify CityLearn Installation
+### Step 1: Verify CityLearn Instal...
+```
 
-```bash
-python -c "import citylearn; print('✅ CityLearn ready')"
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Step 2: Build Complete Dataset
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 # Output: schema.json + 128 charger_simulation_*.csv files
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Step 3: Quick Agent Test (1 episode, ~5 min per agent)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python scripts/train_quick.py --episodes 1 --device cpu
 # Verify agents run without errors
 ```bash
+<!-- markdownlint-enable...
+```
 
-### Step 4: Full Agent Training
-
-```bash
-# Option A: Serial training (recommended, ~4-5 hours total)
-python scripts/train_agents_serial.py --device cuda --episodes 50
-
-# Option B: Individual agent training (manual, more control)
-python -m scripts.run_oe3_sac_training --episodes 50 --device cuda
-python -m scripts.run_oe3_ppo_training --episodes 50 --device cuda
-python -m scripts.run_oe3_a2c_training --episodes 50 --device cuda
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Step 5: Evaluation & Results
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Compare baseline vs RL:
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
@@ -123,6 +123,7 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 # Generate performance report:
 python -m scripts.run_oe3_final_report --config configs/default.yaml
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -132,17 +133,11 @@ python -m scripts.run_oe3_final_report --config configs/default.yaml
 
 **File**: `src/iquitos_citylearn/oe3/agents/sac.py`  
 **Type**: Off-policy, sample-efficient  
-**Best for**: Sparse rewards, exploration
+...
+```
 
-```python
-SACConfig:
-  train_steps: 1000000
-  learning_rate: 2.0e-4
-  batch_size: 256
-  hidden_sizes: (1024, 1024)
-  use_amp: True  # Mixed precision
-  device: "auto"  # GPU auto-detection
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### PPO (Proximal Policy Optimization)
 
@@ -150,6 +145,7 @@ SACConfig:
 **Type**: On-policy, stable  
 **Best for**: Stable convergence, continuous control
 
+<!-- markdownlint-disable MD013 -->
 ```python
 PPOConfig:
   train_steps: 1000000
@@ -161,6 +157,7 @@ PPOConfig:
   gae_lambda: 0.98
   device: "auto"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### A2C (Advantage Actor-Critic)
 
@@ -168,16 +165,11 @@ PPOConfig:
 **Type**: On-policy, simple  
 **Best for**: Fast training, multi-step learning
 
-```python
-A2CConfig:
-  train_steps: 1000000
-  learning_rate: 2.0e-4
-  batch_size: 64
-  hidden_sizes: (1024, 1024)
-  n_steps: 2048
-  lr_schedule: "linear"
-  device: "auto"
-```bash
+<!-- markd...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -185,32 +177,32 @@ A2CConfig:
 
 ### Real-Time Monitoring
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Watch training progress (updates every 5 sec):
 python scripts/monitor_training_live_2026.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Log Files Location
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 analyses/logs/          - Training metrics per episode
 analyses/oe3/          - OE3 evaluation results
 analyses/time_series/  - Time series analysis
 checkpoints/           - Agent checkpoints
-  SAC/
-  PPO/
-  A2C/
-```bash
+  ...
+```
 
-### Expected Output Files
-
-```bash
+[Ver código completo en GitHub]bash
 analyses/logs/sac_training.log
 analyses/logs/ppo_training.log
 analyses/logs/a2c_training.log
 COMPARACION_BASELINE_VS_RL.txt  - Final results table
 reports/oe3/performance_metrics.json
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -227,53 +219,10 @@ reports/oe3/performance_metrics.json
 
 - **SAC**: CO₂ ~7,500 kg/year (-26%), Solar ~65%
 - **PPO**: CO₂ ~7,200 kg/year (-29%), Solar ~68%
-- **A2C**: CO₂ ~7,800 kg/year (-24%), Solar ~60%
+- **A2C**: CO₂ ~7,...
+```
 
----
-
-## Phase 8 Timeline Estimate | Activity | Duration | Parallelizable | |----------|----------|----------------| | Python 3.11 install | 10-15 min | Manual | | CityLearn install | 5-10 min | Automatic | | Build dataset | 15-30 min | Once | | Quick test (1 episode) | 15 min | Sequential | | SAC training (50 ep) | 60-90 min | Once | | PPO training (50 ep) | 90-120 min | Once | | A2C training (50 ep) | 60-90 min | Once | | Evaluation & reports | 10-15 min | Once | | **TOTAL** | **4-6 hours** | **Sequential** | **Note**: Can run agents on separate GPUs in parallel for 2-3 hour reduction
-
----
-
-## Potential Issues & Solutions
-
-### Issue: "ImportError: No module named 'citylearn'"
-
-**Cause**: Python 3.13 installed (CityLearn needs 3.11)  
-**Solution**: Install Python 3.11 (see PYTHON_3.11_SETUP_GUIDE.md)
-
-### Issue: GPU out of memory during training
-
-**Cause**: PPO with large batch size (128)  
-**Solution**: Reduce batch_size or n_steps in config; use CPU mode
-
-### Issue: Agent training stuck at negative rewards
-
-**Cause**: Dataset builder not run; old schema  
-**Solution**: Run `python -m scripts.run_oe3_build_dataset` first
-
-### Issue: Agent checkpoint incompatible
-
-**Cause**: Agent class modified between sessions  
-**Solution**: Delete old checkpoints, restart from scratch
-
----
-
-## Success Criteria for Phase 8
-
-- ✅ All 3 agents (SAC, PPO, A2C) trained for 50+ episodes
-- ✅ Training converges to stable rewards
-- ✅ CO₂ reduction ≥ 20% vs baseline
-- ✅ Solar utilization ≥ 60%
-- ✅ Performance metrics saved and reported
-- ✅ Final comparison table generated (COMPARACION_BASELINE_VS_RL.txt)
-- ✅ No agent crashes or out-of-memory errors
-
----
-
-## Quick Reference Commands
-
-```bash
+[Ver código completo en GitHub]bash
 # Full Phase 8 in one command (after Python 3.11 + CityLearn):
 python scripts/train_agents_serial.py --device cuda --episodes 50
 
@@ -289,6 +238,7 @@ cat COMPARACION_BASELINE_VS_RL.txt
 # Advanced: Train individual agents with custom params:
 python -m scripts.run_oe3_sac_training --episodes 50 --learning_rate 1e-4 --device cuda
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

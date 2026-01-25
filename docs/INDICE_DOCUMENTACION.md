@@ -27,6 +27,7 @@
 - 🧪 Prueba la API
 - 📊 Dashboard de monitoreo
 
+<!-- markdownlint-disable MD013 -->
  **Lectura:** 30-45 min|**Dificultad:** Intermedio|**Mejor para:** Entender a fondo 
 
 ---
@@ -44,6 +45,7 @@
 - Accesos disponibles
 - Checklist y próximos pasos
 
+<!-- markdownlint-disable MD013 -->
  **Lectura:** 20-30 min|**Dificultad:** Intermedio|**Mejor para:** Referencia rápida 
 
 ---
@@ -62,6 +64,7 @@
   9. Comparativa Con/Sin IA
   10. Interface de usuario
 
+<!-- markdownlint-disable MD013 -->
  **Lectura:** 15-20 min|**Dificultad:** Principiante|**Mejor para:** Visualización 
 
 ---
@@ -75,6 +78,7 @@
 - Endpoints disponibles
 - Web Interface info
 
+<!-- markdownlint-disable MD013 -->
  **Lectura:** 5 min|**Dificultad:** Principiante|**Mejor para:** Verificación rápida 
 
 ---
@@ -103,6 +107,7 @@
   - A2C: actor-crítico on-policy, actualización síncrona cada n_steps, entropía
     - para exploración, sin replay buffer.
 
+<!-- markdownlint-disable MD013 -->
  **Lectura:** 5-10 min|**Dificultad:** Intermedio|**Mejor para:** Comparar desempeño... 
 
 ---
@@ -180,36 +185,43 @@ Interfaz web Flask para gestionar Docker
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 🌐 Accesos Disponibles | Servicio | URL | Usuario | Contraseña | | ---------- | ----- | --------- | ----------- | | **Swagger API** | <http://localhost:8000/docs> | - | - | | **ReDoc API** | <http://localhost:8000/redoc> | - | - | | **API REST** | <http://localhost:8000> | - | - | | **Docker Manager** | <http://localhost:5000> | - | - | | **MongoDB Admin** | <http://localhost:8081> | admin | password | | **MongoDB** | localhost:27017 | admin | password | ---
 
 ## 📖 Rutas de Aprendizaje Recomendadas
 
 ### 🟢 **RUTA 1: Principiante (1 hora)**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 1. Lee: README_GUIA.md (15 min)
 2. Ve: DIAGRAMAS_VISUALIZACION.md (10 min)
 3. Prueba: simulador_interactivo.py - Opción 1-6 (20 min)
 4. Accede: http://localhost:8000/docs (15 min)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 🟡 **RUTA 2: Intermedio (2 horas)**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 1. Lee: GUIA_FUNCIONAMIENTO_SIMULACION.md (45 min)
-2. Prueba: simulador_interactivo.py - Opción 7 (20 min)
-3. Experimenta: cURL/Python con API (30 min)
-4. Revisa: RESUMEN_SIMULACION_COMPLETO.md (25 min)
-```bash
+2. Prueba: simulador_interactivo.py - Opc...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### 🔴 **RUTA 3: Avanzado (4 horas)**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 1. Lee todo: Documentación completa (90 min)
 2. Prueba: Todos los endpoints (30 min)
 3. Crea: Script propio integración (60 min)
 4. Deploy: En servidor real (60 min)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -221,73 +233,10 @@ Interfaz web Flask para gestionar Docker
 
 [ref]: GUIA_FUNCIONAMIENTO_SIMULACION.md
 
-### **¿Qué valores proporciona?**
+### **...
+```
 
-→ [GUIA_FUNCIONAMIENTO_SIMULACION.md][ref] - Sección "Valores que Debes Proporcionar"
-
-[ref]: GUIA_FUNCIONAMIENTO_SIMULACION.md
-
-### **¿Cómo uso la API?**
-
-→ [RESUMEN_SIMULACION_COMPLETO.md](RESUMEN_SIMULACION_COMPLETO.md) - Sección
-"Endpoints de la API"
-
-### **¿Cómo simulo?**
-
-→ [README_GUIA.md](README_GUIA.md) - Sección "Cómo Empezar"
-
-### **¿Qué archivos creaste?**
-
-→ [RESUMEN_SIMULACION_COMPLETO.md](RESUMEN_SIMULACION_COMPLETO.md) - Sección
-"Archivos Creados"
-
-### **¿Cómo instalo Docker?**
-
-→ [DOCKER_SETUP_GUIDE.md](DOCKER_SETUP_GUIDE.md)
-
-### **¿Cuál es el estado actual?**
-
-→ [FASTAPI_RUNNING_STATUS.md](FASTAPI_RUNNING_STATUS.md)
-
-### **¿Quiero ver diagramas?**
-
-→ [DIAGRAMAS_VISUALIZACION.md](DIAGRAMAS_VISUALIZACION.md)
-
-### **¿Cómo ahorro dinero?**
-
-→ [GUIA_FUNCIONAMIENTO_SIMULACION.md][ref] - Sección "Simulación Paso a Paso"
-
-[ref]: GUIA_FUNCIONAMIENTO_SIMULACION.md
-
-### **¿Qué debe hacer IA?**
-
-→ [DIAGRAMAS_VISUALIZACION.md](DIAGRAMAS_VISUALIZACION.md) - Diagrama 8 "Matriz
-de Decisión"
-
----
-
-## 📊 Estadísticas de Documentación | Documento | Líneas | Palabras | Tema | | ----------- | -------- | ---------- | ------ | | README_GUIA.md | 500+ | 3,500+ | Overview | | GUIA_FUNCIONAMIENTO_SIMULACION.md | 700+ | 5,000+ | Funcionamiento | | RESUMEN_SIMULACION_COMPLETO.md | 600+ | 4,000+ | Resumen ejecutivo | | DIAGRAMAS_VISUALIZACION.md | 500+ | 2,000+ | Visualización | | FASTAPI_RUNNING_STATUS.md | 200+ | 1,000+ | Estado actual | | **TOTAL** | **2,500+** | **15,500+** | **Completo** | ---
-
-## 🎯 Objetivos de Aprendizaje
-
-Después de estudiar esta documentación serás capaz de:
-
-✅ **Comprender** cómo funciona PVBESSCAR  
-✅ **Identificar** los 3 tipos de acciones (CHARGE, DISCHARGE, IDLE)  
-✅ **Leer** y interpretar métricas de energía  
-✅ **Usar** la API REST para control manual  
-✅ **Simular** decisiones de IA  
-✅ **Analizar** optimización de costos  
-✅ **Integrar** con sistemas reales  
-✅ **Crear** scripts propios  
-
----
-
-## 💡 Quick Reference Cards
-
-### **The 3 Actions**
-
-```text
+[Ver código completo en GitHub]text
 CHARGE      Cargar batería con energía solar
             Cuándo: Solar alto + Batería baja
             Ahorro: €2-5/ciclo
@@ -300,28 +249,32 @@ IDLE        Esperar - Sistema equilibrado
             Cuándo: Situación normal
             Ahorro: €0/ciclo (neutral)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### **API Endpoints**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 GET  /health           → ¿Está vivo?
 GET  /api/status       → Estado componentes
 GET  /api/metrics      → Datos en tiempo real
 POST /api/control      → Ejecutar acción
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### **Métricas Principales**
 
+<!-- markdownlint-disable MD013 -->
 ```text
-building_load_kw    Consumo del edificio (kW)
-pv_generation_kw    Generación solar (kW)
-battery_soc         Estado batería (%)
-grid_import_kw      Compra a red (kW)
-total_cost          Costo acumulado (€)
-```bash
+building_lo...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 🔗 Enlaces Importantes | Recurso | URL | | --------- | ----- | | API Documentación | <http://localhost:8000/docs> | | Docker Manager | <http://localhost:5000> | | MongoDB Admin | <http://localhost:8081> | | GitHub Repo | [Tu repo aquí] | | Documentación Oficial | <https://fastapi.tiangolo.com> | ---
 
 ## ❓ Preguntas Frecuentes

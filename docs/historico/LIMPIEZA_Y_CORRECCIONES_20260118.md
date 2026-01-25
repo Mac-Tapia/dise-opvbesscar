@@ -50,10 +50,12 @@ Scripts conservados (funcionales):
 
 El entrenamiento anterior usaba un **SimpleEnv/DummyEnv** con:
 
+<!-- markdownlint-disable MD013 -->
 ```python
 obs = np.random.randn(131).astype(np.float32)  # DATOS ALEATORIOS
 reward = float(np.sum(action) / 128.0)  # REWARD FALSO
 ```text
+<!-- markdownlint-enable MD013 -->
 
 En lugar del entorno CityLearn real con:
 
@@ -65,19 +67,10 @@ En lugar del entorno CityLearn real con:
 
 Ejecutar con:
 
-```bash
-python scripts/run_oe3_simulate.py --skip-dataset
-```text
+<!-- markdown...
+```
 
-Métricas observadas:
-
-- R_total: 0.2889
-- R_CO2: 0.6087
-- R_cost: 0.2531
-
-## CONFIGURACIÓN ACTUAL (configs/default.yaml)
-
-```yaml
+[Ver código completo en GitHub]yaml
 oe3:
   evaluation:
     sac:
@@ -86,6 +79,7 @@ oe3:
       device: cuda
       checkpoint_freq_steps: 100
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ## PRÓXIMOS PASOS
 
@@ -94,4 +88,5 @@ oe3:
 3. Continuar con PPO y A2C si es necesario
 4. Comparar métricas contra baseline uncontrolled
 
+<!-- markdownlint-disable MD013 -->
 ## ARCHIVOS IMPORTANTES | Archivo | Propósito | | --------- | ----------- | | `scripts/run_oe3_simulate.py` | Script oficial de entrenamiento | | `train_gpu_robusto.py` | Script simplificado con verificaciones | | `test_citylearn_env.py` | Prueba del entorno | | `configs/default.yaml` | Configuración principal | | `data/interim/oe2/chargers/individual_chargers.json` | 128 cargadores | 

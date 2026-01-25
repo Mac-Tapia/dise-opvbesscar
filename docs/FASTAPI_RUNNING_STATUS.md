@@ -7,6 +7,7 @@
 
 ## 📊 Estado de Servicios
 
+<!-- markdownlint-disable MD013 -->
 ### Aplicación FastAPI | Componente | Estado | Puerto | URL | Comando | | ----------- | -------- | -------- | ----- | --------- |
 |**fastapi-app**|✅ Healthy (corriendo)|8000|<[url0] ps`|
 |API Docs|✅ Disponible|8000|<[url0] UI| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| ### Base de Datos | Componente | Estado | Puerto | URL | | ----------- | -------- | -------- | ----- | | **mongodb** | ✅ Healthy | 27017 | localhost:27017 | | **mongo-admin** | ✅ Up | 8081 | <http://localhost:8081> | ### Interfaces Web | Componente | Estado | Puerto | URL | | ----------- | -------- | -------- | ----- | | **Docker Manager** | ✅ Running | 5000 | <http://localhost:5000> | | **FastAPI Server (nativo)** | ✅ Running | 8000 | <http://localhost:8000> | ### Kubernetes (Docker Desktop) | Componente | Estado | | ----------- | -------- | | **kube-system** | ✅ Up (5 horas) | | **storage-provisioner** | ✅ Running | | **coredns** | ✅ Running (x2) | | **kube-proxy** | ✅ Running | | **etcd** | ✅ Running | | **kube-scheduler** | ✅ Running | | **kube-controller-manager** | ✅ Running | | **kube-apiserver** | ✅ Running | ---
@@ -15,13 +16,16 @@
 
 ### Verificar estado de FastAPI
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 docker ps | Select-String fastapi
 docker logs fastapi-app
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Acceder a la API
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 # Health check
 curl http://localhost:8000/health
@@ -29,21 +33,21 @@ curl http://localhost:8000/health
 # Documentación interactiva
 # Abrir en navegador: http://localhost:8000/docs
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Reiniciar FastAPI
 
-```powershell
-docker restart fastapi-app
-```bash
+<!-- markdownlint-disable MD013 ...
+```
 
-### Ver logs en tiempo real
-
-```powershell
+[Ver código completo en GitHub]powershell
 docker logs -f fastapi-app
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Monitorear MongoDB
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 # Abrir MongoDB Admin en navegador
 http://localhost:8081
@@ -51,31 +55,22 @@ http://localhost:8081
 # Usuario: admin
 # Contraseña: password
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
-## 📝 Endpoints FastAPI Disponibles | Método | Ruta | Descripción | | -------- | ------ | ------------- | | GET | `/` | Root endpoint | | GET | `/health` | Health check | | GET | `/api/status` | Estado del sistema | | GET | `/api/metrics` | Métricas actuales | | POST | `/api/control` | Control del sistema | | GET | `/docs` | Swagger UI (documentación) | | GET | `/redoc` | ReDoc (documentación alternativa) | ---
+<!-- markdownlint-disable MD013 -->
+## 📝 Endpoints FastAPI Disponibles | Método | Ruta | Descripción | | -------- | ------ | ------------- | | ...
+```
 
-## 🔍 Información de Ejecución
-
-#### FastAPI Container:
-
-- **ID del Contenedor**: 15e37ecd8d66
-- **Imagen**: fastapi-mongo-api:latest
-- **Tiempo de Ejecución**: 6 minutos (Up 6 minutes)
-- **Puertos Expuestos**: 8000->8000/tcp (IPv4 e IPv6)
-- **Health Status**: ✅ Healthy
-- **Reinicio Automático**: unless-stopped
-
-#### Logs Recientes:
-
-```text
+[Ver código completo en GitHub]text
 INFO:__main__:🚀 Starting PVBESSCAR FastAPI Server...
 INFO:__main__:📊 API Documentation: http://localhost:8000/docs
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000
 INFO:     127.0.0.1:xxxxx - "GET /health HTTP/1.1" 200 OK
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

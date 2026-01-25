@@ -13,6 +13,7 @@
 
 ### Dataset Reutilizado
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ✓ Datos construidos: 128 cargadores (112 motos + 16 mototaxis)
 ✓ PV: 4,162 kWp nominal (generación escalada a objetivo)
@@ -20,18 +21,21 @@
 ✓ Demanda: 12,368,653 kWh anuales (mall)
 ✓ 101 perfiles estocásticos cargadores generados
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### Baseline Calculado (SIN recalcular)
 
+<!-- markdownlint-disable MD013 -->
 ```text
-✓ Cacheado en: analyses/oe3/training/checkpoints/baseline_metrics.json
-✓ Energía solar: ~1,927,391 kWh
-✓ Importación grid: Baseline estimado
-✓ CO₂ anual: Referencia para comparación
-```text
+✓ Cacheado en: analyses/oe3/train...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ### Pesos Multiobjetivo Rebalanceados
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 co2: 0.50          # Énfasis en reducción CO₂
 cost: 0.15         # Costo operacional
@@ -39,28 +43,20 @@ solar: 0.20        # Maximizar FV directo
 ev: 0.10           # Satisfacción vehículos
 grid: 0.05         # Estabilidad red (penalidad pico 4x)
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### Configuración GPU Máximo
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 SAC:
   batch_size: 32768
   gradient_steps: 256
-  train_freq: 4
-  learning_rate: 0.001
+  train...
+```
 
-PPO:
-  n_steps: 32768
-  batch_size: 32768
-
-A2C:
-  n_steps: 65536
-
-All:
-  episodes: 2
-  use_amp: true
-  resume_checkpoints: false
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -81,25 +77,27 @@ All:
 
 ### Monitoreo en Vivo
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Terminal 1 (PID: 56e33e6d): Entrenamiento en ejecución
 Terminal 2 (PID: cf2cec8e): Monitor de progreso
 Log file: training_log.txt
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### Ubicaciones de Checkpoints
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 SAC:  analyses/oe3/training/checkpoints/sac_step_*.zip
 PPO:  analyses/oe3/training/checkpoints/ppo_step_*.zip
-A2C:  analyses/oe3/training/checkpoints/a2c_step_*.zip
-```text
+A2C:  analyses/oe3/training/checkpoints/...
+```
 
-### Resultados
-
-```text
+[Ver código completo en GitHub]text
 Output: outputs/oe3/simulations/simulation_summary.json
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -116,52 +114,49 @@ Output: outputs/oe3/simulations/simulation_summary.json
 
 - → SAC debe mejorar reward (0.6 → 0.7+)
 - → PPO debe estabilizar política
-- → A2C debe converger rápidamente
-- → Checkpoints cada 500 pasos
+- → A2C debe conver...
+```
 
-### Fase 3: Convergencia (5000-17520 pasos)
-
-- → Mejora de métricas (~33% CO₂ reduction)
-- → Integración solar maximizada
-- → Comportamiento de pico optimizado
-
----
-
-## 📊 Comandos Útiles
-
-### Monitorear Progreso
-
-```bash
+[Ver código completo en GitHub]bash
 python monitor_training_progress.py
 ```text
+<!-- markdownlint-enable MD013 -->
 
 #### Ver Log en Vivo
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 type training_log.txt | Select-Object -Last 100
 ```text
+<!-- markdownlint-enable MD013 -->
 
 #### Contar Checkpoints
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 dir analyses/oe3/training/checkpoints/
 ```text
+<!-- markdownlint-enable MD013 -->
 
 #### Verificar Tamaño GPU
 
-```bash
-python -c "import torch; print(f'GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB')"
-```text
+<!-- markdownlint-disable M...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## ✅ Historial de Cambios Recientes
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ff457493 - feat: launch training with constructed dataset and cached baseline
 01b7e2f1 - fix: resolve remaining 9 linting errors (from 293 to 9)
 c22ed9b7 - fix: optimize GPU training config for PPO/A2C and fix 293 linting errors
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 

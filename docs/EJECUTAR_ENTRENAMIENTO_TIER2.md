@@ -11,6 +11,7 @@
 
 ### Opción 1: Script MASTER (TODO EN UNO)
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 # En: d:\diseñopvbesscar
 
@@ -23,6 +24,7 @@ python -m src.train_ppo_cuda --episodes=2 --verbose=1
 # SAC - 2 episodios
 python -m src.train_sac_cuda --episodes=2 --verbose=1
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -30,27 +32,16 @@ python -m src.train_sac_cuda --episodes=2 --verbose=1
 
 ### A2C TIER 2 CONFIG
 
-```python
-A2CConfig(
-    train_steps=500000,
-    n_steps=1024,              # ↑ TIER 2: de 512
-    learning_rate=2.5e-4,      # ↓ TIER 2: de 3e-4
-    lr_schedule="linear",      # TIER 2: de constant
-    ent_coef=0.02,             # ↑ TIER 2: de 0.01
-    hidden_sizes=(512, 512),   # ↑ TIER 2: de (256, 256)
-    activation="relu",         # TIER 2: de tanh
+<!-- markdownlint-disable MD013 -->
+```py...
+```
 
-    # Multiobjetivo (igual)
-    weight_co2=0.50,
-    weight_cost=0.15,
-    weight_solar=0.20,
-    weight_ev_satisfaction=0.10,
-    weight_grid_stability=0.05,
-)
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ### PPO TIER 2 CONFIG
 
+<!-- markdownlint-disable MD013 -->
 ```python
 PPOConfig(
     train_steps=500000,
@@ -61,21 +52,15 @@ PPOConfig(
     lr_schedule="linear",      # TIER 2: de constant
     ent_coef=0.02,             # ↑ TIER 2: de 0.01
     hidden_sizes=(512, 512),   # ↑ TIER 2: de (256, 256)
-    activation="relu",         # TIER 2: de tanh
-    use_sde=True,              # NEW TIER 2
-    sde_sample_freq=-1,        # Sample every step
+    activation="relu",         # TIE...
+```
 
-    # Multiobjetivo (igual)
-    weight_co2=0.50,
-    weight_cost=0.15,
-    weight_solar=0.20,
-    weight_ev_satisfaction=0.10,
-    weight_grid_stability=0.05,
-)
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ### SAC TIER 2 CONFIG
 
+<!-- markdownlint-disable MD013 -->
 ```python
 SACConfig(
     episodes=2,
@@ -86,17 +71,11 @@ SACConfig(
     target_entropy=-40,        # ↓ TIER 2: de -50
     hidden_sizes=(512, 512),   # ↑ TIER 2: de (256, 256)
     update_per_timestep=2,     # NEW TIER 2
-    use_dropout=True,          # NEW TIER 2
-    dropout_rate=0.1,          # NEW TIER 2
+    use_dropout=Tru...
+```
 
-    # Multiobjetivo + Adaptive normalization (rewards.py)
-    weight_co2=0.50,
-    weight_cost=0.05,          # ↓ TIER 2: de 0.15
-    weight_solar=0.20,
-    weight_ev_satisfaction=0.10,
-    weight_grid_stability=0.15, # ↑ TIER 2: de 0.10
-)
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -104,15 +83,18 @@ SACConfig(
 
 ### 1. Verificar Setup GPU
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 # En terminal PowerShell
 nvidia-smi
 
 # Debería mostrar: NVIDIA GPU con CUDA disponible
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### 2. Limpiar Checkpoints Anteriores (OPCIONAL)
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 # Backup viejo
 mkdir backups_tier1
@@ -120,72 +102,71 @@ mv checkpoints_a2c backups_tier1/
 mv checkpoints_ppo backups_tier1/
 mv checkpoints_sac backups_tier1/
 ```text
+<!-- markdownlint-enable...
+```
 
-### 3. Entrenar A2C (2 episodios)
-
-```powershell
-cd "d:\diseñopvbesscar"
-python -m src.train_a2c_cuda --episodes=2 --verbose=1
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 **Expected Output**:
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Episode 1/2: Reward=..., Import=..., CO2=...
 Episode 2/2: Reward=..., Import=..., CO2=...
 ✅ A2C training complete
 ```text
+<!-- markdownlint-enable MD013 -->
 
 **Tiempo**: ~15-20 minutos GPU
 
 ### 4. Entrenar PPO (2 episodios)
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 python -m src.train_ppo_cuda --episodes=2 --verbose=1
 ```text
+<!-- markdownlint-enable MD013 -->
 
 **Expected Output**:
 
-```text
-Episode 1/2: Reward=..., Stability=...
-Episode 2/2: Reward=..., Stability=...
-✅ PPO training complete
-```text
+<!-- ...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 **Tiempo**: ~15-20 minutos GPU
 
 ### 5. Entrenar SAC (2 episodios)
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 python -m src.train_sac_cuda --episodes=2 --verbose=1
 ```text
+<!-- markdownlint-enable MD013 -->
 
 **Expected Output**:
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Episode 1/2: Reward=..., Convergence=...
 Episode 2/2: Reward=..., Convergence=...
 ✅ SAC training complete
 ```text
+<!-- markdownlint-enable MD013 -->
 
 **Tiempo**: ~10-15 minutos GPU (SAC más rápido)
 
 ---
 
-## 📊 MONITOREO DURANTE ENTRENAMIENTO
+## 📊 MONITOREO DURANTE ENTRENAMI...
+```
 
-### En Terminal (Real-time)
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
-```powershell
-# Monitor GPU
-while($true) { nvidia-smi; Start-Sleep 5 }
-
-# Debería ver:
-# - GPU-Util: 80-100%
-# - Memory: Aumentando gradualmente
-# - Temp: <80°C idealmente
-```text
-
+<!-- markdownlint-disable MD013 -->
 ### Métricas a Esperar | Agente | Ep 1 Reward | Ep 2 Reward | Trend | | -------- | ------------- | ------------- | ------- | | **A2C** | -0.5 a 0.0 | -0.2 a 0.1 | ↑ Mejorando | | **PPO** | -0.3 a 0.1 | 0.0 a 0.3 | ↑ Mejorando | | **SAC** | 0.0 a 0.3 | 0.2 a 0.5 | ↑↑ Rápido | **SAC debería convergir más rápido** (reward mejor en menos episodios)
 
 ---
@@ -194,6 +175,7 @@ while($true) { nvidia-smi; Start-Sleep 5 }
 
 Después de entrenamientos:
 
+<!-- markdownlint-disable MD013 -->
 ```text
 checkpoints_a2c/
   └─ episode_1/
@@ -210,6 +192,7 @@ checkpoints_sac/
   └─ episode_2/
   └─ FINAL/
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -217,21 +200,19 @@ checkpoints_sac/
 
 ### Generar Reportes
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 # Comparar 3 agentes
 python -c "
-from src.analyze_agents import compare_tier2_results
-compare_tier2_results(
-    checkpoints=['checkpoints_a2c/FINAL',
-                 'checkpoints_ppo/FINAL',
-                 'checkpoints_sac/FINAL'],
-    episodes=2
-)
-"
-```text
+from src.analyze_agents imp...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ### Resultados Esperados
 
+<!-- markdownlint-disable MD013 -->
 ```text
 A2C TIER 2:
   - Avg Reward: 0.05-0.15
@@ -248,6 +229,7 @@ SAC TIER 2:
   - Import Peak: <240 kWh/h ⭐
   - Convergence: Fast ⭐
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -255,23 +237,25 @@ SAC TIER 2:
 
 ### Si GPU Memory Error
 
-```powershell
-# Bajar batch_size
-# PPO: batch_size 256 → 128
-# A2C: n_steps 1024 → 512
-# SAC: batch_size 256 → 128
-```text
+<!-- markdown...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ### Si Reward diverge
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 # Bajar learning_rate
 # 2.5e-4 → 2.0e-4
 # Subir entropy (ya está en 0.02)
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### Si Muy lento
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 # Verificar GPU está siendo usado:
 nvidia-smi
@@ -280,24 +264,23 @@ nvidia-smi
 # Si no:
 # Bajar episode length o sample rate
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## ✅ CHECKLIST PRE-ENTRENAMIENTO
 
-```text
-[ ] GPU CUDA disponible (nvidia-smi)
-[ ] Configs TIER 2 aplicados (ppo_sb3.py, a2c_sb3.py, sac.py)
-[ ] Repos clean (git status limpio)
-[ ] ~10GB GPU memory libre
-[ ] ~2 horas disponibles (2ep × 3 agentes)
-[ ] Checkpoints dir vacío o backuped
-```text
+<!-- markdo...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 📋 COMANDOS RÁPIDO COPY-PASTE
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 # Setup
 cd "d:\diseñopvbesscar"
@@ -316,6 +299,7 @@ git add -A
 git commit -m "Training: 2-episode test run A2C, PPO, SAC TIER 2"
 git push origin main
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 

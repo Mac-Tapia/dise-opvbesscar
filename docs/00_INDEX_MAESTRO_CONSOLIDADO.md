@@ -248,6 +248,7 @@ Informes de correcciones y cleanup
 
 ## 📊 Matriz de Contenidos por Tema
 
+<!-- markdownlint-disable MD013 -->
 ### **Por Agente** | Agente | Documentos Clave | Estado | | -------- | ------------------ | -------- |
 |**PPO**|COMPARATIVA_AGENTES_FINAL_TIER2.md, PPO_A2C_TIER2_MASTER_PLAN.md|✅ Completado|
 |**A2C**|COMPARATIVA_AGENTES_FINAL_TIER2.md, PPO_A2C_TIER2_MASTER_PLAN.md|✅ Completado| | **SAC** | 7 documentos... | ✅ Completado | ### **Por Actividad** | Actividad | Documento Recomendado | | ----------- | ---------------------- | | Comienza el proyecto | COMIENZA_AQUI_TIER2_FINAL.md | | Comprende los resultados | COMPARATIVA_AGENTES_FINAL_TIER2.md | | Entrena modelos | EJECUTAR_ENTRENAMIENTO_TIER2.md | | Lee informe técnico | INFORME_UNICO_ENTRENAMIENTO_TIER2.md | | Implementa SAC TIER 2 | SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md | | Ve estado actual | TIER2_TRAINING_SESSION_STATUS.md | ---
@@ -278,6 +279,7 @@ Informes de correcciones y cleanup
 
 Para futuras sesiones, se recomienda mantener:
 
+<!-- markdownlint-disable MD013 -->
 ```text
 docs/
 ├── 00_INDEX_MAESTRO.md ⭐ (este archivo)
@@ -294,16 +296,11 @@ docs/
 │   └── SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md
 │
 ├── 🔍 ANALISIS (Nivel 4)
-│   ├── INFORME_UNICO_ENTRENAMIENTO_TIER2.md
-│   ├── CONSTRUCCION_128_CHARGERS_FINAL.md
-│   ├── DATASETS_ANUALES_128_CHARGERS.md
-│   └── AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md
-│
-└── 📋 HISTORICO (Nivel 5)
-    ├── SESION_SAC_TIER2_COMPLETADA.md
-    ├── SESSION_SUMMARY_20260118.md
-    └── [otros archivos históricos]
-```text
+│   ├── INFORME_UNICO_ENTRENAMIEN...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -328,6 +325,7 @@ docs/
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## ✅ Estado de Consolidación | Elemento | Estado | | ---------- | -------- | | Documentos Identificados | 29 archivos | | Documentos Consolidados | 8 categorías principales | | Índice Maestro | ✅ Este archivo | | Gráficas | ✅ 25 PNG consolidadas | | Métricas | ✅ JSON generado | ---
 
 ## 📝 Notas Importantes

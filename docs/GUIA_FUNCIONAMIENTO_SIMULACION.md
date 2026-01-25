@@ -15,6 +15,7 @@ usando **Inteligencia Artificial**:
 
 ## 🏗️ Arquitectura del Sistema
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ┌─────────────────────────────────────────────────────────┐
 │                    PVBESSCAR SYSTEM                      │
@@ -22,27 +23,11 @@ usando **Inteligencia Artificial**:
 │                                                          │
 │  ┌──────────────┐    ┌──────────────┐  ┌────────────┐  │
 │  │   FastAPI    │───→│   MongoDB    │  │ ML Models  │  │
-│  │  (API REST)  │    │  (Database)  │  │   (A2C/    │  │
-│  │              │    │              │  │   PPO/SAC) │  │
-│  └──────────────┘    └──────────────┘  └────────────┘  │
-│        ↓                                                 │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │         Energy Controller                        │  │
-│  │  - Building Load Forecasting                     │  │
-│  │  - Solar Generation Optimization                 │  │
-│  │  - Battery State of Charge Management            │  │
-│  │  - Grid Exchange Control                         │  │
-│  └──────────────────────────────────────────────────┘  │
-│        ↓                                                 │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │         Real-time Metrics                        │  │
-│  │  - Energy Balance                                │  │
-│  │  - Cost Tracking                                 │  │
-│  │  - Performance KPIs                              │  │
-│  └──────────────────────────────────────────────────┘  │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
-```bash
+│  │  (API REST)  │    │  (Database)  │ ...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -50,6 +35,7 @@ usando **Inteligencia Artificial**:
 
 ### 1️⃣ **Sistema Recibe Datos Actuales**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Entrada (cada 5 minutos):
 ├─ Consumo del edificio (kW)
@@ -57,54 +43,49 @@ Entrada (cada 5 minutos):
 ├─ Batería disponible (kWh)
 └─ Precio de electricidad (€/kWh)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 2️⃣ **Modelo ML Predice Futuro**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Análisis:
 ├─ ¿Qué consumo habrá en 1 hora?
 ├─ ¿Cuánto sol habrá?
 ├─ ¿Cuál es el precio más bajo hoy?
-└─ ¿Cuánta batería debería guardar?
-```bash
+└─ ¿Cuánta batería debería guar...
+```
 
-### 3️⃣ **Controlador Toma Decisiones**
-
-```text
+[Ver código completo en GitHub]text
 Decisión (optimizada por IA):
 ├─ ¿Cargar batería? (Sí/No/Parcial)
 ├─ ¿Usar solar? (100%)
 ├─ ¿Comprar electricidad a red? (Sí/No)
 └─ Acción: CHARGE / DISCHARGE / IDLE
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 4️⃣ **Sistema Ejecuta Acciones**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Ejecución:
 ├─ Activa inversores
 ├─ Controla cargadores
 └─ Registra cambios en tiempo real
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 5️⃣ **Resultado: Ahorro Financiero**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Salida:
 ├─ ✅ Costo total reducido
-├─ ✅ Emisiones CO2 minimizadas
-└─ ✅ Disponibilidad energética garantizada
-```bash
+├─ ✅ Emisiones CO2 minimizad...
+```
 
----
-
-## 📡 Endpoints de la API
-
-### 1. **Health Check** ✅
-
-Verifica que el sistema está vivo
-
-```bash
+[Ver código completo en GitHub]bash
 GET /health
 
 # Respuesta:
@@ -114,11 +95,13 @@ GET /health
   "service": "PVBESSCAR API"
 }
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 2. **Estado del Sistema** 📊
 
 Obtiene el estado actual de todos los componentes
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 GET /api/status
 
@@ -131,15 +114,10 @@ GET /api/status
     "database": "connected",
     "ml_models": "loaded",
     "energy_controller": "active"
-  }
-}
-```bash
+  ...
+```
 
-### 3. **Métricas Actuales** 📈
-
-Obtiene mediciones de energía en tiempo real
-
-```bash
+[Ver código completo en GitHub]bash
 GET /api/metrics
 
 # Respuesta: (3)
@@ -152,11 +130,13 @@ GET /api/metrics
   "total_cost": 156.45               # Costo acumulado (€)
 }
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 4. **Ejecutar Acción** 🎮
 
 Envía comando al controlador de energía
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 POST /api/control
 
@@ -170,28 +150,20 @@ POST /api/control
 {
   "action": "charge",
   "value": 5.0,
-  "timestamp": "2026-01-20T11:08:09",
-  "status": "executed"
-}
-```bash
+  "timestamp": "2026-01-20T11:08:...
+```
 
----
-
-## 🎮 Simulación Paso a Paso
-
-### **Escenario: Día Soleado - Optimizar Costos**
-
-#### **PASO 1: Verificar que el sistema está activo**
-
-```bash
+[Ver código completo en GitHub]bash
 curl http://localhost:8000/health
 
 # ✅ Respuesta:
 # {"status": "healthy", ...}
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### **PASO 2: Obtener estado actual**
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 curl http://localhost:8000/api/status
 
@@ -200,19 +172,17 @@ curl http://localhost:8000/api/status
 # - ML Models: ✅ cargados
 # - Controller: ✅ activo
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### **PASO 3: Leer métricas de sensores**
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-curl http://localhost:8000/api/metrics
+curl http:...
+```
 
-# Recibimos:
-# - Edificio consume: 45.2 kW
-# - Solar genera: 12.5 kW
-# - Batería tiene: 87.3% de carga
-# - Compramos a red: 32.7 kW
-# - Gasto acumulado: €156.45
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 #### **PASO 4: Análisis IA**
 
@@ -225,6 +195,7 @@ El modelo ML analiza:
 
 #### **PASO 5: Decisión del Controlador**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 🤖 IA decide: "CARGAR batería ahora"
 
@@ -235,20 +206,22 @@ Razón:
 - ✅ A las 18h subirá demanda (peak)
 - ✅ Cargar ahora = ahorrar €5 después
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### **PASO 6: Ejecutar acción**
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 curl -X POST http://localhost:8000/api/control \
-  -H "Content-Type: application/json" \
-  -d '{"action":"charge","value":5.0}'
+  -H "Content-Type: applic...
+```
 
-# ✅ Respuesta: (2)
-# {"action":"charge","value":5.0,"status":"executed"}
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 #### **PASO 7: Sistema ejecuta**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ⚡ Acciones en tiempo real:
 ├─ Inversor se activa
@@ -259,31 +232,21 @@ curl -X POST http://localhost:8000/api/control \
 │  └─ 0 kW (equilibrado, sin red)
 └─ Resultado: ✅ No pagamos a la red en este período
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### **PASO 8: 2 Horas Después...**
 
+<!-- markdownlint-disable MD013 -->
 ```text
-☁️ Llegaron las nubes (predicción correcta)
-- Solar genera: 2.3 kW (bajó)
-- Batería tiene: 95% (se cargó)
-- Consumo: 48.0 kW
+☁️ Llegaron las n...
+```
 
-🤖 IA decide: "DESCARGAR batería"
-
-Acción:
-curl -X POST http://localhost:8000/api/control \
-  -H "Content-Type: application/json" \
-  -d '{"action":"discharge","value":10.0}'
-
-Resultado:
-├─ Solar: 2.3 kW
-├─ Batería: 10.0 kW (descargando)
-├─ Red: 35.7 kW (muy menos)
-└─ ✅ Ahorro: €3.5 por no pagar tasa pico
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 #### **PASO 9: Verificar Resultado**
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 curl http://localhost:8000/api/metrics
 
@@ -296,18 +259,16 @@ curl http://localhost:8000/api/metrics
   "total_cost": 159.95            # Subió +€3.50 (pero sin pico)
 }
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 📋 Valores que Debes Proporcionar
 
-### **Entrada de Sensores (Auto - cada 5 min)** | Parámetro | Rango | Unidad | Ejemplo | Fuente | | ----------- | ------- | -------- | --------- | -------- | | `building_load` | 0 - 500 | kW | 45.2 | Smart Meter | | `pv_generation` | 0 - 100 | kW | 12.5 | Inversor Solar | | `battery_capacity` | 0 - 100 | % | 87.3 | BMS (Battery System) | | `electricity_price` | 0 - 1.0 | €/kWh | 0.28 | Grid Operator | ### **Parámetros de Control (Manual - API)** | Parámetro | Valores | Unidad | Descripción | | ----------- | --------- | -------- | ------------- | | `action` | charge / discharge / idle | - | Acción a ejecutar | | `value` | 0 - 100 | kW | Potencia (opcional) | | `duration` | 1 - 1440 | minutos | Tiempo de acción (opcional) | ### **Configuración del Sistema (Una vez)** | Parámetro | Valor | Unidad | Descripción | | ----------- | ------- | -------- | ------------- | | `battery_capacity_total` | 50 - 500 | kWh | Capacidad máxima batería | | `battery_min_soc` | 20 - 50 | % | Carga mínima permitida | | `battery_max_charge_rate` | 10 - 100 | kW | Velocidad máx carga | | `battery_max_discharge_rate` | 10 - 100 | kW | Velocidad máx descarga | | `peak_hours` | 17:00 - 21:00 | HH:MM | Horarios caros | | `solar_forecast_enable` | true / false | - | Usar predicción solar | | `price_forecast_enable` | true / false | - | Usar predicción precios | ---
+<!-- markdownlint-disable MD013 -->...
+```
 
-## 💡 Ejemplos de Simulaciones Reales
-
-### **Ejemplo 1: Día Soleado (Verano)**
-
-```python
+[Ver código completo en GitHub]python
 # Simulación en 1 hora (12 mediciones)
 
  Hora | Consumo | Solar | Batería | Acción | Costo 
@@ -328,28 +289,28 @@ curl http://localhost:8000/api/metrics
 📊 RESULTADO: Costo hora = €99 (sin IA sería €105)
 💰 AHORRO: €6 por hora = €144 por día
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### **Ejemplo 2: Día Nublado (Invierno)**
 
+<!-- markdownlint-disable MD013 -->
 ```python
  Hora | Consumo | Solar | Batería | Acción | Costo 
  ------ | --------- | ------- | --------- | -------------- | ------- 
  10:00 | 52 kW | 8 kW | 70% | IDLE | €11 
  10:05 | 51 kW | 6 kW | 70% | IDLE | €11 
  10:10 | 53 kW | 5 kW | 70% | DISCHARGE | €10 
- 10:15 | 52 kW | 4 kW | 68% | DISCHARGE | €10 
- 10:20 | 51 kW | 3 kW | 66% | IDLE | €11 
- 10:25 | 52 kW | 2 kW | 66% | IDLE | €11 
- 10:30 | 54 kW | 1 kW | 66% | IDLE | €11 
+ 10:15 | 52 kW | 4 kW ...
+```
 
-📊 RESULTADO: Costo hora = €75
-💰 Sin batería sería: €108 (ahorro: €33)
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🔄 Ciclo de Operación Típico
 
+<!-- markdownlint-disable MD013 -->
 ```text
 BUCLE CONTINUO (cada 5 minutos):
 
@@ -370,21 +331,11 @@ BUCLE CONTINUO (cada 5 minutos):
    └─ Elegir mejor acción
 
 4. EJECUTAR
-   ├─ Enviar comando a hardware
-   ├─ Monitorear ejecución
-   └─ Registrar en base de datos
+   ├─ ...
+```
 
-5. APRENDER
-   ├─ Guardar resultados
-   ├─ Comparar vs predicción
-   └─ Mejorar modelo IA
-
-6. REPETIR (después de 5 min)
-   └─ Volver al paso 1
-
-REPETICIONES POR DÍA: 288 ciclos = 288 decisiones optimizadas
-AHORRO ANUAL: 365 × €100 = €36,500 por edificio
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -392,6 +343,7 @@ AHORRO ANUAL: 365 × €100 = €36,500 por edificio
 
 ### **Opción 1: Con cURL (Terminal)**
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # 1. Health check
 curl http://localhost:8000/health
@@ -407,20 +359,18 @@ curl -X POST http://localhost:8000/api/control \
   -H "Content-Type: application/json" \
   -d '{"action":"charge","value":10}'
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### **Opción 2: Con Swagger (Navegador)**
+...
+```
 
-```text
-1. Abre: http://localhost:8000/docs
-2. Verás todos los endpoints
-3. Click en cada uno
-4. Click en "Try it out"
-5. Modifica parámetros
-6. Click "Execute"
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### **Opción 3: Con Python (Script)**
 
+<!-- markdownlint-disable MD013 -->
 ```python
 import requests
 import json
@@ -437,15 +387,11 @@ resp = requests.get(f"{BASE}/api/metrics")
 data = resp.json()
 print(f"📊 Consumo: {data['building_load_kw']} kW")
 print(f"☀️ Solar: {data['pv_generation_kw']} kW")
-print(f"🔋 Batería: {data['battery_soc']}%")
+print(f"🔋 Batería: {data['battery_soc']}%"...
+```
 
-# 3. Ejecutar acción
-resp = requests.post(
-    f"{BASE}/api/control",
-    json={"action": "charge", "value": 5.0}
-)
-print("⚡ Acción:", resp.json()["status"])
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -453,6 +399,7 @@ print("⚡ Acción:", resp.json()["status"])
 
 Para ver todo en tiempo real:
 
+<!-- markdownlint-disable MD013 -->
 ```text
 DOCKER MANAGER: http://localhost:5000
 ├─ Estado de contenedores
@@ -469,7 +416,9 @@ SWAGGER API: http://localhost:8000/docs
 ├─ Documentación interactiva
 └─ Pruebas en vivo
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 🎓 Resumen | Concepto | Explicación | | ---------- | ------------- | | **PVBESSCAR** | Sistema IA para... | | **Entrada** | Sensores (consumo, solar,... | | **Proceso** | ML predice futuro + RL optimiza decisión | | **Salida** | Acción (cargar/descargar/esperar) | | **Resultado** | Menor costo +... | | **API** | FastAPI + MongoDB + ML Models | | **Ejecución** | Ciclo cada 5 minutos (288 veces/día) | | **Ahorro** | ~€100/día por edificio = €36,500/año | **¡Listo! Ahora entiendes cómo funciona el sistema completo.**

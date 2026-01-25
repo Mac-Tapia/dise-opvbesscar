@@ -82,6 +82,7 @@ FONDO
 
 ## 🔀 FLUJO DE TRABAJO RECOMENDADO
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ┌─ Ejecutivo/Decisor ────────────────┐
 │  1. Leer RESUMEN (5 min)           │
@@ -94,33 +95,20 @@ FONDO
 │  2. Entender teoría                │
 │  3. Validate cambios con eq./plots │
 │  4. Aprueba para dev               │
-└─ 👇 ──────────────────────────────┘
-    ↓
-┌─ Ingeniero/Developer ──────────────┐
-│  1. Leer STEP_BY_STEP (inicio)     │
-│  2. Implementar Cambio 1 (rewards) │
-│  3. Implementar Cambio 2 (sac)     │
-│  4. Implementar Cambio 3 (obs)     │
-│  5. Test: syntax, shape, no NaN    │
-│  6. Commit & push                  │
-│  7. Ejecutar TRAIN                 │
-│  8. Monitorear 24h                 │
-└─ 👇 ──────────────────────────────┘
-    ↓
-┌─ ML Engineer ──────────────────────┐
-│  1. Analizar resultados            │
-│  2. Comparar vs A2C/PPO            │
-│  3. Reportar mejoras               │
-│  4. Identificar próximos fixes     │
-└────────────────────────────────────┘
-```text
+└─ 👇 ─...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🔍 BUSCA RÁPIDA
 
+<!-- markdownlint-disable MD013 -->
 **Quiero...** → **Lee esto:** | Necesidad | Documento | Sección | | --- | ----------- | --- | | Entender qué cambios | RESUMEN | "CAMBIOS CLAVE" | | Saber por qué funciona | OPTIMIZATION | "REFERENCIAS TEÓRICAS" | | Ver código exacto | STEP_BY_STEP | "CAMBIO 1", "CAMBIO 2" | | Resultados esperados | RESUMEN | "RESULTADOS ESPERADOS" | | Implementar Paso 1 | STEP_BY_STEP | "CAMBIO 1: rewards.py" | | Implementar Paso 2 | STEP_BY_STEP | "CAMBIO 2: sac.py" | | Validar después | STEP_BY_STEP | "VALIDACIÓN POST-CAMBIOS" | | Debuggear problema | OPTIMIZATION | "DEBUGGING ESPERADO" | | Revertir cambios | RESUMEN o STEP_BY_STEP | "ROLLBACK" | | Entrenamiento | OPTIMIZATION | "PLAN IMPLEMENTACIÓN" | | Métricas éxito | RESUMEN | "MÉTRICAS ÉXITO" | | FAQ | RESUMEN | "FAQ" | ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📊 ESTADÍSTICAS DOCUMENTACIÓN | Documento | Tipo | Palabras | Tiempo Lectura | Audiencia | | --- | ------ | --- | ---------------- | --- | | RESUMEN_EJECUTIVO | Summary | 2000 | 5-10 min | Todos | | OPTIMIZATION | Technical | 5000 | 20-30 min | Scientists/Researchers | | STEP_BY_STEP | Implementation | 3000 | 2-3 h (ejecutar) | Engineers | | **Total** | | **10000** | **30 min + 3h trabajo** | | ---
 
 ## ✅ CHECKLIST PRE-INICIO
@@ -138,6 +126,7 @@ Antes de empezar, asegúrate que:
 
 ## 🚀 TIMELINE TÍPICO
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Día 1 (2-3h):
   ├─ 0:00 - Leer documentación (RESUMEN + OPTIMIZATION)
@@ -156,9 +145,11 @@ Día 4 (2h):
   ├─ Reportar mejoras
   └─ Plan TIER 3
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📞 TROUBLESHOOTING | Problema | Solución | Documento | | --- | ---------- | --- | | No entiendo cambios | Leer OPTIMIZATION parte "POR QUÉ" | OPTIMIZATION.md | | Errores sintaxis Python | Leer paso-a-paso STEP_BY_STEP | STEP_BY_STEP.md | | Reward sigue diverge | Ver "Si Reward diverge" | OPTIMIZATION.md | | Importación sigue alta | Ver "Si Importación sigue alta" | OPTIMIZATION.md | | SOC se drena | Ver "Si SOC se drena" | OPTIMIZATION.md | | Convergencia lenta | Ver "Si converge muy lento" | OPTIMIZATION.md | | Revertir cambios | Ver "ROLLBACK" | RESUMEN o STEP_BY_STEP | ---
 
 ## 🔗 DOCUMENTOS RELACIONADOS

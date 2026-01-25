@@ -22,6 +22,7 @@ orphaned files, import chains, data flow, and version conflicts.
 
 ## 1. DUPLICATE FILES & VERSION CONFLICTS
 
+<!-- markdownlint-disable MD013 -->
 ### 1.1 Reward Modules (4 files with overlapping purposes) | File | Purpose | Status | Lines | Used Where | |------|---------|--------|-------|-----------| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 |`rewards_dynamic.py`|**EXPERIMENTAL** - Hour-based...|❌ Orphaned|80|Only in...| ### 1.2 CO₂ Calculation Modules (2 files, different scope) | File | Purpose | Status | Lines | Used Where | |------|---------|--------|-------|-----------|
 |`co2_emissions.py`|**Data structure** -...|⚠️ Unused|358|Imported but NOT used...| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| ---
@@ -88,6 +89,7 @@ orphaned files, import chains, data flow, and version conflicts.
 
 ### 3.1 Core Import Chain (Main Pipeline)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ENTRY POINTS:
 ├─ scripts/run_oe3_build_dataset.py
@@ -99,12 +101,11 @@ ENTRY POINTS:
 │  │  ├─→ agents.__init__ (SAC, PPO, A2C, Uncontrolled, etc.)
 │  │  ├─→ rewards.MultiObjectiveReward
 │  │  └─→ agents/*.py (sac.py, ppo_sb3.py, a2c_sb3.py)
-│  └─→ co2_table.py (NO - called separately)
-│
-└─ scripts/run_oe3_co2_table.py
-   └─→ co2_table.compute_table()
-       └─→ co2_emissions.py ❌ (IMPORTED BUT UNUSED)
-```bash
+│  └─→ co2_table.py (NO - called sep...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### 3.2 Import Validation Results
 
@@ -128,6 +129,7 @@ ENTRY POINTS:
 
 - `demanda_mall_kwh.py`: **NO imports anywhere** (0 usages detected)
 
+<!-- markdownlint-disable MD013 -->
 ### 3.3 Unused Exports in Key Files | Module | Exports | Actually Used | Status | |--------|---------|---------------|--------| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 |`co2_emissions.py`|`CO2EmissionFactors`, `CO2EmissionBreakdown`|❌ Never instantiated|❌| | `demanda_mall_kwh.py` | 6 classes, 10+ functions | ❌ Zero usages | ❌ | | `rewards_dynamic.py` | `DynamicReward` class | ❌ Only in dev script | ⚠️ | |`enriched_observables.py`|`EnrichedObservableWrapper`|❓ Unclear (not in simulate.py)|⚠️| ---
 
@@ -135,6 +137,7 @@ ENTRY POINTS:
 
 ### 4.1 OE2 → OE3 Complete Flow
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 INPUT (OE2 Artifacts)
 ├─ data/interim/oe2/solar/pv_generation_timeseries.csv
@@ -147,47 +150,17 @@ INPUT (OE2 Artifacts)
 └─ data/interim/oe2/bess/bess_config.json
    └─ Fixed: 2 MWh / 1.2 MW
 
-              ↓ dataset_builder.py:build_citylearn_dataset()
+              ↓...
+```
 
-OUTPUT (CityLearn v2 Schema)
-├─ data/processed/citylearnv2_dataset/
-│  ├─ schema.json (building definition, observable keys, etc.)
-│  ├─ climate_zones/default_climate_zone/
-│  │  ├─ weather.csv (PVGIS, 8,760 rows)
-│  │  ├─ carbon_intensity.csv (0.4521 kg CO₂/kWh Iquitos)
-│  │  └─ pricing.csv (0.20 USD/kWh tariff)
-│  └─ buildings/<building_name>/
-│     ├─ energy_simulation.csv (PV + charger load profile)
-│     └─ charger_simulation_*.csv (per-charger 8,760 profiles)
-
-              ↓ simulate.py:simulate()
-              │ ├─→ CityLearnEnv(schema)
-              │ ├─→ agents (SAC/PPO/A2C trained on env)
-              │ └─→ rewards.MultiObjectiveReward wrapper
-
-OUTPUTS (Agent Evaluation)
-├─ outputs/oe3/simulations/simulation_summary.json
-│  └─ All agents' CO₂, EV kWh, grid import, etc.
-│
-├─ analyses/oe3/training/checkpoints/{SAC,PPO,A2C}/
-│  └─ Agent checkpoints (.zip files)
-│
-└─ analyses/oe3/oe3_simulation_timeseries.csv
-   └─ Detailed hourly timeseries (all agents)
-
-              ↓ co2_table.py:compute_table()
-
-FINAL OUTPUTS
-├─ COMPARACION_BASELINE_VS_RL.txt (CO₂ comparison table)
-├─ analyses/oe3/co2_breakdown_annual.csv (emissions by scenario)
-├─ analyses/oe3/control_comparison_summary.csv (agent comparison)
-└─ analyses/oe3/agent_comparison.csv (multiobjetivo metrics)
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### 4.2 Data Objects Through Pipeline
 
 #### Solar Generation → Agents
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # In dataset_builder.py
 pv_timeseries = pd.read_csv("data/interim/oe2/solar/pv"
@@ -199,12 +172,10 @@ pv_kwh \
     = env.buildings[0].electrical_storage.charging_efficiency  # Extracted from CityLearn
 
 # In rewards.py:MultiObjectiveReward.compute()
-r_solar = solar_generation / (pv_available + 0.1)  # Reward for self-consumption
-```bash
+r_solar = solar_generation / (pv_available + 0.1) ...
+```
 
-#### Charger Profiles → Agents
-
-```python
+[Ver código completo en GitHub]python
 # In dataset_builder.py (2)
 chargers_json = json.load(open("data/interim/oe2/chargers"
     "/individual_chargers.json"))
@@ -218,9 +189,11 @@ obs['chargers'] = [charger_power, occupancy, soc, ...] for each charger
 # In agents (SAC/PPO/A2C)
 actions = [0.0-1.0] × 126 chargers  # Normalized power setpoints
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### BESS State → Agents
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # Fixed in configs/default.yaml
 bess_capacity_kwh: 2000
@@ -230,31 +203,13 @@ bess_power_kw: 1200
 # BESS discharge prioritized for peak hours
 # Agents learn to discharge BESS when solar insufficient
 ```bash
+<!-- markdownlint-enable MD013 -->
 
-#### Multi-Objective Reward Integration
+#### Mult...
+```
 
-```python
-# Flow: simulate.py → agents training loop
-from rewards import MultiObjectiveWeights, MultiObjectiveReward
-
-# agents init
-config = MultiObjectiveWeights(
-    co2=0.50,        # PRIMARY
-    solar=0.20,      # SECONDARY
-    cost=0.10,
-    ev_satisfaction=0.10,
-    grid_stability=0.10
-)
-
-# Per-timestep in training
-reward = reward_fn.compute(
-    grid_import_kwh=...,
-    solar_generation_kwh=...,
-    ev_charging_kwh=...,
-    bess_soc=...,
-    # Returns weighted sum of 5 components
-)
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -262,6 +217,7 @@ reward = reward_fn.compute(
 
 ### 5.1 Circular Dependencies
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Severity: LOW (unused modules only)
 
@@ -274,90 +230,51 @@ Severity: LOW (unused modules only)
    
 Result: Both can be safely removed without affecting main pipeline
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 5.2 Class Dependencies
 
-**agents/**init**.py** → **IMPORTS FROM rewards.py** (REQUIRED)
+**agents/**init**.py** → **IMPORTS FROM rewards.p...
+```
 
-```python
-from ..rewards import (
-    MultiObjectiveReward,
-    MultiObjectiveWeights,
-    IquitosContext,
-    CityLearnMultiObjectiveWrapper,
-    create_iquitos_reward_weights,
-)
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ✅ All 5 classes are used in agent training
 
 **simulate.py** → **IMPORTS FROM agents + rewards** (REQUIRED)
 
+<!-- markdownlint-disable MD013 -->
 ```python
 from iquitos_citylearn.oe3.agents import (
     SACAgent, PPOAgent, A2CAgent, UncontrolledChargingAgent,
     MultiObjectiveReward, MultiObjectiveWeights, ...
 )
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ✅ Core classes instantiated in simulation loop
 
 **co2_table.py** → **IMPORTS FROM co2_emissions.py** (UNUSED)
 
+<!-- markdownlint-disable MD013 -->
 ```python
-# Line 7 in co2_table.py - but EmissionFactors never used in actual code
-from iquitos_citylearn.oe3.co2_emissions import (...)
-```bash
+# Line 7 in co2_table.py - but EmissionF...
+```
 
-❌ Import exists but classes not instantiated
-
----
-
-## 6. VERSION CONFLICT MATRIX | Aspect | v1 (Active) | v2 (Backup) | Status | |--------|------------|-----------|--------| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| **Risk Assessment**: 🟡 MEDIUM
-
-- Both v1 and v2 define same interfaces
-- If code switches to v2 without updating agents/**init**.py, breakage occurs
-- Currently safe because v2 not in main import path
-
----
-
-## 7. RECOMMENDED CLEANUP PLAN
-
-### Phase 1: Immediate (Low Risk) - DELETE
-
-#### Files to DELETE (100% safe):
-
-1. **`demanda_mall_kwh.py`** (507 lines)
-   - Zero imports anywhere
-   - Appears to be legacy OE2 analysis
-   - Command: `git rm src/iquitos_citylearn/oe3/demanda_mall_kwh.py`
-
-2. **`rewards_dynamic.py`** (80 lines, optional)
-   - Only used in dev script `train_ppo_dynamic.py`
-   - Not in active training pipeline
-   - Command: `git rm src/iquitos_citylearn/oe3/rewards_dynamic.py` + update
-     - `train_ppo_dynamic.py`
-
-### Phase 2: Medium Risk - CONSOLIDATE
-
-#### Files to CONSOLIDATE:
-
-1. **Merge `co2_emissions.py` into `co2_table.py`**
-
-   ```python
-   # Move dataclasses from co2_emissions.py to co2_table.py
-   # Update co2_table.py line 7: remove import
-   # Delete co2_emissions.py
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
    - **Impact**: 1 file deleted, cleaner imports
    - **Testing**: Verify `scripts/run_oe3_co2_table.py` still runs
    - **Command**:
 
+<!-- markdownlint-disable MD013 -->
      ```bash
      # Copy content of co2_emissions.py into co2_table.py
      git rm src/iquitos_citylearn/oe3/co2_emissions.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Phase 3: Low Priority - ARCHIVE
 
@@ -365,19 +282,10 @@ from iquitos_citylearn.oe3.co2_emissions import (...)
 
 1. **`rewards_improved_v2.py`** (410 lines)
    - Only imported by unused `rewards_wrapper_v2.py`
-   - Move to `src/iquitos_citylearn/experimental/rewards_improved_v2.py`
-   - Update comments: "Kept as reference for v2 iteration"
+   - Move to `src/iquitos_citylearn/experimental/rewa...
+```
 
-2. **`rewards_wrapper_v2.py`** (180 lines)
-   - Experimental wrapper, not in main pipeline
-   - Move to `src/iquitos_citylearn/experimental/rewards_wrapper_v2.py`
-   - Comment: "Gymnasium wrapper for ImprovedMultiObjectiveReward - not active"
-
-### Phase 4: DOCUMENT
-
-#### Create file: `OE3_MODULE_STATUS.md`
-
-```markdown
+[Ver código completo en GitHub]markdown
 # OE3 Module Status (Jan 2026)
 
 ## Active Modules (Production)
@@ -396,34 +304,17 @@ from iquitos_citylearn.oe3.co2_emissions import (...)
 - rewards_dynamic.py (dev-only, archived to scripts/experimental/)
 - co2_emissions.py (consolidated into co2_table.py)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 8. SPECIFIC FILE RECOMMENDATIONS
 
-### 🟢 KEEP (Production) | File | Reason | Actions | |------|--------|---------| | `rewards.py` | Core multi-objective system, all... | Keep as-is (TIER... | | `co2_table.py` | Main CO₂ evaluation module | Keep as-is (or... | | `dataset_builder.py` | Only module for... | Keep as-is | | `simulate.py` | Central orchestrator for agent training | Keep as-is | |`agents/__init__.py`|Agent factory and multiobjetivo imports|Keep as-is| | All `agents/*.py` | 7 agent implementations (SAC,... | Keep all | | `progress.py` | Training progress utilities | Keep as-is | | `enriched_observables.py` | Observable wrapper... | Keep; check if needed | | `dispatch_priorities.py` | BESS dispatch logic | Keep as-is | | `tier2_v2_config.py` | Training configuration | Keep as-is | ### 🟡 CONDITIONAL KEEP | File | Condition | Action | |------|-----------|--------|
-|`enriched_observables.py`|If not used in simulate.py|Check usage; archive if dead code| | `co2_emissions.py` | If co2_table.py... | Merge into co2_table.py, delete | ### 🔴 DELETE | File | Reason | Impact | |------|--------|--------|
-|`demanda_mall_kwh.py`|100% orphaned, zero imports|None - dev code, no dependencies|
-|`rewards_dynamic.py`|Only in dev script, not active|Move to scripts/experimental/| ### 🟠 ARCHIVE (Move to experimental/) | File | Reason | Archive Path | |------|--------|--------------| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-|`rewards_wrapper_v2.py`|Experimental wrapper, unused|`src/iquitos_citylearn/experimental/`| ---
+<!-- markdownlint-disable MD013 -->
+### 🟢 KEEP (Production) | File | Reason | Actions | |------|--------|---------| | `rewards.py` | Core multi-objective system, all... | Keep as-is (TIER... | | `co2_table.py` | Main CO₂ evaluation module | Keep as-is (or... | | `dataset_builder.py` | Only module for... | Keep as-is | | ...
+```
 
-## 9. IMPACT ANALYSIS
-
-### 9.1 If Changes Implemented
-
-**Total lines of code to remove**: ~1,000 lines
-
-- `demanda_mall_kwh.py`: 507 lines
-- `rewards_improved_v2.py`: 410 lines
-- `rewards_wrapper_v2.py`: 180 lines
-- `rewards_dynamic.py`: 80 lines
-- `co2_emissions.py`: 358 lines (consolidated)
-
-**Result**: Cleaner codebase, easier to maintain, no functional impact.
-
-### 9.2 Testing Required After Cleanup
-
-```bash
+[Ver código completo en GitHub]bash
 # 1. Test dataset building
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 
@@ -439,6 +330,7 @@ python -c "from iquitos_citylearn.oe3.agents import *; print('✓')"
 # 5. Test rewards imports
 python -c "from iquitos_citylearn.oe3.rewards import *; print('✓')"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -446,25 +338,22 @@ python -c "from iquitos_citylearn.oe3.rewards import *; print('✓')"
 
 ### 10.1 Import Chain: agents/**init**.py
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # All imports verified as VALID:
 ✅ from .uncontrolled import UncontrolledChargingAgent
 ✅ from .rbc import BasicRBCAgent, RBCConfig
 ✅ from .sac import SACAgent, SACConfig
 ✅ from .no_control import NoControlAgent
-✅ from .ppo_sb3 import PPOAgent, PPOConfig
-✅ from .a2c_sb3 import A2CAgent, A2CConfig
-✅ from ..rewards import (
-   MultiObjectiveReward,
-   MultiObjectiveWeights,
-   IquitosContext,
-   CityLearnMultiObjectiveWrapper,
-   create_iquitos_reward_weights,
-)
-```bash
+✅ from .ppo_sb3 impor...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### 10.2 Agent Usage in simulate.py
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # All agents properly imported and used:
 ✅ UncontrolledChargingAgent (baseline)
@@ -479,10 +368,10 @@ python -c "from iquitos_citylearn.oe3.rewards import *; print('✓')"
 ✅ MultiObjectiveWeights loaded from config
 ✅ CityLearnMultiObjectiveWrapper applied to env
 ```bash
+<!-- mark...
+```
 
-### 10.3 OE2 Data Integration in Agents
-
-```python
+[Ver código completo en GitHub]python
 # Solar integration:
 ✓ data/interim/oe2/solar/pv_generation_timeseries.csv
   → dataset_builder.py creates energy_simulation.csv
@@ -502,11 +391,13 @@ python -c "from iquitos_citylearn.oe3.rewards import *; print('✓')"
   → CityLearnEnv manages BESS state
   → agents learn to discharge during EV peaks via CO₂ reward
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 11. CONCLUSION & ACTION ITEMS
 
+<!-- markdownlint-disable MD013 -->
 ### Summary Table | Category | Finding | Action | Priority | |----------|---------|--------|----------|
 |**Duplicates**|4 reward modules|Consolidate to 1 active + archive 2|🟡 Medium| | **Orphaned** | demanda_mall_kwh.py (507 lines) | DELETE | 🔴 High | | **Version Conflict** | v1 vs v2 rewards | Document, don't mix | 🟡 Medium | |**Import Errors**|co2_emissions.py unused|Merge into co2_table.py|🟡 Medium| | **Data Flow** | OE2 → OE3 clear | ✓ No changes needed | ✓ None | |**Agent Connection**|All agents properly linked|✓ No changes needed|✓ None| ### Recommended Execution Order
 

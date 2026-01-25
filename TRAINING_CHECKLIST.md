@@ -36,9 +36,11 @@ Verifica todos estos items antes de iniciar el entrenamiento RL.
 
 - [ ] Ejecutar builder si no existe:
 
+<!-- markdownlint-disable MD013 -->
   ```bash
   python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 - [ ] Validar schema: `outputs/schema_*.json` debe existir
   - [ ] Contains `buildings` key
@@ -49,36 +51,39 @@ Verifica todos estos items antes de iniciar el entrenamiento RL.
 
 - [ ] Imports funcionales:
 
+<!-- markdownlint-disable MD013 -->
   ```bash
-  python -c "from iquitos_citylearn.oe3.agents import PPOAgent,
-      SACAgent,
-      A2CAgent; print('OK')"
-```bash
+  python -c "from iquitos_c...
+```
 
-- [ ] Device detectado:
-
-  ```bash
-  python -c "from iquitos_citylearn.oe3.agents import detect_device; print(detect_device())"
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ## 6. Rewards & Observables
 
 - [ ] Rewards normalizadas (suma pesos = 1.0):
 
+<!-- markdownlint-disable MD013 -->
   ```bash
+<details>
+<summary>  python -c "from iquitos_citylearn.oe3.rewards import MultiObjectiveWeights; w=...</summary>
+
   python -c "from iquitos_citylearn.oe3.rewards import MultiObjectiveWeights; w=MultiObjectiveWeights(); print(f'Sum={w.co2+w.cost+w.solar+w.ev_satisfaction+w.grid_stability:.2f}')"
+
+</details>
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 - [ ] Observables enriquecidos disponibles:
   - [ ] `src/iquitos_citylearn/oe3/enriched_observables.py` contiene lógica
 
 ## 7. Checkpoints
 
-- [ ] Directorio de checkpoints limpio o inexistente:
+- [ ] Directorio de checkpoints li...
+```
 
-  ```bash
-  rm -r checkpoints/  # o en PowerShell: Remove-Item -Recurse checkpoints
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 - [ ] O aceptar reanudar desde checkpoint existente (opcional)
 
@@ -86,12 +91,15 @@ Verifica todos estos items antes de iniciar el entrenamiento RL.
 
 Ejecuta validación automática:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python src/iquitos_citylearn/oe3/agents/validate_training_env.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 Debe mostrar:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✓ Agents imported successfully
 ✓ Rewards imported successfully
@@ -99,24 +107,23 @@ Debe mostrar:
 ✓ Checkpoint dir: (path)
 ✓ All checks passed! Ready to train.
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ## 9. Entrenamiento
 
-Iniciar entrenamiento con:
+Iniciar ent...
+```
 
-```bash
-# Validación rápida (5 episodios, ~5 min)
-python scripts/train_quick.py --device cuda --episodes 5
-
-# O entrenamiento serial completo (50 episodios, ~50 min)
-python scripts/train_agents_serial.py --device cuda --episodes 50
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 Monitorear progreso en otra terminal:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python scripts/monitor_training_live_2026.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ## 10. Post-Entrenamiento
 
@@ -130,34 +137,15 @@ python scripts/monitor_training_live_2026.py
 
 ## 🚀 Quick Start (Todos en Orden)
 
-```bash
-# 1. Setup
-python -m venv .venv
-.venv\Scripts\activate  # Windows
-pip install -r requirements.txt
+<!-- markdo...
+```
 
-# 2. Validar datos OE2
-python -c "import pandas as pd; print('Solar rows:',
-    len(pd.read_csv('data/interim/oe2/solar/pv_generation_timeseries.csv')))"
-
-# 3. Build dataset
-python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-
-# 4. Validar entorno
-python src/iquitos_citylearn/oe3/agents/validate_training_env.py
-
-# 5. Entrenar
-python scripts/train_quick.py --device cuda --episodes 5
-
-# 6. Monitorear (otra terminal)
-python scripts/monitor_training_live_2026.py
-
-# 7. Comparar resultados
-python -m scripts.run_oe3_co2_table --config configs/default.yaml
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## ⚠️ Problemas Comunes | Problema | Solución | |----------|----------| | "Schema not found" | Ejecutar `run_oe3_build_dataset` primero | |"128 chargers not found"|Validar `data/interim/oe2/chargers/individual_chargers.json`...| | "GPU out of memory" | Reducir `n_steps` en... | | "Reward NaN" | Verificar weights sum... | | "Import error agents" | Verificar `src/` en PYTHONPATH | | "Checkpoint load failed" | Limpiar `checkpoints/` o... | ---
 
 **Status**: Actualizado Ene 25, 2026

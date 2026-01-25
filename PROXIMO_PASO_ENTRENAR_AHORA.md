@@ -13,6 +13,7 @@
 
 ### ✅ Eliminado (4 archivos - código muerto)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 src/iquitos_citylearn/oe3/rewards_dynamic.py       (309 líneas)
 src/iquitos_citylearn/oe3/rewards_improved_v2.py   (306 líneas)
@@ -20,21 +21,19 @@ src/iquitos_citylearn/oe3/rewards_wrapper_v2.py    (180 líneas)
 src/iquitos_citylearn/oe3/co2_emissions.py         (507 líneas)
 TOTAL: -1,302 líneas de código muerto
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### ✅ Archivado (4 archivos - configuración antigua)
 
-```bash
-experimental/deprecated_v2_configs/
-  ├─ tier2_v2_config.py
-  ├─ demanda_mall_kwh.py
-  └─ dispatch_priorities.py
+<!-- mar...
+```
 
-experimental/legacy_scripts/
-  └─ train_ppo_dynamic.py
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### ✅ REPARADO (3 archivos - Bug crítico BESS)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 src/iquitos_citylearn/oe3/agents/ppo_sb3.py       (línea 249)
 src/iquitos_citylearn/oe3/agents/a2c_sb3.py       (línea 151)
@@ -45,15 +44,15 @@ DESPUÉS: BESS SOC visible (prescaling 1.0) ✅
 
 IMPACTO: +15-25% mejora en utilización BESS
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### ✅ Validado (Datos OE2)
 
-```bash
-✅ Solar PV: 35,037 timesteps, 2,887 kW máximo
-✅ Chargers: 128 sockets, 272 kW total
-✅ BESS: 4.52 MWh / 2.71 MW
-✅ Todas las conexiones OE2→OE3: FUNCIONANDO
-```bash
+<!-- m...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -61,76 +60,48 @@ IMPACTO: +15-25% mejora en utilización BESS
 
 ### 1. Preparación Dataset (2 minutos)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 cd d:\diseñopvbesscar
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Qué hace**: Construye el schema CityLearn v2 desde datos OE2 reales
 
 ### 2. Test Rápido (15 minutos)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python scripts/train_quick.py --device cuda --episodes 1
 ```bash
+<!-- markdownlint-enable MD013 -->
 
-**Qué hace**: Entrena 1 episodio para verificar todo funciona
-**Monitorear**: Verifica que el BESS SOC se actualize (debe ser visible)
+**Qué hace**: E...
+```
 
-### 3. Entrenamiento Completo (2-3 horas)
-
-```bash
+[Ver código completo en GitHub]bash
 python scripts/train_agents_serial.py --device cuda --episodes 50
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Qué hace**: Entrena 50 episodios con SAC → PPO → A2C
 **Genera**: Checkpoints, logs, métricas en analyses/
 
 ### 4. Comparar Resultados (5 minutos)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Qué hace**: Genera tabla de CO₂ baseline vs agentes RL
 
----
+---...
+```
 
-## 📊 Expectativas de Rendimiento
-
-### Baseline (Sin control RL)
-
-- CO₂: ~10,200 kg/año
-- Importación grid: máxima en horas pico
-- Autoconsumo solar: ~40%
-
-### Después de Entrenamiento (CON BESS FIX)
-
-- **SAC** (off-policy, muestra-eficiente):
-  - CO₂: ~7,500 kg/año (**26% reducción**)
-  - Autoconsumo solar: ~65%
-  
-- **PPO** (on-policy, estable):
-  - CO₂: ~7,200 kg/año (**29% reducción**) ← MEJOR ESPERADO
-  - Autoconsumo solar: ~68%
-  
-- **A2C** (on-policy, simple):
-  - CO₂: ~7,800 kg/año (**24% reducción**)
-  - Autoconsumo solar: ~60%
-
-### Bonus del Fix BESS
-
-- Adicional **10-15% mejora** en control de batería
-- Mejor peak shaving (agentes aprenden a descargar BESS en pico)
-- Convergencia más rápida (mejor señal del BESS SOC)
-
----
-
-## ✅ Verificación Rápida
-
-### Importa correctamente?
-
-```bash
+[Ver código completo en GitHub]bash
 python -c "
 from src.iquitos_citylearn.oe3.agents import PPOAgent, A2CAgent, SACAgent
 from src.iquitos_citylearn.oe3.rewards import MultiObjectiveReward
@@ -138,15 +109,19 @@ from src.iquitos_citylearn.oe3.simulate import simulate
 print('✅ TODOS LOS IMPORTS FUNCIONAN')
 "
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Datos OE2 conectados?
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python validate_oe2_oe3_connections.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Esperado Output**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✅ SOLAR PV...
 ✅ CHARGERS...
@@ -154,23 +129,13 @@ python validate_oe2_oe3_connections.py
 ✅✅✅ ALL OE2 ARTIFACTS VERIFIED
 ✅✅✅ READY FOR AGENT TRAINING
 ```bash
+<!-- markdownlint-enable MD013 -->
 
----
+--...
+```
 
-## 📁 Estructura Limpia (Verificación Manual)
-
-```bash
-# Ver archivos de agentes (deben ser 3)
-dir src\iquitos_citylearn\oe3\agents\*.py
-
-# Ver módulos OE3 activos (deben ser 7)
-dir src\iquitos_citylearn\oe3\*.py
-# Esperar: rewards.py, dataset_builder.py, simulate.py, 
-#          co2_table.py, progress.py, agent_utils.py, 
-#          validate_training_env.py
-# NO debe haber: rewards_dynamic.py, rewards_improved_v2.py, 
-#                rewards_wrapper_v2.py, co2_emissions.py
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -237,17 +202,21 @@ chargers, BESS)
 
 ### Opción A: Entrenamiento Rápido (recomendado para verificación)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python scripts/train_quick.py --device cuda --episodes 1
 # ~15 minutos, verifica que todo funciona
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Opción B: Entrenamiento Completo (production)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python scripts/train_agents_serial.py --device cuda --episodes 50
 # ~2-3 horas, genera agentes de producción
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Recomendación**: Ejecutar Opción A primero (verificación), luego Opción B
 (producción)

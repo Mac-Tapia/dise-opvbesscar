@@ -15,6 +15,7 @@ aprendiera:
 
 **Archivo**: [src/iquitos_citylearn/oe3/rewards.py][ref]
 
+<!-- markdownlint-disable MD013 -->
 [ref]: src/iquitos_citylearn/oe3/rewards.py#L30 | Métrica | Antes | Después | Razón | | --- | --- | --- | --- | | **CO₂** | 0.45 | **0.50** | PRIMARY: matriz térmica... | | **Solar** | 0.15 | **0.20** | SECONDARY: FV limpia... | | **Costo** | 0.15 | **0.10** | REDUCIDO: tarifa baja, no es bottleneck | | **Grid Stability** | 0.20 | **0.10** | REDUCIDO: implícito en CO₂ + Solar | | **EV Satisfaction** | 0.05 | **0.10** | Aumentado: operación balanceada | **Beneficio**: Agente ahora enfoca en **minimizar importación de grid** (CO₂)
 **maximizando solar**.
 
@@ -28,27 +29,25 @@ aprendiera:
 
 #### ❌ PROBLEMA ORIGINAL - Issue
 
+<!-- markdownlint-disable MD013 -->
 ```python
 co2_baseline = 500.0  # ¡¡¡ARBITRARIO!!!
 # Típico demanda mall: 100 kW
 # 500.0 es 5x la demanda típica
 # Resultado: reward casi siempre positivo → SIN GRADIENTES para learning
 ```text
+<!-- markdownlint-enable MD013 -->
 
 #### ✅ SOLUCIÓN APLICADA - Fix
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # Baselines reales de Iquitos:
-co2_baseline_offpeak = 130.0   # Mall ~100kW + Chargers ~30kW = 130 kWh/hora
-co2_baseline_peak = 250.0      # Mall ~150kW + Chargers ~100kW = 250 kWh/hora (TARGET)
+co2_baseline_offpeak = 130.0   # Mall ~100kW + Chargers ~30kW = 130 kWh...
+```
 
-if is_peak:
-    # En pico: si importas 250 (target), r_co2 = 1 - 2*(250/250) = -1 (penalidad)
-    #          si importas 100 (excelente), r_co2 = 1 - 2*(100/250) = 0.2 (bonus)
-    r_co2 = 1.0 - 2.0 * min(1.0, grid_import_kwh / co2_baseline_peak)
-else:
-    r_co2 = 1.0 - 1.0 * min(1.0, grid_import_kwh / co2_baseline_offpeak)
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 **Beneficio**: Reward ahora varía en rango COMPLETO [-1, +1] → **claros
 gradientes para SAC**.
@@ -68,6 +67,7 @@ gradientes para SAC**.
 
 #### ❌ PROBLEMA ORIGINAL - Issue (2)
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # Penalización sumada SIN ponderación
 if hour in pre_peak_hours and bess_soc < 0.5:
@@ -76,27 +76,16 @@ if hour in pre_peak_hours and bess_soc < 0.5:
 # RESULTADO: Si reward_componentes = [-0.5 del CO₂, -0.5 del SOC]
 # ¡SOC tiene IGUAL peso que CO₂ a pesar de ser mucho menos importante!
 ```text
+<!-- markdownlint-enable MD013 -->
 
 #### ✅ SOLUCIÓN APLICADA - Fix (2)
 
-```python
-# Ahora normalizado con peso explícito
-if hour in [16, 17]:  # Pre-peak
-    soc_target_prepeak = 0.65  # Meta realista
-    if bess_soc < soc_target_prepeak:
-        r_soc_reserve = 1.0 - (soc_deficit / soc_target_prepeak)  # [0, 1] normalizado
-    else:
-        r_soc_reserve = 1.0  # Bonus si cumples
+<!-- markdownlint-disable MD013 -->
+```pyth...
+```
 
-soc_penalty = (r_soc_reserve - 1.0) * 0.5  # Escala [-0.5, 0]
-
-# En suma total:
-reward = (
-    0.50 * r_co2 +              # 0.50 de peso
-    0.10 * soc_penalty +        # 0.10 de peso (mucho menor, correcto)
-    ...
-)
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 **Beneficio**: SOC penalty ahora tiene peso EXPLÍCITO y balanceado.
 
@@ -106,6 +95,7 @@ reward = (
 
 **Archivo**: [src/iquitos_citylearn/oe3/agents/sac.py][ref]
 
+<!-- markdownlint-disable MD013 -->
 [ref]: src/iquitos_citylearn/oe3/agents/sac.py#L136-L138 | Parámetro | Antes | Después | Razón | | --- | --- | --- | --- | | `ent_coef` | `"auto"` | **`0.01`** | Fijo: evita exploración EXCESIVA | | `target_entropy` | `-126.0` | **`-50.0`** | Menos ruido, más EXPLOTACIÓN | **Por qué**: Con rewards bien escalados ahora, SAC NO necesita exploración
 salvaje. Entropy bajo = más focus en políticas buenas.
 
@@ -120,108 +110,58 @@ salvaje. Entropy bajo = más focus en políticas buenas.
 
 #### 1. Componente `r_co2` (CRÍTICO)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Paso 25:   r_co2 = -0.2 a 0.0   (baseline, learning iniciado)
 Paso 100:  r_co2 = +0.1 a +0.2  (clara MEJORA vs antes -0.1)
 Paso 250:  r_co2 = +0.2 a +0.3  (convergencia visible)
 Paso 500:  r_co2 = +0.3+        (estable alto)
 ```text
+<!-- markdownlint-enable MD013 -->
 
 #### 2. Componente `r_grid` (INDICADOR)
 
+<!-- markdownlint-disable MD013 -->
 ```text
-Antes:  r_grid variaba wildly [-1, +1] (mal escalado)
-Ahora:  r_grid variará [-0.8, +0.4] (rango controlado)
-```text
+Antes:  r_grid variaba wildly [-1, +1] (mal es...
+```
 
-#### 3. `reward_total` Mean
-
-```text
+[Ver código completo en GitHub]text
 Paso 100:  reward_total = 0.56-0.60  (mejora vs 0.5600 plano)
 Paso 500:  reward_total = 0.60-0.65  (tendencia CLARA al alza)
 ```text
+<!-- markdownlint-enable MD013 -->
 
 #### 4. `grid_import` en Peak Hours (18-21h)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Baseline SAC paso 500: ~180 kWh/hora pico
 Esperado con TIER 1:   ~150 kWh/hora pico (25% reduction)
 ```text
+<!-- markdownlint-enable MD013 -->
 
 #### 5. `bess_soc` Pre-Peak (horas 16-17)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Actual: ~0.50 (justo target)
-Esperado: ~0.65-0.70 (agente entiende prepeak charging)
-```text
+Esperado: ~0.6...
+```
 
----
-
-## Próximos Pasos (TIER 2)
-
-Si TIER 1 muestra mejora clara (r_co2 subiendo), implementar TIER 2:
-
-### TIER 2 (DEPENDE DE VALIDACIÓN TIER 1)
-
-1. **Normalización de Reward** (línea 230 rewards.py)
-
-   ```python
-   reward_mean = rolling mean (últimos 100 pasos)
-   reward_std = rolling std
-   reward_normalized = (reward - mean) / std
-   ```text
-
-2. **Reducir Batch Size** (sac.py)
-
-   ```python
-   batch_size: 32768 → 4096  (mejor flexibility)
-   gradient_steps: 256 → 256 (ok, se complementa)
-   ```text
-
-3. **Agregar Observables Contextuales** (simulate.py)
-
-   ```python
-   is_peak_hour, bess_soc, bess_soc_target, pv_available_kw, queue_motos, queue_mototaxis
-   ```text
-
----
-
-## Archivos Modificados
-
-### TIER 1 - YA APLICADO
-
-- ✅ [src/iquitos_citylearn/oe3/rewards.py](src/iquitos_citylearn/oe3/rewards.py)
-  1. Lines 30-45: Pesos rebalanceados
-  2. Lines 152-165: CO₂ baselines realistas
-  3. Lines 215-230: SOC penalty normalizada
-
-- ✅
-  - [src/iquitos_citylearn/oe3/agents/sac.py][url1]
-  1. Lines 136-138: Entropía reducida
-
-### DOCUMENTACIÓN
-
-- ✅
-  - [AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md][url2]
-
-1. ✅ [AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md][ref]
-
-[ref]: AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md
-2.
-
----
-
-## Comando para Relanzar
-
-```bash
+[Ver código completo en GitHub]bash
 ```powershellv\\Scripts\\python.exe -m scripts.run_oe3_simulate --config configs/default.yaml
+<!-- markdownlint-enable MD013 -->
+<!-- markdownlint-disable MD013 -->
 ```text
 
 **Nota**: Checkpoints SAC anterior (con valores malos) pueden ser ignorados automáticamente o limpiados:
 
 ```bash
+<!-- markdownlint-enable MD013 -->
 RempowershellItem -Path
 "d:\diseñopvbesscar\analyses\oe3\training\checkpoints\sac" -Recurse -Force
+<!-- markdownlint-disable MD013 -->
 ```text
 
 ---

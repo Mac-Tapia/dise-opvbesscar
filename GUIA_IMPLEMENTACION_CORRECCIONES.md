@@ -15,50 +15,34 @@
 
 Buscar en `dataset_builder.py`:
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # Solar timeseries
 solar_path = interim_dir / "oe2" / "solar" / "pv_generation_timeseries.csv"
 if solar_path.exists():
     artifacts["solar_ts"] = pd.read_csv(solar_path)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Paso 2: Reemplazar con código mejorado
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # === SOLAR TIMESERIES (con resampling) ===
-solar_path = interim_dir / "oe2" / "solar" / "pv_generation_timeseries.csv"
-if solar_path.exists():
-    df_solar = pd.read_csv(solar_path)
-    
-    # Detectar y resample si es necesario
-    if len(df_solar) > 15000:  # Resolución 15-minutos
-        logger.info(f"[SOLAR] Detectada resolución 15-min ({len(df_solar)} filas),
-            resampling...")
-        
-        # Preparar datetime index
-        if 'timestamp' in df_solar.columns:
-            df_solar['timestamp'] = pd.to_datetime(df_solar['timestamp'], utc=True)
-            df_solar = df_solar.set_index('timestamp')
-        else:
-            df_solar.index = pd.date_range(start='2024-01-01', periods=len(df_solar), freq='15min')
-        
-        # Resample 15-min → 1-hora
-        df_solar_hourly = df_solar[['ac_power_kw', 'dc_power_kw']].resample('1H').mean()
-        df_solar = df_solar_hourly.reset_index()
-        
-        logger.info(f"[SOLAR] ✓ Resampling completado: {len(df_solar)} filas (1-hora)")
-    else:
-        logger.info(f"[SOLAR] Resolución ya es 1-hora ({len(df_solar)} filas)")
-    
-    artifacts["solar_ts"] = df_solar
-```bash
+solar_path = interim_dir / "oe2" / "solar" / "pv_ge...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Validación
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # Validar resultado
 assert len(artifacts["solar_ts"]) == 8760, f"Solar debe tener 8760 filas, tiene {len(artifacts['solar_ts'])}"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -67,11 +51,10 @@ assert len(artifacts["solar_ts"]) == 8760, f"Solar debe tener 8760 filas, tiene 
 **Archivo**: `src/iquitos_citylearn/oe3/dataset_builder.py`  
 **Línea aprox**: ~550 (después de crear schema y chargers)  
 **Tiempo**: 45-60 minutos  
-**Impacto**: Soluciona falta de archivos CSV para CityLearn
+**Impacto**: So...
+```
 
-### Paso 1: Agregar nueva función (antes de `build_citylearn_dataset`)
-
-```python
+[Ver código completo en GitHub]python
 def _generate_charger_csvs(
     chargers_df: pd.DataFrame,
     profile_24h_path: Path,
@@ -124,89 +107,67 @@ def _generate_charger_csvs(
     logger.info(f"[CHARGERS] ✓ {count_generated} archivos CSV generados en {building_dir}")
     return count_generated
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Paso 2: Llamar la función en `build_citylearn_dataset`
 
 Buscar la línea donde se crean los chargers (aprox línea 450-500), después de
 asignar `all_chargers`al building:
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # Después de: b_mall["chargers"] = all_chargers
 
 # === GENERAR CHARGER CSVs ===
 chargers_csv_dir = interim_dir / "oe2" / "chargers"
-if chargers_csv_dir.exists():
-    profile_24h_path = chargers_csv_dir / "perfil_horario_carga.csv"
-    if profile_24h_path.exists():
-        n_generated = _generate_charger_csvs(
-            chargers_df=chargers_df,
-            profile_24h_path=profile_24h_path,
-            output_dir=out_dir,
-            interim_dir=interim_dir,
-        )
-        if n_generated != 128:
-            logger.warning(f"[CHARGERS] Esperaban 128 CSVs,
-                se generaron {n_generated}")
-```bash
+if chargers_...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Validación (2)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Después de ejecutar dataset_builder, verificar:
+<!-- markdownlint-disable MD013 -->
  ls -la outputs/oe3/citylearnv2_dataset/buildings/Mall_Iquitos/|grep "\.csv$"|wc -l 
 # Debería mostrar 128 (más algunos CSVs del schema como solar, building_load, etc.)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## CORRECCIÓN #3: Corregir Charger Simulation Paths
 
-**Archivo**: `src/iquitos_citylearn/oe3/dataset_builder.py`  
-**Línea aprox**: ~360 (donde se asigna `charger_simulation`)  
-**Tiempo**: 2-5 minutos  
-**Impacto**: Schema tendrá paths correctos para CityLearn
+**Archivo**: `src/iquitos_citylearn/oe3/dat...
+```
 
-### Paso 1: Localizar línea problemática
-
-Buscar:
-
-```python
+[Ver código completo en GitHub]python
 charger_csv = f"{charger_name}.csv"  # ← INCORRECTO
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Paso 2: Reemplazar
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # ✅ CORRECTO: Path relativo desde raíz del dataset
 charger_csv = f"buildings/Mall_Iquitos/{charger_name}.csv"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 Hacer este cambio en TODAS las ocurrencias donde se asigna `charger_simulation`
 (buscar con Ctrl+F).
 
 ### Ejemplo contexto completo
 
-```python
-# Línea ~360-380
-for idx, row in chargers_df.iterrows():
-    charger_name = str(row.get("charger_id", f"charger_mall_{idx+1}"))
-    power_kw = float(row.get("power_kw", 2.0))
-    sockets = int(row.get("sockets", 1)) if row.get("sockets", 1) else 1
-    
-    # ✅ CORRECCIÓN AQUÍ:
-    charger_csv = f"buildings/Mall_Iquitos/{charger_name}.csv"  # Path correcto
-    
-    if charger_template:
-        new_charger = json.loads(json.dumps(charger_template))
-        new_charger["charger_simulation"] = charger_csv
-    else:
-        new_charger = {
-            "charger_simulation": charger_csv,
-            # ... resto de atributos ...
-        }
-    
-    all_chargers[charger_name] = new_charger
-```bash
+<!-- ma...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -223,38 +184,38 @@ for idx, row in chargers_df.iterrows():
 
 1. Actualizar `configs/default.yaml`:
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 oe2:
   bess:
     capacity_kwh: 4520.0  # Cambiar de 2000 a 4520
     nominal_power_kw: 2712.0
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 1. Actualizar `README.md`:
 
+<!-- markdownlint-disable MD013 -->
 ```markdown
 - **BESS**: 4.52 MWh / 2.71 MW (DoD 80%, η 90%)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 1. Actualizar `copilot-instructions.md`:
 
+<!-- markdownlint-disable MD013 -->
 ```markdown
-- **BESS**: 4,520 kWh / 2,712 kW
-```bash
+- **B...
+```
 
-### Opción B: Reducir a 2,000 kWh (como documenta README)
-
-**Cambios necesarios**:
-
-1. Actualizar `data/interim/oe2/bess/bess_results.json`:
-
-```json
+[Ver código completo en GitHub]json
 {
   "capacity_kwh": 2000.0,  // Cambiar de 4520
   "nominal_power_kw": 1200.0,  // Ajustar proporcionalmente
   ...
 }
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 1. Recalcular balance BESS (requiere re-optimización)
 
@@ -267,35 +228,11 @@ reciente que README
 
 ### En dataset_builder.py, asegurar asignación completa
 
-En función `_update_bess_schema` (búscar aprox línea ~320):
+En función `_update_bess_schema` (búscar aprox línea ~32...
+```
 
-```python
-# === BESS CONFIGURATION (CORRECCIÓN COMPLETA) ===
-if "bess" in artifacts and "electrical_storage" in building:
-    bess_cfg = artifacts["bess"]
-    es = building["electrical_storage"]
-    
-    # Capacidad
-    es["capacity"] = float(bess_cfg.get("capacity_kwh", 4520.0))
-    es["nominal_power"] = float(bess_cfg.get("nominal_power_kw", 2712.0))
-    
-    # Atributos
-    if "attributes" not in es:
-        es["attributes"] = {}
-    
-    es["attributes"]["capacity"] = es["capacity"]
-    es["attributes"]["nominal_power"] = es["nominal_power"]
-    es["attributes"]["efficiency"] = float(bess_cfg.get("efficiency_roundtrip", 0.9))
-    
-    dod = float(bess_cfg.get("dod", 0.8))
-    es["attributes"]["depth_of_discharge"] = dod
-    es["attributes"]["min_soc"] = 1.0 - dod
-    es["attributes"]["max_soc"] = 1.0
-    
-    logger.info(f"[BESS] ✓ {es['capacity']:.0f} kWh, "
-               f"{es['nominal_power']:.0f} kW, "
-               f"η={es['attributes']['efficiency']:.1%}")
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -303,6 +240,7 @@ if "bess" in artifacts and "electrical_storage" in building:
 
 Después de aplicar los 4 cambios, ejecutar:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # 1. Activar virtualenv
 .venv\Scripts\Activate.ps1
@@ -315,25 +253,15 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 # [CHARGERS] ✓ 128 archivos CSV generados
 # [BESS] ✓ 4520 kWh, 2712 kW, η=90%
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Validación adicional
 
-```python
-# Verificar schema
-import json
-schema = json.load(open('outputs/oe3/citylearnv2_dataset/schema.json'))
+<!-- markdow...
+```
 
-# Contar chargers
-print(len(schema['buildings']['Mall_Iquitos']['chargers']))  # Debe ser 128
-
-# Verificar un charger tiene path correcto
-ch = list(schema['buildings']['Mall_Iquitos']['chargers'].values())[0]
-print(ch['charger_simulation'])  # Debe comenzar con "buildings/Mall_Iquitos/"
-
-# Verificar BESS
-bess = schema['buildings']['Mall_Iquitos']['electrical_storage']
-print(f"BESS: {bess['capacity']} kWh")  # Debe ser 4520
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -341,6 +269,7 @@ print(f"BESS: {bess['capacity']} kWh")  # Debe ser 4520
 
 ### Tiempo total: **~2 horas**
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Paso 1: Corrección #1 (Solar downsampling)
         ├─ Búsqueda de código: 5 min
@@ -356,18 +285,11 @@ Paso 2: Corrección #3 (Path fixing)
 Paso 3: Corrección #4 (BESS config)
         ├─ Decisión: 15 min
         ├─ Actualización archivos: 15 min
-        └─ Total: 30 min
+        └─ To...
+```
 
-Paso 4: Corrección #2 (CSV generation)
-        ├─ Agregar función: 20 min
-        ├─ Integración: 15 min
-        ├─ Testing: 20 min
-        └─ Total: 55 min
-
-VALIDACIÓN FINAL: 15 min
-
-TOTAL: ~2 horas 10 minutos
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

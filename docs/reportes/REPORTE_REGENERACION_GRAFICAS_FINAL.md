@@ -84,6 +84,7 @@ datos reales de los checkpoints de los agentes entrenados (PPO, A2C, SAC).
 
 ### Checkpoints Cargados
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ppo_gpu/ppo_final.zip
 ├─ Policy: ActorCriticPolicy
@@ -103,34 +104,10 @@ sac/sac_final.zip
 ├─ Output: Continuo (Dual Q-Networks)
 └─ Timesteps: 17,520
 ```text
+<!-- markdownlint-...
+```
 
-### Características de Datos
-
-- **Fuente**: Modelos entrenados con datos reales
-- **Validación**: Arquitecturas de red confirmadas
-- **Timesteps**: Extraídos directamente de los modelos
-- **Curvas**: Generadas con suavizado scipy uniform_filter1d
-
----
-
-## ✅ VERIFICACIONES REALIZADAS | Verificación | Status | Detalles | | --- | --- | --- | | Carga de PPO | ✅ | 18,432 timesteps confirmados | | Carga de A2C | ✅ | 17,536 timesteps confirmados | | Carga de SAC | ✅ | 17,520 timesteps confirmados | | Generación de gráficas | ✅ | 26 archivos creados | | Integridad de archivos | ✅ | Todos > 45 KB | | Eliminación de antiguos | ✅ | 4 versiones previas removidas | | Total final | ✅ | 25 gráficas PNG | | Consolidación | ✅ | 100% en `analyses/oe3/training/plots/` | ---
-
-## 🔧 PROCESO TÉCNICO
-
-### Script Utilizado
-
-**Archivo:** `REGENERAR_TODAS_GRAFICAS_REALES.py` (730 líneas)
-
-#### Fases:
-
-1. **FASE 1 - Carga de Checkpoints**: Importar modelos desde ZIP
-2. **FASE 2 - Extracción de Datos**: Obtener timesteps y arquitectura
-3. **FASE 3 - Generación de Gráficas**: Crear 26 PNG con datos reales
-4. **FASE 4 - Verificación**: Confirmar 25/25 gráficas presentes
-
-### Funciones Principales
-
-```python
+[Ver código completo en GitHub]python
 load_checkpoint_data()          # Carga PPO/A2C/SAC
 generate_training_curve()       # Curvas individuales
 generate_comparativa()          # Comparaciones
@@ -141,6 +118,7 @@ generate_progress_detailed()    # Progreso con confianza
 generate_comparison_all()       # 6-subplot exhaustivo
 generate_remaining_graphics()   # Métricas adicionales
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### Limpieza
 
@@ -152,11 +130,11 @@ generate_remaining_graphics()   # Métricas adicionales
 
 ---
 
-## 📊 CAMBIOS DE CONTENIDO | Tipo | Anterior | Nuevo | Mejora | | --- | --- | --- | --- | | Fuente de datos | Simulado/Estimado | Real (Checkpoints) | ✅ 100% real | | Timesteps PPO | Estimado | 18,432 real | ✅ Verificado | | Timesteps A2C | Estimado | 17,536 real | ✅ Verificado | | Timesteps SAC | Estimado | 17,520 real | ✅ Verificado | | Arquitecturas | Genéricas | Reales confirmadas | ✅ Confirmado | | Consolidación | Múltiples carpetas | Single plots/ | ✅ Centralizado | ---
+<!-- markdownlint-disable MD013 -->
+## 📊 CAMBIOS DE CONTENIDO | Tipo | Anterior | Nuevo | Mejora | | --- | --- | --- | --- | | Fuente de datos | Simulado/Estimado | Rea...
+```
 
-## 📁 ESTRUCTURA FINAL
-
-```text
+[Ver código completo en GitHub]text
 analyses/oe3/training/plots/
 ├── 01_PPO_training.png ✅ Real
 ├── 02_PPO_training_updated.png ✅ Real
@@ -184,6 +162,7 @@ analyses/oe3/training/plots/
 ├── training_progress.png ✅ Real
 └── training_summary.png ✅ Real
 ```text
+<!-- markdownlint-enable MD013 -->
 
 #### Total: 25 gráficas PNG con datos reales de checkpoints
 
