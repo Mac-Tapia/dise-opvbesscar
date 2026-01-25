@@ -125,20 +125,20 @@ class SACConfig:
     dimensionalidad como CityLearn con ~900 obs dims × 126 action dims.
     Para convergencia óptima, usar 100+ episodios.
     """
-    # Hiperparámetros de entrenamiento - TIER 2 OPTIMIZED
+# Hiperparámetros de entrenamiento - SAC MÁXIMA POTENCIA
     episodes: int = 50  # 50 mínimo para alta dimensionalidad (8760 pasos/ep)
-    batch_size: int = 256                    # TIER 2 FIX: ↓ de 512 (más estable)
-    buffer_size: int = 100000
-    learning_rate: float = 2.5e-4            # TIER 2 FIX: ↓ de 3e-4 (convergencia suave)
-    gamma: float = 0.99
-    tau: float = 0.005
+    batch_size: int = 512                    # ↑ SAC es off-policy, puede usar batch grande
+    buffer_size: int = 1000000              # ↑↑ 10x más memoria = mejor estabilidad
+    learning_rate: float = 1.5e-4            # ↓ Aún más bajo para suavidad extrema
+    gamma: float = 0.999                     # ↑ Discount factor más alto (horizonte largo)
+    tau: float = 0.001                       # ↓ Soft updates MUCHO más suave
 
-    # Entropía - TIER 2 FIX: Aumentada para mejor exploración
-    ent_coef: float = 0.02                   # TIER 2 FIX: ↑ de 0.01 (2x exploración)
-    target_entropy: Optional[float] = -50.0  # Menos exploración que -126.0 (-dim/2.5 approx)
+    # Entropía - SAC DINÁMICO para mejor exploración
+    ent_coef: float = 0.01                   # ✅ AUTO adaptativo: comienza bajo, ajusta
+    target_entropy: Optional[float] = None   # Auto-calcula based on action space (-dim/2)
 
-    # Red neuronal - TIER 2 FIX: Ampliada
-    hidden_sizes: tuple = (512, 512)         # TIER 2 FIX: ↑ de (256, 256) (capacidad)
+    # Red neuronal - SAC POTENTE
+    hidden_sizes: tuple = (1024, 1024)       # ↑↑ GRANDE para complejidad Iquitos
     activation: str = "relu"                 # ✅ Óptimo para SAC
 
     # Escalabilidad

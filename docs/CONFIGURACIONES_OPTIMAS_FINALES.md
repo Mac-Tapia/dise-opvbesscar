@@ -89,6 +89,7 @@ class SACConfig:
 ```
 
 **Justificación TIER 2**:
+
 - **Learning Rate 2.5e-4**: Convergencia más suave que 3e-4, mejor estabilidad
 - **Batch Size 256**: GPU puede manejar 512, pero 256 da mejor generalización
 - **Hidden (512, 512)**: Aumentado para capturar dinámicas complejas de Iquitos
@@ -143,6 +144,7 @@ class PPOConfig:
 ```
 
 **Justificación TIER 2**:
+
 - **N Steps 1024**: Recolecta más experiencias, reduce varianza
 - **N Epochs 15**: Más updates por batch, mejor convergencia
 - **SDE True**: Exploración mejorada (Stochastic Delta Exploration)
@@ -193,6 +195,7 @@ class A2CConfig:
 ```
 
 **Justificación TIER 2**:
+
 - **N Steps 1024**: Recolecta muchas experiencias, buena eficiencia
 - **GAE Lambda 1.0**: Return completo (A2C puro, sin blending)
 - **Learning Rate 2.5e-4**: Igual que SAC/PPO para convergencia uniforme
