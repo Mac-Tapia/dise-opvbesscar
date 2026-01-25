@@ -82,17 +82,17 @@ Ejecuta validación automática:
 
 ```bash
 python src/iquitos_citylearn/oe3/agents/validate_training_env.py
-```
+```bash
 
 Debe mostrar:
 
-```
+```bash
 ✓ Agents imported successfully
 ✓ Rewards imported successfully
 ✓ GPU available: (device name)
 ✓ Checkpoint dir: (path)
 ✓ All checks passed! Ready to train.
-```
+```bash
 
 ## 9. Entrenamiento
 
@@ -104,13 +104,13 @@ python scripts/train_quick.py --device cuda --episodes 5
 
 # O entrenamiento serial completo (50 episodios, ~50 min)
 python scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 Monitorear progreso en otra terminal:
 
 ```bash
 python scripts/monitor_training_live_2026.py
-```
+```bash
 
 ## 10. Post-Entrenamiento
 
@@ -146,7 +146,7 @@ python scripts/monitor_training_live_2026.py
 
 # 7. Comparar resultados
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
-```
+```bash
 
 ---
 

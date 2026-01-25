@@ -20,7 +20,7 @@ Buscar en `dataset_builder.py`:
 solar_path = interim_dir / "oe2" / "solar" / "pv_generation_timeseries.csv"
 if solar_path.exists():
     artifacts["solar_ts"] = pd.read_csv(solar_path)
-```
+```bash
 
 ### Paso 2: Reemplazar con código mejorado
 
@@ -50,14 +50,14 @@ if solar_path.exists():
         logger.info(f"[SOLAR] Resolución ya es 1-hora ({len(df_solar)} filas)")
     
     artifacts["solar_ts"] = df_solar
-```
+```bash
 
 ### Validación
 
 ```python
 # Validar resultado
 assert len(artifacts["solar_ts"]) == 8760, f"Solar debe tener 8760 filas, tiene {len(artifacts['solar_ts'])}"
-```
+```bash
 
 ---
 
@@ -122,7 +122,7 @@ def _generate_charger_csvs(
     
     logger.info(f"[CHARGERS] ✓ {count_generated} archivos CSV generados en {building_dir}")
     return count_generated
-```
+```bash
 
 ### Paso 2: Llamar la función en `build_citylearn_dataset`
 
@@ -144,15 +144,15 @@ if chargers_csv_dir.exists():
         )
         if n_generated != 128:
             logger.warning(f"[CHARGERS] Esperaban 128 CSVs, se generaron {n_generated}")
-```
+```bash
 
-### Validación
+### Validación (2)
 
 ```bash
 # Después de ejecutar dataset_builder, verificar:
 ls -la outputs/oe3/citylearnv2_dataset/buildings/Mall_Iquitos/ | grep "\.csv$" | wc -l
 # Debería mostrar 128 (más algunos CSVs del schema como solar, building_load, etc.)
-```
+```bash
 
 ---
 
@@ -169,14 +169,14 @@ Buscar:
 
 ```python
 charger_csv = f"{charger_name}.csv"  # ← INCORRECTO
-```
+```bash
 
 ### Paso 2: Reemplazar
 
 ```python
 # ✅ CORRECTO: Path relativo desde raíz del dataset
 charger_csv = f"buildings/Mall_Iquitos/{charger_name}.csv"
-```
+```bash
 
 Hacer este cambio en TODAS las ocurrencias donde se asigna `charger_simulation` (buscar con Ctrl+F).
 
@@ -202,7 +202,7 @@ for idx, row in chargers_df.iterrows():
         }
     
     all_chargers[charger_name] = new_charger
-```
+```bash
 
 ---
 
@@ -224,19 +224,19 @@ oe2:
   bess:
     capacity_kwh: 4520.0  # Cambiar de 2000 a 4520
     nominal_power_kw: 2712.0
-```
+```bash
 
 1. Actualizar `README.md`:
 
 ```markdown
 - **BESS**: 4.52 MWh / 2.71 MW (DoD 80%, η 90%)
-```
+```bash
 
 1. Actualizar `copilot-instructions.md`:
 
 ```markdown
 - **BESS**: 4,520 kWh / 2,712 kW
-```
+```bash
 
 ### Opción B: Reducir a 2,000 kWh (como documenta README)
 
@@ -250,7 +250,7 @@ oe2:
   "nominal_power_kw": 1200.0,  // Ajustar proporcionalmente
   ...
 }
-```
+```bash
 
 1. Recalcular balance BESS (requiere re-optimización)
 
@@ -289,7 +289,7 @@ if "bess" in artifacts and "electrical_storage" in building:
     logger.info(f"[BESS] ✓ {es['capacity']:.0f} kWh, "
                f"{es['nominal_power']:.0f} kW, "
                f"η={es['attributes']['efficiency']:.1%}")
-```
+```bash
 
 ---
 
@@ -308,7 +308,7 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 # [SOLAR] ✓ Resampling completado: 8760 filas (1-hora)
 # [CHARGERS] ✓ 128 archivos CSV generados
 # [BESS] ✓ 4520 kWh, 2712 kW, η=90%
-```
+```bash
 
 ### Validación adicional
 
@@ -327,7 +327,7 @@ print(ch['charger_simulation'])  # Debe comenzar con "buildings/Mall_Iquitos/"
 # Verificar BESS
 bess = schema['buildings']['Mall_Iquitos']['electrical_storage']
 print(f"BESS: {bess['capacity']} kWh")  # Debe ser 4520
-```
+```bash
 
 ---
 
@@ -335,7 +335,7 @@ print(f"BESS: {bess['capacity']} kWh")  # Debe ser 4520
 
 ### Tiempo total: **~2 horas**
 
-```
+```bash
 Paso 1: Corrección #1 (Solar downsampling)
         ├─ Búsqueda de código: 5 min
         ├─ Modificación: 10 min
@@ -361,7 +361,7 @@ Paso 4: Corrección #2 (CSV generation)
 VALIDACIÓN FINAL: 15 min
 
 TOTAL: ~2 horas 10 minutos
-```
+```bash
 
 ---
 
@@ -381,7 +381,7 @@ TOTAL: ~2 horas 10 minutos
 - [ ] Corrección #3: Paths correctos
 - [ ] Corrección #4: BESS config
 
-### Validación
+### Validación (3)
 
 - [ ] Ejecutar dataset_builder sin errores
 - [ ] Verificar 128 charger CSVs creados

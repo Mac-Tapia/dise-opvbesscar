@@ -40,10 +40,10 @@
 
 **Hallazgo crítico**: Resolución 15-minutos vs esperada 1-hora
 
-```
+```bash
 actual:   35,037 filas × 15 min/fila = ~8,759.25 horas
 esperado: 8,760 filas × 60 min/fila = ~8,760 horas
-```
+```bash
 
 **AC Power range**: 0.0 - 2,886.7 kW (válido, con saturación esperada en inversor)
 
@@ -105,26 +105,26 @@ esperado: 8,760 filas × 60 min/fila = ~8,760 horas
 
 ### 2.1 Validación Solar
 
-```
+```bash
 ✓ Columnas presentes: ghi_wm2, dni_wm2, dhi_wm2, temp_air_c, wind_speed_ms, 
                       dc_power_kw, ac_power_kw, dc_energy_kwh, ac_energy_kwh, pv_kwh
 ✓ Rango AC Power: 0.0 - 2,886.7 kW (saturado a ~2,886.69 kW durante picos)
 ✓ Sin valores NaN
 ❌ Resolución: 35,037 filas (15-min) vs 8,760 esperadas (1-hora)
    → Diferencia: 4x más datos de los necesarios
-```
+```bash
 
 **Implicación**: El downsampling debe hacerse en dataset_builder, pero **NO está implementado**.
 
 ### 2.2 Validación Chargers
 
-```
+```bash
 ✓ 128 chargers en individual_chargers.json (CORRECTO)
 ✓ Estructura: charger_id, charger_type, power_kw, sockets, hourly_load_profile[24]
 ✓ Perfiles horarios válidos (24 horas por charger)
 ✗ FALTA: CSVs de simulación anual (charger_0.csv ... charger_127.csv)
 ✗ FALTA: Mapeo individual_chargers → charger_simulation_*.csv
-```
+```bash
 
 **Composición de chargers**:
 
@@ -134,7 +134,7 @@ esperado: 8,760 filas × 60 min/fila = ~8,760 horas
 
 **Daily profiles**:
 
-```
+```bash
 Hora  | Power (kW) | Factor | Energy (kWh) | Peak?
 ------|-----------|--------|--------------|------
 0-9   | 0         | 0.0    | 0.0          | No
@@ -145,11 +145,11 @@ Hora  | Power (kW) | Factor | Energy (kWh) | Peak?
 22-23 | 0         | 0.0    | 0.0          | No
 ------|-----------|--------|--------------|------
 TOTAL | -         | -      | 3,252.0      | 4 horas pico
-```
+```bash
 
 ### 2.3 Validación BESS
 
-```
+```bash
 ✓ Config válida: 4,520 kWh capacity, 2,712 kW power
 ✓ DoD: 80% (0.8), Efficiency: 90% (0.9) - valores realistas
 ✓ Daily balance coherente
@@ -157,7 +157,7 @@ TOTAL | -         | -      | 3,252.0      | 4 horas pico
    - README dice: "2 MWh / 1.2 MW"
    - bess_results.json dice: "4,520 kWh / 2,712 kW"
    - Razón desconocida (respec or updated during optimization?)
-```
+```bash
 
 ### 2.4 Consistencia Entre Archivos
 
@@ -216,7 +216,7 @@ for charger in chargers:
 # Código que DEBERÍA leer demanda base:
 df_building_load = pd.read_csv(interim_dir / "oe2" / "citylearn" / "building_load.csv")
 # → Asignar a non_shiftable_load en schema
-```
+```bash
 
 ---
 
@@ -247,7 +247,7 @@ df_building_load = pd.read_csv(interim_dir / "oe2" / "citylearn" / "building_loa
     "EV_Mall_128": { ... }
   }
 }
-```
+```bash
 
 ### 4.2 Problemas Detectados en Schema Actual
 
@@ -292,7 +292,7 @@ df_solar = df_solar.set_index('timestamp')
 df_solar_hourly = df_solar.resample('1H')['ac_power_kw'].mean()
 # Ahora 35037 → 8760 filas
 df_solar_hourly.to_csv(output_dir / "buildings/Mall_Iquitos/solar_generation.csv")
-```
+```bash
 
 **Código de corrección**: Ver CORRECCIONES_DATASET_BUILDER.py
 
@@ -325,7 +325,7 @@ for charger in chargers_df.iterrows():
     # Crear CSV anual (365 × 24 horas)
     df_annual = pd.concat([df_charger_24h] * 365, ignore_index=True)
     df_annual.to_csv(charger_path, index=False)
-```
+```bash
 
 ---
 
@@ -354,7 +354,7 @@ for charger in chargers_df.iterrows():
 np.random.seed(charger_id)
 noise = np.random.normal(1.0, 0.1, 8760)  # ±10% ruido
 df_annual_noisy = df_annual * noise
-```
+```bash
 
 ---
 
@@ -387,7 +387,7 @@ charger_csv = f"{charger_name}.csv"  # ← Path relativo incorrecto
 
 # DEBERÍA ser:
 charger_csv = f"buildings/Mall_Iquitos/{charger_name}.csv"
-```
+```bash
 
 **Impacto**:
 
@@ -425,7 +425,7 @@ charger_csv = f"buildings/Mall_Iquitos/{charger_name}.csv"
 building["electrical_storage"]["attributes"]["nominal_power"] = bess_pow
 building["electrical_storage"]["attributes"]["efficiency"] = cfg['efficiency_roundtrip']
 building["electrical_storage"]["attributes"]["min_soc"] = 1 - cfg['dod']
-```
+```bash
 
 ---
 
@@ -481,7 +481,7 @@ building["electrical_storage"]["attributes"]["min_soc"] = 1 - cfg['dod']
 env = CityLearnEnv(schema=schema_path)
 obs, _ = env.reset()
 assert len(obs) == 534, f"Expected 534-dim obs, got {len(obs)}"
-```
+```bash
 
 ---
 
@@ -523,7 +523,7 @@ for charger in chargers:
     hourly_sum = sum(charger['hourly_load_profile'])
     daily_energy = charger['daily_energy_kwh']
     assert abs(hourly_sum - daily_energy) < 0.1, f"Profile mismatch for {charger['id']}"
-```
+```bash
 
 ---
 
@@ -531,7 +531,7 @@ for charger in chargers:
 
 ### Flujo Actual (Incompleto)
 
-```
+```bash
 OE2 ARTIFACTS
 ├─ pv_generation_ts.csv (35k filas, 15-min) ──┐
 ├─ individual_chargers.json (128)             ├──→ dataset_builder ──→ schema.json (INCOMPLETO)
@@ -543,11 +543,11 @@ OE2 ARTIFACTS
                                                   ❌ NO expansión chargers
                                                   ❌ NO generación CSVs
                                                   ❌ paths relativos incorrectos
-```
+```bash
 
 ### Flujo Esperado (Correcto)
 
-```
+```bash
 OE2 ARTIFACTS
 ├─ pv_generation_ts.csv (35k)
 │   ↓ [RESAMPLE 15min→1h]
@@ -590,7 +590,7 @@ OE2 ARTIFACTS
     
     RL Training (SAC/PPO/A2C)
     └─ Convergencia sin NaN/infinitos
-```
+```bash
 
 ---
 
@@ -705,7 +705,7 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
                 "profile_24h": df_profile_24h,
                 "output_dir": None,  # Se asignará en build_citylearn_dataset
             }
-```
+```bash
 
 ---
 
@@ -728,7 +728,7 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
 
 ### Hallazgos Principales
 
-```
+```bash
 ┌─────────────────────────────────────────────────────────────────────┐
 │ OE2→OE3 PIPELINE STATUS: PARCIALMENTE ROTO                          │
 ├─────────────────────────────────────────────────────────────────────┤
@@ -757,7 +757,7 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
 │                                                                      │
 │ RESULTADO: RL TRAINING IMPOSIBLE SIN CORRECCIONES TIER 1            │
 └─────────────────────────────────────────────────────────────────────┘
-```
+```bash
 
 ### Próximos Pasos (Orden)
 
@@ -772,7 +772,7 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
 
 ## APÉNDICE: ESTADÍSTICAS FINALES
 
-```
+```bash
 ARCHIVOS ANALIZADOS:
 - OE2 total: 537 archivos en data/interim/oe2/
 - Solares: 8 archivos
@@ -794,7 +794,7 @@ ERRORES/GAPS IDENTIFICADOS: 14
 COBERTURA OE2→OE3: 65% (datos existen, transformaciones incompletas)
 CALIDAD DATOS: 85% (integridad OK, integración deficiente)
 RIESGO ENTRENAMIENTO RL: 🔴 CRÍTICO (bloqueado sin Tier 1)
-```
+```bash
 
 ---
 

@@ -77,7 +77,7 @@
 
 ### Current Approach (Problematic)
 
-```
+```bash
 Raw observation (534 dims): Mix of kW (0-4162), kWh (0-2000), SOC (0-1), cost (0-1)
          ↓
 Prescaling (multiply by 0.001): [0, 4162] → [0, 4.162]
@@ -85,7 +85,7 @@ Prescaling (multiply by 0.001): [0, 4162] → [0, 4.162]
 Running normalization: (prescaled - mean) / std
          ↓
 Clipping: [-10, 10]
-```
+```bash
 
 ### The BESS SOC Problem
 
@@ -98,7 +98,7 @@ Clipping: [-10, 10]
 
 ### Fix Applied (in CODE_FIXES document)
 
-```
+```bash
 Original SOC (0-1) → Keep as-is (prescale=1.0, not 0.001)
          ↓
 Running normalization: (soc - mean) / std
@@ -106,7 +106,7 @@ Running normalization: (soc - mean) / std
 Agent sees: [0.05] vs [0.95] as meaningfully different
          ↓
 Can learn BESS control
-```
+```bash
 
 ---
 
@@ -114,23 +114,23 @@ Can learn BESS control
 
 ### Physical Configuration (from OE2)
 
-```
+```bash
 32 physical chargers × 4 sockets each = 128 controllable outlets
 ├─ Playa Motos: 28 chargers × 4 sockets × 2.0 kW = 224 kW
 └─ Playa Mototaxis: 4 chargers × 4 sockets × 3.0 kW = 48 kW
 Total: 272 kW installed capacity
-```
+```bash
 
 ### Agent Modeling
 
-```
+```bash
 CityLearn action space: 128 (from environment definition)
 Agent action space: 126 (configurable in _get_act_dim)
   └─ 2 chargers reserved for baseline comparison
 
 Action interpretation:
   action[i] ∈ [-1.0, 1.0] → charger power = action[i] × rated_power
-```
+```bash
 
 ### ✓ Correct Handling
 
@@ -150,23 +150,23 @@ Action interpretation:
 
 ### Data Specification
 
-```
+```bash
 File: data/interim/oe2/solar/pv_generation_timeseries.csv
 Format: 8,760 rows × 1 column (hourly AC output)
 Range: 0 - 4,162 kW (peak at solar noon, ~11:00 AM Iquitos time)
 Profile: Zeros from 18:00 - 04:00 (nighttime), peaks 09:00-14:00
 Annual: 8.31 GWh (AC), Capacity Factor 29.6%
 Source: PVGIS TMY + pvlib simulation for Kyocera KS20 + Eaton Xpert1670
-```
+```bash
 
 ### Runtime Access
 
-```
+```bash
 Every timestep (t = 0 to 8759):
   pv_kw = building.solar_generation[t]  # Access 8,760-element array
   → Normalized (prescale 0.001, then running stats)
   → Passed to agent as observation feature [pv_kw_normalized, soc_normalized]
-```
+```bash
 
 ### ✓ Correct Implementation
 
@@ -176,7 +176,7 @@ Every timestep (t = 0 to 8759):
 
 ### Observation Integration
 
-```
+```bash
 Observation space: 534 dims (base) + 2 (PV/BESS) = 536 total
 ├─ 534 dims: CityLearn building/charger state
 ├─ 1 dim: Current PV generation [0, 4.162] after prescale
@@ -186,7 +186,7 @@ Agent learns:
   - High PV (morning/noon) → charge EVs & BESS
   - Low PV (evening) → discharge BESS to cover load
   - Zero PV (night) → rely on BESS + grid
-```
+```bash
 
 ---
 
@@ -203,7 +203,7 @@ Agent learns:
   "soc_min": 0.10,
   "soc_max": 0.90
 }
-```
+```bash
 
 ### Current Usage in Agents
 
@@ -215,7 +215,7 @@ soc = building.electrical_storage.state_of_charge  # Range: 0.1 to 0.9
 # Reward function (implicit)
 # BESS SOC higher → more energy available → can supply EVs without grid
 # No explicit BESS health tracking (cycling, DoD)
-```
+```bash
 
 ### Control Strategy (Implicit)
 

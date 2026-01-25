@@ -4,7 +4,7 @@
 
 ## 1. Current File Structure (Before Cleanup)
 
-```
+```bash
 src/iquitos_citylearn/oe3/
 │
 ├── 🟢 ACTIVE PRODUCTION FILES
@@ -40,7 +40,7 @@ src/iquitos_citylearn/oe3/
 │
 ├── __init__.py
 └── __pycache__/
-```
+```bash
 
 **Summary**:
 
@@ -54,7 +54,7 @@ src/iquitos_citylearn/oe3/
 
 ## 2. Import Dependency Graph (Current)
 
-```
+```bash
 ENTRY POINTS (Scripts)
 │
 ├─ run_oe3_build_dataset.py ────────┐
@@ -122,13 +122,13 @@ OUTPUTS:
 
 UNUSED IMPORTS:
 └─ co2_emissions.py ❌ (imported but classes never used)
-```
+```bash
 
 ---
 
 ## 3. Data Flow: OE2 → OE3 → Training → Results
 
-```
+```bash
 ╔══════════════════════════════════════════════════════════════════════╗
 ║                    INPUT LAYER (OE2 Artifacts)                      ║
 ╚══════════════════════════════════════════════════════════════════════╝
@@ -257,13 +257,13 @@ UNUSED IMPORTS:
 
   Comparison: Baseline vs SAC vs PPO vs A2C
   └─ Ranking: [Best CO₂ reduction] → Recommended agent
-```
+```bash
 
 ---
 
 ## 4. Reward System Architecture
 
-```
+```bash
 Multi-Objective Reward Function
 ═════════════════════════════════════════════════════════════════
 
@@ -331,13 +331,13 @@ v2 ARCHIVED (rewards_improved_v2.py):
 DYNAMIC (rewards_dynamic.py):
 ├─ DynamicReward [Hour-based sinusoidal gradients]
 └─ Used in: train_ppo_dynamic.py (DEV SCRIPT ONLY)
-```
+```bash
 
 ---
 
 ## 5. Agent Dependency Chain
 
-```
+```bash
 AGENT FACTORY
 ═════════════════════════════════════════════════════════════════
 
@@ -459,13 +459,13 @@ simulate.py::simulate()
 │  └─ Save checkpoint: agent_final.zip
 │
 └─ Return SimulationResult with CO₂, kWh, rewards, etc.
-```
+```bash
 
 ---
 
 ## 6. File Status Matrix (Before & After Cleanup)
 
-```
+```bash
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                        BEFORE CLEANUP (Current State)                         ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
@@ -534,13 +534,13 @@ TOTAL ARCHIVED CODE:          670 lines  ← Separate experimental/ folder
 TOTAL DELETED CODE:           865 lines  ← Removed from repo
 
 RESULT: Cleaner, easier to maintain, no functional changes to production
-```
+```bash
 
 ---
 
 ## 7. Risk Assessment Heat Map
 
-```
+```bash
 CLEANUP OPERATIONS RISK ASSESSMENT
 ═════════════════════════════════════════════════════════════════════════════
 
@@ -557,7 +557,7 @@ Operation                          Risk Level   Rollback Time   Impact
 TOTAL CLEANUP TIME:                ~35 minutes
 TOTAL ROLLBACK TIME IF NEEDED:    ~15 minutes
 CONFIDENCE LEVEL:                 95% (Very Low Risk)
-```
+```bash
 
 ---
 

@@ -225,7 +225,7 @@ La tarea de regeneración de gráficas se ha completado **exitosamente**:
 
 ---
 
-**Status Final: ✅ LISTO PARA USAR**
+#### Status Final: ✅ LISTO PARA USAR
 
 *Regeneración completada: 2026-01-19 11:36:10*
 *Verificación completada: 2026-01-19*

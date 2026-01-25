@@ -62,7 +62,7 @@ El archivo `bess.py` está **correctamente vinculado y actualizado** con los dat
 
 ## 3. FLUJO DE DATOS
 
-```
+```bash
 ┌─────────────────────┐
 │  chargers.py        │
 │  run_charger_sizing()│
@@ -91,7 +91,7 @@ El archivo `bess.py` está **correctamente vinculado y actualizado** con los dat
   - Flujos energía
   - Autosuficiencia
   - Ciclos/día
-```
+```bash
 
 ---
 
@@ -138,7 +138,7 @@ El archivo `bess.py` está **correctamente vinculado y actualizado** con los dat
 pv_profile_path = rp.interim_dir / "oe2" / "solar" / "pv_profile_24h.csv"
 ev_profile_path = rp.interim_dir / "oe2" / "chargers" / "perfil_horario_carga.csv"
 mall_demand_path = rp.interim_dir / "oe2" / "demandamallkwh" / "demanda_mall_kwh.csv"
-```
+```bash
 
 ### Parámetros pasados desde config
 
@@ -179,7 +179,7 @@ oe2:
     efficiency_roundtrip: 0.90 # ← Usado por bess.py
     sizing_mode: "ev_open_hours" # ← Usado por bess.py
     load_scope: "total"       # ← Usado por bess.py
-```
+```bash
 
 ---
 
@@ -297,7 +297,7 @@ python scripts/run_oe2_bess.py --config configs/default.yaml
 
 # Verificar vinculación en cualquier momento
 python VERIFICACION_VINCULACION_BESS.py
-```
+```bash
 
 ### 📊 Próximos Pasos
 

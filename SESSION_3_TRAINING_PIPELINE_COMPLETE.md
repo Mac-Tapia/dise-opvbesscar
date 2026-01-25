@@ -2,7 +2,7 @@
 
 ## Estado Final
 
-```
+```bash
 ┌─────────────────────────────────────────────────────────────────┐
 │ ✅ PIPELINE COMPLETO: OE2 → Dataset → Baseline → Training       │
 └─────────────────────────────────────────────────────────────────┘
@@ -28,7 +28,7 @@
 
 GPU DISPONIBLE: NVIDIA RTX 4060 (8.6 GB)
 Tiempo Total: 3.0 segundos
-```
+```bash
 
 ## Métricas de Entrenamiento
 
@@ -44,7 +44,7 @@ Tiempo Total: 3.0 segundos
 
 ### SAC (Off-Policy Máxima Estabilidad)
 
-```
+```bash
 LR: 1.5e-4
 Buffer: 1M
 Batch: 512
@@ -52,11 +52,11 @@ Tau: 0.001
 Hidden: 1024x1024 (4M parámetros)
 Gamma: 0.999
 Entropy: 0.01
-```
+```bash
 
 ### PPO (On-Policy Máxima Convergencia)
 
-```
+```bash
 LR: 2.0e-4
 Batch: 128
 N Steps: 2048
@@ -64,26 +64,26 @@ N Epochs: 20
 Clip: 0.1
 Hidden: 1024x1024 (4M parámetros)
 Train Steps: 1M
-```
+```bash
 
 ### A2C (On-Policy Máxima Velocidad)
 
-```
+```bash
 LR: 1.5e-4
 N Steps: 2048
 GAE Lambda: 0.95
 VF Coef: 0.7
 Hidden: 1024x1024 (4M parámetros)
 Train Steps: 1M
-```
+```bash
 
 ## Archivos Creados
 
-```
+```bash
 ✅ scripts/run_training_pipeline.py          [PIPELINE PRINCIPAL]
 ✅ scripts/pipeline_dataset_training.py      [BACKUP]
 ✅ TRAINING_SESSION_SUMMARY.json             [METRICAS]
-```
+```bash
 
 ## Próximos Pasos
 
@@ -91,7 +91,7 @@ Train Steps: 1M
 
 ```bash
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 ### 2️⃣ Comparar Agentes
 

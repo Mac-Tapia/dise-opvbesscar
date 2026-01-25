@@ -20,29 +20,29 @@
 
 ### ✅ Validation Results
 
-```
+```bash
 STEP 1: OE2 Data Integrity      ✅ PASSED (solar, chargers, bess, all)
 STEP 2: Key Data Metrics        ✅ PASSED (Solar: 35,037 rows, Chargers: 128 units/272 kW, BESS: 4,520 kWh)
 STEP 3: Charger Profile Expansion ✅ PASSED (Daily 24h → Annual 8,760h confirmed)
 STEP 4: Schema File Status      ⏳ Ready for generation with CityLearn
-```
+```bash
 
 ### ✅ Code Quality Check
 
-```
+```bash
 Python Files Compiled:
   ✅ src/iquitos_citylearn/oe2/data_loader.py
   ✅ src/iquitos_citylearn/oe3/schema_validator.py
   ✅ src/iquitos_citylearn/oe3/dataset_builder.py
   ✅ phase7_test_pipeline.py
   ✅ phase7_validation_complete.py
-```
+```bash
 
 ---
 
 ## Current Environment Status
 
-```
+```bash
 System Python: 3.11.9 ✅ (Project requires 3.11 - CONFIRMED)
 Core Dependencies: ✅ All installed
   - pandas ✅
@@ -52,7 +52,7 @@ Core Dependencies: ✅ All installed
   - stable-baselines3 ✅
   
 CityLearn: ✅ Ready to install with Python 3.11.9 (Phase 8)
-```
+```bash
 
 ---
 
@@ -121,7 +121,7 @@ CityLearn: ✅ Ready to install with Python 3.11.9 (Phase 8)
 
 ### For Next Session (Phase 8)
 
-**Priority 1 - If Installing Python 3.11:**
+#### Priority 1 - If Installing Python 3.11:
 
 1. Install Python 3.11 using one of 4 methods from `PYTHON_3.11_SETUP_GUIDE.md`
 2. Create fresh venv with Python 3.11
@@ -129,7 +129,7 @@ CityLearn: ✅ Ready to install with Python 3.11.9 (Phase 8)
 4. Run full dataset builder: `python -m scripts.run_oe3_build_dataset`
 5. Proceed with Phase 8 (Agent Training)
 
-**Priority 2 - Without Python 3.11:**
+#### Priority 2 - Without Python 3.11:
 
 1. Continue code development/validation with Phase 7 modules
 2. Review and optimize agent configurations
@@ -164,7 +164,7 @@ Key features:
 Ready for Phase 8 (Agent Training)"
 
 git push
-```
+```bash
 
 ---
 

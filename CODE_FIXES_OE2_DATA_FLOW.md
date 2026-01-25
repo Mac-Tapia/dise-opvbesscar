@@ -1,4 +1,4 @@
-# Code Fixes: OE2 Data Flow & Agent Integration Issues
+﻿# Code Fixes: OE2 Data Flow & Agent Integration Issues
 
 ## pvbesscar - Implementation Fixes
 
@@ -13,11 +13,11 @@
 ### Problem
 
 BESS state_of_charge [0, 1] is multiplied by 0.001, creating [0, 0.001].  
-After normalization with mean≈0.5, std≈0.29:
+After normalization with meanâ‰ˆ0.5, stdâ‰ˆ0.29:
 
-```
-Normalized SOC = (0.0005 - 0.0005) / 0.00029 ≈ 0  (all states map to ~0)
-```
+```bash
+Normalized SOC = (0.0005 - 0.0005) / 0.00029 â‰ˆ 0  (all states map to ~0)
+```bash
 
 Agent cannot distinguish between:
 
@@ -35,14 +35,14 @@ Keep BESS SOC unscaled in normalized observation space.
 Current code:
 
 ```python
-# PRE-ESCALADO: kW/kWh / 1000 → rango ~1-5
+# PRE-ESCALADO: kW/kWh / 1000 â†’ rango ~1-5
 self._obs_prescale = np.ones(self.obs_dim, dtype=np.float32) * 0.001
-```
+```bash
 
 Fixed code:
 
 ```python
-# PRE-ESCALADO: kW/kWh / 1000 → rango ~1-5
+# PRE-ESCALADO: kW/kWh / 1000 â†’ rango ~1-5 (2)
 # BUT: Keep BESS SOC as-is (0-1) since it's already normalized
 self._obs_prescale = np.ones(self.obs_dim, dtype=np.float32) * 0.001
 
@@ -61,18 +61,18 @@ def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
     normalized = (prescaled - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
     clipped = np.clip(normalized, -self._clip_obs, self._clip_obs)
     return np.asarray(clipped, dtype=np.float32)
-```
+```bash
 
 **Better approach** - Separate prescaling factors:
 
 ```python
 # In __init__ of CityLearnWrapper
 self._obs_prescale_factors = {
-    'power': 0.001,      # PV (kW) → smaller range
+    'power': 0.001,      # PV (kW) â†’ smaller range
     'energy': 0.001,     # Load, charger demand (kW)
-    'soc': 1.0,          # BESS state [0-1] → keep as-is
-    'tariff': 1.0,       # Cost ($/kWh) → keep as-is
-    'carbon': 1.0,       # CO2 factor → keep as-is
+    'soc': 1.0,          # BESS state [0-1] â†’ keep as-is
+    'tariff': 1.0,       # Cost ($/kWh) â†’ keep as-is
+    'carbon': 1.0,       # CO2 factor â†’ keep as-is
 }
 
 # In _normalize_observation:
@@ -96,7 +96,7 @@ def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
     normalized = (prescaled - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
     clipped = np.clip(normalized, -self._clip_obs, self._clip_obs)
     return np.asarray(clipped, dtype=np.float32)
-```
+```bash
 
 **Apply to**: sac.py, ppo_sb3.py, a2c_sb3.py (CityLearnWrapper._normalize_observation)
 
@@ -104,12 +104,12 @@ def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
 
 ## Issue 2: Hardcoded Prescaling Constants Not Documented
 
-### Problem
+### Problem (2)
 
 Magic number `0.001` appears in all three agents without justification.  
 If data ranges change (e.g., larger inverter), assumption breaks.
 
-### Solution
+### Solution (2)
 
 Move prescaling to agent config with explanation.
 
@@ -121,12 +121,12 @@ Current:
 @dataclass
 class SACConfig:
     # ... existing fields ...
-    # === NORMALIZACIÓN (crítico para estabilidad) ===
+    # === NORMALIZACIÃ“N (crÃ­tico para estabilidad) ===
     normalize_observations: bool = True
     normalize_rewards: bool = True
     reward_scale: float = 0.01
     clip_obs: float = 10.0
-```
+```bash
 
 Fixed:
 
@@ -134,7 +134,7 @@ Fixed:
 @dataclass
 class SACConfig:
     # ... existing fields ...
-    # === NORMALIZACIÓN (crítico para estabilidad) ===
+    # === NORMALIZACIÃ“N (crÃ­tico para estabilidad) ===
     normalize_observations: bool = True
     normalize_rewards: bool = True
     reward_scale: float = 0.01
@@ -142,14 +142,14 @@ class SACConfig:
     
     # === PRESCALING FACTORS (for obs normalization) ===
     # Prescaling reduces large kW/kWh values to manageable range before normalization
-    # E.g., 4162 kW (PV) → 4.162 after prescaling by 0.001
+    # E.g., 4162 kW (PV) â†’ 4.162 after prescaling by 0.001
     obs_prescale_power: float = 0.001        # For PV generation (kW)
     obs_prescale_load: float = 0.001         # For charger demand (kW)
     obs_prescale_soc: float = 1.0            # For BESS SOC [0-1] (keep as-is)
     obs_prescale_energy: float = 0.001       # For grid import/export (kWh)
     obs_prescale_cost: float = 1.0           # For tariff ($/kWh) (keep as-is)
     obs_prescale_carbon: float = 1.0         # For CO2 factor (kg/kWh) (keep as-is)
-```
+```bash
 
 **Apply to**: SAC, PPO, A2C configs
 
@@ -180,13 +180,13 @@ class CityLearnWrapper(gym.Wrapper):
             prescale[-1] = self._prescale_factors['soc']
         
         return prescale
-```
+```bash
 
 ---
 
 ## Issue 3: Silent Failures in Feature Extraction
 
-### Problem
+### Problem (3)
 
 If `building.solar_generation` or `building.electrical_storage` missing:
 
@@ -194,11 +194,11 @@ If `building.solar_generation` or `building.electrical_storage` missing:
 sg = getattr(b, "solar_generation", None)
 if sg is not None and len(sg) > t:
     pv_kw += float(max(0.0, sg[t]))
-```
+```bash
 
 Code continues with default `pv_kw = 0.0` without warning.
 
-### Solution
+### Solution (3)
 
 Add debug logging and validation.
 
@@ -223,7 +223,7 @@ def _get_pv_bess_feats(self):
     except (AttributeError, TypeError, IndexError, ValueError) as err:
         logger.debug("Error extracting PV/BESS features: %s", err)
     return np.array([pv_kw, soc], dtype=np.float32)
-```
+```bash
 
 Fixed:
 
@@ -288,17 +288,17 @@ def _get_pv_bess_feats(self):
         logger.error("Unexpected error in _get_pv_bess_feats: %s", err)
     
     return np.array([pv_kw, soc], dtype=np.float32)
-```
+```bash
 
 ---
 
 ## Issue 4: Duplicate Wrapper Code (DRY Violation)
 
-### Problem
+### Problem (4)
 
 Same `CityLearnWrapper` class defined in 3 files (300+ lines each)
 
-### Solution
+### Solution (4)
 
 Extract to `agent_utils.py` and reuse.
 
@@ -311,10 +311,10 @@ class CityLearnWrapper(gym.Wrapper):
     """Generic wrapper for CityLearn environments.
     
     Handles:
-    - Flattening observations (list → array)
+    - Flattening observations (list â†’ array)
     - Feature extraction (PV, BESS)
     - Normalization (prescaling + running stats)
-    - Action unflattening (array → CityLearn list format)
+    - Action unflattening (array â†’ CityLearn list format)
     
     Used by all three agents: SAC, PPO, A2C
     """
@@ -496,7 +496,7 @@ class CityLearnWrapper(gym.Wrapper):
         citylearn_action = self._unflatten_action(action)
         obs, reward, terminated, truncated, info = self.env.step(citylearn_action)
         
-        # Normalize done flags (truncate → terminate)
+        # Normalize done flags (truncate â†’ terminate)
         if truncated and not terminated:
             terminated = True
             truncated = False
@@ -518,7 +518,7 @@ class CityLearnWrapper(gym.Wrapper):
         normalized_reward = self._normalize_reward(reward)
         
         return self._flatten(obs), normalized_reward, terminated, truncated, info
-```
+```bash
 
 **Update SAC to use**:
 
@@ -540,9 +540,9 @@ wrapped = CityLearnWrapper(
     obs_prescale_power=self.config.obs_prescale_power,  # From new config field
     obs_prescale_soc=self.config.obs_prescale_soc,      # From new config field
 )
-```
+```bash
 
-**Same for PPO and A2C**
+#### Same for PPO and A2C
 
 **Benefit**: Single source of truth for wrapper logic
 
@@ -579,9 +579,9 @@ agent = A2CAgent(env, config)
 # Check that BESS SOC is in reasonable range after normalization
 obs, info = env.reset()
 print(f'BESS SOC from env: {obs[-1]:.3f}')
-print('✓ BESS should be observable after fix')
+print('âœ“ BESS should be observable after fix')
 "
-```
+```bash
 
 ---
 

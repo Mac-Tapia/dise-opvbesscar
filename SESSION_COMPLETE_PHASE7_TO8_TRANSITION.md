@@ -74,12 +74,12 @@
 
 ### Data Integrity Verified
 
-```
+```bash
 Solar:      35,037 rows → 8,760 annual hourly ✅
 Chargers:   128 units, 272 kW aggregate ✅
 BESS:       4,520 kWh, 2,712 kW ✅
 Profiles:   24h daily → 8,760h annual (EXPANDED ✅)
-```
+```bash
 
 ### Code Quality
 
@@ -133,7 +133,7 @@ Profiles:   24h daily → 8,760h annual (EXPANDED ✅)
 
 ### Timeline
 
-```
+```bash
 Phase 8 Start (After Python 3.11 installation)
 │
 ├─ [10 min] Install CityLearn
@@ -147,7 +147,7 @@ Phase 8 Start (After Python 3.11 installation)
 └─ [10 min] Create final report
 
 TOTAL: 4-6 hours (sequential)
-```
+```bash
 
 ### Expected Results
 
@@ -216,7 +216,7 @@ TOTAL: 4-6 hours (sequential)
 
 ### Architecture Confirmed
 
-```
+```bash
 OE2 Inputs              Phase 7 Validation          Phase 8 Training
    ↓                          ↓                           ↓
 PV 4,050 kWp ─┐         OE2DataLoader         ┌─→ SAC Agent
@@ -229,11 +229,11 @@ Episode Length:  8,760 timesteps (1 year hourly)
 Agents:          3 (SAC, PPO, A2C)
 Training:        50 episodes each
 Total Steps:     50 × 8,760 × 3 = 1.31M steps
-```
+```bash
 
 ### Network Topology
 
-```
+```bash
 Input (534 dims)
     ↓
 Dense Layer 1 (1024 neurons, ReLU)
@@ -244,11 +244,11 @@ Policy Head (126 outputs, Tanh → [0,1])
     + Value Head (1 output, Linear)
     ↓
 Action: Charger power setpoints
-```
+```bash
 
 ### Reward Function
 
-```
+```bash
 Total Reward = 0.50×CO₂ + 0.20×Solar + 0.10×Cost + 0.10×EV + 0.10×Grid
 
 Where:
@@ -257,7 +257,7 @@ Where:
 - Cost: -grid_import_kwh × 0.20 (tariff USD/kWh)
 - EV: -max(0, demand - supply) (unmet charging)
 - Grid: -max(0, peak_power - baseline) (peak smoothing)
-```
+```bash
 
 ---
 
@@ -291,7 +291,7 @@ git commit -m "feat: Phase 7 complete & Phase 8 ready
 - Agent training configurations for SAC/PPO/A2C
 - Complete training guide with troubleshooting
 - Readiness checklist and success criteria"
-```
+```bash
 
 ---
 
@@ -331,31 +331,31 @@ git commit -m "feat: Phase 7 complete & Phase 8 ready
 ```bash
 # Follow PYTHON_3.11_SETUP_GUIDE.md
 # Verify: python --version → Python 3.11.x
-```
+```bash
 
 ### Step 2: Install CityLearn (5 minutes)
 
 ```bash
 pip install citylearn>=2.5.0
-```
+```bash
 
 ### Step 3: Build Dataset (20 minutes)
 
 ```bash
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-```
+```bash
 
 ### Step 4: Train Agents (4-5 hours)
 
 ```bash
 python scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 ### Step 5: View Results (1 minute)
 
 ```bash
 cat COMPARACION_BASELINE_VS_RL.txt
-```
+```bash
 
 ---
 
@@ -474,7 +474,7 @@ All Phase 7 actions complete. Phase 8 fully prepared. System ready for agent tra
 
 ```bash
 python scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 ---
 

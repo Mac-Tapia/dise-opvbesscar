@@ -31,7 +31,7 @@ self.wrapped_env = None
 # ✅ DESPUÉS
 self.model: Optional[Any] = None
 self.wrapped_env: Optional[Any] = None
-```
+```bash
 
 #### 2. Inicialización de Reward Stats
 
@@ -40,11 +40,11 @@ self.wrapped_env: Optional[Any] = None
 self._reward_count = 1e-4
 # (self._reward_mean y self._reward_var no existían)
 
-# ✅ DESPUÉS
+# ✅ DESPUÉS (2)
 self._reward_count = 1e-4
 self._reward_mean = 0.0
 self._reward_var = 1.0
-```
+```bash
 
 #### 3. Normalización de Observaciones
 
@@ -56,14 +56,14 @@ def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
     normalized = (prescaled - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
     return np.clip(normalized, -self._clip_obs, self._clip_obs).astype(np.float32)
 
-# ✅ DESPUÉS
+# ✅ DESPUÉS (3)
 def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
     if not self._normalize_obs:
         return obs.astype(np.float32)  # ✅ Conversión explícita
     normalized = (prescaled - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
     clipped = np.clip(normalized, -self._clip_obs, self._clip_obs)
     return np.asarray(clipped, dtype=np.float32)
-```
+```bash
 
 #### 4. Inicialización de CityLearnWrapper
 
@@ -72,11 +72,11 @@ def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
 self.wrapped_env = Monitor(CityLearnWrapper(...))
 vec_env = make_vec_env(lambda: self.wrapped_env, ...)  # ❌ Type mismatch
 
-# ✅ DESPUÉS
+# ✅ DESPUÉS (4)
 wrapped = CityLearnWrapper(...)
 self.wrapped_env = Monitor(wrapped)
 vec_env = make_vec_env(lambda: self.wrapped_env, ...)
-```
+```bash
 
 #### 5. Gestión de Rewards
 
@@ -85,12 +85,12 @@ vec_env = make_vec_env(lambda: self.wrapped_env, ...)
 if isinstance(reward, (list, tuple)):
     reward = sum(reward)  # ❌ int | float (ambiguo)
 
-# ✅ DESPUÉS
+# ✅ DESPUÉS (5)
 if isinstance(reward, (list, tuple)):
     reward = float(sum(reward))  # ✅ Conversión explícita
 else:
     reward = float(reward)
-```
+```bash
 
 #### 6. Logging Format
 
@@ -100,17 +100,17 @@ logger.info(f"[PPO Checkpoint Config] dir={checkpoint_dir}, freq={checkpoint_fre
 
 # ✅ DESPUÉS - Lazy formatting
 logger.info("[PPO Checkpoint Config] dir=%s, freq=%d", checkpoint_dir, checkpoint_freq)
-```
+```bash
 
 #### 7. Logging Format en make_ppo
 
 ```python
-# ❌ ANTES
+# ❌ ANTES (2)
 logger.info(f"[make_ppo] Using provided config: checkpoint_dir={cfg.checkpoint_dir}")
 
-# ✅ DESPUÉS
+# ✅ DESPUÉS (6)
 logger.info("[make_ppo] Using provided config: checkpoint_dir=%s", cfg.checkpoint_dir)
-```
+```bash
 
 #### 8. Método learn() - Parámetro Utilizado
 
@@ -119,21 +119,21 @@ logger.info("[make_ppo] Using provided config: checkpoint_dir=%s", cfg.checkpoin
 def learn(self, episodes: int = 5, total_timesteps: Optional[int] = None) -> None:
     """Entrena el agente PPO con optimizadores avanzados."""
     # Parameter 'episodes' se usa indirectamente (episodes parámetro de configuración)
-```
+```bash
 
 ### A2C Agent (`a2c_sb3.py`)
 
-#### 1. Type Hints en `__init__`
+#### 1. Type Hints en `__init__` (2)
 
 ```python
-# ❌ ANTES
+# ❌ ANTES (3)
 self.model = None
 self.wrapped_env = None
 
-# ✅ DESPUÉS
+# ✅ DESPUÉS (7)
 self.model: Optional[Any] = None
 self.wrapped_env: Optional[Any] = None
-```
+```bash
 
 #### 2. Initialización de Reward Stats
 
@@ -142,9 +142,9 @@ self.wrapped_env: Optional[Any] = None
 self._reward_count = 1e-4
 self._reward_mean = 0.0
 self._reward_var = 1.0
-```
+```bash
 
-#### 3. Normalización de Observaciones
+#### 3. Normalización de Observaciones (2)
 
 ```python
 # ✅ Mismo arreglo que PPO
@@ -152,37 +152,37 @@ def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
     if not self._normalize_obs:
         return obs.astype(np.float32)  # ✅ Conversión explícita
     ...
-```
+```bash
 
-#### 4. Inicialización de CityLearnWrapper
+#### 4. Inicialización de CityLearnWrapper (2)
 
 ```python
-# ✅ Mismo arreglo que PPO
+# ✅ Mismo arreglo que PPO (2)
 wrapped = CityLearnWrapper(...)
 self.wrapped_env = Monitor(wrapped)
-```
+```bash
 
-#### 5. Gestión de Rewards
+#### 5. Gestión de Rewards (2)
 
 ```python
-# ✅ Mismo arreglo que PPO
+# ✅ Mismo arreglo que PPO (3)
 if isinstance(reward, (list, tuple)):
     reward = float(sum(reward))
 else:
     reward = float(reward)
-```
+```bash
 
 #### 6. Return Type de `_get_lr_schedule`
 
 ```python
-# ❌ ANTES
+# ❌ ANTES (4)
 def _get_lr_schedule(self, total_steps: int) -> Callable:
     ...
     if self.config.lr_schedule == "cosine":
         def cosine_schedule(progress):  # ❌ Tipo incorrecto
             return self.config.learning_rate * (...)
 
-# ✅ DESPUÉS
+# ✅ DESPUÉS (8)
 def _get_lr_schedule(self, total_steps: int) -> Union[Callable[[float], float], float]:
     """Crea scheduler de learning rate."""
     ...
@@ -190,27 +190,27 @@ def _get_lr_schedule(self, total_steps: int) -> Union[Callable[[float], float], 
         def cosine_schedule(progress: float) -> float:  # ✅ Tipos explícitos
             return self.config.learning_rate * (0.5 * (1 + np.cos(np.pi * (1 - progress))))
         return cosine_schedule
-```
+```bash
 
 #### 7. Imports - Agregar Union
 
 ```python
-# ❌ ANTES
+# ❌ ANTES (5)
 from typing import Any, Optional, Dict, List, Callable
 
-# ✅ DESPUÉS
+# ✅ DESPUÉS (9)
 from typing import Any, Optional, Dict, List, Callable, Union
-```
+```bash
 
 #### 8. Logging Format
 
 ```python
-# ✅ Mismo arreglo que PPO
+# ✅ Mismo arreglo que PPO (4)
 logger.info("[A2C VERIFICATION] Checkpoints created: %d files", len(zips))
 for z in sorted(zips)[:5]:
     size_kb = z.stat().st_size / 1024
     logger.info("  - %s (%.1f KB)", z.name, size_kb)
-```
+```bash
 
 ---
 

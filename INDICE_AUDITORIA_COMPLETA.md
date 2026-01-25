@@ -95,14 +95,14 @@
 
 ### Para gerentes/stakeholders
 
-```
+```bash
 1. AUDITORIA_RESUMEN_EJECUTIVO.md (10 min)
    → Entienden qué está roto y qué hacer
-```
+```bash
 
 ### Para desarrolladores (sin contexto previo)
 
-```
+```bash
 1. AUDITORIA_RESUMEN_EJECUTIVO.md (10 min)
    ↓
 2. GUIA_IMPLEMENTACION_CORRECCIONES.md - solo resumen (5 min)
@@ -110,11 +110,11 @@
 3. AUDITORIA_EXHAUSTIVA_OE2_OE3_REPORTE_COMPLETO.md (30 min)
    ↓
 4. Implementar cambios siguiendo GUIA_IMPLEMENTACION_CORRECCIONES.md
-```
+```bash
 
 ### Para desarrolladores (contexto existente)
 
-```
+```bash
 1. AUDITORIA_RESUMEN_EJECUTIVO.md - solo tabla (5 min)
    ↓
 2. GUIA_IMPLEMENTACION_CORRECCIONES.md - Paso a paso (20 min)
@@ -122,7 +122,7 @@
 3. CORRECCIONES_DATASET_BUILDER_TIER1.py - código (copiar/pegar)
    ↓
 4. Validar con AUDITORIA_OE2_OE3_EXHAUSTIVA.py
-```
+```bash
 
 ---
 
@@ -144,32 +144,32 @@
 
 ### Tier 1: CRÍTICO (Bloquean training)
 
-```
+```bash
 ❌ [1] Solar: 35,037 filas (15-min) vs 8,760 esperadas (1-hora) → Sin downsampling
 ❌ [2] Chargers: 0 CSVs generados vs 128 requeridos → CityLearn falla
 ❌ [3] Paths: "charger_X.csv" vs "buildings/Mall/charger_X.csv" → No encontrados
 ❌ [4] BESS: 4,520 kWh (real) vs 2,000 kWh (doc.) → Mismatch capacidad
-```
+```bash
 
 ### Tier 2: ALTO (Degradan resultados)
 
-```
+```bash
 ⚠️  [5] Building load: Incompleto/unclear
 ⚠️  [6] Charger expansion: Sin variación anual
 ⚠️  [7] BESS parámetros: Parcial en schema
 ⚠️  [8] Annual datasets: Existe pero NO USADO
 ⚠️  [9] Timezones: Inconsistentes entre archivos
 ⚠️  [10] Validación: Sin tests de schema output
-```
+```bash
 
 ### Tier 3: MEDIO (Asuntos técnicos)
 
-```
+```bash
 ℹ️  [11] Obs space: No validado 534-dim
 ℹ️  [12] Reward mapping: Documentación incompleta
 ℹ️  [13] Perfiles chargers: Sin validación suma
 ℹ️  [14] Annual datasets: Investigación pendiente
-```
+```bash
 
 ---
 
@@ -208,7 +208,7 @@
 
 ### Problema → Documentación → Solución
 
-```
+```bash
 [Problem]              [Report Section]         [Implementation]
 ─────────────────────────────────────────────────────────────────
 Solar 15-min    → Parte 1 + Error #1  → GUIA Corrección #1
@@ -219,7 +219,7 @@ Building load   → Parte 3 + Error #4  → CORRECCIONES línea ~550
 Annual datasets → Parte 1 + Error #14 → Investigación propuesta
 Obs validation  → Parte 4 + Error #10 → CORRECCIONES función validate
 Timezone        → Parte 2 + Error #12 → Validación requerida
-```
+```bash
 
 ---
 
@@ -227,43 +227,43 @@ Timezone        → Parte 2 + Error #12 → Validación requerida
 
 ### SIN CORRECCIONES
 
-```
+```bash
 ├─ RL Training: ❌ IMPOSIBLE (CityLearn falla)
 ├─ Schema Valid: ❌ NO (paths rotos, CSVs faltantes)
 ├─ Observation: ❓ DESCONOCIDO (no testeado)
 └─ Confianza: 🔴 CRÍTICA (datos inciertos)
-```
+```bash
 
 ### CON CORRECCIONES TIER 1
 
-```
+```bash
 ├─ RL Training: ✅ POSIBLE (ambiente funcional)
 ├─ Schema Valid: ✅ SÍ (paths correctos, CSVs completos)
 ├─ Observation: ✅ VALIDADO (534-dim verificado)
 └─ Confianza: 🟡 MEDIA (mejora significativa)
-```
+```bash
 
 ### CON CORRECCIONES TIER 1-2
 
-```
+```bash
 ├─ RL Training: ✅ CONFIABLE (datos válidos)
 ├─ Schema Valid: ✅ EXCELENTE (completo)
 ├─ Observation: ✅ VERIFICADO
 └─ Confianza: 🟢 ALTA (resultados confiables)
-```
+```bash
 
 ---
 
 ## 🎓 LECCIONES APRENDIDAS
 
-```
+```bash
 1. OE2→OE3 es un pipeline complejo con múltiples transformaciones
 2. Documentación vs código: Mismatch común (BESS capacity)
 3. Testing: Falta validación de schema output en dataset_builder
 4. Datos: 35 archivos OE2, pero transformación incompleta
 5. Priorización: 4 issues críticos, 10+ adicionales
 6. Escalabilidad: 128 chargers requiere generación automática
-```
+```bash
 
 ---
 

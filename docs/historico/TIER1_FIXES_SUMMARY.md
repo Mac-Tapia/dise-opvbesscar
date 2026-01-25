@@ -67,7 +67,7 @@ else:
 
 **Archivo**: [src/iquitos_citylearn/oe3/rewards.py](src/iquitos_citylearn/oe3/rewards.py#L215-L230)
 
-#### ❌ PROBLEMA ORIGINAL - Issue
+#### ❌ PROBLEMA ORIGINAL - Issue (2)
 
 ```python
 # Penalización sumada SIN ponderación
@@ -78,7 +78,7 @@ if hour in pre_peak_hours and bess_soc < 0.5:
 # ¡SOC tiene IGUAL peso que CO₂ a pesar de ser mucho menos importante!
 ```text
 
-#### ✅ SOLUCIÓN APLICADA - Fix
+#### ✅ SOLUCIÓN APLICADA - Fix (2)
 
 ```python
 # Ahora normalizado con peso explícito

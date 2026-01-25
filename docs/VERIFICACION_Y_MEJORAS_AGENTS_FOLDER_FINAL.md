@@ -51,7 +51,7 @@ except (ImportError, AttributeError, RuntimeError) as err:
         return _detect_xformer()
     except (ImportError, AttributeError, RuntimeError):
         return torch.device("cpu")
-```
+```bash
 
 **Estado**: ✅ Listo para producción
 
@@ -86,7 +86,7 @@ def _env_creator() -> Any:
     return self.wrapped_env
 
 vec_env = make_vec_env(_env_creator, n_envs=1, seed=self.config.seed)
-```
+```bash
 
 **Estado**: ✅ **Completamente Limpio**
 
@@ -130,7 +130,7 @@ vec_env = make_vec_env(_env_creator, n_envs=1, seed=self.config.seed)
 _sb3_sac: Optional[SAC] = None
 # Luego se asigna SAC y se usa directamente sin type narrowing
 self._sb3_sac.learn(...)  # ← Type checker se queja
-```
+```bash
 
 **Solución Recomendada**:
 
@@ -142,7 +142,7 @@ def _initialize_model(self) -> SAC:
     if self._sb3_sac is None:
         raise RuntimeError("SAC model not initialized")
     return self._sb3_sac
-```
+```bash
 
 #### Categoría B: Logging F-Strings (11 errores)
 
@@ -152,19 +152,19 @@ logger.info(f"[SAC] Value: {value}")
 
 # CORRECTO
 logger.info("[SAC] Value: %s", value)
-```
+```bash
 
 #### Categoría C: Exception Handling (12 errores)
 
 ```python
-# INCORRECTO
+# INCORRECTO (2)
 except Exception:
     pass
 
-# CORRECTO
+# CORRECTO (2)
 except (SpecificError1, SpecificError2) as err:
     logger.debug("Error context: %s", err)
-```
+```bash
 
 #### Categoría D: Device Info Dictionary (4 errores)
 
@@ -180,7 +180,7 @@ info: Dict[str, Any] = {  # ← Use Any or specific Union
     "cuda_available": torch.cuda.is_available(),
     "gpu_count": torch.cuda.device_count(),
 }
-```
+```bash
 
 #### Categoría E: Attribute Initialization (2 errores)
 
@@ -188,7 +188,7 @@ info: Dict[str, Any] = {  # ← Use Any or specific Union
 # Atributos definidos fuera de __init__:
 self._prev_obs = obs  # ← En métodos, no en __init__
 self._wrapped_env = wrapped  # ← En métodos, no en __init__
-```
+```bash
 
 **Recomendación para sac.py**:
 
@@ -229,7 +229,7 @@ def _env_creator() -> Any:
     return self.wrapped_env
 
 vec_env = make_vec_env(_env_creator, n_envs=1)
-```
+```bash
 
 ### 2. Exception Specificity
 
@@ -245,7 +245,7 @@ try:
     result = operation()
 except (ValueError, TypeError, AttributeError) as err:
     logger.debug("Operation failed: %s", err)
-```
+```bash
 
 ### 3. Lazy Logging
 
@@ -255,7 +255,7 @@ logger.info(f"Status: {compute_status()}")
 
 # DESPUÉS (Lazy - evaluated only if logged)
 logger.info("Status: %s", compute_status())
-```
+```bash
 
 ### 4. Safe Attribute Access
 
@@ -268,7 +268,7 @@ action_space = getattr(self.env, 'action_space', None)
 if action_space is not None and hasattr(action_space, 'shape'):
     return int(action_space.shape[0])
 return 126  # Fallback
-```
+```bash
 
 ---
 
@@ -278,7 +278,7 @@ return 126  # Fallback
 
 ```bash
 get_errors d:/diseñopvbesscar/src/iquitos_citylearn/oe3/agents/
-```
+```bash
 
 **Resultado**: 113 → 46 errores (59.3% reducción)
 

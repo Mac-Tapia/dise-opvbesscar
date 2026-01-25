@@ -19,9 +19,9 @@
 
 ### 3. **Capacidad Real**
 
-```
+```bash
 Capacidad Total = 128 tomas × 26 sesiones/día × 92% = 3,062 vehículos/día
-```
+```bash
 
 ## CAMBIOS REALIZADOS EN EL CÓDIGO
 
@@ -39,35 +39,35 @@ Estos valores se usan SOLO para dimensionar cargadores.
 
 Fórmula: Vehículos efectivos = Vehículos_hora_pico × PE
 """
-```
+```bash
 
 ### `evaluate_scenario()` (Líneas 460-560)
 
 ```python
-# ANTES (INCORRECTO):
+# ANTES (INCORRECTO): (2)
 # Comentarios decían "ya tienen PE aplicado implícitamente"
 # "NO debemos multiplicar por PE nuevamente"
 
-# AHORA (CORRECTO):
+# AHORA (CORRECTO): (2)
 # IMPORTANTE: n_motos y n_mototaxis son vehículos en HORA PICO (6pm-10pm, 4h)
 # Estos valores se usan SOLO para dimensionar los cargadores.
 # PE y FC se aplican para calcular la energía y el número de cargadores.
-```
+```bash
 
 ### `run_charger_sizing()` (Líneas 1290-1650)
 
 ```python
-# ANTES (INCORRECTO):
+# ANTES (INCORRECTO): (3)
 # - Calculaba "motos_dia_total" y "mototaxis_dia_total"
 # - Usaba peak_share_day para derivar "flota diaria"
 # - Guardaba variables n_motos_dia_total en JSON
 
-# AHORA (CORRECTO):
+# AHORA (CORRECTO): (3)
 # - NO calcula "flota diaria total"
 # - Elimina variables n_motos_dia_total y n_mototaxis_dia_total del JSON
 # - Elimina peak_share_day del JSON
 # - Solo muestra parámetros de hora pico y capacidad de infraestructura
-```
+```bash
 
 ## ARCHIVOS ACTUALIZADOS
 
@@ -94,13 +94,13 @@ Fórmula: Vehículos efectivos = Vehículos_hora_pico × PE
 
 ## VERIFICACIÓN FINAL
 
-```
+```bash
 ✅ REGLA 1: 900+130 vehículos en hora pico → Dimensionan 32 cargadores
 ✅ REGLA 2: Potencia instalada 272 kW (28×4×2 + 4×4×3)
 ✅ REGLA 3: Operación 13h/día, Modo 3, sesiones 30 min
 ✅ REGLA 4: Capacidad 3,062 vehículos/día (128 × 26 × 0.92)
 ✅ Variables eliminadas: n_motos_dia_total, n_mototaxis_dia_total, peak_share_day
-```
+```bash
 
 ## RESULTADOS FINALES
 
@@ -138,4 +138,4 @@ Fórmula: Vehículos efectivos = Vehículos_hora_pico × PE
 
 **✅ TODO EL CÓDIGO HA SIDO ACTUALIZADO Y VERIFICADO**  
 **✅ TODAS LAS REGLAS SE CUMPLEN CORRECTAMENTE**  
-**✅ TODAS LAS TABLAS Y GRÁFICAS GENERADAS**
+#### ✅ TODAS LAS TABLAS Y GRÁFICAS GENERADAS

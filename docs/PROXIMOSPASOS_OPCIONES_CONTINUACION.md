@@ -31,7 +31,7 @@ Generar análisis comparativo detallado entre los 3 agentes (PPO, A2C, SAC)
 - Estabilidad de convergencia
 - Consumo de energía/CO2
 - Picos de demanda (grid stability)"
-```
+```bash
 
 **Resultado esperado**: Tabla comparativa + gráficas de análisis
 
@@ -52,7 +52,7 @@ Ejecutar un nuevo ciclo de entrenamiento con parámetros mejorados
 ```text
 "Entrenar nuevamente PPO/A2C/SAC con timesteps optimizados
 para conseguir mejor convergencia y reward"
-```
+```bash
 
 ---
 
@@ -71,7 +71,7 @@ Ejecutar modelos entrenados en diferentes escenarios de demanda
 ```text
 "Validar modelos PPO/A2C/SAC en los 101 escenarios
 y generar matriz de evaluación de desempeño"
-```
+```bash
 
 ---
 
@@ -106,7 +106,7 @@ Análisis detallado del consumo de energía y emisiones CO2
 - Reducción CO2 (kg)
 - Picos evitados (kW)
 - Costo estimado (USD)"
-```
+```bash
 
 ---
 
@@ -152,14 +152,14 @@ Cuando esté listo para continuar, dígame:
 
 ```text
 "Quiero [OPCIÓN X] porque [MOTIVO]"
-```
+```bash
 
 Ejemplo:
 
 ```text
 "Quiero OPCIÓN A porque necesito entender qué tan bien 
 están entrenados los modelos actuales"
-```
+```bash
 
 Y procederé a implementar la tarea completa.
 

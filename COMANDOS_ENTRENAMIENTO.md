@@ -13,20 +13,20 @@ Antes de entrenar, **siempre ejecuta** la verificación:
 
 ```cmd
 verificar_agentes.bat
-```
+```bash
 
 ### Windows (PowerShell)
 
 ```powershell
 .\verificar_agentes.ps1
-```
+```bash
 
 ### Linux/Mac
 
 ```bash
 source .venv/bin/activate
 python scripts/verificar_agentes.py
-```
+```bash
 
 **Resultado esperado**: Todas las verificaciones en ✅ OK
 
@@ -37,12 +37,12 @@ python scripts/verificar_agentes.py
 ### Entrenar SAC (Soft Actor-Critic)
 
 ```bash
-# Windows (PowerShell)
+# Windows (PowerShell) (2)
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent SAC --episodes 5 --device cuda
 
-# Linux/Mac
+# Linux/Mac (2)
 python scripts/train_gpu_robusto.py --agent SAC --episodes 5 --device cuda
-```
+```bash
 
 **Duración estimada**: ~15-20 minutos  
 **Memoria GPU**: ~4-6 GB VRAM
@@ -52,12 +52,12 @@ python scripts/train_gpu_robusto.py --agent SAC --episodes 5 --device cuda
 ### Entrenar PPO (Proximal Policy Optimization)
 
 ```bash
-# Windows (PowerShell)
+# Windows (PowerShell) (3)
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent PPO --episodes 5 --device cuda
 
-# Linux/Mac
+# Linux/Mac (3)
 python scripts/train_gpu_robusto.py --agent PPO --episodes 5 --device cuda
-```
+```bash
 
 **Duración estimada**: ~20-25 minutos  
 **Memoria GPU**: ~3-4 GB VRAM
@@ -67,12 +67,12 @@ python scripts/train_gpu_robusto.py --agent PPO --episodes 5 --device cuda
 ### Entrenar A2C (Advantage Actor-Critic)
 
 ```bash
-# Windows (PowerShell)
+# Windows (PowerShell) (4)
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent A2C --episodes 5 --device cuda
 
-# Linux/Mac
+# Linux/Mac (4)
 python scripts/train_gpu_robusto.py --agent A2C --episodes 5 --device cuda
-```
+```bash
 
 **Duración estimada**: ~10-15 minutos  
 **Memoria GPU**: ~2-3 GB VRAM
@@ -84,12 +84,12 @@ python scripts/train_gpu_robusto.py --agent A2C --episodes 5 --device cuda
 Entrena SAC, PPO y A2C automáticamente uno después del otro:
 
 ```bash
-# Windows (PowerShell)
+# Windows (PowerShell) (5)
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 5
 
-# Linux/Mac
+# Linux/Mac (5)
 python scripts/train_agents_serial.py --device cuda --episodes 5
-```
+```bash
 
 **Duración estimada total**: ~45-60 minutos  
 **Checkpoints**: Guardados automáticamente cada 1000 steps
@@ -101,12 +101,12 @@ python scripts/train_agents_serial.py --device cuda --episodes 5
 ### SAC (50 episodios recomendados)
 
 ```bash
-# Windows (PowerShell)
+# Windows (PowerShell) (6)
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda
 
-# Linux/Mac
+# Linux/Mac (6)
 python scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda
-```
+```bash
 
 **Duración estimada**: ~2.5-3 horas  
 **Nota**: 50 episodios es el **mínimo recomendado** para alta dimensionalidad
@@ -116,12 +116,12 @@ python scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda
 ### PPO (500k timesteps = ~57 episodios)
 
 ```bash
-# Windows (PowerShell)
+# Windows (PowerShell) (7)
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent PPO --episodes 57 --device cuda
 
-# Linux/Mac
+# Linux/Mac (7)
 python scripts/train_gpu_robusto.py --agent PPO --episodes 57 --device cuda
-```
+```bash
 
 **Duración estimada**: ~3.5-4 horas  
 **Nota**: 500k timesteps es el **mínimo recomendado**
@@ -131,12 +131,12 @@ python scripts/train_gpu_robusto.py --agent PPO --episodes 57 --device cuda
 ### A2C (500k timesteps = ~57 episodios)
 
 ```bash
-# Windows (PowerShell)
+# Windows (PowerShell) (8)
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent A2C --episodes 57 --device cuda
 
-# Linux/Mac
+# Linux/Mac (8)
 python scripts/train_gpu_robusto.py --agent A2C --episodes 57 --device cuda
-```
+```bash
 
 **Duración estimada**: ~2-2.5 horas  
 **Nota**: A2C es más rápido pero menos estable que PPO
@@ -149,7 +149,7 @@ python scripts/train_gpu_robusto.py --agent A2C --episodes 57 --device cuda
 
 ```bash
 python scripts/train_gpu_robusto.py --agent SAC --episodes 5 --device cpu
-```
+```bash
 
 ⚠️ **Advertencia**: El entrenamiento será **10-20x más lento** en CPU
 
@@ -160,7 +160,7 @@ python scripts/train_gpu_robusto.py --agent SAC --episodes 5 --device cpu
 ```bash
 # Resume automático habilitado por defecto
 python scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda --resume
-```
+```bash
 
 **Nota**: El script busca automáticamente el último checkpoint y continúa desde ahí.
 
@@ -170,7 +170,7 @@ python scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda --re
 
 ```bash
 python scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda --no-resume
-```
+```bash
 
 ---
 
@@ -180,12 +180,12 @@ python scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda --no
 
 Los logs de entrenamiento se guardan en:
 
-```
+```bash
 training/oe3/progress/
 ├── sac_progress.csv
 ├── ppo_progress.csv
 └── a2c_progress.csv
-```
+```bash
 
 **Contenido**: timestamp, agent, episode, episode_reward, episode_length, global_step
 
@@ -195,7 +195,7 @@ training/oe3/progress/
 
 Los modelos intermedios se guardan en:
 
-```
+```bash
 training/oe3/checkpoints/
 ├── sac/
 │   ├── checkpoint_1000.zip
@@ -205,7 +205,7 @@ training/oe3/checkpoints/
 │   └── ...
 └── a2c/
     └── ...
-```
+```bash
 
 **Frecuencia**: Cada 1000 steps (configurable)
 
@@ -216,7 +216,7 @@ training/oe3/checkpoints/
 ```bash
 # En otra terminal
 tail -f training/oe3/progress/sac_progress.csv
-```
+```bash
 
 O usar Excel/Pandas para graficar `episode_reward` vs `episode`.
 
@@ -239,7 +239,7 @@ O usar Excel/Pandas para graficar `episode_reward` vs `episode`.
 ```bash
 # El script detecta automáticamente el último checkpoint
 python scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda
-```
+```bash
 
 **Nota**: Asegúrate de usar el **mismo número de episodios** (o más) que la ejecución anterior.
 
@@ -273,13 +273,13 @@ python scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda
 ```python
 # En src/iquitos_citylearn/oe3/agents/sac.py
 batch_size: int = 256  # Reducido de 512
-```
+```bash
 
 **Solución 2**: Entrenar en CPU
 
 ```bash
 python scripts/train_gpu_robusto.py --agent SAC --episodes 5 --device cpu
-```
+```bash
 
 ---
 
@@ -289,7 +289,7 @@ python scripts/train_gpu_robusto.py --agent SAC --episodes 5 --device cpu
 
 ```bash
 ls training/oe3/checkpoints/sac/
-```
+```bash
 
 Si no existe, el entrenamiento empezará desde cero automáticamente.
 
@@ -308,7 +308,7 @@ Si no existe, el entrenamiento empezará desde cero automáticamente.
 ```bash
 # Debería mostrar ~100-200 steps/seg en GPU
 # Debería mostrar ~10-20 steps/seg en CPU
-```
+```bash
 
 ---
 
@@ -322,7 +322,7 @@ export PYTHON_LOG_LEVEL=DEBUG  # Linux/Mac
 $env:PYTHON_LOG_LEVEL="DEBUG"  # Windows PowerShell
 
 python scripts/train_gpu_robusto.py --agent SAC --episodes 5 --device cuda
-```
+```bash
 
 ---
 
@@ -333,7 +333,7 @@ python scripts/train_gpu_robusto.py --agent SAC --episodes 5 --device cuda
 watch -n 1 nvidia-smi  # Linux
 # O en Windows PowerShell:
 while ($true) { nvidia-smi; Start-Sleep -Seconds 1; Clear-Host }
-```
+```bash
 
 ---
 
@@ -363,7 +363,7 @@ Para **primera prueba**:
 
 # 3. Si funciona bien, lanzar entrenamiento completo
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda
-```
+```bash
 
 ---
 

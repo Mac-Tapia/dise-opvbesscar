@@ -65,18 +65,18 @@
 
 **Test Results**:
 
-```
+```bash
 ✅ OE2 Data Validation:    ALL PASSED
 ✅ Charger Expansion:      24h×128 → 8,760h×128 ✓
 ✅ CSV Generation:         128 files × 8,760 rows ✓
 ✅ Data Integrity:         All value ranges correct ✓
-```
+```bash
 
 ---
 
 ## 🏗️ DATA PIPELINE (NOW SYSTEMATIC & INTEGRAL)
 
-```
+```bash
 ┌─────────────────────────────────────────────────────────────┐
 │ OE2 DATA (REAL GENERATION)                                  │
 └─────────────────────────────────────────────────────────────┘
@@ -132,7 +132,7 @@
 ┌─────────────────────────────────────────────────────────────┐
 │ RESULTS: CO₂ Reduction, Cost Minimization, Solar Max        │
 └─────────────────────────────────────────────────────────────┘
-```
+```bash
 
 ---
 

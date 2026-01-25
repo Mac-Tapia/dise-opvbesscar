@@ -10,27 +10,27 @@
 
 ### Sesión 1: BESS Dimensionado + Agentes TIER 2
 
-```
+```bash
 ✅ BESS: 1,632 kWh / 593 kW (factor 1.20, DoD 80%)
 ✅ SAC, PPO, A2C con configs TIER 2
 ✅ 8 archivos de documentación
 ✅ Verificación automática: TODAS PASARON
-```
+```bash
 
 ### Sesión 2: Catalizacion MÁXIMA POTENCIA INDIVIDUAL
 
-```
+```bash
 ✅ SAC: Off-policy (Buffer 1M, Batch 512, Tau 0.001)
 ✅ PPO: On-policy (Batch 128, Clip 0.1, SDE enabled)
 ✅ A2C: On-policy (N Steps 2048, GAE 0.95)
 ✅ Todos con hidden 1024x1024 = 4M parámetros
 ✅ Documentación COMPLETA (8 archivos)
 ✅ Verificación: ✅ TODAS PASARON
-```
+```bash
 
 ### Sesión 3: PIPELINE DE ENTRENAMIENTO (ACTUAL)
 
-```
+```bash
 ✅ Dataset OE2: Verificado
 ✅ Dataset Construcción: Listo
 ✅ Baseline Calculado: 550 kg CO₂ (sin control)
@@ -39,13 +39,13 @@
    • SAC (5 ep): 301 kg CO₂ 
    • PPO (5 ep): 291 kg CO₂ ← MEJOR INICIAL
 ✅ Repositorio Actualizado
-```
+```bash
 
 ---
 
 ## 🏗️ Arquitectura Final
 
-```
+```bash
 ┌─────────────────────────────────────────────────┐
 │        SISTEMA DE CONTROL DE ENERGÍA IQUITOS   │
 ├─────────────────────────────────────────────────┤
@@ -65,7 +65,7 @@
 │  🚀 Deployment Ready                           │
 │                                                   │
 └─────────────────────────────────────────────────┘
-```
+```bash
 
 ---
 
@@ -117,7 +117,7 @@
 
 ```bash
 & .venv/Scripts/python.exe scripts/run_training_pipeline.py
-```
+```bash
 
 **Resultado**: ✅ 3.0 segundos | 3/3 agentes completados
 
@@ -125,7 +125,7 @@
 
 ```bash
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 **Resultado**: Pendiente (listo para ejecutar)
 
@@ -133,7 +133,7 @@
 
 ```bash
 & .venv/Scripts/python.exe scripts/verificar_configuraciones_maxima_potencia.py
-```
+```bash
 
 **Resultado**: ✅ TODAS LAS VERIFICACIONES PASARON
 
@@ -154,20 +154,20 @@
 
 ## 🔧 Infraestructura
 
-```
+```bash
 GPU:       NVIDIA GeForce RTX 4060 Laptop
 Memory:    8.6 GB VRAM
 CUDA:      12.1
 PyTorch:   2.5.1+cu121
 cuDNN:     90100
 Framework: Stable Baselines3 + Custom Wrappers
-```
+```bash
 
 ---
 
 ## 📁 Estructura de Archivos Clave
 
-```
+```bash
 project_root/
 ├── src/iquitos_citylearn/
 │   ├── oe2/                    # Dataset OE2
@@ -191,7 +191,7 @@ project_root/
     ├── CONFIGURACIONES_INDIVIDUALES_MAXIMA_POTENCIA.md
     ├── CONFIGURACIONES_OPTIMAS_FINALES.md
     └── [8+ archivos de documentación]
-```
+```bash
 
 ---
 
@@ -258,7 +258,7 @@ project_root/
 
 ## 📈 Proyección de Mejora
 
-```
+```bash
 Baseline (sin control):      550 kg CO₂
 ↓
 Agente RL (5 ep):           290 kg CO₂  (47% mejora)
@@ -266,7 +266,7 @@ Agente RL (5 ep):           290 kg CO₂  (47% mejora)
 Agente RL (50 ep):          ~250 kg CO₂ (55% mejora) [OBJETIVO]
 ↓
 Agente RL (100 ep):         ~200 kg CO₂ (64% mejora) [STRETCH]
-```
+```bash
 
 ---
 
@@ -298,13 +298,13 @@ ls -la results/
 
 # Push a repositorio
 git add . && git commit -m "Training updates" && git push
-```
+```bash
 
 ---
 
 ## 📊 Status Actual
 
-```
+```bash
 ┌────────────────────────────────────────┐
 │  🟢 OPERACIONAL                        │
 ├────────────────────────────────────────┤
@@ -318,7 +318,7 @@ git add . && git commit -m "Training updates" && git push
 │                                        │
 │  LISTO PARA: Escalar a 50-100 ep     │
 └────────────────────────────────────────┘
-```
+```bash
 
 ---
 

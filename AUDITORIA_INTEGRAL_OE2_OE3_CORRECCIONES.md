@@ -27,20 +27,20 @@
 
 ### Solar Tier (data/interim/oe2/solar/)
 
-```
+```bash
 ✅ pv_generation_timeseries.csv     35,037 rows × 12 cols (15-min frequency)
 ✅ pv_monthly_energy.csv             12 rows (aggregated monthly)
 ✅ pv_profile_24h.csv               24 rows (typical day profile)
 ✅ solar_results.json               Summary: 8.31 GWh/año, 29.6% capacity factor
 ✅ solar_technical_report.md        Eaton Xpert1670 config, 200,632 modules
 ✅ pv_candidates_*.csv              Candidate analysis (not used in training)
-```
+```bash
 
 **Status**: ✅ Datos de alta calidad, solo necesita resampling 15-min → 1-hour
 
 ### Chargers Tier (data/interim/oe2/chargers/)
 
-```
+```bash
 ✅ individual_chargers.json         128 chargers with specs + hourly profiles (nested)
 ✅ chargers_hourly_profiles.csv     128 cols × 24 rows (hourly demands)
 ✅ chargers_citylearn.csv           Format for CityLearn (current)
@@ -49,30 +49,30 @@
 ❌ charger_001.csv ... charger_128.csv  MISSING: Individual per-charger files
     → Required by CityLearn v2 for per-charger observables
 ⚠️  annual_datasets/                Contains variant profiles (not integrated)
-```
+```bash
 
 **Status**: ⚠️ Core data presente, pero falta generación de CSVs individuales
 
 ### BESS Tier (data/interim/oe2/bess/)
 
-```
+```bash
 ✅ bess_results.json                4,520 kWh capacity, 2,712 kW power, 80% DoD
 ✅ bess_simulation_hourly.csv       8,760 rows (hourly SOC, charge/discharge)
 ✅ bess_daily_balance_24h.csv       24-hour profile
 ❌ bess_config.json                 MISSING: Static config file
     → Expected: capacity, power, efficiency, min_soc, max_soc
-```
+```bash
 
 **Status**: ⚠️ Simulation data present, pero falta config estático
 
 ### CityLearn Intermediate (data/interim/oe2/citylearn/)
 
-```
+```bash
 ✅ solar_generation.csv             8,760 rows, hourly (resampled)
 ✅ bess_solar_generation.csv        Hybrid (not clearly defined)
 ❌ building_load.csv                Appears empty or undefined
 ❌ charger_001.csv...charger_128.csv MISSING: Should be here for schema
-```
+```bash
 
 **Status**: 🔴 Incompleto - falta claridad y estructura de building_load
 
@@ -106,13 +106,13 @@ outputs/schema_TIMESTAMP.json
 ├─ Climate zones: [1] - PRESENT
 ├─ charger_simulation_X.csv - ? (check if generated)
 └─ building_load structure - ? (unclear definition)
-```
+```bash
 
 ### Data Flow Verification
 
 **SHOULD BE**:
 
-```
+```bash
 OE2/solar/pv_generation_timeseries.csv (35,037 rows, 15-min)
     ↓ [resample → hourly]
 OE2/citylearn/solar_generation.csv (8,760 rows, 1-hour)
@@ -120,7 +120,7 @@ OE2/citylearn/solar_generation.csv (8,760 rows, 1-hour)
 schema.json → observables[0] = solar_generation_kwh
     ↓
 agents/ppo_sb3.py → obs[0] (input to neural net)
-```
+```bash
 
 **CURRENT STATE**: ✅ Mostly working, but:
 
@@ -153,12 +153,12 @@ agents/ppo_sb3.py → obs[0] (input to neural net)
 #   charger_simulation.csv (aggregated)
 
 # SOLUTION: Generate 128 individual CSVs from individual_chargers.json
-```
+```bash
 
 **Error 1.2**: Building Load Definition Unclear
 
 ```python
-# PROBLEMA:
+# PROBLEMA: (2)
 # energy_simulation.csv should contain:
 #   Column 1: Building total electricity demand (kWh)
 #   = PV generation + Charger demand + BESS state + Grid import
@@ -172,28 +172,28 @@ agents/ppo_sb3.py → obs[0] (input to neural net)
 # SOLUTION: 
 #   Define precisely: total_load = chargers_demand + mall_demand ± BESS
 #   Verify timestamp alignment (all 8,760 hours, no gaps)
-```
+```bash
 
 **Error 1.3**: Solar Timeseries Resampling Not Verified
 
 ```python
-# PROBLEMA:
+# PROBLEMA: (3)
 # pv_generation_timeseries.csv is 15-minute frequency (35,037 rows)
 # CityLearn expects hourly (8,760 rows)
 
-# ACTUAL:
+# ACTUAL: (2)
 #   dataset_builder assumes resampling happens
 #   But no validation that output is correct 8,760 rows
 
-# SOLUTION:
+# SOLUTION: (2)
 #   Explicit resampling: 4 × 15-min → 1 × 1-hour (mean/sum)
 #   Validate output shape and values
-```
+```bash
 
 **Error 1.4**: BESS Config Missing Static File
 
 ```python
-# PROBLEMA:
+# PROBLEMA: (4)
 # bess_results.json is simulation output, not configuration
 # CityLearn schema expects static parameters:
 #   - capacity_kwh
@@ -202,14 +202,14 @@ agents/ppo_sb3.py → obs[0] (input to neural net)
 #   - min_soc
 #   - max_soc
 
-# ACTUAL:
+# ACTUAL: (3)
 #   No bess_config.json exists
 #   Values scattered in different files
 
-# SOLUTION:
+# SOLUTION: (3)
 #   Create bess_config.json with standardized format
 #   Use as single source of truth
-```
+```bash
 
 ### TIER 2 (IMPORTANTES - Arreglar en 2 horas)
 
@@ -310,7 +310,7 @@ class OE2DataLoader:
         # Check all values in valid ranges
         # Return validation report
         pass
-```
+```bash
 
 ### Mejora 2: Schema Validation
 
@@ -347,7 +347,7 @@ class CityLearnSchemaValidator:
         obs, _ = env.reset()
         assert obs.shape == (534,), f"Wrong obs shape: {obs.shape}"
         return True
-```
+```bash
 
 ### Mejora 3: Data Integrity Checks in Training
 
@@ -367,7 +367,7 @@ def simulate(...):
         raise RuntimeError("CityLearn schema invalid")
     
     # Training proceeds only if all checks pass
-```
+```bash
 
 ---
 
@@ -375,7 +375,7 @@ def simulate(...):
 
 ### Data Lineage Diagram
 
-```
+```bash
 ┌─────────────────────────────────────┐
 │        OE2 INPUT DATA               │
 │  (data/interim/oe2/)                │
@@ -424,7 +424,7 @@ def simulate(...):
      │   RL Agents Training         │
      │  PPO / SAC / A2C             │
      └─────────────────────────────┘
-```
+```bash
 
 ---
 
@@ -457,7 +457,7 @@ def simulate(...):
 
 ### Before Corrections
 
-```
+```bash
 ✅ Solar data:           High quality, just needs resampling
 ✅ Charger data:         128 chargers with profiles present
 ✅ BESS data:            Simulation complete
@@ -466,11 +466,11 @@ def simulate(...):
 ❌ Integración:          Gaps between OE2 y OE3
 ❌ Documentación:        Incompleta
 ❌ Operacionalidad:      Frágil
-```
+```bash
 
 ### After Corrections (Target)
 
-```
+```bash
 ✅ Solar data:           Resampled, validated, normalized
 ✅ Charger data:         128 individual CSVs generated
 ✅ BESS config:          Estándar, validado
@@ -479,7 +479,7 @@ def simulate(...):
 ✅ Integración:          Verificada end-to-end
 ✅ Documentación:        Completa y operacional
 ✅ Operacionalidad:      Robusta y reproducible
-```
+```bash
 
 ---
 

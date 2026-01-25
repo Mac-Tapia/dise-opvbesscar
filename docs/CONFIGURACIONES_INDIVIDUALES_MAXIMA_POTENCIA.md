@@ -47,7 +47,7 @@ class SACConfig:
     device: str = "auto"
     use_amp: bool = True               # Mixed precision
     pin_memory: bool = True
-```
+```bash
 
 ### Justificación SAC
 
@@ -63,7 +63,7 @@ class SACConfig:
 
 ### Rendimiento Esperado SAC
 
-```
+```bash
 Episodios:          50 entrenamiento
 Convergencia:       ~10-15 episodios
 Reward Final:       -100 a +200 (muy bueno)
@@ -71,7 +71,7 @@ CO₂:                250-350 kg/episodio (MUY BAJO)
 EV Satisfacción:    90-95%
 Tiempo:             ~3 horas
 Estabilidad:        ⭐⭐⭐⭐⭐ (máxima)
-```
+```bash
 
 ---
 
@@ -114,7 +114,7 @@ class PPOConfig:
     device: str = "auto"
     use_amp: bool = True
     normalize_advantage: bool = True
-```
+```bash
 
 ### Justificación PPO
 
@@ -132,7 +132,7 @@ class PPOConfig:
 
 ### Rendimiento Esperado PPO
 
-```
+```bash
 Episodios:          57 (500k steps)
 Convergencia:       ~20-30 episodios
 Reward Final:       -50 a +300 (EXCELENTE)
@@ -141,7 +141,7 @@ EV Satisfacción:    88-93%
 Tiempo:             ~5-6 horas (más lento pero MEJOR)
 Estabilidad:        ⭐⭐⭐⭐ (muy buena)
 Convergencia:       ⭐⭐⭐⭐⭐ (óptima)
-```
+```bash
 
 ---
 
@@ -178,7 +178,7 @@ class A2CConfig:
     normalize_rewards: bool = True
     reward_scale: float = 0.01
     clip_obs: float = 10.0
-```
+```bash
 
 ### Justificación A2C
 
@@ -195,7 +195,7 @@ class A2CConfig:
 
 ### Rendimiento Esperado A2C
 
-```
+```bash
 Episodios:          57 (500k steps)
 Convergencia:       ~15-20 episodios
 Reward Final:       -150 a +100 (bueno)
@@ -204,7 +204,7 @@ EV Satisfacción:    85-90%
 Tiempo:             ~2.5-3 horas (RÁPIDO)
 Estabilidad:        ⭐⭐⭐⭐ (buena)
 Velocidad:          ⭐⭐⭐⭐⭐ (máxima)
-```
+```bash
 
 ---
 
@@ -237,7 +237,7 @@ Velocidad:          ⭐⭐⭐⭐⭐ (máxima)
 
 ```bash
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda
-```
+```bash
 
 ⏱️ Duración: ~3 horas | 🎯 Mejor para: Precisión máxima
 
@@ -245,7 +245,7 @@ Velocidad:          ⭐⭐⭐⭐⭐ (máxima)
 
 ```bash
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent PPO --episodes 57 --device cuda
-```
+```bash
 
 ⏱️ Duración: ~5-6 horas | 🎯 Mejor para: Rendimiento general
 
@@ -253,7 +253,7 @@ Velocidad:          ⭐⭐⭐⭐⭐ (máxima)
 
 ```bash
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent A2C --episodes 57 --device cuda
-```
+```bash
 
 ⏱️ Duración: ~2.5-3 horas | 🎯 Mejor para: Prototipado rápido
 
@@ -268,13 +268,13 @@ Velocidad:          ⭐⭐⭐⭐⭐ (máxima)
 
 # Terminal 3 (mientras PPO en CPU):
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent A2C --episodes 57 --device cpu
-```
+```bash
 
 **O secuencial** (más seguro):
 
 ```bash
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 ---
 
@@ -325,14 +325,14 @@ Velocidad:          ⭐⭐⭐⭐⭐ (máxima)
 
 ## ✅ VERIFICACIÓN COMPLETADA
 
-```
+```bash
 🟢 SAC:     Learning Rate 1.5e-4 | Batch 512 | Buffer 1M | Hidden 1024x1024
 🟢 PPO:     Learning Rate 2.0e-4 | Batch 128 | N Steps 2048 | Hidden 1024x1024
 🟢 A2C:     Learning Rate 1.5e-4 | N Steps 2048 | Hidden 1024x1024
 🟢 GPU:     RTX 4060 8GB | CUDA 12.1
 🟢 Datos:   128 cargadores | 5 schemas
 🟢 Listo:   ✅ MÁXIMA POTENCIA INDIVIDUAL
-```
+```bash
 
 ---
 

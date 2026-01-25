@@ -42,7 +42,7 @@ learning_rate: 0.0007
 
 ## 🔄 Secuencia de Ejecución (EN SERIE)
 
-**Orden ejecutado en `scripts/run_oe3_simulate.py`:**
+#### Orden ejecutado en `scripts/run_oe3_simulate.py`:
 
 ```text
 1️⃣ BASELINE (Uncontrolled)

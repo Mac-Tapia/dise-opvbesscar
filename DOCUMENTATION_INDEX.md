@@ -35,7 +35,7 @@
 
 ### Archivos Mejorados
 
-```
+```bash
 ✓ src/iquitos_citylearn/oe3/agents/__init__.py
   - Device detection unificada
   - Imports mejorados
@@ -50,11 +50,11 @@
 ✓ src/iquitos_citylearn/oe3/agents/a2c_sb3.py
   - Logging mejorado
   - Error handling robusto
-```
+```bash
 
 ### Archivos Nuevos
 
-```
+```bash
 ✓ src/iquitos_citylearn/oe3/agents/agent_utils.py
   - Utilidades centralizadas
   - ListToArrayWrapper para CityLearn
@@ -74,7 +74,7 @@
 ✓ AGENTS_IMPROVEMENTS_SUMMARY.md
 ✓ QUICK_REFERENCE_TRAINING.py
 ✓ TRAINING_READY.md
-```
+```bash
 
 ---
 
@@ -84,37 +84,37 @@
 
 ```bash
 python src/iquitos_citylearn/oe3/agents/validate_training_env.py
-```
+```bash
 
 ### Entrenamiento Rápido (5 episodios, ~5 min)
 
 ```bash
 python scripts/train_quick.py --device cuda --episodes 5
-```
+```bash
 
 ### Entrenamiento Completo (50 episodios, ~1-2 horas)
 
 ```bash
 python scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 ### Monitoreo en Tiempo Real
 
 ```bash
 python scripts/monitor_training_live_2026.py
-```
+```bash
 
 ### Ver Resultados
 
 ```bash
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
-```
+```bash
 
 ---
 
 ## 📊 ESTADO ACTUAL
 
-```
+```bash
 ✅ Agentes importables: PPOAgent, SACAgent, A2CAgent
 ✅ Device detection: CUDA/MPS/CPU auto-detect
 ✅ Rewards normalizados: CO2=0.50, Solar=0.20, Cost=0.10, EV=0.10, Grid=0.10
@@ -122,7 +122,7 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 ✅ Scripts de entrenamiento: Listos
 ✅ Documentación: Exhaustiva
 ✅ Troubleshooting: Incluido
-```
+```bash
 
 ---
 
@@ -232,7 +232,7 @@ Después de entrenamiento con 50 episodios:
 
 ```bash
 python -m venv .venv && .venv\Scripts\Activate.ps1 && pip install -r requirements.txt -q && python src/iquitos_citylearn/oe3/agents/validate_training_env.py && python scripts/train_quick.py --device cuda --episodes 5
-```
+```bash
 
 ---
 

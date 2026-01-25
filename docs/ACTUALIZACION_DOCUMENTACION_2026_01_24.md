@@ -116,7 +116,7 @@ data/processed/citylearn/
 
 data/oe2/
 └── tabla_escenarios_vehiculos.csv  # Tabla 13 con vehículos (actualizado)
-```
+```bash
 
 ---
 

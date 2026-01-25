@@ -61,7 +61,7 @@
 
 ### Entrenamiento Serial
 
-**[1/3] A2C - 2 Episodios**
+#### [1/3] A2C - 2 Episodios
 
 - Status: ▶️ INICIADO (19:25:49)
 - Config: LR=2.5e-4, n_steps=1024, ent=0.02
@@ -69,7 +69,7 @@
 - Expected CO2: <1.8M kg
 - Expected Peak Import: <250 kWh/h
 
-**[2/3] PPO - 2 Episodios**
+#### [2/3] PPO - 2 Episodios
 
 - Status: ⏳ EN COLA
 - Config: LR=2.5e-4, batch=256, n_epochs=15, use_sde=True
@@ -77,7 +77,7 @@
 - Expected CO2: <1.9M kg
 - Expected Peak Import: <280 kWh/h
 
-**[3/3] SAC - 2 Episodios**
+#### [3/3] SAC - 2 Episodios
 
 - Status: ⏳ EN COLA
 - Config: LR=2.5e-4, batch=256, update_freq=2, dropout=0.1

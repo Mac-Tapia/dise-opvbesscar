@@ -41,7 +41,7 @@ weight_ev_satisfaction:    0.10   # Satisfacción carga EV
 weight_grid_stability:     0.05   # Estabilidad de red
 ──────────────────────────────────
 TOTAL:                     1.00   # ✅ Normalizado
-```
+```bash
 
 ---
 
@@ -86,7 +86,7 @@ class SACConfig:
     weight_cost: float = 0.15
     weight_ev_satisfaction: float = 0.10
     weight_grid_stability: float = 0.05
-```
+```bash
 
 **Justificación TIER 2**:
 
@@ -141,7 +141,7 @@ class PPOConfig:
     weight_cost: float = 0.15
     weight_ev_satisfaction: float = 0.10
     weight_grid_stability: float = 0.05
-```
+```bash
 
 **Justificación TIER 2**:
 
@@ -192,7 +192,7 @@ class A2CConfig:
     weight_cost: float = 0.15
     weight_ev_satisfaction: float = 0.10
     weight_grid_stability: float = 0.05
-```
+```bash
 
 **Justificación TIER 2**:
 
@@ -223,7 +223,7 @@ class A2CConfig:
 
 ## ✅ VERIFICACIÓN ACTUAL
 
-```
+```bash
 🔍 Verificando imports...
   ✅ Todos los imports exitosos
 
@@ -289,7 +289,7 @@ class A2CConfig:
   ✅ OK       Datos
 
 ✅ TODAS LAS VERIFICACIONES PASARON
-```
+```bash
 
 ---
 
@@ -300,7 +300,7 @@ class A2CConfig:
 ```bash
 .\verificar_agentes.ps1
 # Resultado esperado: ✅ TODAS LAS VERIFICACIONES PASARON
-```
+```bash
 
 ### 2. Entrenar Rápido (5 episodios)
 
@@ -313,7 +313,7 @@ class A2CConfig:
 
 # A2C (baseline, 10-15 min)
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent A2C --episodes 5 --device cuda
-```
+```bash
 
 ### 3. Entrenar Completo (50+ episodios)
 
@@ -326,13 +326,13 @@ class A2CConfig:
 
 # A2C: 57 episodios / 500k steps (2-2.5 horas)
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent A2C --episodes 57 --device cuda
-```
+```bash
 
 ### 4. Entrenar Todos en Serie
 
 ```bash
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 ---
 

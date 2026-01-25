@@ -17,7 +17,7 @@
 ```powershell
 cd D:\diseñopvbesscar
 py -3.11 simulador_interactivo.py
-```
+```bash
 
 Menú interactivo con:
 
@@ -38,7 +38,7 @@ Menú interactivo con:
 3. Click "Try it out"
 4. Modifica parámetros
 5. Click "Execute"
-```
+```bash
 
 ### **Opción 3: Con cURL (Terminal)**
 
@@ -56,7 +56,7 @@ curl http://localhost:8000/api/metrics
 curl -X POST http://localhost:8000/api/control \
   -H "Content-Type: application/json" \
   -d '{"action":"charge","value":10}'
-```
+```bash
 
 ---
 
@@ -91,7 +91,7 @@ curl -X POST http://localhost:8000/api/control \
    ├─ Costo reducido
    ├─ CO2 minimizado
    └─ Disponibilidad garantizada
-```
+```bash
 
 ### **Ejemplo Real: Simulación 1 Hora**
 
@@ -121,7 +121,7 @@ HORA: 11:00 (Mediodía soleado)
   • Batería guardada: 20 kW
   • Red comprada: 0 kW
   ✅ Costo: €0 en este período
-```
+```bash
 
 ---
 
@@ -181,7 +181,7 @@ HORA  │ CONSUMO │ SOLAR │ ACCIÓN    │ AHORRO ESTIMADO
 Ahorro Total: €22.30
 Sin IA sería: €89.20
 Reducción: 75% 🎉
-```
+```bash
 
 ---
 
@@ -198,7 +198,7 @@ Respuesta:
   "timestamp": "2026-01-20T11:08:09",
   "service": "PVBESSCAR API"
 }
-```
+```bash
 
 ### **2. Estado del Sistema**
 
@@ -215,7 +215,7 @@ Respuesta:
     "energy_controller": "active"
   }
 }
-```
+```bash
 
 ### **3. Métricas Actuales**
 
@@ -231,7 +231,7 @@ Respuesta:
   "grid_import_kw": 32.7,
   "total_cost": 156.45
 }
-```
+```bash
 
 ### **4. Ejecutar Acción**
 
@@ -251,7 +251,7 @@ Respuesta:
   "timestamp": "2026-01-20T11:08:09",
   "status": "executed"
 }
-```
+```bash
 
 ---
 
@@ -267,7 +267,7 @@ Respuesta:
   "battery_max_charge_rate": 25,        // kW
   "battery_max_discharge_rate": 30      // kW
 }
-```
+```bash
 
 ### **Sistema (Optimización)**
 
@@ -281,7 +281,7 @@ Respuesta:
   "price_forecast_enable": true,
   "ml_model_type": "A2C"                // A2C, PPO, SAC
 }
-```
+```bash
 
 ---
 
@@ -309,7 +309,7 @@ resp = requests.post(
     json={"action": "charge", "value": 10}
 )
 print(resp.json()["status"])  # "executed"
-```
+```bash
 
 ### **JavaScript - Fetch**
 
@@ -329,7 +329,7 @@ fetch(`${BASE}/api/control`, {
 })
   .then(r => r.json())
   .then(data => console.log("Acción:", data.status));
-```
+```bash
 
 ---
 
@@ -370,7 +370,7 @@ py -3.11 simulador_interactivo.py
 # Terminal 3: Docker Manager
 cd D:\diseñopvbesscar
 py -3.11 docker_web_interface.py
-```
+```bash
 
 ---
 
@@ -406,6 +406,6 @@ py -3.11 docker_web_interface.py
 
 ---
 
-**¡Sistema listo para simular! 🚀**
+#### ¡Sistema listo para simular! 🚀
 
 *Última actualización: 20 Enero 2026*

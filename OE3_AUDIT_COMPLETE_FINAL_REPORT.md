@@ -68,16 +68,16 @@
 
 ### Files Deleted (Permanent)
 
-```
+```bash
 src/iquitos_citylearn/oe3/rewards_dynamic.py       (309 lines)  - 0 refs
 src/iquitos_citylearn/oe3/rewards_improved_v2.py   (306 lines)  - superseded
 src/iquitos_citylearn/oe3/rewards_wrapper_v2.py    (180 lines)  - depends on v2
 src/iquitos_citylearn/oe3/co2_emissions.py         (507 lines)  - 100% orphaned
-```
+```bash
 
 ### Files Archived (experimental/)
 
-```
+```bash
 experimental/deprecated_v2_configs/
   ├─ tier2_v2_config.py       (old v2 config)
   ├─ demanda_mall_kwh.py      (unused helper)
@@ -85,13 +85,13 @@ experimental/deprecated_v2_configs/
 
 experimental/legacy_scripts/
   └─ train_ppo_dynamic.py     (deprecated, used rewards_dynamic)
-```
+```bash
 
 ### Data Connections Verified ✅
 
-**OE2 → OE3 Pipeline (100% Working)**
+#### OE2 → OE3 Pipeline (100% Working)
 
-```
+```bash
 data/interim/oe2/
 ├─ solar/pv_generation_timeseries.csv
 │  └─ 35,037 timesteps (15-min) → dataset_builder.py
@@ -110,7 +110,7 @@ data/interim/oe2/
       └─ Observables: obs[192] (BESS SOC, normalized)
          Status: ✅ Connected & Validated
          CRITICAL FIX: Prescaling corrected (1.0, not 0.001)
-```
+```bash
 
 ---
 
@@ -131,7 +131,7 @@ During data connection audit, discovered BESS SOC was prescaled to 0.001:
 # In agents/ppo_sb3.py:249, a2c_sb3.py:151, sac.py:493
 # BEFORE - Blanket prescaling for all observations:
 self._obs_prescale = np.ones(obs_dim) * 0.001
-```
+```bash
 
 ### Solution Applied
 
@@ -140,7 +140,7 @@ self._obs_prescale = np.ones(obs_dim) * 0.001
 self._obs_prescale = np.ones(obs_dim) * 0.001  # Default: power/energy dims
 if obs_dim > 10:
     self._obs_prescale[-10:] = 1.0  # ✅ Last 10 dims (SOC): NO prescaling
-```
+```bash
 
 ### Files Modified
 
@@ -162,7 +162,7 @@ if obs_dim > 10:
 ✅ PPOAgent: BESS SOC visible
 ✅ A2CAgent: BESS SOC visible
 ✅ SACAgent: BESS SOC visible (heuristic-based last 10 dims)
-```
+```bash
 
 ---
 
@@ -170,7 +170,7 @@ if obs_dim > 10:
 
 ### Solar PV (4,050 kWp, Kyocera KS20 + Eaton Xpert1670)
 
-```
+```bash
 ✅ File: data/interim/oe2/solar/pv_generation_timeseries.csv
   ├─ Format: CSV (12 columns: timestamp, GHI, DNI, DHI, temp, wind, DC/AC power, energy)
   ├─ Frequency: 15-minute intervals
@@ -178,11 +178,11 @@ if obs_dim > 10:
   ├─ Max AC Power: 2,887 kW (within Eaton spec ≤ 4,050 kWp)
   ├─ Source: PVGIS TMY + pvlib simulation
   └─ Connection Status: ✅ Active in dataset_builder.py
-```
+```bash
 
 ### Chargers (128 sockets, 272 kW)
 
-```
+```bash
 ✅ File: data/interim/oe2/chargers/individual_chargers.json
   ├─ Format: JSON array of 128 charger objects
   ├─ Chargers: 128 individual chargers
@@ -194,11 +194,11 @@ if obs_dim > 10:
   │  └─ Total: 256 kW (or 272 kW if different configuration)
   ├─ Source: MATLAB vehicle charging simulation
   └─ Connection Status: ✅ Active in dataset_builder.py
-```
+```bash
 
 ### BESS (4.52 MWh / 2.71 MW)
 
-```
+```bash
 ✅ File: data/interim/oe2/bess/bess_results.json
   ├─ Capacity: 4,520 kWh (4.52 MWh)
   ├─ Power: 2,712 kW (2.71 MW) - charge/discharge rate
@@ -208,7 +208,7 @@ if obs_dim > 10:
   ├─ Source: Technologically validated energy storage specifications
   ├─ Critical Fix: BESS SOC prescaling = 1.0 (visible to agents) ✅
   └─ Connection Status: ✅ Active in dataset_builder.py + agents (FIXED)
-```
+```bash
 
 ---
 
@@ -256,35 +256,35 @@ if obs_dim > 10:
 
 ### Commands (Copy-Paste Ready)
 
-**Build dataset from OE2**
+#### Build dataset from OE2
 
 ```bash
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-```
+```bash
 
-**Run baseline (uncontrolled) for comparison**
+#### Run baseline (uncontrolled) for comparison
 
 ```bash
 python -m scripts.run_uncontrolled_baseline --config configs/default.yaml
-```
+```bash
 
-**Test with 1 episode (GPU) - ~15 minutes**
+#### Test with 1 episode (GPU) - ~15 minutes
 
 ```bash
 python scripts/train_quick.py --device cuda --episodes 1
-```
+```bash
 
-**Full training (50 episodes, GPU) - ~2-3 hours**
+#### Full training (50 episodes, GPU) - ~2-3 hours
 
 ```bash
 python scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
-**Compare baseline vs RL results**
+#### Compare baseline vs RL results
 
 ```bash
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
-```
+```bash
 
 ### Expected Performance
 
@@ -301,7 +301,7 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 
 ## 📁 File Structure (Post-Cleanup)
 
-```
+```bash
 src/iquitos_citylearn/oe3/                (7 active core modules)
 ├─ __init__.py                            (exports all agents)
 ├─ agent_utils.py                         (helpers, 189 lines) ✅
@@ -332,7 +332,7 @@ experimental/                             (Archived legacy code)
 │  └─ dispatch_priorities.py
 └─ legacy_scripts/
    └─ train_ppo_dynamic.py
-```
+```bash
 
 ---
 
@@ -374,7 +374,7 @@ NEW (5 files):
   - CLEANUP_QUICK_REFERENCE.txt
   - validate_oe2_oe3_connections.py
   - .github/copilot-instructions.md
-```
+```bash
 
 ---
 

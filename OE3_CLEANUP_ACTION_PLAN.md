@@ -28,13 +28,13 @@
 
 **Before**:
 
-```
+```bash
 src/iquitos_citylearn/oe3/
 ├── demanda_mall_kwh.py  ← TO DELETE (507 lines, completely orphaned)
 ├── rewards.py
 ├── co2_table.py
 └── ...
-```
+```bash
 
 **Action**:
 
@@ -48,7 +48,7 @@ git rm src/iquitos_citylearn/oe3/demanda_mall_kwh.py
 
 # Commit
 git commit -m "Remove: Delete demanda_mall_kwh.py (100% orphaned legacy code)"
-```
+```bash
 
 **After**:
 
@@ -60,7 +60,7 @@ git commit -m "Remove: Delete demanda_mall_kwh.py (100% orphaned legacy code)"
 
 ```bash
 python -c "import iquitos_citylearn.oe3; print('✓ No import errors')"
-```
+```bash
 
 ---
 
@@ -90,7 +90,7 @@ class EmissionFactors:
     kgco2_per_gallon: float
     grid_kgco2_per_kwh: float
     project_life_years: int
-```
+```bash
 
 **After**:
 
@@ -108,7 +108,7 @@ class EmissionFactors:
 class CityBaseline:
     transport_tpy: float
     electricity_tpy: float
-```
+```bash
 
 **Actions**:
 
@@ -147,7 +147,7 @@ class CityBaseline:
 # Test that co2_table script still works
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
 # Should complete successfully, generating COMPARACION_BASELINE_VS_RL.txt
-```
+```bash
 
 ---
 
@@ -157,23 +157,23 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 
 **Before**:
 
-```
+```bash
 src/iquitos_citylearn/oe3/
 ├── rewards.py              ← ACTIVE v1
 ├── rewards_improved_v2.py  ← BACKUP v2 (only used by wrapper_v2)
 ├── rewards_wrapper_v2.py   ← BACKUP v2 wrapper (unused)
 └── ...
-```
+```bash
 
 **After**:
 
-```
+```bash
 src/iquitos_citylearn/oe3/
 ├── rewards.py              ← ACTIVE v1
 └── experimental/
     ├── rewards_improved_v2.py    ← ARCHIVED
     └── rewards_wrapper_v2.py     ← ARCHIVED
-```
+```bash
 
 **Actions**:
 
@@ -278,7 +278,7 @@ src/iquitos_citylearn/oe3/
 
 **Before**:
 
-```
+```bash
 src/iquitos_citylearn/oe3/
 ├── rewards_dynamic.py       ← DEV ONLY (used only in scripts/train_ppo_dynamic.py)
 └── ...
@@ -286,11 +286,11 @@ src/iquitos_citylearn/oe3/
 scripts/
 ├── train_ppo_dynamic.py     ← Imports rewards_dynamic
 └── ...
-```
+```bash
 
 **After**:
 
-```
+```bash
 src/iquitos_citylearn/oe3/
 ├── rewards.py               ← ACTIVE
 └── experimental/
@@ -299,7 +299,7 @@ src/iquitos_citylearn/oe3/
 scripts/experimental/
 ├── train_ppo_dynamic.py     ← ARCHIVED
 └── ...
-```
+```bash
 
 **Actions**:
 
@@ -442,7 +442,7 @@ Located in `src/iquitos_citylearn/oe3/experimental/`
 
 ## Data Flow Summary
 
-```
+```bash
 
 OE2 Artifacts
 ├── data/interim/oe2/solar/pv_generation_timeseries.csv
@@ -471,7 +471,7 @@ Final Outputs
 ├── COMPARACION_BASELINE_VS_RL.txt
 └── analyses/oe3/*.csv (breakdown, control comparison, etc.)
 
-```
+```bash
 
 ---
 
@@ -491,25 +491,25 @@ All active imports verified:
 ### 1. Build Dataset (from OE2)
 ```bash
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-```
+```bash
 
 ### 2. Train Agents
 
 ```bash
 python -m scripts.run_oe3_simulate --config configs/default.yaml
-```
+```bash
 
 ### 3. Generate CO₂ Comparison Table
 
 ```bash
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
-```
+```bash
 
 ### 4. Run Full Pipeline
 
 ```bash
 python scripts/run_full_pipeline_visible.py
-```
+```bash
 
 ---
 
@@ -541,7 +541,7 @@ python scripts/run_full_pipeline_visible.py
 - **Changes**: Consolidated co2_emissions.py, archived v2 reward modules, deleted orphaned demanda_mall_kwh.py
 - **Author**: Code Cleanup Initiative
 
-```
+```bash
 
 **File path**: `src/iquitos_citylearn/oe3/MODULE_STATUS.md`
 
@@ -577,7 +577,7 @@ if [ $? -eq 0 ]; then echo "✅ CO₂ table generated successfully"; fi
 echo "Checking for orphaned imports..."
 grep -r "demanda_mall" src/ scripts/ --include="*.py" 2>/dev/null
 if [ $? -ne 0 ]; then echo "✅ No references to deleted modules"; fi
-```
+```bash
 
 **After cleanup, run verification tests**:
 
@@ -591,7 +591,7 @@ try:
 except ImportError as e:
     print(f'❌ Error: {e}')
 "
-```
+```bash
 
 ---
 
@@ -599,7 +599,7 @@ except ImportError as e:
 
 ### Before Cleanup
 
-```
+```bash
 src/iquitos_citylearn/oe3/
 ├── rewards.py                   ✅ ACTIVE (529 lines)
 ├── rewards_improved_v2.py       ⚠️ UNUSED v2 (410 lines)
@@ -611,13 +611,13 @@ src/iquitos_citylearn/oe3/
 ├── demanda_mall_kwh.py          ❌ ORPHANED (507 lines)
 ├── simulate.py                  ✅ ACTIVE (935 lines)
 └── agents/                      ✅ ALL ACTIVE
-```
+```bash
 
 **Total: 3,750+ lines of potentially unnecessary code**
 
 ### After Cleanup
 
-```
+```bash
 src/iquitos_citylearn/oe3/
 ├── rewards.py                   ✅ ACTIVE (529 lines)
 ├── co2_table.py                 ✅ ACTIVE (827 lines, consolidated)
@@ -630,7 +630,7 @@ src/iquitos_citylearn/oe3/
 │   └── rewards_dynamic.py       🔶 ARCHIVED (80 lines)
 ├── MODULE_STATUS.md             📋 DOCUMENTATION
 └── __init__.py
-```
+```bash
 
 **Total: ~3,100 lines of active code + 670 archived for reference**
 
@@ -686,7 +686,7 @@ git commit -m "Refactor: Clean up OE3 module structure
 
 Total: -650 lines of dead code, cleaner import chains
 "
-```
+```bash
 
 ---
 
@@ -715,7 +715,7 @@ git reset --hard HEAD~1
 git checkout HEAD -- src/iquitos_citylearn/oe3/demanda_mall_kwh.py
 git checkout HEAD -- src/iquitos_citylearn/oe3/co2_emissions.py
 # ... etc
-```
+```bash
 
 ---
 

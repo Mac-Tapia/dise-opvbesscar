@@ -9,9 +9,9 @@
 ```diff
 - Antes: Build directo, sin optimizaciones de cache
 + Ahora: Multi-stage con BuildKit, Tini init, health checks completos
-```
+```bash
 
-**Mejoras clave:**
+#### Mejoras clave:
 
 - Stage 1 (Builder): Construye dependencias
 - Stage 2 (Runtime): Usa wheels del builder (imagen mínima)
@@ -26,17 +26,17 @@
 ```diff
 - Antes: pipeline + monitor (básico)
 + Ahora: pipeline + monitor + jupyter + health checks + cache volume
-```
+```bash
 
-**Servicios:**
+#### Servicios:
 
 ```yaml
 pvbesscar-pipeline:    # Pipeline principal con health check
 pvbesscar-monitor:     # Monitoreo de checkpoints
 pvbesscar-jupyter:     # Jupyter Lab puerto 8888 (nuevo)
-```
+```bash
 
-**Mejoras:**
+#### Mejoras:
 
 - Health check conditions: `service_healthy`
 - Logging con rotación automática
@@ -50,17 +50,17 @@ pvbesscar-jupyter:     # Jupyter Lab puerto 8888 (nuevo)
 ```diff
 - Antes: GPU básica
 + Ahora: GPU optimizada + monitor GPU + jupyter GPU + health checks
-```
+```bash
 
-**Servicios GPU:**
+#### Servicios GPU:
 
 ```yaml
 pvbesscar-pipeline-gpu:    # GPU acceleration
 pvbesscar-monitor-gpu:     # Monitor con GPU
 pvbesscar-jupyter-gpu:     # Jupyter puerto 8889 (nuevo)
-```
+```bash
 
-**Mejoras:**
+#### Mejoras:
 
 - Runtime nvidia configurado
 - Health check GPU-específico (torch.cuda)
@@ -74,16 +74,16 @@ pvbesscar-jupyter-gpu:     # Jupyter puerto 8889 (nuevo)
 ```diff
 - Antes: notebook + tests (simple)
 + Ahora: notebook + tests + lint + type-check (completo)
-```
+```bash
 
-**Servicios desarrollo:**
+#### Servicios desarrollo:
 
 ```yaml
 dev-notebook:      # Jupyter Lab interactivo
 dev-tests:         # Pytest (exit when done)
 dev-lint:          # Pylint + Black + isort
 dev-type-check:    # MyPy type checking
-```
+```bash
 
 ---
 
@@ -112,20 +112,20 @@ docker-compose up -d
 
 # Jupyter
 open http://localhost:8888
-```
+```bash
 
 ### GPU Production
 
 ```bash
-# Build
+# Build (2)
 docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pvbesscar:latest-gpu .
 
-# Start
+# Start (2)
 docker-compose -f docker-compose.gpu.yml up -d
 
 # Check GPU
 docker exec pvbesscar-pipeline-gpu nvidia-smi
-```
+```bash
 
 ### Development Full
 
@@ -136,36 +136,36 @@ docker-compose -f docker-compose.dev.yml up -d
 # Jupyter (localhost:8888)
 # Tests run automatically
 # Linting available
-```
+```bash
 
 ### Quick Commands
 
-**Windows Batch:**
+#### Windows Batch:
 
 ```batch
 docker_quick.bat build-cpu
 docker_quick.bat up-cpu
 docker_quick.bat logs-pipeline
 docker_quick.bat down
-```
+```bash
 
-**PowerShell:**
+#### PowerShell:
 
 ```powershell
 .\docker_quick.ps1 -Command build -GPU
 .\docker_quick.ps1 -Command up
 .\docker_quick.ps1 -Command logs
 .\docker_quick.ps1 -Command health
-```
+```bash
 
-**Python Utility:**
+#### Python Utility:
 
 ```bash
 python docker_manager.py build --gpu
 python docker_manager.py up --service pvbesscar-jupyter
 python docker_manager.py logs --tail 50
 python docker_manager.py health --gpu
-```
+```bash
 
 ---
 
@@ -181,7 +181,7 @@ Líneas ahora:  120 líneas (+140%)
 - Tini init: +5 líneas
 - Health checks: +15 líneas
 - Labels/metadata: +20 líneas
-```
+```bash
 
 ### docker-compose.yml
 
@@ -193,7 +193,7 @@ Nuevas features:
   - Volume cache: ✅
   - Logging labels: ✅
   - Resource limits: ✅
-```
+```bash
 
 ### docker-compose.gpu.yml
 
@@ -202,7 +202,7 @@ Nombres antes: iquitos-*
 Nombres ahora: pvbesscar-*-gpu
 Servicios: 3 (+ jupyter GPU)
 GPU config: nvidia-docker2 completo
-```
+```bash
 
 ### docker-compose.dev.yml
 
@@ -212,7 +212,7 @@ Servicios ahora: 4 (+ lint, type-check)
 Nuevo:
   - Pylint + Black + isort
   - MyPy type checking
-```
+```bash
 
 ---
 
@@ -225,7 +225,7 @@ $ docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pvbesscar:latest .
 ✓ Successfully built image
 ✓ All dependencies verified
 ✓ Health check configured
-```
+```bash
 
 ### Contenedores Health
 
@@ -236,7 +236,7 @@ $ docker inspect --format='{{json .State.Health}}' pvbesscar-pipeline
   "FailingStreak": 0,
   "Log": [...]
 }
-```
+```bash
 
 ### Resources
 
@@ -246,7 +246,7 @@ CONTAINER              CPU %   MEM USAGE
 pvbesscar-pipeline     4.2%    2.5GB / 16GB
 pvbesscar-monitor      1.1%    0.8GB / 2GB
 pvbesscar-jupyter      2.3%    1.2GB / 8GB
-```
+```bash
 
 ---
 
@@ -275,7 +275,7 @@ Files changed: 9
 Insertions: 1699
 Deletions: 50
 Status: ✅ Pushed to origin/main
-```
+```bash
 
 ---
 

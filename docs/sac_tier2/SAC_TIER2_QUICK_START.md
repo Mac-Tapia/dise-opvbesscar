@@ -97,16 +97,16 @@ git checkout HEAD -- src/iquitos_citylearn/oe3/agents/sac.py
 
 ## ❓ QUICK FAQ
 
-**¿Perderé aprendizaje previo?**
+#### ¿Perderé aprendizaje previo?
 NO. Checkpoint = pesos redes. Cambios = solo estrategia mejor.
 
-**¿Cuánto tarda?**
+#### ¿Cuánto tarda?
 Código: 2-3h. Entrenamiento: 24h en GPU. Análisis: 2h.
 
-**¿Es reversible?**
+#### ¿Es reversible?
 SÍ. Git revert siempre disponible.
 
-**¿Garantizado que funciona?**
+#### ¿Garantizado que funciona?
 95% probable. Si no → plan debugging en docs.
 
 ---

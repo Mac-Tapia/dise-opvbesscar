@@ -96,7 +96,7 @@ data/processed/citylearn/
     ├── MOTO_TAXI_CH_113.csv        # 16 archivos mototaxis
     ├── ...
     └── MOTO_TAXI_CH_128.csv
-```
+```bash
 
 ### Perfiles de Carga
 
@@ -126,7 +126,7 @@ Observables (264 total):
 Actions (129 total):
   • action_charger_1 ... action_charger_128 (128 tomas controlables)
   • action_battery (BESS)
-```
+```bash
 
 ### Metadata de 128 Tomas
 
@@ -144,7 +144,7 @@ Arquitectura física:
     - 16 tomas (4 tomas × 4 cargadores)
     - 48 kW potencia (3 kW × 16 tomas)
     - IDs: [MOTO_TAXI_CH_113, ..., MOTO_TAXI_CH_128]
-```
+```bash
 
 ---
 
@@ -249,7 +249,7 @@ Feat: Actualización arquitectura 32 cargadores × 4 tomas = 128 tomas OE2
 - Schema CityLearn con 264 observables, 129 acciones
 - Control individual por toma para agente OE3
 - Sesiones de 30 minutos (Modo 3 IEC 61851)
-```
+```bash
 
 ---
 

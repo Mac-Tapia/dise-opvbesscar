@@ -56,7 +56,7 @@ else:
 **Baseline debería ser**:
 
 ```python
-# ✅ PROPUESTO
+# ✅ PROPUESTO (2)
 # Típico: mall ~100 kWh + chargers ~30 kWh (off-peak) = 130 kWh
 # En pico: mall ~150 + chargers ~100 (con BESS support) = 250 kWh target
 # Si agente importa >250 en pico, debe sufrir penalización
@@ -104,7 +104,7 @@ if is_peak:
 ### Línea 215 en rewards.py
 
 ```python
-# ❌ ACTUAL
+# ❌ ACTUAL (2)
 pre_peak_hours = [16, 17]
 if hour in pre_peak_hours and bess_soc < 0.5:
     soc_penalty = -0.5 * (1.0 - bess_soc / 0.5)  # Máximo -0.5
@@ -117,7 +117,7 @@ if hour in pre_peak_hours and bess_soc < 0.5:
 **Mejor**:
 
 ```python
-# ✅ PROPUESTO
+# ✅ PROPUESTO (3)
 if hour in pre_peak_hours and bess_soc < 0.65:  # Target 65% (no 50%)
     # Penalizar faltante
     soc_deficit = 0.65 - bess_soc
@@ -134,7 +134,7 @@ else:
 ### Línea 220 en rewards.py
 
 ```python
-# ❌ ACTUAL
+# ❌ ACTUAL (3)
 reward = (
     self.weights.co2 * r_co2 +
     self.weights.cost * r_cost +
@@ -157,7 +157,7 @@ reward = (
 **Solución**:
 
 ```python
-# ✅ PROPUESTO
+# ✅ PROPUESTO (4)
 reward = (
     self.weights.co2 * r_co2 +
     self.weights.cost * r_cost +
@@ -195,7 +195,7 @@ obs = env.reset()  # obs es solo estado de CityLearn
 **Solución**: Agregar observables contextuales:
 
 ```python
-# ✅ PROPUESTO
+# ✅ PROPUESTO (5)
 additional_obs = np.array([
     float(hour in [18, 19, 20, 21]),  # is_peak (0 o 1)
     bess_soc,                          # SOC BESS actual [0-1]
@@ -218,10 +218,10 @@ obs_extended = np.concatenate([obs_original, additional_obs])
 SAC NO ve la **tasa de cambio** (potencia = dE/dt en kW).
 
 ```python
-# ❌ ACTUAL
+# ❌ ACTUAL (4)
 # observation[t] contiene energía acumulada o rates, pero NO potencia pico
 
-# ✅ PROPUESTO
+# ✅ PROPUESTO (6)
 # Agregar derivada (diferencia)
 if t > 0:
     power_grid_kw = (grid_import[t] - grid_import[t-1]) / (timestep_hours)
@@ -240,7 +240,7 @@ additional_obs.append(np.clip(power_grid_kw / 200.0, -1, 1))  # Normalizado
 **Archivo**: [src/iquitos_citylearn/oe3/agents/sac.py](src/iquitos_citylearn/oe3/agents/sac.py#L130-L145)
 
 ```python
-# ❌ ACTUAL
+# ❌ ACTUAL (5)
 ent_coef: str = "auto"          # Auto-ajusta entropía
 target_entropy: Optional[float] = -126.0  # -dim(action) = -126
 
@@ -255,7 +255,7 @@ target_entropy: Optional[float] = -126.0  # -dim(action) = -126
 **Solución**:
 
 ```python
-# ✅ PROPUESTO
+# ✅ PROPUESTO (7)
 ent_coef: float = 0.01          # Fijo, NO auto (reduce exploración innecesaria)
 target_entropy: Optional[float] = -50.0  # Menos exploración (-dim/2 o menos)
 
@@ -289,7 +289,7 @@ gradient_steps: int = 256       # (en config YAML)
 **Solución**:
 
 ```python
-# ✅ PROPUESTO
+# ✅ PROPUESTO (8)
 gradient_steps: int = 64        # Reducido de 256 a 64
 train_freq: int = 4             # Update cada 4 timesteps (unchanged)
 
@@ -307,7 +307,7 @@ train_freq: int = 4             # Update cada 4 timesteps (unchanged)
 ### Línea 230 en rewards.py
 
 ```python
-# ❌ ACTUAL
+# ❌ ACTUAL (6)
 reward = np.clip(reward, -1.0, 1.0)  # Clipped pero NO normalizado
 
 # MEJOR:
@@ -351,12 +351,12 @@ batch_size: int = 32768         # 32K ejemplos por update
 **Alternativa**:
 
 ```python
-# ✅ PROPUESTO
+# ✅ PROPUESTO (9)
 batch_size: int = 4096          # Reducido de 32,768 a 4K
 gradient_steps: int = 256       # Aumentado (ahora tiene sentido)
 train_freq: int = 4             # Unchanged
 
-# LÓGICA:
+# LÓGICA: (2)
 # 4,096 × 256 = 1M ejemplos por ciclo (vs 32,768 × 256 = 8M)
 # Menos "shock" de grandebatch, más exploración de direcciones
 ```text

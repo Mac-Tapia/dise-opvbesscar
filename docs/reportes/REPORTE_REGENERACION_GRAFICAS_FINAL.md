@@ -130,7 +130,7 @@ sac/sac_final.zip
 
 **Archivo:** `REGENERAR_TODAS_GRAFICAS_REALES.py` (730 líneas)
 
-**Fases:**
+#### Fases:
 
 1. **FASE 1 - Carga de Checkpoints**: Importar modelos desde ZIP
 2. **FASE 2 - Extracción de Datos**: Obtener timesteps y arquitectura

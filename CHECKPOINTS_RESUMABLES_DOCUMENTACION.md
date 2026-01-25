@@ -2,13 +2,13 @@
 
 ## ✅ Estado Actual
 
-```
+```bash
 🎯 OBJETIVO: Entrenar 5 episodios guardando checkpoints resumables
 ✅ COMPLETADO: 10 episodios acumulados (5 + 5 reanudados)
 📁 CHECKPOINTS: 30 archivos guardados (10 por agente)
 ⚡ GPU: NVIDIA RTX 4060 - Operacional
 🚀 STATUS: LISTO PARA PRODUCCIÓN
-```
+```bash
 
 ---
 
@@ -16,23 +16,23 @@
 
 ### Session 1: Episodios 1-5 (Nuevo)
 
-```
+```bash
 Episodio 1: A2C=367kg | SAC=301kg | PPO=280kg
 Episodio 2: A2C=365kg | SAC=295kg | PPO=286kg
 Episodio 3: A2C=374kg | SAC=288kg | PPO=287kg
 Episodio 4: A2C=373kg | SAC=301kg | PPO=273kg
 Episodio 5: A2C=362kg | SAC=305kg | PPO=287kg
-```
+```bash
 
 ### Session 2: Episodios 6-10 (Reanudado desde Checkpoint)
 
-```
+```bash
 Episodio 6: A2C=347kg | SAC=285kg | PPO=266kg ✅ MEJORA
 Episodio 7: A2C=338kg | SAC=303kg | PPO=277kg
 Episodio 8: A2C=334kg | SAC=286kg | PPO=261kg ✅ MEJOR
 Episodio 9: A2C=363kg | SAC=274kg | PPO=260kg ✅ MEJOR
 Episodio 10: A2C=363kg | SAC=284kg | PPO=271kg
-```
+```bash
 
 ---
 
@@ -50,7 +50,7 @@ Episodio 10: A2C=363kg | SAC=284kg | PPO=271kg
 
 ## 🏗️ Estructura de Checkpoints
 
-```
+```bash
 project_root/
 ├── checkpoints/
 │   ├── A2C/
@@ -74,7 +74,7 @@ project_root/
 │       ├── episode_0010.pt     ✅ Guardado
 │       ├── history.json        📊 10 episodios registrados
 │       └── metadata.json       📋 Metadata de entrenamiento
-```
+```bash
 
 ---
 
@@ -96,7 +96,7 @@ checkpoints/{AGENT}/episode_{XXXX}.pt
     "time_seconds": 0.5
   }
 }
-```
+```bash
 
 ### 2️⃣ Reanudar desde Último Checkpoint
 
@@ -107,7 +107,7 @@ checkpoints/{AGENT}/episode_{XXXX}.pt
 # Resultado:
 # 📂 Reanudando desde episodio 6
 # Entrenamientos previos: 5
-```
+```bash
 
 ### 3️⃣ Historial Completo de Entrenamientos
 
@@ -133,7 +133,7 @@ checkpoints/{AGENT}/episode_{XXXX}.pt
     }
   ]
 }
-```
+```bash
 
 ### 4️⃣ Entrenar Agentes Específicos
 
@@ -142,7 +142,7 @@ checkpoints/{AGENT}/episode_{XXXX}.pt
 & python scripts/train_with_checkpoints.py --episodes 10 --agent SAC --resume
 
 # Resultado: SAC continuará desde episodio 11
-```
+```bash
 
 ---
 
@@ -152,7 +152,7 @@ checkpoints/{AGENT}/episode_{XXXX}.pt
 
 ```bash
 & .venv/Scripts/python.exe scripts/train_with_checkpoints.py --episodes 5 --device cuda
-```
+```bash
 
 **Resultado**: 5 nuevos episodios (ep 1-5)
 
@@ -160,7 +160,7 @@ checkpoints/{AGENT}/episode_{XXXX}.pt
 
 ```bash
 & .venv/Scripts/python.exe scripts/train_with_checkpoints.py --episodes 5 --device cuda --resume
-```
+```bash
 
 **Resultado**: 5 episodios más (ep 6-10)
 
@@ -168,7 +168,7 @@ checkpoints/{AGENT}/episode_{XXXX}.pt
 
 ```bash
 & .venv/Scripts/python.exe scripts/train_with_checkpoints.py --episodes 10 --agent PPO --resume
-```
+```bash
 
 **Resultado**: PPO continúa desde ep 11-20
 
@@ -177,13 +177,13 @@ checkpoints/{AGENT}/episode_{XXXX}.pt
 ```bash
 cat checkpoints/PPO/history.json
 cat checkpoints/SAC/metadata.json
-```
+```bash
 
 ---
 
 ## 📊 Estadísticas Actuales
 
-```
+```bash
 ┌─────────┬──────────────┬─────────────┬──────────────┬──────────────┐
 │ Agente  │ Episodios    │ CO₂ Final   │ Checkpoints  │ Status       │
 ├─────────┼──────────────┼─────────────┼──────────────┼──────────────┤
@@ -197,7 +197,7 @@ cat checkpoints/SAC/metadata.json
 │ Tiempo Total: ~15.2 segundos                                        │
 │ GPU Utilizado: NVIDIA RTX 4060 (8.6 GB)                             │
 └──────────────────────────────────────────────────────────────────────┘
-```
+```bash
 
 ---
 
@@ -207,19 +207,19 @@ cat checkpoints/SAC/metadata.json
 
 ```bash
 & python scripts/train_with_checkpoints.py --episodes 10 --device cuda --resume
-```
+```bash
 
 ### Session 4: Episodios 21-50
 
 ```bash
 & python scripts/train_with_checkpoints.py --episodes 30 --device cuda --resume
-```
+```bash
 
 ### Session 5: Episodios 51-100
 
 ```bash
 & python scripts/train_with_checkpoints.py --episodes 50 --device cuda --resume
-```
+```bash
 
 ---
 
@@ -266,12 +266,12 @@ Se guarda información sobre:
 
 ## 📈 Proyección de Entrenamiento
 
-```
+```bash
 Episodios 1-10:      ✅ COMPLETADO    (CO₂: 363/284/271 kg)
 Episodios 11-20:     📅 Listo         (~250-260 kg esperado)
 Episodios 21-50:     📅 Siguiente     (~220-240 kg esperado)
 Episodios 51-100:    📅 Producción    (~200-220 kg esperado)
-```
+```bash
 
 **Baseline**: 550 kg CO₂  
 **Mejora Actual**: 49% (271 kg con PPO)  
@@ -314,7 +314,7 @@ cat checkpoints/SAC/metadata.json
 
 # Entrenar 50 más en una sesión
 & python scripts/train_with_checkpoints.py --episodes 50 --device cuda --resume
-```
+```bash
 
 ---
 
@@ -322,7 +322,7 @@ cat checkpoints/SAC/metadata.json
 
 **Sistema de entrenamiento con checkpoints**: ✅ **OPERACIONAL**
 
-```
+```bash
 Capacidades:
 ✅ Guardar checkpoints automáticamente
 ✅ Reanudar desde último checkpoint
@@ -332,7 +332,7 @@ Capacidades:
 ✅ GPU optimizado (RTX 4060)
 
 Status: 🟢 LISTO PARA ESCALAR A 100+ EPISODIOS
-```
+```bash
 
 ---
 

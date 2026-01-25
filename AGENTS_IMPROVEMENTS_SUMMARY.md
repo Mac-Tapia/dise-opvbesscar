@@ -96,7 +96,7 @@ def detect_device() -> str:
         except: 
             try: return _detect_a2c()
             except: return "cpu"
-```
+```bash
 
 ### Validación Pre-Entrenamiento
 
@@ -124,25 +124,25 @@ def detect_device() -> str:
 
 ```bash
 python src/iquitos_citylearn/oe3/agents/validate_training_env.py
-```
+```bash
 
 ### Entrenar (Opción 1: Rápido)
 
 ```bash
 python scripts/train_quick.py --device cuda --episodes 5
-```
+```bash
 
 ### Entrenar (Opción 2: Completo)
 
 ```bash
 python scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 ### Monitorear Entrenamiento
 
 ```bash
 python scripts/monitor_training_live_2026.py
-```
+```bash
 
 ---
 
@@ -177,7 +177,7 @@ Puedes empezar entrenamiento ahora:
 
 ```bash
 python scripts/train_quick.py --device cuda --episodes 5
-```
+```bash
 
 ---
 

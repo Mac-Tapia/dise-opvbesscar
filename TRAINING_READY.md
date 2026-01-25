@@ -9,23 +9,23 @@
 
 ### Archivos Modificados: 4
 
-```
+```bash
 ✓ src/iquitos_citylearn/oe3/agents/__init__.py         (Enhanced imports + device detection)
 ✓ src/iquitos_citylearn/oe3/agents/ppo_sb3.py          (Improved docstrings)
 ✓ src/iquitos_citylearn/oe3/agents/sac.py              (Enhanced logging + error handling)
 ✓ src/iquitos_citylearn/oe3/agents/a2c_sb3.py          (Enhanced logging + error handling)
-```
+```bash
 
 ### Archivos Creados: 5
 
-```
+```bash
 ✓ src/iquitos_citylearn/oe3/agents/agent_utils.py      (Centralized utilities)
 ✓ src/iquitos_citylearn/oe3/agents/validate_training_env.py (Pre-training validation)
 ✓ scripts/train_quick.py                                (Quick training entrypoint)
 ✓ TRAINING_CHECKLIST.md                                 (Validation guide)
 ✓ AGENTS_IMPROVEMENTS_SUMMARY.md                        (Detailed changelog)
 ✓ QUICK_REFERENCE_TRAINING.py                           (Copy-paste commands)
-```
+```bash
 
 ---
 
@@ -64,7 +64,7 @@
 # Configuración de agentes
 ✓ PPOConfig, SACConfig, A2CConfig importables
   Status: OK
-```
+```bash
 
 ---
 
@@ -74,23 +74,23 @@
 
 ```bash
 python src/iquitos_citylearn/oe3/agents/validate_training_env.py
-```
+```bash
 
 **Esperado**:
 
-```
+```bash
 ✓ Agents imported successfully
 ✓ Rewards imported successfully
 ✓ GPU available: (device name)
 ✓ Checkpoint dir: validated
 ✓ All checks passed! Ready to train.
-```
+```bash
 
 ### Paso 2: Construir Dataset (si no existe)
 
 ```bash
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-```
+```bash
 
 **Esperado**: `outputs/schema_TIMESTAMP.json` creado
 
@@ -98,7 +98,7 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 
 ```bash
 python scripts/train_quick.py --device cuda --episodes 5
-```
+```bash
 
 **Tiempo esperado**: 5-10 minutos  
 **GPU**: ~2-3 GB VRAM
@@ -107,7 +107,7 @@ python scripts/train_quick.py --device cuda --episodes 5
 
 ```bash
 python scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 **Tiempo esperado**: 1-2 horas  
 **GPU**: ~3-4 GB VRAM
@@ -116,7 +116,7 @@ python scripts/train_agents_serial.py --device cuda --episodes 50
 
 ```bash
 python scripts/monitor_training_live_2026.py
-```
+```bash
 
 **Muestra**: Agent | Episode | Reward | Total Timesteps
 
@@ -124,7 +124,7 @@ python scripts/monitor_training_live_2026.py
 
 ```bash
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
-```
+```bash
 
 **Genera**: `COMPARACION_BASELINE_VS_RL.txt`
 
@@ -161,7 +161,7 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 ✓ PyTorch (GPU/CPU auto-detect)
 ✓ Multi-objective rewards (normalización garantizada)
 ✓ Checkpoint management (save/load/resume)
-```
+```bash
 
 ---
 
@@ -230,7 +230,7 @@ python -m venv .venv && \
 pip install -r requirements.txt -q && \
 python src/iquitos_citylearn/oe3/agents/validate_training_env.py && \
 python scripts/train_quick.py --device cuda --episodes 5
-```
+```bash
 
 ---
 

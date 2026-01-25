@@ -172,7 +172,7 @@
 
 ### Files Examined
 
-```
+```bash
 src/iquitos_citylearn/oe3/agents/
 ├─ __init__.py                    ✓ 75 lines (clean)
 ├─ sac.py                         ✓ 1,113 lines (hardcoded params)
@@ -183,7 +183,7 @@ src/iquitos_citylearn/oe3/agents/
 ├─ uncontrolled.py                ✓ ~60 lines (simple)
 ├─ rbc.py                         ✓ 320 lines (good)
 └─ validate_training_env.py       ✓ 137 lines (useful)
-```
+```bash
 
 ### Analysis Depth
 

@@ -61,7 +61,7 @@ data/processed/citylearn/iquitos_128_tomas/
 │   └── [16 tomas × 8762 filas cada una]
 ├── schema_128_tomas.json      # Schema CityLearn v2
 └── dataset_summary.json       # Resumen de generación
-```
+```bash
 
 **Energía**: ~905 kWh/día (Tabla 13 RECOMENDADO)
 
@@ -77,7 +77,7 @@ data/processed/citylearn/iquitos_128_tomas_maximo/
 │   └── [16 tomas × 8762 filas cada una]
 ├── schema_128_tomas_maximo.json   # Schema CityLearn v2
 └── dataset_summary_maximo.json    # Resumen de generación
-```
+```bash
 
 **Energía**: ~2,298 kWh/día (Capacidad máxima 128 tomas)
 

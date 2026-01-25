@@ -25,21 +25,21 @@
 
 ✅ **Datos OE2 Confirmados**:
 
-```
+```bash
 Solar:       35,037 filas → 8,760 horas anuales
 Chargers:    128 unidades, 272 kW
 BESS:        4,520 kWh, 2,712 kW
 Perfiles:    24h diarios → 8,760h anuales (expandidos)
-```
+```bash
 
 ✅ **Calidad de Código Verificada**:
 
-```
+```bash
 5/5 archivos Python compilados correctamente
 Todos los tests de Phase 7 pasando
 Sin errores de sintaxis
 Listos para Phase 8
-```
+```bash
 
 ### Documentación Creada
 
@@ -126,7 +126,7 @@ Listos para Phase 8
 
 ## 🎬 CRONOGRAMA PHASE 8
 
-```
+```bash
 Paso 1: Instalar Python 3.11                [10 min]
 Paso 2: Instalar CityLearn                  [5 min]
 Paso 3: Construir dataset                   [20 min]
@@ -138,7 +138,7 @@ Paso 5: Entrenamiento completo (50 ep)     [240 min]
 Paso 6: Generar resultados                 [10 min]
 ────────────────────────────────────────────────────
 TOTAL:  4-6 horas (ejecución secuencial con GPU)
-```
+```bash
 
 ---
 
@@ -282,7 +282,7 @@ TOTAL:  4-6 horas (ejecución secuencial con GPU)
 
 ### Estado General
 
-```
+```bash
 Phase 7:  ✅ 100% COMPLETA
 Phase 8:  🟢 LISTA PARA COMENZAR (después Python 3.11)
 Phase 9:  ⏭️  PLANIFICADA
@@ -292,7 +292,7 @@ Código:          95% (todos módulos listos)
 Datos:           100% (validados)
 Documentación:   98% (solo Phase 9 pendiente)
 Tests:           100% (Phase 7 todos pasando)
-```
+```bash
 
 ---
 
@@ -312,28 +312,28 @@ Tests:           100% (Phase 7 todos pasando)
 ```bash
 # Después de instalar Python 3.11
 python --version  # Debe mostrar: Python 3.11.x
-```
+```bash
 
 ### Comando #2: Instalar CityLearn
 
 ```bash
 pip install citylearn>=2.5.0
-```
+```bash
 
 ### Comando #3: Entrenar Agentes
 
 ```bash
 python scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 ### Resultado Esperado
 
-```
+```bash
 ✅ SAC training complete
 ✅ PPO training complete
 ✅ A2C training complete
 ✅ Results saved to COMPARACION_BASELINE_VS_RL.txt
-```
+```bash
 
 ---
 

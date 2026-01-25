@@ -29,11 +29,11 @@
 
 **Test Result**: ✅ ALL VALIDATION PASSED
 
-```
+```bash
 ✅ Solar validation: passed
 ✅ Chargers validation: passed (128 chargers, 272 kW)
 ✅ BESS validation: passed (4,520 kWh, 2,712 kW)
-```
+```bash
 
 ### 2. Schema Validation Module (schema_validator.py) - ✅ COMPLETE
 
@@ -63,11 +63,11 @@
 
 **Test Result**: ✅ Generated 128 CSVs successfully in test
 
-```
+```bash
 charger_001: 8,760 rows, min=0.000 kW, max=3.171 kW
 charger_064: 8,760 rows, min=0.000 kW, max=3.126 kW
 charger_128: 8,760 rows, min=0.000 kW, max=4.741 kW
-```
+```bash
 
 ### 4. Dataset Builder Integration - ✅ MOSTLY COMPLETE
 
@@ -87,7 +87,7 @@ charger_128: 8,760 rows, min=0.000 kW, max=4.741 kW
 
 **Integration Flow**:
 
-```
+```bash
 OE2 data/interim/oe2/chargers/
     ↓
 load_oe2_artifacts() [expanded charger profiles]
@@ -97,7 +97,7 @@ build_citylearn_dataset() [generates schema]
 _generate_individual_charger_csvs()
     ↓
 buildings/Mall_Iquitos/charger_simulation_001.csv through 128.csv
-```
+```bash
 
 ---
 
@@ -187,7 +187,7 @@ buildings/Mall_Iquitos/charger_simulation_001.csv through 128.csv
 
 ### Test Run Output
 
-```
+```bash
 ✅ OE2 Validation Results: {'solar': True, 'chargers': True, 'bess': True, 'all': True}
 ✅ Charger Profiles Shape: (8760, 128)
 ✅ Generated 128 charger CSVs
@@ -195,7 +195,7 @@ buildings/Mall_Iquitos/charger_simulation_001.csv through 128.csv
    ...
    charger_128: 8760 rows, min=0.000 kW, max=4.741 kW
 ✅✅✅ ALL TESTS PASSED
-```
+```bash
 
 ### Data Integrity
 
@@ -210,7 +210,7 @@ buildings/Mall_Iquitos/charger_simulation_001.csv through 128.csv
 
 ### Data Pipeline Corrected
 
-```
+```bash
 OE2 Raw                Data Validation         Schema Generation       CityLearn v2
 data/interim/oe2/  →  OE2DataLoader    →    _generate_CSVs()    →    env.reset()
   ├─ solar/ (15-min)     ├─ Solar validation     ├─ buildings/           ├─ obs (534d)
@@ -221,7 +221,7 @@ data/interim/oe2/  →  OE2DataLoader    →    _generate_CSVs()    →    env.r
                                                      ├─ weather.csv
                                                      ├─ carbon.csv
                                                      └─ pricing.csv
-```
+```bash
 
 ### Critical Discovery
 

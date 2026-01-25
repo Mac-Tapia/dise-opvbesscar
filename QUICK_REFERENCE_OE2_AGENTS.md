@@ -26,7 +26,7 @@ soc = 0.5  # BESS at 50% charge
 → 0.0005
 → normalize (mean≈0.5, std≈0.29)
 → (0.0005 - 0.0005) / 0.00029 ≈ 0  ✗ All states map to ~0
-```
+```bash
 
 **Why it matters**: Agent cannot distinguish between empty (0.1) and full (0.9) BESS
 
@@ -41,7 +41,7 @@ soc = 0.5  # BESS at 50% charge
 ```python
 # OLD: prescale[-1] *= 0.001  # ✗ Makes SOC invisible
 # NEW: prescale[-1] *= 1.0    # ✓ Keep SOC as-is [0,1]
-```
+```bash
 
 **Estimated impact**: +15-25% improvement in BESS utilization
 
@@ -49,7 +49,7 @@ soc = 0.5  # BESS at 50% charge
 
 ## Data Flow: OE2 → Agents
 
-```
+```bash
 OE2 Files                    CityLearn Env              Agents
 ├─ solar/pv_...csv ────┐     ┌─ schema.json ─┐         ┌─ SACAgent
 ├─ chargers/...json ────┼──→ ├─ weather.csv  ├─ Obs → ├─ PPOAgent
@@ -60,7 +60,7 @@ Features extracted at runtime:
   obs[534:536] = [PV_kW, BESS_SOC]
   ↑
   This is where BESS bug is!
-```
+```bash
 
 ---
 
@@ -68,33 +68,33 @@ Features extracted at runtime:
 
 ### Solar
 
-```
+```bash
 File: data/interim/oe2/solar/pv_generation_timeseries.csv
 Shape: (8760, 1)  ← 8,760 hourly values
 Range: 0 - 4,162 kW
 Peak: 11:00 AM (Iquitos time)
 Access: building.solar_generation[t]  where t ∈ [0, 8759]
-```
+```bash
 
 ### Chargers
 
-```
+```bash
 32 physical × 4 sockets = 128 total outlets
 ├─ Motos: 28 × 4 × 2.0 kW = 224 kW
 └─ Mototaxis: 4 × 4 × 3.0 kW = 48 kW
 Agent action space: 126 (2 reserved for baseline)
 Control: action[i] ∈ [-1, 1] maps to charger power
-```
+```bash
 
 ### BESS
 
-```
+```bash
 Capacity: 2,000 kWh
 Power: 1,200 kW
 SOC range: [0.1, 0.9]
 Access: building.electrical_storage.state_of_charge
 BUG: Prescaled by 0.001 ❌ Should be 1.0
-```
+```bash
 
 ---
 
@@ -102,7 +102,7 @@ BUG: Prescaled by 0.001 ❌ Should be 1.0
 
 ### Observation Pipeline
 
-```
+```bash
 CityLearn obs (list, 534 dims)
   ↓ _flatten_base
 np.array (534,)
@@ -114,17 +114,17 @@ np.array (534,)
   ├─ Normalize ((x-μ)/σ)
   └─ Clip ([-10, 10])
 Result: (536,) normalized float32
-```
+```bash
 
 ### Action Pipeline
 
-```
+```bash
 Agent output: (126,) ∈ [-1, 1]
   ↓ _unflatten_action
 CityLearn format: list of arrays
   ↓ env.step()
 Returns: obs, reward, terminated, truncated, info
-```
+```bash
 
 ---
 
@@ -143,7 +143,7 @@ soc = np.array([0.1, 0.5, 0.9])
 prescaled = soc * 1.0  # Keep as [0.1, 0.5, 0.9]
 print('BESS SOC observable:', prescaled)
 "
-```
+```bash
 
 ### 2️⃣ Make Prescaling Configurable (1 hour, MED impact)
 
@@ -153,7 +153,7 @@ class SACConfig:
     # Add fields:
     obs_prescale_power: float = 0.001  # For PV/load
     obs_prescale_soc: float = 1.0      # For BESS (1.0 = no prescale)
-```
+```bash
 
 ### 3️⃣ Extract Duplicate Wrapper (2 hours, LOW impact)
 
@@ -164,7 +164,7 @@ class CityLearnWrapper(gym.Wrapper):
 
 # Use in all agents:
 from .citylearn_wrapper import CityLearnWrapper
-```
+```bash
 
 ---
 

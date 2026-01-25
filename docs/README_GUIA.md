@@ -54,14 +54,14 @@ curl http://localhost:8000/health
 
 # Respuesta esperada:
 # {"status": "healthy", "service": "PVBESSCAR API"}
-```
+```bash
 
 ### **Paso 2: Inicia el Simulador**
 
 ```powershell
 cd D:\diseñopvbesscar
 py -3.11 simulador_interactivo.py
-```
+```bash
 
 ### **Paso 3: Elige una opción en el menú**
 
@@ -75,7 +75,7 @@ py -3.11 simulador_interactivo.py
 7. 🌅 Simular Día Completo  ← RECOMENDADO
 8. 📖 Ver Guía
 9. ❌ Salir
-```
+```bash
 
 ---
 
@@ -87,7 +87,7 @@ py -3.11 simulador_interactivo.py
 Sensores → Predicción IA → Decisión → Ejecución → Resultado
  ↓          ↓               ↓         ↓            ↓
 Datos      Futuro        Optim.    Comando     Ahorro €
-```
+```bash
 
 ### **2. Valores que Proporciona**
 
@@ -99,7 +99,7 @@ Datos      Futuro        Optim.    Comando     Ahorro €
   "grid_import_kw": 32.7,         // Red
   "total_cost": 156.45            // Costo acumulado
 }
-```
+```bash
 
 ### **3. Decisiones que Toma**
 
@@ -109,7 +109,7 @@ Situación               → Acción      → Ahorro
 Solar alto + Batería baja → CHARGE    → €3-5
 Solar bajo + Batería alto → DISCHARGE → €2-4
 Sistema equilibrado     → IDLE       → €0-1
-```
+```bash
 
 ### **4. Ejemplos de Simulación**
 
@@ -126,7 +126,7 @@ Día nublado (invierno):
   • Descarga selectivamente en peak
   • Compra a red cuando es barato
   Resultado: Ahorro 30% vs sin IA
-```
+```bash
 
 ---
 
@@ -153,7 +153,7 @@ curl -X POST http://localhost:8000/api/control \
   "timestamp": "2026-01-20T11:08:09",
   "status": "executed"
 }
-```
+```bash
 
 ---
 
@@ -214,7 +214,7 @@ d:\diseñopvbesscar\
 ├── docker_web_interface.py            ← 🐳 Docker Manager
 ├── docker-compose.yml                 ← 📦 Docker Compose
 └── ... (otros archivos del proyecto)
-```
+```bash
 
 ---
 
@@ -257,7 +257,7 @@ docker logs fastapi-app -f
 
 # Monitorear en tiempo real
 docker stats fastapi-app
-```
+```bash
 
 ---
 
@@ -331,7 +331,7 @@ docker ps | findstr fastapi
 
 # Si no está corriendo, iniciarlo:
 docker run -d -p 8000:8000 --name fastapi-app fastapi-mongo-api
-```
+```bash
 
 ### **Error: "Connection refused"**
 
@@ -341,7 +341,7 @@ netstat -ano | findstr :8000
 
 # Si está ocupado, usar otro puerto
 docker run -d -p 8001:8000 --name fastapi-app fastapi-mongo-api
-```
+```bash
 
 ### **Error: "Module not found"**
 
@@ -351,7 +351,7 @@ pip install fastapi uvicorn requests
 
 # O específicamente para Python 3.11
 py -3.11 -m pip install fastapi uvicorn requests
-```
+```bash
 
 ---
 
@@ -367,7 +367,7 @@ Para más información, revisa:
 
 ## ✅ Resumen
 
-**Tienes todo lo necesario para:**
+#### Tienes todo lo necesario para:
 
 - ✅ Entender cómo funciona PVBESSCAR
 - ✅ Ver qué valores proporciona

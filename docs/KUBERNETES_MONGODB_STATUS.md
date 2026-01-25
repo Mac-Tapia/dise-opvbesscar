@@ -43,7 +43,7 @@ Recursos incluidos:
   ✅ Network Policy
   ✅ HorizontalPodAutoscaler
   ✅ ServiceMonitor (Prometheus)
-```
+```bash
 
 ### 2. **k8s_manager.py** (200+ líneas)
 
@@ -56,7 +56,7 @@ CLI Commands:
   ✅ scale      - Escalar replicas
   ✅ mongo      - Conectar a MongoDB
   ✅ delete     - Borrar deployment
-```
+```bash
 
 ### 3. **KUBERNETES_MONGODB_GUIDE.md** (300+ líneas)
 
@@ -70,7 +70,7 @@ Documentación:
   ✅ Monitoreo
   ✅ Troubleshooting
   ✅ Comandos útiles
-```
+```bash
 
 ---
 
@@ -104,7 +104,7 @@ Documentación:
          │              │            │
     LoadBalancer    Ingress    DNS (if configured)
     5000, 8888       :80/:443   pvbesscar.local
-```
+```bash
 
 ---
 
@@ -117,7 +117,7 @@ Secret: mongodb-credentials
   username: admin
   password: pvbesscar2026
   connection_string: mongodb://admin:pvbesscar2026@mongodb:27017/pvbesscar
-```
+```bash
 
 ### Collections (inicializadas automáticamente)
 
@@ -130,7 +130,7 @@ db.scenarios            // Escenarios de validación
 training_metrics: {"model": 1, "timestamp": -1}
 checkpoints:      {"model": 1, "episode": 1}
 scenarios:        {"scenario_id": 1}
-```
+```bash
 
 ### Storage
 
@@ -139,7 +139,7 @@ PVC: mongodb-pvc
 Size: 10Gi
 AccessMode: ReadWriteOnce
 Mounts: /data/db
-```
+```bash
 
 ---
 
@@ -149,19 +149,19 @@ Mounts: /data/db
 
 ```bash
 python k8s_manager.py deploy
-```
+```bash
 
 ### Opción 2: kubectl directo
 
 ```bash
 kubectl apply -f k8s-deployment.yaml
-```
+```bash
 
 ### Opción 3: Helm (futuro)
 
 ```bash
 helm install pvbesscar ./helm-chart
-```
+```bash
 
 ---
 
@@ -171,20 +171,20 @@ helm install pvbesscar ./helm-chart
 
 ```bash
 python k8s_manager.py deploy
-```
+```bash
 
 ### Status
 
 ```bash
 python k8s_manager.py status
-```
+```bash
 
 ### Logs
 
 ```bash
 python k8s_manager.py logs
 python k8s_manager.py logs --pod pvbesscar-pipeline-0
-```
+```bash
 
 ### Port Forward (básico)
 
@@ -192,26 +192,26 @@ python k8s_manager.py logs --pod pvbesscar-pipeline-0
 python k8s_manager.py forward web      # 5000
 python k8s_manager.py forward jupyter  # 8888
 python k8s_manager.py forward mongodb  # 27017
-```
+```bash
 
 ### Scale
 
 ```bash
 python k8s_manager.py scale 3
-```
+```bash
 
 ### MongoDB
 
 ```bash
 python k8s_manager.py mongo status
 python k8s_manager.py mongo shell
-```
+```bash
 
 ### Delete
 
 ```bash
 python k8s_manager.py delete
-```
+```bash
 
 ---
 
@@ -235,7 +235,7 @@ kubectl port-forward svc/pvbesscar-pipeline 8888:8888 -n pvbesscar
 
 # Terminal 3
 kubectl port-forward svc/mongodb 27017:27017 -n pvbesscar
-```
+```bash
 
 ---
 
@@ -247,7 +247,7 @@ kubectl port-forward svc/mongodb 27017:27017 -n pvbesscar
 name: pvbesscar
 labels:
   app: pvbesscar
-```
+```bash
 
 ### Pods
 
@@ -256,14 +256,14 @@ mongodb-0                        # MongoDB StatefulSet
 pvbesscar-pipeline-[hash]        # PVBESSCAR Deployment
 pvbesscar-pipeline-[hash]-2      # (si escalado)
 pvbesscar-pipeline-[hash]-3      # (si escalado)
-```
+```bash
 
 ### Services
 
 ```yaml
 mongodb (ClusterIP):           mongodb:27017
 pvbesscar-pipeline (LoadBalancer): 5000, 8888
-```
+```bash
 
 ### PersistentVolumes
 
@@ -271,19 +271,19 @@ pvbesscar-pipeline (LoadBalancer): 5000, 8888
 mongodb-pvc:            10Gi
 pvbesscar-data-pvc:     20Gi
 pvbesscar-outputs-pvc:  50Gi
-```
+```bash
 
 ### Deployments
 
 ```yaml
 pvbesscar-pipeline: 1-3 replicas (con HPA)
-```
+```bash
 
 ### StatefulSets
 
 ```yaml
 mongodb: 1 replica
-```
+```bash
 
 ---
 
@@ -313,7 +313,7 @@ resourceQuota: pvbesscar-quota
 
 # Network Segmentation
 networkPolicy: egress/ingress rules
-```
+```bash
 
 ---
 
@@ -327,7 +327,7 @@ Max Replicas: 3
 Metrics:
   - CPU: 70% → scale up
   - Memory: 80% → scale up
-```
+```bash
 
 ### Manual Scale
 
@@ -335,7 +335,7 @@ Metrics:
 kubectl scale deployment pvbesscar-pipeline --replicas 3 -n pvbesscar
 # O
 python k8s_manager.py scale 3
-```
+```bash
 
 ---
 
@@ -352,7 +352,7 @@ python k8s_manager.py scale 3
 ```bash
 kubectl logs -f -n pvbesscar -l app=pvbesscar-pipeline
 kubectl logs -f mongodb-0 -n pvbesscar
-```
+```bash
 
 ### Métricas Prometheus
 
@@ -363,7 +363,7 @@ Métricas incluidas:
   - HTTP requests/latency
   - Error rates
   - Custom training metrics
-```
+```bash
 
 ---
 
@@ -424,21 +424,21 @@ kubectl cluster-info
 # Si Docker Desktop: Enable en Settings > Kubernetes
 # Si Minikube: minikube start
 # Si otro: verificar kubeconfig
-```
+```bash
 
 ### Pods no inician
 
 ```bash
 kubectl describe pod pvbesscar-pipeline-0 -n pvbesscar
 kubectl logs pvbesscar-pipeline-0 -n pvbesscar
-```
+```bash
 
 ### MongoDB no conecta
 
 ```bash
 kubectl logs mongodb-0 -n pvbesscar
 kubectl exec -it mongodb-0 -n pvbesscar -- mongosh -u admin -p pvbesscar2026
-```
+```bash
 
 ### PVC pendiente
 
@@ -455,7 +455,7 @@ metadata:
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
 EOF
-```
+```bash
 
 ---
 
@@ -474,19 +474,19 @@ EOF
 ```bash
 docker-compose up -d              # CPU dev local
 docker-compose -f docker-compose.gpu.yml up -d    # GPU local
-```
+```bash
 
 ### Web Interface (Python Flask)
 
 ```bash
 python docker_web_interface.py    # http://localhost:5000
-```
+```bash
 
 ### Kubernetes (Production)
 
 ```bash
 python k8s_manager.py deploy      # Deploy a K8s
-```
+```bash
 
 ---
 
@@ -506,7 +506,7 @@ python k8s_manager.py deploy      # Deploy a K8s
 ✅ Health checks (Liveness/Readiness)
 ✅ Monitoring (Prometheus)
 ✅ Resource limits/requests
-```
+```bash
 
 ---
 
@@ -525,7 +525,7 @@ Production:
   ✅ Monitoring (Prometheus)
   ✅ Networking (Ingress)
   ✅ Storage (PVC)
-```
+```bash
 
 ---
 

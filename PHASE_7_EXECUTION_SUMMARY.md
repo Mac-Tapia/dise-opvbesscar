@@ -58,15 +58,15 @@
 
 ```bash
 python phase7_test_pipeline.py
-```
+```bash
 
 **Result** (with Python 3.13):
 
-```
+```bash
 ✅ OE2 validation PASSED
 ✅ Schema validation PASSED
 ⏳ CityLearn full test pending Python 3.11 installation
-```
+```bash
 
 ---
 
@@ -114,7 +114,7 @@ def _generate_individual_charger_csvs(df_chargers, output_dir, building_name):
     - Output: 128 files (charger_simulation_001.csv through charger_simulation_128.csv)
     - Each file: 8,760 rows × 1 column (demand_kw)
     """
-```
+```bash
 
 **Enhanced Functions**:
 
@@ -156,15 +156,15 @@ def _generate_individual_charger_csvs(df_chargers, output_dir, building_name):
 
 ### System State
 
-```
+```bash
 System Python: 3.13.9 (C:\Program Files\Python313\python.exe)
 Project Configuration: 3.11 (enforced via pyproject.toml, setup.py, .python-version)
 Virtual Environment: .venv (currently using Python 3.13)
-```
+```bash
 
 ### Installed Packages (Phase 7)
 
-```
+```bash
 ✅ pandas - Data manipulation
 ✅ numpy - Numerical computing
 ✅ PyYAML - Config file parsing
@@ -173,15 +173,15 @@ Virtual Environment: .venv (currently using Python 3.13)
 ✅ torch - Neural networks (auto-installed with stable-baselines3)
 ❌ CityLearn - BLOCKED (requires Python 3.11 due to scikit-learn compilation)
 ❌ scikit-learn - BLOCKED (Cython errors on Python 3.13)
-```
+```bash
 
 ### Key Finding
 
 **Installation Blocker**: scikit-learn fails to compile on Python 3.13 with Cython errors:
 
-```
+```bash
 Cython.Compiler.Errors.CompileError: sklearn\linear_model\_cd_fast.pyx
-```
+```bash
 
 **Solution**: Use Python 3.11 (guaranteed compatibility)
 
@@ -191,17 +191,17 @@ Cython.Compiler.Errors.CompileError: sklearn\linear_model\_cd_fast.pyx
 
 ### Modified Files (5)
 
-```
+```bash
 M  .github/workflows/test-and-lint.yml
 M  pyproject.toml
 M  setup.py
 M  scripts/analysis/EJECUTAR_OPCION_4_INFRAESTRUCTURA.py
 M  src/iquitos_citylearn/oe3/dataset_builder.py
-```
+```bash
 
 ### New Files (19+)
 
-```
+```bash
 A  .python-version
 A  PYTHON_3.11_SETUP_GUIDE.md
 A  PHASE_7_STATUS_REPORT.md
@@ -209,7 +209,7 @@ A  phase7_test_pipeline.py
 A  src/iquitos_citylearn/oe2/data_loader.py
 A  src/iquitos_citylearn/oe3/schema_validator.py
 A  [12 additional test/doc files from Phase 6]
-```
+```bash
 
 ---
 
@@ -229,7 +229,7 @@ A  [12 additional test/doc files from Phase 6]
 
 ```bash
 python3.11 --version  # Should show Python 3.11.x
-```
+```bash
 
 **Create Fresh Virtual Environment** (5 minutes):
 
@@ -238,7 +238,7 @@ cd d:\diseñopvbesscar
 python3.11 -m venv .venv
 .venv\Scripts\activate
 python --version  # Verify 3.11
-```
+```bash
 
 **Install Dependencies** (10-15 minutes):
 
@@ -246,28 +246,28 @@ python --version  # Verify 3.11
 pip install -r requirements.txt
 pip install -r requirements-training.txt
 python -c "import citylearn; print('✅ CityLearn installed')"
-```
+```bash
 
 **Run Full Phase 7 Tests** (5 minutes):
 
 ```bash
 python phase7_test_pipeline.py
 # Expected: ALL TESTS PASSED ✅
-```
+```bash
 
 **Build Complete Dataset** (15-30 minutes):
 
 ```bash
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 # Output: schema.json + 128 charger_simulation_X.csv files
-```
+```bash
 
 **Test Agent Training** (10-15 minutes):
 
 ```bash
 python scripts/train_quick.py --episodes 1 --device cpu
 # Verify: Obs space 534d ✅, Action space 126d ✅, No errors ✅
-```
+```bash
 
 **Final Commit** (5 minutes):
 
@@ -275,7 +275,7 @@ python scripts/train_quick.py --episodes 1 --device cpu
 git add -A
 git commit -m "feat: Phase 6-7 complete - OE2→OE3 integration with Python 3.11"
 git push
-```
+```bash
 
 **Total Time**: ~50-80 minutes (mostly waiting for installations)
 

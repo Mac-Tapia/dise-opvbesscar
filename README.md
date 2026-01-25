@@ -38,7 +38,7 @@ python -m scripts.run_oe2_solar --config configs/default.yaml --no-plots
 
 # Ejecutar pipeline visible OE3
 python run_pipeline_visible.py
-```
+```bash
 
 ## Referencias de resultados
 

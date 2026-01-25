@@ -30,7 +30,7 @@ self._obs_prescale = np.ones(obs_dim) * 0.001  # Prescala TODO por 0.001
 # Resultado: BESS SOC [0, 1.0] → [0, 0.001]
 # Después de normalización: ~0 para todos los timesteps
 # Agente NO PUEDE aprender a controlar BESS
-```
+```bash
 
 **Raíz Causa**:
 
@@ -56,7 +56,7 @@ if obs_dim > 10:
 
 # Resultado: BESS SOC [0, 1.0] → [0, 1.0] ✅
 # Agente puede ver el estado y aprender control
-```
+```bash
 
 **Archivos Corregidos**:
 
@@ -85,7 +85,7 @@ timestamp,ghi_wm2,dni_wm2,dhi_wm2,temp_air_c,wind_speed_ms,dc_power_kw,ac_power_
 2024-01-01 00:00:00-05:00,0.0,0.0,0.0,24.71,0.61,0.0,0.0,0.0,0.0,0.0,0.0
 ...
 2024-12-31 23:45:00-05:00,0.0,0.0,0.0,25.2,0.45,0.0,0.0,0.0,0.0,0.0,0.0
-```
+```bash
 
 **Parámetros OE2**:
 
@@ -104,7 +104,7 @@ for b in buildings:
     sg = getattr(b, "solar_generation", None)  # [ac_power_kw per hour]
     if sg is not None and len(sg) > t:
         pv_kw += float(max(0.0, sg[t]))  # Get hour t value
-```
+```bash
 
 **Validación**:
 
@@ -137,7 +137,7 @@ for b in buildings:
   },
   ...  # 32 chargers total
 ]
-```
+```bash
 
 **Parámetros OE2**:
 
@@ -166,7 +166,7 @@ hour,power_kw,is_peak
 21,406.50,True
 22,0.0,False      # Noche
 23,0.0,False
-```
+```bash
 
 **Cómo lo consumen los agentes** ✅:
 
@@ -179,7 +179,7 @@ hour,power_kw,is_peak
 # 126 acciones continuas [0, 1] → poder actual / poder máximo
 # Cargador 0: action_0 → charger_power = action_0 * 2.0 kW (motos)
 # Cargador 128: action_125 → charger_power = action_125 * 3.0 kW (mototaxis)
-```
+```bash
 
 **Validación**:
 
@@ -221,7 +221,7 @@ if storage:
 # - Descarga máxima: +1.2 MW
 # - Carga máxima: -1.2 MW (desde grid o PV)
 # - SOC mínimo: 20% (240 kWh usable)
-```
+```bash
 
 **Validación**:
 
@@ -274,7 +274,7 @@ def _env_creator() -> Any:
     return self.wrapped_env
 
 vec_env = make_vec_env(_env_creator, n_envs=1)
-```
+```bash
 
 **Archivos**: ppo_sb3.py, a2c_sb3.py (2 archivos)
 
@@ -292,7 +292,7 @@ logger.info(f"[A2C] Value: {expensive_func()}")
 
 # DESPUÉS (lazy - solo se evalúa si se loguea)
 logger.info("[A2C] Value: %s", expensive_func())
-```
+```bash
 
 ---
 
@@ -309,13 +309,13 @@ action_space = getattr(self.env, 'action_space', None)
 if action_space is not None and hasattr(action_space, 'shape'):
     return int(action_space.shape[0])
 return 126  # Fallback
-```
+```bash
 
 ---
 
 ## FLUJO DE DATOS OE2 → OE3 → AGENTES (Diagrama)
 
-```
+```bash
 OE2 (Dimensionamiento)
 ├── Solar
 │   └── pv_generation_timeseries.csv (8,760 hrs)
@@ -353,7 +353,7 @@ Training
 ├── Act: policy(normalized_obs) → 126 charger setpoints
 ├── Step: CityLearn.step(actions)
 └── Reward: multiobjetivo(CO2, solar, cost, ev_soc, grid)
-```
+```bash
 
 ---
 
@@ -393,11 +393,11 @@ Training
 
 ### Validación Esperada
 
-```
+```bash
 Episodio 1: BESS SOC observado = [0.25, 0.45, 0.60, ...] ← VISIBLE ✅ (ANTES era ~0)
 Episodio 1: Grid import reduction ← debe mejorarse con BESS control
 Episodio 5: CO2 reducción >= 10% vs baseline
-```
+```bash
 
 ### Post-Entrenamiento (1 semana)
 
