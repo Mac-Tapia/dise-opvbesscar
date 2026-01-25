@@ -384,19 +384,19 @@ NEW (5 files):
 
    ```bash
    git commit -m "chore: cleanup OE3 orphaned files and validate OE2 connections"
-   ```
+```bash
 
 2. **Build CityLearn dataset**
 
    ```bash
    python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-   ```
+```bash
 
 3. **Quick test (1 episode)**
 
    ```bash
    python scripts/train_quick.py --device cuda --episodes 1
-   ```
+```bash
 
 4. **Monitor BESS learning**
    - Watch for BESS SOC changes in first 5 episodes
@@ -407,7 +407,7 @@ NEW (5 files):
 
    ```bash
    python scripts/train_agents_serial.py --device cuda --episodes 50
-   ```
+```bash
 
 ---
 

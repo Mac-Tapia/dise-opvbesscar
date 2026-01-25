@@ -381,28 +381,28 @@ py -3.11 docker_web_interface.py
 ```text
    py -3.11 simulador_interactivo.py
    Selecciona: 7 (Simular Día Completo)
-   ```
+```bash
 
 2. ✅ **Probar endpoints individuales**
 
 ```text
    Abre: http://localhost:8000/docs
    Prueba cada endpoint
-   ```
+```bash
 
 3. ✅ **Crear automatización**
 
 ```text
    Script Python que llame API cada 5 min
    Integrar con sistema real
-   ```
+```bash
 
 4. ✅ **Entrenar modelo ML**
 
 ```text
    Con datos históricos reales
    A2C/PPO/SAC (Reinforcement Learning)
-   ```
+```bash
 
 ---
 

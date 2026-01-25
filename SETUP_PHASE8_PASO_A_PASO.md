@@ -2,7 +2,7 @@
 
 ## PASO 1: Instalar Python 3.11.9
 
-**Antes de nada, instalar Python 3.11.9 (versión EXACTA)**
+#### Antes de nada, instalar Python 3.11.9 (versión EXACTA)
 
 ```bash
 # Opción 1: Descargar de python.org
@@ -122,7 +122,7 @@ python -c "import citylearn; print(f'CityLearn {citylearn.__version__} ✅')"
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 ```bash
 
-**Esperado: Schema y 128 charger CSV files generados**
+#### Esperado: Schema y 128 charger CSV files generados
 
 ```bash
 ✅ Loading OE2 artifacts...

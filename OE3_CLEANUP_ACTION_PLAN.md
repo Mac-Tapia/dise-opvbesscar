@@ -116,7 +116,7 @@ class CityBaseline:
 
    ```bash
    head -100 src/iquitos_citylearn/oe3/co2_emissions.py
-   ```
+```bash
 
 2. **Add to co2_table.py**: Prepend dataclass definitions before existing imports
    - Edit: `src/iquitos_citylearn/oe3/co2_table.py`
@@ -127,19 +127,19 @@ class CityBaseline:
    ```python
    # DELETE THIS LINE:
    from iquitos_citylearn.oe3.co2_emissions import (...)
-   ```
+```bash
 
 4. **Delete file**:
 
    ```bash
    git rm src/iquitos_citylearn/oe3/co2_emissions.py
-   ```
+```bash
 
 5. **Commit**:
 
    ```bash
    git commit -m "Refactor: Consolidate co2_emissions.py into co2_table.py; remove unused dataclass definitions"
-   ```
+```bash
 
 **Verification**:
 
@@ -181,14 +181,14 @@ src/iquitos_citylearn/oe3/
 
    ```bash
    mkdir -p src/iquitos_citylearn/oe3/experimental
-   ```
+```bash
 
 2. **Move files**:
 
    ```bash
    git mv src/iquitos_citylearn/oe3/rewards_improved_v2.py \
            src/iquitos_citylearn/oe3/experimental/rewards_improved_v2.py
-   ```
+```bash
 
 3. **Add documentation header** to `rewards_improved_v2.py`:
 
@@ -204,13 +204,13 @@ src/iquitos_citylearn/oe3/
    
    See: rewards.py for active production implementation
    """
-   ```
+```bash
 
 4. **Commit**:
 
    ```bash
    git commit -m "Archive: Move rewards_improved_v2.py to experimental/ (v2 iteration reference)"
-   ```
+```bash
 
 ---
 
@@ -225,7 +225,7 @@ src/iquitos_citylearn/oe3/
    ```bash
    git mv src/iquitos_citylearn/oe3/rewards_wrapper_v2.py \
            src/iquitos_citylearn/oe3/experimental/rewards_wrapper_v2.py
-   ```
+```bash
 
 2. **Add documentation header**:
 
@@ -242,13 +242,13 @@ src/iquitos_citylearn/oe3/
    
    See: rewards.py::CityLearnMultiObjectiveWrapper for active implementation
    """
-   ```
+```bash
 
 3. **Create **init**.py** in experimental folder:
 
    ```bash
    touch src/iquitos_citylearn/oe3/experimental/__init__.py
-   ```
+```bash
 
 4. **Add content to **init**.py**:
 
@@ -262,13 +262,13 @@ src/iquitos_citylearn/oe3/
    - rewards_improved_v2: v2 iteration of multi-objective reward system
    - rewards_wrapper_v2: Gymnasium wrapper for improved_v2 rewards
    """
-   ```
+```bash
 
 5. **Commit**:
 
    ```bash
    git commit -m "Archive: Move rewards_wrapper_v2.py to experimental/"
-   ```
+```bash
 
 ---
 
@@ -308,19 +308,19 @@ scripts/experimental/
    ```bash
    git mv src/iquitos_citylearn/oe3/rewards_dynamic.py \
            src/iquitos_citylearn/oe3/experimental/rewards_dynamic.py
-   ```
+```bash
 
 2. **Create scripts/experimental folder**:
 
    ```bash
    mkdir -p scripts/experimental
-   ```
+```bash
 
 3. **Move train_ppo_dynamic.py**:
 
    ```bash
    git mv scripts/train_ppo_dynamic.py scripts/experimental/train_ppo_dynamic.py
-   ```
+```bash
 
 4. **Update import in train_ppo_dynamic.py**:
 
@@ -330,7 +330,7 @@ scripts/experimental/
    
    # TO:
    from iquitos_citylearn.oe3.experimental.rewards_dynamic import DynamicReward
-   ```
+```bash
 
 5. **Add README to scripts/experimental**:
 
@@ -343,13 +343,13 @@ scripts/experimental/
    
    ## Contents
    - train_ppo_dynamic.py: PPO with dynamic hour-based reward gradients
-   ```
+```bash
 
 6. **Commit**:
 
    ```bash
    git commit -m "Archive: Move rewards_dynamic.py and train_ppo_dynamic.py to experimental/"
-   ```
+```bash
 
 ---
 
@@ -613,7 +613,7 @@ src/iquitos_citylearn/oe3/
 └── agents/                      ✅ ALL ACTIVE
 ```bash
 
-**Total: 3,750+ lines of potentially unnecessary code**
+#### Total: 3,750+ lines of potentially unnecessary code
 
 ### After Cleanup
 

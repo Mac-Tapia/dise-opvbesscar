@@ -169,7 +169,7 @@ Asumiendo costo sistema: **$50,000**
    - Modelo primario: SAC (mayor desempeño general)
    - Fallback: A2C (si SAC falla - más estable)
    - Monitoreo: PPO (análisis comparativo)
-   ```
+```bash
 
 #### 3. Métricas a Monitorear
 

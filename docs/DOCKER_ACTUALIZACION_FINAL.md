@@ -133,7 +133,7 @@ Features:
    python docker_manager.py health [--gpu]
    python docker_manager.py stats
    python docker_manager.py clean
-   ```
+```bash
 
 2. **docker_quick.bat** (Windows Batch)
 
@@ -143,7 +143,7 @@ Features:
    docker_quick.bat down
    docker_quick.bat logs-pipeline|monitor
    docker_quick.bat stats|health|clean
-   ```
+```bash
 
 3. **docker_quick.ps1** (PowerShell)
 
@@ -152,7 +152,7 @@ Features:
    .\docker_quick.ps1 -Command up [-GPU] [-Dev]
    .\docker_quick.ps1 -Command logs [-GPU]
    .\docker_quick.ps1 -Command health [-GPU]
-   ```
+```bash
 
 ---
 

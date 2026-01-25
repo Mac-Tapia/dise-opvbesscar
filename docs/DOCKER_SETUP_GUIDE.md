@@ -19,7 +19,7 @@
    ```powershell
    # Run installer and follow wizard
    # Enable WSL 2 backend when prompted
-   ```
+```bash
 
 3. **Start Docker Desktop**
    - Launch from Start Menu
@@ -30,7 +30,7 @@
    ```powershell
    docker --version
    docker ps
-   ```
+```bash
 
 ### Option 2: Docker CE via Chocolatey
 

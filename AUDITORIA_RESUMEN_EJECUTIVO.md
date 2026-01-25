@@ -208,7 +208,7 @@ RIESGO CRÍTICO: Sin Tier 1, proyecto BLOQUEADO
    ```bash
    python -m scripts.run_oe3_build_dataset --config configs/default.yaml
    # Debe completar SIN ERRORES y generar 128 charger CSVs
-   ```
+```bash
 
 4. **Verificar**: Observables
 
@@ -218,14 +218,14 @@ RIESGO CRÍTICO: Sin Tier 1, proyecto BLOQUEADO
              obs, _ = env.reset(); \
              assert len(obs) == 534, f'Error: {len(obs)}-dim'"
    # Debe imprimir dimensión correcta (534)
-   ```
+```bash
 
 5. **Entrenar**: Agentes RL
 
    ```bash
    python scripts/train_agents_serial.py --device cuda --episodes 5
    # Debe correr SIN CRASHES relacionados con datos/schema
-   ```
+```bash
 
 ---
 
@@ -273,19 +273,19 @@ Una vez corregidas las issues de Tier 1, el proyecto puede:
 
 ## 📞 PREGUNTAS FRECUENTES
 
-**P: ¿Puedo entrenar ahora mismo sin correcciones?**  
+#### P: ¿Puedo entrenar ahora mismo sin correcciones?
 R: No. Sin charger CSVs, CityLearn falla. Sin downsampling solar, timesteps desalineados. Imposible.
 
-**P: ¿Cuánto tardará corregir?**  
+#### P: ¿Cuánto tardará corregir?
 R: Tier 1 (crítico): 2 horas. Tier 2-3 (mejoras): 10 horas más. Una persona podría hacerlo en 2-3 días.
 
-**P: ¿Hay riesgo de romper algo existente?**  
+#### P: ¿Hay riesgo de romper algo existente?
 R: No. Cambios son aditivos (new functions) o sustituciones directas (ya identificadas). Tests recomendados.
 
-**P: ¿BESS es realmente 4,520 kWh o 2,000?**  
+#### P: ¿BESS es realmente 4,520 kWh o 2,000?
 R: bess_results.json dice 4,520. README dice 2,000. Necesita **investigación de origen** (¿por qué diferencia?).
 
-**P: ¿Annual_datasets es importante?**  
+#### P: ¿Annual_datasets es importante?
 R: Potencialmente sí. Si contiene timeseries anuales reales por charger, es mejor que replicas del perfil 24h.
 
 ---

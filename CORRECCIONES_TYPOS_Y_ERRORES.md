@@ -283,19 +283,19 @@ for z in sorted(zips)[:5]:
 
    ```bash
    pytest tests/ -v
-   ```
+```bash
 
 2. **Validar imports**:
 
    ```bash
    python -c "from src.iquitos_citylearn.oe3.agents import PPOAgent, SACAgent, A2CAgent; print('✓ All agents importable')"
-   ```
+```bash
 
 3. **Entrenar agentes**:
 
    ```bash
    python scripts/train_quick.py --device cuda --episodes 5
-   ```
+```bash
 
 ---
 

@@ -68,7 +68,7 @@ pvbesscar-jupyter:      # Jupyter Lab en puerto 8888
 
 ### 3. **docker-compose.gpu.yml** (Actualizado)
 
-#### Servicios:
+#### Servicios: (2)
 
 ```yaml
 pvbesscar-pipeline-gpu:    # GPU acceleration
@@ -76,7 +76,7 @@ pvbesscar-monitor-gpu:     # Monitoreo GPU
 pvbesscar-jupyter-gpu:     # Jupyter Lab puerto 8889
 ```bash
 
-#### Mejoras:
+#### Mejoras: (2)
 
 - Runtime nvidia para GPU
 - Health check GPU-específico
