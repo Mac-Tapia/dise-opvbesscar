@@ -23,11 +23,9 @@ setup(
         "Topic :: Scientific/Engineering",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3.13",
     ],
-    python_requires=">=3.10",
+    python_requires=">=3.11,<3.12",
     install_requires=[
         "stable-baselines3>=2.0",
         "gymnasium>=0.28",
