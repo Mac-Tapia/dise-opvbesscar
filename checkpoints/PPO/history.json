@@ -1,0 +1,97 @@
+{
+  "total_episodes": 10,
+  "trainings": [
+    {
+      "session_timestamp": "2026-01-24T20:33:32.826357",
+      "start_episode": 1,
+      "end_episode": 5,
+      "episodes_count": 5,
+      "device": "cuda",
+      "duration_seconds": 2.5,
+      "metrics": [
+        {
+          "episode": 1,
+          "co2_kg": 280,
+          "reward": -507,
+          "time_seconds": 0.5
+        },
+        {
+          "episode": 2,
+          "co2_kg": 286,
+          "reward": -471,
+          "time_seconds": 0.5
+        },
+        {
+          "episode": 3,
+          "co2_kg": 287,
+          "reward": -505,
+          "time_seconds": 0.5
+        },
+        {
+          "episode": 4,
+          "co2_kg": 273,
+          "reward": -460,
+          "time_seconds": 0.5
+        },
+        {
+          "episode": 5,
+          "co2_kg": 287,
+          "reward": -458,
+          "time_seconds": 0.5
+        }
+      ]
+    },
+    {
+      "session_timestamp": "2026-01-24T20:33:46.336454",
+      "start_episode": 6,
+      "end_episode": 10,
+      "episodes_count": 5,
+      "device": "cuda",
+      "duration_seconds": 2.5,
+      "metrics": [
+        {
+          "episode": 6,
+          "co2_kg": 266,
+          "reward": -476,
+          "time_seconds": 0.5
+        },
+        {
+          "episode": 7,
+          "co2_kg": 277,
+          "reward": -436,
+          "time_seconds": 0.5
+        },
+        {
+          "episode": 8,
+          "co2_kg": 261,
+          "reward": -446,
+          "time_seconds": 0.5
+        },
+        {
+          "episode": 9,
+          "co2_kg": 260,
+          "reward": -476,
+          "time_seconds": 0.5
+        },
+        {
+          "episode": 10,
+          "co2_kg": 271,
+          "reward": -430,
+          "time_seconds": 0.5
+        }
+      ]
+    }
+  ],
+  "checkpoints": [
+    "episode_0001.pt",
+    "episode_0002.pt",
+    "episode_0003.pt",
+    "episode_0004.pt",
+    "episode_0005.pt",
+    "episode_0006.pt",
+    "episode_0007.pt",
+    "episode_0008.pt",
+    "episode_0009.pt",
+    "episode_0010.pt"
+  ]
+}

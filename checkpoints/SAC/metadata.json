@@ -1,0 +1,12 @@
+{
+  "agent": "SAC",
+  "last_episode": 10,
+  "total_episodes_trained": 10,
+  "last_training": "2026-01-24T20:33:43.786170",
+  "final_metrics": {
+    "episode": 10,
+    "co2_kg": 284.0,
+    "reward": -934,
+    "time_seconds": 0.5
+  }
+}
