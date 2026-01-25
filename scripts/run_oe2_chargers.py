@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 import shutil
-from pathlib import Path
 
 from iquitos_citylearn.utils.logging import setup_logging
 from iquitos_citylearn.oe2.chargers import run_charger_sizing
@@ -63,7 +62,7 @@ def main() -> None:
     scenarios_path = out_dir / "selection_pe_fc_completo.csv"
     if scenarios_path.exists():
         shutil.copy2(scenarios_path, analyses_dir / scenarios_path.name)
-    
+
     # Mostrar resumen
     esc_rec = result["esc_rec"]
     print("\nRESUMEN FINAL:")
@@ -71,10 +70,17 @@ def main() -> None:
     print(f"   Sockets totales: {int(esc_rec['sockets_total'])}")
     print(f"   Energía diaria: {result['total_daily_energy_kwh']:.0f} kWh")
     print(f"   Potencia pico: {result['peak_power_kw']:.0f} kW")
-    print("\nDEMANDA TOTAL INSTALADA:")
-    print(f"   Motos:     {result['n_motos']:,} × {result['charger_power_kw_moto']} kW = {result['potencia_instalada_motos_kw']:,.0f} kW")
-    print(f"   Mototaxis: {result['n_mototaxis']:,} × {result['charger_power_kw_mototaxi']} kW = {result['potencia_instalada_mototaxis_kw']:,.0f} kW")
-    print(f"   TOTAL:     {result['potencia_total_instalada_kw']:,.0f} kW")
+
+    # Demanda Total Instalada (cargadores × tomas × potencia por playa)
+    # Usar valores del resultado si están disponibles, sino calcular
+    pot_moto = result.get('potencia_instalada_motos_kw', 224)  # 28×4×2=224 kW
+    pot_mototaxi = result.get('potencia_instalada_mototaxis_kw', 48)  # 4×4×3=48 kW
+    pot_total = result.get('potencia_total_instalada_kw', 272)  # 272 kW
+
+    print("\nDEMANDA TOTAL INSTALADA (cargadores × tomas × potencia):")
+    print(f"   Playa Motos:     28 carg × 4 tomas × 2.0 kW = {pot_moto:,.0f} kW")
+    print(f"   Playa Mototaxis: 4 carg × 4 tomas × 3.0 kW = {pot_mototaxi:,.0f} kW")
+    print(f"   TOTAL:           {pot_total:,.0f} kW")
 
 
 if __name__ == "__main__":

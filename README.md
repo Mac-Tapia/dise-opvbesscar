@@ -83,7 +83,11 @@ python run_pipeline_visible.py
 - Datos meteo: PVGIS TMY, modelo Sandia (pvlib).
 - Componentes: Kyocera KS20; inversor Eaton Xpert1670 (2 uds, 31 módulos/string, 6,472 strings, 200,632 módulos).
 - BESS: 2 MWh / 1.2 MW (fijo, DoD 80%, eff 95%).
-- Cargadores: 112 motos @2 kW, 16 mototaxis @3 kW; 3,061 vehículos/día (30 min sesión, 92% utilización).
+- Cargadores EV: **32 cargadores físicos × 4 tomas = 128 tomas controlables**:
+  - Playa Motos: 28 cargadores × 4 tomas × 2.0 kW = **224 kW**
+  - Playa Mototaxis: 4 cargadores × 4 tomas × 3.0 kW = **48 kW**
+  - **Potencia total instalada: 272 kW**
+  - 3,061 vehículos/día (30 min sesión Modo 3, 92% utilización)
 - RL: CityLearn v2, recompensas multiobjetivo; scripts en `src/iquitos_citylearn/oe3/` y `scripts/`.
 
 ## Resultados (referencia OE2 - actualizado 2026-01-24)

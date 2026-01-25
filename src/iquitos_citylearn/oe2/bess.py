@@ -241,7 +241,7 @@ def load_ev_demand(ev_profile_path: Path, year: int = 2024) -> pd.DataFrame:
         df_full = df_full.drop(columns=['hour'])
         return df_full
 
-    raise ValueError(f"Formato de CSV no reconocido. Se esperan columnas 'interval' y 'energy_kwh' (96 intervalos) o 'hour' y 'energy_kwh' (24 horas)")
+    raise ValueError("Formato de CSV no reconocido. Se esperan columnas 'interval' y 'energy_kwh' (96 intervalos) o 'hour' y 'energy_kwh' (24 horas)")
 
 
 def simulate_bess_operation(
@@ -558,10 +558,10 @@ def generate_bess_plots(
     mall_solar_used = np.where(pv > 0, np.minimum(mall_h, pv), 0.0)
 
     grid_import = np.asarray(df_day['grid_import_kwh'].values)
-    grid_export = np.asarray(df_day['grid_export_kwh'].values)
+    # grid_export no se usa en gráficas actuales
     mall_grid = np.asarray(df_day['mall_grid_import_kwh'].values) if 'mall_grid_import_kwh' in df_day else np.maximum(mall_h - mall_solar_used, 0)
     ev_grid = np.asarray(df_day['ev_grid_import_kwh'].values) if 'ev_grid_import_kwh' in df_day else np.maximum(grid_import - mall_grid, 0)
-    mall_solar_used_plot = np.asarray(df_day['mall_pv_used_kwh'].values) if 'mall_pv_used_kwh' in df_day else mall_solar_used
+    # mall_solar_used_plot no se usa actualmente
 
     # ===== Panel 1: Demanda Total =====
     ax1 = axes[0]
@@ -692,13 +692,11 @@ def generate_bess_plots(
     ax4.grid(True, alpha=0.3)
 
     # Métricas integradas con explicación
-    grid_total = grid_import.sum()
-    grid_mall_total = mall_grid.sum()
+    # Variables calculadas pero no usadas: grid_total, grid_mall_total, pv_to_bess
     grid_ev_total = ev_grid.sum()
     bess_charge_total = charge.sum()
     bess_discharge_total = discharge.sum()
     ev_total = ev_h.sum()
-    pv_to_bess = bess_charge_total
     bess_to_ev = bess_discharge_total
     ev_self_suff = (1 - grid_ev_total/max(ev_total, 1e-9))*100
 
@@ -970,9 +968,9 @@ def run_bess_sizing(
         ev_kwh_day = df_ev['ev_kwh'].sum() / (len(df_ev) / 24)
         print(f"   Demanda EV (horaria, {len(df_ev)} horas): {ev_kwh_day:.0f} kWh/día")
 
-    print(f"      - 32 cargadores, 128 sockets totales")
-    print(f"      - Playa Motos: 112 sockets")
-    print(f"      - Playa Mototaxis: 16 sockets")
+    print("      - 32 cargadores, 128 sockets totales")
+    print("      - Playa Motos: 112 sockets")
+    print("      - Playa Mototaxis: 16 sockets")
 
     # ===========================================
     # 2. Alinear series temporales
@@ -1065,9 +1063,9 @@ def run_bess_sizing(
     # 3. Déficit EV real (lo que el solar NO puede cubrir directamente)
     ev_shortfall_hourly = ev_kwh - pv_to_ev
 
-    # Identificar horas donde hay déficit EV significativo
-    ev_shortfall_hourly_mean = pd.Series(ev_shortfall_hourly).groupby(hours).mean()
-    deficit_hours = set(ev_shortfall_hourly_mean[ev_shortfall_hourly_mean > 1.0].index.astype(int).tolist())
+    # deficit_hours no se usa actualmente (cálculo reemplazado por análisis de cruce)
+    # ev_shortfall_hourly_mean = pd.Series(ev_shortfall_hourly).groupby(hours).mean()
+    # deficit_hours = set(ev_shortfall_hourly_mean[ev_shortfall_hourly_mean > 1.0].index.astype(int).tolist())
 
     # REGLA 2: Descarga BESS desde cuando termina generación solar hasta cierre mall
     closing_hour = 22  # 10 PM - cierre mall
@@ -1081,7 +1079,7 @@ def run_bess_sizing(
         pv_15min_day = []
         for h in range(24):
             pv_hour = df_pv[df_pv.index.hour == h]['pv_kwh'].mean() if len(df_pv[df_pv.index.hour == h]) > 0 else 0
-            for i in range(4):
+            for _ in range(4):
                 pv_15min_day.append(pv_hour / 4.0)
 
         # Mall sintético 15 min
@@ -1153,9 +1151,9 @@ def run_bess_sizing(
     # Excedente solar DESPUÉS de cubrir EV (disponible para BESS)
     surplus = pv_after_ev  # Excedente después de EV
 
-    # Carga EV total en horario nocturno (sin solar)
-    ev_night_load = ev_kwh * discharge_mask  # Carga EV en horario de descarga
-    ev_night_day = float(ev_night_load.sum() / (min_len / 24))
+    # Carga EV total en horario nocturno (sin solar) - no usado actualmente
+    # ev_night_load = ev_kwh * discharge_mask
+    # ev_night_day no se usa actualmente
 
     # Déficit EV en horario de descarga BESS (cuando solar no cubre EV)
     # Usar cálculo preciso de perfil 15 min si está disponible
@@ -1167,8 +1165,7 @@ def run_bess_sizing(
 
     surplus_day = float(surplus.sum() / (min_len / 24))
     pv_day = float(pv_kwh.sum() / (min_len / 24))
-    mall_day = float(mall_kwh.sum() / (min_len / 24))
-    ev_day = float(ev_kwh.sum() / (min_len / 24))
+    # Variables diarias no usadas: mall_day, ev_day
     load_day = float(total_load_kwh.sum() / (min_len / 24))
     bess_load_day = float(bess_load.sum() / (min_len / 24))
     pv_to_ev_day = float(pv_to_ev.sum() / (min_len / 24))
@@ -1177,7 +1174,7 @@ def run_bess_sizing(
     print(f"   Generación solar: 5h-17h (~{pv_day:.0f} kWh/día)")
     print(f"   PRIORIDAD: Solar → EV ({pv_to_ev_day:.0f} kWh/día) → BESS → Mall")
     print(f"   Descarga BESS: {discharge_start}h - {closing_hour}h ({len(bess_discharge_hours)} horas)")
-    print(f"   BESS activado cuando solar no puede cubrir demanda EV hasta cierre")
+    print("   BESS activado cuando solar no puede cubrir demanda EV hasta cierre")
     print(f"   Pico deficit EV en descarga: {peak_ev_shortfall_discharge:.1f} kW")
 
     # ===========================================
@@ -1193,8 +1190,8 @@ def run_bess_sizing(
     effective_dod = 0.80  # DoD: 80% (fijo según análisis)
     effective_efficiency = 0.95  # Eficiencia: 95% (fijo según análisis)
 
-    print(f"\n[DIMENSIONAMIENTO - Según análisis perfil 15 min]")
-    print(f"   SOC operacional: 20% - 100%")
+    print("\n[DIMENSIONAMIENTO - Según análisis perfil 15 min]")
+    print("   SOC operacional: 20% - 100%")
     print(f"   DoD: {effective_dod*100:.0f}%")
     print(f"   Eficiencia round-trip: {effective_efficiency*100:.0f}%")
 
@@ -1204,8 +1201,8 @@ def run_bess_sizing(
     sizing_deficit = deficit_day  # Solo el déficit EV en horario descarga
     peak_load = peak_ev_shortfall_discharge  # Pico déficit EV en descarga
 
-    print(f"\n[CRITERIO CAPACIDAD]")
-    print(f"   Criterio: Cubrir solo DÉFICIT EV en horario nocturno (demanda - solar)")
+    print("\n[CRITERIO CAPACIDAD]")
+    print("   Criterio: Cubrir solo DÉFICIT EV en horario nocturno (demanda - solar)")
     print(f"   Déficit EV nocturno: {sizing_deficit:.0f} kWh/dia")
     print(f"   Horas de descarga: {len(bess_discharge_hours)} horas ({discharge_start}h-{closing_hour}h)")
     print(f"   Pico déficit EV nocturno: {peak_load:.1f} kW")
@@ -1232,9 +1229,7 @@ def run_bess_sizing(
 
     # Aplicar factor de diseño a capacidad y potencia
     capacity_base_kwh = capacity_kwh
-    power_base_kw = power_kw
-
-    capacity_kwh = capacity_kwh * design_factor
+    # power_base_kw no se usa (se recalcula con ratio)
 
     # Ajuste de potencia según análisis perfil 15 min
     # Capacidad esperada: 1,712 kWh → Potencia esperada: 622 kW
