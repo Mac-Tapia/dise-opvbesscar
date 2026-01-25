@@ -117,16 +117,7 @@ Fórmula: Vehículos efectivos = Vehículos_hora_pico × PE
 - **Anual**: 1,117,630 vehículos (365 días)
 - **20 años**: 22,352,600 vehículos
 
-### Escenarios de Sensibilidad
-
-  | Escenario | PE | FC | Cargadores | Energía (kWh/día) |  
-|-----------|----|----|------------|-------------------|
-  | CONSERVADOR | 0.10 | 0.29 | 4 | 66 |  
-  | MEDIANO | 0.50 | 0.40 | 18 | 464 |  
-  | **RECOMENDADO** | **0.90** | **0.90** | **32** | **3,252** |  
-  | MÁXIMO | 1.00 | 0.90 | 35 | 2,088 |  
-
-## DOCUMENTOS GENERADOS
+### Escenarios de Sensibilidad | Escenario | PE | FC | Cargadores | Energía (kWh/día) | |-----------|----|----|------------|-------------------| | CONSERVADOR | 0.10 | 0.29 | 4 | 66 | | MEDIANO | 0.50 | 0.40 | 18 | 464 | | **RECOMENDADO** | **0.90** | **0.90** | **32** | **3,252** | | MÁXIMO | 1.00 | 0.90 | 35 | 2,088 | ## DOCUMENTOS GENERADOS
 
 1. **Código fuente actualizado**: `chargers.py`
 2. **Script de verificación**: `VERIFICACION_FINAL_CHARGERS.py`

@@ -36,15 +36,7 @@
 
 ---
 
-## 📈 Análisis de Convergencia
-
-  | Agente | Ep 1-5 (Avg) | Ep 6-10 (Avg) | Tendencia |  
-|--------|--------------|---------------|-----------|
-  | **A2C** | 368.2 kg | 349.0 kg | ↓ 19.2 kg (5.2% mejor) |  
-  | **SAC** | 298.0 kg | 286.6 kg | ↓ 11.4 kg (3.8% mejor) |  
-  | **PPO** | 282.6 kg | 267.0 kg | ↓ 15.6 kg (5.5% mejor) |  
-
-**Conclusión**: Los agentes están convergiendo correctamente, mostrando mejora
+## 📈 Análisis de Convergencia | Agente | Ep 1-5 (Avg) | Ep 6-10 (Avg) | Tendencia | |--------|--------------|---------------|-----------| | **A2C** | 368.2 kg | 349.0 kg | ↓ 19.2 kg (5.2% mejor) | | **SAC** | 298.0 kg | 286.6 kg | ↓ 11.4 kg (3.8% mejor) | | **PPO** | 282.6 kg | 267.0 kg | ↓ 15.6 kg (5.5% mejor) | **Conclusión**: Los agentes están convergiendo correctamente, mostrando mejora
 gradual.
 
 ---

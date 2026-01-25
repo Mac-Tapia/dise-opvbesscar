@@ -68,28 +68,12 @@
 
 ---
 
-## ✅ RESULTADO ESPERADO
+## ✅ RESULTADO ESPERADO | Métrica | Antes | Después | | --------- | ------- | --------- | | Importación pico | 280 kWh/h | <250 kWh/h | | Convergencia | 30-40 ep | 15-20 ep | | CO₂ anual | 1.8M kg | <1.7M kg | ---
 
-  | Métrica | Antes | Después |  
-| --------- | ------- | --------- |
-  | Importación pico | 280 kWh/h | <250 kWh/h |  
-  | Convergencia | 30-40 ep | 15-20 ep |  
-  | CO₂ anual | 1.8M kg | <1.7M kg |  
-
----
-
-## 📚 TODOS LOS DOCUMENTOS
-
-  | Archivo | Tipo | Duración | Para |  
-| --------- | ------ | ---------- | ------ |
-  | [SAC_TIER2_QUICK_START.md](SAC_TIER2_QUICK_START.md) | 1-pager | 5 min | Impatient |  
-  | [SAC_TIER2_RESUMEN_EJECUTIVO.md](SAC_TIER2_RESUMEN_EJECUTIVO.md) | Summary | 5-10 min | Execs |  
-  | [SAC_TIER2_OPTIMIZATION.md](SAC_TIER2_OPTIMIZATION.md) | Technical | 20-30 min | Scientists |  
-  | [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md][url3] | Code | 2-3 h | Devs |  
-  | [SAC_TIER2_INDICE.md](SAC_TIER2_INDICE.md) | Index | 5 min | Navigation |  
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
----
+## 📚 TODOS LOS DOCUMENTOS | Archivo | Tipo | Duración | Para | | --------- | ------ | ---------- | ------ |
+|[SAC_TIER2_QUICK_START.md](SAC_TIER2_QUICK_START.md)|1-pager|5 min|Impatient|
+|[SAC_TIER2_RESUMEN_EJECUTIVO.md](SAC_TIER2_RESUMEN_EJECUTIVO.md)|Summary|5-10 min|Execs|
+|[SAC_TIER2_OPTIMIZATION.md](SAC_TIER2_OPTIMIZATION.md)|Technical|20-30 min|Scientists| | [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md][url3] | Code | 2-3 h | Devs | | [SAC_TIER2_INDICE.md](SAC_TIER2_INDICE.md) | Index | 5 min | Navigation | |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| ---
 
 ## 🎓 3 CAMBIOS CLAVE
 
@@ -147,7 +131,7 @@ MAÑANA-PASADO:
 
 ---
 
- **Status**: ✅ LISTO | **Impacto**: +15-20% | **Riesgo**: BAJO | **Reversible**: SÍ 
+ **Status**: ✅ LISTO|**Impacto**: +15-20%|**Riesgo**: BAJO|**Reversible**: SÍ 
 
 **START HERE**: [SAC_TIER2_QUICK_START.md](SAC_TIER2_QUICK_START.md)
 

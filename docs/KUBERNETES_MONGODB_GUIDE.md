@@ -200,15 +200,7 @@ scenarios:        {"scenario_id": 1}
 
 ## 🌐 Acceso Web
 
-### Rutas Disponibles
-
-  | Ruta | Servicio | Puerto |  
-| ------ | ---------- | -------- |
-  | <http://localhost:5000> | Web Interface | 5000 |  
-  | <http://localhost:8888> | Jupyter Lab | 8888 |  
-  | <http://localhost:27017> | MongoDB | 27017 |  
-
-### Desde Ingress
+### Rutas Disponibles | Ruta | Servicio | Puerto | | ------ | ---------- | -------- | | <http://localhost:5000> | Web Interface | 5000 | | <http://localhost:8888> | Jupyter Lab | 8888 | | <http://localhost:27017> | MongoDB | 27017 | ### Desde Ingress
 
 ```text
 http://pvbesscar.local

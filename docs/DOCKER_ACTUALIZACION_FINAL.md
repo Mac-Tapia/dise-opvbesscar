@@ -11,19 +11,7 @@ Push: ✅ GitHub sincronizado
 
 ## 📊 Resumen Ejecutivo
 
-Se actualizó completamente la infraestructura Docker de PVBESSCAR con:
-
-  | Mejora | Antes | Ahora | Impacto |  
-| -------- | ------- | ------- | --------- |
-  | **Build time** | Variable | -60% BuildKit | ⚡ Más rápido |  
-  | **Health checks** | No | ✅ Automáticos | 🛡️ Autorecuperación |  
-  | **Signal handling** | Manual | ✅ Tini | 🎯 Limpio |  
-  | **Jupyter** | Separado | ✅ Integrado | 🔬 Mejor DX |  
-  | **Dev services** | Mínimos | ✅ Completos | 🧪 Testing/Lint |  
-  | **GPU support** | Básico | ✅ Optimizado | 🚀 Producción |  
-  | **Caching** | No | ✅ Volume cache | 📦 Más rápido |  
-
----
+Se actualizó completamente la infraestructura Docker de PVBESSCAR con: | Mejora | Antes | Ahora | Impacto | | -------- | ------- | ------- | --------- | | **Build time** | Variable | -60% BuildKit | ⚡ Más rápido | | **Health checks** | No | ✅ Automáticos | 🛡️ Autorecuperación | | **Signal handling** | Manual | ✅ Tini | 🎯 Limpio | | **Jupyter** | Separado | ✅ Integrado | 🔬 Mejor DX | | **Dev services** | Mínimos | ✅ Completos | 🧪 Testing/Lint | | **GPU support** | Básico | ✅ Optimizado | 🚀 Producción | | **Caching** | No | ✅ Volume cache | 📦 Más rápido | ---
 
 ## 📁 Cambios por Archivo
 
@@ -503,7 +491,7 @@ RESUMEN_CONSTRUCCION_DOCKER_ACTUALIZADA.md (Validación)
 ## 🎓 Learning Resources
 
 - [Docker Best
-  - Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
+  - Practices]([url0])
 - [BuildKit](https://docs.docker.com/build/buildkit/)
 - [nvidia-docker](https://github.com/NVIDIA/nvidia-docker)
 - [Docker Compose](https://docs.docker.com/compose/)

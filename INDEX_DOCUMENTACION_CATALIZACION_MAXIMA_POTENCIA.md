@@ -6,31 +6,8 @@
 
 ## 📋 DOCUMENTACIÓN GENERADA EN ESTA SESIÓN
 
-### 🎯 Documentos de Configuración (Nivel 1 - Entender)
-
-  | Archivo | Descripción | Ubicación | Función |  
-|---------|-------------|-----------|---------|
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | **RESUMEN_POTENCIA_MAXIMA_INDIVIDUAL.txt** | Resumen visual con tablas | Raíz | 📊 Vista rápida |  
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
-### 🚀 Documentos de Ejecución (Nivel 2 - Hacer)
-
-  | Archivo | Descripción | Ubicación | Función |  
-|---------|-------------|-----------|---------|
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
-### 📊 Archivos de Configuración Modificados
-
-  | Archivo | Cambios | Ubicación | Impacto |  
-|---------|---------|-----------|---------|
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
----
+### 🎯 Documentos de Configuración (Nivel 1 - Entender) | Archivo | Descripción | Ubicación | Función | |---------|-------------|-----------|---------| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+|**RESUMEN_POTENCIA_MAXIMA_INDIVIDUAL.txt**|Resumen visual con tablas|Raíz|📊 Vista rápida| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| ### 🚀 Documentos de Ejecución (Nivel 2 - Hacer) | Archivo | Descripción | Ubicación | Función | |---------|-------------|-----------|---------| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| ### 📊 Archivos de Configuración Modificados | Archivo | Cambios | Ubicación | Impacto | |---------|---------|-----------|---------| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| ---
 
 ## 🗂️ ESTRUCTURA DE CARPETAS DOCUMENTACIÓN
 
@@ -172,16 +149,7 @@ d:\diseñopvbesscar/
 
 ---
 
-## 🎯 MATRIZ DE DECISIÓN
-
-  | Necesidad | Agente | Tiempo | Razón |  
-|-----------|--------|--------|-------|
-  | Máxima velocidad | A2C | 2.5-3h | Sin overhead, GPU eficiente |  
-  | Máxima estabilidad | SAC | 3h | Buffer grande, soft updates |  
-  | Mejor rendimiento final | PPO | 5-6h | Convergencia óptima |  
-  | Todos juntos | Serial | 11h | Robusto, completo |  
-
----
+## 🎯 MATRIZ DE DECISIÓN | Necesidad | Agente | Tiempo | Razón | |-----------|--------|--------|-------| | Máxima velocidad | A2C | 2.5-3h | Sin overhead, GPU eficiente | | Máxima estabilidad | SAC | 3h | Buffer grande, soft updates | | Mejor rendimiento final | PPO | 5-6h | Convergencia óptima | | Todos juntos | Serial | 11h | Robusto, completo | ---
 
 ## 🔍 ARCHIVOS TÉCNICOS DETALLADOS
 
@@ -240,14 +208,7 @@ d:\diseñopvbesscar/
 
 ---
 
-## 🔄 HISTORIAL DE VERSIONES
-
-  | Versión | Fecha | Cambio | Estado |  
-|---------|-------|--------|--------|
-  | 1.0 | 2026-01-23 | Agentes TIER 2 | ✅ |  
-  | 2.0 | 2026-01-24 | Máxima Potencia Individual | ✅ ACTUAL |  
-
----
+## 🔄 HISTORIAL DE VERSIONES | Versión | Fecha | Cambio | Estado | |---------|-------|--------|--------| | 1.0 | 2026-01-23 | Agentes TIER 2 | ✅ | | 2.0 | 2026-01-24 | Máxima Potencia Individual | ✅ ACTUAL | ---
 
 ## ⚠️ CAMBIOS DESDE LA VERSIÓN ANTERIOR
 
@@ -323,19 +284,8 @@ NUEVAS CARACTERÍSTICAS:
 
 ## 📞 SOPORTE RÁPIDO
 
-### ¿Dónde está...?
-
-  | Información | Archivo |  
-|---|---|
-  | Configuraciones detalladas | `CONFIGURACIONES_INDIVIDUALES_MAXIMA_POTENCIA.md` |  
-  | Cómo entrenar | `ESTRATEGIA_ENTRENAMIENTO_MAXIMA_POTENCIA.md` |  
-  | Estado actual | `STATUS_CATALIZACION_MAXIMA_POTENCIA.txt` |  
-  | Resumen visual | `RESUMEN_POTENCIA_MAXIMA_INDIVIDUAL.txt` |  
-  | Código SAC | `src/iquitos_citylearn/oe3/agents/sac.py` líneas 122-170 |  
-  | Código PPO | `src/iquitos_citylearn/oe3/agents/ppo_sb3.py` líneas 48-85 |  
-  | Código A2C | `src/iquitos_citylearn/oe3/agents/a2c_sb3.py` líneas 44-70 |  
-
----
+### ¿Dónde está...? | Información | Archivo | |---|---|
+|Configuraciones detalladas|`CONFIGURACIONES_INDIVIDUALES_MAXIMA_POTENCIA.md`| | Cómo entrenar | `ESTRATEGIA_ENTRENAMIENTO_MAXIMA_POTENCIA.md` | | Estado actual | `STATUS_CATALIZACION_MAXIMA_POTENCIA.txt` | | Resumen visual | `RESUMEN_POTENCIA_MAXIMA_INDIVIDUAL.txt` | | Código SAC | `src/iquitos_citylearn/oe3/agents/sac.py` líneas 122-170 | | Código PPO | `src/iquitos_citylearn/oe3/agents/ppo_sb3.py` líneas 48-85 | | Código A2C | `src/iquitos_citylearn/oe3/agents/a2c_sb3.py` líneas 44-70 | ---
 
 ## ✅ CHECKLIST DE COMPLETITUD
 

@@ -15,17 +15,7 @@ aprendiera:
 
 **Archivo**: [src/iquitos_citylearn/oe3/rewards.py][ref]
 
-[ref]: src/iquitos_citylearn/oe3/rewards.py#L30
-
-  | Métrica | Antes | Después | Razón |  
-| --- | --- | --- | --- |
-  | **CO₂** | 0.45 | **0.50** | PRIMARY: matriz térmica... |  
-  | **Solar** | 0.15 | **0.20** | SECONDARY: FV limpia... |  
-  | **Costo** | 0.15 | **0.10** | REDUCIDO: tarifa baja, no es bottleneck |  
-  | **Grid Stability** | 0.20 | **0.10** | REDUCIDO: implícito en CO₂ + Solar |  
-  | **EV Satisfaction** | 0.05 | **0.10** | Aumentado: operación balanceada |  
-
-**Beneficio**: Agente ahora enfoca en **minimizar importación de grid** (CO₂)
+[ref]: src/iquitos_citylearn/oe3/rewards.py#L30 | Métrica | Antes | Después | Razón | | --- | --- | --- | --- | | **CO₂** | 0.45 | **0.50** | PRIMARY: matriz térmica... | | **Solar** | 0.15 | **0.20** | SECONDARY: FV limpia... | | **Costo** | 0.15 | **0.10** | REDUCIDO: tarifa baja, no es bottleneck | | **Grid Stability** | 0.20 | **0.10** | REDUCIDO: implícito en CO₂ + Solar | | **EV Satisfaction** | 0.05 | **0.10** | Aumentado: operación balanceada | **Beneficio**: Agente ahora enfoca en **minimizar importación de grid** (CO₂)
 **maximizando solar**.
 
 ---
@@ -116,14 +106,7 @@ reward = (
 
 **Archivo**: [src/iquitos_citylearn/oe3/agents/sac.py][ref]
 
-[ref]: src/iquitos_citylearn/oe3/agents/sac.py#L136-L138
-
-  | Parámetro | Antes | Después | Razón |  
-| --- | --- | --- | --- |
-  | `ent_coef` | `"auto"` | **`0.01`** | Fijo: evita exploración EXCESIVA |  
-  | `target_entropy` | `-126.0` | **`-50.0`** | Menos ruido, más EXPLOTACIÓN |  
-
-**Por qué**: Con rewards bien escalados ahora, SAC NO necesita exploración
+[ref]: src/iquitos_citylearn/oe3/agents/sac.py#L136-L138 | Parámetro | Antes | Después | Razón | | --- | --- | --- | --- | | `ent_coef` | `"auto"` | **`0.01`** | Fijo: evita exploración EXCESIVA | | `target_entropy` | `-126.0` | **`-50.0`** | Menos ruido, más EXPLOTACIÓN | **Por qué**: Con rewards bien escalados ahora, SAC NO necesita exploración
 salvaje. Entropy bajo = más focus en políticas buenas.
 
 **Beneficio**: SAC dedica más capacidad a **APRENDER** patrones que a

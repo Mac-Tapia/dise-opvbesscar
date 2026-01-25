@@ -222,19 +222,7 @@ for z in sorted(zips)[:5]:
 
 ---
 
-## 📊 ESTADÍSTICAS DE CAMBIOS
-
-  | Aspecto | Cantidad |  
-|---------|----------|
-  | Tipo Hints Corregidos | 4 |  
-  | Atributos Inicializados | 3 |  
-  | Conversiones de Tipo Explícitas | 5 |  
-  | Formateos de Logger Arreglados | 15+ |  
-  | Imports Agregados | 1 (Union en a2c_sb3.py) |  
-  | Líneas Analizadas | 1,500+ |  
-  | Errores Críticos Resueltos | 25+ |  
-
----
+## 📊 ESTADÍSTICAS DE CAMBIOS | Aspecto | Cantidad | |---------|----------| | Tipo Hints Corregidos | 4 | | Atributos Inicializados | 3 | | Conversiones de Tipo Explícitas | 5 | | Formateos de Logger Arreglados | 15+ | | Imports Agregados | 1 (Union en a2c_sb3.py) | | Líneas Analizadas | 1,500+ | | Errores Críticos Resueltos | 25+ | ---
 
 ## ✅ VALIDACIÓN
 

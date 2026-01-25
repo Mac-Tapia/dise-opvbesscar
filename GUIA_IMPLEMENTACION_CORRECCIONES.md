@@ -153,7 +153,7 @@ if chargers_csv_dir.exists():
 
 ```bash
 # Después de ejecutar dataset_builder, verificar:
- ls -la outputs/oe3/citylearnv2_dataset/buildings/Mall_Iquitos/ | grep "\.csv$" | wc -l 
+ ls -la outputs/oe3/citylearnv2_dataset/buildings/Mall_Iquitos/|grep "\.csv$"|wc -l 
 # Debería mostrar 128 (más algunos CSVs del schema como solar, building_load, etc.)
 ```bash
 

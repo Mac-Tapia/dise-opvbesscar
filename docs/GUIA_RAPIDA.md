@@ -72,32 +72,12 @@
 
 ---
 
-## 📊 Tabla Rápida de Resultados
-
-  | Métrica | PPO | A2C | SAC | Baseline |  
-| --------- | ----- | ----- | ----- | ---------- |
-  | Reward | **0.0343** | 0.0254 | 0.0252 | -0.2000 |  
-  | CO2 | 1.76M | 1.76M | 1.76M | 2.00M |  
-  | Peak | 274 | 275 | 275 | 310 |  
-  | Stability | **0.61** | 0.61 | 0.61 | 0.50 |  
-
-**Conclusión**: PPO ligeramente mejor, todos mejoran significativamente vs
+## 📊 Tabla Rápida de Resultados | Métrica | PPO | A2C | SAC | Baseline | | --------- | ----- | ----- | ----- | ---------- | | Reward | **0.0343** | 0.0254 | 0.0252 | -0.2000 | | CO2 | 1.76M | 1.76M | 1.76M | 2.00M | | Peak | 274 | 275 | 275 | 310 | | Stability | **0.61** | 0.61 | 0.61 | 0.50 | **Conclusión**: PPO ligeramente mejor, todos mejoran significativamente vs
 Baseline
 
 ---
 
-## 🔧 Parámetros TIER 2
-
-  | Parámetro | Valor |  
-| ----------- | ------- |
-  | Learning Rate | 2.5e-4 |  
-  | Batch Size | 256 (SAC) / 1024 (A2C) |  
-  | Hidden | (512, 512) |  
-  | Entropy | 0.02 |  
-  | Activation | ReLU |  
-  | LR Schedule | Linear |  
-
----
+## 🔧 Parámetros TIER 2 | Parámetro | Valor | | ----------- | ------- | | Learning Rate | 2.5e-4 | | Batch Size | 256 (SAC) / 1024 (A2C) | | Hidden | (512, 512) | | Entropy | 0.02 | | Activation | ReLU | | LR Schedule | Linear | ---
 
 ## 📁 Estructura de Carpetas
 
@@ -163,20 +143,7 @@ R: `analyses/oe3/training/checkpoints/{ppo_gpu, a2c_gpu, sac}/`
 
 ---
 
-## 🎓 Términos Clave
-
-  | Término | Significado |  
-| --------- | ------------ |
-  | **TIER 2** | Segunda iteración con... |  
-  | **PPO** | Proximal Policy Optimization |  
-  | **A2C** | Advantage Actor-Critic |  
-  | **SAC** | Soft Actor-Critic |  
-  | **Reward** | Señal de recompensa del aprendizaje |  
-  | **Convergencia** | Cuando el modelo deja de mejorar |  
-  | **CO2** | Emisiones de carbono en kg |  
-  | **Peak Import** | Pico de importación de red en kWh/h |  
-
----
+## 🎓 Términos Clave | Término | Significado | | --------- | ------------ | | **TIER 2** | Segunda iteración con... | | **PPO** | Proximal Policy Optimization | | **A2C** | Advantage Actor-Critic | | **SAC** | Soft Actor-Critic | | **Reward** | Señal de recompensa del aprendizaje | | **Convergencia** | Cuando el modelo deja de mejorar | | **CO2** | Emisiones de carbono en kg | | **Peak Import** | Pico de importación de red en kWh/h | ---
 
 **Estado**: ✅ CONSOLIDADO Y LISTO
 **Última actualización**: 2026-01-19 23:30 UTC

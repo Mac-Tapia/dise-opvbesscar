@@ -35,25 +35,9 @@
 
 ## 📚 COMPLETE DOCUMENTATION SUITE
 
-### Core Phase 8 Documents
-
-  | Document | Purpose | Read Time | Size |  
-|----------|---------|-----------|------|
-  | **PHASE_8_COMPLETE_GUIDE.md** | Comprehensive training guide... | 30 min | 2,500 lines |  
-  | **AGENT_TRAINING_CONFIG_PHASE8.yaml** | All agent... | 15 min | 400 lines |  
-  | **PHASE_8_READINESS_CHECKLIST.md** | Pre-training verification checklist | 10 min | 500 lines |  
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
-### Supporting Reference Documents
-
-  | Document | Purpose | When to Use |  
-|----------|---------|------------|
-  | **PYTHON_3.11_SETUP_GUIDE.md** | Install Python 3.11 | Before Phase 8 start |  
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | **PHASE_7_FINAL_COMPLETION.md** | Phase 7 completion status | Reference |  
-  | **phase7_validation_complete.py** | Data validation script | If verification needed |  
-
----
+### Core Phase 8 Documents | Document | Purpose | Read Time | Size | |----------|---------|-----------|------|
+|**PHASE_8_COMPLETE_GUIDE.md**|Comprehensive training guide...|30 min|2,500 lines| | **AGENT_TRAINING_CONFIG_PHASE8.yaml** | All agent... | 15 min | 400 lines | |**PHASE_8_READINESS_CHECKLIST.md**|Pre-training verification checklist|10 min|500 lines| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| ### Supporting Reference Documents | Document | Purpose | When to Use | |----------|---------|------------|
+|**PYTHON_3.11_SETUP_GUIDE.md**|Install Python 3.11|Before Phase 8 start| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| | **PHASE_7_FINAL_COMPLETION.md** | Phase 7 completion status | Reference | |**phase7_validation_complete.py**|Data validation script|If verification needed| ---
 
 ## 🎯 BY USE CASE
 
@@ -106,20 +90,8 @@ Specifications → PPO section
 
 ## 📖 COMPLETE GUIDE SECTIONS
 
-### PHASE_8_COMPLETE_GUIDE.md Contents
-
-  | Section | Page | Duration | Key Topics |  
-|---------|------|----------|-----------|
-  | **1. Quick Start** | 1 | 5 min | Prerequisites, Step-by-step, Command |  
-  | **2. Detailed Walkthrough** | 2 | 10 min | What is Phase 8,... |  
-  | **3. Agent Specifications** | 3-7 | 20 min | SAC, PPO, A2C detailed specs |  
-  | **4. Training Execution** | 8-10 | 20 min | Options A-D, Resume, Quick test |  
-  | **5. Monitoring & Troubleshooting** | 11-15 | 30 min | Real-time monitoring, 5+... |  
-  | **6. Performance Evaluation** | 16-18 | 20 min | During training,... |  
-  | **7. Results Analysis** | 19-20 | 15 min | Interpreting results,... |  
-  | **8. Next Steps** | 21-23 | 10 min | Immediate, Short-term,... |  
-
----
+### PHASE_8_COMPLETE_GUIDE.md Contents | Section | Page | Duration | Key Topics | |---------|------|----------|-----------| | **1. Quick Start** | 1 | 5 min | Prerequisites, Step-by-step, Command | | **2. Detailed Walkthrough** | 2 | 10 min | What is Phase 8,... | | **3. Agent Specifications** | 3-7 | 20 min | SAC, PPO, A2C detailed specs | |**4. Training Execution**|8-10|20 min|Options A-D, Resume, Quick test|
+|**5. Monitoring & Troubleshooting**|11-15|30 min|Real-time monitoring, 5+...| | **6. Performance Evaluation** | 16-18 | 20 min | During training,... | | **7. Results Analysis** | 19-20 | 15 min | Interpreting results,... | | **8. Next Steps** | 21-23 | 10 min | Immediate, Short-term,... | ---
 
 ## 🔧 CONFIGURATION FILES
 
@@ -209,15 +181,7 @@ python scripts/train_quick.py --episodes 1 --agent PPO
 - Grid import: 41,300 kWh/year
 - Peak demand: 1.2 MW
 
-### After Training (Expected)
-
-  | Agent | CO₂ Reduction | Solar Util | Status |  
-|-------|---------------|-----------|--------|
-  | SAC | 20-26% | 60-65% | Good |  
-  | PPO | 25-29% | 65-70% | **BEST** ⭐ |  
-  | A2C | 20-25% | 60-65% | Good |  
-
----
+### After Training (Expected) | Agent | CO₂ Reduction | Solar Util | Status | |-------|---------------|-----------|--------| | SAC | 20-26% | 60-65% | Good | | PPO | 25-29% | 65-70% | **BEST** ⭐ | | A2C | 20-25% | 60-65% | Good | ---
 
 ## 🚨 CRITICAL REQUIREMENTS
 
@@ -274,17 +238,7 @@ python scripts/train_quick.py --episodes 1 --agent PPO
 
 ---
 
-## 📞 TROUBLESHOOTING QUICK INDEX
-
-  | Error | Guide Location | Solution |  
-|-------|----------------|----------|
-  | ImportError: citylearn | [Guide][url4] | Install Python 3.11 |  
-  | CUDA out of memory | [Guide][url5] | Reduce batch_size |  
-  | Agent not learning | [Guide][url6] | Build dataset |  
-  | gymnasium version error | [Guide][url7] | pip install gymnasium==0.28.1 |  
-  | Checkpoint incompatible | [Guide][url8] | Delete old checkpoints |  
-
----
+## 📞 TROUBLESHOOTING QUICK INDEX | Error | Guide Location | Solution | |-------|----------------|----------| | ImportError: citylearn | [Guide][url4] | Install Python 3.11 | | CUDA out of memory | [Guide][url5] | Reduce batch_size | | Agent not learning | [Guide][url6] | Build dataset | | gymnasium version error | [Guide][url7] | pip install gymnasium==0.28.1 | | Checkpoint incompatible | [Guide][url8] | Delete old checkpoints | ---
 
 ## 📋 FILE ORGANIZATION
 

@@ -90,23 +90,7 @@ DOCKER_BUILDKIT=1 docker build \
 
 ## 🔧 Resource Configuration
 
-### Default Limits
-
-  | Service | CPU Limit | CPU Reservation | Memory Limit | Memory Reservation |  
-| --------- | ----------- | ----------------- | -------------- | ------------------- |
-  | pipeline | 8 | 4 | 32 GB | 16 GB |  
-  | monitor | 2 | 1 | 8 GB | 2 GB |  
-  | jupyter | 4 | 2 | 16 GB | 8 GB |  
-
-### GPU Allocation
-
-  | Service | GPU Count | GPU Type | CPU | Memory |  
-| --------- | ----------- | ---------- | ----- | -------- |
-  | pipeline-gpu | 1 | nvidia | 16 | 64 GB |  
-  | monitor-gpu | 1 | nvidia | 4 | 16 GB |  
-  | jupyter-gpu | 1 | nvidia | 8 | 32 GB |  
-
----
+### Default Limits | Service | CPU Limit | CPU Reservation | Memory Limit | Memory Reservation | |---------|-----------|-----------------|--------------|-------------------| | pipeline | 8 | 4 | 32 GB | 16 GB | | monitor | 2 | 1 | 8 GB | 2 GB | | jupyter | 4 | 2 | 16 GB | 8 GB | ### GPU Allocation | Service | GPU Count | GPU Type | CPU | Memory | | --------- | ----------- | ---------- | ----- | -------- | | pipeline-gpu | 1 | nvidia | 16 | 64 GB | | monitor-gpu | 1 | nvidia | 4 | 16 GB | | jupyter-gpu | 1 | nvidia | 8 | 32 GB | ---
 
 ## 📊 Health Checks
 
@@ -132,27 +116,9 @@ docker exec pvbesscar-pipeline-gpu nvidia-smi
 
 ---
 
-## 📝 Volume Mounts
+## 📝 Volume Mounts | Volume | Host Path | Container Path | Permissions | Purpose | | -------- | ----------- | ----------------- | ------------- | --------- | | data | ./data | /app/data | RW | Input datasets | | outputs | ./outputs | /app/outputs | RW | Results & checkpoints | | configs | ./configs | /app/configs | RO | Configuration files | | pipeline_cache | (managed) | /app/.cache | RW | Pip cache | | jupyter_data | (managed) | /root/.jupyter | RW | Jupyter config | ---
 
-  | Volume | Host Path | Container Path | Permissions | Purpose |  
-| -------- | ----------- | ----------------- | ------------- | --------- |
-  | data | ./data | /app/data | RW | Input datasets |  
-  | outputs | ./outputs | /app/outputs | RW | Results & checkpoints |  
-  | configs | ./configs | /app/configs | RO | Configuration files |  
-  | pipeline_cache | (managed) | /app/.cache | RW | Pip cache |  
-  | jupyter_data | (managed) | /root/.jupyter | RW | Jupyter config |  
-
----
-
-## 🌐 Port Mappings
-
-  | Service | Port | Access |  
-| --------- | ------ | -------- |
-  | pvbesscar-jupyter | 8888 | <http://localhost:8888> |  
-  | pvbesscar-jupyter-gpu | 8889 | <http://localhost:8889> |  
-  | dev-notebook | 8888 | <http://localhost:8888> |  
-
----
+## 🌐 Port Mappings | Service | Port | Access | | --------- | ------ | -------- | | pvbesscar-jupyter | 8888 | <http://localhost:8888> | | pvbesscar-jupyter-gpu | 8889 | <http://localhost:8889> | | dev-notebook | 8888 | <http://localhost:8888> | ---
 
 ## 🛑 Common Commands
 
@@ -299,7 +265,7 @@ docker ps -a
 ### View Health Status
 
 ```bash
-docker inspect --format='{{json .State.Health}}' pvbesscar-pipeline | python -m json.tool
+docker inspect --format='{{json .State.Health}}' pvbesscar-pipeline|python -m json.tool
 ```bash
 
 ### Monitor Resources
@@ -362,7 +328,7 @@ docker-compose -f docker-compose.dev.yml -p pvbesscar-dev up -d
 ## 📚 Additional Resources
 
 - [Docker Best
-  - Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
+  - Practices]([url0])
 - [BuildKit](https://docs.docker.com/build/buildkit/)
 - [nvidia-docker](https://github.com/NVIDIA/nvidia-docker)
 - [Jupyter Lab Docker](https://jupyter-docker-stacks.readthedocs.io/)

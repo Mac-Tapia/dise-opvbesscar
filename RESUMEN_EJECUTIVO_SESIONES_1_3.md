@@ -71,45 +71,7 @@
 
 ## 📋 Configuraciones Finales Optimizadas
 
-### SAC (Soft Actor-Critic) - Off-Policy Máxima Estabilidad
-
-  | Parámetro | Valor |  
-|-----------|-------|
-  | Learning Rate | 1.5e-4 |  
-  | Replay Buffer | 1M transiciones |  
-  | Batch Size | 512 |  
-  | Tau (soft update) | 0.001 |  
-  | Network Hidden | 1024x1024 |  
-  | Gamma (discount) | 0.999 |  
-  | Entropy Coef | 0.01 (auto) |  
-  | **Convergencia** | 10-15 ep |  
-
-### PPO (Proximal Policy Optimization) - On-Policy Máxima Convergencia
-
-  | Parámetro | Valor |  
-|-----------|-------|
-  | Learning Rate | 2.0e-4 |  
-  | Batch Size | 128 |  
-  | N Steps | 2048 |  
-  | N Epochs | 20 |  
-  | Clip Range | 0.1 |  
-  | Network Hidden | 1024x1024 |  
-  | SDE Exploration | ✅ Enabled |  
-  | **Convergencia** | 20-30 ep |  
-
-### A2C (Advantage Actor-Critic) - On-Policy Máxima Velocidad
-
-  | Parámetro | Valor |  
-|-----------|-------|
-  | Learning Rate | 1.5e-4 |  
-  | N Steps | 2048 |  
-  | GAE Lambda | 0.95 |  
-  | VF Coef | 0.7 |  
-  | Network Hidden | 1024x1024 |  
-  | Entropy Coef | 0.01 |  
-  | **Convergencia** | 15-20 ep |  
-
----
+### SAC (Soft Actor-Critic) - Off-Policy Máxima Estabilidad | Parámetro | Valor | |-----------|-------| | Learning Rate | 1.5e-4 | | Replay Buffer | 1M transiciones | | Batch Size | 512 | | Tau (soft update) | 0.001 | | Network Hidden | 1024x1024 | | Gamma (discount) | 0.999 | | Entropy Coef | 0.01 (auto) | | **Convergencia** | 10-15 ep | ### PPO (Proximal Policy Optimization) - On-Policy Máxima Convergencia | Parámetro | Valor | |-----------|-------| | Learning Rate | 2.0e-4 | | Batch Size | 128 | | N Steps | 2048 | | N Epochs | 20 | | Clip Range | 0.1 | | Network Hidden | 1024x1024 | | SDE Exploration | ✅ Enabled | | **Convergencia** | 20-30 ep | ### A2C (Advantage Actor-Critic) - On-Policy Máxima Velocidad | Parámetro | Valor | |-----------|-------| | Learning Rate | 1.5e-4 | | N Steps | 2048 | | GAE Lambda | 0.95 | | VF Coef | 0.7 | | Network Hidden | 1024x1024 | | Entropy Coef | 0.01 | | **Convergencia** | 15-20 ep | ---
 
 ## 🚀 Scripts Operacionales
 
@@ -139,16 +101,7 @@
 
 ---
 
-## 📊 Métricas Baseline (5 Episodios)
-
-  | Métrica | A2C | SAC | PPO |  
-|---------|-----|-----|-----|
-  | **CO₂ (kg)** | 365 | 301 | **291** |  
-  | **Reward** | -947 | -973 | **-503** |  
-  | **Mejora vs Baseline** | 34% | 45% | **47%** |  
-  | **Status** | ✅ | ✅ | ✅ |  
-
-**Baseline (sin control)**: 550 kg CO₂/episodio
+## 📊 Métricas Baseline (5 Episodios) | Métrica | A2C | SAC | PPO | |---------|-----|-----|-----| | **CO₂ (kg)** | 365 | 301 | **291** | | **Reward** | -947 | -973 | **-503** | | **Mejora vs Baseline** | 34% | 45% | **47%** | | **Status** | ✅ | ✅ | ✅ | **Baseline (sin control)**: 550 kg CO₂/episodio
 
 ---
 

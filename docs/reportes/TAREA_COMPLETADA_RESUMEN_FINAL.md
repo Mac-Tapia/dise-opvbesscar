@@ -152,15 +152,7 @@ ENTRADA (Sensores) → PREDICCIÓN (ML) → DECISIÓN (IA) → EJECUCIÓN → RE
 €0.28/kWh          ¿Óptimo?        valor: X kW      Hardware    CO2 -
 ```bash
 
-### **Las 3 Acciones**
-
-  | Acción | Cuándo | Ahorro |  
-| -------- | -------- | -------- |
-  | **CHARGE** | Solar alto + Batería baja | €2-5 |  
-  | **DISCHARGE** | Solar bajo + Batería alta + Pico | €3-8 |  
-  | **IDLE** | Sistema equilibrado | €0 |  
-
-### **Valores que Proporciona**
+### **Las 3 Acciones** | Acción | Cuándo | Ahorro | | -------- | -------- | -------- | | **CHARGE** | Solar alto + Batería baja | €2-5 | | **DISCHARGE** | Solar bajo + Batería alta + Pico | €3-8 | | **IDLE** | Sistema equilibrado | €0 | ### **Valores que Proporciona**
 
 ```json
 {
@@ -175,17 +167,7 @@ ENTRADA (Sensores) → PREDICCIÓN (ML) → DECISIÓN (IA) → EJECUCIÓN → RE
 
 ---
 
-## 🌐 Accesos Disponibles
-
-  | Servicio | URL | Estado |  
-| ---------- | ----- | -------- |
-  | **Swagger UI** | <http://localhost:8000/docs> | ✅ |  
-  | **API** | <http://localhost:8000> | ✅ |  
-  | **Docker Manager** | <http://localhost:5000> | ✅ |  
-  | **MongoDB Admin** | <http://localhost:8081> | ✅ |  
-  | **MongoDB** | localhost:27017 | ✅ |  
-
----
+## 🌐 Accesos Disponibles | Servicio | URL | Estado | | ---------- | ----- | -------- | | **Swagger UI** | <http://localhost:8000/docs> | ✅ | | **API** | <http://localhost:8000> | ✅ | | **Docker Manager** | <http://localhost:5000> | ✅ | | **MongoDB Admin** | <http://localhost:8081> | ✅ | | **MongoDB** | localhost:27017 | ✅ | ---
 
 ## 📈 Ejemplo de Simulación - Día Soleado
 

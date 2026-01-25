@@ -11,20 +11,7 @@
 
 ## 📊 Resumen
 
-Se creó configuración **completa** de Kubernetes + MongoDB para PVBESSCAR:
-
-  | Componente | Estado | Detalles |  
-| ----------- | -------- | ---------- |
-  | **K8s Manifest** | ✅ Creado | k8s-deployment.yaml (300+ líneas) |  
-  | **MongoDB** | ✅ Configurado | 7.0, 10Gi storage, autenticación |  
-  | **Pipeline** | ✅ Configurado | Deployment, Service, LoadBalancer |  
-  | **Storage** | ✅ Configurado | 3 PVCs (mongo, data, outputs) |  
-  | **Networking** | ✅ Configurado | Ingress, NetworkPolicy, Health checks |  
-  | **Autoscaling** | ✅ Configurado | HPA (1-3 replicas) |  
-  | **Monitoring** | ✅ Configurado | Prometheus ServiceMonitor |  
-  | **Manager CLI** | ✅ Creado | k8s_manager.py (Python) |  
-
----
+Se creó configuración **completa** de Kubernetes + MongoDB para PVBESSCAR: | Componente | Estado | Detalles | | ----------- | -------- | ---------- | | **K8s Manifest** | ✅ Creado | k8s-deployment.yaml (300+ líneas) | | **MongoDB** | ✅ Configurado | 7.0, 10Gi storage, autenticación | | **Pipeline** | ✅ Configurado | Deployment, Service, LoadBalancer | | **Storage** | ✅ Configurado | 3 PVCs (mongo, data, outputs) | | **Networking** | ✅ Configurado | Ingress, NetworkPolicy, Health checks | | **Autoscaling** | ✅ Configurado | HPA (1-3 replicas) | | **Monitoring** | ✅ Configurado | Prometheus ServiceMonitor | | **Manager CLI** | ✅ Creado | k8s_manager.py (Python) | ---
 
 ## 🗂️ Archivos Creados (3)
 
@@ -215,16 +202,7 @@ python k8s_manager.py delete
 
 ---
 
-## 🌐 Acceso Web Después de Deployar
-
-  | Servicio | URL Local | URL Network |  
-| ---------- | ----------- | ------------- |
-  | Web Interface | <http://localhost:5000> | <http://192.168.43.30:5000> |  
-  | Jupyter Lab | <http://localhost:8888> | <http://192.168.43.30:8888> |  
-  | MongoDB | localhost:27017 | 192.168.43.30:27017 |  
-  | Ingress | <http://pvbesscar.local> | (requiere DNS) |  
-
-### Port Forward (diagnóstico)
+## 🌐 Acceso Web Después de Deployar | Servicio | URL Local | URL Network | | ---------- | ----------- | ------------- | | Web Interface | <http://localhost:5000> | <http://192.168.43.30:5000> | | Jupyter Lab | <http://localhost:8888> | <http://192.168.43.30:8888> | | MongoDB | localhost:27017 | 192.168.43.30:27017 | | Ingress | <http://pvbesscar.local> | (requiere DNS) | ### Port Forward (diagnóstico)
 
 ```bash
 # Terminal 1

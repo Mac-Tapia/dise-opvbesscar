@@ -18,16 +18,7 @@ A2C     │     6      │  -0.049390 │ 0.043033 │   33.36 ms │   0.8220  
 SAC     │     6      │  -0.113933 │ 0.044066 │   28.22 ms │   0.8196    │ 83.3%
 ```bash
 
-#### 2. Rankings de Validación
-
-  | Métrica | Ganador | Valor |  
-| --------- | --------- | ------- |
-  | **Mejor Reward** | A2C | -0.049390 |  
-  | **Mayor Estabilidad** | A2C | 0.8220 |  
-  | **Más Rápido** | SAC | 28.22 ms |  
-  | **Mayor Tasa Éxito** | SAC | 83.3% |  
-
-#### 3. Análisis de Estabilidad Detallado
+#### 2. Rankings de Validación | Métrica | Ganador | Valor | | --------- | --------- | ------- | | **Mejor Reward** | A2C | -0.049390 | | **Mayor Estabilidad** | A2C | 0.8220 | | **Más Rápido** | SAC | 28.22 ms | | **Mayor Tasa Éxito** | SAC | 83.3% | #### 3. Análisis de Estabilidad Detallado
 
 - **PPO**: Rango 0.7136 - 0.9863, Tasa éxito 50.0%
 - **A2C**: Rango 0.7416 - 0.9396, Tasa éxito 50.0%, **Más estable**
@@ -102,15 +93,7 @@ SAC     │   37.20 kW  │  10.62 kW │   22.2% ↓   │  $4,523.23/año
 
 #### 5. Análisis de ROI (Retorno de Inversión)
 
-Asumiendo costo sistema: **$50,000**
-
-  | Modelo | Ahorro Anual | Años para ROI | Beneficio 10 Años |  
-| -------- | -------------- | --------------- | ------------------- |
-  | PPO | $5,419.64 | 9.2 años | $4,196.45 |  
-  | A2C | $4,438.14 | 11.3 años | -$5,618.62 |  
-  | **SAC** | **$6,231.43** | **8.0 años** | **$12,314.32** ✓ |  
-
-**Ganador: SAC - Retorno más rápido y mayor beneficio a 10 años**
+Asumiendo costo sistema: **$50,000** | Modelo | Ahorro Anual | Años para ROI | Beneficio 10 Años | | -------- | -------------- | --------------- | ------------------- | | PPO | $5,419.64 | 9.2 años | $4,196.45 | | A2C | $4,438.14 | 11.3 años | -$5,618.62 | | **SAC** | **$6,231.43** | **8.0 años** | **$12,314.32** ✓ | **Ganador: SAC - Retorno más rápido y mayor beneficio a 10 años**
 
 #### 6. Rankings de Beneficios
 
@@ -130,20 +113,7 @@ Asumiendo costo sistema: **$50,000**
 
 ## 📊 **Síntesis Comparativa: Todas las Opciones**
 
-### Desempeño Integral
-
-  | Aspecto | PPO | A2C | SAC | Ganador |  
-| -------- | ----- | ----- | ----- | --------- |
-  | **Reward en Validación** | -0.126575 | **-0.049390** | -0.113933 | A2C |  
-  | **Estabilidad** | 0.8059 | **0.8220** | 0.8196 | A2C |  
-  | **Tasa Éxito** | 50.0% | 50.0% | **83.3%** | SAC |  
-  | **Velocidad Inferencia** | 30.53 ms | 33.36 ms | **28.22 ms** | SAC |  
-  | **Ahorro Económico** | $5,419.64 | $4,438.14 | **$6,231.43** | **SAC** ✓ |  
-  | **Reducción CO2** | 4,932 kg | 4,110 kg | **5,480 kg** | **SAC** ✓ |  
-  | **ROI (años)** | 9.2 | 11.3 | **8.0** | **SAC** ✓ |  
-  | **Beneficio 10 años** | $4,196.45 | -$5,618.62 | **$12,314.32** | **SAC** ✓ |  
-
-### 🏆 **GANADOR GENERAL: SAC**
+### Desempeño Integral | Aspecto | PPO | A2C | SAC | Ganador | | -------- | ----- | ----- | ----- | --------- | | **Reward en Validación** | -0.126575 | **-0.049390** | -0.113933 | A2C | | **Estabilidad** | 0.8059 | **0.8220** | 0.8196 | A2C | | **Tasa Éxito** | 50.0% | 50.0% | **83.3%** | SAC | | **Velocidad Inferencia** | 30.53 ms | 33.36 ms | **28.22 ms** | SAC | | **Ahorro Económico** | $5,419.64 | $4,438.14 | **$6,231.43** | **SAC** ✓ | | **Reducción CO2** | 4,932 kg | 4,110 kg | **5,480 kg** | **SAC** ✓ | | **ROI (años)** | 9.2 | 11.3 | **8.0** | **SAC** ✓ | |**Beneficio 10 años**|$4,196.45|-$5,618.62|**$12,314.32**|**SAC** ✓| ### 🏆 **GANADOR GENERAL: SAC**
 
 - Mayor tasa de éxito en validación (83.3%)
 - Mayor ahorro económico ($6,231.43/año)
@@ -188,20 +158,7 @@ Asumiendo costo sistema: **$50,000**
 
 ## 📈 **Impacto Total del Proyecto**
 
-### Cifras Consolidadas (OPCIÓN 1 + 4 + C + E)
-
-  | Métrica | Valor |  
-| --------- | ------- |
-  | Scripts de análisis creados | 4 (OPCIÓN 1,4,C,E) |  
-  | Modelos analizados | 3 (PPO, A2C, SAC) |  
-  | Escenarios validados | 101 |  
-  | Archivos JSON generados | 4 reportes |  
-  | Beneficio económico anual (SAC) | $6,231.43 |  
-  | Reducción CO2 anual (SAC) | 5,480 kg |  
-  | ROI (años) | 8.0 |  
-  | Documentación | Completa |  
-
----
+### Cifras Consolidadas (OPCIÓN 1 + 4 + C + E) | Métrica | Valor | | --------- | ------- | | Scripts de análisis creados | 4 (OPCIÓN 1,4,C,E) | | Modelos analizados | 3 (PPO, A2C, SAC) | | Escenarios validados | 101 | | Archivos JSON generados | 4 reportes | | Beneficio económico anual (SAC) | $6,231.43 | | Reducción CO2 anual (SAC) | 5,480 kg | | ROI (años) | 8.0 | | Documentación | Completa | ---
 
 ## 🚀 **Próximos Pasos Recomendados**
 

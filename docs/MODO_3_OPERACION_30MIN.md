@@ -2,31 +2,10 @@
 
 ## Actualización: 2026-01-24
 
-### Configuración de Infraestructura
+### Configuración de Infraestructura | Parámetro | Valor | |-----------|-------| | Cargadores físicos | 32 (28 motos + 4 mototaxis) | | Tomas por cargador | 4 | | **Total tomas** | **128** (112 motos + 16 mototaxis) | | Potencia motos | 2.0 kW/toma | | Potencia mototaxis | 3.0 kW/toma | | **Potencia total** | **272 kW** (224 + 48) | | Horario operación | 9 AM - 10 PM (13 horas) | | Duración sesión | 30 minutos (Modo 3) | ---
 
-  | Parámetro | Valor |  
-|-----------|-------|
-  | Cargadores físicos | 32 (28 motos + 4 mototaxis) |  
-  | Tomas por cargador | 4 |  
-  | **Total tomas** | **128** (112 motos + 16 mototaxis) |  
-  | Potencia motos | 2.0 kW/toma |  
-  | Potencia mototaxis | 3.0 kW/toma |  
-  | **Potencia total** | **272 kW** (224 + 48) |  
-  | Horario operación | 9 AM - 10 PM (13 horas) |  
-  | Duración sesión | 30 minutos (Modo 3) |  
-
----
-
-## Tabla 13 OE2 - Escenarios de Dimensionamiento
-
-  | Escenario | PE | FC | Cargadores | Tomas | Energía/Día | Vehíc/Día | Vehíc/20años |  
-|-----------|---:|---:|----------:|------:|------------:|----------:|-------------:|
-  | CONSERVADOR | 0.10 | 0.40 | 4 | 16 | 231 kWh | 257 | 1,876,100 |  
-  | MEDIANO | 0.50 | 0.60 | 20 | 80 | 1,739 kWh | 1,287 | 9,395,100 |  
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | MÁXIMO | 1.00 | 1.00 | 35 | 140 | 5,800 kWh | 2,575 | 18,797,500 |  
-
-> **Nota**: PE = Probabilidad de Evento de carga, FC = Factor de Carga (% de
+## Tabla 13 OE2 - Escenarios de Dimensionamiento |Escenario|PE|FC|Cargadores|Tomas|Energía/Día|Vehíc/Día|Vehíc/20años|
+|-----------|---:|---:|----------:|------:|------------:|----------:|-------------:| | CONSERVADOR | 0.10 | 0.40 | 4 | 16 | 231 kWh | 257 | 1,876,100 | | MEDIANO | 0.50 | 0.60 | 20 | 80 | 1,739 kWh | 1,287 | 9,395,100 | |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| | MÁXIMO | 1.00 | 1.00 | 35 | 140 | 5,800 kWh | 2,575 | 18,797,500 | > **Nota**: PE = Probabilidad de Evento de carga, FC = Factor de Carga (% de
 batería a recargar)
 
 ---
@@ -40,25 +19,7 @@ batería a recargar)
 - Factor pico: 40% de demanda diaria
 - Escenario RECOMENDADO usa PE=0.65
 
-### Vehículos Cargados por Período (RECOMENDADO PE=0.65)
-
-  | Período | Motos | Mototaxis | Total |  
-|---------|------:|----------:|------:|
-  | **Día** | 1,462 | 210 | **1,672** |  
-  | **Mes** | 43,860 | 6,300 | **50,160** |  
-  | **Año** | 533,630 | 76,650 | **610,280** |  
-  | **20 años** | 10,672,600 | 1,533,000 | **12,205,600** |  
-
-### Energía Cargada por Período (RECOMENDADO)
-
-  | Período | Motos | Mototaxis | Total |  
-|---------|------:|----------:|------:|
-  | **Día** | 2,193 kWh | 630 kWh | **2,823 kWh** |  
-  | **Mes** | 65,790 kWh | 18,900 kWh | **84,690 kWh** |  
-  | **Año** | 800,445 kWh | 229,950 kWh | **1,030,395 kWh** |  
-  | **20 años** | 16,009 MWh | 4,599 MWh | **20,608 MWh** |  
-
----
+### Vehículos Cargados por Período (RECOMENDADO PE=0.65) | Período | Motos | Mototaxis | Total | |---------|------:|----------:|------:| | **Día** | 1,462 | 210 | **1,672** | | **Mes** | 43,860 | 6,300 | **50,160** | | **Año** | 533,630 | 76,650 | **610,280** | | **20 años** | 10,672,600 | 1,533,000 | **12,205,600** | ### Energía Cargada por Período (RECOMENDADO) | Período | Motos | Mototaxis | Total | |---------|------:|----------:|------:| | **Día** | 2,193 kWh | 630 kWh | **2,823 kWh** | | **Mes** | 65,790 kWh | 18,900 kWh | **84,690 kWh** | | **Año** | 800,445 kWh | 229,950 kWh | **1,030,395 kWh** | | **20 años** | 16,009 MWh | 4,599 MWh | **20,608 MWh** | ---
 
 ## Clarificación de Capacidad vs Demanda
 
@@ -141,17 +102,12 @@ Cada **toma es una unidad controlable independiente** en el momento de carga:
 - Observable: `MOTO_TAXI_CH_113_ev_charging_power`, ...,
   - `MOTO_TAXI_CH_128_ev_charging_power`
 
-### 📊 Niveles de Control en CityLearn
-
-  | Nivel | Observable | Rango | Control |  
-| ------- | ----------- | ------- | --------- |
-  | **Agregado Total** | `ev_charging_power_total_kw` | 0-272 kW | Potencia global |  
-  | **Playa** | `ev_charging_power_playa_motos_kw` | 0-224 kW | Suma de 112 tomas |  
-  | **Playa** | `ev_charging_power_playa_mototaxis_kw` | 0-48 kW | Suma de 16 tomas |  
-  | **Individual** | `MOTO_CH_001_ev_charging_power` | 0-2 kW | 1 toma específica |  
-  | **Individual** | `MOTO_TAXI_CH_128_ev_charging_power` | 0-3 kW | 1 toma específica |  
-
-### Acción RL: Control Individual por Toma (OE3)
+### 📊 Niveles de Control en CityLearn | Nivel | Observable | Rango | Control | | ------- | ----------- | ------- | --------- |
+|**Agregado Total**|`ev_charging_power_total_kw`|0-272 kW|Potencia global|
+|**Playa**|`ev_charging_power_playa_motos_kw`|0-224 kW|Suma de 112 tomas|
+|**Playa**|`ev_charging_power_playa_mototaxis_kw`|0-48 kW|Suma de 16 tomas|
+|**Individual**|`MOTO_CH_001_ev_charging_power`|0-2 kW|1 toma específica|
+|**Individual**|`MOTO_TAXI_CH_128_ev_charging_power`|0-3 kW|1 toma específica| ### Acción RL: Control Individual por Toma (OE3)
 
 **Arquitectura OE3: 128 acciones individuales**:
 
@@ -172,22 +128,8 @@ action = {"action_charger_1": 0.5,   # MOTO_CH_001: 1 kW
 
 ```text
 
----
-
-  | Hora | Sesión | Motos Activas | Potencia Playa Motos | Potencia Playa Mototaxis | Total |  
-| ------ | -------- | --------------- | --------------------- | --------------------- | ------- |
-  | 9:00-9:30 | 1 | 35-40 | 70 kW | 0 kW | 70 kW |  
-  | 9:30-10:00 | 2 | 40-50 | 90 kW | 0 kW | 90 kW |  
-  | 10:00-10:30 | 3 | 50-60 | 110 kW | 15 kW | 125 kW |  
-  | ... | ... | ... | ... | ... | ... |  
-  | 18:00-18:30 | 17 | 100-112 | 224 kW | 32 kW | 256 kW (PICO) |  
-  | 18:30-19:00 | 18 | 112 | 224 kW | 48 kW | 272 kW (MÁXIMO) |  
-  | 19:00-19:30 | 19 | 112 | 224 kW | 48 kW | 272 kW (MÁXIMO) |  
-  | 19:30-20:00 | 20 | 112 | 224 kW | 48 kW | 272 kW (MÁXIMO) |  
-  | 20:00-20:30 | 21 | 80-100 | 180 kW | 48 kW | 228 kW (descenso) |  
-  | 21:30-22:00 | 26 | 20-30 | 50 kW | 20 kW | 70 kW |  
-
-### Observables Individuales (OE3: 264 observables)
+--- |Hora|Sesión|Motos Activas|Potencia Playa Motos|Potencia Playa Mototaxis|Total|
+|------|--------|---------------|---------------------|---------------------|-------| | 9:00-9:30 | 1 | 35-40 | 70 kW | 0 kW | 70 kW | | 9:30-10:00 | 2 | 40-50 | 90 kW | 0 kW | 90 kW | | 10:00-10:30 | 3 | 50-60 | 110 kW | 15 kW | 125 kW | | ... | ... | ... | ... | ... | ... | | 18:00-18:30 | 17 | 100-112 | 224 kW | 32 kW | 256 kW (PICO) | | 18:30-19:00 | 18 | 112 | 224 kW | 48 kW | 272 kW (MÁXIMO) | | 19:00-19:30 | 19 | 112 | 224 kW | 48 kW | 272 kW (MÁXIMO) | | 19:30-20:00 | 20 | 112 | 224 kW | 48 kW | 272 kW (MÁXIMO) | | 20:00-20:30 | 21 | 80-100 | 180 kW | 48 kW | 228 kW (descenso) | | 21:30-22:00 | 26 | 20-30 | 50 kW | 20 kW | 70 kW | ### Observables Individuales (OE3: 264 observables)
 
 - `MOTO_CH_001_ev_charging_power`: Sesión = 0-2 kW
 - `MOTO_CH_002_ev_charging_power`: Sesión = 0-2 kW
@@ -263,21 +205,7 @@ action = {"action_charger_1": 0.5,   # MOTO_CH_001: 1 kW
 
 ## Capacidad Real vs Demanda
 
-### Dimensionamiento OE2 ✅
-
-  | Métrica | Playa Motos | Playa Mototaxis | Total |  
-| --------- | ------------ | ----------------- | ------- |
-  | **Chargers Físicos** | 112 | 16 | **128** |  
-  | **Sockets Totales** | 112 (4 por charger) | 16 (4 por charger) | **128** |  
-  | **Potencia/Socket** | 2 kW | 3 kW | - |  
-  | **Potencia Pico** | 224 kW | 48 kW | **272 kW** |  
-  | **PICO (4 horas)** | 900 motos | 130 mototaxis | **1030 veh** |  
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | **Sesiones/Día** | 30 min | 30 min | 30 min |  
-  | **Total diario (13h)** | 1600+ motos | 600+ mototaxis | **2200+ veh** |  
-  | **Horas Operación** | 9am-10pm (13h) | 9am-10pm (13h) | 9am-10pm |  
-
----
+### Dimensionamiento OE2 ✅ | Métrica | Playa Motos | Playa Mototaxis | Total | | --------- | ------------ | ----------------- | ------- | | **Chargers Físicos** | 112 | 16 | **128** | | **Sockets Totales** | 112 (4 por charger) | 16 (4 por charger) | **128** | | **Potencia/Socket** | 2 kW | 3 kW | - | | **Potencia Pico** | 224 kW | 48 kW | **272 kW** | | **PICO (4 horas)** | 900 motos | 130 mototaxis | **1030 veh** | |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| | **Sesiones/Día** | 30 min | 30 min | 30 min | | **Total diario (13h)** | 1600+ motos | 600+ mototaxis | **2200+ veh** | | **Horas Operación** | 9am-10pm (13h) | 9am-10pm (13h) | 9am-10pm | ---
 
 ## Importancia para Entrenamiento RL
 

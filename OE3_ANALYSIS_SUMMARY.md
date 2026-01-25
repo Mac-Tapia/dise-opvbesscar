@@ -134,46 +134,20 @@ issues.
 
 ## Dead Code Analysis: How Much Dead Code Exists?
 
-### Orphaned Files
-
-  | File | Lines | Status | Impact |  
-|------|-------|--------|--------|
-  | demanda_mall_kwh.py | 507 | ❌ Orphaned (0 imports) | DELETE |  
-  | rewards_dynamic.py | 80 | ⚠️ Dev-only | ARCHIVE |  
-  | co2_emissions.py | 358 | ⚠️ Unused classes | CONSOLIDATE |  
-  | rewards_improved_v2.py | 410 | ⚠️ v2 iteration unused | ARCHIVE |  
-  | rewards_wrapper_v2.py | 180 | ⚠️ Wrapper unused | ARCHIVE |  
-  | **TOTAL** | **1,535 lines** |  |  |  
-
-**Space Savings**: Removing these files saves ~1,500 lines of code (40% of
+### Orphaned Files | File | Lines | Status | Impact | |------|-------|--------|--------| | demanda_mall_kwh.py | 507 | ❌ Orphaned (0 imports) | DELETE | | rewards_dynamic.py | 80 | ⚠️ Dev-only | ARCHIVE | | co2_emissions.py | 358 | ⚠️ Unused classes | CONSOLIDATE | | rewards_improved_v2.py | 410 | ⚠️ v2 iteration unused | ARCHIVE | | rewards_wrapper_v2.py | 180 | ⚠️ Wrapper unused | ARCHIVE | | **TOTAL** | **1,535 lines** | | | **Space Savings**: Removing these files saves ~1,500 lines of code (40% of
 module size)
 
 ---
 
 ## Duplicate Functionality: Is Code Repeated?
 
-### Reward System Duplication
-
-  | Aspect | v1 (Active) | v2 (Backup) | Conflict? |  
-|--------|-----------|-----------|-----------|
-  | Weights class | MultiObjectiveWeights | ImprovedWeights | ⚠️ Yes, different fields |  
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | Context class | IquitosContext | IquitosContextV2 | ⚠️ Yes, v2 has extra fields |  
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
-**Risk**: If v2 accidentally imported without updating agents/**init**.py, it
+### Reward System Duplication | Aspect | v1 (Active) | v2 (Backup) | Conflict? | |--------|-----------|-----------|-----------|
+|Weights class|MultiObjectiveWeights|ImprovedWeights|⚠️ Yes, different fields| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+|Context class|IquitosContext|IquitosContextV2|⚠️ Yes, v2 has extra fields| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| **Risk**: If v2 accidentally imported without updating agents/**init**.py, it
 would break training.
 **Mitigation**: Archive v2 to experimental/ folder.
 
-### CO₂ Calculation Duplication
-
-  | Aspect | co2_emissions.py | co2_table.py | Duplication? |  
-|--------|-----------------|-------------|-------------|
-  | EmissionFactors | ✅ Defined | ❌ Not used | ⚠️ Yes, unused |  
-  | CO2EmissionBreakdown | ✅ Defined | ❌ Not used | ⚠️ Yes, unused |  
-  | compute_table() | ❌ No | ✅ Defined | ✓ Single source |  
-
-**Issue**: co2_emissions.py defines classes that co2_table.py imports but
+### CO₂ Calculation Duplication | Aspect | co2_emissions.py | co2_table.py | Duplication? | |--------|-----------------|-------------|-------------| | EmissionFactors | ✅ Defined | ❌ Not used | ⚠️ Yes, unused | | CO2EmissionBreakdown | ✅ Defined | ❌ Not used | ⚠️ Yes, unused | | compute_table() | ❌ No | ✅ Defined | ✓ Single source | **Issue**: co2_emissions.py defines classes that co2_table.py imports but
 doesn't use.
 **Solution**: Merge dataclass definitions into co2_table.py, delete
 co2_emissions.py.

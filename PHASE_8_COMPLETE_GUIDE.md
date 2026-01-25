@@ -96,15 +96,7 @@ reduce costs
 **Input**: OE2 infrastructure (4 MWp PV, 2 MWh BESS, 128 chargers)  
 **Output**: Trained agents that reduce CO₂ by 20-30% vs uncontrolled charging
 
-### Why Three Agents?
-
-  | Agent | Approach | Strength |  
-|-------|----------|----------|
-  | **SAC** | Off-policy, entropy-regularized | Handles exploration... |  
-  | **PPO** | On-policy, stable | Best performance, most... |  
-  | **A2C** | On-policy, simple | Fast training, good baseline |  
-
-**Goal**: Compare performance, determine best for production deployment
+### Why Three Agents? | Agent | Approach | Strength | |-------|----------|----------| | **SAC** | Off-policy, entropy-regularized | Handles exploration... | | **PPO** | On-policy, stable | Best performance, most... | | **A2C** | On-policy, simple | Fast training, good baseline | **Goal**: Compare performance, determine best for production deployment
 
 ### Architecture Overview
 
@@ -164,7 +156,7 @@ data/interim/oe2/          Build Dataset
 
 **Cons**:
 
-- Can be unstable in very large action spaces
+- Can be unstable in large action spaces
 - Entropy coefficient requires tuning
 
 **Hyperparameters**:
@@ -532,7 +524,7 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 ls outputs/schema_*.json
 
 # Verify charger CSVs created
-ls data/processed/citylearnv2_dataset/buildings/*/charger_simulation_*.csv | wc -l
+ls data/processed/citylearnv2_dataset/buildings/*/charger_simulation_*.csv|wc -l
 # Should show 128 files
 
 # Try training again
@@ -837,20 +829,7 @@ Phase 8 is complete when:
 
 ---
 
-## 📞 TROUBLESHOOTING SUMMARY
-
-  | Problem | Cause | Solution |  
-|---------|-------|----------|
-  | ImportError: citylearn | Python 3.13 | Install Python 3.11 |  
-  | CUDA OOM | Batch too large | Reduce batch_size/n_steps |  
-  | Reward not learning | Dataset not built | Run dataset_builder |  
-  | NaN in training | Numerical error | Check reward normalization |  
-  | GPU not detected | No CUDA available | Use --device cpu |  
-  | Checkpoint incompatible | Old code + checkpoint | Delete checkpoints, restart |  
-  | Training very slow | CPU mode | Use --device cuda |  
-  | Permission denied | File access | Check write permissions |  
-
----
+## 📞 TROUBLESHOOTING SUMMARY | Problem | Cause | Solution | |---------|-------|----------| | ImportError: citylearn | Python 3.13 | Install Python 3.11 | | CUDA OOM | Batch too large | Reduce batch_size/n_steps | | Reward not learning | Dataset not built | Run dataset_builder | | NaN in training | Numerical error | Check reward normalization | | GPU not detected | No CUDA available | Use --device cpu | |Checkpoint incompatible|Old code + checkpoint|Delete checkpoints, restart| | Training slow | CPU mode | Use --device cuda | | Permission denied | File access | Check write permissions | ---
 
 ## 📞 HELP & SUPPORT
 

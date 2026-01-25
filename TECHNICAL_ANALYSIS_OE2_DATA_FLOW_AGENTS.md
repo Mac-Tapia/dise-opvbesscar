@@ -26,21 +26,7 @@
 âœ“ validate_training_env.py       (Pre-training validation - 137 lines)
 ```bash
 
-### Key Findings Summary
-
-  | Category | Status | Severity |  
-|----------|--------|----------|
-  | **OE2 Data Connection** | âœ“ Indirect via CityLearn | Medium |  
-  | **128 Chargers Handling** | âœ“ Correct via wrapper flattening | Low |  
-  | **Solar Generation (8,760 hrs)** |  
- âœ“ Loaded in... | Low |  
-  | **BESS (2MWh/1.2MW)** | âœ“ Via environment attribute access | Low |  
-  | **Type Errors** | âš  Minor issues in wrappers | Low |  
-  | **Data Mismatches** | âš  Pre-scaling hardcoded to 0.001 | Medium |  
-  | **Code Quality** | âœ“ Good modular design | Low |  
-  | **Architecture** | âœ“ Proper abstraction layers | Low |  
-
----
+### Key Findings Summary | Category | Status | Severity | |----------|--------|----------| | **OE2 Data Connection** | âœ“ Indirect via CityLearn | Medium | | **128 Chargers Handling** | âœ“ Correct via wrapper flattening | Low | | **Solar Generation (8,760 hrs)** | âœ“ Loaded in... | Low | | **BESS (2MWh/1.2MW)** | âœ“ Via environment attribute access | Low | | **Type Errors** | âš  Minor issues in wrappers | Low | | **Data Mismatches** | âš  Pre-scaling hardcoded to 0.001 | Medium | | **Code Quality** | âœ“ Good modular design | Low | | **Architecture** | âœ“ Proper abstraction layers | Low | ---
 
 ## 1. DATA FLOW ANALYSIS: OE2 â†’ AGENTS
 
@@ -238,20 +224,7 @@ controllable out of 128** (2 reserved)
 
 ### 1.3 OE2 Parameters in Agent Configs
 
-All three agents (SAC/PPO/A2C) embed OE2 parameters in dataclass configs:
-
-  | Parameter | SAC | PPO | A2C | OE2 Spec | Status |  
-|-----------|-----|-----|-----|----------|--------|
-  | `co2_target_kg_per_kwh` | 0.4521 | 0.4521 |  
- 0.4521 | âœ“ Correct (Iquitos thermal) | âœ“ |  
-  | `cost_target_usd_per_kwh` | 0.20 | 0.20 | 0.20 | âœ“ Correct | âœ“ |  
-  | `ev_soc_target` | 0.90 | 0.90 | 0.90 | âœ“ Correct | âœ“ |  
-  | `peak_demand_limit_kw` | 200.0 | 200.0 |  
- 200.0 | âœ“ Reasonable (272 kW total) | âœ“ |  
-  | (No charger count) | â€” | â€” | â€” | âš  Missing | âš |  
-  | (No BESS capacity) | â€” | â€” | â€” | âš  Missing | âš |  
-
----
+All three agents (SAC/PPO/A2C) embed OE2 parameters in dataclass configs: | Parameter | SAC | PPO | A2C | OE2 Spec | Status | |-----------|-----|-----|-----|----------|--------| | `co2_target_kg_per_kwh` | 0.4521 | 0.4521 | 0.4521 | âœ“ Correct (Iquitos thermal) | âœ“ | | `cost_target_usd_per_kwh` | 0.20 | 0.20 | 0.20 | âœ“ Correct | âœ“ | | `ev_soc_target` | 0.90 | 0.90 | 0.90 | âœ“ Correct | âœ“ | | `peak_demand_limit_kw` | 200.0 | 200.0 | 200.0 | âœ“ Reasonable (272 kW total) | âœ“ | | (No charger count) | â€” | â€” | â€” | âš  Missing | âš | | (No BESS capacity) | â€” | â€” | â€” | âš  Missing | âš | ---
 
 ## 2. 128 CHARGERS HANDLING ANALYSIS
 
@@ -523,53 +496,13 @@ return np.array([pv_kw * 0.001, soc * 1.0], dtype=np.float32)
 
 ## 5. IDENTIFIED ISSUES
 
-### 5.1 Type Errors
-
-  | File | Location | Issue | Severity |  
-|------|----------|-------|----------|
-  | ppo_sb3.py | Line 290 |  
- `_get_act_dim()` returns `int`... | Low |  
-  | a2c_sb3.py | Line 270 | Same as above | Low |  
-  | sac.py | Line 515-525 |  
- `_obs_prescale` is float... | Low |  
-  | All wrappers | Lines ~180-200 |  
- `getattr()` without type... | Low |  
-
-**Assessment**: Type errors are **not fatal** due to duck typing in NumPy
+### 5.1 Type Errors | File | Location | Issue | Severity | |------|----------|-------|----------| | ppo_sb3.py | Line 290 | `_get_act_dim()` returns `int`... | Low | | a2c_sb3.py | Line 270 | Same as above | Low | | sac.py | Line 515-525 | `_obs_prescale` is float... | Low | | All wrappers | Lines ~180-200 | `getattr()` without type... | Low | **Assessment**: Type errors are **not fatal** due to duck typing in NumPy
 
 ---
 
-### 5.2 Data Mismatches
+### 5.2 Data Mismatches | Issue | Location | Impact | Severity | |-------|----------|--------|----------| | Hardcoded prescale 0.001 | All wrappers | Assumes specific data ranges (PV, power) | **HIGH** | | BESS SOC prescaled by 0.001 | All wrappers | Makes SOC near-zero in normalized space | **HIGH** | | No per-charger state features | All agents | Agent cannot distinguish... | **MEDIUM** | | 126 vs 128 chargers not documented | Config docstrings | Confusion about controllable... | **MEDIUM** | | Silent failures in feature extraction | All wrappers | Missing buildings/storage attributes... | **MEDIUM** | ---
 
-  | Issue | Location | Impact | Severity |  
-|-------|----------|--------|----------|
-  | Hardcoded prescale 0.001 | All wrappers |  
- Assumes specific data ranges (PV, power) | **HIGH** |  
-  | BESS SOC prescaled by 0.001 | All wrappers |  
- Makes SOC near-zero in normalized space | **HIGH** |  
-  | No per-charger state features | All agents |  
- Agent cannot distinguish... | **MEDIUM** |  
-  | 126 vs 128 chargers not documented | Config docstrings |  
- Confusion about controllable... | **MEDIUM** |  
-  | Silent failures in feature extraction | All wrappers |  
- Missing buildings/storage attributes... | **MEDIUM** |  
-
----
-
-### 5.3 Code Quality Issues
-
-  | Issue | Location | Impact | Severity |  
-|-------|----------|--------|----------|
-  | Inconsistent exception handling | All wrappers |  
- Some use try/except,... | Low |  
-  | Magic numbers (0.001, 1000) | All wrappers |  
- Hardcoded assumptions not documented | Medium |  
-  | No validation of OE2 data | dataset_builder.py |  
- Silent failures if... | Medium |  
-  | Duplicate wrapper code | sac.py, ppo_sb3.py, a2c_sb3.py |  
- 300+ lines copied; maintenance burden | Medium |  
-
----
+### 5.3 Code Quality Issues | Issue | Location | Impact | Severity | |-------|----------|--------|----------| | Inconsistent exception handling | All wrappers | Some use try/except,... | Low | | Magic numbers (0.001, 1000) | All wrappers | Hardcoded assumptions not documented | Medium | | No validation of OE2 data | dataset_builder.py | Silent failures if... | Medium | | Duplicate wrapper code | sac.py, ppo_sb3.py, a2c_sb3.py | 300+ lines copied; maintenance burden | Medium | ---
 
 ## 6. ARCHITECTURAL ASSESSMENT
 
@@ -826,19 +759,7 @@ def compute(..., bess_soc: float, prev_bess_soc: float, ...):
 ### Summary
 
 The OE2 data flow to agents is **architecturally sound** but has **critical
-tuning issues**:
-
-  | Aspect | Status | Risk |  
-|--------|--------|------|
-  | Data connection | âœ“ Correct | Low |  
-  | 128 chargers | âœ“ Correct (126 controllable) | Low |  
-  | Solar (8,760 hrs) | âœ“ Correct | Medium (prescaling hardcoded) |  
-  | BESS (2MWh/1.2MW) | âš  Partially correct | **High** (SOC not observable) |  
-  | Type safety | âš  Duck typing | Low |  
-  | Code quality | âœ“ Good (except duplication) | Medium |  
-  | Architectural | âœ“ Excellent abstraction | Low |  
-
-### Critical Issues to Address
+tuning issues**: | Aspect | Status | Risk | |--------|--------|------| | Data connection | âœ“ Correct | Low | | 128 chargers | âœ“ Correct (126 controllable) | Low | | Solar (8,760 hrs) | âœ“ Correct | Medium (prescaling hardcoded) | | BESS (2MWh/1.2MW) | âš  Partially correct | **High** (SOC not observable) | | Type safety | âš  Duck typing | Low | | Code quality | âœ“ Good (except duplication) | Medium | | Architectural | âœ“ Excellent abstraction | Low | ### Critical Issues to Address
 
 1. **BESS SOC prescaling by 0.001** â†’ Makes SOC invisible in normalized space
 2. **Hardcoded 0.001 prescaling** â†’ Fragile if data ranges change
@@ -854,20 +775,6 @@ tuning issues**:
 
 ---
 
-## 10. APPENDIX: File Reference
-
-  | File | Purpose | Lines | Status |  
-|------|---------|-------|--------|
-  | `__init__.py` | Exports + device detection | 75 | âœ“ Clean |  
-  | `sac.py` | SAC agent (SB3 + CityLearn) | 1,113 | âš  Hardcoded params |  
-  | `ppo_sb3.py` | PPO agent | 868 | âš  Hardcoded params |  
-  | `a2c_sb3.py` | A2C agent | 715 | âš  Hardcoded params |  
-  | `agent_utils.py` | Shared utilities | 189 | âœ“ Light |  
-  | `no_control.py` | Zero action baseline | ~50 | âœ“ Simple |  
-  | `uncontrolled.py` | EV-max baseline | ~60 | âœ“ Simple |  
-  | `rbc.py` | Rule-based controller | 320 | âœ“ Good |  
-  | `validate_training_env.py` | Pre-training checks | 137 | âœ“ Useful |  
-
----
+## 10. APPENDIX: File Reference | File | Purpose | Lines | Status | |------|---------|-------|--------| | `__init__.py` | Exports + device detection | 75 | âœ“ Clean | | `sac.py` | SAC agent (SB3 + CityLearn) | 1,113 | âš  Hardcoded params | | `ppo_sb3.py` | PPO agent | 868 | âš  Hardcoded params | | `a2c_sb3.py` | A2C agent | 715 | âš  Hardcoded params | | `agent_utils.py` | Shared utilities | 189 | âœ“ Light | | `no_control.py` | Zero action baseline | ~50 | âœ“ Simple | | `uncontrolled.py` | EV-max baseline | ~60 | âœ“ Simple | | `rbc.py` | Rule-based controller | 320 | âœ“ Good | | `validate_training_env.py` | Pre-training checks | 137 | âœ“ Useful | ---
 
  **Report Generated**: 2026-01-25 | **Python 3.11** | **stable-baselines3 1.8+** 

@@ -36,16 +36,7 @@ soc_reserve_deficit, pv_power_ratio, etc.
 
 ---
 
-## ✅ RESULTADOS ESPERADOS
-
-  | Métrica | Ahora | Después |  
-| --------- | ------- | --------- |
-  | **Importación Pico** | 280 kWh/h | <250 kWh/h ✅ |  
-  | **SOC Pre-Pico** | 0.45 | >0.65 ✅ |  
-  | **Convergencia** | 30-40 ep | 15-20 ep ✅ |  
-  | **CO₂ Anual** | 1.8M kg | <1.7M kg ✅ |  
-
----
+## ✅ RESULTADOS ESPERADOS | Métrica | Ahora | Después | | --------- | ------- | --------- | | **Importación Pico** | 280 kWh/h | <250 kWh/h ✅ | | **SOC Pre-Pico** | 0.45 | >0.65 ✅ | | **Convergencia** | 30-40 ep | 15-20 ep ✅ | | **CO₂ Anual** | 1.8M kg | <1.7M kg ✅ | ---
 
 ## 📋 CHECKLIST (3 HORAS)
 
@@ -63,20 +54,7 @@ soc_reserve_deficit, pv_power_ratio, etc.
 
 ---
 
-## 🎯 POR QUÉ FUNCIONA
-
-  | Cambio | Problema | Solución | Resultado |  
-| -------- | ---------- | ---------- | ----------- |
-  | Normalización | Reward diverge | Percentiles p25-p75 | Gradientes estables |  
-  | Baselines dinámica | Penalidad uniforme | 130 off-peak / 250 peak | Estrategia por hora |  
-  | Bonus BESS | No motiva batería | +0.3 si SOC alto | Pico preparado |  
-  | Ent ↑ | Mínimo local | 0.01→0.02 | Explora mejor |  
-  | LR ↓ | Inestable | 3e-4→2.5e-4 | Converge suave |  
-  | Batch ↓ | Ruido gradiente | 512→256 | Correlación ↓ |  
-  | Red ↑ | Capacidad baja | 256→512 | Fit obs ~915 dims |  
-  | Obs ↑ | Ciega temporal | +15 features | Aprende scheduling |  
-
----
+## 🎯 POR QUÉ FUNCIONA | Cambio | Problema | Solución | Resultado | | -------- | ---------- | ---------- | ----------- | | Normalización | Reward diverge | Percentiles p25-p75 | Gradientes estables | |Baselines dinámica|Penalidad uniforme|130 off-peak / 250 peak|Estrategia por hora| | Bonus BESS | No motiva batería | +0.3 si SOC alto | Pico preparado | | Ent ↑ | Mínimo local | 0.01→0.02 | Explora mejor | | LR ↓ | Inestable | 3e-4→2.5e-4 | Converge suave | | Batch ↓ | Ruido gradiente | 512→256 | Correlación ↓ | | Red ↑ | Capacidad baja | 256→512 | Fit obs ~915 dims | | Obs ↑ | Ciega temporal | +15 features | Aprende scheduling | ---
 
 ## 🔄 ROLLBACK (SI FALLA)
 

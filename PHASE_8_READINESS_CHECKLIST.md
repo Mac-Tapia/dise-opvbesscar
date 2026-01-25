@@ -52,25 +52,7 @@
 4. **Collect training logs** and performance data
 5. **Prepare final results reports**
 
-### Expected Agents
-
-  | Agent | Type | Framework | Expected Training Time |  
-|-------|------|-----------|----------------------|
-  | SAC | Off-policy | Stable-Baselines3 | 60-90 min |  
-  | PPO | On-policy | Stable-Baselines3 | 90-120 min |  
-  | A2C | On-policy | Stable-Baselines3 | 60-90 min |  
-
-### Key Metrics to Track
-
-  | Metric | Source | Purpose |  
-|--------|--------|---------|
-  | CO₂ Reduction | rewards.py | Primary objective |  
-  | Solar Utilization | rewards.py | Secondary objective |  
-  | Cost Savings | rewards.py | Economic impact |  
-  | Grid Stability | rewards.py | System reliability |  
-  | Episode Reward | training logs | Training progress |  
-
----
+### Expected Agents | Agent | Type | Framework | Expected Training Time | |-------|------|-----------|----------------------| | SAC | Off-policy | Stable-Baselines3 | 60-90 min | | PPO | On-policy | Stable-Baselines3 | 90-120 min | | A2C | On-policy | Stable-Baselines3 | 60-90 min | ### Key Metrics to Track | Metric | Source | Purpose | |--------|--------|---------| | CO₂ Reduction | rewards.py | Primary objective | | Solar Utilization | rewards.py | Secondary objective | | Cost Savings | rewards.py | Economic impact | | Grid Stability | rewards.py | System reliability | | Episode Reward | training logs | Training progress | ---
 
 ## Phase 8 Prerequisites
 
@@ -249,21 +231,7 @@ reports/oe3/performance_metrics.json
 
 ---
 
-## Phase 8 Timeline Estimate
-
-  | Activity | Duration | Parallelizable |  
-|----------|----------|----------------|
-  | Python 3.11 install | 10-15 min | Manual |  
-  | CityLearn install | 5-10 min | Automatic |  
-  | Build dataset | 15-30 min | Once |  
-  | Quick test (1 episode) | 15 min | Sequential |  
-  | SAC training (50 ep) | 60-90 min | Once |  
-  | PPO training (50 ep) | 90-120 min | Once |  
-  | A2C training (50 ep) | 60-90 min | Once |  
-  | Evaluation & reports | 10-15 min | Once |  
-  | **TOTAL** | **4-6 hours** | **Sequential** |  
-
-**Note**: Can run agents on separate GPUs in parallel for 2-3 hour reduction
+## Phase 8 Timeline Estimate | Activity | Duration | Parallelizable | |----------|----------|----------------| | Python 3.11 install | 10-15 min | Manual | | CityLearn install | 5-10 min | Automatic | | Build dataset | 15-30 min | Once | | Quick test (1 episode) | 15 min | Sequential | | SAC training (50 ep) | 60-90 min | Once | | PPO training (50 ep) | 90-120 min | Once | | A2C training (50 ep) | 60-90 min | Once | | Evaluation & reports | 10-15 min | Once | | **TOTAL** | **4-6 hours** | **Sequential** | **Note**: Can run agents on separate GPUs in parallel for 2-3 hour reduction
 
 ---
 

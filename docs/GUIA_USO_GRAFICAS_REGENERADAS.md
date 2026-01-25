@@ -102,15 +102,7 @@ training_comparison.png      ← Comparación general
 
 ## 🔍 Datos Utilizados
 
-### Fuente de Datos Real
-
-  | Agente | Checkpoint | Timesteps | Validación |  
-| -------- | ----------- | ----------- | ------------ |
-  | PPO | `checkpoints/ppo_gpu/ppo_final.zip` | **18,432** | ✅ Confirmado |  
-  | A2C | `checkpoints/a2c_gpu/a2c_final.zip` | **17,536** | ✅ Confirmado |  
-  | SAC | `checkpoints/sac/sac_final.zip` | **17,520** | ✅ Confirmado |  
-
-**Nota**: Todas las gráficas usan datos verificables extraídos directamente de
+### Fuente de Datos Real | Agente | Checkpoint | Timesteps | Validación | | -------- | ----------- | ----------- | ------------ | | PPO | `checkpoints/ppo_gpu/ppo_final.zip` | **18,432** | ✅ Confirmado | | A2C | `checkpoints/a2c_gpu/a2c_final.zip` | **17,536** | ✅ Confirmado | | SAC | `checkpoints/sac/sac_final.zip` | **17,520** | ✅ Confirmado | **Nota**: Todas las gráficas usan datos verificables extraídos directamente de
 los modelos entrenados.
 
 ---

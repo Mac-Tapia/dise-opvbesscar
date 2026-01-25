@@ -158,17 +158,6 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 
 ---
 
-## ⚠️ Problemas Comunes
-
-  | Problema | Solución |  
-|----------|----------|
-  | "Schema not found" | Ejecutar `run_oe3_build_dataset` primero |  
-  | "128 chargers not found" | Validar `data/interim/oe2/chargers/individual_chargers.json`... |  
-  | "GPU out of memory" | Reducir `n_steps` en... |  
-  | "Reward NaN" | Verificar weights sum... |  
-  | "Import error agents" | Verificar `src/` en PYTHONPATH |  
-  | "Checkpoint load failed" | Limpiar `checkpoints/` o... |  
-
----
+## ⚠️ Problemas Comunes | Problema | Solución | |----------|----------| | "Schema not found" | Ejecutar `run_oe3_build_dataset` primero | |"128 chargers not found"|Validar `data/interim/oe2/chargers/individual_chargers.json`...| | "GPU out of memory" | Reducir `n_steps` en... | | "Reward NaN" | Verificar weights sum... | | "Import error agents" | Verificar `src/` en PYTHONPATH | | "Checkpoint load failed" | Limpiar `checkpoints/` o... | ---
 
 **Status**: Actualizado Ene 25, 2026

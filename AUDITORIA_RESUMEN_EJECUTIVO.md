@@ -25,19 +25,8 @@
 
 ---
 
-## 📊 TABLA COMPARATIVA: Esperado vs Actual
-
-  | Componente | Esperado | Actual | Gap | Severidad |  
-|-----------|----------|--------|-----|-----------|
-  | **Solar timeseries** | 8,760 h (1h res) | 35,037 filas (15-min) | 4x más datos | 🔴 CRÍTICO |  
-  | **Charger CSVs** | 128 archivos | 0 generados | 100% faltante | 🔴 CRÍTICO |  
-  | **BESS config** | 2,000 kWh doc. | 4,520 kWh real | MISMATCH | 🟠 ALTO |  
-  | **Building load** | 8,760 h | ? incompleto | Desconocido | 🟠 ALTO |  
-  | **Downsampling** | Implementado | ❌ NO | 100% faltante | 🔴 CRÍTICO |  
-  | **Path schema** | `buildings/Mall/X.csv` | `X.csv` (relativo) | Incorrecto | 🔴 CRÍTICO |  
-  | **Schema validation** | ✓ Implementado | ❌ NO | 0% hecho | 🟠 ALTO |  
-
----
+## 📊 TABLA COMPARATIVA: Esperado vs Actual | Componente | Esperado | Actual | Gap | Severidad | |-----------|----------|--------|-----|-----------|
+|**Solar timeseries**|8,760 h (1h res)|35,037 filas (15-min)|4x más datos|🔴 CRÍTICO| | **Charger CSVs** | 128 archivos | 0 generados | 100% faltante | 🔴 CRÍTICO | | **BESS config** | 2,000 kWh doc. | 4,520 kWh real | MISMATCH | 🟠 ALTO | | **Building load** | 8,760 h | ? incompleto | Desconocido | 🟠 ALTO | | **Downsampling** | Implementado | ❌ NO | 100% faltante | 🔴 CRÍTICO | |**Path schema**|`buildings/Mall/X.csv`|`X.csv` (relativo)|Incorrecto|🔴 CRÍTICO| | **Schema validation** | ✓ Implementado | ❌ NO | 0% hecho | 🟠 ALTO | ---
 
 ## 🔴 TOP 4 ERRORES BLOQUEANTES
 
@@ -178,17 +167,9 @@ RIESGO CRÍTICO: Sin Tier 1, proyecto BLOQUEADO
 
 ---
 
-## 💾 ARCHIVOS GENERADOS POR AUDITORÍA
-
-  | Archivo | Descripción | Tamaño |  
-|---------|-------------|--------|
-  | **AUDITORIA_OE2_OE3_EXHAUSTIVA.py** | Script de análisis automático | 15 KB |  
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | **CORRECCIONES_DATASET_BUILDER_TIER1.py** | Código de correcciones... | 12 KB |  
-  | **AUDITORIA_EXHAUSTIVA_LOG.txt** | Output del análisis | 8 KB |  
-  | **[ESTE ARCHIVO]** | Resumen ejecutivo | 5 KB |  
-
-**Total**: ~65 KB de documentación y código de correcciones
+## 💾 ARCHIVOS GENERADOS POR AUDITORÍA | Archivo | Descripción | Tamaño | |---------|-------------|--------|
+|**AUDITORIA_OE2_OE3_EXHAUSTIVA.py**|Script de análisis automático|15 KB| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+|**CORRECCIONES_DATASET_BUILDER_TIER1.py**|Código de correcciones...|12 KB| | **AUDITORIA_EXHAUSTIVA_LOG.txt** | Output del análisis | 8 KB | | **[ESTE ARCHIVO]** | Resumen ejecutivo | 5 KB | **Total**: ~65 KB de documentación y código de correcciones
 
 ---
 

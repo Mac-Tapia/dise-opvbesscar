@@ -92,17 +92,7 @@ Ahora:  step 500, lr=1.00e-03, reward_avg=??? (esperado mejora)
 
 ### Solution Applied: TIER 1
 
-#### 1. Pesos Rebalanceados
-
-  | Métrica | Antes | Ahora | Razón |  
-| --- | --- | --- | --- |
-  | CO₂ | 0.45 | **0.50** | PRIMARY (matriz térmica aislada) |  
-  | Solar | 0.15 | **0.20** | SECONDARY (FV limpia disponible) |  
-  | Cost | 0.15 | **0.10** | REDUCIDO (tarifa baja) |  
-  | Grid | 0.20 | **0.10** | REDUCIDO (implícito en CO₂) |  
-  | EV | 0.05 | **0.10** | AUMENTADO (balance) |  
-
-Commit: `3d41ca7f` (TIER 1)
+#### 1. Pesos Rebalanceados | Métrica | Antes | Ahora | Razón | | --- | --- | --- | --- | | CO₂ | 0.45 | **0.50** | PRIMARY (matriz térmica aislada) | | Solar | 0.15 | **0.20** | SECONDARY (FV limpia disponible) | | Cost | 0.15 | **0.10** | REDUCIDO (tarifa baja) | | Grid | 0.20 | **0.10** | REDUCIDO (implícito en CO₂) | | EV | 0.05 | **0.10** | AUMENTADO (balance) | Commit: `3d41ca7f` (TIER 1)
 
 #### 2. CO₂ Baselines Realistas
 
@@ -214,7 +204,7 @@ en lugar de explorar ruido.
 
 ### Why Learning Rate Was Capped
 
-Historical issue from very early SAC implementation (>6 months old). Code
+Historical issue from early SAC implementation (>6 months old). Code
 comment:
 
 ```python

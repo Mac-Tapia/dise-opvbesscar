@@ -27,13 +27,8 @@
   - 2,679 motos + 382 mototaxis, inversor Eaton Xpert1670 regenerado).
 
 ## Resultados observados
-  | Agente | Pasos | Mean Reward | CO2 episodio (kg) | Grid (kWh) | Solar (kWh) | Fuente |  
-| --- | --- | --- | --- | --- | --- | --- |
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | A2C | — | — | — | — | — | Sin métricas... |  
-
-## Conclusión
+|Agente|Pasos|Mean Reward|CO2 episodio (kg)|Grid (kWh)|Solar (kWh)|Fuente|
+| --- | --- | --- | --- | --- | --- | --- | |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| | A2C | — | — | — | — | — | Sin métricas... | ## Conclusión
 - PPO y SAC no muestran aprendizaje: reward constante, CO2 y grid sin mejora,
   - solar = 0.
 - A2C no produjo resumen de métricas; no hay evidencia de convergencia.

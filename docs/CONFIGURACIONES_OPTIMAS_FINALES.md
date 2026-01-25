@@ -5,29 +5,11 @@
 
 ---
 
-## 📊 TABLA COMPARATIVA - HIPERPARÁMETROS INDIVIDUALES OPTIMIZADOS
-
-  | Parámetro | **SAC** | **PPO** | **A2C** | Descripción |  
-|-----------|---------|---------|---------|-------------|
-  | **Learning Rate** | **2.5e-4** | **2.5e-4** | **2.5e-4** | ↓ Convergencia suave y estable |  
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | **Entropy Coef** | **0.02** | **0.02** | **0.02** | ↑ 2x exploración vs TIER 1 |  
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | **Activation** | **relu** | **relu** | **relu** | ✅ Mejor que tanh para RL moderno |  
-  | **Gamma** | **0.99** | **0.99** | **0.99** | Descuento estándar (largo plazo) |  
-  | **Tau** | **0.005** | N/A | N/A | Soft update SAC |  
-  | **LR Schedule** | **Constant** | **Linear ↓** | **Linear ↓** | SAC: constante; PPO/A2C: decay |  
-  | **Buffer/Replay** | **100k** | N/A | N/A | Experiencias para SAC |  
-  | **Gradient Steps** | **1** | N/A | N/A | Updates por step |  
-  | **GAE Lambda** | N/A | **0.95** | **1.0** | Advantage estimation |  
-  | **Norm Obs** | **✅** | **✅** | **✅** | Todas normalizadas a N(0,1) |  
-  | **Norm Rewards** | **✅** | **✅** | **✅** | Todas escaladas a [-1, 1] |  
-  | **Reward Scale** | **0.01** | **0.01** | **0.01** | Factor de escala uniforme |  
-  | **Clip Obs** | **10.0** | **10.0** | **10.0** | Clipping de outliers |  
-  | **GPU/CUDA** | **auto** | **auto** | **auto** | Auto-detección de dispositivo |  
-  | **Mixed Precision** | **✅** | **✅** | N/A | Entrenamiento más rápido |  
-
----
+## 📊 TABLA COMPARATIVA - HIPERPARÁMETROS INDIVIDUALES OPTIMIZADOS | Parámetro | **SAC** | **PPO** | **A2C** | Descripción | |-----------|---------|---------|---------|-------------|
+|**Learning Rate**|**2.5e-4**|**2.5e-4**|**2.5e-4**|↓ Convergencia suave y estable| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+|**Entropy Coef**|**0.02**|**0.02**|**0.02**|↑ 2x exploración vs TIER 1| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+|**Activation**|**relu**|**relu**|**relu**|✅ Mejor que tanh para RL moderno|
+|**Gamma**|**0.99**|**0.99**|**0.99**|Descuento estándar (largo plazo)| | **Tau** | **0.005** | N/A | N/A | Soft update SAC | |**LR Schedule**|**Constant**|**Linear ↓**|**Linear ↓**|SAC: constante; PPO/A2C: decay| | **Buffer/Replay** | **100k** | N/A | N/A | Experiencias para SAC | | **Gradient Steps** | **1** | N/A | N/A | Updates por step | | **GAE Lambda** | N/A | **0.95** | **1.0** | Advantage estimation | | **Norm Obs** | **✅** | **✅** | **✅** | Todas normalizadas a N(0,1) | | **Norm Rewards** | **✅** | **✅** | **✅** | Todas escaladas a [-1, 1] | |**Reward Scale**|**0.01**|**0.01**|**0.01**|Factor de escala uniforme| | **Clip Obs** | **10.0** | **10.0** | **10.0** | Clipping de outliers | |**GPU/CUDA**|**auto**|**auto**|**auto**|Auto-detección de dispositivo| | **Mixed Precision** | **✅** | **✅** | N/A | Entrenamiento más rápido | ---
 
 ## 🎯 PESOS MULTIOBJETIVO - IDÉNTICOS PARA TODOS
 
@@ -205,19 +187,7 @@ class A2CConfig:
 
 ## 📈 MEJORAS TIER 2 APLICADAS
 
-### vs TIER 1 (Original)
-
-  | Métrica | TIER 1 | TIER 2 | Mejora |  
-|---------|--------|--------|--------|
-  | **Learning Rate** | 3e-4 | 2.5e-4 | ↓ 17% más suave |  
-  | **Batch/N Steps** | 128-512 | 256-1024 | ↑ Balance estabilidad-velocidad |  
-  | **Hidden Layers** | 256x256 | 512x512 | ↑ 4x capacidad (1M → 4M params) |  
-  | **Entropy Coef** | 0.01 | 0.02 | ↑ 2x exploración |  
-  | **Activation** | tanh/ReLU | ReLU | ✅ Gradientes más limpios |  
-  | **LR Schedule** | constant | linear | ↓ Decay automático |  
-  | **Normalization** | Parcial | Completa | ✅ Obs+Rewards+Advantage |  
-
-**Resultado esperado**: Convergencia 2-3x más rápida, desempeño 30-50% mejor
+### vs TIER 1 (Original) | Métrica | TIER 1 | TIER 2 | Mejora | |---------|--------|--------|--------| | **Learning Rate** | 3e-4 | 2.5e-4 | ↓ 17% más suave | | **Batch/N Steps** | 128-512 | 256-1024 | ↑ Balance estabilidad-velocidad | | **Hidden Layers** | 256x256 | 512x512 | ↑ 4x capacidad (1M → 4M params) | | **Entropy Coef** | 0.01 | 0.02 | ↑ 2x exploración | | **Activation** | tanh/ReLU | ReLU | ✅ Gradientes más limpios | | **LR Schedule** | constant | linear | ↓ Decay automático | | **Normalization** | Parcial | Completa | ✅ Obs+Rewards+Advantage | **Resultado esperado**: Convergencia 2-3x más rápida, desempeño 30-50% mejor
 
 ---
 
@@ -338,20 +308,7 @@ class A2CConfig:
 
 ## 📊 COMPARACIÓN RENDIMIENTO ESPERADO
 
-### Después de 50 episodios
-
-  | Métrica | **SAC** | **PPO** | **A2C** |  
-|---------|---------|---------|---------|
-  | **Reward Promedio** | -200 a 0 | -100 a +100 | -300 a -100 |  
-  | **CO₂ (kg/ep)** | 350-450 | 300-400 | 400-500 |  
-  | **SOC BESS (%)** | 35-75% | 30-70% | 40-80% |  
-  | **EV Satisfacción** | 85-95% | 80-90% | 75-85% |  
-  | **Autoconsumo Solar** | 65-75% | 60-70% | 55-65% |  
-  | **Tiempo Entrenamiento** | ~2.5h | ~4h | ~2h |  
-  | **Estabilidad** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ |  
-  | **Exploración** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |  
-
----
+### Después de 50 episodios | Métrica | **SAC** | **PPO** | **A2C** | |---------|---------|---------|---------| | **Reward Promedio** | -200 a 0 | -100 a +100 | -300 a -100 | | **CO₂ (kg/ep)** | 350-450 | 300-400 | 400-500 | | **SOC BESS (%)** | 35-75% | 30-70% | 40-80% | | **EV Satisfacción** | 85-95% | 80-90% | 75-85% | | **Autoconsumo Solar** | 65-75% | 60-70% | 55-65% | | **Tiempo Entrenamiento** | ~2.5h | ~4h | ~2h | | **Estabilidad** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | | **Exploración** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ---
 
 ## 📝 NOTAS IMPORTANTES
 

@@ -570,18 +570,7 @@ wrapped = CityLearnWrapper(
 
 ---
 
-## Summary of Changes
-
-  | File | Change | Impact |  
-|------|--------|--------|
-  | sac.py | Remove hardcoded 0.001;... | MEDIUM |  
-  | sac.py | Fix BESS SOC prescaling (use 1.0) | **HIGH** |  
-  | ppo_sb3.py | Same as SAC | MEDIUM / **HIGH** |  
-  | a2c_sb3.py | Same as SAC | MEDIUM / **HIGH** |  
-  | agent_utils.py | Add CityLearnWrapper class | LOW (extraction) |  
-  | All configs | Add prescale_* fields to dataclasses | LOW (config) |  
-
----
+## Summary of Changes | File | Change | Impact | |------|--------|--------| | sac.py | Remove hardcoded 0.001;... | MEDIUM | | sac.py | Fix BESS SOC prescaling (use 1.0) | **HIGH** | | ppo_sb3.py | Same as SAC | MEDIUM / **HIGH** | | a2c_sb3.py | Same as SAC | MEDIUM / **HIGH** | | agent_utils.py | Add CityLearnWrapper class | LOW (extraction) | | All configs | Add prescale_* fields to dataclasses | LOW (config) | ---
 
 ## Testing
 

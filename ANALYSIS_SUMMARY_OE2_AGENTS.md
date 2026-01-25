@@ -28,16 +28,11 @@ for baseline)
 comparison
 7. **GPU Support**: Auto-detection of CUDA/MPS/CPU with proper device setup
 
-### ⚠ Critical Issues (Must Fix)
-
-  | Issue | Severity | Location | Impact |  
-|-------|----------|----------|--------|
-  | **BESS SOC scaled by 0.001** | 🔴 HIGH | All wrappers | Agent cannot observe BESS state |  
-  | **Hardcoded 0.001 prescale** | 🟠 MEDIUM | All wrappers | Fragile if data ranges change |  
-  | **Wrapper code duplicated** | 🟠 MEDIUM | 3 files (300+ lines) | Maintenance burden |  
-  | **No OE2 validation** | 🟠 MEDIUM | dataset_builder.py | Silent failures if data missing |  
-
-### 🟡 Minor Issues (Should Improve)
+### ⚠ Critical Issues (Must Fix) | Issue | Severity | Location | Impact | |-------|----------|----------|--------|
+|**BESS SOC scaled by 0.001**|🔴 HIGH|All wrappers|Agent cannot observe BESS state|
+|**Hardcoded 0.001 prescale**|🟠 MEDIUM|All wrappers|Fragile if data ranges change|
+|**Wrapper code duplicated**|🟠 MEDIUM|3 files (300+ lines)|Maintenance burden|
+|**No OE2 validation**|🟠 MEDIUM|dataset_builder.py|Silent failures if data missing| ### 🟡 Minor Issues (Should Improve)
 
 1. No per-charger state features (observation lacks detailed charger info)
 2. Silent exception handling (missing error context)
@@ -48,35 +43,8 @@ comparison
 
 ## Data Flow Verification
 
-### ✓ OE2 → CityLearn Schema
-
-  | Step | Source | Target | Status |  
-|------|--------|--------|--------|
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | Charger loading | `individual_chargers.json` (32 ×... | `schema.json` | ✓ Correct |  
-  | BESS loading | `bess_results.json` (2000... | `schema.json` | ✓ Correct |  
-  | Weather data | `weather.csv` (PVGIS) | `climate_zones/` | ✓ Correct |  
-  | Carbon intensity | Hardcoded 0.4521 kg CO₂/kWh | `pricing.csv` | ✓ Correct |  
-
-### ✓ CityLearn Schema → Agent Observation
-
-  | Feature | Access Pattern | Status | Issue |  
-|---------|-----------------|--------|-------|
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | Charger demands | Included in base... | ✓ Works | Not explicitly extracted |  
-  | Grid import/export | In base observation | ✓ Works | Prescaled by 0.001 (ok) |  
-
-### ⚠ Agent Action → CityLearn Control
-
-  | Element | Handling | Status |  
-|---------|----------|--------|
-  | Action space dim | 126 (from `_get_act_dim()`) | ✓ Correct |  
-  | Action bounds | [-1.0, 1.0] (gym.Box) | ✓ Correct |  
-  | Unflattening | Converts 126-dim array... | ✓ Correct |  
-  | Charger mapping | 126 → 126 charger power setpoints | ✓ Correct |  
-
----
+### ✓ OE2 → CityLearn Schema | Step | Source | Target | Status | |------|--------|--------|--------| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+|Charger loading|`individual_chargers.json` (32 ×...|`schema.json`|✓ Correct| | BESS loading | `bess_results.json` (2000... | `schema.json` | ✓ Correct | | Weather data | `weather.csv` (PVGIS) | `climate_zones/` | ✓ Correct | | Carbon intensity | Hardcoded 0.4521 kg CO₂/kWh | `pricing.csv` | ✓ Correct | ### ✓ CityLearn Schema → Agent Observation | Feature | Access Pattern | Status | Issue | |---------|-----------------|--------|-------| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| | Charger demands | Included in base... | ✓ Works | Not explicitly extracted | |Grid import/export|In base observation|✓ Works|Prescaled by 0.001 (ok)| ### ⚠ Agent Action → CityLearn Control | Element | Handling | Status | |---------|----------|--------| | Action space dim | 126 (from `_get_act_dim()`) | ✓ Correct | | Action bounds | [-1.0, 1.0] (gym.Box) | ✓ Correct | | Unflattening | Converts 126-dim array... | ✓ Correct | | Charger mapping | 126 → 126 charger power setpoints | ✓ Correct | ---
 
 ## Data Normalization Analysis
 
@@ -95,16 +63,7 @@ Running normalization: (prescaled - mean) / std
 Clipping: [-10, 10]
 ```bash
 
-### The BESS SOC Problem
-
-  | Step | Value | Issue |  
-|------|-------|-------|
-  | Original | 0.0 to 1.0 | ✓ Already normalized |  
-  | After prescale (×0.001) | 0.0 to 0.001 | ❌ Becomes tiny |  
-  | After running norm | ~0.0 | ❌ All states map to ~0 |  
-  | Agent sees | No difference between... | ❌ **Cannot control BESS** |  
-
-### Fix Applied (in CODE_FIXES document)
+### The BESS SOC Problem | Step | Value | Issue | |------|-------|-------| | Original | 0.0 to 1.0 | ✓ Already normalized | | After prescale (×0.001) | 0.0 to 0.001 | ❌ Becomes tiny | | After running norm | ~0.0 | ❌ All states map to ~0 | | Agent sees | No difference between... | ❌ **Cannot control BESS** | ### Fix Applied (in CODE_FIXES document)
 
 ```bash
 Original SOC (0-1) → Keep as-is (prescale=1.0, not 0.001)
@@ -303,15 +262,8 @@ BESS (2000)
 
 ---
 
-## Files Delivered
-
-  | Document | Purpose | Size |  
-|----------|---------|------|
-  | `TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md` | Complete technical... | ~10 KB |  
-  | `CODE_FIXES_OE2_DATA_FLOW.md` | Implementation fixes... | ~8 KB |  
-  | This file | Executive summary | ~4 KB |  
-
----
+## Files Delivered | Document | Purpose | Size | |----------|---------|------|
+|`TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md`|Complete technical...|~10 KB| | `CODE_FIXES_OE2_DATA_FLOW.md` | Implementation fixes... | ~8 KB | | This file | Executive summary | ~4 KB | ---
 
 ## Next Steps
 
