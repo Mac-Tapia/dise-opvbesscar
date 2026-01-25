@@ -691,7 +691,7 @@ def build_hourly_profile(
     closing_interval = closing_hour * intervals_per_hour - 1  # Última actividad antes del cierre
 
     operating_intervals = [i for i in intervals if opening_interval <= i <= closing_interval]
-    peak_intervals = []
+    peak_intervals: list[int] = []
     for h in peak_hours:
         peak_intervals.extend(range(h * intervals_per_hour, (h + 1) * intervals_per_hour))
     hours_peak = [i for i in peak_intervals if i in operating_intervals]
@@ -1428,8 +1428,7 @@ def run_charger_sizing(
     """
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Importar pandas al inicio
-    import pandas as pd
+    # pandas ya está importado al inicio del módulo (línea 59)
 
     # =========================================================================
     # REGLAS DE DIMENSIONAMIENTO:
@@ -1448,7 +1447,7 @@ def run_charger_sizing(
     print(f"   Mototaxis: {n_mototaxis:,}")
     print(f"   TOTAL:     {n_motos + n_mototaxis:,} vehículos en hora pico")
     print(f"   PE (Probabilidad de Evento): {pe_motos:.0%}")
-    print(f"\n[+] Configuracion de carga Modo 3:")
+    print("\n[+] Configuracion de carga Modo 3:")
     print(f"   Potencia cargador motos: {charger_power_kw_moto} kW")
     print(f"   Potencia cargador mototaxis: {charger_power_kw_mototaxi} kW")
     print(f"   Sockets por cargador: {sockets_per_charger}")
@@ -1666,7 +1665,7 @@ def run_charger_sizing(
     print(f"   Cargadores: {N_CHARGERS_TOTAL} × {TOMAS_POR_CARGADOR_INFRAESTRUCTURA} tomas = {TOMAS_TOTALES} tomas")
     print(f"   Horario: {HORAS_OPERACION}h × {SESIONES_POR_TOMA_POR_HORA:.0f} sesiones/h/toma = {SESIONES_POR_TOMA_POR_DIA:.0f} sesiones/día/toma")
     print(f"   Utilización: {utilization:.0%}")
-    print(f"\n   Vehículos que pueden cargar:")
+    print("\n   Vehículos que pueden cargar:")
     print(f"   Diario:   {capacidad_efectiva_dia:,} vehículos")
     print(f"   Mensual:  {capacidad_efectiva_mes:,} vehículos ({DIAS_MES} días)")
     print(f"   Anual:    {capacidad_efectiva_anio:,} vehículos ({DIAS_ANIO} días)")
@@ -1879,7 +1878,7 @@ def run_charger_sizing(
         print(f"   • {out_dir / 'tabla_escenario_recomendado.csv'}")
         print(f"   • {out_dir / 'tabla_estadisticas_escenarios.csv'}")
         print(f"   • {out_dir / 'tabla_escenarios_detallados.csv'}")
-    except Exception as e:
+    except (OSError, IOError, ValueError) as e:
         print(f"   [ERROR] No se pudieron guardar las tablas: {e}")
 
     # =================================================================
