@@ -243,7 +243,8 @@ def _get_pv_bess_feats(self):
         buildings = getattr(self.env, "buildings", [])
         
         if not buildings:
-            logger.warning("No buildings found in environment at time_step %d", t)
+            logger.warning("No buildings found in environment"
+                "at time_step %d", t)
             return np.array([pv_kw, soc], dtype=np.float32)
         
         for b_idx, b in enumerate(buildings):
@@ -251,7 +252,8 @@ def _get_pv_bess_feats(self):
             sg = getattr(b, "solar_generation", None)
             if sg is None:
                 pv_missing = True
-                logger.debug("Building %d has no solar_generation attribute", b_idx)
+                logger.debug("Building %d has no"
+                    "solar_generation attribute", b_idx)
             elif not isinstance(sg, (list, np.ndarray)) or len(sg) <= t:
                 logger.debug("Building %d solar_generation"
                     "invalid (len=%s, t=%d)",
@@ -270,7 +272,8 @@ def _get_pv_bess_feats(self):
             es = getattr(b, "electrical_storage", None)
             if es is None:
                 soc_missing = True
-                logger.debug("Building %d has no electrical_storage attribute", b_idx)
+                logger.debug("Building %d has no"
+                    "electrical_storage attribute", b_idx)
             else:
                 try:
                     soc_val = getattr(es, "state_of_charge", None)

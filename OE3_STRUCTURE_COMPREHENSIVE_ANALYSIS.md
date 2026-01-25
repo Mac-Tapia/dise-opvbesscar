@@ -213,11 +213,13 @@ FINAL OUTPUTS
 
 ```python
 # In dataset_builder.py
-pv_timeseries = pd.read_csv("data/interim/oe2/solar/pv_generation_timeseries.csv")
+pv_timeseries = pd.read_csv("data/interim/oe2/solar/pv"
+    "_generation_timeseries.csv")
 # Creates energy_simulation.csv in schema
 
 # In simulate.py:_extract_pv_generation_kwh()
-pv_kwh = env.buildings[0].electrical_storage.charging_efficiency  # Extracted from CityLearn
+pv_kwh \
+    = env.buildings[0].electrical_storage.charging_efficiency  # Extracted from CityLearn
 
 # In rewards.py:MultiObjectiveReward.compute()
 r_solar = solar_generation / (pv_available + 0.1)  # Reward for self-consumption
@@ -227,7 +229,8 @@ r_solar = solar_generation / (pv_available + 0.1)  # Reward for self-consumption
 
 ```python
 # In dataset_builder.py (2)
-chargers_json = json.load(open("data/interim/oe2/chargers/individual_chargers.json"))
+chargers_json = json.load(open("data/interim/oe2/chargers"
+    "/individual_chargers.json"))
 # Discovers 32 chargers × 4 sockets = 128 controllable outlets
 # Creates charger_simulation_*.csv for each
 
