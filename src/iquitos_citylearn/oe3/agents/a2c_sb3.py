@@ -36,21 +36,22 @@ def detect_device() -> str:
 @dataclass
 class A2CConfig:
     """Configuración para A2C (SB3) con soporte CUDA/GPU.
-    
+
     Nota: train_steps=500000 es el mínimo recomendado para problemas de alta
     dimensionalidad como CityLearn con ~900 obs dims × 126 action dims.
     """
-    train_steps: int = 500000  # 500k mínimo para alta dimensionalidad
-    n_steps: int = 1024            # TIER 2 FIX: ↑ de 512 (más steps/update)
-    learning_rate: float = 2.5e-4  # TIER 2 FIX: ↓ de 3e-4 (convergencia suave)
-    lr_schedule: str = "linear"    # TIER 2 FIX: cambio de "constant" (decay)
-    gamma: float = 0.99
-    gae_lambda: float = 1.0
-    ent_coef: float = 0.02         # TIER 2 FIX: ↑ de 0.01 (2x exploración)
-    vf_coef: float = 0.5
-    max_grad_norm: float = 0.5
-    hidden_sizes: tuple = (512, 512)  # TIER 2 FIX: ↑ de (256, 256) (capacidad)
-    activation: str = "relu"       # TIER 2 FIX: cambio de "tanh"
+    # Hiperparámetros de entrenamiento - A2C MÁXIMA POTENCIA
+    train_steps: int = 1000000  # ↑↑ 2x más pasos (mejor convergencia)
+    n_steps: int = 2048         # ↑↑ Recolecta MÁS experiencias
+    learning_rate: float = 1.5e-4  # ↓ Aún más bajo
+    lr_schedule: str = "linear"    # ✅ Decay automático
+    gamma: float = 0.999           # ↑ Horizonte más largo
+    gae_lambda: float = 0.95       # ✅ Óptimo para A2C
+    ent_coef: float = 0.01         # ↓ Menos ruido, más focus
+    vf_coef: float = 0.7           # ↑ Value function más importante
+    max_grad_norm: float = 1.0     # ↑ Menos agresivo
+    hidden_sizes: tuple = (1024, 1024)  # ↑↑ GRANDE como SAC
+    activation: str = "relu"
     device: str = "auto"
     seed: int = 42
     verbose: int = 0
@@ -61,7 +62,7 @@ class A2CConfig:
     progress_path: Optional[str] = None
     progress_interval_episodes: int = 1
     resume_path: Optional[str] = None  # Ruta a checkpoint SB3 para reanudar
-    
+
     # === MULTIOBJETIVO / MULTICRITERIO ===
     # Pesos para función de recompensa compuesta (deben sumar 1.0)
     weight_co2: float = 0.50           # Minimizar emisiones CO₂
@@ -69,13 +70,13 @@ class A2CConfig:
     weight_solar: float = 0.20         # Maximizar autoconsumo solar
     weight_ev_satisfaction: float = 0.10  # Maximizar satisfacción carga EV
     weight_grid_stability: float = 0.05   # Minimizar picos de demanda
-    
+
     # Umbrales multicriterio
     co2_target_kg_per_kwh: float = 0.4521  # Factor emisión Iquitos
     cost_target_usd_per_kwh: float = 0.20  # Tarifa objetivo
     ev_soc_target: float = 0.90          # SOC objetivo EVs al partir
     peak_demand_limit_kw: float = 200.0  # Límite demanda pico
-    
+
     # Suavizado de acciones (penaliza cambios bruscos)
     reward_smooth_lambda: float = 0.0
     # === NORMALIZACIÓN (crítico para estabilidad) ===
@@ -127,16 +128,16 @@ class A2CAgent:
                 self.act_dim = self._get_act_dim()
                 self._smooth_lambda = smooth_lambda
                 self._prev_action = None
-                
+
                 # Normalización
                 self._normalize_obs = normalize_obs
                 self._normalize_rewards = normalize_rewards
                 self._reward_scale = reward_scale  # 0.01
                 self._clip_obs = clip_obs
-                
+
                 # PRE-ESCALADO: kW/kWh / 1000 → rango ~1-5
                 self._obs_prescale = np.ones(self.obs_dim, dtype=np.float32) * 0.001
-                
+
                 # Running stats
                 self._obs_mean = np.zeros(self.obs_dim, dtype=np.float64)
                 self._obs_var = np.ones(self.obs_dim, dtype=np.float64)
@@ -148,14 +149,14 @@ class A2CAgent:
                 self.action_space = gym.spaces.Box(
                     low=-1.0, high=1.0, shape=(self.act_dim,), dtype=np.float32
                 )
-            
+
             def _update_obs_stats(self, obs: np.ndarray):
                 delta = obs - self._obs_mean
                 self._obs_count += 1
                 self._obs_mean = self._obs_mean + delta / self._obs_count
                 delta2 = obs - self._obs_mean
                 self._obs_var = self._obs_var + (delta * delta2 - self._obs_var) / self._obs_count
-            
+
             def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
                 if not self._normalize_obs:
                     return obs
@@ -164,14 +165,14 @@ class A2CAgent:
                 self._update_obs_stats(prescaled)
                 normalized = (prescaled - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
                 return np.clip(normalized, -self._clip_obs, self._clip_obs).astype(np.float32)
-            
+
             def _update_reward_stats(self, reward: float):
                 delta = reward - self._reward_mean
                 self._reward_count += 1
                 self._reward_mean += delta / self._reward_count
                 delta2 = reward - self._reward_mean
                 self._reward_var += (delta * delta2 - self._reward_var) / self._reward_count
-            
+
             def _normalize_reward(self, reward: float) -> float:
                 if not self._normalize_rewards:
                     return reward
@@ -255,7 +256,7 @@ class A2CAgent:
                 return self._flatten(obs), normalized_reward, terminated, truncated, info
 
         self.wrapped_env = Monitor(CityLearnWrapper(
-            self.env, 
+            self.env,
             smooth_lambda=self.config.reward_smooth_lambda,
             normalize_obs=self.config.normalize_observations,
             normalize_rewards=self.config.normalize_rewards,
@@ -321,7 +322,7 @@ class A2CAgent:
                 infos = self.locals.get("infos", [])
                 if isinstance(infos, dict):
                     infos = [infos]
-                
+
                 # Acumular NORMALIZED rewards (después de escala, no raw)
                 # Los raw rewards están en [-0.5, 0.5], muy pequeños
                 # Necesitamos acumular los scaled rewards para métricas significativas
@@ -338,7 +339,7 @@ class A2CAgent:
                         scaled_r = float(rewards) * 100.0  # Amplificar para visibilidad en logs
                         self.reward_sum += scaled_r
                         self.reward_count += 1
-                
+
                 # Extraer métricas de energía del environment
                 try:
                     env = self.training_env.envs[0] if hasattr(self.training_env, 'envs') else self.training_env
@@ -359,25 +360,25 @@ class A2CAgent:
                                 self.solar_energy_sum += max(0, float(last_solar))
                 except Exception:
                     pass
-                
+
                 if not infos:
                     return True
                 if self.log_interval_steps > 0 and self.n_calls % self.log_interval_steps == 0:
                     approx_episode = max(1, int(self.model.num_timesteps // 8760) + 1)
-                    
+
                     # Calcular reward promedio
                     avg_reward = self.reward_sum / max(1, self.reward_count)
-                    
+
                     # Usar grid_energy_sum acumulado, si es 0 usar valor mínimo
                     grid_kwh_to_log = max(self.grid_energy_sum, 100.0) if self.grid_energy_sum == 0 else self.grid_energy_sum
-                    
+
                     # Calcular CO2 estimado
                     co2_kg = grid_kwh_to_log * self.co2_intensity
-                    
+
                     # Obtener métricas de entrenamiento del logger de SB3
                     parts = []
                     parts.append(f"reward_avg={avg_reward:.4f}")
-                    
+
                     try:
                         if hasattr(self.model, 'logger') and self.model.logger is not None:
                             name_to_value = getattr(self.model.logger, 'name_to_value', {})
@@ -386,7 +387,7 @@ class A2CAgent:
                                 value_loss = name_to_value.get('train/value_loss', None)
                                 entropy_loss = name_to_value.get('train/entropy_loss', None)
                                 learning_rate = name_to_value.get('train/learning_rate', None)
-                                
+
                                 if policy_loss is not None:
                                     parts.append(f"policy_loss={policy_loss:.2f}")
                                 if value_loss is not None:
@@ -397,16 +398,16 @@ class A2CAgent:
                                     parts.append(f"lr={learning_rate:.2e}")
                     except Exception:
                         pass
-                    
+
                     # Agregar métricas de energía y CO2
                     if self.grid_energy_sum > 0:
                         parts.append(f"grid_kWh={self.grid_energy_sum:.1f}")
                         parts.append(f"co2_kg={co2_kg:.1f}")
                     if self.solar_energy_sum > 0:
                         parts.append(f"solar_kWh={self.solar_energy_sum:.1f}")
-                    
+
                     metrics_str = " | ".join(parts)
-                    
+
                     logger.info(
                         "[A2C] paso %d | ep~%d | pasos_global=%d | %s",
                         self.n_calls,
@@ -431,12 +432,12 @@ class A2CAgent:
                     self.episode_count += 1
                     reward = float(episode.get("r", 0.0))
                     length = int(episode.get("l", 0))
-                    
+
                     # Calcular métricas finales del episodio ANTES de reiniciar
                     episode_co2_kg = self.grid_energy_sum * self.co2_intensity
                     episode_grid_kwh = self.grid_energy_sum
                     episode_solar_kwh = self.solar_energy_sum
-                    
+
                     self.agent.training_history.append({
                         "step": int(self.model.num_timesteps),
                         "mean_reward": reward,
@@ -482,13 +483,13 @@ class A2CAgent:
                                 episode_grid_kwh,
                                 episode_solar_kwh,
                             )
-                    
+
                     # REINICIAR métricas para el siguiente episodio
                     self.reward_sum = 0.0
                     self.reward_count = 0
                     self.grid_energy_sum = 0.0
                     self.solar_energy_sum = 0.0
-                    
+
                 return True
 
         checkpoint_dir = self.config.checkpoint_dir
@@ -513,16 +514,16 @@ class A2CAgent:
 
             def _on_step(self) -> bool:
                 self.call_count += 1
-                
+
                 if self.call_count == 1:
                     logger.info(f"[A2C CheckpointCallback._on_step] FIRST CALL DETECTED! num_timesteps={self.num_timesteps}")
-                
+
                 if self.call_count % 100 == 0:
                     logger.info(f"[A2C CheckpointCallback._on_step] call #{self.call_count}, num_timesteps={self.num_timesteps}")
-                
+
                 if self.save_dir is None or self.freq <= 0:
                     return True
-                
+
                 # Use num_timesteps (total steps so far) instead of n_calls (rollout count)
                 should_save = (self.num_timesteps > 0 and self.num_timesteps % self.freq == 0)
                 if should_save:
@@ -533,7 +534,7 @@ class A2CAgent:
                         logger.info(f"[A2C CHECKPOINT OK] Saved: {save_path}")
                     except Exception as exc:
                         logger.error(f"[A2C CHECKPOINT ERROR] {exc}", exc_info=True)
-                
+
                 return True
 
         callback = CallbackList([
@@ -558,7 +559,7 @@ class A2CAgent:
                 logger.info("[A2C FINAL OK] Modelo guardado en %s", final_path)
             except Exception as exc:
                 logger.error("[A2C FINAL ERROR] %s", exc, exc_info=True)
-        
+
         # MANDATORY: Verify checkpoints were created
         if checkpoint_dir:
             checkpoint_path = Path(checkpoint_dir)

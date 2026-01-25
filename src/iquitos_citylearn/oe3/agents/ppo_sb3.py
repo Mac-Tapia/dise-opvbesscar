@@ -36,48 +36,48 @@ def detect_device() -> str:
 @dataclass
 class PPOConfig:
     """Configuración avanzada para PPO con soporte CUDA/GPU y multiobjetivo.
-    
+
     Nota: train_steps=500000 es el mínimo recomendado para problemas de alta
     dimensionalidad como CityLearn con ~900 obs dims × 126 action dims.
     Para convergencia óptima, usar 1M+ pasos.
     """
-    # Hiperparámetros de entrenamiento
-    train_steps: int = 500000  # 500k mínimo para alta dimensionalidad
-    n_steps: int = 1024  # Steps por update
-    batch_size: int = 256           # TIER 2 FIX: ↑ de 128 (más estable)
-    n_epochs: int = 15              # TIER 2 FIX: ↑ de 10 (más updates)
-    
-    # Optimización
-    learning_rate: float = 2.5e-4   # TIER 2 FIX: ↓ de 3e-4 (convergencia suave)
-    lr_schedule: str = "linear"     # TIER 2 FIX: cambio de "constant" (decay LR)
-    gamma: float = 0.99
-    gae_lambda: float = 0.95
-    
-    # Clipping y regularización
-    clip_range: float = 0.2
-    clip_range_vf: Optional[float] = None
-    ent_coef: float = 0.02          # TIER 2 FIX: ↑ de 0.01 (2x exploración)
-    vf_coef: float = 0.5  # Coeficiente value function
-    max_grad_norm: float = 0.5
-    
-    # Red neuronal
-    hidden_sizes: tuple = (512, 512)  # TIER 2 FIX: ↑ de (256, 256) (capacidad)
-    activation: str = "relu"        # TIER 2 FIX: cambio de "tanh" (ReLU mejor)
+    # Hiperparámetros de entrenamiento - PPO MÁXIMA POTENCIA
+    train_steps: int = 1000000  # ↑↑ 2x más pasos (mejor convergencia)
+    n_steps: int = 2048         # ↑ Aún más experiencias por update
+    batch_size: int = 128        # ↓ Batch pequeño para PPO (on-policy)
+    n_epochs: int = 20           # ↑ Más updates por batch
+
+    # Optimización - PPO FINO AJUSTADO
+    learning_rate: float = 2.0e-4   # ↓ Aún más bajo
+    lr_schedule: str = "linear"     # ✅ Decay automático
+    gamma: float = 0.999            # ↑ Horizonte más largo
+    gae_lambda: float = 0.98        # ↑ Mejor estimación advantage
+
+    # Clipping y regularización - PPO PRECISO
+    clip_range: float = 0.1         # ↓ Más restrictivo (más estable)
+    clip_range_vf: float = 0.1      # ↓ Value function clipping
+    ent_coef: float = 0.01          # ↓ Menos ruido (más focus)
+    vf_coef: float = 0.7            # ↑ Value function más importante
+    max_grad_norm: float = 1.0      # ↑ Menos agresivo
+
+    # Red neuronal - PPO GRANDE
+    hidden_sizes: tuple = (1024, 1024)  # ↑↑ MÁS GRANDE
+    activation: str = "relu"
     ortho_init: bool = True
-    
-    # Normalización (mejora estabilidad)
+
+    # Normalización
     normalize_advantage: bool = True
-    
-    # === EXPLORACIÓN MEJORADA (TIER 2) ===
-    use_sde: bool = True            # NEW: Stochastic Delta Exploration
-    sde_sample_freq: int = -1       # Sample every step
-    
+
+    # === EXPLORACIÓN MEJORADA ===
+    use_sde: bool = True
+    sde_sample_freq: int = -1
+
     # === CONFIGURACIÓN GPU/CUDA ===
     device: str = "auto"  # "auto", "cuda", "cuda:0", "cuda:1", "mps", "cpu"
     use_amp: bool = True  # Mixed precision training
     pin_memory: bool = True  # Acelera CPU->GPU
     deterministic_cuda: bool = False  # True = reproducible pero más lento
-    
+
     # === MULTIOBJETIVO / MULTICRITERIO ===
     # Pesos para función de recompensa compuesta (deben sumar 1.0)
     weight_co2: float = 0.50           # Minimizar emisiones CO₂
@@ -85,16 +85,16 @@ class PPOConfig:
     weight_solar: float = 0.20         # Maximizar autoconsumo solar
     weight_ev_satisfaction: float = 0.10  # Maximizar satisfacción carga EV
     weight_grid_stability: float = 0.05   # Minimizar picos de demanda
-    
+
     # Umbrales multicriterio
     co2_target_kg_per_kwh: float = 0.4521
     cost_target_usd_per_kwh: float = 0.20
     ev_soc_target: float = 0.90
     peak_demand_limit_kw: float = 200.0
-    
+
     # Reproducibilidad
     seed: int = 42
-    
+
     # Logging
     verbose: int = 0
     tensorboard_log: Optional[str] = None
@@ -122,7 +122,7 @@ class PPOConfig:
 
 class PPOAgent:
     """Agente PPO robusto y escalable con optimizadores avanzados.
-    
+
     Características:
     - Proximal Policy Optimization con clipping
     - GAE (Generalized Advantage Estimation)
@@ -130,56 +130,56 @@ class PPOAgent:
     - Normalización de ventajas
     - Compatible con CityLearn
     """
-    
+
     def __init__(self, env: Any, config: Optional[PPOConfig] = None):
         self.env = env
         self.config = config or PPOConfig()
         self.model = None
         self.wrapped_env = None
         self._trained = False
-        
+
         # Métricas
         self.training_history: List[Dict[str, float]] = []
-        
+
         # === Configurar dispositivo GPU/CUDA ===
         self.device = self._setup_device()
         self._setup_torch_backend()
-    
+
     def _setup_device(self) -> str:
         """Configura el dispositivo para entrenamiento."""
         if self.config.device == "auto":
             return detect_device()
         return self.config.device
-    
+
     def _setup_torch_backend(self):
         """Configura PyTorch para máximo rendimiento en GPU."""
         try:
             import torch
-            
+
             # Seed para reproducibilidad
             torch.manual_seed(self.config.seed)
-            
+
             if "cuda" in self.device:
                 torch.cuda.manual_seed_all(self.config.seed)
-                
+
                 # Optimizaciones CUDA
                 if not self.config.deterministic_cuda:
                     torch.backends.cudnn.benchmark = True  # Auto-tune kernels
                 else:
                     torch.backends.cudnn.deterministic = True
                     torch.backends.cudnn.benchmark = False
-                
+
                 # Logging de GPU
                 if torch.cuda.is_available():
                     gpu_mem = torch.cuda.get_device_properties(0).total_memory / 1e9
                     logger.info("CUDA memoria disponible: %.2f GB", gpu_mem)
-            
+
             if self.config.use_amp and "cuda" in self.device:
                 logger.info("Mixed Precision (AMP) habilitado")
-                
+
         except ImportError:
             logger.warning("PyTorch no instalado")
-    
+
     def get_device_info(self) -> Dict[str, Any]:
         """Retorna información del dispositivo."""
         info = {"device": self.device}
@@ -195,7 +195,7 @@ class PPOAgent:
         except ImportError:
             pass
         return info
-    
+
     def learn(self, episodes: int = 5, total_timesteps: Optional[int] = None):
         """Entrena el agente PPO con optimizadores avanzados."""
         try:
@@ -207,9 +207,9 @@ class PPOAgent:
         except ImportError as e:
             logger.warning("stable_baselines3 no disponible: %s", e)
             return
-        
+
         steps = total_timesteps or self.config.train_steps
-        
+
         # Wrapper robusto para CityLearn
         class CityLearnWrapper(gym.Wrapper):
             def __init__(self, env, smooth_lambda: float = 0.0,
@@ -223,22 +223,22 @@ class PPOAgent:
                 self.act_dim = self._get_act_dim()
                 self._smooth_lambda = smooth_lambda
                 self._prev_action = None
-                
+
                 # Normalización
                 self._normalize_obs = normalize_obs
                 self._normalize_rewards = normalize_rewards
                 self._reward_scale = reward_scale  # 0.01
                 self._clip_obs = clip_obs
                 self._reward_count = 1e-4
-                
+
                 # PRE-ESCALADO: kW/kWh / 1000 → rango ~1-5
                 self._obs_prescale = np.ones(self.obs_dim, dtype=np.float32) * 0.001
-                
+
                 # Running stats para normalización
                 self._obs_mean = np.zeros(self.obs_dim, dtype=np.float64)
                 self._obs_var = np.ones(self.obs_dim, dtype=np.float64)
                 self._obs_count = 1e-4
-                
+
                 self.observation_space = gym.spaces.Box(
                     low=-np.inf, high=np.inf,
                     shape=(self.obs_dim,), dtype=np.float32
@@ -247,7 +247,7 @@ class PPOAgent:
                     low=-1.0, high=1.0,
                     shape=(self.act_dim,), dtype=np.float32
                 )
-            
+
             def _update_obs_stats(self, obs: np.ndarray):
                 """Actualiza estadísticas de observación con Welford's algorithm."""
                 delta = obs - self._obs_mean
@@ -255,7 +255,7 @@ class PPOAgent:
                 self._obs_mean = self._obs_mean + delta / self._obs_count
                 delta2 = obs - self._obs_mean
                 self._obs_var = self._obs_var + (delta * delta2 - self._obs_var) / self._obs_count
-            
+
             def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
                 if not self._normalize_obs:
                     return obs
@@ -264,20 +264,20 @@ class PPOAgent:
                 self._update_obs_stats(prescaled)
                 normalized = (prescaled - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
                 return np.clip(normalized, -self._clip_obs, self._clip_obs).astype(np.float32)
-            
+
             def _update_reward_stats(self, reward: float):
                 delta = reward - self._reward_mean
                 self._reward_count += 1
                 self._reward_mean += delta / self._reward_count
                 delta2 = reward - self._reward_mean
                 self._reward_var += (delta * delta2 - self._reward_var) / self._reward_count
-            
+
             def _normalize_reward(self, reward: float) -> float:
                 if not self._normalize_rewards:
                     return reward
                 scaled = reward * self._reward_scale
                 return float(np.clip(scaled, -10.0, 10.0))
-            
+
             def _get_act_dim(self):
                 action_space = getattr(self.env, "action_space", None)
                 if isinstance(action_space, list):
@@ -285,7 +285,7 @@ class PPOAgent:
                 if action_space is not None and hasattr(action_space, "shape"):
                     return int(action_space.shape[0])
                 return 0
-            
+
             def _get_pv_bess_feats(self):
                 pv_kw = 0.0
                 soc = 0.0
@@ -320,7 +320,7 @@ class PPOAgent:
                 elif arr.size > target:
                     arr = arr[: target]
                 return self._normalize_observation(arr.astype(np.float32))
-            
+
             def _unflatten_action(self, action):
                 if isinstance(self.env.action_space, list):
                     result = []
@@ -331,12 +331,12 @@ class PPOAgent:
                         idx += dim
                     return result
                 return [action.tolist()]
-            
+
             def reset(self, **kwargs):
                 obs, info = self.env.reset(**kwargs)
                 self._prev_action = None
                 return self._flatten(obs), info
-            
+
             def step(self, action):
                 citylearn_action = self._unflatten_action(action)
                 obs, reward, terminated, truncated, info = self.env.step(citylearn_action)
@@ -353,25 +353,25 @@ class PPOAgent:
                     delta = flat_action - self._prev_action
                     reward -= float(self._smooth_lambda * np.linalg.norm(delta))
                 self._prev_action = flat_action
-                
+
                 normalized_reward = self._normalize_reward(float(reward))
                 return self._flatten(obs), normalized_reward, terminated, truncated, info
-        
+
         self.wrapped_env = Monitor(CityLearnWrapper(
-            self.env, 
+            self.env,
             smooth_lambda=self.config.reward_smooth_lambda,
             normalize_obs=self.config.normalize_observations,
             normalize_rewards=self.config.normalize_rewards,
             reward_scale=self.config.reward_scale,
             clip_obs=self.config.clip_obs,
         ))
-        
+
         # Crear ambiente vectorizado
         vec_env = make_vec_env(lambda: self.wrapped_env, n_envs=1, seed=self.config.seed)
-        
+
         # Learning rate scheduler
         lr_schedule = self._get_lr_schedule(steps)
-        
+
         # Configurar política con arquitectura optimizada
         policy_kwargs = {
             "net_arch": dict(
@@ -381,7 +381,7 @@ class PPOAgent:
             "activation_fn": self._get_activation(),
             "ortho_init": self.config.ortho_init,
         }
-        
+
         # Crear o reanudar modelo PPO con configuración avanzada y GPU
         resume_path = Path(self.config.resume_path) if self.config.resume_path else None
         resuming = resume_path is not None and resume_path.exists()
@@ -415,7 +415,7 @@ class PPOAgent:
                 target_kl=self.config.target_kl,
                 device=self.device,  # GPU/CUDA support
             )
-        
+
         # Callback para logging
         progress_path = Path(self.config.progress_path) if self.config.progress_path else None
         progress_headers = ("timestamp", "agent", "episode", "episode_reward", "episode_length", "global_step")
@@ -472,12 +472,12 @@ class PPOAgent:
                     for group in optimizer.param_groups:
                         group["lr"] = new_lr
                     logger.info("[PPO] KL adaptativo: kl=%.4f lr=%.2e", approx_kl, new_lr)
-            
+
             def _on_step(self):
                 infos = self.locals.get("infos", [])
                 if isinstance(infos, dict):
                     infos = [infos]
-                
+
                 # Acumular NORMALIZED rewards (después de escala, no raw)
                 # Los raw rewards están en [-0.5, 0.5], muy pequeños
                 # Necesitamos acumular los scaled rewards para métricas significativas
@@ -494,7 +494,7 @@ class PPOAgent:
                         scaled_r = float(rewards) * 100.0  # Amplificar para visibilidad en logs
                         self.reward_sum += scaled_r
                         self.reward_count += 1
-                
+
                 # Extraer métricas de energía del environment
                 try:
                     env = None
@@ -523,7 +523,7 @@ class PPOAgent:
                                     self.solar_energy_sum += abs(last_solar)
                 except Exception:
                     pass
-                
+
                 if not infos:
                     return True
                 if self.log_interval_steps > 0 and self.n_calls % self.log_interval_steps == 0:
@@ -558,7 +558,7 @@ class PPOAgent:
                     if not episode:
                         continue
                     self.episode_count += 1
-                    
+
                     # VERIFICAR LÍMITE DE EPISODIOS - DETENER SI SE ALCANZÓ
                     if self.expected_episodes > 0 and self.episode_count >= self.expected_episodes:
                         logger.warning(
@@ -566,15 +566,15 @@ class PPOAgent:
                             self.expected_episodes
                         )
                         return False  # Detener entrenamiento inmediatamente
-                    
+
                     reward = float(episode.get("r", 0.0))
                     length = int(episode.get("l", 0))
-                    
+
                     # Calcular métricas finales del episodio ANTES de reiniciar
                     episode_co2_kg = self.grid_energy_sum * self.co2_intensity
                     episode_grid_kwh = self.grid_energy_sum
                     episode_solar_kwh = self.solar_energy_sum
-                    
+
                     self.agent.training_history.append({
                         "step": int(self.model.num_timesteps),
                         "mean_reward": reward,
@@ -620,13 +620,13 @@ class PPOAgent:
                                 episode_grid_kwh,
                                 episode_solar_kwh,
                             )
-                    
+
                     # REINICIAR métricas para el siguiente episodio
                     self.reward_sum = 0.0
                     self.reward_count = 0
                     self.grid_energy_sum = 0.0
                     self.solar_energy_sum = 0.0
-                    
+
                 return True
 
         checkpoint_dir = self.config.checkpoint_dir
@@ -650,7 +650,7 @@ class PPOAgent:
                 # Callback MINIMALISTA para evitar bloqueos
                 if self.save_dir is None or self.freq <= 0:
                     return True
-                
+
                 if self.n_calls > 0 and self.n_calls % self.freq == 0:
                     try:
                         save_path = self.save_dir / f"ppo_step_{self.n_calls}"
@@ -658,7 +658,7 @@ class PPOAgent:
                         logger.info(f"[PPO CHECKPOINT] Saved step {self.n_calls}")
                     except Exception as exc:
                         logger.error(f"[PPO CHECKPOINT ERROR] {exc}")
-                
+
                 return True
 
         callback = CallbackList([
@@ -684,7 +684,7 @@ class PPOAgent:
                 logger.info("[PPO FINAL OK] Modelo guardado en %s", final_path)
             except Exception as exc:
                 logger.error("✗ [PPO FINAL ERROR] %s", exc, exc_info=True)
-        
+
         # MANDATORY: Verify checkpoints were created
         if checkpoint_dir:
             checkpoint_path = Path(checkpoint_dir)
@@ -692,11 +692,11 @@ class PPOAgent:
             logger.info(f"[PPO VERIFICATION] Checkpoints created: {len(zips)} files")
             for z in sorted(zips)[:5]:
                 logger.info(f"  - {z.name} ({z.stat().st_size / 1024:.1f} KB)")
-    
+
     def _get_lr_schedule(self, total_steps: int) -> Union[Callable[[float], float], float]:
         """Crea scheduler de learning rate."""
         from stable_baselines3.common.utils import get_linear_fn
-        
+
         if self.config.lr_schedule == "linear":
             return get_linear_fn(self.config.learning_rate, self.config.learning_rate * 0.1, 1.0)
         elif self.config.lr_schedule == "cosine":
@@ -705,7 +705,7 @@ class PPOAgent:
             return cosine_schedule
         else:  # constant
             return self.config.learning_rate
-    
+
     def _get_activation(self):
         """Obtiene función de activación."""
         import torch.nn as nn
@@ -718,13 +718,13 @@ class PPOAgent:
             "silu": nn.SiLU,
         }
         return activations.get(self.config.activation, nn.Tanh)
-    
+
     def predict(self, observations: Any, deterministic: bool = True):
         """Predice acción dado el estado."""
         if self.model is None:
             return self._zero_action()
         assert self.model is not None
-        
+
         obs = self._flatten_obs(observations)
         # Ajustar a la dimensión esperada por el modelo
         try:
@@ -770,7 +770,7 @@ class PPOAgent:
             elif arr.size > target_dim:
                 arr = arr[:target_dim]
         return arr.astype(np.float32)
-    
+
     def _unflatten_action(self, action):
         action_space = getattr(self.env, "action_space", None)
         if isinstance(action_space, list):
@@ -784,7 +784,7 @@ class PPOAgent:
         if isinstance(action, np.ndarray):
             return [action.tolist()]
         return [action]
-    
+
     def _zero_action(self):
         """Devuelve acción cero."""
         action_space = getattr(self.env, "action_space", None)
@@ -793,13 +793,13 @@ class PPOAgent:
         if isinstance(action_space, list):
             return [[0.0] * sp.shape[0] for sp in action_space]
         return [[0.0] * action_space.shape[0]]
-    
+
     def save(self, path: str):
         """Guarda el modelo."""
         if self.model is not None:
             self.model.save(path)
             logger.info("Modelo PPO guardado en %s", path)
-    
+
     def load(self, path: str):
         """Carga modelo."""
         from stable_baselines3 import PPO
