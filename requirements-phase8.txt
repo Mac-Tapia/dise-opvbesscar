@@ -1,0 +1,10 @@
+# Phase 8 ONLY - CityLearn Dependency
+# IMPORTANT: Install ONLY AFTER:
+#   1. Python 3.11.9 is installed and verified
+#   2. All Phase 7 dependencies are installed
+#   3. Virtual environment is activated
+
+# Install with: pip install -r requirements-phase8.txt
+
+# CityLearn v2 Environment (REQUIRES Python 3.11.9)
+citylearn>=2.5.0

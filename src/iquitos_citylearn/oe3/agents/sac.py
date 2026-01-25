@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Dict, List
@@ -34,23 +34,28 @@ def detect_device() -> str:
             return "mps"
     except ImportError:
         logger.warning("PyTorch no disponible; usando CPU")
-        pass
     logger.info("Usando CPU para entrenamiento")
     return "cpu"
 
 
 def _patch_citylearn_sac_update() -> None:
+    """Parche para compatibilidad con CityLearn SAC."""
     try:
-        import torch
+        import torch  # noqa: F401
         from citylearn.agents import sac as citylearn_sac  # type: ignore
-    except Exception:
+    except (ImportError, ModuleNotFoundError):
         return
 
     if getattr(citylearn_sac.SAC.update, "_iquitos_tensor_patch", False):
         return
 
-    def _update(self, observations, actions, reward, next_observations, terminated, truncated):
-        for i, (o, a, r, n) in enumerate(zip(observations, actions, reward, next_observations)):
+    def _update(self, observations, actions, reward, next_observations,
+                terminated, done):
+        """Actualizar modelo SAC con tuple de experiencias."""
+        for i, (o, a, r, n) in enumerate(zip(observations, actions,
+                                              reward, next_observations)):
+            o = self.get_encoded_observations(i, o)
+            n = self.get_encoded_observations(i, n)
             o = self.get_encoded_observations(i, o)
             n = self.get_encoded_observations(i, n)
 
@@ -209,11 +214,11 @@ class SACAgent:
     """
 
     def __init__(self, env: Any, config: Optional[SACConfig] = None):
-        logger.info(f"[SACAgent.__init__] ENTRY: config type={type(config)}, config={config}")
-        logger.info(f"[SACAgent.__init__] ENTRY: config.checkpoint_dir={config.checkpoint_dir if config else 'None'}")
+        logger.info("[SACAgent.__init__] ENTRY: config type=%s, config=%s", type(config), config)
+        logger.info("[SACAgent.__init__] ENTRY: config.checkpoint_dir=%s", config.checkpoint_dir if config else 'None')
         self.env = env
         self.config = config or SACConfig()
-        logger.info(f"[SACAgent.__init__] AFTER ASSIGNMENT: self.config.checkpoint_dir={self.config.checkpoint_dir}, checkpoint_freq_steps={self.config.checkpoint_freq_steps}")
+        logger.info("[SACAgent.__init__] AFTER ASSIGNMENT: self.config.checkpoint_dir=%s, checkpoint_freq_steps=%s", self.config.checkpoint_dir, self.config.checkpoint_freq_steps)
         self._citylearn_sac = None
         self._sb3_sac = None
         self._trained = False
@@ -271,9 +276,10 @@ class SACAgent:
             if torch.cuda.is_available():
                 info["cuda_version"] = torch.version.cuda
                 info["gpu_name"] = torch.cuda.get_device_name(0)
-                info["gpu_memory_gb"] = torch.cuda.get_device_properties(0).total_memory / 1e9
+                props = torch.cuda.get_device_properties(0)
+                info["gpu_memory_gb"] = props.total_memory / 1e9
                 info["gpu_count"] = torch.cuda.device_count()
-        except ImportError:
+        except (ImportError, ModuleNotFoundError):
             pass
         return info
 
@@ -456,7 +462,7 @@ class SACAgent:
     def _train_sb3_sac(self, total_timesteps: int):
         """Entrena usando Stable-Baselines3 SAC con optimizadores avanzados."""
         # DIAGNOSTIC: Write to file to confirm method execution
-        with open("sac_training_test.txt", "w") as f:
+        with open("sac_training_test.txt", "w", encoding="utf-8") as f:
             f.write(f"_train_sb3_sac called with total_timesteps={total_timesteps}\n")
             f.write(f"checkpoint_dir={self.config.checkpoint_dir}\n")
             f.write(f"checkpoint_freq_steps={self.config.checkpoint_freq_steps}\n")
@@ -592,8 +598,9 @@ class SACAgent:
                             pv_kw += float(max(0.0, sg[t]))
                         es = getattr(b, "electrical_storage", None)
                         if es is not None:
-                            soc = float(getattr(es, "state_of_charge", soc))
-                except Exception:
+                            soc = float(getattr(es, "state_of_charge",
+                                                soc))
+                except (ImportError, ModuleNotFoundError, AttributeError):
                     pass
                 return np.array([pv_kw, soc], dtype=np.float32)
 
@@ -790,9 +797,10 @@ class SACAgent:
                             # Acumular generación solar
                             if hasattr(b, 'solar_generation') and b.solar_generation:
                                 last_solar = b.solar_generation[-1] if b.solar_generation else 0
-                                if last_solar != 0:  # FIJO: Acumula valores no-cero
-                                    self.solar_energy_sum += abs(last_solar)
-                except Exception:
+                                if last_solar != 0:
+                                    self.solar_energy_sum += abs(
+                                        last_solar)
+                except (ImportError, ModuleNotFoundError, AttributeError):
                     pass
 
                 if not infos:
@@ -830,18 +838,22 @@ class SACAgent:
                                 if critic_loss is not None:
                                     parts.append(f"critic_loss={critic_loss:.2f}")
                                 if ent_coef is not None:
-                                    parts.append(f"ent_coef={ent_coef:.4f}")
+                                    parts.append(
+                                        f"ent_coef={ent_coef:.4f}")
                                 if learning_rate is not None:
                                     parts.append(f"lr={learning_rate:.2e}")
-                    except Exception:
+                    except (ImportError, ModuleNotFoundError,
+                            AttributeError):
                         pass
 
                     # Agregar métricas de energía y CO2
                     if self.grid_energy_sum > 0:
-                        parts.append(f"grid_kWh={self.grid_energy_sum:.1f}")
+                        parts.append(
+                            f"grid_kWh={self.grid_energy_sum:.1f}")
                         parts.append(f"co2_kg={co2_kg:.1f}")
                     if self.solar_energy_sum > 0:
-                        parts.append(f"solar_kWh={self.solar_energy_sum:.1f}")
+                        parts.append(
+                            f"solar_kWh={self.solar_energy_sum:.1f}")
 
                     metrics_str = " | ".join(parts)
 
@@ -929,10 +941,10 @@ class SACAgent:
 
         checkpoint_dir = self.config.checkpoint_dir
         checkpoint_freq = int(self.config.checkpoint_freq_steps or 0)
-        logger.info(f"[SAC Checkpoint Config] dir={checkpoint_dir}, freq={checkpoint_freq}")
+        logger.info("[SAC Checkpoint Config] dir=%s, freq=%s", checkpoint_dir, checkpoint_freq)
         if checkpoint_dir:
             Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
-            logger.info(f"[SAC] Checkpoint directory created: {checkpoint_dir}")
+            logger.info("[SAC] Checkpoint directory created: %s", checkpoint_dir)
         else:
             logger.warning("[SAC] NO checkpoint directory configured!")
 
@@ -942,20 +954,20 @@ class SACAgent:
                 self.save_dir = Path(save_dir) if save_dir else None
                 self.freq = freq
                 self.call_count = 0
-                logger.info(f"[SAC CheckpointCallback.__init__] save_dir={self.save_dir}, freq={self.freq}")
+                logger.info("[SAC CheckpointCallback.__init__] save_dir=%s, freq=%s", self.save_dir, self.freq)
                 if self.save_dir and self.freq > 0:
                     self.save_dir.mkdir(parents=True, exist_ok=True)
-                    logger.info(f"[SAC CheckpointCallback] Created directory: {self.save_dir}")
+                    logger.info("[SAC CheckpointCallback] Created directory: %s", self.save_dir)
 
             def _on_step(self) -> bool:
                 self.call_count += 1
 
                 # Log first call and every 1000 calls
                 if self.call_count == 1:
-                    logger.info(f"[SAC CheckpointCallback._on_step] FIRST CALL DETECTED! n_calls={self.n_calls}")
+                    logger.info("[SAC CheckpointCallback._on_step] FIRST CALL DETECTED! n_calls=%s", self.n_calls)
 
                 if self.call_count % 1000 == 0:
-                    logger.info(f"[SAC CheckpointCallback._on_step] call #{self.call_count}, n_calls={self.n_calls}")
+                    logger.info("[SAC CheckpointCallback._on_step] call #%s, n_calls=%s", self.call_count, self.n_calls)
 
                 if self.save_dir is None or self.freq <= 0:
                     return True
@@ -967,7 +979,7 @@ class SACAgent:
                     save_path = self.save_dir / f"sac_step_{self.n_calls}"
                     try:
                         self.model.save(save_path)
-                        logger.info(f"[SAC CHECKPOINT OK] Saved: {save_path}")
+                        logger.info("[SAC CHECKPOINT OK] Saved: %s", save_path)
                     except Exception as exc:
                         logger.error(f"[SAC CHECKPOINT ERROR] {exc}", exc_info=True)
 
@@ -996,14 +1008,15 @@ class SACAgent:
                 logger.info("[SAC FINAL OK] Modelo guardado en %s", final_path)
             except Exception as exc:
                 logger.error("[SAC FINAL ERROR] %s", exc, exc_info=True)
-
         # MANDATORY: Verify checkpoints were created
         if checkpoint_dir:
             checkpoint_path = Path(checkpoint_dir)
             zips = list(checkpoint_path.glob("*.zip"))
-            logger.info(f"[SAC VERIFICATION] Checkpoints created: {len(zips)} files")
+            logger.info("[SAC VERIFICATION] Checkpoints created: %s files",
+                        len(zips))
             for z in sorted(zips)[:5]:
-                logger.info(f"  - {z.name} ({z.stat().st_size / 1024:.1f} KB)")
+                size_kb = z.stat().st_size / 1024
+                logger.info("  - %s (%.1f KB)", z.name, size_kb)
 
     def _get_activation(self):
         """Obtiene función de activación."""
@@ -1032,7 +1045,7 @@ class SACAgent:
                 elif obs.size > target_dim:
                     obs = obs[:target_dim]
                 obs = obs.astype(np.float32)
-            except Exception:
+            except (ImportError, ModuleNotFoundError, AttributeError):
                 pass
             action, _ = self._sb3_sac.predict(obs, deterministic=deterministic)
             return self._unflatten_action(action)
@@ -1056,7 +1069,7 @@ class SACAgent:
                 space = self._sb3_sac.observation_space
                 if space is not None and hasattr(space, "shape") and space.shape:
                     target_dim = int(space.shape[0])
-        except Exception:
+        except (ImportError, ModuleNotFoundError, AttributeError):
             target_dim = None
         # Si no se pudo, usar el espacio del env base
         if target_dim is None:
@@ -1064,7 +1077,7 @@ class SACAgent:
                 space = getattr(self.env, "observation_space", None)
                 if space is not None and hasattr(space, "shape") and space.shape:
                     target_dim = int(space.shape[0])
-            except Exception:
+            except (ImportError, ModuleNotFoundError, AttributeError):
                 target_dim = None
         if target_dim is not None:
             if arr.size < target_dim:
@@ -1107,17 +1120,17 @@ class SACAgent:
 
 def make_sac(env: Any, config: Optional[SACConfig] = None, **kwargs) -> SACAgent:
     """Factory function para crear agente SAC robusto."""
-    logger.info(f"[make_sac] ENTRY: config={config is not None}, kwargs_empty={not kwargs}")
+    logger.info("[make_sac] ENTRY: config=%s, kwargs_empty=%s", config is not None, not kwargs)
 
     # CRITICAL FIX: Properly handle config vs kwargs priority
     if config is not None:
         cfg = config
-        logger.info(f"[make_sac] Using provided config: checkpoint_dir={cfg.checkpoint_dir}, checkpoint_freq_steps={cfg.checkpoint_freq_steps}")
+        logger.info("[make_sac] Using provided config: checkpoint_dir=%s, checkpoint_freq_steps=%s", cfg.checkpoint_dir, cfg.checkpoint_freq_steps)
     elif kwargs:
         cfg = SACConfig(**kwargs)
-        logger.info(f"[make_sac] Created config from kwargs: checkpoint_dir={cfg.checkpoint_dir}, checkpoint_freq_steps={cfg.checkpoint_freq_steps}")
+        logger.info("[make_sac] Created config from kwargs: checkpoint_dir=%s, checkpoint_freq_steps=%s", cfg.checkpoint_dir, cfg.checkpoint_freq_steps)
     else:
         cfg = SACConfig()
-        logger.info(f"[make_sac] Created default config: checkpoint_dir={cfg.checkpoint_dir}, checkpoint_freq_steps={cfg.checkpoint_freq_steps}")
+        logger.info("[make_sac] Created default config: checkpoint_dir=%s, checkpoint_freq_steps=%s", cfg.checkpoint_dir, cfg.checkpoint_freq_steps)
 
     return SACAgent(env, cfg)
