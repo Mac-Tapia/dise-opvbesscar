@@ -20,6 +20,40 @@ class BuiltDataset:
     schema_path: Path
     building_name: str
 
+def _validate_solar_timeseries_hourly(solar_df: pd.DataFrame) -> None:
+    """
+    CRITICAL VALIDATION: Ensure solar timeseries is EXACTLY hourly (8,760 rows per year).
+
+    NO 15-minute, 30-minute, or sub-hourly data allowed.
+
+    Args:
+        solar_df: Solar timeseries DataFrame
+
+    Raises:
+        ValueError: If not exactly 8,760 rows or if appears to be sub-hourly
+    """
+    n_rows = len(solar_df)
+
+    # Check exact length (8,760 = 365 days × 24 hours, hourly resolution)
+    if n_rows != 8760:
+        raise ValueError(
+            f"❌ CRITICAL: Solar timeseries MUST be exactly 8,760 rows (hourly, 1 year).\n"
+            f"   Got {n_rows} rows instead.\n"
+            f"   This appears to be {'sub-hourly data' if n_rows > 8760 else 'incomplete data'}.\n"
+            f"   If using PVGIS 15-minute data, downsample: "
+            f"df.set_index('time').resample('h').mean()"
+        )
+
+    # Sanity check: if 52,560 rows, it's likely 15-minute (8,760 × 6)
+    if n_rows == 52560:
+        raise ValueError(
+            f"❌ CRITICAL: Solar timeseries has {n_rows} rows = 8,760 × 6 (likely 15-minute data).\n"
+            f"   This codebase ONLY supports hourly resolution (8,760 rows per year).\n"
+            f"   Downsample using: df.set_index('time').resample('h').mean()"
+        )
+
+    logger.info("✅ Solar timeseries validation PASSED: %d rows (hourly, 1 year)", n_rows)
+
 def _find_first_building(schema: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     buildings = schema.get("buildings")
     if not isinstance(buildings, dict) or len(buildings) == 0:
@@ -82,6 +116,8 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
     solar_path = interim_dir / "oe2" / "solar" / "pv_generation_timeseries.csv"
     if solar_path.exists():
         artifacts["solar_ts"] = pd.read_csv(solar_path)
+        # CRITICAL: Validate that solar data is hourly (8,760 rows per year)
+        _validate_solar_timeseries_hourly(artifacts["solar_ts"])
 
     # Solar generation para CityLearn (horario)
     solar_citylearn_csv = interim_dir / "oe2" / "citylearn" / "solar_generation.csv"

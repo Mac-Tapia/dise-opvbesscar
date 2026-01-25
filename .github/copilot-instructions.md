@@ -2,51 +2,61 @@
 
 ## Project Overview
 
-**pvbesscar** is a two-phase reinforcement learning energy management system for Iquitos, Perú:
+**pvbesscar** is a two-phase reinforcement learning energy management system for Iquitos, Perú designed to optimize EV charging for electric motorcycles (motos) and mototaxis using solar PV and battery storage.
 
-- **OE2 (Dimensioning)**: Photovoltaic (4,050 kWp Kyocera KS20 + Eaton Xpert1670 inverter), BESS (2 MWh/1.2 MW), and 128 EV chargers (272 kW installed: 112 motos @2kW + 16 mototaxis @3kW)
-- **OE3 (Control)**: CityLearn v2 environment with SAC/PPO/A2C agents optimizing multi-objective rewards (CO₂ minimization as primary objective)
-
-**Key Results**: 6,707.86 tCO₂/year net reduction; 8.31 GWh annual PV generation with 29.6% capacity factor
-
-**Context**: Iquitos is grid-isolated with thermoelectric generation (0.45 kg CO₂/kWh); tariff is 0.20 USD/kWh (low cost, not bottleneck). Primary optimization target is CO₂ reduction via intelligent solar+BESS dispatch.
+- **OE2 (Dimensioning)**: Photovoltaic (4,050 kWp), BESS (2 MWh/1.2 MW), and 128 EV chargers (32 physical chargers × 4 sockets = 128 controllable outlets, totaling 272 kW)
+- **OE3 (Control)**: CityLearn v2 RL environment with SAC/PPO/A2C agents minimizing CO₂ emissions and optimizing solar self-consumption
+- **Context**: Iquitos is grid-isolated (thermal generators, 0.45 kg CO₂/kWh). Tariff is low (0.20 USD/kWh), so CO₂ minimization is the primary objective, not cost optimization.
 
 ---
 
 ## Architecture & Data Flow
 
-### Three-Tier Structure
-```bash
-Input (OE2 artifacts) → Dataset Builder → CityLearn Environment → RL Agents
-   ↓                        ↓                     ↓                   ↓
-data/interim/oe2/      dataset_builder.py    schema.json          simulate.py
-  (solar, chargers,    (enriched_observables  (building,           (SAC, PPO,
-   BESS profiles)      + dispatch rules)       energy_sim)          A2C configs)
-```bash
+### ⚠️ CRITICAL: Hourly Data Only
+**Solar timeseries MUST be exactly 8,760 rows per year (hourly resolution).** NO 15-minute, 30-minute, or sub-hourly data. If you have PVGIS 15-min data, downsample: `df.set_index('time').resample('h').mean()`
+
+### Three-Phase Pipeline
+1. **OE2 Artifacts** (`data/interim/oe2/`): Solar timeseries (8,760 hrs), charger profiles, BESS config
+2. **Dataset Builder** (`src/iquitos_citylearn/oe3/dataset_builder.py`): Constructs CityLearn schema with 534-dim obs space, 126-dim action space (128 chargers - 2 reserved)
+3. **Simulation** (`src/iquitos_citylearn/oe3/simulate.py`): Trains SAC/PPO/A2C agents; compares vs baseline
+4. **Results** (`outputs/oe3_simulations/`): Timeseries CSV, CO₂ comparisons, checkpoints
 
 ### Critical Data Dependencies
 
-1. **Solar Generation** (`data/interim/oe2/solar/pv_generation_timeseries.csv`): 8,760 hourly values from PVGIS/pvlib, normalized to Eaton Xpert1670 spec (2 inverters, 31 modules/string, 6,472 strings)
-2. **EV Charger Structure** (`data/interim/oe2/chargers/`):
-   - **Physical units**: 32 chargers (28 motos @ 2kW + 4 mototaxis @ 3kW)
-   - **Controllable outlets**: 32 × 4 sockets = **128 outlets** (observed in CityLearn as 128 charger states)
-   - **Individual profiles**: `individual_chargers.json` defines each charger with rated power; `perfil_horario_carga.csv` is 24-hour profile expanded to 8,760 hours per charger
-   - **Action space**: 126 continuous actions (2 chargers reserved for baseline comparison)
-3. **Dispatch Rules** (`configs/default.yaml` → `oe3.dispatch_rules`): Priority-based BESS control with 5 priority levels:
-   - Priority 1: PV→EV (direct, lowest cost)
-   - Priority 2: PV→BESS (charge reserve for peak)
-   - Priority 3: BESS→EV (night charging)
-   - Priority 4: BESS→Mall (desaturate excess)
-   - Priority 5: Grid import (if deficit)
-4. **Carbon Intensity**: Fixed at 0.45 kg CO₂/kWh (thermal grid isolation in Iquitos, not grid-connected)
+**OE2 Input Files** (must exist before dataset build):
+- `data/interim/oe2/solar/pv_generation_timeseries.csv`: **8,760 hourly AC output (kW)** from PVGIS/pvlib (1 row per hour, exactly 1 year). **NO 15-minute or sub-hourly data supported**
+- `data/interim/oe2/chargers/perfil_horario_carga.csv`: 24-hour load profile (kW by hour)
+- `data/interim/oe2/chargers/individual_chargers.json`: 32 chargers with 4 sockets each, rated power (2kW motos, 3kW mototaxis)
+- `data/interim/oe2/bess/bess_config.json`: Fixed 2 MWh / 1.2 MW
+
+**Key Validation Rules** (enforced in dataset builder):
+- Solar timeseries MUST be exactly 8,760 rows (hourly resolution, 1 hour per row). **NO 15-minute data supported**
+- Charger count MUST be 32 (128 sockets = 32 × 4)
+- BESS config immutable in OE3 (not controlled by agents)
+- Observation space: 534 dims (building energy + 128 chargers + time + grid state)
+- Action space: 126 dims (continuous [0,1] per charger, 2 reserved)
+
+**Dispatch Rules** (`configs/default.yaml` → `oe3.dispatch_rules`):
+1. **PV→EV**: Direct solar to chargers (priority 1)
+2. **PV→BESS**: Charge battery during peak sun (priority 2)
+3. **BESS→EV**: Night charging from stored solar (priority 3)
+4. **BESS→Grid**: Sell excess when SOC > 95% (priority 4)
+5. **Grid Import**: If deficit (priority 5)
 
 ### Key Files by Responsibility
 
-- **Config management**: `src/iquitos_citylearn/config.py` (runtime paths, YAML loading)
-- **Dataset construction**: `src/iquitos_citylearn/oe3/dataset_builder.py` (charger CSV discovery, schema generation)
-- **Reward system**: `src/iquitos_citylearn/oe3/rewards.py` (multi-objective weighting: CO₂ 0.50, solar 0.20, cost 0.10, EV/grid 0.20)
-- **Agent training**: `src/iquitos_citylearn/oe3/agents/{ppo_sb3,sac,a2c_sb3}.py` (stable-baselines3 configs with GPU support)
-- **Simulation**: `src/iquitos_citylearn/oe3/simulate.py` (episode runner, checkpoint management)
+**Core Modules** (`src/iquitos_citylearn/`):
+- `config.py`: Load YAML + env vars; `RuntimePaths` for directory resolution
+- `oe3/dataset_builder.py`: Reads OE2 artifacts → generates CityLearn schema + CSV files
+- `oe3/rewards.py`: 5-component multi-objective reward (CO₂ 0.50, solar 0.20, cost 0.10, EV 0.10, grid 0.10)
+- `oe3/simulate.py`: Main training loop; checkpoint resume; episode orchestration
+- `oe3/agents/{sac.py, ppo_sb3.py, a2c_sb3.py}`: Stable-baselines3 wrappers with GPU config
+
+**Entry Points** (`scripts/`):
+- `run_oe3_build_dataset.py`: Build CityLearn dataset from OE2 artifacts
+- `run_uncontrolled_baseline.py`: Calculate baseline (no intelligent control)
+- `run_oe3_simulate.py`: Full pipeline (dataset → baseline → train 3 agents → compare)
+- `_common.py`: Shared config/path loading; Python 3.11 version check
 
 ---
 
@@ -79,69 +89,58 @@ pip install -r requirements-training.txt  # For GPU training
 
 ## Developer Workflows
 
-### Common Tasks
+### Quick Start Commands
 
-#### 1. Build CityLearn Dataset (Required Before Training)
+**1. Full Pipeline (dataset → baseline → train all 3 agents)**
+```bash
+python -m scripts.run_oe3_simulate --config configs/default.yaml
+```
+Duration: 15-30 min (GPU RTX 4060) | Output: `outputs/oe3_simulations/simulation_summary.json`
+
+**2. Build Dataset Only**
 ```bash
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-```bash
-- Validates OE2 artifacts (solar, chargers, BESS)
-- Generates `outputs/schema_<timestamp>.json`
-- Verifies 128 chargers with 4 sockets each = 512 controllable outlets
-- **Output**: `data/processed/citylearnv2_dataset/`
+```
+Duration: ~1 min | Validates: 128 chargers, 8,760 solar timeseries
 
-#### 2. Run Baseline Simulation (Uncontrolled)
+**3. Baseline Simulation (no intelligent control)**
 ```bash
 python -m scripts.run_uncontrolled_baseline --config configs/default.yaml
-```bash
-- No intelligent control; chargers draw maximum available power
-- Produces CO₂/cost baseline for comparison
-- Takes ~5 min (8,760 timesteps)
+```
+Duration: ~10 sec | Produces reference CO₂/cost for comparison
 
-#### 3. Train RL Agents (SAC → PPO → A2C Serial)
-```bash
-python scripts/train_agents_serial.py --device cuda --episodes 5
-```bash
-- Trains 3 agents sequentially (each ~1 hour on GPU)
-- **Agents trained**: SAC (off-policy, sample-efficient), PPO (on-policy, stable), A2C (on-policy, multi-step)
-- **Resume from checkpoint**: Automatically loads `checkpoints/agent/<latest>`
-- Output: Training logs in `analyses/logs/`
-
-#### 4. Compare Baseline vs RL Results
+**4. Compare Results**
 ```bash
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
-```bash
-- Generates comparison table (baseline CO₂ vs each agent's CO₂)
-- Output: `COMPARACION_BASELINE_VS_RL.txt`
+```
+Duration: <1 sec | Generates markdown comparison table
 
-#### 5. Monitor Live Training Progress
-```bash
-python scripts/monitor_training_live_2026.py
-```bash
-- Polls checkpoint metadata every 5 sec
-- Shows agent, episode, reward, timesteps
+## Code Patterns & Conventions
 
----
+### Module Structure
+- **Always** use `from __future__ import annotations` at file start (Python 3.11+ type hints)
+- **Always** use `@dataclass` for configs/data containers (see `SACConfig`, `PPOConfig`, `A2CConfig` in `agents/`)
+- **Path resolution**: Use `RuntimePaths` from `config.py` for all directory access (not hardcoded paths)
+- **Config loading**: Use `load_config(config_path)` + `load_paths(cfg)` from `scripts/_common.py`
 
-## Agent Configuration Pattern
+### Type Hints & Python Version
+- Minimum Python 3.11 (enforced in `_common.py` with `sys.version_info[:2] != (3, 11)` check)
+- All functions must have type hints for parameters and return values
+- Use `Dict[str, Any]` not `dict`, `List[Path]` not `list`, `Optional[str]` not `str | None`
 
-All agents follow same structure in `src/iquitos_citylearn/oe3/agents/`:
-
+### Error Handling Patterns
+When working with OE2 artifacts, validate before proceeding:
 ```python
-@dataclass
-class XXXConfig:
-    train_steps: int = 1000000      # Total training steps
-    learning_rate: float = 2.0e-4   # With linear decay if enabled
-    batch_size: int = 128            # SAC: 256; PPO: 128; A2C: 64
-    hidden_sizes: tuple = (1024, 1024)  # Network architecture
-    device: str = "auto"             # GPU auto-detection via torch
-    use_amp: bool = True             # Mixed precision training
-```bash
+# Check critical files exist before build_citylearn_dataset()
+solar_path = interim_dir / "oe2" / "solar" / "pv_generation_timeseries.csv"
+if not solar_path.exists():
+    raise FileNotFoundError(f"Missing OE2 solar timeseries: {solar_path}")
+```
 
-**Key Hyperparameters** (tuned for thermal grid CO₂ minimization):
-- **PPO**: `n_epochs=20`, `clip_range=0.1`, `gae_lambda=0.98` (long horizon, conservative clipping)
-- **SAC**: `target_update_interval=1`, `use_sde=True` (off-policy flexibility for sparse rewards)
-- **A2C**: `n_steps=2048`, `lr_schedule="linear"` (simpler on-policy baseline)
+### Logging
+- Use `logging.getLogger(__name__)` at module level
+- Setup logging in entry points via `iquitos_citylearn.utils.logging.setup_logging()`
+- Log level info for major milestones (dataset build, training start/end)
 
 ---
 
@@ -149,145 +148,52 @@ class XXXConfig:
 
 Located in `src/iquitos_citylearn/oe3/rewards.py`:
 
-```python
-@dataclass
-class MultiObjectiveWeights:
-    co2: float = 0.50              # PRIMARY: Minimize thermal grid imports
-    solar: float = 0.20            # SECONDARY: Maximize PV self-consumption
-    cost: float = 0.10             # TERTIARY: Low tariff (0.20 USD/kWh)
-    ev_satisfaction: float = 0.10  # Baseline charging requirement
-    grid_stability: float = 0.10   # Peak demand smoothing
-    peak_import_penalty: float = 0.00  # Dynamic penalty (applied in compute())
-```
+**Weights** (in `MultiObjectiveWeights` dataclass):
+- CO₂ minimization: 0.50 (primary: grid imports at 0.4521 kg CO₂/kWh)
+- Solar self-consumption: 0.20 (secondary: maximize PV direct usage)
+- Cost minimization: 0.10 (tertiary: low tariff, not binding constraint)
+- EV satisfaction + grid stability: 0.20 combined (ensure baseline service)
 
-**Context**: Iquitos is grid-isolated (diesel thermoelectric); CO₂ mitigation is primary objective. Cost is secondary (tariff already low). The `peak_import_penalty` is calculated dynamically per timestep, not as a static weight.
-
-### Detailed Reward Calculation
-
-The reward signal combines 5 normalized components:
-
-$$r_{total}(t) = w_{CO2} \cdot r_{CO2}(t) + w_{solar} \cdot r_{solar}(t) + w_{cost} \cdot r_{cost}(t) + w_{EV} \cdot r_{EV}(t) + w_{grid} \cdot r_{grid}(t)$$
-
-#### Component Breakdown
-
-1. **CO₂ Reduction** ($w_{CO2} = 0.50$):
-   - Penalizes grid imports proportional to carbon intensity: $r_{CO2} = -\text{grid\_import\_kwh} \times 0.4521$
-   - Directly maps thermal generation to kg CO₂
-   - Incentivizes PV self-consumption and BESS discharge during peak hours
-
-2. **Solar Self-Consumption** ($w_{solar} = 0.20$):
-   - Rewards using PV generation before battery or grid: $r_{solar} = \frac{\text{pv\_used\_directly}}{(\text{pv\_generated} + 0.1)}$
-   - Normalized [0,1] to prevent division by zero during night hours
-   - Secondary goal: maximizes renewable utilization
-
-3. **Cost Minimization** ($w_{cost} = 0.10$):
-   - Based on tariff: $r_{cost} = -\text{grid\_import\_kwh} \times 0.20$ (USD/kWh)
-   - Low weight (0.10) because baseline tariff is already competitive in Iquitos
-   - Acts as tie-breaker when CO₂ and solar are equal
-
-4. **EV Satisfaction** ($w_{EV} = 0.10$):
-   - Penalizes unmet charger demand: $r_{EV} = -\max(0, \text{charger\_demand} - \text{charger\_power})$
-   - Ensures EVs still get charged (baseline service level)
-
-5. **Grid Stability** ($w_{grid} = 0.10$):
-   - Penalizes peak demand spikes: $r_{grid} = -\max(0, \text{peak\_power} - \text{baseline\_threshold})$
-   - Reduces sudden load swings on isolated grid
-
-**How to Modify**:
-1. Edit `src/iquitos_citylearn/oe3/rewards.py::MultiObjectiveWeights` dataclass
-2. Ensure new weights sum to ~1.0 (auto-normalized in `__post_init__`)
-3. Re-run `train_agents_serial.py` (agents will reload new weights)
+**How to adjust weights**:
+1. Edit `MultiObjectiveWeights` dataclass in `rewards.py`
+2. Ensure weights sum to 1.0 (auto-normalized in `__post_init__`)
+3. Restart training - agents auto-reload new weights
 4. Compare results: `python -m scripts.run_oe3_co2_table`
 
-**Example**: To prioritize solar usage over CO₂, change to `co2: 0.30, solar: 0.50`
+**Example**: To prioritize solar over CO₂, change to `co2: 0.30, solar: 0.50`
 
 ---
 
-## Data Processing Pipeline (OE2 → OE3)
+## Critical Implementation Details
 
-### Phase 1: OE2 Artifact Generation
+### Checkpoint Management
+- **Location**: `checkpoints/{SAC,PPO,A2C}/`
+- **Resume behavior**: `simulate()` auto-loads latest checkpoint (by modification date) if exists
+- **Key config**: `reset_num_timesteps=False` to accumulate steps across resumptions
+- **Metadata file**: `TRAINING_CHECKPOINTS_SUMMARY_*.json` tracks agent, episode, total_steps, best_reward
 
-**Location**: `data/interim/oe2/`
-
-**Inputs** (from external sources):
-- **PVGIS TMY data**: Weather normals for Iquitos (5.5°S, 73.3°W)
-- **MATLAB charger simulation**: 3,061 vehicles/day, 92% utilization profile
-
-**Outputs** (generated by scripts):
-```bash
-data/interim/oe2/
-├── solar/
-│   ├── pv_generation_timeseries.csv      # 8,760 hourly AC output (kW)
-│   ├── solar_technical_report.md         # String/inverter config
-│   └── solar_results.json                # Yield, PR, capacity factor
-├── chargers/
-│   ├── perfil_horario_carga.csv          # 24-hour profile (kW by hour)
-│   ├── individual_chargers.json          # 32 chargers × 4 sockets × power_rating
-│   └── charger_results.json              # Total 272 kW installed
-└── bess/
-    └── bess_config.json                  # Fixed: 2 MWh / 1.2 MW
-```bash
-
-**Key validation**:
-- Solar timeseries must have exactly 8,760 rows (1 year, hourly)
-- Each charger in `individual_chargers.json` must have 4 sockets
-- Sum of charger power ratings = 272 kW
-
-### Phase 2: Dataset Construction (run_oe3_build_dataset.py)
-
-**Process**:
-1. **Load OE2 artifacts**: Solar, charger profiles, BESS config
-2. **Enrich observables**: Add time-of-day, solar availability, BESS state
-3. **Build CityLearn schema**: Create `schema.json` with building definition
-4. **Validate chargers**: Verify all 128 sockets (32 chargers × 4) discovered
-5. **Generate dispatch rules**: Embed priority stack into schema
-
-**Output**: `data/processed/citylearnv2_dataset/` with:
-```bash
-citylearnv2_dataset/
-├── schema.json                                 # CityLearn environment config
-├── climate_zones/
-│   └── default_climate_zone/
-│       ├── weather.csv                        # PVGIS weather (temp, irradiance)
-│       ├── carbon_intensity.csv               # Fixed 0.4521 kg CO₂/kWh
-│       └── pricing.csv                        # Tariff 0.20 USD/kWh
-└── buildings/
-    └── <building_name>/
-        ├── energy_simulation.csv              # From OE2 solar + charger load
-        └── charger_simulation_<i>.csv         # Per-charger 8,760 profiles
-```bash
-
-**Code pattern**:
+### Module Import Structure
+Key modules must be imported in correct order to avoid circular imports:
 ```python
-from iquitos_citylearn.oe3.dataset_builder import build_citylearn_dataset
-build_citylearn_dataset(
-    cfg=config,
-    raw_dir=paths.raw_dir,
-    interim_dir=paths.interim_dir,
-    processed_dir=paths.processed_dir,
-)
-```bash
+# Correct order (from simulate.py)
+from iquitos_citylearn.config import load_config, load_paths  # Config first
+from iquitos_citylearn.oe3.dataset_builder import build_citylearn_dataset  # Dataset
+from iquitos_citylearn.oe3.agents import SACConfig, PPOConfig, A2CConfig  # Configs
+from iquitos_citylearn.oe3.simulate import simulate  # Simulation last
+```
 
-### Phase 3: Environment Initialization (CityLearn)
+### CityLearn Environment Setup
+- **Observation**: Flattened 534-dim array (building energy + 128 charger states + time features)
+- **Action**: 126 continuous [0,1] values (2 chargers reserved for comparison)
+- **Episode length**: 8,760 timesteps (1 year = 365 days × 24 hours per day, hourly resolution)
+- **Time step**: 1 hour (3,600 seconds per timestep)
+- **Wrapper pattern**: Some agents need `ListToArrayWrapper` to convert CityLearn list obs to numpy
 
-**Environment creation**:
-```python
-from citylearn.citylearn import CityLearnEnv
-
-env = CityLearnEnv(schema=schema_path)
-obs, info = env.reset()
-```bash
-
-**Observation space** (534 dims when flattened):
-- Building energy metrics (solar generation, demand, grid import)
-- 128 charger states (power draw, occupancy, battery level per charger)
-- Time features (hour, month, day-of-week)
-- BESS state (SOC, available power)
-
-**Action space** (126 dims when flattened):
-- 126 continuous values in [0, 1] representing charger power setpoints
-- Mapped to actual power: `action_power = action_normalized * charger_rated_power`
-- Note: Only 126 of 128 chargers are controllable (2 reserved for baseline)
+### OE2 ↔ OE3 Connection Points
+- **Solar**: `pv_generation_timeseries.csv` → CityLearn `weather.csv`
+- **Chargers**: `individual_chargers.json` (32 units) + `perfil_horario_carga.csv` → 128 charger observables
+- **BESS**: Config immutable in OE3 (not agent-controlled, dispatch rules instead)
+- **Dispatch validation**: Verify priority rules in `configs/default.yaml` match `dataset_builder.py` expectations
 
 ### Data Flow Diagram
 ```bash
@@ -306,7 +212,7 @@ bess_config.json─                                    action (126d)
 
 **Observation** (534-dimensional when flattened):
 ```python
-# Building-level (per timestep)
+# Building-level (per hourly timestep)
 - Solar generation (kW)                          # 1 value
 - Total electricity demand (kW)                  # 1 value
 - Grid import (kW)                               # 1 value
@@ -540,7 +446,7 @@ Priority stack (in `configs/default.yaml`):
 | Training loops never converge (reward stays flat) | Check observation vector not all zeros; verify action space is continuous [0,1] not discrete; enable `print_rewards` debugging in `compute_reward()` |
 | Solar generation zeros at night causing reward issues | Expected behavior; rewards should account for nighttime (solar bonus uses normalized form); BESS discharge should cover night EV charging |
 | Charger profiles all identical/unrealistic | Verify `individual_chargers.json` has unique power ratings per charger (motos 2kW, mototaxis 3kW); check `perfil_horario_carga.csv` has proper 24-hour demand curve |
-| Dataset builder fails on 15-minute solar data | Current codebase works with hourly solar timeseries (8,760 rows). If using PVGIS 15-min raw data, downsample first: `df.set_index('time').resample('h').mean()` |
+| **15-minute solar data provided (NOT SUPPORTED)** | **This codebase ONLY accepts hourly data with exactly 8,760 rows per year.** If using PVGIS 15-min raw data, downsample: `df.set_index('time').resample('h').mean()` |
 
 ### Diagnostic Commands
 
@@ -549,8 +455,8 @@ Priority stack (in `configs/default.yaml`):
 # Verify schema
 python -c "import json; s=json.load(open('outputs/schema_*.json')); print(len(s['buildings']), 'buildings')"
 
-# Verify solar timeseries length
-python -c "import pandas as pd; df=pd.read_csv('data/interim/oe2/solar/pv_generation_timeseries.csv'); print(f'{len(df)} rows')"
+# Verify solar timeseries is exactly 8,760 rows (hourly, NOT 15-minute)
+python -c "import pandas as pd; df=pd.read_csv('data/interim/oe2/solar/pv_generation_timeseries.csv'); assert len(df)==8760, f'ERROR: Expected 8760 rows, got {len(df)}'; print(f'✓ Solar timeseries: {len(df)} rows (correct hourly)')"
 
 # List discovered chargers
 python -c "import json; c=json.load(open('data/interim/oe2/chargers/individual_chargers.json')); print(f'{len(c)} chargers, {len(c)*4} sockets')"

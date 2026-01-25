@@ -38,7 +38,7 @@ def main() -> None:
     else:
         built = build_citylearn_dataset(
             cfg=cfg,
-            raw_dir=rp.raw_dir,
+            _raw_dir=rp.raw_dir,
             interim_dir=rp.interim_dir,
             processed_dir=rp.processed_dir,
         )
@@ -65,7 +65,7 @@ def main() -> None:
     sac_cfg = eval_cfg.get("sac", {})
     ppo_cfg = eval_cfg.get("ppo", {})
     a2c_cfg = eval_cfg.get("a2c", {})
-    
+
     sac_episodes = int(sac_cfg.get("episodes", 5))
     sac_batch_size = int(sac_cfg.get("batch_size", 512))
     sac_log_interval = int(sac_cfg.get("log_interval", 500))
@@ -73,7 +73,7 @@ def main() -> None:
     sac_device = sac_cfg.get("device")
     sac_checkpoint_freq = int(sac_cfg.get("checkpoint_freq_steps", 1000))  # Default to 1000 steps, MANDATORY checkpoint generation
     sac_prefer_citylearn = bool(sac_cfg.get("prefer_citylearn", False))
-    
+
     ppo_episodes = ppo_cfg.get("episodes")
     if ppo_episodes is not None:
         ppo_timesteps = int(ppo_episodes) * 8760
@@ -161,13 +161,13 @@ def main() -> None:
         # Skip Uncontrolled in this loop - it will be run in Scenario C as baseline
         if agent.lower() == "uncontrolled":
             continue
-        
+
         # Skip if results already exist
         results_json = out_dir / f"{agent.lower()}_results.json"
         if results_json.exists():
             with open(results_json) as f:
                 res = json.load(f)
-            
+
             # Verificar si SAC o PPO ya completaron 2 episodios
             if agent.lower() in ["sac", "ppo"]:
                 # Verificar si tiene al menos 2 episodios (simulated_years >= 2.0)
@@ -180,13 +180,13 @@ def main() -> None:
                     print(f"{'='*80}\n")
                     results[agent] = res
                     continue
-            
+
             import logging
             logger = logging.getLogger(__name__)
             logger.info(f"[SKIP] {agent} - resultados ya existen en {results_json}")
             results[agent] = res
             continue
-        
+
         try:
             res = simulate(
                 schema_path=schema_pv,
