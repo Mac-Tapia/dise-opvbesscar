@@ -30,6 +30,16 @@ class RuntimePaths:
     outputs_dir: Path
     analyses_dir: Path
 
+    @property
+    def oe3_simulations_dir(self) -> Path:
+        """Directorio para simulaciones OE3"""
+        return self.outputs_dir / "oe3_simulations"
+
+    @property
+    def checkpoints_dir(self) -> Path:
+        """Directorio para checkpoints de agentes"""
+        return self.outputs_dir / "checkpoints"
+
     def ensure(self) -> None:
         for p in (
             self.raw_dir,
@@ -38,6 +48,8 @@ class RuntimePaths:
             self.reports_dir,
             self.outputs_dir,
             self.analyses_dir,
+            self.oe3_simulations_dir,
+            self.checkpoints_dir,
         ):
             p.mkdir(parents=True, exist_ok=True)
 

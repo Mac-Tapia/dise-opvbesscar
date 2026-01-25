@@ -140,6 +140,7 @@ oe2:
     target_dc_kw: 4162.0
     use_pvlib: true
 oe3:
+  baseline_episodes: 3
   city_baseline_tpy:
     electricity_generation: 290000.0
     transport: 258250.0

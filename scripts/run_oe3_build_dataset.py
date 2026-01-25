@@ -16,7 +16,7 @@ def main() -> None:
 
     build_citylearn_dataset(
         cfg=cfg,
-        raw_dir=rp.raw_dir,
+        _raw_dir=rp.raw_dir,
         interim_dir=rp.interim_dir,
         processed_dir=rp.processed_dir,
     )
