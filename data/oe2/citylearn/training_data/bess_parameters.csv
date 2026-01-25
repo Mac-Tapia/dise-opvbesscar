@@ -1,0 +1,9 @@
+Parameter,Value,Unit,Description
+Capacity,1711.60,kWh,Usable energy capacity
+Nominal_Power,622.40,kW,Charge/discharge power
+DoD,80,%,Depth of Discharge
+Efficiency_Roundtrip,95,%,Round-trip efficiency
+C_Rate,0.36,C,Power to capacity ratio
+Initial_SOC,50,%,Starting state of charge
+Min_SOC,20,%,Minimum SOC
+Max_SOC,100,%,Maximum SOC

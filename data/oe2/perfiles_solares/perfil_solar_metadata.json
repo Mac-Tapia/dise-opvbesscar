@@ -1,0 +1,15 @@
+{
+  "nombre": "Perfil Solar \u00danico - Iquitos BESS",
+  "ubicacion": "Iquitos, Per\u00fa",
+  "latitud": -3.75,
+  "longitud": -73.25,
+  "a\u00f1o": 2024,
+  "resolucion_minutos": 15,
+  "timesteps_totales": 35037,
+  "dias": 365,
+  "energia_anual_kwh": 763786.688733423,
+  "potencia_maxima_kw": 418.95077322893724,
+  "potencia_promedio_kw": 87.19772682974262,
+  "archivo_csv": "perfil_solar_15min_anual.csv",
+  "observacion": "Una \u00fanica serie de generaci\u00f3n solar para todos los 101 escenarios"
+}
