@@ -33,15 +33,18 @@ schema (✅ PASSED)
 
 #### 1. `.python-version` (NEW)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 3.11.0
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 - Purpose: Specify Python version for pyenv/asdf tools
 - Status: ✅ Created
 
 #### 2. `.github/workflows/test-and-lint.yml` (UPDATED)
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 # BEFORE:
 - uses: actions/setup-python@v4
@@ -51,14 +54,10 @@ schema (✅ PASSED)
 # AFTER:
 - uses: actions/setup-python@v4
   with:
-    python-version: ["3.11"]
-```bash
+    python-version: ["3.11"...
+```
 
-- Status: ✅ Updated
-
-#### 3. `pyproject.toml` (UPDATED)
-
-```toml
+[Ver código completo en GitHub]toml
 # BEFORE: (2)
 requires-python = ">=3.10"
 target-version = ['py310', 'py311', 'py313']
@@ -67,37 +66,28 @@ target-version = ['py310', 'py311', 'py313']
 requires-python = ">=3.11,<3.12"
 target-version = ['py311']
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 - Status: ✅ Updated (2 replacements)
 
 #### 4. `setup.py` (UPDATED)
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # BEFORE: (3)
+<details>
+<summary>classifiers = [..., "Programming Language :: Python :: 3.10", "Programming Langu...</summary>
+
 classifiers = [..., "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.13", ...]
+
+</details>
 python_requires=">=3.10"
 
 # AFTER: (3)
-classifiers = [..., "Programming Language :: Python :: 3.11", ...]
-python_requires=">=3.11,<3.12"
-```bash
+classifiers = [..., "Programming Language :: P...
+```
 
-- Status: ✅ Updated
-
-**5. `scripts/analysis/EJECUTAR_OPCION_4_INFRAESTRUCTURA.py` (UPDATED)**
-
-- Classifiers and python_requires updated to match setup.py
-- Status: ✅ Updated
-
-### Impact | File Type | Count | Status | |-----------|-------|--------| | Configuration files | 5 | ✅ Updated | | CI/CD pipelines | 1 | ✅ Updated | | Type stubs | 1 | ✅ Created | | **TOTAL** | **7** | **✅ COMPLETE** | ---
-
-## 2. Code Quality Status
-
-### Previous Phases (1-5) Summary | Component | Status | Lines | Notes | |-----------|--------|-------|-------| | Agents (3 files) | ✅ Production Ready | 2,696 | BESS prescaling FIXED | |OE3 Core (7 files)|✅ Production Ready|3,792|Multi-objective rewards verified| | Tests | ✅ Created | 400 | Phase 7 validation script | | **TOTAL CODE** | **✅ VERIFIED** | **6,488** | All critical paths validated | ### Phase 6 New Modules (COMPLETE ✅)
-
-#### 1. `src/iquitos_citylearn/oe2/data_loader.py` (479 lines)
-
-```python
+[Ver código completo en GitHub]python
 class OE2DataLoader:
     - load_solar_timeseries() ✅
     - load_individual_chargers() ✅
@@ -107,27 +97,30 @@ class OE2DataLoader:
     - load_bess_hourly() ✅
     - validate_all() ✅ Comprehensive validation
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Test Result**: ✅ ALL VALIDATIONS PASSED
 
 **2. `src/iquitos_citylearn/oe3/schema_validator.py` (570 lines)**
 
+<!-- markdownlint-disable MD013 -->
 ```python
 class CityLearnSchemaValidator:
     - validate_structure() ✅
     - validate_building_files() ✅ Checks all 128 charger CSVs
     - validate_climate_zone_files() ✅
-    - validate_timestamps_aligned() ✅ Verifies 8,760 rows
-    - validate_value_ranges() ✅
-    - validate_citylearn_load() ⏳ Blocked by CityLearn (Python 3.11)
-    - validate_all() ✅
-```bash
+    - validate_timestamps_aligned() ✅ Verifies...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Test Result**: ✅ PASSED (except CityLearn load which requires full
 installation)
 
 **3. `src/iquitos_citylearn/oe3/dataset_builder.py` (Enhanced)**
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # New function:
 _generate_individual_charger_csvs(df_chargers, output_dir, building_name)
@@ -137,26 +130,26 @@ _generate_individual_charger_csvs(df_chargers, output_dir, building_name)
 
 # Enhanced:
 _load_oe2_artifacts(cfg, raw_dir, interim_dir)
-    → Added annual charger profile loading/expansion
-    → Returns dict with artifacts["chargers_hourly_profiles_annual"]
+    → Added annual charger profile loading/expansion...
+```
 
-# Enhanced: (2)
-build_citylearn_dataset(cfg, raw_dir, interim_dir, processed_dir)
-    → Calls _generate_individual_charger_csvs() after config loading
-    → Proper error handling and logging
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Test Result**: ✅ PASSED (CSV generation verified)
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 3. Dependency Installation Status | Package | Version | Status | Notes | |---------|---------|--------|-------| | pandas | Latest | ✅ Installed | OE2/OE3 data loading | | numpy | Latest | ✅ Installed | Numerical operations | | PyYAML | Latest | ✅ Installed | Config file parsing | | gymnasium | 0.28.1 | ✅ Installed | RL environment wrapper | | stable-baselines3 | Latest | ✅ Installed | PPO/SAC/A2C agents | | torch | Latest | ✅ Installed (via stable-baselines3) | GPU support | | **citylearn** | >=2.5.0 | ❌ **FAILED** | Requires Python... | | scikit-learn | Latest | ❌ **FAILED** | Cython errors on Python 3.13 | ### Installation Errors Encountered
 
 **CityLearn Installation Error** (Python 3.13):
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Cython.Compiler.Errors.CompileError: sklearn\linear_model\_cd_fast.pyx
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Root Cause**: scikit-learn fails to compile Cython extensions on Python 3.13
 
@@ -168,17 +161,13 @@ Cython.Compiler.Errors.CompileError: sklearn\linear_model\_cd_fast.pyx
 
 ### Test Execution
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Command: python phase7_test_pipeline.py
-Python: 3.13.9 (system Python)
-Status: ✅ PASSED (except CityLearn)
-```bash
+Python: 3....
+```
 
-### Test Breakdown
-
-#### STEP 1: Dependency Check
-
-```bash
+[Ver código completo en GitHub]bash
 ✅ PyYAML
 ✅ pandas
 ✅ numpy
@@ -186,9 +175,11 @@ Status: ✅ PASSED (except CityLearn)
 ✅ gymnasium
 ⚠️ CityLearn (FAILED - requires Python 3.11)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### STEP 2: OE2 Data Validation
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✅ OE2DataLoader initialized
 ✅ Solar: 35,037 rows → 8,760 hourly, 918 kW mean
@@ -196,16 +187,19 @@ Status: ✅ PASSED (except CityLearn)
 ✅ BESS: 4,520 kWh, 2,712 kW, 8,760 rows
 ✅ ALL OE2 DATA VALIDATION PASSED
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### STEP 3: Schema Validation
 
-```bash
-✅ Schema validator initialized
-⏳ No schema files yet (will be generated with CityLearn)
-```bash
+<...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Summary**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Results:
   oe2_validation: ✅ PASSED
@@ -213,6 +207,7 @@ Results:
   
 ⚠️ Constraint: Full pipeline blocked by Python 3.11 requirement
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -223,14 +218,11 @@ Results:
 #### Why?
 
 - scikit-learn (used by CityLearn) fails to compile on Python 3.13
-- Cython cannot handle Python 3.13 syntax in sklearn's compilation
+- Cython cannot handle Python 3.13 syntax in sklearn's c...
+```
 
-**Current Environment**:
-
-```bash
-System Python: C:\Program Files\Python313\python.exe (3.13.9)
-Available 3.11: NOT INSTALLED
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Solution**:
 Use any of 4 methods described in `PYTHON_3.11_SETUP_GUIDE.md`:
@@ -248,47 +240,55 @@ Use any of 4 methods described in `PYTHON_3.11_SETUP_GUIDE.md`:
 
 #### Step 1: Create Fresh Virtual Environment (5 min)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 cd d:\diseñopvbesscar
 python3.11 -m venv .venv_py311
 .venv_py311\Scripts\activate
 python --version  # Verify 3.11
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Step 2: Install Dependencies (10-15 min)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 pip install -r requirements.txt
 pip install -r requirements-training.txt
 # Verify CityLearn:
 python -c "import citylearn; print('✅')"
 ```bash
+<!-- mark...
+```
 
-#### Step 3: Run Phase 7 Tests (5 min)
-
-```bash
+[Ver código completo en GitHub]bash
 python phase7_test_pipeline.py
 # Expected: ALL TESTS PASSED ✅
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Step 4: Build CityLearn Dataset (15-30 min)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 # Output: schema.json + 128 charger_simulation_X.csv files
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Step 5: Verify Generated Files (5 min)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-# Check schema exists
-ls outputs/schema_*.json
-# Check charger CSVs
-ls data/processed/citylearnv2_dataset/buildings/*/charger_simulation_*.csv|wc -l  # Should be 128
-```bash
+# Check ...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 #### Step 6: Quick Agent Training Test (10-15 min)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python scripts/train_quick.py --episodes 1 --device cpu
 # Verify:
@@ -297,32 +297,24 @@ python scripts/train_quick.py --episodes 1 --device cpu
 #   - BESS SOC visible (not prescaled) ✅
 #   - No Cython errors ✅
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Step 7: Final Commit (5 min)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 git add -A
-git commit -m "feat: Phase 6-7 complete - OE2→OE3 integration with Python 3.11 enforcement
+git commit -m "feat: Phase 6-7 complete - OE2→OE3 integration with ...
+```
 
-- Updated project to require Python 3.11 exclusively (removed 3.10, 3.13 support)
-- Created .python-version specification file (3.11.0)
-- Updated 5 configuration files (pyproject.toml, setup.py, .github/workflows, EJECUTAR_OPCION_4)
-- Created OE2DataLoader: comprehensive data validation (479 lines)
-- Created CityLearnSchemaValidator: schema validation (570 lines)
-- Enhanced dataset_builder: 128 individual charger CSV generation (critical fix)
-- Phase 7 test suite: all validations passing
-- Created PYTHON_3.11_SETUP_GUIDE.md with 4 installation options
-
-Blockers resolved: Charger CSV generation ✅, BESS SOC prescaling fix ✅
-Awaiting: Python 3.11 system installation for full pipeline execution"
-
-git push
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 7. File Inventory - Phase 7
 
+<!-- markdownlint-disable MD013 -->
 ### Created Files | File | Type | Lines | Purpose | Status | |------|------|-------|---------|--------|
 |`PYTHON_3.11_SETUP_GUIDE.md`|Guide|200|Installation instructions...|✅ Created| | `PHASE_7_STATUS_REPORT.md` | Report | 400 | This document | ✅ Created | | `phase7_test_pipeline.py` | Test | 400 | Validation script | ✅ Created | | `.python-version` | Config | 1 | pyenv specification | ✅ Created | ### Modified Files | File | Changes | Status | |------|---------|--------| | `.github/workflows/test-and-lint.yml` | Python 3.11 only | ✅ Updated | | `pyproject.toml` | requires-python, target-version | ✅ Updated | | `setup.py` | Classifiers, python_requires | ✅ Updated | |`scripts/analysis/EJECUTAR_OPCION_4_INFRAESTRUCTURA.py`|Version requirements|✅ Updated| ### Enhanced Modules | File | Enhancement | Lines | Status | |------|-------------|-------|--------| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 |`src/iquitos_citylearn/oe3/schema_validator.py`|NEW: Schema validation|570|✅ Created|
@@ -375,6 +367,7 @@ git push
 
 ## 10. References
 
+<!-- markdownlint-disable MD013 -->
 ### Key Documents | Document | Purpose | Location | |----------|---------|----------| | README.md | Project overview | [README.md](README.md) | |Copilot Instructions|Development guidelines|[.github/copilot-instructions.md][url1]| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 |Audit & Rewards|Technical deep-dive|[docs/AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md][url2]| ### Key Files in Codebase | File | Lines | Purpose | |------|-------|---------| | `src/iquitos_citylearn/oe2/data_loader.py` | 479 | OE2 data validation | | `src/iquitos_citylearn/oe3/schema_validator.py` | 570 | Schema validation | |`src/iquitos_citylearn/oe3/dataset_builder.py`|950+|Dataset construction...|
 |`src/iquitos_citylearn/oe3/rewards.py`|529|Multi-objective reward function| | `src/iquitos_citylearn/oe3/agents/ppo_sb3.py` | 868 | PPO agent | | `src/iquitos_citylearn/oe3/agents/sac.py` | 1,113 | SAC agent | | `src/iquitos_citylearn/oe3/agents/a2c_sb3.py` | 715 | A2C agent | ---

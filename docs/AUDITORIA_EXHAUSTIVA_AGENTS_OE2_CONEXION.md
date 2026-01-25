@@ -26,6 +26,7 @@ invisible
 
 **Problema**:
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # ANTES (Todos 3 agentes)
 self._obs_prescale = np.ones(obs_dim) * 0.001  # Prescala TODO por 0.001
@@ -34,23 +35,15 @@ self._obs_prescale = np.ones(obs_dim) * 0.001  # Prescala TODO por 0.001
 # Después de normalización: ~0 para todos los timesteps
 # Agente NO PUEDE aprender a controlar BESS
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Raíz Causa**:
 
 - Aplicar factor 0.001 uniformemente a todas observaciones
-- 0.001 es correcto para potencias (kW: 0-5000 → 0-5)
-- 0.001 es INCORRECTO para SOC (0-1 → mantener como es)
+- 0.001 es correcto para potencias (...
+```
 
-**Impacto**:
-
-- Agente ignora estado de la batería
-- Imposible aprender carga/descarga BESS
-- Pérdida de 15-25% de potencial de CO₂
-- Resultados de entrenamiento subóptimos
-
-**Solución Implementada**:
-
-```python
+[Ver código completo en GitHub]python
 # DESPUÉS (Prescalado selectivo)
 self._obs_prescale = np.ones(obs_dim) * 0.001
 if obs_dim > 10:
@@ -60,6 +53,7 @@ if obs_dim > 10:
 # Resultado: BESS SOC [0, 1.0] → [0, 1.0] ✅
 # Agente puede ver el estado y aprender control
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Archivos Corregidos**:
 
@@ -79,16 +73,11 @@ if obs_dim > 10:
 
 ### 1. SOLAR PV (8,760 hrs anuales)
 
-**Ruta OE2**: `data/interim/oe2/solar/pv_generation_timeseries.csv`
+**Ruta OE2**: `data/interim...
+```
 
-**Estructura**:
-
-```csv
-timestamp,ghi_wm2,dni_wm2,dhi_wm2,temp_air_c,wind_speed_ms,dc_power_kw,ac_power_kw,dc_energy_kwh,ac_energy_kwh,pv_kwh,pv_kw
-2024-01-01 00:00:00-05:00,0.0,0.0,0.0,24.71,0.61,0.0,0.0,0.0,0.0,0.0,0.0
-...
-2024-12-31 23:45:00-05:00,0.0,0.0,0.0,25.2,0.45,0.0,0.0,0.0,0.0,0.0,0.0
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Parámetros OE2**:
 
@@ -100,6 +89,7 @@ timestamp,ghi_wm2,dni_wm2,dhi_wm2,temp_air_c,wind_speed_ms,dc_power_kw,ac_power_
 
 **Cómo lo consumen los agentes** ✅:
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # Cada agente accede al solar a través de CityLearn:
 buildings = getattr(self.env, "buildings", [])
@@ -108,27 +98,15 @@ for b in buildings:
     if sg is not None and len(sg) > t:
         pv_kw += float(max(0.0, sg[t]))  # Get hour t value
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Validación**:
 
 - ✅ 8,760 valores por año (1 por hora)
-- ✅ Rango: 0-4,162 kW (capacidad instalada)
-- ✅ Perfil: 05:00-17:00 local, pico ~11:00 AM
-- ✅ Patrón: Máximo en junio, mínimo en diciembre
-- ✅ Prescalado: 0.001 correcto para potencias
+- ✅ Rango...
+```
 
-**Datos Reales**: ✅ Provienen de PVGIS TMY (datos climáticos reales Iquitos
-5.5°S, 73.3°W)
-
----
-
-### 2. CHARGERS EV (128 tomas = 32 cargadores × 4 sockets)
-
-**Ruta OE2**: `data/interim/oe2/chargers/individual_chargers.json`
-
-**Estructura**:
-
-```json
+[Ver código completo en GitHub]json
 [
   {
     "charger_id": "MOTO_CH_001",
@@ -142,6 +120,7 @@ for b in buildings:
   ...  # 32 chargers total
 ]
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Parámetros OE2**:
 
@@ -152,28 +131,18 @@ for b in buildings:
 
 **Perfil Horario** (agrupado por hora):
 
+<!-- markdownlint-disable MD013 -->
 ```csv
 hour,power_kw,is_peak
-0,0.0,False       # Noche: no hay carga
-...
-10,13.94,False    # Mañana: comienza carga
-11,51.30,False
-12,105.39,False
-13,169.51,False
-14,236.99,False
-15,301.11,False
-16,355.20,False
-17,392.56,False
-18,406.50,True    # PICO 18:00-21:00
-19,406.50,True
-20,406.50,True
-21,406.50,True
-22,0.0,False      # Noche
-23,0.0,False
-```bash
+0,0....
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Cómo lo consumen los agentes** ✅:
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # CityLearn carga chargers con perfiles individuales
 # Cada charger tiene su propia columna en observación
@@ -182,38 +151,10 @@ hour,power_kw,is_peak
 # Acciones de control:
 # 126 acciones continuas [0, 1] → poder actual / poder máximo
 # Cargador 0: action_0 → charger_power = action_0 * 2.0 kW (motos)
-# Cargador 128: action_125 → charger_power = action_125 * 3.0 kW (mototaxis)
-```bash
+# Cargador 128: action_125 → charger_power = actio...
+```
 
-**Validación**:
-
-- ✅ 128 sockets = 126 controlables (2 reservados para línea base)
-- ✅ Perfiles horarios: 24 valores por charger
-- ✅ Potencia: 2-3 kW individual, 272 kW total
-- ✅ Peaks: 18:00-21:00 (406.5 kW)
-- ✅ Prescalado: 0.001 correcto para potencias
-
-**Datos Reales**: ✅ Simulación MATLAB de 3,061 vehículos/día con 92%
-utilización (datos operacionales reales)
-
----
-
-### 3. BESS (2 MWh / 1.2 MW)
-
-**Ubicación OE2**: Parámetros en configuración global + simulación
-
-**Especificación**:
-
-- Capacidad: 2,000 kWh (2 MWh)
-- Potencia: 1,200 kW (1.2 MW)
-- DoD (Depth of Discharge): 80% (usable: 1,600 kWh)
-- Eficiencia: 95% round-trip
-- SOC min: 20%, SOC max: 100%
-- Química: Implícita (no especificada, asumir Li-ion)
-
-**Cómo lo consumen los agentes** ✅:
-
-```python
+[Ver código completo en GitHub]python
 # BESS en CityLearn como electrical_storage
 storage = getattr(b, "electrical_storage", None)
 if storage:
@@ -227,6 +168,7 @@ if storage:
 # - Carga máxima: -1.2 MW (desde grid o PV)
 # - SOC mínimo: 20% (240 kWh usable)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Validación**:
 
@@ -240,29 +182,10 @@ if storage:
 **CRÍTICO - POST FIX**:
 
 - BESS SOC ahora visible en observación: [0, 1] sin prescalado
-- Agente puede aprender a optimizar carga/descarga
-- Impacto esperado: +15-25% utilización BESS, +10% CO₂ reduction
+- Agente puede ...
+```
 
----
-
-## ERRORES DE TIPEO Y CÓDIGO - CORRECCIONES
-
-### Categoría 1: Bare Exceptions (Seguridad de Código)
-
-**Problema**: `except Exception:`captura TODO, incluyendo errores de
-programación
-
-**Archivos Corregidos**: | Archivo | Línea | ANTES | DESPUÉS | |---------|-------|-------|---------| | ppo_sb3.py | 307 | `except Exception:` | `except (AttributeError,... | | a2c_sb3.py | 213 | `except Exception:` | `except (AttributeError,... | |sac.py|46+|`except Exception:`|`except (ValueError, TypeError, ...):`| **Impacto**: Mejor debuggabilidad, errores específicos con logging
-
----
-
-### Categoría 2: Factory Functions (Type Safety)
-
-**Problema**: Lambda functions no pasan type checking para make_vec_env
-
-**Código Corregido**:
-
-```python
+[Ver código completo en GitHub]python
 # ANTES (Type mismatch)
 vec_env = make_vec_env(lambda: self.wrapped_env, n_envs=1)
 
@@ -273,6 +196,7 @@ def _env_creator() -> Any:
 
 vec_env = make_vec_env(_env_creator, n_envs=1)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Archivos**: ppo_sb3.py, a2c_sb3.py (2 archivos)
 
@@ -284,21 +208,15 @@ vec_env = make_vec_env(_env_creator, n_envs=1)
 
 **Correcciones**: 11+ instancias en a2c_sb3.py y sac.py
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # ANTES
 logger.info(f"[A2C] Value: {expensive_func()}")
 
-# DESPUÉS (lazy - solo se evalúa si se loguea)
-logger.info("[A2C] Value: %s", expensive_func())
-```bash
+# DESPUÉS (lazy - solo...
+```
 
----
-
-### Categoría 4: Safe Attribute Access
-
-**Problema**: Acceso directo a atributos que pueden no existir
-
-```python
+[Ver código completo en GitHub]python
 # ANTES (puede fallar con AttributeError)
 return self.env.action_space.shape[0]
 
@@ -308,11 +226,13 @@ if action_space is not None and hasattr(action_space, 'shape'):
     return int(action_space.shape[0])
 return 126  # Fallback
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## FLUJO DE DATOS OE2 → OE3 → AGENTES (Diagrama)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 OE2 (Dimensionamiento)
 ├── Solar
@@ -322,36 +242,11 @@ OE2 (Dimensionamiento)
 │
 ├── Chargers
 │   └── individual_chargers.json (32 chargers, 128 sockets)
-│       ├── power_kw: 2.0 (motos), 3.0 (mototaxis)
-│       ├── hourly_load_profile (24 values)
-│       └── → CityLearn: 128 charger power observables
-│
-└── BESS
-    └── bess_config.json
-        ├── capacity: 2,000 kWh
-        ├── power: 1,200 kW
-        ├── soc: [0, 1]
-        └── → CityLearn: electrical_storage.soc observable
+│       ├── power_...
+```
 
-         ↓↓↓ CityLearn Dataset Builder ↓↓↓
-
-OE3 (Dataset)
-└── processed/citylearn/iquitos_ev_mall/
-    └── schema_pv_bess.json
-        ├── 2 buildings
-        ├── 534-dim observation space
-        └── 126-dim action space
-
-         ↓↓↓ Agents (PPO, A2C, SAC) ↓↓↓
-
-Training
-├── Observe: [pv_kw, charger_powers[], bess_soc, grid_import, ...]
-├── Prescale: [0.001 * power, 0.001 * power, 1.0 * soc, ...]  ← FIXED
-├── Normalize: (prescaled - mean) / std
-├── Act: policy(normalized_obs) → 126 charger setpoints
-├── Step: CityLearn.step(actions)
-└── Reward: multiobjetivo(CO2, solar, cost, ev_soc, grid)
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -367,6 +262,7 @@ Training
 ✅ **Exception Handling**: Específico y debuggeable  
 ✅ **Logging**: Lazy formatting en toda la cadena  
 
+<!-- markdownlint-disable MD013 -->
 ### Archivos Listos para Entrenamiento | Archivo | Status | Ready | |---------|--------|-------| | ppo_sb3.py | ✅ Limpio + BESS fix | ✅ YES | | a2c_sb3.py | ✅ Limpio + BESS fix | ✅ YES | | sac.py | ⚠️ 38 errores (logging) | ✅ FUNCIONAL | | agent_utils.py | ✅ Limpio | ✅ YES | | validate_training_env.py | ✅ Limpio | ✅ YES | | **init**.py | ✅ Limpio | ✅ YES | ---
 
 ## PRÓXIMOS PASOS
@@ -381,11 +277,13 @@ Training
 
 ### Validación Esperada
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Episodio 1: BESS SOC observado = [0.25, 0.45, 0.60, ...] ← VISIBLE ✅ (ANTES era ~0)
 Episodio 1: Grid import reduction ← debe mejorarse con BESS control
 Episodio 5: CO2 reducción >= 10% vs baseline
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Post-Entrenamiento (1 semana)
 

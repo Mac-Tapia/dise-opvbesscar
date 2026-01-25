@@ -16,10 +16,12 @@
 
 2. **Install Docker Desktop**
 
+<!-- markdownlint-disable MD013 -->
    ```powershell
    # Run installer and follow wizard
    # Enable WSL 2 backend when prompted
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 3. **Start Docker Desktop**
    - Launch from Start Menu
@@ -27,17 +29,18 @@
 
 4. **Verify Installation**
 
+<!-- markdownlint-disable MD013 -->
    ```powershell
    docker --version
    docker ps
 ```bash
+<!-- markdownlint-enable MD013 -->
 
-### Option 2: Docker CE via Chocolatey
+### Option 2...
+```
 
-```powershell
-choco install docker-cli docker-buildx -y
-# Still requires Docker Engine running separately
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ## Using docker-compose
 
@@ -45,6 +48,7 @@ Once Docker is installed and running:
 
 ### Build Images
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 # CPU version
 docker-compose -f docker-compose.yml build
@@ -55,58 +59,52 @@ docker-compose -f docker-compose.gpu.yml build
 # Development version
 docker-compose -f docker-compose.dev.yml build
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Start Services
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 # CPU version (2)
 docker-compose -f docker-compose.yml up -d
 
-# GPU version (requires NVIDIA Docker)
-docker-compose -f docker-compose.gpu.yml up -d
+# GPU version (requires NVIDIA Dock...
+```
 
-# Development version (2)
-docker-compose -f docker-compose.dev.yml up -d
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### View Logs
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 docker-compose logs -f pvbesscar-pipeline
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Stop Services
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 docker-compose down
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ## Web Interface (Docker Management)
 
 The Flask web interface runs **without Docker daemon**:
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 py -3.11 docker_web_interface.py
-# Available at: http://localhost:5000
-```bash
+# A...
+```
 
-This provides:
-
-- 📊 Container status monitoring
-- 🔨 Build management
-- 📋 Log viewer
-- ⚙️ Service control
-
-## Troubleshooting
-
-### Error: "docker daemon is not running"
-
-**Solution**: Start Docker Desktop
-
-```powershell
+[Ver código completo en GitHub]powershell
 # Or restart if already installed
 docker daemon
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Error: "Cannot connect to Docker daemon"
 
@@ -121,18 +119,11 @@ Already resolved - `version` field removed from all compose files.
 
 ## Kubernetes Deployment
 
-When Docker daemon is ready, deploy to Kubernetes:
+When Docker d...
+```
 
-```powershell
-# Using Python CLI manager
-python k8s_manager.py deploy
-
-# Or directly
-kubectl apply -f k8s-deployment.yaml
-
-# Monitor status
-python k8s_manager.py status
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ## MongoDB Integration
 
@@ -145,9 +136,11 @@ MongoDB configured in Kubernetes:
 
 Access via:
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 python k8s_manager.py mongo shell
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ## Next Steps
 

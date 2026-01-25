@@ -11,11 +11,13 @@
 
 ## 🚀 Acceso
 
+<!-- markdownlint-disable MD013 -->
 ### URLs Disponibles | Servicio | Local | Red Local | | ---------- | ------- | ----------- | | **Docker Manager** | <http://localhost:5000> | <http://192.168.43.30:5000> | |**Jupyter Lab (CPU)**|<[url0]
 |**Jupyter Lab (GPU)**|<[url0]
 
 ### Acceso Rápido
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Desde navegador
 http://localhost:5000
@@ -23,6 +25,7 @@ http://localhost:5000
 # Desde otra máquina en la red
 http://192.168.43.30:5000
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -37,27 +40,11 @@ http://192.168.43.30:5000
 ### 2. **Gestión de Imágenes**
 
 - ✅ Build CPU/GPU/Dev
-- ✅ Build con BuildKit cache
-- ✅ Feedback en vivo
+- ✅ Build con BuildKit cac...
+```
 
-### 3. **Control de Servicios**
-
-```text
-CPU Mode:
-  ✅ Build CPU
-  ✅ Start CPU services
-  ✅ Stop CPU services
-
-GPU Mode:
-  ✅ Build GPU image
-  ✅ Start GPU services
-  ✅ Stop GPU services
-
-Dev Mode:
-  ✅ Build dev image
-  ✅ Start dev stack (tests, lint, jupyter)
-  ✅ Stop dev services
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### 4. **Visualización de Logs**
 
@@ -76,6 +63,7 @@ Dev Mode:
 
 ## 🎨 Interfaz Visual
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ┌─────────────────────────────────────────┐
 │  🐳 PVBESSCAR Docker Manager           │
@@ -86,20 +74,11 @@ Dev Mode:
 │  ─────────────────  ────────────────  │
  │  Contenedores      CPU | GPU | Dev   │ 
 │  • pipeline         [Build] [Start]   │
-│  • monitor          [Stop]            │
-│  • jupyter                            │
-│                                       │
-│  🌐 Acceso Web                        │
-│  Jupyter (CPU): http://localhost:8888 │
-│  Jupyter (GPU): http://localhost:8889 │
-│                                       │
-│  📋 Logs & Output                    │
-│  ┌─────────────────────────────────┐ │
-│  │ [📜 Ver] [Pipeline] [Jupyter]   │ │
-│  │ Terminalfondo oscuro con logs   │ │
-│  └─────────────────────────────────┘ │
-└─────────────────────────────────────────┘
-```bash
+│  • monitor  ...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -107,6 +86,7 @@ Dev Mode:
 
 ### GET /api/status
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Retorna estado de todos los contenedores
 
@@ -121,50 +101,55 @@ Response:
   "timestamp": "2026-01-20T..."
 }
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### POST /api/build
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-Construir imagen Docker
+Constru...
+```
 
- Request: {"mode": "cpu | gpu | dev"} 
-Response: {"success": true, "message": "Image built", "output": "..."}
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### POST /api/start
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Iniciar servicios
 
  Request: {"mode": "cpu | gpu | dev"} 
 Response: {"success": true, "message": "Services started"}
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### POST /api/stop
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Detener servicios
 
  Request: {"mode": "cpu | gpu | dev"} 
 Response: {"success": true, "message": "Services stopped"}
 ```bash
+<!-- markdownlint-enable MD013 -->
 
-### GET /api/logs
+### GET /api/l...
+```
 
-```bash
-Obtener logs de contenedores
-
- Query: ?service=all | pipeline | jupyter 
-Response: {"success": true, "logs": "..."}
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### GET /api/health
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Health check del servidor
 
 Response: {"status": "healthy", "docker": true, "timestamp": "..."}
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -172,6 +157,7 @@ Response: {"status": "healthy", "docker": true, "timestamp": "..."}
 
 ### Verificar proceso
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Ver puertos en uso
 netstat -ano | findstr 5000
@@ -179,21 +165,20 @@ netstat -ano | findstr 5000
 # Ver proceso Flask
 Get-Process python|Where-Object {$_.CommandLine -like "*docker_web_interface*"}
 ```bash
+<!-...
+```
 
-### Detener servidor
-
-```bash
-# Presionar Ctrl+C en la terminal donde corre Flask
-# O matar el proceso:
-Stop-Process -Name python -Force
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Reiniciar
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 cd d:\diseñopvbesscar
 py -3.11 docker_web_interface.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -201,6 +186,7 @@ py -3.11 docker_web_interface.py
 
 ### Scenario 1: Desarrollo Local CPU
 
+<!-- markdownlint-disable MD013 -->
 ```text
 1. Abre http://localhost:5000
 2. Click en tab "CPU"
@@ -208,20 +194,15 @@ py -3.11 docker_web_interface.py
 4. Click "Start CPU" → inicia servicios
 5. Abre http://localhost:8888 → Jupyter Lab
 ```bash
+<!-- markd...
+```
 
-### Scenario 2: Producción GPU
-
-```text
-1. Abre http://localhost:5000
-2. Click en tab "GPU"
-3. Click "Build GPU" → construye imagen
-4. Click "Start GPU" → inicia con NVIDIA GPU
-5. Abre http://localhost:8889 → Jupyter GPU
-6. Monitorea en tab "Logs" → Ver Logs
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Scenario 3: Testing Completo
 
+<!-- markdownlint-disable MD013 -->
 ```text
 1. Abre http://localhost:5000
 2. Click en tab "Dev"
@@ -229,6 +210,7 @@ py -3.11 docker_web_interface.py
 4. Click "Start Dev" → inicia pytest, linting, mypy
 5. Monitorea logs en tiempo real
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -236,22 +218,18 @@ py -3.11 docker_web_interface.py
 
 ### En otra máquina de la red local
 
+<!-- markdownlint-disable MD013 -->
 ```text
 http://192.168.43.30:5000
 ```bash
+<!-- markdownlint-enable MD0...
+```
 
-### Consideraciones
-
-- ✅ Servidor escucha en 0.0.0.0 (todas las interfaces)
-- ✅ Puerto 5000 abierto
-- ✅ Requiere conectividad de red
-
-### Firewall (si necesario)
-
-```powershell
+[Ver código completo en GitHub]powershell
 # Permitir puerto 5000
 netsh advfirewall firewall add rule name="Flask 5000" dir=in action=allow protocol=tcp localport=5000
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -271,29 +249,14 @@ netsh advfirewall firewall add rule name="Flask 5000" dir=in action=allow protoc
 
 ### Para Producción
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Usar Gunicorn
 pip install gunicorn
-gunicorn -w 4 -b 0.0.0.0:5000 docker_web_interface:app
-```bash
+gunic...
+```
 
----
-
-## 📱 Responsivo
-
-✅ Interfaz responsive para:
-
-- Desktop
-- Tablets
-- Mobile
-
----
-
-## 🆘 Troubleshooting
-
-### Servidor no inicia
-
-```bash
+[Ver código completo en GitHub]bash
 # Verificar puerto en uso
 netstat -ano | findstr :5000
 
@@ -303,33 +266,36 @@ taskkill /PID [PID] /F
 # Reiniciar (2)
 py -3.11 docker_web_interface.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Docker no detecta imágenes
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Verificar Docker daemon
 docker ps
 
 # Si falla: Docker Desktop no está instalado o running
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Conectar desde otra PC y no funciona
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Verificar IP local
 ipconfig
 
 # Firewall permitir puerto 5000
-# Verificar conectividad: ping 192.168.43.30
-```bash
+# V...
+```
 
-### Flask debug mode warnings
-
-```text
+[Ver código completo en GitHub]text
 ⚠️ Solo desarrollo
 ✅ Cambios en código = reload automático
 ✅ Debugger PIN para debugging remoto
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -359,34 +325,17 @@ ipconfig
 
 ### Con Docker Compose
 
-- ✅ Usa los mismos archivos docker-compose.yml
-- ✅ Compatible con GPU, Dev, CPU configs
+-...
+```
 
-### Con Python
-
-- ✅ Python 3.11.9
-- ✅ Flask + CORS
-- ✅ Subprocess para ejecutar docker
-
-### Con Sistema
-
-- ✅ Shell commands automáticas
-- ✅ Captura salida/errores
-- ✅ Timeout protection (30s)
-
----
-
-## 📈 Estadísticas
-
-### Al Iniciar
-
-```text
+[Ver código completo en GitHub]text
 ✓ Servidor: 127.0.0.1:5000
 ✓ Network: 192.168.43.30:5000
 ✓ Flask Debug: Habilitado
 ✓ Auto-reload: Habilitado
 ✓ CORS: Habilitado para todas las origins
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Capacidades
 
@@ -401,31 +350,34 @@ ipconfig
 
 ### 1. Mantén abierto en una pestaña
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Abre en una pestaña y deja abierto
 Auto-refresh mantiene status actualizado
 ```bash
+<!-- markdownlint-enable ...
+```
 
-### 2. Usa logs en paralelo
-
-```text
-Abre logs en otra pestaña mientras ejecutas acciones
-Ver en tiempo real qué ocurre
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### 3. Monitorea desde otra máquina
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Usa http://192.168.43.30:5000
 Excelente para monitoreo remoto
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 4. Combina con terminal
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Abre terminal CMD + Web Interface en paralelo
 Más control y flexibilidad
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -434,26 +386,10 @@ Más control y flexibilidad
 1. **Build Image**
    - Selecciona modo (CPU/GPU/Dev)
    - Click "Build"
-   - Monitorea progreso en Logs
+   - Moni...
+```
 
-2. **Start Services**
-   - Click "Start CPU/GPU/Dev"
-   - Espera a que aparezcan en Status
-
-3. **Access Services**
-   - Jupyter: <http://localhost:8888>
-   - Otros servicios según disponibles
-
-4. **Monitor & Debug**
-   - Usa Log viewer para troubleshooting
-   - Check Health status
-   - View Docker output
-
----
-
-## 📚 Archivos Relacionados
-
-```text
+[Ver código completo en GitHub]text
 docker_web_interface.py    (Esta interfaz)
 docker-compose.yml         (CPU services)
 docker-compose.gpu.yml     (GPU services)
@@ -461,6 +397,7 @@ docker-compose.dev.yml     (Dev stack)
 Dockerfile                 (Imagen base)
 DOCKER_BUILD_GUIDE.md      (Documentación Docker)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -482,18 +419,11 @@ DOCKER_BUILD_GUIDE.md      (Documentación Docker)
 
 ---
 
-## 🎉 Status Final
+## 🎉 St...
+```
 
-```text
-✅ Web Interface:        RUNNING
-✅ Python 3.11:          ACTIVE
-✅ Flask Server:         LISTENING (0.0.0.0:5000)
-✅ Local Access:         http://localhost:5000
-✅ Network Access:       http://192.168.43.30:5000
-✅ API Endpoints:        READY
-✅ Docker Integration:   READY
-✅ Jupyter Redirect:     CONFIGURED
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 #### 🟢 SISTEMA LISTO PARA USAR
 

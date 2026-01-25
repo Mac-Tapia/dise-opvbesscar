@@ -1,5 +1,6 @@
 # 🎯 RESUMEN COMPLETO - PVBESSCAR Sistema de Gestión de Energía
 
+<!-- markdownlint-disable MD013 -->
 ## 📋 Archivos Creados para Guía y Simulación | Archivo | Descripción | Ubicación | | --------- | ------------- | ----------- |
 |**GUIA_FUNCIONAMIENTO_SIMULACION.md**|Guía completa del funcionamiento|d:\diseñopvbesscar\|
 |**simulador_interactivo.py**|Programa interactivo para simular|d:\diseñopvbesscar\|
@@ -9,10 +10,12 @@
 
 ### **Opción 1: Simulador Interactivo (Recomendado)**
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 cd D:\diseñopvbesscar
 py -3.11 simulador_interactivo.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 Menú interactivo con:
 
@@ -27,16 +30,17 @@ Menú interactivo con:
 
 ### **Opción 2: API Interactiva (Swagger)**
 
+<!-- markdownlint-disable MD013 -->
 ```text
-1. Abre navegador: http://localhost:8000/docs
-2. Verás todos los endpoints
-3. Click "Try it out"
-4. Modifica parámetros
-5. Click "Execute"
-```bash
+1. Abre navegador: http://localhost:80...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### **Opción 3: Con cURL (Terminal)**
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Verificar sistema
 curl http://localhost:8000/health
@@ -52,44 +56,21 @@ curl -X POST http://localhost:8000/api/control \
   -H "Content-Type: application/json" \
   -d '{"action":"charge","value":10}'
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🎮 Cómo Funciona la Simulación
 
-### **Flujo Paso a Paso**
+### **Flu...
+```
 
-```text
-1. LEER SENSORES
-   ├─ Consumo edificio (kW)
-   ├─ Generación solar (kW)
-   ├─ Estado batería (%)
-   └─ Precio electricidad (€/kWh)
-   
-2. PREDICCIÓN IA (24 horas)
-   ├─ ¿Consumo futuro?
-   ├─ ¿Solar futuro?
-   ├─ ¿Precio futuro?
-   └─ ¿Estado batería optimal?
-   
-3. DECISIÓN OPTIMIZADA
-   ├─ Evalúa 100+ escenarios
-   ├─ Calcula recompensa (ahorro €)
-   └─ Elige mejor acción
-   
-4. EJECUTAR COMANDO
-   ├─ CHARGE: Cargar batería
-   ├─ DISCHARGE: Descargar batería
-   └─ IDLE: Esperar (sistema equilibrado)
-   
-5. RESULTADO
-   ├─ Costo reducido
-   ├─ CO2 minimizado
-   └─ Disponibilidad garantizada
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### **Ejemplo Real: Simulación 1 Hora**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 HORA: 11:00 (Mediodía soleado)
 ────────────────────────────────
@@ -111,23 +92,24 @@ HORA: 11:00 (Mediodía soleado)
   Potencia: 20 kW
   Razón: Aprovechar solar antes de nubes
 
-💰 RESULTADO (Luego):
-  • Solar usado: 65 kW (edificio + carga)
-  • Batería guardada: 20 kW
-  • Red comprada: 0 kW
-  ✅ Costo: €0 en este período
-```bash
+💰 RE...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 📊 Valores que Proporciona el Sistema
 
+<!-- markdownlint-disable MD013 -->
 ### **Entrada de Sensores (Automática)** | Parámetro | Rango | Unidad | Actualización | | ----------- | ------- | -------- | --------------- | | building_load | 0 - 500 | kW | Cada 5 min | | pv_generation | 0 - 100 | kW | Cada 5 min | | battery_soc | 0 - 100 | % | Cada 5 min | | electricity_price | 0 - 1.0 | €/kWh | Cada hora | ### **Salida de Decisión (API)** | Parámetro | Valores | Unidad | | ----------- | --------- | -------- | | action | charge / discharge / idle | - | | value | 0 - 100 | kW | | timestamp | 2026-01-20T... | ISO 8601 | | status | executed | - | ---
 
 ## 📈 Simulación de Un Día Completo
 
 ### **Escenario: Día Soleado (Verano)**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 HORA  │ CONSUMO │ SOLAR │ ACCIÓN    │ AHORRO ESTIMADO
 ──────┼─────────┼───────┼───────────┼────────────────
@@ -137,28 +119,11 @@ HORA  │ CONSUMO │ SOLAR │ ACCIÓN    │ AHORRO ESTIMADO
 08:00 │  48 kW  │  35 kW│  CHARGE   │  €1.50
 09:00 │  52 kW  │  55 kW│  CHARGE   │  €2.00
 10:00 │  50 kW  │  75 kW│  CHARGE   │  €2.50
-11:00 │  48 kW  │  85 kW│  CHARGE   │  €3.00
-12:00 │  52 kW  │  90 kW│   IDLE    │  €0 (lleno)
-13:00 │  55 kW  │  88 kW│   IDLE    │  €0 (lleno)
-14:00 │  58 kW  │  70 kW│  IDLE     │  €0
-15:00 │  60 kW  │  50 kW│  DISCHARGE│  €1.50
-16:00 │  65 kW  │  30 kW│ DISCHARGE │  €2.00
-17:00 │  72 kW  │  15 kW│ DISCHARGE │  €2.50 (PEAK)
-18:00 │  75 kW  │   5 kW│ DISCHARGE │  €3.00 (PEAK)
-19:00 │  70 kW  │   2 kW│   IDLE    │  €0 (batería baja)
-20:00 │  65 kW  │   0 kW│   IDLE    │  €0
-21:00 │  45 kW  │   0 kW│   IDLE    │  €0
-22:00 │  38 kW  │   0 kW│   IDLE    │  €0
-23:00 │  35 kW  │   0 kW│   IDLE    │  €0
-00:00 │  32 kW  │   0 kW│   IDLE    │  €0
-04:00 │  30 kW  │   0 kW│   IDLE    │  €0
+11:00 │  48 kW  │  85 kW│  C...
+```
 
-📊 RESULTADO DEL DÍA:
-────────────────────────
-Ahorro Total: €22.30
-Sin IA sería: €89.20
-Reducción: 75% 🎉
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -166,6 +131,7 @@ Reducción: 75% 🎉
 
 ### **1. Health Check**
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 GET /health
 
@@ -176,9 +142,11 @@ Respuesta:
   "service": "PVBESSCAR API"
 }
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### **2. Estado del Sistema**
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 GET /api/status
 
@@ -189,14 +157,10 @@ Respuesta:
   "components": {
     "database": "connected",
     "ml_models": "loaded",
-    "energy_controller": "active"
-  }
-}
-```bash
+    "en...
+```
 
-### **3. Métricas Actuales**
-
-```bash
+[Ver código completo en GitHub]bash
 GET /api/metrics
 
 Respuesta:
@@ -209,9 +173,11 @@ Respuesta:
   "total_cost": 156.45
 }
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### **4. Ejecutar Acción**
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 POST /api/control
 
@@ -229,14 +195,12 @@ Respuesta:
   "status": "executed"
 }
 ```bash
+<!-- markdownlint-enable MD013 -->
 
----
+---...
+```
 
-## 💡 Parámetros de Configuración
-
-### **Batería (Setup Inicial)**
-
-```json
+[Ver código completo en GitHub]json
 {
   "battery_capacity_total": 100,        // kWh
   "battery_min_soc": 20,                // %
@@ -245,9 +209,11 @@ Respuesta:
   "battery_max_discharge_rate": 30      // kW
 }
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### **Sistema (Optimización)**
 
+<!-- markdownlint-disable MD013 -->
 ```json
 {
   "peak_hours_start": "17:00",
@@ -258,15 +224,10 @@ Respuesta:
   "price_forecast_enable": true,
   "ml_model_type": "A2C"                // A2C, PPO, SAC
 }
-```bash
+```...
+```
 
----
-
-## 🎓 Ejemplos de Uso
-
-### **Python - Script Simple**
-
-```python
+[Ver código completo en GitHub]python
 import requests
 
 BASE = "http://localhost:8000"
@@ -287,9 +248,11 @@ resp = requests.post(
 )
 print(resp.json()["status"])  # "executed"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### **JavaScript - Fetch**
 
+<!-- markdownlint-disable MD013 -->
 ```javascript
 const BASE = "http://localhost:8000";
 
@@ -301,15 +264,15 @@ fetch(`${BASE}/api/metrics`)
 // Ejecutar acción
 fetch(`${BASE}/api/control`, {
   method: "POST",
-  headers: {"Content-Type": "application/json"},
-  body: JSON.stringify({action: "discharge", value: 15})
-})
-  .then(r => r.json())
-  .then(data => console.log("Acción:", data.status));
-```bash
+  headers: {"Content-Type": "applicatio...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 🌐 Accesos Disponibles | Servicio | URL | Descripción | | ---------- | ----- | ------------- | | **Swagger UI** | <http://localhost:8000/docs> | Documentación interactiva | | **ReDoc** | <http://localhost:8000/redoc> | Documentación alternativa | | **FastAPI** | <http://localhost:8000> | API REST | | **Docker Manager** | <http://localhost:5000> | Panel de control Docker | | **Mongo Admin** | <http://localhost:8081> | Administración MongoDB | | **MongoDB** | localhost:27017 | Base de datos | ---
 
 ## ✅ Checklist de Verificación
@@ -324,6 +287,7 @@ fetch(`${BASE}/api/control`, {
 
 ## 📞 Comando Rápido para Iniciar Todo
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 # Terminal 1: FastAPI
 cd D:\diseñopvbesscar
@@ -337,6 +301,7 @@ py -3.11 simulador_interactivo.py
 cd D:\diseñopvbesscar
 py -3.11 docker_web_interface.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -344,31 +309,38 @@ py -3.11 docker_web_interface.py
 
 1. ✅ **Ejecutar simulador interactivo**
 
-```text
-   py -3.11 simulador_interactivo.py
-   Selecciona: 7 (Simular Día Completo)
-```bash
+<!-- markdownli...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 2. ✅ **Probar endpoints individuales**
 
+<!-- markdownlint-disable MD013 -->
 ```text
    Abre: http://localhost:8000/docs
    Prueba cada endpoint
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 3. ✅ **Crear automatización**
 
+<!-- markdownlint-disable MD013 -->
 ```text
    Script Python que llame API cada 5 min
    Integrar con sistema real
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 4. ✅ **Entrenar modelo ML**
 
+<!-- markdownlint-disable MD013 -->
 ```text
    Con datos históricos reales
    A2C/PPO/SAC (Reinforcement Learning)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

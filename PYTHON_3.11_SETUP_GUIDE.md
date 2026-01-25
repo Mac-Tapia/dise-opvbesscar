@@ -14,9 +14,11 @@
 
 scikit-learn fails to build on Python 3.13.9 due to Cython compilation errors:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Cython.Compiler.Errors.CompileError: sklearn\linear_model\_cd_fast.pyx
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Solution**: Use Python 3.11 exclusively.
 
@@ -27,19 +29,11 @@ Cython.Compiler.Errors.CompileError: sklearn\linear_model\_cd_fast.pyx
 ### Option 1: Download Python 3.11 from python.org (Recommended)
 
 1. **Visit**: <https://www.python.org/downloads/release/python-3110/>
-2. **Download**: "Windows installer (64-bit)" (e.g., `python-3.11.0-amd64.exe`)
-3. **Install**:
-   - Run installer
-   - ✅ Check: **Add python.exe to PATH**
-   - ✅ Check: **Install for all users** (optional but recommended)
-   - Complete installation
+2. **Download**: "Windows installer (64-bit)" (e.g., `python-3.11.0-amd64.e...
+```
 
-4. **Verify**:
-
-   ```bash
-   python3.11 --version
-   # Should output: Python 3.11.0 (or similar 3.11.x)
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -47,31 +41,33 @@ Cython.Compiler.Errors.CompileError: sklearn\linear_model\_cd_fast.pyx
 
 1. **Install pyenv-windows**:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    # In PowerShell or Git Bash
    git clone https://github.com/pyenv-win/pyenv-win.git ~/.pyenv
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 2. **Add to PATH** (PowerShell):
 
+<!-- markdownlint-disable MD013 -->
    ```powershell
    [Environment]::SetEnvironmentVariable("PYENV", "$home\.pyenv\pyenv-win", "User")
    [Environment]::SetEnvironmentVariable("PATH", "$env:PYENV\bin;$env:PATH", "User")
-```bash
+```b...
+```
 
-3. **Install Python 3.11**:
-
-   ```bash
-   pyenv install 3.11.0
-   pyenv global 3.11.0
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 4. **Verify**:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    python --version
    # Should output: Python 3.11.0
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -79,24 +75,23 @@ Cython.Compiler.Errors.CompileError: sklearn\linear_model\_cd_fast.pyx
 
 1. **Install Chocolatey** (if not installed):
 
+<!-- markdownlint-disable MD013 -->
    ```powershell
    Set-ExecutionPolicy Bypass -Scope Process -Force
-   [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-   iex ((New-Object System.Net.WebClient).DownloadString('[url0]))
-```bash
+   [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::Secu...
+```
 
-2. **Install pyenv**:
-
-   ```bash
-   choco install pyenv-win
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 3. **Install Python 3.11**:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    pyenv install 3.11.0
    pyenv global 3.11.0
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -104,6 +99,7 @@ Cython.Compiler.Errors.CompileError: sklearn\linear_model\_cd_fast.pyx
 
 Once Python 3.11 is installed:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Navigate to project
 cd d:\diseñopvbesscar
@@ -114,18 +110,11 @@ rmdir /s /q .venv
 # Create new venv with Python 3.11
 python3.11 -m venv .venv
 
-# Activate
-.venv\Scripts\activate  # Windows
-# or
-source .venv/bin/activate  # Linux/Mac
+...
+```
 
-# Verify Python version
-python --version  # Should show 3.11.x
-
-# Install dependencies
-pip install -r requirements.txt
-pip install -r requirements-training.txt
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -133,6 +122,7 @@ pip install -r requirements-training.txt
 
 After installing Python 3.11 and creating `.venv`:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Activate venv
 .venv\Scripts\activate
@@ -150,27 +140,15 @@ python -c "import pandas,
 # Check CityLearn specifically
 python -c "import citylearn; print('✅ CityLearn installed')"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
-## Phase 7 Execution with Python 3.11
+## Phase ...
+```
 
-Once Python 3.11 is configured:
-
-```bash
-# Activate venv (2)
-.venv\Scripts\activate
-
-# Run Phase 7 tests
-python phase7_test_pipeline.py
-
-# Expected output:
-# ✅ All tests passed!
-# NEXT STEPS:
-#   1. Run: python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-#   2. Test agent training: python scripts/train_quick.py --episodes 1
-#   3. Commit changes
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -190,6 +168,7 @@ python phase7_test_pipeline.py
 
 **Solution**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Verify active Python
 python --version
@@ -197,6 +176,7 @@ python --version
 .venv\Scripts\activate
 # Re-run: python --version (should be 3.11)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Cython compilation errors during pip install
 
@@ -208,45 +188,36 @@ python --version
 
 ## Project Configuration (Already Done ✅)
 
-The following files have been updated to enforce Python 3.11:
+The foll...
+```
 
-- ✅ `.python-version` - Created with "3.11.0"
-- ✅ `pyproject.toml` - requires-python = ">=3.11,<3.12"
-- ✅ `setup.py` - python_requires = ">=3.11,<3.12"
-- ✅ `.github/workflows/test-and-lint.yml` - python-version: ["3.11"]
-- ✅ `scripts/analysis/EJECUTAR_OPCION_4_INFRAESTRUCTURA.py` - Classifiers
-  - updated
-
----
-
-## Next Steps
-
-1. **Install Python 3.11** (using one of the 4 options above)
-2. **Create fresh virtual environment** with Python 3.11
-3. **Run Phase 7 tests**:
-
-   ```bash
-   python phase7_test_pipeline.py
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 4. **Build CityLearn dataset**:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 5. **Test agent training**:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    python scripts/train_quick.py --episodes 1
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 6. **Commit**:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    git add -A
    git commit -m "feat: Phase 6-7 complete - OE2->OE3 integration with Python 3.11"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

@@ -51,33 +51,31 @@ Programa Python interactivo que te permite:
 
 ### **Paso 1: Verifica que FastAPI está corriendo**
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 curl http://localhost:8000/health
 
 # Respuesta esperada:
 # {"status": "healthy", "service": "PVBESSCAR API"}
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### **Paso 2: Inicia el Simulador**
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 cd D:\diseñopvbesscar
 py -3.11 simulador_interactivo.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### **Paso 3: Elige una opción en el menú**
 
-```text
-1. ✅ Health Check
-2. 📊 Ver Estado Sistema
-3. 📈 Leer Métricas
-4. 🤖 Decidir Acción IA
-5. ⚡ Ejecutar Acción
-6. 🔄 Ciclo Completo (1-5)
-7. 🌅 Simular Día Completo  ← RECOMENDADO
-8. 📖 Ver Guía
-9. ❌ Salir
-```bash
+<!-- markdownli...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -85,26 +83,30 @@ py -3.11 simulador_interactivo.py
 
 ### **1. Cómo Funciona el Sistema**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Sensores → Predicción IA → Decisión → Ejecución → Resultado
  ↓          ↓               ↓         ↓            ↓
 Datos      Futuro        Optim.    Comando     Ahorro €
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### **2. Valores que Proporciona**
 
+<!-- markdownlint-disable MD013 -->
 ```json
 {
   "building_load_kw": 45.2,      // Consumo edificio
   "pv_generation_kw": 12.5,      // Solar
-  "battery_soc": 87.3,            // Batería %
-  "grid_import_kw": 32.7,         // Red
-  "total_cost": 156.45            // Costo acumulado
-}
-```bash
+  "battery...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### **3. Decisiones que Toma**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Situación               → Acción      → Ahorro
 ────────────────────────────────────────────────
@@ -112,28 +114,25 @@ Solar alto + Batería baja → CHARGE    → €3-5
 Solar bajo + Batería alto → DISCHARGE → €2-4
 Sistema equilibrado     → IDLE       → €0-1
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### **4. Ejemplos de Simulación**
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Día soleado (verano):
-  • MAÑANA: Carga batería con solar
-  • MEDIODÍA: Batería llena, espera
-  • TARDE: Descarga batería para peak
-  • NOCHE: Usa red (batería agotada)
-  Resultado: Ahorro 75% vs sin IA
+  • MAÑANA: Carga batería...
+```
 
-Día nublado (invierno):
-  • Menos solar disponible
-  • Descarga selectivamente en peak
-  • Compra a red cuando es barato
-  Resultado: Ahorro 30% vs sin IA
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 💡 Endpoints Disponibles | Endpoint | Método | Descripción | Respuesta | | ---------- | -------- | ------------- | ----------- | | `/health` | GET | ¿Está vivo? | `{"status":"healthy"}` | | `/api/status` | GET | Estado componentes | Componentes conectados | |`/api/metrics`|GET|Datos en tiempo real|Consumo, solar, batería, costo| | `/api/control` | POST | Ejecutar acción | Acción ejecutada | ### **Ejemplo: Ejecutar Acción**
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 curl -X POST http://localhost:8000/api/control \
   -H "Content-Type: application/json" \
@@ -147,6 +146,7 @@ curl -X POST http://localhost:8000/api/control \
   "status": "executed"
 }
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -155,48 +155,10 @@ curl -X POST http://localhost:8000/api/control \
 ### **CHARGE (Cargar)**
 
 - Cuando: Solar disponible + Batería no llena
-- Acción: Guarda energía solar en batería
-- Resultado: Energía disponible cuando se necesita
-- Ahorro: €2-5 por ciclo
+- Acción: Guard...
+```
 
-### **DISCHARGE (Descargar)**
-
-- Cuando: Solar bajo + Batería disponible + Consumo alto
-- Acción: Usa batería en lugar de comprar red
-- Resultado: Evita comprar energía cara
-- Ahorro: €3-8 por ciclo
-
-### **IDLE (Esperar)**
-
-- Cuando: Sistema equilibrado
-- Acción: No hace nada
-- Resultado: Mantiene estado actual
-- Ahorro: €0 (neutral)
-
----
-
-## 📈 Métricas de Éxito
-
-### **Sistema Optimizado**
-
-- ✅ Costo reducido 20-75%
-- ✅ CO2 minimizado
-- ✅ Batería bien gestionada
-- ✅ Disponibilidad energética garantizada
-- ✅ Previsibilidad mejorada
-
-### **Por Edificio**
-
-- Ahorro: ~€100/día = €36,500/año
-- Reducción CO2: ~50 toneladas/año
-- Payback: 2-3 años
-- ROI: 30-50% anual
-
----
-
-## 🔧 Archivos Disponibles
-
-```text
+[Ver código completo en GitHub]text
 d:\diseñopvbesscar\
 ├── GUIA_FUNCIONAMIENTO_SIMULACION.md  ← 📖 Guía detallada
 ├── RESUMEN_SIMULACION_COMPLETO.md    ← 📊 Resumen ejecutivo
@@ -208,16 +170,15 @@ d:\diseñopvbesscar\
 ├── docker-compose.yml                 ← 📦 Docker Compose
 └── ... (otros archivos del proyecto)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
-## 🌐 Accesos Disponibles | Servicio | URL | Usuario | Contraseña | | ---------- | ----- | --------- | ----------- | | **API Swagger** | <http://localhost:8000/docs> | - | - | | **API ReDoc** | <http://localhost:8000/redoc> | - | - | | **Docker Manager** | <http://localhost:5000> | - | - | | **MongoDB Admin** | <http://localhost:8081> | admin | password | | **MongoDB** | localhost:27017 | admin | password | ---
+<!-- markdownlint-disable MD013 -->
+## 🌐 Accesos Disponibles | Servicio | URL | Usuario | Contraseña | | ---------- | ----- | --------- | ----------- | | **API Swagger** | <http://localhost:8000/docs> | - | - | | **API ReDoc** | <http://localhost:8000/redoc> | - | - | | **Docker Manager** | <http://localhost:5000> | - | - | | **MongoDB Admin** | <http://loc...
+```
 
-## 📋 Quick Reference
-
-### **Comandos Esenciales**
-
-```powershell
+[Ver código completo en GitHub]powershell
 # Iniciar simulador
 py -3.11 simulador_interactivo.py
 
@@ -241,6 +202,7 @@ docker logs fastapi-app -f
 # Monitorear en tiempo real
 docker stats fastapi-app
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -260,64 +222,21 @@ Leer: Sección "Cómo Funciona en 5 Pasos"
 
 ### **4️⃣ Explorar Endpoints (10 min)**
 
-Abrir: <http://localhost:8000/docs>
+Abr...
+```
 
-### **5️⃣ Simular en Vivo (20 min)**
-
-Ejecutar: `py -3.11 simulador_interactivo.py` → Opción 1-6
-
-### **6️⃣ Simular Día Completo (15 min)**
-
-Ejecutar: `py -3.11 simulador_interactivo.py` → Opción 7
-
-### **7️⃣ Experimentar (Libre)**
-
-Crear propios scripts con la API
-
----
-
-## ❓ Preguntas Frecuentes
-
-### **¿Qué pasa si la batería está llena?**
-
-→ La acción CHARGE se ignora. Sistema espera (IDLE) hasta que haya espacio.
-
-### **¿Qué pasa si la batería está vacía?**
-
-→ La acción DISCHARGE se ignora. Sistema compra de la red.
-
-### **¿Cómo conoce el futuro el modelo?**
-
-→ Usa ML (Machine Learning) entrenado con datos históricos:
-
-- Patrones de consumo (días de semana vs fin de semana)
-- Predicción solar (nubosidad, hora del día)
-- Precios de electricidad (tarifa dinámica)
-
-### **¿Cuál es el objetivo principal?**
-
-→ Minimizar costo = Usar energía barata (solar o fuera de peak)
-
-### **¿Funciona con renovables?**
-
-→ Sí, está diseñado específicamente para solar + batería.
-
----
-
-## 🚨 Troubleshooting
-
-### **Error: "Cannot connect to API"**
-
-```powershell
+[Ver código completo en GitHub]powershell
 # Verificar que FastAPI está corriendo
 docker ps | findstr fastapi
 
 # Si no está corriendo, iniciarlo:
 docker run -d -p 8000:8000 --name fastapi-app fastapi-mongo-api
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### **Error: "Connection refused"**
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 # Verificar puerto
 netstat -ano | findstr :8000
@@ -325,16 +244,16 @@ netstat -ano | findstr :8000
 # Si está ocupado, usar otro puerto
 docker run -d -p 8001:8000 --name fastapi-app fastapi-mongo-api
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### **Error: "Module not found"**
 
-```powershell
-# Instalar dependencias
-pip install fastapi uvicorn requests
+<!-- markdownlint-disable MD013 -->
+```powershell...
+```
 
-# O específicamente para Python 3.11
-py -3.11 -m pip install fastapi uvicorn requests
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

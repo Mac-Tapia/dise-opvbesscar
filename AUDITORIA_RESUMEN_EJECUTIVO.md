@@ -8,6 +8,7 @@
 
 ## 🎯 HALLAZGOS PRINCIPALES
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ┌──────────────────────────────────────────────────────────────┐
 │                                                              │
@@ -15,16 +16,15 @@
 │                                                              │
 │  ✓ Datos OE2 disponibles: SÓLIDO                            │
 │  ✓ Dataset builder existe: PRESENTE                         │
-│  ❌ Transformaciones: INCOMPLETAS                            │
-│  ❌ CSV generation: FALTANTE                                 │
-│  ❌ Schema validation: NO HECHO                              │
-│  ❌ RESULTADO: RL TRAINING IMPOSIBLE ACTUALMENTE             │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-```bash
+│  ❌ Transform...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📊 TABLA COMPARATIVA: Esperado vs Actual | Componente | Esperado | Actual | Gap | Severidad | |-----------|----------|--------|-----|-----------|
 |**Solar timeseries**|8,760 h (1h res)|35,037 filas (15-min)|4x más datos|🔴 CRÍTICO| | **Charger CSVs** | 128 archivos | 0 generados | 100% faltante | 🔴 CRÍTICO | | **BESS config** | 2,000 kWh doc. | 4,520 kWh real | MISMATCH | 🟠 ALTO | | **Building load** | 8,760 h | ? incompleto | Desconocido | 🟠 ALTO | | **Downsampling** | Implementado | ❌ NO | 100% faltante | 🔴 CRÍTICO | |**Path schema**|`buildings/Mall/X.csv`|`X.csv` (relativo)|Incorrecto|🔴 CRÍTICO| | **Schema validation** | ✓ Implementado | ❌ NO | 0% hecho | 🟠 ALTO | ---
 
@@ -37,39 +37,21 @@
 - **Impacto**: Training 4x más lento, timesteps desalineados
 - **Solución**: 1 línea de código (~5 minutos)
 
+<!-- markdownlint-disable MD013 -->
 ```python
 df_solar_hourly = df_solar.resample('1H')['ac_power_kw'].mean()
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 2️⃣ CHARGER SIMULATION CSVs INEXISTENTES
 
 - **Problema**: Schema define 128 chargers pero 0 CSVs generados
 - **Causa**: dataset_builder asigna paths pero no crea archivos
 - **Impacto**: CityLearn falla al load_dataset → **TRAINING IMPOSIBLE**
-- **Solución**: Loop que genera 128 archivos (~30 minutos)
+- **Solución**: Loop que genera 128 archivos ...
+```
 
-### 3️⃣ PATHS CHARGER INCORRECTOS
-
-- **Problema**: `charger_X.csv` en lugar de
-  - `buildings/Mall_Iquitos/charger_X.csv`
-- **Causa**: Path relativo incompleto
-- **Impacto**: CityLearn no encuentra los CSVs
-- **Solución**: 1 línea cambio (~2 minutos)
-
-### 4️⃣ BESS CAPACITY MISMATCH
-
-- **Problema**: README dice 2 MWh, datos dicen 4,520 kWh
-- **Causa**: Desincronización documentación vs implementación
-- **Impacto**: Capacidad energética incorrecta en simulación
-- **Solución**: Decisión + actualización (~15 minutos)
-
----
-
-## 📁 TABLA DE ARCHIVOS OE2
-
-### Carpeta: `data/interim/oe2/`
-
-```bash
+[Ver código completo en GitHub]bash
 solar/                          8 archivos   4.4 MB
 ├─ pv_generation_timeseries.csv ✅ 35,037 filas (15-min, SIN downsample)
 ├─ solar_results.json            ✅ Config: 4,162 kWp DC, 3,201 kW AC
@@ -97,6 +79,7 @@ citylearn/                       5 archivos  0.5 MB
 ├─ building_load.csv             ✅ Demanda edificio
 └─ schema_params.json             ✅ Parámetros preparados
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Total OE2**: 537 archivos, ~8 MB (estructura bien documentada)
 
@@ -106,55 +89,38 @@ citylearn/                       5 archivos  0.5 MB
 
 ### ⏱️ INMEDIATAMENTE (2 horas)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 [1.1] Downsampling solar 15-min → 1-hora
       ├─ Archivo: dataset_builder.py
       ├─ Cambio: Agregar resample() → 8,760 filas
       ├─ Tiempo: 30 min
-      └─ Prioridad: 🔴 MÁXIMA
+      └─ Priorid...
+```
 
-[1.2] Generar 128 charger_simulation CSVs
-      ├─ Archivo: dataset_builder.py
-      ├─ Cambio: Loop genera CSV para cada charger
-      ├─ Tiempo: 60 min
-      └─ Prioridad: 🔴 MÁXIMA
-
-[1.3] Corregir charger_simulation paths
-      ├─ Archivo: dataset_builder.py
-      ├─ Cambio: f"buildings/Mall_Iquitos/{id}.csv"
-      ├─ Tiempo: 15 min
-      └─ Prioridad: 🔴 MÁXIMA
-
-[1.4] Resolver BESS capacity mismatch
-      ├─ Decisión: ¿2,000 o 4,520 kWh?
-      ├─ Cambio: Actualizar doc O datos
-      ├─ Tiempo: 30 min
-      └─ Prioridad: 🔴 MÁXIMA
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### ⏱️ ESTA SEMANA (4 horas)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 [2.1] Integrar building_load en schema
 [2.2] Expandir charger profiles con variación
 [2.3] Completar asignación BESS (power, efficiency, soc_limits)
 [2.4] Investigar annual_datasets/ (¿contiene CSVs anuales?)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### ⏱️ PRÓXIMA SEMANA (6 horas)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 [3.1] Validar observation space (534-dim)
-[3.2] Documentar reward↔observable mapping
-[3.3] Standarizar timezones UTC-5
-[3.4] Validar integridad charger profiles
-```bash
+[3.2] Documentar reward↔obse...
+```
 
----
-
-## 📈 IMPACTO SIN CORRECCIONES
-
-```bash
+[Ver código completo en GitHub]bash
                             SIN FIXES      CON FIXES
 Training RL posible?          ❌ NO         ✅ SÍ
 Schema cargas sin error?      ❌ NO         ✅ SÍ
@@ -164,40 +130,22 @@ Convergencia agentes?         🔴 IMPOSIBLE  ✅ ESPERADO
 
 RIESGO CRÍTICO: Sin Tier 1, proyecto BLOQUEADO
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 💾 ARCHIVOS GENERADOS POR AUDITORÍA | Archivo | Descripción | Tamaño | |---------|-------------|--------|
 |**AUDITORIA_OE2_OE3_EXHAUSTIVA.py**|Script de análisis automático|15 KB| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-|**CORRECCIONES_DATASET_BUILDER_TIER1.py**|Código de correcciones...|12 KB| | **AUDITORIA_EXHAUSTIVA_LOG.txt** | Output del análisis | 8 KB | | **[ESTE ARCHIVO]** | Resumen ejecutivo | 5 KB | **Total**: ~65 KB de documentación y código de correcciones
+|**CORRECCIONES_DATASET_BUILDER_TIER1.py**|Código de correccio...
+```
 
----
-
-## 🎯 RECOMENDACIÓN FINAL
-
-### ✅ ACCIÓN INMEDIATA REQUERIDA
-
-1. **Leer**: [AUDITORIA_EXHAUSTIVA_OE2_OE3_REPORTE_COMPLETO.md][ref]
-
-[ref]: file:///d:/diseñopvbesscar/AUDITORIA_EXHAUSTIVA_OE2_OE3_REPORTE_COMPLETO.md
-   - Entender los 14 errores identificados
-   - Comprender impacto de cada gap
-
-2. **Aplicar**: Cambios de [CORRECCIONES_DATASET_BUILDER_TIER1.py][ref]
-
-[ref]: file:///d:/diseñopvbesscar/CORRECCIONES_DATASET_BUILDER_TIER1.py
-   - Modificar `dataset_builder.py` con 4 correcciones críticas
-   - Tiempo estimado: **2 horas**
-
-3. **Validar**: Ejecutar pipeline corregido
-
-   ```bash
-   python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-   # Debe completar SIN ERRORES y generar 128 charger CSVs
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 4. **Verificar**: Observables
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    python -c "from citylearn.citylearn import CityLearnEnv; \
              env = CityLearnEnv(schema='outputs/oe3/schema_*.json'); \
@@ -205,18 +153,23 @@ RIESGO CRÍTICO: Sin Tier 1, proyecto BLOQUEADO
              assert len(obs) == 534, f'Error: {len(obs)}-dim'"
    # Debe imprimir dimensión correcta (534)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 5. **Entrenar**: Agentes RL
 
+<!-- markdownlint-disable MD013 -->
    ```bash
-   python scripts/train_agents_serial.py --device cuda --episodes 5
-   # Debe correr SIN CRASHES relacionados con datos/schema
-```bash
+   ...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 📊 ESTADÍSTICAS FINALES
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 COBERTURA OE2→OE3: 65%
 ├─ Datos disponibles: 100% ✓
@@ -234,14 +187,11 @@ ESFUERZO CORRECCIÓN:
 ├─ Tier 1 (crítico): 2 horas
 ├─ Tier 2 (alto): 4 horas
 ├─ Tier 3 (medio): 6 horas
-└─ TOTAL: 12 horas (solo una persona)
+└─ TOTAL: 12 horas (solo una pers...
+```
 
-BENEFICIO POTENCIAL:
-├─ RL training será posible ✅
-├─ Resultados serán válidos ✅
-├─ Documentación mejora ✅
-└─ Confianza en datos ✅
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

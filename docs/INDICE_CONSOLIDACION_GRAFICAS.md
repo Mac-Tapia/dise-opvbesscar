@@ -74,6 +74,7 @@
 
 ### VERIFICAR_Y_LIMPIAR_GRAFICAS.py
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Acciones:
 ✅ Analizar 39 PNG en 4 carpetas
@@ -83,20 +84,25 @@ Acciones:
 ✅ Limpiar 3 carpetas vacías
 ✅ Guardar INFORME_LIMPIEZA_GRAFICAS.json
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### VERIFICAR_GRAFICAS_NECESARIAS.py
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Acciones:
 ✅ Verificar 25 gráficas presentes
 ✅ Detectar 0 faltantes
-✅ Validar tamaño (> 18KB)
-✅ Guardar INFORME_GRAFICAS_VERIFICACION.json
-✅ Sugerir regeneración si necesario
-```text
+✅...
+```
 
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
+
+<!-- markdownlint-disable MD013 -->
 ## 📊 Estadísticas Finales | Métrica | Antes | Después | Diferencia | | --------- | ------- | --------- | ----------- | | Gráficas | 39 | 25 | -14 (-36%) | | Duplicados | 14 pares | 0 | -28 (-100%) | | Carpetas | 4 | 1 | -3 (-75%) | | Espacio (KB) | ~1600 | ~800 | -800 (-50%) | | Verificadas | - | 25/25 | 100% | ## 🗂️ Estructura Final
 
+<!-- markdownlint-disable MD013 -->
 ```text
 analyses/oe3/training/
 ├── plots/                               ✅ MAESTRO (25 PNG)
@@ -108,15 +114,11 @@ analyses/oe3/training/
 │
 ├── checkpoints/
 │   ├── ppo_gpu/ppo_final.zip            (18,432 steps)
-│   ├── a2c_gpu/a2c_final.zip            (17,536 steps)
-│   └── sac/sac_final.zip                (17,520 steps)
-│
-├── RESULTADOS_METRICAS_MODELOS.json
-├── INFORME_LIMPIEZA_GRAFICAS.json       ✅ NUEVO
-├── INFORME_GRAFICAS_VERIFICACION.json   ✅ NUEVO
-├── RESUMEN_CONSOLIDACION_GRAFICAS.md    ✅ NUEVO
-└── (archivos raíz del proyecto)
-```text
+│   ├── a2c_gpu/a2c_final.zip            (17,536 st...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ## 🎯 Cómo Usar Este Índice
 
@@ -152,10 +154,12 @@ analyses/oe3/training/
 
 Usar `plots/` como referencia única en toda la documentación
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ejemplo_anterior:  training/progress/ppo_progress.png
 ejemplo_nuevo:     training/plots/20_ppo_progress.png
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 

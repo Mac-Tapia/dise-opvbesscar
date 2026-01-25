@@ -58,11 +58,13 @@ planas; ver métricas)
 
 ### 🟢 En Ejecución
 
+<!-- markdownlint-disable MD013 -->
 ```text
 [1/3] A2C - ENTRENAMIENTO EN PROGRESO (iniciado 19:26:54)
 [2/3] PPO - EN COLA
 [3/3] SAC - EN COLA
 ```text
+<!-- markdownlint-enable MD013 -->
 
 **Monitor**: Terminal ID: `90da3439-e423-4dee-a54d-11c354a9ed96`
 
@@ -70,11 +72,11 @@ planas; ver métricas)
 
 ## 🎯 TIER 2 CONFIGURATION EQUIVALENCE
 
-### Mapping Multiobjetivo (Balanced Priority) | Componente | Peso | Descripción | | ----------- | ------ | ------------- | | CO2 | 0.35 | Primario - Emisiones carbono | | Costo | 0.25 | Costo energético | | Solar | 0.20 | Aprovechamiento solar | | EV | 0.15 | Satisfacción EV | | Grid | 0.05 | Estabilidad red | ### Parámetros TIER 2 por Agente
+<!-- markdownlint-disable MD013 -->
+### Mapping Multiobjetivo (Balanced Priority) | Componente | Peso | Descripción | | ----------- | ------ | -----...
+```
 
-#### PPO (`ppo_sb3.py`)
-
-```python
+[Ver código completo en GitHub]python
 learning_rate = 2.5e-4          # ↓ 3e-4 (convergencia suave)
 batch_size = 256                # ↑ 128 (menos ruido)
 n_epochs = 15                   # ↑ 10 (más updates)
@@ -84,9 +86,11 @@ activation = "relu"             # ↑ tanh
 lr_schedule = "linear"          # ↑ constant
 use_sde = True                  # NEW
 ```text
+<!-- markdownlint-enable MD013 -->
 
 #### A2C (`a2c_sb3.py`)
 
+<!-- markdownlint-disable MD013 -->
 ```python
 learning_rate = 2.5e-4          # ↓ 3e-4
 n_steps = 1024                  # ↑ 512
@@ -95,17 +99,11 @@ hidden_sizes = (512, 512)       # ↑ (256,256)
 activation = "relu"             # ↑ tanh
 lr_schedule = "linear"          # ↑ constant
 ```text
+<!-- markdownlint-enable MD013 ...
+```
 
-#### SAC (`sac.py`) - Previo
-
-```python
-learning_rate = 2.5e-4          # ↓ 3e-4
-batch_size = 256                # ↓ 512
-ent_coef = 0.02                 # ↑ 0.01
-hidden_sizes = (512, 512)       # ↑ (256,256)
-update_per_timestep = 2         # ↑ 1
-dropout = 0.1                   # ↑ 0
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -197,6 +195,7 @@ dropout = 0.1                   # ↑ 0
 
 Correctamente llamada con parámetros específicos por agente:
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # A2C
 result_a2c = simulate(
@@ -216,25 +215,18 @@ result_ppo = simulate(
     agent_name="PPO",
     ppo_timesteps=2 * 8760,
     ppo_batch_size=256,
-    ppo_n_steps=2048,
-    use_multi_objective=True,
-)
+    ppo_n_steps=...
+```
 
-# SAC
-result_sac = simulate(
-    schema_path=schema_pv,
-    agent_name="SAC",
-    sac_episodes=2,
-    sac_batch_size=256,
-    use_multi_objective=True,
-)
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ### CityLearn Patches Applied
 
 **Problema**: Array indexing error en `Battery.get_max_input_power()`
 **Solución**: Clamping de índices + validación de SOC
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # Antes:
 idx = max(0, np.argmax(soc <= self.capacity_power_curve[0]) - 1)  # ← CRASH
@@ -243,32 +235,21 @@ idx = max(0, np.argmax(soc <= self.capacity_power_curve[0]) - 1)  # ← CRASH
 idx = max(0, np.argmax(comparison) - 1)
 idx = min(idx, len(self.capacity_power_curve) - 1)  # ← SAFE
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 📂 ARCHIVOS CLAVE
 
+<!-- markdownlint-disable MD013 -->
 ```text
 src/iquitos_citylearn/oe3/
 ├── agents/
-│   ├── ppo_sb3.py          ✅ TIER 2 (config actualizada)
-│   ├── a2c_sb3.py          ✅ TIER 2 (config actualizada)
-│   └── sac.py              ✅ TIER 2 (prev session)
-├── rewards.py              ✅ Multiobjetivo
-├── simulate.py             (función principal)
-└── dataset_builder.py
+│   ├── ppo_sb3.py          ✅ TIER 2 (config actu...
+```
 
-scripts/
-├── train_tier2_serial_fixed.py  ✅ ENTRENAMIENTO EN EJECUCIÓN
-└── _common.py              (utilidades)
-
-apply_citylearn_patches.py  ✅ Patches aplicados
-
-outputs/oe3/training/tier2_2ep_serial/
-├── a2c/                    ← ENTRENANDO AHORA
-├── ppo/                    ← EN COLA
-└── sac/                    ← EN COLA
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -288,17 +269,21 @@ Calcula para cada agente (2 episodios):
 - ✅ **Grid Stability**: Estabilidad de la red (0-1, donde 1 = perfecta)
 - ✅ **Convergence Speed**: Velocidad en minutos de GPU
 
+<!-- markdownlint-disable MD013 -->
 ### Convergencia Típica (benchmarks indicativos) | Métrica | A2C | PPO | SAC | Mejor | | --------- | ----- | ----- | ----- | ------- | | Avg Reward (2ep) | 0.45-0.55 | 0.40-0.50 | 0.55-0.65 | 🥇 SAC | | CO2 (kg) | 1.75-1.85M | 1.85-2.0M | 1.65-1.80M | 🥇 SAC | | Peak Import (kWh/h) | 240-260 | 260-290 | 220-250 | 🥇 SAC | | Grid Stability | 0.70-0.80 | 0.75-0.85 | 0.80-0.90 | 🥇 SAC | | Convergence Speed | Fast | Medium | Medium | 🥇 A2C | **Salida**: `analyses/oe3/training/RESULTADOS_METRICAS_COMPLETAS.json`
 
+<!-- markdownlint-disable MD013 -->
 ### Velocidad Entrenamiento (wall-clock) | Agente | Tipo | GPU | CPU | | -------- | ------ | ----- | ----- | | A2C | On-policy | ~18 min | ~45 min | | PPO | On-policy | ~22 min | ~55 min | | SAC | Off-policy | ~12 min | ~30 min | ---
 
 ## 📝 GIT COMMITS
 
+<!-- markdownlint-disable MD013 -->
 ```text
 7061b76c - Training: CityLearn patches + fixed serial script + status doc
 b4c36887 - TIER 2 DOCS: Updated COMPARATIVA, EJECUTAR_ENTRENAMIENTO
 d13d39da - PPO & A2C TIER 2: Updated configs (LR, batch, ent, hidden, etc)
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -308,40 +293,16 @@ d13d39da - PPO & A2C TIER 2: Updated configs (LR, batch, ent, hidden, etc)
 
 Para ver el entrenamiento en tiempo real:
 
-```powershell
-Get-Content -Path "path/to/training.log" -Tail 20 -Wait
-```text
+<!-- markd...
+```
 
-O via terminal VS Code:
-
-- Ir a "Terminal" → "Show Running Terminals"
-- Seleccionar terminal con ID: `90da3439...`
-
----
-
-## 🚀 PRÓXIMOS PASOS
-
-1. ⏳ **A2C completa 2 episodios** (esperar 15-20 min)
-2. ⏳ **PPO comienza automáticamente** (esperar 20-25 min)
-3. ⏳ **SAC comienza automáticamente** (esperar 10-15 min)
-4. ✅ **Commit resultados** → "Training: 2-ep test TIER 2 complete"
-5. ✅ **Generar reporte final** → Comparar A2C vs PPO vs SAC
-6. ✅ **Análisis de convergencia** → Validar TIER 2 improvements
-
----
-
-## 📊 RESULTADOS ESPERADOS
-
-### Post-Training (al completar todos)
-
-**Archivo de salida**:
-
-```text
+[Ver código completo en GitHub]text
 outputs/oe3/training/tier2_2ep_serial/
 ├── a2c/results_summary.json
 ├── ppo/results_summary.json
 └── sac/results_summary.json
 ```text
+<!-- markdownlint-enable MD013 -->
 
 **Comparativa final esperada**:
 

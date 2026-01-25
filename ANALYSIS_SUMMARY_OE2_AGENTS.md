@@ -28,6 +28,7 @@ for baseline)
 comparison
 7. **GPU Support**: Auto-detection of CUDA/MPS/CPU with proper device setup
 
+<!-- markdownlint-disable MD013 -->
 ### ⚠ Critical Issues (Must Fix) | Issue | Severity | Location | Impact | |-------|----------|----------|--------|
 |**BESS SOC scaled by 0.001**|🔴 HIGH|All wrappers|Agent cannot observe BESS state|
 |**Hardcoded 0.001 prescale**|🟠 MEDIUM|All wrappers|Fragile if data ranges change|
@@ -43,6 +44,7 @@ comparison
 
 ## Data Flow Verification
 
+<!-- markdownlint-disable MD013 -->
 ### ✓ OE2 → CityLearn Schema | Step | Source | Target | Status | |------|--------|--------|--------| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 |Charger loading|`individual_chargers.json` (32 ×...|`schema.json`|✓ Correct| | BESS loading | `bess_results.json` (2000... | `schema.json` | ✓ Correct | | Weather data | `weather.csv` (PVGIS) | `climate_zones/` | ✓ Correct | | Carbon intensity | Hardcoded 0.4521 kg CO₂/kWh | `pricing.csv` | ✓ Correct | ### ✓ CityLearn Schema → Agent Observation | Feature | Access Pattern | Status | Issue | |---------|-----------------|--------|-------| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| | Charger demands | Included in base... | ✓ Works | Not explicitly extracted | |Grid import/export|In base observation|✓ Works|Prescaled by 0.001 (ok)| ### ⚠ Agent Action → CityLearn Control | Element | Handling | Status | |---------|----------|--------| | Action space dim | 126 (from `_get_act_dim()`) | ✓ Correct | | Action bounds | [-1.0, 1.0] (gym.Box) | ✓ Correct | | Unflattening | Converts 126-dim array... | ✓ Correct | | Charger mapping | 126 → 126 charger power setpoints | ✓ Correct | ---
 
@@ -50,6 +52,7 @@ comparison
 
 ### Current Approach (Problematic)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Raw observation (534 dims): Mix of kW (0-4162),
     kWh (0-2000),
@@ -62,10 +65,13 @@ Running normalization: (prescaled - mean) / std
          ↓
 Clipping: [-10, 10]
 ```bash
+<!-- markdownlint-enable MD013 -->
 
-### The BESS SOC Problem | Step | Value | Issue | |------|-------|-------| | Original | 0.0 to 1.0 | ✓ Already normalized | | After prescale (×0.001) | 0.0 to 0.001 | ❌ Becomes tiny | | After running norm | ~0.0 | ❌ All states map to ~0 | | Agent sees | No difference between... | ❌ **Cannot control BESS** | ### Fix Applied (in CODE_FIXES document)
+<!-- markdownlint-disable MD013 -->
+### The BESS SOC Problem | Step | Value | Issue | |------|-------|--...
+```
 
-```bash
+[Ver código completo en GitHub]bash
 Original SOC (0-1) → Keep as-is (prescale=1.0, not 0.001)
          ↓
 Running normalization: (soc - mean) / std
@@ -74,6 +80,7 @@ Agent sees: [0.05] vs [0.95] as meaningfully different
          ↓
 Can learn BESS control
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -81,23 +88,18 @@ Can learn BESS control
 
 ### Physical Configuration (from OE2)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 32 physical chargers × 4 sockets each = 128 controllable outlets
 ├─ Playa Motos: 28 chargers × 4 sockets × 2.0 kW = 224 kW
 └─ Playa Mototaxis: 4 chargers × 4 sockets × 3.0 kW = 48 kW
 Total: 272 kW installed capacity
 ```bash
+<!-- markdownlint-enable...
+```
 
-### Agent Modeling
-
-```bash
-CityLearn action space: 128 (from environment definition)
-Agent action space: 126 (configurable in _get_act_dim)
-  └─ 2 chargers reserved for baseline comparison
-
-Action interpretation:
-  action[i] ∈ [-1.0, 1.0] → charger power = action[i] × rated_power
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### ✓ Correct Handling
 
@@ -117,6 +119,7 @@ Action interpretation:
 
 ### Data Specification
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 File: data/interim/oe2/solar/pv_generation_timeseries.csv
 Format: 8,760 rows × 1 column (hourly AC output)
@@ -125,15 +128,13 @@ Profile: Zeros from 18:00 - 04:00 (nighttime), peaks 09:00-14:00
 Annual: 8.31 GWh (AC), Capacity Factor 29.6%
 Source: PVGIS TMY + pvlib simulation for Kyocera KS20 + Eaton Xpert1670
 ```bash
+<!-- markdownlint-enable MD013 -->
 
-### Runtime Access
+##...
+```
 
-```bash
-Every timestep (t = 0 to 8759):
-  pv_kw = building.solar_generation[t]  # Access 8,760-element array
-  → Normalized (prescale 0.001, then running stats)
-  → Passed to agent as observation feature [pv_kw_normalized, soc_normalized]
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### ✓ Correct Implementation
 
@@ -143,6 +144,7 @@ Every timestep (t = 0 to 8759):
 
 ### Observation Integration
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Observation space: 534 dims (base) + 2 (PV/BESS) = 536 total
 ├─ 534 dims: CityLearn building/charger state
@@ -154,26 +156,15 @@ Agent learns:
   - Low PV (evening) → discharge BESS to cover load
   - Zero PV (night) → rely on BESS + grid
 ```bash
+<!-- markdownlint-ena...
+```
 
----
-
-## BESS: 2 MWh / 1.2 MW
-
-### Configuration
-
-```json
-{
-  "capacity_kwh": 2000,
-  "power_kw": 1200,
-  "efficiency_round_trip": 0.95,
-  "depth_of_discharge": 0.80,
-  "soc_min": 0.10,
-  "soc_max": 0.90
-}
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Current Usage in Agents
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # Observation feature (per timestep)
 soc = building.electrical_storage.state_of_charge  # Range: 0.1 to 0.9
@@ -183,6 +174,7 @@ soc = building.electrical_storage.state_of_charge  # Range: 0.1 to 0.9
 # BESS SOC higher → more energy available → can supply EVs without grid
 # No explicit BESS health tracking (cycling, DoD)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Control Strategy (Implicit)
 

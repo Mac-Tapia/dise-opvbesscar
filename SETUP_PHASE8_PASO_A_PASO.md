@@ -4,6 +4,7 @@
 
 #### Antes de nada, instalar Python 3.11.9 (versión EXACTA)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Opción 1: Descargar de python.org
 # https://www.python.org/downloads/release/python-3119/
@@ -19,20 +20,15 @@ conda activate phase8
 # Opción 4: Usando Scoop (Windows)
 scoop install python@3.11.9
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
-## PASO 2: Verificar Python 3.11.9
+## PASO 2: Verificar Python 3.11.9...
+```
 
-#### Asegúrate que Python es 3.11.9
-
-```bash
-python --version
-# DEBE mostrar: Python 3.11.9
-
-python -c "import sys; print(sys.executable)"
-# DEBE ser la ruta de Python 3.11.9
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Si NO es 3.11.9, DETENER y reinstalar.**
 
@@ -40,6 +36,7 @@ python -c "import sys; print(sys.executable)"
 
 ## PASO 3: Crear/Activar Virtual Environment
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Crear nuevo .venv (si no existe)
 python -m venv .venv
@@ -53,23 +50,20 @@ python -m venv .venv
 # Activar .venv (Linux/Mac)
 source .venv/bin/activate
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Verificar que está activado:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-# Debe mostrar algo como: (.venv) D:\diseñopvbesscar>
-```bash
+# Debe mostrar algo como: (.venv) D:\dise...
+```
 
----
-
-## PASO 4: Instalar Dependencias Phase 7
-
-#### SOLO dependencias básicas (sin CityLearn)
-
-```bash
+[Ver código completo en GitHub]bash
 pip install --upgrade pip setuptools wheel
 pip install -r requirements-phase7.txt
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Esperar a que terminen todas las instalaciones.**
 
@@ -79,18 +73,21 @@ pip install -r requirements-phase7.txt
 
 #### Ejecutar test de validación
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python phase7_validation_complete.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Esperado: TODOS los tests deben pasar ✅
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-✓ STEP 1: OE2 Data Integrity Check ✅
-✓ STEP 2: Key Data Metrics ✅
-✓ STEP 3: Charger Profile Expansion ✅
-✓ STEP 4: Schema File Status ✅
-```bash
+✓ STEP 1: OE2 ...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -98,6 +95,7 @@ python phase7_validation_complete.py
 
 #### SOLO DESPUÉS de verificar Phase 7
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Instalar CityLearn específicamente
 pip install -r requirements-phase8.txt
@@ -105,31 +103,36 @@ pip install -r requirements-phase8.txt
 # O manualmente
 pip install citylearn>=2.5.0
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Verificar instalación:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python -c "import citylearn; print(f'CityLearn {citylearn.__version__} ✅')"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## PASO 7: Construir Dataset
 
-#### Después de CityLearn instalado
+#### D...
+```
 
-```bash
-python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 #### Esperado: Schema y 128 charger CSV files generados
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✅ Loading OE2 artifacts...
 ✅ Building schema...
 ✅ Generating 128 charger_simulation_*.csv files...
 ✅ Complete dataset generated
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -137,84 +140,14 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 
 #### Después de dataset construido
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python scripts/train_agents_serial.py --device cuda --episodes 50
 ```bash
+<!-- markdownlint-enable MD013...
+```
 
----
-
-## ⚠️ ERRORES COMUNES
-
-### Error 1: "python --version → Python 3.13"
-
-**PROBLEMA**: Installed Python 3.13 (wrong version)
-
-**SOLUCIÓN**:
-
-1. Uninstall Python 3.13
-2. Install Python 3.11.9 exactly
-3. Verify: `python --version` → Python 3.11.9
-
----
-
-### Error 2: "ImportError: No module named 'citylearn'"
-
-**PROBLEMA**: CityLearn no instalado (esperado en Phase 7)
-
-**SOLUCIÓN**:
-
-- Phase 7: Ignorar (normal)
-- Phase 8: Ejecutar `pip install -r requirements-phase8.txt`
-
----
-
-### Error 3: "Cython errors during citylearn install"
-
-**PROBLEMA**: Python version incorrecto cuando instalar CityLearn
-
-**SOLUCIÓN**:
-
-1. Verify Python version: `python --version` → DEBE ser 3.11.9
-2. Instalar CityLearn: `pip install -r requirements-phase8.txt`
-
----
-
-## ✅ CHECKLIST
-
-- [ ] Python 3.11.9 instalado
-- [ ] `python --version` → Python 3.11.9
-- [ ] `.venv` creado y activado
-- [ ] `pip install -r requirements-phase7.txt` completado
-- [ ] `python phase7_validation_complete.py` - ✅ TODOS PASAN
-- [ ] `pip install -r requirements-phase8.txt` completado
-- [ ] `python -c "import citylearn"` → ✅ OK
-- [ ] Dataset construido (128 charger CSVs)
-- [ ] Listo para entrenar agentes
-
----
-
-## 🎯 VERSIONES EXACTAS
-
-#### REQUERIDAS:
-
-- Python: **3.11.9** (exactamente)
-- CityLearn: **>=2.5.0** (solo Phase 8)
-- gymnasium: **<=0.28.1** (especificar versión máxima)
-- PyYAML: **>=6.0**
-
----
-
-## 📋 ARCHIVOS DE DEPENDENCIAS
-
-1. **requirements.txt** - Todas las dependencias (ACTUALIZADO - sin CityLearn)
-2. **requirements-phase7.txt** - Phase 7 core (sin CityLearn)
-3. **requirements-phase8.txt** - Phase 8 only (CityLearn)
-
----
-
-## 🚀 QUICK START COMMAND
-
-```bash
+[Ver código completo en GitHub]bash
 # 1. Verificar Python
 python --version
 
@@ -233,6 +166,7 @@ pip install -r requirements-phase8.txt
 # 6. Entrenar
 python scripts/train_agents_serial.py --device cuda --episodes 50
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

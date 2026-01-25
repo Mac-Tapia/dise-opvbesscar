@@ -20,6 +20,7 @@ en:
 
 #### Cambios principales:
 
+<!-- markdownlint-disable MD013 -->
 ```dockerfile
 # ✅ Multi-stage build mejorado
 FROM python:3.11-slim as builder    # Stage 1: Build dependencies
@@ -32,11 +33,11 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install ...
 ENTRYPOINT ["/usr/bin/tini", "--"]
 
 # ✅ Health checks mejorados
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 ...
+HEALTHCHECK --interval=30s --timeo...
+```
 
-# ✅ Verificación completa de dependencias
-RUN python -c "import stable_baselines3, gymnasium, numpy, pandas"
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 #### Beneficios:
 
@@ -51,11 +52,13 @@ RUN python -c "import stable_baselines3, gymnasium, numpy, pandas"
 
 #### Servicios:
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 pvbesscar-pipeline:     # Pipeline principal
 pvbesscar-monitor:      # Monitoreo de checkpoints
 pvbesscar-jupyter:      # Jupyter Lab en puerto 8888
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Mejoras:
 
@@ -63,19 +66,15 @@ pvbesscar-jupyter:      # Jupyter Lab en puerto 8888
 - Logging con rotación de archivos (max 10m, 5 files)
 - Cache volume (`pipeline_cache`) para pip
 - Resource limits mejorados
-- Labels de logging para tracking
+- Labels de loggin...
+```
 
----
-
-### 3. **docker-compose.gpu.yml** (Actualizado)
-
-#### Servicios: (2)
-
-```yaml
+[Ver código completo en GitHub]yaml
 pvbesscar-pipeline-gpu:    # GPU acceleration
 pvbesscar-monitor-gpu:     # Monitoreo GPU
 pvbesscar-jupyter-gpu:     # Jupyter Lab puerto 8889
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Mejoras: (2)
 
@@ -91,12 +90,14 @@ pvbesscar-jupyter-gpu:     # Jupyter Lab puerto 8889
 
 #### Servicios completos:
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 dev-notebook:      # Jupyter Lab interactivo
-dev-tests:         # Pytest automation (exit when done)
-dev-lint:          # Pylint + Black + isort
-dev-type-check:    # MyPy type checking
-```bash
+dev-te...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 #### Características:
 
@@ -125,6 +126,7 @@ Documentación completa con:
 
 Utilidad Python para gestión Docker:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python docker_manager.py build [--tag] [--gpu] [--dev] [--no-cache]
 python docker_manager.py up [--gpu] [--dev] [--service]
@@ -134,12 +136,10 @@ python docker_manager.py health [--gpu]
 python docker_manager.py stats [--container]
 python docker_manager.py clean
 ```bash
+<!-- markdownlint-enable MD...
+```
 
-### 3. **docker_quick.bat**
-
-Comandos rápidos para Windows Batch:
-
-```batch
+[Ver código completo en GitHub]batch
 docker_quick.bat build-cpu
 docker_quick.bat build-gpu
 docker_quick.bat up-cpu
@@ -149,11 +149,13 @@ docker_quick.bat logs-pipeline
 docker_quick.bat stats
 docker_quick.bat clean
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 4. **docker_quick.ps1**
 
 Comandos rápidos para PowerShell:
 
+<!-- markdownlint-disable MD013 -->
 ```powershell
 .\docker_quick.ps1 -Command build
 .\docker_quick.ps1 -Command build -GPU
@@ -161,26 +163,21 @@ Comandos rápidos para PowerShell:
 .\docker_quick.ps1 -Command logs -GPU
 .\docker_quick.ps1 -Command health
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🚀 Cómo Usar
 
-### CPU Only (Recomendado para desarrollo)
+### CPU ...
+```
 
-```bash
-# Build
-docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pvbesscar:latest .
-
-# Start
-docker-compose up -d
-
-# Monitorear
-docker-compose logs -f pvbesscar-pipeline
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### GPU Acceleration
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Build (2)
 docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pvbesscar:latest-gpu .
@@ -191,31 +188,31 @@ docker-compose -f docker-compose.gpu.yml up -d
 # Check GPU
 docker exec pvbesscar-pipeline-gpu nvidia-smi
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Development Full Stack
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Start all services
 docker-compose -f docker-compose.dev.yml up -d
 
-# Run tests (will exit when done)
-docker-compose -f docker-compose.dev.yml exec dev-tests
+# Run tes...
+```
 
-# Run linting
-docker-compose -f docker-compose.dev.yml exec dev-lint
-
-# Run type checking
-docker-compose -f docker-compose.dev.yml exec dev-type-check
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📊 Comparativa Antes vs Después | Aspecto | Antes | Después | | -------- | ------- | --------- | | **Build time** | N/A | -60% con BuildKit | | **Image size** | ~1.2GB | Similar (optimizado) | | **Health checks** | No | ✅ Integrated | | **Signal handling** | Manual | ✅ Tini automático | | **Jupyter integration** | Separado | ✅ Integrado | | **Dev services** | Separados | ✅ docker-compose.dev.yml | | **GPU support** | Basic | ✅ Completo | | **Cache volumes** | No | ✅ pipeline_cache | | **Logging rotation** | No | ✅ Enabled | ---
 
 ## 🔧 Configuración de Recursos
 
 ### CPU Services (docker-compose.yml)
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 deploy:
   resources:
@@ -226,9 +223,11 @@ deploy:
       cpus: '4'
       memory: 16G
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### GPU Services (docker-compose.gpu.yml)
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 deploy:
   resources:
@@ -238,26 +237,15 @@ deploy:
           count: 1
           capabilities: [gpu]
 ```bash
+<!-- markdownl...
+```
 
----
-
-## 📝 Comandos Útiles
-
-### Build (3)
-
-```bash
-# CPU
-docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pvbesscar:latest .
-
-# GPU
-docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pvbesscar:latest-gpu .
-
-# Sin cache
-docker build --no-cache -t pvbesscar:latest .
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Up/Down
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # CPU up
 docker-compose up -d
@@ -271,9 +259,11 @@ docker-compose down
 # Down + remove volumes
 docker-compose down -v
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Logs & Status
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # All logs
 docker-compose logs -f
@@ -284,13 +274,10 @@ docker logs -f pvbesscar-pipeline
 # Resource usage
 docker stats
 
-# Health status
-docker inspect --format='{{json .State.Health}}' pvbesscar-pipeline
-```bash
+# Health s...
+```
 
-### Cleanup
-
-```bash
+[Ver código completo en GitHub]bash
 # Docker cache
 docker builder prune --all
 
@@ -300,6 +287,7 @@ docker image prune
 # Unused volumes
 docker volume prune
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -307,64 +295,74 @@ docker volume prune
 
 ### 1. **BuildKit Inline Cache**
 
+<!-- markdownlint-disable MD013 -->
 ```dockerfile
 ARG BUILDKIT_INLINE_CACHE=1
 # Permite reutilizar capas en GitHub Actions, CI/CD
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 2. **Tini Init**
 
+<!-- markdownlint-disable MD013 -->
 ```dockerfile
 ENTRYPOINT ["/usr/bin/tini", "--"]
-# Reaping zombie processes, proper signal handling
-```bash
+# Reaping zombie process...
+```
 
-### 3. **Health Checks**
-
-```yaml
+[Ver código completo en GitHub]yaml
 healthcheck:
   test: ["CMD", "python", "-c", "import stable_baselines3"]
   interval: 30s
   timeout: 10s
   retries: 3
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 4. **Volume Cache**
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 volumes:
   pipeline_cache:  # Pip cache, acelera rebuilds
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 5. **Labels de Logging**
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 logging:
   options:
     labels: "service=pipeline"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🔍 Verificación
 
-### Check Build Success
+...
+```
 
-```bash
-docker run --rm pvbesscar:latest python -c "import stable_baselines3; print('✓ OK')"
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Check Health
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 docker exec pvbesscar-pipeline python -c "import gymnasium; print('✓ OK')"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Check GPU (si disponible)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 docker exec pvbesscar-pipeline-gpu python -c "import torch; print(torch.cuda.is_available())"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

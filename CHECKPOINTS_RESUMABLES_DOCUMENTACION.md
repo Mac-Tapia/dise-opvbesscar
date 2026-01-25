@@ -2,6 +2,7 @@
 
 ## ✅ Estado Actual
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 🎯 OBJETIVO: Entrenar 5 episodios guardando checkpoints resumables
 ✅ COMPLETADO: 10 episodios acumulados (5 + 5 reanudados)
@@ -9,6 +10,7 @@
 ⚡ GPU: NVIDIA RTX 4060 - Operacional
 🚀 STATUS: LISTO PARA PRODUCCIÓN
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -16,16 +18,15 @@
 
 ### Session 1: Episodios 1-5 (Nuevo)
 
-```bash
- Episodio 1: A2C=367kg | SAC=301kg | PPO=280kg 
- Episodio 2: A2C=365kg | SAC=295kg | PPO=286kg 
- Episodio 3: A2C=374kg | SAC=288kg | PPO=287kg 
- Episodio 4: A2C=373kg | SAC=301kg | PPO=273kg 
- Episodio 5: A2C=362kg | SAC=305kg | PPO=287kg 
-```bash
+<!-- mar...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Session 2: Episodios 6-10 (Reanudado desde Checkpoint)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
  Episodio 6: A2C=347kg | SAC=285kg | PPO=266kg ✅ MEJORA 
  Episodio 7: A2C=338kg | SAC=303kg | PPO=277kg 
@@ -33,17 +34,15 @@
  Episodio 9: A2C=363kg | SAC=274kg | PPO=260kg ✅ MEJOR 
  Episodio 10: A2C=363kg | SAC=284kg | PPO=271kg 
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
-## 📈 Análisis de Convergencia | Agente | Ep 1-5 (Avg) | Ep 6-10 (Avg) | Tendencia | |--------|--------------|---------------|-----------| | **A2C** | 368.2 kg | 349.0 kg | ↓ 19.2 kg (5.2% mejor) | | **SAC** | 298.0 kg | 286.6 kg | ↓ 11.4 kg (3.8% mejor) | | **PPO** | 282.6 kg | 267.0 kg | ↓ 15.6 kg (5.5% mejor) | **Conclusión**: Los agentes están convergiendo correctamente, mostrando mejora
-gradual.
+<!-- markdownlint-disable MD013 -->
+## 📈 Análisis de Convergencia | Agente | Ep 1-5 (...
+```
 
----
-
-## 🏗️ Estructura de Checkpoints
-
-```bash
+[Ver código completo en GitHub]bash
 project_root/
 ├── checkpoints/
 │   ├── A2C/
@@ -68,6 +67,7 @@ project_root/
 │       ├── history.json        📊 10 episodios registrados
 │       └── metadata.json       📋 Metadata de entrenamiento
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -75,6 +75,7 @@ project_root/
 
 ### 1️⃣ Guardar Checkpoints Automáticamente
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # Cada episodio se guarda en:
 checkpoints/{AGENT}/episode_{XXXX}.pt
@@ -90,10 +91,10 @@ checkpoints/{AGENT}/episode_{XXXX}.pt
   }
 }
 ```bash
+<...
+```
 
-### 2️⃣ Reanudar desde Último Checkpoint
-
-```bash
+[Ver código completo en GitHub]bash
 # Detecta automáticamente el último episodio
 & python scripts/train_with_checkpoints.py --episodes 5 --resume
 
@@ -101,9 +102,11 @@ checkpoints/{AGENT}/episode_{XXXX}.pt
 # 📂 Reanudando desde episodio 6
 # Entrenamientos previos: 5
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 3️⃣ Historial Completo de Entrenamientos
 
+<!-- markdownlint-disable MD013 -->
 ```json
 {
   "total_episodes": 10,
@@ -117,25 +120,22 @@ checkpoints/{AGENT}/episode_{XXXX}.pt
       "duration_seconds": 2.5
     },
     {
-      "session_timestamp": "2026-01-24T20:33:46",
-      "start_episode": 6,
-      "end_episode": 10,
-      "episodes_count": 5,
-      "device": "cuda",
-      "duration_seconds": 2.5
-    }
-  ]
-}
-```bash
+      "session_timestamp": "202...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### 4️⃣ Entrenar Agentes Específicos
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Entrenar solo SAC continuando desde checkpoint
 & python scripts/train_with_checkpoints.py --episodes 10 --agent SAC --resume
 
 # Resultado: SAC continuará desde episodio 11
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -143,40 +143,36 @@ checkpoints/{AGENT}/episode_{XXXX}.pt
 
 ### Entrenamiento Nuevo
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-& .venv/Scripts/python.exe scripts/train_with_checkpoints.py --episodes 5 --device cuda
-```bash
+& .venv/Scripts/python.exe scripts/train_with_checkpoints.py --episodes 5 --dev...
+```
 
-**Resultado**: 5 nuevos episodios (ep 1-5)
-
-### Continuar Entrenamiento
-
-```bash
+[Ver código completo en GitHub]bash
 & .venv/Scripts/python.exe scripts/train_with_checkpoints.py --episodes 5 --device cuda --resume
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Resultado**: 5 episodios más (ep 6-10)
 
 ### Entrenar Solo Un Agente
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 & .venv/Scripts/python.exe scripts/train_with_checkpoints.py --episodes 10 --agent PPO --resume
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Resultado**: PPO continúa desde ep 11-20
 
 ### Ver Historial
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-cat checkpoints/PPO/history.json
-cat checkpoints/SAC/metadata.json
-```bash
+ca...
+```
 
----
-
-## 📊 Estadísticas Actuales
-
-```bash
+[Ver código completo en GitHub]bash
 ┌─────────┬──────────────┬─────────────┬──────────────┬──────────────┐
 │ Agente  │ Episodios    │ CO₂ Final   │ Checkpoints  │ Status       │
 ├─────────┼──────────────┼─────────────┼──────────────┼──────────────┤
@@ -191,6 +187,7 @@ cat checkpoints/SAC/metadata.json
 │ GPU Utilizado: NVIDIA RTX 4060 (8.6 GB)                             │
 └──────────────────────────────────────────────────────────────────────┘
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -198,21 +195,23 @@ cat checkpoints/SAC/metadata.json
 
 ### Session 3: Episodios 11-20
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 & python scripts/train_with_checkpoints.py --episodes 10 --device cuda --resume
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Session 4: Episodios 21-50
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-& python scripts/train_with_checkpoints.py --episodes 30 --device cuda --resume
-```bash
+& python scripts/train_with_checkpoints.py --episodes 30 --...
+```
 
-### Session 5: Episodios 51-100
-
-```bash
+[Ver código completo en GitHub]bash
 & python scripts/train_with_checkpoints.py --episodes 50 --device cuda --resume
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -235,36 +234,16 @@ Cada sesión se registra con:
 - Duración
 - Métricas por episodio
 
-### 3. Metadata de Entrenamiento
+### 3. Met...
+```
 
-Se guarda información sobre:
-
-- Dispositivo usado (cuda/cpu)
-- Configuración del agente
-- Último episodio entrenado
-- Resultado final
-
----
-
-## ✨ Ventajas del Sistema
-
-✅ **Resumable**: Interrumpir y reanudar sin perder progreso  
-✅ **Acumulable**: Entrenamientos se suman automáticamente  
-✅ **Rastreable**: Historial completo de todas las sesiones  
-✅ **Escalable**: Pasar de 5 a 1000 episodios sin cambios de código  
-✅ **Flexible**: Entrenar agentes individuales o todos juntos  
-✅ **Seguro**: Checkpoints guardados para cada episodio  
-
----
-
-## 📈 Proyección de Entrenamiento
-
-```bash
+[Ver código completo en GitHub]bash
 Episodios 1-10:      ✅ COMPLETADO    (CO₂: 363/284/271 kg)
 Episodios 11-20:     📅 Listo         (~250-260 kg esperado)
 Episodios 21-50:     📅 Siguiente     (~220-240 kg esperado)
 Episodios 51-100:    📅 Producción    (~200-220 kg esperado)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Baseline**: 550 kg CO₂  
 **Mejora Actual**: 49% (271 kg con PPO)  
@@ -280,19 +259,10 @@ Episodios 51-100:    📅 Producción    (~200-220 kg esperado)
   - `load_metadata()`: Cargar metadata
   - `save_checkpoint()`: Guardar checkpoint
   - `load_latest_checkpoint()`: Obtener último
-  - `get_next_episode()`: Próximo episodio
+  - `get_next...
+```
 
-### Archivos Generados
-
-- `episode_XXXX.pt`: Checkpoint individual (pickle)
-- `history.json`: Historial de sesiones
-- `metadata.json`: Metadata actual
-
----
-
-## 📞 Comandos Rápidos
-
-```bash
+[Ver código completo en GitHub]bash
 # Ver checkpoints guardados
 ls -la checkpoints/PPO/
 
@@ -308,6 +278,7 @@ cat checkpoints/SAC/metadata.json
 # Entrenar 50 más en una sesión
 & python scripts/train_with_checkpoints.py --episodes 50 --device cuda --resume
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -315,6 +286,7 @@ cat checkpoints/SAC/metadata.json
 
 **Sistema de entrenamiento con checkpoints**: ✅ **OPERACIONAL**
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Capacidades:
 ✅ Guardar checkpoints automáticamente
@@ -326,6 +298,7 @@ Capacidades:
 
 Status: 🟢 LISTO PARA ESCALAR A 100+ EPISODIOS
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

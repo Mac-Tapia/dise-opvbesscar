@@ -10,6 +10,7 @@
 
 ### SAC (Soft Actor-Critic)
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 episodes: 2
 batch_size: 32,768
@@ -18,9 +19,11 @@ train_freq: 4
 learning_rate: 0.001
 → Total timesteps: 2 × 8,760 = 17,520 pasos
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### PPO (Proximal Policy Optimization)
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 episodes: 2
 n_steps: 32,768
@@ -28,15 +31,11 @@ batch_size: 32,768
 n_epochs: 10
 → Total timesteps: 2 × 8,760 = 17,520 pasos
 ```text
+<!-- markdownlint-enable MD013...
+```
 
-### A2C (Advantage Actor-Critic)
-
-```yaml
-episodes: 2
-n_steps: 65,536
-learning_rate: 0.0007
-→ Total timesteps: 2 × 8,760 = 17,520 pasos
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -44,6 +43,7 @@ learning_rate: 0.0007
 
 #### Orden ejecutado en `scripts/run_oe3_simulate.py`:
 
+<!-- markdownlint-disable MD013 -->
 ```text
 1️⃣ BASELINE (Uncontrolled)
    ├─ Tipo: PV+BESS sin control
@@ -59,19 +59,15 @@ learning_rate: 0.0007
 
 3️⃣ PPO (Reinforcement Baseline)
    ├─ Episodios: 2
-   ├─ Timesteps: 2 × 8,760 = 17,520 pasos
-   ├─ n_steps: 32,768
-   └─ Status: Secuencial después de SAC
+   ├─ Timesteps: 2 × 8,760 = 17,520 pas...
+```
 
-4️⃣ A2C (Convergence Test)
-   ├─ Episodios: 2
-   ├─ Timesteps: 2 × 8,760 = 17,520 pasos
-   ├─ n_steps: 65,536
-   └─ Status: Secuencial después de PPO
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📊 Estadísticas Totales | Agente | Episodios | Timesteps | Batch Size | Status | | --- | --- | --- | --- | --- | | **Baseline** | 1 | 8,760 | N/A | ✅ | | **SAC** | 2 | 17,520 | 32,768 | ✅ | | **PPO** | 2 | 17,520 | 32,768 | ✅ | | **A2C** | 2 | 17,520 | 65,536 | ✅ | | **TOTAL** | 7 | **61,320** | Var. | ✅ | ### Duración Estimada
 
 - **GPU**: NVIDIA RTX 4060 (8.6 GB VRAM)
@@ -85,37 +81,23 @@ learning_rate: 0.0007
 
 ### Memoria Utilizada
 
+<!-- markdownlint-disable MD013 -->
 ```text
 SAC:   batch_size=32,768  → ~7.2 GB
 PPO:   batch_size=32,768  → ~6.8 GB
 A2C:   n_steps=65,536     → ~7.5 GB
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### Ventajas de la Configuración
 
 - ✅ **Paralización**: Cada agente usa GPU al máximo sin overflow
 - ✅ **Serie**: Un agente completa antes de que comience el siguiente
 - ✅ **Consistencia**: Pesos multi-objetivo iguales en todos
-- ✅ **Comparabilidad**: 2 episodios por agente para fair comparison
+- ✅ **Comparabilidad...
+```
 
----
-
-## ✅ Checklist de Verificación
-
-- ✅ **SAC configurado**: 2 episodios, batch_size=32,768
-- ✅ **PPO configurado**: 2 episodios, n_steps=32,768
-- ✅ **A2C configurado**: 2 episodios, n_steps=65,536
-- ✅ **Entrenamiento en serie**: Loop for en `run_oe3_simulate.py`
-- ✅ **GPU máximo**: Batch sizes optimizados para RTX 4060
-- ✅ **Datos reutilizados**: Dataset cacheado (no reconstruir)
-- ✅ **Baseline cacheado**: No recalcular uncontrolled
-- ✅ **Pesos multiobjetivo**: Rebalanceados para CO₂ focus
-
----
-
-## 📁 Archivos Verificados
-
-```text
+[Ver código completo en GitHub]text
 configs/default.yaml
 ├── oe3.evaluation.agents: [SAC, PPO, A2C]
 ├── oe3.evaluation.sac.episodes: 2 ✅
@@ -127,6 +109,7 @@ scripts/run_oe3_simulate.py
 ├── simulate(...) call ✅ (línea ~200)
 └── Serial execution ✅ (Secuencial, no paralelo)
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 

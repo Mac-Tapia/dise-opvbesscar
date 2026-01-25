@@ -6,6 +6,7 @@
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## Quick Reference: What To Do | # | Action | File | Commands | Risk | Est. Time | |---|--------|------|----------|------|-----------| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 |2|MERGE|`co2_emissions.py` → `co2_table.py`|Copy content, delete...|🟡 Low|5 min|
 |3|MOVE|`rewards_improved_v2.py`|Create `experimental/`, move file|🟢 None|3 min|
@@ -21,6 +22,7 @@
 
 **Before**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 src/iquitos_citylearn/oe3/
 ├── demanda_mall_kwh.py  ← TO DELETE (507 lines, completely orphaned)
@@ -28,20 +30,22 @@ src/iquitos_citylearn/oe3/
 ├── co2_table.py
 └── ...
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Action**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Verify it's truly unused
 grep -r "demanda_mall_kwh" . --include="*.py"  
 # Result: Should be empty (0 matches)
 
 # Delete
-git rm src/iquitos_citylearn/oe3/demanda_mall_kwh.py
+git rm src/iquitos_citylearn/oe3/demand...
+```
 
-# Commit
-git commit -m "Remove: Delete demanda_mall_kwh.py (100% orphaned legacy code)"
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **After**:
 
@@ -51,9 +55,11 @@ git commit -m "Remove: Delete demanda_mall_kwh.py (100% orphaned legacy code)"
 
 **Verification**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python -c "import iquitos_citylearn.oe3; print('✓ No import errors')"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -67,26 +73,15 @@ python -c "import iquitos_citylearn.oe3; print('✓ No import errors')"
 
 **Before**:
 
-```python
-# co2_table.py line 7
-from iquitos_citylearn.oe3.co2_emissions import (
-    EmissionsFactors,      # ❌ Never used
-    CityBaseline,          # ❌ Never used
-    ...
-)
+<!-- markdownlint-disable MD013 --...
+```
 
-# co2_emissions.py (358 lines of dataclasses)
-@dataclass(frozen=True)
-class EmissionFactors:
-    km_per_kwh: float
-    km_per_gallon: float
-    kgco2_per_gallon: float
-    grid_kgco2_per_kwh: float
-    project_life_years: int
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **After**:
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # co2_table.py - all classes defined here, single source of truth
 @dataclass(frozen=True)
@@ -102,14 +97,14 @@ class CityBaseline:
     transport_tpy: float
     electricity_tpy: float
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Actions**:
+...
+```
 
-1. **Copy content**: Read lines 1-100 from `co2_emissions.py`
-
-   ```bash
-   head -100 src/iquitos_citylearn/oe3/co2_emissions.py
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 2. **Add to co2_table.py**: Prepend dataclass definitions before existing
 imports
@@ -118,31 +113,34 @@ imports
 
 3. **Remove old import**: In `co2_table.py` line 7
 
+<!-- markdownlint-disable MD013 -->
    ```python
    # DELETE THIS LINE:
    from iquitos_citylearn.oe3.co2_emissions import (...)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 4. **Delete file**:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    git rm src/iquitos_citylearn/oe3/co2_emissions.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 5. **Commit**:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
-   git commit -m "Refactor: Consolidate co2_emissions.py into"
-       "co2_table.py; remove unused dataclass definitions"
-```bash
+   git commit -m "Refactor: Consolidate co2_emis...
+```
 
-**Verification**:
-
-```bash
+[Ver código completo en GitHub]bash
 # Test that co2_table script still works
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
 # Should complete successfully, generating COMPARACION_BASELINE_VS_RL.txt
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -153,61 +151,52 @@ reference only
 
 **Before**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 src/iquitos_citylearn/oe3/
 ├── rewards.py              ← ACTIVE v1
 ├── rewards_improved_v2.py  ← BACKUP v2 (only used by wrapper_v2)
-├── rewards_wrapper_v2.py   ← BACKUP v2 wrapper (unused)
-└── ...
-```bash
+├── rewards_wrapper_v2.py   ← BACKUP v...
+```
 
-**After**:
-
-```bash
+[Ver código completo en GitHub]bash
 src/iquitos_citylearn/oe3/
 ├── rewards.py              ← ACTIVE v1
 └── experimental/
     ├── rewards_improved_v2.py    ← ARCHIVED
     └── rewards_wrapper_v2.py     ← ARCHIVED
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Actions**:
 
 1. **Create experimental folder**:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    mkdir -p src/iquitos_citylearn/oe3/experimental
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 2. **Move files**:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    git mv src/iquitos_citylearn/oe3/rewards_improved_v2.py \
-           src/iquitos_citylearn/oe3/experimental/rewards_improved_v2.py
-```bash
+           src/iquitos_citylearn/oe3/experim...
+```
 
-3. **Add documentation header** to `rewards_improved_v2.py`:
-
-   ```python
-   """
-   ARCHIVED: v2 Iteration of Multi-Objective Reward System
-   
-   Status: Not in active pipeline (superseded by rewards.py v1)
-   Date Archived: 2026-01-25
-   
-   Kept as reference for ImprovedMultiObjectiveReward implementation
-   and ImprovedWeights class design from v2 iteration.
-   
-   See: rewards.py for active production implementation
-   """
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 4. **Commit**:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    git commit -m "Archive: Move rewards_improved_v2.py to"
        "experimental/ (v2 iteration reference)"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -219,53 +208,44 @@ src/iquitos_citylearn/oe3/
 
 1. **Move file**:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
-   git mv src/iquitos_citylearn/oe3/rewards_wrapper_v2.py \
-           src/iquitos_citylearn/oe3/experimental/rewards_wrapper_v2.py
-```bash
+   git mv src/iquitos_citylearn/oe3/rewards_wrapp...
+```
 
-2. **Add documentation header**:
-
-   ```python
-   """
-   ARCHIVED: Gymnasium Wrapper for Improved Multi-Objective Rewards
-   
-   Status: Experimental, not in active pipeline
-   Date Archived: 2026-01-25
-   
-   Kept as reference for ImprovedRewardWrapper Gymnasium wrapper
-   implementation. Main pipeline uses CityLearnMultiObjectiveWrapper
-   from rewards.py instead.
-   
-   See: rewards.py::CityLearnMultiObjectiveWrapper for active implementation
-   """
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 3. **Create **init**.py** in experimental folder:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    touch src/iquitos_citylearn/oe3/experimental/__init__.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 4. **Add content to **init**.py**:
 
+<!-- markdownlint-disable MD013 -->
    ```python
    """Experimental / Archived modules from OE3.
    
    These modules are kept for reference and historical tracking but are NOT
    used in the active training pipeline. Use at your own risk.
    
-   Archived modules:
-   - rewards_improved_v2: v2 iteration of multi-objective reward system
-   - rewards_wrapper_v2: Gymnasium wrapper for improved_v2 rewards
-   """
-```bash
+   Archived modu...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 5. **Commit**:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    git commit -m "Archive: Move rewards_wrapper_v2.py to experimental/"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -276,19 +256,13 @@ main pipeline
 
 **Before**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 src/iquitos_citylearn/oe3/
-├── rewards_dynamic.py       ← DEV ONLY (used only in scripts/train_ppo_dynamic.py)
-└── ...
+├── rewards_dynamic.py       ← DEV ONLY (used only in scripts/train...
+```
 
-scripts/
-├── train_ppo_dynamic.py     ← Imports rewards_dynamic
-└── ...
-```bash
-
-**After**:
-
-```bash
+[Ver código completo en GitHub]bash
 src/iquitos_citylearn/oe3/
 ├── rewards.py               ← ACTIVE
 └── experimental/
@@ -298,30 +272,32 @@ scripts/experimental/
 ├── train_ppo_dynamic.py     ← ARCHIVED
 └── ...
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Actions**:
 
 1. **Move rewards_dynamic.py**:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    git mv src/iquitos_citylearn/oe3/rewards_dynamic.py \
            src/iquitos_citylearn/oe3/experimental/rewards_dynamic.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 2. **Create scripts/experimental folder**:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
-   mkdir -p scripts/experimental
-```bash
+   mkdir ...
+```
 
-3. **Move train_ppo_dynamic.py**:
-
-   ```bash
-   git mv scripts/train_ppo_dynamic.py scripts/experimental/train_ppo_dynamic.py
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 4. **Update import in train_ppo_dynamic.py**:
 
+<!-- markdownlint-disable MD013 -->
    ```python
    # CHANGE FROM:
    from iquitos_citylearn.oe3.rewards_dynamic import DynamicReward
@@ -329,26 +305,28 @@ scripts/experimental/
    # TO:
    from iquitos_citylearn.oe3.experimental.rewards_dynamic import DynamicReward
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 5. **Add README to scripts/experimental**:
 
+<!-- markdownlint-disable MD013 -->
    ```markdown
    # Experimental Training Scripts
    
-   These scripts are development/experimental and NOT part of the main
-   training pipeline. Use `scripts/train_agents_serial.py` for production
-   training instead.
-   
-   ## Contents
-   - train_ppo_dynamic.py: PPO with dynamic hour-based reward gradients
-```bash
+   These scripts are development/experimenta...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 6. **Commit**:
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    git commit -m "Archive: Move rewards_dynamic.py and"
        "train_ppo_dynamic.py to experimental/"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -360,89 +338,13 @@ scripts/experimental/
 
 **Content**:
 
+<!-- markdownlint-disable MD013 -->
 ```markdown
-# OE3 Module Status (2026-01-25)
+# OE3 Modul...
+```
 
-## Active Production Modules ✅
-
-### Core Modules
-- **rewards.py** (529 lines)
-  - Multi-objective reward system (TIER 1 fixes applied)
-  - Used in all agent training
-  - Implements: MultiObjectiveWeights \
-      , IquitosContext, MultiObjectiveReward, CityLearnMultiObjectiveWrapper
-  
-- **co2_table.py** (469 lines, consolidated from co2_emissions.py)
-  - CO₂ evaluation and agent comparison
-  - Generates COMPARACION_BASELINE_VS_RL.txt
-  - Entry point: `scripts/run_oe3_co2_table.py`
-  
-- **dataset_builder.py** (863 lines)
-  - Constructs CityLearn v2 schema from OE2 artifacts
-  - Entry point: `scripts/run_oe3_build_dataset.py`
-  - Discovers 128 EV chargers, integrates solar and BESS
-  
-- **simulate.py** (935 lines)
-  - Main training orchestration
-  - Runs agents (SAC, PPO, A2C, Uncontrolled, RBC)
-  - Entry point: `scripts/run_oe3_simulate.py`
-
-### Agent Implementations
-- **agents/__init__.py**: Factory and exports
-- **agents/sac.py**: SAC off-policy RL (Stable-Baselines3)
-- **agents/ppo_sb3.py**: PPO on-policy RL (Stable-Baselines3)
-- **agents/a2c_sb3.py**: A2C on-policy RL (Stable-Baselines3)
-- **agents/rbc.py**: Rule-based control (baseline)
-- **agents/uncontrolled.py**: No control (baseline)
-- **agents/no_control.py**: Alternative no-control variant
-
-### Utilities
-- **progress.py**: Training progress tracking and plotting
-- **enriched_observables.py**: Observable wrapper (OperationalConstraints)
-- **dispatch_priorities.py**: BESS dispatch optimization
-- **tier2_v2_config.py**: Training configuration dataclass
-- **agent_utils.py**: GPU detection, environment validation, wrappers
-
----
-
-## Archived Modules (Reference Only) 🔶
-
-Located in `src/iquitos_citylearn/oe3/experimental/`
-
-### rewards_improved_v2.py
-- v2 iteration of multi-objective rewards
-- Superseded by rewards.py
-- Defines: ImprovedWeights, IquitosContextV2, ImprovedMultiObjectiveReward
-
-### rewards_wrapper_v2.py
-- Gymnasium wrapper for ImprovedMultiObjectiveReward
-- Experimental, not in main pipeline
-- Kept as reference only
-
-### rewards_dynamic.py
-- Hour-based dynamic reward with sinusoidal gradients
-- Development experimentation only
-- See: scripts/experimental/train_ppo_dynamic.py
-
----
-
-## Deleted Modules 🔴
-
-### demanda_mall_kwh.py (deleted 2026-01-25)
-- Legacy OE2 mall demand analysis
-- 100% orphaned (zero imports)
-- Reason: No longer needed; dataset builder uses CSV files directly
-
-### co2_emissions.py (consolidated 2026-01-25)
-- Original dataclass definitions merged into co2_table.py
-- Eliminated unused imports
-- Reason: Single source of truth in co2_table.py
-
----
-
-## Data Flow Summary
-
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 OE2 Artifacts
 ├── data/interim/oe2/solar/pv_generation_timeseries.csv
@@ -471,6 +373,7 @@ Final Outputs
 ├── COMPARACION_BASELINE_VS_RL.txt
 └── analyses/oe3/*.csv (breakdown, control comparison, etc.)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 
 ---
@@ -488,61 +391,35 @@ All active imports verified:
 
 ## How to Use This Repository
 
-### 1. Build Dataset (from OE2)
-```bash
-python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-```bash
+### 1. Build...
+```
+
+[Ver código completo en GitHub]bash
 
 ### 2. Train Agents
 
 ```bash
+<!-- markdownlint-enable MD013 -->
 python -m scripts.run_oe3_simulate --config configs/default.yaml
+<!-- markdownlint-disable MD013 -->
 ```bash
 
 ### 3. Generate CO₂ Comparison Table
 
 ```bash
+<!-- markdownlint-enable MD013 -->
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
+<!-- markdownlint-disable MD013 -->
 ```bash
 
 ### 4. Run Full Pipeline
 
 ```bash
-python scripts/run_full_pipeline_visible.py
-```bash
+<!-- markdownlint-enable MD01...
+```
 
----
-
-## Development Guidelines
-
-### When Adding New Rewards
-
-- Edit: `src/iquitos_citylearn/oe3/rewards.py`
-- Update: `MultiObjectiveWeights` dataclass
-- Test: `python -c "from iquitos_citylearn.oe3.agents import *; print('✓')"`
-
-### When Adding New Agents
-
-- Create: `src/iquitos_citylearn/oe3/agents/newagent.py`
-- Import: `agents/__init__.py`
-- Import in: `simulate.py`
-
-### When Experimenting with New Reward Functions
-
-- Use: `src/iquitos_citylearn/oe3/experimental/` for development
-- Document: Add clear "EXPERIMENTAL" header
-- Don't import into main pipeline
-
----
-
-## Last Updated
-
-- **Date**: 2026-01-25
-- **Changes**: Consolidated co2_emissions.py \
-    , archived v2 reward modules, deleted orphaned demanda_mall_kwh.py
-- **Author**: Code Cleanup Initiative
-
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **File path**: `src/iquitos_citylearn/oe3/MODULE_STATUS.md`
 
@@ -552,6 +429,7 @@ python scripts/run_full_pipeline_visible.py
 
 **Before running cleanup, run baseline tests**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Test 1: Verify imports work
 echo "Testing imports..."
@@ -564,24 +442,15 @@ from iquitos_citylearn.oe3.co2_table import compute_table
 print('✅ All imports successful')
 "
 
-# Test 2: Run dataset build
-echo "Testing dataset building..."
-python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-if [ $? -eq 0 ]; then echo "✅ Dataset built successfully"; fi
+# Test 2: Run dataset bu...
+```
 
-# Test 3: Test CO₂ table generation
-echo "Testing CO₂ table generation..."
-python -m scripts.run_oe3_co2_table --config configs/default.yaml
-if [ $? -eq 0 ]; then echo "✅ CO₂ table generated successfully"; fi
-
-# Test 4: Verify no orphaned imports remain
-echo "Checking for orphaned imports..."
-grep -r "demanda_mall" src/ scripts/ --include="*.py" 2>/dev/null
-if [ $? -ne 0 ]; then echo "✅ No references to deleted modules"; fi
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **After cleanup, run verification tests**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # All tests from above should still pass
 # Plus check for experimental imports:
@@ -593,6 +462,7 @@ except ImportError as e:
     print(f'❌ Error: {e}')
 "
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -600,24 +470,17 @@ except ImportError as e:
 
 ### Before Cleanup
 
-```bash
-src/iquitos_citylearn/oe3/
-├── rewards.py                   ✅ ACTIVE (529 lines)
-├── rewards_improved_v2.py       ⚠️ UNUSED v2 (410 lines)
-├── rewards_wrapper_v2.py        ⚠️ UNUSED wrapper (180 lines)
-├── rewards_dynamic.py           ⚠️ DEV-ONLY (80 lines)
-├── co2_emissions.py             ⚠️ UNUSED dataclasses (358 lines)
-├── co2_table.py                 ✅ ACTIVE (469 lines)
-├── dataset_builder.py           ✅ ACTIVE (863 lines)
-├── demanda_mall_kwh.py          ❌ ORPHANED (507 lines)
-├── simulate.py                  ✅ ACTIVE (935 lines)
-└── agents/                      ✅ ALL ACTIVE
-```bash
+<!-- markdownlint-...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 #### Total: 3,750+ lines of potentially unnecessary code
 
 ### After Cleanup
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 src/iquitos_citylearn/oe3/
 ├── rewards.py                   ✅ ACTIVE (529 lines)
@@ -627,11 +490,11 @@ src/iquitos_citylearn/oe3/
 ├── agents/                      ✅ ALL ACTIVE
 ├── experimental/
 │   ├── rewards_improved_v2.py   🔶 ARCHIVED (410 lines)
-│   ├── rewards_wrapper_v2.py    🔶 ARCHIVED (180 lines)
-│   └── rewards_dynamic.py       🔶 ARCHIVED (80 lines)
-├── MODULE_STATUS.md             📋 DOCUMENTATION
-└── __init__.py
-```bash
+│   ├── rewards_wrapper...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Total: ~3,100 lines of active code + 670 archived for reference**
 
@@ -646,6 +509,7 @@ src/iquitos_citylearn/oe3/
 
 ## Git Commands Summary (All Steps)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Step 1: Delete orphaned file
 git rm src/iquitos_citylearn/oe3/demanda_mall_kwh.py
@@ -657,46 +521,22 @@ git rm src/iquitos_citylearn/oe3/co2_emissions.py
 # Step 3: Archive improved_v2
 mkdir -p src/iquitos_citylearn/oe3/experimental
 git mv src/iquitos_citylearn/oe3/rewards_improved_v2.py \
-        src/iquitos_citylearn/oe3/experimental/rewards_improved_v2.py
+        src/iquitos_cit...
+```
 
-# Step 4: Archive wrapper_v2
-git mv src/iquitos_citylearn/oe3/rewards_wrapper_v2.py \
-        src/iquitos_citylearn/oe3/experimental/rewards_wrapper_v2.py
-
-# Step 5: Move dynamic
-mkdir -p scripts/experimental
-git mv src/iquitos_citylearn/oe3/rewards_dynamic.py \
-        src/iquitos_citylearn/oe3/experimental/rewards_dynamic.py
-git mv scripts/train_ppo_dynamic.py scripts/experimental/train_ppo_dynamic.py
-
-# Step 6: Add documentation
-touch src/iquitos_citylearn/oe3/MODULE_STATUS.md
-# [Edit with content from Step 6 above]
-touch src/iquitos_citylearn/oe3/experimental/__init__.py
-touch scripts/experimental/README.md
-
-# Final: Commit all changes
-git add -A
-git commit -m "Refactor: Clean up OE3 module structure
-
-- Delete demanda_mall_kwh.py (100% orphaned)
-- Consolidate co2_emissions.py into co2_table.py
-- Archive rewards_improved_v2.py, rewards_wrapper_v2.py to experimental/
-- Move rewards_dynamic.py and train_ppo_dynamic.py to experimental/
-- Add MODULE_STATUS.md for documentation
-
-Total: -650 lines of dead code, cleaner import chains
-"
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## Estimated Timeline | Step | Task | Time | Risk | |------|------|------|------| | 1 | Delete demanda_mall_kwh.py | 2 min | 🟢 | | 2 | Consolidate co2_emissions.py | 5 min | 🟡 | | 3-5 | Move archive folders | 10 min | 🟢 | | 6 | Create documentation | 5 min | 🟢 | | 7 | Run verification tests | 10 min | 🟡 | | **Total** | **All steps** | **~35 min** | **LOW** | ---
 
 ## Rollback Plan (If Issues Occur)
 
 If any tests fail after cleanup:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Undo all changes
 git reset --hard HEAD~1
@@ -706,6 +546,7 @@ git checkout HEAD -- src/iquitos_citylearn/oe3/demanda_mall_kwh.py
 git checkout HEAD -- src/iquitos_citylearn/oe3/co2_emissions.py
 # ... etc
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

@@ -6,6 +6,7 @@
 
 **Ubicación:** `data/interim/oe2/chargers/annual_datasets/`
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Playa_Motos/
   ├── 0/ (Baseline, factor 1.0)
@@ -19,58 +20,12 @@ Playa_Mototaxis/
 
 TOTAL: 101 × 128 chargers × 8760 horas/año = 113,385,600 datos
 ```text
+<!-- markdownlint-enable MD013 -->
 
-#### Características:
+#### Carac...
+```
 
-- Escenario 0: Baseline (factor 1.0, sin variación)
-- Escenarios 1-100: Monte Carlo con variabilidad realista
-- Variabilidad: factor de demanda 0.8x a 1.2x (±20%)
-- Ruido: Gaussiano ±10% para realismo en operación
-
-### 2. ✅ ARQUITECTURA 128 CHARGERS INTEGRADA
-
-#### Configuración:
-
-- 112 chargers Playa_Motos: 2 kW c/u → 224 kW pico
-- 16 chargers Playa_Mototaxis: 3 kW c/u → 48 kW pico
-- **Total sistema: 272 kW pico simultáneo**
-
-#### Especificaciones:
-
-- Estándar: Modo 3 IEC 61851
-- Sesiones: 30 minutos (multiplex model)
-- Demanda: 1030 veh/4h pico + 2200+ veh/13h operación
-
-#### Integración CityLearn:
-
-- Schema: `schema_with_128_chargers.json`
-- Observables: 131 EV (3 agregados + 128 individuales)
-- Control: Individual por charger
-
-### 3. ✅ CORRECCIONES MARKDOWN (40-50 ERRORES CORREGIDOS)
-
-#### Archivos Modificados:
-
-- ENTRENAMIENTO_LANZADO_2026_01_18.md (MD024, MD001 duplicados/increments)
-- TIER1_FIXES_SUMMARY.md (MD024 headings)
-- SAC_LEARNING_RATE_FIX_REPORT.md (MD040, MD060)
-- SAC_TIER2_OPTIMIZATION.md (MD040, MD060)
-- SAC_TIER2_RESUMEN_EJECUTIVO.md (MD040, MD060)
-- SAC_TIER2_INDICE.md (MD040, MD060, MD051)
-- SESSION_SUMMARY_20260118.md (MD040)
-- STATUS_DASHBOARD_TIER1.md (MD040)
-
-#### Tipos de Correcciones:
-
-- MD040: Agregado language tag a code blocks sin especificar
-- MD060: Normalizado spacing en separadores de tablas
-- MD024: Hecho heading content único (duplicados → contexto único)
-- MD051: Corregidos link fragments válidos
-- MD001: Corregidos heading level increments
-
-### 4. ✅ COMMIT Y PUSH COMPLETADO
-
-```bash
+[Ver código completo en GitHub]bash
 Commit: "Complete: 101 scenarios + Markdown fixes + 128 chargers system"
 Files changed: 11
 Insertions: 380 (+)
@@ -79,6 +34,7 @@ Deletions: 82 (-)
 Remote: https://github.com/Mac-Tapia/dise-opvbesscar.git
 Branch: main (16 commits pushed)
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -86,6 +42,7 @@ Branch: main (16 commits pushed)
 
 ### Ejecución del Entrenamiento
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Training v2 Fresh con 128 chargers + 101 scenarios
 python train_v2_fresh.py \
@@ -93,16 +50,17 @@ python train_v2_fresh.py \
   --episodes 5 \
   --max_episode_steps 8760
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### Validación de Datos
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-# Verificar que los 101 escenarios se carguen correctamente
-python validate_128_chargers.py
+# Verif...
+```
 
-# Estadísticas de demanda por escenario
-python -c "import pandas as pd; df = pd.read_csv('data/interim/oe2/chargers/annual_datasets/Playa_Motos/0/charger_1.csv'); print(df[['power_kw']].describe())"
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ### Experiments Sugeridos
 
@@ -138,6 +96,7 @@ python -c "import pandas as pd; df = pd.read_csv('data/interim/oe2/chargers/annu
 
 ## ✅ VERIFICACIÓN FINAL
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # Verificar que los archivos existen
 import os
@@ -151,16 +110,15 @@ taxis = list((base / 'Playa_Mototaxis').glob('*/'))
 
 print(f"✓ Playa_Motos: {len(motos)} escenarios")
 print(f"✓ Playa_Mototaxis: {len(taxis)} escenarios")
-print(f"✓ Total: {len(motos) + len(taxis)} escenarios")
+print(f"✓ Total: {len(motos) + len(taxis)} esc...
+```
 
-# Verificar estructura
-for scen in sorted(motos)[:3]:
-    chargers = list(scen.glob('charger_*.csv'))
-    print(f"  Escenario {scen.name}: {len(chargers)} chargers")
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 🎯 ESTADO ACTUAL | Componente | Status | Detalles | | --- | --- | --- | | 128 Chargers | ✅ Integrados | Schema con 131 observables | | 101 Escenarios | ✅ Generados | 113.3M datos, 2 playas | | Markdown | 🔄 Parcial | 99/418 corregidos, ~3... | | Git | ✅ Actualizado | 16 commits pusheados | | Entrenamiento | ⏳ Listo | training_v2_fresh.py configurado | ---
 
 ## 📝 NOTAS IMPORTANTES

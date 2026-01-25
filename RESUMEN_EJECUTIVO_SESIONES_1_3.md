@@ -10,26 +10,29 @@
 
 ### Sesión 1: BESS Dimensionado + Agentes TIER 2
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✅ BESS: 1,632 kWh / 593 kW (factor 1.20, DoD 80%)
 ✅ SAC, PPO, A2C con configs TIER 2
 ✅ 8 archivos de documentación
 ✅ Verificación automática: TODAS PASARON
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Sesión 2: Catalizacion MÁXIMA POTENCIA INDIVIDUAL
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✅ SAC: Off-policy (Buffer 1M, Batch 512, Tau 0.001)
-✅ PPO: On-policy (Batch 128, Clip 0.1, SDE enabled)
-✅ A2C: On-policy (N Steps 2048, GAE 0.95)
-✅ Todos con hidden 1024x1024 = 4M parámetros
-✅ Documentación COMPLETA (8 archivos)
-✅ Verificación: ✅ TODAS PASARON
-```bash
+✅ PPO: On-policy (Batch 128, Clip 0.1, SDE enable...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Sesión 3: PIPELINE DE ENTRENAMIENTO (ACTUAL)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✅ Dataset OE2: Verificado
 ✅ Dataset Construcción: Listo
@@ -40,73 +43,65 @@
    • PPO (5 ep): 291 kg CO₂ ← MEJOR INICIAL
 ✅ Repositorio Actualizado
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🏗️ Arquitectura Final
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-┌─────────────────────────────────────────────────┐
-│        SISTEMA DE CONTROL DE ENERGÍA IQUITOS   │
-├─────────────────────────────────────────────────┤
-│                                                   │
-│  📊 BESS Optimization (1,632 kWh / 593 kW)     │
-│      ↓                                           │
-│  🎮 3 Agentes RL (Máxima Potencia Individual)  │
-│      ├─ SAC (Off-Policy)                       │
-│      ├─ PPO (On-Policy)                        │
-│      └─ A2C (On-Policy)                        │
-│      ↓                                           │
-│  ⚡ GPU Training (RTX 4060 8GB)                │
-│      ├─ Training: 5+ episodios ✅             │
-│      ├─ Monitoring: Real-time                  │
-│      └─ Checkpoint: Automático                 │
-│      ↓                                           │
-│  🚀 Deployment Ready                           │
-│                                                   │
-└─────────────────────────────────────────────────┘
-```bash
+┌──────...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 📋 Configuraciones Finales Optimizadas
 
+<!-- markdownlint-disable MD013 -->
 ### SAC (Soft Actor-Critic) - Off-Policy Máxima Estabilidad | Parámetro | Valor | |-----------|-------| | Learning Rate | 1.5e-4 | | Replay Buffer | 1M transiciones | | Batch Size | 512 | | Tau (soft update) | 0.001 | | Network Hidden | 1024x1024 | | Gamma (discount) | 0.999 | | Entropy Coef | 0.01 (auto) | | **Convergencia** | 10-15 ep | ### PPO (Proximal Policy Optimization) - On-Policy Máxima Convergencia | Parámetro | Valor | |-----------|-------| | Learning Rate | 2.0e-4 | | Batch Size | 128 | | N Steps | 2048 | | N Epochs | 20 | | Clip Range | 0.1 | | Network Hidden | 1024x1024 | | SDE Exploration | ✅ Enabled | | **Convergencia** | 20-30 ep | ### A2C (Advantage Actor-Critic) - On-Policy Máxima Velocidad | Parámetro | Valor | |-----------|-------| | Learning Rate | 1.5e-4 | | N Steps | 2048 | | GAE Lambda | 0.95 | | VF Coef | 0.7 | | Network Hidden | 1024x1024 | | Entropy Coef | 0.01 | | **Convergencia** | 15-20 ep | ---
 
 ## 🚀 Scripts Operacionales
 
 ### Pipeline Completo (5 Episodios)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 & .venv/Scripts/python.exe scripts/run_training_pipeline.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Resultado**: ✅ 3.0 segundos | 3/3 agentes completados
 
 ### Entrenamiento Escalado (50+ Episodios)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 50
 ```bash
+<!-- markdownlint-enable MD013 -->
 
-**Resultado**: Pendiente (listo para ejecutar)
+**Resultado**: Pendie...
+```
 
-### Verificación de Configuraciones
-
-```bash
-& .venv/Scripts/python.exe scripts/verificar_configuraciones_maxima_potencia.py
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Resultado**: ✅ TODAS LAS VERIFICACIONES PASARON
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📊 Métricas Baseline (5 Episodios) | Métrica | A2C | SAC | PPO | |---------|-----|-----|-----| | **CO₂ (kg)** | 365 | 301 | **291** | | **Reward** | -947 | -973 | **-503** | | **Mejora vs Baseline** | 34% | 45% | **47%** | | **Status** | ✅ | ✅ | ✅ | **Baseline (sin control)**: 550 kg CO₂/episodio
 
 ---
 
 ## 🔧 Infraestructura
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 GPU:       NVIDIA GeForce RTX 4060 Laptop
 Memory:    8.6 GB VRAM
@@ -115,36 +110,22 @@ PyTorch:   2.5.1+cu121
 cuDNN:     90100
 Framework: Stable Baselines3 + Custom Wrappers
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 📁 Estructura de Archivos Clave
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 project_root/
 ├── src/iquitos_citylearn/
 │   ├── oe2/                    # Dataset OE2
-│   │   ├── solar_pvlib.py
-│   │   ├── chargers.py
-│   │   └── bess.py
-│   └── oe3/                    # Agentes y Entrenamiento
-│       ├── agents/
-│       │   ├── sac.py          ✅ Optimizado
-│       │   ├── ppo_sb3.py      ✅ Optimizado
-│       │   └── a2c_sb3.py      ✅ Optimizado
-│       ├── simulate.py         ✅ 935 líneas
-│       └── dataset_builder.py  ✅ 863 líneas
-│
-├── scripts/
-│   ├── run_training_pipeline.py        ✅ 5 episodios (demo)
-│   ├── train_agents_serial.py          ✅ 50+ episodios (prod)
-│   └── verificar_configuraciones_*     ✅ QA/Testing
-│
-└── docs/
-    ├── CONFIGURACIONES_INDIVIDUALES_MAXIMA_POTENCIA.md
-    ├── CONFIGURACIONES_OPTIMAS_FINALES.md
-    └── [8+ archivos de documentación]
-```bash
+│   │   ├── solar...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -186,9 +167,11 @@ project_root/
 
 1. **Escalar a 50 episodios por agente**
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    scripts/train_agents_serial.py --episodes 50
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 2. **Evaluar convergencia**
    - Gráficas de reward
@@ -204,14 +187,10 @@ project_root/
 
 1. **Entrenar ganador a 100+ episodios**
 2. **Evaluar en datos reales de Iquitos**
-3. **Implementar sistema de monitoreo**
-4. **Preparar para deployment**
+3. *...
+```
 
----
-
-## 📈 Proyección de Mejora
-
-```bash
+[Ver código completo en GitHub]bash
 Baseline (sin control):      550 kg CO₂
 ↓
 Agente RL (5 ep):           290 kg CO₂  (47% mejora)
@@ -220,6 +199,7 @@ Agente RL (50 ep):          ~250 kg CO₂ (55% mejora) [OBJETIVO]
 ↓
 Agente RL (100 ep):         ~200 kg CO₂ (64% mejora) [STRETCH]
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -234,29 +214,17 @@ Agente RL (100 ep):         ~200 kg CO₂ (64% mejora) [STRETCH]
 
 ---
 
-## 📞 Comandos Listos para Usar
+## 📞 Comandos L...
+```
 
-```bash
-# Ver estado actual
-cat TRAINING_SESSION_SUMMARY.json
-
-# Entrenar más episodios
-& .venv/Scripts/python.exe scripts/train_agents_serial.py --episodes 50
-
-# Verificar configuraciones
-& .venv/Scripts/python.exe scripts/verificar_configuraciones_maxima_potencia.py
-
-# Ver logs
-ls -la results/
-
-# Push a repositorio
-git add . && git commit -m "Training updates" && git push
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 📊 Status Actual
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ┌────────────────────────────────────────┐
 │  🟢 OPERACIONAL                        │
@@ -267,11 +235,11 @@ git add . && git commit -m "Training updates" && git push
 │  GPU:         ✅ RTX 4060 disponible  │
 │  Dataset:     ✅ OE2 integrado        │
 │  Pipeline:    ✅ Automatizado         │
-│  Docs:        ✅ Completas            │
-│                                        │
-│  LISTO PARA: Escalar a 50-100 ep     │
-└────────────────────────────────────────┘
-```bash
+│  Docs:        ✅ Completa...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

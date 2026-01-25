@@ -5,6 +5,7 @@
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📊 TABLA COMPARATIVA - HIPERPARÁMETROS INDIVIDUALES OPTIMIZADOS | Parámetro | **SAC** | **PPO** | **A2C** | Descripción | |-----------|---------|---------|---------|-------------|
 |**Learning Rate**|**2.5e-4**|**2.5e-4**|**2.5e-4**|↓ Convergencia suave y estable| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 |**Entropy Coef**|**0.02**|**0.02**|**0.02**|↑ 2x exploración vs TIER 1| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -15,6 +16,7 @@
 
 **Compartidos por SAC, PPO, A2C**:
 
+<!-- markdownlint-disable MD013 -->
 ```python
 weight_co2:                0.50   # PRIMARY: Minimizar CO₂ (matriz térmica)
 weight_solar:              0.20   # SECUNDARIO: Autoconsumo solar
@@ -22,18 +24,10 @@ weight_cost:               0.15   # Minimizar costo eléctrico
 weight_ev_satisfaction:    0.10   # Satisfacción carga EV
 weight_grid_stability:     0.05   # Estabilidad de red
 ──────────────────────────────────
-TOTAL:                     1.00   # ✅ Normalizado
-```bash
+TOTAL:                     1.00   # ✅ Normalizad...
+```
 
----
-
-## 🔍 DETALLES DE CONFIGURACIÓN POR AGENTE
-
-### **SAC (Soft Actor-Critic)** - TIER 2 OPTIMIZADO ✅
-
-**Mejor para**: Estabilidad, muestra excelente, complejidad de tareas
-
-```python
+[Ver código completo en GitHub]python
 @dataclass
 class SACConfig:
     # TIER 2 OPTIMIZED
@@ -69,6 +63,7 @@ class SACConfig:
     weight_ev_satisfaction: float = 0.10
     weight_grid_stability: float = 0.05
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Justificación TIER 2**:
 
@@ -79,11 +74,10 @@ class SACConfig:
 
 ---
 
-### **PPO (Proximal Policy Optimization)** - TIER 2 ✅
+### **PPO (Proximal Policy Optim...
+```
 
-**Mejor para**: Convergencia estable, buen balance exploración-explotación
-
-```python
+[Ver código completo en GitHub]python
 @dataclass
 class PPOConfig:
     # TIER 2 OPTIMIZED
@@ -124,6 +118,7 @@ class PPOConfig:
     weight_ev_satisfaction: float = 0.10
     weight_grid_stability: float = 0.05
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Justificación TIER 2**:
 
@@ -136,45 +131,11 @@ class PPOConfig:
 
 ### **A2C (Advantage Actor-Critic)** - TIER 2 ✅
 
-**Mejor para**: Velocidad, rendimiento en GPU, baseline simple
+**Mejor para**: Velocidad, re...
+```
 
-```python
-@dataclass
-class A2CConfig:
-    # TIER 2 OPTIMIZED
-    train_steps: int = 500000          # Mínimo para alta dimensionalidad
-    n_steps: int = 1024                # ↑ Más steps por update
-    learning_rate: float = 2.5e-4      # ↓ Convergencia suave
-    lr_schedule: str = "linear"        # ↑ Decay automático
-    gamma: float = 0.99
-    gae_lambda: float = 1.0            # Full return (no GAE blending)
-    ent_coef: float = 0.02             # ↑ 2x exploración
-    vf_coef: float = 0.5
-    max_grad_norm: float = 0.5
-    
-    # Red neuronal
-    hidden_sizes: tuple = (512, 512)   # ↑ Mayor capacidad
-    activation: str = "relu"
-    
-    # Normalización
-    normalize_observations: bool = True
-    normalize_rewards: bool = True
-    reward_scale: float = 0.01
-    clip_obs: float = 10.0
-    
-    # GPU
-    device: str = "auto"
-    
-    # Checkpoints
-    checkpoint_freq_steps: int = 1000
-    
-    # Multiobjetivo
-    weight_co2: float = 0.50
-    weight_solar: float = 0.20
-    weight_cost: float = 0.15
-    weight_ev_satisfaction: float = 0.10
-    weight_grid_stability: float = 0.05
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Justificación TIER 2**:
 
@@ -187,12 +148,14 @@ class A2CConfig:
 
 ## 📈 MEJORAS TIER 2 APLICADAS
 
+<!-- markdownlint-disable MD013 -->
 ### vs TIER 1 (Original) | Métrica | TIER 1 | TIER 2 | Mejora | |---------|--------|--------|--------| | **Learning Rate** | 3e-4 | 2.5e-4 | ↓ 17% más suave | | **Batch/N Steps** | 128-512 | 256-1024 | ↑ Balance estabilidad-velocidad | | **Hidden Layers** | 256x256 | 512x512 | ↑ 4x capacidad (1M → 4M params) | | **Entropy Coef** | 0.01 | 0.02 | ↑ 2x exploración | | **Activation** | tanh/ReLU | ReLU | ✅ Gradientes más limpios | | **LR Schedule** | constant | linear | ↓ Decay automático | | **Normalization** | Parcial | Completa | ✅ Obs+Rewards+Advantage | **Resultado esperado**: Convergencia 2-3x más rápida, desempeño 30-50% mejor
 
 ---
 
 ## ✅ VERIFICACIÓN ACTUAL
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 🔍 Verificando imports...
   ✅ Todos los imports exitosos
@@ -211,55 +174,11 @@ class A2CConfig:
 
   SAC:
     - Learning Rate:      2.50e-04 ✅ (TIER 2)
-    - Batch Size:         256 ✅ (TIER 2)
-    - N Steps:            1 ✅
-    - Hidden Sizes:       (512, 512) ✅ (TIER 2)
-    - Activation:         relu ✅
-    - Entropy Coef:       0.020 ✅ (TIER 2)
-    - Norm Observations:  ✅
-    - Norm Rewards:       ✅
-    - Checkpoint Freq:    1000 steps ✅
+    - Bat...
+```
 
-  PPO:
-    - Learning Rate:      2.50e-04 ✅ (TIER 2)
-    - Batch Size:         256 ✅ (TIER 2)
-    - N Steps:            1024 ✅ (TIER 2)
-    - Hidden Sizes:       (512, 512) ✅ (TIER 2)
-    - Activation:         relu ✅
-    - Entropy Coef:       0.020 ✅ (TIER 2)
-    - Norm Observations:  ✅
-    - Norm Rewards:       ✅
-    - Checkpoint Freq:    1000 steps ✅
-
-  A2C:
-    - Learning Rate:      2.50e-04 ✅ (TIER 2)
-    - N Steps:            1024 ✅ (TIER 2)
-    - Hidden Sizes:       (512, 512) ✅ (TIER 2)
-    - Activation:         relu ✅
-    - Entropy Coef:       0.020 ✅ (TIER 2)
-    - Norm Observations:  ✅
-    - Norm Rewards:       ✅
-    - Checkpoint Freq:    1000 steps ✅
-
-  ✅ Todas las configuraciones verificadas
-
-🎮 Verificando GPU/CUDA...
-  ✅ GPU disponible: NVIDIA GeForce RTX 4060 Laptop GPU
-  📊 Memoria total:    8.0 GB
-  📊 Memoria libre:    8.0 GB
-
-📁 Verificando datos de entrenamiento...
-  ✅ Cargadores: 112 motos + 16 mototaxis = 128 total
-  ✅ Dataset CityLearn: 5 schemas encontrados
-
-================================================================================
-  ✅ OK       Imports
-  ✅ OK       Configuraciones
-  ✅ OK       GPU/CUDA
-  ✅ OK       Datos
-
-✅ TODAS LAS VERIFICACIONES PASARON
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -267,26 +186,30 @@ class A2CConfig:
 
 ### 1. Verificar (Pre-requisito)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 .\verificar_agentes.ps1
 # Resultado esperado: ✅ TODAS LAS VERIFICACIONES PASARON
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 2. Entrenar Rápido (5 episodios)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # SAC (más rápido, 15-20 min)
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent SAC --episodes 5 --device cuda
 
 # PPO (estable, 20-25 min)
-& .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent PPO --episodes 5 --device cuda
+& .venv/Scripts/python.exe scripts/train...
+```
 
-# A2C (baseline, 10-15 min)
-& .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent A2C --episodes 5 --device cuda
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### 3. Entrenar Completo (50+ episodios)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # SAC: 50 episodios (2.5-3 horas)
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda
@@ -295,19 +218,19 @@ class A2CConfig:
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent PPO --episodes 57 --device cuda
 
 # A2C: 57 episodios / 500k steps (2-2.5 horas)
-& .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent A2C --episodes 57 --device cuda
-```bash
+& .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent A2C --episodes...
+```
 
-### 4. Entrenar Todos en Serie
-
-```bash
+[Ver código completo en GitHub]bash
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 50
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 📊 COMPARACIÓN RENDIMIENTO ESPERADO
 
+<!-- markdownlint-disable MD013 -->
 ### Después de 50 episodios | Métrica | **SAC** | **PPO** | **A2C** | |---------|---------|---------|---------| | **Reward Promedio** | -200 a 0 | -100 a +100 | -300 a -100 | | **CO₂ (kg/ep)** | 350-450 | 300-400 | 400-500 | | **SOC BESS (%)** | 35-75% | 30-70% | 40-80% | | **EV Satisfacción** | 85-95% | 80-90% | 75-85% | | **Autoconsumo Solar** | 65-75% | 60-70% | 55-65% | | **Tiempo Entrenamiento** | ~2.5h | ~4h | ~2h | | **Estabilidad** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | | **Exploración** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ---
 
 ## 📝 NOTAS IMPORTANTES

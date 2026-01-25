@@ -54,6 +54,7 @@ All core files are properly interconnected and actively used:
 
 ### ✅ YES - Complete Integration Verified
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 OE2 Solar Data (8,760 hourly values)
 └→ pv_generation_timeseries.csv
@@ -64,18 +65,11 @@ OE2 Solar Data (8,760 hourly values)
 
 OE2 Charger Data (128 sockets from 32 chargers)
 └→ individual_chargers.json + perfil_horario_carga.csv
-  └→ dataset_builder.py discovers 128 sockets, creates charger_simulation_*.csv
-    └→ CityLearnEnv exposes as observation (power, occupancy, SOC)
-      └→ agents control via 126-dim action space
-        └→ Multi-objective reward includes EV satisfaction (0.10 weight)
+  └→ dataset_b...
+```
 
-OE2 BESS Config (2 MWh / 1.2 MW)
-└→ bess_config.json
-  └→ dataset_builder.py loads config
-    └→ CityLearnEnv manages BESS state
-      └→ agents learn dispatch timing via CO₂ gradient
-        └→ Priority: discharge during EV peaks to avoid grid import
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Result**: ✅ Data flow is clean and complete. No issues.
 
@@ -85,6 +79,7 @@ OE2 BESS Config (2 MWh / 1.2 MW)
 
 ### ✅ YES - All imports verified valid
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 Main Entry Points:
 ├─ scripts/run_oe3_simulate.py
@@ -93,15 +88,11 @@ Main Entry Points:
 │        └→ from iquitos_citylearn.oe3.agents/__init__.py
 │           ├→ from .sac import SACAgent, SACConfig ✓
 │           ├→ from .ppo_sb3 import PPOAgent, PPOConfig ✓
-│           ├→ from .a2c_sb3 import A2CAgent, A2CConfig ✓
-│           ├→ from .uncontrolled import UncontrolledChargingAgent ✓
-│           ├→ from .rbc import BasicRBCAgent, RBCConfig ✓
-│           ├→ from .no_control import NoControlAgent ✓
-│           └→ from ..rewards import (MultiObjectiveReward, ...) ✓
+│           ├→ from .a2c_sb3 import A2CAgent, A2CCo...
+```
 
-└─ scripts/run_oe3_co2_table.py
-   └→ from iquitos_citylearn.oe3.co2_table import compute_table ✓
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Result**: ✅ Zero broken imports. All agents properly linked.
 
@@ -134,6 +125,7 @@ issues.
 
 ## Dead Code Analysis: How Much Dead Code Exists?
 
+<!-- markdownlint-disable MD013 -->
 ### Orphaned Files | File | Lines | Status | Impact | |------|-------|--------|--------| | demanda_mall_kwh.py | 507 | ❌ Orphaned (0 imports) | DELETE | | rewards_dynamic.py | 80 | ⚠️ Dev-only | ARCHIVE | | co2_emissions.py | 358 | ⚠️ Unused classes | CONSOLIDATE | | rewards_improved_v2.py | 410 | ⚠️ v2 iteration unused | ARCHIVE | | rewards_wrapper_v2.py | 180 | ⚠️ Wrapper unused | ARCHIVE | | **TOTAL** | **1,535 lines** | | | **Space Savings**: Removing these files saves ~1,500 lines of code (40% of
 module size)
 
@@ -141,12 +133,14 @@ module size)
 
 ## Duplicate Functionality: Is Code Repeated?
 
+<!-- markdownlint-disable MD013 -->
 ### Reward System Duplication | Aspect | v1 (Active) | v2 (Backup) | Conflict? | |--------|-----------|-----------|-----------|
 |Weights class|MultiObjectiveWeights|ImprovedWeights|⚠️ Yes, different fields| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 |Context class|IquitosContext|IquitosContextV2|⚠️ Yes, v2 has extra fields| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| **Risk**: If v2 accidentally imported without updating agents/**init**.py, it
 would break training.
 **Mitigation**: Archive v2 to experimental/ folder.
 
+<!-- markdownlint-disable MD013 -->
 ### CO₂ Calculation Duplication | Aspect | co2_emissions.py | co2_table.py | Duplication? | |--------|-----------------|-------------|-------------| | EmissionFactors | ✅ Defined | ❌ Not used | ⚠️ Yes, unused | | CO2EmissionBreakdown | ✅ Defined | ❌ Not used | ⚠️ Yes, unused | | compute_table() | ❌ No | ✅ Defined | ✓ Single source | **Issue**: co2_emissions.py defines classes that co2_table.py imports but
 doesn't use.
 **Solution**: Merge dataclass definitions into co2_table.py, delete
@@ -254,6 +248,7 @@ co2_emissions.py.
 
 After cleanup, verify:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # ✓ All imports work
 python -c "from iquitos_citylearn.oe3.agents import *; print('✅ Agents OK')"
@@ -263,18 +258,11 @@ python -c "from iquitos_citylearn.oe3.co2_table import *; print('✅ CO₂ table
 # ✓ Dataset building works
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml && echo "✅ Dataset OK"
 
-# ✓ Simulation works (skip dataset, skip uncontrolled)
-python -m scripts.run_oe3_simulate --config configs/default.yaml --skip-dataset --skip-uncontrolled && echo "✅ Simulation OK"
+# ✓ Simulation wor...
+```
 
-# ✓ CO₂ table generation works
-python -m scripts.run_oe3_co2_table --config configs/default.yaml && echo "✅ CO₂ table OK"
-
-# ✓ No dangling imports remain
-grep -r "demanda_mall" . --include="*.py" 2>/dev/null | wc -l  # Should return 0
-
-# ✓ Experimental modules accessible (if needed)
-python -c "from iquitos_citylearn.oe3.experimental.rewards_improved_v2 import *; print('✅ Experimental OK')"
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

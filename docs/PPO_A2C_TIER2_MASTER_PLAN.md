@@ -9,11 +9,13 @@ reentrenar
 
 ## 🎯 TIER 2 CHANGES FOR PPO & A2C
 
+<!-- markdownlint-disable MD013 -->
 ### Equivalentes SAC → PPO/A2C | SAC TIER 2 | PPO TIER 2 | A2C TIER 2 | | ----------- | ----------- | ----------- | | ent_coef: 0.01→0.02 | ent_coef: 0.01→0.02 | ent_coef: 0.01→0.02 | |learning_rate: 3e-4→2.5e-4|learning_rate: 3e-4→2.5e-4|learning_rate: 3e-4→2.5e-4| | batch_size: 512→256 | batch_size: 128→256 | n_steps: 512→1024 | |hidden: 256,256→512,512|hidden: 256,256→512,512|hidden: 256,256→512,512| | tau: 0.005→0.005 | clip_range: 0.2→0.2 | No equivalente | | | n_epochs: 10→15 (↑) | |
 | | lr_schedule: const→linear | lr_schedule: const→linear | ### ACTUALIZAR CONFIGS
 
 #### PPOConfig (`ppo_sb3.py`)
 
+<!-- markdownlint-disable MD013 -->
 ```python
 @dataclass
 class PPOConfig:
@@ -24,17 +26,15 @@ class PPOConfig:
     ent_coef: float = 0.02         # ↑ de 0.01 (más exploración)
     clip_range: float = 0.2        # mantener
     hidden_sizes: tuple = (512, 512)  # ↑ de (256, 256)
-    activation: str = "relu"       # cambiar de tanh → relu
-    lr_schedule: str = "linear"    # cambiar de constant → linear
+    activation: str = "relu"    ...
+```
 
-    # NEW: Normalización adaptativa
-    normalize_advantage: bool = True  # mantener
-    use_sde: bool = True           # NEW: Exploration via SDE
-    sde_sample_freq: int = -1      # Sample every step
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 #### A2CConfig (`a2c_sb3.py`)
 
+<!-- markdownlint-disable MD013 -->
 ```python
 @dataclass
 class A2CConfig:
@@ -46,11 +46,11 @@ class A2CConfig:
     activation: str = "relu"       # cambiar de tanh
     lr_schedule: str = "linear"    # cambiar de constant
 
-    # NEW: Normalización rewards
-    normalize_rewards: bool = True  # mantener
-    reward_scale: float = 0.01     # mantener
-    clip_obs: float = 10.0         # mantener
-```text
+    # NEW: Normalización ...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -118,6 +118,7 @@ lr_schedule
 
 ### FASE 1: CÓDIGO (1 hora)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 [ ] Actualizar PPOConfig (ppo_sb3.py)
 [ ] Actualizar A2CConfig (a2c_sb3.py)
@@ -125,21 +126,23 @@ lr_schedule
 [ ] Syntax check
 [ ] Commit: "PPO & A2C TIER 2: Updated configs"
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### FASE 2: DOCUMENTOS (2 horas)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 [ ] Regenerar: COMPARATIVA_AGENTES_FINAL.md
 [ ] Actualizar: ARQUITECTURA_UN_EDIFICIO_DOS_PLAYAS.md
-[ ] Actualizar: DOCKER_GUIDE.md
-[ ] Regenerar: EJECUTAR_ENTRENAMIENTO_GPU.txt
-[ ] Actualizar: CHECKPOINT_QUICK_REFERENCE.md
-[ ] Regenerar: COMIENZA_AQUI.md
-[ ] Commit: "Docs: Updated with PPO & A2C TIER 2"
-```text
+...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ### FASE 3: REENTRENAMIENTO (variable)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 [ ] A2C: 2 episodios
 [ ] PPO: 2 episodios
@@ -147,6 +150,7 @@ lr_schedule
 [ ] Monitor: GPU, reward, convergence
 [ ] Commit: "Training: 2-episode test run all agents TIER 2"
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 

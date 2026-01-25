@@ -56,31 +56,31 @@
 
 ## 🎯 Key Results
 
+<!-- markdownlint-disable MD013 -->
 ### Code Metrics | Metric | Before | After | Improvement | |--------|--------|-------|-------------| | Total OE3 Lines | 8,500 | 6,800 | -20% ✅ | | Dead Code | 1,302 | 0 | -100% ✅ | | Orphaned Files | 4 | 0 | -100% ✅ | | Errors | 193 → 113 | 44 non-blocking | -75% ✅ | | BESS Visibility | ❌ Invisible | ✅ Visible | CRITICAL FIX ✅ | | Import Failures | N/A | 0 | 100% Success ✅ | ### Files Deleted (Permanent)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 src/iquitos_citylearn/oe3/rewards_dynamic.py       (309 lines)  - 0 refs
 src/iquitos_citylearn/oe3/rewards_improved_v2.py   (306 lines)  - superseded
 src/iquitos_citylearn/oe3/rewards_wrapper_v2.py    (180 lines)  - depends on v2
 src/iquitos_citylearn/oe3/co2_emissions.py         (507 lines)  - 100% orphaned
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Files Archived (experimental/)
 
-```bash
-experimental/deprecated_v2_configs/
-  ├─ tier2_v2_config.py       (old v2 config)
-  ├─ demanda_mall_kwh.py      (unused helper)
-  └─ dispatch_priorities.py    (legacy config)
+<!-- markd...
+```
 
-experimental/legacy_scripts/
-  └─ train_ppo_dynamic.py     (deprecated, used rewards_dynamic)
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Data Connections Verified ✅
 
 #### OE2 → OE3 Pipeline (100% Working)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 data/interim/oe2/
 ├─ solar/pv_generation_timeseries.csv
@@ -92,15 +92,11 @@ data/interim/oe2/
 │  └─ 128 chargers × 1 socket = 128 controllable outlets
 │     → dataset_builder.py
 │     └─ Observables: obs[64:192] (charger demands, 128 dims)
-│        Status: ✅ Connected & Validated
-│
-└─ bess/bess_results.json
-   └─ 4.52 MWh / 2.71 MW capacity
-      → dataset_builder.py
-      └─ Observables: obs[192] (BESS SOC, normalized)
-         Status: ✅ Connected & Validated
-         CRITICAL FIX: Prescaling corrected (1.0, not 0.001)
-```bash
+│    ...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -117,42 +113,30 @@ During data connection audit, discovered BESS SOC was prescaled to 0.001:
 
 ### Root Cause
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # In agents/ppo_sb3.py:249, a2c_sb3.py:151, sac.py:493
 # BEFORE - Blanket prescaling for all observations:
 self._obs_prescale = np.ones(obs_dim) * 0.001
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Solution Applied
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # AFTER - Selective prescaling by observable type:
 self._obs_prescale = np.ones(obs_dim) * 0.001  # Default: power/energy dims
-if obs_dim > 10:
-    self._obs_prescale[-10:] = 1.0  # ✅ Last 10 dims (SOC): NO prescaling
-```bash
+if obs_d...
+```
 
-### Files Modified
-
-1. ✅ `src/iquitos_citylearn/oe3/agents/ppo_sb3.py` (line 249)
-2. ✅ `src/iquitos_citylearn/oe3/agents/a2c_sb3.py` (line 151)
-3. ✅ `src/iquitos_citylearn/oe3/agents/sac.py` (line 493)
-
-### Expected Impact
-
-- **15-25% improvement** in BESS utilization during training
-- **+10% additional CO₂ reduction** from better peak management
-- Faster agent convergence (clear signal for BESS control)
-- Better grid stability (BESS discharge strategy learned)
-
-### Verification
-
-```bash
+[Ver código completo en GitHub]bash
 # All agents now instantiate with correct prescaling:
 ✅ PPOAgent: BESS SOC visible
 ✅ A2CAgent: BESS SOC visible
 ✅ SACAgent: BESS SOC visible (heuristic-based last 10 dims)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -160,18 +144,20 @@ if obs_dim > 10:
 
 ### Solar PV (4,050 kWp, Kyocera KS20 + Eaton Xpert1670)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✅ File: data/interim/oe2/solar/pv_generation_timeseries.csv
   ├─ Format: CSV (12 columns: timestamp, GHI, DNI, DHI, temp, wind, DC/AC power, energy)
   ├─ Frequency: 15-minute intervals
-  ├─ Duration: 365 days (35,037 timesteps)
-  ├─ Max AC Power: 2,887 kW (within Eaton spec ≤ 4,050 kWp)
-  ├─ Source: PVGIS TMY + pvlib simulation
-  └─ Connection Status: ✅ Active in dataset_builder.py
-```bash
+  ├─ Duration: 365 days (35,037 timest...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Chargers (128 sockets, 272 kW)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✅ File: data/interim/oe2/chargers/individual_chargers.json
   ├─ Format: JSON array of 128 charger objects
@@ -182,13 +168,10 @@ if obs_dim > 10:
   │  ├─ 100 motos @ 2.0 kW = 200 kW
   │  └─ 0 mototaxis @ 3.0 kW = 0 kW
   │  └─ Total: 256 kW (or 272 kW if different configuration)
-  ├─ Source: MATLAB vehicle charging simulation
-  └─ Connection Status: ✅ Active in dataset_builder.py
-```bash
+  ├─ Source...
+```
 
-### BESS (4.52 MWh / 2.71 MW)
-
-```bash
+[Ver código completo en GitHub]bash
 ✅ File: data/interim/oe2/bess/bess_results.json
   ├─ Capacity: 4,520 kWh (4.52 MWh)
   ├─ Power: 2,712 kW (2.71 MW) - charge/discharge rate
@@ -199,6 +182,7 @@ if obs_dim > 10:
   ├─ Critical Fix: BESS SOC prescaling = 1.0 (visible to agents) ✅
   └─ Connection Status: ✅ Active in dataset_builder.py + agents (FIXED)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -213,68 +197,42 @@ if obs_dim > 10:
 - [x] Exception handlers specific & correct
 - [x] Code documented with clear comments
 
-### Data Integrity
+### Data Integ...
+```
 
-- [x] Solar PV data verified (35,037 timesteps)
-- [x] Charger profiles verified (128 sockets)
-- [x] BESS configuration verified (4.52 MWh)
-- [x] All OE2→OE3 connections tested
-- [x] Observation space correct (534 dims)
-- [x] Action space correct (126 dims)
-
-### Agent Status
-
-- [x] PPOAgent: Production ready + BESS fix ✅
-- [x] A2CAgent: Production ready + BESS fix ✅
-- [x] SACAgent: Functional + BESS fix ✅
-- [x] All agents can instantiate without errors
-- [x] Reward function active (multi-objective)
-- [x] Training loop verified (simulate.py)
-
-### Testing & Validation
-
-- [x] Import validation script created & passed
-- [x] Data connection validator created & passed
-- [x] OE2→OE3 pipeline verified end-to-end
-- [x] BESS SOC visibility confirmed
-- [x] Documentation complete & detailed
-- [x] Cleanup validated via git status
-
----
-
-## 🚀 Ready for Training
-
-### Commands (Copy-Paste Ready)
-
-#### Build dataset from OE2
-
-```bash
+[Ver código completo en GitHub]bash
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Run baseline (uncontrolled) for comparison
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python -m scripts.run_uncontrolled_baseline --config configs/default.yaml
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Test with 1 episode (GPU) - ~15 minutes
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python scripts/train_quick.py --device cuda --episodes 1
-```bash
+```bas...
+```
 
-#### Full training (50 episodes, GPU) - ~2-3 hours
-
-```bash
+[Ver código completo en GitHub]bash
 python scripts/train_agents_serial.py --device cuda --episodes 50
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Compare baseline vs RL results
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Expected Performance
 
@@ -282,16 +240,10 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 
 **After Fix**: ~26-29% CO₂ reduction + enhanced BESS utilization
 
-- SAC (off-policy): 26% reduction (sample-efficient)
-- PPO (on-policy): 29% reduction (stable, convergent)
-- A2C (on-policy): 24% reduction (simple baseline)
-- **BESS improvement**: +15-25% utilization (from prescaling fix)
+- SAC...
+```
 
----
-
-## 📁 File Structure (Post-Cleanup)
-
-```bash
+[Ver código completo en GitHub]bash
 src/iquitos_citylearn/oe3/                (7 active core modules)
 ├─ __init__.py                            (exports all agents)
 ├─ agent_utils.py                         (helpers, 189 lines) ✅
@@ -323,19 +275,18 @@ experimental/                             (Archived legacy code)
 └─ legacy_scripts/
    └─ train_ppo_dynamic.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📚 Documentation Generated | Document | Purpose | Status | |----------|---------|--------|
 |[AUDITORIA_OE3_LIMPIEZA_FINAL.md][url1]|Detailed cleanup plan & analysis|✅ Complete|
 |[OE3_CLEANUP_VALIDATION_FINAL.md][url2]|Full validation report...|✅ Complete|
-|[CLEANUP_QUICK_REFERENCE.txt](CLEANUP_QUICK_REFERENCE.txt)|One-page summary...|✅ Complete|
-|[validate_oe2_oe3_connections.py][url3]|Automated data validation script|✅ Executable|
-|[.github/copilot-instructions.md][url4]|Comprehensive Copilot instructions|✅ Complete| ---
+|[CLEANUP_QUICK_REFERENCE.txt](CLEANUP_QUICK_REFERENCE.txt)|One-p...
+```
 
-## 🔄 Git Changes Summary
-
-```bash
+[Ver código completo en GitHub]bash
 DELETED (4 files, 1,302 lines):
   - src/iquitos_citylearn/oe3/rewards_dynamic.py
   - src/iquitos_citylearn/oe3/rewards_improved_v2.py
@@ -360,6 +311,7 @@ NEW (5 files):
   - validate_oe2_oe3_connections.py
   - .github/copilot-instructions.md
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -367,21 +319,21 @@ NEW (5 files):
 
 1. **Commit cleanup changes**
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    git commit -m "chore: cleanup OE3 orphaned files and validate OE2 connections"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 2. **Build CityLearn dataset**
 
+<!-- markdownlint-disable MD013 -->
    ```bash
-   python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-```bash
+   python -m scripts.run_oe3_build_dataset --c...
+```
 
-3. **Quick test (1 episode)**
-
-   ```bash
-   python scripts/train_quick.py --device cuda --episodes 1
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 4. **Monitor BESS learning**
    - Watch for BESS SOC changes in first 5 episodes
@@ -390,12 +342,15 @@ NEW (5 files):
 
 5. **Full training**
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    python scripts/train_agents_serial.py --device cuda --episodes 50
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📊 Success Criteria (Post-Training) | Metric | Baseline | Target | Status | |--------|----------|--------|--------| | CO₂ Reduction (SAC) | 0% | 26% | TBD | | CO₂ Reduction (PPO) | 0% | 29% | TBD | | CO₂ Reduction (A2C) | 0% | 24% | TBD | | BESS Utilization | ~40% | 55-65% | TBD | | Solar Self-Consumption | ~40% | 60-70% | TBD | | Grid Peak Reduction | 0% | 20-30% | TBD | | Agent Convergence | N/A | Episode 30-40 | TBD | ---
 
 ## 🏁 Conclusion

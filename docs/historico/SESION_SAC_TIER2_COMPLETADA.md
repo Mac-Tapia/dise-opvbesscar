@@ -116,6 +116,7 @@ con LR corregido.
 
 **Qué cambiar**:
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ent_coef:            0.01 → 0.02          (↑ exploración)
 target_entropy:      -50 → -40            (menos restrictivo)
@@ -124,12 +125,11 @@ critic_lr:           NEW → 2.5e-4         (LR crítico)
 actor_lr:            NEW → 2.5e-4         (LR actor)
 alpha_lr:            NEW → 1e-4           (LR entropía)
 batch_size:          512 → 256            (menos ruido)
-buffer_size:         100k → 150k          (más diversidad)
-hidden_sizes:        (256,256) → (512,512) (capacidad ↑)
-use_dropout:         NEW → True           (regularización)
-dropout_rate:        NEW → 0.1            (10% dropout)
-update_per_timestep: NEW → 2              (entrenamiento x2)
-```text
+buff...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 **Líneas de código**: ~50 líneas (SACConfig dataclass)
 
@@ -153,12 +153,14 @@ update_per_timestep: NEW → 2              (entrenamiento x2)
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📊 RESULTADOS ESPERADOS | Métrica | Antes (Baseline) | Después (TIER 2) | Mejora | | --------- | ------------------ | ------------------ | -------- | | **Importación Pico (kWh/h)** | 280-300 | <250 | -12% | | **Importación Off-Peak** | 120-140 | <130 | -8% | | **SOC Pre-Pico (16-17h)** | 0.45-0.55 | >0.65 | +20% | | **SOC Pico (18-21h)** | 0.20-0.30 | >0.35 | +15% | | **Reward Convergencia (episodios)** | 30-40 | 15-20 | 2x ↑ | | **CO₂ Anual (kg)** | ~1.8e6 | <1.7e6 | -5% | | **Varianza Reward** | Alto | Bajo | -40% | | **Fairness (motos/mototaxis)** | 1.2-1.5 | <1.1 | Mejor coordinación | ---
 
 ## 🚀 TIMELINE DE EJECUCIÓN
 
 ### Fase 1: CÓDIGO (2-3 horas)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 [ ] Leer documentación (RESUMEN + OPTIMIZATION)      [30 min]
 [ ] Implementar Cambio 1: rewards.py                 [45 min]
@@ -167,24 +169,22 @@ update_per_timestep: NEW → 2              (entrenamiento x2)
 [ ] Syntax test + unit test                          [30 min]
 [ ] Commit & push                                    [15 min]
 ```text
+<!-- markdownlint-en...
+```
 
-### Fase 2: ENTRENAMIENTO (24 horas en GPU)
-
-```text
-[ ] Cargar checkpoint SAC actual                     [5 min]
-[ ] Ejecutar: python -m src.train_sac_cuda --episodes=50
-[ ] Monitorear cada 5-10 episodios                   [toda la fase]
-[ ] Guardar checkpoint final                         [5 min]
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ### Fase 3: ANÁLISIS (2 horas)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 [ ] Generar convergence plots                        [30 min]
 [ ] Comparar vs A2C/PPO baseline                     [30 min]
 [ ] Calcular mejoras en CO₂, SOC, fairness          [30 min]
 [ ] Reportar resultados + plan TIER 3               [30 min]
 ```text
+<!-- markdownlint-enable MD013 -->
 
 **Total**: ~30 horas (incluyendo 24h de GPU)
 
@@ -192,27 +192,11 @@ update_per_timestep: NEW → 2              (entrenamiento x2)
 
 ## ✅ CHECKLIST ANTES DE EMPEZAR
 
-```text
-VERIFICACIÓN PREVIA:
-[ ] SAC ya fue relanzado (LR 3e-4, ent 0.01)
-[ ] Tienes acceso a GPU (CUDA)
-[ ] Git sin cambios pendientes
-[ ] Checkpoint SAC guardado
-[ ] ~30GB disco disponible
-[ ] 24+ horas GPU disponible
+<!-- markdownlint-disable ...
+```
 
-DESPUÉS DE LEER DOCUMENTOS:
-[ ] Entiendes por qué 3 cambios
-[ ] Sabes cómo implementar Cambio 1
-[ ] Sabes cómo implementar Cambio 2
-[ ] Sabes cómo verificar Cambio 3
-
-DESPUÉS DE IMPLEMENTAR:
-[ ] No hay errores sintaxis
-[ ] Observables shape = (915,)
-[ ] Reward en [-1, 1]
-[ ] Sin NaN/Inf en gradientes
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -249,12 +233,14 @@ DESPUÉS DE IMPLEMENTAR:
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📞 TROUBLESHOOTING RÁPIDO | Problema | Solución | | ---------- | ---------- | | No entiendo cambios | → Lee OPTIMIZATION.md parte "POR QUÉ" | | Error Python sintaxis | → Copia-pega código STEP_BY_STEP.md | | Reward diverge | → Bajar `ent_coef` a 0.01 o LR a 2e-4 | | Importación sigue alta | → Bajar baseline pico de 250 a 220 | | SOC se drena | → Aumentar bonus BESS de 0.3 a 0.5 | | Convergencia lenta | → Aumentar update_per_timestep a 3 | | Quiero revertir | → `git checkout HEAD -- src/...` | ---
 
 ## 🔄 ROLLBACK INSTRUCCIONES
 
 Si algo falla durante implementación:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Revertir cambios específicos
 git checkout HEAD -- src/iquitos_citylearn/oe3/rewards.py
@@ -266,6 +252,7 @@ git revert --no-edit HEAD~1
 # Si ya committeaste pero no pushes
 git reset --soft HEAD~1
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -273,23 +260,10 @@ git reset --soft HEAD~1
 
 ### Indicadores TIER 2 Success
 
-- ✅ Importación pico <250 kWh/h (vs 280-300)
-- ✅ SOC pre-pico >0.65 (vs 0.45-0.55)
-- ✅ Reward converge en 15-20 episodios (vs 30-40)
-- ✅ CO₂ anual <1.7e6 kg (vs ~1.8e6)
-- ✅ Fairness ratio <1.1 (coordinación inter-playas)
+- ✅ Importación pico <250 k...
+```
 
-### Si NO cumple
-
-→ Ver debugging guide en OPTIMIZATION.md
-→ Ajustar hiperparams según tabla
-→ Re-entrenar
-
----
-
-## 📚 ESTRUCTURA DOCUMENTOS (CÓMO USARLOS)
-
-```text
+[Ver código completo en GitHub]text
 1️⃣ QUICK_START.md        ← Empieza aquí (5 min)
    ├─ Para: Alguien sin tiempo
    └─ Contiene: 3 cambios + checklist
@@ -314,6 +288,7 @@ git reset --soft HEAD~1
    ├─ Para: Verificar qué se hizo
    └─ Contiene: Todo lo creado + checklist
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -321,22 +296,18 @@ git reset --soft HEAD~1
 
 Todos los documentos están en GitHub:
 
+<!-- markdownlint-disable MD013 -->
 ```text
 d:\diseñopvbesscar\
 ├── SAC_TIER2_QUICK_START.md                    ✅ PUSHED
 ├── SAC_TIER2_RESUMEN_EJECUTIVO.md              ✅ PUSHED
 ├── SAC_TIER2_OPTIMIZATION.md                   ✅ PUSHED
 ├── SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md    ✅ PUSHED
-├── SAC_TIER2_INDICE.md                         ✅ PUSHED
-└── STATUS_DASHBOARD_TIER1.md                   ✅ (YA EXISTÍA)
+├── ...
+```
 
-Commits:
-- Add STATUS_DASHBOARD_TIER1
-- Add SAC TIER 2 OPTIMIZATION
-- Add SAC_TIER2_RESUMEN_EJECUTIVO
-- Add SAC_TIER2_INDICE
-- Add SAC_TIER2_QUICK_START
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 

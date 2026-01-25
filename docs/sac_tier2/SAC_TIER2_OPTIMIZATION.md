@@ -32,6 +32,7 @@ ajustarse
 
 **Cambio**: Implementar running statistics y normalización por percentiles
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # En src/iquitos_citylearn/oe3/rewards.py: MultiObjectiveReward.__init__
 
@@ -44,13 +45,11 @@ class MultiObjectiveReward:
             "r_co2": [],
             "r_cost": [],
             "r_solar": [],
-            "r_ev": [],
-            "r_grid": [],
-        }
-        self._history_size = 500  # Rolling window
-        self._adapt_rewards = adapt_rewards
-        self._reward_percentiles = {k: (0.0, 1.0) for k in self._component_history}
-```text
+            "r_ev": [...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 **Lógica**:
 
@@ -64,6 +63,7 @@ class MultiObjectiveReward:
 
 **Cambio**: Ajustar baselines según hora y estado
 
+<!-- markdownlint-disable MD013 -->
 ```python
 def compute(self, grid_import_kwh, grid_export_kwh, solar_generation_kwh,
             ev_charging_kwh, ev_soc_avg, bess_soc, hour, ev_demand_kwh=0.0):
@@ -74,58 +74,11 @@ def compute(self, grid_import_kwh, grid_export_kwh, solar_generation_kwh,
     # ========== CO₂ RECOMPENSA (50% del peso) ==========
     co2_kg = grid_import_kwh * self.context.co2_factor_kg_per_kwh
 
-    # BASELINES DINÁMICAS (no fijas)
-    co2_baseline_offpeak = 130.0  # kWh/hora típico off-peak
-    co2_baseline_peak = 250.0     # kWh/hora target con BESS en pico
+    # BASELINES DINÁMICAS (no fijas)...
+```
 
-    if is_peak:
-        # Penalidad EXPONENCIAL en pico (no lineal)
-        # Si importas 250 → r_co2 = 1 - 2*(250/250) = -1
-        # Si importas 100 → r_co2 = 1 - 2*(100/250) = 0.2
-        # Si importas 50  → r_co2 = 1 - 2*(50/250) = 0.6
-        r_co2_raw = 1.0 - 2.0 * min(1.0, grid_import_kwh / co2_baseline_peak)
-
-        # BONUS si battería contribuyó a bajar importación
-        bess_contribution = max(0, bess_soc - 0.40)  # SOC > 40% en pico
-        r_co2 = r_co2_raw + 0.3 * bess_contribution  # Bonus +0.3 si SOC bien
-    else:
-        r_co2_raw = 1.0 - 1.0 * min(1.0, grid_import_kwh / co2_baseline_offpeak)
-        r_co2 = r_co2_raw  # Sin bonus off-peak
-
-    r_co2 = np.clip(r_co2, -1.0, 1.0)
-    components["r_co2"] = r_co2
-    components["co2_kg"] = co2_kg
-
-    # ========== ESTABILIDAD GRID (10% → aumentar a 15%) ==========
-    demand_ratio = grid_import_kwh / self.context.peak_demand_limit_kw
-
-    if is_peak:
-        # Penalidad MUY fuerte en pico si superas 200 kW
-        if demand_ratio > 1.0:
-            r_grid = -1.0  # Violación severa
-        else:
-            r_grid = 1.0 - 3.0 * demand_ratio  # Gradientes más fuertes
-    else:
-        r_grid = 1.0 - 1.5 * min(1.0, demand_ratio)
-
-    r_grid = np.clip(r_grid, -1.0, 1.0)
-    components["r_grid"] = r_grid
-
-    # ... resto de componentes igual ...
-
-    # RECOMPENSA TOTAL - TIER 2: Pesos rebalanceados
-    reward = (
-        0.50 * r_co2 +      # PRIMARY: minimizar CO₂
-        0.15 * r_grid +     # SECUNDARIO: estabilidad (+5%)
-        0.20 * r_solar +    # Autoconsumo
-        0.10 * r_ev +       # Satisfacción EV
-        0.05 * r_cost       # Costo mínimo
-    )
-
-    reward = np.clip(reward, -1.0, 1.0)
-    components["reward_total"] = reward
-    return reward, components
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 **Cambios clave**:
 
@@ -143,21 +96,18 @@ def compute(self, grid_import_kwh, grid_export_kwh, solar_generation_kwh,
 
 **Observables a añadir** (ya existen, solo asegurar inclusión):
 
+<!-- markdownlint-disable MD013 -->
 ```python
 enriched_state = {
     "is_peak_hour": 1 if hour in [18,19,20,21] else 0,           # Flag pico
     "hour_of_day": float(hour),                                    # Hora [0-23]
     "bess_soc_current": bess_soc,                                  # SOC [0-1]
     "bess_soc_target": soc_target_dinamico,                       # SOC objetivo dinámico
-    "bess_soc_reserve_deficit": max(0, soc_target - bess_soc),   # Déficit reserva
-    "pv_power_available_kw": pv_power,                            # FV disponible
-    "pv_power_ratio": pv_power / (ev_power + 0.1),              # Cobertura FV
-    "grid_import_kw": grid_import,                                # Importación actual
-    "ev_power_motos_kw": power_motos,                            # Motos [kW]
-    "ev_power_mototaxis_kw": power_mototaxis,                    # Mototaxis [kW]
-    "ev_power_fairness_ratio": max_power / min_power,            # Equilibrio playas
-}
-```text
+    "bess_soc_reserve_deficit": max(0, soc_target - be...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 **Dimensión**:
 
@@ -180,10 +130,12 @@ enriched_state = {
 
 **Cambio Propuesto**:
 
+<!-- markdownlint-disable MD013 -->
 ```python
 ent_coef: float = 0.02        # Aumentar de 0.01 (más exploración inicial)
 target_entropy: float = -40.0  # Reducir penalidad (de -50.0)
 ```text
+<!-- markdownlint-enable MD013 -->
 
 **Justificación**:
 
@@ -191,17 +143,11 @@ target_entropy: float = -40.0  # Reducir penalidad (de -50.0)
 - `target_entropy=-40.0` → Red puede ser más determinística (mejor control)
 - Rango exploración sigue siendo restringido (vs -126.0)
 
-#### D.2 Learning Rates
+#### D...
+```
 
-**Cambio Propuesto**:
-
-```python
-# En SACConfig dataclass:
-learning_rate: float = 2.5e-4  # Bajar de 3e-4 (más estable)
-critic_lr: float = 2.5e-4      # Critic LR
-actor_lr: float = 2.5e-4       # Actor LR
-alpha_lr: float = 1e-4         # LR para alpha (entropía)
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 **Justificación**:
 
@@ -213,11 +159,13 @@ alpha_lr: float = 1e-4         # LR para alpha (entropía)
 
 **Cambio Propuesto**:
 
+<!-- markdownlint-disable MD013 -->
 ```python
 batch_size: int = 256           # Bajar de 512 (menos ruido)
 buffer_size: int = 150000       # Aumentar de 100k (más diversidad)
 update_per_timestep: int = 2    # 2 updates por step (vs 1)
 ```text
+<!-- markdownlint-enable MD013 -->
 
 **Justificación**:
 
@@ -225,16 +173,11 @@ update_per_timestep: int = 2    # 2 updates por step (vs 1)
 - Buffer mayor → experiencia más diversa
 - 2 updates → crítico entrenado más frecuentemente
 
-#### D.4 Red Neuronal
+#### D.4 Red...
+```
 
-**Cambio Propuesto**:
-
-```python
-hidden_sizes: tuple = (512, 512)  # Aumentar de (256, 256)
-hidden_activation: str = "relu"   # Mantener
-use_dropout: bool = True          # NUEVO: regularización
-dropout_rate: float = 0.1         # 10% regularización
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 **Justificación**:
 
@@ -286,6 +229,7 @@ dropout_rate: float = 0.1         # 10% regularización
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📊 MÉTRICAS ÉXITO TIER 2 | Métrica | Baseline | Target TIER 2 | Cómo Medir | | --- | ---------- | --- | ----------- | | **Importación Pico (kWh/hora)** | 280-300 | <250 | Promedio horas 18-21 | | **Importación Off-Peak (kWh/hora)** | 120-140 | <130 | Promedio horas 0-8 | | **SOC Pre-Pico (16-17h)** | 0.45-0.55 | >0.65 | Promedio horas 16-17 | | **SOC Pico (18-21h)** | 0.20-0.30 | >0.35 | Promedio horas 18-21 | | **CO₂ Total Año (kg)** | ~1.8e6 | <1.7e6 | Integración anual | |**Reward Convergencia**|Lento (~ep 30)|Rápido (~ep 15)|Episode smoothed| | **Fairness (motos/mototaxis)** | 1.2-1.5 | <1.1 | Ratio máx/mín | ---
 
 ## 🔍 DEBUGGING ESPERADO
@@ -314,6 +258,7 @@ dropout_rate: float = 0.1         # 10% regularización
 
 ## 📝 CHECKLIST EJECUCIÓN
 
+<!-- markdownlint-disable MD013 -->
 ```text
 FASE 1: CÓDIGO
 ---
@@ -324,32 +269,11 @@ FASE 1: CÓDIGO
 [ ] Editar sac.py - SACConfig actualizado
 [ ] Editar sac.py - incluir observables enriquecidos
 [ ] Compilar/Linter check
-[ ] Commit: "SAC TIER 2: Normalización adaptativa + observables enriquecidos"
+[ ] Commit: "SAC TIER 2: Normalización adaptativa + observables...
+```
 
-FASE 2: VALIDACIÓN
----
-[ ] Test reshape observation: esperado (915,)
-[ ] Test reward output: rango [-1, 1]
-[ ] Test step(): sin NaN/Inf
-[ ] Cargar checkpoint SAC existente
-[ ] 1 episodio forward pass
-[ ] Verificar gradientes (no exploding/vanishing)
-
-FASE 3: ENTRENAMIENTO
----
-[ ] Ejecutar: python -m src.train_sac_cuda --episodes=50
-[ ] Monitorear GPU: nvidia-smi
-[ ] Graficar progreso cada 2 episodios
-[ ] Checkpoint cada episodio
-
-FASE 4: ANÁLISIS
----
-[ ] Generar dashboard de convergencia
-[ ] Comparar vs A2C baseline
-[ ] Reportar mejoras
-[ ] Identificar próximos fixes (TIER 3)
-
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 

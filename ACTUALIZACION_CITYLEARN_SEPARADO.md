@@ -26,13 +26,16 @@
 
 ### FASE 1: PYTHON 3.11.9 ✅ (Obligatorio primero)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Instalar Python 3.11.9 (exactamente esa versión)
 python --version  # → Python 3.11.9
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### FASE 2: DEPENDENCIAS PHASE 7 ✅ (Sin CityLearn)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Crear y activar .venv
 python -m venv .venv
@@ -41,33 +44,22 @@ python -m venv .venv
 # Instalar SOLO dependencias Phase 7
 pip install -r requirements-phase7.txt
 ```bash
+<!-- markdownl...
+```
 
-#### Incluye:
-
-- numpy, pandas, PyYAML
-- gymnasium, stable-baselines3
-- torch, matplotlib, jupyterlab
-- pvlib, tabulate
-
-#### NO incluye:
-
-- ❌ citylearn (FASE 3)
-
----
-
-### FASE 3: VALIDACIÓN PHASE 7 ✅ (Antes de CityLearn)
-
-```bash
+[Ver código completo en GitHub]bash
 # Validar que Phase 7 funciona sin CityLearn
 python phase7_validation_complete.py
 
 # Esperado: TODOS los tests pasan ✅
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ### FASE 4: CITYLEARN PHASE 8 ✅ (SOLO después Phase 7)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # SOLO DESPUÉS de validar Phase 7
 pip install -r requirements-phase8.txt
@@ -75,6 +67,7 @@ pip install -r requirements-phase8.txt
 # Verificar instalación
 python -c "import citylearn; print('✅ CityLearn ready')"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Incluye: (2)
 
@@ -82,88 +75,75 @@ python -c "import citylearn; print('✅ CityLearn ready')"
 
 ---
 
-### FASE 5: DATASET BUILDER ✅
+### FASE 5: DA...
+```
 
-```bash
-python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ### FASE 6: AGENT TRAINING ✅
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python scripts/train_agents_serial.py --device cuda --episodes 50
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
-## 📁 ARCHIVOS ACTUALIZADOS | Archivo | Cambio | Status | |---------|--------|--------| | **requirements.txt** | Removido citylearn | ✅ ACTUALIZADO | | **requirements-phase7.txt** | CREADO (core deps) | ✅ NUEVO | | **requirements-phase8.txt** | CREADO (solo citylearn) | ✅ NUEVO | | **SETUP_PHASE8_PASO_A_PASO.md** | Guía paso a paso | ✅ NUEVO | ---
+<!-- markdownlint-disable MD013 -->
+## 📁 ARCHIVOS ACTUALIZADOS | Archivo | Cambio | Status | |---------|--------|--------| | **requirements.txt** | Removido citylearn | ✅ ACTUALIZADO | | **requirements-phase7.txt** | CREADO (core deps) | ✅ NUEVO | | **requirements-phase8.txt** | CREAD...
+```
 
-## 🎯 VENTAJAS
-
-### Antes (CityLearn mezclado)
-
-❌ CityLearn intentaba instalar en Phase 7  
-❌ Error si Python no es 3.11.9  
-❌ Confusión sobre cuándo instalar CityLearn  
-❌ Usuario podría instalar sin verificar Python  
-
-### Después (CityLearn separado)
-
-✅ CityLearn **SOLO en Phase 8**  
-✅ Python 3.11.9 **verificado ANTES de CityLearn**  
-✅ Clear separation: Phase 7 (core) → Phase 8 (CityLearn)  
-✅ Proceso ordenado y seguro  
-
----
-
-## 📖 GUÍA RÁPIDA
-
-### Instalación Completa (7 pasos)
-
-1. **Instalar Python 3.11.9**
-
-   ```bash
-   python --version  # → Python 3.11.9
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 2. **Crear .venv**
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    python -m venv .venv
    .\.venv\Scripts\Activate.ps1
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 3. **Instalar Phase 7**
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    pip install -r requirements-phase7.txt
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 4. **Validar Phase 7**
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    python phase7_validation_complete.py  # ✅ DEBE PASAR
 ```bash
+<!-- ma...
+```
 
-5. **Instalar CityLearn (Phase 8)**
-
-   ```bash
-   pip install -r requirements-phase8.txt
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 6. **Construir Dataset**
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 7. **Entrenar Agentes**
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    python scripts/train_agents_serial.py --device cuda --episodes 50
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -171,21 +151,25 @@ python scripts/train_agents_serial.py --device cuda --episodes 50
 
 ### 1. Python DEBE ser 3.11.9
 
-```bash
-python --version
-# DEBE mostrar exactamente: Python 3.11.9
-# Si es 3.13 o diferente: DETENER Y REINSTALAR PYTHON
-```bash
+<!-- markdownlint-disable MD013 -->
+```...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### 2. CityLearn SOLO en Phase 8
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Phase 7: NO ejecutar pip install citylearn
 # Phase 8: Ejecutar pip install -r requirements-phase8.txt
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 3. Phase 7 debe pasar ANTES de CityLearn
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Ejecutar ANTES de instalar CityLearn:
 python phase7_validation_complete.py  # Debe pasar ✅
@@ -193,6 +177,7 @@ python phase7_validation_complete.py  # Debe pasar ✅
 # SOLO si pasa, instalar CityLearn:
 pip install -r requirements-phase8.txt
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -210,6 +195,7 @@ pip install -r requirements-phase8.txt
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📊 COMPARATIVA | Aspecto | Antes | Después | |--------|-------|---------| | CityLearn en requirements.txt | ✅ Sí (problema) | ❌ No (correcto) | | Separación Phase 7/8 | ❌ Mezclado | ✅ Separado | | Verificación Python antes CityLearn | ❌ No | ✅ Sí | | Orden de instalación claro | ❌ Confuso | ✅ Claro | | Documentación paso a paso | ❌ No | ✅ Sí (SETUP_PHASE8_PASO_A_PASO.md) | ---
 
 ## 🚀 PRÓXIMOS PASOS USUARIO

@@ -11,12 +11,14 @@
 
 ## 📊 Resumen
 
+<!-- markdownlint-disable MD013 -->
 Se creó configuración **completa** de Kubernetes + MongoDB para PVBESSCAR: | Componente | Estado | Detalles | | ----------- | -------- | ---------- | | **K8s Manifest** | ✅ Creado | k8s-deployment.yaml (300+ líneas) | | **MongoDB** | ✅ Configurado | 7.0, 10Gi storage, autenticación | | **Pipeline** | ✅ Configurado | Deployment, Service, LoadBalancer | | **Storage** | ✅ Configurado | 3 PVCs (mongo, data, outputs) | | **Networking** | ✅ Configurado | Ingress, NetworkPolicy, Health checks | | **Autoscaling** | ✅ Configurado | HPA (1-3 replicas) | | **Monitoring** | ✅ Configurado | Prometheus ServiceMonitor | | **Manager CLI** | ✅ Creado | k8s_manager.py (Python) | ---
 
 ## 🗂️ Archivos Creados (3)
 
 ### 1. **k8s-deployment.yaml** (300+ líneas)
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 Recursos incluidos:
   ✅ Namespace: pvbesscar
@@ -31,22 +33,15 @@ Recursos incluidos:
   ✅ HorizontalPodAutoscaler
   ✅ ServiceMonitor (Prometheus)
 ```bash
+<!-- markdownlint-enable MD01...
+```
 
-### 2. **k8s_manager.py** (200+ líneas)
-
-```python
-CLI Commands:
-  ✅ deploy     - Deploy a Kubernetes
-  ✅ status     - Mostrar estado
-  ✅ logs       - Ver logs de pods
-  ✅ forward    - Port forwarding
-  ✅ scale      - Escalar replicas
-  ✅ mongo      - Conectar a MongoDB
-  ✅ delete     - Borrar deployment
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### 3. **KUBERNETES_MONGODB_GUIDE.md** (300+ líneas)
 
+<!-- markdownlint-disable MD013 -->
 ```markdown
 Documentación:
   ✅ Quick start
@@ -58,40 +53,21 @@ Documentación:
   ✅ Troubleshooting
   ✅ Comandos útiles
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🎯 Arquitectura Kubernetes
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ┌─────────────────────────────────────────────┐
 │         PVBESSCAR Namespace                 │
-├─────────────────────────────────────────────┤
-│                                             │
-│  ┌────────────┐        ┌────────────────┐  │
-│  │  MongoDB   │        │  PVBESSCAR     │  │
-│  │  Pod       │◄──────►│  Pipeline Pod  │  │
-│  │  (StatefulSet)      │  (Deployment)  │  │
-│  │  27017     │        │  5000, 8888    │  │
-│  └────┬───────┘        └────┬───────────┘  │
-│       │                     │              │
-│  ┌────▼──────┐         ┌────▼──────────┐   │
-│  │ mongodb-   │         │pvbesscar-data │   │
-│  │ pvc(10Gi)  │         │pvc(20Gi)      │   │
-│  └────────────┘         └────┬──────────┘   │
-│                              │              │
-│                         ┌────▼──────────┐   │
-│                         │pvbesscar-     │   │
-│                         │outputs        │   │
-│                         │pvc(50Gi)      │   │
-│                         └───────────────┘   │
-│                                             │
-└─────────────────────────────────────────────┘
-         ▲              ▲            ▲
-         │              │            │
-    LoadBalancer    Ingress    DNS (if configured)
-    5000, 8888       :80/:443   pvbesscar.local
-```bash
+├─────────────────...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -99,34 +75,37 @@ Documentación:
 
 ### Credenciales
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 Secret: mongodb-credentials
   username: admin
   password: pvbesscar2026
   connection_string: mongodb://admin:pvbesscar2026@mongodb:27017/pvbesscar
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Collections (inicializadas automáticamente)
 
+<!-- markdownlint-disable MD013 -->
 ```javascript
 db.training_metrics      // Métricas de entrenamiento
 db.checkpoints          // Checkpoints de modelos
-db.scenarios            // Escenarios de validación
+db.sce...
+```
 
-// Indexes
-training_metrics: {"model": 1, "timestamp": -1}
-checkpoints:      {"model": 1, "episode": 1}
-scenarios:        {"scenario_id": 1}
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Storage
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 PVC: mongodb-pvc
 Size: 10Gi
 AccessMode: ReadWriteOnce
 Mounts: /data/db
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -134,21 +113,24 @@ Mounts: /data/db
 
 ### Opción 1: CLI Python
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python k8s_manager.py deploy
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Opción 2: kubectl directo
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 kubectl apply -f k8s-deployment.yaml
-```bash
+```ba...
+```
 
-### Opción 3: Helm (futuro)
-
-```bash
+[Ver código completo en GitHub]bash
 helm install pvbesscar ./helm-chart
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -156,55 +138,59 @@ helm install pvbesscar ./helm-chart
 
 ### Deploy
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python k8s_manager.py deploy
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Status
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python k8s_manager.py status
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Logs
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-python k8s_manager.py logs
-python k8s_manager.py logs --pod pvbesscar-pipeline-0
-```bash
+python k8s_manager.py...
+```
 
-### Port Forward (básico)
-
-```bash
+[Ver código completo en GitHub]bash
 python k8s_manager.py forward web      # 5000
 python k8s_manager.py forward jupyter  # 8888
 python k8s_manager.py forward mongodb  # 27017
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Scale
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python k8s_manager.py scale 3
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### MongoDB
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python k8s_manager.py mongo status
 python k8s_manager.py mongo shell
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Delete
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-python k8s_manager.py delete
-```bash
+python k8...
+```
 
----
-
-## 🌐 Acceso Web Después de Deployar | Servicio | URL Local | URL Network | | ---------- | ----------- | ------------- | | Web Interface | <http://localhost:5000> | <http://192.168.43.30:5000> | | Jupyter Lab | <http://localhost:8888> | <http://192.168.43.30:8888> | | MongoDB | localhost:27017 | 192.168.43.30:27017 | | Ingress | <http://pvbesscar.local> | (requiere DNS) | ### Port Forward (diagnóstico)
-
-```bash
+[Ver código completo en GitHub]bash
 # Terminal 1
 kubectl port-forward svc/pvbesscar-pipeline 5000:5000 -n pvbesscar
 
@@ -214,6 +200,7 @@ kubectl port-forward svc/pvbesscar-pipeline 8888:8888 -n pvbesscar
 # Terminal 3
 kubectl port-forward svc/mongodb 27017:27017 -n pvbesscar
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -221,63 +208,53 @@ kubectl port-forward svc/mongodb 27017:27017 -n pvbesscar
 
 ### Namespace
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 name: pvbesscar
 labels:
   app: pvbesscar
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Pods
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 mongodb-0                        # MongoDB StatefulSet
 pvbesscar-pipeline-[hash]        # PVBESSCAR Deployment
-pvbesscar-pipeline-[hash]-2      # (si escalado)
-pvbesscar-pipeline-[hash]-3      # (si escalado)
-```bash
+pvbesscar-pipeline-[hash]-2    ...
+```
 
-### Services
-
-```yaml
+[Ver código completo en GitHub]yaml
 mongodb (ClusterIP):           mongodb:27017
 pvbesscar-pipeline (LoadBalancer): 5000, 8888
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### PersistentVolumes
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 mongodb-pvc:            10Gi
 pvbesscar-data-pvc:     20Gi
 pvbesscar-outputs-pvc:  50Gi
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Deployments
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 pvbesscar-pipeline: 1-3 replicas (con HPA)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### StatefulSets
 
-```yaml
-mongodb: 1 replica
-```bash
+...
+```
 
----
-
-## 🔒 Seguridad
-
-### Incluida en YAML
-
-- ✅ **Secrets**: Credenciales MongoDB encriptadas
-- ✅ **NetworkPolicy**: Tráfico restringido
-- ✅ **RBAC**: (preparado para agregar)
-- ✅ **TLS**: Ingress con certificados
-- ✅ **Health Checks**: Liveness + Readiness probes
-
-### Por Agregar (producción)
-
-```yaml
+[Ver código completo en GitHub]yaml
 # RBAC
 serviceAccount: pvbesscar
 role: pipeline-viewer
@@ -292,6 +269,7 @@ resourceQuota: pvbesscar-quota
 # Network Segmentation
 networkPolicy: egress/ingress rules
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -299,6 +277,7 @@ networkPolicy: egress/ingress rules
 
 ### HorizontalPodAutoscaler
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 Min Replicas: 1
 Max Replicas: 3
@@ -306,34 +285,24 @@ Metrics:
   - CPU: 70% → scale up
   - Memory: 80% → scale up
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Manual Scale
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-kubectl scale deployment pvbesscar-pipeline --replicas 3 -n pvbesscar
-# O
-python k8s_manager.py scale 3
-```bash
+kubectl scale deployment pvbesscar-pipeline --replicas 3 -n pvbessca...
+```
 
----
-
-## 🔍 Monitoreo
-
-### Incluido
-
-- ✅ **Prometheus ServiceMonitor**: Métricas cada 30s
-- ✅ **Health Checks**: Liveness (30s) + Readiness (5s)
-- ✅ **Logs**: Stdout/stderr capturados
-
-### Ver Logs
-
-```bash
+[Ver código completo en GitHub]bash
 kubectl logs -f -n pvbesscar -l app=pvbesscar-pipeline
 kubectl logs -f mongodb-0 -n pvbesscar
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Métricas Prometheus
 
+<!-- markdownlint-disable MD013 -->
 ```text
 /metrics endpoint en puerto 5000
 Scrape interval: 30s
@@ -342,6 +311,7 @@ Métricas incluidas:
   - Error rates
   - Custom training metrics
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -349,45 +319,42 @@ Métricas incluidas:
 
 ### 1. **Iniciar Kubernetes Cluster**
 
-- **Docker Desktop**: Enable Kubernetes en settings
-- **Minikube**: `minikube start`
-- **Kind**: `kind create cluster --name pvbesscar`
-- **AKS/EKS**: Usar servicios cloud
+- **Docker Desktop**: Enable Kubernetes en...
+```
 
-### 2. **Verificar Cluster**
-
-   ```bash
-   kubectl cluster-info
-   kubectl get nodes
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### 3. **Deployar**
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    python k8s_manager.py deploy
    # O
    kubectl apply -f k8s-deployment.yaml
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 4. **Verificar Deployment**
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    python k8s_manager.py status
    # O
    kubectl get all -n pvbesscar
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 5. **Port Forward (guía rápida)**
 
-   ```bash
-   python k8s_manager.py forward web
-```bash
+<!-- markdownlint-disable MD013 -->
+   ```b...
+```
 
-### 6. **Acceder**
-
-```text
+[Ver código completo en GitHub]text
    http://localhost:5000
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -395,6 +362,7 @@ Métricas incluidas:
 
 ### Kubectl no conecta
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Verificar cluster
 kubectl cluster-info
@@ -403,23 +371,29 @@ kubectl cluster-info
 # Si Minikube: minikube start
 # Si otro: verificar kubeconfig
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Pods no inician
 
-```bash
-kubectl describe pod pvbesscar-pipeline-0 -n pvbesscar
-kubectl logs pvbesscar-pipeline-0 -n pvbesscar
-```bash
+<!-- markdownlint-disable MD013 -->
+```b...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### MongoDB no conecta
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 kubectl logs mongodb-0 -n pvbesscar
 kubectl exec -it mongodb-0 -n pvbesscar -- mongosh -u admin -p pvbesscar2026
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### PVC pendiente
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 kubectl get pvc -n pvbesscar
 kubectl describe pvc mongodb-pvc -n pvbesscar
@@ -428,12 +402,11 @@ kubectl describe pvc mongodb-pvc -n pvbesscar
 kubectl apply -f - <<EOF
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
-metadata:
-  name: standard
-provisioner: kubernetes.io/no-provisioner
-volumeBindingMode: WaitForFirstConsumer
-EOF
-```bash
+...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -449,28 +422,27 @@ EOF
 
 ### Docker Compose (Local)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 docker-compose up -d              # CPU dev local
 docker-compose -f docker-compose.gpu.yml up -d    # GPU local
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Web Interface (Python Flask)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python docker_web_interface.py    # http://localhost:5000
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Kubernetes (Production)
 
-```bash
-python k8s_manager.py deploy      # Deploy a K8s
-```bash
+<!-- markdownlint-disable MD013 -->...
+```
 
----
-
-## ✨ Features Kubernetes
-
-```text
+[Ver código completo en GitHub]text
 ✅ Multi-container pods
 ✅ StatefulSets (MongoDB)
 ✅ Deployments (Pipeline)
@@ -485,11 +457,13 @@ python k8s_manager.py deploy      # Deploy a K8s
 ✅ Monitoring (Prometheus)
 ✅ Resource limits/requests
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 📦 Stack Completo
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Local Development:
   ✅ Docker Compose (CPU/GPU/Dev)
@@ -504,6 +478,7 @@ Production:
   ✅ Networking (Ingress)
   ✅ Storage (PVC)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

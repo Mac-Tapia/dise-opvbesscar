@@ -35,6 +35,7 @@
 
 ## 📚 COMPLETE DOCUMENTATION SUITE
 
+<!-- markdownlint-disable MD013 -->
 ### Core Phase 8 Documents | Document | Purpose | Read Time | Size | |----------|---------|-----------|------|
 |**PHASE_8_COMPLETE_GUIDE.md**|Comprehensive training guide...|30 min|2,500 lines| | **AGENT_TRAINING_CONFIG_PHASE8.yaml** | All agent... | 15 min | 400 lines | |**PHASE_8_READINESS_CHECKLIST.md**|Pre-training verification checklist|10 min|500 lines| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| ### Supporting Reference Documents | Document | Purpose | When to Use | |----------|---------|------------|
 |**PYTHON_3.11_SETUP_GUIDE.md**|Install Python 3.11|Before Phase 8 start| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| | **PHASE_7_FINAL_COMPLETION.md** | Phase 7 completion status | Reference | |**phase7_validation_complete.py**|Data validation script|If verification needed| ---
@@ -90,6 +91,7 @@ Specifications → PPO section
 
 ## 📖 COMPLETE GUIDE SECTIONS
 
+<!-- markdownlint-disable MD013 -->
 ### PHASE_8_COMPLETE_GUIDE.md Contents | Section | Page | Duration | Key Topics | |---------|------|----------|-----------| | **1. Quick Start** | 1 | 5 min | Prerequisites, Step-by-step, Command | | **2. Detailed Walkthrough** | 2 | 10 min | What is Phase 8,... | | **3. Agent Specifications** | 3-7 | 20 min | SAC, PPO, A2C detailed specs | |**4. Training Execution**|8-10|20 min|Options A-D, Resume, Quick test|
 |**5. Monitoring & Troubleshooting**|11-15|30 min|Real-time monitoring, 5+...| | **6. Performance Evaluation** | 16-18 | 20 min | During training,... | | **7. Results Analysis** | 19-20 | 15 min | Interpreting results,... | | **8. Next Steps** | 21-23 | 10 min | Immediate, Short-term,... | ---
 
@@ -99,6 +101,7 @@ Specifications → PPO section
 
 **Structure**:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ├── sac:              # SAC agent config (25 parameters)
 ├── ppo:              # PPO agent config (25 parameters)
@@ -108,141 +111,35 @@ Specifications → PPO section
 ├── evaluation:       # Evaluation metrics & reporting
 └── [Notes section]   # Usage instructions
 ```bash
+<!-- markdownlint-en...
+```
 
-**Key Parameters**:
-
-- Learning rates: 2.0e-4 (all agents)
-- Batch sizes: SAC=256, PPO=128, A2C=64
-- Hidden layers: [1024, 1024] (all agents)
-- Total timesteps: 438M per agent (50 episodes × 8,760)
-- Device: auto (GPU auto-detection)
-- Mixed precision: Enabled (AMP)
-
----
-
-## 📊 DATA SPECIFICATIONS
-
-### Input/Output Space
-
-**Observation Space** (534 dimensions):
-
-- Building energy metrics (4)
-- 128 charger states × 4 = 512
-- Time features (14)
-- Grid state (2)
-
-**Action Space** (126 dimensions):
-
-- 126 charger power setpoints
-- Normalized to [0, 1]
-- Mapped to actual power: action × charger_max_power
-
-**Episode Length**: 8,760 timesteps (1 year, hourly)
-
----
-
-## 🎯 TESTING & VALIDATION
-
-### Pre-Training Validation
-
-Run before Phase 8 starts:
-
-```bash
+[Ver código completo en GitHub]bash
 python phase7_validation_complete.py
 # All tests should pass ✅
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 Expected output:
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ✅ STEP 1: OE2 Data Integrity Check - PASSED
 ✅ STEP 2: Key Data Metrics - PASSED
 ✅ STEP 3: Charger Profile Expansion - PASSED
 ✅ STEP 4: Schema File Status - READY
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Quick Training Test
 
 Run before full training (5 min):
 
-```bash
-python scripts/train_quick.py --episodes 1 --agent PPO
-# Should complete without errors
-```bash
+<!-- markdownlint-disable MD013 -->
+...
+```
 
----
-
-## 📈 PERFORMANCE EXPECTATIONS
-
-### Baseline (Uncontrolled)
-
-- CO₂: 10,200 kg/year
-- Solar: 40% utilization
-- Grid import: 41,300 kWh/year
-- Peak demand: 1.2 MW
-
-### After Training (Expected) | Agent | CO₂ Reduction | Solar Util | Status | |-------|---------------|-----------|--------| | SAC | 20-26% | 60-65% | Good | | PPO | 25-29% | 65-70% | **BEST** ⭐ | | A2C | 20-25% | 60-65% | Good | ---
-
-## 🚨 CRITICAL REQUIREMENTS
-
-### Before Phase 8 Starts
-
-**Must Have**:
-
-- ✅ Python 3.11 installed
-- ✅ CityLearn v2.5+ installed
-- ✅ GPU available (or CPU with patience)
-- ✅ 4-6 hours free time
-- ✅ Read Quick Start guide
-
-**Data (All Ready)**:
-
-- ✅ OE2 artifacts validated
-- ✅ 128 chargers confirmed
-- ✅ Solar timeseries ready
-- ✅ BESS configuration set
-
----
-
-## 🔗 QUICK LINKS
-
-### Main Documents
-
-- [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) - Primary guide (2,500
-  - lines)
-- [AGENT_TRAINING_CONFIG_PHASE8.yaml](AGENT_TRAINING_CONFIG_PHASE8.yaml) -
-  - Agent configs
-- [PHASE_8_READINESS_CHECKLIST.md](PHASE_8_READINESS_CHECKLIST.md) -
-  - Verification checklist
-
-### Setup & Installation
-
-- [PYTHON_3.11_SETUP_GUIDE.md](docs/PYTHON_3.11_SETUP_GUIDE.md) - Install
-  - Python 3.11
-- [GITHUB_COPILOT_INSTRUCTIONS.md](GITHUB_COPILOT_INSTRUCTIONS.md) - Project
-  - overview
-
-### Reference Materials
-
-- [SESSION_COMPLETE_PHASE7_TO8_TRANSITION.md][url2]
-- - Session summary
-- [VISUAL_PROJECT_STATUS_PHASE8_READY.txt][url3]
-- - Visual overview
-- [PHASE_7_FINAL_COMPLETION.md](PHASE_7_FINAL_COMPLETION.md) - Phase 7 status
-
-### Validation Tools
-
-- `phase7_validation_complete.py` - Run validation
-- `scripts/train_quick.py` - Quick 1-episode test
-- `scripts/monitor_training_live_2026.py` - Live monitoring
-
----
-
-## 📞 TROUBLESHOOTING QUICK INDEX | Error | Guide Location | Solution | |-------|----------------|----------| | ImportError: citylearn | [Guide][url4] | Install Python 3.11 | | CUDA out of memory | [Guide][url5] | Reduce batch_size | | Agent not learning | [Guide][url6] | Build dataset | | gymnasium version error | [Guide][url7] | pip install gymnasium==0.28.1 | | Checkpoint incompatible | [Guide][url8] | Delete old checkpoints | ---
-
-## 📋 FILE ORGANIZATION
-
-```bash
+[Ver código completo en GitHub]bash
 Project Root (d:\diseñopvbesscar)
 │
 ├── Phase 8 Documents (NEW - This Session)
@@ -284,6 +181,7 @@ Project Root (d:\diseñopvbesscar)
     ├── analyses/logs/                         ← Training logs
     └── COMPARACION_BASELINE_VS_RL.txt        ← Final results
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -300,54 +198,10 @@ Project Root (d:\diseñopvbesscar)
      - [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md)
    - Compare: SAC vs PPO vs A2C
 
-3. **Set up environment** (15 min)
-   - Follow: [PYTHON_3.11_SETUP_GUIDE.md](docs/PYTHON_3.11_SETUP_GUIDE.md)
+3. **...
+```
 
-4. **Run quick test** (5 min)
-   - Execute: `python scripts/train_quick.py --episodes 1`
-
-5. **Run full training** (4-6 hours)
-   - Execute: `python scripts/train_agents_serial.py --device cuda --episodes
-     - 50`
-
-6. **Analyze results** (30 min)
-   - Read: Results Analysis in
-     - [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md)
-   - Review: `COMPARACION_BASELINE_VS_RL.txt`
-
----
-
-## ✅ CHECKLIST BEFORE STARTING
-
-- [ ] Read: VISUAL_PROJECT_STATUS_PHASE8_READY.txt (5 min)
-- [ ] Read: PHASE_8_COMPLETE_GUIDE.md Quick Start section (5 min)
-- [ ] Install: Python 3.11 (10 min)
-- [ ] Verify: `python --version` → Python 3.11.x
-- [ ] Install: `pip install citylearn>=2.5.0`
-- [ ] Verify: `python -c "import citylearn; print('✅')"`
-- [ ] Run: `python phase7_validation_complete.py` (all tests pass?)
-- [ ] Ready: For training!
-
----
-
-## 📞 GETTING HELP
-
-1. **Check this index** - Find document for your use case
-2. **Search [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md)** -
-Troubleshooting section
-3. **Check log files** - `analyses/logs/*.log`
-4. **Review configs** - [AGENT_TRAINING_CONFIG_PHASE8.yaml][ref]
-
-[ref]: AGENT_TRAINING_CONFIG_PHASE8.yaml
-5. **Run validation** - `python phase7_validation_complete.py`
-
----
-
-## 🏆 SUCCESS LOOKS LIKE
-
-After Phase 8 completes:
-
-```bash
+[Ver código completo en GitHub]bash
 ✅ All 3 agents trained (SAC, PPO, A2C)
 ✅ Training converged (reward stabilized)
 ✅ CO₂ reduction ≥ 20% (better ≥ 25%)
@@ -356,6 +210,7 @@ After Phase 8 completes:
 ✅ COMPARACION_BASELINE_VS_RL.txt generated
 ✅ Results committed to git
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -363,7 +218,12 @@ After Phase 8 completes:
 **Date**: 2026-01-25  
 **Status**: Complete and ready for Phase 8  
 
+<details>
+<summary>**Next Action**: Read [VISUAL_PROJECT_STATUS_PHASE8_READY.txt][ref] or [PHASE_8_...</summary>
+
 **Next Action**: Read [VISUAL_PROJECT_STATUS_PHASE8_READY.txt][ref] or [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md)
+
+</details>
 
 [ref]: VISUAL_PROJECT_STATUS_PHASE8_READY.txt
 

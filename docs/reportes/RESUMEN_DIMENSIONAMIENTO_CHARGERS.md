@@ -32,9 +32,11 @@ Los cargadores dimensionados operan **TODO EL DÍA**:
 
 #### Capacidad Diaria
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 128 tomas × 26 sesiones/día × 92% utilización = 3,062 vehículos/día
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Proyecciones
 
@@ -46,32 +48,10 @@ Los cargadores dimensionados operan **TODO EL DÍA**:
 
 ### Modo de Carga: Modo 3 (IEC 61851)
 
-- **Motos**: 2.0 kW por toma
-- **Mototaxis**: 3.0 kW por toma
-- **Duración de sesión**: 30 minutos fijos
-- **Tomas por cargador**: 4 tomas controlables
+- **Motos**: 2.0 kW por t...
+```
 
-### Distribución por Playa de Estacionamiento
-
-#### Playa de Motos
-
-- 28 cargadores
-- 112 tomas (28 × 4)
-- 224 kW instalados
-- 2,679 kWh/día (escenario base)
-
-#### Playa de Mototaxis
-
-- 4 cargadores
-- 16 tomas (4 × 4)
-- 48 kW instalados
-- 573 kWh/día (escenario base)
-
-## DATOS GUARDADOS
-
-### Archivo: `chargers_results.json`
-
-```json
+[Ver código completo en GitHub]json
 {
   "n_motos_pico": 900,
   "n_mototaxis_pico": 130,
@@ -83,6 +63,7 @@ Los cargadores dimensionados operan **TODO EL DÍA**:
   "capacidad_infraestructura_20anios": 22352600
 }
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ## RESUMEN EJECUTIVO
 

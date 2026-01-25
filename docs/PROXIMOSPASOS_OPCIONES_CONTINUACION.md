@@ -25,6 +25,7 @@ Generar análisis comparativo detallado entre los 3 agentes (PPO, A2C, SAC)
 
 **Tarea específica**:
 
+<!-- markdownlint-disable MD013 -->
 ```text
 "Analizar y comparar desempeño de PPO vs A2C vs SAC en:
 - Reward promedio durante entrenamiento
@@ -32,6 +33,7 @@ Generar análisis comparativo detallado entre los 3 agentes (PPO, A2C, SAC)
 - Consumo de energía/CO2
 - Picos de demanda (grid stability)"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Resultado esperado**: Tabla comparativa + gráficas de análisis
 
@@ -39,20 +41,14 @@ Generar análisis comparativo detallado entre los 3 agentes (PPO, A2C, SAC)
 
 ### **OPCIÓN B: Reentrenamiento con Parámetros Optimizados** 🚀
 
-Ejecutar un nuevo ciclo de entrenamiento con parámetros mejorados
+Ejecutar un nuevo ciclo de entren...
+```
 
-**Consideraciones**:
-
-- Tiempos de entrenamiento: ~2-4 horas por agente en GPU
-- Scripts: ENTRENAMIENTO_SECUENCIAL_PPO_A2C.py disponible
-- Checkpoints actuales: 197 guardados en `analyses/oe3/training/checkpoints/`
-
-**Tarea específica**:
-
-```text
+[Ver código completo en GitHub]text
 "Entrenar nuevamente PPO/A2C/SAC con timesteps optimizados
 para conseguir mejor convergencia y reward"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -68,45 +64,18 @@ Ejecutar modelos entrenados en diferentes escenarios de demanda
 
 **Tarea específica**:
 
+<!-- markdownlint-disable MD013 -->
 ```text
-"Validar modelos PPO/A2C/SAC en los 101 escenarios
-y generar matriz de evaluación de desempeño"
-```bash
+"Validar modelos PPO/A2C/SAC en los 10...
+```
 
----
-
-### **OPCIÓN D: Optimización de Infraestructura** ⚙️
-
-Mejorar documentación, CI/CD, y estructura del proyecto
-
-**Tareas**:
-
-- Crear GitHub Actions para testing automático
-- Generar documentación Sphinx
-- Publicar como Python package
-- Limpiar los 40-50 warnings de Python restantes
-
-**Beneficio**: Reproducibilidad y colaboración facilitada
-
----
-
-### **OPCIÓN E: Análisis Energético Profundo** 📊
-
-Análisis detallado del consumo de energía y emisiones CO2
-
-**Scripts disponibles**:
-
-- ANALISIS_CEROS_SOLAR.py
-- COMPARACION_BASELINE_VS_RL.py
-
-**Tarea específica**:
-
-```text
+[Ver código completo en GitHub]text
 "Cuantificar ahorros de energía logrados con RL vs baseline:
 - Reducción CO2 (kg)
 - Picos evitados (kW)
 - Costo estimado (USD)"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -117,39 +86,22 @@ Análisis detallado del consumo de energía y emisiones CO2
 1. **Primero (OPCIÓN A)**: Análisis de modelos → Entender qué ya está entrenado
 2. **Segundo (OPCIÓN E)**: Análisis energético → Cuantificar valor del proyecto  
 3. **Tercero (OPCIÓN C)**: Validación → Verificar generalización
-4. **Cuarto (OPCIÓN B)**: Reentrenamiento → Solo si resultados no satisfacen
-5. **Quinto (OPCIÓN D)**: Optimización → Cuando todo funcione bien
+4. **Cuarto (OPCIÓN B)**: Reentrenamiento →...
+```
 
----
-
-## 📍 Estado Actual para Referencia | Recurso | Estado | Ubicación | | --- | --- | --- | | Checkpoints | ✅ 197 disponibles | `analyses/oe3/training/checkpoints/` | | Gráficas | ✅ 25 con datos reales | `analyses/oe3/training/plots/` | | Datasets | ✅ 476 CSV | `data/interim/oe2/` | | Scripts de análisis | ✅ 38 disponibles | Raíz del proyecto | | Documentación | ✅ 63 Markdown | Distribuida en carpetas | ---
-
-## ❓ ¿Cómo Elegir?
-
-**Responde estas preguntas**:
-
-- ¿Necesitas entender mejor qué tenemos? → **OPCIÓN A (Análisis)**
-- ¿Quieres mejorar los modelos? → **OPCIÓN B (Reentrenamiento)**  
-- ¿Necesitas validar en casos reales? → **OPCIÓN C (Validación)**
-- ¿Quieres cuantificar beneficios? → **OPCIÓN E (Análisis Energético)**
-- ¿Quieres mejorar la estructura? → **OPCIÓN D (Optimización)**
-
----
-
-## 💡 Próxima Instrucción Sugerida
-
-Cuando esté listo para continuar, dígame:
-
-```text
+[Ver código completo en GitHub]text
 "Quiero [OPCIÓN X] porque [MOTIVO]"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 Ejemplo:
 
+<!-- markdownlint-disable MD013 -->
 ```text
 "Quiero OPCIÓN A porque necesito entender qué tan bien 
 están entrenados los modelos actuales"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 Y procederé a implementar la tarea completa.
 

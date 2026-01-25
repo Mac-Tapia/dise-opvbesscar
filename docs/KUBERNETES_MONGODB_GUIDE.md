@@ -9,6 +9,7 @@ integrado.
 
 ## ✅ Requisitos
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Kubernetes
 kubectl version --client       # v1.34.1+
@@ -19,6 +20,7 @@ docker version                 # 20.10+
 # Helm (opcional)
 helm version                   # 3.0+
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -26,23 +28,21 @@ helm version                   # 3.0+
 
 ### 1. **Verificar Kubernetes**
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 kubectl cluster-info
 kubectl get nodes
 ```bash
+<!-- markdownlint-enable MD013 -->
 
-### 2. **Deploy Completo**
+### 2. **De...
+```
 
-```bash
-kubectl apply -f k8s-deployment.yaml
-```bash
-
-### 3. **Verificar Deployment**
-
-```bash
+[Ver código completo en GitHub]bash
 kubectl get pods -n pvbesscar
 kubectl get svc -n pvbesscar
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -50,28 +50,25 @@ kubectl get svc -n pvbesscar
 
 ### 1. **Namespace**
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 Nombre: pvbesscar
 Labels: app=pvbesscar
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 2. **MongoDB StatefulSet**
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 Nombre:        mongodb
 Replicas:      1
 Imagen:        mongo:7.0
 Puerto:        27017
-Almacenamiento: 10Gi (PVC)
+Almacenamiento: 10...
+```
 
-Credenciales:
-  Username: admin
-  Password: pvbesscar2026
-```bash
-
-### 3. **PVBESSCAR Pipeline Deployment**
-
-```yaml
+[Ver código completo en GitHub]yaml
 Nombre:        pvbesscar-pipeline
 Replicas:      1 (escalable)
 Imagen:        pvbesscar:latest
@@ -79,31 +76,30 @@ Puertos:       5000 (Web), 8888 (Jupyter)
 CPU:           2-4 cores
 Memoria:       4-8 GB
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 4. **Persistent Volumes**
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 mongodb-pvc:           10Gi
 pvbesscar-data-pvc:    20Gi
 pvbesscar-outputs-pvc: 50Gi
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 5. **Services**
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 mongodb:             ClusterIP (27017)
 pvbesscar-pipeline:  LoadBalancer (5000, 8888)
 ```bash
+<!...
+```
 
-### 6. **Ingress**
-
-```yaml
-Host: pvbesscar.local
-Paths:
-  /          → Web (5000)
-  /jupyter   → Jupyter Lab (8888)
-TLS: Habilitado
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -111,64 +107,73 @@ TLS: Habilitado
 
 ### Deploy
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python k8s_manager.py deploy
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Status
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python k8s_manager.py status
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Logs
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python k8s_manager.py logs
 python k8s_manager.py logs --pod pvbesscar-pipeline-0
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Port Forward
 
-```bash
-python k8s_manager.py forward web      # 5000
-python k8s_manager.py forward jupyter  # 8888
-python k8s_manager.py forward mongodb  # 27017
-```bash
+<...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Scale
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python k8s_manager.py scale 3
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### MongoDB (CLI)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python k8s_manager.py mongo status
 python k8s_manager.py mongo shell
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Delete
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python k8s_manager.py delete
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
-## 🔑 MongoDB Credentials
+## 🔑 MongoDB Cre...
+```
 
-```yaml
-Secret: mongodb-credentials
-Keys:
-  username: admin
-  password: pvbesscar2026
-  connection_string: mongodb://admin:pvbesscar2026@mongodb:27017/pvbesscar
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Connection desde Pod
 
+<!-- markdownlint-disable MD013 -->
 ```python
 from pymongo import MongoClient
 import os
@@ -177,6 +182,7 @@ uri = os.getenv('MONGODB_URI')
 client = MongoClient(uri)
 db = client['pvbesscar']
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -184,31 +190,33 @@ db = client['pvbesscar']
 
 ### Inicializadas Automáticamente
 
+<!-- markdownlint-disable MD013 -->
 ```javascript
 // Collections
 db.training_metrics      // Métricas de entrenamiento
-db.checkpoints          // Checkpoints de modelos
-db.scenarios            // Escenarios de validación
+db.checkpoints          // Checkpoints de mode...
+```
 
-// Indexes
-training_metrics: {"model": 1, "timestamp": -1}
-checkpoints:      {"model": 1, "episode": 1}
-scenarios:        {"scenario_id": 1}
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🌐 Acceso Web
 
+<!-- markdownlint-disable MD013 -->
 ### Rutas Disponibles | Ruta | Servicio | Puerto | | ------ | ---------- | -------- | | <http://localhost:5000> | Web Interface | 5000 | | <http://localhost:8888> | Jupyter Lab | 8888 | | <http://localhost:27017> | MongoDB | 27017 | ### Desde Ingress
 
+<!-- markdownlint-disable MD013 -->
 ```text
 http://pvbesscar.local
 https://pvbesscar.local (con TLS)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Port Forward (Ingress/Servicios)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Terminal 1: Web
 kubectl port-forward svc/pvbesscar-pipeline 5000:5000 -n pvbesscar
@@ -217,28 +225,25 @@ kubectl port-forward svc/pvbesscar-pipeline 5000:5000 -n pvbesscar
 kubectl port-forward svc/pvbesscar-pipeline 8888:8888 -n pvbesscar
 
 # Terminal 3: MongoDB
-kubectl port-forward svc/mongodb 27017:27017 -n pvbesscar
-```bash
+kubectl port-forwar...
+```
 
----
-
-## 🔄 Scalabilidad
-
-### HorizontalPodAutoscaler
-
-```yaml
+[Ver código completo en GitHub]yaml
 Min Replicas: 1
 Max Replicas: 3
 Metricas:
   CPU:    70% utilization → scale up
   Memory: 80% utilization → scale up
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Manual Scale
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 kubectl scale deployment pvbesscar-pipeline --replicas 3 -n pvbesscar
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -246,20 +251,17 @@ kubectl scale deployment pvbesscar-pipeline --replicas 3 -n pvbesscar
 
 ### ServiceMonitor (Prometheus)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Scrape metrics cada 30s
 /metrics endpoint
 
 # Métricas incluidas:
 - HTTP requests
-- Latency
-- Error rates
-- Custom training metrics
-```bash
+- Laten...
+```
 
-### Ver Logs
-
-```bash
+[Ver código completo en GitHub]bash
 # Todos los pods
 kubectl logs -n pvbesscar -f
 
@@ -269,17 +271,21 @@ kubectl logs pvbesscar-pipeline-0 -n pvbesscar -f
 # Últimas 100 líneas
 kubectl logs pvbesscar-pipeline-0 -n pvbesscar --tail=100
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Exec en Pod
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 kubectl exec -it pvbesscar-pipeline-0 -n pvbesscar -- bash
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🔐 Network Policy
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 Ingress:
   - podSelector: mongodb
@@ -289,55 +295,51 @@ Egress:
   - To: mongodb
     port: 27017 (TCP)
   - To: External DNS
-    port: 53 (TCP/UDP)
-```bash
+    po...
+```
 
----
-
-## 💾 Persistent Storage
-
-### MongoDB Storage
-
-```yaml
+[Ver código completo en GitHub]yaml
 PVC: mongodb-pvc
 Size: 10Gi
 AccessMode: ReadWriteOnce
 Mounts: /data/db
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Pipeline Data
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 PVC: pvbesscar-data-pvc
 Size: 20Gi
 AccessMode: ReadWriteOnce
 Mounts: /app/data
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Pipeline Outputs
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 PVC: pvbesscar-outputs-pvc
 Size: 50Gi
 AccessMode: ReadWriteOnce
 Mounts: /app/outputs
 ```bash
+<!-- markdownlint-e...
+```
 
----
-
-## 🧪 Health Checks
-
-### MongoDB Health Checks
-
-```yaml
+[Ver código completo en GitHub]yaml
 Liveness:
   Command: mongosh --eval "db.adminCommand('ping')"
   Initial Delay: 30s
   Period: 10s
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Pipeline
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 Liveness:
   HTTP GET: /api/health (port 5000)
@@ -349,6 +351,7 @@ Readiness:
   Initial Delay: 10s
   Period: 5s
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -356,43 +359,46 @@ Readiness:
 
 ### Paso 1: Build Image
 
-```bash
-docker build -t pvbesscar:latest .
-```bash
+<!-- markdownlint-disable MD013 -->
+```bash...
+```
 
-### Paso 2: Push a Registry
-
-```bash
+[Ver código completo en GitHub]bash
 docker tag pvbesscar:latest myregistry/pvbesscar:latest
 docker push myregistry/pvbesscar:latest
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Paso 3: Deploy a K8s
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 kubectl apply -f k8s-deployment.yaml
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Paso 4: Verificar
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 kubectl get pods -n pvbesscar
 kubectl logs -n pvbesscar -f
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🔧 Troubleshooting
 
-### Pods no inician
+### Pods no inic...
+```
 
-```bash
-kubectl describe pod pvbesscar-pipeline-0 -n pvbesscar
-kubectl logs pvbesscar-pipeline-0 -n pvbesscar
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### MongoDB no conecta
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Verificar service
 kubectl get svc mongodb -n pvbesscar
@@ -404,26 +410,22 @@ kubectl logs mongodb-0 -n pvbesscar
 kubectl exec -it pvbesscar-pipeline-0 -n pvbesscar -- \
   mongosh --uri "mongodb://admin:pvbesscar2026@mongodb:27017/pvbesscar"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### PVC no provisiona
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 kubectl get pvc -n pvbesscar
-kubectl describe pvc mongodb-pvc -n pvbesscar
+ku...
+```
 
-# Crear default StorageClass si no existe
-kubectl apply -f - <<EOF
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: standard
-provisioner: kubernetes.io/no-provisioner
-volumeBindingMode: WaitForFirstConsumer
-EOF
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Ingress no funciona
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Verificar ingress controller
 kubectl get ingress -n pvbesscar
@@ -432,6 +434,7 @@ kubectl describe ingress pvbesscar-ingress -n pvbesscar
 # Agregar hosts entry
 echo "127.0.0.1 pvbesscar.local" >> /etc/hosts
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -439,78 +442,75 @@ echo "127.0.0.1 pvbesscar.local" >> /etc/hosts
 
 ### Cluster Info
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 kubectl cluster-info
 kubectl get nodes
 kubectl top nodes
 ```bash
+<!-- markdow...
+```
 
-### Namespace
-
-```bash
-kubectl get ns
-kubectl describe ns pvbesscar
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Resources
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 kubectl get all -n pvbesscar
 kubectl get pods,svc,pvc,deploy -n pvbesscar
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Events
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 kubectl get events -n pvbesscar
 kubectl get events -n pvbesscar --sort-by='.lastTimestamp'
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Resource Usage
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-kubectl top pods -n pvbesscar
-kubectl top nodes
-kubectl describe node
-```bash
+kubectl top pods -n pvbessc...
+```
 
----
-
-## 🔄 Updates & Rolling Deployment
-
-### Update Image
-
-```bash
+[Ver código completo en GitHub]bash
 kubectl set image deployment/pvbesscar-pipeline \
   pipeline=pvbesscar:v2 -n pvbesscar
 
 # Verificar rollout
 kubectl rollout status deployment/pvbesscar-pipeline -n pvbesscar
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Rollback
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 kubectl rollout undo deployment/pvbesscar-pipeline -n pvbesscar
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### History
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 kubectl rollout history deployment/pvbesscar-pipeline -n pvbesscar
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
-## 🌍 Multi-Region Deployment
+## 🌍 Multi-Region Deploym...
+```
 
-### Replicar en múltiples clusters
-
-```bash
-for cluster in cluster1 cluster2 cluster3; do
-  kubectl --context=$cluster apply -f k8s-deployment.yaml
-done
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -525,6 +525,7 @@ done
 
 ### Comandos Rápidos
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Deploy completo
 kubectl apply -f k8s-deployment.yaml
@@ -544,6 +545,7 @@ kubectl logs -f -n pvbesscar -l app=pvbesscar-pipeline
 # Delete todo
 kubectl delete namespace pvbesscar
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

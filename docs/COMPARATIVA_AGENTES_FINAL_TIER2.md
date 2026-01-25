@@ -11,6 +11,7 @@
 - Consolidados en `INFORME_UNICO_ENTRENAMIENTO_TIER2.md`.
 - **ACTUALIZACIÓN 2026-01-19**: Todas las gráficas regeneradas y consolidadas
   - en `analyses/oe3/training/plots/`
+<!-- markdownlint-disable MD013 -->
 - 25 gráficas disponibles (ver `plots/README.md` para índice completo) ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 | --- | --- | --- | --- | --- | --- | --- | --- | |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 |A2C|~5 (convergencia)|17,536|0.0254|1.76M|275|0.0|✅ Rápido y robusto| ### Notas de entrenamiento
@@ -32,10 +33,12 @@
 
 ## 📊 TABLA COMPARATIVA - RESULTADOS FINALES (2026-01-19)
 
+<!-- markdownlint-disable MD013 -->
 ### Métricas Regeneradas desde Checkpoints | Métrica | BASELINE | PPO | A2C | SAC | | --------- | ---------- | ----- | ----- | ----- |
 |**Avg Reward**|-0.2000 ± 0.0800|**0.0343 ± 0.0500**|0.0254 ± 0.0500|0.0252 ± 0.0500|
 |**CO2 (kg)**|2.00M ± 0.15M|**1.76M ± 0.10M**|1.76M ± 0.10M|1.76M ± 0.10M| | **Peak Import (kWh/h)** | 310 ± 30 | **274 ± 20** | 275 ± 20 | 275 ± 20 | |**Grid Stability**|0.50 ± 0.08|**0.61 ± 0.05**|0.61 ± 0.05|0.61 ± 0.05| | **Timesteps** | 0 | **18,432** | 17,536 | 17,520 | | **File Size** | - | 1.62 MB | 1.10 MB | 14.61 MB | ### Mejora sobre Baseline (%) | Métrica | PPO | A2C | SAC | | --------- | ----- | ----- | ----- | | **Reward** | +217% | +212% | +212% | | **CO2** | -12% | -12% | -12% | | **Peak Import** | -11% | -11% | -11% | | **Grid Stability** | +22% | +22% | +22% | ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📊 TABLA COMPARATIVA - HIPERPARÁMETROS TIER 2 | Parámetro | A2C TIER 2 | PPO TIER 2 | SAC TIER 2 | | ----------- | ----------- | ----------- | ----------- | | **Learning Rate** | 2.5e-4 | 2.5e-4 | 2.5e-4 | | **Batch Size** | 1024 (n_steps) | 256 | 256 | | **Entropía** | 0.02 | 0.02 | 0.02 | | **Hidden Sizes** | (512, 512) | (512, 512) | (512, 512) | | **Activation** | ReLU | ReLU | ReLU | | **LR Schedule** | Linear (decay) | Linear (decay) | Constant | | **Red Update** | Every step | Per epoch | 2x per step | | **Exploración** | Entropy | SDE + Entropy | Alpha (automático) | | **Gamma** | 0.99 | 0.99 | 0.99 | ---
 
 ## 🎯 CARACTERÍSTICAS POR AGENTE
@@ -155,43 +158,53 @@
 
 **Off-Peak (0-8h, 9-17h)**:
 
+<!-- markdownlint-disable MD013 -->
 ```text
 A2C:  130-140 kWh/h
 PPO:  125-135 kWh/h  ← Mejor
 SAC:  <130 kWh/h     ← Mejor
 ```text
+<!-- markdownlint-enable MD013 -->
 
 **Peak (18-21h)**:
 
+<!-- markdownlint-disable MD013 -->
 ```text
 A2C:  280-290 kWh/h
 PPO:  260-270 kWh/h  ← Mejor
 SAC:  <250 kWh/h     ← Mejor ⭐
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### Convergencia (episodios)
 
+<!-- markdownlint-disable MD013 -->
 ```text
-A2C:  2 episodios (checkpoint actual)
-PPO:  2 episodios (checkpoint actual)
-SAC:  2-3 episodios (checkpoint actual; fine-tune hasta 50 en TIER 2)
-```text
+A2C:  2 episodio...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ### CO₂ Anual (kg)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 A2C:  ~1.75M kg
 PPO:  ~1.72M kg  ← Mejor
 SAC:  <1.70M kg  ← Mejor ⭐
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### Estabilidad (varianza reward)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 A2C:  Media (fluctúa)
 PPO:  Alta (muy suave)  ← Mejor
 SAC:  Muy Alta (smooth)  ← Mejor ⭐
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -199,60 +212,10 @@ SAC:  Muy Alta (smooth)  ← Mejor ⭐
 
 ### Por Convergencia ⚡
 
-1. **SAC**: 2-3 ep (sample efficient; fine-tune 50 ep TIER 2)
-2. **PPO**: 2 ep (convergencia alcanzada; checkpoints a 2 ep)
-3. **A2C**: 2 ep (convergencia alcanzada; checkpoints a 2 ep)
+1. **SAC**: 2-3 ...
+```
 
-### Por Estabilidad 🛡️
-
-1. **PPO**: Clipping + GAE = muy robusto
-2. **SAC**: Off-policy smoothing = muy estable
-3. **A2C**: On-policy variance = menos estable
-
-### Por Eficiencia Energética 🌍
-
-1. **SAC**: <1.70M kg CO₂ anual
-2. **PPO**: ~1.72M kg CO₂ anual
-3. **A2C**: ~1.75M kg CO₂ anual
-
-### Por Balance General ⭐
-
-1. **SAC**: Mejor convergencia + energía
-2. **PPO**: Mejor estabilidad + robustez
-3. **A2C**: Más rápido pero menos pulido
-
----
-
-## 💡 RECOMENDACIONES TIER 2
-
-### Usa **SAC** si
-
-- ✅ Quieres convergencia rápida (2-3 ep) y fine-tuning largo (hasta 50 ep)
-- ✅ Sample efficiency es crítico
-- ✅ Puedes hacer tuning de alpha
-- ✅ Meta: energía mínima
-
-### Usa **PPO** si
-
-- ✅ Necesitas máxima estabilidad
-- ✅ Prefieres robusted sobre velocidad
-- ✅ Hyperparams tradicionales mejor
-- ✅ Meta: producción estable
-
-### Usa **A2C** si
-
-- ✅ Necesitas convergencia inicial rápida
-- ✅ Problemas de memory/compute limitado
-- ✅ Quieres simplicidad
-- ✅ Meta: prototyping rápido
-
----
-
-## 📋 CONFIGURACIÓN LADO-A-LADO
-
-### A2C TIER 2
-
-```python
+[Ver código completo en GitHub]python
 learning_rate:      2.5e-4    # ↓ de 3e-4
 n_steps:            1024      # ↑ de 512
 ent_coef:           0.02      # ↑ de 0.01
@@ -260,9 +223,11 @@ hidden_sizes:       (512, 512)  # ↑ de (256, 256)
 activation:         "relu"    # cambio de tanh
 lr_schedule:        "linear"  # cambio de constant
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### PPO TIER 2
 
+<!-- markdownlint-disable MD013 -->
 ```python
 learning_rate:      2.5e-4    # ↓ de 3e-4
 batch_size:         256       # ↑ de 128
@@ -270,13 +235,10 @@ n_epochs:           15        # ↑ de 10
 ent_coef:           0.02      # ↑ de 0.01
 hidden_sizes:       (512, 512)  # ↑ de (256, 256)
 activation:         "relu"    # cambio de tanh
-lr_schedule:        "linear"  # cambio de constant
-use_sde:            True      # NEW: Exploración SDE
-```text
+lr_schedule:        "linear"  # cambio d...
+```
 
-### SAC TIER 2
-
-```python
+[Ver código completo en GitHub]python
 learning_rate:      2.5e-4    # ↓ de 3e-4
 batch_size:         256       # ↓ de 512
 ent_coef:           0.02      # ↑ de 0.01
@@ -287,6 +249,7 @@ update_per_timestep: 2        # NEW: 2x updates
 dropout:            0.1       # NEW: regularización
 # + Normalización adaptativa + baselines dinámicas
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -296,6 +259,7 @@ Para cada agente, cambios mínimos:
 
 **PPO**:
 
+<!-- markdownlint-disable MD013 -->
 ```diff
 - batch_size: 128 → 256
 - learning_rate: 3e-4 → 2.5e-4
@@ -305,19 +269,19 @@ Para cada agente, cambios mínimos:
 + lr_schedule: constant → linear
 + use_sde: True
 ```text
+<!-- markdownlint-enable MD013 -->
 
 **A2C**:
 
-```diff
-- learning_rate: 3e-4 → 2.5e-4
-+ n_steps: 512 → 1024
-+ ent_coef: 0.01 → 0.02
-+ hidden: (256,256) → (512,512)
-+ lr_schedule: constant → linear
-```text
+<!-...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 **SAC**:
 
+<!-- markdownlint-disable MD013 -->
 ```diff
 - learning_rate: 3e-4 → 2.5e-4
 - batch_size: 512 → 256
@@ -327,22 +291,21 @@ Para cada agente, cambios mínimos:
 + Dynamic baselines
 + BESS bonuses
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 📊 PRUEBAS TIER 2 (2 EPISODIOS CADA)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 [ ] A2C: 2 episodios (test convergencia)
 [ ] PPO: 2 episodios (test estabilidad)
-[ ] SAC: 2 episodios (test efficiency)
+[ ] SAC:...
+```
 
-Monitorear:
-- Reward evolution
-- Importación pico/off-peak
-- SOC pre-pico
-- Convergencia inicial
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -363,6 +326,7 @@ Monitorear:
 
 ### Ubicación Centralizada
 
+<!-- markdownlint-disable MD013 -->
 ```text
 📁 analyses/oe3/training/plots/
 ├── README.md (índice completo)
@@ -375,28 +339,11 @@ Monitorear:
 │   └── 06_SAC_training_updated.png
 ├── 📈 Gráficas Finales TIER 2 (5)
 │   ├── 07_01_COMPARATIVA_ENTRENAMIENTO.png
-│   ├── 07_02_ANALISIS_PERDIDAS.png
-│   ├── 07_03_ESTADISTICAS_RESUMEN.png
-│   ├── 07_co2_vs_steps_tier2.png
-│   └── 07_reward_vs_steps_tier2.png
-├── 📊 Gráficas Regeneradas (5)
-│   ├── training_progress_ppo.png
-│   ├── training_progress_a2c.png
-│   ├── training_progress_sac.png
-│   ├── comparison_all_agents.png
-│   └── training_efficiency.png
-├── 🔍 Gráficas de Progreso (3)
-│   ├── 20_a2c_progress.png
-│   ├── 20_ppo_progress.png
-│   └── 20_sac_progress.png
-└── 📋 Gráficas Auxiliares (6)
-    ├── comparison_table.png
-    ├── convergence_analysis.png
-    ├── storage_analysis.png
-    ├── training_comparison.png
-    ├── training_progress.png
-    └── training_summary.png
-```text
+│   ├── 07_02_ANALISIS...
+```
+
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 **Total**: 25 gráficas PNG (~2.5 MB)
 **Índice**: Ver `plots/README.md` para descripción completa de cada gráfica

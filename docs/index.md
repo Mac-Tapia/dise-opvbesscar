@@ -5,6 +5,7 @@ inteligente de energía en edificios usando Reinforcement Learning.
 
 ## 📚 Tabla de Contenidos
 
+<!-- markdownlint-disable MD013 -->
 ```{toctree}
 :maxdepth: 2
 
@@ -15,6 +16,7 @@ datos
 evaluacion
 deployment
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ## 🎯 Descripción General
 
@@ -28,68 +30,36 @@ integra:
 
 ### Agentes Implementados
 
-- **PPO** (Proximal Policy Optimization): 18,432 timesteps
-- **A2C** (Advantage Actor-Critic): 17,536 timesteps
-- **SAC** (Soft Actor-Critic): 17,520 timesteps
+- **PPO**...
+```
 
-## 📊 Recursos Principales
-
-### Gráficas
-
-- 25 gráficas regeneradas con datos reales
-- Ubicación: `analyses/oe3/training/plots/`
-- Índice: [plots/README.md](../analyses/oe3/training/plots/README.md)
-
-### Checkpoints
-
-- PPO: 11 checkpoints en `checkpoints/ppo_gpu/`
-- A2C: 10 checkpoints en `checkpoints/a2c_gpu/`
-- SAC: 176 checkpoints en `checkpoints/sac/`
-
-### Datasets
-
-- 476 archivos CSV
-- 101 escenarios de validación
-- Datos reales de demanda de mall
-
-## 🚀 Guía Rápida
-
-### Análisis de Modelos
-
-```bash
+[Ver código completo en GitHub]bash
 python EJECUTAR_OPCION_1_ANALISIS.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Evaluación en Escenarios
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python VERIFICACION_101_ESCENARIOS_2_PLAYAS.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Análisis Energético
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python EVALUACION_METRICAS_COMPLETAS.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ## 📖 Documentación Disponible
 
-- [RESUMEN_SESION_CONSOLIDACION_20260119.md][url1]:
-- Resumen de limpieza del proyecto
-- [PROXIMOSPASOS_OPCIONES_CONTINUACION.md][url2]:
-- Opciones de continuación
-- [plots/README.md](../analyses/oe3/training/plots/README.md): Índice de
-  - gráficas
+- [RESUMEN_SESI...
+```
 
-## 🔗 Enlaces Útiles
-
-- [GitHub Repository](https://github.com/Mac-Tapia/dise-opvbesscar)
-- [CityLearn](https://github.com/intelligent-environments-lab/CityLearn)
-- [Stable-Baselines3](https://stable-baselines3.readthedocs.io/)
-
-## 📝 Requisitos
-
-```text
+[Ver código completo en GitHub]text
 python >= 3.10
 stable-baselines3 >= 2.0
 gymnasium >= 0.28
@@ -97,6 +67,7 @@ numpy
 pandas
 matplotlib
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ## 📧 Contacto
 

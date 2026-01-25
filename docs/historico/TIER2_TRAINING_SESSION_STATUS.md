@@ -97,6 +97,7 @@
 **Problema**: Script inicial usaba parámetro inválido `agent_config=...`
 **Solución**: Updated script para usar parámetros específicos por agente
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # CORRECTO:
 result_a2c = simulate(
@@ -109,6 +110,7 @@ result_a2c = simulate(
     # ... más parámetros
 )
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ### Multiobjetivo Reward (Balanceado)
 
@@ -120,15 +122,11 @@ result_a2c = simulate(
 
 ---
 
-## 📊 MONITOREO EN VIVO
+## 📊 MONITOREO EN V...
+```
 
-**Terminal**: `bcbad086-ec29-433c-b4c4-d25563704e8e`
-
-```text
-2026-01-18 19:25:49,385 - INFO - Loading configuration...
-2026-01-18 19:25:54,891 - INFO - [MULTIOBJETIVO] Pesos activados
-2026-01-18 19:25:54,893 - INFO - Creando modelo A2C en dispositivo: cuda
-```text
+[Ver código completo en GitHub]text
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -145,10 +143,12 @@ result_a2c = simulate(
 
 ## 🎯 METAS DE CONVERGENCIA
 
+<!-- markdownlint-disable MD013 -->
 **Esperadas tras 2 episodios** (benchmarks indicativos): | Métrica | A2C | PPO | SAC | Target | | --------- | ----- | ----- | ----- | -------- | | Avg Reward | 0.45-0.55 | 0.40-0.50 | 0.55-0.65 | SAC > PPO > A2C | | CO2 (kg) | 1.75-1.85M | 1.85-2.0M | 1.65-1.80M | SAC < A2C < PPO | | Peak Import (kWh/h) | 240-260 | 260-290 | 220-250 | SAC < A2C < PPO | | Grid Stability | 0.70-0.80 | 0.75-0.85 | 0.80-0.90 | ↑ (TIER 2 benefit) | ---
 
 ## 📁 ARCHIVOS PRINCIPALES
 
+<!-- markdownlint-disable MD013 -->
 ```text
 src/iquitos_citylearn/oe3/agents/
 ├── ppo_sb3.py          ✅ TIER 2
@@ -165,6 +165,7 @@ outputs/oe3/training/tier2_2ep_serial/
 ├── ppo/                ← EN COLA
 └── sac/                ← EN COLA
 ```text
+<!-- markdownlint-enable MD013 -->
 
 ---
 

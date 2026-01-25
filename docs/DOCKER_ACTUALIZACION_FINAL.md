@@ -11,12 +11,14 @@ Push: ✅ GitHub sincronizado
 
 ## 📊 Resumen Ejecutivo
 
+<!-- markdownlint-disable MD013 -->
 Se actualizó completamente la infraestructura Docker de PVBESSCAR con: | Mejora | Antes | Ahora | Impacto | | -------- | ------- | ------- | --------- | | **Build time** | Variable | -60% BuildKit | ⚡ Más rápido | | **Health checks** | No | ✅ Automáticos | 🛡️ Autorecuperación | | **Signal handling** | Manual | ✅ Tini | 🎯 Limpio | | **Jupyter** | Separado | ✅ Integrado | 🔬 Mejor DX | | **Dev services** | Mínimos | ✅ Completos | 🧪 Testing/Lint | | **GPU support** | Básico | ✅ Optimizado | 🚀 Producción | | **Caching** | No | ✅ Volume cache | 📦 Más rápido | ---
 
 ## 📁 Cambios por Archivo
 
 ### 1. `Dockerfile` (+70 líneas)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 ✅ Multi-stage build optimizado
 ✅ BuildKit inline cache
@@ -25,6 +27,7 @@ Se actualizó completamente la infraestructura Docker de PVBESSCAR con: | Mejora
 ✅ Verificación de dependencias
 ✅ Metadata y labels
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Resultado:
 
@@ -36,23 +39,17 @@ Se actualizó completamente la infraestructura Docker de PVBESSCAR con: | Mejora
 
 ### 2. `docker-compose.yml` (+60 líneas)
 
-```text
-Servicios:
-  ✅ pvbesscar-pipeline (pipeline)
-  ✅ pvbesscar-monitor (checkpoints)
-  ✅ pvbesscar-jupyter (Jupyter Lab :8888)
+<!-- markdownlint-disab...
+```
 
-Features:
-  ✅ Health checks con service_healthy
-  ✅ Logging con rotación
-  ✅ Volume cache para pip
-  ✅ Resource limits/reservations
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ### 3. `docker-compose.gpu.yml` (+80 líneas)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Servicios GPU:
   ✅ pvbesscar-pipeline-gpu
@@ -65,23 +62,20 @@ GPU Config:
   ✅ GPU health checks
   ✅ Resource reservations
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ### 4. `docker-compose.dev.yml` (+80 líneas)
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Servicios Desarrollo:
-  ✅ dev-notebook (Jupyter)
-  ✅ dev-tests (Pytest)
-  ✅ dev-lint (Pylint + Black + isort)
-  ✅ dev-type-check (MyPy)
+  ✅ dev-notebook (Jupyter)...
+```
 
-Features:
-  ✅ Todos exit when done
-  ✅ Test result volumes
-  ✅ Jupyter data persistence
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -113,6 +107,7 @@ Features:
 
 4. **docker_manager.py** (200+ líneas)
 
+<!-- markdownlint-disable MD013 -->
    ```bash
    python docker_manager.py build [--gpu] [--dev] [--no-cache]
    python docker_manager.py up [--gpu] [--dev] [--service]
@@ -122,25 +117,24 @@ Features:
    python docker_manager.py stats
    python docker_manager.py clean
 ```bash
+<!-- markdownlint-enable MD013 -->
 
-2. **docker_quick.bat** (Windows Batch)
+2. **docke...
+```
 
-   ```batch
- docker_quick.bat build-cpu | gpu | dev 
- docker_quick.bat up-cpu | gpu | dev 
-   docker_quick.bat down
-   docker_quick.bat logs-pipeline|monitor
- docker_quick.bat stats | health | clean 
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 3. **docker_quick.ps1** (PowerShell)
 
+<!-- markdownlint-disable MD013 -->
    ```powershell
    .\docker_quick.ps1 -Command build [-GPU] [-Dev] [-Clean]
    .\docker_quick.ps1 -Command up [-GPU] [-Dev]
    .\docker_quick.ps1 -Command logs [-GPU]
    .\docker_quick.ps1 -Command health [-GPU]
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -148,19 +142,18 @@ Features:
 
 ### CPU Development (Recommended)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Build con cache
-docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pvbesscar:latest .
+docker build --build-arg BUILDKIT_INLINE_C...
+```
 
-# Start
-docker-compose up -d
-
-# Access Jupyter
-open http://localhost:8888
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### GPU Production
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Build GPU image
 docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pvbesscar:latest-gpu .
@@ -171,18 +164,20 @@ docker-compose -f docker-compose.gpu.yml up -d
 # Check GPU
 docker exec pvbesscar-pipeline-gpu nvidia-smi
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Development Stack
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # Start all services
 docker-compose -f docker-compose.dev.yml up -d
 
-# Services run automatically:
-# - Jupyter Lab on :8888
-# - Tests run in background
-# - Linting available
-```bash
+# S...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -190,35 +185,27 @@ docker-compose -f docker-compose.dev.yml up -d
 
 ### Build Performance
 
+<!-- markdownlint-disable MD013 -->
 ```text
 Antes: ~3-5 min primera vez, ~2-3 min rebuild
 Ahora: ~3-5 min primera vez, ~30-60 seg rebuild (-60%)
        Gracias a BuildKit inline cache
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Image Size
 
+<!-- markdownlint-disable MD013 -->
 ```text
 CPU image: ~1.2GB (optimizado, no cambio significativo)
 GPU image: ~2.1GB (nvidia/cuda base larger)
 Dev image: ~1.3GB (pytest, pylint, mypy added)
 ```bash
+<...
+```
 
-### Features
-
-```text
-Antes:
-  ✗ Sin health checks
-  ✗ Sin signal handling
-  ✗ Sin Jupyter
-  ✗ Dev services separados
-
-Ahora:
-  ✅ Health checks automáticos
-  ✅ Tini para signal handling
-  ✅ Jupyter integrado en cada compose
-  ✅ Dev services completos en un archivo
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -226,6 +213,7 @@ Ahora:
 
 ### Build Check
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 $ docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pvbesscar:latest .
 ✓ Stage 1: Builder completed
@@ -233,26 +221,24 @@ $ docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pvbesscar:latest .
 ✓ Health check configured
 ✓ Image: pvbesscar:latest
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Service Health
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 $ docker compose up -d
 $ docker inspect --format='{{json .State.Health}}' pvbesscar-pipeline
 {
-  "Status": "healthy",
-  "FailingStreak": 0,
-  "Log": [...]
-}
-```bash
+  "Status": "h...
+```
 
-### GPU Check
-
-```bash
+[Ver código completo en GitHub]bash
 $ docker exec pvbesscar-pipeline-gpu nvidia-smi
 NVIDIA-SMI X.X.X
 GPU 0: [Your GPU] (UUID: ...)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -260,9 +246,11 @@ GPU 0: [Your GPU] (UUID: ...)
 
 ### 1. BuildKit Cache
 
+<!-- markdownlint-disable MD013 -->
 ```dockerfile
 RUN --mount=type=cache,target=/root/.cache/pip pip install ...
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 - Reutiliza capas entre builds
 - Funciona en GitHub Actions, CI/CD
@@ -270,23 +258,18 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install ...
 
 ### 2. Tini Init
 
-```dockerfile
-ENTRYPOINT ["/usr/bin/tini", "--"]
-```bash
+<!-- markdownlint-disable MD013 -->
+```docke...
+```
 
-- Reap zombie processes
-- Proper SIGTERM/SIGINT handling
-- Graceful shutdown
-
-### 3. Health Checks
-
-```yaml
+[Ver código completo en GitHub]yaml
 healthcheck:
   test: ["CMD", "python", "-c", "import stable_baselines3"]
   interval: 30s
   timeout: 10s
   retries: 3
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 - Auto-restart unhealthy containers
 - Dependency verification
@@ -294,10 +277,12 @@ healthcheck:
 
 ### 4. Volume Cache
 
+<!-- markdownlint-disable MD013 -->
 ```yaml
 volumes:
   pipeline_cache:
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 - Persists pip cache between runs
 - Acelera rebuilds
@@ -305,24 +290,11 @@ volumes:
 
 ### 5. Jupyter Integrado
 
-```yaml
-pvbesscar-jupyter:
-  ports:
-    - "8888:8888"
-  command: jupyter lab --ip=0.0.0.0 --allow-root
-```bash
+<!-- markdownlint-disable MD013 -->
+```yam...
+```
 
-- Interactive development
-- Same image, same environment
-- Ready to use
-
----
-
-## 📋 Git Commits
-
-### Commit 1: 1839140d
-
-```text
+[Ver código completo en GitHub]text
 feat: actualización construcción Docker con BuildKit, 
       Tini, health checks y servicios integrados
 
@@ -337,9 +309,11 @@ feat: actualización construcción Docker con BuildKit,
 - docker_quick.ps1 (nuevo)
 - ACTUALIZACION_DOCKER_20260120.md (nuevo)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Commit 2: 56852630
 
+<!-- markdownlint-disable MD013 -->
 ```text
 docs: agregar resumen de actualización Docker 
       con benchmarks y next steps
@@ -347,49 +321,23 @@ docs: agregar resumen de actualización Docker
 1 file changed, 351 insertions(+)
 - RESUMEN_CONSTRUCCION_DOCKER_ACTUALIZADA.md (nuevo)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Push
 
+<!-- markdownlint-disable MD013 -->
 ```text
-✅ Pushed to https://github.com/Mac-Tapia/dise-opvbesscar
-   1839140d..56852630  main -> main
-```bash
+✅ Pushed to https://github.co...
+```
 
----
-
-## 📦 Archivos Importantes
-
-### Docker Config
-
-- ✅ `Dockerfile` (modificado) - Multi-stage optimizado
-- ✅ `docker-compose.yml` (modificado) - CPU services
-- ✅ `docker-compose.gpu.yml` (modificado) - GPU services
-- ✅ `docker-compose.dev.yml` (modificado) - Dev services
-
-### Documentation
-
-- 📖 `DOCKER_BUILD_GUIDE.md` - Guía completa (250+ líneas)
-- 📖 `ACTUALIZACION_DOCKER_20260120.md` - Cambios realizados
-- 📖 `RESUMEN_CONSTRUCCION_DOCKER_ACTUALIZADA.md` - Validación
-
-### Tools
-
-- 🔧 `docker_manager.py` - Python CLI utility
-- 🔧 `docker_quick.bat` - Windows Batch commands
-- 🔧 `docker_quick.ps1` - PowerShell commands
-
----
-
-## 🎯 Next Steps
-
-### 1. Build Image
-
-```bash
+[Ver código completo en GitHub]bash
 docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pvbesscar:latest .
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 2. Start Services
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 # CPU
 docker-compose up -d
@@ -397,26 +345,26 @@ docker-compose up -d
 # Or GPU
 docker-compose -f docker-compose.gpu.yml up -d
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 3. Verify
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 docker-compose ps
 docker inspect --format='{{json .State.Health}}' pvbesscar-pipeline
 ```bash
+<!-- markdownlin...
+```
 
-### 4. Access
-
-```text
-Jupyter: http://localhost:8888
-Logs:    docker-compose logs -f
-Stats:   docker stats
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 📚 Documentation Structure
 
+<!-- markdownlint-disable MD013 -->
 ```text
 DOCKER_BUILD_GUIDE.md (Principal)
 ├── Quick Start
@@ -435,15 +383,10 @@ ACTUALIZACION_DOCKER_20260120.md (Cambios)
 RESUMEN_CONSTRUCCION_DOCKER_ACTUALIZADA.md (Validación)
 ├── Cambios completados
 ├── Comparativa antes/después
-├── Beneficios clave
-└── Next steps
-```bash
+├── Be...
+```
 
----
-
-## ✨ Características Principales
-
-```text
+[Ver código completo en GitHub]text
 🏗️  Multi-stage build
     - Builder stage
     - Runtime stage
@@ -485,6 +428,7 @@ RESUMEN_CONSTRUCCION_DOCKER_ACTUALIZADA.md (Validación)
     - Faster installs
     - Persistent storage
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

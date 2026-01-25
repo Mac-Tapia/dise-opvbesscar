@@ -26,84 +26,87 @@ entrenamiento con configuraciones TIER 2 optimizadas.
 
 **Archivo**: `src/iquitos_citylearn/oe3/agents/sac.py`
 
+<!-- markdownlint-disable MD013 -->
 #### Hiperparámetros Principales | Parámetro | Valor | Estado | |-----------|-------|--------| | **Learning Rate** | 3e-4 | ✅ Óptimo (no limitado) | | **Batch Size** | 512 | ✅ Configurado | | **Buffer Size** | 100,000 | ✅ Suficiente | | **Gamma** | 0.99 | ✅ Estándar | | **Tau** | 0.005 | ✅ Suave target update | | **Entropy Coef** | 0.01 | ✅ Reducido (TIER 2) | | **Target Entropy** | -50.0 | ✅ Menos exploración | | **Gradient Steps** | 1 | ✅ Eficiente | #### Red Neuronal
 
+<!-- markdownlint-disable MD013 -->
 ```python
 hidden_sizes: (256, 256)
 activation: "relu"
 optimizer_kwargs: {"weight_decay": 1e-5}
 ```bash
+<!-- markdownlint-enable MD013 -->
 
-#### Normalización y Escalado | Configuración | Valor | Propósito | |--------------|-------|-----------| | `normalize_observations` | ✅ True | Obs → media=0, std=1 | | `normalize_rewards` | ✅ True | Rewards → [-1, 1] | | `reward_scale` | 0.01 | Reduce magnitud | | `clip_obs` | 10.0 | Previene outliers | #### GPU/CUDA
+<!-- markdownlint-disable MD013 -->
+#### Normalización y Escalado | Configuración | Valor | Propósito | |--------------|-------|-----------| | `normalize_observations` | ✅ True | Obs → media=0, std=1 | | `normalize_rewards` | ✅ True | Rewards → [-1, 1] | | `reward_scale`...
+```
 
-```python
+[Ver código completo en GitHub]python
 device: "auto"              # Auto-detección GPU
 use_amp: True               # Mixed precision (FP16/FP32)
 pin_memory: True            # CPU→GPU rápido
 deterministic_cuda: False   # Velocidad > reproducibilidad
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Checkpoints
 
+<!-- markdownlint-disable MD013 -->
 ```python
 checkpoint_freq_steps: 1000  # Cada 1000 pasos
 save_final: True             # Guardar modelo final
 progress_path: Configurado   # Log de progreso
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ### 2. **PPO (Proximal Policy Optimization)**
 
-**Archivo**: `src/iquitos_citylearn/oe3/agents/ppo_sb3.py`
+**Archivo**: `src/iquitos_citylearn/oe3/agents/ppo_sb3.py`...
+```
 
-#### Hiperparámetros TIER 2 | Parámetro | Valor TIER 1 | Valor TIER 2 | Mejora | |-----------|--------------|--------------|---------| | **Learning Rate** | 3e-4 | **2.5e-4** | ↓ Convergencia suave | | **Batch Size** | 128 | **256** | ↑ Más estable | | **N Epochs** | 10 | **15** | ↑ Más updates | | **Entropy Coef** | 0.01 | **0.02** | ↑ 2x exploración | | **Hidden Sizes** | (256,256) | **(512,512)** | ↑ Capacidad | | **Activation** | tanh | **relu** | Mejor gradientes | | **LR Schedule** | constant | **linear** | Decay automático | #### Exploración Mejorada
-
-```python
+[Ver código completo en GitHub]python
 use_sde: True               # Stochastic Delta Exploration
 sde_sample_freq: -1         # Sample every step
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Normalización
 
+<!-- markdownlint-disable MD013 -->
 ```python
 normalize_advantage: True    # Normaliza advantage function
 normalize_observations: True # Obs → N(0,1)
 normalize_rewards: True      # Rewards escalados
 reward_scale: 0.01          # Factor de escala
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### GPU
 
-```python
-device: "auto"
-use_amp: True               # Mixed precision
-pin_memory: True
-```bash
+<!-- markdownlint-disable MD013 -->
+```pytho...
+```
 
----
-
-### 3. **A2C (Advantage Actor-Critic)**
-
-**Archivo**: `src/iquitos_citylearn/oe3/agents/a2c_sb3.py`
-
-#### Hiperparámetros TIER 2 (2) | Parámetro | Valor TIER 1 | Valor TIER 2 | Mejora | |-----------|--------------|--------------|---------| | **Learning Rate** | 3e-4 | **2.5e-4** | ↓ Convergencia suave | | **N Steps** | 512 | **1024** | ↑ Más steps/update | | **Entropy Coef** | 0.01 | **0.02** | ↑ 2x exploración | | **Hidden Sizes** | (256,256) | **(512,512)** | ↑ Capacidad | | **Activation** | tanh | **relu** | Mejor gradientes | | **LR Schedule** | constant | **linear** | Decay automático | #### Configuración Estándar
-
-```python
+[Ver código completo en GitHub]python
 gamma: 0.99
 gae_lambda: 1.0             # Generalized Advantage Estimation
 vf_coef: 0.5                # Value function coefficient
 max_grad_norm: 0.5          # Gradient clipping
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 #### Normalización (2)
 
+<!-- markdownlint-disable MD013 -->
 ```python
 normalize_observations: True
 normalize_rewards: True
 reward_scale: 0.01
 clip_obs: 10.0
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -113,16 +116,11 @@ clip_obs: 10.0
 
 ### Pesos Optimizados (Compartidos por todos los agentes)
 
-```python
-@dataclass
-class MultiObjectiveWeights:
-    co2: 0.50                    # PRIMARY: Minimizar CO₂ (matriz térmica)
-    cost: 0.10                   # REDUCIDO: costo no es bottleneck
-    solar: 0.20                  # SECUNDARIO: autoconsumo solar limpio
-    ev_satisfaction: 0.10        # Satisfacción básica de carga
-    grid_stability: 0.10         # REDUCIDO: implícito en CO₂+solar
-    peak_import_penalty: 0.00    # Dinámico (aplicado en compute())
-```bash
+<!-- m...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Justificación**:
 
@@ -137,42 +135,36 @@ class MultiObjectiveWeights:
 
 **Off-peak** (00:00-17:59, 22:00-23:59):
 
+<!-- markdownlint-disable MD013 -->
 ```python
 co2_baseline_offpeak = 130.0 kWh/h  # Mall ~100 kW + Chargers ~30 kW
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Peak** (18:00-21:59):
 
+<!-- markdownlint-disable MD013 -->
 ```python
 co2_baseline_peak = 250.0 kWh/h     # Mall ~150 kW + Chargers ~100 kW
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Función de Recompensa
 
+<!-- markdownlint-disable MD013 -->
 ```python
-R_total = w_co2 * R_co2 + w_cost * R_cost + w_solar * R_solar + 
-          w_ev * R_ev + w_grid * R_grid
-```bash
+R_total = w_co2 * R_co2 + w_c...
+```
 
-Donde cada `R_i ∈ [-1, 1]` normalizado.
-
-#### Componentes Detallados
-
-**1. R_CO₂** (minimizar importación grid):
-
-- Off-peak: `R = 1.0 - 1.0 * min(1.0, import/130)`
-- Peak: `R = 1.0 - 2.0 * min(1.0, import/250)` (penalización 2x)
-- Rango: [-1, 1]
-
-**2. R_Cost** (minimizar costo):
-
-```python
+[Ver código completo en GitHub]python
 cost_usd = (import - export) * 0.20
 R_cost = 1.0 - 2.0 * min(1.0, max(0, cost)/100)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **3. R_Solar** (maximizar autoconsumo):
 
+<!-- markdownlint-disable MD013 -->
 ```python
 if solar_gen > 0:
     solar_used = min(solar_gen, ev_charging + grid_import*0.5)
@@ -180,23 +172,27 @@ if solar_gen > 0:
 else:
     R_solar = 0.0
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **4. R_EV** (satisfacción de carga):
 
-```python
-satisfaction = min(1.0, ev_soc_avg / 0.90)
-R_ev = 2.0 * satisfaction - 1.0
-# + bonus 0.1 si carga con solar
-```bash
+<!-- markdownlint-disable MD013 -->
+```py...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **5. R_Grid** (estabilidad):
 
+<!-- markdownlint-disable MD013 -->
 ```python
 if hour in peak_hours:
     R_grid = 1.0 - 3.0 * (import / 200)  # Penalización fuerte
 else:
     R_grid = 1.0 - 1.0 * (import / 150)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -204,44 +200,30 @@ else:
 
 **Archivo**: `src/iquitos_citylearn/oe3/rewards.py`
 
+<!-- markdownlint-disable MD013 -->
 ```python
 @dataclass
 class IquitosContext:
     # Factor de emisión (central térmica aislada)
-    co2_factor_kg_per_kwh: 0.4521
-    
-    # Tarifa eléctrica
-    tariff_usd_per_kwh: 0.20
-    
-    # Configuración chargers (OE2)
-    n_chargers: 31
-    sockets_per_charger: 4
-    charger_power_kw: 2.14
-    
-    # Flota EV
-    n_motos: 900
-    n_mototaxis: 130
-    
-    # Límites operacionales
-    peak_demand_limit_kw: 200.0
-    ev_soc_target: 0.90
-    bess_soc_min: 0.10
-    bess_soc_max: 0.90
-    
-    # Horas pico Iquitos
-    peak_hours: (18, 19, 20, 21)
-```bash
+    co2_factor...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## 🔧 CONFIGURACIONES COMPARTIDAS
 
+<!-- markdownlint-disable MD013 -->
 ### Todos los Agentes | Configuración | SAC | PPO | A2C | Descripción | |--------------|-----|-----|-----|-------------| | **weight_co2** | 0.50 | 0.50 | 0.50 | Minimizar CO₂ | | **weight_cost** | 0.15 | 0.15 | 0.15 | Minimizar costo | | **weight_solar** | 0.20 | 0.20 | 0.20 | Maximizar solar | | **weight_ev_satisfaction** | 0.10 | 0.10 | 0.10 | Satisfacción EV | | **weight_grid_stability** | 0.05 | 0.05 | 0.05 | Estabilidad grid | | **normalize_observations** | ✅ | ✅ | ✅ | Obs → N(0,1) | | **normalize_rewards** | ✅ | ✅ | ✅ | Rewards escalados | | **reward_scale** | 0.01 | 0.01 | 0.01 | Factor de escala | | **clip_obs** | 10.0 | 10.0 | 10.0 | Clipping outliers | | **device** | auto | auto | auto | GPU/CUDA auto | | **seed** | 42 | 42 | 42 | Reproducibilidad | ### Umbrales Multicriterio | Parámetro | Valor | Todos los Agentes | |-----------|-------|-------------------| | `co2_target_kg_per_kwh` | 0.4521 | ✅ | | `cost_target_usd_per_kwh` | 0.20 | ✅ | | `ev_soc_target` | 0.90 | ✅ | | `peak_demand_limit_kw` | 200.0 | ✅ | ---
 
+<!-- markdownlint-disable MD013 -->
 ## 📊 TABLA COMPARATIVA FINAL | Parámetro | A2C TIER 2 | PPO TIER 2 | SAC TIER 2 | |-----------|------------|------------|------------| | **Learning Rate** | 2.5e-4 | 2.5e-4 | 3e-4 | | **Batch Size** | 1024 (n_steps) | 256 | 512 | | **Entropía** | 0.02 | 0.02 | 0.01 | | **Hidden Sizes** | (512, 512) | (512, 512) | (256, 256) | | **Activation** | ReLU | ReLU | ReLU | | **LR Schedule** | Linear ↓ | Linear ↓ | Constant | | **Normalización Obs** | ✅ | ✅ | ✅ | | **Normalización Rewards** | ✅ | ✅ | ✅ | | **GPU/CUDA** | ✅ | ✅ | ✅ | | **Mixed Precision** | ❌ | ✅ | ✅ | | **Checkpoints** | ✅ (1000 steps) | ✅ (1000 steps) | ✅ (1000 steps) | ---
 
 ## 🚀 ESTADO DE ENTRENAMIENTO
 
+<!-- markdownlint-disable MD013 -->
 ### Archivos de Configuración | Agente | Archivo Config | Estado | |--------|---------------|--------| | **SAC** | `src/iquitos_citylearn/oe3/agents/sac.py` | ✅ Listo | | **PPO** | `src/iquitos_citylearn/oe3/agents/ppo_sb3.py` | ✅ Listo | | **A2C** | `src/iquitos_citylearn/oe3/agents/a2c_sb3.py` | ✅ Listo | | **Rewards** | `src/iquitos_citylearn/oe3/rewards.py` | ✅ Listo | ### Scripts de Entrenamiento | Script | Propósito | Estado | |--------|-----------|--------| | `scripts/train_gpu_robusto.py` | Entrenamiento GPU robusto | ✅ Disponible | | `scripts/train_agents_serial.py` | Entrenamiento serial | ✅ Disponible | |`src/iquitos_citylearn/oe3/simulate.py`|Simulación y entrenamiento|✅ Listo| ---
 
 ## ✅ CHECKLIST FINAL
@@ -300,25 +282,28 @@ class IquitosContext:
 
 **SAC** (más rápido):
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python scripts/train_gpu_robusto.py --agent SAC --episodes 5 --device cuda
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **PPO** (más estable):
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python scripts/train_gpu_robusto.py --agent PPO --episodes 5 --device cuda
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **A2C** (baseline):
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-python scripts/train_gpu_robusto.py --agent A2C --episodes 5 --device cuda
-```bash
+python scripts/train_gpu_robu...
+```
 
-### 2. Entrenamiento Completo
-
-```bash
+[Ver código completo en GitHub]bash
 # SAC: 50 episodios (mínimo recomendado)
 python scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda
 
@@ -328,31 +313,28 @@ python scripts/train_gpu_robusto.py --agent PPO --episodes 57 --device cuda
 # A2C: 500k timesteps
 python scripts/train_gpu_robusto.py --agent A2C --episodes 57 --device cuda
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 3. Entrenamiento Serial (todos los agentes)
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python scripts/train_agents_serial.py --device cuda --episodes 5
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### 4. Monitoreo
 
 - **Checkpoints**: `training/oe3/checkpoints/{agent}/`
 - **Logs de progreso**: `training/oe3/progress/{agent}_progress.csv`
-- **Modelos finales**: `training/oe3/checkpoints/{agent}/final_model.zip`
+- **Modelos finales*...
+```
 
----
-
-## 📝 NOTAS IMPORTANTES
-
-### Normalización de Recompensas
-
-La normalización está **habilitada** en todos los agentes:
-
-```python
+[Ver código completo en GitHub]python
 normalize_rewards: True
 reward_scale: 0.01
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 Esto significa que las recompensas crudas (típicamente en rango [-100, 100]) se
 escalan a [-1, 1] antes de entrenar. **No requiere ajustes manuales**.
@@ -365,20 +347,13 @@ Con las configuraciones actuales:
 - **PPO**: ~3-4 GB VRAM (batch=256, n_steps=1024)
 - **A2C**: ~2-3 GB VRAM (n_steps=1024)
 
-Si encuentras OOM (Out of Memory):
+Si encuentras OOM (Out...
+```
 
-1. Reducir `batch_size` a la mitad
-2. Reducir `buffer_size` (SAC) o `n_steps` (PPO/A2C)
-3. Deshabilitar `use_amp` (mixed precision)
-
-### Reproducibilidad
-
-Todos los agentes usan `seed=42`para reproducibilidad. Para resultados
-idénticos:
-
-```python
+[Ver código completo en GitHub]python
 deterministic_cuda: True  # Más lento, pero reproducible
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -393,11 +368,11 @@ deterministic_cuda: True  # Más lento, pero reproducible
 - ✅ Checkpoints y logging configurados
 - ✅ Contexto Iquitos integrado
 
-**Próxima acción**: Ejecutar entrenamiento inicial con:
+**Próxima acción**: Ejecutar entrenamiento inic...
+```
 
-```bash
-python scripts/train_gpu_robusto.py --agent SAC --episodes 5 --device cuda
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 

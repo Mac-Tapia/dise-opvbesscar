@@ -8,6 +8,7 @@
 
 ## 📊 RESUMEN EJECUTIVO
 
+<!-- markdownlint-disable MD013 -->
 ### Dimensionamiento del BESS | Parámetro | Valor | |-----------|-------| | **Capacidad Nominal** | **1,712 kWh** | | **Potencia Nominal** | **622 kW** | | Tecnología | Litio-Ion | | Profundidad de Descarga (DoD) | 80% | | SOC Operacional | 20% - 100% | | Eficiencia Round-trip | 95% | | C-rate | 0.60 | ### Demanda EV | Parámetro | Valor | |-----------|-------| | Energía Total Diaria | 3,252 kWh | | Potencia Máxima | 502 kW (17:15h) | | Potencia Promedio (operación) | 255 kW | | Horario Operación | 9h - 22h (13 horas) | | Resolución Temporal | 15 minutos | ### Déficit Energético (requiere BESS) | Parámetro | Valor | |-----------|-------| | Energía Déficit | 1,301 kWh/día | | Horario Déficit | 18h - 22h (5 horas) | | Potencia Pico Déficit | 373 kW | | % del total demanda | 40% | ---
 
 ## 📁 ARCHIVOS GENERADOS
@@ -51,6 +52,7 @@
 
 ### Horario de Operación
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 APERTURA (9:00h):
   - Potencia: 0.00 kW (exactamente cero)
@@ -67,21 +69,20 @@ HORA PICO (18h-21h):
   - Variación: ±5%
   - Potencia máxima: 373.45 kW
 
-RAMPA CIERRE (21h):
-  - Descenso lineal: 356 kW → 89 kW
-  - Duración: 1 hora (4 intervalos de 15 min)
+RAMPA...
+```
 
-CIERRE (22:00h):
-  - Potencia: 0.00 kW (todos los intervalos)
-  - Sin actividad hasta apertura siguiente día
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
+<!-- markdownlint-disable MD013 -->
 ### Distribución Horaria de Energía | Hora | Energía (kWh) | Pot. Máx (kW) | Estado | |------|---------------|---------------|--------| | 9h | 3.73 | 9.49 | Apertura (cero) | | 10h | 28.70 | 48.76 | Crecimiento | | 11h | 76.21 | 95.97 | Crecimiento | | 12h | 135.31 | 188.34 | Crecimiento | | 13h | 213.71 | 225.88 | Crecimiento | | 14h | 288.58 | 319.05 | Crecimiento | | 15h | 365.58 | 380.12 | Crecimiento | | 16h | 397.02 | 459.10 | Crecimiento | | 17h | 442.36 | 501.91 | **Pico máximo** | | 18h | 368.11 | 373.45 | Pico (déficit) | | 19h | 360.04 | 368.39 | Pico (déficit) | | 20h | 350.15 | 358.24 | Pico (déficit) | | 21h | 222.51 | 356.01 | Rampa cierre | | 22h | 0.00 | 0.00 | **Cierre (cero)** | ---
 
 ## ⚡ OPERACIÓN DEL BESS
 
 ### Estrategia Diaria
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 ┌─────────────────────────────────────────────────────────┐
 │                   CICLO OPERACIONAL BESS                │
@@ -89,25 +90,13 @@ CIERRE (22:00h):
 │                                                         │
 │  00:00 - 05:00  │ REPOSO                                │
 │                 │ SOC: 20% (mínimo)                     │
-│                 │ Sin actividad                         │
-│                                                         │
-│  05:00 - 17:00  │ CARGA (desde solar)                   │
-│                 │ Fuente: Excedente solar (post-mall)   │
-│                 │ SOC: 20% → 100%                       │
-│                 │ Objetivo: 100% antes de las 18h       │
-│                                                         │
-│  18:00 - 22:00  │ DESCARGA (a demanda EV)               │
-│                 │ Cubre déficit nocturno                │
-│                 │ SOC: 100% → 20%                       │
-│                 │ Energía entregada: 1,301 kWh          │
-│                                                         │
-│  22:00 - 24:00  │ REPOSO                                │
-│                 │ SOC: 20% (alcanzado)                  │
-│                 │ Preparación para nuevo ciclo          │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```bash
+│                 │ Sin actividad       ...
+```
 
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
+
+<!-- markdownlint-disable MD013 -->
 ### Perfil de SOC Esperado | Hora | SOC (%) | Estado | Actividad | |------|---------|--------|-----------| | 0h-5h | 20% | Reposo | - | | 5h-17h | 20%→100% | Carga | Carga desde solar | | 17h | 100% | Listo | Máxima carga alcanzada | | 18h | 78.5% | Descarga | Cubriendo déficit EV | | 19h | 57.5% | Descarga | Cubriendo déficit EV | | 20h | 37.0% | Descarga | Cubriendo déficit EV | | 21h | 24.0% | Descarga | Cubriendo déficit EV | | 22h | 24.0%* | Reposo | *Debe llegar a 20% | > **Nota:** La simulación muestra SOC final de 24% (ligeramente sobre el
 objetivo de 20%). Esto indica que el BESS está correctamente dimensionado con
 margen de seguridad.
@@ -118,6 +107,7 @@ margen de seguridad.
 
 ### Estructura del Schema
 
+<!-- markdownlint-disable MD013 -->
 ```json
 {
   "buildings": {
@@ -134,42 +124,15 @@ margen de seguridad.
       "electrical_storage": {
         "type": "Battery",
         "capacity_kwh": 1712,
-        "power_kw": 622,
-        "efficiency": 0.95,
-        "initial_soc": 0.20,
-        "soc_min": 0.20,
-        "soc_max": 1.00,
-        "depth_of_discharge": 0.80
-      },
-      
-      "ev_charging": {
-        "type": "ElectricVehicleCharging",
-        "num_chargers": 32,
-        "sockets_per_charger": 4,
-        "total_sockets": 128,
-        "charging_schedule": "perfil_horario_carga.csv",
-        "operating_hours": {
-          "opening": 9,
-          "closing": 22
-        }
-      }
-    }
-  },
-  
-  "simulation": {
-    "time_step_minutes": 15,
-    "time_steps_per_hour": 4,
-    "time_steps_per_day": 96,
-    "simulation_period": {
-      "start_time_step": 0,
-      "end_time_step": 35040
-    }
-  }
-}
-```bash
+        "power_kw": ...
+```
+
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ### Parámetros Clave para el Schema
 
+<!-- markdownlint-disable MD013 -->
 ```python
 # Resolución temporal
 TIMESTEP_MINUTES = 15
@@ -192,12 +155,11 @@ EV_OPENING_HOUR = 9
 EV_CLOSING_HOUR = 22
 EV_NUM_CHARGERS = 32
 EV_SOCKETS_PER_CHARGER = 4
+...
+```
 
-# Solar (estimado - validar con datos reales)
-SOLAR_CAPACITY_KW = 5000  # Ajustar según instalación real
-SOLAR_GENERATION_START = 5  # 5h
-SOLAR_GENERATION_END = 17   # 17h
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
@@ -205,6 +167,7 @@ SOLAR_GENERATION_END = 17   # 17h
 
 ### Flujo Diario de Energía
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 GENERACIÓN SOLAR (estimada):
   22,036 kWh/día (generación 5h-17h)
@@ -226,16 +189,13 @@ EXCEDENTE SOLAR DISPONIBLE:
       5,583 kWh disponibles para cargar BESS
       (suficiente para alcanzar 100% SOC)
 
-DEMANDA EV NOCTURNA (18h-22h):
-  1,301 kWh requeridos
-  
-  ↓
-  
-DESCARGA BESS:
-  1,301 kWh entregados por BESS
-  SOC: 100% → 20%
-```bash
+DEMANDA EV N...
+```
 
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
+
+<!-- markdownlint-disable MD013 -->
 ### Distribución de Fuentes | Fuente | Energía (kWh) | % del Total EV | |--------|---------------|----------------| | Solar Directa (9h-17h) | 577 | 18% | | BESS (18h-22h) | 1,301 | 40% | | Red (respaldo) | 1,374* | 42% | | **TOTAL** | **3,252** | **100%** | > **Nota:** *La red cubre períodos cuando solar+BESS no pueden cubrir demanda
 completa o como respaldo. Revisar con análisis detallado de excedente solar.
 

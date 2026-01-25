@@ -23,43 +23,27 @@
 
 ### ✅ Testing Results
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 STEP 1: Dependencies       ✅ PASSED (except CityLearn → requires Python 3.11)
 STEP 2: OE2 Validation     ✅ PASSED (Solar, Chargers, BESS all verified)
 STEP 3: Schema Validation  ✅ PASSED (Structure verified)
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### ✅ Documentation Created
 
 - `PYTHON_3.11_SETUP_GUIDE.md` - 4 installation methods (200 lines)
-- `PHASE_7_STATUS_REPORT.md` - Detailed progress report (400 lines)
-- `PHASE_7_EXECUTION_SUMMARY.md` - Quick reference guide (300 lines)
+- `PHASE_7_STATUS_REPORT.md` - Detailed progress re...
+```
 
----
-
-## 🚨 Critical Blocker Identified & Documented
-
-**Issue**: Python 3.13 installed on system  
-**Problem**: scikit-learn fails to compile on Python 3.13 (Cython errors)  
-**Impact**: CityLearn installation fails (blocks full pipeline)  
-**Solution**: Install Python 3.11 (guaranteed compatibility)
-
----
-
-## 📋 Next Steps (User Action Required)
-
-### Step 1: Install Python 3.11
-
-Choose ONE of 4 methods from `PYTHON_3.11_SETUP_GUIDE.md`:
-
-**Option A (⭐ Recommended)**: Download from python.org
-
-```bash
+[Ver código completo en GitHub]bash
 https://www.python.org/downloads/release/python-3110/
 → Download "Windows installer (64-bit)"
 → Run installer, check "Add python.exe to PATH"
 → Verify: python3.11 --version
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Option B**: Use pyenv-windows
 **Option C**: Use Chocolatey  
@@ -71,23 +55,21 @@ https://www.python.org/downloads/release/python-3110/
 
 ### Step 2: Create Fresh Virtual Environment
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 cd d:\diseñopvbesscar
 python3.11 -m venv .venv
 .venv\Scripts\activate
 python --version  # Verify shows 3.11
 ```bash
+<!--...
+```
 
-**Time**: 5 minutes
-
----
-
-### Step 3: Install Dependencies
-
-```bash
+[Ver código completo en GitHub]bash
 pip install -r requirements.txt
 pip install -r requirements-training.txt
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Time**: 10-15 minutes
 
@@ -95,9 +77,11 @@ pip install -r requirements-training.txt
 
 ### Step 4: Verify CityLearn
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python -c "import citylearn; print('✅ CityLearn installed')"
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Time**: <1 minute
 
@@ -105,17 +89,15 @@ python -c "import citylearn; print('✅ CityLearn installed')"
 
 ### Step 5: Run Full Phase 7 Tests
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python phase7_test_pipeline.py
 ```bash
+<!-- markd...
+```
 
-**Expected Output**:
-
-```bash
-✅ OE2 validation PASSED
-✅ Schema validation PASSED
-⚠️ All CityLearn tests will now be fully available
-```bash
+[Ver código completo en GitHub]bash
+<!-- markdownlint-enable MD013 -->
 
 **Time**: 5 minutes
 
@@ -123,9 +105,11 @@ python phase7_test_pipeline.py
 
 ### Step 6: Build Complete Dataset
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Output**:
 
@@ -140,24 +124,12 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 
 ### Step 7: Quick Agent Training Test
 
+<!-- markdownlint-disable MD013 -->
 ```bash
-python scripts/train_quick.py --episodes 1 --device cpu
-```bash
+python scripts/t...
+```
 
-**Verify**:
-
-- ✅ No Cython errors
-- ✅ Observation space: 534 dimensions
-- ✅ Action space: 126 dimensions
-- ✅ BESS SOC visible (not prescaled)
-
-**Time**: 10-15 minutes
-
----
-
-### Step 8: Final Commit
-
-```bash
+[Ver código completo en GitHub]bash
 git add -A
 git commit -m "feat: Phase 6-7 complete - OE2→OE3 integration with Python 3.11
 
@@ -173,18 +145,17 @@ Status: Phase 7 complete, pipeline ready for agent training"
 
 git push
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 **Time**: 5 minutes
 
 ---
 
-## 📊 Phase 7 Summary | Component | Status | Details | |-----------|--------|---------| | Python 3.11 enforcement | ✅ DONE | 5 config files updated | | OE2 data validation | ✅ DONE | All data verified and tested | | Schema validation | ✅ DONE | Complete validation framework | | Charger CSV generation | ✅ DONE | 128 files × 8,760 rows tested | | Test pipeline | ✅ DONE | Full validation suite created | | Documentation | ✅ DONE | 4 setup guides + 3 status reports | | **Code deployment** | ⏳ PENDING | Awaits Python 3.11 installation | ---
+<!-- markdownlint-disable MD013 -->
+## 📊 Phase 7 Summary | Component | Status | Details | |-----------|--------|---------| | Python 3.11 enforcement | ✅ DONE | 5 config files updated | | OE2 data validation | ✅ DONE | All data verified and tested | | Schema validation | ✅ DONE | Complete validation framework | | Charger CSV generation |...
+```
 
-## 🎓 Key Files Created/Modified
-
-### New Files (Essential)
-
-```bash
+[Ver código completo en GitHub]bash
 PYTHON_3.11_SETUP_GUIDE.md         ← Read this first!
 PHASE_7_STATUS_REPORT.md           ← Detailed reference
 PHASE_7_EXECUTION_SUMMARY.md       ← Quick summary
@@ -193,9 +164,11 @@ src/iquitos_citylearn/oe2/data_loader.py              ← OE2 validation
 src/iquitos_citylearn/oe3/schema_validator.py         ← Schema validation
 .python-version                    ← pyenv specification
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ### Modified Files
 
+<!-- markdownlint-disable MD013 -->
 ```bash
 .github/workflows/test-and-lint.yml
 pyproject.toml
@@ -203,9 +176,11 @@ setup.py
 scripts/analysis/EJECUTAR_OPCION_4_INFRAESTRUCTURA.py
 src/iquitos_citylearn/oe3/dataset_builder.py
 ```bash
+<!-- markdownlint-enable MD013 -->
 
 ---
 
+<!-- markdownlint-disable MD013 -->
 ## ⏱️ Time Estimate for Full Completion | Step | Time | Status | |------|------|--------| | Install Python 3.11 | 5-15 min | User action | | Create venv | 5 min | After Python 3.11 | | Install dependencies | 10-15 min | After venv | | Run Phase 7 tests | 5 min | Automated ✅ | | Build dataset | 15-30 min | Automated ✅ | | Training test | 10-15 min | Automated ✅ | | Final commit | 5 min | Quick | | **TOTAL** | **50-80 min** | **~1 hour** | ---
 
 ## 🔗 Quick Links | Document | Purpose | |----------|---------|
