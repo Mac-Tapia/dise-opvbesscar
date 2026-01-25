@@ -17,7 +17,7 @@ Se actualizó la construcción Docker para PVBESSCAR con mejoras significativas 
 
 ### 1. **Dockerfile** (Actualizado)
 
-**Cambios principales:**
+#### Cambios principales:
 
 ```dockerfile
 # ✅ Multi-stage build mejorado
@@ -35,9 +35,9 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 ...
 
 # ✅ Verificación completa de dependencias
 RUN python -c "import stable_baselines3, gymnasium, numpy, pandas"
-```
+```bash
 
-**Beneficios:**
+#### Beneficios:
 
 - Tiempo de build reducido ~60% en rebuilds
 - Señales SIGTERM/SIGINT manejadas correctamente
@@ -48,15 +48,15 @@ RUN python -c "import stable_baselines3, gymnasium, numpy, pandas"
 
 ### 2. **docker-compose.yml** (Actualizado)
 
-**Servicios:**
+#### Servicios:
 
 ```yaml
 pvbesscar-pipeline:     # Pipeline principal
 pvbesscar-monitor:      # Monitoreo de checkpoints
 pvbesscar-jupyter:      # Jupyter Lab en puerto 8888
-```
+```bash
 
-**Mejoras:**
+#### Mejoras:
 
 - Health checks con `service_healthy` conditions
 - Logging con rotación de archivos (max 10m, 5 files)
@@ -68,15 +68,15 @@ pvbesscar-jupyter:      # Jupyter Lab en puerto 8888
 
 ### 3. **docker-compose.gpu.yml** (Actualizado)
 
-**Servicios:**
+#### Servicios:
 
 ```yaml
 pvbesscar-pipeline-gpu:    # GPU acceleration
 pvbesscar-monitor-gpu:     # Monitoreo GPU
 pvbesscar-jupyter-gpu:     # Jupyter Lab puerto 8889
-```
+```bash
 
-**Mejoras:**
+#### Mejoras:
 
 - Runtime nvidia para GPU
 - Health check GPU-específico
@@ -88,16 +88,16 @@ pvbesscar-jupyter-gpu:     # Jupyter Lab puerto 8889
 
 ### 4. **docker-compose.dev.yml** (Actualizado)
 
-**Servicios completos:**
+#### Servicios completos:
 
 ```yaml
 dev-notebook:      # Jupyter Lab interactivo
 dev-tests:         # Pytest automation (exit when done)
 dev-lint:          # Pylint + Black + isort
 dev-type-check:    # MyPy type checking
-```
+```bash
 
-**Características:**
+#### Características:
 
 - Todos los servicios de desarrollo integrados
 - Volúmenes de datos para test_results y jupyter_data
@@ -132,7 +132,7 @@ python docker_manager.py logs [--gpu] [--dev] [--service] [--tail]
 python docker_manager.py health [--gpu]
 python docker_manager.py stats [--container]
 python docker_manager.py clean
-```
+```bash
 
 ### 3. **docker_quick.bat**
 
@@ -147,7 +147,7 @@ docker_quick.bat down
 docker_quick.bat logs-pipeline
 docker_quick.bat stats
 docker_quick.bat clean
-```
+```bash
 
 ### 4. **docker_quick.ps1**
 
@@ -159,7 +159,7 @@ Comandos rápidos para PowerShell:
 .\docker_quick.ps1 -Command up
 .\docker_quick.ps1 -Command logs -GPU
 .\docker_quick.ps1 -Command health
-```
+```bash
 
 ---
 
@@ -176,20 +176,20 @@ docker-compose up -d
 
 # Monitorear
 docker-compose logs -f pvbesscar-pipeline
-```
+```bash
 
 ### GPU Acceleration
 
 ```bash
-# Build
+# Build (2)
 docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pvbesscar:latest-gpu .
 
-# Start
+# Start (2)
 docker-compose -f docker-compose.gpu.yml up -d
 
 # Check GPU
 docker exec pvbesscar-pipeline-gpu nvidia-smi
-```
+```bash
 
 ### Development Full Stack
 
@@ -205,7 +205,7 @@ docker-compose -f docker-compose.dev.yml exec dev-lint
 
 # Run type checking
 docker-compose -f docker-compose.dev.yml exec dev-type-check
-```
+```bash
 
 ---
 
@@ -238,7 +238,7 @@ deploy:
     reservations:
       cpus: '4'
       memory: 16G
-```
+```bash
 
 ### GPU Services (docker-compose.gpu.yml)
 
@@ -250,13 +250,13 @@ deploy:
         - driver: nvidia
           count: 1
           capabilities: [gpu]
-```
+```bash
 
 ---
 
 ## 📝 Comandos Útiles
 
-### Build
+### Build (3)
 
 ```bash
 # CPU
@@ -267,7 +267,7 @@ docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pvbesscar:latest-gpu .
 
 # Sin cache
 docker build --no-cache -t pvbesscar:latest .
-```
+```bash
 
 ### Up/Down
 
@@ -283,7 +283,7 @@ docker-compose down
 
 # Down + remove volumes
 docker-compose down -v
-```
+```bash
 
 ### Logs & Status
 
@@ -299,7 +299,7 @@ docker stats
 
 # Health status
 docker inspect --format='{{json .State.Health}}' pvbesscar-pipeline
-```
+```bash
 
 ### Cleanup
 
@@ -312,7 +312,7 @@ docker image prune
 
 # Unused volumes
 docker volume prune
-```
+```bash
 
 ---
 
@@ -323,14 +323,14 @@ docker volume prune
 ```dockerfile
 ARG BUILDKIT_INLINE_CACHE=1
 # Permite reutilizar capas en GitHub Actions, CI/CD
-```
+```bash
 
 ### 2. **Tini Init**
 
 ```dockerfile
 ENTRYPOINT ["/usr/bin/tini", "--"]
 # Reaping zombie processes, proper signal handling
-```
+```bash
 
 ### 3. **Health Checks**
 
@@ -340,14 +340,14 @@ healthcheck:
   interval: 30s
   timeout: 10s
   retries: 3
-```
+```bash
 
 ### 4. **Volume Cache**
 
 ```yaml
 volumes:
   pipeline_cache:  # Pip cache, acelera rebuilds
-```
+```bash
 
 ### 5. **Labels de Logging**
 
@@ -355,7 +355,7 @@ volumes:
 logging:
   options:
     labels: "service=pipeline"
-```
+```bash
 
 ---
 
@@ -365,19 +365,19 @@ logging:
 
 ```bash
 docker run --rm pvbesscar:latest python -c "import stable_baselines3; print('✓ OK')"
-```
+```bash
 
 ### Check Health
 
 ```bash
 docker exec pvbesscar-pipeline python -c "import gymnasium; print('✓ OK')"
-```
+```bash
 
 ### Check GPU (si disponible)
 
 ```bash
 docker exec pvbesscar-pipeline-gpu python -c "import torch; print(torch.cuda.is_available())"
-```
+```bash
 
 ---
 

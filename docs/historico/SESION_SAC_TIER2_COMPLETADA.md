@@ -416,16 +416,16 @@ Commits:
 
 ## 📞 CONTACTO & FAQ
 
-**¿Preguntas generales?**
+#### ¿Preguntas generales?
 → Ver [SAC_TIER2_QUICK_START.md](SAC_TIER2_QUICK_START.md)
 
-**¿Preguntas técnicas?**
+#### ¿Preguntas técnicas?
 → Ver [SAC_TIER2_OPTIMIZATION.md](SAC_TIER2_OPTIMIZATION.md)
 
-**¿Cómo implementar?**
+#### ¿Cómo implementar?
 → Seguir [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md)
 
-**¿Dónde encontrar?**
+#### ¿Dónde encontrar?
 → Ver [SAC_TIER2_INDICE.md](SAC_TIER2_INDICE.md)
 
 ---

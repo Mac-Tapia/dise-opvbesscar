@@ -51,7 +51,7 @@
 ```powershell
 docker ps | Select-String fastapi
 docker logs fastapi-app
-```
+```bash
 
 ### Acceder a la API
 
@@ -61,19 +61,19 @@ curl http://localhost:8000/health
 
 # Documentación interactiva
 # Abrir en navegador: http://localhost:8000/docs
-```
+```bash
 
 ### Reiniciar FastAPI
 
 ```powershell
 docker restart fastapi-app
-```
+```bash
 
 ### Ver logs en tiempo real
 
 ```powershell
 docker logs -f fastapi-app
-```
+```bash
 
 ### Monitorear MongoDB
 
@@ -83,7 +83,7 @@ http://localhost:8081
 
 # Usuario: admin
 # Contraseña: password
-```
+```bash
 
 ---
 
@@ -103,7 +103,7 @@ http://localhost:8081
 
 ## 🔍 Información de Ejecución
 
-**FastAPI Container:**
+#### FastAPI Container:
 
 - **ID del Contenedor**: 15e37ecd8d66
 - **Imagen**: fastapi-mongo-api:latest
@@ -112,7 +112,7 @@ http://localhost:8081
 - **Health Status**: ✅ Healthy
 - **Reinicio Automático**: unless-stopped
 
-**Logs Recientes:**
+#### Logs Recientes:
 
 ```text
 INFO:__main__:🚀 Starting PVBESSCAR FastAPI Server...
@@ -120,7 +120,7 @@ INFO:__main__:📊 API Documentation: http://localhost:8000/docs
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000
 INFO:     127.0.0.1:xxxxx - "GET /health HTTP/1.1" 200 OK
-```
+```bash
 
 ---
 

@@ -94,7 +94,7 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 
 # Run Phase 8 training:
 python scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 ---
 
@@ -104,21 +104,21 @@ python scripts/train_agents_serial.py --device cuda --episodes 50
 
 ```bash
 python -c "import citylearn; print('✅ CityLearn ready')"
-```
+```bash
 
 ### Step 2: Build Complete Dataset
 
 ```bash
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 # Output: schema.json + 128 charger_simulation_*.csv files
-```
+```bash
 
 ### Step 3: Quick Agent Test (1 episode, ~5 min per agent)
 
 ```bash
 python scripts/train_quick.py --episodes 1 --device cpu
 # Verify agents run without errors
-```
+```bash
 
 ### Step 4: Full Agent Training
 
@@ -130,7 +130,7 @@ python scripts/train_agents_serial.py --device cuda --episodes 50
 python -m scripts.run_oe3_sac_training --episodes 50 --device cuda
 python -m scripts.run_oe3_ppo_training --episodes 50 --device cuda
 python -m scripts.run_oe3_a2c_training --episodes 50 --device cuda
-```
+```bash
 
 ### Step 5: Evaluation & Results
 
@@ -140,7 +140,7 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 
 # Generate performance report:
 python -m scripts.run_oe3_final_report --config configs/default.yaml
-```
+```bash
 
 ---
 
@@ -160,7 +160,7 @@ SACConfig:
   hidden_sizes: (1024, 1024)
   use_amp: True  # Mixed precision
   device: "auto"  # GPU auto-detection
-```
+```bash
 
 ### PPO (Proximal Policy Optimization)
 
@@ -178,7 +178,7 @@ PPOConfig:
   clip_range: 0.1
   gae_lambda: 0.98
   device: "auto"
-```
+```bash
 
 ### A2C (Advantage Actor-Critic)
 
@@ -195,7 +195,7 @@ A2CConfig:
   n_steps: 2048
   lr_schedule: "linear"
   device: "auto"
-```
+```bash
 
 ---
 
@@ -206,11 +206,11 @@ A2CConfig:
 ```bash
 # Watch training progress (updates every 5 sec):
 python scripts/monitor_training_live_2026.py
-```
+```bash
 
 ### Log Files Location
 
-```
+```bash
 analyses/logs/          - Training metrics per episode
 analyses/oe3/          - OE3 evaluation results
 analyses/time_series/  - Time series analysis
@@ -218,17 +218,17 @@ checkpoints/           - Agent checkpoints
   SAC/
   PPO/
   A2C/
-```
+```bash
 
 ### Expected Output Files
 
-```
+```bash
 analyses/logs/sac_training.log
 analyses/logs/ppo_training.log
 analyses/logs/a2c_training.log
 COMPARACION_BASELINE_VS_RL.txt  - Final results table
 reports/oe3/performance_metrics.json
-```
+```bash
 
 ---
 
@@ -320,7 +320,7 @@ cat COMPARACION_BASELINE_VS_RL.txt
 
 # Advanced: Train individual agents with custom params:
 python -m scripts.run_oe3_sac_training --episodes 50 --learning_rate 1e-4 --device cuda
-```
+```bash
 
 ---
 

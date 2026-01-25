@@ -130,19 +130,19 @@ python -m src.train_sac_cuda --episodes=2 --verbose=1
 
 ## 📈 QUÉ ESPERAR (2 EPISODIOS)
 
-### A2C
+### A2C (2)
 
 - Ep 1: Reward -0.5 a 0.0, Import ~280 kWh/h
 - Ep 2: Reward -0.2 a 0.1, Import ~260 kWh/h
 - **Trend**: Mejorando
 
-### PPO
+### PPO (2)
 
 - Ep 1: Reward -0.3 a 0.1, Estable
 - Ep 2: Reward 0.0 a 0.3, Mejor
 - **Trend**: Convergencia lenta pero suave
 
-### SAC
+### SAC (2)
 
 - Ep 1: Reward 0.0 a 0.3, Import <260 kWh/h ⭐
 - Ep 2: Reward 0.2 a 0.5, Import <240 kWh/h ⭐

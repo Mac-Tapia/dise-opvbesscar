@@ -132,20 +132,20 @@ analyses/oe3/training/
 
 ### Si necesitas... → Ve a
 
-**Resumen rápido (30 seg)**
+#### Resumen rápido (30 seg)
 → `CONSOLIDACION_GRAFICAS_REFERENCIA_RAPIDA.txt`
 
-**Resumen ejecutivo (5 min)**
+#### Resumen ejecutivo (5 min)
 → `CONSOLIDACION_GRAFICAS_RESUMEN_EJECUTIVO.md`
 
-**Reportes técnicos**
+#### Reportes técnicos
 → `INFORME_LIMPIEZA_GRAFICAS.json`
 → `INFORME_GRAFICAS_VERIFICACION.json`
 
-**Documentación completa**
+#### Documentación completa
 → `RESUMEN_CONSOLIDACION_GRAFICAS.md`
 
-**Índice de gráficas**
+#### Índice de gráficas
 → `analyses/oe3/training/plots/README.md`
 
 ## ✅ Verificación Completada

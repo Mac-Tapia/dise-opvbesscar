@@ -112,7 +112,7 @@
 ║  TOTAL 13 HORAS: ~2,250 motos atendidas (RECOMENDADO)                    ║
 ║                                                                           ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
-```
+```bash
 
 ---
 
@@ -157,7 +157,7 @@ action = {"action_charger_1": 0.5,   # MOTO_CH_001: 1 kW
           ...
           "action_charger_128": 0.7} # MOTO_TAXI_CH_128: 2.1 kW
 # Total 128 acciones + 1 BESS = 129 acciones
-```
+```bash
 
           "MOTO_CH_002": 0.5,  # ... y así 20 chargers
           ...

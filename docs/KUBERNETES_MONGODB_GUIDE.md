@@ -17,7 +17,7 @@ docker version                 # 20.10+
 
 # Helm (opcional)
 helm version                   # 3.0+
-```
+```bash
 
 ---
 
@@ -28,20 +28,20 @@ helm version                   # 3.0+
 ```bash
 kubectl cluster-info
 kubectl get nodes
-```
+```bash
 
 ### 2. **Deploy Completo**
 
 ```bash
 kubectl apply -f k8s-deployment.yaml
-```
+```bash
 
 ### 3. **Verificar Deployment**
 
 ```bash
 kubectl get pods -n pvbesscar
 kubectl get svc -n pvbesscar
-```
+```bash
 
 ---
 
@@ -52,7 +52,7 @@ kubectl get svc -n pvbesscar
 ```yaml
 Nombre: pvbesscar
 Labels: app=pvbesscar
-```
+```bash
 
 ### 2. **MongoDB StatefulSet**
 
@@ -66,7 +66,7 @@ Almacenamiento: 10Gi (PVC)
 Credenciales:
   Username: admin
   Password: pvbesscar2026
-```
+```bash
 
 ### 3. **PVBESSCAR Pipeline Deployment**
 
@@ -77,7 +77,7 @@ Imagen:        pvbesscar:latest
 Puertos:       5000 (Web), 8888 (Jupyter)
 CPU:           2-4 cores
 Memoria:       4-8 GB
-```
+```bash
 
 ### 4. **Persistent Volumes**
 
@@ -85,14 +85,14 @@ Memoria:       4-8 GB
 mongodb-pvc:           10Gi
 pvbesscar-data-pvc:    20Gi
 pvbesscar-outputs-pvc: 50Gi
-```
+```bash
 
 ### 5. **Services**
 
 ```yaml
 mongodb:             ClusterIP (27017)
 pvbesscar-pipeline:  LoadBalancer (5000, 8888)
-```
+```bash
 
 ### 6. **Ingress**
 
@@ -102,7 +102,7 @@ Paths:
   /          → Web (5000)
   /jupyter   → Jupyter Lab (8888)
 TLS: Habilitado
-```
+```bash
 
 ---
 
@@ -112,20 +112,20 @@ TLS: Habilitado
 
 ```bash
 python k8s_manager.py deploy
-```
+```bash
 
 ### Status
 
 ```bash
 python k8s_manager.py status
-```
+```bash
 
 ### Logs
 
 ```bash
 python k8s_manager.py logs
 python k8s_manager.py logs --pod pvbesscar-pipeline-0
-```
+```bash
 
 ### Port Forward
 
@@ -133,26 +133,26 @@ python k8s_manager.py logs --pod pvbesscar-pipeline-0
 python k8s_manager.py forward web      # 5000
 python k8s_manager.py forward jupyter  # 8888
 python k8s_manager.py forward mongodb  # 27017
-```
+```bash
 
 ### Scale
 
 ```bash
 python k8s_manager.py scale 3
-```
+```bash
 
 ### MongoDB (CLI)
 
 ```bash
 python k8s_manager.py mongo status
 python k8s_manager.py mongo shell
-```
+```bash
 
 ### Delete
 
 ```bash
 python k8s_manager.py delete
-```
+```bash
 
 ---
 
@@ -164,7 +164,7 @@ Keys:
   username: admin
   password: pvbesscar2026
   connection_string: mongodb://admin:pvbesscar2026@mongodb:27017/pvbesscar
-```
+```bash
 
 ### Connection desde Pod
 
@@ -175,7 +175,7 @@ import os
 uri = os.getenv('MONGODB_URI')
 client = MongoClient(uri)
 db = client['pvbesscar']
-```
+```bash
 
 ---
 
@@ -193,7 +193,7 @@ db.scenarios            // Escenarios de validación
 training_metrics: {"model": 1, "timestamp": -1}
 checkpoints:      {"model": 1, "episode": 1}
 scenarios:        {"scenario_id": 1}
-```
+```bash
 
 ---
 
@@ -212,7 +212,7 @@ scenarios:        {"scenario_id": 1}
 ```text
 http://pvbesscar.local
 https://pvbesscar.local (con TLS)
-```
+```bash
 
 ### Port Forward (Ingress/Servicios)
 
@@ -225,7 +225,7 @@ kubectl port-forward svc/pvbesscar-pipeline 8888:8888 -n pvbesscar
 
 # Terminal 3: MongoDB
 kubectl port-forward svc/mongodb 27017:27017 -n pvbesscar
-```
+```bash
 
 ---
 
@@ -239,13 +239,13 @@ Max Replicas: 3
 Metricas:
   CPU:    70% utilization → scale up
   Memory: 80% utilization → scale up
-```
+```bash
 
 ### Manual Scale
 
 ```bash
 kubectl scale deployment pvbesscar-pipeline --replicas 3 -n pvbesscar
-```
+```bash
 
 ---
 
@@ -262,7 +262,7 @@ kubectl scale deployment pvbesscar-pipeline --replicas 3 -n pvbesscar
 - Latency
 - Error rates
 - Custom training metrics
-```
+```bash
 
 ### Ver Logs
 
@@ -275,13 +275,13 @@ kubectl logs pvbesscar-pipeline-0 -n pvbesscar -f
 
 # Últimas 100 líneas
 kubectl logs pvbesscar-pipeline-0 -n pvbesscar --tail=100
-```
+```bash
 
 ### Exec en Pod
 
 ```bash
 kubectl exec -it pvbesscar-pipeline-0 -n pvbesscar -- bash
-```
+```bash
 
 ---
 
@@ -297,7 +297,7 @@ Egress:
     port: 27017 (TCP)
   - To: External DNS
     port: 53 (TCP/UDP)
-```
+```bash
 
 ---
 
@@ -310,7 +310,7 @@ PVC: mongodb-pvc
 Size: 10Gi
 AccessMode: ReadWriteOnce
 Mounts: /data/db
-```
+```bash
 
 ### Pipeline Data
 
@@ -319,7 +319,7 @@ PVC: pvbesscar-data-pvc
 Size: 20Gi
 AccessMode: ReadWriteOnce
 Mounts: /app/data
-```
+```bash
 
 ### Pipeline Outputs
 
@@ -328,7 +328,7 @@ PVC: pvbesscar-outputs-pvc
 Size: 50Gi
 AccessMode: ReadWriteOnce
 Mounts: /app/outputs
-```
+```bash
 
 ---
 
@@ -341,7 +341,7 @@ Liveness:
   Command: mongosh --eval "db.adminCommand('ping')"
   Initial Delay: 30s
   Period: 10s
-```
+```bash
 
 ### Pipeline
 
@@ -355,7 +355,7 @@ Readiness:
   HTTP GET: /api/health (port 5000)
   Initial Delay: 10s
   Period: 5s
-```
+```bash
 
 ---
 
@@ -365,27 +365,27 @@ Readiness:
 
 ```bash
 docker build -t pvbesscar:latest .
-```
+```bash
 
 ### Paso 2: Push a Registry
 
 ```bash
 docker tag pvbesscar:latest myregistry/pvbesscar:latest
 docker push myregistry/pvbesscar:latest
-```
+```bash
 
 ### Paso 3: Deploy a K8s
 
 ```bash
 kubectl apply -f k8s-deployment.yaml
-```
+```bash
 
 ### Paso 4: Verificar
 
 ```bash
 kubectl get pods -n pvbesscar
 kubectl logs -n pvbesscar -f
-```
+```bash
 
 ---
 
@@ -396,7 +396,7 @@ kubectl logs -n pvbesscar -f
 ```bash
 kubectl describe pod pvbesscar-pipeline-0 -n pvbesscar
 kubectl logs pvbesscar-pipeline-0 -n pvbesscar
-```
+```bash
 
 ### MongoDB no conecta
 
@@ -410,7 +410,7 @@ kubectl logs mongodb-0 -n pvbesscar
 # Testear conexión
 kubectl exec -it pvbesscar-pipeline-0 -n pvbesscar -- \
   mongosh --uri "mongodb://admin:pvbesscar2026@mongodb:27017/pvbesscar"
-```
+```bash
 
 ### PVC no provisiona
 
@@ -427,7 +427,7 @@ metadata:
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
 EOF
-```
+```bash
 
 ### Ingress no funciona
 
@@ -438,7 +438,7 @@ kubectl describe ingress pvbesscar-ingress -n pvbesscar
 
 # Agregar hosts entry
 echo "127.0.0.1 pvbesscar.local" >> /etc/hosts
-```
+```bash
 
 ---
 
@@ -450,28 +450,28 @@ echo "127.0.0.1 pvbesscar.local" >> /etc/hosts
 kubectl cluster-info
 kubectl get nodes
 kubectl top nodes
-```
+```bash
 
 ### Namespace
 
 ```bash
 kubectl get ns
 kubectl describe ns pvbesscar
-```
+```bash
 
 ### Resources
 
 ```bash
 kubectl get all -n pvbesscar
 kubectl get pods,svc,pvc,deploy -n pvbesscar
-```
+```bash
 
 ### Events
 
 ```bash
 kubectl get events -n pvbesscar
 kubectl get events -n pvbesscar --sort-by='.lastTimestamp'
-```
+```bash
 
 ### Resource Usage
 
@@ -479,7 +479,7 @@ kubectl get events -n pvbesscar --sort-by='.lastTimestamp'
 kubectl top pods -n pvbesscar
 kubectl top nodes
 kubectl describe node
-```
+```bash
 
 ---
 
@@ -493,19 +493,19 @@ kubectl set image deployment/pvbesscar-pipeline \
 
 # Verificar rollout
 kubectl rollout status deployment/pvbesscar-pipeline -n pvbesscar
-```
+```bash
 
 ### Rollback
 
 ```bash
 kubectl rollout undo deployment/pvbesscar-pipeline -n pvbesscar
-```
+```bash
 
 ### History
 
 ```bash
 kubectl rollout history deployment/pvbesscar-pipeline -n pvbesscar
-```
+```bash
 
 ---
 
@@ -517,7 +517,7 @@ kubectl rollout history deployment/pvbesscar-pipeline -n pvbesscar
 for cluster in cluster1 cluster2 cluster3; do
   kubectl --context=$cluster apply -f k8s-deployment.yaml
 done
-```
+```bash
 
 ---
 
@@ -550,7 +550,7 @@ kubectl logs -f -n pvbesscar -l app=pvbesscar-pipeline
 
 # Delete todo
 kubectl delete namespace pvbesscar
-```
+```bash
 
 ---
 

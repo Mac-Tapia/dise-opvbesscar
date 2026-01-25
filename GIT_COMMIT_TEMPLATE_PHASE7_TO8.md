@@ -17,7 +17,7 @@ feat: Phase 7 complete & Phase 8 prepared for training
 Phase 8 Status: READY
 Expected Phase 8 Duration: 4-6 hours (sequential GPU training)
 Estimated Agent Performance: SAC 20-26%, PPO 25-29%, A2C 20-25%
-```
+```bash
 
 ## Detailed Change Summary
 
@@ -29,7 +29,7 @@ M  pyproject.toml
 M  scripts/analysis/EJECUTAR_OPCION_4_INFRAESTRUCTURA.py
 M  setup.py
 M  src/iquitos_citylearn/oe3/dataset_builder.py
-```
+```bash
 
 ### Files Created (8 - Phase 8 Preparation)
 
@@ -43,7 +43,7 @@ M  src/iquitos_citylearn/oe3/dataset_builder.py
 +  phase7_validation_complete.py       (400 lines) - Validation
 +  PHASE_7_FINAL_COMPLETION.md         (200 lines) - Phase status
 +  GIT_COMMIT_TEMPLATE_PHASE7_TO8.md   (This file) - Guide
-```
+```bash
 
 ## Phase 8 Preparation Summary
 
@@ -87,7 +87,7 @@ M  src/iquitos_citylearn/oe3/dataset_builder.py
    - Chargers: 128 units, 272 kW ✓
    - BESS: 4,520 kWh ✓
    - Profiles: 24h → 8,760h ✓
-```
+```bash
 
 ## Documentation Additions
 
@@ -239,7 +239,7 @@ git commit -m "feat: Phase 7 complete & Phase 8 fully prepared for agent trainin
 Phase 8 Status: 🟢 READY TO BEGIN (after Python 3.11 installation)
 Expected Phase 8 Duration: 4-6 hours (sequential GPU training)
 Estimated Agent Performance: SAC 20-26%, PPO 25-29%, A2C 20-25% CO₂ reduction"
-```
+```bash
 
 ---
 

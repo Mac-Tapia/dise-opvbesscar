@@ -12,9 +12,9 @@
 
 scikit-learn fails to build on Python 3.13.9 due to Cython compilation errors:
 
-```
+```bash
 Cython.Compiler.Errors.CompileError: sklearn\linear_model\_cd_fast.pyx
-```
+```bash
 
 **Solution**: Use Python 3.11 exclusively.
 
@@ -123,7 +123,7 @@ python --version  # Should show 3.11.x
 # Install dependencies
 pip install -r requirements.txt
 pip install -r requirements-training.txt
-```
+```bash
 
 ---
 
@@ -144,7 +144,7 @@ python -c "import pandas, numpy, stable_baselines3, gymnasium; print('✅ All pa
 
 # Check CityLearn specifically
 python -c "import citylearn; print('✅ CityLearn installed')"
-```
+```bash
 
 ---
 
@@ -153,7 +153,7 @@ python -c "import citylearn; print('✅ CityLearn installed')"
 Once Python 3.11 is configured:
 
 ```bash
-# Activate venv
+# Activate venv (2)
 .venv\Scripts\activate
 
 # Run Phase 7 tests
@@ -165,7 +165,7 @@ python phase7_test_pipeline.py
 #   1. Run: python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 #   2. Test agent training: python scripts/train_quick.py --episodes 1
 #   3. Commit changes
-```
+```bash
 
 ---
 
@@ -191,7 +191,7 @@ python --version
 # If 3.13, activate .venv:
 .venv\Scripts\activate
 # Re-run: python --version (should be 3.11)
-```
+```bash
 
 ### Cython compilation errors during pip install
 

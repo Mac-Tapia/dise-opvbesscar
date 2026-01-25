@@ -148,7 +148,7 @@
 
 ## 🎯 Decision Tree
 
-```
+```bash
 START: "I want to understand the OE3 module structure"
 │
 ├─ "I have 5 minutes"
@@ -186,7 +186,7 @@ START: "I want to understand the OE3 module structure"
    │   [Quick risk matrix]
    └─→ OE3_CLEANUP_ACTION_PLAN.md (Risk levels for each step)
        [Detailed rollback procedures]
-```
+```bash
 
 ---
 
@@ -326,18 +326,18 @@ OE3_CLEANUP_ACTION_PLAN.md contains:
 
 All analysis documents in workspace root:
 
-```
+```bash
 d:\diseñopvbesscar\
 ├── OE3_ANALYSIS_SUMMARY.md                          ← START HERE (5 min read)
 ├── OE3_STRUCTURE_COMPREHENSIVE_ANALYSIS.md          ← DETAILED ANALYSIS (20 min)
 ├── OE3_CLEANUP_ACTION_PLAN.md                       ← IMPLEMENTATION GUIDE (35 min)
 ├── OE3_VISUAL_MAPS.md                               ← DIAGRAMS & MAPS (10 min)
 └── OE3_ANALYSIS_INDEX.md                            ← THIS FILE (navigation)
-```
+```bash
 
 Source code analyzed:
 
-```
+```bash
 d:\diseñopvbesscar\src\iquitos_citylearn\oe3\
 ├── rewards.py                  (529 lines) - ACTIVE
 ├── co2_table.py                (469 lines) - ACTIVE
@@ -349,7 +349,7 @@ d:\diseñopvbesscar\src\iquitos_citylearn\oe3\
 ├── rewards_dynamic.py          (80 lines)  - DEV ONLY
 ├── co2_emissions.py            (358 lines) - UNUSED (to merge)
 └── demanda_mall_kwh.py         (507 lines) - ORPHANED (to delete)
-```
+```bash
 
 ---
 
@@ -418,4 +418,4 @@ These documents can be used to learn about:
 
 ---
 
-**Choose your starting document above and begin!**
+#### Choose your starting document above and begin!

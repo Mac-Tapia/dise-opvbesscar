@@ -24,11 +24,11 @@
 
 ### Files Modified
 
-**1. `.python-version` (NEW)**
+#### 1. `.python-version` (NEW)
 
-```
+```bash
 3.11.0
-```
+```bash
 
 - Purpose: Specify Python version for pyenv/asdf tools
 - Status: ✅ Created
@@ -45,35 +45,35 @@
 - uses: actions/setup-python@v4
   with:
     python-version: ["3.11"]
-```
+```bash
 
 - Status: ✅ Updated
 
-**3. `pyproject.toml` (UPDATED)**
+#### 3. `pyproject.toml` (UPDATED)
 
 ```toml
-# BEFORE:
+# BEFORE: (2)
 requires-python = ">=3.10"
 target-version = ['py310', 'py311', 'py313']
 
-# AFTER:
+# AFTER: (2)
 requires-python = ">=3.11,<3.12"
 target-version = ['py311']
-```
+```bash
 
 - Status: ✅ Updated (2 replacements)
 
-**4. `setup.py` (UPDATED)**
+#### 4. `setup.py` (UPDATED)
 
 ```python
-# BEFORE:
+# BEFORE: (3)
 classifiers = [..., "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.13", ...]
 python_requires=">=3.10"
 
-# AFTER:
+# AFTER: (3)
 classifiers = [..., "Programming Language :: Python :: 3.11", ...]
 python_requires=">=3.11,<3.12"
-```
+```bash
 
 - Status: ✅ Updated
 
@@ -117,7 +117,7 @@ class OE2DataLoader:
     - load_bess_config() ✅
     - load_bess_hourly() ✅
     - validate_all() ✅ Comprehensive validation
-```
+```bash
 
 **Test Result**: ✅ ALL VALIDATIONS PASSED
 
@@ -132,7 +132,7 @@ class CityLearnSchemaValidator:
     - validate_value_ranges() ✅
     - validate_citylearn_load() ⏳ Blocked by CityLearn (Python 3.11)
     - validate_all() ✅
-```
+```bash
 
 **Test Result**: ✅ PASSED (except CityLearn load which requires full installation)
 
@@ -150,11 +150,11 @@ _load_oe2_artifacts(cfg, raw_dir, interim_dir)
     → Added annual charger profile loading/expansion
     → Returns dict with artifacts["chargers_hourly_profiles_annual"]
 
-# Enhanced:
+# Enhanced: (2)
 build_citylearn_dataset(cfg, raw_dir, interim_dir, processed_dir)
     → Calls _generate_individual_charger_csvs() after config loading
     → Proper error handling and logging
-```
+```bash
 
 **Test Result**: ✅ PASSED (CSV generation verified)
 
@@ -177,9 +177,9 @@ build_citylearn_dataset(cfg, raw_dir, interim_dir, processed_dir)
 
 **CityLearn Installation Error** (Python 3.13):
 
-```
+```bash
 Cython.Compiler.Errors.CompileError: sklearn\linear_model\_cd_fast.pyx
-```
+```bash
 
 **Root Cause**: scikit-learn fails to compile Cython extensions on Python 3.13
 
@@ -191,51 +191,51 @@ Cython.Compiler.Errors.CompileError: sklearn\linear_model\_cd_fast.pyx
 
 ### Test Execution
 
-```
+```bash
 Command: python phase7_test_pipeline.py
 Python: 3.13.9 (system Python)
 Status: ✅ PASSED (except CityLearn)
-```
+```bash
 
 ### Test Breakdown
 
-**STEP 1: Dependency Check**
+#### STEP 1: Dependency Check
 
-```
+```bash
 ✅ PyYAML
 ✅ pandas
 ✅ numpy
 ✅ stable-baselines3
 ✅ gymnasium
 ⚠️ CityLearn (FAILED - requires Python 3.11)
-```
+```bash
 
-**STEP 2: OE2 Data Validation**
+#### STEP 2: OE2 Data Validation
 
-```
+```bash
 ✅ OE2DataLoader initialized
 ✅ Solar: 35,037 rows → 8,760 hourly, 918 kW mean
 ✅ Chargers: 128 units, 272 kW total, 8,760 annual profiles
 ✅ BESS: 4,520 kWh, 2,712 kW, 8,760 rows
 ✅ ALL OE2 DATA VALIDATION PASSED
-```
+```bash
 
-**STEP 3: Schema Validation**
+#### STEP 3: Schema Validation
 
-```
+```bash
 ✅ Schema validator initialized
 ⏳ No schema files yet (will be generated with CityLearn)
-```
+```bash
 
 **Summary**:
 
-```
+```bash
 Results:
   oe2_validation: ✅ PASSED
   schema_validation: ✅ PASSED
   
 ⚠️ Constraint: Full pipeline blocked by Python 3.11 requirement
-```
+```bash
 
 ---
 
@@ -243,17 +243,17 @@ Results:
 
 ### BLOCKER: Python 3.11 System Installation Required
 
-**Why?**
+#### Why?
 
 - scikit-learn (used by CityLearn) fails to compile on Python 3.13
 - Cython cannot handle Python 3.13 syntax in sklearn's compilation
 
 **Current Environment**:
 
-```
+```bash
 System Python: C:\Program Files\Python313\python.exe (3.13.9)
 Available 3.11: NOT INSTALLED
-```
+```bash
 
 **Solution**:
 Use any of 4 methods described in `PYTHON_3.11_SETUP_GUIDE.md`:
@@ -269,48 +269,48 @@ Use any of 4 methods described in `PYTHON_3.11_SETUP_GUIDE.md`:
 
 ### After Python 3.11 Installation
 
-**Step 1: Create Fresh Virtual Environment (5 min)**
+#### Step 1: Create Fresh Virtual Environment (5 min)
 
 ```bash
 cd d:\diseñopvbesscar
 python3.11 -m venv .venv_py311
 .venv_py311\Scripts\activate
 python --version  # Verify 3.11
-```
+```bash
 
-**Step 2: Install Dependencies (10-15 min)**
+#### Step 2: Install Dependencies (10-15 min)
 
 ```bash
 pip install -r requirements.txt
 pip install -r requirements-training.txt
 # Verify CityLearn:
 python -c "import citylearn; print('✅')"
-```
+```bash
 
-**Step 3: Run Phase 7 Tests (5 min)**
+#### Step 3: Run Phase 7 Tests (5 min)
 
 ```bash
 python phase7_test_pipeline.py
 # Expected: ALL TESTS PASSED ✅
-```
+```bash
 
-**Step 4: Build CityLearn Dataset (15-30 min)**
+#### Step 4: Build CityLearn Dataset (15-30 min)
 
 ```bash
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 # Output: schema.json + 128 charger_simulation_X.csv files
-```
+```bash
 
-**Step 5: Verify Generated Files (5 min)**
+#### Step 5: Verify Generated Files (5 min)
 
 ```bash
 # Check schema exists
 ls outputs/schema_*.json
 # Check charger CSVs
 ls data/processed/citylearnv2_dataset/buildings/*/charger_simulation_*.csv | wc -l  # Should be 128
-```
+```bash
 
-**Step 6: Quick Agent Training Test (10-15 min)**
+#### Step 6: Quick Agent Training Test (10-15 min)
 
 ```bash
 python scripts/train_quick.py --episodes 1 --device cpu
@@ -319,9 +319,9 @@ python scripts/train_quick.py --episodes 1 --device cpu
 #   - Action space: 126 dims ✅
 #   - BESS SOC visible (not prescaled) ✅
 #   - No Cython errors ✅
-```
+```bash
 
-**Step 7: Final Commit (5 min)**
+#### Step 7: Final Commit (5 min)
 
 ```bash
 git add -A
@@ -340,7 +340,7 @@ Blockers resolved: Charger CSV generation ✅, BESS SOC prescaling fix ✅
 Awaiting: Python 3.11 system installation for full pipeline execution"
 
 git push
-```
+```bash
 
 ---
 

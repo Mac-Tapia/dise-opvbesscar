@@ -224,6 +224,6 @@ Para preguntas sobre las gráficas:
 
 ---
 
-**Status Final: ✅ LISTO PARA USAR**
+#### Status Final: ✅ LISTO PARA USAR
 
 *Regeneración completada con éxito el 2026-01-19*

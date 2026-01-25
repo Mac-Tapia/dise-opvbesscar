@@ -34,7 +34,7 @@
 
 ## 🗂️ ESTRUCTURA DE CARPETAS DOCUMENTACIÓN
 
-```
+```bash
 d:\diseñopvbesscar/
 ├── 📄 CONFIGURACIONES_INDIVIDUALES_MAXIMA_POTENCIA.md
 ├── 📄 ESTRATEGIA_ENTRENAMIENTO_MAXIMA_POTENCIA.md
@@ -51,7 +51,7 @@ d:\diseñopvbesscar/
         ├── 🐍 sac.py ✅ (Optimizado)
         ├── 🐍 ppo_sb3.py ✅ (Optimizado)
         └── 🐍 a2c_sb3.py ✅ (Optimizado)
-```
+```bash
 
 ---
 
@@ -101,7 +101,7 @@ d:\diseñopvbesscar/
 ```bash
 # Ejecutar este script para verificar que TODO está correcto
 & .venv/Scripts/python.exe scripts/verificar_configuraciones_maxima_potencia.py
-```
+```bash
 
 **Resultado esperado**: ✅ TODAS LAS VERIFICACIONES PASARON
 
@@ -117,7 +117,7 @@ d:\diseñopvbesscar/
 
 # Entrena todos en serie
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 **Duración**: ~11 horas  
 **Resultado**: 3 agentes entrenados y convergidos
@@ -128,7 +128,7 @@ d:\diseñopvbesscar/
 # A2C (más rápido)
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
   --agent A2C --episodes 57 --device cuda
-```
+```bash
 
 **Duración**: ~2.5-3 horas  
 **Resultado**: Baseline funcional
@@ -139,7 +139,7 @@ d:\diseñopvbesscar/
 # Verificar que funciona
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
   --agent SAC --episodes 5 --device cuda
-```
+```bash
 
 **Duración**: ~10 minutos  
 **Resultado**: Sistema funciona correctamente
@@ -150,24 +150,24 @@ d:\diseñopvbesscar/
 
 ### SAC (Off-Policy Estabilidad)
 
-```
+```bash
 LR: 1.5e-4 | Batch: 512 | Buffer: 1M | Hidden: 1024x1024
 Convergencia: 10-15 ep | Reward: -100→+200 | CO₂: 250-350 kg
-```
+```bash
 
 ### PPO (On-Policy Convergencia)
 
-```
+```bash
 LR: 2.0e-4 | Batch: 128 | N Steps: 2048 | Hidden: 1024x1024
 Convergencia: 20-30 ep | Reward: -50→+300 | CO₂: 200-300 kg
-```
+```bash
 
 ### A2C (On-Policy Velocidad)
 
-```
+```bash
 LR: 1.5e-4 | N Steps: 2048 | GAE: 0.95 | Hidden: 1024x1024
 Convergencia: 15-20 ep | Reward: -150→+100 | CO₂: 300-400 kg
-```
+```bash
 
 ---
 
@@ -252,7 +252,7 @@ Convergencia: 15-20 ep | Reward: -150→+100 | CO₂: 300-400 kg
 
 ### SAC
 
-```
+```bash
 ANTES (TIER 2):
   LR: 2.5e-4 → AHORA: 1.5e-4 ✅
   Batch: 256 → AHORA: 512 ✅
@@ -261,11 +261,11 @@ ANTES (TIER 2):
 NUEVAS CARACTERÍSTICAS:
   Tau: 0.005 → AHORA: 0.001 (soft updates más suave)
   Hidden: (512,512) → AHORA: (1024,1024) (4x parámetros)
-```
+```bash
 
 ### PPO
 
-```
+```bash
 ANTES (TIER 2):
   LR: 2.5e-4 → AHORA: 2.0e-4 ✅
   Batch: 256 → AHORA: 128 ✅
@@ -276,11 +276,11 @@ NUEVAS CARACTERÍSTICAS:
   Hidden: (512,512) → AHORA: (1024,1024) (4x parámetros)
   N Epochs: 15 → AHORA: 20 (más updates)
   Train Steps: 500k → AHORA: 1M (2x)
-```
+```bash
 
 ### A2C
 
-```
+```bash
 ANTES (TIER 2):
   LR: 2.5e-4 → AHORA: 1.5e-4 ✅
   N Steps: 1024 → AHORA: 2048 ✅
@@ -291,7 +291,7 @@ NUEVAS CARACTERÍSTICAS:
   Max Grad Norm: 0.5 → AHORA: 1.0 (menos agresivo)
   Hidden: (512,512) → AHORA: (1024,1024) (4x parámetros)
   Train Steps: 500k → AHORA: 1M (2x)
-```
+```bash
 
 ---
 
@@ -395,7 +395,7 @@ Cada uno tiene:
 
 ```bash
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 ---
 

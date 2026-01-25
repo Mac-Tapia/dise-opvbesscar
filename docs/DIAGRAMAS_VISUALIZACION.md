@@ -55,7 +55,7 @@
     │  • CO2 minimizado: 50 toneladas/año                │
     │  • Disponibilidad: garantizada                     │
     └────────────────────────────────────────────────────┘
-```
+```bash
 
 ---
 
@@ -116,7 +116,7 @@ CICLO CONTINUO - Repetido 288 veces por día (cada 5 min)
                           │ Esperar 5 minutos               │
                           │ ↓↓ VOLVER A INICIO ↓↓          │
                           └──────────────────────────────────┘
-```
+```bash
 
 ---
 
@@ -169,7 +169,7 @@ CICLO CONTINUO - Repetido 288 veces por día (cada 5 min)
                         │ DISCHARGE      │
                         │ (Usar batería) │
                         └────────────────┘
-```
+```bash
 
 ---
 
@@ -205,7 +205,7 @@ ENTRADA:
                          AHORRO: €12.60/hora
                          = €302.40/día
                          = €110,376/año
-```
+```bash
 
 ---
 
@@ -247,7 +247,7 @@ ACCIONES POR ZONA:
 │ Evita descargar más (protege batería)               │
 │ Acción: Compra de red si necesario                  │
 └─────────────────────────────────────────────────────┘
-```
+```bash
 
 ---
 
@@ -311,7 +311,7 @@ RESULTADO:
 Ahorro total: €22.30/día
 Reducción: 75% vs sin IA
 ROI anual: €8,140/edificio
-```
+```bash
 
 ---
 
@@ -365,7 +365,7 @@ CLIENTE (curl, Python, JavaScript)
          }
          ↓
      CLIENTE recibe confirmación
-```
+```bash
 
 ---
 
@@ -402,7 +402,7 @@ ADEMÁS CONSIDERA:
 │ • Predicción consumo         │
 │ • Historial (aprendizaje)    │
 └─────────────────────────────┘
-```
+```bash
 
 ---
 
@@ -441,7 +441,7 @@ MÉTRICAS COMPARATIVAS:
 │ Disponibilidad     │ 70%      │ 99%      │ +41% ✅  │
 │ Predictibilidad    │ Baja     │ Alta     │ +200% ✅ │
 └────────────────────┴──────────┴──────────┴──────────┘
-```
+```bash
 
 ---
 
@@ -499,7 +499,7 @@ POST /api/control
 │  ├─ action: "charge"|"discharge"|"idle"
 │  └─ value: 0-100
 └─ Respuesta: {acción ejecutada}
-```
+```bash
 
 ---
 
@@ -518,7 +518,7 @@ Sensores     ML Models    Decisiones
 └────────┘
 
 RESULTADO: ✅ Ahorro €100/día = €36,500/año
-```
+```bash
 
 ---
 

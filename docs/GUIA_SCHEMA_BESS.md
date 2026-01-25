@@ -81,7 +81,7 @@
 
 ### Horario de Operación
 
-```
+```bash
 APERTURA (9:00h):
   - Potencia: 0.00 kW (exactamente cero)
   - Primer intervalo con carga: 9:15h (1.09 kW)
@@ -104,7 +104,7 @@ RAMPA CIERRE (21h):
 CIERRE (22:00h):
   - Potencia: 0.00 kW (todos los intervalos)
   - Sin actividad hasta apertura siguiente día
-```
+```bash
 
 ### Distribución Horaria de Energía
 
@@ -131,7 +131,7 @@ CIERRE (22:00h):
 
 ### Estrategia Diaria
 
-```
+```bash
 ┌─────────────────────────────────────────────────────────┐
 │                   CICLO OPERACIONAL BESS                │
 ├─────────────────────────────────────────────────────────┤
@@ -155,7 +155,7 @@ CIERRE (22:00h):
 │                 │ Preparación para nuevo ciclo          │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
-```
+```bash
 
 ### Perfil de SOC Esperado
 
@@ -226,7 +226,7 @@ CIERRE (22:00h):
     }
   }
 }
-```
+```bash
 
 ### Parámetros Clave para el Schema
 
@@ -257,7 +257,7 @@ EV_SOCKETS_PER_CHARGER = 4
 SOLAR_CAPACITY_KW = 5000  # Ajustar según instalación real
 SOLAR_GENERATION_START = 5  # 5h
 SOLAR_GENERATION_END = 17   # 17h
-```
+```bash
 
 ---
 
@@ -265,7 +265,7 @@ SOLAR_GENERATION_END = 17   # 17h
 
 ### Flujo Diario de Energía
 
-```
+```bash
 GENERACIÓN SOLAR (estimada):
   22,036 kWh/día (generación 5h-17h)
   
@@ -294,7 +294,7 @@ DEMANDA EV NOCTURNA (18h-22h):
 DESCARGA BESS:
   1,301 kWh entregados por BESS
   SOC: 100% → 20%
-```
+```bash
 
 ### Distribución de Fuentes
 

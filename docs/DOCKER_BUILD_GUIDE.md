@@ -20,9 +20,9 @@ Configuración Docker actualizada para PVBESSCAR con:
 
 ```bash
 docker-compose -f docker-compose.yml up -d
-```
+```bash
 
-**Servicios iniciados:**
+#### Servicios iniciados:
 
 - `pvbesscar-pipeline`: Pipeline principal
 - `pvbesscar-monitor`: Monitoreo de checkpoints
@@ -33,9 +33,9 @@ docker-compose -f docker-compose.yml up -d
 ```bash
 # Requisitos: nvidia-docker2, CUDA 11.8+
 docker-compose -f docker-compose.gpu.yml up -d
-```
+```bash
 
-**Servicios iniciados:**
+#### Servicios iniciados:
 
 - `pvbesscar-pipeline-gpu`: Pipeline con GPU
 - `pvbesscar-monitor-gpu`: Monitoreo GPU
@@ -45,9 +45,9 @@ docker-compose -f docker-compose.gpu.yml up -d
 
 ```bash
 docker-compose -f docker-compose.dev.yml up -d
-```
+```bash
 
-**Servicios iniciados:**
+#### Servicios iniciados:
 
 - `dev-notebook`: Jupyter Lab
 - `dev-tests`: Pytest automation
@@ -68,7 +68,7 @@ docker build -t pvbesscar:latest .
 DOCKER_BUILDKIT=1 docker build \
   --build-arg BUILDKIT_INLINE_CACHE=1 \
   -t pvbesscar:latest .
-```
+```bash
 
 ### Build GPU Image
 
@@ -76,7 +76,7 @@ DOCKER_BUILDKIT=1 docker build \
 DOCKER_BUILDKIT=1 docker build \
   --build-arg BUILDKIT_INLINE_CACHE=1 \
   -t pvbesscar:latest-gpu .
-```
+```bash
 
 ### Build Dev Image
 
@@ -84,7 +84,7 @@ DOCKER_BUILDKIT=1 docker build \
 DOCKER_BUILDKIT=1 docker build \
   --build-arg BUILDKIT_INLINE_CACHE=1 \
   -t pvbesscar:dev .
-```
+```bash
 
 ---
 
@@ -118,7 +118,7 @@ docker exec pvbesscar-pipeline python -c "import stable_baselines3; print('OK')"
 
 # Monitor service health
 docker logs pvbesscar-pipeline --tail=20
-```
+```bash
 
 ### GPU Services
 
@@ -128,7 +128,7 @@ docker exec pvbesscar-pipeline-gpu python -c "import torch; print(f'GPU: {torch.
 
 # Monitor GPU usage
 docker exec pvbesscar-pipeline-gpu nvidia-smi
-```
+```bash
 
 ---
 
@@ -167,7 +167,7 @@ docker logs -f pvbesscar-monitor --tail=50
 
 # All services
 docker-compose logs -f
-```
+```bash
 
 ### Execute Commands
 
@@ -180,7 +180,7 @@ docker exec -it pvbesscar-pipeline bash
 
 # Check dependencies
 docker exec pvbesscar-pipeline pip list
-```
+```bash
 
 ### Stop & Clean
 
@@ -196,7 +196,7 @@ docker-compose down -v
 
 # Remove unused images
 docker image prune
-```
+```bash
 
 ---
 
@@ -213,7 +213,7 @@ docker build --no-cache -t pvbesscar:latest .
 
 # Check build logs
 docker build --progress=plain -t pvbesscar:latest . 2>&1 | tail -50
-```
+```bash
 
 ### GPU Not Available
 
@@ -227,7 +227,7 @@ docker exec pvbesscar-pipeline-gpu python -c "import torch; print(torch.cuda.get
 # Troubleshoot
 export NVIDIA_VISIBLE_DEVICES=0
 docker-compose -f docker-compose.gpu.yml up -d
-```
+```bash
 
 ### Memory Issues
 
@@ -240,7 +240,7 @@ docker stats
 
 # Restart with new limits
 docker-compose restart
-```
+```bash
 
 ### Permission Denied
 
@@ -250,7 +250,7 @@ docker-compose exec pipeline chmod -R 777 /app/outputs
 
 # Or use host user ID
 docker-compose exec -u $(id -u):$(id -g) pipeline ls -la /app/outputs
-```
+```bash
 
 ---
 
@@ -265,7 +265,7 @@ docker-compose exec -u $(id -u):$(id -g) pipeline ls -la /app/outputs
 
 ```dockerfile
 RUN --mount=type=cache,target=/root/.cache/pip pip install ...
-```
+```bash
 
 Reduces build time by ~60% on rebuilds.
 
@@ -273,7 +273,7 @@ Reduces build time by ~60% on rebuilds.
 
 ```dockerfile
 ENTRYPOINT ["/usr/bin/tini", "--"]
-```
+```bash
 
 Ensures proper signal handling (SIGTERM, SIGINT) in containers.
 
@@ -281,7 +281,7 @@ Ensures proper signal handling (SIGTERM, SIGINT) in containers.
 
 ```dockerfile
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 ...
-```
+```bash
 
 Docker automatically restarts unhealthy containers.
 
@@ -294,13 +294,13 @@ Docker automatically restarts unhealthy containers.
 ```bash
 docker ps
 docker ps -a
-```
+```bash
 
 ### View Health Status
 
 ```bash
 docker inspect --format='{{json .State.Health}}' pvbesscar-pipeline | python -m json.tool
-```
+```bash
 
 ### Monitor Resources
 
@@ -310,7 +310,7 @@ docker stats
 
 # Historical stats
 docker stats --no-stream
-```
+```bash
 
 ---
 
@@ -320,19 +320,19 @@ docker stats --no-stream
 
 ```bash
 docker-compose -f docker-compose.yml -p pvbesscar up -d
-```
+```bash
 
 ### Production (GPU)
 
 ```bash
 docker-compose -f docker-compose.gpu.yml -p pvbesscar-gpu up -d
-```
+```bash
 
 ### Development
 
 ```bash
 docker-compose -f docker-compose.dev.yml -p pvbesscar-dev up -d
-```
+```bash
 
 ---
 

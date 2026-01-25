@@ -119,7 +119,7 @@ co2_baseline_peak = 250.0      # Mall 150kW + Chargers 100kW = 250 kWh/hora
 # ❌ ANTES: soc_penalty sumada directamente, sin peso
 # Resultado: SOC penalty = CO₂ penalty en magnitude
 
-# ✅ AHORA:
+# ✅ AHORA: (2)
 reward = (
     0.50 * r_co2 +
     0.10 * soc_penalty +  # Ponderado explícitamente

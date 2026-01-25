@@ -8,14 +8,14 @@ Se ha actualizado exitosamente el sistema de generación de perfiles de carga pa
 
 ### 1. Función `build_hourly_profile()` (chargers.py, líneas 622-724)
 
-**Antes (24 intervalos horarios):**
+#### Antes (24 intervalos horarios):
 
 ```python
 hours = list(range(24))
 operating_hours = [h for h in hours if opening_hour <= h < closing_hour]
-```
+```bash
 
-**Ahora (96 intervalos de 15 minutos):**
+#### Ahora (96 intervalos de 15 minutos):
 
 ```python
 intervals_per_hour = 4
@@ -24,18 +24,18 @@ intervals = list(range(total_intervals))
 opening_interval = opening_hour * intervals_per_hour
 closing_interval = (closing_hour + 1) * intervals_per_hour - 1
 operating_intervals = [i for i in intervals if opening_interval <= i <= closing_interval]
-```
+```bash
 
-**Cálculo de energía y potencia:**
+#### Cálculo de energía y potencia:
 
 ```python
 # Energía en kWh para cada intervalo de 15 min
 energy_interval = energy_day_kwh * factor_array
 # Potencia en kW (promedio durante 15 min): kWh / 0.25h = kW
 power_kw = energy_interval / 0.25
-```
+```bash
 
-**Estructura de salida actualizada:**
+#### Estructura de salida actualizada:
 
 ```python
 return pd.DataFrame({
@@ -47,19 +47,19 @@ return pd.DataFrame({
     "power_kw": power_kw,
     "is_peak": is_peak,
 })
-```
+```bash
 
 ### 2. Función `generate_annual_charger_profiles()` (chargers.py, líneas 794-878)
 
-**Antes (8,760 horas/año):**
+#### Antes (8,760 horas/año):
 
 ```python
 hours_year = 8760
 index = pd.date_range(start=start_date, periods=hours_year, freq='h')
 annual_profile = np.zeros(hours_year)
-```
+```bash
 
-**Ahora (35,040 intervalos de 15 min/año):**
+#### Ahora (35,040 intervalos de 15 min/año):
 
 ```python
 intervals_per_year = 8760 * 4  # 35040 intervalos de 15 min
@@ -68,9 +68,9 @@ intervals_per_day = 24 * 4  # 96 intervalos de 15 min por día
 opening_interval = opening_hour * 4
 closing_interval = closing_hour * 4
 annual_profile = np.zeros(intervals_per_year)
-```
+```bash
 
-**Bucle diario actualizado:**
+#### Bucle diario actualizado:
 
 ```python
 for day in range(365):
@@ -81,7 +81,7 @@ for day in range(365):
     for i in range(intervals_per_day):
         if i < opening_interval or i >= closing_interval:
             day_profile[i] = 0.0
-```
+```bash
 
 ## Estructura del Archivo CSV Generado
 
@@ -101,13 +101,13 @@ for day in range(365):
 
 ### Perfil Diario (96 intervalos)
 
-```
+```bash
 Total intervalos: 96
 Energía total: 3,252.00 kWh/día
 Potencia máxima: 409.85 kW
 Energía pico (18-21h): 1,300.80 kWh
 Energía fuera pico: 1,951.20 kWh
-```
+```bash
 
 ### Muestra de Datos - Hora Pico (18h)
 
@@ -118,17 +118,17 @@ Energía fuera pico: 1,951.20 kWh
 | 74 | 18.50 | 18 | 30 | 81.3 | 325.2 | True |
 | 75 | 18.75 | 18 | 45 | 81.3 | 325.2 | True |
 
-**Verificación energía en 1 hora pico:**
+#### Verificación energía en 1 hora pico:
 
 - 4 intervalos × 81.3 kWh = 325.2 kWh/hora ✅
 
 ### Perfil Anual (35,040 intervalos)
 
-```
+```bash
 Total intervalos: 35,040 (8,760 horas × 4)
 Frecuencia: 15 minutos
 Formato timestamp: '2024-01-01 00:00:00' con freq='15min'
-```
+```bash
 
 ## Ventajas de la Resolución de 15 Minutos
 
@@ -145,7 +145,7 @@ Con resolución de 15 minutos, el dimensionamiento del BESS será más preciso:
 - **Antes (horario)**: Pico promedio en 1 hora podría ocultar picos de 15 min
 - **Ahora (15 min)**: Captura picos reales de potencia → dimensionamiento correcto
 
-**Ejemplo:**
+#### Ejemplo:
 
 - Promedio horario 18h: 325 kW
 - Pico real 18:00-18:15: 409.85 kW ← **Detectado ahora**
@@ -170,12 +170,12 @@ Esto asegura que el BESS tenga la potencia suficiente para cubrir los picos real
 ---
 
 **Fecha de actualización:** 2026-01-20  
-**Archivos modificados:**
+#### Archivos modificados:
 
 - `src/iquitos_citylearn/oe2/chargers.py` (funciones `build_hourly_profile` y `generate_annual_charger_profiles`)
 - `data/oe2/perfil_horario_carga.csv` (generado)
 
-**Scripts creados:**
+#### Scripts creados:
 
 - `GENERAR_PERFIL_15MIN.py`
 - `TEST_PERFIL_15MIN.py`

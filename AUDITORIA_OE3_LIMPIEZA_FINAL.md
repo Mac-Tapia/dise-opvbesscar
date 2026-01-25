@@ -15,14 +15,14 @@
 
 ### Acción Inmediata Recomendada
 
-```
+```bash
 1. ELIMINAR: rewards_dynamic.py (0 imports genuinos en pipeline)
 2. ELIMINAR: rewards_improved_v2.py (reemplazado por rewards.py)  
 3. ELIMINAR: rewards_wrapper_v2.py (depende de v2, innecesario)
 4. MOVER A EXPERIMENTAL: co2_emissions.py (superseded por co2_table.py)
 5. ACTUALIZAR: train_ppo_dynamic.py (usa rewards_dynamic, debe usar rewards.py)
 6. ARCHIVAR: tier2_v2_config.py (vieja configuración)
-```
+```bash
 
 ---
 
@@ -83,7 +83,7 @@
 
 ### Import Chain (Validado)
 
-```
+```bash
 Main Entry Points:
 ├─ scripts/train_agents_serial.py
 │  └─> simulate.py (912 líneas)
@@ -101,27 +101,27 @@ Main Entry Points:
 └─ agents/*.py (ppo_sb3, a2c_sb3, sac)
    ├─> rewards.py ✅ (via __init__.py)
    └─> agent_utils.py ✅
-```
+```bash
 
 ### Problemas Identificados
 
-**1. MAIN ISSUE: train_ppo_dynamic.py (Deprecated)**
+#### 1. MAIN ISSUE: train_ppo_dynamic.py (Deprecated)
 
 ```python
 # scripts/train_ppo_dynamic.py - LINE 20
 from iquitos_citylearn.oe3.rewards_dynamic import DynamicReward
-```
+```bash
 
 - Status: ❌ DEAD CODE (rewards_dynamic.py debe eliminarse)
 - Solución: Actualizar para usar `from iquitos_citylearn.oe3.rewards import MultiObjectiveReward`
 - O: Eliminar completamente este script (redundante con train_agents_serial.py)
 
-**2. SECONDARY: rewards_wrapper_v2.py**
+#### 2. SECONDARY: rewards_wrapper_v2.py
 
 ```python
 # Line 20
 from .rewards_improved_v2 import ImprovedMultiObjectiveReward, ...
-```
+```bash
 
 - Status: ❌ CIRCULAR (rewards_improved_v2 → rewards_wrapper_v2 → ???)
 - Solución: Eliminar ambos (rewards_improved_v2 + rewards_wrapper_v2)
@@ -134,7 +134,7 @@ from .rewards_improved_v2 import ImprovedMultiObjectiveReward, ...
 
 **Ubicación**: `data/interim/oe2/solar/pv_generation_timeseries.csv`
 
-```
+```bash
 ✅ Validaciones:
 ├─ Length: 8,760 rows (1 año, 1 valor/hora)
 ├─ Values: [0 - 4,162] kW (AC output, Eaton spec)
@@ -142,7 +142,7 @@ from .rewards_improved_v2 import ImprovedMultiObjectiveReward, ...
 ├─ Source: PVGIS TMY + pvlib
 ├─ Conectado a: dataset_builder.py (load_solar_generation)
 └─ Accesible en OE3 como: obs[0] en observables (solar_generation)
-```
+```bash
 
 **Verificación de conexión**:
 
@@ -153,7 +153,7 @@ def load_solar_generation(...):
     # Normaliza a rango [0, 1] para agentes
     solar_normalized = df['solar_generation'] / 4162.0
     return solar_normalized
-```
+```bash
 
 ✅ CONECTADO CORRECTAMENTE
 
@@ -161,7 +161,7 @@ def load_solar_generation(...):
 
 **Ubicación**: `data/interim/oe2/chargers/`
 
-```
+```bash
 ✅ Validaciones:
 ├─ individual_chargers.json: 32 cargadores × 4 tomas = 128 sockets
 │  ├─ Playa Motos: 28 × 4 × 2.0 kW = 224 kW
@@ -170,19 +170,19 @@ def load_solar_generation(...):
 ├─ perfil_horario_carga.csv: 24-hour profile (kW por hora)
 ├─ Conectado a: dataset_builder.py (load_charger_profiles)
 └─ Accesible en OE3 como: obs[64:192] en observables (128 charger demands)
-```
+```bash
 
 **Verificación de conexión**:
 
 ```python
-# En dataset_builder.py
+# En dataset_builder.py (2)
 def load_charger_profiles(...):
     chargers = json.load(open(paths.chargers_json))
     assert len(chargers) == 32, f"Expected 32 chargers, got {len(chargers)}"
     assert all(len(c['sockets']) == 4 for c in chargers)
     profiles = load_hourly_profiles(paths.charger_profiles_csv)
     return profiles  # 128 × 24 matrix
-```
+```bash
 
 ✅ CONECTADO CORRECTAMENTE
 
@@ -190,7 +190,7 @@ def load_charger_profiles(...):
 
 **Ubicación**: `data/interim/oe2/bess/bess_config.json`
 
-```
+```bash
 ✅ Validaciones:
 ├─ Capacidad: 2 MWh
 ├─ Poder: 1.2 MW (carga/descarga)
@@ -199,7 +199,7 @@ def load_charger_profiles(...):
 ├─ Eficiencia: 95% round-trip
 ├─ Conectado a: dataset_builder.py (initialize_bess)
 └─ Accesible en OE3 como: obs[192] en observables (BESS SOC)
-```
+```bash
 
 **CRITICAL FIX APLICADO (Phase 4)**:
 
@@ -210,7 +210,7 @@ def load_charger_profiles(...):
 self._obs_prescale = np.ones(obs_dim) * 0.001
 if obs_dim > 10:
     self._obs_prescale[-10:] = 1.0  # ✅ SOC dims: NO prescaling
-```
+```bash
 
 ✅ ARREGLADO - BESS SOC ahora visible
 
@@ -225,7 +225,7 @@ Observables totales: 534 dimensiones
 ├─ Grid state (carbon intensity, tariff): 2
 ├─ Padding/Reserved: ~133
 └─ Total: 534 dims
-```
+```bash
 
 ✅ TODOS CONECTADOS A DATOS OE2
 
@@ -241,7 +241,7 @@ rm -f src/iquitos_citylearn/oe3/rewards_dynamic.py     # 309 líneas, 0 imports 
 rm -f src/iquitos_citylearn/oe3/rewards_improved_v2.py # 306 líneas, v2 superseded
 rm -f src/iquitos_citylearn/oe3/rewards_wrapper_v2.py  # 180 líneas, depende v2
 rm -f src/iquitos_citylearn/oe3/co2_emissions.py       # 507 líneas, ORPHANED 100%
-```
+```bash
 
 **Impacto**: -1,302 líneas de código muerto  
 **Riesgo**: 🟢 MÍNIMO (0 referencias en pipeline activo)  
@@ -255,14 +255,14 @@ rm -f src/iquitos_citylearn/oe3/co2_emissions.py       # 507 líneas, ORPHANED 1
 # ANTES:
 from iquitos_citylearn.oe3.rewards_dynamic import DynamicReward
 
-# DESPUÉS:
+# DESPUÉS: (2)
 from src.iquitos_citylearn.oe3.rewards import MultiObjectiveReward, MultiObjectiveWeights
 
 # Actualizar instantiación:
 # reward_fn = DynamicReward(...)
 # CAMBIAR A:
 # reward_fn = MultiObjectiveReward(MultiObjectiveWeights())
-```
+```bash
 
 **O OPCIÓN B**: Archivar completamente (recomendado - duplicado de train_agents_serial.py)
 
@@ -274,7 +274,7 @@ mv src/iquitos_citylearn/oe3/tier2_v2_config.py experimental/
 mv src/iquitos_citylearn/oe3/demanda_mall_kwh.py experimental/
 mv src/iquitos_citylearn/oe3/dispatch_priorities.py experimental/  # If unused
 mv scripts/train_ppo_dynamic.py experimental/
-```
+```bash
 
 ### FASE 3: Verificar Imports (5 min)
 
@@ -290,7 +290,7 @@ from src.iquitos_citylearn.oe3.simulate import simulate_episode
 from src.iquitos_citylearn.oe3.dataset_builder import build_citylearn_dataset
 print('✅ Todos los imports válidos')
 "
-```
+```bash
 
 ### FASE 4: Validar Conexión de Datos (10 min)
 
@@ -327,7 +327,7 @@ print(f'✅ BESS: {bess[\"capacity_mwh\"]} MWh, {bess[\"power_mw\"]} MW')
 
 print('\\n✅✅✅ ALL OE2 DATA VERIFIED AND CONNECTED')
 "
-```
+```bash
 
 ---
 

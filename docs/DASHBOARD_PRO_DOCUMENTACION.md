@@ -32,7 +32,7 @@ Tu sistema ahora está **100% operacional** con:
 
 ✅ Simulación Interactiva
    └─ simulador_interactivo.py (9 opciones de menú)
-```
+```bash
 
 ---
 
@@ -52,7 +52,7 @@ Tu sistema ahora está **100% operacional** con:
 │ 4. CONVERGENCIA IA            │ 45% → 100%                 │
 │    Aprendizaje del modelo      │ [████████░░░░░░░░░░░]      │
 └─────────────────────────────────────────────────────────────┘
-```
+```bash
 
 ---
 
@@ -94,7 +94,7 @@ Tu sistema ahora está **100% operacional** con:
 curl -X POST http://localhost:8000/api/control/CHARGE
 curl -X POST http://localhost:8000/api/control/DISCHARGE
 curl -X POST http://localhost:8000/api/control/IDLE
-```
+```bash
 
 ---
 
@@ -107,21 +107,21 @@ Líneas superpuestas de:
 - Consumo (rojo)
 - Generación Solar (naranja)
 - Estado Batería % (verde)
-```
+```bash
 
 ### 2. Costo Acumulado
 
 ```text
 Línea del costo total acumulado (azul)
 Con relleno bajo la curva
-```
+```bash
 
 ### 3. Aprendizaje del Agente
 
 ```text
 Progresión del modelo IA (morado)
 De 0% a 100% convergencia
-```
+```bash
 
 ---
 
@@ -131,29 +131,29 @@ De 0% a 100% convergencia
 
 ```bash
 py -3.11 test_dashboard.py
-```
+```bash
 
 ### Opción 2: Manual (2 terminales)
 
-**Terminal 1 - FastAPI Server:**
+#### Terminal 1 - FastAPI Server:
 
 ```bash
 cd d:\diseñopvbesscar
 py -3.11 fastapi_websocket_server.py
-```
+```bash
 
-**Terminal 2 - Dashboard:**
+#### Terminal 2 - Dashboard:
 
 ```bash
 cd d:\diseñopvbesscar
 py -3.11 dashboard_pro.py
-```
+```bash
 
 ### Opción 3: Con Docker (si quieres)
 
 ```bash
 docker-compose up -d
-```
+```bash
 
 ---
 
@@ -208,7 +208,7 @@ Response: {"objectives": {...}, "progress": {...}}
 # Histórico (últimas N horas)
 GET http://localhost:8000/api/historical/24
 Response: {"data": {"timestamps": [...], "consumos": [...]}}
-```
+```bash
 
 ### POST Endpoints
 
@@ -219,7 +219,7 @@ POST http://localhost:8000/api/control/DISCHARGE
 POST http://localhost:8000/api/control/IDLE
 
 Response: {"status": "updated", "action": "CHARGE"}
-```
+```bash
 
 ### WebSocket
 
@@ -239,7 +239,7 @@ ws.onmessage = (event) => {
     console.log('Convergencia:', data.convergence, '%');
   }
 };
-```
+```bash
 
 ---
 
@@ -256,7 +256,7 @@ Responsabilidades:
 ✅ Proporcionar API REST
 ✅ Comunicarse con MongoDB
 ✅ Hacer streaming de datos a clientes
-```
+```bash
 
 ### Dashboard PRO (`dashboard_pro.py`)
 
@@ -269,7 +269,7 @@ Responsabilidades:
 ✅ Mostrar objetivos y progreso
 ✅ Actualizar sin recargar página
 ✅ Responder a acciones del usuario
-```
+```bash
 
 ---
 
@@ -302,7 +302,7 @@ Responsabilidades:
          ▼                       ▼
       MongoDB             Datos simulados
     (Persistencia)      (Métricas en vivo)
-```
+```bash
 
 ---
 
@@ -339,7 +339,7 @@ Tiempo 60s:  [████░░░░░░░░░░░░░░░░]  10%
 ...
 Tiempo 300s: [██████████░░░░░░░░░░]  50%
 Objetivo:    [████████████████████]  75%
-```
+```bash
 
 ---
 
@@ -356,7 +356,7 @@ Objetivo:    [████████████████████]  75%
    - RESUMEN_SIMULACION_COMPLETO.md
    - README_GUIA.md
    - Y 3 más...
-```
+```bash
 
 ---
 
@@ -374,7 +374,7 @@ Objetivo:    [████████████████████]  75%
 ✅ Python 3.11
 ✅ MongoDB corriendo (puerto 27017)
 ✅ Docker (opcional, para containerización)
-```
+```bash
 
 ---
 
@@ -402,14 +402,14 @@ taskkill /PID <PID> /F
 # Linux
 lsof -i :5000
 kill -9 <PID>
-```
+```bash
 
 ### Puerto 8000 en uso
 
 ```bash
 netstat -ano | findstr ":8000"
 taskkill /PID <PID> /F
-```
+```bash
 
 ### MongoDB no conecta
 
@@ -418,7 +418,7 @@ taskkill /PID <PID> /F
 docker ps | grep mongo
 # o
 mongod --version
-```
+```bash
 
 ### WebSocket no conecta
 
@@ -459,7 +459,7 @@ Sistema PVBESSCAR Dashboard
 🤖 Control Manual     → HABILITADO
 
 ESTADO GENERAL: 🟢 100% OPERACIONAL
-```
+```bash
 
 ---
 
@@ -476,7 +476,7 @@ ESTADO GENERAL: 🟢 100% OPERACIONAL
 ║   Acceso: http://localhost:5000                ║
 ║                                                ║
 ╚════════════════════════════════════════════════╝
-```
+```bash
 
 **Disfruta de tu sistema completamente funcional** 🎊
 

@@ -13,7 +13,7 @@ modelos
 datos
 evaluacion
 deployment
-```
+```bash
 
 ## 🎯 Descripción General
 
@@ -56,19 +56,19 @@ PVBESSCAR es un sistema de gestión inteligente de energía para edificios que i
 
 ```bash
 python EJECUTAR_OPCION_1_ANALISIS.py
-```
+```bash
 
 ### Evaluación en Escenarios
 
 ```bash
 python VERIFICACION_101_ESCENARIOS_2_PLAYAS.py
-```
+```bash
 
 ### Análisis Energético
 
 ```bash
 python EVALUACION_METRICAS_COMPLETAS.py
-```
+```bash
 
 ## 📖 Documentación Disponible
 
@@ -91,7 +91,7 @@ gymnasium >= 0.28
 numpy
 pandas
 matplotlib
-```
+```bash
 
 ## 📧 Contacto
 

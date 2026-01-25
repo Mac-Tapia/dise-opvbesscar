@@ -44,7 +44,7 @@
 hidden_sizes: (256, 256)
 activation: "relu"
 optimizer_kwargs: {"weight_decay": 1e-5}
-```
+```bash
 
 #### Normalización y Escalado
 
@@ -62,7 +62,7 @@ device: "auto"              # Auto-detección GPU
 use_amp: True               # Mixed precision (FP16/FP32)
 pin_memory: True            # CPU→GPU rápido
 deterministic_cuda: False   # Velocidad > reproducibilidad
-```
+```bash
 
 #### Checkpoints
 
@@ -70,7 +70,7 @@ deterministic_cuda: False   # Velocidad > reproducibilidad
 checkpoint_freq_steps: 1000  # Cada 1000 pasos
 save_final: True             # Guardar modelo final
 progress_path: Configurado   # Log de progreso
-```
+```bash
 
 ---
 
@@ -95,7 +95,7 @@ progress_path: Configurado   # Log de progreso
 ```python
 use_sde: True               # Stochastic Delta Exploration
 sde_sample_freq: -1         # Sample every step
-```
+```bash
 
 #### Normalización
 
@@ -104,7 +104,7 @@ normalize_advantage: True    # Normaliza advantage function
 normalize_observations: True # Obs → N(0,1)
 normalize_rewards: True      # Rewards escalados
 reward_scale: 0.01          # Factor de escala
-```
+```bash
 
 #### GPU
 
@@ -112,7 +112,7 @@ reward_scale: 0.01          # Factor de escala
 device: "auto"
 use_amp: True               # Mixed precision
 pin_memory: True
-```
+```bash
 
 ---
 
@@ -120,7 +120,7 @@ pin_memory: True
 
 **Archivo**: `src/iquitos_citylearn/oe3/agents/a2c_sb3.py`
 
-#### Hiperparámetros TIER 2
+#### Hiperparámetros TIER 2 (2)
 
 | Parámetro | Valor TIER 1 | Valor TIER 2 | Mejora |
 |-----------|--------------|--------------|---------|
@@ -138,16 +138,16 @@ gamma: 0.99
 gae_lambda: 1.0             # Generalized Advantage Estimation
 vf_coef: 0.5                # Value function coefficient
 max_grad_norm: 0.5          # Gradient clipping
-```
+```bash
 
-#### Normalización
+#### Normalización (2)
 
 ```python
 normalize_observations: True
 normalize_rewards: True
 reward_scale: 0.01
 clip_obs: 10.0
-```
+```bash
 
 ---
 
@@ -166,7 +166,7 @@ class MultiObjectiveWeights:
     ev_satisfaction: 0.10        # Satisfacción básica de carga
     grid_stability: 0.10         # REDUCIDO: implícito en CO₂+solar
     peak_import_penalty: 0.00    # Dinámico (aplicado en compute())
-```
+```bash
 
 **Justificación**:
 
@@ -182,20 +182,20 @@ class MultiObjectiveWeights:
 
 ```python
 co2_baseline_offpeak = 130.0 kWh/h  # Mall ~100 kW + Chargers ~30 kW
-```
+```bash
 
 **Peak** (18:00-21:59):
 
 ```python
 co2_baseline_peak = 250.0 kWh/h     # Mall ~150 kW + Chargers ~100 kW
-```
+```bash
 
 ### Función de Recompensa
 
 ```python
 R_total = w_co2 * R_co2 + w_cost * R_cost + w_solar * R_solar + 
           w_ev * R_ev + w_grid * R_grid
-```
+```bash
 
 Donde cada `R_i ∈ [-1, 1]` normalizado.
 
@@ -212,7 +212,7 @@ Donde cada `R_i ∈ [-1, 1]` normalizado.
 ```python
 cost_usd = (import - export) * 0.20
 R_cost = 1.0 - 2.0 * min(1.0, max(0, cost)/100)
-```
+```bash
 
 **3. R_Solar** (maximizar autoconsumo):
 
@@ -222,7 +222,7 @@ if solar_gen > 0:
     R_solar = 2.0 * (solar_used/solar_gen) - 1.0
 else:
     R_solar = 0.0
-```
+```bash
 
 **4. R_EV** (satisfacción de carga):
 
@@ -230,7 +230,7 @@ else:
 satisfaction = min(1.0, ev_soc_avg / 0.90)
 R_ev = 2.0 * satisfaction - 1.0
 # + bonus 0.1 si carga con solar
-```
+```bash
 
 **5. R_Grid** (estabilidad):
 
@@ -239,7 +239,7 @@ if hour in peak_hours:
     R_grid = 1.0 - 3.0 * (import / 200)  # Penalización fuerte
 else:
     R_grid = 1.0 - 1.0 * (import / 150)
-```
+```bash
 
 ---
 
@@ -273,7 +273,7 @@ class IquitosContext:
     
     # Horas pico Iquitos
     peak_hours: (18, 19, 20, 21)
-```
+```bash
 
 ---
 
@@ -364,21 +364,21 @@ class IquitosContext:
 - [x] Penalizaciones en horas pico (18-21h)
 - [x] Bonificaciones por uso solar
 
-### Normalización
+### Normalización (3)
 
 - [x] Observaciones normalizadas (media=0, std=1)
 - [x] Recompensas escaladas (factor 0.01)
 - [x] Clipping de outliers (±10.0)
 - [x] Advantage normalization (PPO)
 
-### GPU/CUDA
+### GPU/CUDA (2)
 
 - [x] Auto-detección de dispositivo
 - [x] Mixed precision training (FP16/FP32)
 - [x] Pin memory para transferencias
 - [x] Configuración reproducible (seed=42)
 
-### Checkpoints
+### Checkpoints (2)
 
 - [x] Frecuencia configurada (1000 steps)
 - [x] Guardado de modelo final
@@ -403,19 +403,19 @@ class IquitosContext:
 
 ```bash
 python scripts/train_gpu_robusto.py --agent SAC --episodes 5 --device cuda
-```
+```bash
 
 **PPO** (más estable):
 
 ```bash
 python scripts/train_gpu_robusto.py --agent PPO --episodes 5 --device cuda
-```
+```bash
 
 **A2C** (baseline):
 
 ```bash
 python scripts/train_gpu_robusto.py --agent A2C --episodes 5 --device cuda
-```
+```bash
 
 ### 2. Entrenamiento Completo
 
@@ -428,13 +428,13 @@ python scripts/train_gpu_robusto.py --agent PPO --episodes 57 --device cuda
 
 # A2C: 500k timesteps
 python scripts/train_gpu_robusto.py --agent A2C --episodes 57 --device cuda
-```
+```bash
 
 ### 3. Entrenamiento Serial (todos los agentes)
 
 ```bash
 python scripts/train_agents_serial.py --device cuda --episodes 5
-```
+```bash
 
 ### 4. Monitoreo
 
@@ -453,7 +453,7 @@ La normalización está **habilitada** en todos los agentes:
 ```python
 normalize_rewards: True
 reward_scale: 0.01
-```
+```bash
 
 Esto significa que las recompensas crudas (típicamente en rango [-100, 100]) se escalan a [-1, 1] antes de entrenar. **No requiere ajustes manuales**.
 
@@ -477,7 +477,7 @@ Todos los agentes usan `seed=42` para reproducibilidad. Para resultados idéntic
 
 ```python
 deterministic_cuda: True  # Más lento, pero reproducible
-```
+```bash
 
 ---
 
@@ -496,7 +496,7 @@ deterministic_cuda: True  # Más lento, pero reproducible
 
 ```bash
 python scripts/train_gpu_robusto.py --agent SAC --episodes 5 --device cuda
-```
+```bash
 
 ---
 

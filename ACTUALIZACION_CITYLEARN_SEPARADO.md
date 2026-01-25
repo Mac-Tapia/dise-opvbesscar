@@ -10,11 +10,11 @@
 
 ### 1. Archivos de Dependencias Reorganizados
 
-**Antes:**
+#### Antes:
 
 - `requirements.txt` - Incluía citylearn>=2.5.0
 
-**Después:**
+#### Después:
 
 - `requirements.txt` - **SIN CityLearn** (Phase 7 core only)
 - `requirements-phase7.txt` - Core dependencies (sin CityLearn)
@@ -29,7 +29,7 @@
 ```bash
 # Instalar Python 3.11.9 (exactamente esa versión)
 python --version  # → Python 3.11.9
-```
+```bash
 
 ### FASE 2: DEPENDENCIAS PHASE 7 ✅ (Sin CityLearn)
 
@@ -40,16 +40,16 @@ python -m venv .venv
 
 # Instalar SOLO dependencias Phase 7
 pip install -r requirements-phase7.txt
-```
+```bash
 
-**Incluye:**
+#### Incluye:
 
 - numpy, pandas, PyYAML
 - gymnasium, stable-baselines3
 - torch, matplotlib, jupyterlab
 - pvlib, tabulate
 
-**NO incluye:**
+#### NO incluye:
 
 - ❌ citylearn (FASE 3)
 
@@ -62,7 +62,7 @@ pip install -r requirements-phase7.txt
 python phase7_validation_complete.py
 
 # Esperado: TODOS los tests pasan ✅
-```
+```bash
 
 ---
 
@@ -74,9 +74,9 @@ pip install -r requirements-phase8.txt
 
 # Verificar instalación
 python -c "import citylearn; print('✅ CityLearn ready')"
-```
+```bash
 
-**Incluye:**
+#### Incluye:
 
 - ✅ citylearn>=2.5.0
 
@@ -86,7 +86,7 @@ python -c "import citylearn; print('✅ CityLearn ready')"
 
 ```bash
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-```
+```bash
 
 ---
 
@@ -94,7 +94,7 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 
 ```bash
 python scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 ---
 
@@ -184,14 +184,14 @@ python scripts/train_agents_serial.py --device cuda --episodes 50
 python --version
 # DEBE mostrar exactamente: Python 3.11.9
 # Si es 3.13 o diferente: DETENER Y REINSTALAR PYTHON
-```
+```bash
 
 ### 2. CityLearn SOLO en Phase 8
 
 ```bash
 # Phase 7: NO ejecutar pip install citylearn
 # Phase 8: Ejecutar pip install -r requirements-phase8.txt
-```
+```bash
 
 ### 3. Phase 7 debe pasar ANTES de CityLearn
 
@@ -201,7 +201,7 @@ python phase7_validation_complete.py  # Debe pasar ✅
 
 # SOLO si pasa, instalar CityLearn:
 pip install -r requirements-phase8.txt
-```
+```bash
 
 ---
 

@@ -50,7 +50,7 @@ All core files are properly interconnected and actively used:
 
 ### ✅ YES - Complete Integration Verified
 
-```
+```bash
 OE2 Solar Data (8,760 hourly values)
 └→ pv_generation_timeseries.csv
   └→ dataset_builder.py creates energy_simulation.csv
@@ -71,7 +71,7 @@ OE2 BESS Config (2 MWh / 1.2 MW)
     └→ CityLearnEnv manages BESS state
       └→ agents learn dispatch timing via CO₂ gradient
         └→ Priority: discharge during EV peaks to avoid grid import
-```
+```bash
 
 **Result**: ✅ Data flow is clean and complete. No issues.
 
@@ -81,7 +81,7 @@ OE2 BESS Config (2 MWh / 1.2 MW)
 
 ### ✅ YES - All imports verified valid
 
-```
+```bash
 Main Entry Points:
 ├─ scripts/run_oe3_simulate.py
 │  └→ from iquitos_citylearn.oe3.simulate import simulate
@@ -97,7 +97,7 @@ Main Entry Points:
 
 └─ scripts/run_oe3_co2_table.py
    └→ from iquitos_citylearn.oe3.co2_table import compute_table ✓
-```
+```bash
 
 **Result**: ✅ Zero broken imports. All agents properly linked.
 
@@ -284,7 +284,7 @@ grep -r "demanda_mall" . --include="*.py" 2>/dev/null | wc -l  # Should return 0
 
 # ✓ Experimental modules accessible (if needed)
 python -c "from iquitos_citylearn.oe3.experimental.rewards_improved_v2 import *; print('✅ Experimental OK')"
-```
+```bash
 
 ---
 

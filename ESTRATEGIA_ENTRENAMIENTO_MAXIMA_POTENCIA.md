@@ -35,11 +35,11 @@
 
 # Entrenar todos en serie
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 ### Detalle de Ejecución
 
-```
+```bash
 ┌─ A2C (Rápido) ─────────────────────────┐
 │ Duración: 2.5-3 horas                  │
 │ Episodes: 57 (~500k steps)             │
@@ -62,11 +62,11 @@
 └────────────────────────────────────────┘
          ↓
 ✅ TOTAL: ~11 horas para 3 agentes
-```
+```bash
 
 ### Logs Esperados
 
-```
+```bash
 [Inicio] A2C Entrenamiento
   Episode 1/57 | Reward: -1200 | CO₂: 600 kg
   Episode 10/57 | Reward: -800 | CO₂: 500 kg
@@ -84,7 +84,7 @@
   Episode 15/57 | Reward: -400 | CO₂: 380 kg
   Episode 40/57 | Reward: +50 | CO₂: 220 kg
   Episode 57/57 | Reward: +250 | CO₂: 200 kg ✅✅✅
-```
+```bash
 
 ---
 
@@ -123,7 +123,7 @@
 # Terminal 3 (CPU mientras GPU está ocupada)
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
   --agent PPO --episodes 57 --device cpu
-```
+```bash
 
 **Tiempo Total**: ~7-8 horas
 
@@ -139,7 +139,7 @@
 
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
   --agent A2C --episodes 57 --device cuda
-```
+```bash
 
 **Tiempo Total**: ~11 horas (igual que secuencial, pero control fino)
 
@@ -155,7 +155,7 @@
 # 3 horas, máxima estabilidad
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
   --agent SAC --episodes 50 --device cuda
-```
+```bash
 
 **Resultado Esperado**:
 
@@ -170,7 +170,7 @@
 # 2.5 horas, prototipado rápido
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
   --agent A2C --episodes 57 --device cuda
-```
+```bash
 
 **Resultado Esperado**:
 
@@ -185,7 +185,7 @@
 # 5-6 horas, mejor rendimiento final
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
   --agent PPO --episodes 57 --device cuda
-```
+```bash
 
 **Resultado Esperado**:
 
@@ -206,7 +206,7 @@
 # ~30 minutos
 & .venv/Scripts/python.exe scripts/train_agents_serial.py ^
   --device cuda --episodes 5
-```
+```bash
 
 ### Prueba Individual SAC
 
@@ -214,7 +214,7 @@
 # ~10 minutos
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
   --agent SAC --episodes 5 --device cuda
-```
+```bash
 
 ### Prueba Individual PPO
 
@@ -222,7 +222,7 @@
 # ~15 minutos
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
   --agent PPO --episodes 5 --device cuda
-```
+```bash
 
 ### Prueba Individual A2C
 
@@ -230,7 +230,7 @@
 # ~8 minutos
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py ^
   --agent A2C --episodes 5 --device cuda
-```
+```bash
 
 ---
 
@@ -238,7 +238,7 @@
 
 ### Archivos de Salida Generados
 
-```
+```bash
 results/
 ├── SAC/
 │   ├── checkpoints/
@@ -263,13 +263,13 @@ results/
     ├── checkpoints/
     ├── logs/
     └── plots/
-```
+```bash
 
 ### Métricas Clave a Monitorear
 
 #### 1. Reward Convergencia
 
-```
+```bash
 SAC:
   Episode 1:    -1100  (inicio caótico)
   Episode 10:   -600   (mejorando)
@@ -287,11 +287,11 @@ A2C:
   Episode 15:   -500   (rápida mejora)
   Episode 30:   -150   (convergencia rápida)
   Episode 57:   -50    ✅ (bueno pero no óptimo)
-```
+```bash
 
 #### 2. CO₂ Reducción
 
-```
+```bash
 SAC:
   Initial: ~600 kg/episodio
   Final:   250-350 kg/episodio (EXCELENTE)
@@ -303,15 +303,15 @@ PPO:
 A2C:
   Initial: ~600 kg/episodio
   Final:   300-400 kg/episodio (BUENO)
-```
+```bash
 
 #### 3. EV Satisfacción
 
-```
+```bash
 SAC:  90-95% (ALTA)
 PPO:  88-93% (ALTA)
 A2C:  85-90% (BUENA)
-```
+```bash
 
 ### Herramientas de Monitoreo
 
@@ -324,7 +324,7 @@ tail -f results/SAC/logs/training_log.txt
 
 # Comparar los 3 agentes
 & .venv/Scripts/python.exe scripts/compare_agents.py
-```
+```bash
 
 ---
 
@@ -336,7 +336,7 @@ tail -f results/SAC/logs/training_log.txt
 
 ```bash
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 - ✅ Simple (un comando)
 - ✅ Controlado (no OOM)
@@ -345,11 +345,11 @@ tail -f results/SAC/logs/training_log.txt
 
 ### Para Máxima Velocidad
 
-**Opción 3B (Solo A2C)**
+#### Opción 3B (Solo A2C)
 
 ```bash
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent A2C --episodes 57 --device cuda
-```
+```bash
 
 - ✅ Rápido (2.5-3h)
 - ✅ Baseline funcional
@@ -358,7 +358,7 @@ tail -f results/SAC/logs/training_log.txt
 
 ### Para Mejor Rendimiento Final
 
-**Opción 1 Completo + PPO**
+#### Opción 1 Completo + PPO
 
 ```bash
 # Entrenar todos 3 agentes
@@ -366,7 +366,7 @@ tail -f results/SAC/logs/training_log.txt
 
 # Luego reentrenar PPO con más episodios
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent PPO --episodes 100 --device cuda
-```
+```bash
 
 - ✅ Todos los agentes entrenados
 - ✅ PPO con entrenamiento extra
@@ -384,7 +384,7 @@ tail -f results/SAC/logs/training_log.txt
 
 # O usar CPU para un agente
 & .venv/Scripts/python.exe scripts/train_gpu_robusto.py --agent SAC --device cpu
-```
+```bash
 
 ### Si la convergencia es lenta
 
@@ -393,7 +393,7 @@ tail -f results/SAC/logs/training_log.txt
 # SAC:  1.5e-4 → 2.0e-4
 # PPO:  2.0e-4 → 2.5e-4
 # A2C:  1.5e-4 → 2.0e-4
-```
+```bash
 
 ### Si el reward es muy negativo después de 20 episodios
 
@@ -401,13 +401,13 @@ tail -f results/SAC/logs/training_log.txt
 # Checkear normalización de observaciones
 # Checkear pesos multiobjetivo
 # Considerar reducir hidden_sizes a (512, 512)
-```
+```bash
 
 ---
 
 ## 📈 ROADMAP DE ENTRENAMIENTO
 
-```
+```bash
 DÍA 1 (Mañana):
   09:00 - Verificación ✅
   09:15 - Inicio A2C (2.5h)
@@ -419,7 +419,7 @@ DÍA 2 (Madrugada):
   
   → TODOS LOS 3 AGENTES ENTRENADOS
   → 11 HORAS DE ENTRENAMIENTO TOTAL
-```
+```bash
 
 ---
 
@@ -439,11 +439,11 @@ DÍA 2 (Madrugada):
 
 Todos los agentes están optimizados al máximo nivel individual.
 
-**Opción recomendada:**
+#### Opción recomendada:
 
 ```bash
 & .venv/Scripts/python.exe scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 **Tiempo estimado**: 11 horas  
 **Resultado esperado**: 3 agentes entrenados, converging, listos para producción

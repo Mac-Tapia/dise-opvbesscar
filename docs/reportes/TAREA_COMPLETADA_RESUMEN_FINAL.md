@@ -128,13 +128,13 @@ Programa Python con menú interactivo que permite:
 7. 🌅 Simular Día Completo    → Simula 24 horas ← RECOMENDADO
 8. 📖 Ver Guía                → Muestra guía integrada
 9. ❌ Salir                    → Exit
-```
+```bash
 
-**Cómo usar:**
+#### Cómo usar:
 
 ```powershell
 py -3.11 simulador_interactivo.py
-```
+```bash
 
 ---
 
@@ -149,7 +149,7 @@ ENTRADA (Sensores) → PREDICCIÓN (ML) → DECISIÓN (IA) → EJECUCIÓN → RE
 12.5 kW solar      ¿Solar?         DISCHARGE/       Batería     20-75%
 87% batería        ¿Precio?        IDLE             Controler   Costo -
 €0.28/kWh          ¿Óptimo?        valor: X kW      Hardware    CO2 -
-```
+```bash
 
 ### **Las 3 Acciones**
 
@@ -170,7 +170,7 @@ ENTRADA (Sensores) → PREDICCIÓN (ML) → DECISIÓN (IA) → EJECUCIÓN → RE
   "grid_import_kw": 32.7,            // Red (kW)
   "total_cost": 156.45               // Costo (€)
 }
-```
+```bash
 
 ---
 
@@ -202,7 +202,7 @@ HORA  │ CONSUMO │ SOLAR │ ACCIÓN    │ RESULTADO
 Costo total: €50/día
 Sin IA sería: €200/día
 AHORRO: 75% ✅ = €54,750/año
-```
+```bash
 
 ---
 
@@ -216,7 +216,7 @@ AHORRO: 75% ✅ = €54,750/año
 3. GUIA_FUNCIONAMIENTO_SIMULACION.md (30 min)
 4. Ejecute simulador (20 min)
 Total: ~70 minutos
-```
+```bash
 
 ### **Opción 2: Aprenda Haciendo**
 
@@ -227,7 +227,7 @@ Total: ~70 minutos
 2. Seleccione opción 7 (Simular Día Completo)
 
 3. Lea documentación según necesidad
-```
+```bash
 
 ### **Opción 3: API Interactiva**
 
@@ -235,7 +235,7 @@ Total: ~70 minutos
 1. Abra: http://localhost:8000/docs
 2. Pruebe cada endpoint
 3. Lea documentación integrada
-```
+```bash
 
 ---
 
@@ -333,16 +333,16 @@ Total: ~70 minutos
 - [x] ¿Sistema está operacional?
 - [x] ¿APIs funcionan correctamente?
 
-**Resultado: 8/8 ✅ COMPLETADO**
+#### Resultado: 8/8 ✅ COMPLETADO
 
 ---
 
 ## 🎯 Resumen Ejecutivo
 
-**Pregunta Original:**
+#### Pregunta Original:
 "Haz una guía de cómo funciona y qué valores debo completar a una simulación de cómo se ejecuta o funciona"
 
-**Respuesta Entregada:**
+#### Respuesta Entregada:
 ✅ **6 documentos de guía** explicando funcionamiento completo  
 ✅ **Descripción de valores** que proporciona el sistema  
 ✅ **Simulador interactivo** para ver cómo funciona en vivo  
@@ -350,7 +350,7 @@ Total: ~70 minutos
 ✅ **100+ ejemplos** prácticos de uso  
 ✅ **Sistema completo** operacional y testeado  
 
-**Resultado Final:**
+#### Resultado Final:
 
 - 📚 Documentación: **Completa** (45+ páginas)
 - 💻 Código: **Funcional** (FastAPI + MongoDB + RL Models)

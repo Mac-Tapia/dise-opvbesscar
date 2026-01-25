@@ -236,7 +236,7 @@ python train_tier2_v2_gpu.py
 
 ## ✅ CERTIFICACIÓN FINAL
 
-**ARQUITECTURA LIMPIA Y CONSOLIDADA**
+#### ARQUITECTURA LIMPIA Y CONSOLIDADA
 
 - Código: ✅ Sin duplicados, sin conflictos
 - Métricas: ✅ 100% verificadas
@@ -246,7 +246,7 @@ python train_tier2_v2_gpu.py
 - GPU: ✅ Detectado y optimizado
 - Documentación: ✅ Completa
 
-**LISTO PARA ENTRENAMIENTO TIER 2 V2**
+#### LISTO PARA ENTRENAMIENTO TIER 2 V2
 
 ---
 

@@ -63,7 +63,7 @@
 
 ### Before Cleanup
 
-```
+```bash
 OE3 Folder:
 ├─ rewards.py (529 lines) - ✅ Active
 ├─ rewards_dynamic.py (309 lines) - ❌ Orphaned
@@ -79,11 +79,11 @@ Scripts:
 ├─ train_ppo_dynamic.py (450 lines) - ⚠️ Legacy (uses rewards_dynamic)
 ├─ train_agents_serial.py (600 lines) - ✅ Active (main)
 └─ ...
-```
+```bash
 
 ### After Cleanup
 
-```
+```bash
 OE3 Folder:
 ├─ rewards.py (529 lines) - ✅ ACTIVE PRIMARY
 ├─ co2_table.py (201 lines) - ✅ ACTIVE PRIMARY
@@ -106,11 +106,11 @@ Scripts:
 ├─ train_quick.py - ✅ TESTING
 ├─ run_oe3_build_dataset.py - ✅ DATA PIPELINE
 └─ ... (all active, no deprecated)
-```
+```bash
 
 ### Import Validation Results
 
-```
+```bash
 ✅ Core Imports Working:
   ├─ PPOAgent, A2CAgent, SACAgent
   ├─ MultiObjectiveReward, MultiObjectiveWeights
@@ -122,11 +122,11 @@ Scripts:
 ✅ No Import Failures
 ✅ No Circular Dependencies
 ✅ All Modules Discoverable
-```
+```bash
 
 ### OE2 → OE3 Data Flow Verification
 
-```
+```bash
 DATA INTEGRITY CHECKLIST:
 
 OE2 Solar (data/interim/oe2/solar/)
@@ -148,7 +148,7 @@ OE2 BESS (data/interim/oe2/bess/)
   ✅ CRITICAL: SOC prescaling corrected in agents/ppo_sb3.py:249
                agents/a2c_sb3.py:151, agents/sac.py:493
                (BESS now visible with 1.0 scale, not 0.001)
-```
+```bash
 
 ---
 
@@ -203,11 +203,11 @@ from src.iquitos_citylearn.oe3.co2_table import CityBaseline, EmissionsFactors
 ✅ ALL IMPORTS VALID
 ✅ ALL AGENT CLASSES READY
 ✅ ALL CORE MODULES DISCOVERABLE
-```
+```bash
 
 ### Test 2: OE2 Data Connection ✅
 
-```
+```bash
 ✅ SOLAR PV (4,050 kWp, Eaton Xpert1670)
    Timeseries: 35,037 timesteps (365 days at 15-min frequency)
    Max generation: 2,887 kW
@@ -228,7 +228,7 @@ from src.iquitos_citylearn.oe3.co2_table import CityBaseline, EmissionsFactors
 ✅✅✅ ALL OE2 ARTIFACTS VERIFIED
 ✅✅✅ ALL OE2 → OE3 CONNECTIONS ACTIVE
 ✅✅✅ READY FOR AGENT TRAINING
-```
+```bash
 
 ---
 
@@ -241,7 +241,7 @@ BESS State-of-Charge (SOC) was prescaled to 0.001, making it invisible to agents
 ```python
 # BEFORE:
 self._obs_prescale = np.ones(obs_dim) * 0.001  # ❌ BESS SOC: [0-1] → [0-0.001]
-```
+```bash
 
 ### Solution Applied (Phase 4)
 
@@ -252,7 +252,7 @@ Selective prescaling - only power/energy dims at 0.001, SOC at 1.0:
 self._obs_prescale = np.ones(obs_dim) * 0.001  # Default: power/energy
 if obs_dim > 10:
     self._obs_prescale[-10:] = 1.0  # ✅ SOC dims: NO scaling
-```
+```bash
 
 ### Files Fixed
 
@@ -281,7 +281,7 @@ python -m scripts.run_uncontrolled_baseline --config configs/default.yaml
 
 # Quick training test (1 episode on GPU) - ~15 min
 python scripts/train_quick.py --device cuda --episodes 1
-```
+```bash
 
 ### Short Term (1-2 hours)
 
@@ -291,7 +291,7 @@ python scripts/train_agents_serial.py --device cuda --episodes 50
 
 # Compare baseline vs RL results
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
-```
+```bash
 
 ### Performance Expectations
 
@@ -328,7 +328,7 @@ git commit -m "chore: cleanup OE3 orphaned files and validate OE2 connections
 - Clean ~1,800 lines of redundant code
 - All imports validated, zero breaking changes
 - Ready for full RL training with real OE2 data"
-```
+```bash
 
 ---
 
@@ -353,7 +353,7 @@ git commit -m "chore: cleanup OE3 orphaned files and validate OE2 connections
 
 ## Summary
 
-**✅ OE3 CLEANUP COMPLETE AND VALIDATED**
+#### ✅ OE3 CLEANUP COMPLETE AND VALIDATED
 
 - Removed 1,302 lines of orphaned code (32% reduction)
 - Verified all OE2→OE3 data connections

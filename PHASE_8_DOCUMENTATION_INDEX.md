@@ -116,7 +116,7 @@
 
 **Structure**:
 
-```
+```bash
 ├── sac:              # SAC agent config (25 parameters)
 ├── ppo:              # PPO agent config (25 parameters)
 ├── a2c:              # A2C agent config (20 parameters)
@@ -124,7 +124,7 @@
 ├── training:         # Global training parameters
 ├── evaluation:       # Evaluation metrics & reporting
 └── [Notes section]   # Usage instructions
-```
+```bash
 
 **Key Parameters**:
 
@@ -167,16 +167,16 @@ Run before Phase 8 starts:
 ```bash
 python phase7_validation_complete.py
 # All tests should pass ✅
-```
+```bash
 
 Expected output:
 
-```
+```bash
 ✅ STEP 1: OE2 Data Integrity Check - PASSED
 ✅ STEP 2: Key Data Metrics - PASSED
 ✅ STEP 3: Charger Profile Expansion - PASSED
 ✅ STEP 4: Schema File Status - READY
-```
+```bash
 
 ### Quick Training Test
 
@@ -185,7 +185,7 @@ Run before full training (5 min):
 ```bash
 python scripts/train_quick.py --episodes 1 --agent PPO
 # Should complete without errors
-```
+```bash
 
 ---
 
@@ -270,7 +270,7 @@ python scripts/train_quick.py --episodes 1 --agent PPO
 
 ## 📋 FILE ORGANIZATION
 
-```
+```bash
 Project Root (d:\diseñopvbesscar)
 │
 ├── Phase 8 Documents (NEW - This Session)
@@ -311,7 +311,7 @@ Project Root (d:\diseñopvbesscar)
     ├── checkpoints/{SAC,PPO,A2C}/            ← Agent checkpoints
     ├── analyses/logs/                         ← Training logs
     └── COMPARACION_BASELINE_VS_RL.txt        ← Final results
-```
+```bash
 
 ---
 
@@ -368,7 +368,7 @@ Project Root (d:\diseñopvbesscar)
 
 After Phase 8 completes:
 
-```
+```bash
 ✅ All 3 agents trained (SAC, PPO, A2C)
 ✅ Training converged (reward stabilized)
 ✅ CO₂ reduction ≥ 20% (better ≥ 25%)
@@ -376,7 +376,7 @@ After Phase 8 completes:
 ✅ No crashes or errors
 ✅ COMPARACION_BASELINE_VS_RL.txt generated
 ✅ Results committed to git
-```
+```bash
 
 ---
 

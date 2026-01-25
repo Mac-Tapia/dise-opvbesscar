@@ -31,9 +31,9 @@ Los cargadores dimensionados operan **TODO EL DÍA**:
 
 #### Capacidad Diaria
 
-```
+```bash
 128 tomas × 26 sesiones/día × 92% utilización = 3,062 vehículos/día
-```
+```bash
 
 #### Proyecciones
 
@@ -81,7 +81,7 @@ Los cargadores dimensionados operan **TODO EL DÍA**:
   "capacidad_infraestructura_anio": 1117630,
   "capacidad_infraestructura_20anios": 22352600
 }
-```
+```bash
 
 ## RESUMEN EJECUTIVO
 

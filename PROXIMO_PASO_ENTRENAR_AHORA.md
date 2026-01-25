@@ -13,17 +13,17 @@
 
 ### ✅ Eliminado (4 archivos - código muerto)
 
-```
+```bash
 src/iquitos_citylearn/oe3/rewards_dynamic.py       (309 líneas)
 src/iquitos_citylearn/oe3/rewards_improved_v2.py   (306 líneas)
 src/iquitos_citylearn/oe3/rewards_wrapper_v2.py    (180 líneas)
 src/iquitos_citylearn/oe3/co2_emissions.py         (507 líneas)
 TOTAL: -1,302 líneas de código muerto
-```
+```bash
 
 ### ✅ Archivado (4 archivos - configuración antigua)
 
-```
+```bash
 experimental/deprecated_v2_configs/
   ├─ tier2_v2_config.py
   ├─ demanda_mall_kwh.py
@@ -31,11 +31,11 @@ experimental/deprecated_v2_configs/
 
 experimental/legacy_scripts/
   └─ train_ppo_dynamic.py
-```
+```bash
 
 ### ✅ REPARADO (3 archivos - Bug crítico BESS)
 
-```
+```bash
 src/iquitos_citylearn/oe3/agents/ppo_sb3.py       (línea 249)
 src/iquitos_citylearn/oe3/agents/a2c_sb3.py       (línea 151)
 src/iquitos_citylearn/oe3/agents/sac.py           (línea 493)
@@ -44,16 +44,16 @@ ANTES: BESS SOC invisible (prescaling 0.001)
 DESPUÉS: BESS SOC visible (prescaling 1.0) ✅
 
 IMPACTO: +15-25% mejora en utilización BESS
-```
+```bash
 
 ### ✅ Validado (Datos OE2)
 
-```
+```bash
 ✅ Solar PV: 35,037 timesteps, 2,887 kW máximo
 ✅ Chargers: 128 sockets, 272 kW total
 ✅ BESS: 4.52 MWh / 2.71 MW
 ✅ Todas las conexiones OE2→OE3: FUNCIONANDO
-```
+```bash
 
 ---
 
@@ -64,7 +64,7 @@ IMPACTO: +15-25% mejora en utilización BESS
 ```bash
 cd d:\diseñopvbesscar
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-```
+```bash
 
 **Qué hace**: Construye el schema CityLearn v2 desde datos OE2 reales
 
@@ -72,7 +72,7 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 
 ```bash
 python scripts/train_quick.py --device cuda --episodes 1
-```
+```bash
 
 **Qué hace**: Entrena 1 episodio para verificar todo funciona
 **Monitorear**: Verifica que el BESS SOC se actualize (debe ser visible)
@@ -81,7 +81,7 @@ python scripts/train_quick.py --device cuda --episodes 1
 
 ```bash
 python scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 **Qué hace**: Entrena 50 episodios con SAC → PPO → A2C
 **Genera**: Checkpoints, logs, métricas en analyses/
@@ -90,7 +90,7 @@ python scripts/train_agents_serial.py --device cuda --episodes 50
 
 ```bash
 python -m scripts.run_oe3_co2_table --config configs/default.yaml
-```
+```bash
 
 **Qué hace**: Genera tabla de CO₂ baseline vs agentes RL
 
@@ -137,23 +137,23 @@ from src.iquitos_citylearn.oe3.rewards import MultiObjectiveReward
 from src.iquitos_citylearn.oe3.simulate import simulate
 print('✅ TODOS LOS IMPORTS FUNCIONAN')
 "
-```
+```bash
 
 ### Datos OE2 conectados?
 
 ```bash
 python validate_oe2_oe3_connections.py
-```
+```bash
 
 **Esperado Output**:
 
-```
+```bash
 ✅ SOLAR PV...
 ✅ CHARGERS...
 ✅ BESS...
 ✅✅✅ ALL OE2 ARTIFACTS VERIFIED
 ✅✅✅ READY FOR AGENT TRAINING
-```
+```bash
 
 ---
 
@@ -170,7 +170,7 @@ dir src\iquitos_citylearn\oe3\*.py
 #          validate_training_env.py
 # NO debe haber: rewards_dynamic.py, rewards_improved_v2.py, 
 #                rewards_wrapper_v2.py, co2_emissions.py
-```
+```bash
 
 ---
 
@@ -236,14 +236,14 @@ dir src\iquitos_citylearn\oe3\*.py
 ```bash
 python scripts/train_quick.py --device cuda --episodes 1
 # ~15 minutos, verifica que todo funciona
-```
+```bash
 
 ### Opción B: Entrenamiento Completo (production)
 
 ```bash
 python scripts/train_agents_serial.py --device cuda --episodes 50
 # ~2-3 horas, genera agentes de producción
-```
+```bash
 
 **Recomendación**: Ejecutar Opción A primero (verificación), luego Opción B (producción)
 

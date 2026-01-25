@@ -32,7 +32,7 @@ Se actualizó exitosamente el código `bess.py` para trabajar con los nuevos per
 
 ### Resultado del Dimensionamiento
 
-```
+```bash
 DIMENSIONAMIENTO ÓPTIMO:
   Capacidad:        2,910 kWh
   Potencia:         1,746 kW
@@ -45,11 +45,11 @@ OPERACIÓN:
   Autosuficiencia:  49.2%
   Ciclos/día:       0.47
   SOC min/max:      50.0% / 100.0%
-```
+```bash
 
 ### Análisis de Resultados
 
-**Comparación con análisis inicial (perfil 15 min):**
+#### Comparación con análisis inicial (perfil 15 min):
 
 | Parámetro | Análisis 15 min | BESS Simulado | Diferencia |
 |-----------|-----------------|---------------|------------|
@@ -58,7 +58,7 @@ OPERACIÓN:
 | Potencia | 622 kW | 1,746 kW | +181% |
 | Horario descarga | 18h-22h (5h) | 9h-22h (14h) | +9 horas |
 
-**Razones de la diferencia:**
+#### Razones de la diferencia:
 
 1. **Horario de descarga extendido:** La simulación incluyó todo el horario de operación (9h-22h) en lugar de solo el período nocturno (18h-22h)
 2. **Priorización de solar:** El análisis inicial asumió que el solar remanente cubría parte de la demanda EV diurna, pero la simulación muestra déficit desde las 9h
@@ -95,7 +95,7 @@ OPERACIÓN:
 
 ### 1. Refinamiento del Dimensionamiento
 
-**Ajustar horario de descarga:**
+#### Ajustar horario de descarga:
 
 ```python
 # En bess.py, línea ~1010
@@ -104,7 +104,7 @@ discharge_start = min(deficit_hours)  # 9h (todo el día)
 
 # A:
 discharge_start = 18  # 6 PM (solo período nocturno)
-```
+```bash
 
 Esto reducirá el BESS a los valores esperados (~1,712 kWh).
 
@@ -169,7 +169,7 @@ def load_ev_demand(ev_profile_path: Path, year: int = 2024) -> pd.DataFrame:
     
     # Formato antiguo: 24 horas (retrocompatibilidad)
     # ... resto del código
-```
+```bash
 
 ### Conversión 15 min → Horario (líneas 920-936)
 
@@ -187,7 +187,7 @@ if len(df_ev) == 35040:
     df_ev_aligned['hour'] = df_ev_hourly['hour'].values[:8760]
     df_ev_aligned['ev_kwh'] = df_ev_hourly['ev_kwh'].values[:8760]
     df_ev = df_ev_aligned[['ev_kwh']]
-```
+```bash
 
 ---
 
@@ -212,7 +212,7 @@ if len(df_ev) == 35040:
 
 ---
 
-**Para ejecutar:**
+#### Para ejecutar:
 
 ```bash
 # 1. Generar perfil solar (si no existe)
@@ -224,7 +224,7 @@ python PROBAR_BESS_15MIN.py
 # 3. Revisar resultados en:
 #    data/oe2/interim/plots/
 #    data/oe2/citylearn/
-```
+```bash
 
 ---
 

@@ -34,7 +34,7 @@ python -c "import citylearn; print('✅ CityLearn ready')"
 # Verify project structure
 ls -la src/iquitos_citylearn/oe3/agents/
 # Should show: sac.py, ppo_sb3.py, a2c_sb3.py
-```
+```bash
 
 ### Step 1: Build Dataset (15-30 minutes)
 
@@ -47,7 +47,7 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 # ✅ Generating 128 charger_simulation_*.csv files...
 # ✅ Building schema.json...
 # ✅ Complete dataset generated: data/processed/citylearnv2_dataset/
-```
+```bash
 
 ### Step 2: Quick Test (5 minutes - OPTIONAL)
 
@@ -56,7 +56,7 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 python scripts/train_quick.py --episodes 1 --agent PPO
 
 # Expected: Completes in ~5 min without errors
-```
+```bash
 
 ### Step 3: Full Training (4-5 hours)
 
@@ -68,7 +68,7 @@ python scripts/train_agents_serial.py --device cuda --episodes 50
 python -m scripts.run_oe3_sac_training --episodes 50 --device cuda
 python -m scripts.run_oe3_ppo_training --episodes 50 --device cuda
 python -m scripts.run_oe3_a2c_training --episodes 50 --device cuda
-```
+```bash
 
 ### Step 4: View Results (1 minute)
 
@@ -78,7 +78,7 @@ cat COMPARACION_BASELINE_VS_RL.txt
 
 # View training logs
 tail -50 analyses/logs/ppo_training.log
-```
+```bash
 
 ---
 
@@ -106,7 +106,7 @@ Phase 8 trains **three reinforcement learning agents** (SAC, PPO, A2C) to optimi
 
 ### Architecture Overview
 
-```
+```bash
 CityLearn Environment (534 dims in, 126 dims out)
     ↓
  RL Agent (PPO/SAC/A2C)
@@ -121,11 +121,11 @@ CityLearn Environment (534 dims in, 126 dims out)
   - Cost: -0.10 × (grid_import_kwh × 0.20)
   - EV: -0.10 × max(0, demand - supply)
   - Grid: -0.10 × max(0, peak - baseline)
-```
+```bash
 
 ### Data Flow (Phase 7 → Phase 8)
 
-```
+```bash
 Phase 7 Outputs                Phase 8 Execution
     ↓                               ↓
 data/interim/oe2/          Build Dataset
@@ -144,7 +144,7 @@ data/interim/oe2/          Build Dataset
                          (co2_table.py)
                                ↓
                          COMPARACION_BASELINE_VS_RL.txt
-```
+```bash
 
 ---
 
@@ -167,7 +167,7 @@ data/interim/oe2/          Build Dataset
 
 **Hyperparameters**:
 
-```
+```bash
 learning_rate: 2.0e-4
 batch_size: 256 (large for stability)
 hidden_sizes: [1024, 1024]
@@ -175,7 +175,7 @@ entropy_coef: "auto" (learned)
 target_update_interval: 1
 use_sde: true (stochastic dynamics exploration)
 use_amp: true (mixed precision)
-```
+```bash
 
 **Expected Performance**:
 
@@ -207,7 +207,7 @@ use_amp: true (mixed precision)
 
 **Hyperparameters**:
 
-```
+```bash
 learning_rate: 2.0e-4 (linear decay)
 batch_size: 128
 n_epochs: 20 (repeated gradient updates)
@@ -215,7 +215,7 @@ n_steps: 2048 (rollout length)
 clip_range: 0.1 (conservative clipping)
 gae_lambda: 0.98 (generalized advantage estimation)
 use_amp: true
-```
+```bash
 
 **Expected Performance**:
 
@@ -247,14 +247,14 @@ use_amp: true
 
 **Hyperparameters**:
 
-```
+```bash
 learning_rate: 2.0e-4 (linear decay)
 n_steps: 2048 (multi-step advantage)
 batch_size: 64 (smaller batches)
 gae_lambda: 1.0 (Monte Carlo)
 use_rms_prop: true (RMSProp instead of Adam)
 normalize_advantage: true
-```
+```bash
 
 **Expected Performance**:
 
@@ -270,7 +270,7 @@ normalize_advantage: true
 
 ### Common Architecture (All Agents)
 
-```
+```bash
 Input Layer: 534 dimensions
   ├─ Building state (solar, demand, grid import, BESS SOC)
   ├─ Charger states × 128 (power, occupancy, battery level)
@@ -288,7 +288,7 @@ Output Layer (Policy): Dense(126)
 
 Output Layer (Value): Dense(1) [for policy gradient]
   └─ Linear output (unbounded)
-```
+```bash
 
 **Total Parameters**: ~1.3M per agent
 
@@ -314,7 +314,7 @@ mkdir -p analyses/logs/
 
 # 5. Verify dataset exists
 ls data/processed/citylearnv2_dataset/schema.json  # Should exist
-```
+```bash
 
 ### Option A: Full Training (Recommended)
 
@@ -326,7 +326,7 @@ python scripts/train_agents_serial.py \
   --save_interval 8760 \
   --verbose 1
 
-# Expected output:
+# Expected output: (2)
 # Starting SAC training...
 #   Episode 1/50: reward=-750, CO2_reduction=18%
 #   Episode 5/50: reward=-600, CO2_reduction=22%
@@ -338,10 +338,10 @@ python scripts/train_agents_serial.py \
 #   [similar output]
 #
 # Starting A2C training...
-#   [similar output]
+# [similar output] (2)
 #
 # All agents trained. Results in COMPARACION_BASELINE_VS_RL.txt
-```
+```bash
 
 **Expected Duration**: 4-5 hours on GPU
 
@@ -370,7 +370,7 @@ python -m scripts.run_oe3_a2c_training \
   --device cuda \
   --learning_rate 2e-4 \
   --batch_size 64
-```
+```bash
 
 **Pros**: Can run in parallel on different GPUs  
 **Cons**: More manual management
@@ -389,7 +389,7 @@ python scripts/train_quick.py \
 # Expected: Completes in ~5 minutes
 # If successful, proceed to full training
 # If fails, check error message and troubleshoot
-```
+```bash
 
 ---
 
@@ -404,7 +404,7 @@ python scripts/train_agents_serial.py \
   --reset_num_timesteps false
 
 # Important: reset_num_timesteps=false ensures timesteps accumulate
-```
+```bash
 
 ---
 
@@ -424,7 +424,7 @@ python scripts/monitor_training_live_2026.py
 # SAC       15/50    -650      131400        30%
 # PPO       0/50     -       0             0%
 # A2C       0/50     -       0             0%
-```
+```bash
 
 Or use TensorBoard:
 
@@ -434,7 +434,7 @@ tensorboard --logdir analyses/logs/
 
 # Open browser: http://localhost:6006
 # Watch: Training reward, loss curves, learning progress
-```
+```bash
 
 ---
 
@@ -442,7 +442,7 @@ tensorboard --logdir analyses/logs/
 
 **Where to find logs**:
 
-```
+```bash
 analyses/logs/
 ├── SAC_training_20260125.log      # Detailed SAC logs
 ├── PPO_training_20260125.log      # Detailed PPO logs
@@ -450,7 +450,7 @@ analyses/logs/
 ├── SAC/events.out.tfevents.*      # TensorBoard events
 ├── PPO/events.out.tfevents.*
 └── A2C/events.out.tfevents.*
-```
+```bash
 
 **View logs**:
 
@@ -463,7 +463,7 @@ tail -f analyses/logs/SAC_training_20260125.log
 
 # Search for errors
 grep "ERROR\|Warning" analyses/logs/*.log
-```
+```bash
 
 ---
 
@@ -476,7 +476,7 @@ grep "ERROR\|Warning" analyses/logs/*.log
 **Solution**:
 
 ```bash
-# Verify Python 3.11
+# Verify Python 3.11 (2)
 python --version  # Must be 3.11.x
 
 # Install CityLearn
@@ -484,7 +484,7 @@ pip install citylearn>=2.5.0
 
 # Verify
 python -c "import citylearn; print('✅ Ready')"
-```
+```bash
 
 ---
 
@@ -511,7 +511,7 @@ python scripts/train_agents_serial.py --device cpu --episodes 50
 
 # 5. Check GPU memory
 nvidia-smi  # Should show GPU utilization and available memory
-```
+```bash
 
 ---
 
@@ -534,7 +534,7 @@ ls data/processed/citylearnv2_dataset/buildings/*/charger_simulation_*.csv | wc 
 
 # Try training again
 python scripts/train_quick.py --episodes 1
-```
+```bash
 
 ---
 
@@ -548,9 +548,9 @@ python scripts/train_quick.py --episodes 1
 # Update gymnasium to compatible version
 pip install gymnasium==0.28.1
 
-# Verify
+# Verify (2)
 python -c "import gymnasium; print(gymnasium.__version__)"
-```
+```bash
 
 ---
 
@@ -568,7 +568,7 @@ rm -rf checkpoints/A2C/*
 
 # Restart training from scratch
 python scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 ---
 
@@ -578,12 +578,12 @@ python scripts/train_agents_serial.py --device cuda --episodes 50
 
 **Key metrics to monitor**:
 
-```
+```bash
 Episode Reward: Total reward accumulated (should increase/stabilize)
 CO2 Reduction: Percentage vs baseline (target: ≥20%)
 Solar Utilization: Percentage of PV used (target: ≥60%)
 Grid Stability: Peak demand reduction (target: ≥15%)
-```
+```bash
 
 **Healthy training curves**:
 
@@ -609,7 +609,7 @@ Grid Stability: Peak demand reduction (target: ≥15%)
 # Automatic (part of training script output)
 cat COMPARACION_BASELINE_VS_RL.txt
 
-# Expected output:
+# Expected output: (3)
 # ┌─────────────────────────────────────────┐
 # │ Agent │ CO2 Reduction │ Solar % │ Cost  │
 # ├───────┼───────────────┼─────────┼───────┤
@@ -618,7 +618,7 @@ cat COMPARACION_BASELINE_VS_RL.txt
 # │ PPO    │ 29%          │ 68%    │ 12%   │
 # │ A2C    │ 22%          │ 62%    │ 6%    │
 # └─────────────────────────────────────────┘
-```
+```bash
 
 ---
 
@@ -635,7 +635,7 @@ for agent in logs:
     print(f\"  Total steps: {agent['total_steps']}\")
     print(f\"  Best reward: {agent['best_reward']}\")
 "
-```
+```bash
 
 ---
 
@@ -650,7 +650,7 @@ python scripts/plot_training_results.py
 # analyses/plots/co2_comparison.png       # CO2 vs baseline
 # analyses/plots/solar_utilization.png    # Solar usage
 # analyses/plots/grid_stability.png       # Peak demand reduction
-```
+```bash
 
 ---
 
@@ -666,7 +666,7 @@ python scripts/agent_comparison_report.py
 # - Convergence speed comparison
 # - Robustness analysis
 # - Recommendations for production
-```
+```bash
 
 ---
 
@@ -679,7 +679,7 @@ python scripts/agent_comparison_report.py
 **Baseline**: 10,200 kg CO₂/year (diesel import during peak)  
 **Target**: ≥20% reduction = ≤8,160 kg CO₂/year
 
-**What reduces CO₂?**
+#### What reduces CO₂?
 
 - Shifting EV charging to sunny hours (solar generation up)
 - Using BESS during evening peak (avoid grid import)
@@ -727,7 +727,7 @@ python scripts/agent_comparison_report.py
 
 After 50 episodes training:
 
-```
+```bash
 ┌──────────────────────────────────────────────────────────┐
 │ AGENT PERFORMANCE AFTER 50 EPISODES                     │
 ├──────────────────────────────────────────────────────────┤
@@ -743,7 +743,7 @@ After 50 episodes training:
 └──────────────────────────────────────────────────────────┘
 
 RECOMMENDATION: Use PPO for production (best performance + stability)
-```
+```bash
 
 ---
 
@@ -868,6 +868,6 @@ Phase 8 is complete when:
 ```bash
 # Once Python 3.11 installed and CityLearn installed:
 python scripts/train_agents_serial.py --device cuda --episodes 50
-```
+```bash
 
 Good luck! 🚀

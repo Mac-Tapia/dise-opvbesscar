@@ -1,4 +1,4 @@
-# Technical Analysis Report: OE2 Data Flow to RL Agents
+﻿# Technical Analysis Report: OE2 Data Flow to RL Agents
 
 ## pvbesscar Project - Agent Integration Analysis
 
@@ -12,78 +12,78 @@
 
 ### Files Analyzed
 
-```
-✓ __init__.py                    (Agent exports & device detection)
-✓ sac.py                         (Soft Actor-Critic - 1,113 lines)
-✓ ppo_sb3.py                     (Proximal Policy Optimization - 868 lines)
-✓ a2c_sb3.py                     (Advantage Actor-Critic - 715 lines)
-✓ agent_utils.py                 (Shared utilities - 189 lines)
-✓ no_control.py                  (Baseline agent)
-✓ uncontrolled.py                (Uncontrolled EV charging baseline)
-✓ rbc.py                         (Rule-based controller - 320 lines)
-✓ validate_training_env.py       (Pre-training validation - 137 lines)
-```
+```bash
+âœ“ __init__.py                    (Agent exports & device detection)
+âœ“ sac.py                         (Soft Actor-Critic - 1,113 lines)
+âœ“ ppo_sb3.py                     (Proximal Policy Optimization - 868 lines)
+âœ“ a2c_sb3.py                     (Advantage Actor-Critic - 715 lines)
+âœ“ agent_utils.py                 (Shared utilities - 189 lines)
+âœ“ no_control.py                  (Baseline agent)
+âœ“ uncontrolled.py                (Uncontrolled EV charging baseline)
+âœ“ rbc.py                         (Rule-based controller - 320 lines)
+âœ“ validate_training_env.py       (Pre-training validation - 137 lines)
+```bash
 
 ### Key Findings Summary
 
 | Category | Status | Severity |
 |----------|--------|----------|
-| **OE2 Data Connection** | ✓ Indirect via CityLearn | Medium |
-| **128 Chargers Handling** | ✓ Correct via wrapper flattening | Low |
-| **Solar Generation (8,760 hrs)** | ✓ Loaded in wrapper, used in feature extraction | Low |
-| **BESS (2MWh/1.2MW)** | ✓ Via environment attribute access | Low |
-| **Type Errors** | ⚠ Minor issues in wrappers | Low |
-| **Data Mismatches** | ⚠ Pre-scaling hardcoded to 0.001 | Medium |
-| **Code Quality** | ✓ Good modular design | Low |
-| **Architecture** | ✓ Proper abstraction layers | Low |
+| **OE2 Data Connection** | âœ“ Indirect via CityLearn | Medium |
+| **128 Chargers Handling** | âœ“ Correct via wrapper flattening | Low |
+| **Solar Generation (8,760 hrs)** | âœ“ Loaded in wrapper, used in feature extraction | Low |
+| **BESS (2MWh/1.2MW)** | âœ“ Via environment attribute access | Low |
+| **Type Errors** | âš  Minor issues in wrappers | Low |
+| **Data Mismatches** | âš  Pre-scaling hardcoded to 0.001 | Medium |
+| **Code Quality** | âœ“ Good modular design | Low |
+| **Architecture** | âœ“ Proper abstraction layers | Low |
 
 ---
 
-## 1. DATA FLOW ANALYSIS: OE2 → AGENTS
+## 1. DATA FLOW ANALYSIS: OE2 â†’ AGENTS
 
 ### 1.1 Data Connection Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ OE2 ARTIFACTS (data/interim/oe2/)                              │
-├─────────────────────────────────────────────────────────────────┤
-│ ├─ solar/pv_generation_timeseries.csv     (8,760 rows × 1 col) │
-│ ├─ chargers/individual_chargers.json      (32 chargers × 4)    │
-│ ├─ chargers/perfil_horario_carga.csv      (24h demand profile) │
-│ ├─ chargers/annual_datasets/               (Playa_Motos/Mototaxis)
-│ └─ bess/bess_results.json                 (2 MWh / 1.2 MW)     │
-└────────────────────┬──────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ DATASET BUILDER (src/iquitos_citylearn/oe3/dataset_builder.py)  │
-├─────────────────────────────────────────────────────────────────┤
-│ ✓ Loads OE2 artifacts from interim_dir                          │
-│ ✓ Enriches observables (adds solar, charger profiles)           │
-│ ✓ Builds CityLearn schema.json                                  │
-│ ✓ Generates energy_simulation.csv & charger_simulation_*.csv    │
-└────────────────────┬──────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ CityLearn v2 Environment (data/processed/citylearnv2_dataset/)  │
-├─────────────────────────────────────────────────────────────────┤
-│ ├─ schema.json (contains all building/charger/energy configs)  │
-│ ├─ climate_zones/weather.csv                                   │
-│ ├─ buildings/energy_simulation.csv        (aggregated load)    │
-│ └─ buildings/charger_simulation_0-127.csv (per-charger 8760)   │
-└────────────────────┬──────────────────────────────────────────┘
-                     │
-                     ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ RL AGENTS (src/iquitos_citylearn/oe3/agents/*.py)               │
-├─────────────────────────────────────────────────────────────────┤
-│ ├─ SAC/PPO/A2C: CityLearnWrapper extracts obs at runtime      │
-│ ├─ Wrapper._get_pv_bess_feats(): Reads from env.buildings     │
-│ ├─ Flattens 128 charger actions → 126 controllable actions    │
-│ └─ Normalizes obs & rewards (key source of data mismatches)   │
-└─────────────────────────────────────────────────────────────────┘
-```
+```bash
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚ OE2 ARTIFACTS (data/interim/oe2/)                              â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚ â”œâ”€ solar/pv_generation_timeseries.csv     (8,760 rows Ã— 1 col) â”‚
+â”‚ â”œâ”€ chargers/individual_chargers.json      (32 chargers Ã— 4)    â”‚
+â”‚ â”œâ”€ chargers/perfil_horario_carga.csv      (24h demand profile) â”‚
+â”‚ â”œâ”€ chargers/annual_datasets/               (Playa_Motos/Mototaxis)
+â”‚ â””â”€ bess/bess_results.json                 (2 MWh / 1.2 MW)     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                     â”‚
+                     â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚ DATASET BUILDER (src/iquitos_citylearn/oe3/dataset_builder.py)  â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚ âœ“ Loads OE2 artifacts from interim_dir                          â”‚
+â”‚ âœ“ Enriches observables (adds solar, charger profiles)           â”‚
+â”‚ âœ“ Builds CityLearn schema.json                                  â”‚
+â”‚ âœ“ Generates energy_simulation.csv & charger_simulation_*.csv    â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                     â”‚
+                     â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚ CityLearn v2 Environment (data/processed/citylearnv2_dataset/)  â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚ â”œâ”€ schema.json (contains all building/charger/energy configs)  â”‚
+â”‚ â”œâ”€ climate_zones/weather.csv                                   â”‚
+â”‚ â”œâ”€ buildings/energy_simulation.csv        (aggregated load)    â”‚
+â”‚ â””â”€ buildings/charger_simulation_0-127.csv (per-charger 8760)   â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                     â”‚
+                     â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚ RL AGENTS (src/iquitos_citylearn/oe3/agents/*.py)               â”‚
+â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+â”‚ â”œâ”€ SAC/PPO/A2C: CityLearnWrapper extracts obs at runtime      â”‚
+â”‚ â”œâ”€ Wrapper._get_pv_bess_feats(): Reads from env.buildings     â”‚
+â”‚ â”œâ”€ Flattens 128 charger actions â†’ 126 controllable actions    â”‚
+â”‚ â””â”€ Normalizes obs & rewards (key source of data mismatches)   â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+```bash
 
 ### 1.2 Connection Points Analysis
 
@@ -112,11 +112,11 @@ def _get_pv_bess_feats(self):
         if es is not None:
             soc = float(getattr(es, "state_of_charge", soc))
     return np.array([pv_kw, soc], dtype=np.float32)
-```
+```bash
 
-**✓ Correct**: Accesses solar_generation[t] (8,760-element array from OE2 dataset)  
-**✓ Correct**: Accesses electrical_storage.state_of_charge (BESS parameter)  
-**⚠ Issue**: Silent failure if buildings/attributes missing (catches AttributeError)
+**âœ“ Correct**: Accesses solar_generation[t] (8,760-element array from OE2 dataset)  
+**âœ“ Correct**: Accesses electrical_storage.state_of_charge (BESS parameter)  
+**âš  Issue**: Silent failure if buildings/attributes missing (catches AttributeError)
 
 **Observation Flattening (sac.py, lines 545-560)**:
 
@@ -127,7 +127,7 @@ def _flatten(self, obs):
     arr = np.concatenate([base, feats])  # Total: 536 dims
     # Pad/trim to target obs_dim
     return self._normalize_observation(arr.astype(np.float32))
-```
+```bash
 
 **Normalization (sac.py, lines 510-525)**:
 
@@ -140,13 +140,13 @@ def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
     normalized = (prescaled - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
     clipped = np.clip(normalized, -self._clip_obs, self._clip_obs)
     return np.asarray(clipped, dtype=np.float32)
-```
+```bash
 
-**⚠ CRITICAL ISSUE**: Hardcoded pre-scaling by 0.001 assumes:
+**âš  CRITICAL ISSUE**: Hardcoded pre-scaling by 0.001 assumes:
 
-- Solar generation in kW: 4,162 kWp → 4.162 (after scaling)
-- BESS: 2,000 kWh → 2.0 (after scaling)
-- Charger demand: 272 kW → 0.272 (after scaling)
+- Solar generation in kW: 4,162 kWp â†’ 4.162 (after scaling)
+- BESS: 2,000 kWh â†’ 2.0 (after scaling)
+- Charger demand: 272 kW â†’ 0.272 (after scaling)
 
 This is **dimensionally inconsistent** and **fragile** if data ranges change.
 
@@ -157,9 +157,9 @@ def _get_act_dim(self):
     if isinstance(self.env.action_space, list):
         return sum(sp.shape[0] for sp in self.env.action_space)
     return self.env.action_space.shape[0]
-```
+```bash
 
-**✓ Correct**: Handles both list and single action spaces; defaults to 126 (chargers)
+**âœ“ Correct**: Handles both list and single action spaces; defaults to 126 (chargers)
 
 ---
 
@@ -179,10 +179,10 @@ def _get_act_dim(self):
     if action_space is not None and hasattr(action_space, "shape"):
         return int(action_space.shape[0])
     return 126  # Default fallback
-```
+```bash
 
-**⚠ TYPE ERROR**: Uses `getattr()` but doesn't handle missing action_space gracefully  
-**✓ Good**: Has fallback to 126
+**âš  TYPE ERROR**: Uses `getattr()` but doesn't handle missing action_space gracefully  
+**âœ“ Good**: Has fallback to 126
 
 ---
 
@@ -208,9 +208,9 @@ def _get_pv_bess_feats(self):  # Line 185-200
     except (AttributeError, TypeError, IndexError, ValueError) as err:
         logger.debug("Error extracting PV/BESS features: %s", err)
     return np.array([pv_kw, soc], dtype=np.float32)
-```
+```bash
 
-**✓ Better**: Explicit exception handling with debug logging
+**âœ“ Better**: Explicit exception handling with debug logging
 
 **Issue in A2C (line 270)**:
 
@@ -222,9 +222,9 @@ def _get_act_dim(self):
     if action_space is not None and hasattr(action_space, "shape"):
         return int(action_space.shape[0])
     return 126  # Default to 126 charger actions as fallback
-```
+```bash
 
-**⚠ TYPE ERROR**: Comment says "126 charger actions" but config defines **126 controllable out of 128** (2 reserved)
+**âš  TYPE ERROR**: Comment says "126 charger actions" but config defines **126 controllable out of 128** (2 reserved)
 
 ---
 
@@ -234,12 +234,12 @@ All three agents (SAC/PPO/A2C) embed OE2 parameters in dataclass configs:
 
 | Parameter | SAC | PPO | A2C | OE2 Spec | Status |
 |-----------|-----|-----|-----|----------|--------|
-| `co2_target_kg_per_kwh` | 0.4521 | 0.4521 | 0.4521 | ✓ Correct (Iquitos thermal) | ✓ |
-| `cost_target_usd_per_kwh` | 0.20 | 0.20 | 0.20 | ✓ Correct | ✓ |
-| `ev_soc_target` | 0.90 | 0.90 | 0.90 | ✓ Correct | ✓ |
-| `peak_demand_limit_kw` | 200.0 | 200.0 | 200.0 | ✓ Reasonable (272 kW total) | ✓ |
-| (No charger count) | — | — | — | ⚠ Missing | ⚠ |
-| (No BESS capacity) | — | — | — | ⚠ Missing | ⚠ |
+| `co2_target_kg_per_kwh` | 0.4521 | 0.4521 | 0.4521 | âœ“ Correct (Iquitos thermal) | âœ“ |
+| `cost_target_usd_per_kwh` | 0.20 | 0.20 | 0.20 | âœ“ Correct | âœ“ |
+| `ev_soc_target` | 0.90 | 0.90 | 0.90 | âœ“ Correct | âœ“ |
+| `peak_demand_limit_kw` | 200.0 | 200.0 | 200.0 | âœ“ Reasonable (272 kW total) | âœ“ |
+| (No charger count) | â€” | â€” | â€” | âš  Missing | âš  |
+| (No BESS capacity) | â€” | â€” | â€” | âš  Missing | âš  |
 
 ---
 
@@ -249,12 +249,12 @@ All three agents (SAC/PPO/A2C) embed OE2 parameters in dataclass configs:
 
 **OE2 Specification**:
 
-```
-32 physical chargers × 4 sockets = 128 controllable outlets
-├─ Playa Motos: 28 chargers × 4 sockets × 2.0 kW = 224 kW
-└─ Playa Mototaxis: 4 chargers × 4 sockets × 3.0 kW = 48 kW
+```bash
+32 physical chargers Ã— 4 sockets = 128 controllable outlets
+â”œâ”€ Playa Motos: 28 chargers Ã— 4 sockets Ã— 2.0 kW = 224 kW
+â””â”€ Playa Mototaxis: 4 chargers Ã— 4 sockets Ã— 3.0 kW = 48 kW
 Total: 272 kW installed
-```
+```bash
 
 **Agent Action Space Definition**:
 
@@ -266,10 +266,10 @@ self.action_space = gym.spaces.Box(
     shape=(self.act_dim,), dtype=np.float32
 )
 # act_dim = 126 (from _get_act_dim())
-```
+```bash
 
-**⚠ DISCREPANCY**: Config defines 126 controllable actions but OE2 has 128 sockets  
-**✓ Correct interpretation**: 2 chargers reserved for baseline comparison (128 - 2 = 126)
+**âš  DISCREPANCY**: Config defines 126 controllable actions but OE2 has 128 sockets  
+**âœ“ Correct interpretation**: 2 chargers reserved for baseline comparison (128 - 2 = 126)
 
 ### 2.2 Action Unflattening
 
@@ -287,10 +287,10 @@ def _unflatten_action(self, action):
             idx += dim
         return result
     return [action.tolist()]
-```
+```bash
 
-**✓ Correct**: Handles both flat and list action spaces  
-**✓ Correct**: Returns list of actions compatible with CityLearn
+**âœ“ Correct**: Handles both flat and list action spaces  
+**âœ“ Correct**: Returns list of actions compatible with CityLearn
 
 ### 2.3 Charger Feature Extraction
 
@@ -308,7 +308,7 @@ def _distribute_charging_load(self, available_power, n_active_chargers):
     power_per_charger = self.config.charger_power_kw * self.config.sockets_per_charger
     # Round-robin, solar-priority, or sequential distribution
     # Returns 128-dim array of charge rates [0, 1]
-```
+```bash
 
 **Issue**: Treats "4 sockets per charger" but charger_power_kw is averaged  
 **Better approach**: Model chargers as individual control units (already done in 126-dim action space)
@@ -325,7 +325,7 @@ def _distribute_charging_load(self, available_power, n_active_chargers):
 charger_demands = [building.electric_vehicle[i].power_demand for i in range(128)]
 charger_available = [building.electric_vehicle[i].available_battery_capacity for i in range(128)]
 # Add to observation: obs_extended = np.concatenate([obs, charger_demands, charger_available])
-```
+```bash
 
 ---
 
@@ -335,13 +335,13 @@ charger_available = [building.electric_vehicle[i].available_battery_capacity for
 
 **OE2 Dataset**:
 
-```
+```bash
 data/interim/oe2/solar/pv_generation_timeseries.csv
-├─ Format: 8,760 rows × 1 column
-├─ Values: Hourly AC output (kW) from Kyocera KS20 + Eaton Xpert1670
-├─ Range: 0 - 4,162 kW (peak at noon)
-└─ Profile: 05:00-17:00 Iquitos time (UTC-5)
-```
+â”œâ”€ Format: 8,760 rows Ã— 1 column
+â”œâ”€ Values: Hourly AC output (kW) from Kyocera KS20 + Eaton Xpert1670
+â”œâ”€ Range: 0 - 4,162 kW (peak at noon)
+â””â”€ Profile: 05:00-17:00 Iquitos time (UTC-5)
+```bash
 
 **Loading in dataset_builder.py** (lines 195-210):
 
@@ -358,9 +358,9 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
         artifacts["solar_generation_citylearn"] = pd.read_csv(solar_citylearn_csv)
     
     return artifacts
-```
+```bash
 
-**✓ Correct**: Loads both raw OE2 timeseries and CityLearn-formatted version
+**âœ“ Correct**: Loads both raw OE2 timeseries and CityLearn-formatted version
 
 ### 3.2 Runtime Access in Agents
 
@@ -380,28 +380,28 @@ def _get_pv_bess_feats(self):
     except Exception:
         pass
     return np.array([pv_kw, soc], dtype=np.float32)
-```
+```bash
 
-**✓ Correct**: Accesses `solar_generation[t]` at each timestep  
-**✓ Correct**: Handles multiple buildings (aggregates PV across all)  
-**✓ Safe**: Silent fail if solar_generation not available
+**âœ“ Correct**: Accesses `solar_generation[t]` at each timestep  
+**âœ“ Correct**: Handles multiple buildings (aggregates PV across all)  
+**âœ“ Safe**: Silent fail if solar_generation not available
 
 ### 3.3 Observation Normalization Impact
 
 **Critical issue**: Solar generation (0-4162 kW) scaled by 0.001:
 
-```
-4162 kW → 4.162 (after prescaling)
-→ Normalized: (4.162 - mean) / std
-→ Clipped: [-10, 10]
-```
+```bash
+4162 kW â†’ 4.162 (after prescaling)
+â†’ Normalized: (4.162 - mean) / std
+â†’ Clipped: [-10, 10]
+```bash
 
 **Problem**: If mean/std computed over full year:
 
 - Mean ~1500 kW (accounting for nighttime zeros)
 - Std ~1200 kW
-- → Normalized midday: (4162 - 1500) / 1200 ≈ 2.22 (good)
-- → Normalized night: (0 - 1500) / 1200 ≈ -1.25 (good)
+- â†’ Normalized midday: (4162 - 1500) / 1200 â‰ˆ 2.22 (good)
+- â†’ Normalized night: (0 - 1500) / 1200 â‰ˆ -1.25 (good)
 
 **Analysis**: Pre-scaling by 0.001 **appears reasonable** but:
 
@@ -419,10 +419,10 @@ def compute(self, grid_import_kwh, solar_generation_kwh, ...):
     if solar_generation_kwh > 0:
         solar_score = pv_used_directly / (solar_generation_kwh + 0.1)
         reward += weights.solar * solar_score  # weight = 0.20
-```
+```bash
 
-**✓ Correct**: Rewards direct use of solar (avoiding battery/grid inefficiency)  
-**✓ Correct**: Normalized to [0, 1]
+**âœ“ Correct**: Rewards direct use of solar (avoiding battery/grid inefficiency)  
+**âœ“ Correct**: Normalized to [0, 1]
 
 ---
 
@@ -441,7 +441,7 @@ def compute(self, grid_import_kwh, solar_generation_kwh, ...):
   "soc_min": 0.10,
   "soc_max": 0.90
 }
-```
+```bash
 
 ### 4.2 BESS Access in Agents
 
@@ -451,9 +451,9 @@ def compute(self, grid_import_kwh, solar_generation_kwh, ...):
 es = getattr(b, "electrical_storage", None)  # Get BESS object
 if es is not None:
     soc = float(getattr(es, "state_of_charge", soc))  # SOC in [0, 1]
-```
+```bash
 
-**✓ Correct**: Accesses electrical_storage.state_of_charge at each timestep
+**âœ“ Correct**: Accesses electrical_storage.state_of_charge at each timestep
 
 ### 4.3 BESS in Observation
 
@@ -463,16 +463,16 @@ if es is not None:
 return np.array([pv_kw, soc], dtype=np.float32)
 # pv_kw: 0 - 4162 kW
 # soc: 0 - 1.0
-```
+```bash
 
 **After prescaling by 0.001**:
 
-```
+```bash
 [pv_kw * 0.001, soc * 0.001]
-→ [0 - 4.162, 0 - 0.001]
-```
+â†’ [0 - 4.162, 0 - 0.001]
+```bash
 
-**⚠ CRITICAL MISMATCH**:
+**âš  CRITICAL MISMATCH**:
 
 - PV is scaled to ~1-4 range (reasonable)
 - **BESS SOC is scaled to 0.001-1 range (unreasonably small)**
@@ -486,7 +486,7 @@ return np.array([pv_kw, soc], dtype=np.float32)
 # Use different prescaling for SOC
 self._obs_prescale_soc = 1.0  # Keep SOC as-is
 return np.array([pv_kw * 0.001, soc * 1.0], dtype=np.float32)
-```
+```bash
 
 ### 4.4 BESS in Reward Function
 
@@ -496,7 +496,7 @@ return np.array([pv_kw * 0.001, soc * 1.0], dtype=np.float32)
 # BESS used in multi-objective reward calculation
 # But no explicit BESS penalty for over/under-discharge
 # BESS control is implicit: SOC in observation guides policy
-```
+```bash
 
 **Gap**: No explicit reward term for BESS health (DoD, cycling)  
 **Current approach**: Relies on agent learning to maintain SOC within [0.1, 0.9]
@@ -546,7 +546,7 @@ return np.array([pv_kw * 0.001, soc * 1.0], dtype=np.float32)
 ### 6.1 Strengths
 
 1. **Proper abstraction layers**
-   - OE2 data → Dataset builder → CityLearn schema → Agent wrappers
+   - OE2 data â†’ Dataset builder â†’ CityLearn schema â†’ Agent wrappers
    - Clean separation of concerns
 
 2. **Multiple agent implementations**
@@ -559,7 +559,7 @@ return np.array([pv_kw * 0.001, soc * 1.0], dtype=np.float32)
    - Proper device setup in config
 
 4. **Multi-objective rewards**
-   - Weight-based combination of CO₂, cost, solar, EV, grid objectives
+   - Weight-based combination of COâ‚‚, cost, solar, EV, grid objectives
    - Normalized components
    - Configurable thresholds
 
@@ -585,7 +585,7 @@ return np.array([pv_kw * 0.001, soc * 1.0], dtype=np.float32)
    - Agents fail silently
 
 4. **Incomplete charger modeling**
-   - 128 chargers → 126 actions (2 reserved)
+   - 128 chargers â†’ 126 actions (2 reserved)
    - Reservation logic not documented
    - No per-charger state features
 
@@ -613,7 +613,7 @@ self._obs_prescale[-2] = 1.0  # Assuming [pv_kw, soc] at end
 # OR better: separate feature groups
 def _get_pv_bess_feats(self):
     return np.array([pv_kw * 0.001, soc * 1.0], dtype=np.float32)
-```
+```bash
 
 **Impact**: Allow agent to properly observe BESS state
 
@@ -631,7 +631,7 @@ class SACConfig:
     obs_prescale_power: float = 0.001   # Power/load scaling
     obs_prescale_soc: float = 1.0       # SOC scaling (keep as-is)
     obs_prescale_cost: float = 1.0      # Cost/tariff scaling
-```
+```bash
 
 **Impact**: Make normalization strategy explicit and tunable
 
@@ -650,7 +650,7 @@ class CityLearnWrapper(gym.Wrapper):
     """Generic wrapper for CityLearn compatibility"""
     # Consolidate all wrapper logic here
     # Use from sac.py, ppo_sb3.py, a2c_sb3.py
-```
+```bash
 
 **Impact**: Easier maintenance, consistent behavior across agents
 
@@ -678,7 +678,7 @@ def validate_oe2_artifacts(artifacts: Dict) -> Tuple[bool, List[str]]:
         n_chargers = len(artifacts["ev_chargers"])
         n_sockets = n_chargers * 4
         if n_sockets != 128:
-            errors.append(f"Chargers have {n_sockets} sockets, expected 128 (32 × 4)")
+            errors.append(f"Chargers have {n_sockets} sockets, expected 128 (32 Ã— 4)")
     
     # Check BESS
     if "bess" in artifacts:
@@ -687,7 +687,7 @@ def validate_oe2_artifacts(artifacts: Dict) -> Tuple[bool, List[str]]:
             errors.append(f"BESS capacity {bess['capacity_kwh']} kWh, expected 2000")
     
     return len(errors) == 0, errors
-```
+```bash
 
 **Impact**: Catch configuration errors early
 
@@ -722,7 +722,7 @@ def _flatten(self, obs):
     charger_feats = self._get_charger_feats()  # NEW
     arr = np.concatenate([base, feats, charger_feats])
     # ... rest of processing
-```
+```bash
 
 **Impact**: Richer observation space; agent can learn per-charger control
 
@@ -740,9 +740,9 @@ python compare_all_agents.py \
   --episodes 2 \
   --agents NoControl UncontrolledCharging RBC SAC PPO A2C \
   --output analyses/comparison_all_agents.csv
-```
+```bash
 
-**Output**: CO₂, cost, peak load, solar use for each agent
+**Output**: COâ‚‚, cost, peak load, solar use for each agent
 
 ---
 
@@ -758,29 +758,29 @@ def compute(..., bess_soc: float, prev_bess_soc: float, ...):
     # BESS cycling penalty (avoid continuous charge/discharge)
     cycling_penalty = abs(bess_soc - prev_bess_soc) * 0.05
     reward -= cycling_penalty
-```
+```bash
 
 ---
 
 ## 8. DATA FLOW VERIFICATION CHECKLIST
 
-### OE2 → CityLearn Schema
+### OE2 â†’ CityLearn Schema
 
 - [x] Solar timeseries (8,760 rows) loaded from CSV
 - [x] Charger profiles (24h + annual variants) loaded from JSON/CSV
 - [x] BESS config (2 MWh / 1.2 MW) loaded from JSON
 - [x] Building load aggregated and included in schema
-- [x] Carbon intensity (0.4521 kg CO₂/kWh) hardcoded for Iquitos
+- [x] Carbon intensity (0.4521 kg COâ‚‚/kWh) hardcoded for Iquitos
 
-### CityLearn Schema → Agent Observation
+### CityLearn Schema â†’ Agent Observation
 
 - [x] Solar generation accessed via `building.solar_generation[t]`
 - [x] BESS SOC accessed via `building.electrical_storage.state_of_charge`
 - [x] Charger demands accessed via CityLearn's base observation
-- [⚠] Observation normalization uses hardcoded prescaling (0.001)
-- [⚠] BESS SOC normalization not optimized
+- [âš ] Observation normalization uses hardcoded prescaling (0.001)
+- [âš ] BESS SOC normalization not optimized
 
-### Agent Action → CityLearn Control
+### Agent Action â†’ CityLearn Control
 
 - [x] 126 continuous actions mapped to charger power setpoints [0, 1]
 - [x] Action unflattening handles both single and list action spaces
@@ -796,20 +796,20 @@ The OE2 data flow to agents is **architecturally sound** but has **critical tuni
 
 | Aspect | Status | Risk |
 |--------|--------|------|
-| Data connection | ✓ Correct | Low |
-| 128 chargers | ✓ Correct (126 controllable) | Low |
-| Solar (8,760 hrs) | ✓ Correct | Medium (prescaling hardcoded) |
-| BESS (2MWh/1.2MW) | ⚠ Partially correct | **High** (SOC not observable) |
-| Type safety | ⚠ Duck typing | Low |
-| Code quality | ✓ Good (except duplication) | Medium |
-| Architectural | ✓ Excellent abstraction | Low |
+| Data connection | âœ“ Correct | Low |
+| 128 chargers | âœ“ Correct (126 controllable) | Low |
+| Solar (8,760 hrs) | âœ“ Correct | Medium (prescaling hardcoded) |
+| BESS (2MWh/1.2MW) | âš  Partially correct | **High** (SOC not observable) |
+| Type safety | âš  Duck typing | Low |
+| Code quality | âœ“ Good (except duplication) | Medium |
+| Architectural | âœ“ Excellent abstraction | Low |
 
 ### Critical Issues to Address
 
-1. **BESS SOC prescaling by 0.001** → Makes SOC invisible in normalized space
-2. **Hardcoded 0.001 prescaling** → Fragile if data ranges change
-3. **Wrapper code duplication** → Maintenance burden (300+ lines × 3)
-4. **No OE2 validation** → Silent failures if artifacts missing
+1. **BESS SOC prescaling by 0.001** â†’ Makes SOC invisible in normalized space
+2. **Hardcoded 0.001 prescaling** â†’ Fragile if data ranges change
+3. **Wrapper code duplication** â†’ Maintenance burden (300+ lines Ã— 3)
+4. **No OE2 validation** â†’ Silent failures if artifacts missing
 
 ### Next Steps
 
@@ -824,15 +824,15 @@ The OE2 data flow to agents is **architecturally sound** but has **critical tuni
 
 | File | Purpose | Lines | Status |
 |------|---------|-------|--------|
-| `__init__.py` | Exports + device detection | 75 | ✓ Clean |
-| `sac.py` | SAC agent (SB3 + CityLearn) | 1,113 | ⚠ Hardcoded params |
-| `ppo_sb3.py` | PPO agent | 868 | ⚠ Hardcoded params |
-| `a2c_sb3.py` | A2C agent | 715 | ⚠ Hardcoded params |
-| `agent_utils.py` | Shared utilities | 189 | ✓ Light |
-| `no_control.py` | Zero action baseline | ~50 | ✓ Simple |
-| `uncontrolled.py` | EV-max baseline | ~60 | ✓ Simple |
-| `rbc.py` | Rule-based controller | 320 | ✓ Good |
-| `validate_training_env.py` | Pre-training checks | 137 | ✓ Useful |
+| `__init__.py` | Exports + device detection | 75 | âœ“ Clean |
+| `sac.py` | SAC agent (SB3 + CityLearn) | 1,113 | âš  Hardcoded params |
+| `ppo_sb3.py` | PPO agent | 868 | âš  Hardcoded params |
+| `a2c_sb3.py` | A2C agent | 715 | âš  Hardcoded params |
+| `agent_utils.py` | Shared utilities | 189 | âœ“ Light |
+| `no_control.py` | Zero action baseline | ~50 | âœ“ Simple |
+| `uncontrolled.py` | EV-max baseline | ~60 | âœ“ Simple |
+| `rbc.py` | Rule-based controller | 320 | âœ“ Good |
+| `validate_training_env.py` | Pre-training checks | 137 | âœ“ Useful |
 
 ---
 

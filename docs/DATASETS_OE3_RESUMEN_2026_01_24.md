@@ -78,7 +78,7 @@ iquitos_128_tomas/
 │   └── MOTOTAXI_CH_004_T4.csv
 ├── schema_128_tomas.json  # Schema CityLearn v2
 └── dataset_summary.json   # Resumen generación
-```
+```bash
 
 **Estadísticas**:
 
@@ -100,7 +100,7 @@ iquitos_128_tomas_maximo/
 ├── Playa_Mototaxis/       # 16 archivos CSV
 ├── schema_128_tomas_maximo.json
 └── dataset_summary_maximo.json
-```
+```bash
 
 **Estadísticas**:
 
@@ -168,7 +168,7 @@ schema_path = "data/processed/citylearn/iquitos_128_tomas/schema_128_tomas.json"
 
 # El agente OE3 controlará 128 tomas individuales
 # Cada toma puede modular potencia: 0 a potencia_nominal kW
-```
+```bash
 
 ---
 

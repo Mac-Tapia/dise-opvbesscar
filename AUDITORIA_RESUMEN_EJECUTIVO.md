@@ -8,7 +8,7 @@
 
 ## 🎯 HALLAZGOS PRINCIPALES
 
-```
+```bash
 ┌──────────────────────────────────────────────────────────────┐
 │                                                              │
 │  SISTEMA OE2→OE3: 65% COMPLETADO, 35% ROTO                 │
@@ -21,7 +21,7 @@
 │  ❌ RESULTADO: RL TRAINING IMPOSIBLE ACTUALMENTE             │
 │                                                              │
 └──────────────────────────────────────────────────────────────┘
-```
+```bash
 
 ---
 
@@ -50,7 +50,7 @@
 
 ```python
 df_solar_hourly = df_solar.resample('1H')['ac_power_kw'].mean()
-```
+```bash
 
 ### 2️⃣ CHARGER SIMULATION CSVs INEXISTENTES
 
@@ -79,7 +79,7 @@ df_solar_hourly = df_solar.resample('1H')['ac_power_kw'].mean()
 
 ### Carpeta: `data/interim/oe2/`
 
-```
+```bash
 solar/                          8 archivos   4.4 MB
 ├─ pv_generation_timeseries.csv ✅ 35,037 filas (15-min, SIN downsample)
 ├─ solar_results.json            ✅ Config: 4,162 kWp DC, 3,201 kW AC
@@ -106,7 +106,7 @@ citylearn/                       5 archivos  0.5 MB
 ├─ solar_generation.csv          ✅ Ya resampled a 1-hora
 ├─ building_load.csv             ✅ Demanda edificio
 └─ schema_params.json             ✅ Parámetros preparados
-```
+```bash
 
 **Total OE2**: 537 archivos, ~8 MB (estructura bien documentada)
 
@@ -116,7 +116,7 @@ citylearn/                       5 archivos  0.5 MB
 
 ### ⏱️ INMEDIATAMENTE (2 horas)
 
-```
+```bash
 [1.1] Downsampling solar 15-min → 1-hora
       ├─ Archivo: dataset_builder.py
       ├─ Cambio: Agregar resample() → 8,760 filas
@@ -140,31 +140,31 @@ citylearn/                       5 archivos  0.5 MB
       ├─ Cambio: Actualizar doc O datos
       ├─ Tiempo: 30 min
       └─ Prioridad: 🔴 MÁXIMA
-```
+```bash
 
 ### ⏱️ ESTA SEMANA (4 horas)
 
-```
+```bash
 [2.1] Integrar building_load en schema
 [2.2] Expandir charger profiles con variación
 [2.3] Completar asignación BESS (power, efficiency, soc_limits)
 [2.4] Investigar annual_datasets/ (¿contiene CSVs anuales?)
-```
+```bash
 
 ### ⏱️ PRÓXIMA SEMANA (6 horas)
 
-```
+```bash
 [3.1] Validar observation space (534-dim)
 [3.2] Documentar reward↔observable mapping
 [3.3] Standarizar timezones UTC-5
 [3.4] Validar integridad charger profiles
-```
+```bash
 
 ---
 
 ## 📈 IMPACTO SIN CORRECCIONES
 
-```
+```bash
                             SIN FIXES      CON FIXES
 Training RL posible?          ❌ NO         ✅ SÍ
 Schema cargas sin error?      ❌ NO         ✅ SÍ
@@ -173,7 +173,7 @@ Timesteps alineados?          ❌ NO (4x)    ✅ SÍ
 Convergencia agentes?         🔴 IMPOSIBLE  ✅ ESPERADO
 
 RIESGO CRÍTICO: Sin Tier 1, proyecto BLOQUEADO
-```
+```bash
 
 ---
 
@@ -231,7 +231,7 @@ RIESGO CRÍTICO: Sin Tier 1, proyecto BLOQUEADO
 
 ## 📊 ESTADÍSTICAS FINALES
 
-```
+```bash
 COBERTURA OE2→OE3: 65%
 ├─ Datos disponibles: 100% ✓
 ├─ Integridad datos: 85% ✓
@@ -255,7 +255,7 @@ BENEFICIO POTENCIAL:
 ├─ Resultados serán válidos ✅
 ├─ Documentación mejora ✅
 └─ Confianza en datos ✅
-```
+```bash
 
 ---
 

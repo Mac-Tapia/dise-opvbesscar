@@ -143,19 +143,19 @@ docs/
 
 ## 📞 Ayuda Rápida
 
-**P: ¿Cuál es el estado del proyecto?**
+#### P: ¿Cuál es el estado del proyecto?
 R: ✅ TIER 2 completado. 3 agentes entrenados. Modelos guardados. Métricas generadas.
 
-**P: ¿Cuál agente es mejor?**
+#### P: ¿Cuál agente es mejor?
 R: PPO (mejor reward 0.0343). SAC más eficiente (off-policy). A2C balance entre ambos.
 
-**P: ¿Cómo entreno un modelo?**
+#### P: ¿Cómo entreno un modelo?
 R: Ver EJECUTAR_ENTRENAMIENTO_TIER2.md. Scripts listos en carpeta raíz.
 
-**P: ¿Dónde están las gráficas?**
+#### P: ¿Dónde están las gráficas?
 R: `analyses/oe3/training/plots/` (25 gráficas consolidadas)
 
-**P: ¿Dónde veo los checkpoints?**
+#### P: ¿Dónde veo los checkpoints?
 R: `analyses/oe3/training/checkpoints/{ppo_gpu, a2c_gpu, sac}/`
 
 ---

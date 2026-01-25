@@ -36,9 +36,9 @@ Se actualizó completamente la infraestructura Docker de PVBESSCAR con:
 ✅ Health checks integrados
 ✅ Verificación de dependencias
 ✅ Metadata y labels
-```
+```bash
 
-**Resultado:**
+#### Resultado:
 
 - Imágenes: cpu + gpu + dev
 - Build time: -60% en rebuilds
@@ -59,7 +59,7 @@ Features:
   ✅ Logging con rotación
   ✅ Volume cache para pip
   ✅ Resource limits/reservations
-```
+```bash
 
 ---
 
@@ -76,7 +76,7 @@ GPU Config:
   ✅ CUDA env variables
   ✅ GPU health checks
   ✅ Resource reservations
-```
+```bash
 
 ---
 
@@ -93,7 +93,7 @@ Features:
   ✅ Todos exit when done
   ✅ Test result volumes
   ✅ Jupyter data persistence
-```
+```bash
 
 ---
 
@@ -169,7 +169,7 @@ docker-compose up -d
 
 # Access Jupyter
 open http://localhost:8888
-```
+```bash
 
 ### GPU Production
 
@@ -182,7 +182,7 @@ docker-compose -f docker-compose.gpu.yml up -d
 
 # Check GPU
 docker exec pvbesscar-pipeline-gpu nvidia-smi
-```
+```bash
 
 ### Development Stack
 
@@ -194,7 +194,7 @@ docker-compose -f docker-compose.dev.yml up -d
 # - Jupyter Lab on :8888
 # - Tests run in background
 # - Linting available
-```
+```bash
 
 ---
 
@@ -206,7 +206,7 @@ docker-compose -f docker-compose.dev.yml up -d
 Antes: ~3-5 min primera vez, ~2-3 min rebuild
 Ahora: ~3-5 min primera vez, ~30-60 seg rebuild (-60%)
        Gracias a BuildKit inline cache
-```
+```bash
 
 ### Image Size
 
@@ -214,7 +214,7 @@ Ahora: ~3-5 min primera vez, ~30-60 seg rebuild (-60%)
 CPU image: ~1.2GB (optimizado, no cambio significativo)
 GPU image: ~2.1GB (nvidia/cuda base larger)
 Dev image: ~1.3GB (pytest, pylint, mypy added)
-```
+```bash
 
 ### Features
 
@@ -230,7 +230,7 @@ Ahora:
   ✅ Tini para signal handling
   ✅ Jupyter integrado en cada compose
   ✅ Dev services completos en un archivo
-```
+```bash
 
 ---
 
@@ -244,7 +244,7 @@ $ docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pvbesscar:latest .
 ✓ Stage 2: Runtime completed
 ✓ Health check configured
 ✓ Image: pvbesscar:latest
-```
+```bash
 
 ### Service Health
 
@@ -256,7 +256,7 @@ $ docker inspect --format='{{json .State.Health}}' pvbesscar-pipeline
   "FailingStreak": 0,
   "Log": [...]
 }
-```
+```bash
 
 ### GPU Check
 
@@ -264,7 +264,7 @@ $ docker inspect --format='{{json .State.Health}}' pvbesscar-pipeline
 $ docker exec pvbesscar-pipeline-gpu nvidia-smi
 NVIDIA-SMI X.X.X
 GPU 0: [Your GPU] (UUID: ...)
-```
+```bash
 
 ---
 
@@ -274,7 +274,7 @@ GPU 0: [Your GPU] (UUID: ...)
 
 ```dockerfile
 RUN --mount=type=cache,target=/root/.cache/pip pip install ...
-```
+```bash
 
 - Reutiliza capas entre builds
 - Funciona en GitHub Actions, CI/CD
@@ -284,7 +284,7 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install ...
 
 ```dockerfile
 ENTRYPOINT ["/usr/bin/tini", "--"]
-```
+```bash
 
 - Reap zombie processes
 - Proper SIGTERM/SIGINT handling
@@ -298,7 +298,7 @@ healthcheck:
   interval: 30s
   timeout: 10s
   retries: 3
-```
+```bash
 
 - Auto-restart unhealthy containers
 - Dependency verification
@@ -309,7 +309,7 @@ healthcheck:
 ```yaml
 volumes:
   pipeline_cache:
-```
+```bash
 
 - Persists pip cache between runs
 - Acelera rebuilds
@@ -322,7 +322,7 @@ pvbesscar-jupyter:
   ports:
     - "8888:8888"
   command: jupyter lab --ip=0.0.0.0 --allow-root
-```
+```bash
 
 - Interactive development
 - Same image, same environment
@@ -348,7 +348,7 @@ feat: actualización construcción Docker con BuildKit,
 - docker_quick.bat (nuevo)
 - docker_quick.ps1 (nuevo)
 - ACTUALIZACION_DOCKER_20260120.md (nuevo)
-```
+```bash
 
 ### Commit 2: 56852630
 
@@ -358,14 +358,14 @@ docs: agregar resumen de actualización Docker
 
 1 file changed, 351 insertions(+)
 - RESUMEN_CONSTRUCCION_DOCKER_ACTUALIZADA.md (nuevo)
-```
+```bash
 
 ### Push
 
 ```text
 ✅ Pushed to https://github.com/Mac-Tapia/dise-opvbesscar
    1839140d..56852630  main -> main
-```
+```bash
 
 ---
 
@@ -398,7 +398,7 @@ docs: agregar resumen de actualización Docker
 
 ```bash
 docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pvbesscar:latest .
-```
+```bash
 
 ### 2. Start Services
 
@@ -408,14 +408,14 @@ docker-compose up -d
 
 # Or GPU
 docker-compose -f docker-compose.gpu.yml up -d
-```
+```bash
 
 ### 3. Verify
 
 ```bash
 docker-compose ps
 docker inspect --format='{{json .State.Health}}' pvbesscar-pipeline
-```
+```bash
 
 ### 4. Access
 
@@ -423,7 +423,7 @@ docker inspect --format='{{json .State.Health}}' pvbesscar-pipeline
 Jupyter: http://localhost:8888
 Logs:    docker-compose logs -f
 Stats:   docker stats
-```
+```bash
 
 ---
 
@@ -449,7 +449,7 @@ RESUMEN_CONSTRUCCION_DOCKER_ACTUALIZADA.md (Validación)
 ├── Comparativa antes/después
 ├── Beneficios clave
 └── Next steps
-```
+```bash
 
 ---
 
@@ -496,7 +496,7 @@ RESUMEN_CONSTRUCCION_DOCKER_ACTUALIZADA.md (Validación)
     - Pip caching
     - Faster installs
     - Persistent storage
-```
+```bash
 
 ---
 

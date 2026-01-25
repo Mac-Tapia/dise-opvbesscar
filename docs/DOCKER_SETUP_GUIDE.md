@@ -37,7 +37,7 @@
 ```powershell
 choco install docker-cli docker-buildx -y
 # Still requires Docker Engine running separately
-```
+```bash
 
 ## Using docker-compose
 
@@ -54,32 +54,32 @@ docker-compose -f docker-compose.gpu.yml build
 
 # Development version
 docker-compose -f docker-compose.dev.yml build
-```
+```bash
 
 ### Start Services
 
 ```powershell
-# CPU version
+# CPU version (2)
 docker-compose -f docker-compose.yml up -d
 
 # GPU version (requires NVIDIA Docker)
 docker-compose -f docker-compose.gpu.yml up -d
 
-# Development version
+# Development version (2)
 docker-compose -f docker-compose.dev.yml up -d
-```
+```bash
 
 ### View Logs
 
 ```powershell
 docker-compose logs -f pvbesscar-pipeline
-```
+```bash
 
 ### Stop Services
 
 ```powershell
 docker-compose down
-```
+```bash
 
 ## Web Interface (Docker Management)
 
@@ -88,7 +88,7 @@ The Flask web interface runs **without Docker daemon**:
 ```powershell
 py -3.11 docker_web_interface.py
 # Available at: http://localhost:5000
-```
+```bash
 
 This provides:
 
@@ -106,7 +106,7 @@ This provides:
 ```powershell
 # Or restart if already installed
 docker daemon
-```
+```bash
 
 ### Error: "Cannot connect to Docker daemon"
 
@@ -132,7 +132,7 @@ kubectl apply -f k8s-deployment.yaml
 
 # Monitor status
 python k8s_manager.py status
-```
+```bash
 
 ## MongoDB Integration
 
@@ -147,7 +147,7 @@ Access via:
 
 ```powershell
 python k8s_manager.py mongo shell
-```
+```bash
 
 ## Next Steps
 

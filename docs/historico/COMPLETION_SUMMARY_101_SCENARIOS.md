@@ -20,7 +20,7 @@ Playa_Mototaxis/
 TOTAL: 101 × 128 chargers × 8760 horas/año = 113,385,600 datos
 ```text
 
-**Características:**
+#### Características:
 
 - Escenario 0: Baseline (factor 1.0, sin variación)
 - Escenarios 1-100: Monte Carlo con variabilidad realista
@@ -29,19 +29,19 @@ TOTAL: 101 × 128 chargers × 8760 horas/año = 113,385,600 datos
 
 ### 2. ✅ ARQUITECTURA 128 CHARGERS INTEGRADA
 
-**Configuración:**
+#### Configuración:
 
 - 112 chargers Playa_Motos: 2 kW c/u → 224 kW pico
 - 16 chargers Playa_Mototaxis: 3 kW c/u → 48 kW pico
 - **Total sistema: 272 kW pico simultáneo**
 
-**Especificaciones:**
+#### Especificaciones:
 
 - Estándar: Modo 3 IEC 61851
 - Sesiones: 30 minutos (multiplex model)
 - Demanda: 1030 veh/4h pico + 2200+ veh/13h operación
 
-**Integración CityLearn:**
+#### Integración CityLearn:
 
 - Schema: `schema_with_128_chargers.json`
 - Observables: 131 EV (3 agregados + 128 individuales)
@@ -49,7 +49,7 @@ TOTAL: 101 × 128 chargers × 8760 horas/año = 113,385,600 datos
 
 ### 3. ✅ CORRECCIONES MARKDOWN (40-50 ERRORES CORREGIDOS)
 
-**Archivos Modificados:**
+#### Archivos Modificados:
 
 - ENTRENAMIENTO_LANZADO_2026_01_18.md (MD024, MD001 duplicados/increments)
 - TIER1_FIXES_SUMMARY.md (MD024 headings)
@@ -60,7 +60,7 @@ TOTAL: 101 × 128 chargers × 8760 horas/año = 113,385,600 datos
 - SESSION_SUMMARY_20260118.md (MD040)
 - STATUS_DASHBOARD_TIER1.md (MD040)
 
-**Tipos de Correcciones:**
+#### Tipos de Correcciones:
 
 - MD040: Agregado language tag a code blocks sin especificar
 - MD060: Normalizado spacing en separadores de tablas

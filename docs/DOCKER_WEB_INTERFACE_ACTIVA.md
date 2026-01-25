@@ -27,7 +27,7 @@ http://localhost:5000
 
 # Desde otra máquina en la red
 http://192.168.43.30:5000
-```
+```bash
 
 ---
 
@@ -62,7 +62,7 @@ Dev Mode:
   ✅ Build dev image
   ✅ Start dev stack (tests, lint, jupyter)
   ✅ Stop dev services
-```
+```bash
 
 ### 4. **Visualización de Logs**
 
@@ -104,7 +104,7 @@ Dev Mode:
 │  │ Terminalfondo oscuro con logs   │ │
 │  └─────────────────────────────────┘ │
 └─────────────────────────────────────────┘
-```
+```bash
 
 ---
 
@@ -125,7 +125,7 @@ Response:
   "docker_running": true,
   "timestamp": "2026-01-20T..."
 }
-```
+```bash
 
 ### POST /api/build
 
@@ -134,7 +134,7 @@ Construir imagen Docker
 
 Request: {"mode": "cpu|gpu|dev"}
 Response: {"success": true, "message": "Image built", "output": "..."}
-```
+```bash
 
 ### POST /api/start
 
@@ -143,7 +143,7 @@ Iniciar servicios
 
 Request: {"mode": "cpu|gpu|dev"}
 Response: {"success": true, "message": "Services started"}
-```
+```bash
 
 ### POST /api/stop
 
@@ -152,7 +152,7 @@ Detener servicios
 
 Request: {"mode": "cpu|gpu|dev"}
 Response: {"success": true, "message": "Services stopped"}
-```
+```bash
 
 ### GET /api/logs
 
@@ -161,7 +161,7 @@ Obtener logs de contenedores
 
 Query: ?service=all|pipeline|jupyter
 Response: {"success": true, "logs": "..."}
-```
+```bash
 
 ### GET /api/health
 
@@ -169,7 +169,7 @@ Response: {"success": true, "logs": "..."}
 Health check del servidor
 
 Response: {"status": "healthy", "docker": true, "timestamp": "..."}
-```
+```bash
 
 ---
 
@@ -183,7 +183,7 @@ netstat -ano | findstr 5000
 
 # Ver proceso Flask
 Get-Process python | Where-Object {$_.CommandLine -like "*docker_web_interface*"}
-```
+```bash
 
 ### Detener servidor
 
@@ -191,14 +191,14 @@ Get-Process python | Where-Object {$_.CommandLine -like "*docker_web_interface*"
 # Presionar Ctrl+C en la terminal donde corre Flask
 # O matar el proceso:
 Stop-Process -Name python -Force
-```
+```bash
 
 ### Reiniciar
 
 ```bash
 cd d:\diseñopvbesscar
 py -3.11 docker_web_interface.py
-```
+```bash
 
 ---
 
@@ -212,7 +212,7 @@ py -3.11 docker_web_interface.py
 3. Click "Build CPU" → espera construcción
 4. Click "Start CPU" → inicia servicios
 5. Abre http://localhost:8888 → Jupyter Lab
-```
+```bash
 
 ### Scenario 2: Producción GPU
 
@@ -223,7 +223,7 @@ py -3.11 docker_web_interface.py
 4. Click "Start GPU" → inicia con NVIDIA GPU
 5. Abre http://localhost:8889 → Jupyter GPU
 6. Monitorea en tab "Logs" → Ver Logs
-```
+```bash
 
 ### Scenario 3: Testing Completo
 
@@ -233,7 +233,7 @@ py -3.11 docker_web_interface.py
 3. Click "Build Dev" → crea imagen dev
 4. Click "Start Dev" → inicia pytest, linting, mypy
 5. Monitorea logs en tiempo real
-```
+```bash
 
 ---
 
@@ -243,7 +243,7 @@ py -3.11 docker_web_interface.py
 
 ```text
 http://192.168.43.30:5000
-```
+```bash
 
 ### Consideraciones
 
@@ -256,7 +256,7 @@ http://192.168.43.30:5000
 ```powershell
 # Permitir puerto 5000
 netsh advfirewall firewall add rule name="Flask 5000" dir=in action=allow protocol=tcp localport=5000
-```
+```bash
 
 ---
 
@@ -280,7 +280,7 @@ netsh advfirewall firewall add rule name="Flask 5000" dir=in action=allow protoc
 # Usar Gunicorn
 pip install gunicorn
 gunicorn -w 4 -b 0.0.0.0:5000 docker_web_interface:app
-```
+```bash
 
 ---
 
@@ -305,9 +305,9 @@ netstat -ano | findstr :5000
 # Matar proceso anterior
 taskkill /PID [PID] /F
 
-# Reiniciar
+# Reiniciar (2)
 py -3.11 docker_web_interface.py
-```
+```bash
 
 ### Docker no detecta imágenes
 
@@ -316,7 +316,7 @@ py -3.11 docker_web_interface.py
 docker ps
 
 # Si falla: Docker Desktop no está instalado o running
-```
+```bash
 
 ### Conectar desde otra PC y no funciona
 
@@ -326,7 +326,7 @@ ipconfig
 
 # Firewall permitir puerto 5000
 # Verificar conectividad: ping 192.168.43.30
-```
+```bash
 
 ### Flask debug mode warnings
 
@@ -334,7 +334,7 @@ ipconfig
 ⚠️ Solo desarrollo
 ✅ Cambios en código = reload automático
 ✅ Debugger PIN para debugging remoto
-```
+```bash
 
 ---
 
@@ -391,7 +391,7 @@ ipconfig
 ✓ Flask Debug: Habilitado
 ✓ Auto-reload: Habilitado
 ✓ CORS: Habilitado para todas las origins
-```
+```bash
 
 ### Capacidades
 
@@ -409,28 +409,28 @@ ipconfig
 ```text
 Abre en una pestaña y deja abierto
 Auto-refresh mantiene status actualizado
-```
+```bash
 
 ### 2. Usa logs en paralelo
 
 ```text
 Abre logs en otra pestaña mientras ejecutas acciones
 Ver en tiempo real qué ocurre
-```
+```bash
 
 ### 3. Monitorea desde otra máquina
 
 ```text
 Usa http://192.168.43.30:5000
 Excelente para monitoreo remoto
-```
+```bash
 
 ### 4. Combina con terminal
 
 ```text
 Abre terminal CMD + Web Interface en paralelo
 Más control y flexibilidad
-```
+```bash
 
 ---
 
@@ -465,7 +465,7 @@ docker-compose.gpu.yml     (GPU services)
 docker-compose.dev.yml     (Dev stack)
 Dockerfile                 (Imagen base)
 DOCKER_BUILD_GUIDE.md      (Documentación Docker)
-```
+```bash
 
 ---
 
@@ -473,16 +473,16 @@ DOCKER_BUILD_GUIDE.md      (Documentación Docker)
 
 ### Problemas Comunes
 
-**"Cannot connect to Docker daemon"**
+#### "Cannot connect to Docker daemon"
 → Docker Desktop no instalado o no running
 
-**"Port 5000 already in use"**
+#### "Port 5000 already in use"
 → Otro proceso usando puerto. Matar y reintentar.
 
-**"Command timeout"**
+#### "Command timeout"
 → Docker command tardó más de 30 segundos. Verificar logs.
 
-**"CORS error"**
+#### "CORS error"
 → Refresh página, limpiar caché navegador
 
 ---
@@ -498,9 +498,9 @@ DOCKER_BUILD_GUIDE.md      (Documentación Docker)
 ✅ API Endpoints:        READY
 ✅ Docker Integration:   READY
 ✅ Jupyter Redirect:     CONFIGURED
-```
+```bash
 
-**🟢 SISTEMA LISTO PARA USAR**
+#### 🟢 SISTEMA LISTO PARA USAR
 
 ---
 

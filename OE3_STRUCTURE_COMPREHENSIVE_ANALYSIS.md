@@ -81,7 +81,7 @@
 - **Recommendation**: **DELETE** or **CONSOLIDATE INTO co2_table.py**
 - **Risk**: Dead weight; duplicate definitions could diverge from actual usage
 
-#### `demanda_mall_kwh.py` (507 lines)
+#### `demanda_mall_kwh.py` (507 lines) (2)
 
 - **Status**: ❌ **100% ORPHANED**
 - **Used by**: Zero imports anywhere
@@ -94,7 +94,7 @@
 
 ### 3.1 Core Import Chain (Main Pipeline)
 
-```
+```bash
 ENTRY POINTS:
 ├─ scripts/run_oe3_build_dataset.py
 │  └─→ dataset_builder.build_citylearn_dataset()
@@ -110,11 +110,11 @@ ENTRY POINTS:
 └─ scripts/run_oe3_co2_table.py
    └─→ co2_table.compute_table()
        └─→ co2_emissions.py ❌ (IMPORTED BUT UNUSED)
-```
+```bash
 
 ### 3.2 Import Validation Results
 
-**✅ VALID IMPORTS:**
+#### ✅ VALID IMPORTS:
 
 - `agents/__init__.py` → imports from `sac.py`, `ppo_sb3.py`, `a2c_sb3.py` ✓
 - `agents/__init__.py` → imports from `rewards.py` ✓
@@ -122,13 +122,13 @@ ENTRY POINTS:
 - `simulate.py` → imports from `progress.py` ✓
 - `dataset_builder.py` → self-contained ✓
 
-**⚠️ DANGLING IMPORTS:**
+#### ⚠️ DANGLING IMPORTS:
 
 - `rewards_wrapper_v2.py` line 20: imports `rewards_improved_v2.py` → **not called**
 - `co2_table.py` line 7: imports `co2_emissions.py` → **classes defined but NOT used**
 - `train_ppo_dynamic.py` line 20: imports `rewards_dynamic.py` → **dev-only**
 
-**❌ MISSING IMPORTS:**
+#### ❌ MISSING IMPORTS:
 
 - `demanda_mall_kwh.py`: **NO imports anywhere** (0 usages detected)
 
@@ -148,7 +148,7 @@ ENTRY POINTS:
 
 ### 4.1 OE2 → OE3 Complete Flow
 
-```
+```bash
 INPUT (OE2 Artifacts)
 ├─ data/interim/oe2/solar/pv_generation_timeseries.csv
 │  └─ 8,760 hourly values (kW AC output, Eaton Xpert1670 spec)
@@ -195,7 +195,7 @@ FINAL OUTPUTS
 ├─ analyses/oe3/co2_breakdown_annual.csv (emissions by scenario)
 ├─ analyses/oe3/control_comparison_summary.csv (agent comparison)
 └─ analyses/oe3/agent_comparison.csv (multiobjetivo metrics)
-```
+```bash
 
 ### 4.2 Data Objects Through Pipeline
 
@@ -211,12 +211,12 @@ pv_kwh = env.buildings[0].electrical_storage.charging_efficiency  # Extracted fr
 
 # In rewards.py:MultiObjectiveReward.compute()
 r_solar = solar_generation / (pv_available + 0.1)  # Reward for self-consumption
-```
+```bash
 
 #### Charger Profiles → Agents
 
 ```python
-# In dataset_builder.py
+# In dataset_builder.py (2)
 chargers_json = json.load(open("data/interim/oe2/chargers/individual_chargers.json"))
 # Discovers 32 chargers × 4 sockets = 128 controllable outlets
 # Creates charger_simulation_*.csv for each
@@ -227,7 +227,7 @@ obs['chargers'] = [charger_power, occupancy, soc, ...] for each charger
 
 # In agents (SAC/PPO/A2C)
 actions = [0.0-1.0] × 126 chargers  # Normalized power setpoints
-```
+```bash
 
 #### BESS State → Agents
 
@@ -239,7 +239,7 @@ bess_power_kw: 1200
 # In rewards.py:dispatch_priorities (implicit in CO₂ reward)
 # BESS discharge prioritized for peak hours
 # Agents learn to discharge BESS when solar insufficient
-```
+```bash
 
 #### Multi-Objective Reward Integration
 
@@ -264,7 +264,7 @@ reward = reward_fn.compute(
     bess_soc=...,
     # Returns weighted sum of 5 components
 )
-```
+```bash
 
 ---
 
@@ -272,7 +272,7 @@ reward = reward_fn.compute(
 
 ### 5.1 Circular Dependencies
 
-```
+```bash
 Severity: LOW (unused modules only)
 
 ⚠️ rewards_wrapper_v2.py
@@ -283,7 +283,7 @@ Severity: LOW (unused modules only)
    └─→ only imported by rewards_wrapper_v2.py
    
 Result: Both can be safely removed without affecting main pipeline
-```
+```bash
 
 ### 5.2 Class Dependencies
 
@@ -297,7 +297,7 @@ from ..rewards import (
     CityLearnMultiObjectiveWrapper,
     create_iquitos_reward_weights,
 )
-```
+```bash
 
 ✅ All 5 classes are used in agent training
 
@@ -308,7 +308,7 @@ from iquitos_citylearn.oe3.agents import (
     SACAgent, PPOAgent, A2CAgent, UncontrolledChargingAgent,
     MultiObjectiveReward, MultiObjectiveWeights, ...
 )
-```
+```bash
 
 ✅ Core classes instantiated in simulation loop
 
@@ -317,7 +317,7 @@ from iquitos_citylearn.oe3.agents import (
 ```python
 # Line 7 in co2_table.py - but EmissionFactors never used in actual code
 from iquitos_citylearn.oe3.co2_emissions import (...)
-```
+```bash
 
 ❌ Import exists but classes not instantiated
 
@@ -344,7 +344,7 @@ from iquitos_citylearn.oe3.co2_emissions import (...)
 
 ### Phase 1: Immediate (Low Risk) - DELETE
 
-**Files to DELETE (100% safe):**
+#### Files to DELETE (100% safe):
 
 1. **`demanda_mall_kwh.py`** (507 lines)
    - Zero imports anywhere
@@ -358,7 +358,7 @@ from iquitos_citylearn.oe3.co2_emissions import (...)
 
 ### Phase 2: Medium Risk - CONSOLIDATE
 
-**Files to CONSOLIDATE:**
+#### Files to CONSOLIDATE:
 
 1. **Merge `co2_emissions.py` into `co2_table.py`**
 
@@ -393,7 +393,7 @@ from iquitos_citylearn.oe3.co2_emissions import (...)
 
 ### Phase 4: DOCUMENT
 
-**Create file: `OE3_MODULE_STATUS.md`**
+#### Create file: `OE3_MODULE_STATUS.md`
 
 ```markdown
 # OE3 Module Status (Jan 2026)
@@ -413,7 +413,7 @@ from iquitos_citylearn.oe3.co2_emissions import (...)
 - demanda_mall_kwh.py (orphaned, legacy)
 - rewards_dynamic.py (dev-only, archived to scripts/experimental/)
 - co2_emissions.py (consolidated into co2_table.py)
-```
+```bash
 
 ---
 
@@ -488,7 +488,7 @@ python -c "from iquitos_citylearn.oe3.agents import *; print('✓')"
 
 # 5. Test rewards imports
 python -c "from iquitos_citylearn.oe3.rewards import *; print('✓')"
-```
+```bash
 
 ---
 
@@ -511,7 +511,7 @@ python -c "from iquitos_citylearn.oe3.rewards import *; print('✓')"
    CityLearnMultiObjectiveWrapper,
    create_iquitos_reward_weights,
 )
-```
+```bash
 
 ### 10.2 Agent Usage in simulate.py
 
@@ -528,7 +528,7 @@ python -c "from iquitos_citylearn.oe3.rewards import *; print('✓')"
 ✅ MultiObjectiveReward instantiated
 ✅ MultiObjectiveWeights loaded from config
 ✅ CityLearnMultiObjectiveWrapper applied to env
-```
+```bash
 
 ### 10.3 OE2 Data Integration in Agents
 
@@ -551,7 +551,7 @@ python -c "from iquitos_citylearn.oe3.rewards import *; print('✓')"
   → dataset_builder.py loads 2 MWh / 1.2 MW
   → CityLearnEnv manages BESS state
   → agents learn to discharge during EV peaks via CO₂ reward
-```
+```bash
 
 ---
 

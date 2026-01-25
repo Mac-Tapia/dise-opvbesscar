@@ -8,7 +8,7 @@
 
 #### Resultados de Validación
 
-**1. Matriz de Desempeño en Escenarios**
+#### 1. Matriz de Desempeño en Escenarios
 
 ```text
 Modelo  │ Escenarios │ Avg Reward │ Reward ± │ Inferencia │ Estabilidad │ Éxito
@@ -16,9 +16,9 @@ Modelo  │ Escenarios │ Avg Reward │ Reward ± │ Inferencia │ Estabilid
 PPO     │     6      │  -0.126575 │ 0.039025 │   30.53 ms │   0.8059    │ 50.0%
 A2C     │     6      │  -0.049390 │ 0.043033 │   33.36 ms │   0.8220    │ 50.0%
 SAC     │     6      │  -0.113933 │ 0.044066 │   28.22 ms │   0.8196    │ 83.3%
-```
+```bash
 
-**2. Rankings de Validación**
+#### 2. Rankings de Validación
 
 | Métrica | Ganador | Valor |
 | --------- | --------- | ------- |
@@ -27,18 +27,18 @@ SAC     │     6      │  -0.113933 │ 0.044066 │   28.22 ms │   0.8196  
 | **Más Rápido** | SAC | 28.22 ms |
 | **Mayor Tasa Éxito** | SAC | 83.3% |
 
-**3. Análisis de Estabilidad Detallado**
+#### 3. Análisis de Estabilidad Detallado
 
 - **PPO**: Rango 0.7136 - 0.9863, Tasa éxito 50.0%
 - **A2C**: Rango 0.7416 - 0.9396, Tasa éxito 50.0%, **Más estable**
 - **SAC**: Rango 0.7222 - 0.9293, Tasa éxito 83.3%, **Mayor confiabilidad**
 
-**4. Recomendaciones de Validación**
+#### 4. Recomendaciones de Validación
 ✅ Mejor rendimiento general: **SAC** (83.3% éxito, 0.8196 estabilidad)
 ⚡ Más rápido: **SAC** (28.22 ms)
 🛡️  Más estable: **A2C** (0.8220)
 
-**5. Archivos Generados**
+#### 5. Archivos Generados
 
 - ✅ `VALIDACION_101_ESCENARIOS_20260120.json` - Reporte detallado
 - ✅ Script reutilizable para futuras validaciones
@@ -51,7 +51,7 @@ SAC     │     6      │  -0.113933 │ 0.044066 │   28.22 ms │   0.8196  
 
 #### Resultados de Beneficios Energéticos
 
-**1. Reducción de Consumo Energético (Anual)**
+#### 1. Reducción de Consumo Energético (Anual)
 
 ```text
 Modelo  │ Consumo Grid │ Reducción │ % Reducción
@@ -60,9 +60,9 @@ Base    │   71,175 kWh │    --     │    --
 PPO     │   58,363 kWh │ 12,812 kWh│  18.0% ↓
 A2C     │   60,499 kWh │ 10,676 kWh│  15.0% ↓
 SAC     │   56,940 kWh │ 14,235 kWh│  20.0% ↓
-```
+```bash
 
-**2. Emisiones CO2 (Anual)**
+#### 2. Emisiones CO2 (Anual)
 
 ```text
 Modelo  │ Emisiones CO2 │ Reducción  │ Árboles Equivalentes
@@ -71,9 +71,9 @@ Base    │    27,402 kg  │     --     │        --
 PPO     │    22,470 kg  │  4,932 kg  │    235 árboles
 A2C     │    23,292 kg  │  4,110 kg  │    196 árboles
 SAC     │    21,922 kg  │  5,480 kg  │    261 árboles ✓
-```
+```bash
 
-**3. Beneficios Económicos (Anual)**
+#### 3. Beneficios Económicos (Anual)
 
 ```text
 Modelo  │ Ahorro Electricidad │ Ahorro Picos │ Total Ahorros
@@ -87,9 +87,9 @@ A2C     │    $7,259.85       │  $23,685.77  │  $30,945.62
 ────────┼────────────────────┼──────────────┼──────────────
 SAC     │    $6,832.80       │  $22,319.53  │  $29,152.33
         │    Ahorro: $6,231.43/año ✓
-```
+```bash
 
-**4. Reducción de Picos de Demanda**
+#### 4. Reducción de Picos de Demanda
 
 ```text
 Modelo  │ Peak Demand │ Reducción │ % Reducción │ Ahorro por Costo
@@ -98,9 +98,9 @@ Base    │   47.82 kW  │    --     │     --      │      --
 PPO     │   38.27 kW  │  9.55 kW  │   20.0% ↓   │  $3,882.26/año
 A2C     │   39.48 kW  │  8.34 kW  │   17.4% ↓   │  $3,156.99/año
 SAC     │   37.20 kW  │  10.62 kW │   22.2% ↓   │  $4,523.23/año
-```
+```bash
 
-**5. Análisis de ROI (Retorno de Inversión)**
+#### 5. Análisis de ROI (Retorno de Inversión)
 
 Asumiendo costo sistema: **$50,000**
 
@@ -112,15 +112,15 @@ Asumiendo costo sistema: **$50,000**
 
 **Ganador: SAC - Retorno más rápido y mayor beneficio a 10 años**
 
-**6. Rankings de Beneficios**
+#### 6. Rankings de Beneficios
 
 ```text
 🥇 Mayor Ahorro Económico:   SAC    ($6,231.43/año)
 🥇 Mayor Reducción CO2:      SAC    (5,480 kg)
 🥇 Mayor Reducción de Picos: SAC    (10.62 kW)
-```
+```bash
 
-**7. Archivos Generados**
+#### 7. Archivos Generados
 
 - ✅ `ANALISIS_ENERGETICO_20260120.json` - Reporte detallado
 - ✅ Simulación anualizada (365 días)
@@ -157,13 +157,13 @@ Asumiendo costo sistema: **$50,000**
 
 ### Para Implementación en Producción
 
-**1. Modelo Recomendado: SAC**
+#### 1. Modelo Recomendado: SAC
 
 - Superior en: Éxito, economía, ambiente, velocidad
 - ROI: 8.0 años (favorable)
 - Beneficio 10 años: $12,314.32
 
-**2. Configuración Sugerida**
+#### 2. Configuración Sugerida
 
 ```text
    - Modelo primario: SAC (mayor desempeño general)
@@ -171,14 +171,14 @@ Asumiendo costo sistema: **$50,000**
    - Monitoreo: PPO (análisis comparativo)
    ```
 
-**3. Métricas a Monitorear**
+#### 3. Métricas a Monitorear
 
 - Tasa de estabilidad > 0.8 (éxito)
 - Energía grid < 56,940 kWh/mes
 - Picos demanda < 37.2 kW
 - CO2 < 1,827 kg/mes
 
-**4. Implementación Gradual**
+#### 4. Implementación Gradual
 
 - Fase 1: Prueba SAC en 10% demanda
 - Fase 2: Escalar a 50% demanda

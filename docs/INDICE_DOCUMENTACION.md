@@ -198,7 +198,7 @@ Interfaz web Flask para gestionar Docker
 2. Ve: DIAGRAMAS_VISUALIZACION.md (10 min)
 3. Prueba: simulador_interactivo.py - Opción 1-6 (20 min)
 4. Accede: http://localhost:8000/docs (15 min)
-```
+```bash
 
 ### 🟡 **RUTA 2: Intermedio (2 horas)**
 
@@ -207,7 +207,7 @@ Interfaz web Flask para gestionar Docker
 2. Prueba: simulador_interactivo.py - Opción 7 (20 min)
 3. Experimenta: cURL/Python con API (30 min)
 4. Revisa: RESUMEN_SIMULACION_COMPLETO.md (25 min)
-```
+```bash
 
 ### 🔴 **RUTA 3: Avanzado (4 horas)**
 
@@ -216,7 +216,7 @@ Interfaz web Flask para gestionar Docker
 2. Prueba: Todos los endpoints (30 min)
 3. Crea: Script propio integración (60 min)
 4. Deploy: En servidor real (60 min)
-```
+```bash
 
 ---
 
@@ -308,7 +308,7 @@ DISCHARGE   Descargar batería para consumo
 IDLE        Esperar - Sistema equilibrado
             Cuándo: Situación normal
             Ahorro: €0/ciclo (neutral)
-```
+```bash
 
 ### **API Endpoints**
 
@@ -317,7 +317,7 @@ GET  /health           → ¿Está vivo?
 GET  /api/status       → Estado componentes
 GET  /api/metrics      → Datos en tiempo real
 POST /api/control      → Ejecutar acción
-```
+```bash
 
 ### **Métricas Principales**
 
@@ -327,7 +327,7 @@ pv_generation_kw    Generación solar (kW)
 battery_soc         Estado batería (%)
 grid_import_kw      Compra a red (kW)
 total_cost          Costo acumulado (€)
-```
+```bash
 
 ---
 

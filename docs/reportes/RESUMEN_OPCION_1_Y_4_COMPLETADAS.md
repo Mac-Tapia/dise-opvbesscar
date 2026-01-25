@@ -33,7 +33,7 @@ Por Reward Promedio        PPO (0.000000)
 Por Estabilidad (±)        PPO (±0.000000)
 Por Timesteps Procesados   PPO (0 steps)
 Por Convergencia Final     PPO (0.000000)
-```
+```bash
 
 ## 4. Archivos Generados
 
@@ -89,7 +89,7 @@ Mejora de documentación, estructura y preparación para production
 - Version: 1.0.0
 - Python support: 3.10+
 
-**4. Calidad de Código**
+#### 4. Calidad de Código
 Herramientas configuradas:
 
 - ✅ `black` - Formatting automático
@@ -116,7 +116,7 @@ docker-compose.dev.yml             ← Desarrollo local
 docs/conf.py                       ← Sphinx config
 docs/index.md                      ← Documentación entrada
 .github/workflows/test-and-lint.yml ← CI/CD pipeline
-```
+```bash
 
 ---
 
@@ -148,7 +148,7 @@ pytest tests/ -v
 # 3. Verificar linting
 black --check src/
 pylint src/ --exit-zero
-```
+```bash
 
 ### Medio Plazo
 
@@ -161,7 +161,7 @@ git push origin main
 
 # 3. Package para PyPI
 python -m build
-```
+```bash
 
 ### Largo Plazo
 
@@ -213,7 +213,7 @@ diseñopvbesscar/
 ├── EJECUTAR_OPCION_1_ANALISIS.py       ← OPCIÓN 1 script
 ├── EJECUTAR_OPCION_4_INFRAESTRUCTURA.py ← OPCIÓN 4 script
 └── [otros archivos de proyecto]
-```
+```bash
 
 ---
 
@@ -253,7 +253,7 @@ pytest tests/ -v
 black src/
 pylint src/ --exit-zero
 # Output: Código formateado y analizado
-```
+```bash
 
 ---
 
@@ -261,7 +261,7 @@ pylint src/ --exit-zero
 
 **OPCIÓN 1 + OPCIÓN 4 completadas exitosamente en una sesión**
 
-### Resultados
+### Resultados (2)
 
 - ✅ Análisis comparativo automatizado de 3 modelos RL
 - ✅ Infraestructura profesional para production
@@ -282,7 +282,7 @@ pylint src/ --exit-zero
 git add -A
 git commit -m "feat: opción 1 y 4 completadas - análisis y infraestructura"
 git push origin main
-```
+```bash
 
 ---
 

@@ -23,11 +23,11 @@
 
 ### ✅ Testing Results
 
-```
+```bash
 STEP 1: Dependencies       ✅ PASSED (except CityLearn → requires Python 3.11)
 STEP 2: OE2 Validation     ✅ PASSED (Solar, Chargers, BESS all verified)
 STEP 3: Schema Validation  ✅ PASSED (Structure verified)
-```
+```bash
 
 ### ✅ Documentation Created
 
@@ -54,12 +54,12 @@ Choose ONE of 4 methods from `PYTHON_3.11_SETUP_GUIDE.md`:
 
 **Option A (⭐ Recommended)**: Download from python.org
 
-```
+```bash
 https://www.python.org/downloads/release/python-3110/
 → Download "Windows installer (64-bit)"
 → Run installer, check "Add python.exe to PATH"
 → Verify: python3.11 --version
-```
+```bash
 
 **Option B**: Use pyenv-windows
 **Option C**: Use Chocolatey  
@@ -76,7 +76,7 @@ cd d:\diseñopvbesscar
 python3.11 -m venv .venv
 .venv\Scripts\activate
 python --version  # Verify shows 3.11
-```
+```bash
 
 **Time**: 5 minutes
 
@@ -87,7 +87,7 @@ python --version  # Verify shows 3.11
 ```bash
 pip install -r requirements.txt
 pip install -r requirements-training.txt
-```
+```bash
 
 **Time**: 10-15 minutes
 
@@ -97,7 +97,7 @@ pip install -r requirements-training.txt
 
 ```bash
 python -c "import citylearn; print('✅ CityLearn installed')"
-```
+```bash
 
 **Time**: <1 minute
 
@@ -107,15 +107,15 @@ python -c "import citylearn; print('✅ CityLearn installed')"
 
 ```bash
 python phase7_test_pipeline.py
-```
+```bash
 
 **Expected Output**:
 
-```
+```bash
 ✅ OE2 validation PASSED
 ✅ Schema validation PASSED
 ⚠️ All CityLearn tests will now be fully available
-```
+```bash
 
 **Time**: 5 minutes
 
@@ -125,7 +125,7 @@ python phase7_test_pipeline.py
 
 ```bash
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-```
+```bash
 
 **Output**:
 
@@ -140,7 +140,7 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 
 ```bash
 python scripts/train_quick.py --episodes 1 --device cpu
-```
+```bash
 
 **Verify**:
 
@@ -170,7 +170,7 @@ Resolved: Charger CSV generation blocker ✅, BESS SOC prescaling ✅
 Status: Phase 7 complete, pipeline ready for agent training"
 
 git push
-```
+```bash
 
 **Time**: 5 minutes
 
@@ -194,7 +194,7 @@ git push
 
 ### New Files (Essential)
 
-```
+```bash
 PYTHON_3.11_SETUP_GUIDE.md         ← Read this first!
 PHASE_7_STATUS_REPORT.md           ← Detailed reference
 PHASE_7_EXECUTION_SUMMARY.md       ← Quick summary
@@ -202,17 +202,17 @@ phase7_test_pipeline.py            ← Validation script
 src/iquitos_citylearn/oe2/data_loader.py              ← OE2 validation
 src/iquitos_citylearn/oe3/schema_validator.py         ← Schema validation
 .python-version                    ← pyenv specification
-```
+```bash
 
 ### Modified Files
 
-```
+```bash
 .github/workflows/test-and-lint.yml
 pyproject.toml
 setup.py
 scripts/analysis/EJECUTAR_OPCION_4_INFRAESTRUCTURA.py
 src/iquitos_citylearn/oe3/dataset_builder.py
-```
+```bash
 
 ---
 

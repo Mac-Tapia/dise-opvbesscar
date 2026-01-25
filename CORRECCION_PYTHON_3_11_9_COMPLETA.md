@@ -31,19 +31,19 @@ Se han eliminado **TODAS** las referencias a Python 3.13.9 y reemplazado con **P
 
 **Antes**:
 
-```
+```bash
 System Python: 3.13.9 ⚠️ (Project requires 3.11, but Phase 7 validation works)
 Core Dependencies: ✅ All installed
 CityLearn: ⏳ Blocked on Python 3.11 (will install when needed for Phase 8)
-```
+```bash
 
 **Después**:
 
-```
+```bash
 System Python: 3.11.9 ✅ (Project requires 3.11 - CONFIRMED)
 Core Dependencies: ✅ All installed
 CityLearn: ✅ Ready to install with Python 3.11.9 (Phase 8)
-```
+```bash
 
 ---
 
@@ -51,20 +51,20 @@ CityLearn: ✅ Ready to install with Python 3.11.9 (Phase 8)
 
 **Cambio 1 - Tabla de Acciones**:
 
-```
+```bash
 Antes:  Python 3.13.9, dependencies installed
 Después: Python 3.11.9 REQUIRED, dependencies installed
-```
+```bash
 
 **Cambio 2 - Blocker Issue**:
 
-```
+```bash
 Antes:  ⏳ Python 3.11 (User must install)
         Issue: CityLearn requires Python 3.11 (scikit-learn fails on 3.13)
 
 Después: ✅ Python 3.11.9 (REQUIRED)
          Requirement: Python 3.11.9 required for CityLearn compatibility
-```
+```bash
 
 ---
 
@@ -72,15 +72,15 @@ Después: ✅ Python 3.11.9 (REQUIRED)
 
 **Antes**:
 
-```
+```bash
 │     └─ Python 3.13.9 ✓ | Dependencies ✓ | Environment ✓
-```
+```bash
 
 **Después**:
 
-```
+```bash
 │     └─ Python 3.11.9 ✓ | Dependencies ✓ | Environment ✓
-```
+```bash
 
 ---
 
@@ -88,17 +88,17 @@ Después: ✅ Python 3.11.9 (REQUIRED)
 
 **Cambio 1 - Tabla de Acciones**:
 
-```
+```bash
 Antes:  Python 3.13.9, todas las dependencias instaladas
 Después: Python 3.11.9, todas las dependencias instaladas
-```
+```bash
 
 **Cambio 2 - Logros**:
 
-```
+```bash
 Antes:  ✅ Diagnóstico de ambiente (Python 3.13.9)
 Después: ✅ Diagnóstico de ambiente (Python 3.11.9 REQUERIDO)
-```
+```bash
 
 ---
 
@@ -106,17 +106,17 @@ Después: ✅ Diagnóstico de ambiente (Python 3.11.9 REQUERIDO)
 
 **Antes**:
 
-```
+```bash
 ### ⏳ Blocking Issue (Single Blocker)
 - **Python 3.11 required** for CityLearn (user must install)
-```
+```bash
 
 **Después**:
 
-```
+```bash
 ### ✅ Python 3.11.9 Required
 - **Python 3.11.9** required for CityLearn/scikit-learn compatibility
-```
+```bash
 
 ---
 
@@ -126,13 +126,13 @@ Después: ✅ Diagnóstico de ambiente (Python 3.11.9 REQUERIDO)
 
 Ahora **TODOS** los documentos reflejan correctamente:
 
-```
+```bash
 ✅ Python 3.11.9 es REQUERIDO (no opcional)
 ✅ No hay referencias a Python 3.13.9
 ✅ Todos los archivos documentan el requisito correcto
 ✅ Ambiente correctamente especificado
 ✅ Mensajes claros y sin ambigüedad
-```
+```bash
 
 ---
 
@@ -146,7 +146,7 @@ grep -r "3\.13" *.md *.yaml *.py 2>/dev/null
 
 # Debe retornar: (sin resultados para archivos de Phase 8)
 # (Solo referencias en archivos de datos/reportes anteriores es aceptable)
-```
+```bash
 
 ---
 

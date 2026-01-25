@@ -41,7 +41,7 @@
 │  └──────────────────────────────────────────────────┘  │
 │                                                          │
 └─────────────────────────────────────────────────────────┘
-```
+```bash
 
 ---
 
@@ -55,7 +55,7 @@ Entrada (cada 5 minutos):
 ├─ Generación solar (kW)
 ├─ Batería disponible (kWh)
 └─ Precio de electricidad (€/kWh)
-```
+```bash
 
 ### 2️⃣ **Modelo ML Predice Futuro**
 
@@ -65,7 +65,7 @@ Análisis:
 ├─ ¿Cuánto sol habrá?
 ├─ ¿Cuál es el precio más bajo hoy?
 └─ ¿Cuánta batería debería guardar?
-```
+```bash
 
 ### 3️⃣ **Controlador Toma Decisiones**
 
@@ -75,7 +75,7 @@ Decisión (optimizada por IA):
 ├─ ¿Usar solar? (100%)
 ├─ ¿Comprar electricidad a red? (Sí/No)
 └─ Acción: CHARGE / DISCHARGE / IDLE
-```
+```bash
 
 ### 4️⃣ **Sistema Ejecuta Acciones**
 
@@ -84,7 +84,7 @@ Ejecución:
 ├─ Activa inversores
 ├─ Controla cargadores
 └─ Registra cambios en tiempo real
-```
+```bash
 
 ### 5️⃣ **Resultado: Ahorro Financiero**
 
@@ -93,7 +93,7 @@ Salida:
 ├─ ✅ Costo total reducido
 ├─ ✅ Emisiones CO2 minimizadas
 └─ ✅ Disponibilidad energética garantizada
-```
+```bash
 
 ---
 
@@ -112,7 +112,7 @@ GET /health
   "timestamp": "2026-01-20T11:08:09.687815",
   "service": "PVBESSCAR API"
 }
-```
+```bash
 
 ### 2. **Estado del Sistema** 📊
 
@@ -121,7 +121,7 @@ Obtiene el estado actual de todos los componentes
 ```bash
 GET /api/status
 
-# Respuesta:
+# Respuesta: (2)
 {
   "system": "PVBESSCAR",
   "status": "operational",
@@ -132,7 +132,7 @@ GET /api/status
     "energy_controller": "active"
   }
 }
-```
+```bash
 
 ### 3. **Métricas Actuales** 📈
 
@@ -141,7 +141,7 @@ Obtiene mediciones de energía en tiempo real
 ```bash
 GET /api/metrics
 
-# Respuesta:
+# Respuesta: (3)
 {
   "timestamp": "2026-01-20T11:08:09",
   "building_load_kw": 45.2,          # Consumo edificio
@@ -150,7 +150,7 @@ GET /api/metrics
   "grid_import_kw": 32.7,            # Importación de red
   "total_cost": 156.45               # Costo acumulado (€)
 }
-```
+```bash
 
 ### 4. **Ejecutar Acción** 🎮
 
@@ -165,14 +165,14 @@ POST /api/control
   "value": 5.0           # Potencia en kW (opcional)
 }
 
-# Respuesta:
+# Respuesta: (4)
 {
   "action": "charge",
   "value": 5.0,
   "timestamp": "2026-01-20T11:08:09",
   "status": "executed"
 }
-```
+```bash
 
 ---
 
@@ -187,7 +187,7 @@ curl http://localhost:8000/health
 
 # ✅ Respuesta:
 # {"status": "healthy", ...}
-```
+```bash
 
 #### **PASO 2: Obtener estado actual**
 
@@ -198,7 +198,7 @@ curl http://localhost:8000/api/status
 # - Database: ✅ conectada
 # - ML Models: ✅ cargados
 # - Controller: ✅ activo
-```
+```bash
 
 #### **PASO 3: Leer métricas de sensores**
 
@@ -211,7 +211,7 @@ curl http://localhost:8000/api/metrics
 # - Batería tiene: 87.3% de carga
 # - Compramos a red: 32.7 kW
 # - Gasto acumulado: €156.45
-```
+```bash
 
 #### **PASO 4: Análisis IA**
 
@@ -233,7 +233,7 @@ Razón:
 - ✅ En 2 horas habrá nubes
 - ✅ A las 18h subirá demanda (peak)
 - ✅ Cargar ahora = ahorrar €5 después
-```
+```bash
 
 #### **PASO 6: Ejecutar acción**
 
@@ -242,9 +242,9 @@ curl -X POST http://localhost:8000/api/control \
   -H "Content-Type: application/json" \
   -d '{"action":"charge","value":5.0}'
 
-# ✅ Respuesta:
+# ✅ Respuesta: (2)
 # {"action":"charge","value":5.0,"status":"executed"}
-```
+```bash
 
 #### **PASO 7: Sistema ejecuta**
 
@@ -257,7 +257,7 @@ curl -X POST http://localhost:8000/api/control \
 │  ├─ 7.5 kW → Edificio (consumo)
 │  └─ 0 kW (equilibrado, sin red)
 └─ Resultado: ✅ No pagamos a la red en este período
-```
+```bash
 
 #### **PASO 8: 2 Horas Después...**
 
@@ -279,7 +279,7 @@ Resultado:
 ├─ Batería: 10.0 kW (descargando)
 ├─ Red: 35.7 kW (muy menos)
 └─ ✅ Ahorro: €3.5 por no pagar tasa pico
-```
+```bash
 
 #### **PASO 9: Verificar Resultado**
 
@@ -294,7 +294,7 @@ curl http://localhost:8000/api/metrics
   "grid_import_kw": 35.7,        # Bajó de 32.7
   "total_cost": 159.95            # Subió +€3.50 (pero sin pico)
 }
-```
+```bash
 
 ---
 
@@ -355,7 +355,7 @@ Hora  | Consumo | Solar | Batería | Acción       | Costo
 
 📊 RESULTADO: Costo hora = €99 (sin IA sería €105)
 💰 AHORRO: €6 por hora = €144 por día
-```
+```bash
 
 ### **Ejemplo 2: Día Nublado (Invierno)**
 
@@ -372,7 +372,7 @@ Hora  | Consumo | Solar | Batería | Acción       | Costo
 
 📊 RESULTADO: Costo hora = €75
 💰 Sin batería sería: €108 (ahorro: €33)
-```
+```bash
 
 ---
 
@@ -412,7 +412,7 @@ BUCLE CONTINUO (cada 5 minutos):
 
 REPETICIONES POR DÍA: 288 ciclos = 288 decisiones optimizadas
 AHORRO ANUAL: 365 × €100 = €36,500 por edificio
-```
+```bash
 
 ---
 
@@ -434,7 +434,7 @@ curl http://localhost:8000/api/metrics
 curl -X POST http://localhost:8000/api/control \
   -H "Content-Type: application/json" \
   -d '{"action":"charge","value":10}'
-```
+```bash
 
 ### **Opción 2: Con Swagger (Navegador)**
 
@@ -445,7 +445,7 @@ curl -X POST http://localhost:8000/api/control \
 4. Click en "Try it out"
 5. Modifica parámetros
 6. Click "Execute"
-```
+```bash
 
 ### **Opción 3: Con Python (Script)**
 
@@ -456,7 +456,7 @@ import json
 # URL base
 BASE = "http://localhost:8000"
 
-# 1. Health check
+# 1. Health check (2)
 resp = requests.get(f"{BASE}/health")
 print("✅ Sistema:", resp.json()["status"])
 
@@ -473,7 +473,7 @@ resp = requests.post(
     json={"action": "charge", "value": 5.0}
 )
 print("⚡ Acción:", resp.json()["status"])
-```
+```bash
 
 ---
 
@@ -496,7 +496,7 @@ SWAGGER API: http://localhost:8000/docs
 ├─ Todos los endpoints
 ├─ Documentación interactiva
 └─ Pruebas en vivo
-```
+```bash
 
 ---
 
