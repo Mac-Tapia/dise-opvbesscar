@@ -236,7 +236,8 @@ git revert 3d41ca7f    # Revert rewards
 # Returns to commit 84a62ae9 (baseline verification state)
 ```text
 
-But **TIER 1 is designed to improve**, not regress. Regression would indicate deeper issue.
+But **TIER 1 is designed to improve**, not regress. Regression would indicate
+deeper issue.
 
 ---
 

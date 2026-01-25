@@ -331,4 +331,5 @@ git add . && git commit -m "Training updates" && git push
 
 ## 🚀 Resumen de Una Línea
 
-**De idea a agente RL entrenado en GPU en 3 sesiones, con 47% de mejora en eficiencia energética.**
+**De idea a agente RL entrenado en GPU en 3 sesiones, con 47% de mejora en
+eficiencia energética.**

@@ -3,7 +3,8 @@
 ## pvbesscar Project - Executive Brief
 
 **Date**: January 25, 2026  
-**Analysis Scope**: Complete review of agent files in `src/iquitos_citylearn/oe3/agents/`  
+**Analysis Scope**: Complete review of agent files in
+`src/iquitos_citylearn/oe3/agents/`
 **Files Produced**:
 
 1. `TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md` (10,000+ words)
@@ -15,12 +16,16 @@
 
 ### ✓ What's Working Well
 
-1. **OE2 Data Connection**: Properly loaded from files → CityLearn schema → agent wrappers
-2. **128 Chargers**: Correctly mapped to 126 controllable actions (2 reserved for baseline)
-3. **Solar Generation (8,760 hrs)**: Successfully accessed via `building.solar_generation[t]`
+1. **OE2 Data Connection**: Properly loaded from files → CityLearn schema →
+agent wrappers
+2. **128 Chargers**: Correctly mapped to 126 controllable actions (2 reserved
+for baseline)
+3. **Solar Generation (8,760 hrs)**: Successfully accessed via
+`building.solar_generation[t]`
 4. **BESS Configuration**: 2 MWh / 1.2 MW loaded and accessible
 5. **Architecture**: Clean 3-tier abstraction (OE2 → Dataset → Agents)
-6. **Agent Diversity**: SAC (off-policy), PPO (on-policy), A2C (simple) for comparison
+6. **Agent Diversity**: SAC (off-policy), PPO (on-policy), A2C (simple) for
+comparison
 7. **GPU Support**: Auto-detection of CUDA/MPS/CPU with proper device setup
 
 ### ⚠ Critical Issues (Must Fix)
@@ -48,8 +53,8 @@
 | Step | Source | Target | Status |
 |------|--------|--------|--------|
 | Solar loading | `data/interim/oe2/solar/pv_generation_timeseries.csv` (8,760 rows) | `schema.json` | ✓ Correct |
-| Charger loading | `individual_chargers.json` (32 × 4 = 128) | `schema.json` | ✓ Correct |
-| BESS loading | `bess_results.json` (2000 kWh, 1200 kW) | `schema.json` | ✓ Correct |
+| Charger loading | `individual_chargers.json` (32 ×... | `schema.json` | ✓ Correct |
+| BESS loading | `bess_results.json` (2000... | `schema.json` | ✓ Correct |
 | Weather data | `weather.csv` (PVGIS) | `climate_zones/` | ✓ Correct |
 | Carbon intensity | Hardcoded 0.4521 kg CO₂/kWh | `pricing.csv` | ✓ Correct |
 
@@ -59,7 +64,7 @@
 |---------|-----------------|--------|-------|
 | Solar generation | `building.solar_generation[t]` (8,760-element array) | ✓ Works | Prescaled by 0.001 (ok) |
 | BESS SOC | `building.electrical_storage.state_of_charge` | ✓ Works | **Prescaled by 0.001 (BAD)** |
-| Charger demands | Included in base observation (534 dims) | ✓ Works | Not explicitly extracted |
+| Charger demands | Included in base... | ✓ Works | Not explicitly extracted |
 | Grid import/export | In base observation | ✓ Works | Prescaled by 0.001 (ok) |
 
 ### ⚠ Agent Action → CityLearn Control
@@ -94,7 +99,7 @@ Clipping: [-10, 10]
 | Original | 0.0 to 1.0 | ✓ Already normalized |
 | After prescale (×0.001) | 0.0 to 0.001 | ❌ Becomes tiny |
 | After running norm | ~0.0 | ❌ All states map to ~0 |
-| Agent sees | No difference between SOC=0.1 vs 0.9 | ❌ **Cannot control BESS** |
+| Agent sees | No difference between... | ❌ **Cannot control BESS** |
 
 ### Fix Applied (in CODE_FIXES document)
 
@@ -273,7 +278,8 @@ With SOC prescaled by 0.001, agent cannot see the difference between:
 
 **Issue**: No OE2 artifact validation  
 **Where**: dataset_builder.py  
-**What to do**: Add validation function checking solar (8760), chargers (128), BESS (2000)  
+**What to do**: Add validation function checking solar (8760), chargers (128),
+BESS (2000)
 **Impact**: Fail fast with clear errors; avoid silent corruption  
 **Time**: 1.5 hours  
 
@@ -298,8 +304,8 @@ With SOC prescaled by 0.001, agent cannot see the difference between:
 
 | Document | Purpose | Size |
 |----------|---------|------|
-| `TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md` | Complete technical analysis with findings | ~10 KB |
-| `CODE_FIXES_OE2_DATA_FLOW.md` | Implementation fixes with code samples | ~8 KB |
+| `TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md` | Complete technical... | ~10 KB |
+| `CODE_FIXES_OE2_DATA_FLOW.md` | Implementation fixes... | ~8 KB |
 | This file | Executive summary | ~4 KB |
 
 ---
@@ -333,10 +339,12 @@ With SOC prescaled by 0.001, agent cannot see the difference between:
 
 ## Questions for Team
 
-1. **Charger Reservation**: Why are 2 chargers reserved for baseline? Can this be made configurable?
+1. **Charger Reservation**: Why are 2 chargers reserved for baseline? Can this
+be made configurable?
 2. **BESS Control**: Should we add explicit penalty for deep discharge cycles?
 3. **Prescaling**: Are hardcoded values (0.001) based on tuning, or arbitrary?
-4. **Per-charger control**: Is granular charger-level control desired, or fine with aggregate?
+4. **Per-charger control**: Is granular charger-level control desired, or fine
+with aggregate?
 
 ---
 
@@ -349,4 +357,4 @@ With SOC prescaled by 0.001, agent cannot see the difference between:
 
 ---
 
-**Analysis Completed**: 2026-01-25 | **Python 3.11** | **CityLearn v2 + Stable-Baselines3**
+**Analysis Completed**: 2026-01-25 | **Python 3.11** | **CityLearn v2... 

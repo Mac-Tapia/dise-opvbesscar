@@ -23,7 +23,8 @@
 - ✅ SOC penalty normalizada
 - ✅ Entropía SAC reducida
 
-**Impacto**: SAC ahora tiene **claros gradientes** para aprender. Esperado mejora en próximo entrenamiento: r_co2 de -0.05 a +0.30+.
+**Impacto**: SAC ahora tiene **claros gradientes** para aprender. Esperado
+mejora en próximo entrenamiento: r_co2 de -0.05 a +0.30+.
 
 ---
 
@@ -40,7 +41,9 @@ Impacto: Gradientes diminutos, convergencia IMPOSIBLE
 
 ### Root Cause
 
-**Archivo**: [src/iquitos_citylearn/oe3/agents/sac.py](src/iquitos_citylearn/oe3/agents/sac.py#L661)
+**Archivo**: [src/iquitos_citylearn/oe3/agents/sac.py][ref]
+
+[ref]: src/iquitos_citylearn/oe3/agents/sac.py#L661
 
 ```python
 # ❌ ANTES
@@ -84,7 +87,8 @@ Ahora:  step 500, lr=1.00e-03, reward_avg=??? (esperado mejora)
 
 ### Impact
 
-**Resultado**: Reward casi siempre en rango [-0.3, +0.5] → sin rango completo [-1, +1] → SIN GRADIENTES.
+**Resultado**: Reward casi siempre en rango [-0.3, +0.5] → sin rango completo
+[-1, +1] → SIN GRADIENTES.
 
 ### Solution Applied: TIER 1
 
@@ -134,7 +138,8 @@ reward = (
 # AHORA:   ent_coef=0.01 (fijo), target_entropy=-50.0 (baja exploración)
 ```text
 
-**Beneficio**: Con rewards bien escaladas, SAC puede EXPLOTAR buenas acciones en lugar de explorar ruido.
+**Beneficio**: Con rewards bien escaladas, SAC puede EXPLOTAR buenas acciones
+en lugar de explorar ruido.
 
 ---
 
@@ -209,7 +214,8 @@ reward = (
 
 ### Why Learning Rate Was Capped
 
-Historical issue from very early SAC implementation (>6 months old). Code comment:
+Historical issue from very early SAC implementation (>6 months old). Code
+comment:
 
 ```python
 # Learning rate MÁS conservador para estabilidad  ← OUTDATED
@@ -220,7 +226,8 @@ stable_lr = min(self.config.learning_rate, 3e-5)
 
 ### Why CO₂ Baseline Was Wrong
 
-Default value (500.0) was based on earlier **testing** with higher loads. Production Iquitos:
+Default value (500.0) was based on earlier **testing** with higher loads.
+Production Iquitos:
 
 - Typical mall demand: ~100 kW baseline
 - Chargers (128): 0-272 kW depending on queue
@@ -228,7 +235,8 @@ Default value (500.0) was based on earlier **testing** with higher loads. Produc
 
 ### Why SOC Penalty Needed Weighting
 
-SAC uses **weighted reward signals**. If component not weighted, it has implicit weight=1.0, drowning out other signals:
+SAC uses **weighted reward signals**. If component not weighted, it has
+implicit weight=1.0, drowning out other signals:
 
 ```text
 r_co2 contribution: 0.50 * (-0.5) = -0.25
@@ -258,7 +266,8 @@ But **strongly expect TIER 1 to improve**, not regress.
 1. Learning rate 100x too low
 2. Reward signal not scaled properly
 
-**Next 4-5 hours**: SAC should show **clear learning trend** (r_co2 increasing from -0.05 to +0.30+).
+**Next 4-5 hours**: SAC should show **clear learning trend** (r_co2 increasing
+from -0.05 to +0.30+).
 
 **If successful**: Proceed to TIER 2 (observables, batch tuning, normalization).
 

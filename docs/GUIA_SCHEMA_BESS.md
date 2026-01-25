@@ -73,7 +73,8 @@
   2. `operacion_bess_simulacion.png` - Simulación de operación del BESS
   3. `balance_energetico_bess.png` - Balance energético diario
   4. `distribucion_horaria_demanda.png` - Distribución horaria y por fuentes
-  5. `caracteristicas_perfil.png` - Características del perfil (variación, rampa)
+  5. `caracteristicas_perfil.png`- Características del perfil (variación,
+  rampa)
 
 ---
 
@@ -170,7 +171,9 @@ CIERRE (22:00h):
 | 21h | 24.0% | Descarga | Cubriendo déficit EV |
 | 22h | 24.0%* | Reposo | *Debe llegar a 20% |
 
-> **Nota:** La simulación muestra SOC final de 24% (ligeramente sobre el objetivo de 20%). Esto indica que el BESS está correctamente dimensionado con margen de seguridad.
+> **Nota:** La simulación muestra SOC final de 24% (ligeramente sobre el
+objetivo de 20%). Esto indica que el BESS está correctamente dimensionado con
+margen de seguridad.
 
 ---
 
@@ -305,7 +308,8 @@ DESCARGA BESS:
 | Red (respaldo) | 1,374* | 42% |
 | **TOTAL** | **3,252** | **100%** |
 
-> **Nota:** *La red cubre períodos cuando solar+BESS no pueden cubrir demanda completa o como respaldo. Revisar con análisis detallado de excedente solar.
+> **Nota:** *La red cubre períodos cuando solar+BESS no pueden cubrir demanda
+completa o como respaldo. Revisar con análisis detallado de excedente solar.
 
 ---
 

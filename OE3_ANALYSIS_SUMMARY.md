@@ -18,18 +18,21 @@
 
 ### 🟡 MEDIUM ISSUES: 3
 
-- **File 1**: `rewards_improved_v2.py` + `rewards_wrapper_v2.py` (590 lines total)  
+- **File 1**: `rewards_improved_v2.py` + `rewards_wrapper_v2.py` (590 lines
+  - total)
   - **Problem**: v2 iteration, only imported by each other, not in main pipeline
   - **Action**: Archive to `experimental/` folder
   - **Impact**: None - main code uses v1
 
 - **File 2**: `co2_emissions.py` (358 lines)  
-  - **Problem**: Defines dataclasses that are never instantiated; import exists but unused
+  - **Problem**: Defines dataclasses that are never instantiated; import exists
+    - but unused
   - **Action**: Merge content into `co2_table.py`, delete file
   - **Impact**: Single source of truth
 
 - **File 3**: `rewards_dynamic.py` (80 lines)  
-  - **Problem**: Only used in dev script `train_ppo_dynamic.py`, not main pipeline
+  - **Problem**: Only used in dev script `train_ppo_dynamic.py`, not main
+    - pipeline
   - **Action**: Archive to `experimental/` with its dev script
   - **Impact**: None - experimental code
 
@@ -42,7 +45,8 @@ All core files are properly interconnected and actively used:
 - ✅ `dataset_builder.py` - Only module for CityLearn schema construction
 - ✅ `simulate.py` - Central orchestrator for training
 - ✅ `agents/*.py` - All 7 agent implementations properly linked
-- ✅ `progress.py`, `dispatch_priorities.py`, `enriched_observables.py` - Utilities in use
+- ✅ `progress.py`, `dispatch_priorities.py`, `enriched_observables.py` -
+  - Utilities in use
 
 ---
 
@@ -109,17 +113,22 @@ Main Entry Points:
 
 **Situation**:
 
-- v1 ACTIVE: `rewards.py` (MultiObjectiveWeights, IquitosContext, MultiObjectiveReward)
-- v2 UNUSED: `rewards_improved_v2.py` (ImprovedWeights, IquitosContextV2, ImprovedMultiObjectiveReward)
-- WRAPPER UNUSED: `rewards_wrapper_v2.py` (ImprovedRewardWrapper Gymnasium wrapper)
+- v1 ACTIVE: `rewards.py` (MultiObjectiveWeights, IquitosContext,
+  - MultiObjectiveReward)
+- v2 UNUSED: `rewards_improved_v2.py` (ImprovedWeights, IquitosContextV2,
+  - ImprovedMultiObjectiveReward)
+- WRAPPER UNUSED: `rewards_wrapper_v2.py` (ImprovedRewardWrapper Gymnasium
+  - wrapper)
 
 **Risk Assessment**:
 
 - ✅ Currently SAFE - v2 modules not imported in main pipeline
-- ⚠️ COULD BREAK IF: Someone accidentally imports v2 without updating agents/**init**.py
+- ⚠️ COULD BREAK IF: Someone accidentally imports v2 without updating
+  - agents/**init**.py
 - 💡 MITIGATION: Archive v2 to `experimental/` folder (this analysis recommends)
 
-**Result**: ✅ Currently no conflicts. Cleanup recommended to prevent future issues.
+**Result**: ✅ Currently no conflicts. Cleanup recommended to prevent future
+issues.
 
 ---
 
@@ -136,7 +145,8 @@ Main Entry Points:
 | rewards_wrapper_v2.py | 180 | ⚠️ Wrapper unused | ARCHIVE |
 | **TOTAL** | **1,535 lines** | | |
 
-**Space Savings**: Removing these files saves ~1,500 lines of code (40% of module size)
+**Space Savings**: Removing these files saves ~1,500 lines of code (40% of
+module size)
 
 ---
 
@@ -151,7 +161,8 @@ Main Entry Points:
 | Context class | IquitosContext | IquitosContextV2 | ⚠️ Yes, v2 has extra fields |
 | Wrapper | CityLearnMultiObjectiveWrapper | ImprovedRewardWrapper | ⚠️ Yes, different implementation |
 
-**Risk**: If v2 accidentally imported without updating agents/**init**.py, it would break training.  
+**Risk**: If v2 accidentally imported without updating agents/**init**.py, it
+would break training.
 **Mitigation**: Archive v2 to experimental/ folder.
 
 ### CO₂ Calculation Duplication
@@ -162,8 +173,10 @@ Main Entry Points:
 | CO2EmissionBreakdown | ✅ Defined | ❌ Not used | ⚠️ Yes, unused |
 | compute_table() | ❌ No | ✅ Defined | ✓ Single source |
 
-**Issue**: co2_emissions.py defines classes that co2_table.py imports but doesn't use.  
-**Solution**: Merge dataclass definitions into co2_table.py, delete co2_emissions.py.
+**Issue**: co2_emissions.py defines classes that co2_table.py imports but
+doesn't use.
+**Solution**: Merge dataclass definitions into co2_table.py, delete
+co2_emissions.py.
 
 ---
 
@@ -177,7 +190,8 @@ Main Entry Points:
 ### 🟡 SHOULD DO (This Week)
 
 2. **CONSOLIDATE** `co2_emissions.py` → `co2_table.py`
-   - Copy 60 lines of dataclass definitions from co2_emissions.py into co2_table.py
+   - Copy 60 lines of dataclass definitions from co2_emissions.py into
+     - co2_table.py
    - Remove import statement from co2_table.py
    - Delete co2_emissions.py
    - Test: `python -m scripts.run_oe3_co2_table --config configs/default.yaml`
@@ -188,7 +202,8 @@ Main Entry Points:
    - Add documentation headers explaining they're archived
 
 3. **ARCHIVE** dev scripts to `scripts/experimental/`
-   - Move: `rewards_dynamic.py` → `src/iquitos_citylearn/oe3/experimental/rewards_dynamic.py`
+   - Move: `rewards_dynamic.py` →
+     - `src/iquitos_citylearn/oe3/experimental/rewards_dynamic.py`
    - Move: `train_ppo_dynamic.py` → `scripts/experimental/train_ppo_dynamic.py`
    - Update import in train_ppo_dynamic.py
 
@@ -227,7 +242,8 @@ Main Entry Points:
 ### Archive rewards_dynamic.py
 
 - **Risk**: 🟡 LOW
-- **Reason**: Only used in dev script (train_ppo_dynamic.py), which is also archived
+- **Reason**: Only used in dev script (train_ppo_dynamic.py), which is also
+  - archived
 - **Test**: Run main training pipeline (doesn't use dynamic rewards)
 - **Rollback**: `git checkout HEAD -- rewards_dynamic.py`
 
@@ -333,7 +349,8 @@ python -c "from iquitos_citylearn.oe3.experimental.rewards_improved_v2 import *;
 
 - **Step 1 (delete demanda_mall_kwh.py)**: Can do alone - zero impact
 - **Step 2 (consolidate co2_emissions.py)**: Must test co2_table script
-- **Steps 3-5 (archive modules)**: Can skip if you plan to use v2/dynamic rewards
+- **Steps 3-5 (archive modules)**: Can skip if you plan to use v2/dynamic
+  - rewards
 - **Step 6 (documentation)**: Always recommended
 
 ---

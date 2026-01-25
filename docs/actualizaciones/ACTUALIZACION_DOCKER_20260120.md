@@ -2,7 +2,8 @@
 
 ## 📋 Resumen de Cambios
 
-Se actualizó la construcción Docker para PVBESSCAR con mejoras significativas en:
+Se actualizó la construcción Docker para PVBESSCAR con mejoras significativas
+en:
 
 - ✅ Multi-stage build optimizado
 - ✅ Caching con BuildKit

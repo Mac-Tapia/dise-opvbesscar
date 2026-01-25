@@ -4,7 +4,8 @@
 
 ### Datasets CityLearn v2 para Entrenamiento OE3
 
-Se generaron datasets anuales (8760 horas) con 128 tomas controlables para entrenamiento de agentes RL.
+Se generaron datasets anuales (8760 horas) con 128 tomas controlables para
+entrenamiento de agentes RL.
 
 **Configuración**:
 
@@ -128,14 +129,16 @@ data/interim/oe2/chargers/annual_datasets/
 
 ✅ **Escenarios 1-100 (Monte Carlo)** - 100 variaciones con incertidumbre:
 
-- Cada escenario: Playa Motos (982,080) + Playa Taxis (140,160) = 1,122,240 datos
+- Cada escenario: Playa Motos (982,080) + Playa Taxis (140,160) = 1,122,240
+  - datos
 - Total 100 escenarios MC: 100 × 1,122,240 = 112,224,000 datos
 
 **TOTAL DATASETS**:
 
 - Baseline: 1,122,240 datos
 - Monte Carlo: 112,224,000 datos
-- **TOTAL**: 113,346,240 puntos de datos de carga (101 escenarios × 128 chargers × 8760 horas)
+- **TOTAL**: 113,346,240 puntos de datos de carga (101 escenarios × 128
+  - chargers × 8760 horas)
 
 ---
 
@@ -156,7 +159,8 @@ timestamp,power_kw,energy_kwh
 ### Campos
 
 - **timestamp**: Marca temporal (YYYY-MM-DD HH:MM:SS)
-- **power_kw**: Potencia de carga en kW (0 = no cargando, hasta 2 kW Motos o 3 kW Taxis)
+- **power_kw**: Potencia de carga en kW (0 = no cargando, hasta 2 kW Motos o 3
+  - kW Taxis)
 - **energy_kwh**: Energía acumulada en esa hora
 
 ---
@@ -211,8 +215,10 @@ python train_v2_fresh.py --scenario 50 --num-episodes 2 # MC 50
 
 CityLearn cargará automáticamente para cada escenario:
 
-- `Playa_Motos/{scenario}/MOTO_CH_001.csv` → observable `charger_MOTO_CH_001_power_kw`
-- `Playa_Motos/{scenario}/MOTO_CH_002.csv` → observable `charger_MOTO_CH_002_power_kw`
+- `Playa_Motos/{scenario}/MOTO_CH_001.csv` → observable
+  - `charger_MOTO_CH_001_power_kw`
+- `Playa_Motos/{scenario}/MOTO_CH_002.csv` → observable
+  - `charger_MOTO_CH_002_power_kw`
 - ... (128 chargers × 101 escenarios)
 
 ---

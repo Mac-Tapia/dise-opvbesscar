@@ -2,14 +2,17 @@
 
 ## ✅ CAMBIOS REALIZADOS
 
-Se ha actualizado el código de `bess.py` para soportar perfiles de carga EV con resolución de 15 minutos:
+Se ha actualizado el código de `bess.py`para soportar perfiles de carga EV con
+resolución de 15 minutos:
 
 ### 1. Función `load_ev_demand()` Actualizada
 
 #### Cambios:
 
-- Detecta automáticamente si el CSV tiene formato de 15 minutos (96 intervalos) o horario (24 horas)
-- Para 15 minutos: Expande 96 intervalos a 35,040 intervalos anuales (365 días × 96)
+- Detecta automáticamente si el CSV tiene formato de 15 minutos (96 intervalos)
+  - o horario (24 horas)
+- Para 15 minutos: Expande 96 intervalos a 35,040 intervalos anuales (365 días
+  - × 96)
 - Mantiene retrocompatibilidad con formato horario
 
 #### Formato CSV esperado (15 minutos):
@@ -67,7 +70,8 @@ Para ejecutar el dimensionamiento BESS se requieren:
 
 ### 2. ❌ Perfil Solar - FALTA GENERAR
 
-**Ubicación esperada:** `data/oe2/pv_profile_24h.csv` O `data/oe2/pv_generation_timeseries.csv`
+**Ubicación esperada:** `data/oe2/pv_profile_24h.csv`O
+`data/oe2/pv_generation_timeseries.csv`
 
 #### Opciones:
 

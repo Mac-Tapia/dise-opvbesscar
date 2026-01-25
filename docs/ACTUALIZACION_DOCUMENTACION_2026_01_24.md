@@ -2,7 +2,8 @@
 
 ## Resumen de Cambios
 
-Esta actualización consolida la documentación relacionada con los datasets OE3 para entrenamiento de agentes RL con 128 tomas controlables.
+Esta actualización consolida la documentación relacionada con los datasets OE3
+para entrenamiento de agentes RL con 128 tomas controlables.
 
 ---
 
@@ -124,7 +125,7 @@ data/oe2/
 
 | Script | Propósito |
 |--------|-----------|
-| `src/iquitos_citylearn/oe2/chargers.py` | **Módulo principal** - Genera Tabla 13 y cálculos |
+| `src/iquitos_citylearn/oe2/chargers.py` | **Módulo principal** - Genera... |
 | `generar_dataset_oe3_128_tomas.py` | Dataset RECOMENDADO |
 | `generar_dataset_oe3_128_tomas_MAXIMO.py` | Dataset MÁXIMO |
 | `generar_tabla_escenarios_vehiculos.py` | Tabla 13 con vehículos |

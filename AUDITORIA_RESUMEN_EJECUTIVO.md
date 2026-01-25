@@ -61,7 +61,8 @@ df_solar_hourly = df_solar.resample('1H')['ac_power_kw'].mean()
 
 ### 3️⃣ PATHS CHARGER INCORRECTOS
 
-- **Problema**: `charger_X.csv` en lugar de `buildings/Mall_Iquitos/charger_X.csv`
+- **Problema**: `charger_X.csv` en lugar de
+  - `buildings/Mall_Iquitos/charger_X.csv`
 - **Causa**: Path relativo incompleto
 - **Impacto**: CityLearn no encuentra los CSVs
 - **Solución**: 1 línea cambio (~2 minutos)
@@ -183,7 +184,7 @@ RIESGO CRÍTICO: Sin Tier 1, proyecto BLOQUEADO
 |---------|-------------|--------|
 | **AUDITORIA_OE2_OE3_EXHAUSTIVA.py** | Script de análisis automático | 15 KB |
 | **AUDITORIA_EXHAUSTIVA_OE2_OE3_REPORTE_COMPLETO.md** | Reporte detallado (10 secciones) | 25 KB |
-| **CORRECCIONES_DATASET_BUILDER_TIER1.py** | Código de correcciones listo para aplicar | 12 KB |
+| **CORRECCIONES_DATASET_BUILDER_TIER1.py** | Código de correcciones... | 12 KB |
 | **AUDITORIA_EXHAUSTIVA_LOG.txt** | Output del análisis | 8 KB |
 | **[ESTE ARCHIVO]** | Resumen ejecutivo | 5 KB |
 
@@ -195,11 +196,15 @@ RIESGO CRÍTICO: Sin Tier 1, proyecto BLOQUEADO
 
 ### ✅ ACCIÓN INMEDIATA REQUERIDA
 
-1. **Leer**: [AUDITORIA_EXHAUSTIVA_OE2_OE3_REPORTE_COMPLETO.md](file:///d:/diseñopvbesscar/AUDITORIA_EXHAUSTIVA_OE2_OE3_REPORTE_COMPLETO.md)
+1. **Leer**: [AUDITORIA_EXHAUSTIVA_OE2_OE3_REPORTE_COMPLETO.md][ref]
+
+[ref]: file:///d:/diseñopvbesscar/AUDITORIA_EXHAUSTIVA_OE2_OE3_REPORTE_COMPLETO.md
    - Entender los 14 errores identificados
    - Comprender impacto de cada gap
 
-2. **Aplicar**: Cambios de [CORRECCIONES_DATASET_BUILDER_TIER1.py](file:///d:/diseñopvbesscar/CORRECCIONES_DATASET_BUILDER_TIER1.py)
+2. **Aplicar**: Cambios de [CORRECCIONES_DATASET_BUILDER_TIER1.py][ref]
+
+[ref]: file:///d:/diseñopvbesscar/CORRECCIONES_DATASET_BUILDER_TIER1.py
    - Modificar `dataset_builder.py` con 4 correcciones críticas
    - Tiempo estimado: **2 horas**
 
@@ -274,25 +279,31 @@ Una vez corregidas las issues de Tier 1, el proyecto puede:
 ## 📞 PREGUNTAS FRECUENTES
 
 #### P: ¿Puedo entrenar ahora mismo sin correcciones?
-R: No. Sin charger CSVs, CityLearn falla. Sin downsampling solar, timesteps desalineados. Imposible.
+R: No. Sin charger CSVs, CityLearn falla. Sin downsampling solar, timesteps
+desalineados. Imposible.
 
 #### P: ¿Cuánto tardará corregir?
-R: Tier 1 (crítico): 2 horas. Tier 2-3 (mejoras): 10 horas más. Una persona podría hacerlo en 2-3 días.
+R: Tier 1 (crítico): 2 horas. Tier 2-3 (mejoras): 10 horas más. Una persona
+podría hacerlo en 2-3 días.
 
 #### P: ¿Hay riesgo de romper algo existente?
-R: No. Cambios son aditivos (new functions) o sustituciones directas (ya identificadas). Tests recomendados.
+R: No. Cambios son aditivos (new functions) o sustituciones directas (ya
+identificadas). Tests recomendados.
 
 #### P: ¿BESS es realmente 4,520 kWh o 2,000?
-R: bess_results.json dice 4,520. README dice 2,000. Necesita **investigación de origen** (¿por qué diferencia?).
+R: bess_results.json dice 4,520. README dice 2,000. Necesita **investigación de
+origen** (¿por qué diferencia?).
 
 #### P: ¿Annual_datasets es importante?
-R: Potencialmente sí. Si contiene timeseries anuales reales por charger, es mejor que replicas del perfil 24h.
+R: Potencialmente sí. Si contiene timeseries anuales reales por charger, es
+mejor que replicas del perfil 24h.
 
 ---
 
 ## ✅ CONCLUSIÓN
 
-El proyecto **Iquitos EV+PV/BESS** tiene **infraestructura OE2 sólida** pero el **pipeline OE3 está incompleto**.
+El proyecto **Iquitos EV+PV/BESS** tiene **infraestructura OE2 sólida** pero el
+**pipeline OE3 está incompleto**.
 
 Con **2 horas de trabajo** en Tier 1 fixes, el sistema será operacional.
 

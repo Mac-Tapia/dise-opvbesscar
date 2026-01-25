@@ -53,7 +53,8 @@ def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
         return obs
     # Apply prescaling selectively
     prescaled = obs.copy()
-    prescaled[:-2] = obs[:-2] * self._obs_prescale[:-2]  # Scale PV/power features
+    prescaled[:-2] = \
+        obs[:-2] * self._obs_prescale[:-2]  # Scale PV/power features
     prescaled[-2] = obs[-2] * 0.001  # Scale PV features (again, first of pair)
     prescaled[-1] = obs[-1]  # DON'T scale BESS SOC (keep as [0,1])
     
@@ -98,7 +99,8 @@ def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
     return np.asarray(clipped, dtype=np.float32)
 ```bash
 
-**Apply to**: sac.py, ppo_sb3.py, a2c_sb3.py (CityLearnWrapper._normalize_observation)
+**Apply to**: sac.py, ppo_sb3.py, \
+    a2c_sb3.py (CityLearnWrapper._normalize_observation)
 
 ---
 
@@ -141,14 +143,16 @@ class SACConfig:
     clip_obs: float = 10.0
     
     # === PRESCALING FACTORS (for obs normalization) ===
-    # Prescaling reduces large kW/kWh values to manageable range before normalization
+    # Prescaling reduces large kW/kWh values to manageable range before
+    # normalization
     # E.g., 4162 kW (PV) â†’ 4.162 after prescaling by 0.001
     obs_prescale_power: float = 0.001        # For PV generation (kW)
     obs_prescale_load: float = 0.001         # For charger demand (kW)
     obs_prescale_soc: float = 1.0            # For BESS SOC [0-1] (keep as-is)
     obs_prescale_energy: float = 0.001       # For grid import/export (kWh)
     obs_prescale_cost: float = 1.0           # For tariff ($/kWh) (keep as-is)
-    obs_prescale_carbon: float = 1.0         # For CO2 factor (kg/kWh) (keep as-is)
+    obs_prescale_carbon: float = \
+        1.0         # For CO2 factor (kg/kWh) (keep as-is)
 ```bash
 
 **Apply to**: SAC, PPO, A2C configs
@@ -249,7 +253,8 @@ def _get_pv_bess_feats(self):
                 pv_missing = True
                 logger.debug("Building %d has no solar_generation attribute", b_idx)
             elif not isinstance(sg, (list, np.ndarray)) or len(sg) <= t:
-                logger.debug("Building %d solar_generation invalid (len=%s, t=%d)",
+                logger.debug("Building %d solar_generation"
+                    "invalid (len=%s, t=%d)",
                             b_idx, len(sg) if hasattr(sg, '__len__') else 'unknown', t)
                 pv_missing = True
             else:
@@ -270,10 +275,12 @@ def _get_pv_bess_feats(self):
                 try:
                     soc_val = getattr(es, "state_of_charge", None)
                     if soc_val is None:
-                        logger.debug("Building %d electrical_storage has no state_of_charge", b_idx)
+                        logger.debug("Building %d electrical_storage has"
+                            "no state_of_charge", b_idx)
                         soc_missing = True
                     else:
-                        soc = float(soc_val)  # Take last (should be same for all buildings)
+                        soc = \
+                            float(soc_val)  # Take last (should be same for all buildings)
                 except (ValueError, TypeError, AttributeError) as e:
                     logger.debug("Error reading BESS at building %d: %s", b_idx, e)
                     soc_missing = True
@@ -382,7 +389,8 @@ class CityLearnWrapper(gym.Wrapper):
     
     def _build_prescale_array(self) -> np.ndarray:
         """Build prescale array matching observation dimensions"""
-        prescale = np.ones(self.obs_dim, dtype=np.float32) * self._obs_prescale_power
+        prescale = np.ones(self.obs_dim, \
+            dtype=np.float32) * self._obs_prescale_power
         if self.obs_dim >= 1:
             prescale[-1] = self._obs_prescale_soc  # BESS SOC is last feature
         return prescale
@@ -404,7 +412,8 @@ class CityLearnWrapper(gym.Wrapper):
             buildings = getattr(self.env, "buildings", [])
             for b in buildings:
                 sg = getattr(b, "solar_generation", None)
-                if sg is not None and isinstance(sg, (list, np.ndarray)) and len(sg) > t:
+                if sg is not None and isinstance(sg, (list, \
+                    np.ndarray)) and len(sg) > t:
                     try:
                         pv_kw += float(max(0.0, sg[t]))
                     except (ValueError, TypeError, IndexError):
@@ -422,9 +431,11 @@ class CityLearnWrapper(gym.Wrapper):
     def _flatten_base(self, obs: Any) -> np.ndarray:
         """Flatten observation from CityLearn format"""
         if isinstance(obs, dict):
-            return np.concatenate([np.array(v, dtype=np.float32).ravel() for v in obs.values()])
+            return np.concatenate([np.array(v, \
+                dtype=np.float32).ravel() for v in obs.values()])
         if isinstance(obs, (list, tuple)):
-            return np.concatenate([np.array(o, dtype=np.float32).ravel() for o in obs])
+            return np.concatenate([np.array(o, \
+                dtype=np.float32).ravel() for o in obs])
         return np.array(obs, dtype=np.float32).ravel()
     
     def _flatten(self, obs: Any) -> np.ndarray:
@@ -447,7 +458,8 @@ class CityLearnWrapper(gym.Wrapper):
         self._obs_count += 1
         self._obs_mean = self._obs_mean + delta / self._obs_count
         delta2 = obs - self._obs_mean
-        self._obs_var = self._obs_var + (delta * delta2 - self._obs_var) / self._obs_count
+        self._obs_var = self._obs_var + (delta * delta2 - \
+            self._obs_var) / self._obs_count
     
     def _normalize_observation(self, obs: np.ndarray) -> np.ndarray:
         """Normalize observation: prescale + running stats + clip"""
@@ -456,7 +468,8 @@ class CityLearnWrapper(gym.Wrapper):
         
         prescaled = obs * self._obs_prescale
         self._update_obs_stats(prescaled)
-        normalized = (prescaled - self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
+        normalized = (prescaled - \
+            self._obs_mean) / (np.sqrt(self._obs_var) + 1e-8)
         clipped = np.clip(normalized, -self._clip_obs, self._clip_obs)
         return np.asarray(clipped, dtype=np.float32)
     
@@ -466,7 +479,8 @@ class CityLearnWrapper(gym.Wrapper):
         self._reward_count += 1
         self._reward_mean += delta / self._reward_count
         delta2 = reward - self._reward_mean
-        self._reward_var += (delta * delta2 - self._reward_var) / self._reward_count
+        self._reward_var += (delta * delta2 - \
+            self._reward_var) / self._reward_count
     
     def _normalize_reward(self, reward: float) -> float:
         """Normalize reward"""
@@ -494,7 +508,8 @@ class CityLearnWrapper(gym.Wrapper):
     
     def step(self, action):
         citylearn_action = self._unflatten_action(action)
-        obs, reward, terminated, truncated, info = self.env.step(citylearn_action)
+        obs, reward, terminated, truncated, info = \
+            self.env.step(citylearn_action)
         
         # Normalize done flags (truncate â†’ terminate)
         if truncated and not terminated:
@@ -517,7 +532,8 @@ class CityLearnWrapper(gym.Wrapper):
         # Normalize reward
         normalized_reward = self._normalize_reward(reward)
         
-        return self._flatten(obs), normalized_reward, terminated, truncated, info
+        return self._flatten(obs), normalized_reward, \
+            terminated, truncated, info
 ```bash
 
 **Update SAC to use**:

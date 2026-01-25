@@ -393,7 +393,8 @@ logger.info(f"SAC: Observables enriquecidos activados, dim total ~915")
 
 ### Paso 3.1: Revisar que todos los features se incluyen
 
-**Ubicación**: Método `get_enriched_state()` en enriched_observables.py (~línea 100)
+**Ubicación**: Método `get_enriched_state()`en enriched_observables.py (~línea
+100)
 
 **Verif icar que retorna TODOS estos keys**:
 
@@ -486,7 +487,8 @@ git revert HEAD~1
 
 Una vez completes estos 3 cambios:
 
-1. Commit: `"SAC TIER 2: Normalización adaptativa + observables + hiperparámetros"`
+1. Commit:
+`"SAC TIER 2: Normalización adaptativa + observables + hiperparámetros"`
 2. Entrenar: `python -m src.train_sac_cuda --episodes=50 --device=cuda`
 3. Monitorear: Reward converge más rápido?
 4. Analizar: CO₂ y SOC mejoraron?

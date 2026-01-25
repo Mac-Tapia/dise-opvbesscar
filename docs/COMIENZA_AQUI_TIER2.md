@@ -97,12 +97,15 @@ python -m src.train_sac_cuda --episodes=2 --verbose=1
 
 ### Para LÍDERES
 
-- **[COMPARATIVA_AGENTES_FINAL_TIER2.md](COMPARATIVA_AGENTES_FINAL_TIER2.md)** - Tabla de comparación
-- **[PPO_A2C_TIER2_MASTER_PLAN.md](PPO_A2C_TIER2_MASTER_PLAN.md)** - Plan detallado
+- **[COMPARATIVA_AGENTES_FINAL_TIER2.md](COMPARATIVA_AGENTES_FINAL_TIER2.md)**
+  - - Tabla de comparación
+- **[PPO_A2C_TIER2_MASTER_PLAN.md](PPO_A2C_TIER2_MASTER_PLAN.md)** - Plan
+  - detallado
 
 ### Para ENGINEERS
 
-- **[EJECUTAR_ENTRENAMIENTO_TIER2.md](EJECUTAR_ENTRENAMIENTO_TIER2.md)** - Scripts & monitoreo
+- **[EJECUTAR_ENTRENAMIENTO_TIER2.md](EJECUTAR_ENTRENAMIENTO_TIER2.md)** -
+  - Scripts & monitoreo
 - Archivos modificados:
   - `src/iquitos_citylearn/oe3/agents/ppo_sb3.py` ✅
   - `src/iquitos_citylearn/oe3/agents/a2c_sb3.py` ✅
@@ -111,7 +114,8 @@ python -m src.train_sac_cuda --episodes=2 --verbose=1
 ### Para DATA SCIENTISTS
 
 - **[SAC_TIER2_OPTIMIZATION.md](SAC_TIER2_OPTIMIZATION.md)** - Teoría SAC
-- **[COMPARATIVA_AGENTES_FINAL_TIER2.md](COMPARATIVA_AGENTES_FINAL_TIER2.md)** - Analysis
+- **[COMPARATIVA_AGENTES_FINAL_TIER2.md](COMPARATIVA_AGENTES_FINAL_TIER2.md)**
+  - - Analysis
 
 ---
 
@@ -217,7 +221,8 @@ python -m src.train_sac_cuda --episodes=2 --verbose=1
 
 ## 🎯 OBJETIVO FINAL
 
-**Entrenar 3 agentes (A2C, PPO, SAC) en paralelo con TIER 2 fixes y validar que SAC es superior en convergencia + eficiencia energética.**
+**Entrenar 3 agentes (A2C, PPO, SAC) en paralelo con TIER 2 fixes y validar que
+SAC es superior en convergencia + eficiencia energética.**
 
 ---
 

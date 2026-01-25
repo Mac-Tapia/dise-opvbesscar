@@ -6,17 +6,21 @@ Verifica todos estos items antes de iniciar el entrenamiento RL.
 
 - [ ] Python 3.10+ activado (`.venv\Scripts\activate` en Windows)
 - [ ] Dependencias instaladas: `pip install -r requirements.txt`
-- [ ] GPU disponible (opcional): `python -c "import torch; print(torch.cuda.is_available())"`
+- [ ] GPU disponible (opcional): `python -c "import torch;
+  - print(torch.cuda.is_available())"`
 
 ## 2. Datos OE2
 
-- [ ] Solar timeseries existe: `data/interim/oe2/solar/pv_generation_timeseries.csv`
+- [ ] Solar timeseries existe:
+  - `data/interim/oe2/solar/pv_generation_timeseries.csv`
   - [ ] Contiene exactamente 8,760 filas (1 año horario)
   - [ ] Columnas: hora, potencia_kw
-- [ ] Chargers profile existe: `data/interim/oe2/chargers/perfil_horario_carga.csv`
+- [ ] Chargers profile existe:
+  - `data/interim/oe2/chargers/perfil_horario_carga.csv`
   - [ ] Contiene 24 filas (horas del día)
   - [ ] Columnas: hora, carga_kw
-- [ ] Individual chargers JSON existe: `data/interim/oe2/chargers/individual_chargers.json`
+- [ ] Individual chargers JSON existe:
+  - `data/interim/oe2/chargers/individual_chargers.json`
   - [ ] Contiene 32 chargers (28 motos + 4 mototaxis)
   - [ ] Cada charger tiene 4 sockets
 
@@ -116,7 +120,8 @@ python scripts/monitor_training_live_2026.py
 
 - [ ] Checkpoints guardados en `checkpoints/{SAC,PPO,A2C}/`
 - [ ] Logs en `analyses/logs/`
-- [ ] Comparativa: `python -m scripts.run_oe3_co2_table --config configs/default.yaml`
+- [ ] Comparativa: `python -m scripts.run_oe3_co2_table --config
+  - configs/default.yaml`
 - [ ] Resultado: `COMPARACION_BASELINE_VS_RL.txt`
 
 ---
@@ -155,11 +160,11 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 | Problema | Solución |
 |----------|----------|
 | "Schema not found" | Ejecutar `run_oe3_build_dataset` primero |
-| "128 chargers not found" | Validar `data/interim/oe2/chargers/individual_chargers.json` tiene 32 items |
+| "128 chargers not found" | Validar `data/interim/oe2/chargers/individual_chargers.json`... |
 | "GPU out of memory" | Reducir `n_steps` en config; usar `--device cpu` |
 | "Reward NaN" | Verificar weights sum ~1.0; check obs scaling |
 | "Import error agents" | Verificar `src/` en PYTHONPATH |
-| "Checkpoint load failed" | Limpiar `checkpoints/` o verificar compatibilidad de versión |
+| "Checkpoint load failed" | Limpiar `checkpoints/` o... |
 
 ---
 

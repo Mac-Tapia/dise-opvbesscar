@@ -26,7 +26,8 @@
 | **RECOMENDADO*** | **0.65** | **0.75** | **32** | **128** | **2,823 kWh** | **1,672** | **12,205,600** |
 | MÁXIMO | 1.00 | 1.00 | 35 | 140 | 5,800 kWh | 2,575 | 18,797,500 |
 
-> **Nota**: PE = Probabilidad de Evento de carga, FC = Factor de Carga (% de batería a recargar)
+> **Nota**: PE = Probabilidad de Evento de carga, FC = Factor de Carga (% de
+batería a recargar)
 
 ---
 
@@ -71,10 +72,12 @@
 
 - **128 tomas físicas** = 272 kW total
 - **Pico de 4 horas**: ~900 motos + ~130 mototaxis (para DIMENSIONAR, PE=1.0)
-- **Operación RECOMENDADO (PE=0.65)**: 128 tomas atienden **~1,672 vehículos/día**
+- **Operación RECOMENDADO (PE=0.65)**: 128 tomas atienden **~1,672
+  - vehículos/día**
 - **Operación MÁXIMO (PE=1.0)**: 128 tomas atienden **~2,575 vehículos/día**
 - **Modo 3 (IEC 61851)**: Carga lenta, segura, cada 30 min → nuevo vehículo
-- **Multiplex**: 13 horas = 26 intervalos de 30 min → muchos más vehículos por toma
+- **Multiplex**: 13 horas = 26 intervalos de 30 min → muchos más vehículos por
+  - toma
 
 ---
 
@@ -127,14 +130,16 @@ Cada **toma es una unidad controlable independiente** en el momento de carga:
 - 112 tomas = 112 unidades controlables
 - Cada toma: potencia 0-2 kW (reducción de velocidad, pausa, etc.)
 - Control granular: decidir qué tomas cargan a potencia máxima vs reducida
-- Observable: `MOTO_CH_001_ev_charging_power`, ..., `MOTO_CH_112_ev_charging_power`
+- Observable: `MOTO_CH_001_ev_charging_power`, ...,
+  - `MOTO_CH_112_ev_charging_power`
 
 **Playa Mototaxis (4 cargadores × 4 tomas = 16 tomas)**:
 
 - 16 tomas = 16 unidades controlables
 - Cada toma: potencia 0-3 kW (reducción de velocidad, pausa, etc.)
 - Control granular: decidir qué tomas cargan a potencia máxima vs reducida
-- Observable: `MOTO_TAXI_CH_113_ev_charging_power`, ..., `MOTO_TAXI_CH_128_ev_charging_power`
+- Observable: `MOTO_TAXI_CH_113_ev_charging_power`, ...,
+  - `MOTO_TAXI_CH_128_ev_charging_power`
 
 ### 📊 Niveles de Control en CityLearn
 

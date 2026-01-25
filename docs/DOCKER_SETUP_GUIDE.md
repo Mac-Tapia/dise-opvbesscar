@@ -160,5 +160,6 @@ python k8s_manager.py mongo shell
 ---
 
 **Last Updated**: 2026-01-20  
-**Files Updated**: docker-compose.yml, docker-compose.gpu.yml, docker-compose.dev.yml  
+**Files Updated**: docker-compose.yml, docker-compose.gpu.yml,
+docker-compose.dev.yml
 **Status**: Ready for Docker deployment

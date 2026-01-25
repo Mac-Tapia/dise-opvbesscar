@@ -141,7 +141,8 @@ M  src/iquitos_citylearn/oe3/dataset_builder.py
 1. Install Python 3.11 (follow guide)
 2. Install CityLearn v2.5+
 3. Review PHASE_8_COMPLETE_GUIDE.md Quick Start
-4. Run training: `python scripts/train_agents_serial.py --device cuda --episodes 50`
+4. Run training: `python scripts/train_agents_serial.py --device cuda
+--episodes 50`
 
 ### Phase 8 Execution
 

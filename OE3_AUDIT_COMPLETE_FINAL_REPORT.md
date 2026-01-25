@@ -37,7 +37,8 @@
 
 - **IDENTIFIED CRITICAL BUG**: BESS SOC prescaled to 0.001 (invisible to agents)
 - **IMPACT**: 15-25% loss in potential BESS control effectiveness
-- **FIXED IN**: agents/ppo_sb3.py (line 249), a2c_sb3.py (line 151), sac.py (line 493)
+- **FIXED IN**: agents/ppo_sb3.py (line 249), a2c_sb3.py (line 151), sac.py
+  - (line 493)
 - **Solution**: Selective prescaling (power 0.001, SOC 1.0)
 - **Verification**: All data connections validated
 - **Status**: ✅ Complete - CRITICAL BUG FIXED
@@ -341,8 +342,8 @@ experimental/                             (Archived legacy code)
 | Document | Purpose | Status |
 |----------|---------|--------|
 | [AUDITORIA_OE3_LIMPIEZA_FINAL.md](AUDITORIA_OE3_LIMPIEZA_FINAL.md) | Detailed cleanup plan & analysis | ✅ Complete |
-| [OE3_CLEANUP_VALIDATION_FINAL.md](OE3_CLEANUP_VALIDATION_FINAL.md) | Full validation report with test results | ✅ Complete |
-| [CLEANUP_QUICK_REFERENCE.txt](CLEANUP_QUICK_REFERENCE.txt) | One-page summary for quick reference | ✅ Complete |
+| [OE3_CLEANUP_VALIDATION_FINAL.md](OE3_CLEANUP_VALIDATION_FINAL.md) | Full validation report... | ✅ Complete |
+| [CLEANUP_QUICK_REFERENCE.txt](CLEANUP_QUICK_REFERENCE.txt) | One-page summary... | ✅ Complete |
 | [validate_oe2_oe3_connections.py](validate_oe2_oe3_connections.py) | Automated data validation script | ✅ Executable |
 | [.github/copilot-instructions.md](.github/copilot-instructions.md) | Comprehensive Copilot instructions | ✅ Complete |
 
@@ -444,7 +445,8 @@ NEW (5 files):
 
 ### Recommended Action
 
-🚀 **PROCEED WITH FULL TRAINING**: Execute `train_agents_serial.py` for 50 episodes with CUDA GPU support
+🚀 **PROCEED WITH FULL TRAINING**: Execute `train_agents_serial.py`for 50
+episodes with CUDA GPU support
 
 ---
 

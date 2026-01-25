@@ -8,9 +8,13 @@
 
 Si **ACABAS DE LLEGAR**, empieza por:
 
-1. [SAC_TIER2_RESUMEN_EJECUTIVO.md](#sac_tier2_resumen_ejecutivomd) (5 min) - Visión de alto nivel
-2. [SAC_TIER2_OPTIMIZATION.md](#sac_tier2_optimizationmd) (15 min) - Explicación completa
-3. [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](#sac_tier2_implementation_step_by_stepmd) (ejecutar - 2h)
+1. [SAC_TIER2_RESUMEN_EJECUTIVO.md](#sac_tier2_resumen_ejecutivomd) (5 min) -
+Visión de alto nivel
+2. [SAC_TIER2_OPTIMIZATION.md](#sac_tier2_optimizationmd) (15 min) -
+Explicación completa
+3. [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md][ref] (ejecutar - 2h)
+
+[ref]: #sac_tier2_implementation_step_by_stepmd
 
 ---
 
@@ -18,7 +22,8 @@ Si **ACABAS DE LLEGAR**, empieza por:
 
 ### `SAC_TIER2_RESUMEN_EJECUTIVO.md` ⭐⭐⭐
 
-**Para**: Decisores, ejecutivos, alguien que quiere saber QUÉ se va a hacer y POR QUÉ
+**Para**: Decisores, ejecutivos, alguien que quiere saber QUÉ se va a hacer y
+POR QUÉ
 **Contenido**:
 
 - Estado actual SAC
@@ -33,7 +38,8 @@ Si **ACABAS DE LLEGAR**, empieza por:
 
 ### `SAC_TIER2_OPTIMIZATION.md` ⭐⭐⭐⭐
 
-**Para**: Científicos de datos, investigadores, alguien que quiere entender FONDO
+**Para**: Científicos de datos, investigadores, alguien que quiere entender
+FONDO
 **Contenido**:
 
 - Análisis situación actual (TIER 1 problems)
@@ -200,7 +206,8 @@ También disponibles en repositorio:
 - `STATUS_DASHBOARD_TIER1.md` - Estado TIER 1 fixes (visual)
 - `VALIDACIÓN_Y_OPTIMIZACIÓN_FINAL.md` - Plan global (todas fases)
 - `CHECKPOINT_QUICK_REFERENCE.md` - Checkpoint reference
-- Código: `src/iquitos_citylearn/oe3/{rewards.py, agents/sac.py, enriched_observables.py}`
+- Código: `src/iquitos_citylearn/oe3/{rewards.py, agents/sac.py,
+  - enriched_observables.py}`
 
 ---
 
@@ -229,7 +236,8 @@ Si necesitas background sobre SAC (Soft Actor-Critic):
 1. **Todos los cambios son REVERSIBLES** - Git permite revert fácil
 2. **Cambios NO destruyen checkpoint** - Solo mejoran estrategia
 3. **TIER 2 es independiente de TIER 1** - Puedes hacer aunque TIER 1 falle
-4. **Plan es modular** - Puedes hacer cambios 1, 2, 3 en cualquier orden (aunque recomendamos 1→2→3)
+4. **Plan es modular** - Puedes hacer cambios 1, 2, 3 en cualquier orden
+(aunque recomendamos 1→2→3)
 5. **Documentación es copy-paste ready** - 80% del código está listo para pegar
 
 ---
@@ -244,8 +252,9 @@ Si TIER 2 tiene éxito (convergencia 2x + CO₂ -15%):
 
 ---
 
-**Creado**: 2025-02-13 | **Status**: ✅ LISTO | **Duración total**: 5 horas (30 min lectura + 3 h código + 24 h train + 2 h análisis)
+**Creado**: 2025-02-13 | **Status**: ✅ LISTO | **Duración total**: 5 horas (30 min lectura + 3... 
 
 **¿Preguntas?** Ver FAQ en RESUMEN_EJECUTIVO.md
 
-**Comienza por**: [SAC_TIER2_RESUMEN_EJECUTIVO.md](SAC_TIER2_RESUMEN_EJECUTIVO.md)
+**Comienza por**:
+[SAC_TIER2_RESUMEN_EJECUTIVO.md](SAC_TIER2_RESUMEN_EJECUTIVO.md)

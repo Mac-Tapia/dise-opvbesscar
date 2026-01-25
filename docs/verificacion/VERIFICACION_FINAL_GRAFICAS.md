@@ -6,7 +6,9 @@
 
 ## 📊 Resumen Ejecutivo
 
-Se ha completado **exitosamente** la regeneración de **TODAS LAS 25 GRÁFICAS** utilizando datos **100% REALES** extraídos de los checkpoints entrenados de los agentes (PPO, A2C, SAC).
+Se ha completado **exitosamente** la regeneración de **TODAS LAS 25 GRÁFICAS**
+utilizando datos **100% REALES** extraídos de los checkpoints entrenados de los
+agentes (PPO, A2C, SAC).
 
 ### Timestamp Final
 
@@ -138,7 +140,8 @@ Todas las gráficas verificadas
 
 **Carpeta**: `d:\diseñopvbesscar\analyses\oe3\training\plots/`
 
-Todas las 25 gráficas están centralizadas en una única carpeta con acceso directo.
+Todas las 25 gráficas están centralizadas en una única carpeta con acceso
+directo.
 
 ---
 
@@ -208,7 +211,8 @@ Todas las 25 gráficas están centralizadas en una única carpeta con acceso dir
 La tarea de regeneración de gráficas se ha completado **exitosamente**:
 
 ✅ **Regeneradas**: 25 gráficas PNG
-✅ **Fuente**: 100% real de checkpoints (PPO: 18,432, A2C: 17,536, SAC: 17,520 timesteps)
+✅ **Fuente**: 100% real de checkpoints (PPO: 18,432, A2C: 17,536, SAC: 17,520
+timesteps)
 ✅ **Consolidadas**: 1 carpeta central
 ✅ **Verificadas**: Integridad y tamaño confirmados
 ✅ **Documentadas**: Metadatos y referencias actualizadas

@@ -1,4 +1,5 @@
-# AUDITORÍA EXHAUSTIVA: AGENTS FOLDER - Conexión OE2, Datos Reales y Correcciones
+# AUDITORÍA EXHAUSTIVA: AGENTS FOLDER - Conexión OE2, Datos Reales y
+Correcciones
 
 **Fecha**: 2026-01-25  
 **Estado**: 🔴 **CRÍTICO RESUELTO** + 🟢 **MEJORAS IMPLEMENTADAS**
@@ -7,10 +8,12 @@
 
 ## RESUMEN EJECUTIVO
 
-Se ha realizado una **auditoría exhaustiva a nivel arquitectónico** de los 6 archivos agents para verificar:
+Se ha realizado una **auditoría exhaustiva a nivel arquitectónico** de los 6
+archivos agents para verificar:
 
 1. ✅ Conexión correcta con datos OE2 (solar, chargers, BESS)
-2. 🔴 **PROBLEMA CRÍTICO IDENTIFICADO**: BESS SOC prescalado a 0.001 lo hace invisible
+2. 🔴 **PROBLEMA CRÍTICO IDENTIFICADO**: BESS SOC prescalado a 0.001 lo hace
+invisible
 3. ✅ **SOLUCIÓN IMPLEMENTADA**: Prescalado selectivo por tipo observable  
 4. ✅ Correcciones de tipeo y código
 5. ✅ Mejoras de robustez
@@ -114,7 +117,8 @@ for b in buildings:
 - ✅ Patrón: Máximo en junio, mínimo en diciembre
 - ✅ Prescalado: 0.001 correcto para potencias
 
-**Datos Reales**: ✅ Provienen de PVGIS TMY (datos climáticos reales Iquitos 5.5°S, 73.3°W)
+**Datos Reales**: ✅ Provienen de PVGIS TMY (datos climáticos reales Iquitos
+5.5°S, 73.3°W)
 
 ---
 
@@ -189,7 +193,8 @@ hour,power_kw,is_peak
 - ✅ Peaks: 18:00-21:00 (406.5 kW)
 - ✅ Prescalado: 0.001 correcto para potencias
 
-**Datos Reales**: ✅ Simulación MATLAB de 3,061 vehículos/día con 92% utilización (datos operacionales reales)
+**Datos Reales**: ✅ Simulación MATLAB de 3,061 vehículos/día con 92%
+utilización (datos operacionales reales)
 
 ---
 
@@ -244,14 +249,15 @@ if storage:
 
 ### Categoría 1: Bare Exceptions (Seguridad de Código)
 
-**Problema**: `except Exception:` captura TODO, incluyendo errores de programación
+**Problema**: `except Exception:`captura TODO, incluyendo errores de
+programación
 
 **Archivos Corregidos**:
 
 | Archivo | Línea | ANTES | DESPUÉS |
 |---------|-------|-------|---------|
-| ppo_sb3.py | 307 | `except Exception:` | `except (AttributeError, IndexError, ...):` |
-| a2c_sb3.py | 213 | `except Exception:` | `except (AttributeError, TypeError, ...):` |
+| ppo_sb3.py | 307 | `except Exception:` | `except (AttributeError,... |
+| a2c_sb3.py | 213 | `except Exception:` | `except (AttributeError,... |
 | sac.py | 46+ | `except Exception:` | `except (ValueError, TypeError, ...):` |
 
 **Impacto**: Mejor debuggabilidad, errores específicos con logging
@@ -388,7 +394,8 @@ Training
 
 1. ✅ Implementar fix de BESS prescaling (DONE)
 2. ✅ Validar tipos y conexiones OE2 (DONE)
-3. [ ] Ejecutar entrenamiento con 5 episodios: `python scripts/train_agents_serial.py --device cuda --episodes 5`
+3. [ ] Ejecutar entrenamiento con 5 episodios:
+`python scripts/train_agents_serial.py --device cuda --episodes 5`
 4. [ ] Verificar que BESS SOC sea visible en logs (debe cambiar, no estar ~0)
 
 ### Validación Esperada

@@ -1,6 +1,7 @@
 # 🏗️ PVBESSCAR - RL Building Energy Management
 
-Documentación oficial del proyecto PVBESSCAR (PV-BESS-CAR) para gestión inteligente de energía en edificios usando Reinforcement Learning.
+Documentación oficial del proyecto PVBESSCAR (PV-BESS-CAR) para gestión
+inteligente de energía en edificios usando Reinforcement Learning.
 
 ## 📚 Tabla de Contenidos
 
@@ -17,7 +18,8 @@ deployment
 
 ## 🎯 Descripción General
 
-PVBESSCAR es un sistema de gestión inteligente de energía para edificios que integra:
+PVBESSCAR es un sistema de gestión inteligente de energía para edificios que
+integra:
 
 - **Paneles Solares (PV)**: Generación de energía renovable
 - **Baterías (BESS)**: Almacenamiento de energía
@@ -72,9 +74,12 @@ python EVALUACION_METRICAS_COMPLETAS.py
 
 ## 📖 Documentación Disponible
 
-- [RESUMEN_SESION_CONSOLIDACION_20260119.md](../RESUMEN_SESION_CONSOLIDACION_20260119.md): Resumen de limpieza del proyecto
-- [PROXIMOSPASOS_OPCIONES_CONTINUACION.md](../PROXIMOSPASOS_OPCIONES_CONTINUACION.md): Opciones de continuación
-- [plots/README.md](../analyses/oe3/training/plots/README.md): Índice de gráficas
+- [RESUMEN_SESION_CONSOLIDACION_20260119.md](../RESUMEN_SESION_CONSOLIDACION_20260119.md):
+- Resumen de limpieza del proyecto
+- [PROXIMOSPASOS_OPCIONES_CONTINUACION.md](../PROXIMOSPASOS_OPCIONES_CONTINUACION.md):
+- Opciones de continuación
+- [plots/README.md](../analyses/oe3/training/plots/README.md): Índice de
+  - gráficas
 
 ## 🔗 Enlaces Útiles
 

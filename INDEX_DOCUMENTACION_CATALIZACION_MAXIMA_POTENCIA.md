@@ -1,6 +1,6 @@
 # 📑 ÍNDICE DE DOCUMENTACIÓN - CATALIZACION MÁXIMA POTENCIA INDIVIDUAL
 
-**Fecha**: 2026-01-24 | **Versión**: MÁXIMA POTENCIA INDIVIDUAL v2.0 | **Estado**: ✅ COMPLETO
+**Fecha**: 2026-01-24 | **Versión**: MÁXIMA... | **Estado**: ✅ COMPLETO
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Archivo | Descripción | Ubicación | Función |
 |---------|-------------|-----------|---------|
-| **CONFIGURACIONES_INDIVIDUALES_MAXIMA_POTENCIA.md** | Documentación detallada de cada agente | `docs/` | 📖 Entender configuraciones |
+| **CONFIGURACIONES_INDIVIDUALES_MAXIMA_POTENCIA.md** | Documentación detallada... | `docs/` | 📖 Entender configuraciones |
 | **RESUMEN_POTENCIA_MAXIMA_INDIVIDUAL.txt** | Resumen visual con tablas | Raíz | 📊 Vista rápida |
 | **RESUMEN_EJECUTIVO_CATALIZACION_MAXIMA_POTENCIA.txt** | Ejecutivo visual completo | Raíz | 🎯 Visión general |
 | **STATUS_CATALIZACION_MAXIMA_POTENCIA.txt** | Estado actual del sistema | Raíz | ✅ Verificación |
@@ -26,9 +26,9 @@
 
 | Archivo | Cambios | Ubicación | Impacto |
 |---------|---------|-----------|---------|
-| **sac.py** | LR 1.5e-4, Batch 512, Buffer 1M, Tau 0.001, Hidden 1024x1024 | `src/iquitos_citylearn/oe3/agents/` | 🔴 SAC Optimizado |
-| **ppo_sb3.py** | LR 2.0e-4, Batch 128, N Steps 2048, Clip 0.1, Hidden 1024x1024 | `src/iquitos_citylearn/oe3/agents/` | 🟢 PPO Optimizado |
-| **a2c_sb3.py** | LR 1.5e-4, N Steps 2048, GAE 0.95, VF 0.7, Hidden 1024x1024 | `src/iquitos_citylearn/oe3/agents/` | 🔵 A2C Optimizado |
+| **sac.py** | LR 1.5e-4, Batch 512, Buffer... | `src/iquitos_citylearn/oe3/agents/` | 🔴 SAC Optimizado |
+| **ppo_sb3.py** | LR 2.0e-4, Batch 128, N... | `src/iquitos_citylearn/oe3/agents/` | 🟢 PPO Optimizado |
+| **a2c_sb3.py** | LR 1.5e-4, N Steps 2048,... | `src/iquitos_citylearn/oe3/agents/` | 🔵 A2C Optimizado |
 
 ---
 
@@ -92,7 +92,8 @@ d:\diseñopvbesscar/
    - `src/iquitos_citylearn/oe3/agents/sac.py` (líneas 122-170)
    - `src/iquitos_citylearn/oe3/agents/ppo_sb3.py` (líneas 48-85)
    - `src/iquitos_citylearn/oe3/agents/a2c_sb3.py` (líneas 44-70)
-3. Ejecutar verificación: `python scripts/verificar_configuraciones_maxima_potencia.py`
+3. Ejecutar verificación:
+`python scripts/verificar_configuraciones_maxima_potencia.py`
 
 ---
 
@@ -379,7 +380,8 @@ NUEVAS CARACTERÍSTICAS:
 
 ## 🎊 CONCLUSIÓN
 
-**Hemos completado la catalizacion a máxima potencia individual de los 3 agentes.**
+**Hemos completado la catalizacion a máxima potencia individual de los 3
+agentes.**
 
 Cada uno tiene:
 

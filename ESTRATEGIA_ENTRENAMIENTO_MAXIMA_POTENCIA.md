@@ -6,10 +6,18 @@
 
 ## 📋 ÍNDICE DE ESTRATEGIAS
 
-1. [Opción 1: Entrenamiento Secuencial (Recomendado)](#opción-1-entrenamiento-secuencial-recomendado)
-2. [Opción 2: Entrenamiento Paralelo en GPUs](#opción-2-entrenamiento-paralelo-en-gpus)
-3. [Opción 3: Entrenamiento Individual Rápido](#opción-3-entrenamiento-individual-rápido)
-4. [Opción 4: Entrenamiento de Prueba (5 episodios)](#opción-4-entrenamiento-de-prueba-5-episodios)
+1. [Opción 1: Entrenamiento Secuencial (Recomendado)][ref]
+
+[ref]: #opción-1-entrenamiento-secuencial-recomendado
+2. [Opción 2: Entrenamiento Paralelo en GPUs][ref]
+
+[ref]: #opción-2-entrenamiento-paralelo-en-gpus
+3. [Opción 3: Entrenamiento Individual Rápido][ref]
+
+[ref]: #opción-3-entrenamiento-individual-rápido
+4. [Opción 4: Entrenamiento de Prueba (5 episodios)][ref]
+
+[ref]: #opción-4-entrenamiento-de-prueba-5-episodios
 5. [Monitoreo y Resultados](#monitoreo-y-resultados)
 
 ---

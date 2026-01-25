@@ -176,8 +176,10 @@ for scen in sorted(motos)[:3]:
 ## 📝 NOTAS IMPORTANTES
 
 1. **Escenarios:** Los 101 escenarios están listos para training inmediato
-2. **Markdown:** Aún hay ~320 errores en linters (mayormente tables), pero la funcionalidad no está afectada
-3. **Control:** Cada charger es individualmente controlable (128 acciones discretas)
+2. **Markdown:** Aún hay ~320 errores en linters (mayormente tables), pero la
+funcionalidad no está afectada
+3. **Control:** Cada charger es individualmente controlable (128 acciones
+discretas)
 4. **Demanda:** Modelo multiplex realista con 30-min sessions
 5. **Data:** 113.3M puntos para análisis exhaustivo de comportamiento RL
 

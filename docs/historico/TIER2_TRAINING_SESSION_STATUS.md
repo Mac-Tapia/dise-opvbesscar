@@ -48,7 +48,8 @@
 
 ### 3. Scripts de Entrenamiento
 
-- ✅ `train_tier2_serial_fixed.py` - Script corregido con parámetros válidos para `simulate()`
+- ✅ `train_tier2_serial_fixed.py` - Script corregido con parámetros válidos
+  - para `simulate()`
 
 ### 4. Git Commits
 
@@ -178,4 +179,5 @@ outputs/oe3/training/tier2_2ep_serial/
 
 **Status**: 🟢 ENTRENAMIENTO EN PROGRESO
 **Última actualización**: 2026-01-18 19:25:54
-**Monitoreo**: Verificar terminal bcbad086-ec29-433c-b4c4-d25563704e8e cada 5 min
+**Monitoreo**: Verificar terminal bcbad086-ec29-433c-b4c4-d25563704e8e cada 5
+min

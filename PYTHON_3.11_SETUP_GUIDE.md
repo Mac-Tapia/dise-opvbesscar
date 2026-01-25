@@ -5,8 +5,10 @@
 **Current Status**:
 
 - System Python: 3.13.9 (installed)
-- Project Configuration: 3.11 only (specified in `pyproject.toml`, `setup.py`, `.python-version`)
-- Issue: CityLearn (via scikit-learn) **FAILS** to compile on Python 3.13 with Cython errors
+- Project Configuration: 3.11 only (specified in `pyproject.toml`, `setup.py`,
+  - `.python-version`)
+- Issue: CityLearn (via scikit-learn) **FAILS** to compile on Python 3.13 with
+  - Cython errors
 
 ## Problem
 
@@ -209,7 +211,8 @@ The following files have been updated to enforce Python 3.11:
 - ✅ `pyproject.toml` - requires-python = ">=3.11,<3.12"
 - ✅ `setup.py` - python_requires = ">=3.11,<3.12"
 - ✅ `.github/workflows/test-and-lint.yml` - python-version: ["3.11"]
-- ✅ `scripts/analysis/EJECUTAR_OPCION_4_INFRAESTRUCTURA.py` - Classifiers updated
+- ✅ `scripts/analysis/EJECUTAR_OPCION_4_INFRAESTRUCTURA.py` - Classifiers
+  - updated
 
 ---
 
@@ -246,11 +249,13 @@ The following files have been updated to enforce Python 3.11:
 
 ## References
 
-- **Python 3.11 Downloads**: <https://www.python.org/downloads/release/python-3110/>
+- **Python 3.11 Downloads**:
+  - <https://www.python.org/downloads/release/python-3110/>
 - **pyenv-win**: <https://github.com/pyenv-win/pyenv-win>
 - **Chocolatey**: <https://chocolatey.org/>
 - **Project README**: [README.md](README.md)
-- **Copilot Instructions**: [.github/copilot-instructions.md](.github/copilot-instructions.md)
+- **Copilot Instructions**:
+  - [.github/copilot-instructions.md](.github/copilot-instructions.md)
 
 ---
 

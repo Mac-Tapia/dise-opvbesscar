@@ -92,7 +92,9 @@ Cómo ejecutar y configurar
 - Cambios de PPO y A2C
 - Pasos de migración
 
-#### 📍 [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md)
+#### 📍 [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md][ref]
+
+[ref]: SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md
 
 - Implementación detallada de SAC TIER 2
 - Normalización adaptativa
@@ -105,7 +107,9 @@ Cómo ejecutar y configurar
 
 Informes técnicos y análisis
 
-#### 📍 [INFORME_UNICO_ENTRENAMIENTO_TIER2.md](INFORME_UNICO_ENTRENAMIENTO_TIER2.md)
+#### 📍 [INFORME_UNICO_ENTRENAMIENTO_TIER2.md][ref]
+
+[ref]: INFORME_UNICO_ENTRENAMIENTO_TIER2.md
 
 - Único informe consolidado de entrenamientos
 - Métricas por agente
@@ -124,7 +128,9 @@ Informes técnicos y análisis
 - Tabla 13 OE2 con todos los escenarios
 - Vehículos cargados hasta 20 años
 
-#### 📍 [DATASETS_OE3_RESUMEN_2026_01_24.md](DATASETS_OE3_RESUMEN_2026_01_24.md) 🆕
+#### 📍 [DATASETS_OE3_RESUMEN_2026_01_24.md][ref] 🆕
+
+[ref]: DATASETS_OE3_RESUMEN_2026_01_24.md
 
 - **Datasets OE3 CityLearn v2** (2026-01-24)
 - 128 tomas controlables (32 cargadores × 4 tomas)
@@ -139,7 +145,9 @@ Informes técnicos y análisis
 - Tabla 13 OE2 con 4 escenarios
 - RECOMENDADO: 1,672 vehículos/día, 12.2M en 20 años
 
-#### 📍 [AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md](AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md)
+#### 📍 [AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md][ref]
+
+[ref]: AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md
 
 - Auditoría de recompensas
 - Análisis de observables
@@ -162,7 +170,9 @@ Histórico de sesiones y status
 - Estado actual de entrenamientos TIER 2
 - Progreso de cada agente
 
-#### 📍 [ENTRENAMIENTO_LANZADO_2026_01_18.md](ENTRENAMIENTO_LANZADO_2026_01_18.md)
+#### 📍 [ENTRENAMIENTO_LANZADO_2026_01_18.md][ref]
+
+[ref]: ENTRENAMIENTO_LANZADO_2026_01_18.md
 
 - Registro de lanzamiento 18 Enero 2026
 - Parámetros iniciales
@@ -204,7 +214,9 @@ Informes de correcciones y cleanup
 - Verificación de configuración
 - Archivos validados
 
-#### 📍 [LIMPIEZA_Y_CORRECCIONES_20260118.md](LIMPIEZA_Y_CORRECCIONES_20260118.md)
+#### 📍 [LIMPIEZA_Y_CORRECCIONES_20260118.md][ref]
+
+[ref]: LIMPIEZA_Y_CORRECCIONES_20260118.md
 
 - Limpieza realizada 18 Enero
 - Correcciones aplicadas
@@ -226,7 +238,9 @@ Informes de correcciones y cleanup
 
 - Mejoras v2 de TIER 2
 
-#### 📍 [COMPLETION_SUMMARY_101_SCENARIOS.md](COMPLETION_SUMMARY_101_SCENARIOS.md)
+#### 📍 [COMPLETION_SUMMARY_101_SCENARIOS.md][ref]
+
+[ref]: COMPLETION_SUMMARY_101_SCENARIOS.md
 
 - Resumen de 101 escenarios completados
 
@@ -240,7 +254,7 @@ Informes de correcciones y cleanup
 | -------- | ------------------ | -------- |
 | **PPO** | COMPARATIVA_AGENTES_FINAL_TIER2.md, PPO_A2C_TIER2_MASTER_PLAN.md | ✅ Completado |
 | **A2C** | COMPARATIVA_AGENTES_FINAL_TIER2.md, PPO_A2C_TIER2_MASTER_PLAN.md | ✅ Completado |
-| **SAC** | 7 documentos específicos, SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md | ✅ Completado |
+| **SAC** | 7 documentos... | ✅ Completado |
 
 ### **Por Actividad**
 
@@ -320,7 +334,8 @@ docs/
 ### **Código y Scripts**
 
 - 🐍 Scripts de entrenamiento: `*.py` en carpeta raíz
-- ✓ Scripts de evaluación: `EVALUACION_MODELOS_SIMPLE.py`, `EVALUACION_METRICAS_MODELOS.py`
+- ✓ Scripts de evaluación: `EVALUACION_MODELOS_SIMPLE.py`,
+  - `EVALUACION_METRICAS_MODELOS.py`
 
 ### **Checkpoints Entrenados**
 
@@ -346,8 +361,10 @@ docs/
 
 1. **Orden de lectura**: Seguir la estructura de niveles (Nivel 1 → Nivel 8)
 2. **Actualización**: Este índice se actualiza después de cada sesión
-3. **Redundancia**: Algunos documentos pueden tener información duplicada (intencional para modularidad)
-4. **Recomendación**: Para nueva sesión, actualizar solo los documentos de Nivel 5 (Estado) y agregar nivel 9 (Nueva sesión)
+3. **Redundancia**: Algunos documentos pueden tener información duplicada
+(intencional para modularidad)
+4. **Recomendación**: Para nueva sesión, actualizar solo los documentos de
+Nivel 5 (Estado) y agregar nivel 9 (Nueva sesión)
 
 ---
 

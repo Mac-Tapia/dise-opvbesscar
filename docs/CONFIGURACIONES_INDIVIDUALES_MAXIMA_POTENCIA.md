@@ -8,7 +8,8 @@
 
 ## 🎯 ESTRATEGIA DE OPTIMIZACIÓN
 
-Cada agente está optimizado **individualmente** para explotar sus fortalezas únicas:
+Cada agente está optimizado **individualmente** para explotar sus fortalezas
+únicas:
 
 - **SAC**: Off-policy, mucha memoria, soft updates → Mayor capacidad
 - **PPO**: On-policy, clipping, epochs → Convergencia suave
@@ -53,12 +54,12 @@ class SACConfig:
 
 | Parámetro | Valor | Razón |
 |-----------|-------|-------|
-| **Batch Size** | 512 | SAC es off-policy, puede procesar batches grandes sin inestabilidad |
+| **Batch Size** | 512 | SAC es off-policy, puede... |
 | **Buffer Size** | 1M | Más experiencias diversas = mejor generalización |
-| **Learning Rate** | 1.5e-4 | SAC es sensible a LR alto, 1.5e-4 garantiza suavidad |
+| **Learning Rate** | 1.5e-4 | SAC es sensible a... |
 | **Gamma** | 0.999 | Horizonte largo (8760 pasos/ep), necesita gamma alto |
 | **Tau** | 0.001 | Soft updates lentos mantienen estabilidad |
-| **Hidden (1024,1024)** | 4M params | Capacidad para 900 obs + 126 actions + multiobjetivo |
+| **Hidden (1024,1024)** | 4M params | Capacidad para 900 obs... |
 | **Entropy auto** | Adaptivo | Ajusta exploración dinámicamente |
 
 ### Rendimiento Esperado SAC
@@ -120,7 +121,7 @@ class PPOConfig:
 
 | Parámetro | Valor | Razón |
 |-----------|-------|-------|
-| **Train Steps** | 1M | 2x de 500k para mejor convergencia en problema complejo |
+| **Train Steps** | 1M | 2x de 500k para... |
 | **N Steps** | 2048 | On-policy necesita MUCHAS muestras por update |
 | **Batch Size** | 128 | Pequeño para PPO, pero procesa 16x en 20 epochs |
 | **N Epochs** | 20 | 20 updates × 128 batch = 2560 actualizaciones |

@@ -162,7 +162,8 @@ python scripts/train_gpu_robusto.py --agent SAC --episodes 5 --device cpu
 python scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda --resume
 ```bash
 
-**Nota**: El script busca automáticamente el último checkpoint y continúa desde ahí.
+**Nota**: El script busca automáticamente el último checkpoint y continúa desde
+ahí.
 
 ---
 
@@ -187,7 +188,8 @@ training/oe3/progress/
 └── a2c_progress.csv
 ```bash
 
-**Contenido**: timestamp, agent, episode, episode_reward, episode_length, global_step
+**Contenido**: timestamp, agent, episode, episode_reward, episode_length,
+global_step
 
 ---
 
@@ -230,7 +232,8 @@ O usar Excel/Pandas para graficar `episode_reward` vs `episode`.
 2. El script guardará el checkpoint actual
 3. Espera a que termine el episodio en curso (~5-10 min)
 
-⚠️ **No presiones** `Ctrl+C` múltiples veces o perderás el progreso del episodio actual.
+⚠️ **No presiones** `Ctrl+C`múltiples veces o perderás el progreso del episodio
+actual.
 
 ---
 
@@ -241,7 +244,8 @@ O usar Excel/Pandas para graficar `episode_reward` vs `episode`.
 python scripts/train_gpu_robusto.py --agent SAC --episodes 50 --device cuda
 ```bash
 
-**Nota**: Asegúrate de usar el **mismo número de episodios** (o más) que la ejecución anterior.
+**Nota**: Asegúrate de usar el **mismo número de episodios** (o más) que la
+ejecución anterior.
 
 ---
 

@@ -2,7 +2,8 @@
 
 ## 🎯 ¿Qué es PVBESSCAR?
 
-**PVBESSCAR** es un sistema de **gestión inteligente de energía en edificios** usando **Inteligencia Artificial**:
+**PVBESSCAR** es un sistema de **gestión inteligente de energía en edificios**
+usando **Inteligencia Artificial**:
 
 - 📊 **Monitorea** consumo de energía
 - ☀️ **Optimiza** generación solar

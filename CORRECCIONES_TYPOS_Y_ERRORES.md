@@ -7,13 +7,16 @@
 
 ## 📋 RESUMEN DE CORRECCIONES
 
-Se han revisado y corregido todos los archivos de la carpeta `src/iquitos_citylearn/oe3/agents/` para eliminar typos, errores de tipo (type hints), problemas de logging y errores de inicialización.
+Se han revisado y corregido todos los archivos de la carpeta
+`src/iquitos_citylearn/oe3/agents/`para eliminar typos, errores de tipo (type
+hints), problemas de logging y errores de inicialización.
 
 ### Archivos Modificados
 
 1. **`ppo_sb3.py`** (842 → 851 líneas)
 2. **`a2c_sb3.py`** (697 → 706 líneas)
-3. Otros archivos revisados: `__init__.py`, `sac.py`, `agent_utils.py`, `validate_training_env.py`
+3. Otros archivos revisados: `__init__.py`, `sac.py`, `agent_utils.py`,
+`validate_training_env.py`
 
 ---
 
@@ -267,13 +270,18 @@ for z in sorted(zips)[:5]:
 
 ## 📝 NOTAS IMPORTANTES
 
-1. **Reward Stats**: Los atributos `_reward_mean` y `_reward_var` se inicializan en `CityLearnWrapper.__init__` para evitar errores de `AttributeError` durante `_update_reward_stats`.
+1. **Reward Stats**: Los atributos `_reward_mean`y `_reward_var`se inicializan
+en `CityLearnWrapper.__init__`para evitar errores de `AttributeError`durante
+`_update_reward_stats`.
 
-2. **Type Hints**: Se usa `Optional[Any]` para `self.model` y `self.wrapped_env` porque se asignan en el método `learn()`, no en `__init__`.
+2. **Type Hints**: Se usa `Optional[Any]`para `self.model`y `self.wrapped_env`
+porque se asignan en el método `learn()`, no en `__init__`.
 
-3. **Logging Format**: Se utiliza `%` formatting (lazy) en lugar de f-strings para mejor performance en logging (standard recommendation de Python logging).
+3. **Logging Format**: Se utiliza `%`formatting (lazy) en lugar de f-strings
+para mejor performance en logging (standard recommendation de Python logging).
 
-4. **Union Import**: Necesario en `a2c_sb3.py` para el tipo de retorno correcto en `_get_lr_schedule`.
+4. **Union Import**: Necesario en `a2c_sb3.py`para el tipo de retorno correcto
+en `_get_lr_schedule`.
 
 ---
 

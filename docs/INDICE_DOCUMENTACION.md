@@ -92,14 +92,18 @@
 
 ### 7. **COMPARACION_BASELINE_VS_RL.txt** ← 🧠 RESULTADOS + ARQUITECTURAS RL
 
-- Tablas comparativas (Baseline vs PPO/A2C/SAC) con métricas anuales (CO₂, costo, solar, picos, satisfacción EV, energía perdida).
+- Tablas comparativas (Baseline vs PPO/A2C/SAC) con métricas anuales (CO₂,
+  - costo, solar, picos, satisfacción EV, energía perdida).
 - Versión CityLearn v2 de los mismos agentes y métricas.
 - Arquitectura de cada agente:
-  - SAC: actor estocástico, doble crítico con redes objetivo y soft update (τ), replay buffer off-policy, loss α·logπ−Q, normalización de obs/reward.
-  - PPO: actor-crítico con clipping y GAE, actualizaciones on-policy por minibatch, entropía fija 0.02.
-  - A2C: actor-crítico on-policy, actualización síncrona cada n_steps, entropía para exploración, sin replay buffer.
+  - SAC: actor estocástico, doble crítico con redes objetivo y soft update (τ),
+    - replay buffer off-policy, loss α·logπ−Q, normalización de obs/reward.
+  - PPO: actor-crítico con clipping y GAE, actualizaciones on-policy por
+    - minibatch, entropía fija 0.02.
+  - A2C: actor-crítico on-policy, actualización síncrona cada n_steps, entropía
+    - para exploración, sin replay buffer.
 
-**Lectura:** 5-10 min | **Dificultad:** Intermedio | **Mejor para:** Comparar desempeño y entender diseño de agentes
+**Lectura:** 5-10 min | **Dificultad:** Intermedio | **Mejor para:** Comparar desempeño... 
 
 ---
 
@@ -113,7 +117,7 @@
 - Escenario MÁXIMO: ~2,298 kWh/día, ~9,269 vehículos/día
 - Scripts de generación y formato de archivos
 
-**Lectura:** 10 min | **Dificultad:** Intermedio | **Mejor para:** Entender datasets de entrenamiento
+**Lectura:** 10 min | **Dificultad:** Intermedio | **Mejor para:** Entender... 
 
 ---
 
@@ -125,7 +129,7 @@
 - Arquitectura de control por toma
 - Timeline operativo
 
-**Lectura:** 15 min | **Dificultad:** Intermedio | **Mejor para:** Entender operación de carga
+**Lectura:** 15 min | **Dificultad:** Intermedio | **Mejor para:** Entender... 
 
 ---
 
@@ -224,15 +228,20 @@ Interfaz web Flask para gestionar Docker
 
 ### **¿Cómo funciona?**
 
-→ [GUIA_FUNCIONAMIENTO_SIMULACION.md](GUIA_FUNCIONAMIENTO_SIMULACION.md) - Sección "Cómo Funciona en 5 Pasos"
+→ [GUIA_FUNCIONAMIENTO_SIMULACION.md][ref] - Sección "Cómo Funciona en 5 Pasos"
+
+[ref]: GUIA_FUNCIONAMIENTO_SIMULACION.md
 
 ### **¿Qué valores proporciona?**
 
-→ [GUIA_FUNCIONAMIENTO_SIMULACION.md](GUIA_FUNCIONAMIENTO_SIMULACION.md) - Sección "Valores que Debes Proporcionar"
+→ [GUIA_FUNCIONAMIENTO_SIMULACION.md][ref] - Sección "Valores que Debes Proporcionar"
+
+[ref]: GUIA_FUNCIONAMIENTO_SIMULACION.md
 
 ### **¿Cómo uso la API?**
 
-→ [RESUMEN_SIMULACION_COMPLETO.md](RESUMEN_SIMULACION_COMPLETO.md) - Sección "Endpoints de la API"
+→ [RESUMEN_SIMULACION_COMPLETO.md](RESUMEN_SIMULACION_COMPLETO.md) - Sección
+"Endpoints de la API"
 
 ### **¿Cómo simulo?**
 
@@ -240,7 +249,8 @@ Interfaz web Flask para gestionar Docker
 
 ### **¿Qué archivos creaste?**
 
-→ [RESUMEN_SIMULACION_COMPLETO.md](RESUMEN_SIMULACION_COMPLETO.md) - Sección "Archivos Creados"
+→ [RESUMEN_SIMULACION_COMPLETO.md](RESUMEN_SIMULACION_COMPLETO.md) - Sección
+"Archivos Creados"
 
 ### **¿Cómo instalo Docker?**
 
@@ -256,11 +266,14 @@ Interfaz web Flask para gestionar Docker
 
 ### **¿Cómo ahorro dinero?**
 
-→ [GUIA_FUNCIONAMIENTO_SIMULACION.md](GUIA_FUNCIONAMIENTO_SIMULACION.md) - Sección "Simulación Paso a Paso"
+→ [GUIA_FUNCIONAMIENTO_SIMULACION.md][ref] - Sección "Simulación Paso a Paso"
+
+[ref]: GUIA_FUNCIONAMIENTO_SIMULACION.md
 
 ### **¿Qué debe hacer IA?**
 
-→ [DIAGRAMAS_VISUALIZACION.md](DIAGRAMAS_VISUALIZACION.md) - Diagrama 8 "Matriz de Decisión"
+→ [DIAGRAMAS_VISUALIZACION.md](DIAGRAMAS_VISUALIZACION.md) - Diagrama 8 "Matriz
+de Decisión"
 
 ---
 
@@ -355,7 +368,8 @@ R: `py -3.11 simulador_interactivo.py` → Opción 7
 R: <http://localhost:8000/docs> (Swagger interactivo)
 
 #### P: ¿Cómo integro con mi sistema?
-R: [RESUMEN_SIMULACION_COMPLETO.md](RESUMEN_SIMULACION_COMPLETO.md) - Sección "Ejemplos de Uso"
+R: [RESUMEN_SIMULACION_COMPLETO.md](RESUMEN_SIMULACION_COMPLETO.md) - Sección
+"Ejemplos de Uso"
 
 #### P: ¿Cuál es el ahorro real?
 R: 20-75% en costo energético anual

@@ -9,7 +9,8 @@
 
 ## 🎯 OBJETIVO
 
-Verificar, limpiar y reorganizar gráficas de entrenamiento TIER 2 en carpeta única:
+Verificar, limpiar y reorganizar gráficas de entrenamiento TIER 2 en carpeta
+única:
 
 - ✅ Detectar gráficas vacías/duplicadas
 - ✅ Eliminar duplicados

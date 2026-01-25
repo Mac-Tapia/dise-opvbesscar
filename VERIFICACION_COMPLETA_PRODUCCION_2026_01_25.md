@@ -104,7 +104,8 @@ python verify_agents_production.py
 #### Requirements files:
 
 - `requirements.txt` - Dependencias principales (SIN CityLearn)
-- `requirements-phase7.txt` - Phase 7 core (numpy, pandas, torch, gymnasium, stable-baselines3, etc.)
+- `requirements-phase7.txt` - Phase 7 core (numpy, pandas, torch, gymnasium,
+  - stable-baselines3, etc.)
 - `requirements-phase8.txt` - Phase 8 ONLY (citylearn>=2.5.0)
 
 **Justificación:** CityLearn requiere Python 3.11.9,
@@ -202,7 +203,8 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
    CityLearn es Phase 8 only.
 3. **Agentes:** Todos compilados, importables y configurables.
    SAC es más rápido, PPO es más estable.
-4. **Errores:** Resueltos todos los problemas de sintaxis, indentación y logging.
+4. **Errores:** Resueltos todos los problemas de sintaxis, indentación y
+logging.
 5. **Documentación:** Exhaustiva y actualizada en `/docs/` y archivos raíz.
 6. **Git:** Todos los cambios commitidos y pusheados a main.
 

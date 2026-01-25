@@ -502,7 +502,8 @@ RESUMEN_CONSTRUCCION_DOCKER_ACTUALIZADA.md (Validación)
 
 ## 🎓 Learning Resources
 
-- [Docker Best Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
+- [Docker Best
+  - Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
 - [BuildKit](https://docs.docker.com/build/buildkit/)
 - [nvidia-docker](https://github.com/NVIDIA/nvidia-docker)
 - [Docker Compose](https://docs.docker.com/compose/)

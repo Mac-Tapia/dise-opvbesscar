@@ -11,10 +11,10 @@
 | # | Action | File | Commands | Risk | Est. Time |
 |---|--------|------|----------|------|-----------|
 | 1 | DELETE | `demanda_mall_kwh.py` | `git rm src/iquitos_citylearn/oe3/demanda_mall_kwh.py` | 🟢 None | 2 min |
-| 2 | MERGE | `co2_emissions.py` → `co2_table.py` | Copy content, delete file, remove import | 🟡 Low | 5 min |
+| 2 | MERGE | `co2_emissions.py` → `co2_table.py` | Copy content, delete... | 🟡 Low | 5 min |
 | 3 | MOVE | `rewards_improved_v2.py` | Create `experimental/`, move file | 🟢 None | 3 min |
 | 4 | MOVE | `rewards_wrapper_v2.py` | Create `experimental/`, move file | 🟢 None | 3 min |
-| 5 | MOVE | `rewards_dynamic.py` | Create `scripts/experimental/`, move file | 🟡 Low | 3 min |
+| 5 | MOVE | `rewards_dynamic.py` | Create `scripts/experimental/`,... | 🟡 Low | 3 min |
 | 6 | CREATE | `OE3_MODULE_STATUS.md` | Document final state | 🟢 None | 5 min |
 | 7 | TEST | All pipelines | Run verification scripts | 🟡 Low | 10 min |
 
@@ -118,7 +118,8 @@ class CityBaseline:
    head -100 src/iquitos_citylearn/oe3/co2_emissions.py
 ```bash
 
-2. **Add to co2_table.py**: Prepend dataclass definitions before existing imports
+2. **Add to co2_table.py**: Prepend dataclass definitions before existing
+imports
    - Edit: `src/iquitos_citylearn/oe3/co2_table.py`
    - Add lines 1-60 from `co2_emissions.py` after existing imports
 
@@ -153,7 +154,8 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 
 ### Step 3: ARCHIVE rewards_improved_v2.py
 
-**Why**: Only imported by unused `rewards_wrapper_v2.py`; v2 iteration reference only
+**Why**: Only imported by unused `rewards_wrapper_v2.py`; v2 iteration
+reference only
 
 **Before**:
 
@@ -274,7 +276,8 @@ src/iquitos_citylearn/oe3/
 
 ### Step 5: MOVE rewards_dynamic.py
 
-**Why**: Development-only script for dynamic reward experimentation; not in main pipeline
+**Why**: Development-only script for dynamic reward experimentation; not in
+main pipeline
 
 **Before**:
 
@@ -719,4 +722,5 @@ git checkout HEAD -- src/iquitos_citylearn/oe3/co2_emissions.py
 
 ---
 
-**Ready to execute? Follow steps 1-7 in order, run tests after step 7, commit when all green.**
+**Ready to execute? Follow steps 1-7 in order, run tests after step 7, commit
+when all green.**

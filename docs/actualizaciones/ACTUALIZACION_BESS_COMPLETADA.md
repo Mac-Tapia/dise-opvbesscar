@@ -7,7 +7,8 @@
 
 ## 📋 RESUMEN DE CAMBIOS
 
-Se actualizó exitosamente el código `bess.py` para trabajar con los nuevos perfiles de carga EV de resolución de 15 minutos (96 intervalos/día).
+Se actualizó exitosamente el código `bess.py`para trabajar con los nuevos
+perfiles de carga EV de resolución de 15 minutos (96 intervalos/día).
 
 ### Cambios Principales
 
@@ -60,9 +61,13 @@ OPERACIÓN:
 
 #### Razones de la diferencia:
 
-1. **Horario de descarga extendido:** La simulación incluyó todo el horario de operación (9h-22h) en lugar de solo el período nocturno (18h-22h)
-2. **Priorización de solar:** El análisis inicial asumió que el solar remanente cubría parte de la demanda EV diurna, pero la simulación muestra déficit desde las 9h
-3. **Excedente solar limitado:** El excedente solar (4,727 kWh/día) no es suficiente para cubrir toda la demanda EV diurna (3,252 kWh/día)
+1. **Horario de descarga extendido:** La simulación incluyó todo el horario de
+operación (9h-22h) en lugar de solo el período nocturno (18h-22h)
+2. **Priorización de solar:** El análisis inicial asumió que el solar remanente
+cubría parte de la demanda EV diurna, pero la simulación muestra déficit desde
+las 9h
+3. **Excedente solar limitado:** El excedente solar (4,727 kWh/día) no es
+suficiente para cubrir toda la demanda EV diurna (3,252 kWh/día)
 
 ---
 

@@ -23,7 +23,9 @@ Learning Rate: lr = 3.00e-05 (¡100x MENOR que lo configurado!)
 
 ## Raíz del Problema
 
-En [src/iquitos_citylearn/oe3/agents/sac.py](src/iquitos_citylearn/oe3/agents/sac.py), líneas 659-667:
+En [src/iquitos_citylearn/oe3/agents/sac.py][ref], líneas 659-667:
+
+[ref]: src/iquitos_citylearn/oe3/agents/sac.py
 
 ```python
 # ❌ ANTES (BUG)
@@ -76,7 +78,8 @@ stable_batch = self.config.batch_size        # Usar config completo: 32,768
 
 **Configuración confirmada**:
 
-- SAC: episodes=2, batch_size=32,768, gradient_steps=256, **learning_rate=0.001**
+- SAC: episodes=2, batch_size=32,768, gradient_steps=256,
+  - **learning_rate=0.001**
 - PPO: episodes=2, n_steps=32,768, batch_size=32,768, **learning_rate=0.001**
 - A2C: episodes=2, n_steps=65,536, **learning_rate=0.001**
 - Multiobjetivo: CO2=0.50, Solar=0.20, Costo=0.15, EV=0.10, Grid=0.05
@@ -95,13 +98,16 @@ stable_batch = self.config.batch_size        # Usar config completo: 32,768
 - Paso 250: reward_avg = 0.65+ (crecimiento claro)
 - Paso 500: reward_avg = 0.70+ (convergencia visible)
 
-**Si reward sigue plano o baja**: Habrá otro bug invisible. Investigar actor_loss y critic_loss.
+**Si reward sigue plano o baja**: Habrá otro bug invisible. Investigar
+actor_loss y critic_loss.
 
 ---
 
 ## Archivo Modificado
 
-**[src/iquitos_citylearn/oe3/agents/sac.py](src/iquitos_citylearn/oe3/agents/sac.py#L659-L667)**
+**[src/iquitos_citylearn/oe3/agents/sac.py][ref]**
+
+[ref]: src/iquitos_citylearn/oe3/agents/sac.py#L659-L667
 
 ```diff
   target_entropy = self.config.target_entropy if self.config.target_entropy is not None else "auto"
@@ -146,8 +152,10 @@ Fix: Remove SAC learning rate cap (3e-5 → use config 0.001) and batch_size cap
 
 - Siempre loguear qué valor se estaba usando vs qué se configuró
 - Revisar `min()` y `max()` caps en código crítico de RL
-- La estabilidad no viene de learning rates ultra-bajos, sino de good reward design + entropy
+- La estabilidad no viene de learning rates ultra-bajos, sino de good reward
+  - design + entropy
 
 ---
 
-**Estado**: 🟢 **ENTRENAMIENTO RELANZADO CON FIX APLICADO - ESPERAR SAC PHASE ~30 MIN**
+**Estado**: 🟢 **ENTRENAMIENTO RELANZADO CON FIX APLICADO - ESPERAR SAC PHASE
+~30 MIN**

@@ -13,13 +13,13 @@
 
 | Aspecto | Problema | Severidad | Impacto |
 |---------|----------|-----------|---------|
-| **Solar Timeseries** | 35,037 filas (15-min) vs 8,760 esperadas (1-hora) | 🔴 CRÍTICO | Dataset builder puede no resamplear correctamente |
-| **Chargers CSVs** | 0 CSVs individuales generados vs 128 requeridos | 🔴 CRÍTICO | Schema CityLearn v2 espera charger_X.csv per charger |
+| **Solar Timeseries** | 35,037 filas (15-min)... | 🔴 CRÍTICO | Dataset builder puede... |
+| **Chargers CSVs** | 0 CSVs individuales... | 🔴 CRÍTICO | Schema CityLearn v2... |
 | **BESS Config** | 4,520 kWh actual vs 2,000 kWh doc. | 🔴 CRÍTICO | Inconsistencia doc vs realidad |
-| **Schema Paths** | Rutas relativas sin carpetas building/ | 🔴 CRÍTICO | CityLearn no encuentra archivos |
-| **Building Load** | Incompleto/no sincronizado con solar+chargers | 🟠 ALTO | Observables inconsistentes |
-| **Validación** | Sin tests automáticos de schema output | 🟠 ALTO | No hay safety checks |
-| **Normalización** | Prescaling inconsistente entre módulos | 🟡 MEDIO | BESS SOC 0.001 (ya parcialmente arreglado) |
+| **Schema Paths** | Rutas relativas... | 🔴 CRÍTICO | CityLearn no encuentra archivos |
+| **Building Load** | Incompleto/no sincronizado... | 🟠 ALTO | Observables inconsistentes |
+| **Validación** | Sin tests automáticos... | 🟠 ALTO | No hay safety checks |
+| **Normalización** | Prescaling inconsistente... | 🟡 MEDIO | BESS SOC 0.001... |
 
 ---
 
@@ -504,4 +504,5 @@ def simulate(...):
 
 ---
 
-**Objetivo Final**: 🟢 **Pipeline OE2→OE3 100% sistemático, integrado y operacional**
+**Objetivo Final**: 🟢 **Pipeline OE2→OE3 100% sistemático, integrado y
+operacional**

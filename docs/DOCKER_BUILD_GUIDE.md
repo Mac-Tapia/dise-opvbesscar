@@ -361,7 +361,8 @@ docker-compose -f docker-compose.dev.yml -p pvbesscar-dev up -d
 
 ## 📚 Additional Resources
 
-- [Docker Best Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
+- [Docker Best
+  - Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
 - [BuildKit](https://docs.docker.com/build/buildkit/)
 - [nvidia-docker](https://github.com/NVIDIA/nvidia-docker)
 - [Jupyter Lab Docker](https://jupyter-docker-stacks.readthedocs.io/)

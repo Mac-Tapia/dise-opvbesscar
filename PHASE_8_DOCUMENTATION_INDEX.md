@@ -19,11 +19,13 @@
    - 4 methods provided (choose one)
 
 3. **QUICK START GUIDE** (5 minutes)
-   - [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) → Section 1: Quick Start
+   - [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) → Section 1: Quick
+     - Start
    - 5-step execution plan
 
 4. **RUN TRAINING** (4-6 hours)
-   - Execute: `python scripts/train_agents_serial.py --device cuda --episodes 50`
+   - Execute: `python scripts/train_agents_serial.py --device cuda --episodes
+     - 50`
    - Monitor: `python scripts/monitor_training_live_2026.py` (separate terminal)
 
 5. **VIEW RESULTS** (1 minute)
@@ -37,8 +39,8 @@
 
 | Document | Purpose | Read Time | Size |
 |----------|---------|-----------|------|
-| **PHASE_8_COMPLETE_GUIDE.md** | Comprehensive training guide with 8 sections | 30 min | 2,500 lines |
-| **AGENT_TRAINING_CONFIG_PHASE8.yaml** | All agent hyperparameters and configs | 15 min | 400 lines |
+| **PHASE_8_COMPLETE_GUIDE.md** | Comprehensive training guide... | 30 min | 2,500 lines |
+| **AGENT_TRAINING_CONFIG_PHASE8.yaml** | All agent... | 15 min | 400 lines |
 | **PHASE_8_READINESS_CHECKLIST.md** | Pre-training verification checklist | 10 min | 500 lines |
 | **VISUAL_PROJECT_STATUS_PHASE8_READY.txt** | ASCII art summary of everything | 5 min | 400 lines |
 
@@ -57,37 +59,46 @@
 
 ### "I want to start training immediately"
 
-1. Read: [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) → Quick Start (5 min)
+1. Read: [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) → Quick Start
+(5 min)
 2. Install: Python 3.11 (10 min)
 3. Run: `python scripts/train_agents_serial.py --device cuda --episodes 50`
 
 ### "I need to understand the agents"
 
-1. Read: [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) → Agent Specifications (15 min)
-2. Reference: [AGENT_TRAINING_CONFIG_PHASE8.yaml](AGENT_TRAINING_CONFIG_PHASE8.yaml) (10 min)
+1. Read: [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) → Agent
+Specifications (15 min)
+2. Reference: [AGENT_TRAINING_CONFIG_PHASE8.yaml][ref] (10 min)
+
+[ref]: AGENT_TRAINING_CONFIG_PHASE8.yaml
 3. Compare: SAC vs PPO vs A2C differences
 
 ### "I want to monitor training"
 
-1. Read: [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) → Monitoring & Troubleshooting (15 min)
+1. Read: [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) → Monitoring &
+Troubleshooting (15 min)
 2. Run: `python scripts/monitor_training_live_2026.py`
 3. Or use: TensorBoard (see guide)
 
 ### "I'm getting an error"
 
-1. Check: [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) → Common Issues & Solutions (15 min)
+1. Check: [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) → Common
+Issues & Solutions (15 min)
 2. Find your error in troubleshooting table
 3. Follow solution steps
 
 ### "I need to understand performance metrics"
 
-1. Read: [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) → Performance Evaluation (20 min)
-2. Refer: [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) → Results Analysis (15 min)
+1. Read: [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) → Performance
+Evaluation (20 min)
+2. Refer: [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) → Results
+Analysis (15 min)
 3. Expected performance tables
 
 ### "I need to decide which agent for production"
 
-1. Read: [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) → Agent Specifications → PPO section
+1. Read: [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) → Agent
+Specifications → PPO section
 2. Expected performance: 25-29% CO₂ reduction, 65-70% solar
 3. Recommendation: PPO (best stability + performance)
 
@@ -100,13 +111,13 @@
 | Section | Page | Duration | Key Topics |
 |---------|------|----------|-----------|
 | **1. Quick Start** | 1 | 5 min | Prerequisites, Step-by-step, Command |
-| **2. Detailed Walkthrough** | 2 | 10 min | What is Phase 8, Why 3 agents, Architecture |
+| **2. Detailed Walkthrough** | 2 | 10 min | What is Phase 8,... |
 | **3. Agent Specifications** | 3-7 | 20 min | SAC, PPO, A2C detailed specs |
 | **4. Training Execution** | 8-10 | 20 min | Options A-D, Resume, Quick test |
-| **5. Monitoring & Troubleshooting** | 11-15 | 30 min | Real-time monitoring, 5+ issues & solutions |
-| **6. Performance Evaluation** | 16-18 | 20 min | During training, After training, Analysis |
-| **7. Results Analysis** | 19-20 | 15 min | Interpreting results, Expected performance |
-| **8. Next Steps** | 21-23 | 10 min | Immediate, Short-term, Medium-term, Success criteria |
+| **5. Monitoring & Troubleshooting** | 11-15 | 30 min | Real-time monitoring, 5+... |
+| **6. Performance Evaluation** | 16-18 | 20 min | During training,... |
+| **7. Results Analysis** | 19-20 | 15 min | Interpreting results,... |
+| **8. Next Steps** | 21-23 | 10 min | Immediate, Short-term,... |
 
 ---
 
@@ -233,19 +244,26 @@ python scripts/train_quick.py --episodes 1 --agent PPO
 
 ### Main Documents
 
-- [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) - Primary guide (2,500 lines)
-- [AGENT_TRAINING_CONFIG_PHASE8.yaml](AGENT_TRAINING_CONFIG_PHASE8.yaml) - Agent configs
-- [PHASE_8_READINESS_CHECKLIST.md](PHASE_8_READINESS_CHECKLIST.md) - Verification checklist
+- [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md) - Primary guide (2,500
+  - lines)
+- [AGENT_TRAINING_CONFIG_PHASE8.yaml](AGENT_TRAINING_CONFIG_PHASE8.yaml) -
+  - Agent configs
+- [PHASE_8_READINESS_CHECKLIST.md](PHASE_8_READINESS_CHECKLIST.md) -
+  - Verification checklist
 
 ### Setup & Installation
 
-- [PYTHON_3.11_SETUP_GUIDE.md](docs/PYTHON_3.11_SETUP_GUIDE.md) - Install Python 3.11
-- [GITHUB_COPILOT_INSTRUCTIONS.md](GITHUB_COPILOT_INSTRUCTIONS.md) - Project overview
+- [PYTHON_3.11_SETUP_GUIDE.md](docs/PYTHON_3.11_SETUP_GUIDE.md) - Install
+  - Python 3.11
+- [GITHUB_COPILOT_INSTRUCTIONS.md](GITHUB_COPILOT_INSTRUCTIONS.md) - Project
+  - overview
 
 ### Reference Materials
 
-- [SESSION_COMPLETE_PHASE7_TO8_TRANSITION.md](SESSION_COMPLETE_PHASE7_TO8_TRANSITION.md) - Session summary
-- [VISUAL_PROJECT_STATUS_PHASE8_READY.txt](VISUAL_PROJECT_STATUS_PHASE8_READY.txt) - Visual overview
+- [SESSION_COMPLETE_PHASE7_TO8_TRANSITION.md](SESSION_COMPLETE_PHASE7_TO8_TRANSITION.md)
+- - Session summary
+- [VISUAL_PROJECT_STATUS_PHASE8_READY.txt](VISUAL_PROJECT_STATUS_PHASE8_READY.txt)
+- - Visual overview
 - [PHASE_7_FINAL_COMPLETION.md](PHASE_7_FINAL_COMPLETION.md) - Phase 7 status
 
 ### Validation Tools
@@ -320,10 +338,12 @@ Project Root (d:\diseñopvbesscar)
 ### If you're new to RL training
 
 1. **Understand the problem** (10 min)
-   - Read: "What is Phase 8?" in [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md)
+   - Read: "What is Phase 8?" in
+     - [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md)
 
 2. **Learn about agents** (20 min)
-   - Read: Agent Specifications in [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md)
+   - Read: Agent Specifications in
+     - [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md)
    - Compare: SAC vs PPO vs A2C
 
 3. **Set up environment** (15 min)
@@ -333,10 +353,12 @@ Project Root (d:\diseñopvbesscar)
    - Execute: `python scripts/train_quick.py --episodes 1`
 
 5. **Run full training** (4-6 hours)
-   - Execute: `python scripts/train_agents_serial.py --device cuda --episodes 50`
+   - Execute: `python scripts/train_agents_serial.py --device cuda --episodes
+     - 50`
 
 6. **Analyze results** (30 min)
-   - Read: Results Analysis in [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md)
+   - Read: Results Analysis in
+     - [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md)
    - Review: `COMPARACION_BASELINE_VS_RL.txt`
 
 ---
@@ -357,9 +379,12 @@ Project Root (d:\diseñopvbesscar)
 ## 📞 GETTING HELP
 
 1. **Check this index** - Find document for your use case
-2. **Search [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md)** - Troubleshooting section
+2. **Search [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md)** -
+Troubleshooting section
 3. **Check log files** - `analyses/logs/*.log`
-4. **Review configs** - [AGENT_TRAINING_CONFIG_PHASE8.yaml](AGENT_TRAINING_CONFIG_PHASE8.yaml)
+4. **Review configs** - [AGENT_TRAINING_CONFIG_PHASE8.yaml][ref]
+
+[ref]: AGENT_TRAINING_CONFIG_PHASE8.yaml
 5. **Run validation** - `python phase7_validation_complete.py`
 
 ---
@@ -384,6 +409,8 @@ After Phase 8 completes:
 **Date**: 2026-01-25  
 **Status**: Complete and ready for Phase 8  
 
-**Next Action**: Read [VISUAL_PROJECT_STATUS_PHASE8_READY.txt](VISUAL_PROJECT_STATUS_PHASE8_READY.txt) or [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md)
+**Next Action**: Read [VISUAL_PROJECT_STATUS_PHASE8_READY.txt][ref] or [PHASE_8_COMPLETE_GUIDE.md](PHASE_8_COMPLETE_GUIDE.md)
+
+[ref]: VISUAL_PROJECT_STATUS_PHASE8_READY.txt
 
 🚀 **Ready to train agents!**

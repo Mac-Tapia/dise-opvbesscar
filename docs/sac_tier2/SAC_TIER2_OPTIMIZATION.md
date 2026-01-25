@@ -21,7 +21,8 @@
 
 1. **Recompensa**: Pesos mal distribuidos, sin normalización adaptativa
 2. **Observables**: Faltan flags de pico, SOC dinámica, colas por playa
-3. **Hiperparámetros**: ent_coef podría ser aún mayor; target_entropy podría ajustarse
+3. **Hiperparámetros**: ent_coef podría ser aún mayor; target_entropy podría
+ajustarse
 
 ---
 
@@ -403,4 +404,5 @@ Si durante implementación encuentras:
 
 ---
 
-**Próximas fases**: TIER 3 (model-based predictions), TIER 4 (multi-agent coordination)
+**Próximas fases**: TIER 3 (model-based predictions), TIER 4 (multi-agent
+coordination)

@@ -164,8 +164,8 @@ OE2 BESS (data/interim/oe2/bess/)
 | **rewards.py** | 529 | ✅ ACTIVE PRIMARY | Multi-objective reward calculation |
 | **co2_table.py** | 201 | ✅ ACTIVE PRIMARY | CO2 emissions tracking & analysis |
 | **dataset_builder.py** | 687 | ✅ ACTIVE PRIMARY | OE2→OE3 data conversion |
-| **simulate.py** | 912 | ✅ ACTIVE PRIMARY | Episode runner & training orchestrator |
-| **progress.py** | 156 | ✅ ACTIVE PRIMARY | Training metrics & progress tracking |
+| **simulate.py** | 912 | ✅ ACTIVE PRIMARY | Episode runner... |
+| **progress.py** | 156 | ✅ ACTIVE PRIMARY | Training metrics... |
 | **validate_training_env.py** | 137 | ✅ ACTIVE PRIMARY | Environment validation |
 | **agent_utils.py** | 189 | ✅ ACTIVE PRIMARY | Utility functions |
 
@@ -176,7 +176,7 @@ OE2 BESS (data/interim/oe2/bess/)
 | rewards_dynamic.py | 309 | 0 references in pipeline | ✅ REMOVED |
 | rewards_improved_v2.py | 306 | Superseded by rewards.py | ✅ REMOVED |
 | rewards_wrapper_v2.py | 180 | Depends on v2 (removed) | ✅ REMOVED |
-| co2_emissions.py | 507 | 100% orphaned, superseded by co2_table.py | ✅ REMOVED |
+| co2_emissions.py | 507 | 100% orphaned,... | ✅ REMOVED |
 
 ### Archived Files (Legacy)
 
@@ -185,7 +185,7 @@ OE2 BESS (data/interim/oe2/bess/)
 | tier2_v2_config.py | experimental/deprecated_v2_configs/ | Old v2 configuration |
 | demanda_mall_kwh.py | experimental/deprecated_v2_configs/ | Unused helper |
 | dispatch_priorities.py | experimental/deprecated_v2_configs/ | Legacy config |
-| train_ppo_dynamic.py | experimental/legacy_scripts/ | Deprecated training script (used rewards_dynamic) |
+| train_ppo_dynamic.py | experimental/legacy_scripts/ | Deprecated training... |
 
 ---
 
@@ -236,7 +236,8 @@ from src.iquitos_citylearn.oe3.co2_table import CityBaseline, EmissionsFactors
 
 ### Issue (Discovered in Phase 4)
 
-BESS State-of-Charge (SOC) was prescaled to 0.001, making it invisible to agents:
+BESS State-of-Charge (SOC) was prescaled to 0.001, making it invisible to
+agents:
 
 ```python
 # BEFORE:
@@ -345,7 +346,8 @@ git commit -m "chore: cleanup OE3 orphaned files and validate OE2 connections
 ### Recommended Long-Term Actions
 
 1. **Monitor BESS learning** in first 5 episodes (verify SOC control learning)
-2. **Track reward convergence** to detect any issues with new observable visibility
+2. **Track reward convergence** to detect any issues with new observable
+visibility
 3. **Compare baseline vs agent CO₂** to validate +10-15% improvement estimate
 4. **Archive experimental/** folder if experiments don't resume within 3 months
 
