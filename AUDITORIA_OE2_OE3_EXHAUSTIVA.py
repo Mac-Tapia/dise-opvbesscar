@@ -12,11 +12,11 @@ Análisis integral de:
 """
 
 import json
-import pandas as pd
-import numpy as np
+import pandas as pd  # type: ignore
+import numpy as np  # type: ignore  # pylint: disable=unused-import
 from pathlib import Path
 import logging
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any
 from dataclasses import dataclass
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -31,13 +31,13 @@ class OE2StructureAudit:
 
     def __init__(self, oe2_dir: Path):
         self.oe2_dir = oe2_dir
-        self.report = {}
+        self.report: Dict[str, Any] = {}
 
     def audit_all(self) -> Dict[str, Any]:
         """Ejecuta auditoría completa"""
-        logger.info("\n" + "="*80)
-        logger.info("PARTE 1: ANÁLISIS ESTRUCTURA OE2 (data/interim/oe2/)")
-        logger.info("="*80)
+        logger.info("%s", "\n" + "="*80)
+        logger.info("%s", "PARTE 1: ANÁLISIS ESTRUCTURA OE2 (data/interim/oe2/)")
+        logger.info("%s", "="*80)
 
         self.report = {
             "solar": self._audit_solar(),
@@ -53,11 +53,13 @@ class OE2StructureAudit:
         """Audita carpeta solar/"""
         logger.info("\n[SOLAR] Archivos y contenido:")
         solar_dir = self.oe2_dir / "solar"
-        result = {
+        result: Dict[str, Any] = {
             "path": str(solar_dir),
             "exists": solar_dir.exists(),
             "files": [],
             "issues": [],
+            "timeseries": {},
+            "config": {},
         }
 
         if not solar_dir.exists():
@@ -72,7 +74,7 @@ class OE2StructureAudit:
                     "size_mb": round(size_mb, 2),
                     "type": file.suffix,
                 })
-                logger.info(f"  ✓ {file.name:45} {size_mb:8.2f} MB")
+                logger.info("  ✓ %s %8.2f MB", file.name, size_mb)
 
         # Validar archivos críticos
         ts_path = solar_dir / "pv_generation_timeseries.csv"
@@ -86,15 +88,16 @@ class OE2StructureAudit:
                 "issue": f"❌ CRÍTICO: {len(df)} filas (15-min) pero CityLearn espera 8760 (hourly)"
                          if len(df) > 15000 else None,
             }
-            logger.info(f"\n  [TIMESERIES] {len(df)} filas, resolución 15-minutos")
-            logger.info(f"  ⚠️  AC power: {df['ac_power_kw'].min():.1f} - {df['ac_power_kw'].max():.1f} kW")
+            logger.info("  [TIMESERIES] %d filas, resolución 15-minutos", len(df))
+            logger.info("  ⚠️  AC power: %.1f - %.1f kW", df['ac_power_kw'].min(), df['ac_power_kw'].max())
             if result["timeseries"]["issue"]:
+                result["issues"] = result.get("issues", [])
                 result["issues"].append(result["timeseries"]["issue"])
-                logger.info(f"  {result['timeseries']['issue']}")
+                logger.info("  %s", result['timeseries']['issue'])
 
         results_path = solar_dir / "solar_results.json"
         if results_path.exists():
-            with open(results_path) as f:
+            with open(results_path, encoding='utf-8') as f:
                 solar_cfg = json.load(f)
             result["config"] = {
                 "modules": solar_cfg.get("total_modules"),
@@ -105,9 +108,9 @@ class OE2StructureAudit:
                 "annual_kwh": solar_cfg.get("annual_kwh"),
                 "capacity_factor": round(solar_cfg.get("capacity_factor", 0), 4),
             }
-            logger.info(f"\n  [CONFIG] DC={result['config']['dc_kw']} kWp, "
-                       f"AC={result['config']['ac_kw']} kW, "
-                       f"CF={result['config']['capacity_factor']:.2%}")
+            logger.info("  [CONFIG] DC=%s kWp, AC=%s kW, CF=%.2f%%",
+                       result['config']['dc_kw'], result['config']['ac_kw'],
+                       result['config']['capacity_factor']*100)
 
         return result
 
@@ -115,7 +118,7 @@ class OE2StructureAudit:
         """Audita carpeta chargers/"""
         logger.info("\n[CHARGERS] Archivos y contenido:")
         chargers_dir = self.oe2_dir / "chargers"
-        result = {
+        result: Dict[str, Any] = {
             "path": str(chargers_dir),
             "exists": chargers_dir.exists(),
             "files": [],
@@ -134,14 +137,14 @@ class OE2StructureAudit:
                     "name": file.name,
                     "size_mb": round(size_mb, 2),
                 })
-                logger.info(f"  ✓ {file.name:45} {size_mb:8.2f} MB")
+                logger.info("  ✓ %s %8.2f MB", file.name, size_mb)
 
         # individual_chargers.json - COUNT
         ic_path = chargers_dir / "individual_chargers.json"
         if ic_path.exists():
-            with open(ic_path) as f:
+            with open(ic_path, encoding='utf-8') as f:
                 chargers_list = json.load(f)
-            result["inventory"]["individual_chargers"] = {
+            inventory_dict: Dict[str, Any] = {
                 "count": len(chargers_list),
                 "expected": 128,
                 "issue": f"❌ {len(chargers_list)} chargers pero se esperan 128"
@@ -149,46 +152,47 @@ class OE2StructureAudit:
             }
             if chargers_list:
                 first = chargers_list[0]
-                result["inventory"]["individual_chargers"]["sample"] = {
+                inventory_dict["sample"] = {
                     "id": first.get("charger_id"),
                     "type": first.get("charger_type"),
                     "power": first.get("power_kw"),
                     "sockets": first.get("sockets"),
                 }
-            logger.info(f"\n  [individual_chargers.json] {len(chargers_list)} chargers")
-            if result["inventory"]["individual_chargers"]["issue"]:
-                result["issues"].append(result["inventory"]["individual_chargers"]["issue"])
-                logger.info(f"  {result['inventory']['individual_chargers']['issue']}")
+            result["inventory"]["individual_chargers"] = inventory_dict  # type: ignore
+            logger.info("  [individual_chargers.json] %d chargers", len(chargers_list))
+            if inventory_dict.get("issue"):
+                result["issues"].append(inventory_dict["issue"])
+                logger.info("  %s", inventory_dict['issue'])
 
         # perfil_horario_carga.csv - 24h profile
         ph_path = chargers_dir / "perfil_horario_carga.csv"
         if ph_path.exists():
             df = pd.read_csv(ph_path)
-            result["inventory"]["hourly_profile"] = {
+            hourly_profile_dict: Dict[str, Any] = {
                 "rows": len(df),
                 "expected": 24,
                 "daily_energy_kwh": float(df["energy_kwh"].sum()),
                 "peak_power_kw": float(df["power_kw"].max()),
             }
-            logger.info(f"\n  [perfil_horario_carga.csv] {len(df)} horas, "
-                       f"E={result['inventory']['hourly_profile']['daily_energy_kwh']:.1f} kWh, "
-                       f"P_max={result['inventory']['hourly_profile']['peak_power_kw']:.1f} kW")
+            result["inventory"]["hourly_profile"] = hourly_profile_dict  # type: ignore
+            logger.info("  [perfil_horario_carga.csv] %d horas, E=%.1f kWh, P_max=%.1f kW",
+                       len(df), hourly_profile_dict['daily_energy_kwh'], hourly_profile_dict['peak_power_kw'])
 
         # chargers_results.json - dimensioning summary
         cr_path = chargers_dir / "chargers_results.json"
         if cr_path.exists():
-            with open(cr_path) as f:
+            with open(cr_path, encoding='utf-8') as f:
                 chargers_results = json.load(f)
             rec = chargers_results.get("esc_rec", {})
-            result["inventory"]["results"] = {
+            results_dict: Dict[str, Any] = {
                 "chargers_recommended": rec.get("chargers_required"),
                 "sockets_total": rec.get("sockets_total"),
                 "daily_energy": rec.get("energy_day_kwh"),
                 "peak_sessions_per_hour": rec.get("peak_sessions_per_hour"),
             }
-            logger.info(f"\n  [chargers_results.json] Recomendado: "
-                       f"{rec.get('chargers_required')} chargers, "
-                       f"{rec.get('sockets_total')} sockets")
+            result["inventory"]["results"] = results_dict  # type: ignore
+            logger.info("  [chargers_results.json] Recomendado: %s chargers, %s sockets",
+                       rec.get('chargers_required'), rec.get('sockets_total'))
 
         return result
 
@@ -196,29 +200,30 @@ class OE2StructureAudit:
         """Audita carpeta bess/"""
         logger.info("\n[BESS] Archivos y contenido:")
         bess_dir = self.oe2_dir / "bess"
-        result = {
+        result: Dict[str, Any] = {
             "path": str(bess_dir),
             "exists": bess_dir.exists(),
             "files": [],
             "config": {},
+            "issues": [],
         }
 
         if not bess_dir.exists():
-            result["issues"] = ["❌ Carpeta bess/ NO EXISTE"]
+            result["issues"].append("❌ Carpeta bess/ NO EXISTE")
             return result
 
         for file in sorted(bess_dir.glob("*")):
             if file.is_file():
                 size_mb = file.stat().st_size / (1024**2)
                 result["files"].append({"name": file.name, "size_mb": round(size_mb, 2)})
-                logger.info(f"  ✓ {file.name:45} {size_mb:8.2f} MB")
+                logger.info("  ✓ %s %8.2f MB", file.name, size_mb)
 
         # bess_results.json
         br_path = bess_dir / "bess_results.json"
         if br_path.exists():
-            with open(br_path) as f:
+            with open(br_path, encoding='utf-8') as f:
                 bess_cfg = json.load(f)
-            result["config"] = {
+            config_dict: Dict[str, Any] = {
                 "capacity_kwh": bess_cfg.get("capacity_kwh"),
                 "nominal_power_kw": bess_cfg.get("nominal_power_kw"),
                 "dod_percent": bess_cfg.get("dod", 0) * 100,
@@ -226,9 +231,10 @@ class OE2StructureAudit:
                 "daily_surplus": bess_cfg.get("surplus_kwh_day"),
                 "daily_deficit": bess_cfg.get("deficit_kwh_day"),
             }
-            logger.info(f"\n  [CONFIG] {result['config']['capacity_kwh']:.0f} kWh, "
-                       f"{result['config']['nominal_power_kw']:.0f} kW, "
-                       f"η={result['config']['efficiency']:.1%}")
+            result["config"] = config_dict
+            logger.info("  [CONFIG] %.0f kWh, %.0f kW, η=%.1f%%",
+                       config_dict['capacity_kwh'], config_dict['nominal_power_kw'],
+                       config_dict['efficiency']*100)
 
         # bess_daily_balance_24h.csv
         bd_path = bess_dir / "bess_daily_balance_24h.csv"
@@ -247,7 +253,7 @@ class OE2StructureAudit:
         """Audita carpeta demandamallkwh/"""
         logger.info("\n[DEMANDAMALL] Archivos:")
         dmd_dir = self.oe2_dir / "demandamallkwh"
-        result = {"path": str(dmd_dir), "exists": dmd_dir.exists(), "files": []}
+        result: Dict[str, Any] = {"path": str(dmd_dir), "exists": dmd_dir.exists(), "files": []}
 
         if not dmd_dir.exists():
             logger.info("  ❌ NO EXISTE")
@@ -257,7 +263,7 @@ class OE2StructureAudit:
             if file.is_file():
                 size_mb = file.stat().st_size / (1024**2)
                 result["files"].append({"name": file.name, "size_mb": round(size_mb, 2)})
-                logger.info(f"  ✓ {file.name:45} {size_mb:8.2f} MB")
+                logger.info("  ✓ %s %8.2f MB", file.name, size_mb)
 
         return result
 
@@ -265,7 +271,7 @@ class OE2StructureAudit:
         """Audita carpeta citylearn/"""
         logger.info("\n[CITYLEARN] Archivos (preparados para CityLearn):")
         cl_dir = self.oe2_dir / "citylearn"
-        result = {"path": str(cl_dir), "exists": cl_dir.exists(), "files": []}
+        result: Dict[str, Any] = {"path": str(cl_dir), "exists": cl_dir.exists(), "files": []}
 
         if not cl_dir.exists():
             logger.info("  ℹ️  NO EXISTE (puede ser generada por dataset_builder)")
@@ -275,7 +281,7 @@ class OE2StructureAudit:
             if file.is_file():
                 size_mb = file.stat().st_size / (1024**2)
                 result["files"].append({"name": file.name, "size_mb": round(size_mb, 2)})
-                logger.info(f"  ✓ {file.name:45} {size_mb:8.2f} MB")
+                logger.info("  ✓ %s %8.2f MB", file.name, size_mb)
 
         return result
 
@@ -287,7 +293,7 @@ class OE2StructureAudit:
             if subdir.is_dir():
                 n_files = len(list(subdir.glob("*")))
                 summary[subdir.name] = n_files
-                logger.info(f"  {subdir.name:20} {n_files:3d} items")
+                logger.info("  %s %3d items", subdir.name, n_files)
         return summary
 
 
@@ -300,13 +306,13 @@ class OE2DataIntegrity:
 
     def __init__(self, oe2_dir: Path):
         self.oe2_dir = oe2_dir
-        self.report = {}
+        self.report: Dict[str, Any] = {}
 
     def audit_all(self) -> Dict[str, Any]:
         """Auditoría integral de integridad"""
-        logger.info("\n" + "="*80)
-        logger.info("PARTE 2: INTEGRIDAD DE DATOS OE2")
-        logger.info("="*80)
+        logger.info("%s", "\n" + "="*80)
+        logger.info("%s", "PARTE 2: INTEGRIDAD DE DATOS OE2")
+        logger.info("%s", "="*80)
 
         self.report = {
             "solar_validation": self._validate_solar(),
@@ -319,13 +325,13 @@ class OE2DataIntegrity:
     def _validate_solar(self) -> Dict[str, Any]:
         """Valida timeseries solar"""
         logger.info("\n[VALIDAR SOLAR]")
-        result = {"valid": True, "issues": []}
+        result: Dict[str, Any] = {"valid": True, "issues": []}
 
         ts_path = self.oe2_dir / "solar" / "pv_generation_timeseries.csv"
         if not ts_path.exists():
             result["valid"] = False
             result["issues"].append("❌ pv_generation_timeseries.csv NO EXISTE")
-            logger.info(f"  {result['issues'][-1]}")
+            logger.info("  %s", result['issues'][-1])
             return result
 
         df = pd.read_csv(ts_path)
@@ -337,52 +343,52 @@ class OE2DataIntegrity:
         if len(df) not in [expected_8760h, expected_8760h * 4]:
             msg = f"❌ {len(df)} filas, se esperaban {expected_8760h} (hora) o {expected_8760h*4} (15min)"
             result["issues"].append(msg)
-            logger.info(f"  {msg}")
+            logger.info("  %s", msg)
         else:
-            logger.info(f"  ✓ {len(df)} filas ({result['resolution']})")
+            logger.info("  ✓ %d filas (%s)", len(df), result['resolution'])
 
         # Check columns
         required = ['ac_power_kw', 'dc_power_kw', 'ghi_wm2', 'temp_air_c']
         missing = [c for c in required if c not in df.columns]
         if missing:
             result["issues"].append(f"❌ Columnas faltantes: {missing}")
-            logger.info(f"  {result['issues'][-1]}")
+            logger.info("  %s", result['issues'][-1])
         else:
-            logger.info(f"  ✓ Columnas requeridas presentes")
+            logger.info("  ✓ Columnas requeridas presentes")
 
         # Check data ranges
         ac_min, ac_max = df['ac_power_kw'].min(), df['ac_power_kw'].max()
         result["ac_power_range"] = (round(ac_min, 1), round(ac_max, 1))
         if ac_min < 0:
             result["issues"].append(f"❌ ac_power_kw mínimo negativo: {ac_min}")
-            logger.info(f"  {result['issues'][-1]}")
+            logger.info("  %s", result['issues'][-1])
         else:
-            logger.info(f"  ✓ AC Power: {ac_min:.1f} - {ac_max:.1f} kW")
+            logger.info("  ✓ AC Power: %.1f - %.1f kW", ac_min, ac_max)
 
         # Check NaNs
         nan_count = df.isnull().sum().sum()
         if nan_count > 0:
             result["issues"].append(f"❌ {nan_count} valores NaN encontrados")
-            logger.info(f"  {result['issues'][-1]}")
+            logger.info("  %s", result['issues'][-1])
         else:
-            logger.info(f"  ✓ Sin valores NaN")
+            logger.info("  ✓ Sin valores NaN")
 
         return result
 
     def _validate_chargers(self) -> Dict[str, Any]:
         """Valida datos de chargers"""
         logger.info("\n[VALIDAR CHARGERS]")
-        result = {"valid": True, "issues": []}
+        result: Dict[str, Any] = {"valid": True, "issues": []}
 
         # individual_chargers.json
         ic_path = self.oe2_dir / "chargers" / "individual_chargers.json"
         if not ic_path.exists():
             result["valid"] = False
             result["issues"].append("❌ individual_chargers.json NO EXISTE")
-            logger.info(f"  {result['issues'][-1]}")
+            logger.info("  %s", result['issues'][-1])
             return result
 
-        with open(ic_path) as f:
+        with open(ic_path, encoding='utf-8') as f:
             chargers = json.load(f)
 
         result["count"] = len(chargers)
@@ -391,9 +397,9 @@ class OE2DataIntegrity:
         if len(chargers) != 128:
             msg = f"❌ {len(chargers)} chargers pero se esperan 128"
             result["issues"].append(msg)
-            logger.info(f"  {msg}")
+            logger.info("  %s", msg)
         else:
-            logger.info(f"  ✓ 128 chargers presentes")
+            logger.info("  ✓ 128 chargers presentes")
 
         # Check each charger has required fields
         issues_per_charger = []
@@ -405,41 +411,40 @@ class OE2DataIntegrity:
         if issues_per_charger:
             msg = f"❌ {len(issues_per_charger)} chargers con campos faltantes"
             result["issues"].append(msg)
-            logger.info(f"  {msg}")
+            logger.info("  %s", msg)
         else:
-            logger.info(f"  ✓ Todos los chargers tienen campos requeridos")
+            logger.info("  ✓ Todos los chargers tienen campos requeridos")
 
         # Check hourly profiles
         h_profiles = [c.get("hourly_load_profile") for c in chargers if c.get("hourly_load_profile")]
         if h_profiles and len(h_profiles[0]) != 24:
             msg = f"❌ Perfil horario con {len(h_profiles[0])} horas en lugar de 24"
             result["issues"].append(msg)
-            logger.info(f"  {msg}")
+            logger.info("  %s", msg)
         else:
-            logger.info(f"  ✓ Perfiles horarios válidos (24 horas)")
+            logger.info("  ✓ Perfiles horarios válidos (24 horas)")
 
         return result
 
     def _validate_bess(self) -> Dict[str, Any]:
         """Valida configuración BESS"""
         logger.info("\n[VALIDAR BESS]")
-        result = {"valid": True, "issues": []}
+        result: Dict[str, Any] = {"valid": True, "issues": []}
 
         br_path = self.oe2_dir / "bess" / "bess_results.json"
         if not br_path.exists():
             result["valid"] = False
             result["issues"].append("❌ bess_results.json NO EXISTE")
-            logger.info(f"  {result['issues'][-1]}")
+            logger.info("  %s", result['issues'][-1])
             return result
 
-        with open(br_path) as f:
+        with open(br_path, encoding='utf-8') as f:
             cfg = json.load(f)
 
         result["capacity"] = cfg.get("capacity_kwh")
         result["power"] = cfg.get("nominal_power_kw")
 
-        logger.info(f"  ✓ BESS: {cfg.get('capacity_kwh'):.0f} kWh, "
-                   f"{cfg.get('nominal_power_kw'):.0f} kW")
+        logger.info("  ✓ BESS: %.0f kWh, %.0f kW", cfg.get('capacity_kwh'), cfg.get('nominal_power_kw'))
 
         # Sanity checks
         if cfg.get("capacity_kwh", 0) <= 0:
@@ -450,32 +455,32 @@ class OE2DataIntegrity:
             result["issues"].append(f"❌ Eficiencia inválida: {cfg.get('efficiency_roundtrip')}")
 
         if result["issues"]:
-            logger.info(f"  {result['issues'][-1]}")
+            logger.info("  %s", result['issues'][-1])
         else:
-            logger.info(f"  ✓ Parámetros BESS válidos")
+            logger.info("  ✓ Parámetros BESS válidos")
 
         return result
 
     def _check_consistency(self) -> Dict[str, Any]:
         """Verifica consistencia entre archivos"""
         logger.info("\n[VERIFICAR CONSISTENCIA]")
-        result = {"issues": []}
+        result: Dict[str, Any] = {"issues": []}
 
         # Solar annual energy vs capacity
         solar_json = self.oe2_dir / "solar" / "solar_results.json"
         chargers_json = self.oe2_dir / "chargers" / "chargers_results.json"
 
         if solar_json.exists() and chargers_json.exists():
-            with open(solar_json) as f:
+            with open(solar_json, encoding='utf-8') as f:
                 solar = json.load(f)
-            with open(chargers_json) as f:
+            with open(chargers_json, encoding='utf-8') as f:
                 chargers = json.load(f)
 
             annual_pv = solar.get("annual_kwh", 0)
             annual_ev = chargers.get("esc_rec", {}).get("energy_day_kwh", 0) * 365
 
-            logger.info(f"  PV anual: {annual_pv/1e6:.2f} GWh")
-            logger.info(f"  EV anual: {annual_ev/1e3:.1f} MWh")
+            logger.info("  PV anual: %.2f GWh", annual_pv/1e6)
+            logger.info("  EV anual: %.1f MWh", annual_ev/1e3)
 
             # PV should be >> EV (solar para EV y otros)
             if annual_pv < annual_ev * 2:
@@ -495,9 +500,9 @@ class DatasetBuilderAnalysis:
     """Analiza dataset_builder.py y sus flujos"""
 
     def audit(self, dataset_builder_path: Path) -> Dict[str, Any]:
-        logger.info("\n" + "="*80)
-        logger.info("PARTE 3: ANÁLISIS DATASET BUILDER")
-        logger.info("="*80)
+        logger.info("%s", "\n" + "="*80)
+        logger.info("%s", "PARTE 3: ANÁLISIS DATASET BUILDER")
+        logger.info("%s", "="*80)
 
         result = {
             "file": str(dataset_builder_path),
@@ -506,10 +511,10 @@ class DatasetBuilderAnalysis:
         }
 
         if not dataset_builder_path.exists():
-            logger.info(f"  ❌ {dataset_builder_path} NO EXISTE")
+            logger.info("  ❌ %s NO EXISTE", dataset_builder_path)
             return result
 
-        with open(dataset_builder_path) as f:
+        with open(dataset_builder_path, encoding='utf-8') as f:
             content = f.read()
 
         # Check if loads each OE2 artifact
@@ -521,14 +526,15 @@ class DatasetBuilderAnalysis:
             "bess": "bess_results.json",
             "chargers_results": "chargers_results.json",
         }
+        result["coverage"] = {}  # type: ignore
 
         for artifact, pattern in artifacts_checked.items():
             if artifact in content or pattern in content:
-                logger.info(f"  ✓ {artifact:30} CARGADO en dataset_builder")
-                result["coverage"][artifact] = True
+                logger.info("  ✓ %s CARGADO en dataset_builder", artifact)
+                result["coverage"][artifact] = True  # type: ignore
             else:
-                logger.info(f"  ❌ {artifact:30} NO CARGADO")
-                result["coverage"][artifact] = False
+                logger.info("  ❌ %s NO CARGADO", artifact)
+                result["coverage"][artifact] = False  # type: ignore
 
         # Check schema generation
         logger.info("\n[TRANSFORMACIONES PRINCIPALES]")
@@ -542,9 +548,9 @@ class DatasetBuilderAnalysis:
 
         for name, pattern in transforms.items():
             if pattern in content:
-                logger.info(f"  ✓ {name:30} IMPLEMENTADO")
+                logger.info("  ✓ %s IMPLEMENTADO", name)
             else:
-                logger.info(f"  ❌ {name:30} FALTANTE")
+                logger.info("  ❌ %s FALTANTE", name)
 
         return result
 
@@ -566,12 +572,12 @@ class AuditIssue:
 class ErrorsAndGapsAnalysis:
     """Identifica y documenta todos los errores y gaps"""
 
-    def identify_all(self, oe2_audit: OE2StructureAudit,
-                     integrity: OE2DataIntegrity,
-                     ds_audit: DatasetBuilderAnalysis) -> List[AuditIssue]:
-        logger.info("\n" + "="*80)
-        logger.info("PARTE 4: ERRORES Y GAPS IDENTIFICADOS (Top 15+)")
-        logger.info("="*80)
+    def identify_all(self, _oe2_audit: OE2StructureAudit,
+                     _integrity: OE2DataIntegrity,
+                     _ds_audit: DatasetBuilderAnalysis) -> List[AuditIssue]:
+        logger.info("%s", "\n" + "="*80)
+        logger.info("%s", "PARTE 4: ERRORES Y GAPS IDENTIFICADOS (Top 15+)")
+        logger.info("%s", "="*80)
 
         issues = []
 
@@ -607,7 +613,7 @@ class ErrorsAndGapsAnalysis:
         charger_count = 0
         ic_path = Path("data/interim/oe2/chargers/individual_chargers.json")
         if ic_path.exists():
-            with open(ic_path) as f:
+            with open(ic_path, encoding='utf-8') as f:
                 charger_count = len(json.load(f))
 
         if charger_count != 128:
@@ -771,10 +777,10 @@ class ErrorsAndGapsAnalysis:
 
         # Log all issues
         for i, issue in enumerate(issues, 1):
-            logger.info(f"\n[ERROR #{i}] {issue.severity:8} | {issue.component:30} | {issue.title}")
-            logger.info(f"  Description: {issue.description}")
-            logger.info(f"  Impact:      {issue.impact}")
-            logger.info(f"  Recommendation: {issue.recommendation}")
+            logger.info("  [ERROR #%d] %s | %s | %s", i, issue.severity, issue.component, issue.title)
+            logger.info("  Description: %s", issue.description)
+            logger.info("  Impact: %s", issue.impact)
+            logger.info("  Recommendation: %s", issue.recommendation)
 
         return issues
 
@@ -787,9 +793,9 @@ class DataFlowDiagram:
     """Genera diagrama de flujo de datos OE2→OE3"""
 
     def generate(self) -> str:
-        logger.info("\n" + "="*80)
-        logger.info("PARTE 5: DATA FLOW DIAGRAM (OE2→OE3)")
-        logger.info("="*80)
+        logger.info("%s", "\n" + "="*80)
+        logger.info("%s", "PARTE 5: DATA FLOW DIAGRAM (OE2→OE3)")
+        logger.info("%s", "="*80)
 
         diagram = """
 ┌─ OE2 ARTIFACTS ─────────────────────────────────────────────────────────┐
@@ -888,15 +894,15 @@ def main():
 
     # PARTE 1: Estructura
     audit1 = OE2StructureAudit(oe2_dir)
-    struct_report = audit1.audit_all()
+    _ = audit1.audit_all()
 
     # PARTE 2: Integridad
     audit2 = OE2DataIntegrity(oe2_dir)
-    integrity_report = audit2.audit_all()
+    _ = audit2.audit_all()
 
     # PARTE 3: Dataset Builder
     audit3 = DatasetBuilderAnalysis()
-    builder_report = audit3.audit(dataset_builder)
+    _ = audit3.audit(dataset_builder)
 
     # PARTE 4: Errores y gaps
     audit4 = ErrorsAndGapsAnalysis()
@@ -907,15 +913,15 @@ def main():
     audit5.generate()
 
     # RESUMEN FINAL
-    logger.info("\n" + "="*80)
-    logger.info("RESUMEN EJECUTIVO")
-    logger.info("="*80)
-    logger.info(f"\nTotal errores/gaps identificados: {len(issues)}")
-    logger.info(f"\nPor severidad:")
+    logger.info("%s", "\n" + "="*80)
+    logger.info("%s", "RESUMEN EJECUTIVO")
+    logger.info("%s", "="*80)
+    logger.info("Total errores/gaps identificados: %d", len(issues))
+    logger.info("Por severidad:")
     for sev in ["CRÍTICO", "ALTO", "MEDIO", "BAJO"]:
         count = sum(1 for i in issues if i.severity == sev)
         if count > 0:
-            logger.info(f"  {sev:10}: {count}")
+            logger.info("  %s: %d", sev, count)
 
     logger.info("\n✅ Auditoría completada. Ver AUDITORIA_EXHAUSTIVA_RESULTADOS.json")
 

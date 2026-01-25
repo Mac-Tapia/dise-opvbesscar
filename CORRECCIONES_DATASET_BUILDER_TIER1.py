@@ -11,6 +11,12 @@ Este archivo contiene las correcciones necesarias para:
 APLICAR ESTOS CAMBIOS EN: src/iquitos_citylearn/oe3/dataset_builder.py
 """
 
+from __future__ import annotations
+from pathlib import Path
+from typing import Dict, Any
+import pandas as pd  # type: ignore
+import numpy as np  # type: ignore
+
 # ============================================================================
 # CORRECCIÓN #1: DOWNSAMPLING SOLAR 15-MIN → 1-HORA
 # ============================================================================

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List
 
 import json
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 
 @dataclass(frozen=True)
 class EmissionsFactors:
@@ -21,8 +21,9 @@ class CityBaseline:
     transport_tpy: float  # tCO2/año sector transporte
     electricity_tpy: float  # tCO2/año generación eléctrica
 
-def load_summary(path: Path) -> Dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+def load_summary(path: Path) -> dict[str, Any]:
+    result = json.loads(path.read_text(encoding="utf-8"))
+    return result if isinstance(result, dict) else {}
 
 def annualize(value: float, simulated_years: float) -> float:
     return value / max(simulated_years, 1e-9)
@@ -31,9 +32,9 @@ def allocate_grid_to_ev(grid_import_kwh: float, ev_kwh: float, building_kwh: flo
     denom = max(ev_kwh + building_kwh, 1e-9)
     return grid_import_kwh * (ev_kwh / denom)
 
-def compute_agent_comparison(summary: Dict[str, Any], factors: EmissionsFactors) -> pd.DataFrame:
+def compute_agent_comparison(summary: dict[str, Any], factors: EmissionsFactors) -> pd.DataFrame:
     """Compara todos los agentes entrenados para seleccionar el mejor.
-    
+
     Evaluación multicriterio basada en:
     1. Emisiones CO₂ (peso alto)
     2. Costo eléctrico
@@ -42,7 +43,7 @@ def compute_agent_comparison(summary: Dict[str, Any], factors: EmissionsFactors)
     5. Estabilidad de red
     """
     pv_results = summary.get("pv_bess_results", {})
-    
+
     rows: List[Dict[str, Any]] = []
     for agent_name, res in pv_results.items():
         ev_kwh_y = annualize(res["ev_charging_kwh"], res["simulated_years"])
@@ -51,12 +52,12 @@ def compute_agent_comparison(summary: Dict[str, Any], factors: EmissionsFactors)
         export_kwh_y = annualize(res["grid_export_kwh"], res["simulated_years"])
         pv_kwh_y = annualize(res["pv_generation_kwh"], res["simulated_years"])
         carbon_kg_y = annualize(res["carbon_kg"], res["simulated_years"])
-        
+
         ev_import_kwh_y = allocate_grid_to_ev(import_kwh_y, ev_kwh_y, build_kwh_y)
-        
+
         # Eficiencia operativa: autoconsumo solar / menor dependencia de red
         autosuficiencia = 100.0 * (1 - import_kwh_y / max(ev_kwh_y + build_kwh_y, 1e-9))
-        
+
         # Métricas multiobjetivo si están disponibles
         mo_priority = res.get("multi_objective_priority", "none")
         r_co2 = res.get("reward_co2_mean", 0.0)
@@ -65,7 +66,7 @@ def compute_agent_comparison(summary: Dict[str, Any], factors: EmissionsFactors)
         r_ev = res.get("reward_ev_mean", 0.0)
         r_grid = res.get("reward_grid_mean", 0.0)
         r_total = res.get("reward_total_mean", 0.0)
-        
+
         rows.append({
             "agente": agent_name,
             "ev_kwh_anual": ev_kwh_y,
@@ -85,7 +86,7 @@ def compute_agent_comparison(summary: Dict[str, Any], factors: EmissionsFactors)
             "reward_grid": r_grid,
             "reward_total": r_total,
         })
-    
+
     df = pd.DataFrame(rows)
     if len(df) > 0:
         # Ordenar por menor CO2 anual y mayor autosuficiencia; desempate por recompensa total.
@@ -96,8 +97,8 @@ def compute_agent_comparison(summary: Dict[str, Any], factors: EmissionsFactors)
         df["ranking"] = range(1, len(df) + 1)
     return df
 
-def compute_table(summary: Dict[str, Any], factors: EmissionsFactors, 
-                  city_baseline: CityBaseline = None) -> pd.DataFrame:
+def compute_table(summary: dict[str, Any], factors: EmissionsFactors,
+                  city_baseline: CityBaseline | None = None) -> pd.DataFrame:
     grid = summary.get("grid_only_result")
     baseline = summary.get("pv_bess_uncontrolled")
     best = summary["best_result"]
@@ -192,13 +193,13 @@ def compute_table(summary: Dict[str, Any], factors: EmissionsFactors,
                 "oe2_co2_reduction_kg_day": chargers.get("co2_reduction_kg_day"),
                 "oe2_co2_reduction_tco2_y": float(chargers.get("co2_reduction_kg_year", 0.0)) / 1000.0,
             })
-    
+
     # Contexto ciudad Iquitos si está disponible
     if city_baseline:
         meta["city_transport_tpy"] = city_baseline.transport_tpy
         meta["city_electricity_tpy"] = city_baseline.electricity_tpy
         meta["contribution_transport_pct"] = 100.0 * (base - ctrl_kg_y/1000.0) / city_baseline.transport_tpy
-    
+
     df.attrs.update(meta)
     return df
 
@@ -348,7 +349,7 @@ def write_outputs(
 ) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     df.to_csv(out_dir / "co2_comparison_table.csv", index=False)
-    
+
     if agent_comparison is not None:
         agent_comparison.to_csv(out_dir / "agent_comparison.csv", index=False)
     if breakdown is not None:
@@ -378,7 +379,7 @@ def write_outputs(
     md.append("> eléctricas más apropiado para maximizar la eficiencia operativa del sistema, ")
     md.append("> asegurando la contribución cuantificable a la reducción de las emisiones de ")
     md.append("> dióxido de carbono en la ciudad de Iquitos, 2025.\n")
-    
+
     md.append("---\n")
     md.append("## 1. Agente Seleccionado\n")
     best_agent = df.attrs.get('best_agent', 'N/A')
@@ -395,7 +396,7 @@ def write_outputs(
         if co2_oe2 is not None:
             md.append(f"- Reducción directa por electrificación (OE2): {co2_oe2:,.2f} tCO2/año ({co2_day:,.1f} kg/día)\n")
         md.append("- Estos valores sirven como baseline operativo previo al control inteligente (OE3).\n")
-    
+
     if agent_comparison is not None and len(agent_comparison) > 0:
         md.append("\n## 2. Comparación de Agentes Evaluados\n")
         md.append("\n### Métricas de Desempeño\n")
@@ -403,22 +404,22 @@ def write_outputs(
         md.append("|:-------:|--------|---------------:|--------------------:|-------------:|\n")
         for _, row in agent_comparison.iterrows():
             md.append(f"| {int(row['ranking'])} | {row['agente']} | {row['carbon_tco2_anual']:.2f} | {row['autosuficiencia_pct']:.1f} | {row.get('reward_total', 0):.4f} |\n")
-        
+
         # Tabla multiobjetivo
         md.append("\n### Evaluación Multicriterio (Recompensas por Objetivo)\n")
         md.append("| Agente | R_CO₂ | R_Costo | R_Solar | R_EV | R_Grid |\n")
         md.append("|--------|------:|--------:|--------:|-----:|-------:|\n")
         for _, row in agent_comparison.iterrows():
             md.append(f"| {row['agente']} | {row.get('reward_co2', 0):.3f} | {row.get('reward_cost', 0):.3f} | {row.get('reward_solar', 0):.3f} | {row.get('reward_ev', 0):.3f} | {row.get('reward_grid', 0):.3f} |\n")
-        
+
         md.append("\n**Interpretación de recompensas:** Valores cercanos a +1.0 son óptimos, valores negativos indican mal desempeño.\n")
-    
+
     md.append("\n## 3. Reducción de Emisiones Cuantificable\n")
     km_y = df.attrs.get('annual_km_equivalent', 0)
     md.append(f"**Servicio de transporte equivalente:** {km_y:,.0f} km/año\n")
     md.append("\n### Tabla Comparativa de Escenarios\n")
     md.append(df[["escenario", "tco2_anual", "tco2_20_anios", "reduccion_vs_base_pct"]].to_markdown(index=False))
-    
+
     # Impacto en la ciudad
     md.append("\n\n## 4. Contribución a Iquitos 2025\n")
     if "city_transport_tpy" in df.attrs:
@@ -430,7 +431,7 @@ def write_outputs(
         md.append(f"| Emisiones transporte Iquitos | {city_transport:,.0f} tCO₂/año |\n")
         md.append(f"| Reducción por proyecto | {reduction:,.2f} tCO₂/año |\n")
         md.append(f"| **Contribución al sector transporte** | **{contribution:.4f}%** |\n")
-    
+
     md.append("\n## 5. Conclusión\n")
     base_tco2 = df.attrs.get("base_combustion_tco2_y", 0)
     reduction_tco2 = df.attrs.get("reduction_tco2_y", 0)
@@ -464,5 +465,5 @@ def write_outputs(
         md.append("\n### Incremento directo e indirecto\n")
         md.append(f"- Directo: {incr_direct:.2f} tCO2/anio (baseline {base_direct:.2f} -> control {best_direct:.2f})\n")
         md.append(f"- Indirecto: {incr_indirect:.2f} tCO2/anio (baseline {base_indirect:.2f} -> control {best_indirect:.2f})\n")
-    
+
     (out_dir / "co2_comparison_table.md").write_text("\n".join(md), encoding="utf-8")

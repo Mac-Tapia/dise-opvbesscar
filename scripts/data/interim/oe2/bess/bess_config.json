@@ -1,0 +1,16 @@
+{
+  "system_name": "Eaton Xpert 1670 - Iquitos BESS",
+  "capacity_kwh": 2000.0,
+  "power_kw": 1200.0,
+  "efficiency": 0.92,
+  "min_soc": 0.1,
+  "max_soc": 1.0,
+  "depth_of_discharge": 0.9,
+  "roundtrip_efficiency": 0.92,
+  "response_time_s": 0.5,
+  "degradation_rate_yearly": 0.01,
+  "round_trip_efficiency_percent": 92.0,
+  "battery_chemistry": "Lithium-ion",
+  "warranty_years": 10,
+  "cycle_life": 4500
+}

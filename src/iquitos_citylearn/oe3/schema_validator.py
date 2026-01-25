@@ -6,30 +6,31 @@ Comprehensive validation of generated CityLearn v2 schemas:
 2. Check data integrity (8,760 rows, no gaps)
 3. Validate value ranges
 4. Verify CityLearn can actually load the schema
-"""
+"""  # noqa: D400
+# pylint: disable=consider-using-f-string
+# flake8: noqa: E501
 
 from __future__ import annotations
 
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, Union
 
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore  # pylint: disable=import-error
 
 logger = logging.getLogger(__name__)
 
 
 class SchemaValidationError(Exception):
     """Raised when schema validation fails."""
-    pass
 
 
 class CityLearnSchemaValidator:
     """Validate CityLearn v2 schema completeness and correctness."""
 
-    def __init__(self, schema_path: Path | str):
+    def __init__(self, schema_path: Union[Path, str]):  # pylint: disable=redefined-outer-name
         """Initialize with path to schema.json.
 
         Args:
@@ -41,17 +42,17 @@ class CityLearnSchemaValidator:
         self.schema_path = Path(schema_path)
 
         if not self.schema_path.exists():
-            raise SchemaValidationError(f"Schema not found: {self.schema_path}")
+            raise SchemaValidationError(f"Schema not found: {self.schema_path}")  # pylint: disable=consider-using-f-string
 
         # Load schema
         try:
-            with open(self.schema_path) as f:
-                self.schema = json.load(f)
+            with open(self.schema_path, encoding='utf-8') as f:
+                self.schema: Dict[str, Any] = json.load(f)
         except Exception as e:
-            raise SchemaValidationError(f"Failed to load schema: {e}")
+            raise SchemaValidationError(f"Failed to load schema: {e}") from e  # pylint: disable=consider-using-f-string
 
         self.schema_dir = self.schema_path.parent
-        logger.info(f"✅ Schema loaded from {self.schema_path}")
+        logger.info("✅ Schema loaded from %s", self.schema_path)
 
     def validate_structure(self) -> bool:
         """Validate top-level schema structure.
@@ -66,7 +67,7 @@ class CityLearnSchemaValidator:
 
         for key in required_keys:
             if key not in self.schema:
-                raise SchemaValidationError(f"Missing schema key: {key}")
+                raise SchemaValidationError(f"Missing schema key: {key}")  # pylint: disable=consider-using-f-string
 
         # Check buildings
         if not isinstance(self.schema['buildings'], list):
@@ -74,7 +75,7 @@ class CityLearnSchemaValidator:
 
         if len(self.schema['buildings']) != 1:
             raise SchemaValidationError(
-                f"Expected 1 building, got {len(self.schema['buildings'])}"
+                f"Expected 1 building, got {len(self.schema['buildings'])}"  # pylint: disable=consider-using-f-string
             )
 
         # Check climate zones
@@ -83,7 +84,7 @@ class CityLearnSchemaValidator:
 
         if len(self.schema['climate_zones']) != 1:
             raise SchemaValidationError(
-                f"Expected 1 climate zone, got {len(self.schema['climate_zones'])}"
+                f"Expected 1 climate zone, got {len(self.schema['climate_zones'])}"  # pylint: disable=consider-using-f-string
             )
 
         logger.info("✅ Schema structure valid")
@@ -98,8 +99,8 @@ class CityLearnSchemaValidator:
         Raises:
             SchemaValidationError: If files missing or invalid
         """
-        building = self.schema['buildings'][0]
-        building_name = building['name']
+        building: Dict[str, Any] = self.schema['buildings'][0]
+        building_name: str = building['name']
 
         # Construct path (schema may use relative paths)
         # Typically: buildings/building_0/ or similar
@@ -110,24 +111,24 @@ class CityLearnSchemaValidator:
             building_dir = self.schema_dir / building_name
             if not building_dir.exists():
                 raise SchemaValidationError(
-                    f"Building directory not found: {building_dir}"
+                    f"Building directory not found: {building_dir}"  # pylint: disable=consider-using-f-string
                 )
 
         # Check energy_simulation.csv (total load)
         energy_sim = building_dir / 'energy_simulation.csv'
         if not energy_sim.exists():
             raise SchemaValidationError(
-                f"Missing energy_simulation.csv: {energy_sim}"
+                f"Missing energy_simulation.csv: {energy_sim}"  # pylint: disable=consider-using-f-string
             )
 
         try:
             df_energy = pd.read_csv(energy_sim)
         except Exception as e:
-            raise SchemaValidationError(f"Failed to read energy_simulation.csv: {e}")
+            raise SchemaValidationError(f"Failed to read energy_simulation.csv: {e}") from e  # pylint: disable=consider-using-f-string
 
         if len(df_energy) != 8760:
             raise SchemaValidationError(
-                f"energy_simulation.csv has {len(df_energy)} rows, expected 8,760"
+                f"energy_simulation.csv has {len(df_energy)} rows, expected 8,760"  # pylint: disable=consider-using-f-string
             )
 
         # Check charger simulation files (128 individual)
@@ -143,30 +144,30 @@ class CityLearnSchemaValidator:
                     df_charger = pd.read_csv(charger_file)
                     if len(df_charger) != 8760:
                         raise SchemaValidationError(
-                            f"charger_{i:03d}.csv has {len(df_charger)} rows, "
+                            f"charger_{i:03d}.csv has {len(df_charger)} rows, "  # pylint: disable=consider-using-f-string
                             f"expected 8,760"
                         )
                 except Exception as e:
                     raise SchemaValidationError(
-                        f"Failed to validate charger_{i:03d}.csv: {e}"
-                    )
+                        f"Failed to validate charger_{i:03d}.csv: {e}"  # pylint: disable=consider-using-f-string
+                    ) from e
 
         if missing_chargers:
             # Error if many are missing, warning if few
             if len(missing_chargers) > 10:
                 raise SchemaValidationError(
-                    f"Missing {len(missing_chargers)} charger files: "
+                    f"Missing {len(missing_chargers)} charger files: "  # pylint: disable=consider-using-f-string
                     f"{missing_chargers[:10]}..."
                 )
             else:
                 logger.warning(
-                    f"⚠️ Missing {len(missing_chargers)} charger files: "
-                    f"{missing_chargers}"
+                    "⚠️ Missing %d charger files: %s",
+                    len(missing_chargers), missing_chargers
                 )
         else:
             logger.info("✅ All 128 charger files present and valid (8,760 rows each)")
 
-        logger.info(f"✅ Building files valid ({128 - len(missing_chargers)}/128 chargers)")
+        logger.info("✅ Building files valid (%d/128 chargers)", 128 - len(missing_chargers))
         return len(missing_chargers) == 0
 
     def validate_climate_zone_files(self) -> bool:
@@ -178,8 +179,8 @@ class CityLearnSchemaValidator:
         Raises:
             SchemaValidationError: If files invalid
         """
-        climate_zone = self.schema['climate_zones'][0]
-        climate_name = climate_zone['name']
+        climate_zone: Dict[str, Any] = self.schema['climate_zones'][0]
+        climate_name: str = climate_zone['name']
 
         climate_dir = self.schema_dir / 'climate_zones' / climate_name
 
@@ -188,7 +189,7 @@ class CityLearnSchemaValidator:
             climate_dir = self.schema_dir / climate_name
             if not climate_dir.exists():
                 raise SchemaValidationError(
-                    f"Climate zone directory not found: {climate_dir}"
+                    f"Climate zone directory not found: {climate_dir}"  # pylint: disable=consider-using-f-string
                 )
 
         # Check required files
@@ -203,25 +204,25 @@ class CityLearnSchemaValidator:
 
             if not filepath.exists():
                 raise SchemaValidationError(
-                    f"Missing climate file: {filepath}"
+                    f"Missing climate file: {filepath}"  # pylint: disable=consider-using-f-string
                 )
 
             try:
                 df = pd.read_csv(filepath)
             except Exception as e:
                 raise SchemaValidationError(
-                    f"Failed to read {filename}: {e}"
-                )
+                    f"Failed to read {filename}: {e}"  # pylint: disable=consider-using-f-string
+                ) from e
 
             if len(df) != 8760:
                 raise SchemaValidationError(
-                    f"{filename} has {len(df)} rows, expected 8,760"
+                    f"{filename} has {len(df)} rows, expected 8,760"  # pylint: disable=consider-using-f-string
                 )
 
             # Check for expected columns (lenient - may have additional)
             for col in expected_cols:
                 if col not in df.columns:
-                    logger.warning(f"⚠️ {filename} missing expected column: {col}")
+                    logger.warning("%s missing expected column: %s", filename, col)
 
         logger.info("✅ Climate zone files valid")
         return True
@@ -235,9 +236,9 @@ class CityLearnSchemaValidator:
         Raises:
             SchemaValidationError: If gaps detected
         """
-        building = self.schema['buildings'][0]
-        building_name = building['name']
-        building_dir = self.schema_dir / 'buildings' / building_name
+        building: Dict[str, Any] = self.schema['buildings'][0]
+        building_name: str = building['name']
+        building_dir: Path = self.schema_dir / 'buildings' / building_name
 
         if not building_dir.exists():
             building_dir = self.schema_dir / building_name
@@ -248,7 +249,7 @@ class CityLearnSchemaValidator:
 
         if len(df_energy) != 8760:
             raise SchemaValidationError(
-                f"Energy simulation has {len(df_energy)} rows, not 8,760"
+                f"Energy simulation has {len(df_energy)} rows, not 8,760"  # pylint: disable=consider-using-f-string
             )
 
         # Spot-check chargers
@@ -257,7 +258,7 @@ class CityLearnSchemaValidator:
             df_charger = pd.read_csv(charger_1)
             if len(df_charger) != 8760:
                 raise SchemaValidationError(
-                    f"Charger 001 has {len(df_charger)} rows, not 8,760"
+                    f"Charger 001 has {len(df_charger)} rows, not 8,760"  # pylint: disable=consider-using-f-string
                 )
 
         # Check climate files
@@ -274,7 +275,7 @@ class CityLearnSchemaValidator:
                 df = pd.read_csv(filepath)
                 if len(df) != 8760:
                     raise SchemaValidationError(
-                        f"{filename} has {len(df)} rows, not 8,760"
+                        f"{filename} has {len(df)} rows, not 8,760"  # pylint: disable=consider-using-f-string
                     )
 
         logger.info("✅ All files have exactly 8,760 timesteps (no gaps)")
@@ -286,9 +287,9 @@ class CityLearnSchemaValidator:
         Returns:
             True if all ranges valid
         """
-        building = self.schema['buildings'][0]
-        building_name = building['name']
-        building_dir = self.schema_dir / 'buildings' / building_name
+        building: Dict[str, Any] = self.schema['buildings'][0]
+        building_name: str = building['name']
+        building_dir: Path = self.schema_dir / 'buildings' / building_name
 
         if not building_dir.exists():
             building_dir = self.schema_dir / building_name
@@ -303,11 +304,11 @@ class CityLearnSchemaValidator:
 
             # Reasonable range: 0-500 kWh per hour (3,600 kW max)
             if load_col.min() < 0:
-                logger.warning(f"⚠️ Negative load values detected: {load_col.min()}")
+                logger.warning("⚠️ Negative load values detected: %s", load_col.min())
 
             if load_col.max() > 1000:
                 logger.warning(
-                    f"⚠️ Very high load: {load_col.max():.0f} kWh/hour"
+                    "⚠️ Very high load: %.0f kWh/hour", load_col.max()
                 )
 
         # Check climate values
@@ -329,8 +330,8 @@ class CityLearnSchemaValidator:
                 )
                 if temp_min < 5 or temp_max > 40:
                     logger.warning(
-                        f"⚠️ Temperature out of expected range: "
-                        f"[{temp_min:.1f}, {temp_max:.1f}]°C"
+                        "⚠️ Temperature out of expected range: [%.1f, %.1f]°C",
+                        temp_min, temp_max
                     )
 
         # Carbon intensity: typical grid ~0.45 kg CO2/kWh for Iquitos
@@ -341,8 +342,7 @@ class CityLearnSchemaValidator:
                 c_intensity = df_carbon['carbon_intensity'].iloc[0]
                 if c_intensity < 0.1 or c_intensity > 1.0:
                     logger.warning(
-                        f"⚠️ Carbon intensity unusual: "
-                        f"{c_intensity:.3f} kg CO2/kWh"
+                        "⚠️ Carbon intensity unusual: %.3f kg CO2/kWh", c_intensity
                     )
 
         logger.info("✅ Value ranges valid")
@@ -365,7 +365,7 @@ class CityLearnSchemaValidator:
 
         try:
             env = CityLearnEnv(schema=str(self.schema_path))
-            obs, info = env.reset()
+            obs, _info = env.reset()
 
             # Check observation shape
             if isinstance(obs, list):
@@ -378,18 +378,18 @@ class CityLearnSchemaValidator:
             # Expected: ~534 dimensions for current Iquitos setup
             if obs_dim < 500:
                 logger.warning(
-                    f"⚠️ Observation dimension low: {obs_dim} (expected ~534)"
+                    "⚠️ Observation dimension low: %d (expected ~534)", obs_dim
                 )
             elif obs_dim > 600:
                 logger.warning(
-                    f"⚠️ Observation dimension high: {obs_dim} (expected ~534)"
+                    "⚠️ Observation dimension high: %d (expected ~534)", obs_dim
                 )
 
-            logger.info(f"✅ CityLearn load successful, obs_dim={obs_dim}")
+            logger.info("✅ CityLearn load successful, obs_dim=%d", obs_dim)
 
             # Try one step
             action = env.action_space.sample()
-            obs, reward, terminated, truncated, info = env.step(action)
+            _obs, _reward, _terminated, _truncated, _info = env.step(action)
 
             logger.info("✅ CityLearn step() successful")
 
@@ -398,11 +398,11 @@ class CityLearnSchemaValidator:
         except Exception as e:
             raise SchemaValidationError(
                 f"CityLearn failed to load schema: {e}"
-            )
+            ) from e
 
     # ========== MAIN VALIDATION ==========
 
-    def validate_all(self, test_citylearn: bool = True) -> Dict[str, bool]:
+    def validate_all(self, test_citylearn: bool = True) -> Dict[str, Any]:
         """Run complete schema validation.
 
         Args:
@@ -411,69 +411,69 @@ class CityLearnSchemaValidator:
         Returns:
             Dict with validation results
         """
-        results = {}
+        validation_results: Dict[str, Any] = {}
 
         # Structure
         try:
             self.validate_structure()
-            results['structure'] = True
+            validation_results['structure'] = True
             logger.info("✅ Structure validation passed")
         except SchemaValidationError as e:
-            logger.error(f"❌ Structure validation failed: {e}")
-            results['structure'] = False
-            return results  # Stop if structure invalid
+            logger.error("❌ Structure validation failed: %s", e)
+            validation_results['structure'] = False
+            return validation_results  # Stop if structure invalid
 
         # Building files
         try:
             self.validate_building_files()
-            results['building_files'] = True
+            validation_results['building_files'] = True
         except SchemaValidationError as e:
-            logger.error(f"❌ Building files validation failed: {e}")
-            results['building_files'] = False
+            logger.error("❌ Building files validation failed: %s", e)
+            validation_results['building_files'] = False
 
         # Climate zone files
         try:
             self.validate_climate_zone_files()
-            results['climate_files'] = True
+            validation_results['climate_files'] = True
         except SchemaValidationError as e:
-            logger.error(f"❌ Climate files validation failed: {e}")
-            results['climate_files'] = False
+            logger.error("❌ Climate files validation failed: %s", e)
+            validation_results['climate_files'] = False
 
         # Timestamps
         try:
             self.validate_timestamps_aligned()
-            results['timestamps'] = True
+            validation_results['timestamps'] = True
         except SchemaValidationError as e:
-            logger.error(f"❌ Timestamps validation failed: {e}")
-            results['timestamps'] = False
+            logger.error("❌ Timestamps validation failed: %s", e)
+            validation_results['timestamps'] = False
 
         # Value ranges
         try:
             self.validate_value_ranges()
-            results['values'] = True
+            validation_results['values'] = True
         except SchemaValidationError as e:
-            logger.error(f"❌ Value ranges validation failed: {e}")
-            results['values'] = False
+            logger.error("❌ Value ranges validation failed: %s", e)
+            validation_results['values'] = False
 
         # CityLearn load
         if test_citylearn:
             try:
                 self.validate_citylearn_load()
-                results['citylearn_load'] = True
+                validation_results['citylearn_load'] = True
             except SchemaValidationError as e:
-                logger.error(f"❌ CityLearn load validation failed: {e}")
-                results['citylearn_load'] = False
+                logger.error("❌ CityLearn load validation failed: %s", e)
+                validation_results['citylearn_load'] = False
         else:
-            results['citylearn_load'] = None
+            validation_results['citylearn_load'] = None
 
-        results['all'] = all(v for v in results.values() if v is not None)
+        validation_results['all'] = all(v for v in validation_results.values() if v is not None)
 
-        if results['all']:
+        if validation_results['all']:
             logger.info("\n✅✅✅ SCHEMA VALIDATION COMPLETE & PASSED\n")
         else:
             logger.error("\n❌ Schema validation has failures\n")
 
-        return results
+        return validation_results
 
 
 if __name__ == '__main__':
@@ -483,4 +483,4 @@ if __name__ == '__main__':
 
     validator = CityLearnSchemaValidator(schema_path)
     results = validator.validate_all()
-    print(f"\nValidation results: {results}")
+    print("\nValidation results:", results)

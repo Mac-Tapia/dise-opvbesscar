@@ -8,13 +8,12 @@ import logging
 import re
 
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore
 
 from iquitos_citylearn.oe3.agents import (
-    UncontrolledChargingAgent, 
-    make_basic_ev_rbc, 
+    UncontrolledChargingAgent,
+    make_basic_ev_rbc,
     make_sac,
-    NoControlAgent,
     make_no_control,
     make_ppo,
     make_a2c,
@@ -23,7 +22,6 @@ from iquitos_citylearn.oe3.agents import (
     A2CConfig,
     # Multiobjetivo
     MultiObjectiveReward,
-    MultiObjectiveWeights,
     IquitosContext,
     CityLearnMultiObjectiveWrapper,
     create_iquitos_reward_weights,
@@ -35,21 +33,21 @@ def _latest_checkpoint(checkpoint_dir: Optional[Path], prefix: str) -> Optional[
     """Retorna el checkpoint más reciente por fecha de modificación (final o step)."""
     if checkpoint_dir is None or not checkpoint_dir.exists():
         return None
-    
+
     # Buscar todos los checkpoints (final y step_*)
     candidates: List[Path] = []
     final_path = checkpoint_dir / f"{prefix}_final.zip"
     if final_path.exists():
         candidates.append(final_path)
     candidates.extend(checkpoint_dir.glob(f"{prefix}_step_*.zip"))
-    
+
     if not candidates:
         return None
-    
+
     # Ordenar por fecha de modificación (más reciente primero)
     candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
     best = candidates[0]
-    
+
     # Log del checkpoint seleccionado
     if "final" in best.name:
         logger.info(f"[RESUME] Usando checkpoint final (más reciente): {best}")
@@ -57,7 +55,7 @@ def _latest_checkpoint(checkpoint_dir: Optional[Path], prefix: str) -> Optional[
         m = re.search(r"step_(\d+)", best.stem)
         step = int(m.group(1)) if m else 0
         logger.info(f"[RESUME] Usando checkpoint step {step} (más reciente): {best}")
-    
+
     return best
 
 @dataclass(frozen=True)
@@ -186,33 +184,33 @@ def _extract_carbon_intensity(env: Any, default_value: float) -> np.ndarray:
 
 def _make_env(schema_path: Path) -> Any:
     from citylearn.citylearn import CityLearnEnv  # type: ignore
-    
+
     # GLOBAL PATCH: Disable the problematic simulate_unconnected_ev_soc method at class level
     # This method tries to access electric_vehicle_charger_state[t+1] which causes boundary errors
     try:
         from citylearn.building import Building
-        
+
         # Replace the problematic method with a no-op at class level
         def _patched_simulate_unconnected_ev_soc(self):
             """Disabled: This method in CityLearn 2.5.0 has a boundary access bug."""
             pass
-        
+
         Building.simulate_unconnected_ev_soc = _patched_simulate_unconnected_ev_soc
         logger.debug("Patched Building.simulate_unconnected_ev_soc at class level")
     except Exception as e:
         logger.debug(f"Optional patch skipped (no impact on training): {e}")
-    
+
     # Must use absolute path so CityLearn can find CSV files relative to schema directory
     abs_path = str(schema_path.resolve())
     try:
         env = CityLearnEnv(schema=abs_path, render_mode=None)
     except TypeError:
         env = CityLearnEnv(schema_path=abs_path, render_mode=None)
-    
+
     # CRITICAL FIX: Ensure render_mode attribute exists to suppress stable_baselines3 warnings
     if not hasattr(env, 'render_mode'):
         env.render_mode = None
-    
+
     return env
 
 def _sample_action(env: Any) -> Any:
@@ -306,7 +304,7 @@ def _run_episode_with_trace(
             logger.info(f"[{agent_label}] Completó {len(rewards)} pasos (1 año). Terminando episodio normalmente.")
             done = True
             break
-        
+
         obs_vec, obs_names = _flatten_obs_for_trace(obs)
         if hasattr(agent, "predict"):
             action = agent.predict(obs, deterministic=deterministic)
@@ -319,25 +317,23 @@ def _run_episode_with_trace(
         action_rows.append(action_vec)
 
         try:
-            obs, reward, terminated, truncated, _ = env.step(action)
+            obs, reward, _, _, _ = env.step(action)
         except KeyboardInterrupt:
             # CityLearn's simulate_unconnected_ev_soc() has __getattr__ chain failure
             # at boundary access electric_vehicle_charger_state[t+1]
             # Skip this error and continue with zero reward for this step
             logger.debug(f"CityLearn KeyboardInterrupt (boundary access bug) - skipping step")
-            obs, reward, terminated, truncated = obs, 0.0, True, False
+            obs, reward = obs, 0.0
         except (KeyError, IndexError, RecursionError, AttributeError, TypeError) as e:
             # Manejar errores de CityLearn con EV charger state boundaries
             logger.warning(f"Error en env.step (CityLearn): {type(e).__name__}: {str(e)[:100]}. Continuando...")
             # NO establecer done=True inmediatamente. Continuar y dejar que el límite max_steps lo maneje
             reward = 0.0
-            terminated, truncated = False, False
         except Exception as e:
             # Fallback para cualquier otro error inesperado
             logger.error(f"Error inesperado en env.step: {type(e).__name__}: {str(e)[:100]}")
             reward = 0.0
-            terminated, truncated = False, False
-            
+
         if isinstance(reward, (list, tuple)):
             reward_val = float(sum(reward))
         else:
@@ -435,7 +431,7 @@ def _save_training_artifacts(
     x = df["step"].values if "step" in df.columns else np.arange(len(df))
     y = df[metric_col].values
     try:
-        import matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt  # type: ignore
     except Exception:
         return
 
@@ -489,7 +485,7 @@ def simulate(
     seed: Optional[int] = None,
 ) -> SimulationResult:
     """Ejecuta simulación con agente especificado.
-    
+
     Args:
         schema_path: Path al schema CityLearn
         agent_name: Nombre del agente (uncontrolled, rbc, sac, ppo, etc.)
@@ -505,7 +501,7 @@ def simulate(
         sac_device: Dispositivo para SAC (e.g., "cuda", "cuda:0"). None = auto.
         ppo_device: Dispositivo para PPO (e.g., "cuda", "cuda:0"). None = auto.
         seed: Semilla para entrenamiento (None usa defaults del agente).
-        
+
     Returns:
         SimulationResult con métricas de la simulación
     """
@@ -513,11 +509,11 @@ def simulate(
     progress_dir = training_dir / "progress" if training_dir is not None else None
 
     raw_env = _make_env(schema_path)
-    
+
     # Configurar recompensa multiobjetivo
     reward_tracker: Optional[MultiObjectiveReward] = None
     env: Any = raw_env  # Por defecto usa el env sin wrapper
-    
+
     if use_multi_objective:
         weights = create_iquitos_reward_weights(multi_objective_priority)
         context = IquitosContext(
@@ -720,12 +716,12 @@ def simulate(
         except Exception as e:
             logger.warning(f"Could not extract net grid kwh from environment for {agent_name}: {e}. Using empty array.")
             net = np.array([], dtype=float)
-        
+
         if len(net) == 0:
             logger.warning(f"Episode for {agent_name} produced no data. Creating baseline 8760-hour array with zeros.")
             net = np.zeros(8760, dtype=float)
         steps = len(net)
-    
+
     # Create baseline arrays of correct size
     try:
         net = _extract_net_grid_kwh(env)
@@ -735,10 +731,10 @@ def simulate(
     except Exception as e:
         logger.warning(f"Could not extract net grid kwh from environment for {agent_name}: {e}. Using zeros.")
         net = np.zeros(steps, dtype=float)
-    
+
     grid_import = np.clip(net, 0.0, None)
     grid_export = np.clip(-net, 0.0, None)
-    
+
     # Extract all metrics with fallback to zero arrays of correct size
     try:
         ev = _extract_ev_charging_kwh(env)
@@ -747,7 +743,7 @@ def simulate(
     except Exception as e:
         logger.warning(f"Could not extract EV charging for {agent_name}: {e}. Using zeros.")
         ev = np.zeros(steps, dtype=float)
-    
+
     try:
         building = _extract_building_load_kwh(env)
         if len(building) != steps:
@@ -755,7 +751,7 @@ def simulate(
     except Exception as e:
         logger.warning(f"Could not extract building load for {agent_name}: {e}. Using zeros.")
         building = np.zeros(steps, dtype=float)
-    
+
     try:
         pv = _extract_pv_generation_kwh(env)
         if len(pv) != steps:
@@ -763,7 +759,7 @@ def simulate(
     except Exception as e:
         logger.warning(f"Could not extract PV generation for {agent_name}: {e}. Using zeros.")
         pv = np.zeros(steps, dtype=float)
-    
+
     try:
         ci = _extract_carbon_intensity(env, default_value=carbon_intensity_kg_per_kwh)
         if len(ci) != steps:
@@ -775,7 +771,7 @@ def simulate(
     carbon = float(np.sum(grid_import * ci))
 
     sim_years = (steps * seconds_per_time_step) / (365.0 * 24.0 * 3600.0)
-    
+
     # Calcular métricas multiobjetivo post-hoc
     mo_metrics = {
         "priority": multi_objective_priority if use_multi_objective else "none",
@@ -786,7 +782,7 @@ def simulate(
         "r_grid_mean": 0.0,
         "reward_total_mean": 0.0,
     }
-    
+
     reward_components: List[Dict[str, float]] = []
     if use_multi_objective and reward_tracker is not None:
         # CRÍTICO: Crear una nueva instancia limpia para calcular métricas desde cero
@@ -805,7 +801,7 @@ def simulate(
         except Exception as e:
             logger.warning(f"Could not recreate MultiObjectiveReward: {e}. Using existing tracker.")
             clean_tracker = reward_tracker
-        
+
         # Calcular recompensas para cada timestep con datos REALES del episodio
         for t in range(steps):
             hour = t % 24
@@ -820,7 +816,7 @@ def simulate(
                 hour=hour,
             )
             reward_components.append(comps)
-        
+
         # Obtener métricas desde el tracker limpio
         pareto = clean_tracker.get_pareto_metrics()
         mo_metrics = {

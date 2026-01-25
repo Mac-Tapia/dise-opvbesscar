@@ -13,10 +13,9 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 
-import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +163,8 @@ class OE2DataLoader:
             return {"power_kw": 4050.0}  # Default Kyocera KS20
 
         try:
-            config = json.load(open(config_file))
+            data = json.load(open(config_file))
+            config = data if isinstance(data, dict) else {"power_kw": 4050.0}
             logger.info(f"✅ Solar config loaded: {config}")
             return config
         except Exception as e:
@@ -308,7 +308,8 @@ class OE2DataLoader:
             }
 
         try:
-            config = json.load(open(config_file))
+            data = json.load(open(config_file))
+            config = data if isinstance(data, dict) else {"num_chargers": 128, "total_power_kw": 272.0}
             logger.info(f"✅ Chargers config loaded")
             return config
         except Exception as e:
@@ -330,7 +331,8 @@ class OE2DataLoader:
         config_file = self.oe2_path / 'bess' / 'bess_config.json'
         if config_file.exists():
             try:
-                config = json.load(open(config_file))
+                data = json.load(open(config_file))
+                config = data if isinstance(data, dict) else {}
                 logger.info(f"✅ BESS config (new format) loaded")
                 return config
             except Exception as e:
@@ -344,7 +346,8 @@ class OE2DataLoader:
             )
 
         try:
-            results = json.load(open(results_file))
+            data = json.load(open(results_file))
+            results = data if isinstance(data, dict) else {}
         except Exception as e:
             raise OE2ValidationError(f"Failed to read BESS results: {e}")
 
@@ -432,7 +435,7 @@ class OE2DataLoader:
         try:
             # Solar
             self.load_solar_timeseries()
-            solar_config = self.load_solar_config()
+            self.load_solar_config()
             results['solar'] = True
             logger.info("✅ Solar validation passed")
         except Exception as e:

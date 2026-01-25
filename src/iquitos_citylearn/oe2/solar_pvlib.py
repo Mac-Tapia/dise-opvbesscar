@@ -39,7 +39,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 import requests  # type: ignore[import-untyped]
 
 _pvlib_exceptions: Optional[Any] = None
@@ -1867,7 +1867,7 @@ if __name__ == "__main__":
 
     # Mostrar gráficas con matplotlib si está disponible
     try:
-        import matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt  # type: ignore[import]
 
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
         fig_title = f"Análisis de Generación PV - Iquitos ({demo_metadata['system_dc_kw']:,.0f} kWp)"

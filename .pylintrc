@@ -1,0 +1,47 @@
+[MASTER]
+# Pylint configuration for pvbesscar project
+load-plugins=pylint.extensions.typing
+persistent=no
+
+[MESSAGES CONTROL]
+disable=
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    too-many-arguments,
+    too-many-instance-attributes,
+    too-many-locals,
+    broad-except,
+    consider-using-f-string,
+    line-too-long,
+    unused-argument,
+    protected-access,
+    no-name-in-module,
+    import-error
+
+[FORMAT]
+max-line-length=120
+indent-string='    '
+
+[LOGGING]
+logging-format-style=new
+
+[VARIABLES]
+additional-builtins=_
+
+[TYPECHECK]
+# Skip external libraries that may not have type stubs
+ignored-modules=
+    pandas,
+    numpy,
+    citylearn,
+    stable_baselines3
+
+ignored-classes=
+    pd.DataFrame,
+    np.ndarray,
+    DataFrame,
+    ndarray
+
+[SPELLING]
+spelling-dict=en_US

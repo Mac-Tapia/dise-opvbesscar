@@ -32,7 +32,7 @@ try:
     import torch
     import numpy as np
 except ImportError as e:
-    logger.error(f"Missing dependency: {e}")
+    logger.error("Missing dependency: %s", e)
     sys.exit(1)
 
 
@@ -58,9 +58,9 @@ def main():
     try:
         from iquitos_citylearn.oe3.agents import detect_device
         device = detect_device() if args.device == "auto" else args.device
-        logger.info(f"✓ Device: {device}")
-    except Exception as e:
-        logger.error(f"✗ Error detectando device: {e}")
+        logger.info("✓ Device: %s", device)
+    except (ImportError, AttributeError) as e:
+        logger.error("✗ Error detectando device: %s", e)
         return False
 
     # ========== CARGAR CONFIGURACIÓN ==========
@@ -68,17 +68,16 @@ def main():
     try:
         from scripts._common import load_all
         cfg, rp = load_all(args.config)
-        logger.info(f"✓ Config cargado: {args.config}")
-        logger.info(f"✓ Paths: processed={rp.processed_dir}, checkpoints={rp.analyses_dir}")
-    except Exception as e:
-        logger.error(f"✗ Error cargando config: {e}")
+        _ = cfg  # Guardar config para futuro uso
+        logger.info("✓ Config cargado: %s", args.config)
+        logger.info("✓ Paths: processed=%s, checkpoints=%s", rp.processed_dir, rp.analyses_dir)
+    except (ImportError, OSError, ValueError) as e:
+        logger.error("✗ Error cargando config: %s", e)
         return False
 
     # ========== CARGAR DATASET ==========
     logger.info("\n[3/4] Cargando dataset CityLearn...")
     try:
-        import json as json_module
-
         # Buscar schema más reciente
         schema_dir = Path(rp.outputs_dir)
         schemas = sorted(schema_dir.glob("schema_*.json"), reverse=True)
@@ -89,17 +88,17 @@ def main():
             return False
 
         schema_path = schemas[0]
-        logger.info(f"✓ Schema: {schema_path.name}")
+        logger.info("✓ Schema: %s", schema_path.name)
 
         # Validar schema
-        with open(schema_path) as f:
-            schema = json_module.load(f)
+        with open(schema_path, encoding="utf-8") as f:
+            schema = json.load(f)
 
         n_buildings = len(schema.get("buildings", {}))
-        logger.info(f"✓ Buildings: {n_buildings}")
+        logger.info("✓ Buildings: %s", n_buildings)
 
-    except Exception as e:
-        logger.error(f"✗ Error cargando dataset: {e}")
+    except (OSError, IOError, json.JSONDecodeError) as e:
+        logger.error("✗ Error cargando dataset: %s", e)
         return False
 
     # ========== ENTRENAR AGENTES ==========
@@ -112,8 +111,8 @@ def main():
             A2CAgent, A2CConfig,
         )
         from citylearn.citylearn import CityLearnEnv
-    except Exception as e:
-        logger.error(f"✗ Error importando agentes: {e}")
+    except (ImportError, AttributeError) as e:
+        logger.error("✗ Error importando agentes: %s", e)
         return False
 
     # Configurar seed para reproducibilidad
@@ -124,9 +123,9 @@ def main():
     try:
         logger.info("  Inicializando CityLearn...")
         env = CityLearnEnv(str(schema_path))
-        logger.info(f"  ✓ Entorno listo")
-    except Exception as e:
-        logger.error(f"✗ Error creando entorno: {e}")
+        logger.info("  ✓ Entorno listo")
+    except (ImportError, OSError, ValueError) as e:
+        logger.error("✗ Error creando entorno: %s", e)
         return False
 
     # Configurar directorio de checkpoints
@@ -145,9 +144,9 @@ def main():
 
     for agent_name, ConfigClass, episodes in agents_config:
         agent_start = time.time()
-        logger.info(f"\n{'='*80}")
-        logger.info(f"🎮 Entrenando {agent_name} ({episodes} episodios)...")
-        logger.info(f"{'='*80}")
+        logger.info("=" * 80)
+        logger.info("🎮 Entrenando %s (%d episodios)...", agent_name, episodes)
+        logger.info("=" * 80)
 
         try:
             # Crear configuración
@@ -156,7 +155,7 @@ def main():
             config.seed = args.seed
             config.checkpoint_dir = str(checkpoint_base / agent_name.lower())
 
-            logger.info(f"  Config: lr={config.learning_rate}, hidden={config.hidden_sizes}")
+            logger.info("  Config: lr=%s, hidden=%s", config.learning_rate, config.hidden_sizes)
 
             # Crear agente
             if agent_name == "SAC":
@@ -166,45 +165,46 @@ def main():
             else:  # A2C
                 agent = A2CAgent(env, config)
 
-            logger.info(f"  ✓ Agente creado")
+            logger.info("  ✓ Agente creado")
 
             # Simular entrenamiento (barra de progreso)
             for ep in range(1, episodes + 1):
                 # Placeholder: en producción llamar a agent.train()
                 time.sleep(0.01)  # Simular trabajo
                 if ep % max(1, episodes // 5) == 0:
-                    logger.info(f"    [{agent_name}] Episode {ep}/{episodes}")
+                    logger.info("    [%s] Episode %d/%d", agent_name, ep, episodes)
 
             elapsed = time.time() - agent_start
-            logger.info(f"✓ {agent_name} training completed in {elapsed:.1f}s")
+            logger.info("✓ %s training completed in %.1fs", agent_name, elapsed)
             results[agent_name] = {"success": True, "time_sec": elapsed}
 
-        except Exception as e:
+        except (ImportError, OSError, ValueError, RuntimeError) as e:
             elapsed = time.time() - agent_start
-            logger.error(f"✗ {agent_name} training failed: {e}")
+            logger.error("✗ %s training failed: %s", agent_name, e)
             results[agent_name] = {"success": False, "time_sec": elapsed, "error": str(e)}
 
     # Resumen final
-    logger.info(f"\n{'='*80}")
+    logger.info("")
+    logger.info("=" * 80)
     logger.info("📊 RESUMEN FINAL")
-    logger.info(f"{'='*80}")
+    logger.info("=" * 80)
 
     total_time = time.time() - total_start
     success_count = sum(1 for r in results.values() if r["success"])
 
     for agent, result in results.items():
         status = "✓" if result["success"] else "✗"
-        logger.info(f"{status} {agent:6} | {result['time_sec']:7.1f}s")
+        logger.info("%s %6s | %7.1fs", status, agent, result['time_sec'])
 
-    logger.info(f"{'='*80}")
-    logger.info(f"Total: {success_count}/{len(results)} agents trained")
-    logger.info(f"Elapsed: {total_time:.1f}s ({total_time/60:.1f}m)")
-    logger.info(f"Started: {datetime.now().isoformat()}")
-    logger.info(f"{'='*80}\n")
+    logger.info("=" * 80)
+    logger.info("Total: %d/%d agents trained", success_count, len(results))
+    logger.info("Elapsed: %.1fs (%.1fm)", total_time, total_time / 60)
+    logger.info("Started: %s", datetime.now().isoformat())
+    logger.info("=" * 80)
 
     # Guardar resultados
     results_file = checkpoint_base.parent / f"training_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-    with open(results_file, "w") as f:
+    with open(results_file, "w", encoding="utf-8") as f:
         json.dump({
             "agents": results,
             "total_time_sec": total_time,
@@ -213,7 +213,7 @@ def main():
             "timestamp": datetime.now().isoformat(),
         }, f, indent=2)
 
-    logger.info(f"Results saved: {results_file.name}")
+    logger.info("Results saved: %s", results_file.name)
 
     return success_count == len(results)
 

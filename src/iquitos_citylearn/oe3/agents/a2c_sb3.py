@@ -112,10 +112,12 @@ class A2CAgent:
             return detect_device()
         return self.config.device
 
-    def learn(self, episodes: int = 5, total_timesteps: Optional[int] = None) -> None:
+    def learn(self, total_timesteps: Optional[int] = None, **kwargs: Any) -> None:
+        """Entrena el agente A2C."""
+        _ = kwargs  # Silenciar warning de argumento no usado
         try:
             import gymnasium as gym
-            from stable_baselines3 import A2C
+            from stable_baselines3 import A2C  # type: ignore[import]
             from stable_baselines3.common.env_util import make_vec_env
             from stable_baselines3.common.callbacks import BaseCallback, CallbackList
             from stable_baselines3.common.monitor import Monitor
@@ -293,7 +295,7 @@ class A2CAgent:
 
         vec_env = make_vec_env(_env_creator, n_envs=1, seed=self.config.seed)
 
-        lr_schedule = self._get_lr_schedule(steps)
+        lr_schedule = self._get_lr_schedule()  # No requiere parámetros
         policy_kwargs = {
             "net_arch": list(self.config.hidden_sizes),
             "activation_fn": self._get_activation(),
@@ -598,12 +600,20 @@ class A2CAgent:
                 size_kb = z.stat().st_size / 1024
                 logger.info("  - %s (%.1f KB)", z.name, size_kb)
 
-    def _get_lr_schedule(self, total_steps: int) -> Union[Callable[[float], float], float]:
+    def _get_lr_schedule(self) -> Union[Callable[[float], float], float]:
         """Crea scheduler de learning rate."""
-        from stable_baselines3.common.utils import get_linear_fn
+        try:
+            from stable_baselines3.common.utils import get_linear_fn  # type: ignore[import]
+        except ImportError:
+            # Fallback implementation
+            def get_linear_fn(init_val: float, final_val: float, _total: float) -> Callable[[float], float]:
+                def fn(progress: float) -> float:
+                    return init_val + (final_val - init_val) * progress
+                return fn
 
         if self.config.lr_schedule == "linear":
-            return get_linear_fn(self.config.learning_rate, self.config.learning_rate * 0.1, 1.0)
+            result: Union[Callable[[float], float], float] = get_linear_fn(self.config.learning_rate, self.config.learning_rate * 0.1, 1.0)
+            return result
         if self.config.lr_schedule == "cosine":
             def cosine_schedule(progress: float) -> float:
                 return float(self.config.learning_rate * (0.5 * (1 + np.cos(np.pi * (1 - progress)))))
@@ -697,7 +707,7 @@ class A2CAgent:
             logger.info("Modelo A2C guardado en %s", path)
 
     def load(self, path: str):
-        from stable_baselines3 import A2C
+        from stable_baselines3 import A2C  # type: ignore
         self.model = A2C.load(path)
         self._trained = True
         logger.info("Modelo A2C cargado desde %s", path)

@@ -17,8 +17,8 @@ from typing import Dict, List, Optional, Tuple, Any, Type
 import json
 import math
 import numpy as np
-import pandas as pd
-from matplotlib import pyplot as plt
+import pandas as pd  # type: ignore[import]
+from matplotlib import pyplot as plt  # type: ignore[import]
 
 
 @dataclass(frozen=True)
@@ -960,7 +960,6 @@ def run_bess_sizing(
     # Determinar si es formato de 15 min (35,040 intervalos) o horario (8,760)
     if len(df_ev) == 35040:
         # Formato de 15 minutos: 96 intervalos/día
-        intervals_per_day = 96
         ev_kwh_day = df_ev['ev_kwh'].sum() / 365
         print(f"   Demanda EV (15 min, {len(df_ev)} intervalos): {ev_kwh_day:.0f} kWh/día")
     else:
@@ -1078,12 +1077,10 @@ def run_bess_sizing(
         # Crear perfil solar de 15 min
         pv_15min_day = []
         for h in range(24):
-            pv_hour = df_pv[df_pv.index.hour == h]['pv_kwh'].mean() if len(df_pv[df_pv.index.hour == h]) > 0 else 0
+            hour_mask = df_pv.index.get_level_values('hour') == h if 'hour' in df_pv.index.names else df_pv.index.hour == h  # type: ignore
+            pv_hour = df_pv[hour_mask]['pv_kwh'].mean() if len(df_pv[hour_mask]) > 0 else 0
             for _ in range(4):
                 pv_15min_day.append(pv_hour / 4.0)
-
-        # Mall sintético 15 min
-        mall_15min_day = [mall_kwh_day / 96.0] * 96
 
         # EV 15 min (primer día)
         ev_15min_day = df_ev_15min_original.head(96)['ev_kwh'].values
@@ -1102,7 +1099,9 @@ def run_bess_sizing(
             print(f"   Primer déficit EV: intervalo {first_deficit_interval} ({discharge_start}:{(first_deficit_interval % 4) * 15:02d})")
         else:
             # Fallback: última hora con generación solar
-            pv_hours_with_generation = df_pv[df_pv['pv_kwh'] > 0.1].index.hour.unique()
+            mask = df_pv['pv_kwh'] > 0.1
+            idx_with_gen = df_pv[mask].index
+            pv_hours_with_generation = idx_with_gen.get_level_values('hour').unique() if 'hour' in idx_with_gen.names else idx_with_gen.hour.unique()  # type: ignore
             if len(pv_hours_with_generation) > 0:
                 last_solar_hour = int(pv_hours_with_generation.max())
                 discharge_start = last_solar_hour
@@ -1110,7 +1109,9 @@ def run_bess_sizing(
                 discharge_start = 17
     else:
         # Fallback: determinar desde datos horarios
-        pv_hours_with_generation = df_pv[df_pv['pv_kwh'] > 0.1].index.hour.unique()
+        mask = df_pv['pv_kwh'] > 0.1
+        idx_with_gen = df_pv[mask].index
+        pv_hours_with_generation = idx_with_gen.get_level_values('hour').unique() if 'hour' in idx_with_gen.names else idx_with_gen.hour.unique()  # type: ignore
         if len(pv_hours_with_generation) > 0:
             last_solar_hour = int(pv_hours_with_generation.max())
             discharge_start = last_solar_hour
@@ -1475,7 +1476,7 @@ if __name__ == "__main__":
     print("\n📦 DIMENSIONAMIENTO:")
     print(f"   • Capacidad:        {result['capacity_kwh']:,.0f} kWh")
     print(f"   • Potencia:         {result['nominal_power_kw']:,.0f} kW")
-    dod_value = float(result['dod'])
+    dod_value = float(result['dod']) if isinstance(result['dod'], (int, float, str)) else 0.0
     print(f"   • DoD:              {dod_value*100:.0f}%")
     print(f"   • C-rate:           {result['c_rate']:.2f}")
 
@@ -1488,7 +1489,7 @@ if __name__ == "__main__":
     print(f"   • Déficit:          {result['deficit_kwh_day']:,.0f} kWh/día")
 
     print("\n🔋 OPERACIÓN:")
-    self_suff_value = float(result['self_sufficiency'])
+    self_suff_value = float(result['self_sufficiency']) if isinstance(result['self_sufficiency'], (int, float, str)) else 0.0
     print(f"   • Autosuficiencia:  {self_suff_value*100:.1f}%")
     print(f"   • Import red:       {result['grid_import_kwh_day']:,.0f} kWh/día")
     print(f"   • Export red:       {result['grid_export_kwh_day']:,.0f} kWh/día")

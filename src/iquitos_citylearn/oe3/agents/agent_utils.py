@@ -59,7 +59,7 @@ def validate_env_spaces(env: Any) -> Dict[str, Any]:
         "action_space": action_space,
     }
 
-    logger.info(f"Environment validated: obs_dim={obs_dim}, action_dim={action_dim}")
+    logger.info("Environment validated: obs_dim=%s, action_dim=%s", obs_dim, action_dim)
     return result
 
 
@@ -77,7 +77,7 @@ def ensure_checkpoint_dir(checkpoint_dir: Optional[str]) -> Path:
 
     path = Path(checkpoint_dir)
     path.mkdir(parents=True, exist_ok=True)
-    logger.info(f"Checkpoint directory: {path.absolute()}")
+    logger.info("Checkpoint directory: %s", path.absolute())
     return path
 
 
@@ -108,22 +108,24 @@ class ListToArrayWrapper:
         if isinstance(obs, list):
             try:
                 return np.array(obs, dtype=np.float32).flatten()
-            except Exception as e:
-                logger.warning(f"Error converting obs: {e}")
-                return obs
-        return obs
+            except (ValueError, TypeError):
+                logger.warning("Error converting obs, returning as numpy array")
+                return np.array(obs, dtype=np.float32).flatten()
+        if isinstance(obs, np.ndarray):
+            return obs.astype(np.float32).flatten()
+        return np.array([obs], dtype=np.float32).flatten()
 
     def __getattr__(self, name: str) -> Any:
         """Delega atributos al entorno envuelto."""
         return getattr(self.env, name)
 
 
-def flatten_action(action: Any, action_space: Any) -> np.ndarray:
+def flatten_action(action: Any) -> np.ndarray:
     """Aplana acción (si es lista de arrays)."""
     if isinstance(action, list):
         try:
             return np.concatenate([np.array(a, dtype=np.float32).flatten() for a in action])
-        except Exception:
+        except (ValueError, TypeError):
             return np.array(action, dtype=np.float32).flatten()
     return np.array(action, dtype=np.float32).flatten()
 
@@ -149,9 +151,9 @@ def validate_checkpoint(checkpoint_path: str) -> bool:
     """
     path = Path(checkpoint_path)
     if not path.exists():
-        logger.warning(f"Checkpoint not found: {checkpoint_path}")
+        logger.warning("Checkpoint not found: %s", checkpoint_path)
         return False
-    logger.info(f"Checkpoint validated: {checkpoint_path}")
+    logger.info("Checkpoint validated: %s", checkpoint_path)
     return True
 
 
@@ -174,13 +176,15 @@ def normalize_observations(obs: np.ndarray, mean: Optional[np.ndarray] = None,
     if std is None:
         std = obs.std(axis=0) + 1e-8
 
-    return (obs - mean) / std
+    result: np.ndarray = (obs - mean) / std
+    return result
 
 
 def denormalize_observations(obs: np.ndarray, mean: np.ndarray,
                             std: np.ndarray) -> np.ndarray:
     """Desnormaliza observaciones."""
-    return obs * std + mean
+    result: np.ndarray = obs * std + mean
+    return result
 
 
 def scale_reward(reward: float, scale: float = 0.01) -> float:
