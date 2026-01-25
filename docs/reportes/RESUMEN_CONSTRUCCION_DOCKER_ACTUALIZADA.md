@@ -60,7 +60,7 @@ pvbesscar-monitor-gpu:     # Monitor con GPU
 pvbesscar-jupyter-gpu:     # Jupyter puerto 8889 (nuevo)
 ```bash
 
-#### Mejoras:
+#### Mejoras: (2)
 
 - Runtime nvidia configurado
 - Health check GPU-específico (torch.cuda)
@@ -298,26 +298,26 @@ Status: ✅ Pushed to origin/main
 
    ```bash
    docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pvbesscar:latest .
-   ```
+```bash
 
 2. **Start services:**
 
    ```bash
    docker-compose up -d
-   ```
+```bash
 
 3. **Verify health:**
 
    ```bash
    docker-compose logs
    docker inspect --format='{{json .State.Health}}' pvbesscar-pipeline
-   ```
+```bash
 
 4. **Access Jupyter:**
 
 ```text
    http://localhost:8888
-   ```
+```bash
 
 ---
 

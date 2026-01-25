@@ -33,7 +33,7 @@
 - Purpose: Specify Python version for pyenv/asdf tools
 - Status: ✅ Created
 
-**2. `.github/workflows/test-and-lint.yml` (UPDATED)**
+#### 2. `.github/workflows/test-and-lint.yml` (UPDATED)
 
 ```yaml
 # BEFORE:
@@ -106,7 +106,7 @@ python_requires=">=3.11,<3.12"
 
 ### Phase 6 New Modules (COMPLETE ✅)
 
-**1. `src/iquitos_citylearn/oe2/data_loader.py` (479 lines)**
+#### 1. `src/iquitos_citylearn/oe2/data_loader.py` (479 lines)
 
 ```python
 class OE2DataLoader:

@@ -26,7 +26,7 @@ interval,time_of_day,hour,minute,energy_kwh,power_kw,is_peak
 
 ### 2. Alineación de Series Temporales
 
-#### Cambios:
+#### Cambios: (2)
 
 - Detecta si EV está en formato de 15 min (35,040 puntos) o horario (8,760)
 - Convierte automáticamente de 15 min a horario para la simulación BESS

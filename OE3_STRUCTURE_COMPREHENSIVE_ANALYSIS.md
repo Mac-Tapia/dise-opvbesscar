@@ -366,7 +366,7 @@ from iquitos_citylearn.oe3.co2_emissions import (...)
    # Move dataclasses from co2_emissions.py to co2_table.py
    # Update co2_table.py line 7: remove import
    # Delete co2_emissions.py
-   ```
+```bash
 
    - **Impact**: 1 file deleted, cleaner imports
    - **Testing**: Verify `scripts/run_oe3_co2_table.py` still runs
@@ -375,7 +375,7 @@ from iquitos_citylearn.oe3.co2_emissions import (...)
      ```bash
      # Copy content of co2_emissions.py into co2_table.py
      git rm src/iquitos_citylearn/oe3/co2_emissions.py
-     ```
+```bash
 
 ### Phase 3: Low Priority - ARCHIVE
 

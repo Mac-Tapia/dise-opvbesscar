@@ -35,7 +35,7 @@ docker-compose -f docker-compose.yml up -d
 docker-compose -f docker-compose.gpu.yml up -d
 ```bash
 
-#### Servicios iniciados:
+#### Servicios iniciados: (2)
 
 - `pvbesscar-pipeline-gpu`: Pipeline con GPU
 - `pvbesscar-monitor-gpu`: Monitoreo GPU
@@ -47,7 +47,7 @@ docker-compose -f docker-compose.gpu.yml up -d
 docker-compose -f docker-compose.dev.yml up -d
 ```bash
 
-#### Servicios iniciados:
+#### Servicios iniciados: (3)
 
 - `dev-notebook`: Jupyter Lab
 - `dev-tests`: Pytest automation
@@ -342,20 +342,20 @@ docker-compose -f docker-compose.dev.yml -p pvbesscar-dev up -d
 
    ```bash
    git pull origin main
-   ```
+```bash
 
 2. **Rebuild image**
 
    ```bash
    DOCKER_BUILDKIT=1 docker build -t pvbesscar:latest .
-   ```
+```bash
 
 3. **Restart services**
 
    ```bash
    docker-compose down
    docker-compose up -d
-   ```
+```bash
 
 ---
 

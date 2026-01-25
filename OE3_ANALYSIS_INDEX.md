@@ -355,31 +355,31 @@ d:\diseñopvbesscar\src\iquitos_citylearn\oe3\
 
 ## ❓ FAQ
 
-**Q: Is this analysis complete?**  
+#### Q: Is this analysis complete?
 A: Yes. Every file in OE3 has been analyzed, imports traced, dependencies mapped.
 
-**Q: Are the recommendations safe?**  
+#### Q: Are the recommendations safe?
 A: Yes. 95% confidence level. All changes are reversible with git.
 
-**Q: Will cleanup break training?**  
+#### Q: Will cleanup break training?
 A: No. All changes are to unused/orphaned files. Main pipeline untouched.
 
-**Q: How long does cleanup take?**  
+#### Q: How long does cleanup take?
 A: ~35 minutes to execute + ~10 minutes to test = ~45 minutes total.
 
-**Q: Can I do partial cleanup?**  
+#### Q: Can I do partial cleanup?
 A: Yes. Each step is independent. Step 1 (delete demanda_mall_kwh.py) is 100% safe alone.
 
-**Q: What if something breaks?**  
+#### Q: What if something breaks?
 A: All changes are reversible. Rollback time is ~15 minutes max.
 
-**Q: Where should I start?**  
+#### Q: Where should I start?
 A: 1) Read OE3_ANALYSIS_SUMMARY.md (5 min)  
    2) Read OE3_STRUCTURE_COMPREHENSIVE_ANALYSIS.md (20 min)  
    3) Decide whether to cleanup  
    4) If yes, follow OE3_CLEANUP_ACTION_PLAN.md
 
-**Q: Who should review before cleanup?**  
+#### Q: Who should review before cleanup?
 A: Recommend showing this analysis to team lead or project owner before execution.
 
 ---

@@ -345,19 +345,19 @@ total_cost          Costo acumulado (€)
 
 ## ❓ Preguntas Frecuentes
 
-**P: ¿Por dónde empiezo?**  
+#### P: ¿Por dónde empiezo?
 R: Lee [README_GUIA.md](README_GUIA.md) primero.
 
-**P: ¿Cómo ejecuto la simulación?**  
+#### P: ¿Cómo ejecuto la simulación?
 R: `py -3.11 simulador_interactivo.py` → Opción 7
 
-**P: ¿Dónde está la documentación API?**  
+#### P: ¿Dónde está la documentación API?
 R: <http://localhost:8000/docs> (Swagger interactivo)
 
-**P: ¿Cómo integro con mi sistema?**  
+#### P: ¿Cómo integro con mi sistema?
 R: [RESUMEN_SIMULACION_COMPLETO.md](RESUMEN_SIMULACION_COMPLETO.md) - Sección "Ejemplos de Uso"
 
-**P: ¿Cuál es el ahorro real?**  
+#### P: ¿Cuál es el ahorro real?
 R: 20-75% en costo energético anual
 
 ---

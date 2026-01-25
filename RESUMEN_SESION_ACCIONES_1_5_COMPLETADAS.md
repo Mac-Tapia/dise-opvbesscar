@@ -197,25 +197,25 @@ TOTAL:  4-6 horas (ejecución secuencial con GPU)
 
    ```bash
    python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-   ```
+```bash
 
 2. Entrenar agentes
 
    ```bash
    python scripts/train_agents_serial.py --device cuda --episodes 50
-   ```
+```bash
 
 3. Monitorear progreso (en otra terminal)
 
    ```bash
    python scripts/monitor_training_live_2026.py
-   ```
+```bash
 
 4. Ver resultados
 
    ```bash
    cat COMPARACION_BASELINE_VS_RL.txt
-   ```
+```bash
 
 ---
 

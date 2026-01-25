@@ -756,7 +756,7 @@ RECOMMENDATION: Use PPO for production (best performance + stability)
    ```bash
    cat COMPARACION_BASELINE_VS_RL.txt
    # Verify CO2 reduction ≥20% and solar ≥60%
-   ```
+```bash
 
 2. **Document Findings**
    - Create final performance report
@@ -768,7 +768,7 @@ RECOMMENDATION: Use PPO for production (best performance + stability)
    ```bash
    git add .
    git commit -m "feat: Phase 8 complete - Agent training results (PPO best: 29% CO2 reduction)"
-   ```
+```bash
 
 ---
 
@@ -783,7 +783,7 @@ RECOMMENDATION: Use PPO for production (best performance + stability)
 
    ```bash
    python scripts/train_agents_serial.py --episodes 100  # Double training
-   ```
+```bash
 
 3. **Agent Comparison**
    - Run same test episode for all 3 agents

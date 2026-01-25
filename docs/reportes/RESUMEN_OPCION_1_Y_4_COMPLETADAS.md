@@ -259,7 +259,7 @@ pylint src/ --exit-zero
 
 ## 📌 Resumen Ejecutivo
 
-**OPCIÓN 1 + OPCIÓN 4 completadas exitosamente en una sesión**
+#### OPCIÓN 1 + OPCIÓN 4 completadas exitosamente en una sesión
 
 ### Resultados (2)
 

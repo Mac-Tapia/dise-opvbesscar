@@ -76,7 +76,7 @@ pip install -r requirements-phase8.txt
 python -c "import citylearn; print('✅ CityLearn ready')"
 ```bash
 
-#### Incluye:
+#### Incluye: (2)
 
 - ✅ citylearn>=2.5.0
 
@@ -135,44 +135,44 @@ python scripts/train_agents_serial.py --device cuda --episodes 50
 
    ```bash
    python --version  # → Python 3.11.9
-   ```
+```bash
 
 2. **Crear .venv**
 
    ```bash
    python -m venv .venv
    .\.venv\Scripts\Activate.ps1
-   ```
+```bash
 
 3. **Instalar Phase 7**
 
    ```bash
    pip install -r requirements-phase7.txt
-   ```
+```bash
 
 4. **Validar Phase 7**
 
    ```bash
    python phase7_validation_complete.py  # ✅ DEBE PASAR
-   ```
+```bash
 
 5. **Instalar CityLearn (Phase 8)**
 
    ```bash
    pip install -r requirements-phase8.txt
-   ```
+```bash
 
 6. **Construir Dataset**
 
    ```bash
    python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-   ```
+```bash
 
 7. **Entrenar Agentes**
 
    ```bash
    python scripts/train_agents_serial.py --device cuda --episodes 50
-   ```
+```bash
 
 ---
 

@@ -276,7 +276,7 @@ outputs/oe3/training/tier2_2ep_serial/
 
 ### Status de Cálculo de Métricas
 
-**✅ MÉTRICAS CALCULADAS EN EVALUACIÓN POST-TRAINING:**
+#### ✅ MÉTRICAS CALCULADAS EN EVALUACIÓN POST-TRAINING:
 
 Script: `EVALUACION_METRICAS_COMPLETAS.py` (ejecutar después del entrenamiento)
 

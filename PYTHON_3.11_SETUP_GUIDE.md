@@ -37,7 +37,7 @@ Cython.Compiler.Errors.CompileError: sklearn\linear_model\_cd_fast.pyx
    ```bash
    python3.11 --version
    # Should output: Python 3.11.0 (or similar 3.11.x)
-   ```
+```bash
 
 ---
 
@@ -48,28 +48,28 @@ Cython.Compiler.Errors.CompileError: sklearn\linear_model\_cd_fast.pyx
    ```bash
    # In PowerShell or Git Bash
    git clone https://github.com/pyenv-win/pyenv-win.git ~/.pyenv
-   ```
+```bash
 
 2. **Add to PATH** (PowerShell):
 
    ```powershell
    [Environment]::SetEnvironmentVariable("PYENV", "$home\.pyenv\pyenv-win", "User")
    [Environment]::SetEnvironmentVariable("PATH", "$env:PYENV\bin;$env:PATH", "User")
-   ```
+```bash
 
 3. **Install Python 3.11**:
 
    ```bash
    pyenv install 3.11.0
    pyenv global 3.11.0
-   ```
+```bash
 
 4. **Verify**:
 
    ```bash
    python --version
    # Should output: Python 3.11.0
-   ```
+```bash
 
 ---
 
@@ -81,20 +81,20 @@ Cython.Compiler.Errors.CompileError: sklearn\linear_model\_cd_fast.pyx
    Set-ExecutionPolicy Bypass -Scope Process -Force
    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-   ```
+```bash
 
 2. **Install pyenv**:
 
    ```bash
    choco install pyenv-win
-   ```
+```bash
 
 3. **Install Python 3.11**:
 
    ```bash
    pyenv install 3.11.0
    pyenv global 3.11.0
-   ```
+```bash
 
 ---
 
@@ -221,26 +221,26 @@ The following files have been updated to enforce Python 3.11:
 
    ```bash
    python phase7_test_pipeline.py
-   ```
+```bash
 
 4. **Build CityLearn dataset**:
 
    ```bash
    python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-   ```
+```bash
 
 5. **Test agent training**:
 
    ```bash
    python scripts/train_quick.py --episodes 1
-   ```
+```bash
 
 6. **Commit**:
 
    ```bash
    git add -A
    git commit -m "feat: Phase 6-7 complete - OE2->OE3 integration with Python 3.11"
-   ```
+```bash
 
 ---
 

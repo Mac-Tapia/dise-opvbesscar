@@ -34,7 +34,7 @@ Verifica todos estos items antes de iniciar el entrenamiento RL.
 
   ```bash
   python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-  ```
+```bash
 
 - [ ] Validar schema: `outputs/schema_*.json` debe existir
   - [ ] Contains `buildings` key
@@ -47,13 +47,13 @@ Verifica todos estos items antes de iniciar el entrenamiento RL.
 
   ```bash
   python -c "from iquitos_citylearn.oe3.agents import PPOAgent, SACAgent, A2CAgent; print('OK')"
-  ```
+```bash
 
 - [ ] Device detectado:
 
   ```bash
   python -c "from iquitos_citylearn.oe3.agents import detect_device; print(detect_device())"
-  ```
+```bash
 
 ## 6. Rewards & Observables
 
@@ -61,7 +61,7 @@ Verifica todos estos items antes de iniciar el entrenamiento RL.
 
   ```bash
   python -c "from iquitos_citylearn.oe3.rewards import MultiObjectiveWeights; w=MultiObjectiveWeights(); print(f'Sum={w.co2+w.cost+w.solar+w.ev_satisfaction+w.grid_stability:.2f}')"
-  ```
+```bash
 
 - [ ] Observables enriquecidos disponibles:
   - [ ] `src/iquitos_citylearn/oe3/enriched_observables.py` contiene lógica
@@ -72,7 +72,7 @@ Verifica todos estos items antes de iniciar el entrenamiento RL.
 
   ```bash
   rm -r checkpoints/  # o en PowerShell: Remove-Item -Recurse checkpoints
-  ```
+```bash
 
 - [ ] O aceptar reanudar desde checkpoint existente (opcional)
 

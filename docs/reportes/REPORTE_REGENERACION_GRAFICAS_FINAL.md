@@ -205,7 +205,7 @@ analyses/oe3/training/plots/
 └── training_summary.png ✅ Real
 ```text
 
-**Total: 25 gráficas PNG con datos reales de checkpoints**
+#### Total: 25 gráficas PNG con datos reales de checkpoints
 
 ---
 

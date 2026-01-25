@@ -171,13 +171,13 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 
    ```bash
    python src/iquitos_citylearn/oe3/agents/validate_training_env.py
-   ```
+```bash
 
 2. **Dataset requerido**: CityLearn schema debe existir
 
    ```bash
    python -m scripts.run_oe3_build_dataset --config configs/default.yaml
-   ```
+```bash
 
 3. **Pesos de rewards**: Verificar que sumen 1.0 (auto-normalizados)
 
@@ -185,13 +185,13 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
    from src.iquitos_citylearn.oe3.rewards import MultiObjectiveWeights
    w = MultiObjectiveWeights()
    print(f"Sum: {w.co2 + w.cost + w.solar + w.ev_satisfaction + w.grid_stability}")
-   ```
+```bash
 
 4. **GPU Optional**: CPU funciona pero más lento (~10x)
 
    ```bash
    python scripts/train_quick.py --device cpu --episodes 5
-   ```
+```bash
 
 ---
 

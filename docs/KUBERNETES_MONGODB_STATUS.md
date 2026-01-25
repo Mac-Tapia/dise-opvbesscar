@@ -381,7 +381,7 @@ Métricas incluidas:
    ```bash
    kubectl cluster-info
    kubectl get nodes
-   ```
+```bash
 
 ### 3. **Deployar**
 
@@ -389,7 +389,7 @@ Métricas incluidas:
    python k8s_manager.py deploy
    # O
    kubectl apply -f k8s-deployment.yaml
-   ```
+```bash
 
 ### 4. **Verificar Deployment**
 
@@ -397,19 +397,19 @@ Métricas incluidas:
    python k8s_manager.py status
    # O
    kubectl get all -n pvbesscar
-   ```
+```bash
 
 ### 5. **Port Forward (guía rápida)**
 
    ```bash
    python k8s_manager.py forward web
-   ```
+```bash
 
 ### 6. **Acceder**
 
 ```text
    http://localhost:5000
-   ```
+```bash
 
 ---
 

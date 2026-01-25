@@ -235,7 +235,7 @@ project_root/
 
    ```bash
    scripts/train_agents_serial.py --episodes 50
-   ```
+```bash
 
 2. **Evaluar convergencia**
    - Gráficas de reward

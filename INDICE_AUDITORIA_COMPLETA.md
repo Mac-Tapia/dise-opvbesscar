@@ -79,7 +79,7 @@
 
      ```bash
      python AUDITORIA_OE2_OE3_EXHAUSTIVA.py
-     ```
+```bash
 
 - **Salida**: Reporte en consola + LOG file
 
