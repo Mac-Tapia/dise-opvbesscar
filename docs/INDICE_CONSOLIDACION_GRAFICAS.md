@@ -95,17 +95,7 @@ Acciones:
 ✅ Sugerir regeneración si necesario
 ```text
 
-## 📊 Estadísticas Finales
-
-  | Métrica | Antes | Después | Diferencia |  
-| --------- | ------- | --------- | ----------- |
-  | Gráficas | 39 | 25 | -14 (-36%) |  
-  | Duplicados | 14 pares | 0 | -28 (-100%) |  
-  | Carpetas | 4 | 1 | -3 (-75%) |  
-  | Espacio (KB) | ~1600 | ~800 | -800 (-50%) |  
-  | Verificadas | - | 25/25 | 100% |  
-
-## 🗂️ Estructura Final
+## 📊 Estadísticas Finales | Métrica | Antes | Después | Diferencia | | --------- | ------- | --------- | ----------- | | Gráficas | 39 | 25 | -14 (-36%) | | Duplicados | 14 pares | 0 | -28 (-100%) | | Carpetas | 4 | 1 | -3 (-75%) | | Espacio (KB) | ~1600 | ~800 | -800 (-50%) | | Verificadas | - | 25/25 | 100% | ## 🗂️ Estructura Final
 
 ```text
 analyses/oe3/training/

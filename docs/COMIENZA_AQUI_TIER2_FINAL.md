@@ -70,17 +70,7 @@ planas; ver métricas)
 
 ## 🎯 TIER 2 CONFIGURATION EQUIVALENCE
 
-### Mapping Multiobjetivo (Balanced Priority)
-
-  | Componente | Peso | Descripción |  
-| ----------- | ------ | ------------- |
-  | CO2 | 0.35 | Primario - Emisiones carbono |  
-  | Costo | 0.25 | Costo energético |  
-  | Solar | 0.20 | Aprovechamiento solar |  
-  | EV | 0.15 | Satisfacción EV |  
-  | Grid | 0.05 | Estabilidad red |  
-
-### Parámetros TIER 2 por Agente
+### Mapping Multiobjetivo (Balanced Priority) | Componente | Peso | Descripción | | ----------- | ------ | ------------- | | CO2 | 0.35 | Primario - Emisiones carbono | | Costo | 0.25 | Costo energético | | Solar | 0.20 | Aprovechamiento solar | | EV | 0.15 | Satisfacción EV | | Grid | 0.05 | Estabilidad red | ### Parámetros TIER 2 por Agente
 
 #### PPO (`ppo_sb3.py`)
 
@@ -298,27 +288,9 @@ Calcula para cada agente (2 episodios):
 - ✅ **Grid Stability**: Estabilidad de la red (0-1, donde 1 = perfecta)
 - ✅ **Convergence Speed**: Velocidad en minutos de GPU
 
-### Convergencia Típica (benchmarks indicativos)
+### Convergencia Típica (benchmarks indicativos) | Métrica | A2C | PPO | SAC | Mejor | | --------- | ----- | ----- | ----- | ------- | | Avg Reward (2ep) | 0.45-0.55 | 0.40-0.50 | 0.55-0.65 | 🥇 SAC | | CO2 (kg) | 1.75-1.85M | 1.85-2.0M | 1.65-1.80M | 🥇 SAC | | Peak Import (kWh/h) | 240-260 | 260-290 | 220-250 | 🥇 SAC | | Grid Stability | 0.70-0.80 | 0.75-0.85 | 0.80-0.90 | 🥇 SAC | | Convergence Speed | Fast | Medium | Medium | 🥇 A2C | **Salida**: `analyses/oe3/training/RESULTADOS_METRICAS_COMPLETAS.json`
 
-  | Métrica | A2C | PPO | SAC | Mejor |  
-| --------- | ----- | ----- | ----- | ------- |
-  | Avg Reward (2ep) | 0.45-0.55 | 0.40-0.50 | 0.55-0.65 | 🥇 SAC |  
-  | CO2 (kg) | 1.75-1.85M | 1.85-2.0M | 1.65-1.80M | 🥇 SAC |  
-  | Peak Import (kWh/h) | 240-260 | 260-290 | 220-250 | 🥇 SAC |  
-  | Grid Stability | 0.70-0.80 | 0.75-0.85 | 0.80-0.90 | 🥇 SAC |  
-  | Convergence Speed | Fast | Medium | Medium | 🥇 A2C |  
-
-**Salida**: `analyses/oe3/training/RESULTADOS_METRICAS_COMPLETAS.json`
-
-### Velocidad Entrenamiento (wall-clock)
-
-  | Agente | Tipo | GPU | CPU |  
-| -------- | ------ | ----- | ----- |
-  | A2C | On-policy | ~18 min | ~45 min |  
-  | PPO | On-policy | ~22 min | ~55 min |  
-  | SAC | Off-policy | ~12 min | ~30 min |  
-
----
+### Velocidad Entrenamiento (wall-clock) | Agente | Tipo | GPU | CPU | | -------- | ------ | ----- | ----- | | A2C | On-policy | ~18 min | ~45 min | | PPO | On-policy | ~22 min | ~55 min | | SAC | Off-policy | ~12 min | ~30 min | ---
 
 ## 📝 GIT COMMITS
 

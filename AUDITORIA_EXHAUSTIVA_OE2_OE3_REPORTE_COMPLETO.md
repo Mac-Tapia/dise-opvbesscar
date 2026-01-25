@@ -9,37 +9,14 @@ datos energéticos
 
 ---
 
-## TABLA RESUMEN EJECUTIVA
-
-  | Aspecto | Encontrado | Esperado | Estado | Prioridad |  
-|---------|-----------|----------|--------|-----------|
-  | **Estructura OE2** | 35 archivos | - | ✓ Completa | - |  
-  | **Timeseries Solar** | 35,037 filas (15-min) | 8,760 (1-hora) | ❌ CRÍTICO | MÁXIMA |  
-  | **Chargers individuales** | 128 | 128 | ✓ Correcto | - |  
-  | **Charger profiles CSV** | 0 generados | 128 | ❌ CRÍTICO | MÁXIMA |  
-  | **BESS configuración** | 4,520 kWh | 2,000 kWh | ⚠️ MISMATCH | ALTO |  
-  | **Dataset builder** | Existe | Existe | ✓ | - |  
-  | **Schema CityLearn** | No validado | 534-dim obs | ❌ NO VERIFICADO | ALTO |  
-  | **Integración OE2→OE3** | Parcial | Completa | ❌ GAPS | CRÍTICO |  
-
----
+## TABLA RESUMEN EJECUTIVA | Aspecto | Encontrado | Esperado | Estado | Prioridad | |---------|-----------|----------|--------|-----------| | **Estructura OE2** | 35 archivos | - | ✓ Completa | - | |**Timeseries Solar**|35,037 filas (15-min)|8,760 (1-hora)|❌ CRÍTICO|MÁXIMA| | **Chargers individuales** | 128 | 128 | ✓ Correcto | - | | **Charger profiles CSV** | 0 generados | 128 | ❌ CRÍTICO | MÁXIMA | | **BESS configuración** | 4,520 kWh | 2,000 kWh | ⚠️ MISMATCH | ALTO | | **Dataset builder** | Existe | Existe | ✓ | - | | **Schema CityLearn** | No validado | 534-dim obs | ❌ NO VERIFICADO | ALTO | | **Integración OE2→OE3** | Parcial | Completa | ❌ GAPS | CRÍTICO | ---
 
 ## PARTE 1: ANÁLISIS ESTRUCTURA OE2
 
 ### 1.1 Inventario de Archivos OE2
 
-#### Carpeta: `data/interim/oe2/solar/` (8 archivos, 4.4 MB)
-
-  | Archivo | Tamaño | Contenido | Estado |  
-|---------|--------|----------|--------|
-  | `pv_generation_timeseries.csv` | **4.34 MB** | 35,037 filas ×... | ❌ Resolución incorrecta |  
-  | `solar_results.json` | 0.01 MB | Config PV: 4162 kWp DC,... | ✓ |  
-  | `solar_technical_report.md` | 0.01 MB | Reporte técnico Kyocera... | ✓ |  
-  | `pv_profile_24h.csv` | <0.01 MB | Perfil 24h agregado | ✓ |  
-  | `pv_monthly_energy.csv` | <0.01 MB | Energía mensual | ✓ |  
-  | `pv_candidates_*.csv` | ~0.01 MB total | Alternativas de diseño | ℹ️ Informativo |  
-
-**Hallazgo crítico**: Resolución 15-minutos vs esperada 1-hora
+#### Carpeta: `data/interim/oe2/solar/` (8 archivos, 4.4 MB) | Archivo | Tamaño | Contenido | Estado | |---------|--------|----------|--------|
+|`pv_generation_timeseries.csv`|**4.34 MB**|35,037 filas ×...|❌ Resolución incorrecta| | `solar_results.json` | 0.01 MB | Config PV: 4162 kWp DC,... | ✓ | | `solar_technical_report.md` | 0.01 MB | Reporte técnico Kyocera... | ✓ | | `pv_profile_24h.csv` | <0.01 MB | Perfil 24h agregado | ✓ | | `pv_monthly_energy.csv` | <0.01 MB | Energía mensual | ✓ | |`pv_candidates_*.csv`|~0.01 MB total|Alternativas de diseño|ℹ️ Informativo| **Hallazgo crítico**: Resolución 15-minutos vs esperada 1-hora
 
 ```bash
 actual:   35,037 filas × 15 min/fila = ~8,759.25 horas
@@ -49,59 +26,24 @@ esperado: 8,760 filas × 60 min/fila = ~8,760 horas
 **AC Power range**: 0.0 - 2,886.7 kW (válido, con saturación esperada en
 inversor)
 
-#### Carpeta: `data/interim/oe2/chargers/` (17 archivos, 0.2 MB)
-
-  | Archivo | Tamaño | Contenido | Estado |  
-|---------|--------|----------|--------|
-  | `individual_chargers.json` | 0.10 MB | **128 chargers** con... | ✓ Correcto |  
-  | `chargers_citylearn.csv` | 0.01 MB | Mapeo para CityLearn... | ✓ |  
-  | `perfil_horario_carga.csv` | <0.01 MB | **Perfil 24 horas... | ⚠️ Solo 24h |  
-  | `chargers_results.json` | 0.03 MB | Recomendación: 32... | ✓ |  
-  | `charger_profile_variants.json` | 0.03 MB | Variantes estocásticas | ⚠️ No integrado |  
-  | `demand_scenarios.csv` | <0.01 MB | Escenarios (min, rec, max) | ℹ️ Informativo |  
-  | `annual_datasets/` | <0.5 MB | **Datos por... | ⚠️ NO USADO |  
-  | Tablas auxiliares | ~0.05 MB | Tabla capacidad, parámetros, etc. | ℹ️ Informativo |  
-
-**Hallazgo crítico**: Falta de timeseries anual por charger
+#### Carpeta: `data/interim/oe2/chargers/` (17 archivos, 0.2 MB) | Archivo | Tamaño | Contenido | Estado | |---------|--------|----------|--------|
+|`individual_chargers.json`|0.10 MB|**128 chargers** con...|✓ Correcto| | `chargers_citylearn.csv` | 0.01 MB | Mapeo para CityLearn... | ✓ | | `perfil_horario_carga.csv` | <0.01 MB | **Perfil 24 horas... | ⚠️ Solo 24h | | `chargers_results.json` | 0.03 MB | Recomendación: 32... | ✓ | |`charger_profile_variants.json`|0.03 MB|Variantes estocásticas|⚠️ No integrado|
+|`demand_scenarios.csv`|<0.01 MB|Escenarios (min, rec, max)|ℹ️ Informativo| | `annual_datasets/` | <0.5 MB | **Datos por... | ⚠️ NO USADO | |Tablas auxiliares|~0.05 MB|Tabla capacidad, parámetros, etc.|ℹ️ Informativo| **Hallazgo crítico**: Falta de timeseries anual por charger
 
 - `perfil_horario_carga.csv` es solo 24 horas
 - `individual_chargers.json` contiene `hourly_load_profile` (24h) pero NO CSVs
   - anuales
 - `annual_datasets/` existe pero NO se consulta en dataset_builder
 
-#### Carpeta: `data/interim/oe2/bess/` (3 archivos, 1.8 MB)
-
-  | Archivo | Tamaño | Contenido | Estado |  
-|---------|--------|----------|--------|
-  | `bess_results.json` | <0.01 MB | Config: **4,520 kWh**, 2,712... | ⚠️ Revisar |  
-  | `bess_daily_balance_24h.csv` | 0.01 MB | Balance 24h:... | ✓ |  
-  | `bess_simulation_hourly.csv` | 1.76 MB | Simulación horaria (8,760 horas) | ✓ |  
-
-**Hallazgo**: Capacidad BESS es **4,520 kWh** (config_default.yaml dice 2,000
+#### Carpeta: `data/interim/oe2/bess/` (3 archivos, 1.8 MB) | Archivo | Tamaño | Contenido | Estado | |---------|--------|----------|--------|
+|`bess_results.json`|<0.01 MB|Config: **4,520 kWh**, 2,712...|⚠️ Revisar| | `bess_daily_balance_24h.csv` | 0.01 MB | Balance 24h:... | ✓ | |`bess_simulation_hourly.csv`|1.76 MB|Simulación horaria (8,760 horas)|✓| **Hallazgo**: Capacidad BESS es **4,520 kWh** (config_default.yaml dice 2,000
 kWh)
 
 - README especifica "2 MWh/1.2 MW"
 - bess_results.json dice "4,520 kWh"
 - **MISMATCH CRÍTICO** entre documentación y datos
 
-#### Carpeta: `data/interim/oe2/demandamallkwh/` (2 archivos)
-
-  | Archivo | Tamaño | Contenido |  
-|---------|--------|----------|
-  | `demandamallkwh.csv` | 0.71 MB | Demanda total mall (anual) |  
-  | `demandamallkwh_profile_24h.json` | <0.01 MB | Perfil 24h |  
-
-#### Carpeta: `data/interim/oe2/citylearn/` (5 archivos, 0.5 MB)
-
-  | Archivo | Tamaño | Contenido |  
-|---------|--------|----------|
-  | `solar_generation.csv` | 0.16 MB | Solar ya resampled a 1-hora |  
-  | `building_load.csv` | 0.20 MB | Demanda edificio (1-hora) |  
-  | `solar_schema_params.json` | <0.01 MB | Parámetros PV para CityLearn |  
-  | `bess_schema_params.json` | <0.01 MB | Parámetros BESS para CityLearn |  
-  | `bess_solar_generation.csv` | 0.14 MB | Generación PV para balance BESS |  
-
-**Observación**: Esta carpeta parece ser **preparada previamente** para
+#### Carpeta: `data/interim/oe2/demandamallkwh/` (2 archivos) | Archivo | Tamaño | Contenido | |---------|--------|----------| | `demandamallkwh.csv` | 0.71 MB | Demanda total mall (anual) | | `demandamallkwh_profile_24h.json` | <0.01 MB | Perfil 24h | #### Carpeta: `data/interim/oe2/citylearn/` (5 archivos, 0.5 MB) | Archivo | Tamaño | Contenido | |---------|--------|----------| | `solar_generation.csv` | 0.16 MB | Solar ya resampled a 1-hora | | `building_load.csv` | 0.20 MB | Demanda edificio (1-hora) | | `solar_schema_params.json` | <0.01 MB | Parámetros PV para CityLearn | | `bess_schema_params.json` | <0.01 MB | Parámetros BESS para CityLearn | | `bess_solar_generation.csv` | 0.14 MB | Generación PV para balance BESS | **Observación**: Esta carpeta parece ser **preparada previamente** para
 CityLearn, pero NO está integrada en dataset_builder actual.
 
 ---
@@ -165,40 +107,11 @@ está implementado**.
    - Razón desconocida (respec or updated during optimization?)
 ```bash
 
-### 2.4 Consistencia Entre Archivos
-
-  | Métrica | Valor | Validación |  
-|---------|-------|-----------|
-  | PV generación anual | 8.04 GWh | ✓ Razonable (8,760h × 918 kW promedio) |  
-  | EV demanda anual | 1,187 MWh | ✓ 3,252 kWh/día × 365 días |  
-  | Ratio PV/EV | 6.76× | ✓ PV suficiente... |  
-  | BESS ciclos/día | 0.767 | ✓ Realista (no sobredimensionado) |  
-
----
+### 2.4 Consistencia Entre Archivos | Métrica | Valor | Validación | |---------|-------|-----------| | PV generación anual | 8.04 GWh | ✓ Razonable (8,760h × 918 kW promedio) | | EV demanda anual | 1,187 MWh | ✓ 3,252 kWh/día × 365 días | | Ratio PV/EV | 6.76× | ✓ PV suficiente... | | BESS ciclos/día | 0.767 | ✓ Realista (no sobredimensionado) | ---
 
 ## PARTE 3: ANÁLISIS DATASET_BUILDER
 
-### 3.1 Cobertura de Artefactos OE2
-
-  | Artefacto OE2 | ¿Cargado? | Ubicación en builder | Transformación |  
-|---------------|-----------|----------------------|-----------------|
-  | `solar_ts` | ✓ | Línea ~87 | Lee CSV, pero **NO downsamples** |  
-  | `ev_profile_24h` | ✓ | Línea ~94 | Lee perfil 24h, **NO expande a 365d** |  
-  | `individual_chargers` | ✓ | Línea ~98 | Lee JSON, pero **NO genera CSVs** |  
-  | `bess` | ✓ | Línea ~158 | Lee resultados, **asignación... |  
-  | `chargers_results` | ✓ | Línea ~105 | Lee dimensionamiento,... |  
-
-### 3.2 Transformaciones Implementadas
-
-  | Transformación | ¿Implementado? | Estado | Impacto |  
-|----------------|---------------|--------|--------|
-  | Schema generation | ✓ | OK | Crea edificio unificado Mall_Iquitos |  
-  | PV update | ✓ | **PARCIAL** | Asigna nominal_power pero no timeseries |  
-  | BESS update | ✓ | **PARCIAL** | Asigna capacidad pero no sim. horaria |  
-  | Chargers definition | ✓ | **INCOMPLETO** | Define chargers pero sin CSV paths |  
-  | CSV discovery | ✓ | **PROBLEMATIC** | Busca CSVs que no existen |  
-
-### 3.3 Transformaciones Faltantes
+### 3.1 Cobertura de Artefactos OE2 | Artefacto OE2 | ¿Cargado? | Ubicación en builder | Transformación | |---------------|-----------|----------------------|-----------------| | `solar_ts` | ✓ | Línea ~87 | Lee CSV, pero **NO downsamples** | | `ev_profile_24h` | ✓ | Línea ~94 | Lee perfil 24h, **NO expande a 365d** | | `individual_chargers` | ✓ | Línea ~98 | Lee JSON, pero **NO genera CSVs** | | `bess` | ✓ | Línea ~158 | Lee resultados, **asignación... | | `chargers_results` | ✓ | Línea ~105 | Lee dimensionamiento,... | ### 3.2 Transformaciones Implementadas | Transformación | ¿Implementado? | Estado | Impacto | |----------------|---------------|--------|--------| | Schema generation | ✓ | OK | Crea edificio unificado Mall_Iquitos | | PV update | ✓ | **PARCIAL** | Asigna nominal_power pero no timeseries | | BESS update | ✓ | **PARCIAL** | Asigna capacidad pero no sim. horaria | |Chargers definition|✓|**INCOMPLETO**|Define chargers pero sin CSV paths| | CSV discovery | ✓ | **PROBLEMATIC** | Busca CSVs que no existen | ### 3.3 Transformaciones Faltantes
 
 ```python
 # ❌ FALTA 1: Downsampling solar 15-min → 1-hora
@@ -255,18 +168,7 @@ df_building_load = pd.read_csv(interim_dir / "oe2" / "citylearn" / "building_loa
 }
 ```bash
 
-### 4.2 Problemas Detectados en Schema Actual
-
-  | Componente | Esperado | Actual | Problema |  
-|------------|----------|--------|----------|
-  | **pv.nominal_power** | 4,162 kWp | ✓ Asignado | OK |  
-  | **electrical_storage.capacity** | 2,000-4,520 kWh | ⚠️ 4,520 | MISMATCH doc. |  
-  | **chargers.count** | 128 | ✓ 128 | OK |  
-  | **charger_simulation paths** | ✓ Valid paths | ❌ Paths no existen | CRÍTICO |  
-  | **non_shiftable_load.csv** | ✓ 8,760 rows | ❌ NO ENCONTRADO | CRÍTICO |  
-  | **electric_vehicles_def.count** | 128 | ✓ 128 | OK |  
-
----
+### 4.2 Problemas Detectados en Schema Actual | Componente | Esperado | Actual | Problema | |------------|----------|--------|----------| | **pv.nominal_power** | 4,162 kWp | ✓ Asignado | OK | |**electrical_storage.capacity**|2,000-4,520 kWh|⚠️ 4,520|MISMATCH doc.| | **chargers.count** | 128 | ✓ 128 | OK | |**charger_simulation paths**|✓ Valid paths|❌ Paths no existen|CRÍTICO| | **non_shiftable_load.csv** | ✓ 8,760 rows | ❌ NO ENCONTRADO | CRÍTICO | | **electric_vehicles_def.count** | 128 | ✓ 128 | OK | ---
 
 ## PARTE 5: ERRORES Y GAPS IDENTIFICADOS (Priorizado)
 
@@ -720,18 +622,7 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
 
 ---
 
-## PARTE 9: IMPACTO DE NO CORREGIR
-
-  | Gap | Impacto Sin Corregir |  
-|-----|---------------------|
-  | Resolución solar | Training 4x más... |  
-  | Charger CSVs faltantes | CityLearn falla al... |  
-  | Paths incorrectos | Schema inválido, environment crash |  
-  | BESS capacity mismatch | Energía disponible incorrecta,... |  
-  | building_load faltante | non_shiftable_load es cero,... |  
-  | annual_datasets no usado | Pierden datos de variación realista |  
-
-**Resumen**: Sin correcciones Tier 1, **entrenamiento RL es IMPOSIBLE**.
+## PARTE 9: IMPACTO DE NO CORREGIR | Gap | Impacto Sin Corregir | |-----|---------------------| | Resolución solar | Training 4x más... | | Charger CSVs faltantes | CityLearn falla al... | | Paths incorrectos | Schema inválido, environment crash | | BESS capacity mismatch | Energía disponible incorrecta,... | | building_load faltante | non_shiftable_load es cero,... | | annual_datasets no usado | Pierden datos de variación realista | **Resumen**: Sin correcciones Tier 1, **entrenamiento RL es IMPOSIBLE**.
 
 ---
 

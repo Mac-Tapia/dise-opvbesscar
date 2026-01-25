@@ -21,16 +21,10 @@ validación
 
 ---
 
-## 📚 DOCUMENTACIÓN PRINCIPAL
-
-  | Documento | Propósito | Tiempo |  
-|-----------|-----------|--------|
-  | [TRAINING_READY.md](TRAINING_READY.md) | Resumen ejecutivo y estado actual | 5 min |  
-  | [TRAINING_CHECKLIST.md](TRAINING_CHECKLIST.md) | Validación paso-a-paso (10 pasos) | 10-20 min |  
-  | [QUICK_REFERENCE_TRAINING.py](QUICK_REFERENCE_TRAINING.py) | Copy-paste commands + FAQ | 5 min |  
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
----
+## 📚 DOCUMENTACIÓN PRINCIPAL | Documento | Propósito | Tiempo | |-----------|-----------|--------|
+|[TRAINING_READY.md](TRAINING_READY.md)|Resumen ejecutivo y estado actual|5 min|
+|[TRAINING_CHECKLIST.md](TRAINING_CHECKLIST.md)|Validación paso-a-paso (10 pasos)|10-20 min|
+|[QUICK_REFERENCE_TRAINING.py](QUICK_REFERENCE_TRAINING.py)|Copy-paste commands + FAQ|5 min| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| ---
 
 ## 🔧 MEJORAS IMPLEMENTADAS
 
@@ -230,16 +224,7 @@ Archivo: `scripts/train_quick.py`
 
 ## 📈 MÉTRICAS ESPERADAS
 
-Después de entrenamiento con 50 episodios:
-
-  | Métrica | Baseline | SAC | PPO | A2C |  
-|---------|----------|-----|-----|-----|
-  | CO₂ emissions | 10,200 kg | 7,500 kg | 7,200 kg | 7,800 kg |  
-  | Reducción CO₂ | 0% | -26% | -29% | -24% |  
-  | Solar utilization | 40% | 65% | 68% | 60% |  
-  | Training time/ep | N/A | 1 hr | 1 hr | 45 min |  
-
----
+Después de entrenamiento con 50 episodios: | Métrica | Baseline | SAC | PPO | A2C | |---------|----------|-----|-----|-----| | CO₂ emissions | 10,200 kg | 7,500 kg | 7,200 kg | 7,800 kg | | Reducción CO₂ | 0% | -26% | -29% | -24% | | Solar utilization | 40% | 65% | 68% | 60% | | Training time/ep | N/A | 1 hr | 1 hr | 45 min | ---
 
 ## ⚡ QUICK START (Una Línea)
 

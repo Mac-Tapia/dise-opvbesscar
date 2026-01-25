@@ -35,18 +35,7 @@ Ahora disponibles en `info["reward_components"]`:
 - `ev_power_mototaxis_kw`: Potencia mototaxis
 - `ev_power_fairness_ratio`: max/min potencia
 
-#### 4. **Hiperparámetros Estabilizados** ✓
-
-  | Parámetro | Valor | Cambio |  
-| ----------- | ------- | -------- |
-  | `entropy_coef` | **0.01 FIJO** | Era 0.02 adaptativo ↓ |  
-  | `learning_rate_base` | 2.5e-4 | Igual TIER 2 |  
-  | `learning_rate_peak` | **1.5e-4** | NUEVO: -40% en pico |  
-  | `normalize_obs` | True | HABILITADO |  
-  | `normalize_rewards` | True | HABILITADO |  
-  | `clip_obs` | 10.0 | Para estabilidad |  
-
-#### 5. **Recompensas Normalizadas y Escaladas** ✓
+#### 4. **Hiperparámetros Estabilizados** ✓ | Parámetro | Valor | Cambio | | ----------- | ------- | -------- | | `entropy_coef` | **0.01 FIJO** | Era 0.02 adaptativo ↓ | | `learning_rate_base` | 2.5e-4 | Igual TIER 2 | | `learning_rate_peak` | **1.5e-4** | NUEVO: -40% en pico | | `normalize_obs` | True | HABILITADO | | `normalize_rewards` | True | HABILITADO | | `clip_obs` | 10.0 | Para estabilidad | #### 5. **Recompensas Normalizadas y Escaladas** ✓
 
 ```python
 # Antes: Mal escalado, sin clipping final
@@ -123,20 +112,7 @@ env = ImprovedRewardWrapper(env, config=config_custom)
 
 ---
 
-## Comparativa: V1 vs V2
-
-  | Aspecto | V1 (Anterior) | V2 (Nuevo) |  
-| --------- | -------------- | ----------- |
-  | **CO₂ weight** | 0.50 | **0.55** ↑ |  
-  | **Penalización CO₂ pico** | 2.0x | **2.5x** ↑ |  
-  | **Potencia pico explícita** | Implícita | **Explícita** ✓ |  
-  | **SOC reserve** | Fijo 0.65 | **Dinámico** (0.40-0.85) |  
-  | **Entropy coef** | 0.02 adaptativo | **0.01 fijo** |  
-  | **LR pico** | No ajustado | **1.5e-4** (reducido) |  
-  | **Normalización final** | Parcial | **Completa [-1,1]** |  
-  | **Observables** | Básicos | **Enriquecidos** (12+) |  
-
----
+## Comparativa: V1 vs V2 | Aspecto | V1 (Anterior) | V2 (Nuevo) | | --------- | -------------- | ----------- | | **CO₂ weight** | 0.50 | **0.55** ↑ | | **Penalización CO₂ pico** | 2.0x | **2.5x** ↑ | | **Potencia pico explícita** | Implícita | **Explícita** ✓ | | **SOC reserve** | Fijo 0.65 | **Dinámico** (0.40-0.85) | | **Entropy coef** | 0.02 adaptativo | **0.01 fijo** | | **LR pico** | No ajustado | **1.5e-4** (reducido) | | **Normalización final** | Parcial | **Completa [-1,1]** | | **Observables** | Básicos | **Enriquecidos** (12+) | ---
 
 ## Próximos Pasos
 
@@ -154,18 +130,7 @@ env = ImprovedRewardWrapper(env, config=config_custom)
 
 ---
 
-## Referencia Rápida - Horas Críticas Iquitos
-
-  | Hora | Tipo | SOC Target | Penalización CO₂ |  
-| ------ | ------ | ----------- | ------------------ |
-  | 0-8 | Noche | 0.60 | 1.2x |  
-  | 9-11 | Valle | 0.60 | 1.2x |  
-  | 12-15 | Normal | 0.60 | 1.2x |  
-  | **16-17** | **Pre-pico** | **0.85** | **1.5x** |  
-  | **18-21** | **PICO** | **0.40** | **2.5x** |  
-  | 22-23 | Noche | 0.60 | 1.2x |  
-
-**Peak Demand Limit**: 150 kW (hard limit en pico)
+## Referencia Rápida - Horas Críticas Iquitos | Hora | Tipo | SOC Target | Penalización CO₂ | | ------ | ------ | ----------- | ------------------ | | 0-8 | Noche | 0.60 | 1.2x | | 9-11 | Valle | 0.60 | 1.2x | | 12-15 | Normal | 0.60 | 1.2x | | **16-17** | **Pre-pico** | **0.85** | **1.5x** | | **18-21** | **PICO** | **0.40** | **2.5x** | | 22-23 | Noche | 0.60 | 1.2x | **Peak Demand Limit**: 150 kW (hard limit en pico)
 
 ---
 

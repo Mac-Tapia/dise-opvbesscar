@@ -9,19 +9,8 @@ reentrenar
 
 ## 🎯 TIER 2 CHANGES FOR PPO & A2C
 
-### Equivalentes SAC → PPO/A2C
-
-  | SAC TIER 2 | PPO TIER 2 | A2C TIER 2 |  
-| ----------- | ----------- | ----------- |
-  | ent_coef: 0.01→0.02 | ent_coef: 0.01→0.02 | ent_coef: 0.01→0.02 |  
-  | learning_rate: 3e-4→2.5e-4 | learning_rate: 3e-4→2.5e-4 | learning_rate: 3e-4→2.5e-4 |  
-  | batch_size: 512→256 | batch_size: 128→256 | n_steps: 512→1024 |  
-  | hidden: 256,256→512,512 | hidden: 256,256→512,512 | hidden: 256,256→512,512 |  
-  | tau: 0.005→0.005 | clip_range: 0.2→0.2 | No equivalente |  
-|  | n_epochs: 10→15 (↑) |  |
-|  | lr_schedule: const→linear | lr_schedule: const→linear |
-
-### ACTUALIZAR CONFIGS
+### Equivalentes SAC → PPO/A2C | SAC TIER 2 | PPO TIER 2 | A2C TIER 2 | | ----------- | ----------- | ----------- | | ent_coef: 0.01→0.02 | ent_coef: 0.01→0.02 | ent_coef: 0.01→0.02 | |learning_rate: 3e-4→2.5e-4|learning_rate: 3e-4→2.5e-4|learning_rate: 3e-4→2.5e-4| | batch_size: 512→256 | batch_size: 128→256 | n_steps: 512→1024 | |hidden: 256,256→512,512|hidden: 256,256→512,512|hidden: 256,256→512,512| | tau: 0.005→0.005 | clip_range: 0.2→0.2 | No equivalente | | | n_epochs: 10→15 (↑) | |
+| | lr_schedule: const→linear | lr_schedule: const→linear | ### ACTUALIZAR CONFIGS
 
 #### PPOConfig (`ppo_sb3.py`)
 

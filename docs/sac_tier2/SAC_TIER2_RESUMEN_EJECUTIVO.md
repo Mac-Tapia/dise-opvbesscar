@@ -69,18 +69,7 @@
 
 ---
 
-## 📈 RESULTADOS ESPERADOS
-
-  | Métrica | Antes | Después | Mejora |  
-| --- | ------- | --- | -------- |
-  | **Importación Pico (kWh/h)** | 280-300 | <250 | -12% |  
-  | **Importación Off-Peak (kWh/h)** | 120-140 | <130 | -8% |  
-  | **SOC Pre-Pico (16-17h)** | 0.45-0.55 | >0.65 | +20% |  
-  | **Reward Convergencia (ep)** | 30-40 | 15-20 | 2x ↑ |  
-  | **CO₂ Anual (kg)** | ~1.8e6 | <1.7e6 | -5% |  
-  | **Varianza Reward** | Alto | Bajo | -40% |  
-
----
+## 📈 RESULTADOS ESPERADOS | Métrica | Antes | Después | Mejora | | --- | ------- | --- | -------- | | **Importación Pico (kWh/h)** | 280-300 | <250 | -12% | | **Importación Off-Peak (kWh/h)** | 120-140 | <130 | -8% | | **SOC Pre-Pico (16-17h)** | 0.45-0.55 | >0.65 | +20% | | **Reward Convergencia (ep)** | 30-40 | 15-20 | 2x ↑ | | **CO₂ Anual (kg)** | ~1.8e6 | <1.7e6 | -5% | | **Varianza Reward** | Alto | Bajo | -40% | ---
 
 ## 🎓 POR QUÉ ESTOS CAMBIOS FUNCIONAN
 

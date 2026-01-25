@@ -11,13 +11,8 @@
 
 ## 🚀 Acceso
 
-### URLs Disponibles
-
-  | Servicio | Local | Red Local |  
-| ---------- | ------- | ----------- |
-  | **Docker Manager** | <http://localhost:5000> | <http://192.168.43.30:5000> |  
-  | **Jupyter Lab (CPU)** | <http://localhost:8888> | <http://192.168.43.30:8888> |  
-  | **Jupyter Lab (GPU)** | <http://localhost:8889> | <http://192.168.43.30:8889> |  
+### URLs Disponibles | Servicio | Local | Red Local | | ---------- | ------- | ----------- | | **Docker Manager** | <http://localhost:5000> | <http://192.168.43.30:5000> | |**Jupyter Lab (CPU)**|<[url0]
+|**Jupyter Lab (GPU)**|<[url0]
 
 ### Acceso Rápido
 
@@ -182,7 +177,7 @@ Response: {"status": "healthy", "docker": true, "timestamp": "..."}
 netstat -ano | findstr 5000
 
 # Ver proceso Flask
-Get-Process python | Where-Object {$_.CommandLine -like "*docker_web_interface*"}
+Get-Process python|Where-Object {$_.CommandLine -like "*docker_web_interface*"}
 ```bash
 
 ### Detener servidor

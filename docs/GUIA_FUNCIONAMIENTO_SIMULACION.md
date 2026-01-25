@@ -301,36 +301,7 @@ curl http://localhost:8000/api/metrics
 
 ## 📋 Valores que Debes Proporcionar
 
-### **Entrada de Sensores (Auto - cada 5 min)**
-
-  | Parámetro | Rango | Unidad | Ejemplo | Fuente |  
-| ----------- | ------- | -------- | --------- | -------- |
-  | `building_load` | 0 - 500 | kW | 45.2 | Smart Meter |  
-  | `pv_generation` | 0 - 100 | kW | 12.5 | Inversor Solar |  
-  | `battery_capacity` | 0 - 100 | % | 87.3 | BMS (Battery System) |  
-  | `electricity_price` | 0 - 1.0 | €/kWh | 0.28 | Grid Operator |  
-
-### **Parámetros de Control (Manual - API)**
-
-  | Parámetro | Valores | Unidad | Descripción |  
-| ----------- | --------- | -------- | ------------- |
-  | `action` | charge / discharge / idle | - | Acción a ejecutar |  
-  | `value` | 0 - 100 | kW | Potencia (opcional) |  
-  | `duration` | 1 - 1440 | minutos | Tiempo de acción (opcional) |  
-
-### **Configuración del Sistema (Una vez)**
-
-  | Parámetro | Valor | Unidad | Descripción |  
-| ----------- | ------- | -------- | ------------- |
-  | `battery_capacity_total` | 50 - 500 | kWh | Capacidad máxima batería |  
-  | `battery_min_soc` | 20 - 50 | % | Carga mínima permitida |  
-  | `battery_max_charge_rate` | 10 - 100 | kW | Velocidad máx carga |  
-  | `battery_max_discharge_rate` | 10 - 100 | kW | Velocidad máx descarga |  
-  | `peak_hours` | 17:00 - 21:00 | HH:MM | Horarios caros |  
-  | `solar_forecast_enable` | true / false | - | Usar predicción solar |  
-  | `price_forecast_enable` | true / false | - | Usar predicción precios |  
-
----
+### **Entrada de Sensores (Auto - cada 5 min)** | Parámetro | Rango | Unidad | Ejemplo | Fuente | | ----------- | ------- | -------- | --------- | -------- | | `building_load` | 0 - 500 | kW | 45.2 | Smart Meter | | `pv_generation` | 0 - 100 | kW | 12.5 | Inversor Solar | | `battery_capacity` | 0 - 100 | % | 87.3 | BMS (Battery System) | | `electricity_price` | 0 - 1.0 | €/kWh | 0.28 | Grid Operator | ### **Parámetros de Control (Manual - API)** | Parámetro | Valores | Unidad | Descripción | | ----------- | --------- | -------- | ------------- | | `action` | charge / discharge / idle | - | Acción a ejecutar | | `value` | 0 - 100 | kW | Potencia (opcional) | | `duration` | 1 - 1440 | minutos | Tiempo de acción (opcional) | ### **Configuración del Sistema (Una vez)** | Parámetro | Valor | Unidad | Descripción | | ----------- | ------- | -------- | ------------- | | `battery_capacity_total` | 50 - 500 | kWh | Capacidad máxima batería | | `battery_min_soc` | 20 - 50 | % | Carga mínima permitida | | `battery_max_charge_rate` | 10 - 100 | kW | Velocidad máx carga | | `battery_max_discharge_rate` | 10 - 100 | kW | Velocidad máx descarga | | `peak_hours` | 17:00 - 21:00 | HH:MM | Horarios caros | | `solar_forecast_enable` | true / false | - | Usar predicción solar | | `price_forecast_enable` | true / false | - | Usar predicción precios | ---
 
 ## 💡 Ejemplos de Simulaciones Reales
 
@@ -501,17 +472,4 @@ SWAGGER API: http://localhost:8000/docs
 
 ---
 
-## 🎓 Resumen
-
-  | Concepto | Explicación |  
-| ---------- | ------------- |
-  | **PVBESSCAR** | Sistema IA para... |  
-  | **Entrada** | Sensores (consumo, solar,... |  
-  | **Proceso** | ML predice futuro + RL optimiza decisión |  
-  | **Salida** | Acción (cargar/descargar/esperar) |  
-  | **Resultado** | Menor costo +... |  
-  | **API** | FastAPI + MongoDB + ML Models |  
-  | **Ejecución** | Ciclo cada 5 minutos (288 veces/día) |  
-  | **Ahorro** | ~€100/día por edificio = €36,500/año |  
-
-**¡Listo! Ahora entiendes cómo funciona el sistema completo.**
+## 🎓 Resumen | Concepto | Explicación | | ---------- | ------------- | | **PVBESSCAR** | Sistema IA para... | | **Entrada** | Sensores (consumo, solar,... | | **Proceso** | ML predice futuro + RL optimiza decisión | | **Salida** | Acción (cargar/descargar/esperar) | | **Resultado** | Menor costo +... | | **API** | FastAPI + MongoDB + ML Models | | **Ejecución** | Ciclo cada 5 minutos (288 veces/día) | | **Ahorro** | ~€100/día por edificio = €36,500/año | **¡Listo! Ahora entiendes cómo funciona el sistema completo.**

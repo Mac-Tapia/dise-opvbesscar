@@ -9,19 +9,11 @@
 
 ## 1. ANÁLISIS EJECUTIVO
 
-### Hallazgos Críticos Identificados
-
-  | Aspecto | Problema | Severidad | Impacto |  
-|---------|----------|-----------|---------|
-  | **Solar Timeseries** | 35,037 filas (15-min)... | 🔴 CRÍTICO | Dataset builder puede... |  
-  | **Chargers CSVs** | 0 CSVs individuales... | 🔴 CRÍTICO | Schema CityLearn v2... |  
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | **Schema Paths** | Rutas relativas... | 🔴 CRÍTICO | CityLearn no encuentra archivos |  
-  | **Building Load** | Incompleto/no sincronizado... | 🟠 ALTO | Observables inconsistentes |  
-  | **Validación** | Sin tests automáticos... | 🟠 ALTO | No hay safety checks |  
-  | **Normalización** | Prescaling inconsistente... | 🟡 MEDIO | BESS SOC 0.001... |  
-
----
+### Hallazgos Críticos Identificados | Aspecto | Problema | Severidad | Impacto | |---------|----------|-----------|---------|
+|**Solar Timeseries**|35,037 filas (15-min)...|🔴 CRÍTICO|Dataset builder puede...|
+|**Chargers CSVs**|0 CSVs individuales...|🔴 CRÍTICO|Schema CityLearn v2...| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+|**Schema Paths**|Rutas relativas...|🔴 CRÍTICO|CityLearn no encuentra archivos|
+|**Building Load**|Incompleto/no sincronizado...|🟠 ALTO|Observables inconsistentes| | **Validación** | Sin tests automáticos... | 🟠 ALTO | No hay safety checks | |**Normalización**|Prescaling inconsistente...|🟡 MEDIO|BESS SOC 0.001...| ---
 
 ## 2. ESTRUCTURA OE2 ACTUAL (REALIDAD)
 

@@ -98,16 +98,7 @@ python scripts/train_agents_serial.py --device cuda --episodes 50
 
 ---
 
-## 📁 ARCHIVOS ACTUALIZADOS
-
-  | Archivo | Cambio | Status |  
-|---------|--------|--------|
-  | **requirements.txt** | Removido citylearn | ✅ ACTUALIZADO |  
-  | **requirements-phase7.txt** | CREADO (core deps) | ✅ NUEVO |  
-  | **requirements-phase8.txt** | CREADO (solo citylearn) | ✅ NUEVO |  
-  | **SETUP_PHASE8_PASO_A_PASO.md** | Guía paso a paso | ✅ NUEVO |  
-
----
+## 📁 ARCHIVOS ACTUALIZADOS | Archivo | Cambio | Status | |---------|--------|--------| | **requirements.txt** | Removido citylearn | ✅ ACTUALIZADO | | **requirements-phase7.txt** | CREADO (core deps) | ✅ NUEVO | | **requirements-phase8.txt** | CREADO (solo citylearn) | ✅ NUEVO | | **SETUP_PHASE8_PASO_A_PASO.md** | Guía paso a paso | ✅ NUEVO | ---
 
 ## 🎯 VENTAJAS
 
@@ -219,17 +210,7 @@ pip install -r requirements-phase8.txt
 
 ---
 
-## 📊 COMPARATIVA
-
-  | Aspecto | Antes | Después |  
-|--------|-------|---------|
-  | CityLearn en requirements.txt | ✅ Sí (problema) | ❌ No (correcto) |  
-  | Separación Phase 7/8 | ❌ Mezclado | ✅ Separado |  
-  | Verificación Python antes CityLearn | ❌ No | ✅ Sí |  
-  | Orden de instalación claro | ❌ Confuso | ✅ Claro |  
-  | Documentación paso a paso | ❌ No | ✅ Sí (SETUP_PHASE8_PASO_A_PASO.md) |  
-
----
+## 📊 COMPARATIVA | Aspecto | Antes | Después | |--------|-------|---------| | CityLearn en requirements.txt | ✅ Sí (problema) | ❌ No (correcto) | | Separación Phase 7/8 | ❌ Mezclado | ✅ Separado | | Verificación Python antes CityLearn | ❌ No | ✅ Sí | | Orden de instalación claro | ❌ Confuso | ✅ Claro | | Documentación paso a paso | ❌ No | ✅ Sí (SETUP_PHASE8_PASO_A_PASO.md) | ---
 
 ## 🚀 PRÓXIMOS PASOS USUARIO
 

@@ -31,17 +31,7 @@
 - 7 recommendations (priority-ranked)
 - Data flow verification checklist
 
-**Key Findings**:
-
-  | Aspect | Status |  
-|--------|--------|
-  | OE2 data connection | ✓ Correct |  
-  | 128 chargers handling | ✓ Correct (126 actions) |  
-  | Solar (8,760 hrs) | ✓ Correct (with caveat on prescaling) |  
-  | BESS (2MWh/1.2MW) | ⚠ Partially correct... |  
-  | Code quality | ✓ Good (except 300+ line duplication) |  
-
----
+**Key Findings**: | Aspect | Status | |--------|--------| | OE2 data connection | ✓ Correct | | 128 chargers handling | ✓ Correct (126 actions) | | Solar (8,760 hrs) | ✓ Correct (with caveat on prescaling) | | BESS (2MWh/1.2MW) | ⚠ Partially correct... | | Code quality | ✓ Good (except 300+ line duplication) | ---
 
 ### 2. **CODE_FIXES_OE2_DATA_FLOW.md** (IMPLEMENTATION GUIDE)
 
@@ -97,17 +87,7 @@
 - Questions for team
 - References
 
-**Priority Summary**:
-
-  | Priority | Issue | Time | Impact |  
-|----------|-------|------|--------|
-  | 🔴 CRITICAL | BESS SOC prescaling | 15 min | Enable BESS control |  
-  | 🟠 HIGH | Hardcoded prescaling | 1 hr | Make assumptions explicit |  
-  | 🟠 HIGH | Wrapper duplication | 2 hr | DRY principle |  
-  | 🟡 MEDIUM | No OE2 validation | 1.5 hr | Fail fast with errors |  
-  | 🟡 MEDIUM | No per-charger features | 2 hr | Richer observation |  
-
----
+**Priority Summary**: | Priority | Issue | Time | Impact | |----------|-------|------|--------| | 🔴 CRITICAL | BESS SOC prescaling | 15 min | Enable BESS control | | 🟠 HIGH | Hardcoded prescaling | 1 hr | Make assumptions explicit | | 🟠 HIGH | Wrapper duplication | 2 hr | DRY principle | | 🟡 MEDIUM | No OE2 validation | 1.5 hr | Fail fast with errors | | 🟡 MEDIUM | No per-charger features | 2 hr | Richer observation | ---
 
 ### 4. **QUICK_REFERENCE_OE2_AGENTS.md** (CHEAT SHEET)
 
@@ -249,17 +229,7 @@ src/iquitos_citylearn/oe3/agents/
 
 ---
 
-## 📈 Expected Improvements After Fixes
-
-  | Fix | Scope | Impact | Timeline |  
-|-----|-------|--------|----------|
-  | BESS SOC visible | Critical | +15-25% CO₂ reduction | 15 min |  
-  | Configurable prescaling | Config | Easier tuning | 1 hour |  
-  | DRY wrapper | Refactor | Maintenance | 2 hours |  
-  | OE2 validation | Robustness | Fail fast | 1.5 hours |  
-  | Per-charger features | Enhancement | Better control | 2 hours |  
-
----
+## 📈 Expected Improvements After Fixes | Fix | Scope | Impact | Timeline | |-----|-------|--------|----------| | BESS SOC visible | Critical | +15-25% CO₂ reduction | 15 min | | Configurable prescaling | Config | Easier tuning | 1 hour | | DRY wrapper | Refactor | Maintenance | 2 hours | | OE2 validation | Robustness | Fail fast | 1.5 hours | | Per-charger features | Enhancement | Better control | 2 hours | ---
 
 ## 📚 Related Documentation
 
@@ -317,20 +287,7 @@ implementation
 
 ---
 
-## 📄 Report Statistics
-
-  | Metric | Value |  
-|--------|-------|
-  | Total documents | 4 (this index + 3) |  
-  | Total words | ~17,000 |  
-  | Total code snippets | 25+ |  
-  | Issues identified | 20+ |  
-  | Code fixes provided | 4 major + fixes |  
-  | Time to implement fixes | 3-4 hours |  
-  | Critical fixes | 1 (15 min) |  
-  | Files affected | 6 (SAC, PPO, A2C + utils) |  
-
----
+## 📄 Report Statistics | Metric | Value | |--------|-------| | Total documents | 4 (this index + 3) | | Total words | ~17,000 | | Total code snippets | 25+ | | Issues identified | 20+ | | Code fixes provided | 4 major + fixes | | Time to implement fixes | 3-4 hours | | Critical fixes | 1 (15 min) | | Files affected | 6 (SAC, PPO, A2C + utils) | ---
 
 ## ✅ Verification Checklist
 

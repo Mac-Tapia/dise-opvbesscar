@@ -252,15 +252,7 @@ if storage:
 **Problema**: `except Exception:`captura TODO, incluyendo errores de
 programación
 
-**Archivos Corregidos**:
-
-  | Archivo | Línea | ANTES | DESPUÉS |  
-|---------|-------|-------|---------|
-  | ppo_sb3.py | 307 | `except Exception:` | `except (AttributeError,... |  
-  | a2c_sb3.py | 213 | `except Exception:` | `except (AttributeError,... |  
-  | sac.py | 46+ | `except Exception:` | `except (ValueError, TypeError, ...):` |  
-
-**Impacto**: Mejor debuggabilidad, errores específicos con logging
+**Archivos Corregidos**: | Archivo | Línea | ANTES | DESPUÉS | |---------|-------|-------|---------| | ppo_sb3.py | 307 | `except Exception:` | `except (AttributeError,... | | a2c_sb3.py | 213 | `except Exception:` | `except (AttributeError,... | |sac.py|46+|`except Exception:`|`except (ValueError, TypeError, ...):`| **Impacto**: Mejor debuggabilidad, errores específicos con logging
 
 ---
 
@@ -375,18 +367,7 @@ Training
 ✅ **Exception Handling**: Específico y debuggeable  
 ✅ **Logging**: Lazy formatting en toda la cadena  
 
-### Archivos Listos para Entrenamiento
-
-  | Archivo | Status | Ready |  
-|---------|--------|-------|
-  | ppo_sb3.py | ✅ Limpio + BESS fix | ✅ YES |  
-  | a2c_sb3.py | ✅ Limpio + BESS fix | ✅ YES |  
-  | sac.py | ⚠️ 38 errores (logging) | ✅ FUNCIONAL |  
-  | agent_utils.py | ✅ Limpio | ✅ YES |  
-  | validate_training_env.py | ✅ Limpio | ✅ YES |  
-  | **init**.py | ✅ Limpio | ✅ YES |  
-
----
+### Archivos Listos para Entrenamiento | Archivo | Status | Ready | |---------|--------|-------| | ppo_sb3.py | ✅ Limpio + BESS fix | ✅ YES | | a2c_sb3.py | ✅ Limpio + BESS fix | ✅ YES | | sac.py | ⚠️ 38 errores (logging) | ✅ FUNCIONAL | | agent_utils.py | ✅ Limpio | ✅ YES | | validate_training_env.py | ✅ Limpio | ✅ YES | | **init**.py | ✅ Limpio | ✅ YES | ---
 
 ## PRÓXIMOS PASOS
 

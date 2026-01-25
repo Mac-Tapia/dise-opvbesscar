@@ -10,15 +10,7 @@ Análisis completo del desempeño de PPO vs A2C vs SAC
 
 #### Resultados
 
-## 1. Checkpoints Verificados
-
-  | Modelo | Ubicación | Tamaño | Fecha |  
-| --- | --- | --- | --- |
-  | PPO | `checkpoints/ppo_gpu/ppo_final.zip` | 1.62 MB | 2026-01-19 |  
-  | A2C | `checkpoints/a2c_gpu/a2c_final.zip` | 1.10 MB | 2026-01-19 |  
-  | SAC | `checkpoints/sac/sac_final.zip` | 14.61 MB | 2026-01-19 |  
-
-## 2. Configuraciones de Modelos Documentadas
+## 1. Checkpoints Verificados | Modelo | Ubicación | Tamaño | Fecha | | --- | --- | --- | --- | | PPO | `checkpoints/ppo_gpu/ppo_final.zip` | 1.62 MB | 2026-01-19 | | A2C | `checkpoints/a2c_gpu/a2c_final.zip` | 1.10 MB | 2026-01-19 | | SAC | `checkpoints/sac/sac_final.zip` | 14.61 MB | 2026-01-19 | ## 2. Configuraciones de Modelos Documentadas
 
 - **PPO**: 17,520 steps, batch_size=16,384, n_epochs=10, lr=0.0003
 - **A2C**: 17,520 steps, batch_size=1,024, lr=0.0003
@@ -120,19 +112,7 @@ docs/index.md                      ← Documentación entrada
 
 ---
 
-## 📊 Estadísticas de Mejora
-
-  | Aspecto | Antes | Después |  
-| --- | --- | --- |
-  | Análisis de Modelos | Manual | ✅ Automatizado |  
-  | Documentación | Markdown disperso | ✅ Sphinx centralizado |  
-  | CI/CD | ❌ Inexistente | ✅ GitHub Actions |  
-  | Packaging | ❌ No packeable | ✅ setup.py + pyproject.toml |  
-  | Code Quality | ⚠️ Variable | ✅ Black + Pylint + MyPy |  
-  | Testing | ❌ Manual | ✅ Pytest automático |  
-  | Development | Manual | ✅ Docker Compose |  
-
----
+## 📊 Estadísticas de Mejora | Aspecto | Antes | Después | | --- | --- | --- | | Análisis de Modelos | Manual | ✅ Automatizado | | Documentación | Markdown disperso | ✅ Sphinx centralizado | | CI/CD | ❌ Inexistente | ✅ GitHub Actions | | Packaging | ❌ No packeable | ✅ setup.py + pyproject.toml | | Code Quality | ⚠️ Variable | ✅ Black + Pylint + MyPy | | Testing | ❌ Manual | ✅ Pytest automático | | Development | Manual | ✅ Docker Compose | ---
 
 ## 🚀 Próximos Pasos (Post-Implementación)
 
@@ -217,18 +197,7 @@ diseñopvbesscar/
 
 ---
 
-## ✨ Validación
-
-  | Componente | Estado | Nota |  
-| --- | --- | --- |
-  | OPCIÓN 1 Analysis | ✅ COMPLETA | JSON report generado |  
-  | OPCIÓN 4 Infrastructure | ✅ COMPLETA | 4 archivos config creados |  
-  | CI/CD Pipeline | ✅ CONFIGURADO | Listo para GitHub |  
-  | Documentación | ✅ PREPARADA | Sphinx ready |  
-  | Packaging | ✅ CONFIGURADO | setup.py + pyproject.toml |  
-  | Git Sync | ⏳ PENDIENTE | Commit final requerido |  
-
----
+## ✨ Validación | Componente | Estado | Nota | | --- | --- | --- | | OPCIÓN 1 Analysis | ✅ COMPLETA | JSON report generado | | OPCIÓN 4 Infrastructure | ✅ COMPLETA | 4 archivos config creados | | CI/CD Pipeline | ✅ CONFIGURADO | Listo para GitHub | | Documentación | ✅ PREPARADA | Sphinx ready | | Packaging | ✅ CONFIGURADO | setup.py + pyproject.toml | | Git Sync | ⏳ PENDIENTE | Commit final requerido | ---
 
 ## 💡 Ejemplo de Uso Post-Implementación
 

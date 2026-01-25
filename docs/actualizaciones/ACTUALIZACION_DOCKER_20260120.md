@@ -210,21 +210,7 @@ docker-compose -f docker-compose.dev.yml exec dev-type-check
 
 ---
 
-## 📊 Comparativa Antes vs Después
-
-  | Aspecto | Antes | Después |  
-| -------- | ------- | --------- |
-  | **Build time** | N/A | -60% con BuildKit |  
-  | **Image size** | ~1.2GB | Similar (optimizado) |  
-  | **Health checks** | No | ✅ Integrated |  
-  | **Signal handling** | Manual | ✅ Tini automático |  
-  | **Jupyter integration** | Separado | ✅ Integrado |  
-  | **Dev services** | Separados | ✅ docker-compose.dev.yml |  
-  | **GPU support** | Basic | ✅ Completo |  
-  | **Cache volumes** | No | ✅ pipeline_cache |  
-  | **Logging rotation** | No | ✅ Enabled |  
-
----
+## 📊 Comparativa Antes vs Después | Aspecto | Antes | Después | | -------- | ------- | --------- | | **Build time** | N/A | -60% con BuildKit | | **Image size** | ~1.2GB | Similar (optimizado) | | **Health checks** | No | ✅ Integrated | | **Signal handling** | Manual | ✅ Tini automático | | **Jupyter integration** | Separado | ✅ Integrado | | **Dev services** | Separados | ✅ docker-compose.dev.yml | | **GPU support** | Basic | ✅ Completo | | **Cache volumes** | No | ✅ pipeline_cache | | **Logging rotation** | No | ✅ Enabled | ---
 
 ## 🔧 Configuración de Recursos
 

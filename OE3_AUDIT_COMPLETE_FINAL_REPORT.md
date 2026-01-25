@@ -56,18 +56,7 @@
 
 ## 🎯 Key Results
 
-### Code Metrics
-
-  | Metric | Before | After | Improvement |  
-|--------|--------|-------|-------------|
-  | Total OE3 Lines | 8,500 | 6,800 | -20% ✅ |  
-  | Dead Code | 1,302 | 0 | -100% ✅ |  
-  | Orphaned Files | 4 | 0 | -100% ✅ |  
-  | Errors | 193 → 113 | 44 non-blocking | -75% ✅ |  
-  | BESS Visibility | ❌ Invisible | ✅ Visible | CRITICAL FIX ✅ |  
-  | Import Failures | N/A | 0 | 100% Success ✅ |  
-
-### Files Deleted (Permanent)
+### Code Metrics | Metric | Before | After | Improvement | |--------|--------|-------|-------------| | Total OE3 Lines | 8,500 | 6,800 | -20% ✅ | | Dead Code | 1,302 | 0 | -100% ✅ | | Orphaned Files | 4 | 0 | -100% ✅ | | Errors | 193 → 113 | 44 non-blocking | -75% ✅ | | BESS Visibility | ❌ Invisible | ✅ Visible | CRITICAL FIX ✅ | | Import Failures | N/A | 0 | 100% Success ✅ | ### Files Deleted (Permanent)
 
 ```bash
 src/iquitos_citylearn/oe3/rewards_dynamic.py       (309 lines)  - 0 refs
@@ -337,17 +326,12 @@ experimental/                             (Archived legacy code)
 
 ---
 
-## 📚 Documentation Generated
-
-  | Document | Purpose | Status |  
-|----------|---------|--------|
-  | [AUDITORIA_OE3_LIMPIEZA_FINAL.md][url1] | Detailed cleanup plan & analysis | ✅ Complete |  
-  | [OE3_CLEANUP_VALIDATION_FINAL.md][url2] | Full validation report... | ✅ Complete |  
-  | [CLEANUP_QUICK_REFERENCE.txt](CLEANUP_QUICK_REFERENCE.txt) | One-page summary... | ✅ Complete |  
-  | [validate_oe2_oe3_connections.py][url3] | Automated data validation script | ✅ Executable |  
-  | [.github/copilot-instructions.md][url4] | Comprehensive Copilot instructions | ✅ Complete |  
-
----
+## 📚 Documentation Generated | Document | Purpose | Status | |----------|---------|--------|
+|[AUDITORIA_OE3_LIMPIEZA_FINAL.md][url1]|Detailed cleanup plan & analysis|✅ Complete|
+|[OE3_CLEANUP_VALIDATION_FINAL.md][url2]|Full validation report...|✅ Complete|
+|[CLEANUP_QUICK_REFERENCE.txt](CLEANUP_QUICK_REFERENCE.txt)|One-page summary...|✅ Complete|
+|[validate_oe2_oe3_connections.py][url3]|Automated data validation script|✅ Executable|
+|[.github/copilot-instructions.md][url4]|Comprehensive Copilot instructions|✅ Complete| ---
 
 ## 🔄 Git Changes Summary
 
@@ -412,19 +396,7 @@ NEW (5 files):
 
 ---
 
-## 📊 Success Criteria (Post-Training)
-
-  | Metric | Baseline | Target | Status |  
-|--------|----------|--------|--------|
-  | CO₂ Reduction (SAC) | 0% | 26% | TBD |  
-  | CO₂ Reduction (PPO) | 0% | 29% | TBD |  
-  | CO₂ Reduction (A2C) | 0% | 24% | TBD |  
-  | BESS Utilization | ~40% | 55-65% | TBD |  
-  | Solar Self-Consumption | ~40% | 60-70% | TBD |  
-  | Grid Peak Reduction | 0% | 20-30% | TBD |  
-  | Agent Convergence | N/A | Episode 30-40 | TBD |  
-
----
+## 📊 Success Criteria (Post-Training) | Metric | Baseline | Target | Status | |--------|----------|--------|--------| | CO₂ Reduction (SAC) | 0% | 26% | TBD | | CO₂ Reduction (PPO) | 0% | 29% | TBD | | CO₂ Reduction (A2C) | 0% | 24% | TBD | | BESS Utilization | ~40% | 55-65% | TBD | | Solar Self-Consumption | ~40% | 60-70% | TBD | | Grid Peak Reduction | 0% | 20-30% | TBD | | Agent Convergence | N/A | Episode 30-40 | TBD | ---
 
 ## 🏁 Conclusion
 

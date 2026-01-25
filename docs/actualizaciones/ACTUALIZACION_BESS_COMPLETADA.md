@@ -50,16 +50,7 @@ OPERACIÓN:
 
 ### Análisis de Resultados
 
-#### Comparación con análisis inicial (perfil 15 min):
-
-  | Parámetro | Análisis 15 min | BESS Simulado | Diferencia |  
-|-----------|-----------------|---------------|------------|
-  | Déficit EV | 1,301 kWh/día | 2,211 kWh/día | +70% |  
-  | Capacidad | 1,712 kWh | 2,910 kWh | +70% |  
-  | Potencia | 622 kW | 1,746 kW | +181% |  
-  | Horario descarga | 18h-22h (5h) | 9h-22h (14h) | +9 horas |  
-
-#### Razones de la diferencia:
+#### Comparación con análisis inicial (perfil 15 min): | Parámetro | Análisis 15 min | BESS Simulado | Diferencia | |-----------|-----------------|---------------|------------| | Déficit EV | 1,301 kWh/día | 2,211 kWh/día | +70% | | Capacidad | 1,712 kWh | 2,910 kWh | +70% | | Potencia | 622 kW | 1,746 kW | +181% | | Horario descarga | 18h-22h (5h) | 9h-22h (14h) | +9 horas | #### Razones de la diferencia:
 
 1. **Horario de descarga extendido:** La simulación incluyó todo el horario de
 operación (9h-22h) en lugar de solo el período nocturno (18h-22h)
@@ -204,18 +195,7 @@ if len(df_ev) == 35040:
 4. **Diferencias identificadas** entre análisis teórico y simulación práctica
 5. **Próximos pasos definidos** para refinamiento del dimensionamiento
 
-### Estado Final
-
-  | Componente | Estado | Notas |  
-|-----------|--------|-------|
-  | Perfil EV 15 min | ✅ Completo | 96 intervalos, 3,252 kWh/día |  
-  | Perfil Solar | ✅ Completo | 22,036 kWh/día |  
-  | Código bess.py | ✅ Actualizado | Soporta 15 min + horario |  
-  | Simulación BESS | ✅ Funcional | Genera resultados |  
-  | Gráficas | ✅ Generadas | 2 archivos PNG |  
-  | CityLearn data | ✅ Exportado | Schema + CSVs |  
-
----
+### Estado Final | Componente | Estado | Notas | |-----------|--------|-------| | Perfil EV 15 min | ✅ Completo | 96 intervalos, 3,252 kWh/día | | Perfil Solar | ✅ Completo | 22,036 kWh/día | | Código bess.py | ✅ Actualizado | Soporta 15 min + horario | | Simulación BESS | ✅ Funcional | Genera resultados | | Gráficas | ✅ Generadas | 2 archivos PNG | | CityLearn data | ✅ Exportado | Schema + CSVs | ---
 
 #### Para ejecutar:
 

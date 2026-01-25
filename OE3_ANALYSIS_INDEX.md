@@ -203,26 +203,7 @@ START: "I want to understand the OE3 module structure"
 - **Unused/orphaned code**: ~865 lines (9%)
 - **Space savings from cleanup**: ~1,500 lines (16%)
 
-### Issues Found
-
-  | Severity | Count | Examples | Action |  
-|----------|-------|----------|--------|
-  | 🔴 Critical | 1 | demanda_mall_kwh.py (100% orphaned) | DELETE |  
-  | 🟡 Medium | 3 | co2_emissions, v2 rewards, dynamic | ARCHIVE/MERGE |  
-  | 🟢 Low | 0 | N/A | N/A |  
-
-### Risk Assessment
-
-  | Operation | Risk | Rollback | Impact |  
-|-----------|------|----------|--------|
-  | Delete demanda_mall_kwh.py | 🟢 None | 1 min | Zero |  
-  | Consolidate co2_emissions | 🟡 Low | 2 min | Test required |  
-  | Archive v2 rewards | 🟢 None | 1 min | Zero |  
-  | Archive v2 wrapper | 🟢 None | 1 min | Zero |  
-  | Archive dynamic reward | 🟡 Low | 1 min | Dev script only |  
-  | **Overall** | **🟢 LOW** | **~15 min** | **All reversible** |  
-
-### Timeline
+### Issues Found | Severity | Count | Examples | Action | |----------|-------|----------|--------| | 🔴 Critical | 1 | demanda_mall_kwh.py (100% orphaned) | DELETE | | 🟡 Medium | 3 | co2_emissions, v2 rewards, dynamic | ARCHIVE/MERGE | | 🟢 Low | 0 | N/A | N/A | ### Risk Assessment | Operation | Risk | Rollback | Impact | |-----------|------|----------|--------| | Delete demanda_mall_kwh.py | 🟢 None | 1 min | Zero | | Consolidate co2_emissions | 🟡 Low | 2 min | Test required | | Archive v2 rewards | 🟢 None | 1 min | Zero | | Archive v2 wrapper | 🟢 None | 1 min | Zero | | Archive dynamic reward | 🟡 Low | 1 min | Dev script only | | **Overall** | **🟢 LOW** | **~15 min** | **All reversible** | ### Timeline
 
 - **Analysis completed**: 35 minutes
 - **Cleanup effort**: 35 minutes

@@ -123,16 +123,7 @@ M  src/iquitos_citylearn/oe3/dataset_builder.py
 
 ## Expected Phase 8 Results
 
-### Performance Expectations
-
-  | Agent | CO₂ Reduction | Solar Util | Time |  
-|-------|---------------|-----------|------|
-  | Baseline | 0% | 40% | Reference |  
-  | SAC | 20-26% | 60-65% | 60-90 min |  
-  | PPO | 25-29% | 65-70% | 90-120 min |  
-  | A2C | 20-25% | 60-65% | 60-90 min |  
-
-**Recommendation**: PPO (best performance + stability)
+### Performance Expectations | Agent | CO₂ Reduction | Solar Util | Time | |-------|---------------|-----------|------| | Baseline | 0% | 40% | Reference | | SAC | 20-26% | 60-65% | 60-90 min | | PPO | 25-29% | 65-70% | 90-120 min | | A2C | 20-25% | 60-65% | 60-90 min | **Recommendation**: PPO (best performance + stability)
 
 ## Next Steps
 

@@ -42,27 +42,7 @@ han pasado exitosamente.
 
 ## 2. PARÁMETROS CLAVE VERIFICADOS
 
-### CHARGERS.PY → BESS.PY
-
-  | Parámetro | Valor en chargers.py | Lectura en bess.py | Estado |  
-|-----------|---------------------|-------------------|--------|
-  | Energía diaria EV | 3,252 kWh | 3,252 kWh | ✅ |  
-  | Cargadores instalados | 32 unidades | (referencia) | ✅ |  
-  | Potencia pico | 406.5 kW | (referencia) | ✅ |  
-  | Potencia instalada | 272 kW | (referencia) | ✅ |  
-  | Horario operación | 9h - 22h (13h) | 9h - 22h | ✅ |  
-
-### SOLAR_PVLIB.PY → BESS.PY
-
-  | Parámetro | Valor en solar_pvlib.py | Lectura en bess.py | Estado |  
-|-----------|------------------------|-------------------|--------|
-  | Capacidad DC | 4,162 kWp | 4,162 kWp | ✅ |  
-  | Energía anual | 8,043 GWh | 8,043 GWh | ✅ |  
-  | Energía diaria promedio | 22,036 kWh | 22,036 kWh | ✅ |  
-  | Factor de capacidad | 28.7% | (calculado) | ✅ |  
-  | Intervalo de datos | 15 min (8760×4) | Resampleado a horario | ✅ |  
-
----
+### CHARGERS.PY → BESS.PY | Parámetro | Valor en chargers.py | Lectura en bess.py | Estado | |-----------|---------------------|-------------------|--------| | Energía diaria EV | 3,252 kWh | 3,252 kWh | ✅ | | Cargadores instalados | 32 unidades | (referencia) | ✅ | | Potencia pico | 406.5 kW | (referencia) | ✅ | | Potencia instalada | 272 kW | (referencia) | ✅ | | Horario operación | 9h - 22h (13h) | 9h - 22h | ✅ | ### SOLAR_PVLIB.PY → BESS.PY | Parámetro | Valor en solar_pvlib.py | Lectura en bess.py | Estado | |-----------|------------------------|-------------------|--------| | Capacidad DC | 4,162 kWp | 4,162 kWp | ✅ | | Energía anual | 8,043 GWh | 8,043 GWh | ✅ | | Energía diaria promedio | 22,036 kWh | 22,036 kWh | ✅ | | Factor de capacidad | 28.7% | (calculado) | ✅ | | Intervalo de datos | 15 min (8760×4) | Resampleado a horario | ✅ | ---
 
 ## 3. FLUJO DE DATOS
 

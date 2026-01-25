@@ -89,29 +89,11 @@ python_requires=">=3.11,<3.12"
 - Classifiers and python_requires updated to match setup.py
 - Status: ✅ Updated
 
-### Impact
-
-  | File Type | Count | Status |  
-|-----------|-------|--------|
-  | Configuration files | 5 | ✅ Updated |  
-  | CI/CD pipelines | 1 | ✅ Updated |  
-  | Type stubs | 1 | ✅ Created |  
-  | **TOTAL** | **7** | **✅ COMPLETE** |  
-
----
+### Impact | File Type | Count | Status | |-----------|-------|--------| | Configuration files | 5 | ✅ Updated | | CI/CD pipelines | 1 | ✅ Updated | | Type stubs | 1 | ✅ Created | | **TOTAL** | **7** | **✅ COMPLETE** | ---
 
 ## 2. Code Quality Status
 
-### Previous Phases (1-5) Summary
-
-  | Component | Status | Lines | Notes |  
-|-----------|--------|-------|-------|
-  | Agents (3 files) | ✅ Production Ready | 2,696 | BESS prescaling FIXED |  
-  | OE3 Core (7 files) | ✅ Production Ready | 3,792 | Multi-objective rewards verified |  
-  | Tests | ✅ Created | 400 | Phase 7 validation script |  
-  | **TOTAL CODE** | **✅ VERIFIED** | **6,488** | All critical paths validated |  
-
-### Phase 6 New Modules (COMPLETE ✅)
+### Previous Phases (1-5) Summary | Component | Status | Lines | Notes | |-----------|--------|-------|-------| | Agents (3 files) | ✅ Production Ready | 2,696 | BESS prescaling FIXED | |OE3 Core (7 files)|✅ Production Ready|3,792|Multi-objective rewards verified| | Tests | ✅ Created | 400 | Phase 7 validation script | | **TOTAL CODE** | **✅ VERIFIED** | **6,488** | All critical paths validated | ### Phase 6 New Modules (COMPLETE ✅)
 
 #### 1. `src/iquitos_citylearn/oe2/data_loader.py` (479 lines)
 
@@ -168,20 +150,7 @@ build_citylearn_dataset(cfg, raw_dir, interim_dir, processed_dir)
 
 ---
 
-## 3. Dependency Installation Status
-
-  | Package | Version | Status | Notes |  
-|---------|---------|--------|-------|
-  | pandas | Latest | ✅ Installed | OE2/OE3 data loading |  
-  | numpy | Latest | ✅ Installed | Numerical operations |  
-  | PyYAML | Latest | ✅ Installed | Config file parsing |  
-  | gymnasium | 0.28.1 | ✅ Installed | RL environment wrapper |  
-  | stable-baselines3 | Latest | ✅ Installed | PPO/SAC/A2C agents |  
-  | torch | Latest | ✅ Installed (via stable-baselines3) | GPU support |  
-  | **citylearn** | >=2.5.0 | ❌ **FAILED** | Requires Python... |  
-  | scikit-learn | Latest | ❌ **FAILED** | Cython errors on Python 3.13 |  
-
-### Installation Errors Encountered
+## 3. Dependency Installation Status | Package | Version | Status | Notes | |---------|---------|--------|-------| | pandas | Latest | ✅ Installed | OE2/OE3 data loading | | numpy | Latest | ✅ Installed | Numerical operations | | PyYAML | Latest | ✅ Installed | Config file parsing | | gymnasium | 0.28.1 | ✅ Installed | RL environment wrapper | | stable-baselines3 | Latest | ✅ Installed | PPO/SAC/A2C agents | | torch | Latest | ✅ Installed (via stable-baselines3) | GPU support | | **citylearn** | >=2.5.0 | ❌ **FAILED** | Requires Python... | | scikit-learn | Latest | ❌ **FAILED** | Cython errors on Python 3.13 | ### Installation Errors Encountered
 
 **CityLearn Installation Error** (Python 3.13):
 
@@ -315,7 +284,7 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 # Check schema exists
 ls outputs/schema_*.json
 # Check charger CSVs
-ls data/processed/citylearnv2_dataset/buildings/*/charger_simulation_*.csv | wc -l  # Should be 128
+ls data/processed/citylearnv2_dataset/buildings/*/charger_simulation_*.csv|wc -l  # Should be 128
 ```bash
 
 #### Step 6: Quick Agent Training Test (10-15 min)
@@ -354,33 +323,10 @@ git push
 
 ## 7. File Inventory - Phase 7
 
-### Created Files
-
-  | File | Type | Lines | Purpose | Status |  
-|------|------|-------|---------|--------|
-  | `PYTHON_3.11_SETUP_GUIDE.md` | Guide | 200 | Installation instructions... | ✅ Created |  
-  | `PHASE_7_STATUS_REPORT.md` | Report | 400 | This document | ✅ Created |  
-  | `phase7_test_pipeline.py` | Test | 400 | Validation script | ✅ Created |  
-  | `.python-version` | Config | 1 | pyenv specification | ✅ Created |  
-
-### Modified Files
-
-  | File | Changes | Status |  
-|------|---------|--------|
-  | `.github/workflows/test-and-lint.yml` | Python 3.11 only | ✅ Updated |  
-  | `pyproject.toml` | requires-python, target-version | ✅ Updated |  
-  | `setup.py` | Classifiers, python_requires | ✅ Updated |  
-  | `scripts/analysis/EJECUTAR_OPCION_4_INFRAESTRUCTURA.py` | Version requirements | ✅ Updated |  
-
-### Enhanced Modules
-
-  | File | Enhancement | Lines | Status |  
-|------|-------------|-------|--------|
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | `src/iquitos_citylearn/oe3/schema_validator.py` | NEW: Schema validation | 570 | ✅ Created |  
-  | `src/iquitos_citylearn/oe3/dataset_builder.py` | Enhanced: Charger CSV... | +35 | ✅ Enhanced |  
-
----
+### Created Files | File | Type | Lines | Purpose | Status | |------|------|-------|---------|--------|
+|`PYTHON_3.11_SETUP_GUIDE.md`|Guide|200|Installation instructions...|✅ Created| | `PHASE_7_STATUS_REPORT.md` | Report | 400 | This document | ✅ Created | | `phase7_test_pipeline.py` | Test | 400 | Validation script | ✅ Created | | `.python-version` | Config | 1 | pyenv specification | ✅ Created | ### Modified Files | File | Changes | Status | |------|---------|--------| | `.github/workflows/test-and-lint.yml` | Python 3.11 only | ✅ Updated | | `pyproject.toml` | requires-python, target-version | ✅ Updated | | `setup.py` | Classifiers, python_requires | ✅ Updated | |`scripts/analysis/EJECUTAR_OPCION_4_INFRAESTRUCTURA.py`|Version requirements|✅ Updated| ### Enhanced Modules | File | Enhancement | Lines | Status | |------|-------------|-------|--------| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+|`src/iquitos_citylearn/oe3/schema_validator.py`|NEW: Schema validation|570|✅ Created|
+|`src/iquitos_citylearn/oe3/dataset_builder.py`|Enhanced: Charger CSV...|+35|✅ Enhanced| ---
 
 ## 8. Success Metrics
 
@@ -429,28 +375,9 @@ git push
 
 ## 10. References
 
-### Key Documents
-
-  | Document | Purpose | Location |  
-|----------|---------|----------|
-  | README.md | Project overview | [README.md](README.md) |  
-  | Copilot Instructions | Development guidelines | [.github/copilot-instructions.md][url1] |  
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | Audit & Rewards | Technical deep-dive | [docs/AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md][url2] |  
-
-### Key Files in Codebase
-
-  | File | Lines | Purpose |  
-|------|-------|---------|
-  | `src/iquitos_citylearn/oe2/data_loader.py` | 479 | OE2 data validation |  
-  | `src/iquitos_citylearn/oe3/schema_validator.py` | 570 | Schema validation |  
-  | `src/iquitos_citylearn/oe3/dataset_builder.py` | 950+ | Dataset construction... |  
-  | `src/iquitos_citylearn/oe3/rewards.py` | 529 | Multi-objective reward function |  
-  | `src/iquitos_citylearn/oe3/agents/ppo_sb3.py` | 868 | PPO agent |  
-  | `src/iquitos_citylearn/oe3/agents/sac.py` | 1,113 | SAC agent |  
-  | `src/iquitos_citylearn/oe3/agents/a2c_sb3.py` | 715 | A2C agent |  
-
----
+### Key Documents | Document | Purpose | Location | |----------|---------|----------| | README.md | Project overview | [README.md](README.md) | |Copilot Instructions|Development guidelines|[.github/copilot-instructions.md][url1]| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+|Audit & Rewards|Technical deep-dive|[docs/AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md][url2]| ### Key Files in Codebase | File | Lines | Purpose | |------|-------|---------| | `src/iquitos_citylearn/oe2/data_loader.py` | 479 | OE2 data validation | | `src/iquitos_citylearn/oe3/schema_validator.py` | 570 | Schema validation | |`src/iquitos_citylearn/oe3/dataset_builder.py`|950+|Dataset construction...|
+|`src/iquitos_citylearn/oe3/rewards.py`|529|Multi-objective reward function| | `src/iquitos_citylearn/oe3/agents/ppo_sb3.py` | 868 | PPO agent | | `src/iquitos_citylearn/oe3/agents/sac.py` | 1,113 | SAC agent | | `src/iquitos_citylearn/oe3/agents/a2c_sb3.py` | 715 | A2C agent | ---
 
 ## 11. Testing & Validation Checklist
 

@@ -286,19 +286,7 @@ dropout_rate: float = 0.1         # 10% regularización
 
 ---
 
-## 📊 MÉTRICAS ÉXITO TIER 2
-
-  | Métrica | Baseline | Target TIER 2 | Cómo Medir |  
-| --- | ---------- | --- | ----------- |
-  | **Importación Pico (kWh/hora)** | 280-300 | <250 | Promedio horas 18-21 |  
-  | **Importación Off-Peak (kWh/hora)** | 120-140 | <130 | Promedio horas 0-8 |  
-  | **SOC Pre-Pico (16-17h)** | 0.45-0.55 | >0.65 | Promedio horas 16-17 |  
-  | **SOC Pico (18-21h)** | 0.20-0.30 | >0.35 | Promedio horas 18-21 |  
-  | **CO₂ Total Año (kg)** | ~1.8e6 | <1.7e6 | Integración anual |  
-  | **Reward Convergencia** | Lento (~ep 30) | Rápido (~ep 15) | Episode smoothed |  
-  | **Fairness (motos/mototaxis)** | 1.2-1.5 | <1.1 | Ratio máx/mín |  
-
----
+## 📊 MÉTRICAS ÉXITO TIER 2 | Métrica | Baseline | Target TIER 2 | Cómo Medir | | --- | ---------- | --- | ----------- | | **Importación Pico (kWh/hora)** | 280-300 | <250 | Promedio horas 18-21 | | **Importación Off-Peak (kWh/hora)** | 120-140 | <130 | Promedio horas 0-8 | | **SOC Pre-Pico (16-17h)** | 0.45-0.55 | >0.65 | Promedio horas 16-17 | | **SOC Pico (18-21h)** | 0.20-0.30 | >0.35 | Promedio horas 18-21 | | **CO₂ Total Año (kg)** | ~1.8e6 | <1.7e6 | Integración anual | |**Reward Convergencia**|Lento (~ep 30)|Rápido (~ep 15)|Episode smoothed| | **Fairness (motos/mototaxis)** | 1.2-1.5 | <1.1 | Ratio máx/mín | ---
 
 ## 🔍 DEBUGGING ESPERADO
 

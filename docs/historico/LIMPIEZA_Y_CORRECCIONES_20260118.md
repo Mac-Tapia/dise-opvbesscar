@@ -94,12 +94,4 @@ oe3:
 3. Continuar con PPO y A2C si es necesario
 4. Comparar métricas contra baseline uncontrolled
 
-## ARCHIVOS IMPORTANTES
-
-  | Archivo | Propósito |  
-| --------- | ----------- |
-  | `scripts/run_oe3_simulate.py` | Script oficial de entrenamiento |  
-  | `train_gpu_robusto.py` | Script simplificado con verificaciones |  
-  | `test_citylearn_env.py` | Prueba del entorno |  
-  | `configs/default.yaml` | Configuración principal |  
-  | `data/interim/oe2/chargers/individual_chargers.json` | 128 cargadores |  
+## ARCHIVOS IMPORTANTES | Archivo | Propósito | | --------- | ----------- | | `scripts/run_oe3_simulate.py` | Script oficial de entrenamiento | | `train_gpu_robusto.py` | Script simplificado con verificaciones | | `test_citylearn_env.py` | Prueba del entorno | | `configs/default.yaml` | Configuración principal | | `data/interim/oe2/chargers/individual_chargers.json` | 128 cargadores | 

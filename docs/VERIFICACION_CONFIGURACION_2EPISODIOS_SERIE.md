@@ -72,17 +72,7 @@ learning_rate: 0.0007
 
 ---
 
-## 📊 Estadísticas Totales
-
-  | Agente | Episodios | Timesteps | Batch Size | Status |  
-| --- | --- | --- | --- | --- |
-  | **Baseline** | 1 | 8,760 | N/A | ✅ |  
-  | **SAC** | 2 | 17,520 | 32,768 | ✅ |  
-  | **PPO** | 2 | 17,520 | 32,768 | ✅ |  
-  | **A2C** | 2 | 17,520 | 65,536 | ✅ |  
-  | **TOTAL** | 7 | **61,320** | Var. | ✅ |  
-
-### Duración Estimada
+## 📊 Estadísticas Totales | Agente | Episodios | Timesteps | Batch Size | Status | | --- | --- | --- | --- | --- | | **Baseline** | 1 | 8,760 | N/A | ✅ | | **SAC** | 2 | 17,520 | 32,768 | ✅ | | **PPO** | 2 | 17,520 | 32,768 | ✅ | | **A2C** | 2 | 17,520 | 65,536 | ✅ | | **TOTAL** | 7 | **61,320** | Var. | ✅ | ### Duración Estimada
 
 - **GPU**: NVIDIA RTX 4060 (8.6 GB VRAM)
 - **Tiempo total**: 4-5 horas

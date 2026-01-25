@@ -321,22 +321,7 @@ Resultado: ✅ 25/25 presentes
 
 ---
 
-## 🎯 VERIFICACIÓN FINAL
-
-  | Verificación | Esperado | Actual | ✅ |  
-| -------------- | ---------- | -------- | ----- |
-  | Gráficas en plots/ | 25 | 25 | ✅ |  
-  | Duplicados | 0 | 0 | ✅ |  
-  | Carpeta progress/ | NO existe | NO existe | ✅ |  
-  | Carpeta graficas_finales/ | NO existe | NO existe | ✅ |  
-  | Carpeta graficas_monitor/ | NO existe | NO existe | ✅ |  
-  | Archivos vacíos | 0 | 0 | ✅ |  
-  | Tamaño mínimo 18KB | SÍ | SÍ | ✅ |  
-  | README actualizado | SÍ | SÍ | ✅ |  
-  | Reportes generados | 3 | 3 | ✅ |  
-  | **ESTADO GENERAL** |  |  | ✅ |  
-
----
+## 🎯 VERIFICACIÓN FINAL | Verificación | Esperado | Actual | ✅ | | -------------- | ---------- | -------- | ----- | | Gráficas en plots/ | 25 | 25 | ✅ | | Duplicados | 0 | 0 | ✅ | | Carpeta progress/ | NO existe | NO existe | ✅ | | Carpeta graficas_finales/ | NO existe | NO existe | ✅ | | Carpeta graficas_monitor/ | NO existe | NO existe | ✅ | | Archivos vacíos | 0 | 0 | ✅ | | Tamaño mínimo 18KB | SÍ | SÍ | ✅ | | README actualizado | SÍ | SÍ | ✅ | | Reportes generados | 3 | 3 | ✅ | | **ESTADO GENERAL** | | | ✅ | ---
 
 ## 🚀 CÓMO USAR LAS GRÁFICAS CONSOLIDADAS
 
@@ -400,21 +385,7 @@ Resultado: ✅ 25/25 presentes
 
 ---
 
-## ✨ ESTADÍSTICAS FINALES
-
-  | Métrica | Valor |  
-| --------- | ------- |
-  | Gráficas iniciales | 39 PNG |  
-  | Gráficas finales | 25 PNG |  
-  | Duplicados eliminados | 14 pares (28 archivos) |  
-  | Espacio liberado | ~800 KB |  
-  | Carpetas limpiadas | 3 |  
-  | Gráficas verificadas | 25/25 (100%) |  
-  | Archivos vacíos | 0 |  
-  | Reportes generados | 3 |  
-  | Tiempo total | ~15 minutos |  
-
----
+## ✨ ESTADÍSTICAS FINALES | Métrica | Valor | | --------- | ------- | | Gráficas iniciales | 39 PNG | | Gráficas finales | 25 PNG | | Duplicados eliminados | 14 pares (28 archivos) | | Espacio liberado | ~800 KB | | Carpetas limpiadas | 3 | | Gráficas verificadas | 25/25 (100%) | | Archivos vacíos | 0 | | Reportes generados | 3 | | Tiempo total | ~15 minutos | ---
 
 ## ✅ CHECKLIST FINAL
 

@@ -22,23 +22,9 @@ orphaned files, import chains, data flow, and version conflicts.
 
 ## 1. DUPLICATE FILES & VERSION CONFLICTS
 
-### 1.1 Reward Modules (4 files with overlapping purposes)
-
-  | File | Purpose | Status | Lines | Used Where |  
-|------|---------|--------|-------|-----------|
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | `rewards_dynamic.py` | **EXPERIMENTAL** - Hour-based... | ❌ Orphaned | 80 | Only in... |  
-
-### 1.2 CO₂ Calculation Modules (2 files, different scope)
-
-  | File | Purpose | Status | Lines | Used Where |  
-|------|---------|--------|-------|-----------|
-  | `co2_emissions.py` | **Data structure** -... | ⚠️ Unused | 358 | Imported but NOT used... |  
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
----
+### 1.1 Reward Modules (4 files with overlapping purposes) | File | Purpose | Status | Lines | Used Where | |------|---------|--------|-------|-----------| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+|`rewards_dynamic.py`|**EXPERIMENTAL** - Hour-based...|❌ Orphaned|80|Only in...| ### 1.2 CO₂ Calculation Modules (2 files, different scope) | File | Purpose | Status | Lines | Used Where | |------|---------|--------|-------|-----------|
+|`co2_emissions.py`|**Data structure** -...|⚠️ Unused|358|Imported but NOT used...| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| ---
 
 ## 2. ORPHANED/RARELY-USED FILES
 
@@ -142,17 +128,8 @@ ENTRY POINTS:
 
 - `demanda_mall_kwh.py`: **NO imports anywhere** (0 usages detected)
 
-### 3.3 Unused Exports in Key Files
-
-  | Module | Exports | Actually Used | Status |  
-|--------|---------|---------------|--------|
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | `co2_emissions.py` | `CO2EmissionFactors`, `CO2EmissionBreakdown` | ❌ Never instantiated | ❌ |  
-  | `demanda_mall_kwh.py` | 6 classes, 10+ functions | ❌ Zero usages | ❌ |  
-  | `rewards_dynamic.py` | `DynamicReward` class | ❌ Only in dev script | ⚠️ |  
-  | `enriched_observables.py` | `EnrichedObservableWrapper` | ❓ Unclear (not in simulate.py) | ⚠️ |  
-
----
+### 3.3 Unused Exports in Key Files | Module | Exports | Actually Used | Status | |--------|---------|---------------|--------| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+|`co2_emissions.py`|`CO2EmissionFactors`, `CO2EmissionBreakdown`|❌ Never instantiated|❌| | `demanda_mall_kwh.py` | 6 classes, 10+ functions | ❌ Zero usages | ❌ | | `rewards_dynamic.py` | `DynamicReward` class | ❌ Only in dev script | ⚠️ | |`enriched_observables.py`|`EnrichedObservableWrapper`|❓ Unclear (not in simulate.py)|⚠️| ---
 
 ## 4. DATA FLOW ANALYSIS
 
@@ -336,16 +313,7 @@ from iquitos_citylearn.oe3.co2_emissions import (...)
 
 ---
 
-## 6. VERSION CONFLICT MATRIX
-
-  | Aspect | v1 (Active) | v2 (Backup) | Status |  
-|--------|------------|-----------|--------|
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
-**Risk Assessment**: 🟡 MEDIUM
+## 6. VERSION CONFLICT MATRIX | Aspect | v1 (Active) | v2 (Backup) | Status | |--------|------------|-----------|--------| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| **Risk Assessment**: 🟡 MEDIUM
 
 - Both v1 and v2 define same interfaces
 - If code switches to v2 without updating agents/**init**.py, breakage occurs
@@ -433,43 +401,11 @@ from iquitos_citylearn.oe3.co2_emissions import (...)
 
 ## 8. SPECIFIC FILE RECOMMENDATIONS
 
-### 🟢 KEEP (Production)
-
-  | File | Reason | Actions |  
-|------|--------|---------|
-  | `rewards.py` | Core multi-objective system, all... | Keep as-is (TIER... |  
-  | `co2_table.py` | Main CO₂ evaluation module | Keep as-is (or... |  
-  | `dataset_builder.py` | Only module for... | Keep as-is |  
-  | `simulate.py` | Central orchestrator for agent training | Keep as-is |  
-  | `agents/__init__.py` | Agent factory and multiobjetivo imports | Keep as-is |  
-  | All `agents/*.py` | 7 agent implementations (SAC,... | Keep all |  
-  | `progress.py` | Training progress utilities | Keep as-is |  
-  | `enriched_observables.py` | Observable wrapper... | Keep; check if needed |  
-  | `dispatch_priorities.py` | BESS dispatch logic | Keep as-is |  
-  | `tier2_v2_config.py` | Training configuration | Keep as-is |  
-
-### 🟡 CONDITIONAL KEEP
-
-  | File | Condition | Action |  
-|------|-----------|--------|
-  | `enriched_observables.py` | If not used in simulate.py | Check usage; archive if dead code |  
-  | `co2_emissions.py` | If co2_table.py... | Merge into co2_table.py, delete |  
-
-### 🔴 DELETE
-
-  | File | Reason | Impact |  
-|------|--------|--------|
-  | `demanda_mall_kwh.py` | 100% orphaned, zero imports | None - dev code, no dependencies |  
-  | `rewards_dynamic.py` | Only in dev script, not active | Move to scripts/experimental/ |  
-
-### 🟠 ARCHIVE (Move to experimental/)
-
-  | File | Reason | Archive Path |  
-|------|--------|--------------|
-  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-  | `rewards_wrapper_v2.py` | Experimental wrapper, unused | `src/iquitos_citylearn/experimental/` |  
-
----
+### 🟢 KEEP (Production) | File | Reason | Actions | |------|--------|---------| | `rewards.py` | Core multi-objective system, all... | Keep as-is (TIER... | | `co2_table.py` | Main CO₂ evaluation module | Keep as-is (or... | | `dataset_builder.py` | Only module for... | Keep as-is | | `simulate.py` | Central orchestrator for agent training | Keep as-is | |`agents/__init__.py`|Agent factory and multiobjetivo imports|Keep as-is| | All `agents/*.py` | 7 agent implementations (SAC,... | Keep all | | `progress.py` | Training progress utilities | Keep as-is | | `enriched_observables.py` | Observable wrapper... | Keep; check if needed | | `dispatch_priorities.py` | BESS dispatch logic | Keep as-is | | `tier2_v2_config.py` | Training configuration | Keep as-is | ### 🟡 CONDITIONAL KEEP | File | Condition | Action | |------|-----------|--------|
+|`enriched_observables.py`|If not used in simulate.py|Check usage; archive if dead code| | `co2_emissions.py` | If co2_table.py... | Merge into co2_table.py, delete | ### 🔴 DELETE | File | Reason | Impact | |------|--------|--------|
+|`demanda_mall_kwh.py`|100% orphaned, zero imports|None - dev code, no dependencies|
+|`rewards_dynamic.py`|Only in dev script, not active|Move to scripts/experimental/| ### 🟠 ARCHIVE (Move to experimental/) | File | Reason | Archive Path | |------|--------|--------------| ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+|`rewards_wrapper_v2.py`|Experimental wrapper, unused|`src/iquitos_citylearn/experimental/`| ---
 
 ## 9. IMPACT ANALYSIS
 
@@ -571,18 +507,8 @@ python -c "from iquitos_citylearn.oe3.rewards import *; print('✓')"
 
 ## 11. CONCLUSION & ACTION ITEMS
 
-### Summary Table
-
-  | Category | Finding | Action | Priority |  
-|----------|---------|--------|----------|
-  | **Duplicates** | 4 reward modules | Consolidate to 1 active + archive 2 | 🟡 Medium |  
-  | **Orphaned** | demanda_mall_kwh.py (507 lines) | DELETE | 🔴 High |  
-  | **Version Conflict** | v1 vs v2 rewards | Document, don't mix | 🟡 Medium |  
-  | **Import Errors** | co2_emissions.py unused | Merge into co2_table.py | 🟡 Medium |  
-  | **Data Flow** | OE2 → OE3 clear | ✓ No changes needed | ✓ None |  
-  | **Agent Connection** | All agents properly linked | ✓ No changes needed | ✓ None |  
-
-### Recommended Execution Order
+### Summary Table | Category | Finding | Action | Priority | |----------|---------|--------|----------|
+|**Duplicates**|4 reward modules|Consolidate to 1 active + archive 2|🟡 Medium| | **Orphaned** | demanda_mall_kwh.py (507 lines) | DELETE | 🔴 High | | **Version Conflict** | v1 vs v2 rewards | Document, don't mix | 🟡 Medium | |**Import Errors**|co2_emissions.py unused|Merge into co2_table.py|🟡 Medium| | **Data Flow** | OE2 → OE3 clear | ✓ No changes needed | ✓ None | |**Agent Connection**|All agents properly linked|✓ No changes needed|✓ None| ### Recommended Execution Order
 
 1. ✅ **DELETE** `demanda_mall_kwh.py` (0% risk)
 2. ✅ **CONSOLIDATE** `co2_emissions.py`into `co2_table.py`(minimal risk, verify

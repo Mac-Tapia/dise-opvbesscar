@@ -147,19 +147,7 @@ python scripts/monitor_training_live_2026.py
 
 ---
 
-## ✨ Ventajas
-
-  | Aspecto | Antes | Después |  
-|--------|--------|---------|
-  | **Detección GPU** | Duplicada en 3 agentes | Centralizada + fallbacks |  
-  | **Validación** | Manual (riesgo de olvidos) | Automática + checklist |  
-  | **Documentación** | Mínima | Exhaustiva con ejemplos |  
-  | **Entrenamiento** | Sin reportes claros | Reporte detallado + JSON |  
-  | **Troubleshooting** | Buscar en docs | Tabla de problemas/soluciones |  
-  | **Manejo Errores** | Básico | Robusto con logging |  
-  | **Compatibilidad** | Con CityLearn | Verificada + wrapping |  
-
----
+## ✨ Ventajas | Aspecto | Antes | Después | |--------|--------|---------| | **Detección GPU** | Duplicada en 3 agentes | Centralizada + fallbacks | | **Validación** | Manual (riesgo de olvidos) | Automática + checklist | | **Documentación** | Mínima | Exhaustiva con ejemplos | | **Entrenamiento** | Sin reportes claros | Reporte detallado + JSON | | **Troubleshooting** | Buscar en docs | Tabla de problemas/soluciones | | **Manejo Errores** | Básico | Robusto con logging | | **Compatibilidad** | Con CityLearn | Verificada + wrapping | ---
 
 ## 🎯 Estado Actual
 
