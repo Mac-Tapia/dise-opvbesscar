@@ -17,32 +17,32 @@
 ### Session 1: Episodios 1-5 (Nuevo)
 
 ```bash
-Episodio 1: A2C=367kg | SAC=301kg | PPO=280kg
-Episodio 2: A2C=365kg | SAC=295kg | PPO=286kg
-Episodio 3: A2C=374kg | SAC=288kg | PPO=287kg
-Episodio 4: A2C=373kg | SAC=301kg | PPO=273kg
-Episodio 5: A2C=362kg | SAC=305kg | PPO=287kg
+ Episodio 1: A2C=367kg | SAC=301kg | PPO=280kg 
+ Episodio 2: A2C=365kg | SAC=295kg | PPO=286kg 
+ Episodio 3: A2C=374kg | SAC=288kg | PPO=287kg 
+ Episodio 4: A2C=373kg | SAC=301kg | PPO=273kg 
+ Episodio 5: A2C=362kg | SAC=305kg | PPO=287kg 
 ```bash
 
 ### Session 2: Episodios 6-10 (Reanudado desde Checkpoint)
 
 ```bash
-Episodio 6: A2C=347kg | SAC=285kg | PPO=266kg ✅ MEJORA
-Episodio 7: A2C=338kg | SAC=303kg | PPO=277kg
-Episodio 8: A2C=334kg | SAC=286kg | PPO=261kg ✅ MEJOR
-Episodio 9: A2C=363kg | SAC=274kg | PPO=260kg ✅ MEJOR
-Episodio 10: A2C=363kg | SAC=284kg | PPO=271kg
+ Episodio 6: A2C=347kg | SAC=285kg | PPO=266kg ✅ MEJORA 
+ Episodio 7: A2C=338kg | SAC=303kg | PPO=277kg 
+ Episodio 8: A2C=334kg | SAC=286kg | PPO=261kg ✅ MEJOR 
+ Episodio 9: A2C=363kg | SAC=274kg | PPO=260kg ✅ MEJOR 
+ Episodio 10: A2C=363kg | SAC=284kg | PPO=271kg 
 ```bash
 
 ---
 
 ## 📈 Análisis de Convergencia
 
-| Agente | Ep 1-5 (Avg) | Ep 6-10 (Avg) | Tendencia |
+  | Agente | Ep 1-5 (Avg) | Ep 6-10 (Avg) | Tendencia |  
 |--------|--------------|---------------|-----------|
-| **A2C** | 368.2 kg | 349.0 kg | ↓ 19.2 kg (5.2% mejor) |
-| **SAC** | 298.0 kg | 286.6 kg | ↓ 11.4 kg (3.8% mejor) |
-| **PPO** | 282.6 kg | 267.0 kg | ↓ 15.6 kg (5.5% mejor) |
+  | **A2C** | 368.2 kg | 349.0 kg | ↓ 19.2 kg (5.2% mejor) |  
+  | **SAC** | 298.0 kg | 286.6 kg | ↓ 11.4 kg (3.8% mejor) |  
+  | **PPO** | 282.6 kg | 267.0 kg | ↓ 15.6 kg (5.5% mejor) |  
 
 **Conclusión**: Los agentes están convergiendo correctamente, mostrando mejora
 gradual.

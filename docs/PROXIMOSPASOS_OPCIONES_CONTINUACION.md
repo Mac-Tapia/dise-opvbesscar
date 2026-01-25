@@ -124,13 +124,13 @@ Análisis detallado del consumo de energía y emisiones CO2
 
 ## 📍 Estado Actual para Referencia
 
-| Recurso | Estado | Ubicación |
+  | Recurso | Estado | Ubicación |  
 | --- | --- | --- |
-| Checkpoints | ✅ 197 disponibles | `analyses/oe3/training/checkpoints/` |
-| Gráficas | ✅ 25 con datos reales | `analyses/oe3/training/plots/` |
-| Datasets | ✅ 476 CSV | `data/interim/oe2/` |
-| Scripts de análisis | ✅ 38 disponibles | Raíz del proyecto |
-| Documentación | ✅ 63 Markdown | Distribuida en carpetas |
+  | Checkpoints | ✅ 197 disponibles | `analyses/oe3/training/checkpoints/` |  
+  | Gráficas | ✅ 25 con datos reales | `analyses/oe3/training/plots/` |  
+  | Datasets | ✅ 476 CSV | `data/interim/oe2/` |  
+  | Scripts de análisis | ✅ 38 disponibles | Raíz del proyecto |  
+  | Documentación | ✅ 63 Markdown | Distribuida en carpetas |  
 
 ---
 

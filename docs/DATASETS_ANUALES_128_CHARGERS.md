@@ -21,30 +21,30 @@ entrenamiento de agentes RL.
 
 ### Tabla 13 OE2 - Escenarios de Dimensionamiento
 
-| Escenario | PE | FC | Cargadores | Tomas | Energía/Día | Total Vehíc/Día | Total/20 años |
+  | Escenario | PE | FC | Cargadores | Tomas | Energía/Día | Total Vehíc/Día | Total/20 años |  
 |-----------|---:|---:|----------:|------:|------------:|----------------:|--------------:|
-| CONSERVADOR | 0.10 | 0.40 | 4 | 16 | 231 kWh | 257 | 1,876,100 |
-| MEDIANO | 0.50 | 0.60 | 20 | 80 | 1,739 kWh | 1,287 | 9,395,100 |
-| **RECOMENDADO*** | **0.65** | **0.75** | **32** | **128** | **2,823 kWh** | **1,672** | **12,205,600** |
-| MÁXIMO | 1.00 | 1.00 | 35 | 140 | 5,800 kWh | 2,575 | 18,797,500 |
+  | CONSERVADOR | 0.10 | 0.40 | 4 | 16 | 231 kWh | 257 | 1,876,100 |  
+  | MEDIANO | 0.50 | 0.60 | 20 | 80 | 1,739 kWh | 1,287 | 9,395,100 |  
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  | MÁXIMO | 1.00 | 1.00 | 35 | 140 | 5,800 kWh | 2,575 | 18,797,500 |  
 
 ### Vehículos Cargados por Período (Todos los Escenarios)
 
-| Escenario | Motos/Día | Mototaxis/Día | Total/Día | Total/Mes | Total/Año | Total/20 años |
+  | Escenario | Motos/Día | Mototaxis/Día | Total/Día | Total/Mes | Total/Año | Total/20 años |  
 |-----------|----------:|--------------:|----------:|----------:|----------:|--------------:|
-| CONSERVADOR | 225 | 32 | 257 | 7,710 | 93,805 | 1,876,100 |
-| MEDIANO | 1,125 | 162 | 1,287 | 38,610 | 469,755 | 9,395,100 |
-| **RECOMENDADO*** | **1,462** | **210** | **1,672** | **50,160** | **610,280** | **12,205,600** |
-| MÁXIMO | 2,250 | 325 | 2,575 | 77,250 | 939,875 | 18,797,500 |
+  | CONSERVADOR | 225 | 32 | 257 | 7,710 | 93,805 | 1,876,100 |  
+  | MEDIANO | 1,125 | 162 | 1,287 | 38,610 | 469,755 | 9,395,100 |  
+  | **RECOMENDADO*** | **1,462** | **210** | **1,672** | **50,160** | **610,280** | **12,205,600** |  
+  | MÁXIMO | 2,250 | 325 | 2,575 | 77,250 | 939,875 | 18,797,500 |  
 
 ### Energía Cargada por Período (Todos los Escenarios)
 
-| Escenario | Energía/Día | Energía/Mes | Energía/Año | Energía/20 años |
+  | Escenario | Energía/Día | Energía/Mes | Energía/Año | Energía/20 años |  
 |-----------|------------:|------------:|------------:|----------------:|
-| CONSERVADOR | 231 kWh | 6,936 kWh | 84,388 kWh | 1,688 MWh |
-| MEDIANO | 1,739 kWh | 52,164 kWh | 634,662 kWh | 12,693 MWh |
-| **RECOMENDADO*** | **2,823 kWh** | **84,690 kWh** | **1,030,395 kWh** | **20,608 MWh** |
-| MÁXIMO | 5,800 kWh | 174,000 kWh | 2,117,000 kWh | 42,340 MWh |
+  | CONSERVADOR | 231 kWh | 6,936 kWh | 84,388 kWh | 1,688 MWh |  
+  | MEDIANO | 1,739 kWh | 52,164 kWh | 634,662 kWh | 12,693 MWh |  
+  | **RECOMENDADO*** | **2,823 kWh** | **84,690 kWh** | **1,030,395 kWh** | **20,608 MWh** |  
+  | MÁXIMO | 5,800 kWh | 174,000 kWh | 2,117,000 kWh | 42,340 MWh |  
 
 ---
 
@@ -110,14 +110,14 @@ data/interim/oe2/chargers/annual_datasets/
 
 ### Conteo Total
 
-| Elemento | Cantidad |
+  | Elemento | Cantidad |  
 | ---------- | ---------- |
-| **Playa Motos** | 112 chargers |
-| **Playa Mototaxis** | 16 chargers |
-| **Total Chargers** | **128** |
-| **Escenarios** | **101** (0 baseline + 1-100 variaciones MC) |
-| **Archivos por escenario** | 128 × 2 playas = 256 CSVs |
-| **Total Archivos** | 101 escenarios × 256 CSVs = **25,856 archivos** |
+  | **Playa Motos** | 112 chargers |  
+  | **Playa Mototaxis** | 16 chargers |  
+  | **Total Chargers** | **128** |  
+  | **Escenarios** | **101** (0 baseline... |  
+  | **Archivos por escenario** | 128 × 2 playas = 256 CSVs |  
+  | **Total Archivos** | 101 escenarios ×... |  
 
 ### Datos por Charger - 101 Escenarios
 

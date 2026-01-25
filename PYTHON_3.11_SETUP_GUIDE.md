@@ -142,7 +142,10 @@ python --version
 # Output: Python 3.11.x (where x >= 0)
 
 # Check critical packages
-python -c "import pandas, numpy, stable_baselines3, gymnasium; print('✅ All packages OK')"
+python -c "import pandas,
+    numpy,
+    stable_baselines3,
+    gymnasium; print('✅ All packages OK')"
 
 # Check CityLearn specifically
 python -c "import citylearn; print('✅ CityLearn installed')"

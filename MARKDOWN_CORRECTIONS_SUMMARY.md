@@ -89,14 +89,14 @@ Los errores restantes son principalmente:
 
 ### ✅ RESULTADO FINAL
 
-| Métrica | Valor |
+  | Métrica | Valor |  
 |---------|-------|
-| Errores iniciales | 1,614 |
-| Errores críticos corregidos | 126+ |
-| Archivos modificados | 32 |
-| Commits realizados | 2 |
-| Push a GitHub | ✅ Completado |
-| Errores restantes (no críticos) | ~1,488 (MD013 en tablas/código) |
+  | Errores iniciales | 1,614 |  
+  | Errores críticos corregidos | 126+ |  
+  | Archivos modificados | 32 |  
+  | Commits realizados | 2 |  
+  | Push a GitHub | ✅ Completado |  
+  | Errores restantes (no críticos) | ~1,488 (MD013 en tablas/código) |  
 
 ---
 

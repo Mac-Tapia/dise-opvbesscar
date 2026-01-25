@@ -163,13 +163,13 @@ for scen in sorted(motos)[:3]:
 
 ## 🎯 ESTADO ACTUAL
 
-| Componente | Status | Detalles |
+  | Componente | Status | Detalles |  
 | --- | --- | --- |
-| 128 Chargers | ✅ Integrados | Schema con 131 observables |
-| 101 Escenarios | ✅ Generados | 113.3M datos, 2 playas |
-| Markdown | 🔄 Parcial | 99/418 corregidos, ~3 archivos pendientes |
-| Git | ✅ Actualizado | 16 commits pusheados |
-| Entrenamiento | ⏳ Listo | training_v2_fresh.py configurado |
+  | 128 Chargers | ✅ Integrados | Schema con 131 observables |  
+  | 101 Escenarios | ✅ Generados | 113.3M datos, 2 playas |  
+  | Markdown | 🔄 Parcial | 99/418 corregidos, ~3... |  
+  | Git | ✅ Actualizado | 16 commits pusheados |  
+  | Entrenamiento | ⏳ Listo | training_v2_fresh.py configurado |  
 
 ---
 

@@ -18,14 +18,14 @@ archivos en `src/iquitos_citylearn/oe3/agents/`, garantizando:
 
 ### Métricas Finales
 
-| Archivo | Errores Iniciales | Errores Actuales | Estado | Observaciones |
+  | Archivo | Errores Iniciales | Errores Actuales | Estado | Observaciones |  
 |---------|------------------|------------------|--------|---------------|
-| `__init__.py` | 3 | 0 | ✅ LIMPIO | Device detection con fallback chain |
-| `ppo_sb3.py` | 13 | 2 | ✅ CASI LIMPIO | 2 unused... |
-| `a2c_sb3.py` | 34 | 4 | ✅ CASI LIMPIO | 2 unused params +... |
-| `sac.py` | 54 | 38 | ⚠️ PARCIAL | Requiere refactoring arquitectónico... |
-| `agent_utils.py` | 0 | 0 | ✅ LIMPIO | Sin cambios necesarios |
-| `validate_training_env.py` | 0 | 0 | ✅ LIMPIO | Sin cambios necesarios |
+  | `__init__.py` | 3 | 0 | ✅ LIMPIO | Device detection con fallback chain |  
+  | `ppo_sb3.py` | 13 | 2 | ✅ CASI LIMPIO | 2 unused... |  
+  | `a2c_sb3.py` | 34 | 4 | ✅ CASI LIMPIO | 2 unused params +... |  
+  | `sac.py` | 54 | 38 | ⚠️ PARCIAL | Requiere refactoring arquitectónico... |  
+  | `agent_utils.py` | 0 | 0 | ✅ LIMPIO | Sin cambios necesarios |  
+  | `validate_training_env.py` | 0 | 0 | ✅ LIMPIO | Sin cambios necesarios |  
 
 **Total Errores Reducidos**: 113 → 46 (59.3% reducción)
 
@@ -62,18 +62,18 @@ except (ImportError, AttributeError, RuntimeError) as err:
 
 **Cambios Realizados** (9 mejoras):
 
-| # | Cambio | Línea | Resultado |
+  | # | Cambio | Línea | Resultado |  
 |---|--------|-------|-----------|
-| 1 | Factory function... | 375-382 | ✅ Fixed type mismatch |
-| 2 | Documented `episodes` parameter | ~205 | ℹ️ Documented, non-breaking |
-| 3 | Documented `total_steps` parameter | ~719 | ℹ️ Documented, non-breaking |
-| 4 | Exception specificity... | ~307 | ✅ (AttributeError, IndexError, ...) |
-| 5 | Exception specificity... | ~546 | ✅ (AttributeError, IndexError, ...) |
-| 6 | Exception specificity... | ~682 | ✅ (OSError,... |
-| 7 | Observation flattening... | ~765 | ✅ (ValueError, TypeError) |
-| 8 | Target dim extraction (model) | ~789 | ✅ Moved try-except... |
-| 9 | Target dim extraction (env) | ~797 | ✅ Moved try-except... |
-| 10 | Removed unnecessary pass statement | ~771 | ✅ Code cleanup |
+  | 1 | Factory function... | 375-382 | ✅ Fixed type mismatch |  
+  | 2 | Documented `episodes` parameter | ~205 | ℹ️ Documented, non-breaking |  
+  | 3 | Documented `total_steps` parameter | ~719 | ℹ️ Documented, non-breaking |  
+  | 4 | Exception specificity... | ~307 | ✅ (AttributeError, IndexError, ...) |  
+  | 5 | Exception specificity... | ~546 | ✅ (AttributeError, IndexError, ...) |  
+  | 6 | Exception specificity... | ~682 | ✅ (OSError,... |  
+  | 7 | Observation flattening... | ~765 | ✅ (ValueError, TypeError) |  
+  | 8 | Target dim extraction (model) | ~789 | ✅ Moved try-except... |  
+  | 9 | Target dim extraction (env) | ~797 | ✅ Moved try-except... |  
+  | 10 | Removed unnecessary pass statement | ~771 | ✅ Code cleanup |  
 
 **Errors Finales**:
 
@@ -98,19 +98,19 @@ vec_env = make_vec_env(_env_creator, n_envs=1, seed=self.config.seed)
 
 **Cambios Realizados** (15 mejoras):
 
-| # | Cambio | Descripción | Línea |
+  | # | Cambio | Descripción | Línea |  
 |----|--------|-------------|-------|
-| 1 | Factory function `_env_creator()` | Reemplazó lambda type mismatch | ~282-290 |
-| 2 | PV/BESS features... | (AttributeError, TypeError,... | ~213 |
-| 3-7 | Logging format (5 instancias) | Lazy % formatting | ~513-557 |
-| 8 | Checkpoint callback exception | (OSError, IOError,... | ~556 |
-| 9 | Metrics extraction exception | (AttributeError, TypeError,... | ~420 |
-| 10 | Action space access protection | Safe getattr() para None check | ~198-202 |
-| 11 | VecEnv attribute safe access | getattr() en lugar de direct access | ~366 |
-| 12 | Learning rate schedule return type | Conversión explícita float() | ~601 |
-| 13 | model obs space try-except | (TypeError, ValueError) solo | ~648-656 |
-| 14 | env obs space try-except | (TypeError, ValueError) solo | ~656 |
-| 15 | Final model save exception | (OSError, IOError,... | ~585 |
+  | 1 | Factory function `_env_creator()` | Reemplazó lambda type mismatch | ~282-290 |  
+  | 2 | PV/BESS features... | (AttributeError, TypeError,... | ~213 |  
+  | 3-7 | Logging format (5 instancias) | Lazy % formatting | ~513-557 |  
+  | 8 | Checkpoint callback exception | (OSError, IOError,... | ~556 |  
+  | 9 | Metrics extraction exception | (AttributeError, TypeError,... | ~420 |  
+  | 10 | Action space access protection | Safe getattr() para None check | ~198-202 |  
+  | 11 | VecEnv attribute safe access | getattr() en lugar de direct access | ~366 |  
+  | 12 | Learning rate schedule return type | Conversión explícita float() | ~601 |  
+  | 13 | model obs space try-except | (TypeError, ValueError) solo | ~648-656 |  
+  | 14 | env obs space try-except | (TypeError, ValueError) solo | ~656 |  
+  | 15 | Final model save exception | (OSError, IOError,... | ~585 |  
 
 **Errors Remanentes** (Aceptables):
 
@@ -337,15 +337,15 @@ get_errors d:/diseñopvbesscar/src/iquitos_citylearn/oe3/agents/
 
 ## Checklist de Calidad
 
-| Aspecto | ppo_sb3.py | a2c_sb3.py | sac.py | agent_utils.py | validate_training_env.py |
+  | Aspecto | ppo_sb3.py | a2c_sb3.py | sac.py | agent_utils.py | validate_training_env.py |  
 |---------|-----------|-----------|--------|----------------|------------------------|
-| Exception Specificity | ✅ | ✅ | ⚠️ | ✅ | ✅ |
-| Type Hints Complete | ✅ | ✅ | ⚠️ | ✅ | ✅ |
-| Lazy Logging | ✅ | ✅ | ⚠️ | ✅ | ✅ |
-| Parameter Documentation | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Factory Pattern | ✅ | ✅ | ⚠️ | ✅ | ✅ |
-| Safe Attribute Access | ✅ | ✅ | ⚠️ | ✅ | ✅ |
-| Production Ready | ✅ | ✅ | ⚠️ | ✅ | ✅ |
+  | Exception Specificity | ✅ | ✅ | ⚠️ | ✅ | ✅ |  
+  | Type Hints Complete | ✅ | ✅ | ⚠️ | ✅ | ✅ |  
+  | Lazy Logging | ✅ | ✅ | ⚠️ | ✅ | ✅ |  
+  | Parameter Documentation | ✅ | ✅ | ✅ | ✅ | ✅ |  
+  | Factory Pattern | ✅ | ✅ | ⚠️ | ✅ | ✅ |  
+  | Safe Attribute Access | ✅ | ✅ | ⚠️ | ✅ | ✅ |  
+  | Production Ready | ✅ | ✅ | ⚠️ | ✅ | ✅ |  
 
 ---
 

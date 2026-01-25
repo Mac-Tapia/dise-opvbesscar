@@ -52,15 +52,15 @@ class SACConfig:
 
 ### Justificación SAC
 
-| Parámetro | Valor | Razón |
+  | Parámetro | Valor | Razón |  
 |-----------|-------|-------|
-| **Batch Size** | 512 | SAC es off-policy, puede... |
-| **Buffer Size** | 1M | Más experiencias diversas = mejor generalización |
-| **Learning Rate** | 1.5e-4 | SAC es sensible a... |
-| **Gamma** | 0.999 | Horizonte largo (8760 pasos/ep), necesita gamma alto |
-| **Tau** | 0.001 | Soft updates lentos mantienen estabilidad |
-| **Hidden (1024,1024)** | 4M params | Capacidad para 900 obs... |
-| **Entropy auto** | Adaptivo | Ajusta exploración dinámicamente |
+  | **Batch Size** | 512 | SAC es off-policy, puede... |  
+  | **Buffer Size** | 1M | Más experiencias diversas... |  
+  | **Learning Rate** | 1.5e-4 | SAC es sensible a... |  
+  | **Gamma** | 0.999 | Horizonte largo (8760... |  
+  | **Tau** | 0.001 | Soft updates lentos... |  
+  | **Hidden (1024,1024)** | 4M params | Capacidad para 900 obs... |  
+  | **Entropy auto** | Adaptivo | Ajusta exploración dinámicamente |  
 
 ### Rendimiento Esperado SAC
 
@@ -119,17 +119,17 @@ class PPOConfig:
 
 ### Justificación PPO
 
-| Parámetro | Valor | Razón |
+  | Parámetro | Valor | Razón |  
 |-----------|-------|-------|
-| **Train Steps** | 1M | 2x de 500k para... |
-| **N Steps** | 2048 | On-policy necesita MUCHAS muestras por update |
-| **Batch Size** | 128 | Pequeño para PPO, pero procesa 16x en 20 epochs |
-| **N Epochs** | 20 | 20 updates × 128 batch = 2560 actualizaciones |
-| **LR** | 2.0e-4 | Suave pero no demasiado (PPO tolera mejor) |
-| **Clip Range** | 0.1 | MÁS restrictivo que estándar (0.2) = más estable |
-| **GAE Lambda** | 0.98 | Estimación advantage de alta calidad |
-| **Hidden (1024,1024)** | 4M params | Igual que SAC |
-| **SDE** | ✅ | Exploración mejorada |
+  | **Train Steps** | 1M | 2x de 500k para... |  
+  | **N Steps** | 2048 | On-policy necesita MUCHAS... |  
+  | **Batch Size** | 128 | Pequeño para PPO,... |  
+  | **N Epochs** | 20 | 20 updates ×... |  
+  | **LR** | 2.0e-4 | Suave pero no... |  
+  | **Clip Range** | 0.1 | MÁS restrictivo que... |  
+  | **GAE Lambda** | 0.98 | Estimación advantage de alta calidad |  
+  | **Hidden (1024,1024)** | 4M params | Igual que SAC |  
+  | **SDE** | ✅ | Exploración mejorada |  
 
 ### Rendimiento Esperado PPO
 
@@ -183,16 +183,16 @@ class A2CConfig:
 
 ### Justificación A2C
 
-| Parámetro | Valor | Razón |
+  | Parámetro | Valor | Razón |  
 |-----------|-------|-------|
-| **Train Steps** | 1M | 2x para mejor convergencia |
-| **N Steps** | 2048 | Recolecta MUCHAS experiencias en paralelo |
-| **LR** | 1.5e-4 | Igual que SAC (suave) |
-| **GAE Lambda** | 0.95 | Standard A2C (mejor que 1.0) |
-| **Gamma** | 0.999 | Largo plazo |
-| **Hidden (1024,1024)** | 4M params | Capacidad similar a otros |
-| **VF Coef** | 0.7 | Value function crítica en A2C |
-| **Simplicity** | ✅ | A2C es simple pero efectivo |
+  | **Train Steps** | 1M | 2x para mejor convergencia |  
+  | **N Steps** | 2048 | Recolecta MUCHAS experiencias... |  
+  | **LR** | 1.5e-4 | Igual que SAC (suave) |  
+  | **GAE Lambda** | 0.95 | Standard A2C (mejor que 1.0) |  
+  | **Gamma** | 0.999 | Largo plazo |  
+  | **Hidden (1024,1024)** | 4M params | Capacidad similar a otros |  
+  | **VF Coef** | 0.7 | Value function crítica en A2C |  
+  | **Simplicity** | ✅ | A2C es simple pero efectivo |  
 
 ### Rendimiento Esperado A2C
 
@@ -211,22 +211,22 @@ Velocidad:          ⭐⭐⭐⭐⭐ (máxima)
 
 ## 📊 TABLA COMPARATIVA - CONFIGURACIONES INDIVIDUALES
 
-| Parámetro | **SAC** | **PPO** | **A2C** | Mejor Para |
+  | Parámetro | **SAC** | **PPO** | **A2C** | Mejor Para |  
 |-----------|---------|---------|---------|-----------|
-| **Learning Rate** | 1.5e-4 | 2.0e-4 | 1.5e-4 | SAC/A2C más suave |
-| **Batch Size** | 512 | 128 | N/A | SAC masivo (off-policy) |
-| **N Steps** | 1 | 2048 | 2048 | PPO/A2C recopilan |
-| **N Epochs** | N/A | 20 | N/A | PPO múltiples updates |
-| **Buffer Size** | **1M** | N/A | N/A | SAC con experiencia |
-| **Hidden Sizes** | (1024,1024) | (1024,1024) | (1024,1024) | Todos grandes |
-| **Gamma** | 0.999 | 0.999 | 0.999 | Todos horizonte largo |
-| **Tau** | **0.001** | N/A | N/A | SAC soft updates |
-| **Clip Range** | N/A | **0.1** | N/A | PPO restrictivo |
-| **GAE Lambda** | N/A | 0.98 | 0.95 | PPO más fino |
-| **Entropy Coef** | 0.01 | 0.01 | 0.01 | Todos bajo |
-| **VF Coef** | N/A | 0.7 | 0.7 | Todos value importante |
-| **Train Steps** | 50 ep | 1M | 1M | PPO/A2C más largo |
-| **Especialidad** | Estabilidad | Convergencia | Velocidad | Diferentes fuerzas |
+  | **Learning Rate** | 1.5e-4 | 2.0e-4 | 1.5e-4 | SAC/A2C más suave |  
+  | **Batch Size** | 512 | 128 | N/A | SAC masivo (off-policy) |  
+  | **N Steps** | 1 | 2048 | 2048 | PPO/A2C recopilan |  
+  | **N Epochs** | N/A | 20 | N/A | PPO múltiples updates |  
+  | **Buffer Size** | **1M** | N/A | N/A | SAC con experiencia |  
+  | **Hidden Sizes** | (1024,1024) | (1024,1024) | (1024,1024) | Todos grandes |  
+  | **Gamma** | 0.999 | 0.999 | 0.999 | Todos horizonte largo |  
+  | **Tau** | **0.001** | N/A | N/A | SAC soft updates |  
+  | **Clip Range** | N/A | **0.1** | N/A | PPO restrictivo |  
+  | **GAE Lambda** | N/A | 0.98 | 0.95 | PPO más fino |  
+  | **Entropy Coef** | 0.01 | 0.01 | 0.01 | Todos bajo |  
+  | **VF Coef** | N/A | 0.7 | 0.7 | Todos value importante |  
+  | **Train Steps** | 50 ep | 1M | 1M | PPO/A2C más largo |  
+  | **Especialidad** | Estabilidad | Convergencia | Velocidad | Diferentes fuerzas |  
 
 ---
 
@@ -281,11 +281,11 @@ Velocidad:          ⭐⭐⭐⭐⭐ (máxima)
 
 ## 💾 COMPARACIÓN MEMORIA GPU REQUERIDA
 
-| Agente | Batch | Buffer | Hidden | Requerido | RTX 4060 (8GB) |
+  | Agente | Batch | Buffer | Hidden | Requerido | RTX 4060 (8GB) |  
 |--------|-------|--------|--------|-----------|----------------|
-| **SAC** | 512 | 1M | 1024x1024 | ~5-6 GB | ✅ Ajustado |
-| **PPO** | 128 | N/A | 1024x1024 | ~3-4 GB | ✅ Cómodo |
-| **A2C** | N/A | N/A | 1024x1024 | ~2-3 GB | ✅ Muy cómodo |
+  | **SAC** | 512 | 1M | 1024x1024 | ~5-6 GB | ✅ Ajustado |  
+  | **PPO** | 128 | N/A | 1024x1024 | ~3-4 GB | ✅ Cómodo |  
+  | **A2C** | N/A | N/A | 1024x1024 | ~2-3 GB | ✅ Muy cómodo |  
 
 **Nota**: Si tienes OOM (Out of Memory):
 
@@ -299,37 +299,37 @@ Velocidad:          ⭐⭐⭐⭐⭐ (máxima)
 
 ### Después de 10 episodios (prueba)
 
-| Métrica | SAC | PPO | A2C |
+  | Métrica | SAC | PPO | A2C |  
 |---------|-----|-----|-----|
-| **Reward Promedio** | -800 a -500 | -900 a -600 | -1000 a -700 |
-| **Trend** | ↗ Mejorando | ↗ Mejorando | ↗ Mejorando |
-| **Estabilidad** | Muy buena | Moderada | Buena |
+  | **Reward Promedio** | -800 a -500 | -900 a -600 | -1000 a -700 |  
+  | **Trend** | ↗ Mejorando | ↗ Mejorando | ↗ Mejorando |  
+  | **Estabilidad** | Muy buena | Moderada | Buena |  
 
 ### Después de 30 episodios (a mitad)
 
-| Métrica | SAC | PPO | A2C |
+  | Métrica | SAC | PPO | A2C |  
 |---------|-----|-----|-----|
-| **Reward Promedio** | -300 a -100 | -400 a -200 | -500 a -300 |
-| **Trend** | ↗ Convergiendo | ↗ Convergiendo | ↗ Convergiendo |
-| **CO₂** | 400-500 kg | 450-550 kg | 400-500 kg |
+  | **Reward Promedio** | -300 a -100 | -400 a -200 | -500 a -300 |  
+  | **Trend** | ↗ Convergiendo | ↗ Convergiendo | ↗ Convergiendo |  
+  | **CO₂** | 400-500 kg | 450-550 kg | 400-500 kg |  
 
 ### Después de 50 episodios (FINAL)
 
-| Métrica | SAC | PPO | A2C |
+  | Métrica | SAC | PPO | A2C |  
 |---------|-----|-----|-----|
-| **Reward Final** | -100 a +200 | -50 a +300 | -150 a +100 |
-| **CO₂ Final** | 250-350 kg | 200-300 kg | 300-400 kg |
-| **EV Satisfacción** | 90-95% | 88-93% | 85-90% |
-| **Status** | ✅ Óptimo | ✅✅ Excelente | ✅ Bueno |
+  | **Reward Final** | -100 a +200 | -50 a +300 | -150 a +100 |  
+  | **CO₂ Final** | 250-350 kg | 200-300 kg | 300-400 kg |  
+  | **EV Satisfacción** | 90-95% | 88-93% | 85-90% |  
+  | **Status** | ✅ Óptimo | ✅✅ Excelente | ✅ Bueno |  
 
 ---
 
 ## ✅ VERIFICACIÓN COMPLETADA
 
 ```bash
-🟢 SAC:     Learning Rate 1.5e-4 | Batch 512 | Buffer 1M | Hidden 1024x1024
-🟢 PPO:     Learning Rate 2.0e-4 | Batch 128 | N Steps 2048 | Hidden 1024x1024
-🟢 A2C:     Learning Rate 1.5e-4 | N Steps 2048 | Hidden 1024x1024
+ 🟢 SAC:     Learning Rate 1.5e-4 | Batch 512 | Buffer 1M | Hidden 1024x1024 
+ 🟢 PPO:     Learning Rate 2.0e-4 | Batch 128 | N Steps 2048 | Hidden 1024x1024 
+ 🟢 A2C:     Learning Rate 1.5e-4 | N Steps 2048 | Hidden 1024x1024 
 🟢 GPU:     RTX 4060 8GB | CUDA 12.1
 🟢 Datos:   128 cargadores | 5 schemas
 🟢 Listo:   ✅ MÁXIMA POTENCIA INDIVIDUAL

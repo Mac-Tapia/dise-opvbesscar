@@ -9,13 +9,13 @@
 
 ## 📊 RESUMEN DE LAS 5 ACCIONES SOLICITADAS
 
-| # | Acción | Estado | Resultado |
+  | # | Acción | Estado | Resultado |  
 |---|--------|--------|-----------|
-| 1 | Diagnosticar estado... | ✅ COMPLETA | Python 3.11.9 REQUERIDO,... |
-| 2 | Ejecutar Phase 7... | ✅ COMPLETA | Todos los tests pasan... |
-| 3 | Hacer cambios finales en... | ✅ COMPLETA | Calidad verificada,... |
-| 4 | Revisar y actualizar documentación | ✅ COMPLETA | Phase 7 completado... |
-| 5 | Preparar para Phase... | ✅ COMPLETA | 3 guías +... |
+  | 1 | Diagnosticar estado... | ✅ COMPLETA | Python 3.11.9 REQUERIDO,... |  
+  | 2 | Ejecutar Phase 7... | ✅ COMPLETA | Todos los tests pasan... |  
+  | 3 | Hacer cambios finales en... | ✅ COMPLETA | Calidad verificada,... |  
+  | 4 | Revisar y actualizar documentación | ✅ COMPLETA | Phase 7 completado... |  
+  | 5 | Preparar para Phase... | ✅ COMPLETA | 3 guías +... |  
 
 ---
 
@@ -113,12 +113,12 @@ Listos para Phase 8
 
 ### Resultados Proyectados
 
-| Agente | Reducción CO₂ | Solar % | Tiempo | Estado |
+  | Agente | Reducción CO₂ | Solar % | Tiempo | Estado |  
 |--------|--------------|---------|--------|--------|
-| Baseline | 0% | 40% | - | Control |
-| **SAC** | **20-26%** | **60-65%** | 60-90 min | Esperado |
-| **PPO ⭐** | **25-29%** | **65-70%** | 90-120 min | **MEJOR** |
-| **A2C** | **20-25%** | **60-65%** | 60-90 min | Esperado |
+  | Baseline | 0% | 40% | - | Control |  
+  | **SAC** | **20-26%** | **60-65%** | 60-90 min | Esperado |  
+  | **PPO ⭐** | **25-29%** | **65-70%** | 90-120 min | **MEJOR** |  
+  | **A2C** | **20-25%** | **60-65%** | 60-90 min | Esperado |  
 
 **Recomendación**: Usar PPO para producción (mejor rendimiento + estabilidad)
 
@@ -256,13 +256,13 @@ TOTAL:  4-6 horas (ejecución secuencial con GPU)
 
 ## 📚 ARCHIVOS CLAVE
 
-| Archivo | Propósito | Leer |
+  | Archivo | Propósito | Leer |  
 |---------|-----------|------|
-| PHASE_8_COMPLETE_GUIDE.md | Guía principal de entrenamiento | 30 min |
-| PHASE_8_READINESS_CHECKLIST.md | Verificación pre-entrenamiento | 10 min |
-| AGENT_TRAINING_CONFIG_PHASE8.yaml | Configuración de agentes | 15 min |
-| PHASE_8_DOCUMENTATION_INDEX.md | Índice y navegación | 5 min |
-| VISUAL_PROJECT_STATUS_PHASE8_READY.txt | Resumen visual | 5 min |
+  | PHASE_8_COMPLETE_GUIDE.md | Guía principal de entrenamiento | 30 min |  
+  | PHASE_8_READINESS_CHECKLIST.md | Verificación pre-entrenamiento | 10 min |  
+  | AGENT_TRAINING_CONFIG_PHASE8.yaml | Configuración de agentes | 15 min |  
+  | PHASE_8_DOCUMENTATION_INDEX.md | Índice y navegación | 5 min |  
+  | VISUAL_PROJECT_STATUS_PHASE8_READY.txt | Resumen visual | 5 min |  
 
 ---
 

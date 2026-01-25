@@ -1,6 +1,6 @@
 # 🚀 ESTRATEGIA DE ENTRENAMIENTO RECOMENDADA
 
-**Fecha**: 2026-01-24 | **Versión**: MÁXIMA POTENCIA INDIVIDUAL | **Estado**: ✅
+ **Fecha**: 2026-01-24 | **Versión**: MÁXIMA POTENCIA INDIVIDUAL | **Estado**: ✅ 
 
 ---
 
@@ -76,22 +76,22 @@
 
 ```bash
 [Inicio] A2C Entrenamiento
-  Episode 1/57 | Reward: -1200 | CO₂: 600 kg
-  Episode 10/57 | Reward: -800 | CO₂: 500 kg
-  Episode 30/57 | Reward: -400 | CO₂: 350 kg
-  Episode 50/57 | Reward: -100 | CO₂: 300 kg ✅
+ Episode 1/57 | Reward: -1200 | CO₂: 600 kg 
+ Episode 10/57 | Reward: -800 | CO₂: 500 kg 
+ Episode 30/57 | Reward: -400 | CO₂: 350 kg 
+ Episode 50/57 | Reward: -100 | CO₂: 300 kg ✅ 
 
 [Inicio] SAC Entrenamiento
-  Episode 1/50 | Reward: -1100 | CO₂: 580 kg
-  Episode 5/50 | Reward: -700 | CO₂: 450 kg
-  Episode 20/50 | Reward: -200 | CO₂: 280 kg
-  Episode 50/50 | Reward: +100 | CO₂: 250 kg ✅✅
+ Episode 1/50 | Reward: -1100 | CO₂: 580 kg 
+ Episode 5/50 | Reward: -700 | CO₂: 450 kg 
+ Episode 20/50 | Reward: -200 | CO₂: 280 kg 
+ Episode 50/50 | Reward: +100 | CO₂: 250 kg ✅✅ 
 
 [Inicio] PPO Entrenamiento
-  Episode 1/57 | Reward: -1300 | CO₂: 620 kg
-  Episode 15/57 | Reward: -400 | CO₂: 380 kg
-  Episode 40/57 | Reward: +50 | CO₂: 220 kg
-  Episode 57/57 | Reward: +250 | CO₂: 200 kg ✅✅✅
+ Episode 1/57 | Reward: -1300 | CO₂: 620 kg 
+ Episode 15/57 | Reward: -400 | CO₂: 380 kg 
+ Episode 40/57 | Reward: +50 | CO₂: 220 kg 
+ Episode 57/57 | Reward: +250 | CO₂: 200 kg ✅✅✅ 
 ```bash
 
 ---

@@ -254,11 +254,11 @@ programación
 
 **Archivos Corregidos**:
 
-| Archivo | Línea | ANTES | DESPUÉS |
+  | Archivo | Línea | ANTES | DESPUÉS |  
 |---------|-------|-------|---------|
-| ppo_sb3.py | 307 | `except Exception:` | `except (AttributeError,... |
-| a2c_sb3.py | 213 | `except Exception:` | `except (AttributeError,... |
-| sac.py | 46+ | `except Exception:` | `except (ValueError, TypeError, ...):` |
+  | ppo_sb3.py | 307 | `except Exception:` | `except (AttributeError,... |  
+  | a2c_sb3.py | 213 | `except Exception:` | `except (AttributeError,... |  
+  | sac.py | 46+ | `except Exception:` | `except (ValueError, TypeError, ...):` |  
 
 **Impacto**: Mejor debuggabilidad, errores específicos con logging
 
@@ -377,14 +377,14 @@ Training
 
 ### Archivos Listos para Entrenamiento
 
-| Archivo | Status | Ready |
+  | Archivo | Status | Ready |  
 |---------|--------|-------|
-| ppo_sb3.py | ✅ Limpio + BESS fix | ✅ YES |
-| a2c_sb3.py | ✅ Limpio + BESS fix | ✅ YES |
-| sac.py | ⚠️ 38 errores (logging) | ✅ FUNCIONAL |
-| agent_utils.py | ✅ Limpio | ✅ YES |
-| validate_training_env.py | ✅ Limpio | ✅ YES |
-| **init**.py | ✅ Limpio | ✅ YES |
+  | ppo_sb3.py | ✅ Limpio + BESS fix | ✅ YES |  
+  | a2c_sb3.py | ✅ Limpio + BESS fix | ✅ YES |  
+  | sac.py | ⚠️ 38 errores (logging) | ✅ FUNCIONAL |  
+  | agent_utils.py | ✅ Limpio | ✅ YES |  
+  | validate_training_env.py | ✅ Limpio | ✅ YES |  
+  | **init**.py | ✅ Limpio | ✅ YES |  
 
 ---
 

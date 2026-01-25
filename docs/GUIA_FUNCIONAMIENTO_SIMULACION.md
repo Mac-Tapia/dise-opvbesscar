@@ -303,32 +303,32 @@ curl http://localhost:8000/api/metrics
 
 ### **Entrada de Sensores (Auto - cada 5 min)**
 
-| Parámetro | Rango | Unidad | Ejemplo | Fuente |
+  | Parámetro | Rango | Unidad | Ejemplo | Fuente |  
 | ----------- | ------- | -------- | --------- | -------- |
-| `building_load` | 0 - 500 | kW | 45.2 | Smart Meter |
-| `pv_generation` | 0 - 100 | kW | 12.5 | Inversor Solar |
-| `battery_capacity` | 0 - 100 | % | 87.3 | BMS (Battery System) |
-| `electricity_price` | 0 - 1.0 | €/kWh | 0.28 | Grid Operator |
+  | `building_load` | 0 - 500 | kW | 45.2 | Smart Meter |  
+  | `pv_generation` | 0 - 100 | kW | 12.5 | Inversor Solar |  
+  | `battery_capacity` | 0 - 100 | % | 87.3 | BMS (Battery System) |  
+  | `electricity_price` | 0 - 1.0 | €/kWh | 0.28 | Grid Operator |  
 
 ### **Parámetros de Control (Manual - API)**
 
-| Parámetro | Valores | Unidad | Descripción |
+  | Parámetro | Valores | Unidad | Descripción |  
 | ----------- | --------- | -------- | ------------- |
-| `action` | charge / discharge / idle | - | Acción a ejecutar |
-| `value` | 0 - 100 | kW | Potencia (opcional) |
-| `duration` | 1 - 1440 | minutos | Tiempo de acción (opcional) |
+  | `action` | charge / discharge / idle | - | Acción a ejecutar |  
+  | `value` | 0 - 100 | kW | Potencia (opcional) |  
+  | `duration` | 1 - 1440 | minutos | Tiempo de acción (opcional) |  
 
 ### **Configuración del Sistema (Una vez)**
 
-| Parámetro | Valor | Unidad | Descripción |
+  | Parámetro | Valor | Unidad | Descripción |  
 | ----------- | ------- | -------- | ------------- |
-| `battery_capacity_total` | 50 - 500 | kWh | Capacidad máxima batería |
-| `battery_min_soc` | 20 - 50 | % | Carga mínima permitida |
-| `battery_max_charge_rate` | 10 - 100 | kW | Velocidad máx carga |
-| `battery_max_discharge_rate` | 10 - 100 | kW | Velocidad máx descarga |
-| `peak_hours` | 17:00 - 21:00 | HH:MM | Horarios caros |
-| `solar_forecast_enable` | true / false | - | Usar predicción solar |
-| `price_forecast_enable` | true / false | - | Usar predicción precios |
+  | `battery_capacity_total` | 50 - 500 | kWh | Capacidad máxima batería |  
+  | `battery_min_soc` | 20 - 50 | % | Carga mínima permitida |  
+  | `battery_max_charge_rate` | 10 - 100 | kW | Velocidad máx carga |  
+  | `battery_max_discharge_rate` | 10 - 100 | kW | Velocidad máx descarga |  
+  | `peak_hours` | 17:00 - 21:00 | HH:MM | Horarios caros |  
+  | `solar_forecast_enable` | true / false | - | Usar predicción solar |  
+  | `price_forecast_enable` | true / false | - | Usar predicción precios |  
 
 ---
 
@@ -339,20 +339,20 @@ curl http://localhost:8000/api/metrics
 ```python
 # Simulación en 1 hora (12 mediciones)
 
-Hora  | Consumo | Solar | Batería | Acción       | Costo
-------|---------|-------|---------|--------------|-------
-11:00 | 45 kW   | 85 kW | 60%     | CHARGE       | €8
-11:05 | 44 kW   | 82 kW | 62%     | CHARGE       | €8
-11:10 | 46 kW   | 88 kW | 65%     | CHARGE       | €8
-11:15 | 45 kW   | 90 kW | 70%     | CHARGE       | €8
-11:20 | 47 kW   | 85 kW | 75%     | CHARGE       | €8
-11:25 | 45 kW   | 80 kW | 80%     | CHARGE       | €8
-11:30 | 46 kW   | 75 kW | 85%     | IDLE         | €8
-11:35 | 45 kW   | 70 kW | 90%     | IDLE         | €8
-11:40 | 47 kW   | 65 kW | 90%     | IDLE         | €9
-11:45 | 48 kW   | 60 kW | 90%     | DISCHARGE    | €8
-11:50 | 46 kW   | 58 kW | 88%     | DISCHARGE    | €8
-11:55 | 45 kW   | 55 kW | 86%     | IDLE         | €8
+ Hora | Consumo | Solar | Batería | Acción | Costo 
+ ------ | --------- | ------- | --------- | -------------- | ------- 
+ 11:00 | 45 kW | 85 kW | 60% | CHARGE | €8 
+ 11:05 | 44 kW | 82 kW | 62% | CHARGE | €8 
+ 11:10 | 46 kW | 88 kW | 65% | CHARGE | €8 
+ 11:15 | 45 kW | 90 kW | 70% | CHARGE | €8 
+ 11:20 | 47 kW | 85 kW | 75% | CHARGE | €8 
+ 11:25 | 45 kW | 80 kW | 80% | CHARGE | €8 
+ 11:30 | 46 kW | 75 kW | 85% | IDLE | €8 
+ 11:35 | 45 kW | 70 kW | 90% | IDLE | €8 
+ 11:40 | 47 kW | 65 kW | 90% | IDLE | €9 
+ 11:45 | 48 kW | 60 kW | 90% | DISCHARGE | €8 
+ 11:50 | 46 kW | 58 kW | 88% | DISCHARGE | €8 
+ 11:55 | 45 kW | 55 kW | 86% | IDLE | €8 
 
 📊 RESULTADO: Costo hora = €99 (sin IA sería €105)
 💰 AHORRO: €6 por hora = €144 por día
@@ -361,15 +361,15 @@ Hora  | Consumo | Solar | Batería | Acción       | Costo
 ### **Ejemplo 2: Día Nublado (Invierno)**
 
 ```python
-Hora  | Consumo | Solar | Batería | Acción       | Costo
-------|---------|-------|---------|--------------|-------
-10:00 | 52 kW   | 8 kW  | 70%     | IDLE         | €11
-10:05 | 51 kW   | 6 kW  | 70%     | IDLE         | €11
-10:10 | 53 kW   | 5 kW  | 70%     | DISCHARGE    | €10
-10:15 | 52 kW   | 4 kW  | 68%     | DISCHARGE    | €10
-10:20 | 51 kW   | 3 kW  | 66%     | IDLE         | €11
-10:25 | 52 kW   | 2 kW  | 66%     | IDLE         | €11
-10:30 | 54 kW   | 1 kW  | 66%     | IDLE         | €11
+ Hora | Consumo | Solar | Batería | Acción | Costo 
+ ------ | --------- | ------- | --------- | -------------- | ------- 
+ 10:00 | 52 kW | 8 kW | 70% | IDLE | €11 
+ 10:05 | 51 kW | 6 kW | 70% | IDLE | €11 
+ 10:10 | 53 kW | 5 kW | 70% | DISCHARGE | €10 
+ 10:15 | 52 kW | 4 kW | 68% | DISCHARGE | €10 
+ 10:20 | 51 kW | 3 kW | 66% | IDLE | €11 
+ 10:25 | 52 kW | 2 kW | 66% | IDLE | €11 
+ 10:30 | 54 kW | 1 kW | 66% | IDLE | €11 
 
 📊 RESULTADO: Costo hora = €75
 💰 Sin batería sería: €108 (ahorro: €33)
@@ -503,15 +503,15 @@ SWAGGER API: http://localhost:8000/docs
 
 ## 🎓 Resumen
 
-| Concepto | Explicación |
+  | Concepto | Explicación |  
 | ---------- | ------------- |
-| **PVBESSCAR** | Sistema IA para optimizar energía en edificios |
-| **Entrada** | Sensores (consumo, solar, batería, precio) |
-| **Proceso** | ML predice futuro + RL optimiza decisión |
-| **Salida** | Acción (cargar/descargar/esperar) |
-| **Resultado** | Menor costo + menor CO2 + mayor disponibilidad |
-| **API** | FastAPI + MongoDB + ML Models |
-| **Ejecución** | Ciclo cada 5 minutos (288 veces/día) |
-| **Ahorro** | ~€100/día por edificio = €36,500/año |
+  | **PVBESSCAR** | Sistema IA para... |  
+  | **Entrada** | Sensores (consumo, solar,... |  
+  | **Proceso** | ML predice futuro + RL optimiza decisión |  
+  | **Salida** | Acción (cargar/descargar/esperar) |  
+  | **Resultado** | Menor costo +... |  
+  | **API** | FastAPI + MongoDB + ML Models |  
+  | **Ejecución** | Ciclo cada 5 minutos (288 veces/día) |  
+  | **Ahorro** | ~€100/día por edificio = €36,500/año |  
 
 **¡Listo! Ahora entiendes cómo funciona el sistema completo.**

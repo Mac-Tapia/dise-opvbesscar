@@ -53,7 +53,7 @@
   1. `### Identificación` → `### Identificación de Cambios`
 
 - **Errores MD060 (Table spacing)**: 1 ✅
-  1. Separador de tabla: `|---------|-------|-------|-------|` → `| --- | --- | --- | --- |`
+ 1. Separador de tabla: ` | --------- | ------- | ------- | ------- | ` → ` | --- | --- | --- | --- | ` 
   2. Agregados espacios en ambos lados de los pipes
 
 - **Total correcciones**: 4
@@ -70,8 +70,8 @@
     - ` ```text` para explicaciones de estructuras (estimado 15-20 bloques)
 
 - **Errores MD060 (Table spacing)**: 2 ✅
-  1. Tabla TIER 1 FIXES: `|-----------|--------|-------|---------|` → `| --- | --- | --- | --- |`
-  2. Tabla SUCCESS METRICS: `|--------|--------|----------|-----------|` → `| --- | --- | --- | --- |`
+ 1. Tabla TIER 1 FIXES: ` | ----------- | -------- | ------- | --------- | ` → ` | --- | --- | --- | --- | ` 
+ 2. Tabla SUCCESS METRICS: ` | -------- | -------- | ---------- | ----------- | ` → ` | --- | --- | --- | --- | ` 
   3. Espacios añadidos en ambos lados de pipes
 
 - **Total correcciones**: ~352
@@ -80,14 +80,14 @@
 
 ## 📈 Resumen de Errores Corregidos
 
-| Error Type | Cantidad | Archivos Afectados | Estado |
+  | Error Type | Cantidad | Archivos Afectados | Estado |  
 | --- | --- | --- | --- |
-| **MD001** (Heading levels) | 1 | ENTRENAMIENTO_LANZADO_2026_01_18.md | ✅ |
-| **MD036** (Emphasis... | 7 | AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md | ✅ |
-| **MD024** (Duplicate headings) | 3 | TIER1_FIXES_SUMMARY.md, SESSION_SUMMARY_20260118.md | ✅ |
-| **MD040** (Code... | ~352 | STATUS_DASHBOARD_TIER1.md, SESSION_SUMMARY_20260118.md | ✅ |
-| **MD060** (Table spacing) | 3 | STATUS_DASHBOARD_TIER1.md, SESSION_SUMMARY_20260118.md | ✅ |
-| **TOTAL** | **~366** | **5 archivos** | ✅ COMPLETADO |
+  | **MD001** (Heading levels) | 1 | ENTRENAMIENTO_LANZADO_2026_01_18.md | ✅ |  
+  | **MD036** (Emphasis... | 7 | AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md | ✅ |  
+  | **MD024** (Duplicate headings) | 3 | TIER1_FIXES_SUMMARY.md, SESSION_SUMMARY_20260118.md | ✅ |  
+  | **MD040** (Code... | ~352 | STATUS_DASHBOARD_TIER1.md, SESSION_SUMMARY_20260118.md | ✅ |  
+  | **MD060** (Table spacing) | 3 | STATUS_DASHBOARD_TIER1.md, SESSION_SUMMARY_20260118.md | ✅ |  
+  | **TOTAL** | **~366** | **5 archivos** | ✅ COMPLETADO |  
 
 ---
 
@@ -132,7 +132,7 @@ corregidos
 ### MD060 - Table Spacing
 
 - Normalización de separadores de tabla a formato consistente
-- Adición de espacios en ambos lados de pipes (`|` → `|`)
+ - Adición de... | ` → ` | `) 
 
 ---
 
@@ -155,7 +155,7 @@ corregidos
      - etc.
 
 5. **Table Separators (MD060)**:
-   - Pattern: `|------|------|` → `| --- | --- |`
+ - Pattern: ` | ------ | ------ | ` → ` | --- | --- | ` 
 
 ---
 

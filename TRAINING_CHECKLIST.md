@@ -50,7 +50,9 @@ Verifica todos estos items antes de iniciar el entrenamiento RL.
 - [ ] Imports funcionales:
 
   ```bash
-  python -c "from iquitos_citylearn.oe3.agents import PPOAgent, SACAgent, A2CAgent; print('OK')"
+  python -c "from iquitos_citylearn.oe3.agents import PPOAgent,
+      SACAgent,
+      A2CAgent; print('OK')"
 ```bash
 
 - [ ] Device detectado:
@@ -135,7 +137,8 @@ python -m venv .venv
 pip install -r requirements.txt
 
 # 2. Validar datos OE2
-python -c "import pandas as pd; print('Solar rows:', len(pd.read_csv('data/interim/oe2/solar/pv_generation_timeseries.csv')))"
+python -c "import pandas as pd; print('Solar rows:',
+    len(pd.read_csv('data/interim/oe2/solar/pv_generation_timeseries.csv')))"
 
 # 3. Build dataset
 python -m scripts.run_oe3_build_dataset --config configs/default.yaml
@@ -157,14 +160,14 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 
 ## ⚠️ Problemas Comunes
 
-| Problema | Solución |
+  | Problema | Solución |  
 |----------|----------|
-| "Schema not found" | Ejecutar `run_oe3_build_dataset` primero |
-| "128 chargers not found" | Validar `data/interim/oe2/chargers/individual_chargers.json`... |
-| "GPU out of memory" | Reducir `n_steps` en config; usar `--device cpu` |
-| "Reward NaN" | Verificar weights sum ~1.0; check obs scaling |
-| "Import error agents" | Verificar `src/` en PYTHONPATH |
-| "Checkpoint load failed" | Limpiar `checkpoints/` o... |
+  | "Schema not found" | Ejecutar `run_oe3_build_dataset` primero |  
+  | "128 chargers not found" | Validar `data/interim/oe2/chargers/individual_chargers.json`... |  
+  | "GPU out of memory" | Reducir `n_steps` en... |  
+  | "Reward NaN" | Verificar weights sum... |  
+  | "Import error agents" | Verificar `src/` en PYTHONPATH |  
+  | "Checkpoint load failed" | Limpiar `checkpoints/` o... |  
 
 ---
 

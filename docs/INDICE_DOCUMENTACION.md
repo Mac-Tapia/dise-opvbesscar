@@ -27,7 +27,7 @@
 - 🧪 Prueba la API
 - 📊 Dashboard de monitoreo
 
-**Lectura:** 30-45 min | **Dificultad:** Intermedio | **Mejor para:** Entender a fondo
+ **Lectura:** 30-45 min | **Dificultad:** Intermedio | **Mejor para:** Entender a fondo 
 
 ---
 
@@ -44,7 +44,7 @@
 - Accesos disponibles
 - Checklist y próximos pasos
 
-**Lectura:** 20-30 min | **Dificultad:** Intermedio | **Mejor para:** Referencia rápida
+ **Lectura:** 20-30 min | **Dificultad:** Intermedio | **Mejor para:** Referencia rápida 
 
 ---
 
@@ -62,7 +62,7 @@
   9. Comparativa Con/Sin IA
   10. Interface de usuario
 
-**Lectura:** 15-20 min | **Dificultad:** Principiante | **Mejor para:** Visualización
+ **Lectura:** 15-20 min | **Dificultad:** Principiante | **Mejor para:** Visualización 
 
 ---
 
@@ -75,7 +75,7 @@
 - Endpoints disponibles
 - Web Interface info
 
-**Lectura:** 5 min | **Dificultad:** Principiante | **Mejor para:** Verificación rápida
+ **Lectura:** 5 min | **Dificultad:** Principiante | **Mejor para:** Verificación rápida 
 
 ---
 
@@ -86,7 +86,7 @@
 - Uso de docker-compose
 - Troubleshooting
 
-**Lectura:** 15 min | **Dificultad:** Intermedio | **Mejor para:** Setup inicial
+ **Lectura:** 15 min | **Dificultad:** Intermedio | **Mejor para:** Setup inicial 
 
 ---
 
@@ -103,7 +103,7 @@
   - A2C: actor-crítico on-policy, actualización síncrona cada n_steps, entropía
     - para exploración, sin replay buffer.
 
-**Lectura:** 5-10 min | **Dificultad:** Intermedio | **Mejor para:** Comparar desempeño... 
+ **Lectura:** 5-10 min | **Dificultad:** Intermedio | **Mejor para:** Comparar desempeño... 
 
 ---
 
@@ -117,7 +117,7 @@
 - Escenario MÁXIMO: ~2,298 kWh/día, ~9,269 vehículos/día
 - Scripts de generación y formato de archivos
 
-**Lectura:** 10 min | **Dificultad:** Intermedio | **Mejor para:** Entender... 
+ **Lectura:** 10 min | **Dificultad:** Intermedio | **Mejor para:** Entender... 
 
 ---
 
@@ -129,7 +129,7 @@
 - Arquitectura de control por toma
 - Timeline operativo
 
-**Lectura:** 15 min | **Dificultad:** Intermedio | **Mejor para:** Entender... 
+ **Lectura:** 15 min | **Dificultad:** Intermedio | **Mejor para:** Entender... 
 
 ---
 
@@ -182,14 +182,14 @@ Interfaz web Flask para gestionar Docker
 
 ## 🌐 Accesos Disponibles
 
-| Servicio | URL | Usuario | Contraseña |
+  | Servicio | URL | Usuario | Contraseña |  
 | ---------- | ----- | --------- | ----------- |
-| **Swagger API** | <http://localhost:8000/docs> | - | - |
-| **ReDoc API** | <http://localhost:8000/redoc> | - | - |
-| **API REST** | <http://localhost:8000> | - | - |
-| **Docker Manager** | <http://localhost:5000> | - | - |
-| **MongoDB Admin** | <http://localhost:8081> | admin | password |
-| **MongoDB** | localhost:27017 | admin | password |
+  | **Swagger API** | <http://localhost:8000/docs> | - | - |  
+  | **ReDoc API** | <http://localhost:8000/redoc> | - | - |  
+  | **API REST** | <http://localhost:8000> | - | - |  
+  | **Docker Manager** | <http://localhost:5000> | - | - |  
+  | **MongoDB Admin** | <http://localhost:8081> | admin | password |  
+  | **MongoDB** | localhost:27017 | admin | password |  
 
 ---
 
@@ -279,14 +279,14 @@ de Decisión"
 
 ## 📊 Estadísticas de Documentación
 
-| Documento | Líneas | Palabras | Tema |
+  | Documento | Líneas | Palabras | Tema |  
 | ----------- | -------- | ---------- | ------ |
-| README_GUIA.md | 500+ | 3,500+ | Overview |
-| GUIA_FUNCIONAMIENTO_SIMULACION.md | 700+ | 5,000+ | Funcionamiento |
-| RESUMEN_SIMULACION_COMPLETO.md | 600+ | 4,000+ | Resumen ejecutivo |
-| DIAGRAMAS_VISUALIZACION.md | 500+ | 2,000+ | Visualización |
-| FASTAPI_RUNNING_STATUS.md | 200+ | 1,000+ | Estado actual |
-| **TOTAL** | **2,500+** | **15,500+** | **Completo** |
+  | README_GUIA.md | 500+ | 3,500+ | Overview |  
+  | GUIA_FUNCIONAMIENTO_SIMULACION.md | 700+ | 5,000+ | Funcionamiento |  
+  | RESUMEN_SIMULACION_COMPLETO.md | 600+ | 4,000+ | Resumen ejecutivo |  
+  | DIAGRAMAS_VISUALIZACION.md | 500+ | 2,000+ | Visualización |  
+  | FASTAPI_RUNNING_STATUS.md | 200+ | 1,000+ | Estado actual |  
+  | **TOTAL** | **2,500+** | **15,500+** | **Completo** |  
 
 ---
 
@@ -346,13 +346,13 @@ total_cost          Costo acumulado (€)
 
 ## 🔗 Enlaces Importantes
 
-| Recurso | URL |
+  | Recurso | URL |  
 | --------- | ----- |
-| API Documentación | <http://localhost:8000/docs> |
-| Docker Manager | <http://localhost:5000> |
-| MongoDB Admin | <http://localhost:8081> |
-| GitHub Repo | [Tu repo aquí] |
-| Documentación Oficial | <https://fastapi.tiangolo.com> |
+  | API Documentación | <http://localhost:8000/docs> |  
+  | Docker Manager | <http://localhost:5000> |  
+  | MongoDB Admin | <http://localhost:8081> |  
+  | GitHub Repo | [Tu repo aquí] |  
+  | Documentación Oficial | <https://fastapi.tiangolo.com> |  
 
 ---
 

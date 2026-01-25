@@ -30,12 +30,12 @@ comparison
 
 ### ⚠ Critical Issues (Must Fix)
 
-| Issue | Severity | Location | Impact |
+  | Issue | Severity | Location | Impact |  
 |-------|----------|----------|--------|
-| **BESS SOC scaled by 0.001** | 🔴 HIGH | All wrappers | Agent cannot observe BESS state |
-| **Hardcoded 0.001 prescale** | 🟠 MEDIUM | All wrappers | Fragile if data ranges change |
-| **Wrapper code duplicated** | 🟠 MEDIUM | 3 files (300+ lines) | Maintenance burden |
-| **No OE2 validation** | 🟠 MEDIUM | dataset_builder.py | Silent failures if data missing |
+  | **BESS SOC scaled by 0.001** | 🔴 HIGH | All wrappers | Agent cannot observe BESS state |  
+  | **Hardcoded 0.001 prescale** | 🟠 MEDIUM | All wrappers | Fragile if data ranges change |  
+  | **Wrapper code duplicated** | 🟠 MEDIUM | 3 files (300+ lines) | Maintenance burden |  
+  | **No OE2 validation** | 🟠 MEDIUM | dataset_builder.py | Silent failures if data missing |  
 
 ### 🟡 Minor Issues (Should Improve)
 
@@ -50,31 +50,31 @@ comparison
 
 ### ✓ OE2 → CityLearn Schema
 
-| Step | Source | Target | Status |
+  | Step | Source | Target | Status |  
 |------|--------|--------|--------|
-| Solar loading | `data/interim/oe2/solar/pv_generation_timeseries.csv` (8,760 rows) | `schema.json` | ✓ Correct |
-| Charger loading | `individual_chargers.json` (32 ×... | `schema.json` | ✓ Correct |
-| BESS loading | `bess_results.json` (2000... | `schema.json` | ✓ Correct |
-| Weather data | `weather.csv` (PVGIS) | `climate_zones/` | ✓ Correct |
-| Carbon intensity | Hardcoded 0.4521 kg CO₂/kWh | `pricing.csv` | ✓ Correct |
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  | Charger loading | `individual_chargers.json` (32 ×... | `schema.json` | ✓ Correct |  
+  | BESS loading | `bess_results.json` (2000... | `schema.json` | ✓ Correct |  
+  | Weather data | `weather.csv` (PVGIS) | `climate_zones/` | ✓ Correct |  
+  | Carbon intensity | Hardcoded 0.4521 kg CO₂/kWh | `pricing.csv` | ✓ Correct |  
 
 ### ✓ CityLearn Schema → Agent Observation
 
-| Feature | Access Pattern | Status | Issue |
+  | Feature | Access Pattern | Status | Issue |  
 |---------|-----------------|--------|-------|
-| Solar generation | `building.solar_generation[t]` (8,760-element array) | ✓ Works | Prescaled by 0.001 (ok) |
-| BESS SOC | `building.electrical_storage.state_of_charge` | ✓ Works | **Prescaled by 0.001 (BAD)** |
-| Charger demands | Included in base... | ✓ Works | Not explicitly extracted |
-| Grid import/export | In base observation | ✓ Works | Prescaled by 0.001 (ok) |
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  | Charger demands | Included in base... | ✓ Works | Not explicitly extracted |  
+  | Grid import/export | In base observation | ✓ Works | Prescaled by 0.001 (ok) |  
 
 ### ⚠ Agent Action → CityLearn Control
 
-| Element | Handling | Status |
+  | Element | Handling | Status |  
 |---------|----------|--------|
-| Action space dim | 126 (from `_get_act_dim()`) | ✓ Correct |
-| Action bounds | [-1.0, 1.0] (gym.Box) | ✓ Correct |
-| Unflattening | Converts 126-dim array → CityLearn list format | ✓ Correct |
-| Charger mapping | 126 → 126 charger power setpoints | ✓ Correct |
+  | Action space dim | 126 (from `_get_act_dim()`) | ✓ Correct |  
+  | Action bounds | [-1.0, 1.0] (gym.Box) | ✓ Correct |  
+  | Unflattening | Converts 126-dim array... | ✓ Correct |  
+  | Charger mapping | 126 → 126 charger power setpoints | ✓ Correct |  
 
 ---
 
@@ -97,12 +97,12 @@ Clipping: [-10, 10]
 
 ### The BESS SOC Problem
 
-| Step | Value | Issue |
+  | Step | Value | Issue |  
 |------|-------|-------|
-| Original | 0.0 to 1.0 | ✓ Already normalized |
-| After prescale (×0.001) | 0.0 to 0.001 | ❌ Becomes tiny |
-| After running norm | ~0.0 | ❌ All states map to ~0 |
-| Agent sees | No difference between... | ❌ **Cannot control BESS** |
+  | Original | 0.0 to 1.0 | ✓ Already normalized |  
+  | After prescale (×0.001) | 0.0 to 0.001 | ❌ Becomes tiny |  
+  | After running norm | ~0.0 | ❌ All states map to ~0 |  
+  | Agent sees | No difference between... | ❌ **Cannot control BESS** |  
 
 ### Fix Applied (in CODE_FIXES document)
 
@@ -305,11 +305,11 @@ BESS (2000)
 
 ## Files Delivered
 
-| Document | Purpose | Size |
+  | Document | Purpose | Size |  
 |----------|---------|------|
-| `TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md` | Complete technical... | ~10 KB |
-| `CODE_FIXES_OE2_DATA_FLOW.md` | Implementation fixes... | ~8 KB |
-| This file | Executive summary | ~4 KB |
+  | `TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md` | Complete technical... | ~10 KB |  
+  | `CODE_FIXES_OE2_DATA_FLOW.md` | Implementation fixes... | ~8 KB |  
+  | This file | Executive summary | ~4 KB |  
 
 ---
 
@@ -360,4 +360,4 @@ with aggregate?
 
 ---
 
-**Analysis Completed**: 2026-01-25 | **Python 3.11** | **CityLearn v2... 
+ **Analysis Completed**: 2026-01-25 | **Python 3.11** | **CityLearn v2... 

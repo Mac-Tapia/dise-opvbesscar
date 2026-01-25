@@ -496,7 +496,7 @@ GET /api/metrics
 
 POST /api/control
 ├─ Parámetros:
-│  ├─ action: "charge"|"discharge"|"idle"
+ │  ├─ action: "charge" | "discharge" | "idle" 
 │  └─ value: 0-100
 └─ Respuesta: {acción ejecutada}
 ```bash

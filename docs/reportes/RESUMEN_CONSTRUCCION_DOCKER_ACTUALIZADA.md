@@ -89,13 +89,13 @@ dev-type-check:    # MyPy type checking
 
 ### 🆕 Archivos Nuevos (5)
 
-| Archivo | Tipo | Propósito |
+  | Archivo | Tipo | Propósito |  
 | --------- | ------ | ---------- |
-| **DOCKER_BUILD_GUIDE.md** | Documentación | Guía completa de... |
-| **docker_manager.py** | Utilidad Python | CLI para... |
-| **docker_quick.bat** | Script Windows | Comandos rápidos batch |
-| **docker_quick.ps1** | Script PowerShell | Comandos rápidos PS1 |
-| **ACTUALIZACION_DOCKER_20260120.md** | Resumen | Este documento |
+  | **DOCKER_BUILD_GUIDE.md** | Documentación | Guía completa de... |  
+  | **docker_manager.py** | Utilidad Python | CLI para... |  
+  | **docker_quick.bat** | Script Windows | Comandos rápidos batch |  
+  | **docker_quick.ps1** | Script PowerShell | Comandos rápidos PS1 |  
+  | **ACTUALIZACION_DOCKER_20260120.md** | Resumen | Este documento |  
 
 ---
 
@@ -252,16 +252,16 @@ pvbesscar-jupyter      2.3%    1.2GB / 8GB
 
 ## 💡 Beneficios Clave
 
-| Beneficio | Impacto |
+  | Beneficio | Impacto |  
 | ----------- | -------- |
-| **BuildKit cache** | -60% build time en rebuilds |
-| **Health checks** | ✅ Auto-restart unhealthy containers |
-| **Tini init** | ✅ Proper signal handling |
-| **Volume cache** | ✅ Faster pip installs |
-| **Jupyter integrado** | ✅ Interactive development |
-| **Dev services** | ✅ Testing/linting automático |
-| **GPU support** | ✅ Soporte nvidia-docker2 |
-| **Logging rotation** | ✅ Disk space management |
+  | **BuildKit cache** | -60% build time en rebuilds |  
+  | **Health checks** | ✅ Auto-restart unhealthy containers |  
+  | **Tini init** | ✅ Proper signal handling |  
+  | **Volume cache** | ✅ Faster pip installs |  
+  | **Jupyter integrado** | ✅ Interactive development |  
+  | **Dev services** | ✅ Testing/linting automático |  
+  | **GPU support** | ✅ Soporte nvidia-docker2 |  
+  | **Logging rotation** | ✅ Disk space management |  
 
 ---
 

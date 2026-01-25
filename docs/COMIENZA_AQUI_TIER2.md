@@ -64,11 +64,11 @@ PRÓXIMO: ENTRENAMIENTO 2 EPISODIOS C/AGENTE
 
 ## 📊 COMPARATIVA RÁPIDA
 
-| Agente | Convergencia | Estabilidad | Eficiencia | Recomendación |
+  | Agente | Convergencia | Estabilidad | Eficiencia | Recomendación |  
 | -------- | ------------- | ------------ | ----------- | -------------- |
-| **A2C** | 30-50 ep | Media | 1.75M kg CO₂ | Prototyping |
-| **PPO** | 50-100 ep | ⭐ Muy Alta | 1.72M kg CO₂ | Producción |
-| **SAC** | **15-25 ep ⭐** | Muy Alta | **<1.70M kg CO₂ ⭐** | **Óptimo** |
+  | **A2C** | 30-50 ep | Media | 1.75M kg CO₂ | Prototyping |  
+  | **PPO** | 50-100 ep | ⭐ Muy Alta | 1.72M kg CO₂ | Producción |  
+  | **SAC** | **15-25 ep ⭐** | Muy Alta | **<1.70M kg CO₂ ⭐** | **Óptimo** |  
 
 ---
 
@@ -209,13 +209,13 @@ python -m src.train_sac_cuda --episodes=2 --verbose=1
 
 ## 📞 QUICK HELP
 
-| Pregunta | Respuesta |
+  | Pregunta | Respuesta |  
 | ---------- | ----------- |
-| ¿Qué cambió? | LR, ent, hidden, activation en PPO/A2C |
-| ¿Por qué? | TIER 2 fixes (convergencia 2x, estabilidad) |
-| ¿Qué esperar? | SAC mejor (15-25 ep, <1.7M kg CO₂) |
-| ¿Cuánto tarda? | 40-60 min (2ep × 3 agentes GPU) |
-| ¿Es reversible? | SÍ (git revert disponible) |
+  | ¿Qué cambió? | LR, ent, hidden, activation en PPO/A2C |  
+  | ¿Por qué? | TIER 2 fixes... |  
+  | ¿Qué esperar? | SAC mejor (15-25 ep, <1.7M kg CO₂) |  
+  | ¿Cuánto tarda? | 40-60 min (2ep × 3 agentes GPU) |  
+  | ¿Es reversible? | SÍ (git revert disponible) |  
 
 ---
 
@@ -238,5 +238,5 @@ python -m src.train_a2c_cuda --episodes=2 --verbose=1
 ---
 
 *TIER 2 Full Stack Activation: 2026-01-18*
-*A2C ✅ | PPO ✅ | SAC ✅ (previo) | REWARDS ✅*
+ *A2C ✅ | PPO ✅ | SAC ✅ (previo) | REWARDS ✅* 
 *Ready to Train: ✅*

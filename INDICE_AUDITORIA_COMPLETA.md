@@ -129,13 +129,13 @@ PROFUNDA
 
 ## 📊 DATOS CLAVE POR ARCHIVO
 
-| Archivo | Líneas | Palabras | Conclusión |
+  | Archivo | Líneas | Palabras | Conclusión |  
 |---------|--------|----------|-----------|
-| Resumen Ejecutivo | 350 | 2,500 | ✅ Rápido, decisión |
-| Reporte Completo | 1,200 | 9,000 | 📚 Referencia técnica |
-| Guía Implementación | 600 | 4,500 | 🔧 Manos a la obra |
-| Código Correcciones | 400 | 3,000 | 💻 Listo para copiar |
-| Script Auditoría | 700 | 5,000 | 🤖 Reproducible |
+  | Resumen Ejecutivo | 350 | 2,500 | ✅ Rápido, decisión |  
+  | Reporte Completo | 1,200 | 9,000 | 📚 Referencia técnica |  
+  | Guía Implementación | 600 | 4,500 | 🔧 Manos a la obra |  
+  | Código Correcciones | 400 | 3,000 | 💻 Listo para copiar |  
+  | Script Auditoría | 700 | 5,000 | 🤖 Reproducible |  
 
 **Total documentación**: ~5 KB de archivos .md + código
 

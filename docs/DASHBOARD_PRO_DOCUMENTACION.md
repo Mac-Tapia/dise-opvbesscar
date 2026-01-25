@@ -159,13 +159,13 @@ docker-compose up -d
 
 ## 🌐 URLs de Acceso
 
-| Componente | URL | Descripción |
+  | Componente | URL | Descripción |  
 | ----------- | ----- | ------------- |
-| **Dashboard** | <http://localhost:5000> | Interfaz principal |
-| **API Docs** | <http://localhost:8000/docs> | Swagger UI |
-| **API Status** | <http://localhost:8000/api/status> | Estado completo |
-| **WebSocket** | ws://localhost:8000/ws | Streaming en vivo |
-| **Simulator** | Menú interactivo | 9 opciones |
+  | **Dashboard** | <http://localhost:5000> | Interfaz principal |  
+  | **API Docs** | <http://localhost:8000/docs> | Swagger UI |  
+  | **API Status** | <http://localhost:8000/api/status> | Estado completo |  
+  | **WebSocket** | ws://localhost:8000/ws | Streaming en vivo |  
+  | **Simulator** | Menú interactivo | 9 opciones |  
 
 ---
 

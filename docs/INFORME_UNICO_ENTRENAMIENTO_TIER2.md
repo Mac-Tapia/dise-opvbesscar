@@ -27,11 +27,11 @@
   - 2,679 motos + 382 mototaxis, inversor Eaton Xpert1670 regenerado).
 
 ## Resultados observados
-| Agente | Pasos | Mean Reward | CO2 episodio (kg) | Grid (kWh) | Solar (kWh) | Fuente |
+  | Agente | Pasos | Mean Reward | CO2 episodio (kg) | Grid (kWh) | Solar (kWh) | Fuente |  
 | --- | --- | --- | --- | --- | --- | --- |
-| PPO | 44,295 | 52.554 | 220.17 | 487.0 | 0.0 | `analyses/oe3/training/PPO_training_metrics.csv` (última fila) |
-| SAC | 17,518 | 52.189 | 220.17 | 487.0 | 0.0 | `analyses/oe3/training/SAC_training_metrics.csv` (última fila) |
-| A2C | — | — | — | — | — | Sin métricas... |
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  | A2C | — | — | — | — | — | Sin métricas... |  
 
 ## Conclusión
 - PPO y SAC no muestran aprendizaje: reward constante, CO2 y grid sin mejora,

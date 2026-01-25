@@ -28,16 +28,16 @@ entrenamiento con configuraciones TIER 2 optimizadas.
 
 #### Hiperparámetros Principales
 
-| Parámetro | Valor | Estado |
+  | Parámetro | Valor | Estado |  
 |-----------|-------|--------|
-| **Learning Rate** | 3e-4 | ✅ Óptimo (no limitado) |
-| **Batch Size** | 512 | ✅ Configurado |
-| **Buffer Size** | 100,000 | ✅ Suficiente |
-| **Gamma** | 0.99 | ✅ Estándar |
-| **Tau** | 0.005 | ✅ Suave target update |
-| **Entropy Coef** | 0.01 | ✅ Reducido (TIER 2) |
-| **Target Entropy** | -50.0 | ✅ Menos exploración |
-| **Gradient Steps** | 1 | ✅ Eficiente |
+  | **Learning Rate** | 3e-4 | ✅ Óptimo (no limitado) |  
+  | **Batch Size** | 512 | ✅ Configurado |  
+  | **Buffer Size** | 100,000 | ✅ Suficiente |  
+  | **Gamma** | 0.99 | ✅ Estándar |  
+  | **Tau** | 0.005 | ✅ Suave target update |  
+  | **Entropy Coef** | 0.01 | ✅ Reducido (TIER 2) |  
+  | **Target Entropy** | -50.0 | ✅ Menos exploración |  
+  | **Gradient Steps** | 1 | ✅ Eficiente |  
 
 #### Red Neuronal
 
@@ -49,12 +49,12 @@ optimizer_kwargs: {"weight_decay": 1e-5}
 
 #### Normalización y Escalado
 
-| Configuración | Valor | Propósito |
+  | Configuración | Valor | Propósito |  
 |--------------|-------|-----------|
-| `normalize_observations` | ✅ True | Obs → media=0, std=1 |
-| `normalize_rewards` | ✅ True | Rewards → [-1, 1] |
-| `reward_scale` | 0.01 | Reduce magnitud |
-| `clip_obs` | 10.0 | Previene outliers |
+  | `normalize_observations` | ✅ True | Obs → media=0, std=1 |  
+  | `normalize_rewards` | ✅ True | Rewards → [-1, 1] |  
+  | `reward_scale` | 0.01 | Reduce magnitud |  
+  | `clip_obs` | 10.0 | Previene outliers |  
 
 #### GPU/CUDA
 
@@ -81,15 +81,15 @@ progress_path: Configurado   # Log de progreso
 
 #### Hiperparámetros TIER 2
 
-| Parámetro | Valor TIER 1 | Valor TIER 2 | Mejora |
+  | Parámetro | Valor TIER 1 | Valor TIER 2 | Mejora |  
 |-----------|--------------|--------------|---------|
-| **Learning Rate** | 3e-4 | **2.5e-4** | ↓ Convergencia suave |
-| **Batch Size** | 128 | **256** | ↑ Más estable |
-| **N Epochs** | 10 | **15** | ↑ Más updates |
-| **Entropy Coef** | 0.01 | **0.02** | ↑ 2x exploración |
-| **Hidden Sizes** | (256,256) | **(512,512)** | ↑ Capacidad |
-| **Activation** | tanh | **relu** | Mejor gradientes |
-| **LR Schedule** | constant | **linear** | Decay automático |
+  | **Learning Rate** | 3e-4 | **2.5e-4** | ↓ Convergencia suave |  
+  | **Batch Size** | 128 | **256** | ↑ Más estable |  
+  | **N Epochs** | 10 | **15** | ↑ Más updates |  
+  | **Entropy Coef** | 0.01 | **0.02** | ↑ 2x exploración |  
+  | **Hidden Sizes** | (256,256) | **(512,512)** | ↑ Capacidad |  
+  | **Activation** | tanh | **relu** | Mejor gradientes |  
+  | **LR Schedule** | constant | **linear** | Decay automático |  
 
 #### Exploración Mejorada
 
@@ -123,14 +123,14 @@ pin_memory: True
 
 #### Hiperparámetros TIER 2 (2)
 
-| Parámetro | Valor TIER 1 | Valor TIER 2 | Mejora |
+  | Parámetro | Valor TIER 1 | Valor TIER 2 | Mejora |  
 |-----------|--------------|--------------|---------|
-| **Learning Rate** | 3e-4 | **2.5e-4** | ↓ Convergencia suave |
-| **N Steps** | 512 | **1024** | ↑ Más steps/update |
-| **Entropy Coef** | 0.01 | **0.02** | ↑ 2x exploración |
-| **Hidden Sizes** | (256,256) | **(512,512)** | ↑ Capacidad |
-| **Activation** | tanh | **relu** | Mejor gradientes |
-| **LR Schedule** | constant | **linear** | Decay automático |
+  | **Learning Rate** | 3e-4 | **2.5e-4** | ↓ Convergencia suave |  
+  | **N Steps** | 512 | **1024** | ↑ Más steps/update |  
+  | **Entropy Coef** | 0.01 | **0.02** | ↑ 2x exploración |  
+  | **Hidden Sizes** | (256,256) | **(512,512)** | ↑ Capacidad |  
+  | **Activation** | tanh | **relu** | Mejor gradientes |  
+  | **LR Schedule** | constant | **linear** | Decay automático |  
 
 #### Configuración Estándar
 
@@ -283,46 +283,46 @@ class IquitosContext:
 
 ### Todos los Agentes
 
-| Configuración | SAC | PPO | A2C | Descripción |
+  | Configuración | SAC | PPO | A2C | Descripción |  
 |--------------|-----|-----|-----|-------------|
-| **weight_co2** | 0.50 | 0.50 | 0.50 | Minimizar CO₂ |
-| **weight_cost** | 0.15 | 0.15 | 0.15 | Minimizar costo |
-| **weight_solar** | 0.20 | 0.20 | 0.20 | Maximizar solar |
-| **weight_ev_satisfaction** | 0.10 | 0.10 | 0.10 | Satisfacción EV |
-| **weight_grid_stability** | 0.05 | 0.05 | 0.05 | Estabilidad grid |
-| **normalize_observations** | ✅ | ✅ | ✅ | Obs → N(0,1) |
-| **normalize_rewards** | ✅ | ✅ | ✅ | Rewards escalados |
-| **reward_scale** | 0.01 | 0.01 | 0.01 | Factor de escala |
-| **clip_obs** | 10.0 | 10.0 | 10.0 | Clipping outliers |
-| **device** | auto | auto | auto | GPU/CUDA auto |
-| **seed** | 42 | 42 | 42 | Reproducibilidad |
+  | **weight_co2** | 0.50 | 0.50 | 0.50 | Minimizar CO₂ |  
+  | **weight_cost** | 0.15 | 0.15 | 0.15 | Minimizar costo |  
+  | **weight_solar** | 0.20 | 0.20 | 0.20 | Maximizar solar |  
+  | **weight_ev_satisfaction** | 0.10 | 0.10 | 0.10 | Satisfacción EV |  
+  | **weight_grid_stability** | 0.05 | 0.05 | 0.05 | Estabilidad grid |  
+  | **normalize_observations** | ✅ | ✅ | ✅ | Obs → N(0,1) |  
+  | **normalize_rewards** | ✅ | ✅ | ✅ | Rewards escalados |  
+  | **reward_scale** | 0.01 | 0.01 | 0.01 | Factor de escala |  
+  | **clip_obs** | 10.0 | 10.0 | 10.0 | Clipping outliers |  
+  | **device** | auto | auto | auto | GPU/CUDA auto |  
+  | **seed** | 42 | 42 | 42 | Reproducibilidad |  
 
 ### Umbrales Multicriterio
 
-| Parámetro | Valor | Todos los Agentes |
+  | Parámetro | Valor | Todos los Agentes |  
 |-----------|-------|-------------------|
-| `co2_target_kg_per_kwh` | 0.4521 | ✅ |
-| `cost_target_usd_per_kwh` | 0.20 | ✅ |
-| `ev_soc_target` | 0.90 | ✅ |
-| `peak_demand_limit_kw` | 200.0 | ✅ |
+  | `co2_target_kg_per_kwh` | 0.4521 | ✅ |  
+  | `cost_target_usd_per_kwh` | 0.20 | ✅ |  
+  | `ev_soc_target` | 0.90 | ✅ |  
+  | `peak_demand_limit_kw` | 200.0 | ✅ |  
 
 ---
 
 ## 📊 TABLA COMPARATIVA FINAL
 
-| Parámetro | A2C TIER 2 | PPO TIER 2 | SAC TIER 2 |
+  | Parámetro | A2C TIER 2 | PPO TIER 2 | SAC TIER 2 |  
 |-----------|------------|------------|------------|
-| **Learning Rate** | 2.5e-4 | 2.5e-4 | 3e-4 |
-| **Batch Size** | 1024 (n_steps) | 256 | 512 |
-| **Entropía** | 0.02 | 0.02 | 0.01 |
-| **Hidden Sizes** | (512, 512) | (512, 512) | (256, 256) |
-| **Activation** | ReLU | ReLU | ReLU |
-| **LR Schedule** | Linear ↓ | Linear ↓ | Constant |
-| **Normalización Obs** | ✅ | ✅ | ✅ |
-| **Normalización Rewards** | ✅ | ✅ | ✅ |
-| **GPU/CUDA** | ✅ | ✅ | ✅ |
-| **Mixed Precision** | ❌ | ✅ | ✅ |
-| **Checkpoints** | ✅ (1000 steps) | ✅ (1000 steps) | ✅ (1000 steps) |
+  | **Learning Rate** | 2.5e-4 | 2.5e-4 | 3e-4 |  
+  | **Batch Size** | 1024 (n_steps) | 256 | 512 |  
+  | **Entropía** | 0.02 | 0.02 | 0.01 |  
+  | **Hidden Sizes** | (512, 512) | (512, 512) | (256, 256) |  
+  | **Activation** | ReLU | ReLU | ReLU |  
+  | **LR Schedule** | Linear ↓ | Linear ↓ | Constant |  
+  | **Normalización Obs** | ✅ | ✅ | ✅ |  
+  | **Normalización Rewards** | ✅ | ✅ | ✅ |  
+  | **GPU/CUDA** | ✅ | ✅ | ✅ |  
+  | **Mixed Precision** | ❌ | ✅ | ✅ |  
+  | **Checkpoints** | ✅ (1000 steps) | ✅ (1000 steps) | ✅ (1000 steps) |  
 
 ---
 
@@ -330,20 +330,20 @@ class IquitosContext:
 
 ### Archivos de Configuración
 
-| Agente | Archivo Config | Estado |
+  | Agente | Archivo Config | Estado |  
 |--------|---------------|--------|
-| **SAC** | `src/iquitos_citylearn/oe3/agents/sac.py` | ✅ Listo |
-| **PPO** | `src/iquitos_citylearn/oe3/agents/ppo_sb3.py` | ✅ Listo |
-| **A2C** | `src/iquitos_citylearn/oe3/agents/a2c_sb3.py` | ✅ Listo |
-| **Rewards** | `src/iquitos_citylearn/oe3/rewards.py` | ✅ Listo |
+  | **SAC** | `src/iquitos_citylearn/oe3/agents/sac.py` | ✅ Listo |  
+  | **PPO** | `src/iquitos_citylearn/oe3/agents/ppo_sb3.py` | ✅ Listo |  
+  | **A2C** | `src/iquitos_citylearn/oe3/agents/a2c_sb3.py` | ✅ Listo |  
+  | **Rewards** | `src/iquitos_citylearn/oe3/rewards.py` | ✅ Listo |  
 
 ### Scripts de Entrenamiento
 
-| Script | Propósito | Estado |
+  | Script | Propósito | Estado |  
 |--------|-----------|--------|
-| `scripts/train_gpu_robusto.py` | Entrenamiento GPU robusto | ✅ Disponible |
-| `scripts/train_agents_serial.py` | Entrenamiento serial | ✅ Disponible |
-| `src/iquitos_citylearn/oe3/simulate.py` | Simulación y entrenamiento | ✅ Listo |
+  | `scripts/train_gpu_robusto.py` | Entrenamiento GPU robusto | ✅ Disponible |  
+  | `scripts/train_agents_serial.py` | Entrenamiento serial | ✅ Disponible |  
+  | `src/iquitos_citylearn/oe3/simulate.py` | Simulación y entrenamiento | ✅ Listo |  
 
 ---
 

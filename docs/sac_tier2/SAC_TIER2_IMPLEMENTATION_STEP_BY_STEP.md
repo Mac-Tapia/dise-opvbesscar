@@ -111,7 +111,8 @@ class AdaptiveRewardStats:
         self.context = context or IquitosContext()
 
         # NEW: Estadísticas adaptativas
-        self._adaptive_stats = AdaptiveRewardStats() if use_adaptive_stats else None
+        self._adaptive_stats = AdaptiveRewardStats() \
+                if use_adaptive_stats else None
 
         self._reward_history: List[Dict[str, float]] = []
         self._max_history = 1000
@@ -180,7 +181,8 @@ class AdaptiveRewardStats:
         r_co2 = np.clip(r_co2, -1.0, 1.0)
         components["r_co2"] = r_co2
         components["co2_kg"] = co2_kg
-        components["co2_baseline"] = co2_baseline_peak if is_peak else co2_baseline_offpeak
+        components["co2_baseline"] = co2_baseline_peak \
+                if is_peak else co2_baseline_offpeak
 
         # ========== 2. RECOMPENSA ESTABILIDAD GRID (15% - SECUNDARIA) ==========
         demand_ratio = grid_import_kwh / max(1.0, self.context.peak_demand_limit_kw)
@@ -443,7 +445,8 @@ from src.iquitos_citylearn.oe3.enriched_observables import EnrichedObservableWra
 
 # Instantiate y test
 config = SACConfig()
-print(f"✅ SAC Config: ent_coef={config.ent_coef}, batch_size={config.batch_size}")
+print(f"✅ SAC Config: ent_coef={config.ent_coef},
+    batch_size={config.batch_size}")
 
 reward_fn = MultiObjectiveReward(use_adaptive_stats=True)
 r, comps = reward_fn.compute(
@@ -455,7 +458,9 @@ r, comps = reward_fn.compute(
     bess_soc=0.6,
     hour=19,
 )
-print(f"✅ Reward compute: r={r:.3f}, co2_bonus={comps.get('co2_bonus_bess', 0):.3f}")
+print(f"✅ Reward compute: r={r:.3f},
+    co2_bonus={comps.get('co2_bonus_bess',
+    0):.3f}")
 ```text
 
 ### Test 3: Full env test

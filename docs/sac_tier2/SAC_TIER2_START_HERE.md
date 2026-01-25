@@ -22,7 +22,7 @@
 
 ┌─────────────────────────────────────────────────────┐
 │ Soy desarrollador / voy a implementar              │
-│ → [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md)  │
+│ → [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md][url1]  │
 │   (2-3h, código paso-a-paso listo copiar-pegar)   │
 └─────────────────────────────────────────────────────┘
 
@@ -54,7 +54,7 @@
 ### 2. IMPLEMENTAR (2-3 horas)
 
 - [ ]
-  - [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md)
+  - [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md][url2]
   - Cambio 1: rewards.py (~45 min)
   - Cambio 2: sac.py (~30 min)
   - Cambio 3: verificación (~15 min)
@@ -70,24 +70,24 @@
 
 ## ✅ RESULTADO ESPERADO
 
-| Métrica | Antes | Después |
+  | Métrica | Antes | Después |  
 | --------- | ------- | --------- |
-| Importación pico | 280 kWh/h | <250 kWh/h |
-| Convergencia | 30-40 ep | 15-20 ep |
-| CO₂ anual | 1.8M kg | <1.7M kg |
+  | Importación pico | 280 kWh/h | <250 kWh/h |  
+  | Convergencia | 30-40 ep | 15-20 ep |  
+  | CO₂ anual | 1.8M kg | <1.7M kg |  
 
 ---
 
 ## 📚 TODOS LOS DOCUMENTOS
 
-| Archivo | Tipo | Duración | Para |
+  | Archivo | Tipo | Duración | Para |  
 | --------- | ------ | ---------- | ------ |
-| [SAC_TIER2_QUICK_START.md](SAC_TIER2_QUICK_START.md) | 1-pager | 5 min | Impatient |
-| [SAC_TIER2_RESUMEN_EJECUTIVO.md](SAC_TIER2_RESUMEN_EJECUTIVO.md) | Summary | 5-10 min | Execs |
-| [SAC_TIER2_OPTIMIZATION.md](SAC_TIER2_OPTIMIZATION.md) | Technical | 20-30 min | Scientists |
-| [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md) | Code | 2-3 h | Devs |
-| [SAC_TIER2_INDICE.md](SAC_TIER2_INDICE.md) | Index | 5 min | Navigation |
-| [SESION_SAC_TIER2_COMPLETADA.md](SESION_SAC_TIER2_COMPLETADA.md) | Report | 10 min | Verification |
+  | [SAC_TIER2_QUICK_START.md](SAC_TIER2_QUICK_START.md) | 1-pager | 5 min | Impatient |  
+  | [SAC_TIER2_RESUMEN_EJECUTIVO.md](SAC_TIER2_RESUMEN_EJECUTIVO.md) | Summary | 5-10 min | Execs |  
+  | [SAC_TIER2_OPTIMIZATION.md](SAC_TIER2_OPTIMIZATION.md) | Technical | 20-30 min | Scientists |  
+  | [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md][url3] | Code | 2-3 h | Devs |  
+  | [SAC_TIER2_INDICE.md](SAC_TIER2_INDICE.md) | Index | 5 min | Navigation |  
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 ---
 
@@ -147,6 +147,10 @@ MAÑANA-PASADO:
 
 ---
 
-**Status**: ✅ LISTO | **Impacto**: +15-20% | **Riesgo**: BAJO | **Reversible**: SÍ
+ **Status**: ✅ LISTO | **Impacto**: +15-20% | **Riesgo**: BAJO | **Reversible**: SÍ 
 
 **START HERE**: [SAC_TIER2_QUICK_START.md](SAC_TIER2_QUICK_START.md)
+
+[url1]: SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md
+[url2]: SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md
+[url3]: SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md

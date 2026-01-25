@@ -32,7 +32,8 @@ if solar_path.exists():
     
     # Detectar y resample si es necesario
     if len(df_solar) > 15000:  # Resolución 15-minutos
-        logger.info(f"[SOLAR] Detectada resolución 15-min ({len(df_solar)} filas), resampling...")
+        logger.info(f"[SOLAR] Detectada resolución 15-min ({len(df_solar)} filas),
+            resampling...")
         
         # Preparar datetime index
         if 'timestamp' in df_solar.columns:
@@ -144,14 +145,15 @@ if chargers_csv_dir.exists():
             interim_dir=interim_dir,
         )
         if n_generated != 128:
-            logger.warning(f"[CHARGERS] Esperaban 128 CSVs, se generaron {n_generated}")
+            logger.warning(f"[CHARGERS] Esperaban 128 CSVs,
+                se generaron {n_generated}")
 ```bash
 
 ### Validación (2)
 
 ```bash
 # Después de ejecutar dataset_builder, verificar:
-ls -la outputs/oe3/citylearnv2_dataset/buildings/Mall_Iquitos/ | grep "\.csv$" | wc -l
+ ls -la outputs/oe3/citylearnv2_dataset/buildings/Mall_Iquitos/ | grep "\.csv$" | wc -l 
 # Debería mostrar 128 (más algunos CSVs del schema como solar, building_load, etc.)
 ```bash
 
@@ -429,11 +431,11 @@ existen
 ## REFERENCIAS
 
 - Script de auditoría:
-  - [AUDITORIA_OE2_OE3_EXHAUSTIVA.py](file:///d:/diseñopvbesscar/AUDITORIA_OE2_OE3_EXHAUSTIVA.py)
+  - [AUDITORIA_OE2_OE3_EXHAUSTIVA.py][url1]
 - Código de correcciones:
-  - [CORRECCIONES_DATASET_BUILDER_TIER1.py](file:///d:/diseñopvbesscar/CORRECCIONES_DATASET_BUILDER_TIER1.py)
+  - [CORRECCIONES_DATASET_BUILDER_TIER1.py][url2]
 - Reporte completo:
-  - [AUDITORIA_EXHAUSTIVA_OE2_OE3_REPORTE_COMPLETO.md](file:///d:/diseñopvbesscar/AUDITORIA_EXHAUSTIVA_OE2_OE3_REPORTE_COMPLETO.md)
+  - [AUDITORIA_EXHAUSTIVA_OE2_OE3_REPORTE_COMPLETO.md][url3]
 
 ---
 
@@ -441,3 +443,8 @@ existen
 **Dificultad**: MEDIA (requiere comprensión del pipeline)  
 **Riesgo**: BAJO (cambios aislados y bien documentados)  
 **Beneficio**: ALTÍSIMO (desbloquea RL training)
+
+
+[url1]: file:///d:/diseñopvbesscar/AUDITORIA_OE2_OE3_EXHAUSTIVA.py
+[url2]: file:///d:/diseñopvbesscar/CORRECCIONES_DATASET_BUILDER_TIER1.py
+[url3]: file:///d:/diseñopvbesscar/AUDITORIA_EXHAUSTIVA_OE2_OE3_REPORTE_COMPLETO.md

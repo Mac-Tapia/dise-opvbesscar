@@ -1,6 +1,6 @@
 # 📑 ÍNDICE DE DOCUMENTACIÓN - CATALIZACION MÁXIMA POTENCIA INDIVIDUAL
 
-**Fecha**: 2026-01-24 | **Versión**: MÁXIMA... | **Estado**: ✅ COMPLETO
+ **Fecha**: 2026-01-24 | **Versión**: MÁXIMA... | **Estado**: ✅ COMPLETO 
 
 ---
 
@@ -8,27 +8,27 @@
 
 ### 🎯 Documentos de Configuración (Nivel 1 - Entender)
 
-| Archivo | Descripción | Ubicación | Función |
+  | Archivo | Descripción | Ubicación | Función |  
 |---------|-------------|-----------|---------|
-| **CONFIGURACIONES_INDIVIDUALES_MAXIMA_POTENCIA.md** | Documentación detallada... | `docs/` | 📖 Entender configuraciones |
-| **RESUMEN_POTENCIA_MAXIMA_INDIVIDUAL.txt** | Resumen visual con tablas | Raíz | 📊 Vista rápida |
-| **RESUMEN_EJECUTIVO_CATALIZACION_MAXIMA_POTENCIA.txt** | Ejecutivo visual completo | Raíz | 🎯 Visión general |
-| **STATUS_CATALIZACION_MAXIMA_POTENCIA.txt** | Estado actual del sistema | Raíz | ✅ Verificación |
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  | **RESUMEN_POTENCIA_MAXIMA_INDIVIDUAL.txt** | Resumen visual con tablas | Raíz | 📊 Vista rápida |  
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 ### 🚀 Documentos de Ejecución (Nivel 2 - Hacer)
 
-| Archivo | Descripción | Ubicación | Función |
+  | Archivo | Descripción | Ubicación | Función |  
 |---------|-------------|-----------|---------|
-| **ESTRATEGIA_ENTRENAMIENTO_MAXIMA_POTENCIA.md** | 4 opciones de entrenamiento | Raíz | 🎬 Cómo entrenar |
-| **verificar_configuraciones_maxima_potencia.py** | Script verificación | `scripts/` | ✅ Validar config |
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 ### 📊 Archivos de Configuración Modificados
 
-| Archivo | Cambios | Ubicación | Impacto |
+  | Archivo | Cambios | Ubicación | Impacto |  
 |---------|---------|-----------|---------|
-| **sac.py** | LR 1.5e-4, Batch 512, Buffer... | `src/iquitos_citylearn/oe3/agents/` | 🔴 SAC Optimizado |
-| **ppo_sb3.py** | LR 2.0e-4, Batch 128, N... | `src/iquitos_citylearn/oe3/agents/` | 🟢 PPO Optimizado |
-| **a2c_sb3.py** | LR 1.5e-4, N Steps 2048,... | `src/iquitos_citylearn/oe3/agents/` | 🔵 A2C Optimizado |
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 ---
 
@@ -152,34 +152,34 @@ d:\diseñopvbesscar/
 ### SAC (Off-Policy Estabilidad)
 
 ```bash
-LR: 1.5e-4 | Batch: 512 | Buffer: 1M | Hidden: 1024x1024
-Convergencia: 10-15 ep | Reward: -100→+200 | CO₂: 250-350 kg
+ LR: 1.5e-4 | Batch: 512 | Buffer: 1M | Hidden: 1024x1024 
+ Convergencia: 10-15 ep | Reward: -100→+200 | CO₂: 250-350 kg 
 ```bash
 
 ### PPO (On-Policy Convergencia)
 
 ```bash
-LR: 2.0e-4 | Batch: 128 | N Steps: 2048 | Hidden: 1024x1024
-Convergencia: 20-30 ep | Reward: -50→+300 | CO₂: 200-300 kg
+ LR: 2.0e-4 | Batch: 128 | N Steps: 2048 | Hidden: 1024x1024 
+ Convergencia: 20-30 ep | Reward: -50→+300 | CO₂: 200-300 kg 
 ```bash
 
 ### A2C (On-Policy Velocidad)
 
 ```bash
-LR: 1.5e-4 | N Steps: 2048 | GAE: 0.95 | Hidden: 1024x1024
-Convergencia: 15-20 ep | Reward: -150→+100 | CO₂: 300-400 kg
+ LR: 1.5e-4 | N Steps: 2048 | GAE: 0.95 | Hidden: 1024x1024 
+ Convergencia: 15-20 ep | Reward: -150→+100 | CO₂: 300-400 kg 
 ```bash
 
 ---
 
 ## 🎯 MATRIZ DE DECISIÓN
 
-| Necesidad | Agente | Tiempo | Razón |
+  | Necesidad | Agente | Tiempo | Razón |  
 |-----------|--------|--------|-------|
-| Máxima velocidad | A2C | 2.5-3h | Sin overhead, GPU eficiente |
-| Máxima estabilidad | SAC | 3h | Buffer grande, soft updates |
-| Mejor rendimiento final | PPO | 5-6h | Convergencia óptima |
-| Todos juntos | Serial | 11h | Robusto, completo |
+  | Máxima velocidad | A2C | 2.5-3h | Sin overhead, GPU eficiente |  
+  | Máxima estabilidad | SAC | 3h | Buffer grande, soft updates |  
+  | Mejor rendimiento final | PPO | 5-6h | Convergencia óptima |  
+  | Todos juntos | Serial | 11h | Robusto, completo |  
 
 ---
 
@@ -242,10 +242,10 @@ Convergencia: 15-20 ep | Reward: -150→+100 | CO₂: 300-400 kg
 
 ## 🔄 HISTORIAL DE VERSIONES
 
-| Versión | Fecha | Cambio | Estado |
+  | Versión | Fecha | Cambio | Estado |  
 |---------|-------|--------|--------|
-| 1.0 | 2026-01-23 | Agentes TIER 2 | ✅ |
-| 2.0 | 2026-01-24 | Máxima Potencia Individual | ✅ ACTUAL |
+  | 1.0 | 2026-01-23 | Agentes TIER 2 | ✅ |  
+  | 2.0 | 2026-01-24 | Máxima Potencia Individual | ✅ ACTUAL |  
 
 ---
 
@@ -325,15 +325,15 @@ NUEVAS CARACTERÍSTICAS:
 
 ### ¿Dónde está...?
 
-| Información | Archivo |
+  | Información | Archivo |  
 |---|---|
-| Configuraciones detalladas | `CONFIGURACIONES_INDIVIDUALES_MAXIMA_POTENCIA.md` |
-| Cómo entrenar | `ESTRATEGIA_ENTRENAMIENTO_MAXIMA_POTENCIA.md` |
-| Estado actual | `STATUS_CATALIZACION_MAXIMA_POTENCIA.txt` |
-| Resumen visual | `RESUMEN_POTENCIA_MAXIMA_INDIVIDUAL.txt` |
-| Código SAC | `src/iquitos_citylearn/oe3/agents/sac.py` líneas 122-170 |
-| Código PPO | `src/iquitos_citylearn/oe3/agents/ppo_sb3.py` líneas 48-85 |
-| Código A2C | `src/iquitos_citylearn/oe3/agents/a2c_sb3.py` líneas 44-70 |
+  | Configuraciones detalladas | `CONFIGURACIONES_INDIVIDUALES_MAXIMA_POTENCIA.md` |  
+  | Cómo entrenar | `ESTRATEGIA_ENTRENAMIENTO_MAXIMA_POTENCIA.md` |  
+  | Estado actual | `STATUS_CATALIZACION_MAXIMA_POTENCIA.txt` |  
+  | Resumen visual | `RESUMEN_POTENCIA_MAXIMA_INDIVIDUAL.txt` |  
+  | Código SAC | `src/iquitos_citylearn/oe3/agents/sac.py` líneas 122-170 |  
+  | Código PPO | `src/iquitos_citylearn/oe3/agents/ppo_sb3.py` líneas 48-85 |  
+  | Código A2C | `src/iquitos_citylearn/oe3/agents/a2c_sb3.py` líneas 44-70 |  
 
 ---
 

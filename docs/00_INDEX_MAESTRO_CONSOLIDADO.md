@@ -250,22 +250,22 @@ Informes de correcciones y cleanup
 
 ### **Por Agente**
 
-| Agente | Documentos Clave | Estado |
+  | Agente | Documentos Clave | Estado |  
 | -------- | ------------------ | -------- |
-| **PPO** | COMPARATIVA_AGENTES_FINAL_TIER2.md, PPO_A2C_TIER2_MASTER_PLAN.md | ✅ Completado |
-| **A2C** | COMPARATIVA_AGENTES_FINAL_TIER2.md, PPO_A2C_TIER2_MASTER_PLAN.md | ✅ Completado |
-| **SAC** | 7 documentos... | ✅ Completado |
+  | **PPO** | COMPARATIVA_AGENTES_FINAL_TIER2.md, PPO_A2C_TIER2_MASTER_PLAN.md | ✅ Completado |  
+  | **A2C** | COMPARATIVA_AGENTES_FINAL_TIER2.md, PPO_A2C_TIER2_MASTER_PLAN.md | ✅ Completado |  
+  | **SAC** | 7 documentos... | ✅ Completado |  
 
 ### **Por Actividad**
 
-| Actividad | Documento Recomendado |
+  | Actividad | Documento Recomendado |  
 | ----------- | ---------------------- |
-| Comienza el proyecto | COMIENZA_AQUI_TIER2_FINAL.md |
-| Comprende los resultados | COMPARATIVA_AGENTES_FINAL_TIER2.md |
-| Entrena modelos | EJECUTAR_ENTRENAMIENTO_TIER2.md |
-| Lee informe técnico | INFORME_UNICO_ENTRENAMIENTO_TIER2.md |
-| Implementa SAC TIER 2 | SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md |
-| Ve estado actual | TIER2_TRAINING_SESSION_STATUS.md |
+  | Comienza el proyecto | COMIENZA_AQUI_TIER2_FINAL.md |  
+  | Comprende los resultados | COMPARATIVA_AGENTES_FINAL_TIER2.md |  
+  | Entrena modelos | EJECUTAR_ENTRENAMIENTO_TIER2.md |  
+  | Lee informe técnico | INFORME_UNICO_ENTRENAMIENTO_TIER2.md |  
+  | Implementa SAC TIER 2 | SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md |  
+  | Ve estado actual | TIER2_TRAINING_SESSION_STATUS.md |  
 
 ---
 
@@ -347,13 +347,13 @@ docs/
 
 ## ✅ Estado de Consolidación
 
-| Elemento | Estado |
+  | Elemento | Estado |  
 | ---------- | -------- |
-| Documentos Identificados | 29 archivos |
-| Documentos Consolidados | 8 categorías principales |
-| Índice Maestro | ✅ Este archivo |
-| Gráficas | ✅ 25 PNG consolidadas |
-| Métricas | ✅ JSON generado |
+  | Documentos Identificados | 29 archivos |  
+  | Documentos Consolidados | 8 categorías principales |  
+  | Índice Maestro | ✅ Este archivo |  
+  | Gráficas | ✅ 25 PNG consolidadas |  
+  | Métricas | ✅ JSON generado |  
 
 ---
 

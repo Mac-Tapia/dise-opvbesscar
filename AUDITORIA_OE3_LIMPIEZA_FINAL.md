@@ -30,34 +30,34 @@
 
 ### A. Archivos ACTIVOS (Production) ✅
 
-| Archivo | Líneas | Estado | Importa | Importado Por | Conexión OE2 |
+  | Archivo | Líneas | Estado | Importa | Importado Por | Conexión OE2 |  
 |---------|--------|--------|---------|---------------|-------------|
-| **rewards.py** | 529 | ✅ ACTIVO PRINCIPAL | MultiObjectiveWeights, MultiObjectiveReward | simulate.py, agents/**init**.py, validate_training_env.py | ✅ Sí |
-| **dataset_builder.py** | 687 | ✅ ACTIVO PRINCIPAL | CityLearnEnv, schema | scripts/run_oe3_build_dataset.py | ✅ Sí (CRÍTICA) |
-| **co2_table.py** | 201 | ✅ ACTIVO PRINCIPAL | CO2Baseline, CO2Tracker | scripts/run_oe3_co2_table.py | ✅ Sí |
-| **simulate.py** | 912 | ✅ ACTIVO PRINCIPAL | MultiObjectiveReward, utils | scripts/train_agents_serial.py | ✅ Sí |
-| **progress.py** | 156 | ✅ ACTIVO PRINCIPAL | TrainingProgress | agents/ppo_sb3.py, agents/sac.py | ✅ Sí (logging) |
-| **agent_utils.py** | 189 | ✅ ACTIVO | utility functions | agents/*.py | ✅ Helpers |
-| **validate_training_env.py** | 137 | ✅ ACTIVO | environment validation | scripts/train_quick.py | ✅ Sí |
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  | **agent_utils.py** | 189 | ✅ ACTIVO | utility functions | agents/*.py | ✅ Helpers |  
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 ### B. Archivos REDUNDANTES (Para Eliminar) 🔴
 
-| Archivo | Líneas | Razón | Importado Por | Acción |
+  | Archivo | Líneas | Razón | Importado Por | Acción |  
 |---------|--------|-------|---------------|--------|
-| **rewards_dynamic.py** | 309 | V1 experimental, superseded | train_ppo_dynamic.py SOLAMENTE | **ELIMINAR** |
-| **rewards_improved_v2.py** | 306 | V2 mejorada,... | rewards_wrapper_v2.py + (none) | **ELIMINAR** |
-| **rewards_wrapper_v2.py** | 180 | Wrapper V2 innecesario | (solo archivo interno) | **ELIMINAR** |
-| **co2_emissions.py** | 507 | ORPHANED: 0 imports,... | (NONE) | **ELIMINAR** |
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+  | **co2_emissions.py** | 507 | ORPHANED: 0 imports,... | (NONE) | **ELIMINAR** |  
 
 ### C. Archivos AUXILIARES (Para Revisar/Archivar) 🟡
 
-| Archivo | Líneas | Status | Recomendación |
+  | Archivo | Líneas | Status | Recomendación |  
 |---------|--------|--------|---------------|
-| **demanda_mall_kwh.py** | 150 | Unused helper | ARCHIVE to experimental/ |
-| **dispatch_priorities.py** | 200 | Old config | ARCHIVE if not in config |
-| **enriched_observables.py** | 180 | Legacy | ARCHIVE if not active |
-| **tier2_v2_config.py** | 150 | Old config (v2) | ARCHIVE -... |
-| **train_ppo_dynamic.py** (en scripts/) | 450 | Legacy training script | ARCHIVE -... |
+  | **demanda_mall_kwh.py** | 150 | Unused helper | ARCHIVE to experimental/ |  
+  | **dispatch_priorities.py** | 200 | Old config | ARCHIVE if not in config |  
+  | **enriched_observables.py** | 180 | Legacy | ARCHIVE if not active |  
+  | **tier2_v2_config.py** | 150 | Old config (v2) | ARCHIVE -... |  
+  | **train_ppo_dynamic.py** (en scripts/) | 450 | Legacy training script | ARCHIVE -... |  
 
 ### D. Agents Folder - ESTADO ACTUAL ✅
 
@@ -348,25 +348,25 @@ print('\\n✅✅✅ ALL OE2 DATA VERIFIED AND CONNECTED')
 
 ## 7. Resumen de Cambios
 
-| Acción | Archivos | Líneas | Impacto |
+  | Acción | Archivos | Líneas | Impacto |  
 |--------|----------|--------|--------|
-| **Eliminar** | rewards_dynamic, rewards_improved_v2,... | -1,302 | -38% código muerto |
-| **Archivar** | tier2_v2_config, demanda_mall, dispatch_priorities | -500 | Limpiar OE3 |
-| **Actualizar** | train_ppo_dynamic.py | ~20 | Fijar imports |
-| **Mantener** | rewards.py, dataset_builder.py,... | 3,800+ | 100% activo |
-| **NETO** | TOTAL | **-1,802** | -32% reducción código |
+  | **Eliminar** | rewards_dynamic, rewards_improved_v2,... | -1,302 | -38% código muerto |  
+  | **Archivar** | tier2_v2_config, demanda_mall, dispatch_priorities | -500 | Limpiar OE3 |  
+  | **Actualizar** | train_ppo_dynamic.py | ~20 | Fijar imports |  
+  | **Mantener** | rewards.py, dataset_builder.py,... | 3,800+ | 100% activo |  
+  | **NETO** | TOTAL | **-1,802** | -32% reducción código |  
 
 ---
 
 ## 8. Riesgos y Mitigaciones
 
-| Riesgo | Probabilidad | Mitigación |
+  | Riesgo | Probabilidad | Mitigación |  
 |--------|------------|-----------|
-| Imports rotos post-limpieza | 🟢 Baja | Validación de imports antes/después |
-| Scripts legacy aún referenciados | 🟢 Baja | grep confirma 0... |
-| Datos OE2 desconectados | 🟢 Mínima | Verificación de conexión incluida |
-| BESS SOC aún invisible | 🟢 Mínima | CRITICAL FIX ya aplicado en Phase 4 |
-| Rollback necesario | 🟢 Muy baja | `git restore` restaura archivos |
+  | Imports rotos post-limpieza | 🟢 Baja | Validación de imports antes/después |  
+  | Scripts legacy aún referenciados | 🟢 Baja | grep confirma 0... |  
+  | Datos OE2 desconectados | 🟢 Mínima | Verificación de conexión incluida |  
+  | BESS SOC aún invisible | 🟢 Mínima | CRITICAL FIX ya aplicado en Phase 4 |  
+  | Rollback necesario | 🟢 Muy baja | `git restore` restaura archivos |  
 
 ---
 
