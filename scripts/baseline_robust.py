@@ -72,7 +72,7 @@ def main():
     # Cálculos basados en dataset real
     co2_kg = total_energy_kwh * carbon_intensity
     cost_usd = total_energy_kwh * tariff
-    max_power_kw = total_energy_kwh / 8760  # Potencia promedio
+    _ = total_energy_kwh / 8760  # Potencia promedio
 
     metrics = {
         "scenario": "baseline_no_control",

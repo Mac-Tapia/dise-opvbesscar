@@ -987,7 +987,7 @@ def calculate_statistics(
     }
 
 
-def calculate_monthly_energy(results: pd.DataFrame) -> "pd.Series[np.float64]":
+def calculate_monthly_energy(results: pd.DataFrame) -> "pd.Series":
     """
     Calcula energía mensual.
     """
@@ -1396,7 +1396,7 @@ def run_solar_sizing(
 
 
 def _generate_technical_report(
-    out_dir: Path, summary: SolarSizingOutput, meta_dict: Dict, monthly: "pd.Series[np.float64]"
+    out_dir: Path, summary: SolarSizingOutput, meta_dict: Dict, monthly: "pd.Series"
 ) -> None:
     """Genera reporte técnico detallado."""
 

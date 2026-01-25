@@ -74,11 +74,11 @@ def train_agent_sac(cfg, rp, episodes=5):
     logger.info("=" * 80)
 
     config = SACConfig()
-    config.train_steps = 8760 * episodes
+    train_steps = 8760 * episodes
 
     logger.info(f"Configuración SAC:")
     logger.info(f"  Episodios: {episodes}")
-    logger.info(f"  Train steps: {config.train_steps}")
+    logger.info(f"  Train steps: {train_steps}")
     logger.info(f"  Learning rate: {config.learning_rate}")
     logger.info(f"  Buffer size: {config.buffer_size}\n")
 

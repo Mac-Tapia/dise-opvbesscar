@@ -96,7 +96,10 @@ try:
 
     # Step
     print('\n  Haciendo un step...')
-    action = env.action_space.sample()
+    if isinstance(env.action_space, list):
+        action = [space.sample() for space in env.action_space]
+    else:
+        action = env.action_space.sample()
     obs2, reward, term, trunc, info2 = env.step(action)
     print('  ✓ env.step() exitoso')
     print(f'    Reward: {reward:.6f}')

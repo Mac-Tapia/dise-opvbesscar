@@ -52,9 +52,9 @@ class ListToArrayWrapper(Env):
             # Action space: también es lista en CityLearn, convertir a Box
             action_sp = self.env.action_space
             if isinstance(action_sp, list) and len(action_sp) > 0:
-                self.action_space = action_sp[0]  # Tomar el primer (único) elemento
+                self.action_space = action_sp[0]  # type: ignore
             else:
-                self.action_space = action_sp
+                self.action_space = action_sp  # type: ignore
 
             logger.info(f"✓ Observation space: {obs_dim} dimensions")
             logger.info(f"✓ Action space: {self.action_space}")
@@ -74,7 +74,9 @@ class ListToArrayWrapper(Env):
                 return np.array(obs, dtype=np.float32).flatten()
         except Exception as e:
             logger.warning(f"Error flattening observation, using zeros: {e}")
-            return np.zeros(self.observation_space.shape[0], dtype=np.float32)
+            obs_shape = self.observation_space.shape
+            size = obs_shape[0] if (obs_shape and len(obs_shape) > 0) else 534
+            return np.zeros(size, dtype=np.float32)
 
     def reset(self, seed=None, options=None):
         try:
@@ -84,7 +86,9 @@ class ListToArrayWrapper(Env):
             return obs_flat, info
         except Exception as e:
             logger.error(f"Error in reset: {e}")
-            return np.zeros(self.observation_space.shape[0], dtype=np.float32), {}
+            obs_shape = self.observation_space.shape
+            size = obs_shape[0] if (obs_shape and len(obs_shape) > 0) else 534
+            return np.zeros(size, dtype=np.float32), {}
 
     def step(self, action):
         try:
@@ -102,7 +106,9 @@ class ListToArrayWrapper(Env):
             return obs_flat, float(reward), terminated, truncated, info
         except Exception as e:
             logger.warning(f"Error in step: {e}")
-            obs_flat = np.zeros(self.observation_space.shape[0], dtype=np.float32)
+            obs_shape = self.observation_space.shape
+            size = obs_shape[0] if (obs_shape and len(obs_shape) > 0) else 534
+            obs_flat = np.zeros(size, dtype=np.float32)
             return obs_flat, 0.0, False, True, {}
 
     def close(self):
@@ -164,7 +170,7 @@ def train_ppo_real(schema_path, episodes=1, timesteps_per_episode=8760):
             for step in range(timesteps_per_episode):
                 try:
                     action, _ = model.predict(obs, deterministic=False)
-                    obs, reward, terminated, truncated, info = env.step(action)
+                    obs, reward, terminated, truncated, _ = env.step(action)
                     episode_reward += reward
                     steps_completed += 1
                     if terminated or truncated:
@@ -252,7 +258,7 @@ def train_sac_real(schema_path, episodes=1, timesteps_per_episode=8760):
             for step in range(timesteps_per_episode):
                 try:
                     action, _ = model.predict(obs, deterministic=False)
-                    obs, reward, terminated, truncated, info = env.step(action)
+                    obs, reward, terminated, truncated, _ = env.step(action)
                     episode_reward += reward
                     steps_completed += 1
                     if terminated or truncated:
@@ -339,7 +345,7 @@ def train_a2c_real(schema_path, episodes=1, timesteps_per_episode=8760):
             for step in range(timesteps_per_episode):
                 try:
                     action, _ = model.predict(obs, deterministic=False)
-                    obs, reward, terminated, truncated, info = env.step(action)
+                    obs, reward, terminated, truncated, _ = env.step(action)
                     episode_reward += reward
                     steps_completed += 1
                     if terminated or truncated:
@@ -506,3 +512,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+

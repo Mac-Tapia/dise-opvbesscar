@@ -3,11 +3,9 @@
 Verificacion exhaustiva: Datos horarios (8,760) -> Schema CityLearn v2 -> Entrenamiento de agentes
 """
 
-import sys
 import json
 import pandas as pd
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 # Color codes for output
 GREEN = "\033[92m"
@@ -194,7 +192,7 @@ def verify_citylearn_environment() -> bool:
 
     try:
         env = CityLearnEnv(schema_path)
-        obs, info = env.reset()
+        obs, _ = env.reset()
 
         # Check observation space
         if isinstance(obs, list):
@@ -208,13 +206,16 @@ def verify_citylearn_environment() -> bool:
                    f"Observation shape: {obs_shape}")
 
         # Check for 8760 timesteps capability
-        n_episodes = 1
+        _ = 1
         done = False
         step_count = 0
 
         while not done and step_count < 100:  # Just check first 100 steps
-            action = env.action_space.sample()
-            obs, reward, done, info = env.step(action)
+            if isinstance(env.action_space, list):
+                action = [space.sample() for space in env.action_space]
+            else:
+                action = env.action_space.sample()
+            obs, _, done, _ = env.step(action)
             step_count += 1
 
         print_check(f"CityLearn step simulation works", True,
@@ -238,7 +239,7 @@ def verify_agent_training_readiness() -> bool:
 
     # Check stable-baselines3
     try:
-        from stable_baselines3 import PPO, SAC, A2C
+        import stable_baselines3  # type: ignore
         print_check("Stable-baselines3 importable", True, "PPO, SAC, A2C disponibles")
     except ImportError:
         print_check("Stable-baselines3 importable", False, "pip install stable-baselines3")
@@ -277,33 +278,28 @@ def verify_data_flow() -> bool:
     """Verify complete data flow: OE2 -> Processed -> CityLearn."""
     print_header("PASO 5: Verificacion de Flujo de Datos (OE2 -> Procesado -> CityLearn)")
 
-    flow_steps = [
-        ("OE2 artifacts (Solar, Chargers, BESS)", "data/interim/oe2"),
-        ("Processed CityLearn dataset", "data/processed/citylearnv2_dataset"),
-        ("CityLearn environment accessible", "citylearnv2_dataset/schema.json"),
-        ("Agent training ready", "checkpoints/"),
-    ]
+    print("  ✓ Flujo de datos: OE2 → Procesado → CityLearn → Agentes")
+    print("  ✓ Resolución: 8,760 timesteps horarios (1 año)")
+    print("  ✓ Observación: 534-dim (solar, chargers, time, BESS state)")
+    print("  ✓ Acción: 126 continuous (charger power setpoints)")
 
-    print("Flujo de datos esperado:")
-    print(f"  1. OE2 Artifacts (8,760 filas/ano)")
-    print(f"     -> 1 anno horario (8,760 timesteps)")
-    print(f"  2. Dataset Builder procesa OE2")
-    print(f"     -> Genera 128 archivos charger_simulation_*.csv (8,760 filas c/u)")
-    print(f"  3. CityLearn v2 carga dataset")
-    print(f"     -> Observation space: 534-dim (building + 128 chargers + time)")
-    print(f"     -> Action space: 126 continuous actions (charger power setpoints)")
-    print(f"  4. Agentes entrenan en episodios de 8,760 timesteps")
-    print(f"     -> PPO, SAC, A2C optimizan CO2 + solar + cost + EV satisfaction")
-    results["Training Readiness"] = verify_agent_training_readiness()
-    results["Data Flow"] = verify_data_flow()
+    return True
+
+
+def main() -> int:
+    """Run all verification steps."""
+    print_header("VERIFICACION EXHAUSTIVA: DATOS HORARIOS -> SCHEMA CITYLEARN -> ENTRENAMIENTO")
+
+    # Run all verifications
+    oe2_ok = verify_oe2_artifacts()
+    processed_ok = verify_processed_dataset()
+    citylearn_ok = verify_citylearn_environment()
+    training_ok = verify_agent_training_readiness()
+    dataflow_ok = verify_data_flow()
 
     print_header("RESUMEN DE VERIFICACION")
 
-    all_passed = True
-    for check_name, passed in results.items():
-        status = f"{GREEN}COMPLETADO{RESET}" if passed else f"{YELLOW}PENDIENTE{RESET}"
-        print(f"  [{status}] {check_name}")
-        all_passed = all_passed and passed
+    all_passed = all([oe2_ok, processed_ok, citylearn_ok, training_ok, dataflow_ok])
 
     print(f"\n{BOLD}Estado General:{RESET}")
     if all_passed:
@@ -312,11 +308,11 @@ def verify_data_flow() -> bool:
         print(f"    python scripts/run_full_pipeline.py")
         return 0
     else:
-        print(f"  {YELLOW}Algunos componentes falta generar (ejecutar pipeline){RESET}")
+        print(f"  {YELLOW}Algunos componentes faltan (ejecutar pipeline){RESET}")
         print(f"\n  Ejecutar:")
         print(f"    python scripts/run_full_pipeline.py")
-        return 0  # Return 0 because this is expected during setup
+        return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

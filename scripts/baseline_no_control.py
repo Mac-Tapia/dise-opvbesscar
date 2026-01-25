@@ -59,10 +59,13 @@ def main():
 
     for ep in range(5):
         logger.info(f"\n[Episode {ep+1}/5]")
-        obs, info = env.reset()
+        _, _ = env.reset()
 
         # Acciones: Obtener número de acciones del entorno
-        num_actions = env.action_space.shape[0] if hasattr(env.action_space, 'shape') else 130
+        if isinstance(env.action_space, list):
+            num_actions = sum(sp.shape[0] if hasattr(sp, 'shape') else 1 for sp in env.action_space)
+        else:
+            num_actions = env.action_space.shape[0] if hasattr(env.action_space, 'shape') else 130
         actions = [np.ones((num_actions,), dtype=np.float32)]  # Una acción por building
 
         episode_metrics = {
@@ -79,7 +82,7 @@ def main():
         step = 0
 
         while not done:
-            obs, reward, terminated, truncated, info = env.step(actions)
+            _, _, terminated, truncated, _ = env.step(actions)
             done = terminated or truncated
             step += 1
 

@@ -56,7 +56,7 @@ def verify_connection():
     try:
         build_citylearn_dataset(
             cfg=config,
-            raw_dir=paths.raw_dir,
+            _raw_dir=paths.raw_dir,
             interim_dir=paths.interim_dir,
             processed_dir=paths.processed_dir,
         )
@@ -147,7 +147,7 @@ def verify_connection():
         print("   ✓ Ambiente CityLearn cargado")
 
         # Resetear para obtener observación inicial
-        obs, info = env.reset()
+        obs, _ = env.reset()
         print(f"   ✓ Ambiente reseteado")
 
         # Verificar dimensiones
@@ -165,8 +165,11 @@ def verify_connection():
             print(f"   - Observación shape: {obs_dim} dims")
 
         # Verificar espacio de acción
-        action_space = env.action_spaces[0]  # Primer building
-        action_shape = action_space.shape if hasattr(action_space, 'shape') else (1,)
+        if isinstance(env.action_space, list):
+            action_space = env.action_space[0]  # Primer building
+            action_shape = action_space.shape if hasattr(action_space, 'shape') else (1,)
+        else:
+            action_shape = env.action_space.shape if hasattr(env.action_space, 'shape') else (1,)
         print(f"   - Acción shape: {action_shape}")
 
         print("   ✓ Espacios de observación y acción verificados")
@@ -181,17 +184,19 @@ def verify_connection():
     # =====================================================
     print("\n[5/5] Simulando 24 timesteps horarios (1 día completo)...")
     try:
-        import numpy as np
-
         for t in range(24):
-            # Crear acción (todos los cargadores a potencia 0.5)
-            action = [[0.5] * len(env.action_spaces[0].shape)]
+            # Crear acción
+            if isinstance(env.action_space, list):
+                action = [[0.5] * len(env.action_space[0].shape)]
+            else:
+                action = [0.5] * len(env.action_space.shape)
 
             # Step
-            obs, reward, terminated, truncated, info = env.step(action)
+            obs, reward, terminated, truncated, _ = env.step(action)
 
             if (t + 1) % 6 == 0:
-                print(f"   ✓ Timestep {t+1:3d}/24 completado (reward: {reward[0]:7.4f})")
+                reward_val = reward[0] if isinstance(reward, (list, tuple)) else reward
+                print(f"   ✓ Timestep {t+1:3d}/24 completado (reward: {reward_val:7.4f})")
 
             if terminated or truncated:
                 print(f"   - Episodio terminado en timestep {t+1}")

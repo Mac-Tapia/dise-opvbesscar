@@ -9,7 +9,7 @@ with open(chargers_file) as f:
     chargers = json.load(f)
 
 # Separar por playa
-playas = {}
+playas: dict = {}
 for c in chargers:
     playa = c.get("playa", "Unknown")
     if playa not in playas:
