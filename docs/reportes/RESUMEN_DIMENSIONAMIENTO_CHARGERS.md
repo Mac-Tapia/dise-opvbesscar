@@ -8,7 +8,8 @@
 - **130 mototaxis** en hora pico (6pm-10pm, 4 horas)
 - **TOTAL: 1,030 vehículos** en ventana de 4 horas
 
-**IMPORTANTE**: Estos valores son SOLO para dimensionar la cantidad de cargadores y tomas necesarios.
+**IMPORTANTE**: Estos valores son SOLO para dimensionar la cantidad de
+cargadores y tomas necesarios.
 
 ### 2. Resultado del Dimensionamiento
 
@@ -85,7 +86,9 @@ Los cargadores dimensionados operan **TODO EL DÍA**:
 
 ## RESUMEN EJECUTIVO
 
-1. **Dimensionamiento**: 900 motos + 130 mototaxis en hora pico → 32 cargadores (128 tomas)
+1. **Dimensionamiento**: 900 motos + 130 mototaxis en hora pico → 32 cargadores
+(128 tomas)
 2. **Operación**: Los 128 tomas operan 13h/día (9am-10pm) con sesiones de 30 min
-3. **Capacidad**: 3,062 vehículos/día, 1.1 millones/año, 22.3 millones en 20 años
+3. **Capacidad**: 3,062 vehículos/día, 1.1 millones/año, 22.3 millones en 20
+años
 4. **Potencia**: 272 kW instalados (224 kW motos + 48 kW mototaxis)

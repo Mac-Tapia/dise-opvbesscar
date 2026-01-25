@@ -6,7 +6,8 @@
 
 ## 📊 Resumen Ejecutivo
 
-Se realizó una limpieza completa de archivos redundantes en la raíz del proyecto:
+Se realizó una limpieza completa de archivos redundantes en la raíz del
+proyecto:
 
 | Métrica | Valor |
 | --------- | ------- |

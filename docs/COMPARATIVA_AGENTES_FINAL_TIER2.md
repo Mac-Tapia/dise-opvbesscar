@@ -9,19 +9,30 @@
 ## Resultados observados (18-19 Ene 2026)
 
 - Consolidados en `INFORME_UNICO_ENTRENAMIENTO_TIER2.md`.
-- **ACTUALIZACIÓN 2026-01-19**: Todas las gráficas regeneradas y consolidadas en `analyses/oe3/training/plots/`
+- **ACTUALIZACIÓN 2026-01-19**: Todas las gráficas regeneradas y consolidadas
+  - en `analyses/oe3/training/plots/`
 - 25 gráficas disponibles (ver `plots/README.md` para índice completo)
 
 | Agente | Episodios usados | Pasos | Mean Reward | CO2 episodio (kg) | Grid (kWh) | Solar (kWh) | Observación |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| PPO | ~5 (convergencia) | **18,432** | **0.0343** | **1.76M** | **274** | 0.0 | ✅ Mejora hasta 4º-5º ep; early stop si converge |
-| SAC | 2-3 (convergencia) · 50 (fine-tune) | 17,520 | 0.0252 | 1.76M | 275 | 0.0 | ✅ Sample efficient; runs largos TIER 2 |
+| PPO | ~5 (convergencia) | **18,432** | **0.0343** | **1.76M** | **274** | 0.0 | ✅ Mejora hasta 4º-5º... |
+| SAC | 2-3 (convergencia) · 50 (fine-tune) | 17,520 | 0.0252 | 1.76M | 275 | 0.0 | ✅ Sample efficient;... |
 | A2C | ~5 (convergencia) | 17,536 | 0.0254 | 1.76M | 275 | 0.0 | ✅ Rápido y robusto |
 
 ### Notas de entrenamiento
 
-- **PPO/A2C**: se entrenaron con 2 episodios efectivos y convergieron; PPO mostró mejora de reward hasta el 2º episodio, estabilizando luego. Cada episodio de 8,760 pasos implicó ~87 actualizaciones de política (batch 1,024). Se aplicó early stopping al detectar convergencia. Se monitoreó actor/critic loss y entropía (ent_coef 0.02) para evitar colapso; las curvas de reward subieron y luego oscilaron estables.
-- **SAC**: off-policy y más sample-efficient, alcanzó buenas políticas en 2–3 episodios; para fine-tuning se llegó a 50 episodios en corridas TIER 2. Reward media por paso tras converger ≈ 0.5–0.6, con curvas más suaves que PPO/A2C gracias a replay y entropía automática. Se añadió normalización adaptativa de recompensas por percentiles para estabilizar gradientes y convergencia.
+- **PPO/A2C**: se entrenaron con 2 episodios efectivos y convergieron; PPO
+  - mostró mejora de reward hasta el 2º episodio, estabilizando luego. Cada
+    - episodio de 8,760 pasos implicó ~87 actualizaciones de política (batch
+      - 1,024). Se aplicó early stopping al detectar convergencia. Se monitoreó
+        - actor/critic loss y entropía (ent_coef 0.02) para evitar colapso; las
+          - curvas de reward subieron y luego oscilaron estables.
+- **SAC**: off-policy y más sample-efficient, alcanzó buenas políticas en 2–3
+  - episodios; para fine-tuning se llegó a 50 episodios en corridas TIER 2. Reward
+    - media por paso tras converger ≈ 0.5–0.6, con curvas más suaves que PPO/A2C
+      - gracias a replay y entropía automática. Se añadió normalización adaptativa
+        - de recompensas por percentiles para estabilizar gradientes y
+          - convergencia.
 
 ---
 
@@ -432,7 +443,8 @@ Monitorear:
 
 ## 🔗 Archivos Relacionados
 
-- **Resultados en JSON**: `analyses/oe3/training/RESULTADOS_METRICAS_MODELOS.json`
+- **Resultados en JSON**:
+  - `analyses/oe3/training/RESULTADOS_METRICAS_MODELOS.json`
 - **Logs de evaluación**: `analyses/logs/EVALUACION_METRICAS_MODELOS.log`
 - **Scripts de evaluación**:
   - `EVALUACION_MODELOS_SIMPLE.py` - Verificación de carga de modelos

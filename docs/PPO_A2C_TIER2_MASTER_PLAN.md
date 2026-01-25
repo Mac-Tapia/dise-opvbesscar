@@ -1,7 +1,8 @@
 # PPO & A2C TIER 2 OPTIMIZATION - PARALLEL IMPLEMENTATION
 
 **Date**: 2026-01-18
-**Objetivo**: Aplicar TIER 2 fixes (SAC) a PPO y A2C + regenerar docs + reentrenar
+**Objetivo**: Aplicar TIER 2 fixes (SAC) a PPO y A2C + regenerar docs +
+reentrenar
 **Status**: 🚀 EN PROGRESO
 
 ---
@@ -104,7 +105,8 @@ class A2CConfig:
 
 **Cambios**:
 
-1. PPOConfig: learning_rate, batch_size, n_epochs, ent_coef, hidden_sizes, activation, lr_schedule, use_sde
+1. PPOConfig: learning_rate, batch_size, n_epochs, ent_coef, hidden_sizes,
+activation, lr_schedule, use_sde
 2. Verificar que normalize_advantage = True
 3. Verificar weights multiobjetivo (ya correctos)
 
@@ -112,7 +114,8 @@ class A2CConfig:
 
 **Cambios**:
 
-1. A2CConfig: learning_rate, n_steps, ent_coef, hidden_sizes, activation, lr_schedule
+1. A2CConfig: learning_rate, n_steps, ent_coef, hidden_sizes, activation,
+lr_schedule
 2. Verificar normalización rewards
 3. Verificar weights multiobjetivo
 

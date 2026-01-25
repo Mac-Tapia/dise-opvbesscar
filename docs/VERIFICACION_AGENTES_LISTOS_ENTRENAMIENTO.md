@@ -7,7 +7,8 @@
 
 ## 📋 RESUMEN EJECUTIVO
 
-**Resultado**: ✅ Los 3 agentes (SAC, PPO, A2C) están **100% listos** para entrenamiento con configuraciones TIER 2 optimizadas.
+**Resultado**: ✅ Los 3 agentes (SAC, PPO, A2C) están **100% listos** para
+entrenamiento con configuraciones TIER 2 optimizadas.
 
 **Configuraciones aplicadas**:
 
@@ -170,7 +171,8 @@ class MultiObjectiveWeights:
 
 **Justificación**:
 
-- **CO₂ 0.50**: Prioritario en Iquitos (central térmica aislada, 0.4521 kg CO₂/kWh)
+- **CO₂ 0.50**: Prioritario en Iquitos (central térmica aislada, 0.4521 kg
+  - CO₂/kWh)
 - **Solar 0.20**: 4,162 kWp instalados, maximizar autoconsumo
 - **Costo 0.10**: Tarifa baja (0.20 USD/kWh), no es constraint
 - **EV 0.10**: Baseline de operación (128 cargadores)
@@ -455,7 +457,8 @@ normalize_rewards: True
 reward_scale: 0.01
 ```bash
 
-Esto significa que las recompensas crudas (típicamente en rango [-100, 100]) se escalan a [-1, 1] antes de entrenar. **No requiere ajustes manuales**.
+Esto significa que las recompensas crudas (típicamente en rango [-100, 100]) se
+escalan a [-1, 1] antes de entrenar. **No requiere ajustes manuales**.
 
 ### GPU Memory
 
@@ -473,7 +476,8 @@ Si encuentras OOM (Out of Memory):
 
 ### Reproducibilidad
 
-Todos los agentes usan `seed=42` para reproducibilidad. Para resultados idénticos:
+Todos los agentes usan `seed=42`para reproducibilidad. Para resultados
+idénticos:
 
 ```python
 deterministic_cuda: True  # Más lento, pero reproducible

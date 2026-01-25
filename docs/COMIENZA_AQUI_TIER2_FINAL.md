@@ -2,15 +2,22 @@
 
 **Sesión**: TIER 2 PPO & A2C Equivalence + Serial 2-Episode Test Run
 **Fecha**: 19 Enero 2026
-**Estado**: ⚠️ Entrenamientos recientes sin convergencia (PPO/SAC recompensas planas; ver métricas)
+**Estado**: ⚠️ Entrenamientos recientes sin convergencia (PPO/SAC recompensas
+planas; ver métricas)
 
 ## Resultados rápidos entrenamientos (19 Ene 2026)
 
-- Informe consolidado: `INFORME_UNICO_ENTRENAMIENTO_TIER2.md` (incluye métricas y conclusiones de no aprendizaje).
+- Informe consolidado: `INFORME_UNICO_ENTRENAMIENTO_TIER2.md` (incluye métricas
+  - y conclusiones de no aprendizaje).
 
-- SAC (pasos 8,759–17,518): reward medio 52.189 (plano), CO₂ episodio 220.17 kg, grid 487 kWh, solar 0 kWh; entropía al alza → no aprendizaje.
-- PPO (pasos 9,259–44,295): reward medio 52.554 (plano), CO₂ episodio 220.17 kg, grid 487 kWh, solar 0 kWh; sin mejora.
-- Conclusión: la señal/observables actuales no inducen aprendizaje; es necesario ajustar recompensas (CO₂/importación pico, potencia pico, SOC reserva) y observaciones (hora pico, SOC, colas por playa) antes de nuevas corridas.
+- SAC (pasos 8,759–17,518): reward medio 52.189 (plano), CO₂ episodio 220.17
+  - kg, grid 487 kWh, solar 0 kWh; entropía al alza → no aprendizaje.
+- PPO (pasos 9,259–44,295): reward medio 52.554 (plano), CO₂ episodio 220.17
+  - kg, grid 487 kWh, solar 0 kWh; sin mejora.
+- Conclusión: la señal/observables actuales no inducen aprendizaje; es
+  - necesario ajustar recompensas (CO₂/importación pico, potencia pico, SOC
+    - reserva) y observaciones (hora pico, SOC, colas por playa) antes de nuevas
+      - corridas.
 
 ---
 
@@ -133,7 +140,8 @@ dropout = 0.1                   # ↑ 0
 - Peak Import: < 260 kWh/h
 - Avg Reward: 0.45-0.55
 - Grid Stability: 0.70-0.80
-- **Resultado observado (19 Ene 2026)**: Sin resumen consolidado para A2C (solo `progress/a2c_progress.csv`), no evidencia de aprendizaje.
+- **Resultado observado (19 Ene 2026)**: Sin resumen consolidado para A2C (solo
+  - `progress/a2c_progress.csv`), no evidencia de aprendizaje.
 
 **Expected Duration**: 15-20 minutos (GPU CUDA)
 
@@ -159,7 +167,8 @@ dropout = 0.1                   # ↑ 0
 - Peak Import: < 290 kWh/h
 - Avg Reward: 0.40-0.50
 - Grid Stability: 0.75-0.85
-- **Resultado observado (19 Ene 2026)**: reward 52.554 (plano), CO₂ 220.17 kg, grid 487 kWh, solar 0 → no aprendizaje.
+- **Resultado observado (19 Ene 2026)**: reward 52.554 (plano), CO₂ 220.17 kg,
+  - grid 487 kWh, solar 0 → no aprendizaje.
 
 **Expected Duration**: 20-25 minutos
 
@@ -183,7 +192,8 @@ dropout = 0.1                   # ↑ 0
 - Peak Import: < 250 kWh/h
 - Avg Reward: 0.55-0.65
 - Grid Stability: 0.80-0.90
-- **Resultado observado (19 Ene 2026)**: reward 52.189 (plano), CO₂ 220.17 kg, grid 487 kWh, solar 0 → no aprendizaje.
+- **Resultado observado (19 Ene 2026)**: reward 52.189 (plano), CO₂ 220.17 kg,
+  - grid 487 kWh, solar 0 → no aprendizaje.
 
 **Expected Duration**: 10-15 minutos
 
@@ -371,7 +381,8 @@ outputs/oe3/training/tier2_2ep_serial/
 
 ## 🎯 VALIDACIÓN TIER 2
 
-**Objetivo**: Validar que los ajustes TIER 2 aplicados a PPO y A2C resulten en mejoras similares a las obtenidas en SAC.
+**Objetivo**: Validar que los ajustes TIER 2 aplicados a PPO y A2C resulten en
+mejoras similares a las obtenidas en SAC.
 
 **KPIs**:
 

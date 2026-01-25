@@ -40,7 +40,8 @@ Centraliza helpers compartidos por todos los agentes:
 
 - ✅ `validate_env_spaces()` - Valida espacios de observación/acción
 - ✅ `ensure_checkpoint_dir()` - Crea y valida directorio de checkpoints
-- ✅ `ListToArrayWrapper` - Convierte listas CityLearn a numpy arrays (SB3 compatible)
+- ✅ `ListToArrayWrapper` - Convierte listas CityLearn a numpy arrays (SB3
+  - compatible)
 - ✅ `flatten_action()` / `unflatten_action()` - Manejo flexible de acciones
 - ✅ `validate_checkpoint()` - Verifica integridad de checkpoints
 - ✅ `clip_observations()` - Clipea obs normalizadas

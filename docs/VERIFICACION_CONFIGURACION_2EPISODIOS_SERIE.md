@@ -148,4 +148,6 @@ scripts/run_oe3_simulate.py
 
 ---
 
-**CONCLUSIÓN**: ✅ Confirmado que entrenamiento está configurado para ejecutar **3 agentes en serie**, **2 episodios cada uno** (17,520 pasos), con **GPU máximo** (batch sizes optimizados) y **datos cacheados**.
+**CONCLUSIÓN**: ✅ Confirmado que entrenamiento está configurado para ejecutar
+**3 agentes en serie**, **2 episodios cada uno** (17,520 pasos), con **GPU
+máximo** (batch sizes optimizados) y **datos cacheados**.

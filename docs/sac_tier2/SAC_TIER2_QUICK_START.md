@@ -1,6 +1,7 @@
 # ⚡ SAC TIER 2 - QUICK START (5 MIN)
 
-**TL;DR**: SAC relanzado necesita 3 fixes para convergencia 2x más rápida y -15% CO₂ pico.
+**TL;DR**: SAC relanzado necesita 3 fixes para convergencia 2x más rápida y
+-15% CO₂ pico.
 
 ---
 
@@ -125,4 +126,5 @@ Si TIER 2 tiene éxito:
 **Complejidad**: MEDIA (código + concepto)
 **Impacto**: ALTO (+15-20% mejora)
 
-**➡️ Siguiente**: [SAC_TIER2_RESUMEN_EJECUTIVO.md](SAC_TIER2_RESUMEN_EJECUTIVO.md)
+**➡️ Siguiente**:
+[SAC_TIER2_RESUMEN_EJECUTIVO.md](SAC_TIER2_RESUMEN_EJECUTIVO.md)

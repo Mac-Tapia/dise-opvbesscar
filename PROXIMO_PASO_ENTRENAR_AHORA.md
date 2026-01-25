@@ -179,17 +179,19 @@ dir src\iquitos_citylearn\oe3\*.py
 ### Error: "ModuleNotFoundError: rewards_dynamic"
 
 **Causa**: Script antiguo todavía intenta importar módulo eliminado
-**Solución**: Actualizar script para usar `rewards` en lugar de `rewards_dynamic`
+**Solución**: Actualizar script para usar `rewards`en lugar de `rewards_dynamic`
 
 ### Error: BESS SOC no se actualiza
 
 **Causa**: Possible agent de versión antigua
-**Solución**: Verificar que agents/ppo_sb3.py:249 tiene `self._obs_prescale[-10:] = 1.0`
+**Solución**: Verificar que agents/ppo_sb3.py:249 tiene
+`self._obs_prescale[-10:] = 1.0`
 
 ### Error: Dataset vacío
 
 **Causa**: OE2 datos no encontrados
-**Solución**: Verificar `data/interim/oe2/` tiene carpetas: solar/, chargers/, bess/
+**Solución**: Verificar `data/interim/oe2/`tiene carpetas: solar/, chargers/,
+bess/
 
 ### Performance baja (CO₂ >8,500 kg)
 
@@ -200,7 +202,8 @@ dir src\iquitos_citylearn\oe3\*.py
 
 ## 📚 Documentación Disponible
 
-- `OE3_AUDIT_COMPLETE_FINAL_REPORT.md` - Reporte completo (este es el más detallado)
+- `OE3_AUDIT_COMPLETE_FINAL_REPORT.md` - Reporte completo (este es el más
+  - detallado)
 - `OE3_CLEANUP_VALIDATION_FINAL.md` - Resultados de validación
 - `AUDITORIA_OE3_LIMPIEZA_FINAL.md` - Plan de limpieza técnico
 - `CLEANUP_QUICK_REFERENCE.txt` - Referencia rápida (1 página)
@@ -225,7 +228,8 @@ dir src\iquitos_citylearn\oe3\*.py
 - 44 errores no-bloqueantes
 - 100% datos OE2 validados y conectados
 
-**LISTO PARA**: Ejecutar entrenamiento RL con datos reales de Iquitos (solar, chargers, BESS)
+**LISTO PARA**: Ejecutar entrenamiento RL con datos reales de Iquitos (solar,
+chargers, BESS)
 
 ---
 
@@ -245,7 +249,8 @@ python scripts/train_agents_serial.py --device cuda --episodes 50
 # ~2-3 horas, genera agentes de producción
 ```bash
 
-**Recomendación**: Ejecutar Opción A primero (verificación), luego Opción B (producción)
+**Recomendación**: Ejecutar Opción A primero (verificación), luego Opción B
+(producción)
 
 ---
 

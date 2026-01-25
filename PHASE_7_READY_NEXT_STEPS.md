@@ -130,7 +130,9 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 **Output**:
 
 - `outputs/schema_<timestamp>.json` ✅
-- 128 files: `data/processed/citylearnv2_dataset/buildings/*/charger_simulation_001-128.csv` ✅
+- 128 files:
+  - `data/processed/citylearnv2_dataset/buildings/*/charger_simulation_001-128.csv`
+    - ✅
 
 **Time**: 15-30 minutes
 
@@ -235,7 +237,7 @@ src/iquitos_citylearn/oe3/dataset_builder.py
 
 | Document | Purpose |
 |----------|---------|
-| [PYTHON_3.11_SETUP_GUIDE.md](PYTHON_3.11_SETUP_GUIDE.md) | Installation instructions (READ FIRST) |
+| [PYTHON_3.11_SETUP_GUIDE.md](PYTHON_3.11_SETUP_GUIDE.md) | Installation instructions... |
 | [PHASE_7_STATUS_REPORT.md](PHASE_7_STATUS_REPORT.md) | Detailed technical reference |
 | [PHASE_7_EXECUTION_SUMMARY.md](PHASE_7_EXECUTION_SUMMARY.md) | Complete execution summary |
 | [README.md](README.md) | Project overview |
@@ -287,7 +289,8 @@ src/iquitos_citylearn/oe3/dataset_builder.py
 **Session Status**: ✅ COMPLETE  
 **Deliverables**: All Phase 7 code/docs ready  
 **Blocker**: Python 3.11 system installation (user action)  
-**Next Checkpoint**: Python 3.11 verified + Phase 7 tests passing with full CityLearn
+**Next Checkpoint**: Python 3.11 verified + Phase 7 tests passing with full
+CityLearn
 
 **Last Updated**: 2026-01-24  
 **Version**: Phase 7 v1.0 Complete

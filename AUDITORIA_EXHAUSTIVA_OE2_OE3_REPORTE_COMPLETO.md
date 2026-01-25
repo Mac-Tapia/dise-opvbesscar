@@ -4,7 +4,8 @@
 
 **Fecha**: 25 de enero de 2026  
 **Proyecto**: Iquitos EV + PV/BESS (OE2→OE3)  
-**Objetivo**: Identificar gaps, errores e inconsistencias en el pipeline de datos energéticos
+**Objetivo**: Identificar gaps, errores e inconsistencias en el pipeline de
+datos energéticos
 
 ---
 
@@ -31,9 +32,9 @@
 
 | Archivo | Tamaño | Contenido | Estado |
 |---------|--------|----------|--------|
-| `pv_generation_timeseries.csv` | **4.34 MB** | 35,037 filas × 12 cols (15-min resolution) | ❌ Resolución incorrecta |
-| `solar_results.json` | 0.01 MB | Config PV: 4162 kWp DC, 3201 kW AC, CF 28.68% | ✓ |
-| `solar_technical_report.md` | 0.01 MB | Reporte técnico Kyocera KS20 + Eaton Xpert1670 | ✓ |
+| `pv_generation_timeseries.csv` | **4.34 MB** | 35,037 filas ×... | ❌ Resolución incorrecta |
+| `solar_results.json` | 0.01 MB | Config PV: 4162 kWp DC,... | ✓ |
+| `solar_technical_report.md` | 0.01 MB | Reporte técnico Kyocera... | ✓ |
 | `pv_profile_24h.csv` | <0.01 MB | Perfil 24h agregado | ✓ |
 | `pv_monthly_energy.csv` | <0.01 MB | Energía mensual | ✓ |
 | `pv_candidates_*.csv` | ~0.01 MB total | Alternativas de diseño | ℹ️ Informativo |
@@ -45,36 +46,39 @@ actual:   35,037 filas × 15 min/fila = ~8,759.25 horas
 esperado: 8,760 filas × 60 min/fila = ~8,760 horas
 ```bash
 
-**AC Power range**: 0.0 - 2,886.7 kW (válido, con saturación esperada en inversor)
+**AC Power range**: 0.0 - 2,886.7 kW (válido, con saturación esperada en
+inversor)
 
 #### Carpeta: `data/interim/oe2/chargers/` (17 archivos, 0.2 MB)
 
 | Archivo | Tamaño | Contenido | Estado |
 |---------|--------|----------|--------|
-| `individual_chargers.json` | 0.10 MB | **128 chargers** con power_kw, sockets, profiles | ✓ Correcto |
-| `chargers_citylearn.csv` | 0.01 MB | Mapeo para CityLearn (charger_id, power, sockets) | ✓ |
-| `perfil_horario_carga.csv` | <0.01 MB | **Perfil 24 horas agregado** (3,252 kWh/día) | ⚠️ Solo 24h |
-| `chargers_results.json` | 0.03 MB | Recomendación: 32 chargers, 128 sockets | ✓ |
+| `individual_chargers.json` | 0.10 MB | **128 chargers** con... | ✓ Correcto |
+| `chargers_citylearn.csv` | 0.01 MB | Mapeo para CityLearn... | ✓ |
+| `perfil_horario_carga.csv` | <0.01 MB | **Perfil 24 horas... | ⚠️ Solo 24h |
+| `chargers_results.json` | 0.03 MB | Recomendación: 32... | ✓ |
 | `charger_profile_variants.json` | 0.03 MB | Variantes estocásticas | ⚠️ No integrado |
 | `demand_scenarios.csv` | <0.01 MB | Escenarios (min, rec, max) | ℹ️ Informativo |
-| `annual_datasets/` | <0.5 MB | **Datos por Playa (Motos, Mototaxis)** | ⚠️ NO USADO |
+| `annual_datasets/` | <0.5 MB | **Datos por... | ⚠️ NO USADO |
 | Tablas auxiliares | ~0.05 MB | Tabla capacidad, parámetros, etc. | ℹ️ Informativo |
 
 **Hallazgo crítico**: Falta de timeseries anual por charger
 
 - `perfil_horario_carga.csv` es solo 24 horas
-- `individual_chargers.json` contiene `hourly_load_profile` (24h) pero NO CSVs anuales
+- `individual_chargers.json` contiene `hourly_load_profile` (24h) pero NO CSVs
+  - anuales
 - `annual_datasets/` existe pero NO se consulta en dataset_builder
 
 #### Carpeta: `data/interim/oe2/bess/` (3 archivos, 1.8 MB)
 
 | Archivo | Tamaño | Contenido | Estado |
 |---------|--------|----------|--------|
-| `bess_results.json` | <0.01 MB | Config: **4,520 kWh**, 2,712 kW, η 90%, DoD 80% | ⚠️ Revisar |
-| `bess_daily_balance_24h.csv` | 0.01 MB | Balance 24h: SOC min/max, import/export | ✓ |
+| `bess_results.json` | <0.01 MB | Config: **4,520 kWh**, 2,712... | ⚠️ Revisar |
+| `bess_daily_balance_24h.csv` | 0.01 MB | Balance 24h:... | ✓ |
 | `bess_simulation_hourly.csv` | 1.76 MB | Simulación horaria (8,760 horas) | ✓ |
 
-**Hallazgo**: Capacidad BESS es **4,520 kWh** (config_default.yaml dice 2,000 kWh)
+**Hallazgo**: Capacidad BESS es **4,520 kWh** (config_default.yaml dice 2,000
+kWh)
 
 - README especifica "2 MWh/1.2 MW"
 - bess_results.json dice "4,520 kWh"
@@ -97,7 +101,8 @@ esperado: 8,760 filas × 60 min/fila = ~8,760 horas
 | `bess_schema_params.json` | <0.01 MB | Parámetros BESS para CityLearn |
 | `bess_solar_generation.csv` | 0.14 MB | Generación PV para balance BESS |
 
-**Observación**: Esta carpeta parece ser **preparada previamente** para CityLearn, pero NO está integrada en dataset_builder actual.
+**Observación**: Esta carpeta parece ser **preparada previamente** para
+CityLearn, pero NO está integrada en dataset_builder actual.
 
 ---
 
@@ -114,7 +119,8 @@ esperado: 8,760 filas × 60 min/fila = ~8,760 horas
    → Diferencia: 4x más datos de los necesarios
 ```bash
 
-**Implicación**: El downsampling debe hacerse en dataset_builder, pero **NO está implementado**.
+**Implicación**: El downsampling debe hacerse en dataset_builder, pero **NO
+está implementado**.
 
 ### 2.2 Validación Chargers
 
@@ -180,7 +186,7 @@ TOTAL | -         | -      | 3,252.0      | 4 horas pico
 | `ev_profile_24h` | ✓ | Línea ~94 | Lee perfil 24h, **NO expande a 365d** |
 | `individual_chargers` | ✓ | Línea ~98 | Lee JSON, pero **NO genera CSVs** |
 | `bess` | ✓ | Línea ~158 | Lee resultados, **asignación parcial al schema** |
-| `chargers_results` | ✓ | Línea ~105 | Lee dimensionamiento, **referencia débil** |
+| `chargers_results` | ✓ | Línea ~105 | Lee dimensionamiento,... |
 
 ### 3.2 Transformaciones Implementadas
 
@@ -279,7 +285,8 @@ df_building_load = pd.read_csv(interim_dir / "oe2" / "citylearn" / "building_loa
 
 - Timesteps desalineados entre solar y otros observables
 - Training más lento (4x más pasos por episodio)
-- Posible error en cálculo de rewards (rewards a cada 15-min en lugar de cada hora)
+- Posible error en cálculo de rewards (rewards a cada 15-min en lugar de cada
+  - hora)
 
 **Recomendación**:
 
@@ -446,7 +453,8 @@ building["electrical_storage"]["attributes"]["min_soc"] = 1 - cfg['dod']
 **Descripción**:  
 
 - demandamallkwh/ contiene datos pero estructura no documentada
-- dataset_builder busca `building_load_citylearn` (línea ~440) pero fuente no clara
+- dataset_builder busca `building_load_citylearn` (línea ~440) pero fuente no
+  - clara
 - Posible que non_shiftable_load sea todos ceros o NaN
 
 ---
@@ -600,7 +608,8 @@ OE2 ARTIFACTS
 
 1. **[1.1] Implementar downsampling solar 15-min → 1-hora**
    - Archivo: `src/iquitos_citylearn/oe3/dataset_builder.py` línea ~450
-   - Cambio: Agregar `df_solar_hourly = df_solar.resample('1H')['ac_power_kw'].mean()`
+   - Cambio: Agregar `df_solar_hourly =
+     - df_solar.resample('1H')['ac_power_kw'].mean()`
    - Estimado: 30 minutos
 
 2. **[1.2] Generar charger_simulation CSVs para 128 chargers**
@@ -663,7 +672,9 @@ OE2 ARTIFACTS
 
 ## PARTE 8: CÓDIGO DE CORRECCIONES
 
-Ver archivo: [CORRECCIONES_DATASET_BUILDER.py](file:///d:/diseñopvbesscar/CORRECCIONES_DATASET_BUILDER.py)
+Ver archivo: [CORRECCIONES_DATASET_BUILDER.py][ref]
+
+[ref]: file:///d:/diseñopvbesscar/CORRECCIONES_DATASET_BUILDER.py
 
 ### Cambios Mínimos (Crítico)
 

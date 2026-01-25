@@ -81,7 +81,8 @@
 | Peak | 274 | 275 | 275 | 310 |
 | Stability | **0.61** | 0.61 | 0.61 | 0.50 |
 
-**Conclusión**: PPO ligeramente mejor, todos mejoran significativamente vs Baseline
+**Conclusión**: PPO ligeramente mejor, todos mejoran significativamente vs
+Baseline
 
 ---
 
@@ -144,10 +145,12 @@ docs/
 ## 📞 Ayuda Rápida
 
 #### P: ¿Cuál es el estado del proyecto?
-R: ✅ TIER 2 completado. 3 agentes entrenados. Modelos guardados. Métricas generadas.
+R: ✅ TIER 2 completado. 3 agentes entrenados. Modelos guardados. Métricas
+generadas.
 
 #### P: ¿Cuál agente es mejor?
-R: PPO (mejor reward 0.0343). SAC más eficiente (off-policy). A2C balance entre ambos.
+R: PPO (mejor reward 0.0343). SAC más eficiente (off-policy). A2C balance entre
+ambos.
 
 #### P: ¿Cómo entreno un modelo?
 R: Ver EJECUTAR_ENTRENAMIENTO_TIER2.md. Scripts listos en carpeta raíz.

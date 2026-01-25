@@ -243,4 +243,5 @@ pip install -r requirements-phase8.txt
 
 **Status**: ✅ **ACTUALIZACIÓN COMPLETA**
 
-CityLearn ahora está **SEPARADO de Phase 7** y se instala **SOLO en Phase 8** después de verificar Python 3.11.9.
+CityLearn ahora está **SEPARADO de Phase 7** y se instala **SOLO en Phase 8**
+después de verificar Python 3.11.9.

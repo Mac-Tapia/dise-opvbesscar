@@ -1,6 +1,7 @@
 # 🎯 SAC TIER 2 OPTIMIZATION - ENTRY POINT
 
-**¿PRIMER VEZ AQUÍ?** Start por [SAC_TIER2_QUICK_START.md](SAC_TIER2_QUICK_START.md) (5 min)
+**¿PRIMER VEZ AQUÍ?** Start por
+[SAC_TIER2_QUICK_START.md](SAC_TIER2_QUICK_START.md) (5 min)
 
 ---
 
@@ -45,12 +46,15 @@
 ### 1. LEER (5-30 min)
 
 - [ ] Quick: [SAC_TIER2_QUICK_START.md](SAC_TIER2_QUICK_START.md) (5 min)
-- [ ] Ejecutivo: [SAC_TIER2_RESUMEN_EJECUTIVO.md](SAC_TIER2_RESUMEN_EJECUTIVO.md) (5-10 min)
-- [ ] Técnico: [SAC_TIER2_OPTIMIZATION.md](SAC_TIER2_OPTIMIZATION.md) (20-30 min)
+- [ ] Ejecutivo:
+  - [SAC_TIER2_RESUMEN_EJECUTIVO.md](SAC_TIER2_RESUMEN_EJECUTIVO.md) (5-10 min)
+- [ ] Técnico: [SAC_TIER2_OPTIMIZATION.md](SAC_TIER2_OPTIMIZATION.md) (20-30
+  - min)
 
 ### 2. IMPLEMENTAR (2-3 horas)
 
-- [ ] [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md)
+- [ ]
+  - [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md)
   - Cambio 1: rewards.py (~45 min)
   - Cambio 2: sac.py (~30 min)
   - Cambio 3: verificación (~15 min)

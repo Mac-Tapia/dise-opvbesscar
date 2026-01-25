@@ -2,7 +2,8 @@
 
 ## Estado: ✅ LISTO PARA ENTRENAMIENTO
 
-> **ACTUALIZADO 2026-01-24**: Arquitectura corregida a 32 cargadores × 4 tomas = 128 tomas totales
+> **ACTUALIZADO 2026-01-24**: Arquitectura corregida a 32 cargadores × 4 tomas
+= 128 tomas totales
 
 ---
 

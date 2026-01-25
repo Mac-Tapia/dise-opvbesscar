@@ -10,7 +10,7 @@
 | Parámetro | **SAC** | **PPO** | **A2C** | Descripción |
 |-----------|---------|---------|---------|-------------|
 | **Learning Rate** | **2.5e-4** | **2.5e-4** | **2.5e-4** | ↓ Convergencia suave y estable |
-| **Batch Size / N Steps** | **256** | **256** | **1024** | SAC/PPO: pequeño para estabilidad; A2C: grande para eficiencia |
+| **Batch Size / N Steps** | **256** | **256** | **1024** | SAC/PPO: pequeño para estabilidad;... |
 | **Entropy Coef** | **0.02** | **0.02** | **0.02** | ↑ 2x exploración vs TIER 1 |
 | **Hidden Sizes** | **(512, 512)** | **(512, 512)** | **(512, 512)** | ↑ Mayor capacidad que (256, 256) |
 | **Activation** | **relu** | **relu** | **relu** | ✅ Mejor que tanh para RL moderno |
@@ -384,7 +384,8 @@ class A2CConfig:
 
 **Estado**: 🟢 **100% OPTIMIZADO Y LISTO PARA ENTRENAR**
 
-- ✅ SAC actualizado a TIER 2 (2.5e-4 LR, 256 batch, 512x512 hidden, 0.02 entropy)
+- ✅ SAC actualizado a TIER 2 (2.5e-4 LR, 256 batch, 512x512 hidden, 0.02
+  - entropy)
 - ✅ PPO en TIER 2 con SDE y decay
 - ✅ A2C en TIER 2 con máxima eficiencia
 - ✅ Todos comparten pesos multiobjetivo idénticos
@@ -392,7 +393,8 @@ class A2CConfig:
 - ✅ GPU/CUDA configurado
 - ✅ Checkpoints automáticos habilitados
 
-**Siguiente acción**: Ejecutar `verificar_agentes.ps1` y comenzar entrenamiento con `train_gpu_robusto.py`
+**Siguiente acción**: Ejecutar `verificar_agentes.ps1`y comenzar entrenamiento
+con `train_gpu_robusto.py`
 
 ---
 

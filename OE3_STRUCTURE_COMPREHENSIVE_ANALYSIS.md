@@ -1,7 +1,8 @@
 # OE3 Folder Structure - Comprehensive Analysis
 
 **Date**: January 25, 2026  
-**Scope**: Complete analysis of `/src/iquitos_citylearn/oe3/` for duplicates, orphaned files, import chains, data flow, and version conflicts.
+**Scope**: Complete analysis of `/src/iquitos_citylearn/oe3/`for duplicates,
+orphaned files, import chains, data flow, and version conflicts.
 
 ---
 
@@ -9,7 +10,8 @@
 
 ### Key Findings
 
-- **4 duplicate reward modules** with overlapping functionality (only 1 actively used)
+- **4 duplicate reward modules** with overlapping functionality (only 1
+  - actively used)
 - **2 CO₂ calculation modules** with different purposes
 - **Orphaned/rarely-used modules**: `rewards_dynamic.py`, `demanda_mall_kwh.py`
 - **Strong circular dependencies** between rewards modules
@@ -24,17 +26,17 @@
 
 | File | Purpose | Status | Lines | Used Where |
 |------|---------|--------|-------|-----------|
-| `rewards.py` | **ACTIVE** - Core multi-objective reward system (TIER 1 FIXES) | ✅ Primary | 529 | `agents/__init__.py`, `simulate.py`, verification scripts |
-| `rewards_improved_v2.py` | **v2 ITERATION** - Enhanced reward with IquitosContextV2 | ⚠️ Secondary | 410 | Only in `rewards_wrapper_v2.py` |
-| `rewards_wrapper_v2.py` | **WRAPPER** - Gymnasium wrapper around improved_v2 | ⚠️ Tertiary | 180 | Not imported anywhere in main pipeline |
-| `rewards_dynamic.py` | **EXPERIMENTAL** - Hour-based dynamic reward gradients | ❌ Orphaned | 80 | Only in `train_ppo_dynamic.py` (dev script) |
+| `rewards.py` | **ACTIVE** - Core multi-objective... | ✅ Primary | 529 | `agents/__init__.py`, `simulate.py`,... |
+| `rewards_improved_v2.py` | **v2 ITERATION** -... | ⚠️ Secondary | 410 | Only in `rewards_wrapper_v2.py` |
+| `rewards_wrapper_v2.py` | **WRAPPER** - Gymnasium... | ⚠️ Tertiary | 180 | Not imported anywhere... |
+| `rewards_dynamic.py` | **EXPERIMENTAL** - Hour-based... | ❌ Orphaned | 80 | Only in... |
 
 ### 1.2 CO₂ Calculation Modules (2 files, different scope)
 
 | File | Purpose | Status | Lines | Used Where |
 |------|---------|--------|-------|-----------|
-| `co2_emissions.py` | **Data structure** - EmissionFactors, CO2EmissionBreakdown dataclasses | ⚠️ Unused | 358 | Imported but NOT used anywhere; defines classes only |
-| `co2_table.py` | **ACTIVE** - Compute agent comparison, breakdowns, write outputs | ✅ Primary | 469 | `scripts/run_oe3_co2_table.py`, pipeline scripts |
+| `co2_emissions.py` | **Data structure** -... | ⚠️ Unused | 358 | Imported but NOT used... |
+| `co2_table.py` | **ACTIVE** - Compute agent... | ✅ Primary | 469 | `scripts/run_oe3_co2_table.py`, pipeline scripts |
 
 ---
 
@@ -44,7 +46,8 @@
 
 #### `demanda_mall_kwh.py` (507 lines)
 
-- **Purpose**: Analyze mall demand with control (MallDemandaHoraria, BalanceHorario, etc.)
+- **Purpose**: Analyze mall demand with control (MallDemandaHoraria,
+  - BalanceHorario, etc.)
 - **Status**: **COMPLETELY ORPHANED**
 - **Used**: Search across codebase shows **zero imports**
 - **Recommendation**: **DELETE** - Appears to be legacy OE2 analysis code
@@ -55,23 +58,28 @@
 - **Purpose**: Hour-based dynamic reward with sinusoidal gradients
 - **Status**: **EXPERIMENTAL** (used only in dev script `train_ppo_dynamic.py`)
 - **Used**: Only `scripts/train_ppo_dynamic.py` line 20
-- **Recommendation**: **MOVE TO dev/** folder OR **DELETE** if PPO dynamic training not active
-- **Reason**: Not in main training pipeline; represents alternative reward attempt
+- **Recommendation**: **MOVE TO dev/** folder OR **DELETE** if PPO dynamic
+  - training not active
+- **Reason**: Not in main training pipeline; represents alternative reward
+  - attempt
 
 #### `rewards_wrapper_v2.py` (180 lines)
 
 - **Purpose**: Gymnasium wrapper for ImprovedMultiObjectiveReward
 - **Status**: **INCOMPLETE/EXPERIMENTAL** (imports but never called)
 - **Used**: Zero usage in main codebase
-- **Recommendation**: **MOVE TO experimental/** OR **DELETE** if v2 rewards not active
+- **Recommendation**: **MOVE TO experimental/** OR **DELETE** if v2 rewards not
+  - active
 - **Reason**: Created as v2 iteration but main code uses `rewards.py` directly
 
 ### 2.2 Partially Unused Modules
 
 #### `rewards_improved_v2.py` (410 lines)
 
-- **Status**: ⚠️ **IMPORTED ONLY BY rewards_wrapper_v2.py** (which itself is unused)
-- **Recommendation**: **KEEP AS BACKUP** but document it's not in active pipeline
+- **Status**: ⚠️ **IMPORTED ONLY BY rewards_wrapper_v2.py** (which itself is
+  - unused)
+- **Recommendation**: **KEEP AS BACKUP** but document it's not in active
+  - pipeline
 - **Risk**: If `rewards_wrapper_v2.py` is deleted, this becomes orphaned too
 
 #### `co2_emissions.py` (358 lines)
@@ -124,8 +132,10 @@ ENTRY POINTS:
 
 #### ⚠️ DANGLING IMPORTS:
 
-- `rewards_wrapper_v2.py` line 20: imports `rewards_improved_v2.py` → **not called**
-- `co2_table.py` line 7: imports `co2_emissions.py` → **classes defined but NOT used**
+- `rewards_wrapper_v2.py` line 20: imports `rewards_improved_v2.py` → **not
+  - called**
+- `co2_table.py` line 7: imports `co2_emissions.py` → **classes defined but NOT
+  - used**
 - `train_ppo_dynamic.py` line 20: imports `rewards_dynamic.py` → **dev-only**
 
 #### ❌ MISSING IMPORTS:
@@ -136,7 +146,7 @@ ENTRY POINTS:
 
 | Module | Exports | Actually Used | Status |
 |--------|---------|---------------|--------|
-| `rewards.py` | `MultiObjectiveWeights`, `IquitosContext`, `MultiObjectiveReward`, `CityLearnMultiObjectiveWrapper`, `create_iquitos_reward_weights` | ✅ All used in agents/**init**.py | ✓ |
+| `rewards.py` | `MultiObjectiveWeights`, `IquitosContext`,... | ✅ All used in agents/**init**.py | ✓ |
 | `co2_emissions.py` | `CO2EmissionFactors`, `CO2EmissionBreakdown` | ❌ Never instantiated | ❌ |
 | `demanda_mall_kwh.py` | 6 classes, 10+ functions | ❌ Zero usages | ❌ |
 | `rewards_dynamic.py` | `DynamicReward` class | ❌ Only in dev script | ⚠️ |
@@ -328,8 +338,8 @@ from iquitos_citylearn.oe3.co2_emissions import (...)
 | Aspect | v1 (Active) | v2 (Backup) | Status |
 |--------|------------|-----------|--------|
 | **Weights class** | `MultiObjectiveWeights` (rewards.py) | `ImprovedWeights` (rewards_improved_v2.py) | Both exist, different schemas |
-| **Reward compute** | `MultiObjectiveReward` (rewards.py line 97) | `ImprovedMultiObjectiveReward` (rewards_improved_v2.py line 96) | Both implement same interface |
-| **Context class** | `IquitosContext` (rewards.py line 70) | `IquitosContextV2` (rewards_improved_v2.py line 70) | v2 has additional grid_stability field |
+| **Reward compute** | `MultiObjectiveReward` (rewards.py... | `ImprovedMultiObjectiveReward` (rewards_improved_v2.py... | Both implement same interface |
+| **Context class** | `IquitosContext` (rewards.py... | `IquitosContextV2` (rewards_improved_v2.py... | v2 has... |
 | **Wrapper class** | `CityLearnMultiObjectiveWrapper` (rewards.py) | `ImprovedRewardWrapper` (rewards_wrapper_v2.py) | Different wrappers, only v1 used |
 
 **Risk Assessment**: 🟡 MEDIUM
@@ -354,7 +364,8 @@ from iquitos_citylearn.oe3.co2_emissions import (...)
 2. **`rewards_dynamic.py`** (80 lines, optional)
    - Only used in dev script `train_ppo_dynamic.py`
    - Not in active training pipeline
-   - Command: `git rm src/iquitos_citylearn/oe3/rewards_dynamic.py` + update `train_ppo_dynamic.py`
+   - Command: `git rm src/iquitos_citylearn/oe3/rewards_dynamic.py` + update
+     - `train_ppo_dynamic.py`
 
 ### Phase 2: Medium Risk - CONSOLIDATE
 
@@ -423,14 +434,14 @@ from iquitos_citylearn.oe3.co2_emissions import (...)
 
 | File | Reason | Actions |
 |------|--------|---------|
-| `rewards.py` | Core multi-objective system, all agents depend on it | Keep as-is (TIER 1 fixes already applied) |
-| `co2_table.py` | Main CO₂ evaluation module | Keep as-is (or merge co2_emissions.py into it) |
-| `dataset_builder.py` | Only module for building CityLearn v2 schema | Keep as-is |
+| `rewards.py` | Core multi-objective system, all... | Keep as-is (TIER... |
+| `co2_table.py` | Main CO₂ evaluation module | Keep as-is (or... |
+| `dataset_builder.py` | Only module for... | Keep as-is |
 | `simulate.py` | Central orchestrator for agent training | Keep as-is |
 | `agents/__init__.py` | Agent factory and multiobjetivo imports | Keep as-is |
-| All `agents/*.py` | 7 agent implementations (SAC, PPO, A2C, RBC, Uncontrolled, NoControl) | Keep all |
+| All `agents/*.py` | 7 agent implementations (SAC,... | Keep all |
 | `progress.py` | Training progress utilities | Keep as-is |
-| `enriched_observables.py` | Observable wrapper (possible future use) | Keep; check if needed |
+| `enriched_observables.py` | Observable wrapper... | Keep; check if needed |
 | `dispatch_priorities.py` | BESS dispatch logic | Keep as-is |
 | `tier2_v2_config.py` | Training configuration | Keep as-is |
 
@@ -439,7 +450,7 @@ from iquitos_citylearn.oe3.co2_emissions import (...)
 | File | Condition | Action |
 |------|-----------|--------|
 | `enriched_observables.py` | If not used in simulate.py | Check usage; archive if dead code |
-| `co2_emissions.py` | If co2_table.py doesn't need dataclasses | Merge into co2_table.py, delete |
+| `co2_emissions.py` | If co2_table.py... | Merge into co2_table.py, delete |
 
 ### 🔴 DELETE
 
@@ -571,15 +582,18 @@ python -c "from iquitos_citylearn.oe3.rewards import *; print('✓')"
 ### Recommended Execution Order
 
 1. ✅ **DELETE** `demanda_mall_kwh.py` (0% risk)
-2. ✅ **CONSOLIDATE** `co2_emissions.py` into `co2_table.py` (minimal risk, verify tests)
-3. ✅ **ARCHIVE** `rewards_improved_v2.py`, `rewards_wrapper_v2.py` to `experimental/`
+2. ✅ **CONSOLIDATE** `co2_emissions.py`into `co2_table.py`(minimal risk, verify
+tests)
+3. ✅ **ARCHIVE** `rewards_improved_v2.py`, `rewards_wrapper_v2.py`to
+`experimental/`
 4. ✅ **MOVE/DELETE** `rewards_dynamic.py` (dev script only)
 5. ✅ **DOCUMENT** final state in `OE3_MODULE_STATUS.md`
 
 ### Testing Checklist (Post-Cleanup)
 
 - [ ] `python -m scripts.run_oe3_build_dataset --config configs/default.yaml` ✓
-- [ ] `python -m scripts.run_oe3_simulate --config configs/default.yaml --skip-dataset` ✓
+- [ ] `python -m scripts.run_oe3_simulate --config configs/default.yaml
+  - --skip-dataset` ✓
 - [ ] `python -m scripts.run_oe3_co2_table --config configs/default.yaml` ✓
 - [ ] All agent imports work (`from iquitos_citylearn.oe3.agents import *`)
 - [ ] No import errors in Python interpreter

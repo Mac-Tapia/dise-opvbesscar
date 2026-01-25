@@ -31,7 +31,8 @@ Muestran las curvas de entrenamiento de cada agente con datos reales.
 06_SAC_training_updated.png       ← Curva SAC suavizada
 ```text
 
-**Uso**: Analizar convergencia y evolución de reward de cada agente individualmente.
+**Uso**: Analizar convergencia y evolución de reward de cada agente
+individualmente.
 
 ---
 
@@ -47,7 +48,8 @@ Comparación entre los tres agentes y análisis detallado de sus entrenamientos.
 07_reward_vs_steps_tier2.png           ← Evolución de Reward
 ```text
 
-**Uso**: Comparar rendimiento relativo de los tres agentes, identificar mejor estrategia.
+**Uso**: Comparar rendimiento relativo de los tres agentes, identificar mejor
+estrategia.
 
 ---
 
@@ -108,7 +110,8 @@ training_comparison.png      ← Comparación general
 | A2C | `checkpoints/a2c_gpu/a2c_final.zip` | **17,536** | ✅ Confirmado |
 | SAC | `checkpoints/sac/sac_final.zip` | **17,520** | ✅ Confirmado |
 
-**Nota**: Todas las gráficas usan datos verificables extraídos directamente de los modelos entrenados.
+**Nota**: Todas las gráficas usan datos verificables extraídos directamente de
+los modelos entrenados.
 
 ---
 

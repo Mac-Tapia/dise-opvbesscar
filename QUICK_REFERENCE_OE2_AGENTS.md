@@ -28,7 +28,8 @@ soc = 0.5  # BESS at 50% charge
 → (0.0005 - 0.0005) / 0.00029 ≈ 0  ✗ All states map to ~0
 ```bash
 
-**Why it matters**: Agent cannot distinguish between empty (0.1) and full (0.9) BESS
+**Why it matters**: Agent cannot distinguish between empty (0.1) and \
+    full (0.9) BESS
 
 **Where to fix**: All wrapper `_normalize_observation()` methods
 
@@ -201,16 +202,19 @@ After applying BESS SOC fix:
 
 | Metric | Before | After | Evidence |
 |--------|--------|-------|----------|
-| BESS utilization | Low (agent ignores BESS) | High (agent learns control) | Agent learns when to charge/discharge |
+| BESS utilization | Low (agent ignores BESS) |
+ High (agent learns control) | Agent learns when to charge/discharge |
 | CO₂ reduction | ~6-8% | ~15-20% | BESS buffers solar for evening peak |
 | Peak shaving | Poor | Good | Agent offloads evening peak to BESS |
-| Training convergence | Slow (reward plateau) | Fast (reward improves) | Agent sees BESS state changes |
+| Training convergence | Slow (reward plateau) |
+ Fast (reward improves) | Agent sees BESS state changes |
 
 ---
 
 ## Know Issues (Non-Critical)
 
-1. **128 vs 126 chargers**: Spec says 128, agents use 126 (2 reserved). Not documented.
+1. **128 vs 126 chargers**: Spec says 128, \
+    agents use 126 (2 reserved). Not documented.
    - Action: Add comment in config
 
 2. **No per-charger features**: Observation is aggregated (128 chargers → 1 dim)
@@ -228,7 +232,8 @@ After applying BESS SOC fix:
 
 | File | Purpose | Read time |
 |------|---------|-----------|
-| `TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md` | Complete 9-section analysis | 30 min |
+| `TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md` |
+ Complete 9-section analysis | 30 min |
 | `CODE_FIXES_OE2_DATA_FLOW.md` | Implementation guide with code | 20 min |
 | `ANALYSIS_SUMMARY_OE2_AGENTS.md` | Executive brief | 10 min |
 | **This file** | One-page reference | 5 min |
@@ -239,9 +244,11 @@ After applying BESS SOC fix:
 
 - **Why prescale by 0.001?** → Normalize kW (0-4162) to ~1-4 range
 - **Why BESS SOC prescale by 0.001?** → Bug! Should be 1.0
-- **Can we control all 128 chargers?** → Yes, but only 126 active (2 baseline reserved)
+- **Can we control all 128 chargers?** → Yes, \
+    but only 126 active (2 baseline reserved)
 - **Is 8,760 solar data correct?** → Yes (1 year × 365 days × 24 hours)
 
 ---
 
-**Version**: 1.0 | **Generated**: 2026-01-25 | **Status**: Ready for Implementation
+**Version**: 1.0 |
+ **Generated**: 2026-01-25 | **Status**: Ready for Implementation

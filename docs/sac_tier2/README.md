@@ -8,7 +8,7 @@ Documentación especializada para el algoritmo SAC (Soft Actor-Critic) en TIER 2
 
 | Archivo | Descripción |
 | --------- | ------------- |
-| **SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md** | 🔧 Implementación detallada paso-a-paso |
+| **SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md** | 🔧 Implementación... |
 | **SAC_TIER2_OPTIMIZATION.md** | ⚙️ Optimizaciones específicas SAC |
 | **SAC_TIER2_QUICK_START.md** | 🚀 Inicio rápido SAC TIER 2 |
 

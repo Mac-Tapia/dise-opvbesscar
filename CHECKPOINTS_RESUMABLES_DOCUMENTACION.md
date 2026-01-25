@@ -44,7 +44,8 @@ Episodio 10: A2C=363kg | SAC=284kg | PPO=271kg
 | **SAC** | 298.0 kg | 286.6 kg | ↓ 11.4 kg (3.8% mejor) |
 | **PPO** | 282.6 kg | 267.0 kg | ↓ 15.6 kg (5.5% mejor) |
 
-**Conclusión**: Los agentes están convergiendo correctamente, mostrando mejora gradual.
+**Conclusión**: Los agentes están convergiendo correctamente, mostrando mejora
+gradual.
 
 ---
 

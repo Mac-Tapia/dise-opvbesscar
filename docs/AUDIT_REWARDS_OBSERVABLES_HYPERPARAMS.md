@@ -9,7 +9,9 @@
 
 ### 1.1 Pesos Mal Configurados
 
-**Archivo**: [src/iquitos_citylearn/oe3/rewards.py](src/iquitos_citylearn/oe3/rewards.py#L30-L45)
+**Archivo**: [src/iquitos_citylearn/oe3/rewards.py][ref]
+
+[ref]: src/iquitos_citylearn/oe3/rewards.py#L30-L45
 
 ```python
 # ❌ ACTUAL (MALO)
@@ -20,7 +22,9 @@ ev_satisfaction: float = 0.05  # Bajado OK
 grid_stability: float = 0.20   # Subido de 0.05 (CONTRAPRODUCENTE)
 ```text
 
-**Problema**: grid_stability=0.20 es excesivo. Con peak_hours=(18,19,20,21) y 4 horas de 24, solo 16% del día está en pico. Darle 20% de peso a penalidad general es **excesivo** cuando se necesita **CO₂/importación en pico**.
+**Problema**: grid_stability=0.20 es excesivo. Con peak_hours=(18,19,20,21) y 4
+horas de 24, solo 16% del día está en pico. Darle 20% de peso a penalidad
+general es **excesivo** cuando se necesita **CO₂/importación en pico**.
 
 **Solución**:
 
@@ -33,7 +37,8 @@ ev_satisfaction: float = 0.10  # Satisfacción básica de EVs
 grid_stability: float = 0.10   # REDUCIDO: picos se controlan por CO₂
 ```text
 
-**Por qué**: grid_stability ya está implícito en CO₂ (importación en pico = CO₂ alto). Duplicar peso causa conflicto.
+**Por qué**: grid_stability ya está implícito en CO₂ (importación en pico = CO₂
+alto). Duplicar peso causa conflicto.
 
 ---
 
@@ -73,7 +78,8 @@ else:
     r_co2 = 1.0 - 1.0 * min(1.0, grid_import_kwh / co2_baseline_offpeak)
 ```text
 
-**Impacto**: Da **RANGO de variación** en reward (-1 a +1 vs -0.5 a +0.8 antes) → gradientes mejores.
+**Impacto**: Da **RANGO de variación** en reward (-1 a +1 vs -0.5 a +0.8 antes)
+→ gradientes mejores.
 
 ---
 
@@ -95,7 +101,8 @@ if is_peak:
 - NO penaliza **potencia instantánea** (kW)
 - SAC nunca ve el "ramp rate" (cómo rápido sube la demanda)
 
-**Solución**: Agregar observable con potencia instantánea (ver abajo en Observables).
+**Solución**: Agregar observable con potencia instantánea (ver abajo en
+Observables).
 
 ---
 
@@ -177,7 +184,9 @@ reward = np.clip(reward, -1.0, 1.0)
 
 ### 2.1 Falta de Flags de Hora Pico y Contexto
 
-**Archivo**: [src/iquitos_citylearn/oe3/simulate.py](src/iquitos_citylearn/oe3/simulate.py) (wrapper)
+**Archivo**: [src/iquitos_citylearn/oe3/simulate.py][ref] (wrapper)
+
+[ref]: src/iquitos_citylearn/oe3/simulate.py
 
 ```python
 # ❌ ACTUAL: El observable NO incluye:
@@ -208,7 +217,8 @@ additional_obs = np.array([
 obs_extended = np.concatenate([obs_original, additional_obs])
 ```text
 
-**Beneficio**: SAC ve explícitamente **cuándo es pico**, **cuánta energía solar**, **cuántas colas hay**.
+**Beneficio**: SAC ve explícitamente **cuándo es pico**, **cuánta energía
+solar**, **cuántas colas hay**.
 
 ---
 
@@ -237,7 +247,9 @@ additional_obs.append(np.clip(power_grid_kw / 200.0, -1, 1))  # Normalizado
 
 ### 3.1 Entropía Automática Muy Alta
 
-**Archivo**: [src/iquitos_citylearn/oe3/agents/sac.py](src/iquitos_citylearn/oe3/agents/sac.py#L130-L145)
+**Archivo**: [src/iquitos_citylearn/oe3/agents/sac.py][ref]
+
+[ref]: src/iquitos_citylearn/oe3/agents/sac.py#L130-L145
 
 ```python
 # ❌ ACTUAL (5)
@@ -263,7 +275,8 @@ target_entropy: Optional[float] = -50.0  # Menos exploración (-dim/2 o menos)
 # y más a "aprender patrones"
 ```text
 
-**Por qué**: Early training necesita exploración, pero con reward mal escalada, SAC explora demasiado.
+**Por qué**: Early training necesita exploración, pero con reward mal escalada,
+SAC explora demasiado.
 
 ---
 
@@ -324,7 +337,8 @@ components["reward_normalized"] = reward_normalized
 return reward_normalized, components  # Retornar normalizado
 ```text
 
-**Beneficio**: SAC ve recompensas con media ~0 y varianza ~1 → mejor convergencia.
+**Beneficio**: SAC ve recompensas con media ~0 y varianza ~1 → mejor
+convergencia.
 
 ---
 
@@ -432,4 +446,5 @@ Paso 1000: reward debe subir a 0.70+  (convergencia visible)
 
 ---
 
-**Estado**: 🔴 **8 PROBLEMAS IDENTIFICADOS - ESPERANDO APROBACIÓN PARA IMPLEMENTAR TIER 1**
+**Estado**: 🔴 **8 PROBLEMAS IDENTIFICADOS - ESPERANDO APROBACIÓN PARA
+IMPLEMENTAR TIER 1**

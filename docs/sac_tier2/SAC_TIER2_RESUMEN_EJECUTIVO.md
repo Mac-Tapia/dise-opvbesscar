@@ -208,23 +208,28 @@ SAC es más sensible que PPO a LR alto. 2.5e-4 es estándar en literature.
 
 ### ¿Por qué aumentar batch size de 512 a 256?
 
-Paradoja: batch MENOR → gradientes MENOS ruidosos. Menos ruido = convergencia más estable.
+Paradoja: batch MENOR → gradientes MENOS ruidosos. Menos ruido = convergencia
+más estable.
 
 ### ¿Perderé aprendizaje previo del checkpoint?
 
-NO. Checkpoint = pesos de redes. Cambios en rewards/hiper = continuamos desde ahí con estrategia mejorada.
+NO. Checkpoint = pesos de redes. Cambios en rewards/hiper = continuamos desde
+ahí con estrategia mejorada.
 
 ### ¿Cuánto tardará entrenar?
 
-50 episodios × 8760 steps ≈ 438k updates. En GPU: ~20-24h (depending en hardware).
+50 episodios × 8760 steps ≈ 438k updates. En GPU: ~20-24h (depending en
+hardware).
 
 ### ¿Qué es AdaptiveRewardStats?
 
-Mantiene historial de último 500 rewards por componente, calcula p25-p75, normaliza componentes al rango [-1,1] automáticamente.
+Mantiene historial de último 500 rewards por componente, calcula p25-p75,
+normaliza componentes al rango [-1,1] automáticamente.
 
 ### ¿Por qué observable enriquecido es CRÍTICO?
 
-Sin flags de pico, red no sabe si es hora pico → no puede aprender estrategia de pico. Con flags → estrategia diferenciada.
+Sin flags de pico, red no sabe si es hora pico → no puede aprender estrategia
+de pico. Con flags → estrategia diferenciada.
 
 ---
 

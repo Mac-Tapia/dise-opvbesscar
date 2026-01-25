@@ -146,25 +146,46 @@
 
 **If you want to...**
 
-- **Understand the complete picture**: Start with [TECHNICAL_ANALYSIS...](TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md) Section 1 (Data Flow Architecture)
+- **Understand the complete picture**: Start with
+[TECHNICAL_ANALYSIS...][ref] Section 1 (Data Flow Architecture)
 
-- **Fix the critical BESS bug**: Go to [QUICK_REFERENCE...](QUICK_REFERENCE_OE2_AGENTS.md) "🔴 CRITICAL BUG" + [CODE_FIXES...](CODE_FIXES_OE2_DATA_FLOW.md) Issue 1
+[ref]: TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md
 
-- **Plan next steps**: Read [ANALYSIS_SUMMARY...](ANALYSIS_SUMMARY_OE2_AGENTS.md) sections "Issue Priority Matrix" and "Next Steps"
+- **Fix the critical BESS bug**: Go to
+  - [QUICK_REFERENCE...](QUICK_REFERENCE_OE2_AGENTS.md) "🔴 CRITICAL BUG" +
+    - [CODE_FIXES...](CODE_FIXES_OE2_DATA_FLOW.md) Issue 1
 
-- **Brief the team**: Share [ANALYSIS_SUMMARY...](ANALYSIS_SUMMARY_OE2_AGENTS.md) (10-minute read)
+- **Plan next steps**: Read
+  - [ANALYSIS_SUMMARY...](ANALYSIS_SUMMARY_OE2_AGENTS.md) sections "Issue Priority
+    - Matrix" and "Next Steps"
 
-- **Understand data flow**: See [TECHNICAL_ANALYSIS...](TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md) Section 1.1-1.3
+- **Brief the team**: Share
+[ANALYSIS_SUMMARY...](ANALYSIS_SUMMARY_OE2_AGENTS.md) (10-minute read)
 
-- **Find specific issue**: Use [TECHNICAL_ANALYSIS...](TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md) Section 5 (Identified Issues) with category table
+- **Understand data flow**: See
+[TECHNICAL_ANALYSIS...][ref] Section 1.1-1.3
 
-- **Get implementation code**: Use [CODE_FIXES...](CODE_FIXES_OE2_DATA_FLOW.md) with copy-paste examples
+[ref]: TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md
 
-- **Understand 128 chargers**: See [TECHNICAL_ANALYSIS...](TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md) Section 2 or [QUICK_REFERENCE...](QUICK_REFERENCE_OE2_AGENTS.md) "Chargers"
+- **Find specific issue**: Use
+[TECHNICAL_ANALYSIS...][ref] Section 5 (Identified Issues) with category table
 
-- **Understand 8,760 solar data**: See [TECHNICAL_ANALYSIS...](TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md) Section 3 or [QUICK_REFERENCE...](QUICK_REFERENCE_OE2_AGENTS.md) "Solar"
+[ref]: TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md
 
-- **Understand BESS (2MWh/1.2MW)**: See [TECHNICAL_ANALYSIS...](TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md) Section 4 or [QUICK_REFERENCE...](QUICK_REFERENCE_OE2_AGENTS.md) "BESS"
+- **Get implementation code**: Use [CODE_FIXES...](CODE_FIXES_OE2_DATA_FLOW.md)
+with copy-paste examples
+
+- **Understand 128 chargers**: See
+  - [TECHNICAL_ANALYSIS...](TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md) Section 2
+    - or [QUICK_REFERENCE...](QUICK_REFERENCE_OE2_AGENTS.md) "Chargers"
+
+- **Understand 8,760 solar data**: See
+  - [TECHNICAL_ANALYSIS...](TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md) Section 3
+    - or [QUICK_REFERENCE...](QUICK_REFERENCE_OE2_AGENTS.md) "Solar"
+
+- **Understand BESS (2MWh/1.2MW)**: See
+  - [TECHNICAL_ANALYSIS...](TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md) Section 4
+    - or [QUICK_REFERENCE...](QUICK_REFERENCE_OE2_AGENTS.md) "BESS"
 
 ---
 
@@ -246,7 +267,8 @@ src/iquitos_citylearn/oe3/agents/
 - **docs/COMIENZA_AQUI_TIER2_FINAL.md**: Agent training guide
 - **docs/AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md**: Reward details
 - **configs/default.yaml**: Configuration parameters
-- **src/iquitos_citylearn/oe3/rewards.py**: Multi-objective reward implementation
+- **src/iquitos_citylearn/oe3/rewards.py**: Multi-objective reward
+implementation
 - **src/iquitos_citylearn/oe3/dataset_builder.py**: OE2 → CityLearn conversion
 
 ---
@@ -330,11 +352,17 @@ Use this to verify all documents are reviewed:
 
 If you need to understand:
 
-- **CityLearn environment**: See [TECHNICAL_ANALYSIS...](TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md) Section 1.2
-- **Observation normalization**: See [ANALYSIS_SUMMARY...](ANALYSIS_SUMMARY_OE2_AGENTS.md) "Data Normalization Analysis"
-- **Agent wrappers**: See [QUICK_REFERENCE...](QUICK_REFERENCE_OE2_AGENTS.md) "Agent Wrappers (All 3 Use Same Pattern)"
-- **Multi-objective rewards**: See [TECHNICAL_ANALYSIS...](TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md) Section 3.4
-- **Code refactoring**: See [CODE_FIXES...](CODE_FIXES_OE2_DATA_FLOW.md) Issue 4 (DRY principle)
+- **CityLearn environment**: See
+[TECHNICAL_ANALYSIS...](TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md) Section 1.2
+- **Observation normalization**: See
+  - [ANALYSIS_SUMMARY...](ANALYSIS_SUMMARY_OE2_AGENTS.md) "Data Normalization
+    - Analysis"
+- **Agent wrappers**: See [QUICK_REFERENCE...](QUICK_REFERENCE_OE2_AGENTS.md)
+  - "Agent Wrappers (All 3 Use Same Pattern)"
+- **Multi-objective rewards**: See
+[TECHNICAL_ANALYSIS...](TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md) Section 3.4
+- **Code refactoring**: See [CODE_FIXES...](CODE_FIXES_OE2_DATA_FLOW.md) Issue
+4 (DRY principle)
 
 ---
 

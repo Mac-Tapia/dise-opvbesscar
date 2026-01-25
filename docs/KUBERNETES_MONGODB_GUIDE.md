@@ -2,7 +2,8 @@
 
 ## 📋 Overview
 
-Configuración completa para deployar PVBESSCAR en Kubernetes con MongoDB integrado.
+Configuración completa para deployar PVBESSCAR en Kubernetes con MongoDB
+integrado.
 
 ---
 

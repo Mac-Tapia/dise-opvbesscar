@@ -3,8 +3,10 @@
 ## pvbesscar Project - Agent Integration Analysis
 
 **Date**: January 25, 2026  
-**Scope**: Complete analysis of agent files in `src/iquitos_citylearn/oe3/agents/`  
-**Objective**: Identify OE2 data connections, type errors, data mismatches, and architectural issues
+**Scope**: Complete analysis of agent files in
+`src/iquitos_citylearn/oe3/agents/`
+**Objective**: Identify OE2 data connections, \
+    type errors, data mismatches, and architectural issues
 
 ---
 
@@ -30,7 +32,8 @@
 |----------|--------|----------|
 | **OE2 Data Connection** | âœ“ Indirect via CityLearn | Medium |
 | **128 Chargers Handling** | âœ“ Correct via wrapper flattening | Low |
-| **Solar Generation (8,760 hrs)** | âœ“ Loaded in wrapper, used in feature extraction | Low |
+| **Solar Generation (8,760 hrs)** |
+ âœ“ Loaded in wrapper, used in feature extraction | Low |
 | **BESS (2MWh/1.2MW)** | âœ“ Via environment attribute access | Low |
 | **Type Errors** | âš  Minor issues in wrappers | Low |
 | **Data Mismatches** | âš  Pre-scaling hardcoded to 0.001 | Medium |
@@ -114,9 +117,11 @@ def _get_pv_bess_feats(self):
     return np.array([pv_kw, soc], dtype=np.float32)
 ```bash
 
-**âœ“ Correct**: Accesses solar_generation[t] (8,760-element array from OE2 dataset)  
+**âœ“ Correct**: Accesses solar_generation[t] (8,760-element array from OE2
+dataset)
 **âœ“ Correct**: Accesses electrical_storage.state_of_charge (BESS parameter)  
-**âš  Issue**: Silent failure if buildings/attributes missing (catches AttributeError)
+**âš  Issue**: Silent failure if buildings/attributes missing (catches
+AttributeError)
 
 **Observation Flattening (sac.py, lines 545-560)**:
 
@@ -159,7 +164,8 @@ def _get_act_dim(self):
     return self.env.action_space.shape[0]
 ```bash
 
-**âœ“ Correct**: Handles both list and single action spaces; defaults to 126 (chargers)
+**âœ“ Correct**: Handles both list and \
+    single action spaces; defaults to 126 (chargers)
 
 ---
 
@@ -181,7 +187,8 @@ def _get_act_dim(self):
     return 126  # Default fallback
 ```bash
 
-**âš  TYPE ERROR**: Uses `getattr()` but doesn't handle missing action_space gracefully  
+**âš TYPE ERROR**: Uses `getattr()`but doesn't handle missing action_space
+gracefully
 **âœ“ Good**: Has fallback to 126
 
 ---
@@ -224,7 +231,8 @@ def _get_act_dim(self):
     return 126  # Default to 126 charger actions as fallback
 ```bash
 
-**âš  TYPE ERROR**: Comment says "126 charger actions" but config defines **126 controllable out of 128** (2 reserved)
+**âš TYPE ERROR**: Comment says "126 charger actions" but config defines **126
+controllable out of 128** (2 reserved)
 
 ---
 
@@ -234,10 +242,12 @@ All three agents (SAC/PPO/A2C) embed OE2 parameters in dataclass configs:
 
 | Parameter | SAC | PPO | A2C | OE2 Spec | Status |
 |-----------|-----|-----|-----|----------|--------|
-| `co2_target_kg_per_kwh` | 0.4521 | 0.4521 | 0.4521 | âœ“ Correct (Iquitos thermal) | âœ“ |
+| `co2_target_kg_per_kwh` | 0.4521 | 0.4521 |
+ 0.4521 | âœ“ Correct (Iquitos thermal) | âœ“ |
 | `cost_target_usd_per_kwh` | 0.20 | 0.20 | 0.20 | âœ“ Correct | âœ“ |
 | `ev_soc_target` | 0.90 | 0.90 | 0.90 | âœ“ Correct | âœ“ |
-| `peak_demand_limit_kw` | 200.0 | 200.0 | 200.0 | âœ“ Reasonable (272 kW total) | âœ“ |
+| `peak_demand_limit_kw` | 200.0 | 200.0 |
+ 200.0 | âœ“ Reasonable (272 kW total) | âœ“ |
 | (No charger count) | â€” | â€” | â€” | âš  Missing | âš  |
 | (No BESS capacity) | â€” | â€” | â€” | âš  Missing | âš  |
 
@@ -268,8 +278,10 @@ self.action_space = gym.spaces.Box(
 # act_dim = 126 (from _get_act_dim())
 ```bash
 
-**âš  DISCREPANCY**: Config defines 126 controllable actions but OE2 has 128 sockets  
-**âœ“ Correct interpretation**: 2 chargers reserved for baseline comparison (128 - 2 = 126)
+**âš  DISCREPANCY**: Config defines 126 controllable actions but OE2 has 128
+sockets
+**âœ“ Correct interpretation**: 2 chargers reserved for baseline comparison
+(128 - 2 = 126)
 
 ### 2.2 Action Unflattening
 
@@ -305,13 +317,15 @@ charger_power_kw: float = 2.125  # Average: (224 + 48) / 128
 # Charger action distribution (lines 140-180)
 def _distribute_charging_load(self, available_power, n_active_chargers):
     rates = np.zeros(self.config.n_chargers)
-    power_per_charger = self.config.charger_power_kw * self.config.sockets_per_charger
+    power_per_charger = \
+        self.config.charger_power_kw * self.config.sockets_per_charger
     # Round-robin, solar-priority, or sequential distribution
     # Returns 128-dim array of charge rates [0, 1]
 ```bash
 
 **Issue**: Treats "4 sockets per charger" but charger_power_kw is averaged  
-**Better approach**: Model chargers as individual control units (already done in 126-dim action space)
+**Better approach**: Model chargers as individual control units (already done
+in 126-dim action space)
 
 ### 2.4 Charger Observation Features
 
@@ -322,9 +336,12 @@ def _distribute_charging_load(self, available_power, n_active_chargers):
 **Improvement**: Could add per-charger features to observation (128 more dims):
 
 ```python
-charger_demands = [building.electric_vehicle[i].power_demand for i in range(128)]
-charger_available = [building.electric_vehicle[i].available_battery_capacity for i in range(128)]
-# Add to observation: obs_extended = np.concatenate([obs, charger_demands, charger_available])
+charger_demands = \
+    [building.electric_vehicle[i].power_demand for i in range(128)]
+charger_available = \
+    [building.electric_vehicle[i].available_battery_capacity for i in range(128)]
+# Add to observation: obs_extended = np.concatenate([obs, charger_demands,
+# charger_available])
 ```bash
 
 ---
@@ -421,7 +438,8 @@ def compute(self, grid_import_kwh, solar_generation_kwh, ...):
         reward += weights.solar * solar_score  # weight = 0.20
 ```bash
 
-**âœ“ Correct**: Rewards direct use of solar (avoiding battery/grid inefficiency)  
+**âœ“ Correct**: Rewards direct use of solar (avoiding battery/grid
+inefficiency)
 **âœ“ Correct**: Normalized to [0, 1]
 
 ---
@@ -509,10 +527,13 @@ return np.array([pv_kw * 0.001, soc * 1.0], dtype=np.float32)
 
 | File | Location | Issue | Severity |
 |------|----------|-------|----------|
-| ppo_sb3.py | Line 290 | `_get_act_dim()` returns `int` but used as `shape[0]` | Low |
+| ppo_sb3.py | Line 290 |
+ `_get_act_dim()` returns `int` but used as `shape[0]` | Low |
 | a2c_sb3.py | Line 270 | Same as above | Low |
-| sac.py | Line 515-525 | `_obs_prescale` is float array but applied element-wise | Low |
-| All wrappers | Lines ~180-200 | `getattr()` without type checking before `.shape[]` | Low |
+| sac.py | Line 515-525 |
+ `_obs_prescale` is float array but applied element-wise | Low |
+| All wrappers | Lines ~180-200 |
+ `getattr()` without type checking before `.shape[]` | Low |
 
 **Assessment**: Type errors are **not fatal** due to duck typing in NumPy
 
@@ -522,11 +543,16 @@ return np.array([pv_kw * 0.001, soc * 1.0], dtype=np.float32)
 
 | Issue | Location | Impact | Severity |
 |-------|----------|--------|----------|
-| Hardcoded prescale 0.001 | All wrappers | Assumes specific data ranges (PV, power) | **HIGH** |
-| BESS SOC prescaled by 0.001 | All wrappers | Makes SOC near-zero in normalized space | **HIGH** |
-| No per-charger state features | All agents | Agent cannot distinguish individual charger demands | **MEDIUM** |
-| 126 vs 128 chargers not documented | Config docstrings | Confusion about controllable vs total chargers | **MEDIUM** |
-| Silent failures in feature extraction | All wrappers | Missing buildings/storage attributes silently ignored | **MEDIUM** |
+| Hardcoded prescale 0.001 | All wrappers |
+ Assumes specific data ranges (PV, power) | **HIGH** |
+| BESS SOC prescaled by 0.001 | All wrappers |
+ Makes SOC near-zero in normalized space | **HIGH** |
+| No per-charger state features | All agents |
+ Agent cannot distinguish individual charger demands | **MEDIUM** |
+| 126 vs 128 chargers not documented | Config docstrings |
+ Confusion about controllable vs total chargers | **MEDIUM** |
+| Silent failures in feature extraction | All wrappers |
+ Missing buildings/storage attributes silently ignored | **MEDIUM** |
 
 ---
 
@@ -534,10 +560,14 @@ return np.array([pv_kw * 0.001, soc * 1.0], dtype=np.float32)
 
 | Issue | Location | Impact | Severity |
 |-------|----------|--------|----------|
-| Inconsistent exception handling | All wrappers | Some use try/except, others use getattr() | Low |
-| Magic numbers (0.001, 1000) | All wrappers | Hardcoded assumptions not documented | Medium |
-| No validation of OE2 data | dataset_builder.py | Silent failures if solar/charger files missing | Medium |
-| Duplicate wrapper code | sac.py, ppo_sb3.py, a2c_sb3.py | 300+ lines copied; maintenance burden | Medium |
+| Inconsistent exception handling | All wrappers |
+ Some use try/except, others use getattr() | Low |
+| Magic numbers (0.001, 1000) | All wrappers |
+ Hardcoded assumptions not documented | Medium |
+| No validation of OE2 data | dataset_builder.py |
+ Silent failures if solar/charger files missing | Medium |
+| Duplicate wrapper code | sac.py, ppo_sb3.py, a2c_sb3.py |
+ 300+ lines copied; maintenance burden | Medium |
 
 ---
 
@@ -671,20 +701,23 @@ def validate_oe2_artifacts(artifacts: Dict) -> Tuple[bool, List[str]]:
     if "solar_ts" not in artifacts:
         errors.append("Missing: pv_generation_timeseries.csv")
     elif len(artifacts["solar_ts"]) != 8760:
-        errors.append(f"Solar timeseries has {len(artifacts['solar_ts'])} rows, expected 8760")
+        errors.append(f"Solar timeseries has"
+            "{len(artifacts['solar_ts'])} rows, expected 8760")
     
     # Check chargers
     if "ev_chargers" in artifacts:
         n_chargers = len(artifacts["ev_chargers"])
         n_sockets = n_chargers * 4
         if n_sockets != 128:
-            errors.append(f"Chargers have {n_sockets} sockets, expected 128 (32 Ã— 4)")
+            errors.append(f"Chargers have {n_sockets} sockets,"
+                "expected 128 (32 Ã— 4)")
     
     # Check BESS
     if "bess" in artifacts:
         bess = artifacts["bess"]
         if bess.get("capacity_kwh") != 2000:
-            errors.append(f"BESS capacity {bess['capacity_kwh']} kWh, expected 2000")
+            errors.append(f"BESS capacity {bess['capacity_kwh']}"
+                "kWh, expected 2000")
     
     return len(errors) == 0, errors
 ```bash
@@ -792,7 +825,8 @@ def compute(..., bess_soc: float, prev_bess_soc: float, ...):
 
 ### Summary
 
-The OE2 data flow to agents is **architecturally sound** but has **critical tuning issues**:
+The OE2 data flow to agents is **architecturally sound** but has **critical
+tuning issues**:
 
 | Aspect | Status | Risk |
 |--------|--------|------|

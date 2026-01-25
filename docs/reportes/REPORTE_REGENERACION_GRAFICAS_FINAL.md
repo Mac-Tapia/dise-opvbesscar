@@ -7,7 +7,8 @@
 
 ## 📊 RESUMEN EJECUTIVO
 
-Se ha completado exitosamente la regeneración de todas las **25 gráficas** con datos reales de los checkpoints de los agentes entrenados (PPO, A2C, SAC).
+Se ha completado exitosamente la regeneración de todas las **25 gráficas** con
+datos reales de los checkpoints de los agentes entrenados (PPO, A2C, SAC).
 
 ### Operaciones Realizadas
 
@@ -59,9 +60,12 @@ Se ha completado exitosamente la regeneración de todas las **25 gráficas** con
 
 ### Grupo 4: Análisis Detallado (6 gráficas)
 
-- `training_progress_ppo.png` - Progreso detallado PPO con intervalos de confianza
-- `training_progress_a2c.png` - Progreso detallado A2C con intervalos de confianza
-- `training_progress_sac.png` - Progreso detallado SAC con intervalos de confianza
+- `training_progress_ppo.png` - Progreso detallado PPO con intervalos de
+  - confianza
+- `training_progress_a2c.png` - Progreso detallado A2C con intervalos de
+  - confianza
+- `training_progress_sac.png` - Progreso detallado SAC con intervalos de
+  - confianza
 - `comparison_all_agents.png` - Comparación exhaustiva (6 subplots)
 - `training_progress.png` - Progreso general combinado
 - `training_summary.png` - Resumen de entrenamiento

@@ -91,8 +91,8 @@ dev-type-check:    # MyPy type checking
 
 | Archivo | Tipo | Propósito |
 | --------- | ------ | ---------- |
-| **DOCKER_BUILD_GUIDE.md** | Documentación | Guía completa de uso Docker (250+ líneas) |
-| **docker_manager.py** | Utilidad Python | CLI para gestionar imágenes/contenedores |
+| **DOCKER_BUILD_GUIDE.md** | Documentación | Guía completa de... |
+| **docker_manager.py** | Utilidad Python | CLI para... |
 | **docker_quick.bat** | Script Windows | Comandos rápidos batch |
 | **docker_quick.ps1** | Script PowerShell | Comandos rápidos PS1 |
 | **ACTUALIZACION_DOCKER_20260120.md** | Resumen | Este documento |

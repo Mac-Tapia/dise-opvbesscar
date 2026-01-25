@@ -2,7 +2,9 @@
 
 ## 🎯 ¿Qué Encontrarás Aquí?
 
-He creado una **guía completa de funcionamiento** con **3 documentos principales** y un **simulador interactivo** para que entiendas cómo funciona el sistema PVBESSCAR:
+He creado una **guía completa de funcionamiento** con **3 documentos
+principales** y un **simulador interactivo** para que entiendas cómo funciona el
+sistema PVBESSCAR:
 
 ### 📖 Documentación
 

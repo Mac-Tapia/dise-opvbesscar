@@ -11,7 +11,8 @@
 
 #### Fase 1: Bloques de código sin lenguaje (MD040)
 
-- **Archivos corregidos:** CODE_FIXES_OE2_DATA_FLOW.md, TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md
+- **Archivos corregidos:** CODE_FIXES_OE2_DATA_FLOW.md,
+  - TECHNICAL_ANALYSIS_OE2_DATA_FLOW_AGENTS.md
 - **Corrección:** Agregado `bash` a todos los bloques ` ``` ` vacíos
 - **Comando:** PowerShell replace regex
 - **Commit:** `66c424f9`

@@ -9,7 +9,8 @@
 
 ## 🎯 OBJETIVO CUMPLIDO
 
-Crear un **plan completo de optimización TIER 2 para SAC** post-relanzamiento con LR corregido.
+Crear un **plan completo de optimización TIER 2 para SAC** post-relanzamiento
+con LR corregido.
 
 ### Problema Identificado
 
@@ -39,7 +40,8 @@ Crear un **plan completo de optimización TIER 2 para SAC** post-relanzamiento c
 
 - **Audiencia**: Ejecutivos, decisores
 - **Duración**: 5-10 minutos
-- **Contenido**: Estado actual + 3 cambios explicados + resultados esperados + FAQ
+- **Contenido**: Estado actual + 3 cambios explicados + resultados esperados +
+  - FAQ
 - **Link**: [SAC_TIER2_RESUMEN_EJECUTIVO.md](SAC_TIER2_RESUMEN_EJECUTIVO.md)
 
 ### 3. **SAC_TIER2_OPTIMIZATION.md** ⭐⭐⭐ PARA CIENTÍFICOS
@@ -65,7 +67,8 @@ Crear un **plan completo de optimización TIER 2 para SAC** post-relanzamiento c
   - Paso 3.1: Verificación enriched_observables.py
   - Validación post-cambios (3 tests)
   - Rollback instructions
-- **Link**: [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md)
+- **Link**:
+  - [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md)
 
 ### 5. **SAC_TIER2_INDICE.md** 📑 NAVEGACIÓN
 
@@ -244,7 +247,8 @@ DESPUÉS DE IMPLEMENTAR:
 
 ### 🛠️ Developer/Engineer
 
-- Leer: [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md)
+- Leer:
+  - [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md)
 - Copiar-pegar código (paso 1.1, 1.2, 1.3, 2.1, 2.2, 3.1)
 - Ejecutar tests
 - Commit & push
@@ -423,7 +427,9 @@ Commits:
 → Ver [SAC_TIER2_OPTIMIZATION.md](SAC_TIER2_OPTIMIZATION.md)
 
 #### ¿Cómo implementar?
-→ Seguir [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md](SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md)
+→ Seguir [SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md][ref]
+
+[ref]: SAC_TIER2_IMPLEMENTATION_STEP_BY_STEP.md
 
 #### ¿Dónde encontrar?
 → Ver [SAC_TIER2_INDICE.md](SAC_TIER2_INDICE.md)
@@ -432,7 +438,9 @@ Commits:
 
 ## 🎯 RESUMEN EN 1 ORACIÓN
 
-> SAC relanzado necesita 3 fixes (recompensa normalizada + observables enriquecidas + hiperparámetros óptimos) para lograr convergencia 2x más rápida e importación pico -15%.
+> SAC relanzado necesita 3 fixes (recompensa normalizada + observables
+enriquecidas + hiperparámetros óptimos) para lograr convergencia 2x más rápida e
+importación pico -15%.
 
 ---
 
@@ -443,7 +451,8 @@ Commits:
 **Impacto**: ALTO (+15-20% mejora esperada)
 **Reversibilidad**: ALTA (git revert available)
 
-**➡️ Siguiente acción**: Leer [SAC_TIER2_QUICK_START.md](SAC_TIER2_QUICK_START.md)
+**➡️ Siguiente acción**: Leer
+[SAC_TIER2_QUICK_START.md](SAC_TIER2_QUICK_START.md)
 
 ---
 

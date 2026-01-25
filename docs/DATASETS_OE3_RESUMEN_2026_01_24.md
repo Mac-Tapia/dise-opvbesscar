@@ -2,8 +2,10 @@
 
 ## Objetivo
 
-Generar datasets anuales (8760 horas) para entrenamiento de agentes RL con CityLearn v2.
-Cada **toma** (no cargador) es un punto de control independiente para el agente OE3.
+Generar datasets anuales (8760 horas) para entrenamiento de agentes RL con
+CityLearn v2.
+Cada **toma** (no cargador) es un punto de control independiente para el agente
+OE3.
 
 ---
 
@@ -31,7 +33,8 @@ Cada **toma** (no cargador) es un punto de control independiente para el agente 
 | **RECOMENDADO*** | 0.65 | 0.75 | 32 | 128 | 2,823.00 |
 | **MÁXIMO** | 1.00 | 1.00 | 35 | 140 | 5,800.00 |
 
-> **Nota**: PE = Probabilidad de Evento de carga, FC = Factor de Carga (% de batería a recargar)
+> **Nota**: PE = Probabilidad de Evento de carga, FC = Factor de Carga (% de
+batería a recargar)
 
 ---
 
@@ -174,9 +177,11 @@ schema_path = "data/processed/citylearn/iquitos_128_tomas/schema_128_tomas.json"
 
 ## Referencias
 
-- [DATASETS_ANUALES_128_CHARGERS.md](docs/DATASETS_ANUALES_128_CHARGERS.md) - Detalles de datasets
+- [DATASETS_ANUALES_128_CHARGERS.md](docs/DATASETS_ANUALES_128_CHARGERS.md) -
+  - Detalles de datasets
 - [MODO_3_OPERACION_30MIN.md](docs/MODO_3_OPERACION_30MIN.md) - Operación Modo 3
-- [Tabla 13 OE2](src/iquitos_citylearn/oe2/chargers.py) - Función `generate_tabla13_scenarios()`
+- [Tabla 13 OE2](src/iquitos_citylearn/oe2/chargers.py) - Función
+  - `generate_tabla13_scenarios()`
 
 ---
 

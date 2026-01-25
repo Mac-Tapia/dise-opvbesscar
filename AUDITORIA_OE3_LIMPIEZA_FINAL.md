@@ -45,9 +45,9 @@
 | Archivo | Líneas | Razón | Importado Por | Acción |
 |---------|--------|-------|---------------|--------|
 | **rewards_dynamic.py** | 309 | V1 experimental, superseded | train_ppo_dynamic.py SOLAMENTE | **ELIMINAR** |
-| **rewards_improved_v2.py** | 306 | V2 mejorada, superseded por rewards.py | rewards_wrapper_v2.py + (none) | **ELIMINAR** |
+| **rewards_improved_v2.py** | 306 | V2 mejorada,... | rewards_wrapper_v2.py + (none) | **ELIMINAR** |
 | **rewards_wrapper_v2.py** | 180 | Wrapper V2 innecesario | (solo archivo interno) | **ELIMINAR** |
-| **co2_emissions.py** | 507 | ORPHANED: 0 imports, superseded por co2_table.py | (NONE) | **ELIMINAR** |
+| **co2_emissions.py** | 507 | ORPHANED: 0 imports,... | (NONE) | **ELIMINAR** |
 
 ### C. Archivos AUXILIARES (Para Revisar/Archivar) 🟡
 
@@ -56,8 +56,8 @@
 | **demanda_mall_kwh.py** | 150 | Unused helper | ARCHIVE to experimental/ |
 | **dispatch_priorities.py** | 200 | Old config | ARCHIVE if not in config |
 | **enriched_observables.py** | 180 | Legacy | ARCHIVE if not active |
-| **tier2_v2_config.py** | 150 | Old config (v2) | ARCHIVE - superseded by default.yaml |
-| **train_ppo_dynamic.py** (en scripts/) | 450 | Legacy training script | ARCHIVE - use train_agents_serial.py |
+| **tier2_v2_config.py** | 150 | Old config (v2) | ARCHIVE -... |
+| **train_ppo_dynamic.py** (en scripts/) | 450 | Legacy training script | ARCHIVE -... |
 
 ### D. Agents Folder - ESTADO ACTUAL ✅
 
@@ -113,7 +113,8 @@ from iquitos_citylearn.oe3.rewards_dynamic import DynamicReward
 ```bash
 
 - Status: ❌ DEAD CODE (rewards_dynamic.py debe eliminarse)
-- Solución: Actualizar para usar `from iquitos_citylearn.oe3.rewards import MultiObjectiveReward`
+- Solución: Actualizar para usar `from iquitos_citylearn.oe3.rewards import
+  - MultiObjectiveReward`
 - O: Eliminar completamente este script (redundante con train_agents_serial.py)
 
 #### 2. SECONDARY: rewards_wrapper_v2.py
@@ -264,7 +265,8 @@ from src.iquitos_citylearn.oe3.rewards import MultiObjectiveReward, MultiObjecti
 # reward_fn = MultiObjectiveReward(MultiObjectiveWeights())
 ```bash
 
-**O OPCIÓN B**: Archivar completamente (recomendado - duplicado de train_agents_serial.py)
+**O OPCIÓN B**: Archivar completamente (recomendado - duplicado de
+train_agents_serial.py)
 
 #### Archivos a archivar a experimental/
 
@@ -348,10 +350,10 @@ print('\\n✅✅✅ ALL OE2 DATA VERIFIED AND CONNECTED')
 
 | Acción | Archivos | Líneas | Impacto |
 |--------|----------|--------|--------|
-| **Eliminar** | rewards_dynamic, rewards_improved_v2, rewards_wrapper_v2, co2_emissions | -1,302 | -38% código muerto |
+| **Eliminar** | rewards_dynamic, rewards_improved_v2,... | -1,302 | -38% código muerto |
 | **Archivar** | tier2_v2_config, demanda_mall, dispatch_priorities | -500 | Limpiar OE3 |
 | **Actualizar** | train_ppo_dynamic.py | ~20 | Fijar imports |
-| **Mantener** | rewards.py, dataset_builder.py, simulate.py, agents/*.py | 3,800+ | 100% activo |
+| **Mantener** | rewards.py, dataset_builder.py,... | 3,800+ | 100% activo |
 | **NETO** | TOTAL | **-1,802** | -32% reducción código |
 
 ---
@@ -361,7 +363,7 @@ print('\\n✅✅✅ ALL OE2 DATA VERIFIED AND CONNECTED')
 | Riesgo | Probabilidad | Mitigación |
 |--------|------------|-----------|
 | Imports rotos post-limpieza | 🟢 Baja | Validación de imports antes/después |
-| Scripts legacy aún referenciados | 🟢 Baja | grep confirma 0 referencias en pipeline |
+| Scripts legacy aún referenciados | 🟢 Baja | grep confirma 0... |
 | Datos OE2 desconectados | 🟢 Mínima | Verificación de conexión incluida |
 | BESS SOC aún invisible | 🟢 Mínima | CRITICAL FIX ya aplicado en Phase 4 |
 | Rollback necesario | 🟢 Muy baja | `git restore` restaura archivos |
@@ -373,15 +375,18 @@ print('\\n✅✅✅ ALL OE2 DATA VERIFIED AND CONNECTED')
 1. **Inmediato (30 min)**:
    - [ ] Ejecutar FASE 1-4 de limpieza
    - [ ] Validar imports y datos
-   - [ ] Commit git: "chore: cleanup OE3 redundant files and validate OE2 connections"
+   - [ ] Commit git: "chore: cleanup OE3 redundant files and validate OE2
+     - connections"
 
 2. **Corto plazo (1-2 horas)**:
-   - [ ] Quick training test: `python scripts/train_quick.py --device cuda --episodes 1`
+   - [ ] Quick training test: `python scripts/train_quick.py --device cuda
+     - --episodes 1`
    - [ ] Verificar BESS SOC learning (visible en primeras 5 episodes)
    - [ ] Generar reporte validación
 
 3. **Antes de entrenamiento full (24h)**:
-   - [ ] Full training: `python scripts/train_agents_serial.py --device cuda --episodes 50`
+   - [ ] Full training: `python scripts/train_agents_serial.py --device cuda
+     - --episodes 50`
    - [ ] Comparación baseline: `python -m scripts.run_oe3_co2_table`
    - [ ] Esperado: +10% CO₂ reduction, +15-25% BESS utilization
 

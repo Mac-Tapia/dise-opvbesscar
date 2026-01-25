@@ -4,15 +4,19 @@
 
 ### ✅ Phase 1: Verificación de Gráficas
 
-- **Tarea**: Verificar 4 carpetas de gráficas (plots/, progress/, graficas_finales/, graficas_monitor/)
-- **Resultado**: 25 gráficas con datos reales consolidadas en `analyses/oe3/training/plots/`
+- **Tarea**: Verificar 4 carpetas de gráficas (plots/, progress/,
+  - graficas_finales/, graficas_monitor/)
+- **Resultado**: 25 gráficas con datos reales consolidadas en
+  - `analyses/oe3/training/plots/`
 - **Archivos**: 39 PNG encontrados, 14 duplicados eliminados
 - **Documentación**: `plots/README.md` con índice completo
 
 ### ✅ Phase 2: Regeneración con Datos Reales
 
-- **Tarea**: "Regenera todas estas graficas con datos reales de los checkpoints de los agnets entrenados"
-- **Resultado**: REGENERAR_TODAS_GRAFICAS_REALES.py (730 líneas) ejecutado exitosamente
+- **Tarea**: "Regenera todas estas graficas con datos reales de los checkpoints
+  - de los agnets entrenados"
+- **Resultado**: REGENERAR_TODAS_GRAFICAS_REALES.py (730 líneas) ejecutado
+  - exitosamente
 - **Checkpoints utilizados**:
   - PPO: 18,432 timesteps (`checkpoints/ppo_gpu/ppo_final.zip`)
   - A2C: 17,536 timesteps (`checkpoints/a2c_gpu/a2c_final.zip`)
@@ -27,7 +31,8 @@
 
 ### ✅ Phase 4: Limpieza de Raíz (Root Directory)
 
-- **Tarea**: "Verfica los archivos de la raíz que no tengan el mismo código... eliminar archivos que se usen en baselines, entrenamiento, configuraciones"
+- **Tarea**: "Verfica los archivos de la raíz que no tengan el mismo código...
+  - eliminar archivos que se usen en baselines, entrenamiento, configuraciones"
 - **Archivos antes**: 114 Python files
 - **Archivos después**: 38 Python files (productivos)
 - **Eliminados**: 77 archivos redundantes
@@ -40,7 +45,8 @@
 
 ### ✅ Phase 5: Corrección de Errores Markdown y Python
 
-- **Tarea**: "Corregir los 351 errores de la pestaña PROBLEMS... y actualizar el repositorio y local"
+- **Tarea**: "Corregir los 351 errores de la pestaña PROBLEMS... y actualizar
+  - el repositorio y local"
 - **Errores iniciales**: 351 (MD060 table-column-style)
 - **Errores finales**: 52 warnings (Python, non-blocking)
 - **Reducción**: 85% de errores corregidos
@@ -151,10 +157,14 @@
 
 ## 🎓 Lecciones Aprendidas
 
-1. **Linter warnings vs critical errors**: Los ~40-50 warnings restantes son acceptable (imports no usados, variables de loop)
-2. **Markdown formatting**: Los 351 errores MD060 eran sistemáticos - requería regex para solución masiva
-3. **Checkpoint preservation**: Todos los modelos entrenados se preservaron exitosamente
-4. **Documentation matters**: La documentación actualizada (plots/README.md) es crítica para reproducibilidad
+1. **Linter warnings vs critical errors**: Los ~40-50 warnings restantes son
+acceptable (imports no usados, variables de loop)
+2. **Markdown formatting**: Los 351 errores MD060 eran sistemáticos - requería
+regex para solución masiva
+3. **Checkpoint preservation**: Todos los modelos entrenados se preservaron
+exitosamente
+4. **Documentation matters**: La documentación actualizada (plots/README.md) es
+crítica para reproducibilidad
 
 ---
 

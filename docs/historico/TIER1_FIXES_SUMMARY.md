@@ -8,11 +8,14 @@
 
 ## Resumen de Cambios
 
-Se identificaron y **corrigieron 4 problemas críticos** que impedían que SAC aprendiera:
+Se identificaron y **corrigieron 4 problemas críticos** que impedían que SAC
+aprendiera:
 
 ### 1️⃣ Pesos Multiobjetivo Rebalanceados
 
-**Archivo**: [src/iquitos_citylearn/oe3/rewards.py](src/iquitos_citylearn/oe3/rewards.py#L30)
+**Archivo**: [src/iquitos_citylearn/oe3/rewards.py][ref]
+
+[ref]: src/iquitos_citylearn/oe3/rewards.py#L30
 
 | Métrica | Antes | Después | Razón |
 | --- | --- | --- | --- |
@@ -22,13 +25,16 @@ Se identificaron y **corrigieron 4 problemas críticos** que impedían que SAC a
 | **Grid Stability** | 0.20 | **0.10** | REDUCIDO: implícito en CO₂ + Solar |
 | **EV Satisfaction** | 0.05 | **0.10** | Aumentado: operación balanceada |
 
-**Beneficio**: Agente ahora enfoca en **minimizar importación de grid** (CO₂) **maximizando solar**.
+**Beneficio**: Agente ahora enfoca en **minimizar importación de grid** (CO₂)
+**maximizando solar**.
 
 ---
 
 ### 2️⃣ CO₂ Baselines Realistas (CRÍTICO)
 
-**Archivo**: [src/iquitos_citylearn/oe3/rewards.py](src/iquitos_citylearn/oe3/rewards.py#L152-L165)
+**Archivo**: [src/iquitos_citylearn/oe3/rewards.py][ref]
+
+[ref]: src/iquitos_citylearn/oe3/rewards.py#L152-L165
 
 #### ❌ PROBLEMA ORIGINAL - Issue
 
@@ -54,7 +60,8 @@ else:
     r_co2 = 1.0 - 1.0 * min(1.0, grid_import_kwh / co2_baseline_offpeak)
 ```text
 
-**Beneficio**: Reward ahora varía en rango COMPLETO [-1, +1] → **claros gradientes para SAC**.
+**Beneficio**: Reward ahora varía en rango COMPLETO [-1, +1] → **claros
+gradientes para SAC**.
 
 **Impacto esperado**:
 
@@ -65,7 +72,9 @@ else:
 
 ### 3️⃣ SOC Reserve Penalty Normalizada
 
-**Archivo**: [src/iquitos_citylearn/oe3/rewards.py](src/iquitos_citylearn/oe3/rewards.py#L215-L230)
+**Archivo**: [src/iquitos_citylearn/oe3/rewards.py][ref]
+
+[ref]: src/iquitos_citylearn/oe3/rewards.py#L215-L230
 
 #### ❌ PROBLEMA ORIGINAL - Issue (2)
 
@@ -105,16 +114,20 @@ reward = (
 
 ### 4️⃣ Entropía Reducida (SAC - PARTE DE TIER 1)
 
-**Archivo**: [src/iquitos_citylearn/oe3/agents/sac.py](src/iquitos_citylearn/oe3/agents/sac.py#L136-L138)
+**Archivo**: [src/iquitos_citylearn/oe3/agents/sac.py][ref]
+
+[ref]: src/iquitos_citylearn/oe3/agents/sac.py#L136-L138
 
 | Parámetro | Antes | Después | Razón |
 | --- | --- | --- | --- |
 | `ent_coef` | `"auto"` | **`0.01`** | Fijo: evita exploración EXCESIVA |
 | `target_entropy` | `-126.0` | **`-50.0`** | Menos ruido, más EXPLOTACIÓN |
 
-**Por qué**: Con rewards bien escalados ahora, SAC NO necesita exploración salvaje. Entropy bajo = más focus en políticas buenas.
+**Por qué**: Con rewards bien escalados ahora, SAC NO necesita exploración
+salvaje. Entropy bajo = más focus en políticas buenas.
 
-**Beneficio**: SAC dedica más capacidad a **APRENDER** patrones que a **EXPLORAR** ruido.
+**Beneficio**: SAC dedica más capacidad a **APRENDER** patrones que a
+**EXPLORAR** ruido.
 
 ---
 
@@ -199,14 +212,18 @@ Si TIER 1 muestra mejora clara (r_co2 subiendo), implementar TIER 2:
   2. Lines 152-165: CO₂ baselines realistas
   3. Lines 215-230: SOC penalty normalizada
 
-- ✅ [src/iquitos_citylearn/oe3/agents/sac.py](src/iquitos_citylearn/oe3/agents/sac.py)
+- ✅
+  - [src/iquitos_citylearn/oe3/agents/sac.py](src/iquitos_citylearn/oe3/agents/sac.py)
   1. Lines 136-138: Entropía reducida
 
 ### DOCUMENTACIÓN
 
-- ✅ [AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md](AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md)
+- ✅
+  - [AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md](AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md)
 
-1. ✅ [AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md](AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md)
+1. ✅ [AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md][ref]
+
+[ref]: AUDIT_REWARDS_OBSERVABLES_HYPERPARAMS.md
 2.
 
 ---
@@ -220,7 +237,8 @@ Si TIER 1 muestra mejora clara (r_co2 subiendo), implementar TIER 2:
 **Nota**: Checkpoints SAC anterior (con valores malos) pueden ser ignorados automáticamente o limpiados:
 
 ```bash
-RempowershellItem -Path "d:\diseñopvbesscar\analyses\oe3\training\checkpoints\sac" -Recurse -Force
+RempowershellItem -Path
+"d:\diseñopvbesscar\analyses\oe3\training\checkpoints\sac" -Recurse -Force
 ```text
 
 ---

@@ -7,7 +7,9 @@
 
 ## RESUMEN EJECUTIVO
 
-El archivo `bess.py` está **correctamente vinculado y actualizado** con los datos calculados por `chargers.py` y `solar_pvlib.py`. Todas las verificaciones han pasado exitosamente.
+El archivo `bess.py`está **correctamente vinculado y actualizado** con los
+datos calculados por `chargers.py`y `solar_pvlib.py`. Todas las verificaciones
+han pasado exitosamente.
 
 ---
 
@@ -22,7 +24,8 @@ El archivo `bess.py` está **correctamente vinculado y actualizado** con los dat
 
 ### Desde SOLAR (Photovoltaic)
 
-- **Archivo primario:** `data/interim/oe2/solar/pv_generation_timeseries.csv` (8760 filas)
+- **Archivo primario:** `data/interim/oe2/solar/pv_generation_timeseries.csv`
+  - (8760 filas)
 - **Archivo secundario:** `data/interim/oe2/solar/pv_profile_24h.csv` (24 filas)
 - **Energía diaria promedio:** 22,036 kWh
 - **Capacidad instalada:** 4,162 kWp DC
@@ -30,7 +33,8 @@ El archivo `bess.py` está **correctamente vinculado y actualizado** con los dat
 
 ### Demanda del Mall
 
-- **Archivo:** `data/interim/oe2/demandamallkwh/demanda_mall_kwh.csv` (si existe)
+- **Archivo:** `data/interim/oe2/demandamallkwh/demanda_mall_kwh.csv` (si
+  - existe)
 - **Fallback:** Perfil sintético basado en `mall_energy_kwh_day` del config
 - **Función de lectura en bess.py:** `load_mall_demand_real()`
 
@@ -251,7 +255,8 @@ oe2:
 
 ### Chargers → BESS
 
-1. **900 motos + 130 mototaxis en hora pico (18-22h)** → Solo para dimensionar cargadores
+1. **900 motos + 130 mototaxis en hora pico (18-22h)** → Solo para dimensionar
+cargadores
 2. **32 cargadores instalados** → Operan 13 horas/día (9h-22h)
 3. **Capacidad real:** 3,062 vehículos/día (128 tomas × 26 sesiones × 92%)
 4. **Energía diaria:** 3,252 kWh (cálculo basado en PE=0.9, FC=0.9)

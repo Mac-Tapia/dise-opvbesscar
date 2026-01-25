@@ -86,10 +86,12 @@ tail -50 analyses/logs/ppo_training.log
 
 ### What is Phase 8?
 
-Phase 8 trains **three reinforcement learning agents** (SAC, PPO, A2C) to optimize EV charger scheduling:
+Phase 8 trains **three reinforcement learning agents** (SAC, PPO, A2C) to
+optimize EV charger scheduling:
 
 **Problem**: 128 chargers × 8,760 hourly decisions = 1.1M control points/year  
-**Solution**: Train neural network policies to minimize CO₂ + maximize solar + reduce costs
+**Solution**: Train neural network policies to minimize CO₂ + maximize solar +
+reduce costs
 
 **Input**: OE2 infrastructure (4 MWp PV, 2 MWh BESS, 128 chargers)  
 **Output**: Trained agents that reduce CO₂ by 20-30% vs uncontrolled charging
@@ -98,7 +100,7 @@ Phase 8 trains **three reinforcement learning agents** (SAC, PPO, A2C) to optimi
 
 | Agent | Approach | Strength |
 |-------|----------|----------|
-| **SAC** | Off-policy, entropy-regularized | Handles exploration well, sample-efficient |
+| **SAC** | Off-policy, entropy-regularized | Handles exploration... |
 | **PPO** | On-policy, stable | Best performance, most reliable convergence |
 | **A2C** | On-policy, simple | Fast training, good baseline |
 
@@ -192,7 +194,8 @@ use_amp: true (mixed precision)
 ### PPO (Proximal Policy Optimization)
 
 **Type**: On-policy trust-region actor-critic  
-**Key Innovation**: Clips policy updates to trust region (prevents large updates)  
+**Key Innovation**: Clips policy updates to trust region (prevents large
+updates)
 **Pros**:
 
 - Most stable and reliable convergence

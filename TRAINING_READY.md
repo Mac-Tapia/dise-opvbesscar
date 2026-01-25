@@ -33,7 +33,7 @@
 
 | Aspecto | Mejora |
 |---------|--------|
-| **Device Detection** | ✅ Unificada con fallbacks múltiples (CUDA → MPS → CPU) |
+| **Device Detection** | ✅ Unificada con fallbacks múltiples... |
 | **Validación Pre-Entrenamiento** | ✅ Automatizada + checklist visual |
 | **Utilidades Compartidas** | ✅ Centralizadas en `agent_utils.py` |
 | **Wrapping** | ✅ `ListToArrayWrapper` para compatibilidad SB3 |
@@ -213,7 +213,7 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 
 | Problema | Solución |
 |----------|----------|
-| Schema not found | `python -m scripts.run_oe3_build_dataset --config configs/default.yaml` |
+| Schema not found | `python -m... |
 | GPU out of memory | Use `--device cpu` or reduce `n_steps` |
 | Rewards are NaN | Check MultiObjectiveWeights sum = 1.0 |
 | Import error | Verify `src/` in PYTHONPATH |

@@ -561,4 +561,5 @@ CONFIDENCE LEVEL:                 95% (Very Low Risk)
 
 ---
 
-**Visual analysis complete!** Use these diagrams to understand module structure, dependencies, and data flow.
+**Visual analysis complete!** Use these diagrams to understand module
+structure, dependencies, and data flow.

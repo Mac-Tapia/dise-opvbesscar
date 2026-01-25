@@ -126,7 +126,8 @@ def _generate_charger_csvs(
 
 ### Paso 2: Llamar la función en `build_citylearn_dataset`
 
-Buscar la línea donde se crean los chargers (aprox línea 450-500), después de asignar `all_chargers` al building:
+Buscar la línea donde se crean los chargers (aprox línea 450-500), después de
+asignar `all_chargers`al building:
 
 ```python
 # Después de: b_mall["chargers"] = all_chargers
@@ -178,7 +179,8 @@ charger_csv = f"{charger_name}.csv"  # ← INCORRECTO
 charger_csv = f"buildings/Mall_Iquitos/{charger_name}.csv"
 ```bash
 
-Hacer este cambio en TODAS las ocurrencias donde se asigna `charger_simulation` (buscar con Ctrl+F).
+Hacer este cambio en TODAS las ocurrencias donde se asigna `charger_simulation`
+(buscar con Ctrl+F).
 
 ### Ejemplo contexto completo
 
@@ -256,8 +258,10 @@ oe2:
 
 ### Recomendación
 
-**→ Opción A (mantener 4,520 kWh)** parece ser la decisión implícita del proyecto  
-**Justificación**: bess_results.json es el resultado de optimización, más reciente que README
+**→ Opción A (mantener 4,520 kWh)** parece ser la decisión implícita del
+proyecto
+**Justificación**: bess_results.json es el resultado de optimización, más
+reciente que README
 
 ### En dataset_builder.py, asegurar asignación completa
 
@@ -412,7 +416,8 @@ TOTAL: ~2 horas 10 minutos
 ### Error: "No charger CSVs generated"
 
 **Causa**: chargers_df vacío o no existe perfil_horario_carga.csv  
-**Solución**: Verificar individual_chargers.json y perfil_horario_carga.csv existen
+**Solución**: Verificar individual_chargers.json y perfil_horario_carga.csv
+existen
 
 ### Error: "CityLearn cannot find charger_simulation files"
 
@@ -423,9 +428,12 @@ TOTAL: ~2 horas 10 minutos
 
 ## REFERENCIAS
 
-- Script de auditoría: [AUDITORIA_OE2_OE3_EXHAUSTIVA.py](file:///d:/diseñopvbesscar/AUDITORIA_OE2_OE3_EXHAUSTIVA.py)
-- Código de correcciones: [CORRECCIONES_DATASET_BUILDER_TIER1.py](file:///d:/diseñopvbesscar/CORRECCIONES_DATASET_BUILDER_TIER1.py)
-- Reporte completo: [AUDITORIA_EXHAUSTIVA_OE2_OE3_REPORTE_COMPLETO.md](file:///d:/diseñopvbesscar/AUDITORIA_EXHAUSTIVA_OE2_OE3_REPORTE_COMPLETO.md)
+- Script de auditoría:
+  - [AUDITORIA_OE2_OE3_EXHAUSTIVA.py](file:///d:/diseñopvbesscar/AUDITORIA_OE2_OE3_EXHAUSTIVA.py)
+- Código de correcciones:
+  - [CORRECCIONES_DATASET_BUILDER_TIER1.py](file:///d:/diseñopvbesscar/CORRECCIONES_DATASET_BUILDER_TIER1.py)
+- Reporte completo:
+  - [AUDITORIA_EXHAUSTIVA_OE2_OE3_REPORTE_COMPLETO.md](file:///d:/diseñopvbesscar/AUDITORIA_EXHAUSTIVA_OE2_OE3_REPORTE_COMPLETO.md)
 
 ---
 

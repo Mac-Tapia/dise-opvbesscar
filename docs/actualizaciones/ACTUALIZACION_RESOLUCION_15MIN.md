@@ -2,7 +2,8 @@
 
 ## Resumen Ejecutivo
 
-Se ha actualizado exitosamente el sistema de generación de perfiles de carga para utilizar **intervalos de 15 minutos** en lugar de intervalos horarios.
+Se ha actualizado exitosamente el sistema de generación de perfiles de carga
+para utilizar **intervalos de 15 minutos** en lugar de intervalos horarios.
 
 ## Cambios Implementados
 
@@ -49,7 +50,8 @@ return pd.DataFrame({
 })
 ```bash
 
-### 2. Función `generate_annual_charger_profiles()` (chargers.py, líneas 794-878)
+### 2. Función `generate_annual_charger_profiles()`(chargers.py, líneas
+794-878)
 
 #### Antes (8,760 horas/año):
 
@@ -143,14 +145,16 @@ Formato timestamp: '2024-01-01 00:00:00' con freq='15min'
 Con resolución de 15 minutos, el dimensionamiento del BESS será más preciso:
 
 - **Antes (horario)**: Pico promedio en 1 hora podría ocultar picos de 15 min
-- **Ahora (15 min)**: Captura picos reales de potencia → dimensionamiento correcto
+- **Ahora (15 min)**: Captura picos reales de potencia → dimensionamiento
+  - correcto
 
 #### Ejemplo:
 
 - Promedio horario 18h: 325 kW
 - Pico real 18:00-18:15: 409.85 kW ← **Detectado ahora**
 
-Esto asegura que el BESS tenga la potencia suficiente para cubrir los picos reales.
+Esto asegura que el BESS tenga la potencia suficiente para cubrir los picos
+reales.
 
 ## Scripts de Verificación
 
@@ -164,15 +168,18 @@ Esto asegura que el BESS tenga la potencia suficiente para cubrir los picos real
 2. ✅ **COMPLETADO**: Actualizar `generate_annual_charger_profiles()` a 15 min
 3. ✅ **COMPLETADO**: Generar y verificar `perfil_horario_carga.csv`
 4. **PENDIENTE**: Actualizar módulo BESS para leer perfiles de 15 min
-5. **PENDIENTE**: Re-dimensionar BESS con datos de 15 min y déficit corregido (2,675 kWh/día)
-6. **PENDIENTE**: Generar perfiles anuales por playa (Playa_Motos, Playa_Mototaxis)
+5. **PENDIENTE**: Re-dimensionar BESS con datos de 15 min y déficit corregido
+(2,675 kWh/día)
+6. **PENDIENTE**: Generar perfiles anuales por playa (Playa_Motos,
+Playa_Mototaxis)
 
 ---
 
 **Fecha de actualización:** 2026-01-20  
 #### Archivos modificados:
 
-- `src/iquitos_citylearn/oe2/chargers.py` (funciones `build_hourly_profile` y `generate_annual_charger_profiles`)
+- `src/iquitos_citylearn/oe2/chargers.py` (funciones `build_hourly_profile` y
+  - `generate_annual_charger_profiles`)
 - `data/oe2/perfil_horario_carga.csv` (generado)
 
 #### Scripts creados:

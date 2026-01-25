@@ -14,7 +14,8 @@
 
 ### Para Entrenamiento Completo
 
-1. Leer: [TRAINING_CHECKLIST.md](TRAINING_CHECKLIST.md) - Checklist de validación
+1. Leer: [TRAINING_CHECKLIST.md](TRAINING_CHECKLIST.md) - Checklist de
+validación
 2. Seguir: Step-by-step en el checklist
 3. Entrenar: `python scripts/train_agents_serial.py --device cuda --episodes 50`
 
@@ -143,8 +144,10 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 
 ### "Tengo un problema o error"
 
-1. Consulta: [QUICK_REFERENCE_TRAINING.py](QUICK_REFERENCE_TRAINING.py) - sección "TROUBLESHOOTING"
-2. O: [AGENTS_IMPROVEMENTS_SUMMARY.md](AGENTS_IMPROVEMENTS_SUMMARY.md) - tabla de problemas
+1. Consulta: [QUICK_REFERENCE_TRAINING.py](QUICK_REFERENCE_TRAINING.py) -
+sección "TROUBLESHOOTING"
+2. O: [AGENTS_IMPROVEMENTS_SUMMARY.md](AGENTS_IMPROVEMENTS_SUMMARY.md) - tabla
+de problemas
 
 ### "Quiero entender los cambios"
 
@@ -153,7 +156,8 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 
 ### "Quiero ajustar parámetros"
 
-1. Consulta: [QUICK_REFERENCE_TRAINING.py](QUICK_REFERENCE_TRAINING.py) - sección "PARÁMETROS AJUSTABLES"
+1. Consulta: [QUICK_REFERENCE_TRAINING.py](QUICK_REFERENCE_TRAINING.py) -
+sección "PARÁMETROS AJUSTABLES"
 2. Edita: `src/iquitos_citylearn/oe3/agents/ppo_sb3.py` etc.
 3. Reentrana: `python scripts/train_quick.py --device cuda --episodes 5`
 
@@ -164,21 +168,30 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 ### Archivos del Proyecto
 
 - [README.md](README.md) - Descripción general del proyecto
-- [.github/copilot-instructions.md](.github/copilot-instructions.md) - Instrucciones para agentes IA (630 líneas, exhaustivo)
-- [configs/default.yaml](configs/default.yaml) - Configuración de parámetros OE2/OE3
+- [.github/copilot-instructions.md](.github/copilot-instructions.md) -
+  - Instrucciones para agentes IA (630 líneas, exhaustivo)
+- [configs/default.yaml](configs/default.yaml) - Configuración de parámetros
+  - OE2/OE3
 
 ### Código Fuente Clave
 
-- [src/iquitos_citylearn/oe3/agents/](src/iquitos_citylearn/oe3/agents/) - Agentes RL
-- [src/iquitos_citylearn/oe3/rewards.py](src/iquitos_citylearn/oe3/rewards.py) - Función de recompensas
-- [src/iquitos_citylearn/oe3/dataset_builder.py](src/iquitos_citylearn/oe3/dataset_builder.py) - Constructor de dataset
+- [src/iquitos_citylearn/oe3/agents/](src/iquitos_citylearn/oe3/agents/) -
+  - Agentes RL
+- [src/iquitos_citylearn/oe3/rewards.py](src/iquitos_citylearn/oe3/rewards.py)
+  - - Función de recompensas
+- [src/iquitos_citylearn/oe3/dataset_builder.py](src/iquitos_citylearn/oe3/dataset_builder.py)
+- - Constructor de dataset
 
 ### Scripts Útiles
 
-- [scripts/train_quick.py](scripts/train_quick.py) - Entrenamiento rápido ✨ NUEVO
-- [scripts/train_agents_serial.py](scripts/train_agents_serial.py) - Entrenamiento serial
-- [scripts/monitor_training_live_2026.py](scripts/monitor_training_live_2026.py) - Monitor de progreso
-- [scripts/run_oe3_build_dataset.py](scripts/run_oe3_build_dataset.py) - Constructor de dataset
+- [scripts/train_quick.py](scripts/train_quick.py) - Entrenamiento rápido ✨
+  - NUEVO
+- [scripts/train_agents_serial.py](scripts/train_agents_serial.py) -
+  - Entrenamiento serial
+- [scripts/monitor_training_live_2026.py](scripts/monitor_training_live_2026.py)
+- - Monitor de progreso
+- [scripts/run_oe3_build_dataset.py](scripts/run_oe3_build_dataset.py) -
+  - Constructor de dataset
 
 ---
 
@@ -239,8 +252,10 @@ python -m venv .venv && .venv\Scripts\Activate.ps1 && pip install -r requirement
 ## 🎯 Próximas Acciones
 
 - [ ] Leer [TRAINING_READY.md](TRAINING_READY.md)
-- [ ] Ejecutar validación: `python src/iquitos_citylearn/oe3/agents/validate_training_env.py`
-- [ ] Iniciar entrenamiento: `python scripts/train_quick.py --device cuda --episodes 5`
+- [ ] Ejecutar validación: `python
+  - src/iquitos_citylearn/oe3/agents/validate_training_env.py`
+- [ ] Iniciar entrenamiento: `python scripts/train_quick.py --device cuda
+  - --episodes 5`
 - [ ] Monitorear: `python scripts/monitor_training_live_2026.py`
 - [ ] Ver resultados: `python -m scripts.run_oe3_co2_table`
 
