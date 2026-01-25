@@ -16,12 +16,12 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Tuple
 
-import matplotlib.dates as mdates
-import matplotlib.pyplot as plt
+import matplotlib.dates as mdates  # type: ignore
+import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore
 import pvlib
-from matplotlib.gridspec import GridSpec
+from matplotlib.gridspec import GridSpec  # type: ignore
 from scipy import stats
 
 # Configuración global de matplotlib para español
@@ -314,7 +314,8 @@ def plot_resumen_sistema(df: pd.DataFrame, monthly: pd.DataFrame,
     ax2 = axes[0, 1]
     months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
     monthly_mwh = np.asarray(monthly['ac_energy_kwh'].values) / 1000
-    colors = plt.colormaps['Blues'](np.linspace(0.4, 0.9, 12))
+    cmap = plt.colormaps()['Blues']  # type: ignore
+    colors = cmap(np.linspace(0.4, 0.9, 12))
     bars = ax2.bar(months, monthly_mwh, color=colors, edgecolor='darkblue', alpha=0.8)
     mean_monthly = float(monthly_mwh.mean())
     ax2.axhline(y=mean_monthly, color='gray', linestyle='--', linewidth=1.5,
@@ -654,9 +655,10 @@ def plot_analisis_temporal_avanzado(df: pd.DataFrame, monthly: pd.DataFrame,
         for m in range(1, 13)
     ]
     bp = ax2.boxplot(daily_by_month, patch_artist=True)
-    colors_box = plt.colormaps['viridis'](np.linspace(0.2, 0.8, 12))
+    cmap_viridis = plt.colormaps()['viridis']  # type: ignore
+    colors_box = cmap_viridis(np.linspace(0.2, 0.8, 12))
     for patch, color in zip(bp['boxes'], colors_box):
-        patch.set_facecolor(color)
+        patch.set_facecolor(color)  # type: ignore
     ax2.set_xticklabels(['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
                          'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'], fontsize=8)
     ax2.set_ylabel('Energía diaria (kWh)')

@@ -5,14 +5,17 @@ from pathlib import Path
 from typing import Any, Dict
 import os
 
-import yaml
+import yaml  # type: ignore
 from dotenv import load_dotenv
 
 def project_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 def load_yaml(path: Path) -> Dict[str, Any]:
-    return yaml.safe_load(path.read_text(encoding='utf-8'))
+    result = yaml.safe_load(path.read_text(encoding='utf-8'))
+    if not isinstance(result, dict):
+        return {}
+    return result
 
 def _env_float(key: str, default: float) -> float:
     v = os.getenv(key)

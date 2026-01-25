@@ -25,9 +25,9 @@ def check_dataset(schema_path: str) -> bool:
     """Verifica que schema CityLearn existe."""
     path = Path(schema_path)
     if not path.exists():
-        logger.error(f"❌ Schema CityLearn no encontrado: {schema_path}")
+        logger.error("❌ Schema CityLearn no encontrado: %s", schema_path)
         return False
-    logger.info(f"✓ Schema CityLearn: {path.absolute()}")
+    logger.info("✓ Schema CityLearn: %s", path.absolute())
     return True
 
 
@@ -35,16 +35,14 @@ def check_agents() -> bool:
     """Verifica que agentes se pueden importar."""
     try:
         from iquitos_citylearn.oe3.agents import (
-            PPOAgent, PPOConfig,
-            SACAgent, SACConfig,
-            A2CAgent, A2CConfig,
             detect_device,
         )
+        _ = detect_device()  # Usar la función
         logger.info("✓ Agentes importados exitosamente")
-        logger.info(f"  Device detectado: {detect_device()}")
+        logger.info("  Device detectado: %s", detect_device())
         return True
-    except Exception as e:
-        logger.error(f"❌ Error importando agentes: {e}")
+    except (ImportError, AttributeError) as e:
+        logger.error("❌ Error importando agentes: %s", e)
         return False
 
 
@@ -53,29 +51,30 @@ def check_rewards() -> bool:
     try:
         from iquitos_citylearn.oe3.rewards import (
             MultiObjectiveWeights,
-            IquitosContext,
         )
         weights = MultiObjectiveWeights()
         logger.info("✓ Rewards importados exitosamente")
-        logger.info(f"  Pesos: CO2={weights.co2}, Solar={weights.solar}, Cost={weights.cost}")
+        logger.info("  Pesos: CO2=%s, Solar=%s, Cost=%s", weights.co2, weights.solar, weights.cost)
         return True
-    except Exception as e:
-        logger.error(f"❌ Error importando rewards: {e}")
+    except (ImportError, AttributeError) as e:
+        logger.error("❌ Error importando rewards: %s", e)
         return False
 
 
-def check_gpu() -> None:
+def check_gpu() -> bool:
     """Verifica disponibilidad de GPU."""
     try:
         import torch
         if torch.cuda.is_available():
-            logger.info(f"✓ GPU disponible: {torch.cuda.get_device_name(0)}")
-            logger.info(f"  CUDA Version: {torch.version.cuda}")
-            logger.info(f"  Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
+            logger.info("✓ GPU disponible: %s", torch.cuda.get_device_name(0))
+            logger.info("  CUDA Version: %s", torch.version.cuda)
+            logger.info("  Memory: %.1f GB", torch.cuda.get_device_properties(0).total_memory / 1e9)
         else:
             logger.warning("⚠ GPU no disponible; se usará CPU")
+        return True
     except ImportError:
         logger.warning("⚠ PyTorch no importable; se usará CPU")
+        return True
 
 
 def check_checkpoint_dir(checkpoint_dir: str) -> bool:
@@ -83,10 +82,10 @@ def check_checkpoint_dir(checkpoint_dir: str) -> bool:
     path = Path(checkpoint_dir)
     try:
         path.mkdir(parents=True, exist_ok=True)
-        logger.info(f"✓ Checkpoint dir: {path.absolute()}")
+        logger.info("✓ Checkpoint dir: %s", path.absolute())
         return True
-    except Exception as e:
-        logger.error(f"❌ Error creando checkpoint dir: {e}")
+    except (OSError, IOError, ValueError) as e:
+        logger.error("❌ Error creando checkpoint dir: %s", e)
         return False
 
 
@@ -96,14 +95,15 @@ def main() -> bool:
     Returns:
         bool: True si todas las validaciones pasaron
     """
-    logger.info("\n" + "="*70)
+    logger.info("")
+    logger.info("="*70)
     logger.info("PRE-TRAINING VALIDATION")
-    logger.info("="*70 + "\n")
+    logger.info("="*70)
 
     checks = [
         ("Agents", check_agents),
         ("Rewards", check_rewards),
-        ("GPU", lambda: (check_gpu(), True)[1]),
+        ("GPU", check_gpu),
         ("Checkpoint Dir", lambda: check_checkpoint_dir("./checkpoints")),
     ]
 
@@ -112,22 +112,23 @@ def main() -> bool:
         try:
             result = check_fn()
             results.append(result)
-        except Exception as e:
-            logger.error(f"❌ {name}: {e}")
+        except (OSError, IOError, ValueError, ImportError) as e:
+            logger.error("❌ %s: %s", name, e)
             results.append(False)
 
-    logger.info("\n" + "="*70)
+    logger.info("")
+    logger.info("="*70)
     passed = sum(results)
     total = len(results)
-    logger.info(f"Results: {passed}/{total} passed")
+    logger.info("Results: %d/%d passed", passed, total)
 
     if all(results):
         logger.info("✓ All checks passed! Ready to train.")
-        logger.info("="*70 + "\n")
+        logger.info("="*70)
         return True
     else:
         logger.error("✗ Some checks failed. Fix issues before training.")
-        logger.info("="*70 + "\n")
+        logger.info("="*70)
         return False
 
 

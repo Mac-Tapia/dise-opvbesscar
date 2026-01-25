@@ -202,14 +202,15 @@ class PPOAgent:
             pass
         return info
 
-    def learn(self, episodes: int = 5, total_timesteps: Optional[int] = None) -> None:
+    def learn(self, total_timesteps: Optional[int] = None, **kwargs: Any) -> None:
         """Entrena el agente PPO con optimizadores avanzados.
 
         Args:
-            episodes: Número de episodios (usado en configuración de callbacks)
             total_timesteps: Total de timesteps; si es None, usa config.train_steps
+            **kwargs: Argumentos adicionales (para compatibilidad con callbacks, ej. episodes)
         """
-        # Nota: episodes es parametrizable pero usa config.train_steps como default
+        _ = kwargs  # Silenciar warning de argumento no usado
+        # Nota: usa config.train_steps como default
         try:
             import gymnasium as gym
             from stable_baselines3 import PPO
@@ -396,7 +397,7 @@ class PPOAgent:
         vec_env = make_vec_env(_env_creator, n_envs=1, seed=self.config.seed)
 
         # Learning rate scheduler
-        lr_schedule = self._get_lr_schedule(steps)
+        lr_schedule = self._get_lr_schedule()
 
         # Configurar política con arquitectura optimizada
         policy_kwargs = {
@@ -499,7 +500,7 @@ class PPOAgent:
                         group["lr"] = new_lr
                     logger.info("[PPO] KL adaptativo: kl=%.4f lr=%.2e", approx_kl, new_lr)
 
-            def _on_step(self):
+            def _on_step(self) -> bool:
                 infos = self.locals.get("infos", [])
                 if isinstance(infos, dict):
                     infos = [infos]
@@ -533,19 +534,20 @@ class PPOAgent:
                             env = training_env
                     if env is not None and hasattr(env, "unwrapped"):
                         env = env.unwrapped
-                    buildings = getattr(env, "buildings", None) if env is not None else None
-                    if buildings:
-                        for b in buildings:
-                            # Acumular consumo neto de la red (positivo = consumo, negativo = exportación)
+                    buildings_obj: Any = getattr(env, "buildings", None) if env is not None else None
+                    if buildings_obj and isinstance(buildings_obj, (list, tuple)):
+                        # Type narrowing: after isinstance check, buildings_obj is list|tuple
+                        # Iterate directly - mypy should recognize this is iterable
+                        for b in buildings_obj:  # type: ignore[assignment,misc]
+                            # Acumular consumo neto de la red
                             if hasattr(b, 'net_electricity_consumption') and b.net_electricity_consumption:
                                 last_consumption = b.net_electricity_consumption[-1] if b.net_electricity_consumption else 0
-                                # Acumular valor absoluto para contabilizar importación desde red
-                                if last_consumption != 0:  # FIJO: Ahora acumula tanto + como -
+                                if last_consumption != 0:
                                     self.grid_energy_sum += abs(last_consumption)
                             # Acumular generación solar
                             if hasattr(b, 'solar_generation') and b.solar_generation:
                                 last_solar = b.solar_generation[-1] if b.solar_generation else 0
-                                if last_solar != 0:  # FIJO: Acumula valores no-cero
+                                if last_solar != 0:
                                     self.solar_energy_sum += abs(last_solar)
                 except (AttributeError, IndexError, TypeError, ValueError) as err:
                     logger.debug("Error in callback: %s", err)
@@ -720,25 +722,32 @@ class PPOAgent:
                 size_kb = z.stat().st_size / 1024
                 logger.info("  - %s (%.1f KB)", z.name, size_kb)
 
-    def _get_lr_schedule(self, total_steps: int) -> Union[Callable[[float], float], float]:
+    def _get_lr_schedule(self) -> Union[Callable[[float], float], float]:
         """Crea scheduler de learning rate.
-
-        Args:
-            total_steps: Total de pasos de entrenamiento (usado para normalizar progreso)
 
         Returns:
             Learning rate schedule (callable o float)
         """
-        from stable_baselines3.common.utils import get_linear_fn
+        try:
+            from stable_baselines3.common.utils import get_linear_fn
 
-        if self.config.lr_schedule == "linear":
-            return get_linear_fn(self.config.learning_rate, self.config.learning_rate * 0.1, 1.0)
-        elif self.config.lr_schedule == "cosine":
-            def cosine_schedule(progress):
-                return self.config.learning_rate * (0.5 * (1 + np.cos(np.pi * (1 - progress))))
+            if self.config.lr_schedule == "linear":
+                result: Union[Callable[[float], float], float] = get_linear_fn(
+                    self.config.learning_rate,
+                    self.config.learning_rate * 0.1,
+                    1.0
+                )
+                return result
+        except ImportError:
+            pass
+
+        if self.config.lr_schedule == "cosine":
+            def cosine_schedule(progress: float) -> float:
+                return float(self.config.learning_rate * (0.5 * (1 + np.cos(np.pi * (1 - progress)))))
             return cosine_schedule
-        else:  # constant
-            return self.config.learning_rate
+
+        # Default: constant learning rate
+        return self.config.learning_rate
 
     def _get_activation(self):
         """Obtiene función de activación."""
@@ -834,12 +843,15 @@ class PPOAgent:
             self.model.save(path)
             logger.info("Modelo PPO guardado en %s", path)
 
-    def load(self, path: str):
+    def load(self, path: str) -> None:
         """Carga modelo."""
-        from stable_baselines3 import PPO
-        self.model = PPO.load(path)
-        self._trained = True
-        logger.info("Modelo PPO cargado desde %s", path)
+        try:
+            from stable_baselines3 import PPO
+            self.model = PPO.load(path)
+            self._trained = True
+            logger.info("Modelo PPO cargado desde %s", path)
+        except ImportError:
+            logger.warning("stable_baselines3 no disponible para cargar modelo")
 
 
 def make_ppo(env: Any, config: Optional[PPOConfig] = None, **kwargs) -> PPOAgent:

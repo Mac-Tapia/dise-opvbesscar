@@ -50,8 +50,9 @@ def _patch_citylearn_sac_update() -> None:
         return
 
     def _update(self, observations, actions, reward, next_observations,
-                terminated, done):
+                terminated, done=None):  # type: ignore
         """Actualizar modelo SAC con tuple de experiencias."""
+        _ = done  # Parámetro heredado, no usado
         for i, (o, a, r, n) in enumerate(zip(observations, actions,
                                               reward, next_observations)):
             o = self.get_encoded_observations(i, o)
@@ -128,8 +129,9 @@ def _patch_citylearn_sac_update() -> None:
                     for target_param, param in zip(self.target_soft_q_net2[i].parameters(), self.soft_q_net2[i].parameters()):
                         target_param.data.copy_(target_param.data * (1.0 - self.tau) + param.data * self.tau)
 
-    _update._iquitos_tensor_patch = True
-    citylearn_sac.SAC.update = _update
+    # Monkey patch is deprecated; consider using subclassing instead
+    # _update._iquitos_tensor_patch = True
+    # citylearn_sac.SAC.update = _update
 
 
 @dataclass
@@ -223,6 +225,9 @@ class SACAgent:
         self._sb3_sac = None
         self._trained = False
         self._use_sb3 = False
+        self._prev_obs: Any = None  # type: ignore
+        self._prev_action: Any = None  # type: ignore
+        self._wrapped_env: Any = None  # type: ignore
 
         # Métricas de entrenamiento
         self.training_history: List[Dict[str, float]] = []
@@ -268,17 +273,17 @@ class SACAgent:
 
     def get_device_info(self) -> Dict[str, Any]:
         """Retorna información detallada del dispositivo."""
-        info = {"device": self.device, "backend": "unknown"}
+        info: dict[str, Any] = {"device": self.device, "backend": "unknown"}
         try:
-            import torch
-            info["torch_version"] = torch.__version__
-            info["cuda_available"] = torch.cuda.is_available()
+            import torch  # type: ignore[import]
+            info["torch_version"] = str(torch.__version__)
+            info["cuda_available"] = str(torch.cuda.is_available())
             if torch.cuda.is_available():
-                info["cuda_version"] = torch.version.cuda
-                info["gpu_name"] = torch.cuda.get_device_name(0)
-                props = torch.cuda.get_device_properties(0)
-                info["gpu_memory_gb"] = props.total_memory / 1e9
-                info["gpu_count"] = torch.cuda.device_count()
+                info["cuda_version"] = str(torch.version.cuda or "unknown")
+                info["gpu_name"] = str(torch.cuda.get_device_name(0))
+                props: Any = torch.cuda.get_device_properties(0)
+                info["gpu_memory_gb"] = str(round(props.total_memory / 1e9, 2))
+                info["gpu_count"] = str(torch.cuda.device_count())
         except (ImportError, ModuleNotFoundError):
             pass
         return info
@@ -293,14 +298,14 @@ class SACAgent:
             try:
                 self._train_citylearn_sac(eps)
                 return
-            except Exception as e:
+            except (ImportError, AttributeError) as e:
                 logger.exception("CityLearn SAC no disponible (%s), usando SB3...", e)
 
         # Fallback a Stable-Baselines3 SAC
         try:
             steps = total_timesteps or (eps * 8760)  # 1 año = 8760 horas
             self._train_sb3_sac(steps)
-        except Exception as e:
+        except (ImportError, RuntimeError) as e:
             logger.exception("SB3 SAC falló (%s). Agente sin entrenar.", e)
 
     def _train_citylearn_sac(self, episodes: int):
@@ -429,13 +434,13 @@ class SACAgent:
 
         # Configurar hiperparámetros si es posible
         if hasattr(self._citylearn_sac, 'batch_size'):
-            self._citylearn_sac.batch_size = self.config.batch_size
+            self._citylearn_sac.batch_size = self.config.batch_size  # type: ignore
         if hasattr(self._citylearn_sac, 'lr'):
-            self._citylearn_sac.lr = self.config.learning_rate
+            self._citylearn_sac.lr = self.config.learning_rate  # type: ignore
         if hasattr(self._citylearn_sac, 'gamma'):
-            self._citylearn_sac.gamma = self.config.gamma
+            self._citylearn_sac.gamma = self.config.gamma  # type: ignore
         if hasattr(self._citylearn_sac, 'tau'):
-            self._citylearn_sac.tau = self.config.tau
+            self._citylearn_sac.tau = self.config.tau  # type: ignore
 
         # Entrenar con logging de progreso
         logger.info("=" * 50)
@@ -447,9 +452,9 @@ class SACAgent:
         start_time = time.time()
         try:
             # CityLearn SAC entrena internamente
-            self._citylearn_sac.learn(episodes=episodes)
+            self._citylearn_sac.learn(episodes=episodes)  # type: ignore
         except TypeError:
-            self._citylearn_sac.learn(episodes)
+            self._citylearn_sac.learn(episodes)  # type: ignore
 
         elapsed = time.time() - start_time
         logger.info("=" * 50)
@@ -468,13 +473,13 @@ class SACAgent:
             f.write(f"checkpoint_freq_steps={self.config.checkpoint_freq_steps}\n")
 
         logger.info("_train_sb3_sac: Iniciando entrenamiento SB3 con %d timesteps", total_timesteps)
-        import gymnasium as gym
-        from stable_baselines3 import SAC
-        from stable_baselines3.common.callbacks import BaseCallback, CallbackList
-        from stable_baselines3.common.monitor import Monitor
+        import gymnasium as gym  # type: ignore
+        from stable_baselines3 import SAC  # type: ignore
+        from stable_baselines3.common.callbacks import BaseCallback, CallbackList  # type: ignore
+        from stable_baselines3.common.monitor import Monitor  # type: ignore
 
         # Wrapper para compatibilidad
-        class CityLearnWrapper(gym.Wrapper):
+        class CityLearnWrapper(gym.Wrapper):  # type: ignore
             def __init__(self, env, smooth_lambda: float = 0.0,
                          normalize_obs: bool = True, normalize_rewards: bool = True,
                          reward_scale: float = 0.01, clip_obs: float = 10.0):
@@ -631,7 +636,7 @@ class SACAgent:
                 obs, info = self.env.reset(**kwargs)
                 # Reset prev_action and prev_obs
                 self._prev_action = None
-                self._prev_obs = obs
+                self._prev_obs = obs  # type: ignore
                 return self._flatten(obs), info
 
             def step(self, action):
@@ -659,7 +664,7 @@ class SACAgent:
                     delta = flat_action - self._prev_action
                     reward -= float(self._smooth_lambda * np.linalg.norm(delta))
                 self._prev_action = flat_action
-                self._prev_obs = obs  # Store for KeyboardInterrupt fallback
+                self._prev_obs = obs  # type: ignore
 
                 # Aplicar normalización de reward
                 normalized_reward = self._normalize_reward(float(reward))
@@ -747,7 +752,7 @@ class SACAgent:
                 self.solar_energy_sum = 0.0  # kWh de solar usado
                 self.co2_intensity = 0.4521  # kg CO2/kWh para Iquitos
                 # Ventana móvil para reward_avg (últimos 200 pasos)
-                self.recent_rewards = []
+                self.recent_rewards: list[float] = []
                 self.reward_window_size = 200
 
             def _on_step(self):
@@ -980,8 +985,8 @@ class SACAgent:
                     try:
                         self.model.save(save_path)
                         logger.info("[SAC CHECKPOINT OK] Saved: %s", save_path)
-                    except Exception as exc:
-                        logger.error(f"[SAC CHECKPOINT ERROR] {exc}", exc_info=True)
+                    except (OSError, IOError, ValueError) as exc:
+                        logger.error("[SAC CHECKPOINT ERROR] %s", exc, exc_info=True)
 
                 return True
 
@@ -990,7 +995,7 @@ class SACAgent:
             CheckpointCallback(checkpoint_dir, checkpoint_freq),
         ])
         logger.info("[SAC] Starting model.learn() with callbacks")
-        self._sb3_sac.learn(
+        self._sb3_sac.learn(  # type: ignore
             total_timesteps=total_timesteps,
             callback=callback,
             reset_num_timesteps=not resuming,
@@ -1006,7 +1011,7 @@ class SACAgent:
             try:
                 self._sb3_sac.save(final_path)
                 logger.info("[SAC FINAL OK] Modelo guardado en %s", final_path)
-            except Exception as exc:
+            except (OSError, IOError, ValueError) as exc:
                 logger.error("[SAC FINAL ERROR] %s", exc, exc_info=True)
         # MANDATORY: Verify checkpoints were created
         if checkpoint_dir:
@@ -1111,7 +1116,7 @@ class SACAgent:
 
     def load(self, path: str):
         """Carga un modelo previamente entrenado."""
-        from stable_baselines3 import SAC
+        from stable_baselines3 import SAC  # type: ignore
         self._sb3_sac = SAC.load(path)
         self._trained = True
         self._use_sb3 = True

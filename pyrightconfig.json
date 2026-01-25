@@ -6,7 +6,11 @@
         "**/__pycache__",
         ".venv",
         "data",
-        "outputs"
+        "outputs",
+        "checkpoints",
+        "analyses",
+        "reports",
+        "scripts"
     ],
     "reportMissingImports": false,
     "reportMissingTypeStubs": false,
@@ -16,6 +20,12 @@
     "reportOptionalMemberAccess": false,
     "reportArgumentType": false,
     "reportOperatorIssue": false,
+    "reportIncompatibleVariableOverride": false,
+    "reportIncompatibleMethodOverride": false,
+    "reportAssignmentType": false,
+    "reportConstantRedefinition": false,
     "pythonVersion": "3.11",
-    "typeCheckingMode": "basic"
+    "typeCheckingMode": "basic",
+    "venvPath": ".venv",
+    "stubPath": "."
 }

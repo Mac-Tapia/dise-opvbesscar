@@ -56,7 +56,7 @@ from typing import Dict, List, Tuple, Any, Optional
 import math
 import json
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 
 
 @dataclass(frozen=True)
@@ -1135,7 +1135,7 @@ def generate_charger_plots(
         reports_dir: Directorio de reportes de alto nivel donde se guardarán las
                      gráficas, dentro de una subcarpeta `oe2/chargers`.
     """
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # type: ignore[import]
 
     plots_dir = out_dir / "plots"
     if reports_dir is not None:

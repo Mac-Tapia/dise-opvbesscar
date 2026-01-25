@@ -1,8 +1,13 @@
 #!/usr/bin/env python
 """Validate OE2 data connections for OE3 training."""
+from __future__ import annotations
 import json
-import pandas as pd
 from pathlib import Path
+
+try:
+    import pandas as pd  # type: ignore
+except ImportError:
+    pd = None  # type: ignore
 
 def validate_oe2_data():
     """Verify all OE2 artifacts are correctly formatted and accessible."""
@@ -20,34 +25,34 @@ def validate_oe2_data():
     solar_max = solar_df['ac_power_kw'].max() if 'ac_power_kw' in solar_df.columns else solar_df.iloc[:, -1].max()
     assert solar_max <= 4200, f'Solar max={solar_max} exceeds Eaton spec'
     time_steps = len(solar_df)
-    print(f'\n✅ SOLAR PV (Eaton Xpert1670 - 4,050 kWp)')
+    print('\n✅ SOLAR PV (Eaton Xpert1670 - 4,050 kWp)')
     print(f'   Timeseries: {time_steps} timesteps ({time_steps/96:.0f} days at 15-min freq)')
     print(f'   Max generation: {solar_max:.0f} kW')
-    print(f'   Status: Connected to OE3 dataset_builder (resampled to 1-hour)')
+    print('   Status: Connected to OE3 dataset_builder (resampled to 1-hour)')
 
     # Chargers validation
     chargers_file = oe2_path / 'chargers' / 'individual_chargers.json'
-    chargers = json.load(open(chargers_file))
+    chargers = json.load(open(chargers_file, encoding='utf-8'))  # type: ignore
     total_sockets = sum(c.get('sockets', 1) for c in chargers)
     assert total_sockets == 128, f'Expected 128 sockets, got {total_sockets}'
-    print(f'\n✅ CHARGERS (128 sockets, 272 kW)')
+    print('\n✅ CHARGERS (128 sockets, 272 kW)')
     print(f'   Physical chargers: {len(chargers)}')
     print(f'   Total sockets: {total_sockets} (4 sockets per charger)')
-    print(f'   Breakdown: 28 motos (2kW) + 4 mototaxis (3kW) × 4 sockets each')
-    print(f'   Status: Connected to OE3 observables (dims 64-192)')
+    print('   Breakdown: 28 motos (2kW) + 4 mototaxis (3kW) × 4 sockets each')
+    print('   Status: Connected to OE3 observables (dims 64-192)')
 
     # BESS validation
     bess_file = oe2_path / 'bess' / 'bess_results.json'
-    bess = json.load(open(bess_file))
+    bess = json.load(open(bess_file, encoding='utf-8'))  # type: ignore
     bess_capacity_mwh = bess['capacity_kwh'] / 1000.0
     bess_power_mw = bess['nominal_power_kw'] / 1000.0
-    print(f'\n✅ BESS (Battery Energy Storage System)')
+    print('\n✅ BESS (Battery Energy Storage System)')
     print(f'   Capacity: {bess_capacity_mwh:.2f} MWh')
     print(f'   Power: {bess_power_mw:.2f} MW (charge/discharge)')
-    print(f'   SOC range: [0.0, 1.0] normalized')
+    print('   SOC range: [0.0, 1.0] normalized')
     print(f'   DoD: {bess["dod"]*100:.0f}%')
-    print(f'   CRITICAL FIX: BESS SOC prescaling corrected (visible to agents)')
-    print(f'   Status: Connected to OE3 observables (dim 192+)')
+    print('   CRITICAL FIX: BESS SOC prescaling corrected (visible to agents)')
+    print('   Status: Connected to OE3 observables (dim 192+)')
 
     # Summary
     print(f'\n{"=" * 70}')
