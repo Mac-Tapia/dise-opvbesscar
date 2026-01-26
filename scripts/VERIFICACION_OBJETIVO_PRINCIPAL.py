@@ -21,14 +21,14 @@ Verificaciones Implementadas:
 from __future__ import annotations
 
 import argparse
-import json
+import json  # type: ignore
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 import pandas as pd  # type: ignore[import]
 
 from iquitos_citylearn.utils.logging import setup_logging
-from iquitos_citylearn.oe3.co2_table import EmissionsFactors, load_summary
+from iquitos_citylearn.oe3.co2_table import load_summary
 from scripts._common import load_all
 
 
@@ -89,9 +89,9 @@ def verify_objective_implementation() -> Dict[str, Any]:
         print(f"✓ Componentes de recompensa: {', '.join(found_components)}")
         print(f"✓ Test compute(): reward={reward:.3f}")
 
-        checks['multiobjetivo_implementado']: bool = True
-        checks['componentes_recompensa']: int = len(found_components)
-        checks['peso_co2_principal']: bool = weights.co2 >= 0.45
+        checks['multiobjetivo_implementado'] = True  # type: bool
+        checks['componentes_recompensa'] = len(found_components)  # type: int
+        checks['peso_co2_principal'] = weights.co2 >= 0.45  # type: bool
 
     except Exception as e:
         print(f"✗ ERROR: {e}")
@@ -120,11 +120,11 @@ def verify_objective_implementation() -> Dict[str, Any]:
             if hasattr(cfg, 'learning_rate'):
                 print(f"    Learning rate: {cfg.learning_rate}")
 
-        checks['num_agentes']: int = len(agents)
+        checks['num_agentes'] = len(agents)  # type: int
 
     except Exception as e:
         print(f"✗ ERROR: {e}")
-        checks['num_agentes'] = 0  # type: ignore
+        checks['num_agentes'] = 0  # type: int
 
     # 3. Verificar script de generación de tabla comparativa
     print("\n[3] TABLA COMPARATIVA DE AGENTES")
@@ -300,7 +300,7 @@ def analyze_summary_if_available(config_path: str) -> Dict[str, Any]:
     results: Dict[str, Any] = {}
 
     try:
-        cfg, rp = load_all(config_path)
+        _, rp = load_all(config_path)
 
         summary_path = rp.outputs_dir / "oe3" / "simulations" / "simulation_summary.json"
 
