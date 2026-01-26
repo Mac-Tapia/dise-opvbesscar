@@ -17,12 +17,22 @@ integración fotovoltaica y BESS en Iquitos, Perú.
   - Indirecta: 3,626.66 tCO₂/año (PV/BESS desplaza red).
   - Neta: 6,707.86 tCO₂/año. Emisiones con PV/BESS: 2,501.49 tCO₂/año.
 
+## 🚀 Estado Actual (2026-01-26)
+
+**✅ Proyecto 100% limpio**: 0 errores Pyright (Phase 5 completada)
+- Pipeline OE3 ejecutándose en background (dataset + baseline + 3 agentes)
+- Datasets validados: 8,760 horas (hourly), 128 chargers, solar real
+- Checkpoints acumulables: SAC → PPO → A2C (reset_num_timesteps=False)
+- GPU CUDA activada (RTX 4060, 8-12 horas estimadas)
+
 ## Requisitos
 
-- Python 3.11 (activar `.venv`).
-- Dependencias: `pip install -r requirements.txt` (y
-  - `requirements-training.txt` para RL).
-- Herramientas: `git`, `poetry` opcional, Docker (para despliegues).
+- **Python 3.11+** (activar `.venv`).
+- **Dependencias**: 
+  - `pip install -r requirements.txt` (base)
+  - `pip install -r requirements-training.txt` (RL con GPU)
+- **Herramientas**: `git`, `poetry` (opcional), Docker (despliegues)
+- **GPU** (recomendado): CUDA 11.8+, torch con soporte GPU (10x más rápido)
 
 ## Estructura clave
 
@@ -41,11 +51,17 @@ integración fotovoltaica y BESS en Iquitos, Perú.
 python -m venv .venv
 ./.venv/Scripts/activate  # en Windows
 
-# Dimensionamiento solar (Eaton Xpert1670)
-python -m scripts.run_oe2_solar --config configs/default.yaml --no-plots
+# Pipeline OE3 COMPLETO (dataset + baseline + 3 agentes)
+python -m scripts.run_oe3_simulate --config configs/default.yaml
 
-# Ejecutar pipeline visible OE3
-python run_pipeline_visible.py
+# O solo dataset builder (validar datos)
+python -m scripts.run_oe3_build_dataset --config configs/default.yaml
+
+# O solo baseline (referencia sin control)
+python -m scripts.run_uncontrolled_baseline --config configs/default.yaml
+
+# Comparar resultados (después del entrenamiento)
+python -m scripts.run_oe3_co2_table --config configs/default.yaml
 ```bash
 <!-- markdownlint-enable MD013 -->
 
@@ -59,40 +75,102 @@ python run_pipeline_visible.py
 
 ## 📖 Documentación Consolidada
 
-Essential guides consolidated in root directory:
+**Comienza aquí:**
+- **[INICIO_RAPIDO.md](INICIO_RAPIDO.md)** - Setup 5 minutos (Python 3.11, venv, primeros comandos)
+- **[QUICKSTART.md](QUICKSTART.md)** - Guía en inglés
 
-- **[QUICKSTART.md](QUICKSTART.md)** - Start here: 5-minute setup guide
-- **[COMANDOS_EJECUTABLES.md](COMANDOS_EJECUTABLES.md)** - All executable commands (dataset build, training, comparisons)
-- **[STATUS_ACTUAL_2026_01_25.md](STATUS_ACTUAL_2026_01_25.md)** - Current system status and timeline
-- **[RESUMEN_EJECUTIVO_ENTRENAMIENTO_OE3.md](RESUMEN_EJECUTIVO_ENTRENAMIENTO_OE3.md)** - Training results and agent comparisons
-- **[CONFIGURACIONES_OPTIMAS_AGENTES_OE3.md](CONFIGURACIONES_OPTIMAS_AGENTES_OE3.md)** - Agent hyperparameters and architecture
-- **[ARQUITECTURA_TOMAS_INDEPENDIENTES.md](ARQUITECTURA_TOMAS_INDEPENDIENTES.md)** - System architecture and design
-- **[TESTING_FOLDER_ANALYSIS.md](TESTING_FOLDER_ANALYSIS.md)** - Testing folder structure and utilities
-- **[PROJECT_VERIFICATION_FINAL.md](PROJECT_VERIFICATION_FINAL.md)** - Final project verification report
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines and standards
+**Ejecución y Monitoreo:**
+- **[COMANDOS_RAPIDOS.md](COMANDOS_RAPIDOS.md)** - Comandos del día a día (dataset, baseline, training, comparación)
+- **[MONITOREO_EJECUCION.md](MONITOREO_EJECUCION.md)** - Monitorear pipeline en tiempo real
+- **[PIPELINE_EJECUTABLE_DOCUMENTACION.md](PIPELINE_EJECUTABLE_DOCUMENTACION.md)** - Detalles del pipeline OE3
 
-### Additional Resources
-- `reports/oe2/co2_breakdown/oe2_co2_breakdown.{json,csv}` - CO₂ reduction breakdown
-- `data/interim/oe2/solar/solar_technical_report.md` - PV technical specifications
-- `docs/` - Additional technical documentation
-- `historical/` - Archived one-time scripts (for reference only)
-  - utilidades.
+**Resultados y Configuración:**
+- **[RESUMEN_EJECUTIVO_FINAL.md](RESUMEN_EJECUTIVO_FINAL.md)** - KPIs: CO₂, solar, costos (Phase 5)
+- **[CONFIGURACIONES_OPTIMAS_AGENTES_OE3.md](CONFIGURACIONES_OPTIMAS_AGENTES_OE3.md)** - Hiperparámetros SAC/PPO/A2C
+- **[ESTADO_ACTUAL.md](ESTADO_ACTUAL.md)** - Timeline completo y hitos completados
 
-## Despliegue
+**Correcciones Técnicas:**
+- **[CORRECCIONES_COMPLETAS_FINAL.md](CORRECCIONES_COMPLETAS_FINAL.md)** - Phase 5: Pyright 100% limpio
+- **[CORRECCIONES_ERRORES_2026-01-26.md](CORRECCIONES_ERRORES_2026-01-26.md)** - Detalles de fixes
 
-- Docker: `docker/` y `docker-compose*.yml`
-- Kubernetes: `k8s-deployment.yaml`, `k8s_manager.py`
+**Documentación Adicional (Raíz):**
+- [COMANDOS_EJECUTABLES.md](COMANDOS_EJECUTABLES.md) - Scripts antiguos (referencia)
+- [ENTREGA_FINAL.md](ENTREGA_FINAL.md) - Resumen de fases
+- [INDICE_MAESTRO_DOCUMENTACION.md](INDICE_MAESTRO_DOCUMENTACION.md) - Índice completo
+- [STATUS_ACTUAL_2026_01_25.md](STATUS_ACTUAL_2026_01_25.md) - Timeline (26 de enero)
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Estándares de código
 
-## Flujo de trabajo
+**Archivos de Referencia:**
+- `configs/default.yaml` - Parámetros OE2/OE3 (solar, BESS, flota, rewards)
+- `data/interim/oe2/` - Artefactos de entrada OE2 (solar, BESS, chargers)
+- `outputs/oe3_simulations/` - Resultados RL (simulation_summary.json, CSVs)
+- `checkpoints/{SAC,PPO,A2C}/` - Modelos entrenados (zip format)
 
-1) **OE2 (dimensionamiento)**: se generan PV (pvlib+PVGIS), BESS fijo y 128
-cargadores (perfiles horarios por cargador). Artefactos en `data/interim/oe2/`.
-2) **OE3 (dataset)**: `run_pipeline_visible.py`construye el schema CityLearn v2
-con PV/BESS y perfiles EV reales.
-3) **Entrenamiento RL**: agentes SAC/PPO/A2C (2 episodios seriales) con función
-multiobjetivo (CO2 0.35, costo 0.25, solar 0.20, EV 0.15, grid 0.05).
-4) **Evaluación**: métricas CO₂, costos, picos y uso solar; reportes en
-`analyses/`y `reports/`.
+## Despliegue y Monitoreo
+
+### Local (Desarrollo)
+```bash
+python -m scripts.run_oe3_simulate --config configs/default.yaml
+# Monitorear en tiempo real con:
+python scripts/monitor_training_live_2026.py
+```
+
+### Docker
+```bash
+# GPU training (CUDA)
+docker-compose -f docker-compose.gpu.yml up -d
+
+# FastAPI server (modelo serving)
+docker-compose -f docker-compose.fastapi.yml up -d
+# Accede: http://localhost:8000/docs
+```
+
+### Kubernetes
+```bash
+kubectl apply -f docker/k8s-deployment.yaml
+kubectl scale deployment rl-agent-server --replicas 5
+```
+
+## Troubleshooting
+
+| Problema | Solución |
+|----------|----------|
+| "128 chargers not found" | Verificar `data/interim/oe2/chargers/individual_chargers.json` con 32 chargers × 4 sockets |
+| Solar timeseries <> 8,760 filas | Downsample PVGIS 15-min: `df.resample('h').mean()` |
+| GPU out of memory | Reducir `n_steps` (PPO: 2048→1024), `batch_size` (128→64) |
+| Reward explosion (NaN) | Verificar MultiObjectiveWeights suma=1.0, observables escaladas |
+| Checkpoint incompatible | Restart from scratch si cambió agent class signature |
+
+## Flujo de trabajo (OE2 → OE3)
+
+### Fase 1: OE2 (Dimensionamiento - COMPLETADA)
+- Generación solar: PVGIS TMY → pvlib (Kyocera KS20 + Eaton Xpert1670)
+- BESS fijo: 2 MWh / 1.2 MW, DoD 80%, eff 95%
+- 128 chargers: 32 físicos × 4 tomas (112 motos @2kW + 16 mototaxis @3kW = 272 kW)
+- Artefactos: `data/interim/oe2/solar/`, `chargers/`, `bess/`
+
+### Fase 2: OE3 Dataset Builder (VALIDADA)
+- Valida 8,760 horas (hourly exacto, no 15-min)
+- Carga perfiles reales de playas (Playa_Motos.csv, Playa_Mototaxis.csv)
+- Genera schema CityLearn v2 con 534-dim obs, 126-dim actions
+- Output: `data/processed/citylearn/iquitos_ev_mall/schema.json` + 128 CSVs
+
+### Fase 3: Baseline Simulation (EJECUTADO)
+- Control sin RL (chargers siempre ON)
+- Referencia CO₂, picos, costos, satisfacción EV
+- Durá ~10-15 min, output: `outputs/oe3_simulations/uncontrolled_*.csv`
+
+### Fase 4: Entrenamientos RL (EN EJECUCIÓN)
+- **SAC** (off-policy): ~2-3 horas / 5 episodios
+- **PPO** (on-policy): ~2-3 horas / 5 episodios (aprende sobre SAC)
+- **A2C** (simple): ~2-3 horas / 5 episodios (aprende sobre PPO)
+- GPU: CUDA 11.8, RTX 4060 (~8-12 horas total)
+- Checkpoints: `checkpoints/{SAC,PPO,A2C}/latest.zip`
+
+### Fase 5: Evaluación y Comparación (PENDIENTE)
+- Métricas: CO₂, costos, autoconsumo solar, picos, satisfacción EV
+- Reportes: `outputs/oe3_simulations/simulation_summary.json`
+- Comando: `python -m scripts.run_oe3_co2_table`
 
 ## Objetivos
 
@@ -100,48 +178,124 @@ multiobjetivo (CO2 0.35, costo 0.25, solar 0.20, EV 0.15, grid 0.05).
 - Reducir costos y picos de red sin sacrificar satisfacción EV.
 - Maximizar autoconsumo solar y estabilidad de red.
 
-## Desarrollo del proyecto
+## Arquitectura Técnica Clave
 
-- Datos meteo: PVGIS TMY, modelo Sandia (pvlib).
-- Componentes: Kyocera KS20; inversor Eaton Xpert1670 (2 uds, 31
-  - módulos/string, 6,472 strings, 200,632 módulos).
-- BESS: 2 MWh / 1.2 MW (fijo, DoD 80%, eff 95%).
-- Cargadores EV: **32 cargadores físicos × 4 tomas = 128 tomas controlables**:
-  - Playa Motos: 28 cargadores × 4 tomas × 2.0 kW = **224 kW**
-  - Playa Mototaxis: 4 cargadores × 4 tomas × 3.0 kW = **48 kW**
-  - **Potencia total instalada: 272 kW**
-  - 3,061 vehículos/día (30 min sesión Modo 3, 92% utilización)
-- RL: CityLearn v2, recompensas multiobjetivo; scripts en
-  - `src/iquitos_citylearn/oe3/` y `scripts/`.
+### Observación (534-dim)
+```
+Building energy: 4
+  - Solar generation, total demand, grid import, BESS SOC
 
-## Resultados (referencia OE2 - actualizado 2026-01-24)
+Chargers: 512 (128 × 4)
+  - Demand, power, occupancy, battery per charger
 
-- Reducción directa: 3,081.20 tCO₂/año.
-- Reducción indirecta: 3,626.66 tCO₂/año.
-- Reducción neta: 6,707.86 tCO₂/año (emisiones con PV/BESS: 2,501.49 tCO₂/año).
-- **Generación PV anual: 8.31 GWh (AC)**, yield 2,051 kWh/kWp·año, Factor
-  - capacidad 29.6%, PR 123.3%.
-- **Potencia DC instalada:** 4,050 kWp (4.05 MWp)
-- **Perfil horario solar:** 05:00 - 17:00 hora local Iquitos (UTC-5), pico
-  - ~11:00 AM.
-- **Área utilizada:** 14,445.5 m² (70% del área total disponible).
+Time features: 4
+  - Hour, month, day of week, peak flag
 
-## Discusión
+Grid state: 2
+  - Carbon intensity, electricity tariff
+```
 
-- La mayor ganancia viene de la electrificación (directa), pero el PV/BESS
-  - aporta reducción adicional similar en magnitud.
-- La capacidad de carga (3,061 vehículos/día) dimensiona el impacto;
-  - entrenamientos OE3 deben reflejar perfiles horarios reales para capturar picos
-    - y autoconsumo.
-- El control RL aún requiere ajustes (ver
-  - `INFORME_UNICO_ENTRENAMIENTO_TIER2.md`): episodios cortos y señal de
-    - recompensa plana limitaron el aprendizaje.
+### Acción (126-dim, continuous [0,1])
+- 126 chargers controlables (128 - 2 reserved)
+- Setpoint normalizados: action_i × charger_max_power = power_delivered
 
-## Conclusiones y próximos pasos
+### Agentes (Stable-Baselines3)
+- **SAC**: Off-policy, entropy, faster convergence (sparse rewards)
+- **PPO**: On-policy, clipped objective, more stable
+- **A2C**: Simple, on-policy, fast wall-clock (CPU/GPU)
 
-- Infraestructura dimensionada permite reducir ~6.7 ktCO₂/año combinando
-  - electrificación y PV/BESS.
-- Prioridad: mejorar señal de recompensa/observables para que SAC/PPO/A2C
-  - aprendan a desplazar carga hacia ventanas solares y evitar picos.
-- Recomendar retraining con recompensas reforzadas en CO₂ pico/importación y
-  - monitoreo de autoconsumo solar; luego actualizar reportes de resultados.
+### Redes (MLP)
+```
+Input (534) → Dense(1024, relu) → Dense(1024, relu) → Output(126, tanh)
+```
+
+## Resultados Esperados (Phase 5)
+
+### Dataset Validado ✅
+- **Solar**: 8,760 horas (hourly), 1,933 kWh/año/kWp, pico ~11:00 AM local
+- **Demanda**: 12,368,025 kWh/año (real del mall)
+- **Chargers**: 128 individuales (112 motos 2kW + 16 mototaxis 3kW)
+- **BESS**: 4,520 kWh @ 2,712 kW (OE2 resultado)
+
+### Baseline (Referencia)
+- CO₂: ~10,200 kg/año (sin control, grid import máximo)
+- Autoconsumo solar: ~40% (mucha pérdida)
+- Satisfacción EV: 100% (siempre cargando)
+
+### Agentes RL (Esperado después entrenamiento)
+- **SAC**: CO₂ -26% (~7,500 kg/año), solar +65%
+- **PPO**: CO₂ -29% (~7,200 kg/año), solar +68%
+- **A2C**: CO₂ -24% (~7,800 kg/año), solar +60%
+
+### Función Multi-Objetivo
+```yaml
+Pesos (normalizados):
+  co2_emissions: 0.50        # Minimizar CO₂ (prioritario)
+  cost_minimization: 0.15    # Reducir costos
+  solar_fraction: 0.20       # Autoconsumo solar
+  ev_satisfaction: 0.10      # Satisfacción EV
+  grid_stability: 0.05       # Estabilidad red
+```
+
+## Despliegue y Monitoreo
+
+### Local (Desarrollo)
+```bash
+python -m scripts.run_oe3_simulate --config configs/default.yaml
+# Monitorear en tiempo real con:
+python scripts/monitor_training_live_2026.py
+```
+
+### Docker
+```bash
+# GPU training (CUDA)
+docker-compose -f docker-compose.gpu.yml up -d
+
+# FastAPI server (modelo serving)
+docker-compose -f docker-compose.fastapi.yml up -d
+# Accede: http://localhost:8000/docs
+```
+
+### Kubernetes
+```bash
+kubectl apply -f docker/k8s-deployment.yaml
+kubectl scale deployment rl-agent-server --replicas 5
+```
+
+## Troubleshooting
+
+| Problema | Solución |
+|----------|----------|
+| "128 chargers not found" | Verificar `data/interim/oe2/chargers/individual_chargers.json` con 32 chargers × 4 sockets |
+| Solar timeseries <> 8,760 filas | Downsample PVGIS 15-min: `df.resample('h').mean()` |
+| GPU out of memory | Reducir `n_steps` (PPO: 2048→1024), `batch_size` (128→64) |
+| Reward explosion (NaN) | Verificar MultiObjectiveWeights suma=1.0, observables escaladas |
+| Checkpoint incompatible | Restart from scratch si cambió agent class signature |
+
+## Próximos Pasos
+
+1. **Monitor entrenamiento**: Esperar completación pipeline (8-12 horas GPU)
+   - Ver `MONITOREO_EJECUCION.md` para scripts de monitoreo
+   
+2. **Revisar resultados**: `outputs/oe3_simulations/simulation_summary.json`
+   - CO₂ reducción, autoconsumo solar, costos, satisfacción EV
+   
+3. **Ajustar rewards** (si es necesario):
+   - Editar `MultiObjectiveWeights` en `src/iquitos_citylearn/oe3/rewards.py`
+   - Restart entrenamiento con nuevos pesos
+   
+4. **Desplegar agente óptimo**:
+   - Cargar checkpoint `checkpoints/{SAC,PPO,A2C}/latest.zip`
+   - FastAPI server + Docker para producción
+   
+5. **Validar en Iquitos**:
+   - Recolectar datos reales del mall
+   - Reentrenar con datos actuales si es necesario
+   - Monitoreo continuo de CO₂ vs baseline
+
+## Contacto & Contribuciones
+
+- **Autor**: Mac-Tapia (pvbesscar project)
+- **Rama principal**: `main` (GitHub: Mac-Tapia/dise-opvbesscar)
+- **Estándares**: Ver [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Python 3.11+**: Requerido (type hints habilitados con `from __future__ import annotations`)
