@@ -2,13 +2,17 @@
 
 ## PROYECTO PVBESSCAR - Versión 2.0 Limpia y Funcional
 
-**📌 Consolidation Note (2026-01-25):**  
-This document consolidates all executable commands previously scattered across:
-- `EJECUTAR_PIPELINE.md` (merged)
-- Historical training launchers (archived to `historical/`)
-- One-time verification scripts (archived to `historical/`)
+**📌 Consolidation Notes:**  
 
-For archived scripts reference, see [historical/README.md](historical/README.md)
+**2026-01-26 Scripts Cleanup:**
+- 48 deprecated/experimental scripts archived to `scripts/historical/`
+- Only 18 essential scripts remain in `scripts/` folder (-74%)
+- See [scripts/historical/README.md](scripts/historical/README.md) for archived scripts reference
+
+**2026-01-25 Root Directory Cleanup:**
+- 26 redundant documentation files deleted (42→14 .md files)
+- 43 one-time Python scripts archived to `historical/` folder
+- See [historical/README.md](historical/README.md) and [DOCUMENTATION_CONSOLIDATION_PLAN.md](DOCUMENTATION_CONSOLIDATION_PLAN.md)
 
 ---
 
