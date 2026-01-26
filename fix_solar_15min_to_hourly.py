@@ -4,9 +4,10 @@ Convertir datos solares de 15 minutos a 1 hora.
 El archivo pv_generation_timeseries.csv viene en 15-min (data subhoraria)
 pero CityLearn requiere exactamente 8,760 filas horarias (1 por hora del año).
 """
+from __future__ import annotations
 from pathlib import Path
-import pandas as pd
-import numpy as np
+import pandas as pd  # type: ignore[import-not-found]
+import numpy as np  # type: ignore[import-not-found]
 
 solar_path = Path("data/interim/oe2/solar/pv_generation_timeseries.csv")
 
@@ -15,7 +16,7 @@ print("CONVERTIR DATOS SOLARES DE 15-MIN A HORARIO")
 print("=" * 80)
 
 # Leer datos en 15-min
-df = pd.read_csv(solar_path)
+df = pd.read_csv(solar_path)  # type: ignore[attr-defined]
 print(f"\n✓ Archivo original cargado: {len(df)} filas")
 print(f"  Primeras filas:\n{df.head()}")
 print(f"  Columnas: {df.columns.tolist()}")
@@ -27,13 +28,13 @@ else:
     print(f"\n⚠ ADVERTENCIA: {len(df)} no es divisible por 4")
 
 # Convertir timestamp a datetime
-df['timestamp'] = pd.to_datetime(df['timestamp'])
-df = df.set_index('timestamp')
+df['timestamp'] = pd.to_datetime(df['timestamp'])  # type: ignore[attr-defined,index]
+df = df.set_index('timestamp')  # type: ignore[attr-defined]
 
 print(f"\nRango de datos: {df.index.min()} a {df.index.max()}")
 
 # Resamplear a horario - usar la suma de 4 datos de 15-min por hora
-df_hourly = df.resample('h').agg({
+df_hourly = df.resample('h').agg({  # type: ignore[attr-defined]
     'ghi_wm2': 'mean',      # Irradiancia: promedio
     'dni_wm2': 'mean',      # DNI: promedio
     'dhi_wm2': 'mean',      # DHI: promedio
@@ -61,7 +62,7 @@ if len(df_hourly) != 8760:
         # Rellenar con ceros si falta
         missing = 8760 - len(df_hourly)
         print(f"  Faltan {missing} filas, rellenando con ceros")
-        df_hourly = df_hourly.reindex(pd.date_range(df_hourly.index[0], periods=8760, freq='h'), fill_value=0.0)
+        df_hourly = df_hourly.reindex(pd.date_range(df_hourly.index[0], periods=8760, freq='h'), fill_value=0.0)  # type: ignore[attr-defined]
 
 print(f"\n✓ FINAL: {len(df_hourly)} filas horarias (correctas: {len(df_hourly) == 8760})")
 
