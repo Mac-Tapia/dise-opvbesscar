@@ -18,7 +18,7 @@ Pasos:
 from __future__ import annotations
 
 import sys
-from pathlib import Path
+from pathlib import Path  # type: ignore[import-not-found]
 
 # Validar Python 3.11
 if sys.version_info[:2] != (3, 11):
@@ -34,7 +34,7 @@ except ImportError as e:
     print("Asegúrate que estés en el venv correcto y el proyecto está instalado")
     sys.exit(1)
 
-import pandas as pd
+import pandas as pd  # type: ignore[import-not-found]
 
 def main() -> None:
     """Regenera datos solares OE2 con resolución horaria."""
@@ -47,6 +47,7 @@ def main() -> None:
 
     # Cargar configuración
     cfg, rp = load_all("configs/default.yaml")
+    _ = cfg  # Will be used in future versions for validation
 
     out_dir = rp.interim_dir / "oe2" / "solar"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -82,7 +83,7 @@ def main() -> None:
     print(f"  Interpolando a resolución: 1 HORA")
     print(f"  Calculando generación ac_power_kw...")
 
-    results_df, metadata = build_pv_timeseries_sandia(
+    results_df, _metadata = build_pv_timeseries_sandia(
         year=int(cfg["project"]["year"]),
         config=config,
         target_dc_kw=float(solar["target_dc_kw"]),
@@ -120,7 +121,7 @@ def main() -> None:
 
     # Validación final
     print(f"\n[VALIDACION]")
-    df_check = pd.read_csv(output_csv, index_col=0)
+    df_check = pd.read_csv(output_csv, index_col=0)  # type: ignore[attr-defined]
     print(f"  ✓ CSV cargado: {len(df_check)} filas")
     print(f"  ✓ ac_power_kw rango: {df_check['ac_power_kw'].min():.2f} - {df_check['ac_power_kw'].max():.2f} kW")
     print(f"  ✓ Generación total: {df_check['ac_power_kw'].sum():.0f} kWh")
