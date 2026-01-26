@@ -1,6 +1,8 @@
 """
 Verificar si los 7.67 GWh calculados son correctos comparando con OE2.
 """
+from __future__ import annotations
+
 import pandas as pd
 from pathlib import Path
 
@@ -9,8 +11,8 @@ print("COMPARACION: GENERACION SOLAR OE2 vs OE3 (CSV ACTUAL)")
 print("=" * 100)
 
 # 1. OE2 - Valor objetivo de configuración
-target_kwh_oe2 = 3_972_478  # del default.yaml
-target_gwh_oe2 = target_kwh_oe2 / 1e6
+target_kwh_oe2: int = 3_972_478  # del default.yaml
+target_gwh_oe2: float = target_kwh_oe2 / 1e6
 
 print(f"\n[OE2] CONFIGURACION EN default.yaml")
 print(f"  target_annual_kwh: {target_kwh_oe2:,} kWh")
@@ -19,11 +21,11 @@ print(f"  target_dc_kw:      4,162 kW")
 print(f"  target_ac_kw:      3,201.2 kW")
 
 # 2. OE3 - Valor actual en CSV
-solar_path = Path("data/interim/oe2/solar/pv_generation_timeseries.csv")
-df = pd.read_csv(solar_path)
-ac_power = df['ac_power_kw']
-actual_kwh = ac_power.sum()
-actual_gwh = actual_kwh / 1e6
+solar_path: Path = Path("data/interim/oe2/solar/pv_generation_timeseries.csv")
+df: pd.DataFrame = pd.read_csv(solar_path)
+ac_power: pd.Series = df['ac_power_kw']
+actual_kwh: float = ac_power.sum()
+actual_gwh: float = actual_kwh / 1e6
 
 print(f"\n[OE3] CSV ACTUAL (pv_generation_timeseries.csv)")
 print(f"  ac_power_kw sum:   {actual_kwh:,.1f} kWh")
@@ -33,8 +35,8 @@ print(f"  ac_power_kw mean:  {ac_power.mean():.2f} kW")
 print(f"  rows:              {len(df)}")
 
 # 3. Análisis de diferencia
-diff_kwh = actual_kwh - target_kwh_oe2
-diff_pct = (diff_kwh / target_kwh_oe2) * 100
+diff_kwh: float = actual_kwh - target_kwh_oe2
+diff_pct: float = (diff_kwh / target_kwh_oe2) * 100
 
 print(f"\n[COMPARACION]")
 print(f"  OE2 Target:     {target_gwh_oe2:.2f} GWh")
@@ -46,7 +48,7 @@ print(f"\n[EXPLICACION]")
 if abs(diff_pct) < 1:
     print(f"  ✓ Los valores coinciden (< 1% diferencia)")
 elif actual_gwh > target_gwh_oe2:
-    factor = actual_gwh / target_gwh_oe2
+    factor: float = actual_gwh / target_gwh_oe2
     print(f"  ⚠ CSV tiene {factor:.2f}× más energía que OE2 target")
     print(f"\n  Posible causa:")
     print(f"    1. OE2 calcula con 15 minutos (PVGIS):")
@@ -58,7 +60,8 @@ elif actual_gwh > target_gwh_oe2:
     print(f"       - Suma 4 intervalos sin pérdidas")
     print(f"       - Puede sobreestimar energía")
 else:
-    print(f"  ⚠ CSV tiene {-factor:.2f}× menos energía que OE2 target")
+    neg_factor: float = -factor
+    print(f"  ⚠ CSV tiene {neg_factor:.2f}× menos energía que OE2 target")
     print(f"\n  Posible causa:")
     print(f"    - Datos incompletos (falta meses)")
     print(f"    - Errores en conversión 15-min→1-hora")

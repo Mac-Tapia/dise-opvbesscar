@@ -8,13 +8,16 @@ Posibilidades:
 
 Este script verifica la estructura.
 """
+from __future__ import annotations
+
 import json
 from pathlib import Path
+from typing import Any
 
 chargers_path = Path("data/interim/oe2/chargers/individual_chargers.json")
 
 with open(chargers_path) as f:
-    chargers = json.load(f)
+    chargers: list[dict[str, Any]] = json.load(f)
 
 print("=" * 100)
 print("ANALISIS DETALLADO: individual_chargers.json")
@@ -31,8 +34,8 @@ for i, item in enumerate(chargers[:3]):
     print(f"      Playa: {item.get('playa', 'N/A')}")
 
 # Contar por tipo
-types = {}
-playas = {}
+types: dict[str, int] = {}
+playas: dict[str, int] = {}
 for item in chargers:
     t = item.get('charger_type', 'unknown')
     types[t] = types.get(t, 0) + 1
