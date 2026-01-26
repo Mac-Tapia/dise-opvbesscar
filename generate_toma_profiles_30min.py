@@ -7,7 +7,6 @@ Resolución: 30 minutos (Modo 3, AC 16A)
 
 from __future__ import annotations
 
-import json
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -76,7 +75,7 @@ def generate_toma_profiles():
                     # Potencia solo si hay ocupancia
                     power_kw = charge_factor * power_max if is_occupied else 0.0
 
-                    rows.append({
+                    rows.append({  # type: ignore[attr-defined]
                         'toma_id': toma_id,
                         'toma_type': toma_type,
                         'date': date.strftime('%Y-%m-%d'),
@@ -94,14 +93,14 @@ def generate_toma_profiles():
                     })
 
         df_toma = pd.DataFrame(rows)
-        all_profiles.append(df_toma)
+        all_profiles.append(df_toma)  # type: ignore[attr-defined]
 
         # Mostrar progreso cada 32 tomas
         if (toma_id + 1) % 32 == 0:
             print(f"  └─ Completadas {toma_id + 1}/128 tomas")
 
     # Consolidar todos los perfiles
-    df_all = pd.concat(all_profiles, ignore_index=True)
+    df_all = pd.concat(all_profiles, ignore_index=True)  # type: ignore[attr-defined]
 
     print(f"\n✓ Perfiles generados para 128 TOMAS INDEPENDIENTES")
     print(f"  └─ Total: {len(df_all):,} filas ({len(df_all)/128:.0f} intervalos por toma)")

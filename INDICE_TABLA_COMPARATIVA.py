@@ -524,7 +524,7 @@ CUANDO ENTRENAMIENTO TERMINE:
 
 # 1. Generar tabla comparativa
 $ cd d:\\diseñopvbesscar
-$ .\\\.venv\\Scripts\\python.exe -m scripts.run_oe3_co2_table --config configs/default.yaml
+$ .\\\\.\\venv\\Scripts\\python.exe -m scripts.run_oe3_co2_table --config configs/default.yaml
 
 # 2. Salida esperada
 ✓ analyses/oe3/CO2_REDUCTION_TABLE.md
