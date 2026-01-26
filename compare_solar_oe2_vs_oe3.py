@@ -50,6 +50,7 @@ if abs(diff_pct) < 1:
 elif actual_gwh > target_gwh_oe2:
     factor: float = actual_gwh / target_gwh_oe2
     print(f"  ⚠ CSV tiene {factor:.2f}× más energía que OE2 target")
+    print(f"  ⚠ CSV tiene {factor:.2f}× más energía que OE2 target")
     print(f"\n  Posible causa:")
     print(f"    1. OE2 calcula con 15 minutos (PVGIS):")
     print(f"       - Datos 15-min se promedian/degradan")
@@ -60,8 +61,9 @@ elif actual_gwh > target_gwh_oe2:
     print(f"       - Suma 4 intervalos sin pérdidas")
     print(f"       - Puede sobreestimar energía")
 else:
-    neg_factor: float = -factor
-    print(f"  ⚠ CSV tiene {neg_factor:.2f}× menos energía que OE2 target")
+    if 'factor' in locals():
+        neg_factor: float = -factor
+        print(f"  ⚠ CSV tiene {neg_factor:.2f}× menos energía que OE2 target")
     print(f"\n  Posible causa:")
     print(f"    - Datos incompletos (falta meses)")
     print(f"    - Errores en conversión 15-min→1-hora")
