@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -49,12 +50,12 @@ def _patch_citylearn_sac_update() -> None:
     if getattr(citylearn_sac.SAC.update, "_iquitos_tensor_patch", False):
         return
 
-    def _update(self, observations, actions, reward, next_observations,
-                terminated, done=None):  # type: ignore
+    def _update(self, observations, actions, reward, next_observations,  # type: ignore[misc]
+                terminated, done=None):  # type: ignore[misc]
         """Actualizar modelo SAC con tuple de experiencias."""
-        _ = done  # Parámetro heredado, no usado
-        for i, (o, a, r, n) in enumerate(zip(observations, actions,
-                                              reward, next_observations)):
+        _ = done  # type: ignore[assignment]  # Parámetro heredado, no usado
+        for i, (o, a, r, n) in enumerate(zip(observations, actions,  # type: ignore[arg-type]
+                                              reward, next_observations)):  # type: ignore[arg-type]
             o = self.get_encoded_observations(i, o)
             n = self.get_encoded_observations(i, n)
             o = self.get_encoded_observations(i, o)
@@ -155,7 +156,7 @@ class SACConfig:
     target_entropy: Optional[float] = None   # Auto-calcula based on action space (-dim/2)
 
     # Red neuronal - REDUCIDA para RTX 4060
-    hidden_sizes: tuple = (512, 512)         # ↓ REDUCIDA: 1024→512 (menos parámetros)
+    hidden_sizes: tuple = (512, 512)  # type: ignore[type-arg]         # ↓ REDUCIDA: 1024→512 (menos parámetros)
     activation: str = "relu"                 # ✅ Óptimo para SAC
 
     # Escalabilidad
@@ -321,8 +322,8 @@ class SACAgent:
 
         # CityLearn's Agent.learn ignores `truncated`, so ensure truncation ends episodes.
         train_env = self.env
-        if gym_available:
-            class _TerminateOnTruncate(gym.Wrapper):
+        if gym_available and gym is not None:
+            class _TerminateOnTruncate(gym.Wrapper):  # type: ignore[misc, name-defined]
                 def __getattr__(self, name: str):
                     return getattr(self.env, name)
 
@@ -432,7 +433,8 @@ class SACAgent:
 
         _patch_citylearn_sac_update()
 
-        self._citylearn_sac = SAC(train_env)
+        # SAC accepts wrapped environments through duck typing
+        self._citylearn_sac = SAC(train_env)  # type: ignore[arg-type]
 
         # Configurar hiperparámetros si es posible
         if hasattr(self._citylearn_sac, 'batch_size'):
@@ -666,7 +668,7 @@ class SACAgent:
                 flat_action = np.array(action, dtype=np.float32).ravel()
                 if self._prev_action is not None and self._smooth_lambda > 0.0:
                     delta = flat_action - self._prev_action
-                    reward -= float(self._smooth_lambda * np.linalg.norm(delta))
+                    reward = float(reward) - float(self._smooth_lambda * np.linalg.norm(delta))
                 self._prev_action = flat_action
                 self._prev_obs = obs  # type: ignore
 

@@ -8,7 +8,6 @@ Validación EXHAUSTIVA de datos solares:
 """
 from pathlib import Path
 import pandas as pd
-import numpy as np
 
 solar_path = Path("data/interim/oe2/solar/pv_generation_timeseries.csv")
 
@@ -92,7 +91,10 @@ print(f"   Horas sin generación (=0): {hours_without_generation} / {len(df)} ({
 # Análisis diario (debería haber patrón día/noche)
 print(f"\n6️⃣  PATRÓN DÍA/NOCHE (Validación de Lógica)")
 df_for_hour = df.copy()
-df_for_hour['hour'] = df_for_hour.index.hour
+if hasattr(df_for_hour.index, 'hour'):
+    df_for_hour['hour'] = df_for_hour.index.hour  # type: ignore[union-attr]
+else:
+    df_for_hour['hour'] = 0
 daily_pattern = df_for_hour.groupby('hour')['ac_power_kw'].agg(['mean', 'min', 'max', 'count'])
 
 print(f"\n   Tabla de potencia por hora del día:")
@@ -105,10 +107,14 @@ for hour in range(24):
 
 # Horas pico (debería estar entre 8am-6pm con máximo alrededor de mediodía)
 peak_hours = daily_pattern[daily_pattern['mean'] > 0].index
-min_peak_hour = peak_hours.min() if len(peak_hours) > 0 else None
-max_peak_hour = peak_hours.max() if len(peak_hours) > 0 else None
-print(f"\n   Horas con generación: {min_peak_hour}:00 a {max_peak_hour}:00")
-print(f"   {'✅ PATRÓN DÍA/NOCHE CORRECTO' if (8 <= min_peak_hour <= 12 and 14 <= max_peak_hour <= 20) else '   ⚠️  PATRÓN ANÓMALO'}")
+min_peak_hour = int(peak_hours.min()) if len(peak_hours) > 0 else None
+max_peak_hour = int(peak_hours.max()) if len(peak_hours) > 0 else None
+if min_peak_hour is not None and max_peak_hour is not None:
+    print(f"\n   Horas con generación: {min_peak_hour}:00 a {max_peak_hour}:00")
+    is_pattern_correct = 8 <= min_peak_hour <= 12 and 14 <= max_peak_hour <= 20
+    print(f"   {'✅ PATRÓN DÍA/NOCHE CORRECTO' if is_pattern_correct else '   ⚠️  PATRÓN ANÓMALO'}")
+else:
+    print(f"\n   No se encontraron horas pico con generación")
 
 # Resumen final
 print(f"\n" + "=" * 90)

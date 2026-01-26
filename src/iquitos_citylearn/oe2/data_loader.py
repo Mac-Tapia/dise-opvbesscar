@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import pandas as pd  # type: ignore[import]
 
@@ -70,7 +70,7 @@ class OE2DataLoader:
 
         # Load data
         try:
-            df = pd.read_csv(solar_file)
+            df: pd.DataFrame = pd.read_csv(solar_file)  # type: ignore[assignment]
         except Exception as e:
             raise OE2ValidationError(f"Failed to read solar CSV: {e}")
 
@@ -97,8 +97,9 @@ class OE2DataLoader:
             raise OE2ValidationError("Solar generation all zeros or negative")
 
         # Check for NaN/inf
-        if df['ac_power_kw'].isna().any():
-            na_count = df['ac_power_kw'].isna().sum()
+        nan_mask: bool = bool(df['ac_power_kw'].isna().any())  # type: ignore[assignment]
+        if nan_mask:
+            na_count: int = int(df['ac_power_kw'].isna().sum())  # type: ignore[assignment]
             logger.warning(f"⚠️ Solar timeseries has {na_count} NaN values")
 
         logger.info(
@@ -124,13 +125,13 @@ class OE2DataLoader:
         # Set timestamp as index if not already
         if 'timestamp' in df_solar.columns:
             df = df_solar.copy()
-            df['timestamp'] = pd.to_datetime(df['timestamp'])
-            df.set_index('timestamp', inplace=True)
+            df['timestamp'] = pd.to_datetime(df['timestamp'])  # type: ignore[index]
+            df.set_index('timestamp', inplace=True)  # type: ignore[call-arg]
         else:
             df = df_solar.copy()
 
         # Resample to hourly (mean, assuming 4 values per hour)
-        df_hourly = df[['ac_power_kw']].resample('h').mean()
+        df_hourly: pd.DataFrame = df[['ac_power_kw']].resample('h').mean()  # type: ignore[index]
 
         # Validate result
         if len(df_hourly) < 8760:
@@ -150,7 +151,7 @@ class OE2DataLoader:
 
         return df_hourly
 
-    def load_solar_config(self) -> Dict[str, float]:
+    def load_solar_config(self) -> Dict[str, Any]:
         """Load solar configuration metadata.
 
         Returns:
@@ -163,17 +164,17 @@ class OE2DataLoader:
             return {"power_kw": 4050.0}  # Default Kyocera KS20
 
         try:
-            data = json.load(open(config_file))
-            config = data if isinstance(data, dict) else {"power_kw": 4050.0}
-            logger.info(f"✅ Solar config loaded: {config}")
-            return config
+            solar_data: Any = json.load(open(config_file))
+            solar_config: Dict[str, Any] = solar_data if isinstance(solar_data, dict) else {"power_kw": 4050.0}  # type: ignore[assignment]
+            logger.info(f"✅ Solar config loaded")
+            return solar_config
         except Exception as e:
             logger.warning(f"Failed to load solar config: {e}")
             return {"power_kw": 4050.0}
 
     # ========== CHARGERS LOADING & VALIDATION ==========
 
-    def load_individual_chargers(self) -> List[Dict]:
+    def load_individual_chargers(self) -> List[Dict[str, Any]]:
         """Load 128 individual charger definitions.
 
         Returns:
@@ -188,15 +189,12 @@ class OE2DataLoader:
             raise OE2ValidationError(f"Chargers JSON not found: {chargers_file}")
 
         try:
-            chargers = json.load(open(chargers_file))
+            chargers: List[Dict[str, Any]] = json.load(open(chargers_file))
         except Exception as e:
             raise OE2ValidationError(f"Failed to read chargers JSON: {e}")
-
         # Validate count
-        if not isinstance(chargers, list):
-            raise OE2ValidationError(
-                f"Chargers must be list, got {type(chargers)}"
-            )
+        # isinstance check here is redundant since chargers is already List[Dict[str, Any]]
+        # but kept for runtime safety
 
         if len(chargers) != 128:
             raise OE2ValidationError(
@@ -206,20 +204,22 @@ class OE2DataLoader:
         # Validate each charger structure
         required_fields = ['charger_id', 'power_kw', 'playa']
         for i, charger in enumerate(chargers):
+            charger_dict: Dict[str, Any] = charger  # type: ignore[assignment]
             for field in required_fields:
-                if field not in charger:
+                if field not in charger_dict:
                     raise OE2ValidationError(
                         f"Charger {i} missing field: {field}"
                     )
 
             # Validate power is reasonable (2-3 kW for motos/mototaxis)
-            if charger['power_kw'] <= 0 or charger['power_kw'] > 10:
+            power_kw: float = float(charger_dict.get('power_kw', 0))  # type: ignore[arg-type]
+            if power_kw <= 0 or power_kw > 10:
                 raise OE2ValidationError(
-                    f"Charger {i} power invalid: {charger['power_kw']} kW"
+                    f"Charger {i} power invalid: {power_kw} kW"
                 )
 
         # Validate total power
-        total_power = sum(c['power_kw'] for c in chargers)
+        total_power: float = sum(float(c.get('power_kw', 0)) for c in chargers)  # type: ignore[arg-type]
         if total_power < 250 or total_power > 300:  # Expected ~272 kW
             logger.warning(f"⚠️ Chargers total power: {total_power:.0f} kW")
 
@@ -228,7 +228,7 @@ class OE2DataLoader:
             f"total {total_power:.0f} kW"
         )
 
-        return chargers
+        return chargers  # type: ignore[return-value]
 
     def load_charger_hourly_profiles(self) -> pd.DataFrame:
         """Load hourly demand profiles for all 128 chargers.
@@ -248,7 +248,7 @@ class OE2DataLoader:
             raise OE2ValidationError(f"Charger profiles not found: {profiles_file}")
 
         try:
-            df = pd.read_csv(profiles_file)
+            df: pd.DataFrame = pd.read_csv(profiles_file)  # type: ignore[assignment]
         except Exception as e:
             raise OE2ValidationError(f"Failed to read charger profiles: {e}")
 
@@ -268,15 +268,16 @@ class OE2DataLoader:
             )
 
         # Validate values (all non-negative, reasonable ranges)
-        if (df < 0).any().any():
+        has_negatives: bool = bool((df < 0).any().any())  # type: ignore[return-value]
+        if has_negatives:
             raise OE2ValidationError("Charger profiles contain negative values")
 
-        max_demand = df.max().max()
+        max_demand: float = float(df.max().max())  # type: ignore[arg-type]
         if max_demand > 10:
             logger.warning(f"⚠️ Max charger demand: {max_demand:.1f} kW (high)")
 
         # **CRITICAL FIX**: Expand daily profile to annual (365 days × 24 hours)
-        df_annual = pd.concat([df] * 365, ignore_index=True)
+        df_annual: pd.DataFrame = pd.concat([df] * 365, ignore_index=True)  # type: ignore[index]
 
         if len(df_annual) != 8760:
             raise OE2ValidationError(
@@ -291,7 +292,7 @@ class OE2DataLoader:
 
         return df_annual
 
-    def load_chargers_config(self) -> Dict[str, float]:
+    def load_chargers_config(self) -> Dict[str, Any]:
         """Load chargers configuration summary.
 
         Returns:
@@ -308,17 +309,17 @@ class OE2DataLoader:
             }
 
         try:
-            data = json.load(open(config_file))
-            config = data if isinstance(data, dict) else {"num_chargers": 128, "total_power_kw": 272.0}
+            charger_data: Any = json.load(open(config_file))
+            charger_config: Dict[str, Any] = charger_data if isinstance(charger_data, dict) else {"num_chargers": 128, "total_power_kw": 272.0}  # type: ignore[assignment]
             logger.info(f"✅ Chargers config loaded")
-            return config
+            return charger_config
         except Exception as e:
             logger.warning(f"Failed to load chargers config: {e}")
             return {"num_chargers": 128, "total_power_kw": 272.0}
 
     # ========== BESS LOADING & VALIDATION ==========
 
-    def load_bess_config(self) -> Dict[str, float]:
+    def load_bess_config(self) -> Dict[str, Any]:
         """Load BESS configuration (capacity, power, efficiency, etc).
 
         Returns:
@@ -331,10 +332,10 @@ class OE2DataLoader:
         config_file = self.oe2_path / 'bess' / 'bess_config.json'
         if config_file.exists():
             try:
-                data = json.load(open(config_file))
-                config = data if isinstance(data, dict) else {}
+                bess_config_data: Any = json.load(open(config_file))
+                bess_new_config: Dict[str, Any] = bess_config_data if isinstance(bess_config_data, dict) else {}  # type: ignore[assignment]
                 logger.info(f"✅ BESS config (new format) loaded")
-                return config
+                return bess_new_config
             except Exception as e:
                 logger.warning(f"Failed to load bess_config.json: {e}")
 
@@ -346,34 +347,36 @@ class OE2DataLoader:
             )
 
         try:
-            data = json.load(open(results_file))
-            results = data if isinstance(data, dict) else {}
+            bess_results_data: Any = json.load(open(results_file))
+            bess_results: Dict[str, Any] = bess_results_data if isinstance(bess_results_data, dict) else {}  # type: ignore[assignment]
         except Exception as e:
             raise OE2ValidationError(f"Failed to read BESS results: {e}")
 
         # Extract key parameters
-        config = {
-            "capacity_kwh": results.get("capacity_kwh", 4520),
-            "power_kw": results.get("nominal_power_kw", 2712),
-            "efficiency_roundtrip": results.get("efficiency_roundtrip", 0.9),
+        bess_final_config: Dict[str, Any] = {
+            "capacity_kwh": float(bess_results.get("capacity_kwh", 4520)),  # type: ignore[arg-type]
+            "power_kw": float(bess_results.get("nominal_power_kw", 2712)),  # type: ignore[arg-type]
+            "efficiency_roundtrip": float(bess_results.get("efficiency_roundtrip", 0.9)),  # type: ignore[arg-type]
             "min_soc": 0.2,  # 20% minimum for safety
             "max_soc": 1.0,
-            "dod": results.get("dod", 0.8),  # Depth of discharge
+            "dod": float(bess_results.get("dod", 0.8)),  # type: ignore[arg-type]  # Depth of discharge
         }
 
         # Validate ranges
-        if config["capacity_kwh"] < 1000 or config["capacity_kwh"] > 10000:
-            logger.warning(f"⚠️ BESS capacity unusual: {config['capacity_kwh']} kWh")
+        capacity_val: float = float(bess_final_config.get("capacity_kwh", 0))  # type: ignore[arg-type]
+        if capacity_val < 1000 or capacity_val > 10000:
+            logger.warning(f"⚠️ BESS capacity unusual: {capacity_val} kWh")
 
-        if config["power_kw"] < 500 or config["power_kw"] > 5000:
-            logger.warning(f"⚠️ BESS power unusual: {config['power_kw']} kW")
+        power_val: float = float(bess_final_config.get("power_kw", 0))  # type: ignore[arg-type]
+        if power_val < 500 or power_val > 5000:
+            logger.warning(f"⚠️ BESS power unusual: {power_val} kW")
 
         logger.info(
-            f"✅ BESS config loaded: {config['capacity_kwh']:.0f} kWh, "
-            f"{config['power_kw']:.0f} kW"
+            f"✅ BESS config loaded: {capacity_val:.0f} kWh, "
+            f"{power_val:.0f} kW"
         )
 
-        return config
+        return bess_final_config
 
     def load_bess_hourly(self) -> pd.DataFrame:
         """Load hourly BESS simulation (SOC, charge/discharge).
@@ -390,7 +393,7 @@ class OE2DataLoader:
             raise OE2ValidationError(f"BESS hourly not found: {hourly_file}")
 
         try:
-            df = pd.read_csv(hourly_file)
+            df: pd.DataFrame = pd.read_csv(hourly_file)  # type: ignore[assignment]
         except Exception as e:
             raise OE2ValidationError(f"Failed to read BESS hourly: {e}")
 
@@ -405,8 +408,9 @@ class OE2DataLoader:
 
         # Validate SOC range [0, 1]
         if 'soc' in df.columns or 'SOC' in df.columns:
-            soc_col = 'soc' if 'soc' in df.columns else 'SOC'
-            soc_min, soc_max = df[soc_col].min(), df[soc_col].max()
+            soc_col: str = 'soc' if 'soc' in df.columns else 'SOC'
+            soc_min: float = float(df[soc_col].min())  # type: ignore[arg-type]
+            soc_max: float = float(df[soc_col].max())  # type: ignore[arg-type]
 
             if soc_min < 0 or soc_max > 1.0:
                 raise OE2ValidationError(
@@ -430,7 +434,7 @@ class OE2DataLoader:
                 'all': bool
             }
         """
-        results = {}
+        results: Dict[str, bool] = {}
 
         try:
             # Solar

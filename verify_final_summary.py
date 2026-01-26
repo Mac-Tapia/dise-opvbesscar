@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from collections import defaultdict
+from typing import Any, Dict
 
 BASE_DIR = Path(__file__).parent
 CHARGERS_DIR = BASE_DIR / "data" / "interim" / "oe2" / "chargers"
@@ -22,7 +23,7 @@ json_path = CHARGERS_DIR / 'individual_chargers.json'
 with open(json_path) as f:
     chargers = json.load(f)
 
-playas = defaultdict(lambda: {'motos': [], 'mototaxis': []})
+playas: Dict[str, Dict[str, list[Any]]] = defaultdict(lambda: {'motos': [], 'mototaxis': []})
 for charger in chargers:
     playa = charger['playa']
     ctype = charger['charger_type']

@@ -289,7 +289,7 @@ class ChargerDataVerification:
 
     def save_charger_profiles(self, df: pd.DataFrame) -> Path:
         """Guarda perfil de cargadores a resolución 30 minutos (Modo 3)."""
-        output_path = self.chargers_dir / 'perfil_horario_carga.csv'
+        output_path: Path = self.chargers_dir / 'perfil_horario_carga.csv'
 
         # Seleccionar columnas para salida (adaptado a 30 minutos)
         output_df = df[[
@@ -319,7 +319,7 @@ class ChargerDataVerification:
         print("   [5] GENERACION DE individual_chargers.json")
         print("="*80)
 
-        chargers = []
+        chargers: list[dict[str, Any]] = []
 
         # 112 motos (2 kW cada una)
         for i in range(112):
@@ -351,15 +351,19 @@ class ChargerDataVerification:
                 'connector_type': 'Type2',
             })
 
-        output_path = self.chargers_dir / 'individual_chargers.json'
+        output_path: Path = self.chargers_dir / 'individual_chargers.json'
         with open(output_path, 'w') as f:
             json.dump(chargers, f, indent=2)
 
         print(f"✓ JSON generado: {output_path}")
-        print(f"  ├─ Cargadores motos: {sum(1 for c in chargers if c['charger_type'] == 'moto')}")
-        print(f"  ├─ Cargadores mototaxis: {sum(1 for c in chargers if c['charger_type'] == 'mototaxi')}")
-        print(f"  ├─ Total sockets: {sum(c['sockets'] for c in chargers)}")
-        print(f"  └─ Potencia instalada: {sum(c['power_kw'] for c in chargers):.0f} kW")
+        moto_count: int = sum(1 for c in chargers if c['charger_type'] == 'moto')
+        mototaxi_count: int = sum(1 for c in chargers if c['charger_type'] == 'mototaxi')
+        total_sockets: int = sum(c['sockets'] for c in chargers)  # type: ignore[misc]
+        total_power: float = float(sum(int(c['power_kw']) for c in chargers))
+        print(f"  ├─ Cargadores motos: {moto_count}")
+        print(f"  ├─ Cargadores mototaxis: {mototaxi_count}")
+        print(f"  ├─ Total sockets: {total_sockets}")
+        print(f"  └─ Potencia instalada: {total_power:.0f} kW")
 
         return output_path
 
@@ -369,7 +373,7 @@ class ChargerDataVerification:
         print("   [6] GENERACION DE chargers_schema.json (CityLearn)")
         print("="*80)
 
-        schema = {
+        schema: Dict[str, Any] = {
             'schema_type': 'chargers_configuration',
             'version': '1.0',
             'description': 'Configuración de 128 cargadores EV para CityLearn OE3',
@@ -437,7 +441,7 @@ class ChargerDataVerification:
             },
         }
 
-        output_path = self.chargers_dir / 'chargers_schema.json'
+        output_path: Path = self.chargers_dir / 'chargers_schema.json'
         with open(output_path, 'w') as f:
             json.dump(schema, f, indent=2)
 

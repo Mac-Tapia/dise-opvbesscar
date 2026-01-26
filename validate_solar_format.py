@@ -67,12 +67,15 @@ print(f"    STATUS: {'VALORES > 0 DETECTADOS' if check5a else 'TODOS CEROS'}")
 # Patron dia/noche
 print(f"\n[6] PATRON DIA/NOCHE")
 df_for_hour = df.copy()
-df_for_hour['hour'] = df_for_hour.index.hour
+if hasattr(df_for_hour.index, 'hour'):
+    df_for_hour['hour'] = df_for_hour.index.hour  # type: ignore[union-attr]
+else:
+    df_for_hour['hour'] = 0
 daily_pattern = df_for_hour.groupby('hour')['ac_power_kw'].agg(['mean'])
 peak_hours = daily_pattern[daily_pattern['mean'] > 0].index
 if len(peak_hours) > 0:
-    min_h = peak_hours.min()
-    max_h = peak_hours.max()
+    min_h = int(peak_hours.min())
+    max_h = int(peak_hours.max())
     print(f"    Horas con generacion: {min_h}:00 a {max_h}:00")
     check6 = (8 <= min_h <= 12 and 14 <= max_h <= 20)
     print(f"    STATUS: {'PATRON CORRECTO' if check6 else 'PATRON ANOMALO'}")

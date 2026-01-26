@@ -15,45 +15,49 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any, Dict, Tuple
-
-import matplotlib.dates as mdates  # type: ignore
-import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
-import pandas as pd  # type: ignore
-import pvlib
-from matplotlib.gridspec import GridSpec  # type: ignore
-from scipy import stats
+import pandas as pd
+
+import matplotlib.dates as mdates  # type: ignore[import-untyped]
+import matplotlib.pyplot as plt  # type: ignore[import-untyped]
+import pvlib  # type: ignore[import-untyped]
+from matplotlib.gridspec import GridSpec  # type: ignore[import-untyped]
+from scipy import stats  # type: ignore[import-untyped]
 
 # Configuración global de matplotlib para español
 plt.rcParams['font.family'] = 'DejaVu Sans'
 plt.rcParams['axes.unicode_minus'] = False
 
 
-def _get_decimal_hours(df: pd.DataFrame) -> np.ndarray:
+def _get_decimal_hours(df: pd.DataFrame) -> np.ndarray[Any, np.dtype[np.floating[Any]]]:
     """Extrae horas decimales del índice de un DataFrame."""
-    idx_dt = pd.to_datetime(df.index)
-    return np.asarray(idx_dt.hour + idx_dt.minute / 60)  # type: ignore[union-attr]
+    idx_dt: pd.DatetimeIndex = pd.to_datetime(df.index)  # type: ignore[assignment]
+    hours: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(idx_dt.hour + idx_dt.minute / 60)  # type: ignore[union-attr]
+    return hours
 
 
-def _get_values(series: pd.Series) -> np.ndarray:  # type: ignore[type-arg]
+def _get_values(series: pd.Series[Any]) -> np.ndarray[Any, np.dtype[Any]]:
     """Extrae valores como numpy array."""
-    return np.asarray(series.values)
+    values_array: np.ndarray[Any, np.dtype[Any]] = np.asarray(series.values)  # type: ignore[assignment]
+    return values_array
 
 
 def load_solar_data(solar_data_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame, Dict[str, Any]]:
     """Carga todos los datos solares necesarios."""
     # Serie temporal
-    ts_path = solar_data_dir / "pv_generation_timeseries.csv"
-    df = pd.read_csv(ts_path, parse_dates=['timestamp'], index_col='timestamp')
+    ts_path: Path = solar_data_dir / "pv_generation_timeseries.csv"
+    df: pd.DataFrame = pd.read_csv(ts_path, parse_dates=['timestamp'], index_col='timestamp')  # type: ignore[assignment]
 
     # Energía mensual
-    monthly_path = solar_data_dir / "pv_monthly_energy.csv"
-    monthly = pd.read_csv(monthly_path, parse_dates=['timestamp'], index_col='timestamp')
+    monthly_path: Path = solar_data_dir / "pv_monthly_energy.csv"
+    monthly: pd.DataFrame = pd.read_csv(monthly_path, parse_dates=['timestamp'], index_col='timestamp')  # type: ignore[assignment]
 
     # Resultados JSON
-    json_path = solar_data_dir / "solar_results.json"
+    json_path: Path = solar_data_dir / "solar_results.json"
     with open(json_path, 'r', encoding='utf-8') as f:
-        results = json.load(f)
+        results: Dict[str, Any] = json.load(f)
+
+    return df, monthly, results
 
     return df, monthly, results
 
@@ -67,20 +71,27 @@ def plot_energia_potencia_diaria(
     Gráfica 1: Energía y Potencia Máxima Diaria del Sistema FV
     Doble eje Y con barras de energía y línea de potencia máxima.
     """
-    _fig, ax1 = plt.subplots(figsize=(14, 6))
+    from matplotlib.figure import Figure
+    from matplotlib.axes import Axes
+
+    _fig: Figure
+    ax1: Axes
+    _fig, ax1 = plt.subplots(figsize=(14, 6))  # type: ignore[assignment]
 
     # Calcular datos diarios
-    daily_energy = df['ac_energy_kwh'].resample('D').sum() / 1000  # MWh
-    daily_pmax = df['ac_power_kw'].resample('D').max()
+    daily_energy: pd.Series[Any] = df['ac_energy_kwh'].resample('D').sum() / 1000  # type: ignore[assignment]  # MWh
+    daily_pmax: pd.Series[Any] = df['ac_power_kw'].resample('D').max()  # type: ignore[assignment]
 
     # Estadísticas
-    energy_mean = daily_energy.mean()
-    pmax_mean = daily_pmax.mean()
-    pmax_absolute = daily_pmax.max()
-    pmax_date = pd.Timestamp(daily_pmax.idxmax())  # type: ignore[arg-type]
+    energy_mean: float = float(daily_energy.mean())  # type: ignore[arg-type]
+    pmax_mean: float = float(daily_pmax.mean())  # type: ignore[arg-type]
+    pmax_absolute: float = float(daily_pmax.max())  # type: ignore[arg-type]
+    pmax_date_idx: Any = daily_pmax.idxmax()
+    pmax_date: pd.Timestamp = pd.Timestamp(pmax_date_idx)  # type: ignore[arg-type]
 
     # Eje izquierdo: Energía diaria (barras)
-    ax1.fill_between(daily_energy.index, np.asarray(daily_energy.values), alpha=0.6,
+    energy_values: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(daily_energy.values, dtype=np.float64)  # type: ignore[assignment]
+    ax1.fill_between(daily_energy.index, energy_values, alpha=0.6,
                      color='lightblue', label='Energía diaria (MWh)')
     ax1.axhline(y=energy_mean, color='blue', linestyle='--', linewidth=1.5,
                 label=f'Promedio: {energy_mean:.2f} MWh')
@@ -91,7 +102,8 @@ def plot_energia_potencia_diaria(
 
     # Eje derecho: Potencia máxima diaria (línea)
     ax2 = ax1.twinx()
-    ax2.plot(daily_pmax.index, np.asarray(daily_pmax.values), 'r-', linewidth=0.8,
+    pmax_values: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(daily_pmax.values, dtype=np.float64)  # type: ignore[assignment]
+    ax2.plot(daily_pmax.index, pmax_values, 'r-', linewidth=0.8,
              label='Potencia máxima diaria (kW)')
     ax2.axhline(y=pmax_mean, color='darkred', linestyle='--', linewidth=1.5,
                 label=f'Pmax promedio: {pmax_mean:.0f} kW')
@@ -100,7 +112,7 @@ def plot_energia_potencia_diaria(
     ax2.set_ylim(0, pmax_absolute * 1.15)
 
     # Anotación del máximo absoluto - usar pmax_date como objeto Timestamp
-    pmax_date_num = float(mdates.date2num(pmax_date))
+    pmax_date_num = float(mdates.date2num(pmax_date))  # type: ignore[arg-type]
     ax2.annotate(f'Pmax absoluta: {pmax_absolute:.1f} kW\nFecha: {pmax_date.strftime("%d/%m/%Y")}',
                  xy=(pmax_date_num, float(pmax_absolute)), xytext=(pmax_date_num, float(pmax_absolute) * 1.05),
                  fontsize=9, ha='center',
@@ -132,11 +144,13 @@ def plot_dia_representativo(df: pd.DataFrame, date_str: str, day_type: str,
     Gráfica 2: Perfil de Potencia, Energía (15 min) y POA - Día representativo
     Con energía acumulada en panel inferior.
     """
-    date = pd.to_datetime(date_str)
+    date: pd.Timestamp = pd.to_datetime(date_str)  # type: ignore[assignment]
     # Filtrar por fecha usando pd.to_datetime para el índice
-    day_data = df[pd.to_datetime(df.index).date == date.date()].copy()  # type: ignore[union-attr]
+    idx_dates: np.ndarray[Any, np.dtype[Any]] = pd.to_datetime(df.index).date  # type: ignore[union-attr]
+    day_data_raw: pd.DataFrame | Any = df[idx_dates == date.date()].copy()  # type: ignore[assignment]
+    day_data: pd.DataFrame = day_data_raw if isinstance(day_data_raw, pd.DataFrame) else pd.DataFrame()
 
-    if len(day_data) == 0:
+    if day_data.empty:
         print(f"  ⚠ No hay datos para {date_str}")
         return
 
@@ -147,29 +161,34 @@ def plot_dia_representativo(df: pd.DataFrame, date_str: str, day_type: str,
     ax1 = fig.add_subplot(gs[0])
 
     # Calcular horas decimales
-    idx_dt = pd.to_datetime(day_data.index)
-    hours = np.asarray(idx_dt.hour + idx_dt.minute / 60)  # type: ignore[union-attr]
+    idx_dt: pd.DatetimeIndex = pd.to_datetime(day_data.index)  # type: ignore[assignment]
+    hours: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(idx_dt.hour + idx_dt.minute / 60)  # type: ignore[union-attr]
 
     # Potencia AC
-    ax1.plot(hours, day_data['ac_power_kw'], 'b-', linewidth=2, label='Potencia (kW)')
+    ac_power: pd.Series[Any] = day_data['ac_power_kw']  # type: ignore[assignment]
+    ac_power_arr: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(ac_power.values)  # type: ignore[assignment]
+    ax1.plot(hours, ac_power_arr, 'b-', linewidth=2, label='Potencia (kW)')
 
     # Energía 15 min (línea discontinua naranja)
-    ax1.plot(hours, day_data['ac_energy_kwh'], '--', color='orange', linewidth=1.5,
+    ac_energy: pd.Series[Any] = day_data['ac_energy_kwh']  # type: ignore[assignment]
+    ac_energy_arr: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(ac_energy.values)  # type: ignore[assignment]
+    ax1.plot(hours, ac_energy_arr, '--', color='orange', linewidth=1.5,
              label='Energía 15 min (kWh)')
 
     ax1.set_ylabel('Potencia (kW)', fontsize=11, color='blue')
     ax1.tick_params(axis='y', labelcolor='blue')
-    max_power = day_data['ac_power_kw'].max()
+    max_power: float = float(day_data['ac_power_kw'].max())  # type: ignore[arg-type]
     ax1.set_ylim(0, max(max_power * 1.15, 1.0))
 
     # Eje derecho: POA
     ax1_r = ax1.twinx()
     # Calcular POA aproximado (GHI * cos(incidencia) ≈ GHI para tilt pequeño)
-    poa = day_data['ghi_wm2'].values  # Simplificación
+    poa: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(day_data['ghi_wm2'].values)  # type: ignore[assignment]
     ax1_r.plot(hours, poa, 'r-', linewidth=1.5, label='POA (W/m²)')
     ax1_r.set_ylabel('POA (W/m²)', fontsize=11, color='red')
     ax1_r.tick_params(axis='y', labelcolor='red')
-    ax1_r.set_ylim(0, max(poa) * 1.1 if max(poa) > 0 else 100)
+    poa_max: float = float(np.max(poa))  # type: ignore[arg-type]
+    ax1_r.set_ylim(0, poa_max * 1.1 if poa_max > 0 else 100)
 
     # Combinar leyendas
     lines1, labels1 = ax1.get_legend_handles_labels()
@@ -183,9 +202,10 @@ def plot_dia_representativo(df: pd.DataFrame, date_str: str, day_type: str,
 
     # Panel inferior: Energía acumulada
     ax2 = fig.add_subplot(gs[1])
-    energy_cumsum = day_data['ac_energy_kwh'].cumsum()
-    ax2.fill_between(hours, energy_cumsum, alpha=0.5, color='purple')
-    ax2.plot(hours, energy_cumsum, 'purple', linewidth=2, label='Energía acumulada (kWh)')
+    energy_cumsum: pd.Series[Any] = day_data['ac_energy_kwh'].cumsum()  # type: ignore[assignment]
+    cumsum_array: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(energy_cumsum.values)  # type: ignore[assignment]
+    ax2.fill_between(hours, cumsum_array, alpha=0.5, color='purple')
+    ax2.plot(hours, cumsum_array, 'purple', linewidth=2, label='Energía acumulada (kWh)')
     ax2.set_xlabel('Hora del día', fontsize=11)
     ax2.set_ylabel('Energía acumulada (kWh)', fontsize=11)
     ax2.set_xlim(0, 24)
@@ -209,27 +229,32 @@ def plot_dia_barras(df: pd.DataFrame, date_str: str, day_type: str,
     """
     Gráfica 3: Día Representativo con barras de energía 15 min
     """
-    date = pd.to_datetime(date_str)
-    day_data = df[pd.to_datetime(df.index).date == date.date()].copy()  # type: ignore[union-attr]
+    date: pd.Timestamp = pd.to_datetime(date_str)  # type: ignore[assignment]
+    idx_dates: np.ndarray[Any, np.dtype[Any]] = pd.to_datetime(df.index).date  # type: ignore[union-attr]
+    day_data_raw: pd.DataFrame | Any = df[idx_dates == date.date()].copy()  # type: ignore[assignment]
+    day_data: pd.DataFrame = day_data_raw if isinstance(day_data_raw, pd.DataFrame) else pd.DataFrame()
 
-    if len(day_data) == 0:
+    if day_data.empty:
         return
 
     # Filtrar solo horas con generación
     day_data = day_data[day_data['ac_energy_kwh'] > 0]
 
-    if len(day_data) == 0:
+    if day_data.empty:
         return
 
     _fig, ax1 = plt.subplots(figsize=(14, 6))
 
     # Convertir índice a hora local sin timezone para que matplotlib muestre correctamente
     # (evita que matplotlib convierta a UTC)
-    times_local = day_data.index.tz_localize(None)
+    times_idx: pd.DatetimeIndex = pd.to_datetime(day_data.index)  # type: ignore[assignment]
+    times_local: pd.DatetimeIndex = times_idx.tz_localize(None)  # type: ignore[union-attr]
 
     # Barras de energía 15 min
     widths = 0.01  # Ancho de barras
-    ax1.bar(times_local, day_data['ac_energy_kwh'], width=widths, color='gold',
+    energy_15min: pd.Series[Any] = day_data['ac_energy_kwh']  # type: ignore[assignment]
+    energy_arr: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(energy_15min.values)  # type: ignore[assignment]
+    ax1.bar(times_local, energy_arr, width=widths, color='gold',
             edgecolor='orange', alpha=0.8, label='Energía 15 min (kWh)')
 
     ax1.set_ylabel('Energía 15 min (kWh)', fontsize=11, color='darkorange')
@@ -237,15 +262,18 @@ def plot_dia_barras(df: pd.DataFrame, date_str: str, day_type: str,
 
     # Eje derecho: Potencia AC
     ax2 = ax1.twinx()
-    ax2.plot(times_local, day_data['ac_power_kw'], 'b-', linewidth=2, label='Potencia AC (kW)')
+    ac_power: pd.Series[Any] = day_data['ac_power_kw']  # type: ignore[assignment]
+    ac_power_arr: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(ac_power.values)  # type: ignore[assignment]
+    ax2.plot(times_local, ac_power_arr, 'b-', linewidth=2, label='Potencia AC (kW)')
     ax2.set_ylabel('Potencia AC (kW)', fontsize=11, color='blue')
     ax2.tick_params(axis='y', labelcolor='blue')
 
     # Estadísticas
-    total_energy = day_data['ac_energy_kwh'].sum()
-    max_power = day_data['ac_power_kw'].max()
-    hours_gen = len(day_data) * 0.25  # intervalos de 15 min
-    peak_hour = day_data['ac_power_kw'].idxmax()
+    total_energy: float = float(day_data['ac_energy_kwh'].sum())  # type: ignore[arg-type]
+    max_power: float = float(day_data['ac_power_kw'].max())  # type: ignore[arg-type]
+    hours_gen: float = len(day_data.index) * 0.25  # intervalos de 15 min
+    peak_hour_idx: int | str = day_data['ac_power_kw'].idxmax()  # type: ignore[assignment]
+    peak_hour: pd.Timestamp = pd.Timestamp(peak_hour_idx)  # type: ignore[arg-type]
 
     # Anotación - usar hora local
     peak_hour_str = peak_hour.strftime("%H:%M")
@@ -285,15 +313,15 @@ def plot_resumen_sistema(df: pd.DataFrame, monthly: pd.DataFrame,
     - Distribución de energía diaria (histograma)
     - Distribución de energía por hora del día
     """
-    _fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    year = df.index[0].year
+    _fig, axes = plt.subplots(2, 2, figsize=(14, 10))  # type: ignore[assignment]
+    year: int = int(df.index[0].year)  # type: ignore[index]
 
-    daily_energy = df['ac_energy_kwh'].resample('D').sum() / 1000  # MWh
+    daily_energy: pd.Series[Any] = df['ac_energy_kwh'].resample('D').sum() / 1000  # type: ignore[assignment]  # MWh
 
     # Panel 1: Energía diaria
     ax1 = axes[0, 0]
     ax1.plot(daily_energy.index, daily_energy.values, 'steelblue', linewidth=0.8)
-    mean_daily = daily_energy.mean()
+    mean_daily: float = float(daily_energy.mean())  # type: ignore[arg-type]
     ax1.axhline(y=mean_daily, color='gray', linestyle='--', linewidth=1.5,
                 label=f'Promedio: {mean_daily:.2f} MWh')
     ax1.set_ylabel('MWh/día', fontsize=10)
@@ -305,7 +333,7 @@ def plot_resumen_sistema(df: pd.DataFrame, monthly: pd.DataFrame,
     ax1.grid(True, alpha=0.3)
 
     # Anotación
-    total_annual = daily_energy.sum()
+    total_annual: float = float(daily_energy.sum())  # type: ignore[arg-type]
     ax1.annotate(f'Total anual: {total_annual:.1f} MWh\nDías: {len(daily_energy)}',
                  xy=(0.02, 0.98), xycoords='axes fraction', ha='left', va='top',
                  fontsize=8, bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
@@ -313,11 +341,11 @@ def plot_resumen_sistema(df: pd.DataFrame, monthly: pd.DataFrame,
     # Panel 2: Energía mensual
     ax2 = axes[0, 1]
     months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-    monthly_mwh = np.asarray(monthly['ac_energy_kwh'].values) / 1000
-    cmap = plt.colormaps()['Blues']  # type: ignore
-    colors = cmap(np.linspace(0.4, 0.9, 12))
+    monthly_mwh: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(monthly['ac_energy_kwh'].values) / 1000  # type: ignore[assignment]
+    cmap_blues: Any = plt.colormaps().get_cmap('Blues')  # type: ignore[attr-defined]
+    colors = cmap_blues(np.linspace(0.4, 0.9, 12))
     bars = ax2.bar(months, monthly_mwh, color=colors, edgecolor='darkblue', alpha=0.8)
-    mean_monthly = float(monthly_mwh.mean())
+    mean_monthly: float = float(monthly_mwh.mean())  # type: ignore[arg-type]
     ax2.axhline(y=mean_monthly, color='gray', linestyle='--', linewidth=1.5,
                 label=f'Promedio: {mean_monthly:.1f} MWh')
     ax2.set_ylabel('MWh/mes', fontsize=10)
@@ -332,10 +360,10 @@ def plot_resumen_sistema(df: pd.DataFrame, monthly: pd.DataFrame,
 
     # Panel 3: Distribución de energía diaria
     ax3 = axes[1, 0]
-    daily_kwh = daily_energy * 1000  # volver a kWh
+    daily_kwh: pd.Series[Any] = daily_energy * 1000  # volver a kWh  # type: ignore[assignment]
     ax3.hist(daily_kwh, bins=30, color='steelblue', edgecolor='white', alpha=0.7)
-    mean_kwh = daily_kwh.mean()
-    median_kwh = daily_kwh.median()
+    mean_kwh: float = float(daily_kwh.mean())  # type: ignore[arg-type]
+    median_kwh: float = float(daily_kwh.median())  # type: ignore[arg-type]
     ax3.axvline(x=mean_kwh, color='blue', linestyle='--', linewidth=1.5,
                 label=f'Media: {mean_kwh:.0f} kWh')
     ax3.axvline(x=median_kwh, color='cyan', linestyle='--', linewidth=1.5,
@@ -347,16 +375,18 @@ def plot_resumen_sistema(df: pd.DataFrame, monthly: pd.DataFrame,
 
     # Panel 4: Distribución de energía por hora del día
     ax4 = axes[1, 1]
-    hourly_energy = df.groupby(pd.to_datetime(df.index).hour)['ac_energy_kwh'].sum()  # type: ignore[union-attr]
-    ax4.bar(hourly_energy.index, np.asarray(hourly_energy.values), color='steelblue',
+    hourly_energy: pd.Series[Any] = df.groupby(pd.to_datetime(df.index).hour)['ac_energy_kwh'].sum()  # type: ignore[union-attr,assignment]
+    hourly_arr: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(hourly_energy.values)  # type: ignore[assignment]
+    ax4.bar(hourly_energy.index, hourly_arr, color='steelblue',
             edgecolor='darkblue', alpha=0.8)
 
     # Encontrar hora pico
-    peak_hour = hourly_energy.idxmax()
-    peak_energy = hourly_energy.max()
-    total_energy = hourly_energy.sum()
+    peak_hour: int = int(hourly_energy.idxmax())  # type: ignore[arg-type]
+    peak_energy: float = float(hourly_energy.max())  # type: ignore[arg-type]
+    total_energy: float = float(hourly_energy.sum())  # type: ignore[arg-type]
+    hourly_mean: float = float(hourly_energy.mean())  # type: ignore[arg-type]
 
-    ax4.axhline(y=hourly_energy.mean(), color='gray', linestyle='--', linewidth=1.5)
+    ax4.axhline(y=hourly_mean, color='gray', linestyle='--', linewidth=1.5)
     ax4.set_xlabel('Hora del día', fontsize=10)
     ax4.set_ylabel('Energía anual total (kWh)', fontsize=10)
     ax4.set_title('Distribución de energía por hora del día', fontsize=11, fontweight='bold')
@@ -384,11 +414,13 @@ def plot_poa_vs_potencia(df: pd.DataFrame, _results: Dict[str, Any], out_dir: Pa
     Scatter plot con línea de tendencia y correlación.
     """
     # Filtrar datos con producción
-    mask = df['ac_power_kw'] > 0
-    poa = np.asarray(df.loc[mask, 'ghi_wm2'].values)  # Usar GHI como proxy de POA
-    power = np.asarray(df.loc[mask, 'ac_power_kw'].values)
+    mask: pd.Series[Any] = df['ac_power_kw'] > 0
+    poa: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(df.loc[mask, 'ghi_wm2'].values)  # type: ignore[assignment]  # Usar GHI como proxy de POA
+    power: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(df.loc[mask, 'ac_power_kw'].values)  # type: ignore[assignment]
 
-    fig, ax = plt.subplots(figsize=(10, 8))
+    from matplotlib.figure import Figure
+    fig: Figure
+    fig, ax = plt.subplots(figsize=(10, 8))  # type: ignore[assignment]
 
     # Scatter plot con color por potencia
     scatter = ax.scatter(
@@ -440,16 +472,16 @@ def plot_poa_vs_potencia(df: pd.DataFrame, _results: Dict[str, Any], out_dir: Pa
     print("  [OK] Grafica: Relacion POA vs Potencia AC")
 
 
-def plot_comparacion_escenarios(df: pd.DataFrame, results: Dict, out_dir: Path) -> None:
+def plot_comparacion_escenarios(df: pd.DataFrame, results: Dict[str, Any], out_dir: Path) -> None:
     """
     Gráfica 6: Comparación de Escenarios - Sistema FV
     Compara días despejado, intermedio, nublado y máxima energía.
     """
     # Obtener fechas de días representativos
-    despejado_date = results.get('despejado_date', '')
-    intermedio_date = results.get('intermedio_date', '')
-    nublado_date = results.get('nublado_date', '')
-    max_energy_date = results.get('max_daily_energy_date', '')
+    despejado_date: str = results.get('despejado_date', '')
+    intermedio_date: str = results.get('intermedio_date', '')
+    nublado_date: str = results.get('nublado_date', '')
+    max_energy_date: str = results.get('max_daily_energy_date', '')
 
     if not despejado_date:
         print("  ⚠ No hay datos de días representativos")
@@ -610,7 +642,7 @@ def plot_comparacion_escenarios(df: pd.DataFrame, results: Dict, out_dir: Path) 
 
 
 def plot_analisis_temporal_avanzado(df: pd.DataFrame, monthly: pd.DataFrame,
-                                     results: Dict, out_dir: Path) -> None:
+                                     results: Dict[str, Any], out_dir: Path) -> None:
     """
     Gráfica 7: Análisis Temporal Avanzado
     - Mapa de calor mes x hora
@@ -620,15 +652,17 @@ def plot_analisis_temporal_avanzado(df: pd.DataFrame, monthly: pd.DataFrame,
     - Distribución de energía diaria con percentiles
     - Performance Ratio mensual
     """
-    fig = plt.figure(figsize=(16, 12))
+    from matplotlib.figure import Figure
+    fig: Figure
+    fig = plt.figure(figsize=(16, 12))  # type: ignore[assignment]
     gs = GridSpec(2, 3, figure=fig, hspace=0.3, wspace=0.3)
-    year = df.index[0].year
+    year: int = int(df.index[0].year)  # type: ignore[index]
 
     # Preparar datos - crear columnas temporales
     df = df.copy()  # Evitar modificar el original
     df['hour'] = pd.to_datetime(df.index).hour  # type: ignore[union-attr]
     df['month'] = pd.to_datetime(df.index).month  # type: ignore[union-attr]
-    daily_energy = df['ac_energy_kwh'].resample('D').sum()
+    daily_energy: pd.Series[Any] = df['ac_energy_kwh'].resample('D').sum()  # type: ignore[assignment]
 
     # Panel 1: Mapa de calor (mes x hora)
     ax1 = fig.add_subplot(gs[0, 0])
@@ -647,10 +681,10 @@ def plot_analisis_temporal_avanzado(df: pd.DataFrame, monthly: pd.DataFrame,
 
     # Panel 2: Box plots de energía diaria por mes
     ax2 = fig.add_subplot(gs[0, 1])
-    daily_energy_df = daily_energy.to_frame()
-    idx_month = pd.to_datetime(daily_energy_df.index).month  # type: ignore[union-attr]
+    daily_energy_df: pd.DataFrame = daily_energy.to_frame()
+    idx_month: np.ndarray[Any, np.dtype[Any]] = pd.to_datetime(daily_energy_df.index).month  # type: ignore[union-attr,assignment]
     daily_energy_df['month'] = idx_month
-    daily_by_month = [
+    daily_by_month: list[np.ndarray[Any, np.dtype[Any]]] = [
         np.asarray(daily_energy_df[daily_energy_df['month'] == m]['ac_energy_kwh'].values)
         for m in range(1, 13)
     ]
@@ -705,8 +739,8 @@ def plot_analisis_temporal_avanzado(df: pd.DataFrame, monthly: pd.DataFrame,
     ax5 = fig.add_subplot(gs[1, 1])
     ax5.hist(daily_energy, bins=30, color='steelblue', edgecolor='white', alpha=0.7)
 
-    p25 = np.percentile(daily_energy, 25)
-    p75 = np.percentile(daily_energy, 75)
+    p25: float = float(np.percentile(daily_energy, 25))
+    p75: float = float(np.percentile(daily_energy, 75))
     median = daily_energy.median()
 
     ax5.axvline(x=mean_val, color='blue', linestyle='--', linewidth=1.5, label=f'Media: {mean_val:.0f} kWh')
