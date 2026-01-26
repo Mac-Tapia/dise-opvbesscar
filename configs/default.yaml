@@ -24,15 +24,15 @@ oe2:
     discharge_only_ev_hours: true
     discharge_only_no_solar: true
     dod: 0.8
-    efficiency_roundtrip: 0.95
-    fixed_capacity_kwh: 2000
-    fixed_power_kw: 1200
+    efficiency_roundtrip: 0.9
+    fixed_capacity_kwh: 4520.0
+    fixed_power_kw: 2712.0
     load_scope: ev_only
-    min_soc_percent: 20
+    min_soc_percent: 25.86
     pv_night_threshold_kwh: 0.1
     round_kwh: 100
-    sizing_mode: fixed
-    surplus_target_kwh_day: 0
+    sizing_mode: open_hours
+    surplus_target_kwh_day: 9630.4
   dispatch_rules:
     description:
       "Cubrir bloque pico (18-21h) con prioridades: FV\xE2\u2020\u2019\
@@ -45,13 +45,13 @@ oe2:
       ev_power_limit_kw: 150.0
       pv_threshold_kwh: 0.5
     priority_2_pv_to_bess:
-      bess_power_max_kw: 1200.0
+      bess_power_max_kw: 2712.0
       bess_soc_max_percent: 95.0
       bess_soc_target_percent: 85.0
       description: FV excedente a BESS (cargar reserva para pico)
       enabled: true
     priority_3_bess_to_ev:
-      bess_power_max_kw: 1200.0
+      bess_power_max_kw: 2712.0
       bess_soc_min_percent: 20.0
       description: BESS a EVs cuando cae el sol (noche)
       enabled: true
