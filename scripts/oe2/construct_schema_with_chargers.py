@@ -8,7 +8,6 @@ Ejecucion: python construct_schema_with_chargers.py
 """
 
 import sys
-import os
 import json
 from pathlib import Path
 from datetime import datetime
@@ -25,12 +24,12 @@ print("[1/3] Cargar configuracion y chargers...")
 try:
     from scripts._common import load_all
     cfg, rp = load_all("configs/default.yaml")
-    
+
     # Cargar chargers individuales (array de 128 chargers)
     chargers_file = rp.interim_dir / "oe2" / "chargers" / "individual_chargers.json"
     with open(chargers_file) as f:
         chargers = json.load(f)
-    
+
     # Cargar metadata de resultados
     results_file = rp.interim_dir / "oe2" / "chargers" / "chargers_results.json"
     with open(results_file) as f:
@@ -40,12 +39,12 @@ try:
     mototaxis_chargers = [c for c in chargers if c.get("playa") == "Playa_Mototaxis"]
     total_sockets = len(chargers)
     n_chargers = len(chargers)
-    
+
     print(f"OK: Config y {n_chargers} chargers cargados")
     print(f"  • Playa Motos: {len(motos_chargers)} chargers, {sum(c.get('sockets', 0) for c in motos_chargers)} sockets")
     print(f"  • Playa Mototaxis: {len(mototaxis_chargers)} chargers, {sum(c.get('sockets', 0) for c in mototaxis_chargers)} sockets")
     print(f"  • Total sockets: {total_sockets}\n")
-    
+
 except Exception as e:
     print(f"ERROR: {e}")
     sys.exit(1)
@@ -55,16 +54,16 @@ print("[2/3] Cargar schema base de CityLearn...")
 try:
     dataset_dir = rp.processed_dir / "citylearn" / cfg["oe3"]["dataset"]["name"]
     dataset_dir.mkdir(parents=True, exist_ok=True)
-    
+
     schema_base = rp.raw_dir / "citylearn_templates" / "schema.json"
-    
+
     with open(schema_base) as f:
         schema = json.load(f)
-    
+
     print(f"OK: Schema base cargado")
     print(f"  • Path: {schema_base}")
     print(f"  • Edificios: {len(schema.get('buildings', []))}\n")
-    
+
 except Exception as e:
     print(f"ERROR: {e}")
     sys.exit(1)
@@ -85,7 +84,7 @@ try:
         "active": True,
         "shared_in_central_agent": True
     }
-    
+
     # Anadir para cada charger individual
     for charger in chargers:
         charger_id = charger.get("charger_id", "unknown")
@@ -94,18 +93,18 @@ try:
             "active": True,
             "shared_in_central_agent": False
         }
-    
+
     print(f"OK: Schema enriquecido")
     print(f"  • Nuevos observables agregados: 3 (totales) + {len(chargers)} (individuales)")
     print(f"  • Total observables: {len(schema.get('observations', {}))}\n")
-    
+
     # GUARDAR SCHEMA ENRIQUECIDO
     output_schema = dataset_dir / "schema_with_128_chargers.json"
     with open(output_schema, 'w') as f:
         json.dump(schema, f, indent=2)
-    
+
     print(f"✓ Schema guardado en: {output_schema}\n")
-    
+
     charger_metadata = {
         "version": "1.0",
         "date_created": datetime.now().isoformat(),
@@ -131,13 +130,13 @@ try:
             "sockets": c.get("sockets")
         } for c in chargers}
     }
-    
+
     charger_meta_file = dataset_dir / "charger_metadata.json"
     with open(charger_meta_file, 'w') as f:
         json.dump(charger_metadata, f, indent=2)
-    
+
     print(f"✓ Metadata de chargers guardada en: {charger_meta_file}\n")
-    
+
 except Exception as e:
     print(f"ERROR: {e}")
     import traceback

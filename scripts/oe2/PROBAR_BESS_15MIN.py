@@ -74,10 +74,13 @@ try:
             print(f"   Potencia BESS: {result['power_kw']:.0f} kW")
         if 'metrics' in result:
             metrics = result['metrics']
-            if 'self_sufficiency' in metrics:
-                print(f"   Autosuficiencia: {metrics['self_sufficiency']*100:.1f}%")
-            if 'cycles_per_day' in metrics:
-                print(f"   Ciclos/día: {metrics['cycles_per_day']:.2f}")
+            if isinstance(metrics, dict):
+                if 'self_sufficiency' in metrics:
+                    self_suff = metrics['self_sufficiency']
+                    print(f"   Autosuficiencia: {float(self_suff)*100:.1f}%")
+                if 'cycles_per_day' in metrics:
+                    cycles = metrics['cycles_per_day']
+                    print(f"   Ciclos/día: {float(cycles):.2f}")
 
     print("\n📁 Archivos generados en:")
     print(f"   {out_dir}")
