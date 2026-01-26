@@ -89,9 +89,9 @@ def verify_objective_implementation() -> Dict[str, Any]:
         print(f"✓ Componentes de recompensa: {', '.join(found_components)}")
         print(f"✓ Test compute(): reward={reward:.3f}")
 
-        checks['multiobjetivo_implementado'] = True
-        checks['componentes_recompensa'] = len(found_components)
-        checks['peso_co2_principal'] = weights.co2 >= 0.45
+        checks['multiobjetivo_implementado']: bool = True
+        checks['componentes_recompensa']: int = len(found_components)
+        checks['peso_co2_principal']: bool = weights.co2 >= 0.45
 
     except Exception as e:
         print(f"✗ ERROR: {e}")
@@ -120,11 +120,11 @@ def verify_objective_implementation() -> Dict[str, Any]:
             if hasattr(cfg, 'learning_rate'):
                 print(f"    Learning rate: {cfg.learning_rate}")
 
-        checks['num_agentes'] = len(agents)
+        checks['num_agentes']: int = len(agents)
 
     except Exception as e:
         print(f"✗ ERROR: {e}")
-        checks['num_agentes'] = 0
+        checks['num_agentes'] = 0  # type: ignore
 
     # 3. Verificar script de generación de tabla comparativa
     print("\n[3] TABLA COMPARATIVA DE AGENTES")
@@ -297,7 +297,7 @@ def analyze_summary_if_available(config_path: str) -> Dict[str, Any]:
     print("ANÁLISIS DE RESULTADOS (SI DISPONIBLE)")
     print("="*80)
 
-    results = {}
+    results: Dict[str, Any] = {}
 
     try:
         cfg, rp = load_all(config_path)
