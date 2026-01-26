@@ -574,12 +574,15 @@ class A2CAgent:
         ])
 
         logger.info("[A2C] Starting model.learn() with callbacks")
-        self.model.learn(
-            total_timesteps=int(steps),
-            callback=callback,
-            reset_num_timesteps=not resuming,
-        )
-        logger.info("[A2C] model.learn() completed successfully")
+        if self.model is not None:
+            self.model.learn(
+                total_timesteps=int(steps),
+                callback=callback,
+                reset_num_timesteps=not resuming,
+            )
+            logger.info("[A2C] model.learn() completed successfully")
+        else:
+            logger.error("[A2C] Model is None, cannot start training")
         self._trained = True
         logger.info("A2C entrenado con %d timesteps", steps)
 

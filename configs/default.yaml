@@ -191,23 +191,24 @@ oe3:
     a2c:
       checkpoint_freq_steps: 500
       device: cuda
-      entropy_coef: 0.01
+      entropy_coef: 0.005
       episodes: 5
-      learning_rate: 0.001
+      learning_rate: 5.0e-4
       log_interval: 250
       max_grad_norm: 0.5
       multi_objective_weights:
-        co2: 0.45
+        co2: 0.50
         cost: 0.15
-        ev: 0.05
-        grid: 0.2
-        solar: 0.15
-      n_steps: 65536
+        ev: 0.10
+        grid: 0.05
+        solar: 0.20
+      n_steps: 2048
       progress_interval_episodes: 1
       resume_checkpoints: false
-      reward_smooth_lambda: 0.01
+      reward_smooth_lambda: 0.1
+      reward_scale: 1.0
       save_final: true
-      timesteps: 17520
+      timesteps: 43800
       vf_coef: 0.5
     agents:
       - SAC
@@ -216,13 +217,13 @@ oe3:
     co2_tracking: true
     multi_objective_priority: co2_focus
     ppo:
-      batch_size: 512
+      batch_size: 128
       checkpoint_freq_steps: 500
-      device: cpu
+      device: cuda
       episodes: 5
-      ent_coef: 0.005
+      ent_coef: 0.01
       kl_adaptive: true
-      learning_rate: 2.5e-4
+      learning_rate: 1.0e-4
       log_interval: 250
       multi_objective_weights:
         co2: 0.50
@@ -230,41 +231,43 @@ oe3:
         ev: 0.10
         grid: 0.05
         solar: 0.20
-      n_epochs: 20
-      n_steps: 2048
+      n_epochs: 10
+      n_steps: 4096
       progress_interval_episodes: 1
       resume_checkpoints: false
-      reward_smooth_lambda: 0.01
+      reward_smooth_lambda: 0.1
+      reward_scale: 1.0
       save_final: true
-      target_kl: 0.02
-      timesteps: 17520
-      use_amp: false
+      target_kl: 0.01
+      timesteps: 43800
+      use_amp: true
     resume_checkpoints: true
     reward_components:
       base_weight: 0.8
       co2_direct_weight: 0.12
       co2_indirect_weight: 0.08
     sac:
-      batch_size: 32768
-      buffer_size: 8000000
-      checkpoint_freq_steps: 100
+      batch_size: 128
+      buffer_size: 2000000
+      checkpoint_freq_steps: 500
       deterministic_eval: true
       device: cuda
       episodes: 5
-      gradient_steps: 256
-      learning_rate: 0.001
-      learning_starts: 50
-      log_interval: 25
+      gradient_steps: 512
+      learning_rate: 3.0e-4
+      learning_starts: 500
+      log_interval: 100
       multi_objective_weights:
-        co2: 0.45
+        co2: 0.50
         cost: 0.15
-        ev: 0.05
-        grid: 0.2
-        solar: 0.15
+        ev: 0.10
+        grid: 0.05
+        solar: 0.20
       prefer_citylearn: false
       progress_interval_episodes: 1
       resume_checkpoints: false
-      reward_smooth_lambda: 0.01
+      reward_smooth_lambda: 0.1
+      reward_scale: 1.0
       save_final: true
       target_entropy_scale: 1.0
       train_freq: 4
