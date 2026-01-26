@@ -6,10 +6,7 @@ Reutiliza los checkpoints de SAC y continúa con los siguientes agentes.
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import json
-import sys
-import logging
 
 from iquitos_citylearn.utils.logging import setup_logging
 from iquitos_citylearn.oe3.dataset_builder import build_citylearn_dataset
@@ -24,7 +21,6 @@ def main() -> None:
 
     setup_logging()
     cfg, rp = load_all(args.config)
-    oe3_cfg = cfg["oe3"]
 
     dataset_name = cfg["oe3"]["dataset"]["name"]
     processed_dataset_dir = rp.processed_dir / "citylearn" / dataset_name
@@ -86,13 +82,12 @@ def main() -> None:
 
     # VERIFICAR SI BASELINE EXISTE - SI EXISTE, SALTEAR
     baseline_json = out_dir / "result_Uncontrolled.json"
-    res_uncontrolled = None
     if baseline_json.exists():
         print("\n" + "="*80)
         print("✓ BASELINE (Uncontrolled) ya existe - SALTANDO")
         print("="*80 + "\n")
         with open(baseline_json) as f:
-            res_uncontrolled = json.load(f)
+            _baseline_data = json.load(f)
     else:
         print("\n" + "="*80)
         print("⚠️  BASELINE (Uncontrolled) NO ENCONTRADO - Necesario para comparación")
