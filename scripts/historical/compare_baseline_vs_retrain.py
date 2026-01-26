@@ -232,7 +232,7 @@ def create_power_profile_plot(
     ax.set_title("Equilibrio (Fairness) Entre Playas")
     ax.legend()
     ax.grid(True, alpha=0.3)
-    ax.set_ylim([0, 4])
+    ax.set_ylim((0, 4))
 
     plt.tight_layout()
     plt.savefig(output_file, dpi=150, bbox_inches="tight")
