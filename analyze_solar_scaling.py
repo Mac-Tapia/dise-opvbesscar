@@ -7,11 +7,11 @@ Este script decide la mejor opción:
 1. Usar el cálculo real OE2 (8.03 GWh)
 2. Escalar al target (3.97 GWh)
 """
-import pandas as pd
+import pandas as pd  # type: ignore[import-not-found]
 from pathlib import Path
 
 solar_path = Path("data/interim/oe2/solar/pv_generation_timeseries.csv")
-df = pd.read_csv(solar_path)
+df = pd.read_csv(solar_path)  # type: ignore[attr-defined]
 
 actual_kwh = df['ac_power_kw'].sum()
 target_kwh = 3_972_478  # del default.yaml

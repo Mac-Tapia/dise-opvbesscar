@@ -22,7 +22,7 @@ print(f"  target_ac_kw:      3,201.2 kW")
 
 # 2. OE3 - Valor actual en CSV
 solar_path: Path = Path("data/interim/oe2/solar/pv_generation_timeseries.csv")
-df: pd.DataFrame = pd.read_csv(solar_path)
+df: pd.DataFrame = pd.read_csv(solar_path)  # type: ignore[attr-defined,return-value]
 ac_power: pd.Series = df['ac_power_kw']
 actual_kwh: float = ac_power.sum()
 actual_gwh: float = actual_kwh / 1e6
@@ -48,8 +48,8 @@ print(f"\n[EXPLICACION]")
 if abs(diff_pct) < 1:
     print(f"  ✓ Los valores coinciden (< 1% diferencia)")
 elif actual_gwh > target_gwh_oe2:
-    factor: float = actual_gwh / target_gwh_oe2
-    print(f"  ⚠ CSV tiene {factor:.2f}× más energía que OE2 target")
+    factor_pos: float = actual_gwh / target_gwh_oe2
+    print(f"  ⚠ CSV tiene {factor_pos:.2f}× más energía que OE2 target")
     print(f"\n  Posible causa:")
     print(f"    1. OE2 calcula con 15 minutos (PVGIS):")
     print(f"       - Datos 15-min se promedian/degradan")
@@ -70,7 +70,7 @@ else:
 # 5. Verificación de 15 minutos vs 1 hora
 print(f"\n[VALIDACION RESAMPLE]")
 # Detectar si original fue 15 minutos
-df_check = pd.read_csv(solar_path)
+df_check = pd.read_csv(solar_path)  # type: ignore[attr-defined,return-value]
 n_rows = len(df_check)
 print(f"  Filas actuales: {n_rows}")
 
