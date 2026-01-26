@@ -896,10 +896,10 @@ def build_citylearn_dataset(
 
                 # Guardar CSV
                 df_charger.to_csv(csv_path, index=False, float_format='%.6f')
-                logger.info(f"  ✅ {charger_name} generado (8760 rows)")
+                logger.info(f"  [OK] {charger_name} generado (8760 rows)")
 
             except Exception as e:
-                logger.error(f"❌ Error generando {charger_name}: {e}")
+                logger.error(f"[ERROR] Error generando {charger_name}: {e}")
                 raise
 
         # === ACTUALIZAR SCHEMA: Referenciar los 128 CSVs en el schema ===
@@ -909,16 +909,16 @@ def build_citylearn_dataset(
             csv_filename = f"charger_simulation_{charger_idx+1:03d}.csv"
             all_chargers[charger_name]["charger_simulation"] = csv_filename
 
-        logger.info(f"✅ [CHARGER GENERATION] Schema actualizado: 128 chargers → 128 CSVs individuales")
+        logger.info(f"[OK] [CHARGER GENERATION] Schema actualizado: 128 chargers -> 128 CSVs individuales")
 
     else:
-        logger.warning("⚠️ [CHARGER GENERATION] No chargers_hourly_profiles_annual en artifacts")
+        logger.warning("[WARN] [CHARGER GENERATION] No chargers_hourly_profiles_annual en artifacts")
 
     # Save the updated schema
     schema_path = out_dir / "schema.json"
     with open(schema_path, "w", encoding="utf-8") as f:
         json.dump(schema, f, indent=2, ensure_ascii=False)
-    logger.info(f"✅ Schema guardado en {schema_path}")
+    logger.info(f"[OK] Schema guardado en {schema_path}")
 
     # --- Schema variants for emissions comparison ---
     # 1) PV+BESS (current schema.json)
