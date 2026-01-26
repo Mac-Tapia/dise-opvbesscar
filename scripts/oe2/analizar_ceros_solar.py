@@ -47,8 +47,16 @@ print("─────┼─────────┼────────�
 for hour in range(24):
     if hour in hourly_solar.index:
         row = hourly_solar.loc[hour]
-        marker = "  ← CERO EN NOCHE" if row['min'] == 0 and hour < 6 or hour > 18 else ""
-        print(f" {hour:2d}  | {row['min']:7.1f} | {row['mean']:7.1f} | {row['max']:7.1f}{marker}")
+        # Extraer valores con type ignore para pandas internals
+        min_val = row['min']  # type: ignore[index]
+        mean_val = row['mean']  # type: ignore[index]
+        max_val = row['max']  # type: ignore[index]
+
+        # Verificar si es hora nocturna
+        is_night: bool = (hour < 6) or (hour > 18)
+        is_zero: bool = bool(min_val == 0.0)  # Asegurar bool
+        marker = "  ← CERO EN NOCHE" if (is_zero and is_night) else ""
+        print(f" {hour:2d}  | {min_val:7.1f} | {mean_val:7.1f} | {max_val:7.1f}{marker}")
 print()
 
 # Verificar si el problema es por transformación en dataset_builder
@@ -61,7 +69,7 @@ if solar_oe2.exists():
     print(f"   Registros: {len(df_solar)}")
     print(f"   Columnas: {list(df_solar.columns)}")
     print()
-    
+
     # Contar ceros
     for col in df_solar.columns:
         if 'pv' in col.lower() or 'kw' in col.lower():
@@ -82,7 +90,7 @@ schema_path = Path("data/processed/citylearn/iquitos_ev_mall/schema_pv_bess.json
 if schema_path.exists():
     schema = json.loads(schema_path.read_text())
     building = schema['buildings']['Mall_Iquitos']
-    
+
     if 'pv' in building:
         pv_cfg = building['pv']
         print(f"✅ PV en schema:")
