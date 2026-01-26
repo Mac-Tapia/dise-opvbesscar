@@ -178,60 +178,80 @@ class ChargerDataVerification:
 
     def generate_hourly_charger_profiles(self) -> pd.DataFrame:
         """
-        Genera perfiles horarios de carga para 128 cargadores (8,760 horas/año).
+        Genera perfiles de carga a RESOLUCIÓN 30 MINUTOS (Modo 3, AC 16A).
 
         Estructura:
         - 112 motos de 2 kW (playa_motos)
         - 16 mototaxis de 3 kW (playa_mototaxis)
         - Patrón: carga 9:00-22:00, pico 18:00-22:00
+        - Intervalo: 30 minutos (17,520 filas/año)
+
+        MODO 3: AC trifásico 16A
+        - Motos: 2.0 kW por toma
+        - Mototaxis: 3.0 kW por toma
         """
         print("\n" + "="*80)
-        print("   [4] GENERACION DE PERFILES HORARIOS DE CARGA")
+        print("   [4] GENERACION DE PERFILES CADA 30 MINUTOS (MODO 3)")
         print("="*80)
 
-        # Crear calendario de 365 días
+        # Crear calendario de 365 días con intervalos de 30 minutos
         start_date = datetime(2023, 1, 1)
-        hours = []
+        intervals = []
+        interval_counter = 0
 
         for day in range(365):
             for hour_of_day in range(24):
-                date = start_date + timedelta(days=day)
-                hours.append({
-                    'hour': day * 24 + hour_of_day,
-                    'date': date.strftime('%Y-%m-%d'),
-                    'hour_of_day': hour_of_day,
-                    'day_of_week': date.weekday(),  # 0=Mon, 6=Sun
-                    'month': date.month,
-                })
+                for minute in [0, 30]:  # 00:00 y 30:00 de cada hora
+                    date = start_date + timedelta(days=day)
+                    time_of_day = hour_of_day + minute / 60.0
 
-        df = pd.DataFrame(hours)
+                    intervals.append({
+                        'interval': interval_counter,
+                        'date': date.strftime('%Y-%m-%d'),
+                        'hour_of_day': hour_of_day,
+                        'minute_of_hour': minute,
+                        'time_decimal': time_of_day,
+                        'day_of_week': date.weekday(),  # 0=Mon, 6=Sun
+                        'month': date.month,
+                    })
+                    interval_counter += 1
 
-        # Patrón de carga horaria (normalizado 0-1, luego multiplicar por kW)
-        # Horario: 09:00-22:00 (operación)
-        # Pico: 18:00-22:00 (carga máxima)
-        # Otros: 09:00-18:00 (carga media)
+        df = pd.DataFrame(intervals)
 
-        def get_hourly_factor(hour_of_day: int) -> float:
-            """Factor de carga por hora del día (0-1)."""
-            if hour_of_day < 9 or hour_of_day >= 22:
-                return 0.0  # Cerrado
-            elif 18 <= hour_of_day < 22:
-                return 1.0  # Pico (carga completa)
-            elif 9 <= hour_of_day < 18:
-                return 0.5  # Carga media (fuera de pico)
+        # Patrón de carga cada 30 minutos (Modo 3: AC 16A)
+        # Horario: 09:00-22:00 (operación = 26 intervalos/día)
+        # Pico: 18:00-22:00 (carga máxima = 8 intervalos)
+        # Off-pico: 09:00-18:00 (carga media = 18 intervalos)
+
+        def get_30min_factor(hour: int, minute: int) -> float:
+            """Factor de carga por intervalo de 30 minutos."""
+            time_decimal = hour + minute / 60.0
+
+            if time_decimal < 9.0 or time_decimal >= 22.0:
+                return 0.0  # Cerrado (22:00-09:00)
+            elif 18.0 <= time_decimal < 22.0:
+                return 1.0  # Pico (18:00-22:00): carga completa
+            elif 9.0 <= time_decimal < 18.0:
+                return 0.5  # Off-pico (09:00-18:00): carga media
             else:
                 return 0.0
 
-        # Aplicar factor a cada tipo de cargador
-        df['moto_charge_factor'] = df['hour_of_day'].apply(get_hourly_factor)
-        df['mototaxi_charge_factor'] = df['hour_of_day'].apply(get_hourly_factor)
+        # Aplicar factor a cada tipo de cargador (por intervalo de 30 min)
+        df['moto_charge_factor'] = df.apply(
+            lambda row: get_30min_factor(row['hour_of_day'], row['minute_of_hour']),
+            axis=1
+        )
+        df['mototaxi_charge_factor'] = df.apply(
+            lambda row: get_30min_factor(row['hour_of_day'], row['minute_of_hour']),
+            axis=1
+        )
 
-        # Potencia por cargador
+        # Potencia por toma (Modo 3, 30 minutos)
         df['moto_power_kw'] = df['moto_charge_factor'] * 2.0  # 2 kW motos
         df['mototaxi_power_kw'] = df['mototaxi_charge_factor'] * 3.0  # 3 kW mototaxis
 
-        # Demanda total horaria (128 sockets = 112 motos + 16 mototaxis)
-        # En hora pico: 112×2 + 16×3 = 224 + 48 = 272 kW
+        # Demanda total por intervalo (128 tomas = 112 motos + 16 mototaxis)
+        # En pico: 112×2 + 16×3 = 224 + 48 = 272 kW
         df['total_demand_kw'] = (
             df['moto_power_kw'] * 112 +
             df['mototaxi_power_kw'] * 16
@@ -240,30 +260,44 @@ class ChargerDataVerification:
         # Potencia máxima teórica
         df['max_power_kw'] = 272.0  # Capacidad instalada
 
-        print(f"✓ Perfiles generados: {len(df)} horas (365 días × 24 horas)")
-        print(f"\n  Demanda horaria agregada:")
+        print(f"✓ Perfiles generados: {len(df)} intervalos de 30 min (365 días × 48 intervalos)")
+        print(f"  = {len(df) / 48:.0f} días × {len(df) // 365} intervalos/día")
+        print(f"\n  Demanda CADA 30 MINUTOS (Modo 3):")
         print(f"    ├─ Media: {df['total_demand_kw'].mean():.2f} kW")
-        print(f"    ├─ Min: {df['total_demand_kw'].min():.2f} kW (fuera de operación)")
-        print(f"    ├─ Max: {df['total_demand_kw'].max():.2f} kW (pico operación)")
-        print(f"    └─ Total anual: {df['total_demand_kw'].sum():.0f} kWh")
+        print(f"    ├─ Min: {df['total_demand_kw'].min():.2f} kW (cerrado 22:00-09:00)")
+        print(f"    ├─ Max: {df['total_demand_kw'].max():.2f} kW (pico 18:00-22:00)")
+
+        # Energía por intervalo (cada 30 min = 0.5 horas)
+        df['energy_kwh_30min'] = df['total_demand_kw'] * 0.5
+        print(f"    └─ Total anual: {df['energy_kwh_30min'].sum():.0f} kWh")
 
         print(f"\n  Desglose por tipo:")
-        motos_total = (df['moto_power_kw'] * 112).sum()
-        mototaxis_total = (df['mototaxi_power_kw'] * 16).sum()
-        print(f"    ├─ Motos (112 × 2kW): {motos_total:.0f} kWh/año ({motos_total/(motos_total+mototaxis_total)*100:.1f}%)")
-        print(f"    └─ Mototaxis (16 × 3kW): {mototaxis_total:.0f} kWh/año ({mototaxis_total/(motos_total+mototaxis_total)*100:.1f}%)")
+        motos_energy = (df['moto_power_kw'] * 112 * 0.5).sum()
+        mototaxis_energy = (df['mototaxi_power_kw'] * 16 * 0.5).sum()
+        total_energy = motos_energy + mototaxis_energy
+        print(f"    ├─ Motos (112 × 2kW): {motos_energy:.0f} kWh/año ({motos_energy/total_energy*100:.1f}%)")
+        print(f"    └─ Mototaxis (16 × 3kW): {mototaxis_energy:.0f} kWh/año ({mototaxis_energy/total_energy*100:.1f}%)")
+
+        print(f"\n  Horario operación:")
+        closed_intervals = len(df[df['total_demand_kw'] == 0])
+        open_intervals = len(df) - closed_intervals
+        print(f"    ├─ Abierto (09:00-22:00): {open_intervals} intervalos/día ({open_intervals/48*24:.1f} horas)")
+        print(f"    ├─ Cerrado (22:00-09:00): {closed_intervals//365} intervalos/día ({closed_intervals/48*24:.1f} horas)")
+        print(f"    └─ Pico (18:00-22:00): 8 intervalos/día (4.0 horas)")
 
         return df
 
     def save_charger_profiles(self, df: pd.DataFrame) -> Path:
-        """Guarda perfil horario de cargadores."""
+        """Guarda perfil de cargadores a resolución 30 minutos (Modo 3)."""
         output_path = self.chargers_dir / 'perfil_horario_carga.csv'
 
-        # Seleccionar columnas para salida
+        # Seleccionar columnas para salida (adaptado a 30 minutos)
         output_df = df[[
-            'hour',
+            'interval',
             'date',
             'hour_of_day',
+            'minute_of_hour',
+            'time_decimal',
             'day_of_week',
             'month',
             'moto_charge_factor',
@@ -276,6 +310,7 @@ class ChargerDataVerification:
 
         output_df.to_csv(output_path, index=False)
         print(f"\n✓ Perfil guardado: {output_path}")
+        print(f"  └─ Formato: 30 minutos (17,520 filas/año)")
         return output_path
 
     def generate_individual_chargers_json(self) -> Path:
