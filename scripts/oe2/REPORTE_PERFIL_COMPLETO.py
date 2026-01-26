@@ -1,11 +1,22 @@
-"""
-Visualización completa del perfil de carga de 15 minutos
+"""Visualización completa del perfil de carga de 15 minutos
+
 Mostrando la rampa de subida, hora pico, rampa de bajada y cierre
 """
-import pandas as pd
-import numpy as np
+from __future__ import annotations
 
-df = pd.read_csv('data/oe2/perfil_horario_carga.csv')
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+csv_path = Path('data/oe2/perfil_horario_carga.csv')
+if not csv_path.exists():
+    raise FileNotFoundError(f"Archivo no encontrado: {csv_path}")
+
+df = pd.read_csv(csv_path)
+
+if df.empty:
+    raise ValueError("El archivo CSV está vacío")
 
 print("=" * 80)
 print("PERFIL COMPLETO DE CARGA - RESOLUCIÓN 15 MINUTOS")
@@ -27,7 +38,7 @@ print("-" * 80)
 
 for hora in range(9, 23):
     data_hora = df[df['hour'] == hora]
-    if len(data_hora) > 0:
+    if not data_hora.empty:
         energia = data_hora['energy_kwh'].sum()
         pot_max = data_hora['power_kw'].max()
         pot_min = data_hora['power_kw'].min()
@@ -63,10 +74,15 @@ print("DETALLES - ÚLTIMA HORA ANTES DE CIERRE (21h) - RAMPA DESCENDENTE")
 print("=" * 80)
 hora_21 = df[df['hour'] == 21][['interval', 'time_of_day', 'hour', 'minute', 'energy_kwh', 'power_kw', 'is_peak']]
 print(hora_21.to_string(index=False))
-print(f"\nVerificación rampa descendente:")
-print(f"  21:00 → 21:15: {hora_21.iloc[0]['power_kw']:.2f} → {hora_21.iloc[1]['power_kw']:.2f} kW (↓{hora_21.iloc[0]['power_kw'] - hora_21.iloc[1]['power_kw']:.2f} kW)")
-print(f"  21:15 → 21:30: {hora_21.iloc[1]['power_kw']:.2f} → {hora_21.iloc[2]['power_kw']:.2f} kW (↓{hora_21.iloc[1]['power_kw'] - hora_21.iloc[2]['power_kw']:.2f} kW)")
-print(f"  21:30 → 21:45: {hora_21.iloc[2]['power_kw']:.2f} → {hora_21.iloc[3]['power_kw']:.2f} kW (↓{hora_21.iloc[2]['power_kw'] - hora_21.iloc[3]['power_kw']:.2f} kW)")
+if len(hora_21) >= 4:
+    print(f"\nVerificación rampa descendente:")
+    val_0 = float(hora_21.iloc[0]['power_kw'])
+    val_1 = float(hora_21.iloc[1]['power_kw'])
+    val_2 = float(hora_21.iloc[2]['power_kw'])
+    val_3 = float(hora_21.iloc[3]['power_kw'])
+    print(f"  21:00 → 21:15: {val_0:.2f} → {val_1:.2f} kW (↓{val_0 - val_1:.2f} kW)")
+    print(f"  21:15 → 21:30: {val_1:.2f} → {val_2:.2f} kW (↓{val_1 - val_2:.2f} kW)")
+    print(f"  21:30 → 21:45: {val_2:.2f} → {val_3:.2f} kW (↓{val_2 - val_3:.2f} kW)")
 
 print("\n" + "=" * 80)
 print("DETALLES - HORA DE CIERRE (22h) - CERO")
@@ -77,24 +93,40 @@ print(hora_22.to_string(index=False))
 print("\n" + "=" * 80)
 print("VERIFICACIÓN FINAL")
 print("=" * 80)
-print(f"✅ Total energía: {df['energy_kwh'].sum():.2f} kWh (objetivo: 3,252.00 kWh)")
-print(f"✅ Energía hora pico (18-21h): {df[df['is_peak']]['energy_kwh'].sum():.2f} kWh (40% = 1,300.80 kWh)")
-print(f"✅ Energía fuera pico: {df[~df['is_peak']]['energy_kwh'].sum():.2f} kWh (60% = 1,951.20 kWh)")
-print(f"✅ Energía a las 22h (cierre): {df[df['hour'] == 22]['energy_kwh'].sum():.2f} kWh (debe ser 0.00)")
-print(f"✅ Rampa descendente 21h: {hora_21['power_kw'].is_monotonic_decreasing} (debe ser True)")
-print(f"✅ Potencia máxima sistema: {df['power_kw'].max():.2f} kW")
 
-# Calcular distribución por período
-apertura = df[(df['hour'] >= 9) & (df['hour'] < 18)]['energy_kwh'].sum()
-pico = df[(df['hour'] >= 18) & (df['hour'] < 21)]['energy_kwh'].sum()
-cierre_rampa = df[df['hour'] == 21]['energy_kwh'].sum()
+# Calcular valores con type safety
+total_energia = float(df['energy_kwh'].sum())
+energia_pico = float(df[df['is_peak']]['energy_kwh'].sum())
+energia_fuera_pico = float(df[~df['is_peak']]['energy_kwh'].sum())
+energia_22h = float(df[df['hour'] == 22]['energy_kwh'].sum())
+potencia_max = float(df['power_kw'].max())
+
+print(f"✅ Total energía: {total_energia:.2f} kWh (objetivo: 3,252.00 kWh)")
+print(f"✅ Energía hora pico (18-21h): {energia_pico:.2f} kWh (40% = 1,300.80 kWh)")
+print(f"✅ Energía fuera pico: {energia_fuera_pico:.2f} kWh (60% = 1,951.20 kWh)")
+print(f"✅ Energía a las 22h (cierre): {energia_22h:.2f} kWh (debe ser 0.00)")
+
+# Validar rampa descendente con seguridad
+is_monotonic_decreasing = bool(hora_21['power_kw'].is_monotonic_decreasing)
+print(f"✅ Rampa descendente 21h: {is_monotonic_decreasing} (debe ser True)")
+print(f"✅ Potencia máxima sistema: {potencia_max:.2f} kW")
+
+# Calcular distribución por período con type safety
+apertura = float(df[(df['hour'] >= 9) & (df['hour'] < 18)]['energy_kwh'].sum())
+pico = float(df[(df['hour'] >= 18) & (df['hour'] < 21)]['energy_kwh'].sum())
+cierre_rampa = float(df[df['hour'] == 21]['energy_kwh'].sum())
+total = float(df['energy_kwh'].sum())
 
 print(f"\n{'=' * 80}")
 print("DISTRIBUCIÓN DE ENERGÍA POR PERÍODO")
 print("=" * 80)
-print(f"Apertura → Pre-pico (9h-18h):  {apertura:>10.2f} kWh  ({apertura/df['energy_kwh'].sum()*100:>5.1f}%)")
-print(f"Hora pico (18h-21h):            {pico:>10.2f} kWh  ({pico/df['energy_kwh'].sum()*100:>5.1f}%)")
-print(f"Rampa cierre (21h):             {cierre_rampa:>10.2f} kWh  ({cierre_rampa/df['energy_kwh'].sum()*100:>5.1f}%)")
+apertura_pct = (apertura / total * 100) if total > 0 else 0.0
+pico_pct = (pico / total * 100) if total > 0 else 0.0
+cierre_pct = (cierre_rampa / total * 100) if total > 0 else 0.0
+
+print(f"Apertura → Pre-pico (9h-18h):  {apertura:>10.2f} kWh  ({apertura_pct:>5.1f}%)")
+print(f"Hora pico (18h-21h):            {pico:>10.2f} kWh  ({pico_pct:>5.1f}%)")
+print(f"Rampa cierre (21h):             {cierre_rampa:>10.2f} kWh  ({cierre_pct:>5.1f}%)")
 print(f"Cierre (22h):                   {0.00:>10.2f} kWh  ({0.0:>5.1f}%)")
 print("-" * 80)
-print(f"TOTAL:                          {df['energy_kwh'].sum():>10.2f} kWh  (100.0%)")
+print(f"TOTAL:                          {total:>10.2f} kWh  (100.0%)")
