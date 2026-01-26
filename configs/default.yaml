@@ -190,6 +190,7 @@ oe3:
   evaluation:
     a2c:
       # A2C: On-policy, simple baseline (fast learning, good for comparison)
+      batch_size: 1024 # Maximum for RTX 4060 GPU
       checkpoint_freq_steps: 250 # More frequent checkpoints
       device: cuda
       entropy_coef: 0.01 # Balanced exploration-exploitation
@@ -224,7 +225,7 @@ oe3:
     multi_objective_priority: co2_focus
     ppo:
       # PPO: On-policy, stable, good for continuous control
-      batch_size: 64 # Reduced for stability
+      batch_size: 512 # Maximum for RTX 4060 GPU
       checkpoint_freq_steps: 250 # More frequent checkpoints
       device: cuda
       episodes: 3
@@ -262,7 +263,7 @@ oe3:
       co2_indirect_weight: 0.08
     sac:
       # SAC: Off-policy, sample-efficient (best for sparse rewards)
-      batch_size: 256 # Increased for better gradient estimates
+      batch_size: 1024 # Maximum for RTX 4060 GPU
       buffer_size: 5000000 # Larger replay buffer for variance reduction
       checkpoint_freq_steps: 250 # More frequent checkpoints
       deterministic_eval: true
