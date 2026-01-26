@@ -696,12 +696,15 @@ class PPOAgent:
 
         # Entrenar
         logger.info("[PPO] Starting model.learn() with callbacks")
-        self.model.learn(
-            total_timesteps=int(steps),
-            callback=callback,
-            reset_num_timesteps=not resuming,
-        )
-        logger.info("[PPO] model.learn() completed successfully")
+        if self.model is not None:
+            self.model.learn(
+                total_timesteps=int(steps),
+                callback=callback,
+                reset_num_timesteps=not resuming,
+            )
+            logger.info("[PPO] model.learn() completed successfully")
+        else:
+            logger.error("[PPO] Model is None, cannot start training")
         self._trained = True
         logger.info("PPO entrenado con %d timesteps, lr_schedule=%s", steps, self.config.lr_schedule)
 

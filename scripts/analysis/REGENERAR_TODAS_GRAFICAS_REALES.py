@@ -10,9 +10,9 @@ REGENERAR TODAS LAS GRÁFICAS CON DATOS REALES DE CHECKPOINTS
 
 import logging
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore[import]
 from pathlib import Path
-from stable_baselines3 import PPO, A2C, SAC
+from stable_baselines3 import PPO, A2C, SAC  # type: ignore[import]
 
 # Configuración
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

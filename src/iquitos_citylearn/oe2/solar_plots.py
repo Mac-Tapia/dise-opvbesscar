@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Tuple
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 
 import matplotlib.dates as mdates  # type: ignore[import-untyped]
 import matplotlib.pyplot as plt  # type: ignore[import-untyped]
@@ -71,8 +71,8 @@ def plot_energia_potencia_diaria(
     Gráfica 1: Energía y Potencia Máxima Diaria del Sistema FV
     Doble eje Y con barras de energía y línea de potencia máxima.
     """
-    from matplotlib.figure import Figure
-    from matplotlib.axes import Axes
+    from matplotlib.figure import Figure  # type: ignore[import]
+    from matplotlib.axes import Axes  # type: ignore[import]
 
     _fig: Figure
     ax1: Axes
@@ -91,7 +91,8 @@ def plot_energia_potencia_diaria(
 
     # Eje izquierdo: Energía diaria (barras)
     energy_values: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(daily_energy.values, dtype=np.float64)  # type: ignore[assignment]
-    ax1.fill_between(daily_energy.index, energy_values, alpha=0.6,
+    x_values: np.ndarray[Any, np.dtype[np.intp]] = np.arange(len(energy_values))  # type: ignore[assignment]
+    ax1.fill_between(x_values, energy_values, alpha=0.6,  # type: ignore[arg-type]
                      color='lightblue', label='Energía diaria (MWh)')
     ax1.axhline(y=energy_mean, color='blue', linestyle='--', linewidth=1.5,
                 label=f'Promedio: {energy_mean:.2f} MWh')
@@ -204,7 +205,7 @@ def plot_dia_representativo(df: pd.DataFrame, date_str: str, day_type: str,
     ax2 = fig.add_subplot(gs[1])
     energy_cumsum: pd.Series[Any] = day_data['ac_energy_kwh'].cumsum()  # type: ignore[assignment]
     cumsum_array: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(energy_cumsum.values)  # type: ignore[assignment]
-    ax2.fill_between(hours, cumsum_array, alpha=0.5, color='purple')
+    ax2.fill_between(hours, cumsum_array, alpha=0.5, color='purple')  # type: ignore[arg-type]
     ax2.plot(hours, cumsum_array, 'purple', linewidth=2, label='Energía acumulada (kWh)')
     ax2.set_xlabel('Hora del día', fontsize=11)
     ax2.set_ylabel('Energía acumulada (kWh)', fontsize=11)
@@ -418,7 +419,7 @@ def plot_poa_vs_potencia(df: pd.DataFrame, _results: Dict[str, Any], out_dir: Pa
     poa: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(df.loc[mask, 'ghi_wm2'].values)  # type: ignore[assignment]  # Usar GHI como proxy de POA
     power: np.ndarray[Any, np.dtype[np.floating[Any]]] = np.asarray(df.loc[mask, 'ac_power_kw'].values)  # type: ignore[assignment]
 
-    from matplotlib.figure import Figure
+    from matplotlib.figure import Figure  # type: ignore[import]
     fig: Figure
     fig, ax = plt.subplots(figsize=(10, 8))  # type: ignore[assignment]
 
@@ -652,7 +653,7 @@ def plot_analisis_temporal_avanzado(df: pd.DataFrame, monthly: pd.DataFrame,
     - Distribución de energía diaria con percentiles
     - Performance Ratio mensual
     """
-    from matplotlib.figure import Figure
+    from matplotlib.figure import Figure  # type: ignore[import]
     fig: Figure
     fig = plt.figure(figsize=(16, 12))  # type: ignore[assignment]
     gs = GridSpec(2, 3, figure=fig, hspace=0.3, wspace=0.3)

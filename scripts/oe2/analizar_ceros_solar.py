@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Verificar por qué hay valores de 0.0 en solar_generation en Building_1.csv"""
 
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 from pathlib import Path
 
 print("="*80)

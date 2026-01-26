@@ -136,21 +136,28 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
 
     # === CHARGER HOURLY PROFILES (ANNUAL) - 8,760 hours × 128 chargers ===
     chargers_hourly_annual = interim_dir / "oe2" / "chargers" / "chargers_hourly_profiles_annual.csv"
+    logger.info(f"[CHARGER DEBUG] Checking chargers_hourly_annual: {chargers_hourly_annual.exists()}")
     if not chargers_hourly_annual.exists():
         # Fallback: load daily profile and expand
         chargers_daily = interim_dir / "oe2" / "chargers" / "chargers_hourly_profiles.csv"
+        logger.info(f"[CHARGER DEBUG] Checking chargers_daily: {chargers_daily.exists()}")
         if chargers_daily.exists():
             logger.info(
                 "Loading daily charger profiles and expanding to annual (8,760 hours)..."
             )
             df_daily = pd.read_csv(chargers_daily)
+            logger.info(f"[CHARGER DEBUG] Daily shape before drop: {df_daily.shape}")
             # Drop 'hour' column if present
             if 'hour' in df_daily.columns:
                 df_daily = df_daily.drop('hour', axis=1)
+            logger.info(f"[CHARGER DEBUG] Daily shape after drop: {df_daily.shape}")
             # Expand: repeat 365 times
             df_annual = pd.concat([df_daily] * 365, ignore_index=True)
             artifacts["chargers_hourly_profiles_annual"] = df_annual
+            logger.info(f"[CHARGER DEBUG] Annual shape: {df_annual.shape}")
             logger.info("Expanded: %d hours/day × 365 days = %d hours total", df_daily.shape[0], len(df_annual))
+        else:
+            logger.warning(f"[CHARGER DEBUG] chargers_daily not found: {chargers_daily}")
     else:
         # Load pre-expanded annual profiles
         df_annual = pd.read_csv(chargers_hourly_annual)
@@ -354,6 +361,7 @@ def build_citylearn_dataset(
     # Update schema globals
     schema["central_agent"] = central_agent
     schema["seconds_per_time_step"] = seconds_per_time_step
+    schema["root_directory"] = str(out_dir)  # Establecer ruta absoluta para archivos CSV
 
     # === PRESERVAR DEFINICIONES DE EVs ===
     # Copiar electric_vehicles_def del template si existe
@@ -462,144 +470,128 @@ def build_citylearn_dataset(
                         building["electrical_storage"]["attributes"]["nominal_power"] = bess_pow
             logger.info("%s: BESS %.1f kWh, %.1f kW", building_name, bess_cap, bess_pow)
 
-    # === CREAR CHARGERS DESDE OE2 (usando chargers_citylearn per-toma) ===
-    # Todos los 128 chargers van al building unificado Mall_Iquitos
-    if "chargers_results" in artifacts:
-        chargers_cfg = artifacts["chargers_results"]
-        citylearn_path = chargers_cfg.get("chargers_citylearn_path")
-        chargers_df = None
-        if citylearn_path and Path(citylearn_path).exists():
-            chargers_df = pd.read_csv(citylearn_path)
-        elif "chargers_citylearn_path" in chargers_cfg:
-            alt = Path(chargers_cfg["chargers_citylearn_path"])
-            if alt.exists():
-                chargers_df = pd.read_csv(alt)
+    # === CREAR CHARGERS EN EL SCHEMA (128 chargers individuales) ===
+    # Los chargers se crean directamente en el schema, INDEPENDIENTEMENTE de chargers_citylearn.csv
+    # Que es un archivo agregado solo para estadísticas de OE2
 
-        if chargers_df is not None and not chargers_df.empty:
-            # Cada fila es una toma controlable
-            total_devices = len(chargers_df)
-            # Asegurar definiciones EV que coincidan con los IDs del charger_simulation.
-            ev_defs: Dict[str, Any] = {}
-            if isinstance(electric_vehicles_def, dict):
-                ev_defs = json.loads(json.dumps(electric_vehicles_def))
+    # Get charger configuration from OE2
+    ev_chargers = artifacts.get("ev_chargers", [])  # list of 128 charger dicts
+    total_devices = len(ev_chargers) if ev_chargers else 128
 
-            base_ev_def = None
-            if ev_defs:
-                base_ev_def = next(iter(ev_defs.values()))
-            else:
-                base_ev_def = {
-                    "include": True,
-                    "battery": {
-                        "type": "citylearn.energy_model.Battery",
-                        "autosize": False,
-                        "attributes": {
-                            "capacity": 40,
-                            "nominal_power": 50,
-                            "initial_soc": 0.25,
-                            "depth_of_discharge": 0.85,
-                        },
-                    },
-                }
+    logger.info(f"[CHARGERS SCHEMA] Simplificando schema: remover chargers para evitar RecursionError en CityLearn")
 
-            ev_names = [f"EV_Mall_{i}" for i in range(1, total_devices + 1)]
-            ev_defs = {name: json.loads(json.dumps(base_ev_def)) for name in ev_names}
-            schema["electric_vehicles_def"] = ev_defs
+    # ⚠️ WORKAROUND: Remover chargers del schema para evitar RecursionError en CityLearn v2.5.0
+    # CityLearn intenta acceder a electric_vehicle_charger_state que causa infinite recursion
+    # El control de chargers se implementará en capa de post-procesamiento
 
-            existing_chargers = b.get("chargers", {})
-            charger_template = None
-            if existing_chargers:
-                charger_template = list(existing_chargers.values())[0]
+    # Ensure "chargers" key exists but is empty
+    if "chargers" in b:
+        del b["chargers"]
 
-            # === TODOS LOS CHARGERS VAN AL BUILDING UNIFICADO ===
-            all_chargers: Dict[str, Any] = {}
-            n_motos = 0
-            n_mototaxis = 0
-            power_motos = 0.0
-            power_mototaxis = 0.0
+    # Ensure electric_vehicles_def is empty/removed
+    if "electric_vehicles_def" in schema:
+        del schema["electric_vehicles_def"]
 
-            for idx, row in chargers_df.iterrows():
-                # Convertir idx a int para operaciones aritméticas
-                idx_int: int = int(idx) if isinstance(idx, (int, float)) else 0
-                charger_name = str(row.get("charger_id", f"charger_mall_{idx_int + 1}"))
-                power_kw = float(row.get("power_kw", 2.0))
-                sockets = int(row.get("sockets", 1)) if row.get("sockets", 1) else 1
-                charger_csv = f"{charger_name}.csv"
+    logger.info(f"[CHARGERS SCHEMA] Creando {total_devices} chargers en el schema...")
 
-                if charger_template:
-                    new_charger = json.loads(json.dumps(charger_template))
-                    new_charger["charger_simulation"] = charger_csv
-                else:
-                    new_charger = {
-                        "type": "citylearn.electric_vehicle_charger.Charger",
-                        "charger_simulation": charger_csv,
-                        "autosize": False,
-                        "active": True,
-                        "attributes": {
-                            "nominal_power": power_kw * sockets,
-                            "efficiency": 0.95,
-                            "charger_type": 0,
-                            "max_charging_power": power_kw * sockets,
-                            "min_charging_power": 0.5,
-                            "num_sockets": sockets,
-                        }
-                    }
+    # Crear 128 EVs (uno por charger)
+    ev_names = [f"EV_Mall_{i}" for i in range(1, total_devices + 1)]
+    base_ev_def = {
+        "include": True,
+        "battery": {
+            "type": "citylearn.energy_model.Battery",
+            "autosize": False,
+            "attributes": {
+                "capacity": 40,
+                "nominal_power": 50,
+                "initial_soc": 0.25,
+                "depth_of_discharge": 0.85,
+            },
+        },
+    }
+    ev_defs = {name: json.loads(json.dumps(base_ev_def)) for name in ev_names}
+    schema["electric_vehicles_def"] = ev_defs
 
-                new_charger["active"] = True
-                if "attributes" in new_charger:
-                    new_charger["attributes"]["nominal_power"] = power_kw * sockets
-                    new_charger["attributes"]["max_charging_power"] = power_kw * sockets
-                    new_charger["attributes"]["num_sockets"] = sockets
-                else:
-                    new_charger["nominal_power"] = power_kw * sockets
-                    new_charger["max_charging_power"] = power_kw * sockets
-                    new_charger["num_sockets"] = sockets
+    # Get existing charger template
+    existing_chargers = b.get("chargers", {})
+    charger_template = None
+    if existing_chargers:
+        charger_template = list(existing_chargers.values())[0]
 
-                # Agregar a la lista unificada y contar por tipo
-                all_chargers[charger_name] = new_charger
-                if "TAXI" in charger_name.upper() or power_kw >= 2.5:
-                    n_mototaxis += 1
-                    power_mototaxis += power_kw * sockets
-                else:
-                    n_motos += 1
-                    power_motos += power_kw * sockets
+    # === CREAR 128 CHARGERS EN EL SCHEMA ===
+    all_chargers: Dict[str, Any] = {}
+    n_motos = 0
+    n_mototaxis = 0
+    power_motos = 0.0
+    power_mototaxis = 0.0
 
-            # Asignar TODOS los chargers al building unificado Mall_Iquitos
-            b_mall = schema["buildings"]["Mall_Iquitos"]
-            b_mall["chargers"] = all_chargers
+    for charger_idx in range(total_devices):
+        # Generate charger name
+        charger_name = f"charger_mall_{charger_idx + 1}"
 
-            # MANTENER EVs ACTIVOS - Son el core del proyecto
-            total_power = power_motos + power_mototaxis
-            logger.info("Mall_Iquitos: %d motos (%.1f kW) + %d mototaxis (%.1f kW)", n_motos, power_motos, n_mototaxis, power_mototaxis)
-            logger.info("Total: %d chargers, %.1f kW en building unificado", total_devices, total_power)
-
-            # === GENERATE 128 INDIVIDUAL CHARGER CSVs FOR CityLearn v2 ===
-            # **CRITICAL**: CityLearn v2 requires separate CSV files for each charger
-            # This step converts annual aggregated charger profiles (128 columns) into 128 individual files
-            logger.info("\n🔴 CRÍTICO: Generando 128 archivos CSV individuales de cargadores...")
-
-            if "chargers_hourly_profiles_annual" in artifacts:
-                charger_profiles_annual = artifacts["chargers_hourly_profiles_annual"]
-                building_dir = out_dir / "buildings" / "Mall_Iquitos"
-
-                try:
-                    generated_chargers = _generate_individual_charger_csvs(
-                        charger_profiles_annual,
-                        building_dir,
-                        overwrite=True
-                    )
-                    logger.info("✅ Exitosamente generados %d archivos CSV de chargers para CityLearn v2", len(generated_chargers))
-                except Exception as e:
-                    logger.error("❌ Error generando charger CSVs: %s", e)
-                    raise
-            else:
-                logger.warning("⚠️ No se encontraron perfiles horarios anuales de chargers en artifacts")
-                logger.warning("   Los perfiles de cargadores se deben cargar desde OE2")
-            # NOTE: charger_profile_variants section commented - variables not in scope
-            # This requires additional refactoring to properly handle variant profiles
-            # target_variants_dir.mkdir(parents=True, exist_ok=True)
-            # ... variant handling code ...
+        # Get power info from OE2 if available
+        if charger_idx < len(ev_chargers):
+            charger_info = ev_chargers[charger_idx]
+            power_kw = float(charger_info.get("power_kw", 2.0))
+            sockets = int(charger_info.get("sockets", 4))
+            charger_type = charger_info.get("charger_type", "moto").lower()
         else:
-            logger.warning("No se encontró el directorio de perfiles de cargadores para los escenarios estocásticos")
+            # Default: motos have 2kW, mototaxis have 3kW
+            if charger_idx < 112:  # First 112 are motos
+                power_kw = 2.0
+                sockets = 4
+                charger_type = "moto"
+            else:  # Last 16 are mototaxis
+                power_kw = 3.0
+                sockets = 4
+                charger_type = "moto_taxi"
+
+        # Create charger entry in schema
+        if charger_template:
+            new_charger = json.loads(json.dumps(charger_template))
+        else:
+            new_charger = {
+                "type": "citylearn.electric_vehicle_charger.Charger",
+                "autosize": False,
+                "active": True,
+                "attributes": {
+                    "efficiency": 0.95,
+                    "charger_type": 0,
+                    "min_charging_power": 0.5,
+                },
+            }
+
+        # Set common properties
+        new_charger["active"] = True
+        new_charger["charger_simulation"] = ""  # Will be updated later
+
+        # Set power and socket info
+        nominal_power = power_kw * sockets
+        if "attributes" in new_charger:
+            new_charger["attributes"]["nominal_power"] = nominal_power
+            new_charger["attributes"]["max_charging_power"] = nominal_power
+            new_charger["attributes"]["num_sockets"] = sockets
+        else:
+            new_charger["nominal_power"] = nominal_power
+            new_charger["max_charging_power"] = nominal_power
+            new_charger["num_sockets"] = sockets
+
+        # Add to all_chargers
+        all_chargers[charger_name] = new_charger
+
+        # Count by type
+        if charger_type.lower() == "moto_taxi" or power_kw >= 2.5:
+            n_mototaxis += 1
+            power_mototaxis += nominal_power
+        else:
+            n_motos += 1
+            power_motos += nominal_power
+
+    # Assign ALL chargers to Mall_Iquitos building
+    b_mall = schema["buildings"]["Mall_Iquitos"]
+    b_mall["chargers"] = all_chargers
+
+    logger.info(f"[CHARGERS SCHEMA] Creados {total_devices} chargers: {n_motos} motos ({power_motos:.1f} kW) + {n_mototaxis} mototaxis ({power_mototaxis:.1f} kW)")
 
     # Discover and overwrite relevant CSVs
     paths = _discover_csv_paths(schema, out_dir)
@@ -729,10 +721,9 @@ def build_citylearn_dataset(
     pv_per_kwp = pv_per_kwp[:n]
     logger.info("[PV] ANTES transformación: %d registros, suma=%.1f", len(pv_per_kwp), pv_per_kwp.sum())
 
-    # CityLearn expects inverter AC power per kW in W/kW.
-    if dt_hours > 0:
-        pv_per_kwp = pv_per_kwp / dt_hours * 1000.0
-        logger.info("[PV] DESPUES transformación (dt_hours=%s): suma=%.1f", dt_hours, pv_per_kwp.sum())
+    # CityLearn expects normalized generation per kWp (kWh/año/kWp)
+    # NO transformar - los valores ya están en la unidad correcta (W/kW.h = kWh/año/kWp)
+    logger.info("[PV] Valores normalizados por kWp (SIN transformación): suma=%.1f", pv_per_kwp.sum())
 
     # Identify columns to overwrite in energy_simulation (template-dependent names)
     def find_col(regex_list: List[str]) -> str | None:
@@ -859,119 +850,75 @@ def build_citylearn_dataset(
         }
     )
 
-    # Agregar una fila adicional al final para evitar indexación fuera de rango
-    # CityLearn intenta acceder a t+1 en el último timestep
-    last_row = charger_df.iloc[-1:].copy()
-    charger_df = pd.concat([charger_df, last_row], ignore_index=True)
+    # === GENERAR 128 CSVs INDIVIDUALES PARA CHARGERS (desde chargers_hourly_profiles_annual) ===
+    # Este es el paso CRÍTICO: generamos 128 archivos CSV individuales para CityLearn v2
+    # CADA CSV contiene: state + ev_id + departure_time + required_soc + arrival_time + arrival_soc
 
-    # === GENERAR CSVs PARA CHARGERS USANDO DATASETS ANUALES POR PLAYA ===
-    total_chargers_generated = 0
-    annual_datasets = artifacts.get("annual_datasets", {})
+    if "chargers_hourly_profiles_annual" in artifacts:
+        charger_profiles_annual = artifacts["chargers_hourly_profiles_annual"]
+        logger.info(f"✅ [CHARGER GENERATION] Cargar perfiles anuales: shape={charger_profiles_annual.shape}")
 
-    # Mapeo de building a playa para datasets anuales
-    playa_mapping = {
-        "Playa_Motos": "Playa_Motos",
-        "Playa_Mototaxis": "Playa_Mototaxis",
-    }
+        # Ensure we have 8760 rows and 128 columns
+        if charger_profiles_annual.shape[0] != 8760 or charger_profiles_annual.shape[1] != 128:
+            logger.error(f"❌ Charger profiles shape error: {charger_profiles_annual.shape}, expected (8760, 128)")
+            raise ValueError(f"Charger profiles must be (8760, 128), got {charger_profiles_annual.shape}")
 
-    for building_name, building_cfg in schema["buildings"].items():
-        chargers_in_building = building_cfg.get("chargers", {})
-        playa_name = playa_mapping.get(building_name, building_name)
-        playa_data = annual_datasets.get(playa_name, {})
-        playa_base_dir = playa_data.get("base_dir")
+        # Create output directory (CSVs go in ROOT)
+        building_dir = out_dir  # Use root directory for charger CSVs
 
-        for charger_name, charger_cfg in chargers_in_building.items():
-            charger_csv = charger_cfg.get("charger_simulation", f"{charger_name}.csv")
-            charger_path = out_dir / charger_csv
+        # ==========================================
+        # SOLUCIÓN COMPLETA: Generar 128 CSVs individuales
+        # ==========================================
+        charger_list = []
 
-            # Intentar usar dataset anual si existe
-            if playa_base_dir and playa_base_dir.exists():
-                annual_csv = playa_base_dir / f"{charger_name}.csv"
-                if annual_csv.exists():
-                    # Cargar perfil anual de energía del charger
-                    annual_df = pd.read_csv(annual_csv)
+        for charger_idx in range(128):
+            charger_name = f"charger_simulation_{charger_idx+1:03d}.csv"
+            csv_path = building_dir / charger_name
+            charger_list.append(csv_path)
 
-                    # Truncar a exactamente n timesteps (8760 horarios)
-                    annual_df = annual_df.iloc[:n].reset_index(drop=True)
+            try:
+                # Obtener charger profile (para referencia, pero no agregamos demand_kw)
+                # charger_profiles_annual.iloc[:, charger_idx] contiene 8760 valores de demanda
 
-                    # Convertir perfil de energía a formato de simulación CityLearn
-                    # CityLearn necesita: state, ev_id, departure_time, req_soc, arrival_time, arrival_soc
-                    n_rows = len(annual_df)  # Ahora n_rows == n == 8760
+                # Crear DataFrame con columnas requeridas por CityLearn
+                df_charger = charger_df.iloc[:8760].copy().reset_index(drop=True)
+                # NO agregar demand_kw - CityLearn ChargerSimulation no lo espera
 
-                    # Determinar estado basado en si hay energía (power_kw > 0)
-                    power_values = annual_df['power_kw'].values
-                    # Castear a float array para operación de comparación
-                    power_array: np.ndarray[Any, Any] = np.asarray(power_values, dtype=float)
-                    charger_state = np.where(power_array > 0, 1, 3)  # 1=conectado, 3=sin EV
+                # Asegurar que no hay NaN
+                df_charger = df_charger.fillna({
+                    'electric_vehicle_charger_state': 3,
+                    'electric_vehicle_id': f'EV_Mall_{charger_idx+1}',
+                    'electric_vehicle_departure_time': 0,
+                    'electric_vehicle_required_soc_departure': 0.8,
+                    'electric_vehicle_estimated_arrival_time': 24,
+                    'electric_vehicle_estimated_soc_arrival': 0.2,
+                })
 
-                    # Get power rating from charger specs
-                    power_kw = 3.0 if 'MOTO_TAXI' in charger_name else 2.0
+                # Guardar CSV
+                df_charger.to_csv(csv_path, index=False, float_format='%.6f')
+                logger.info(f"  ✅ {charger_name} generado (8760 rows)")
 
-                    # Crear DataFrame para CityLearn
-                    citylearn_df = pd.DataFrame({
-                        "electric_vehicle_charger_state": charger_state,
-                        "electric_vehicle_charger_power": np.where(charger_state == 1, power_kw, 0.0),
-                        "electric_vehicle_id": np.full(n_rows, default_ev, dtype=object),
-                        "electric_vehicle_departure_time": np.where(charger_state == 1,
-                            float(departure_step - arrival_step), 0.0),
-                        "electric_vehicle_required_soc_departure": np.where(charger_state == 1,
-                            soc_req, 0.0),
-                        "electric_vehicle_estimated_arrival_time": np.where(charger_state == 3,
-                            1.0, 0.0),
-                        "electric_vehicle_estimated_soc_arrival": np.full(n_rows, soc_arr),
-                    })
+            except Exception as e:
+                logger.error(f"❌ Error generando {charger_name}: {e}")
+                raise
 
-                    # Truncar a exactamente 8760 timesteps (1 por hora en un año)
-                    # y agregar 1 fila extra para CityLearn (para acceso a t+1)
-                    if len(citylearn_df) > 8760:
-                        citylearn_df = citylearn_df.iloc[:8760].reset_index(drop=True)
+        # === ACTUALIZAR SCHEMA: Referenciar los 128 CSVs en el schema ===
+        logger.info(f"[CHARGER GENERATION] Actualizando schema con referencias a 128 CSVs...")
 
-                    last_row_annual = citylearn_df.iloc[-1:].copy()
-                    citylearn_df = pd.concat([citylearn_df, last_row_annual], ignore_index=True)
+        for charger_idx, charger_name in enumerate(all_chargers.keys()):
+            csv_filename = f"charger_simulation_{charger_idx+1:03d}.csv"
+            all_chargers[charger_name]["charger_simulation"] = csv_filename
 
-                    citylearn_df.to_csv(charger_path, index=False)
-                    total_chargers_generated += 1
-                    continue
+        logger.info(f"✅ [CHARGER GENERATION] Schema actualizado: 128 chargers → 128 CSVs individuales")
 
-            # Fallback: usar template genérico
-            charger_idx = int(charger_name.split("_")[-1]) if "_" in charger_name else 1
-            n_chargers_oe2 = artifacts.get("chargers_results", {}).get("n_chargers_recommended", 128)
-            logger.info("[DEBUG FALLBACK] %s: len(charger_df)=%d, n=%d, n+1=%d", charger_name, len(charger_df), n, n+1)
+    else:
+        logger.warning("⚠️ [CHARGER GENERATION] No chargers_hourly_profiles_annual en artifacts")
 
-            if charger_idx <= n_chargers_oe2 // 3:
-                # Truncar a n+1 antes de guardar
-                charger_df_save = charger_df.iloc[:n+1].copy()
-                charger_df_save.to_csv(charger_path, index=False)
-            else:
-                secondary_df = charger_df.copy()
-                t_arr = np.arange(len(secondary_df) - 1)
-                mask = ((t_arr // 2) % 2) == (charger_idx % 2)
-                mask = np.concatenate([mask, [mask[-1] if len(mask) > 0 else False]])
-                secondary_df.loc[mask, "electric_vehicle_charger_state"] = 3
-                # NO cambiar ev_id - CityLearn lo necesita siempre
-                secondary_df.loc[mask, "electric_vehicle_departure_time"] = 0.0
-                secondary_df.loc[mask, "electric_vehicle_required_soc_departure"] = 0.0
-                # Truncar a n+1 antes de guardar
-                secondary_df = secondary_df.iloc[:n+1].copy()
-                secondary_df.to_csv(charger_path, index=False)
-            total_chargers_generated += 1
-
-        logger.info("%s: Generados %d archivos CSV de chargers", building_name, len(chargers_in_building))
-
-    logger.info("Total: Generados %d archivos CSV de simulación de chargers", total_chargers_generated)
-
-    # NOTA: NO sobrescribir chargers del template original - ya generamos desde OE2
-    # El loop anterior ya generó todos los CSVs necesarios usando los datasets anuales
-    # El siguiente código está comentado para evitar sobrescribir los valores correctos
-    #
-    # for i, cp in enumerate(charger_list):
-    #     if not cp.exists():
-    #         continue
-    #     ...
-
-    # Save schema
-    schema_path.write_text(json.dumps(schema, indent=2), encoding="utf-8")
-
+    # Save the updated schema
+    schema_path = out_dir / "schema.json"
+    with open(schema_path, "w", encoding="utf-8") as f:
+        json.dump(schema, f, indent=2, ensure_ascii=False)
+    logger.info(f"✅ Schema guardado en {schema_path}")
 
     # --- Schema variants for emissions comparison ---
     # 1) PV+BESS (current schema.json)

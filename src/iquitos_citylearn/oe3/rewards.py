@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import logging
+import gymnasium as gym
 
 logger = logging.getLogger(__name__)
 
@@ -388,11 +389,12 @@ class MultiObjectiveReward:
         self._reward_history = []
 
 
-class CityLearnMultiObjectiveWrapper:
+class CityLearnMultiObjectiveWrapper(gym.Env):
     """Wrapper para integrar recompensa multiobjetivo con CityLearn.
 
     Reemplaza la función de recompensa default de CityLearn con
-    nuestra función multiobjetivo.
+    nuestra función multiobjetivo. Hereda de gymnasium.Env para
+    compatibilidad con stable-baselines3.
     """
 
     def __init__(
@@ -401,9 +403,15 @@ class CityLearnMultiObjectiveWrapper:
         weights: Optional[MultiObjectiveWeights] = None,
         context: Optional[IquitosContext] = None,
     ):
+        super().__init__()
         self.env = env
         self.reward_fn = MultiObjectiveReward(weights, context)
         self._last_obs = None
+
+        # Copiar espacios de observation y action del env original
+        self.observation_space = env.observation_space
+        self.action_space = env.action_space
+        self.metadata = getattr(env, 'metadata', {})
 
     def reset(self, **kwargs):
         """Reset environment."""
@@ -495,6 +503,11 @@ class CityLearnMultiObjectiveWrapper:
     def __getattr__(self, name):
         """Delegar atributos no definidos al env original."""
         return getattr(self.env, name)
+
+    def close(self):
+        """Close environment."""
+        if hasattr(self.env, 'close'):
+            self.env.close()
 
 
 def create_iquitos_reward_weights(

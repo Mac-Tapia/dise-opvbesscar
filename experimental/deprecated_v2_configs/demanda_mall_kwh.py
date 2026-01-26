@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from typing import Optional, List, Dict
 from pathlib import Path
 import json
-import pandas as pd
+import pandas as pd  # type: ignore[import]
 import numpy as np
 from datetime import datetime
 
