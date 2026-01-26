@@ -11,7 +11,7 @@ import json
 import pandas as pd
 from pathlib import Path
 from collections import defaultdict
-from datetime import datetime
+from typing import Any, Dict
 import sys
 import io
 
@@ -31,7 +31,7 @@ with open(json_path) as f:
     chargers = json.load(f)
 
 # Agrupar por playa
-playas = defaultdict(lambda: {'motos': [], 'mototaxis': []})
+playas: Dict[str, Dict[str, list[Any]]] = defaultdict(lambda: {'motos': [], 'mototaxis': []})
 for charger in chargers:
     playa = charger['playa']
     charger_type = charger['charger_type']

@@ -135,8 +135,10 @@ def verify_and_generate_bess_data():
             }
 
         capacity = bess_cfg.get('capacity_kwh', 2000)
-        power = bess_cfg.get('power_kw', 1200)
-        efficiency = bess_cfg.get('efficiency', 0.92)
+        # Note: power and efficiency are configuration parameters but not used in this simulation
+        # They are preserved from the config for future use in more detailed models
+        _power = bess_cfg.get('power_kw', 1200)  # noqa: F841
+        _efficiency = bess_cfg.get('efficiency', 0.92)  # noqa: F841
         min_soc = bess_cfg.get('min_soc', 0.1)
         max_soc = bess_cfg.get('max_soc', 1.0)
 

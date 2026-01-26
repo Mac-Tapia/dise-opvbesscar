@@ -15,6 +15,13 @@ import sys
 from pathlib import Path
 import json
 import pandas as pd
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    try:
+        import yaml  # type: ignore[import-untyped]
+    except ImportError:
+        pass
 
 def check_file(path, description):
     """Verificar que un archivo existe."""
@@ -140,7 +147,7 @@ def check_configs():
         return False
 
     try:
-        import yaml
+        import yaml  # type: ignore[import-untyped]
         with open(config_path) as f:
             cfg = yaml.safe_load(f)
 

@@ -19,7 +19,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-def run_command(cmd, desc):
+def run_command(cmd: str, desc: str) -> bool:
     """Ejecutar comando con descripción."""
     print(f"\n{'='*80}")
     print(f"EJECUTANDO: {desc}")
@@ -110,7 +110,7 @@ Ingresa el número (1-5) o "exit" para salir:
 
 choice = input("> ").strip().lower()
 
-commands = {
+commands: dict[str, tuple[str, str | None]] = {
     "1": ("SAC", "python -m scripts.run_oe3_simulate --config configs/default.yaml --agent SAC --episodes 5"),
     "2": ("PPO", "python -m scripts.run_oe3_simulate --config configs/default.yaml --agent PPO --episodes 3"),
     "3": ("A2C", "python -m scripts.run_oe3_simulate --config configs/default.yaml --agent A2C --episodes 3"),
@@ -123,8 +123,9 @@ if choice == "exit":
 
 if choice in ["1", "2", "3"]:
     desc, cmd = commands[choice]
-    success = run_command(cmd, f"Entrenamiento {desc}")
-    sys.exit(0 if success else 1)
+    if cmd is not None:
+        success = run_command(cmd, f"Entrenamiento {desc}")
+        sys.exit(0 if success else 1)
 
 elif choice == "4":
     print("\nEjecutando secuencia completa: SAC → PPO → A2C\n")

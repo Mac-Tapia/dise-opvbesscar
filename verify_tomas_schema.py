@@ -16,7 +16,7 @@ def verify_tomas_schema() -> Dict[str, Any]:
     print("VERIFICACIÓN: 128 TOMAS CONECTADAS EN SCHEMA")
     print("="*80)
 
-    results = {"status": "✓ PASS", "issues": []}
+    results: Dict[str, Any] = {"status": "✓ PASS", "issues": []}
 
     # Rutas
     base_dir = Path(__file__).parent

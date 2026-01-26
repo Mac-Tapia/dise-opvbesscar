@@ -21,25 +21,24 @@ Verificaciones Implementadas:
 from __future__ import annotations
 
 import argparse
-import json  # type: ignore
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 
-import pandas as pd  # type: ignore[import]
+import pandas as pd
 
 from iquitos_citylearn.utils.logging import setup_logging
 from iquitos_citylearn.oe3.co2_table import load_summary
 from scripts._common import load_all
 
 
-def verify_objective_implementation() -> Dict[str, Any]:
+def verify_objective_implementation() -> dict[str, Any]:
     """Verifica que el objetivo principal esté implementado correctamente."""
 
     print("\n" + "="*80)
     print("VERIFICACIÓN DE OBJETIVO PRINCIPAL - OE3")
     print("="*80)
 
-    checks = {}
+    checks: dict[str, Any] = {}
 
     # 1. Verificar función de recompensa multiobjetivo
     print("\n[1] FUNCIÓN DE RECOMPENSA MULTIOBJETIVO")
@@ -89,9 +88,9 @@ def verify_objective_implementation() -> Dict[str, Any]:
         print(f"✓ Componentes de recompensa: {', '.join(found_components)}")
         print(f"✓ Test compute(): reward={reward:.3f}")
 
-        checks['multiobjetivo_implementado'] = True  # type: bool
-        checks['componentes_recompensa'] = len(found_components)  # type: int
-        checks['peso_co2_principal'] = weights.co2 >= 0.45  # type: bool
+        checks['multiobjetivo_implementado'] = True  # type: ignore[assignment]
+        checks['componentes_recompensa'] = len(found_components)  # type: ignore[assignment]
+        checks['peso_co2_principal'] = weights.co2 >= 0.45  # type: ignore[assignment]
 
     except Exception as e:
         print(f"✗ ERROR: {e}")
@@ -107,7 +106,7 @@ def verify_objective_implementation() -> Dict[str, Any]:
         ppo_cfg = PPOConfig()
         a2c_cfg = A2CConfig()
 
-        agents = {
+        agents: dict[str, Any] = {
             'SAC (Soft Actor-Critic)': sac_cfg,
             'PPO (Proximal Policy Optimization)': ppo_cfg,
             'A2C (Advantage Actor-Critic)': a2c_cfg
@@ -120,11 +119,11 @@ def verify_objective_implementation() -> Dict[str, Any]:
             if hasattr(cfg, 'learning_rate'):
                 print(f"    Learning rate: {cfg.learning_rate}")
 
-        checks['num_agentes'] = len(agents)  # type: int
+        checks['num_agentes'] = len(agents)  # type: ignore[assignment]
 
     except Exception as e:
         print(f"✗ ERROR: {e}")
-        checks['num_agentes'] = 0  # type: int
+        checks['num_agentes'] = 0  # type: ignore[assignment]
 
     # 3. Verificar script de generación de tabla comparativa
     print("\n[3] TABLA COMPARATIVA DE AGENTES")
@@ -217,7 +216,7 @@ def verify_objective_implementation() -> Dict[str, Any]:
     try:
         cfg_file = Path("configs/default.yaml")
         if cfg_file.exists():
-            import yaml
+            import yaml  # type: ignore[import]
             with open(cfg_file) as f:
                 cfg = yaml.safe_load(f)
 
@@ -278,26 +277,26 @@ def verify_objective_implementation() -> Dict[str, Any]:
             if len(found_metrics) == len(metrics):
                 print(f"\n✓ TODAS las métricas multiobjetivo se registran")
 
-            checks['metricas_simulacion'] = len(found_metrics)
+            checks['metricas_simulacion'] = len(found_metrics)  # type: ignore[assignment]
         else:
             print(f"✗ simulate.py NO EXISTE")
-            checks['metricas_simulacion'] = 0
+            checks['metricas_simulacion'] = 0  # type: ignore[assignment]
 
     except Exception as e:
         print(f"✗ ERROR: {e}")
-        checks['metricas_simulacion'] = 0
+        checks['metricas_simulacion'] = 0  # type: ignore[assignment]
 
-    return checks
+    return checks  # type: ignore[return-value]
 
 
-def analyze_summary_if_available(config_path: str) -> Dict[str, Any]:
+def analyze_summary_if_available(config_path: str) -> dict[str, Any]:
     """Analiza el summary si existe (después de entrenamiento)."""
 
     print("\n" + "="*80)
     print("ANÁLISIS DE RESULTADOS (SI DISPONIBLE)")
     print("="*80)
 
-    results: Dict[str, Any] = {}
+    results: dict[str, Any] = {}
 
     try:
         _, rp = load_all(config_path)
@@ -346,7 +345,7 @@ def analyze_summary_if_available(config_path: str) -> Dict[str, Any]:
             r_grid = res.get('reward_grid_mean', 0.0)
             r_total = res.get('reward_total_mean', 0.0)
 
-            agents_data.append({
+            agents_data.append({  # type: ignore[attr-defined]
                 'agente': agent_name,
                 'ev_kwh_anual': ev_kwh_y,
                 'import_red_kwh_anual': import_kwh_y,
@@ -370,7 +369,7 @@ def analyze_summary_if_available(config_path: str) -> Dict[str, Any]:
             df_agents = pd.DataFrame(agents_data)
 
             # Ordenar por CO₂ (menor es mejor)
-            df_agents = df_agents.sort_values('carbon_tco2_anual').reset_index(drop=True)
+            df_agents = df_agents.sort_values('carbon_tco2_anual').reset_index(drop=True)  # type: ignore[attr-defined]
             df_agents['ranking'] = range(1, len(df_agents) + 1)
 
             best_agent = df_agents.iloc[0]
