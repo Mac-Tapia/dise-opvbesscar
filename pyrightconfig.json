@@ -1,6 +1,8 @@
 {
     "include": [
-        "src"
+        "src",
+        "scripts",
+        "*.py"
     ],
     "exclude": [
         "**/__pycache__",
@@ -9,8 +11,7 @@
         "outputs",
         "checkpoints",
         "analyses",
-        "reports",
-        "scripts"
+        "reports"
     ],
     "reportMissingImports": false,
     "reportMissingTypeStubs": false,
@@ -18,7 +19,7 @@
     "reportUnusedVariable": "warning",
     "reportGeneralTypeIssues": false,
     "reportOptionalMemberAccess": false,
-    "reportArgumentType": false,
+    "typeCheckingMode": "standard""reportArgumentType": false,
     "reportOperatorIssue": false,
     "reportIncompatibleVariableOverride": false,
     "reportIncompatibleMethodOverride": false,
