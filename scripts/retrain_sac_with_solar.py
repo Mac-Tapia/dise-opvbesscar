@@ -12,6 +12,7 @@ if sys.version_info != (3, 11):
 
 from src.iquitos_citylearn._common import load_all
 from src.iquitos_citylearn.oe3.agents import make_sac
+from citylearn.citylearn import CityLearnEnv
 import logging
 
 logger = logging.getLogger(__name__)
@@ -24,23 +25,25 @@ def main() -> None:
     args = ap.parse_args()
 
     cfg, rp = load_all(args.config)
-    
+
     logger.info("=" * 80)
     logger.info("REENTRENANDO SAC CON DATOS SOLARES CORREGIDOS")
     logger.info("=" * 80)
     logger.info(f"Dataset: {rp.citylearn_processed}")
     logger.info(f"Episodios: {args.episodes}")
     logger.info(f"Resume: {args.resume}")
-    
+
     # Construir ambiente CityLearn con solar correctamente asignado
-    
+    schema_path = next(rp.outputs_dir.glob("schema_*.json"))
+    env = CityLearnEnv(schema_path=str(schema_path))
+
     # Crear agente SAC
     agent = make_sac(env, cfg["oe3"]["evaluation"]["sac"])
-    
+
     # Entrenar
     logger.info(f"Entrenando SAC...")
     agent.learn(episodes=args.episodes)
-    
+
     logger.info("=" * 80)
     logger.info("ENTRENAMIENTO COMPLETADO")
     logger.info("=" * 80)

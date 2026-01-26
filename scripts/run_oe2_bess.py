@@ -81,13 +81,23 @@ def main() -> None:
         fixed_capacity_kwh=float(bess_cfg.get("fixed_capacity_kwh", 0) or 0),
         fixed_power_kw=float(bess_cfg.get("fixed_power_kw", 0) or 0),
     )
-    
+
     # Mostrar resumen
     print("\nRESUMEN FINAL BESS:")
-    print(f"   Capacidad: {result['capacity_kwh']:.0f} kWh")
-    print(f"   Potencia:  {result['nominal_power_kw']:.0f} kW")
-    print(f"   Autosuficiencia: {result['self_sufficiency']*100:.1f}%")
-    print(f"   Import red: {result['grid_import_kwh_day']:.0f} kWh/dia")
+    assert isinstance(result['capacity_kwh'], (int, float)), "capacity_kwh debe ser numérico"
+    assert isinstance(result['nominal_power_kw'], (int, float)), "nominal_power_kw debe ser numérico"
+    assert isinstance(result['self_sufficiency'], (int, float)), "self_sufficiency debe ser numérico"
+    assert isinstance(result['grid_import_kwh_day'], (int, float)), "grid_import_kwh_day debe ser numérico"
+
+    capacity_kwh: float = float(result['capacity_kwh'])
+    power_kw: float = float(result['nominal_power_kw'])
+    self_suff: float = float(result['self_sufficiency'])
+    grid_import: float = float(result['grid_import_kwh_day'])
+
+    print(f"   Capacidad: {capacity_kwh:.0f} kWh")
+    print(f"   Potencia:  {power_kw:.0f} kW")
+    print(f"   Autosuficiencia: {self_suff * 100:.1f}%")
+    print(f"   Import red: {grid_import:.0f} kWh/dia")
 
 
 if __name__ == "__main__":
