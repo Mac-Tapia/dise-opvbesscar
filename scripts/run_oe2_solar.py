@@ -19,7 +19,7 @@ from scripts._common import load_all
 def main() -> None:
     ap = argparse.ArgumentParser(description="Dimensionamiento solar con Sandia + PVGIS")
     ap.add_argument("--config", default="configs/default.yaml", help="Archivo de configuración")
-    ap.add_argument("--interval", type=int, default=15, help="Intervalo en minutos (default: 15)")
+    ap.add_argument("--interval", type=int, default=60, help="Intervalo en minutos (default: 60 HORAS para OE3)")
     ap.add_argument("--no-plots", action="store_true", help="No generar gráficas")
     args = ap.parse_args()
 

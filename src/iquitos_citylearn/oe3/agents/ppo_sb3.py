@@ -41,27 +41,27 @@ class PPOConfig:
     dimensionalidad como CityLearn con ~900 obs dims × 126 action dims.
     Para convergencia óptima, usar 1M+ pasos.
     """
-    # Hiperparámetros de entrenamiento - PPO MÁXIMA POTENCIA
-    train_steps: int = 1000000  # ↑↑ 2x más pasos (mejor convergencia)
-    n_steps: int = 2048         # ↑ Aún más experiencias por update
-    batch_size: int = 128        # ↓ Batch pequeño para PPO (on-policy)
-    n_epochs: int = 20           # ↑ Más updates por batch
+    # Hiperparámetros de entrenamiento - PPO OPTIMIZADO PARA RTX 4060
+    train_steps: int = 500000  # ↓ REDUCIDO: 1M→500k (RTX 4060 limitación)
+    n_steps: int = 1024         # ↓ REDUCIDO: 2048→1024 (menos buffer)
+    batch_size: int = 64         # ↓ REDUCIDO: 128→64 (mitad para GPU)
+    n_epochs: int = 10           # ↓ REDUCIDO: 20→10 (menos updates)
 
-    # Optimización - PPO FINO AJUSTADO
-    learning_rate: float = 2.0e-4   # ↓ Aún más bajo
+    # Optimización - PPO ADAPTADO A GPU LIMITADA
+    learning_rate: float = 3e-4     # ↑ Aumentado: 2e-4→3e-4 (compensar menos epochs)
     lr_schedule: str = "linear"     # ✅ Decay automático
-    gamma: float = 0.999            # ↑ Horizonte más largo
-    gae_lambda: float = 0.98        # ↑ Mejor estimación advantage
+    gamma: float = 0.99             # ↓ REDUCIDO: 0.999→0.99 (simplifica)
+    gae_lambda: float = 0.95        # ↓ REDUCIDO: 0.98→0.95 (menos varianza)
 
-    # Clipping y regularización - PPO PRECISO
-    clip_range: float = 0.1         # ↓ Más restrictivo (más estable)
-    clip_range_vf: float = 0.1      # ↓ Value function clipping
-    ent_coef: float = 0.01          # ↓ Menos ruido (más focus)
-    vf_coef: float = 0.7            # ↑ Value function más importante
-    max_grad_norm: float = 1.0      # ↑ Menos agresivo
+    # Clipping y regularización - PPO ESTABLE
+    clip_range: float = 0.2         # ↑ AUMENTADO: 0.1→0.2 (menos restrictivo)
+    clip_range_vf: float = 0.2      # ↑ AUMENTADO: 0.1→0.2
+    ent_coef: float = 0.01          # ✅ Mantener
+    vf_coef: float = 0.5            # ↓ REDUCIDO: 0.7→0.5 (menos focus en VF)
+    max_grad_norm: float = 0.5      # ↓ REDUCIDO: 1.0→0.5 (más suave)
 
-    # Red neuronal - PPO GRANDE
-    hidden_sizes: tuple = (1024, 1024)  # ↑↑ MÁS GRANDE
+    # Red neuronal - REDUCIDA PARA RTX 4060
+    hidden_sizes: tuple = (512, 512)   # ↓ REDUCIDA: 1024→512
     activation: str = "relu"
     ortho_init: bool = True
 
@@ -69,7 +69,7 @@ class PPOConfig:
     normalize_advantage: bool = True
 
     # === EXPLORACIÓN MEJORADA ===
-    use_sde: bool = True
+    use_sde: bool = False  # ↓ DESHABILITADO (SDE requiere más memoria)
     sde_sample_freq: int = -1
 
     # === CONFIGURACIÓN GPU/CUDA ===

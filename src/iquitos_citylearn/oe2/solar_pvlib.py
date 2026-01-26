@@ -1074,7 +1074,7 @@ def build_pv_timeseries_sandia(
     target_dc_kw: float,
     target_ac_kw: float,
     target_annual_kwh: float,
-    seconds_per_time_step: int = 900,  # 15 minutos por defecto
+    seconds_per_time_step: int = 3600,  # 1 HORA por defecto (OE3 requiere horario: 8,760 rows/año)
     selection_mode: str = "manual",
     candidate_count: int = 5,
     selection_metric: str = "energy_per_m2",
