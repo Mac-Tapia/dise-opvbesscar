@@ -57,27 +57,25 @@ python run_pipeline_visible.py
 - Documentación RL: `docs/INFORME_UNICO_ENTRENAMIENTO_TIER2.md`,
   - `COMPARACION_BASELINE_VS_RL.txt`
 
-## Documentación detallada (índice rápido)
+## 📖 Documentación Consolidada
 
-- `COMPARACION_BASELINE_VS_RL.txt`: resumen cuantitativo baseline vs RL (CO₂,
-  - costo, picos, uso solar).
-- `reports/oe2/co2_breakdown/oe2_co2_breakdown.{json,csv}`: tabla de reducción
-  - directa/indirecta/netas (capacidad OE2).
-- `data/interim/oe2/solar/solar_technical_report.md`: reporte técnico PV
-  - (módulos, inversores, strings, métricas anuales).
-- `docs/INFORME_UNICO_ENTRENAMIENTO_TIER2.md`: estado de entrenamiento RL, KPIs
-  - y pendientes.
-- `VERIFICACION_COMPLETA_SOLAR_PVLIB.txt`: verificación de flujo pvlib/PVGIS y
-  - configuración de strings.
-- `GUIA_FUNCIONAMIENTO_SIMULACION.md`: cómo ejecutar la simulación y visualizar
-  - resultados.
-- `DASHBOARD_PRO_DOCUMENTACION.md` y `dashboard_pro.py`: dashboard de monitoreo.
-- `docker/`, `docker-compose*.yml`, `DOCKER_SETUP_GUIDE.md`: despliegue en
-  - contenedores.
-- `k8s-deployment.yaml`, `k8s_manager.py`, `KUBERNETES_MONGODB_GUIDE.md`:
-  - despliegue en Kubernetes.
-- `configs/default.yaml`: parámetros OE2/OE3 (PV/BESS, flota, recompensas).
-- `run_pipeline_visible.py` y `scripts/`: orquestación del pipeline y
+Essential guides consolidated in root directory:
+
+- **[QUICKSTART.md](QUICKSTART.md)** - Start here: 5-minute setup guide
+- **[COMANDOS_EJECUTABLES.md](COMANDOS_EJECUTABLES.md)** - All executable commands (dataset build, training, comparisons)
+- **[STATUS_ACTUAL_2026_01_25.md](STATUS_ACTUAL_2026_01_25.md)** - Current system status and timeline
+- **[RESUMEN_EJECUTIVO_ENTRENAMIENTO_OE3.md](RESUMEN_EJECUTIVO_ENTRENAMIENTO_OE3.md)** - Training results and agent comparisons
+- **[CONFIGURACIONES_OPTIMAS_AGENTES_OE3.md](CONFIGURACIONES_OPTIMAS_AGENTES_OE3.md)** - Agent hyperparameters and architecture
+- **[ARQUITECTURA_TOMAS_INDEPENDIENTES.md](ARQUITECTURA_TOMAS_INDEPENDIENTES.md)** - System architecture and design
+- **[TESTING_FOLDER_ANALYSIS.md](TESTING_FOLDER_ANALYSIS.md)** - Testing folder structure and utilities
+- **[PROJECT_VERIFICATION_FINAL.md](PROJECT_VERIFICATION_FINAL.md)** - Final project verification report
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines and standards
+
+### Additional Resources
+- `reports/oe2/co2_breakdown/oe2_co2_breakdown.{json,csv}` - CO₂ reduction breakdown
+- `data/interim/oe2/solar/solar_technical_report.md` - PV technical specifications
+- `docs/` - Additional technical documentation
+- `historical/` - Archived one-time scripts (for reference only)
   - utilidades.
 
 ## Despliegue
