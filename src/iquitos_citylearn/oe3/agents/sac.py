@@ -142,25 +142,25 @@ class SACConfig:
     dimensionalidad como CityLearn con ~900 obs dims × 126 action dims.
     Para convergencia óptima, usar 100+ episodios.
     """
-# Hiperparámetros de entrenamiento - SAC MÁXIMA POTENCIA
+# Hiperparámetros de entrenamiento - SAC OPTIMIZADO PARA RTX 4060 (8GB VRAM)
     episodes: int = 50  # 50 mínimo para alta dimensionalidad (8760 pasos/ep)
-    batch_size: int = 512                    # ↑ SAC es off-policy, puede usar batch grande
-    buffer_size: int = 1000000              # ↑↑ 10x más memoria = mejor estabilidad
-    learning_rate: float = 1.5e-4            # ↓ Aún más bajo para suavidad extrema
-    gamma: float = 0.999                     # ↑ Discount factor más alto (horizonte largo)
-    tau: float = 0.001                       # ↓ Soft updates MUCHO más suave
+    batch_size: int = 256                    # ↓ REDUCIDO: 512→256 (evita OOM en GPU RTX 4060)
+    buffer_size: int = 500000              # ↓ REDUCIDO: 1M→500k (menos overhead de memoria)
+    learning_rate: float = 3e-4              # ✅ Mantener para convergencia
+    gamma: float = 0.99                      # ↓ Reducido: 0.999→0.99 (simplifica Q-function)
+    tau: float = 0.001                       # ✅ Mantener para soft updates
 
     # Entropía - SAC DINÁMICO para mejor exploración
     ent_coef: float = 0.01                   # ✅ AUTO adaptativo: comienza bajo, ajusta
     target_entropy: Optional[float] = None   # Auto-calcula based on action space (-dim/2)
 
-    # Red neuronal - SAC POTENTE
-    hidden_sizes: tuple = (1024, 1024)       # ↑↑ GRANDE para complejidad Iquitos
+    # Red neuronal - REDUCIDA para RTX 4060
+    hidden_sizes: tuple = (512, 512)         # ↓ REDUCIDA: 1024→512 (menos parámetros)
     activation: str = "relu"                 # ✅ Óptimo para SAC
 
     # Escalabilidad
     n_steps: int = 1
-    gradient_steps: int = 1
+    gradient_steps: int = 1                  # ✅ Ya está en 1 (bien, no cambiar)
 
     # === CONFIGURACIÓN GPU/CUDA ===
     device: str = "auto"  # "auto", "cuda", "cuda:0", "cuda:1", "mps", "cpu"

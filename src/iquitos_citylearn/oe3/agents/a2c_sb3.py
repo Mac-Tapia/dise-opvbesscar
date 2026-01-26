@@ -49,17 +49,17 @@ class A2CConfig:
     Nota: train_steps=500000 es el mínimo recomendado para problemas de alta
     dimensionalidad como CityLearn con ~900 obs dims × 126 action dims.
     """
-    # Hiperparámetros de entrenamiento - A2C MÁXIMA POTENCIA
-    train_steps: int = 1000000  # ↑↑ 2x más pasos (mejor convergencia)
-    n_steps: int = 2048         # ↑↑ Recolecta MÁS experiencias
-    learning_rate: float = 1.5e-4  # ↓ Aún más bajo
+    # Hiperparámetros de entrenamiento - A2C OPTIMIZADO PARA RTX 4060
+    train_steps: int = 500000  # ↓ REDUCIDO: 1M→500k (GPU limitada)
+    n_steps: int = 512         # ↓ REDUCIDO: 2048→512 (menos buffer)
+    learning_rate: float = 3e-4    # ↑ AUMENTADO: 1.5e-4→3e-4
     lr_schedule: str = "linear"    # ✅ Decay automático
-    gamma: float = 0.999           # ↑ Horizonte más largo
-    gae_lambda: float = 0.95       # ✅ Óptimo para A2C
-    ent_coef: float = 0.01         # ↓ Menos ruido, más focus
-    vf_coef: float = 0.7           # ↑ Value function más importante
-    max_grad_norm: float = 1.0     # ↑ Menos agresivo
-    hidden_sizes: tuple = (1024, 1024)  # ↑↑ GRANDE como SAC
+    gamma: float = 0.99            # ↓ REDUCIDO: 0.999→0.99 (simplifica)
+    gae_lambda: float = 0.90       # ↓ REDUCIDO: 0.95→0.90 (menos varianza)
+    ent_coef: float = 0.01         # ✅ Mantener
+    vf_coef: float = 0.5           # ↓ REDUCIDO: 0.7→0.5
+    max_grad_norm: float = 0.5     # ↓ REDUCIDO: 1.0→0.5
+    hidden_sizes: tuple = (512, 512)   # ↓ REDUCIDA: 1024→512
     activation: str = "relu"
     device: str = "auto"
     seed: int = 42

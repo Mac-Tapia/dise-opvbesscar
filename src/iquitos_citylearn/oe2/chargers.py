@@ -10,13 +10,20 @@ Incluye:
 INTEGRACIÓN SISTEMA COMPLETO (OE2):
 ====================================
 
-CARGADORES EV:
-- Configuración: 112 motos (2 kW) + 16 mototaxis (3 kW)
+CARGADORES EV (TOMAS CONTROLABLES):
+- Configuración: 112 tomas para motos (2 kW c/u) + 16 tomas para mototaxis (3 kW c/u)
+- Total tomas: 128 (cada toma controlada de forma INDEPENDIENTE)
 - Capacidad instalada: 272 kW máximo
 - Perfil de carga: 15 minutos (96 intervalos/día)
 - Energía diaria: 3,252 kWh (perfil completo)
 - Horario operación: 09:00 - 22:00 (13 horas)
 - Horario pico: 18:00 - 22:00 (4 horas)
+
+CONTROL OE3 - ARQUITECTURA DE TOMAS:
+- Observables: 128 tomas (estado de cada EV conectado)
+- Acciones: 128 tomas (potencia [0-1] asignada a cada toma de forma independiente)
+- Despacho: Por cada toma, sistema detecta EV conectado → asigna potencia según acción RL
+- Restricción: Potencia máxima por toma (2 kW motos, 3 kW mototaxis)
 
 BESS (Sistema de Almacenamiento):
 - Capacidad base calculada: 1,360 kWh

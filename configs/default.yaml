@@ -75,6 +75,11 @@ oe2:
   ev_fleet:
     charger_power_kw_moto: 2.0
     charger_power_kw_mototaxi: 3.0
+    # ARQUITECTURA OE3: 128 TOMAS CONTROLABLES INDEPENDIENTEMENTE
+    # - 112 tomas para motos (2.0 kW cada una)
+    # - 16 tomas para mototaxis (3.0 kW cada una)
+    # Cada toma es controlada por el agente RL de forma INDEPENDIENTE
+    # viendo estado de carga individual de cada EV conectado
     closing_hour: 22
     daily_sessions_factor: 1.0
     fc_motos: 0.9
@@ -91,7 +96,7 @@ oe2:
       - 21
     peak_share_day: 0.5
     session_minutes: 30
-    sockets_per_charger: 4
+    sockets_per_charger: 4 # 4 sockets por charger (referencial - la unidad de control es TOMA)
     utilization: 0.92
   location:
     alt: 104.0
@@ -136,7 +141,7 @@ oe2:
     surface_azimuth: 0.0
     surface_tilt: 10.0
     target_ac_kw: 3201.2
-    target_annual_kwh: 3972478
+    target_annual_kwh: 8030119
     target_dc_kw: 4162.0
     use_pvlib: true
 oe3:
@@ -187,7 +192,7 @@ oe3:
       checkpoint_freq_steps: 500
       device: cuda
       entropy_coef: 0.01
-      episodes: 2
+      episodes: 5
       learning_rate: 0.001
       log_interval: 250
       max_grad_norm: 0.5
@@ -214,7 +219,7 @@ oe3:
       batch_size: 512
       checkpoint_freq_steps: 500
       device: cpu
-      episodes: 2
+      episodes: 5
       ent_coef: 0.005
       kl_adaptive: true
       learning_rate: 2.5e-4
@@ -245,7 +250,7 @@ oe3:
       checkpoint_freq_steps: 100
       deterministic_eval: true
       device: cuda
-      episodes: 2
+      episodes: 5
       gradient_steps: 256
       learning_rate: 0.001
       learning_starts: 50
