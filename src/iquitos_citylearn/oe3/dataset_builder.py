@@ -518,7 +518,9 @@ def build_citylearn_dataset(
             power_mototaxis = 0.0
 
             for idx, row in chargers_df.iterrows():
-                charger_name = str(row.get("charger_id", f"charger_mall_{idx+1}"))
+                # Convertir idx a int para operaciones aritméticas
+                idx_int: int = int(idx) if isinstance(idx, (int, float)) else 0
+                charger_name = str(row.get("charger_id", f"charger_mall_{idx_int + 1}"))
                 power_kw = float(row.get("power_kw", 2.0))
                 sockets = int(row.get("sockets", 1)) if row.get("sockets", 1) else 1
                 charger_csv = f"{charger_name}.csv"
@@ -898,7 +900,9 @@ def build_citylearn_dataset(
 
                     # Determinar estado basado en si hay energía (power_kw > 0)
                     power_values = annual_df['power_kw'].values
-                    charger_state = np.where(power_values > 0, 1, 3)  # 1=conectado, 3=sin EV
+                    # Castear a float array para operación de comparación
+                    power_array: np.ndarray[Any, Any] = np.asarray(power_values, dtype=float)
+                    charger_state = np.where(power_array > 0, 1, 3)  # 1=conectado, 3=sin EV
 
                     # Get power rating from charger specs
                     power_kw = 3.0 if 'MOTO_TAXI' in charger_name else 2.0
