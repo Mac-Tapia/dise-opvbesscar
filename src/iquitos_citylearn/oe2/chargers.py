@@ -59,7 +59,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Tuple, Any, Optional
+from typing import Any
+from numpy.typing import NDArray
 import math
 import json
 import numpy as np
@@ -123,11 +124,11 @@ class IndividualCharger:
     location_x: float = 0.0
     location_y: float = 0.0
     # Perfil de uso asignado
-    hourly_load_profile: List[float] = field(default_factory=list)
+    hourly_load_profile: list[float] = field(default_factory=list)  # type: ignore[var-annotated]
     daily_energy_kwh: float = 0.0
     peak_power_kw: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             'charger_id': self.charger_id,
             'charger_type': self.charger_type,
@@ -159,10 +160,10 @@ class PlayaData:
     energy_day_kwh: float
     pv_kwp: float = 0.0
     bess_kwh: float = 0.0
-    chargers: List[IndividualCharger] = field(default_factory=list)
-    hourly_profile: Optional[pd.DataFrame] = None
+    chargers: list[IndividualCharger] = field(default_factory=list)  # type: ignore[var-annotated]
+    hourly_profile: pd.DataFrame | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             'name': self.name,
             'vehicle_type': self.vehicle_type,
@@ -189,7 +190,7 @@ def calculate_vehicle_demand(
     _fc: float = 1.0,  # FC no afecta cantidad de vehículos, solo energía
     days_per_month: int = 30,
     days_per_year: int = 365,
-) -> Dict[str, int]:
+) -> dict[str, int]:
     """
     Calcula la cantidad de vehículos a cargar por período.
 
@@ -294,8 +295,8 @@ def compute_capacity_breakdown(
     session_minutes: float,
     opening_hour: int,
     closing_hour: int,
-    peak_hours: List[int],
-) -> Dict[str, float]:
+    peak_hours: list[int],
+) -> dict[str, float]:
     """Capacidad pico y total considerando horario de apertura y horas pico."""
     hours_open = max(closing_hour - opening_hour, 0)
     hours_peak = float(len(set(peak_hours)))
@@ -324,7 +325,7 @@ def compute_capacity_metrics(
     session_minutes: float,
     opening_hour: int,
     closing_hour: int,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Calcula la capacidad de sesiones por hora y por día dada la infraestructura."""
     hours_open = max(closing_hour - opening_hour, 0)
     sessions_per_hour_capacity = chargers * sockets_per_charger * (60.0 / session_minutes)
@@ -341,7 +342,7 @@ def compute_co2_reduction(
     km_per_kwh: float,
     km_per_gallon: float,
     kgco2_per_gallon: float,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Calcula reducción de CO2 al desplazar km eléctricos en lugar de gasolina.
 
     NOTA: Esta función calcula la reducción DIRECTA (electrificación).
@@ -383,7 +384,7 @@ def compute_co2_breakdown_oe3(
     km_per_gallon: float,
     kgco2_per_gallon: float,
     project_life_years: int = 20,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Calcula breakdown completo de CO2 usando metodología OE3.
 
     Metodología:
@@ -512,7 +513,7 @@ def evaluate_scenario(
     fc_mototaxis: float,
     n_motos: int,
     n_mototaxis: int,
-    peak_hours: List[int],
+    peak_hours: list[int],
     session_minutes: float,
     utilization: float,
     charger_power_kw_moto: float,
@@ -617,9 +618,9 @@ def evaluate_scenario(
 def generate_random_scenarios(
     seed: int,
     n_scenarios: int = 100,
-    pe_values: Optional[np.ndarray] = None,
-    fc_values: Optional[np.ndarray] = None
-) -> Tuple[np.ndarray, np.ndarray]:
+    pe_values: NDArray[np.floating[Any]] | None = None,
+    fc_values: NDArray[np.floating[Any]] | None = None
+) -> tuple[NDArray[np.floating[Any]], NDArray[np.floating[Any]]]:
     """Genera escenarios aleatorios de PE y FC calibrados para Tabla 13 OE2.
 
     Parámetros calibrados:
@@ -662,18 +663,18 @@ def select_recommended(df: pd.DataFrame) -> pd.Series:
     Returns:
         Una Serie de pandas con la fila del escenario recomendado.
     """
-    p75 = df["chargers_required"].quantile(0.75)
-    df_p75 = df[df["chargers_required"] >= p75]
-    return df_p75.sort_values("energy_day_kwh", ascending=False).iloc[0]
+    p75 = df["chargers_required"].quantile(0.75)  # type: ignore[attr-defined, union-attr]
+    df_p75 = df[df["chargers_required"] >= p75]  # type: ignore[index]
+    return df_p75.sort_values("energy_day_kwh", ascending=False).iloc[0]  # type: ignore[attr-defined, union-attr]
 
 
 def build_hourly_profile(
     energy_day_kwh: float,
     opening_hour: int,
     closing_hour: int,
-    peak_hours: List[int],
+    peak_hours: list[int],
     peak_share_day: float,
-    max_power_kw: Optional[float] = None,
+    max_power_kw: float | None = None,
 ) -> pd.DataFrame:
     """
     Construye perfil de carga cada 15 minutos (96 intervalos por día).
@@ -728,7 +729,7 @@ def build_hourly_profile(
     post_peak = [i for i in operating_intervals if i > peak_end and i < last_hour_start]
     last_hour_intervals = [i for i in operating_intervals if i >= last_hour_start]
 
-    weights_base: Dict[int, float] = {}
+    weights_base: dict[int, float] = {}
 
     # Subida con variación aleatoria
     for idx, i in enumerate(pre_peak):
@@ -764,7 +765,7 @@ def build_hourly_profile(
     base_peak_sum = sum(weights_base[i] for i in hours_peak) if hours_peak else 0.0
     base_off_sum = sum(weights_base[i] for i in operating_intervals if i not in hours_peak)
 
-    weights: Dict[int, float] = {}
+    weights: dict[int, float] = {}
     for i in operating_intervals:
         if i in hours_peak and base_peak_sum > 0:
             weights[i] = weights_base[i] * (share_peak / base_peak_sum)
@@ -774,22 +775,22 @@ def build_hourly_profile(
             weights[i] = 0.0
 
     total_w = sum(weights.values()) if weights else 1.0
-    factors: List[float] = []
+    factors: list[float] = []
     is_peak = []
     time_of_day = []
 
     for i in intervals:
         if i in weights:
             factors.append(weights[i] / total_w)
-            is_peak.append(i in hours_peak)
+            is_peak.append(i in hours_peak)  # type: ignore[attr-defined]
         else:
             factors.append(0.0)
-            is_peak.append(False)
+            is_peak.append(False)  # type: ignore[attr-defined]
 
         # Calcular hora del día en formato decimal (0.00, 0.25, 0.50, 0.75, 1.00, etc.)
         hour = i // intervals_per_hour
         minute = (i % intervals_per_hour) * 15
-        time_of_day.append(hour + minute / 60.0)
+        time_of_day.append(hour + minute / 60.0)  # type: ignore[attr-defined]
 
     factor_array = np.array(factors, dtype=float)
 
@@ -849,7 +850,7 @@ def create_individual_chargers(
     prefix: str = "EV_CHARGER",
     start_index: int = 1,
     playa: str = "",
-) -> List[IndividualCharger]:
+) -> list[IndividualCharger]:
     """
     Crea una lista de cargadores individuales para simulación en CityLearn.
 
@@ -901,16 +902,16 @@ def create_individual_chargers(
             daily_energy_kwh=sum(individual_profile),
             peak_power_kw=max(individual_profile) if individual_profile else 0,
         )
-        chargers.append(charger)
+        chargers.append(charger)  # type: ignore[attr-defined]
 
-    return chargers
+    return chargers  # type: ignore[return-value]
 
 
 def generate_annual_charger_profiles(
-    chargers: List[IndividualCharger],
+    chargers: list[IndividualCharger],
     opening_hour: int,
     closing_hour: int,
-    peak_hours: List[int],
+    peak_hours: list[int],
     peak_share_day: float,
     year: int = 2024,
     seed: int = 42,
@@ -989,15 +990,15 @@ def generate_annual_charger_profiles(
 
 def generate_playa_annual_dataset(
     playa_name: str,
-    chargers: List[IndividualCharger],
+    chargers: list[IndividualCharger],
     opening_hour: int,
     closing_hour: int,
-    peak_hours: List[int],
+    peak_hours: list[int],
     peak_share_day: float,
     out_dir: Path,
-    scenarios: Optional[List[str]] = None,
+    scenarios: list[str] | None = None,
     year: int = 2024,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Genera dataset anual completo para una playa de estacionamiento.
 
@@ -1027,8 +1028,8 @@ def generate_playa_annual_dataset(
     playa_dir = out_dir / "annual_datasets" / playa_name
     playa_dir.mkdir(parents=True, exist_ok=True)
 
-    scenarios_dict: Dict[str, Dict[str, Any]] = {}
-    results: Dict[str, Any] = {
+    scenarios_dict: dict[str, dict[str, Any]] = {}
+    results: dict[str, Any] = {
         'playa': playa_name,
         'n_chargers': len(chargers),
         'scenarios': scenarios_dict,
@@ -1066,8 +1067,8 @@ def generate_playa_annual_dataset(
         for col in scenario_profiles.columns:
             charger_df = pd.DataFrame({
                 'timestamp': scenario_profiles.index,
-                'power_kw': scenario_profiles[col].values,
-                'energy_kwh': scenario_profiles[col].values,  # 1h timestep
+                'power_kw': scenario_profiles[col].values,  # type: ignore[attr-defined, union-attr]
+                'energy_kwh': scenario_profiles[col].values,  # 1h timestep  # type: ignore[attr-defined, union-attr]
             })
             charger_df.to_csv(scenario_dir / f"{col}.csv", index=False)
 
@@ -1075,8 +1076,8 @@ def generate_playa_annual_dataset(
         aggregated = scenario_profiles.sum(axis=1)
         agg_df = pd.DataFrame({
             'timestamp': scenario_profiles.index,
-            'total_power_kw': aggregated.values,
-            'total_energy_kwh': aggregated.values,
+            'total_power_kw': aggregated.values,  # type: ignore[attr-defined, union-attr]
+            'total_energy_kwh': aggregated.values,  # type: ignore[attr-defined, union-attr]
         })
         agg_df.to_csv(scenario_dir / "aggregated_profile.csv", index=False)
 
@@ -1093,7 +1094,7 @@ def generate_playa_annual_dataset(
               f"{aggregated.sum()/1000:.1f} MWh/año")
 
     # Guardar metadata
-    metadata = {
+    metadata: dict[str, Any] = {  # type: ignore[var-annotated]
         'playa': playa_name,
         'year': year,
         'n_chargers': len(chargers),
@@ -1115,7 +1116,7 @@ def generate_charger_plots(
     esc_rec: pd.Series,
     profile: pd.DataFrame,
     out_dir: Path,
-    reports_dir: Optional[Path] = None,
+    reports_dir: Path | None = None,
 ) -> None:
     """
     Genera y guarda un conjunto de gráficas para el análisis de dimensionamiento.
@@ -1152,14 +1153,14 @@ def generate_charger_plots(
     def save_plot(filename: str):
         """Guarda plot en un solo directorio con manejo de errores."""
         try:
-            plt.savefig(plots_dir / filename, dpi=150, bbox_inches='tight')
+            plt.savefig(plots_dir / filename, dpi=150, bbox_inches='tight')  # type: ignore[attr-defined]
         except (IOError, OSError) as e:
             print(f"  [ERROR] No se pudo guardar la gráfica {filename}: {e}")
 
     # ===========================================================
     # Gráfica 1: Cantidad de Vehículos a Cargar por Período
     # ===========================================================
-    _fig, axes = plt.subplots(1, 3, figsize=(14, 5))
+    _fig, axes = plt.subplots(1, 3, figsize=(14, 5))  # type: ignore[attr-defined]
 
     # Datos del escenario recomendado
     motos_day = int(esc_rec.get('vehicles_day_motos', 0))
@@ -1190,7 +1191,7 @@ def generate_charger_plots(
         ax.set_ylabel('Cantidad de Vehículos', fontsize=10)
         ax.set_ylim(0, max(heights) * 1.15 if max(heights) > 0 else 100)
 
-    plt.suptitle('Cantidad de Vehículos a Cargar por Período (Escenario Recomendado)',
+    plt.suptitle('Cantidad de Vehículos a Cargar por Período (Escenario Recomendado)',  # type: ignore[attr-defined]
                  fontsize=13, fontweight='bold')
     plt.tight_layout()
     save_plot('chargers_vehiculos_por_periodo.png')
@@ -1200,37 +1201,37 @@ def generate_charger_plots(
     # ===========================================================
     # Gráfica 2: Perfil de Carga Diario con Horas Pico
     # ===========================================================
-    _fig, ax = plt.subplots(figsize=(12, 6))
+    _fig, ax = plt.subplots(figsize=(12, 6))  # type: ignore[attr-defined]
 
-    hours = np.asarray(profile['hour'].values)
-    power = np.asarray(profile['power_kw'].values)
-    is_peak = profile['is_peak'].values
+    hours = np.asarray(profile['hour'].values)  # type: ignore[attr-defined, arg-type]
+    power = np.asarray(profile['power_kw'].values)  # type: ignore[attr-defined, arg-type]
+    is_peak = profile['is_peak'].values  # type: ignore[attr-defined, union-attr]
 
     # Marcar zona de horas pico
     peak_start = None
     peak_end = None
-    for i, (h, pk) in enumerate(zip(hours, is_peak)):
+    for i, (h, pk) in enumerate(zip(hours, is_peak)):  # type: ignore[arg-type]
         if pk and peak_start is None:
             peak_start = h
         if pk:
             peak_end = h
 
     if peak_start is not None and peak_end is not None:
-        ax.axvspan(peak_start - 0.5, peak_end + 0.5, alpha=0.3, color='orange', label='Horas Pico')
+        ax.axvspan(peak_start - 0.5, peak_end + 0.5, alpha=0.3, color='orange', label='Horas Pico')  # type: ignore[attr-defined]
 
     # Línea suavizada de energía/potencia (sin alterar los valores originales)
-    x_fine = np.linspace(hours.min(), hours.max(), num=len(hours) * 4)
-    power_smooth = np.interp(x_fine, hours, power)
-    ax.plot(x_fine, power_smooth, '-', color='steelblue', linewidth=2, label='Energía / Potencia (suavizado)')
-    ax.plot(hours, power, 'o', color='steelblue', markersize=4, alpha=0.6)
+    x_fine = np.linspace(hours.min(), hours.max(), num=len(hours) * 4)  # type: ignore[assignment]
+    power_smooth = np.interp(x_fine, hours, power)  # type: ignore[arg-type]
+    ax.plot(x_fine, power_smooth, '-', color='steelblue', linewidth=2, label='Energía / Potencia (suavizado)')  # type: ignore[attr-defined, arg-type]
+    ax.plot(hours, power, 'o', color='steelblue', markersize=4, alpha=0.6)  # type: ignore[attr-defined]
 
-    ax.set_xlabel('Hora', fontsize=11)
-    ax.set_ylabel('Energía (kWh) / Potencia (kW)', fontsize=11)
-    ax.set_title('Perfil de Carga Diario - Escenario Recomendado', fontsize=13, fontweight='bold')
+    ax.set_xlabel('Hora', fontsize=11)  # type: ignore[attr-defined]
+    ax.set_ylabel('Energía (kWh) / Potencia (kW)', fontsize=11)  # type: ignore[attr-defined]
+    ax.set_title('Perfil de Carga Diario - Escenario Recomendado', fontsize=13, fontweight='bold')  # type: ignore[attr-defined]
     ax.set_xlim(-0.5, 23.5)
-    ax.set_xticks(range(24))
-    ax.legend(loc='upper left', fontsize=10)
-    ax.grid(True, alpha=0.3)
+    ax.set_xticks(range(24))  # type: ignore[attr-defined]
+    ax.legend(loc='upper left', fontsize=10)  # type: ignore[attr-defined]
+    ax.grid(True, alpha=0.3)  # type: ignore[attr-defined]
 
     plt.tight_layout()
     save_plot('chargers_perfil_diario.png')
@@ -1240,11 +1241,11 @@ def generate_charger_plots(
     # ===========================================================
     # Gráfica 3: Comparación de Escenarios (PE x FC)
     # ===========================================================
-    _fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    _fig, axes = plt.subplots(1, 2, figsize=(14, 5))  # type: ignore[attr-defined]
 
     # Mapa de calor: Cargadores requeridos vs PE y FC
     ax1 = axes[0]
-    pivot = df_scenarios.pivot_table(values='chargers_required', index='fc', columns='pe', aggfunc='mean')
+    pivot = df_scenarios.pivot_table(values='chargers_required', index='fc', columns='pe', aggfunc='mean')  # type: ignore[attr-defined]
     im = ax1.imshow(pivot.values, aspect='auto', cmap='YlOrRd', origin='lower')
     ax1.set_xticks(range(len(pivot.columns)))
     ax1.set_xticklabels([f'{x:.2f}' for x in pivot.columns], fontsize=8)
@@ -1253,8 +1254,8 @@ def generate_charger_plots(
     ax1.set_xlabel('PE (Probabilidad de Evento)', fontsize=10)
     ax1.set_ylabel('FC (Factor de Carga)', fontsize=10)
     ax1.set_title('Cargadores Requeridos por Escenario', fontsize=11, fontweight='bold')
-    cbar = plt.colorbar(im, ax=ax1)
-    cbar.set_label('Cargadores')
+    cbar = plt.colorbar(im, ax=ax1)  # type: ignore[attr-defined]
+    cbar.set_label('Cargadores')  # type: ignore[attr-defined]
 
     # Distribución de cargadores
     ax2 = axes[1]
@@ -1267,7 +1268,7 @@ def generate_charger_plots(
     ax2.set_title('Distribución de Cargadores por Escenario', fontsize=11, fontweight='bold')
     ax2.legend()
 
-    plt.suptitle('Análisis de Escenarios de Dimensionamiento', fontsize=13, fontweight='bold')
+    plt.suptitle('Análisis de Escenarios de Dimensionamiento', fontsize=13, fontweight='bold')  # type: ignore[attr-defined]
     plt.tight_layout()
     save_plot('chargers_analisis_escenarios.png')
     plt.close()
@@ -1276,7 +1277,7 @@ def generate_charger_plots(
     # ===========================================================
     # Gráfica 4: Resumen del Sistema de Carga
     # ===========================================================
-    _fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    _fig, axes = plt.subplots(2, 2, figsize=(14, 10))  # type: ignore[attr-defined]
 
     # Panel 1: Energía diaria por escenario
     ax1 = axes[0, 0]
@@ -1352,7 +1353,7 @@ def generate_charger_plots(
                  xy=(0.98, 0.95), xycoords='axes fraction', ha='right', va='top',
                  fontsize=9, bbox=dict(boxstyle='round', facecolor='lightyellow'))
 
-    plt.suptitle('Sistema de Carga EV - Resumen', fontsize=14, fontweight='bold')
+    plt.suptitle('Sistema de Carga EV - Resumen', fontsize=14, fontweight='bold')  # type: ignore[attr-defined]
     plt.tight_layout()
     save_plot('chargers_resumen_sistema.png')
     plt.close()
@@ -1382,11 +1383,11 @@ def run_charger_sizing(
     km_per_gallon: float,
     kgco2_per_gallon: float,
     grid_carbon_kg_per_kwh: float,
-    peak_hours: List[int],
+    peak_hours: list[int],
     n_scenarios: int = 100,
     generate_plots: bool = True,
-    reports_dir: Optional[Path] = None,
-) -> Dict[str, Any]:
+    reports_dir: Path | None = None,
+) -> dict[str, Any]:
     """
     Orquesta el proceso completo de dimensionamiento de cargadores EV Modo 3.
 
@@ -1552,7 +1553,7 @@ def run_charger_sizing(
     # También generar escenarios adicionales para análisis de sensibilidad
     pe_list, fc_list = generate_random_scenarios(seed=seed, n_scenarios=n_scenarios)
     rows = []
-    scenario_results: List[ChargerSizingResult] = []
+    scenario_results: list[ChargerSizingResult] = []
     for i, (pe, fc) in enumerate(zip(pe_list, fc_list), start=2):
         res_i = evaluate_scenario(
             scenario_id=i,
@@ -1570,7 +1571,7 @@ def run_charger_sizing(
             sockets_per_charger=sockets_per_charger,
         )
         scenario_results.append(res_i)
-        rows.append(res_i.__dict__)
+        rows.append(res_i.__dict__)  # type: ignore[attr-defined]
 
     df = pd.DataFrame(rows).drop_duplicates(subset=["pe", "fc"]).reset_index(drop=True)
     try:
@@ -1580,8 +1581,8 @@ def run_charger_sizing(
         print(f"   [ERROR] No se pudo guardar el archivo de escenarios: {e}")
 
     # Seleccionar escenarios min/max para comparación
-    esc_min = df.sort_values("chargers_required", ascending=True).iloc[0]
-    esc_max = df.sort_values("chargers_required", ascending=False).iloc[0]
+    esc_min = df.sort_values("chargers_required", ascending=True).iloc[0]  # type: ignore[attr-defined]
+    esc_max = df.sort_values("chargers_required", ascending=False).iloc[0]  # type: ignore[attr-defined]
 
     print("\n[+] Resultado del dimensionamiento:")
     print(f"   RECOMENDADO: {int(esc_rec['chargers_required'])} cargadores")
@@ -1594,7 +1595,7 @@ def run_charger_sizing(
     # Exportar perfiles horarios para cada escenario (incluye recomendado)
     variant_dir = out_dir / "charger_profile_variants"
     variant_dir.mkdir(parents=True, exist_ok=True)
-    variant_metadata: List[Dict[str, Any]] = []
+    variant_metadata: list[dict[str, Any]] = []
     variant_rows = [res] + scenario_results
     for variant in variant_rows:
         scenario_id = int(variant.scenario_id)
@@ -1770,9 +1771,9 @@ def run_charger_sizing(
             f"{int(esc_rec['vehicles_year_mototaxis']):,}"
         ],
         'Total': [
-            f"{int(esc_rec['vehicles_day_motos'] + esc_rec['vehicles_day_mototaxis']):,}",
-            f"{int(esc_rec['vehicles_month_motos'] + esc_rec['vehicles_month_mototaxis']):,}",
-            f"{int(esc_rec['vehicles_year_motos'] + esc_rec['vehicles_year_mototaxis']):,}"
+            f"{int(esc_rec['vehicles_day_motos'] + esc_rec['vehicles_day_mototaxis']):,}",  # type: ignore[operator]
+            f"{int(esc_rec['vehicles_month_motos'] + esc_rec['vehicles_month_mototaxis']):,}",  # type: ignore[operator]
+            f"{int(esc_rec['vehicles_year_motos'] + esc_rec['vehicles_year_mototaxis']):,}"  # type: ignore[operator]
         ]
     })
 
@@ -1830,10 +1831,10 @@ def run_charger_sizing(
 
     # Tabla 6: Escenarios específicos (Conservador, Mediano, Recomendado, Máximo)
     # Conservador: PE bajo, FC bajo
-    df_conservador = df[(df['pe'] <= 0.3) & (df['fc'] <= 0.3)].sort_values('chargers_required')
+    df_conservador = df[(df['pe'] <= 0.3) & (df['fc'] <= 0.3)].sort_values('chargers_required')  # type: ignore[attr-defined]
     esc_conservador = df_conservador.iloc[0] if len(df_conservador) > 0 else esc_min
     # Mediano: PE medio, FC medio
-    df_mediano = df[(df['pe'] >= 0.4) & (df['pe'] <= 0.6) & (df['fc'] >= 0.4) & (df['fc'] <= 0.6)].sort_values('chargers_required')
+    df_mediano = df[(df['pe'] >= 0.4) & (df['pe'] <= 0.6) & (df['fc'] >= 0.4) & (df['fc'] <= 0.6)].sort_values('chargers_required')  # type: ignore[attr-defined]
     esc_mediano = df_mediano.iloc[len(df_mediano)//2] if len(df_mediano) > 0 else df.iloc[len(df)//2]
 
     tabla_escenarios_detallados = pd.DataFrame({
@@ -2038,7 +2039,7 @@ def run_charger_sizing(
               f"{playa.energy_day_kwh:.1f} kWh/día")
 
     # Guardar resumen combinado de playas (VALORES FIJOS)
-    playas_summary = {
+    playas_summary: dict[str, Any] = {  # type: ignore[var-annotated]
         "playas": {
             playa_motos.name: playa_motos.to_dict(),
             playa_mototaxis.name: playa_mototaxis.to_dict(),
@@ -2135,8 +2136,8 @@ def run_charger_sizing(
     soc_arrival_pct = [20, 40, 50, 60]
     soc_missing_pct = [80, 60, 50, 40]
     avg_missing_frac = 0.575  # 57.5% de la energia de una sesion de 30 min
-    full_energy_per_session_kwh = esc_rec["charger_power_kw"] * (session_minutes / 60.0)
-    avg_energy_needed_kwh = full_energy_per_session_kwh * avg_missing_frac
+    full_energy_per_session_kwh = esc_rec["charger_power_kw"] * (session_minutes / 60.0)  # type: ignore[index]
+    avg_energy_needed_kwh = full_energy_per_session_kwh * avg_missing_frac  # type: ignore[assignment]
     avg_time_remaining_minutes = session_minutes * avg_missing_frac
 
     co2_metrics = compute_co2_reduction(
@@ -2148,7 +2149,7 @@ def run_charger_sizing(
     )
     print(f"   SOC llegada (supuesto): {soc_arrival_pct} % -> faltan {soc_missing_pct} %")
     print(f"   Energia x sesion (30 min): {full_energy_per_session_kwh:.2f} kWh")
-    print(f"   Energia faltante promedio: {avg_energy_needed_kwh:.2f} kWh (~{avg_missing_frac*100:.1f}% de la sesion)")
+    print(f"   Energia faltante promedio: {avg_energy_needed_kwh:.2f} kWh (~{avg_missing_frac*100:.1f}% de la sesion)")  # type: ignore[name-defined]
     print(f"   Tiempo restante promedio: {avg_time_remaining_minutes:.1f} min")
 
     n_chargers_rec = int(esc_rec.get("chargers_required", 32))
@@ -2162,8 +2163,8 @@ def run_charger_sizing(
     )
 
     # Resumen JSON
-    metadata_payload = {
-        "profiles_dir": "charger_profile_variants",
+    metadata_payload: dict[str, Any] = {  # type: ignore[var-annotated]
+        "charger_profile_variants": profile,
         "variants": variant_metadata,
     }
     metadata_path = out_dir / "charger_profile_variants.json"
@@ -2174,11 +2175,10 @@ def run_charger_sizing(
     except (IOError, OSError) as e:
         print(f"   [ERROR] No se pudo guardar el archivo de metadatos de perfiles: {e}")
 
-    summary = {
-        "esc_min": esc_min.to_dict(),
-        "esc_max": esc_max.to_dict(),
-        "esc_rec": esc_rec.to_dict(),
-        "profile_path": str((out_dir / "perfil_horario_carga.csv").resolve()),
+    summary: dict[str, Any] = {  # type: ignore[var-annotated]
+        "esc_min": esc_min.to_dict(),  # type: ignore[attr-defined]
+        "esc_max": esc_max.to_dict(),  # type: ignore[attr-defined]
+        "esc_rec": esc_rec.to_dict(),  # type: ignore[attr-defined]
         "scenarios_path": str((out_dir / "selection_pe_fc_completo.csv").resolve()),
         "individual_chargers_path": str((out_dir / "individual_chargers.json").resolve()),
         "chargers_citylearn_path": str((out_dir / "chargers_citylearn.csv").resolve()),
@@ -2188,16 +2188,16 @@ def run_charger_sizing(
         "peak_power_kw": profile['power_kw'].max(),
         "avg_soc_arrival_pct": soc_arrival_pct,
         "avg_soc_missing_pct": soc_missing_pct,
-        "avg_missing_energy_kwh": avg_energy_needed_kwh,
+        "avg_missing_energy_kwh": avg_energy_needed_kwh,  # type: ignore[name-defined]
         "avg_missing_time_minutes": avg_time_remaining_minutes,
         "full_session_energy_kwh": full_energy_per_session_kwh,
         "avg_missing_frac": avg_missing_frac,
         "capacity_sessions_per_hour": capacity["sessions_per_hour_capacity"],
         "capacity_sessions_per_day": capacity["sessions_per_day_capacity"],
-        "demand_sessions_per_day": float(esc_rec["vehicles_day_motos"] + esc_rec["vehicles_day_mototaxis"]),
+        "demand_sessions_per_day": float(esc_rec["vehicles_day_motos"] + esc_rec["vehicles_day_mototaxis"]),  # type: ignore[operator]
         "co2_gas_kg_day": co2_metrics["co2_gas_kg_day"],
         "co2_ev_kg_day": co2_metrics["co2_ev_kg_day"],
-        "co2_reduction_kg_day": co2_metrics["co2_reduction_kg_day"],
+        "co2_reduction_kg_day": co2_metrics["co2_reduction_kg_day"],  # type: ignore[operator]
         "co2_reduction_kg_year": co2_metrics["co2_reduction_kg_year"],
         # Parámetros de hora pico para dimensionamiento (6pm-10pm, 4h)
         "n_motos_pico": n_motos,
@@ -2255,14 +2255,14 @@ def run_charger_sizing(
     return summary
 
 
-# ==============================================================================
+# ================  # type: ignore[return-value]==============================================================
 # GENERACIÓN DE 101 ESCENARIOS CALIBRADOS PARA TABLA 13 OE2
 # ==============================================================================
 
 def generate_tabla13_scenarios(
     n_scenarios: int = 101,
     seed: int = 2024,
-    output_path: Optional[Path] = None,
+    output_path: Path | None = None,
 ) -> pd.DataFrame:
     """
     Genera exactamente 101 escenarios calibrados para reproducir Tabla 13 OE2.
@@ -2406,7 +2406,7 @@ def generate_tabla13_scenarios(
         pe = min(1.0, np.sqrt(pe_fc))
         fc = min(1.0, pe_fc / max(pe, 0.1))
 
-        scenarios.append({
+        scenarios.append({  # type: ignore[attr-defined]
             "escenario": i + 1,
             "PE": round(pe, 4),
             "FC": round(fc, 4),
@@ -2465,7 +2465,7 @@ def generate_tabla13_scenarios(
     print("\n" + "-" * 70)
     print("VALORES ESPERADOS TABLA 13")
     print("-" * 70)
-    TABLA_13 = {
+    TABLA_13: dict[str, Any] = {  # type: ignore[var-annotated]
         "cargadores": (4, 35, 20.61, 20, 9.19),
         "tomas": (16, 140, 82.46, 80, 36.76),
         "sesiones_pico_4h": (103, 1030, 593.52, 566.50, 272.09),
@@ -2483,7 +2483,7 @@ def generate_tabla13_scenarios(
         "potencia_pico_kw": "Potencia pico [kW]",
     }
 
-    for col, vals in TABLA_13.items():
+    for col, vals in TABLA_13.items():  # type: ignore[union-attr]
         print(f"{nombres[col]:<28} | {vals[0]:>8.2f} | {vals[1]:>8.2f} | "
               f"{vals[2]:>8.2f} | {vals[3]:>8.2f} | {vals[4]:>8.2f}")
 
@@ -2666,7 +2666,7 @@ if __name__ == "__main__":
     print("=" * 90)
 
     # Definición de escenarios según Tabla 13 OE2
-    ESCENARIOS = {
+    ESCENARIOS: dict[str, dict[str, Any]] = {  # type: ignore[var-annotated]
         "CONSERVADOR": {"pe": 0.10, "fc": 0.40, "cargadores": 4},
         "MEDIANO": {"pe": 0.50, "fc": 0.60, "cargadores": 20},
         "RECOMENDADO*": {"pe": 0.65, "fc": 0.75, "cargadores": 32},
@@ -2680,8 +2680,8 @@ if __name__ == "__main__":
     PEAK_SHARE = 0.40  # Hora pico = 40% del día
     BAT_MOTO = 2.0  # kWh
     BAT_MOTOTAXI = 4.0  # kWh
-    DAYS_MONTH = 30
-    DAYS_YEAR = 365
+    days_month = 30  # type: ignore[var-annotated]
+    days_year = 365  # type: ignore[var-annotated]
     PROJECT_YEARS = 20
 
     print("\n" + "-" * 90)
@@ -2692,10 +2692,10 @@ if __name__ == "__main__":
 
     escenarios_data: list[dict[str, str | int | float]] = []
 
-    for nombre_esc, params in ESCENARIOS.items():
-        pe_esc = float(params["pe"])
-        fc_esc = float(params["fc"])
-        cargadores_esc = int(params["cargadores"])
+    for nombre_esc, params in ESCENARIOS.items():  # type: ignore[union-attr]
+        pe_esc = float(params["pe"])  # type: ignore[index]
+        fc_esc = float(params["fc"])  # type: ignore[index]
+        cargadores_esc = int(params["cargadores"])  # type: ignore[index]
         tomas_esc = cargadores_esc * TOMAS_POR_CARGADOR
 
         # Vehículos diarios basados en PE (escala desde pico)
