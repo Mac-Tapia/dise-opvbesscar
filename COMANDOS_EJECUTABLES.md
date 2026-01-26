@@ -2,6 +2,14 @@
 
 ## PROYECTO PVBESSCAR - Versión 2.0 Limpia y Funcional
 
+**📌 Consolidation Note (2026-01-25):**  
+This document consolidates all executable commands previously scattered across:
+- `EJECUTAR_PIPELINE.md` (merged)
+- Historical training launchers (archived to `historical/`)
+- One-time verification scripts (archived to `historical/`)
+
+For archived scripts reference, see [historical/README.md](historical/README.md)
+
 ---
 
 ## 🚀 INICIO RÁPIDO (30 segundos)
