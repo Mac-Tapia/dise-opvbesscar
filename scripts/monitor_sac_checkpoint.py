@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import subprocess
-import json
 from pathlib import Path
 from datetime import datetime
 import time
@@ -14,12 +13,12 @@ def get_latest_checkpoint() -> tuple[str, int] | None:
     cp_dir = Path("analyses/oe3/training/checkpoints/sac")
     if not cp_dir.exists():
         return None
-    
-    checkpoints = sorted(cp_dir.glob("sac_step_*.zip"), 
+
+    checkpoints = sorted(cp_dir.glob("sac_step_*.zip"),
                         key=lambda p: int(p.stem.split("_")[-1]) if "_" in p.stem else 0)
     if not checkpoints:
         return None
-    
+
     latest = checkpoints[-1]
     step = int(latest.stem.split("_")[-1]) if "_" in latest.stem else 0
     return latest.name, step
@@ -28,7 +27,7 @@ def get_gpu_status() -> dict:
     """Retorna uso de GPU."""
     try:
         result = subprocess.run(
-            ["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total", 
+            ["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total",
              "--format=csv,noheader"],
             capture_output=True,
             text=True,
@@ -50,7 +49,7 @@ def get_process_status() -> dict:
     """Retorna status del proceso Python."""
     try:
         result = subprocess.run(
-            ["powershell", "-Command", 
+            ["powershell", "-Command",
              "Get-Process python -ErrorAction SilentlyContinue | Where-Object {$_.CommandLine -match 'continue_sac'} | Select-Object Id"],
             capture_output=True,
             text=True,
@@ -67,7 +66,7 @@ def print_status():
     print("\n" + "="*70)
     print(f"SAC Training Monitor | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("="*70)
-    
+
     # Checkpoint info
     cp_info = get_latest_checkpoint()
     if cp_info:
@@ -75,13 +74,13 @@ def print_status():
         print(f"✅ Último checkpoint: {name} (paso {step:,})")
     else:
         print("❌ No hay checkpoints")
-    
+
     # GPU status
     gpu = get_gpu_status()
     print(f"\n📊 GPU:")
     print(f"   Utilización: {gpu['gpu_util']}")
     print(f"   Memoria: {gpu['mem_used']} / {gpu['mem_total']}")
-    
+
     # Process status
     proc = get_process_status()
     print(f"\n🔄 Proceso:")
@@ -89,7 +88,7 @@ def print_status():
         print(f"   Status: ✅ EN EJECUCIÓN")
     else:
         print(f"   Status: ⏸️  DETENIDO")
-    
+
     # Archivo de salida más reciente
     output_file = Path("outputs/oe3/simulations/sac_pv_bess.json")
     if output_file.exists():
@@ -101,7 +100,7 @@ def print_status():
         print(f"   Archivo: {output_file.name}")
         print(f"   Tamaño: {size_kb:.1f} KB")
         print(f"   Actualizado hace: {age_mins} minutos atrás")
-        
+
         # Leer últimas líneas
         try:
             with open(output_file) as f:
@@ -114,9 +113,9 @@ def print_status():
                             print(f"   Último: {line[:65]}...")
         except:
             pass
-    
+
     # Timeline estimado
-    cp_name, step = cp_info if cp_info else ("none", 0)
+    _cp_name, step = cp_info if cp_info else ("none", 0)
     if step > 0:
         episodes_completed = step // 3500  # ~3500 steps per episode
         episodes_remaining = 5 - episodes_completed
@@ -125,13 +124,13 @@ def print_status():
         print(f"\n⏱️  Estimado:")
         print(f"   Episodios completados: {episodes_completed}/5")
         print(f"   ETA de finalización: {eta} minutos")
-    
+
     print("="*70 + "\n")
 
 if __name__ == "__main__":
     # Loop con actualización cada N segundos
     interval = 10 if len(sys.argv) < 2 else int(sys.argv[1])
-    
+
     try:
         while True:
             print_status()
