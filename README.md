@@ -5,7 +5,7 @@
 Este proyecto implementa un **sistema inteligente de gestión de energía** para Iquitos (Perú) que:
 
 1. **Genera energía solar:** 4,050 kWp de paneles solares
-2. **Almacena energía:** Batería de 2,000 kWh para usar en la noche
+2. **Almacena energía:** Batería de 4,520 kWh para usar en la noche
 3. **Carga motos y taxis eléctricos:** 128 cargadores para 512 conexiones
 4. **Minimiza CO₂:** Usa aprendizaje por refuerzo para decidir cuándo cargar cada moto
 5. **Maximiza ahorro solar:** Intenta usar energía solar directa en lugar de importar de la red
@@ -25,8 +25,8 @@ Este proyecto implementa un **sistema inteligente de gestión de energía** para
 - **Inversor:** Eaton Xpert1670 (2 unidades)
 
 **Sistema de Almacenamiento (BESS):**
-- **Capacidad:** 2,000 kWh (2 MWh)
-- **Potencia:** 1,200 kW (1.2 MW)
+- **Capacidad:** 4,520 kWh (4.52 MWh) - OE2 Real
+- **Potencia:** 2,712 kW (2.712 MW) - OE2 Real
 
 **Infraestructura de Carga (Chargers):**
 - **Total:** 128 cargadores
@@ -167,7 +167,7 @@ bess_config.json┘                                    action (126-dim)
 - `pv_generation_timeseries.csv`: 8,760 filas (hourly) con potencia solar
 - `individual_chargers.json`: 32 chargers × 4 sockets = 128 chargers
 - `perfil_horario_carga.csv`: Demanda horaria típica de flota
-- `bess_config.json`: 2,000 kWh / 1,200 kW (fijo)
+- `bess_config.json`: 4,520 kWh / 2,712 kW (OE2 Real)
 
 **Proceso:**
 1. Leer datos solares y enriquecer con timestamps
