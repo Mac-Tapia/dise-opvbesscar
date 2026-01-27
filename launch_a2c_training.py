@@ -3,11 +3,22 @@
 Lanzador de Entrenamiento A2C - Sin dependencias de .venv en shell
 Ejecuta directamente desde Python el pipeline OE3 completo
 """
+from __future__ import annotations
 
 import sys
 import subprocess
 import os
 from pathlib import Path
+
+# Imports opcionales - disponibles en venv con Python 3.11
+try:
+    import torch  # type: ignore  # noqa
+    import numpy  # type: ignore  # noqa
+    import pandas  # type: ignore  # noqa
+    import stable_baselines3  # type: ignore  # noqa
+    import citylearn  # type: ignore  # noqa
+except ImportError:
+    pass
 
 def run_command(cmd, description):
     """Ejecutar comando y mostrar resultado"""
@@ -38,11 +49,11 @@ def main():
     # Verificar paquetes
     print(f"\n[2/3] Verificando paquetes...")
     try:
-        import torch
-        import numpy
-        import pandas
-        import stable_baselines3
-        import citylearn
+        import torch  # type: ignore
+        import numpy  # type: ignore
+        import pandas  # type: ignore
+        import stable_baselines3  # type: ignore
+        import citylearn  # type: ignore
         print("[OK] Todos los paquetes disponibles")
     except ImportError as e:
         print(f"[ERROR] Falta paquete: {e}")

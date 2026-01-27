@@ -9,6 +9,12 @@ import json
 import sys
 from pathlib import Path
 
+# Imports que se requieren en runtime dentro del venv
+try:
+    import pandas as pd  # type: ignore  # noqa
+except ImportError:
+    pd = None
+
 print("=" * 80)
 print("VERIFICACION: SCHEMA + DATASETS CONECTADOS")
 print("=" * 80)
@@ -67,7 +73,7 @@ if not solar_path.exists():
     print(f"  ✗ {solar_path} NO EXISTE")
 else:
     try:
-        import pandas as pd
+        import pandas as pd  # type: ignore  # noqa
         df_solar = pd.read_csv(solar_path)
 
         print(f"  ✓ Solar timeseries cargada: {solar_path}")
@@ -140,7 +146,10 @@ if not profile_path.exists():
     print(f"  ✗ {profile_path} NO EXISTE")
 else:
     try:
-        df_profile = pd.read_csv(profile_path)
+        if pd is not None:
+            df_profile = pd.read_csv(profile_path)
+        else:
+            raise ImportError("pandas no disponible")
 
         print(f"  ✓ Perfil horario cargado: {profile_path}")
         print(f"    - Horas: {len(df_profile)} (24 esperadas)")
