@@ -718,7 +718,7 @@ kubectl scale deployment rl-agent-server --replicas 5
 
 ### Fase 1: OE2 (Dimensionamiento - COMPLETADA)
 - Generación solar: PVGIS TMY → pvlib (Kyocera KS20 + Eaton Xpert1670)
-- BESS fijo: 2 MWh / 1.2 MW, DoD 80%, eff 95%
+- BESS fijo: 4,520 kWh / 2,712 kW (OE2 Real), DoD 80%, eff 95%
 - 128 chargers: 32 físicos × 4 tomas (112 motos @2kW + 16 mototaxis @3kW = 272 kW)
 - Artefactos: `data/interim/oe2/solar/`, `chargers/`, `bess/`
 
