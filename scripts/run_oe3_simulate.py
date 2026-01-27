@@ -236,7 +236,7 @@ def main() -> None:
 
     # Pick best (lowest annualized carbon, then highest autosuficiencia)
     def annualized_carbon(r: dict) -> float:
-        return r["carbon_kg"] / max(r["simulated_years"], 1e-9)
+        return float(r["carbon_kg"] / max(r["simulated_years"], 1e-9))
 
     def autosuficiencia(r: dict) -> float:
         # Manejar claves faltantes con get() para compatibilidad
@@ -244,7 +244,7 @@ def main() -> None:
         build_kwh_y = r.get("building_load_kwh", 0) / max(r.get("simulated_years", 1), 1e-9)
         import_kwh_y = r.get("grid_import_kwh", 0) / max(r.get("simulated_years", 1), 1e-9)
         total_load = max(ev_kwh_y + build_kwh_y, 1e-9)
-        return 1.0 - import_kwh_y / total_load
+        return float(1.0 - import_kwh_y / total_load)
 
     # Manejar caso cuando no hay resultados de agentes
     if not results:
@@ -261,7 +261,7 @@ def main() -> None:
     baseline = res_uncontrolled
     tailpipe_kg_y = _tailpipe_kg(cfg, float(baseline["ev_charging_kwh"]), float(baseline["simulated_years"]))
     grid_only_total = float(baseline["carbon_kg"]) + tailpipe_kg_y  # CO2 si no hubiera PV/BESS
-    reductions = {}
+    reductions: dict = {}
     if baseline is not None:
         base_carbon = float(baseline["carbon_kg"])
         reductions["oe2_reduction_kg"] = tailpipe_kg_y  # Reducción por electrificación
@@ -333,9 +333,9 @@ def main() -> None:
                         str(r["Escenario"]),
                         f"{r['CO2_kg']:.2f}",
                         f"{r['Reduccion_vs_grid_kg']:.2f}",
-                        f"{r['Reduccion_vs_grid_pct']*100:.4f}%",
+                        f"{float(r['Reduccion_vs_grid_pct'])*100:.4f}%",  # type: ignore[arg-type]
                         f"{r['Reduccion_vs_base_kg']:.2f}",
-                        f"{r['Reduccion_vs_base_pct']*100:.4f}%",
+                        f"{float(r['Reduccion_vs_base_pct'])*100:.4f}%",  # type: ignore[arg-type]
                     ]) + " |"
                 )
             table_path = out_dir / "co2_comparison.md"
