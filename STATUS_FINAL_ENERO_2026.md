@@ -80,6 +80,38 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 - A2C training (3 episodes): ~15-30 min (GPU) | ~1-2 hrs (CPU)
 - Total: 20 mins - 2 hrs
 
+## 📋 Infraestructura OE2 - Datos Reales
+
+### Sistema Fotovoltaico (Kyocera KS20)
+| Parámetro | Valor |
+|-----------|-------|
+| **Potencia Total** | 4,050 kWp |
+| **Módulos por String** | 31 |
+| **Número de Strings** | 6,472 |
+| **Módulos Totales** | 200,632 |
+| **Inversor** | Eaton Xpert1670 (2 unidades) |
+
+### Sistema de Almacenamiento (BESS)
+| Parámetro | Valor |
+|-----------|-------|
+| **Capacidad** | 2,000 kWh |
+| **Potencia** | 1,200 kW |
+| **Aplicación** | Night charging, peak shaving |
+
+### Infraestructura de Carga
+| Parámetro | Cantidad | Potencia |
+|-----------|----------|---------|
+| **Motos (Chargers)** | 112 | 2 kW c/u |
+| **Mototaxis (Chargers)** | 16 | 3 kW c/u |
+| **Total Cargadores** | **128** | 272 kW nominal |
+| **Sockets Totales** | **512** | (128 × 4) |
+
+### Datos Operacionales
+- **Resolución Temporal:** Horaria (1 hora = 1 timestep)
+- **Período:** 1 año = 8,760 timesteps
+- **Tarifa Grid:** 0.20 USD/kWh
+- **Emisiones Grid:** 0.45 kg CO₂/kWh
+
 ---
 
 ## 📈 Resultados Esperados
