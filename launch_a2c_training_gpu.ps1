@@ -84,26 +84,26 @@ Write-Host ""
 
 $monitor_count = 0
 while ($monitor_count -lt 30) {
-    $gpuInfo = nvidia-smi --query-gpu=utilization.gpu, memory.used, memory.total --format=csv, noheader, nounits 2>$null
+    $gpu_info = nvidia-smi --query-gpu=utilization.gpu, memory.used, memory.total --format=csv, noheader, nounits 2>$null
 
-    if ($gpuInfo) {
-        $parts = $gpuInfo -split ','
-        $gpuUtil = [int]$parts[0]
-        $memUsed = [int]$parts[1]
-        $memTotal = [int]$parts[2]
+    if ($gpu_info) {
+        $parts = $gpu_info -split ','
+        $gpu_util = [int]$parts[0]
+        $mem_used = [int]$parts[1]
+        $mem_total = [int]$parts[2]
 
-        $memPercent = [math]::Round(($memUsed / $memTotal) * 100, 1)
+        $mem_percent = [math]::Round(($mem_used / $mem_total) * 100, 1)
 
-        # Barra visual
-        $utilBar = "░" * 32
-        $utilFilled = [math]::Round($gpuUtil / 3.125)
-        $utilBar = ("█" * $utilFilled) + ("░" * (32 - $utilFilled))
+        # Progress bar visualization
+        $util_bar = "░" * 32
+        $util_filled = [math]::Round($gpu_util / 3.125)
+        $util_bar = ("█" * $util_filled) + ("░" * (32 - $util_filled))
 
-        $memBar = "░" * 32
-        $memFilled = [math]::Round($memPercent / 3.125)
-        $memBar = ("█" * $memFilled) + ("░" * (32 - $memFilled))
+        $mem_bar = "░" * 32
+        $mem_filled = [math]::Round($mem_percent / 3.125)
+        $mem_bar = ("█" * $mem_filled) + ("░" * (32 - $mem_filled))
 
-        Write-Host "`r[$(Get-Date -Format 'HH:mm:ss')] GPU: $utilBar $($gpuUtil)%  |  MEM: $memBar $($memPercent)% ($memUsed/$memTotal MB)" -ForegroundColor Cyan -NoNewline
+        Write-Host "`r[$(Get-Date -Format 'HH:mm:ss')] GPU: $util_bar $($gpu_util)%  |  MEM: $mem_bar $($mem_percent)% ($mem_used/$mem_total MB)" -ForegroundColor Cyan -NoNewline
     }
 
     Start-Sleep -Seconds 5
