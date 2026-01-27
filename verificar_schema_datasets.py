@@ -30,9 +30,9 @@ success_count = 0
 print("[1/7] Verificando Python 3.11...")
 if sys.version_info[:2] != (3, 11):
     errors.append(f"Python {sys.version_info[0]}.{sys.version_info[1]} (requiere 3.11)")
-    print(f"  ✗ ERROR: Python {sys.version_info[0]}.{sys.version_info[1]} (requiere 3.11)")
+    print(f"  X ERROR: Python {sys.version_info[0]}.{sys.version_info[1]} (requiere 3.11)")
 else:
-    print(f"  ✓ Python 3.11 detectado")
+    print(f"  OK: Python 3.11 detectado")
     success_count += 1
 
 # 2. Schema archivo
