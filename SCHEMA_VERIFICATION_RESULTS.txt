@@ -24,7 +24,7 @@ STATUS: ✅ COMPLETED - ALL CHECKS PASSED
 [✅ PASS] 3. Architecture Correct
    - Chargers: 128 (112 motos 2kW + 16 mototaxis 3kW)
    - Timesteps: 8,760 (1 year hourly)
-   - BESS: 2,000 kWh / 1,200 kW
+   - BESS: 4,520 kWh / 2,712 kW (OE2 Real)
    - PV: 4,050 kWp
 
 [✅ PASS] 4. Chargers Configuration

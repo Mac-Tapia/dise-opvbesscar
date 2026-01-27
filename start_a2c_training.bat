@@ -10,7 +10,7 @@ echo.
 echo Data Configuration:
 echo   - Solar: 4,162 kW from Iquitos (real timeseries)
 echo   - EV Chargers: 128 with real demand profiles
-echo   - BESS: 2,000 kWh / 1,200 kW
+echo   - BESS: 4,520 kWh / 2,712 kW (OE2 Real)
 echo   - Objective: Minimize CO2 (0.4521 kg CO2/kWh)
 echo.
 echo Starting training in PowerShell...

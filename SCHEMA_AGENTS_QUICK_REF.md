@@ -28,7 +28,7 @@ Location:       data/processed/citylearn/iquitos_ev_mall/
 Chargers:       128 (112 motos 2kW + 16 mototaxis 3kW)
 Timesteps:      8,760 (1 year hourly)
 Central Agent:  Yes (agents coordinate)
-BESS:           2,000 kWh / 1,200 kW (immutable)
+BESS:           4,520 kWh / 2,712 kW (OE2 Real, immutable)
 PV:             4,050 kWp (immutable)
 Protection:     🔒 SHA256 locked (.schema.lock)
 ```
@@ -98,7 +98,7 @@ python -m scripts.run_oe3_simulate --config configs/default.yaml --agents a2c
 - ✅ 8,760 Timesteps
 - ✅ 534-dim Observation space
 - ✅ 126-dim Action space
-- ✅ BESS (2,000 kWh / 1,200 kW)
+- ✅ BESS (4,520 kWh / 2,712 kW - OE2 Real)
 - ✅ PV (4,050 kWp)
 
 ---

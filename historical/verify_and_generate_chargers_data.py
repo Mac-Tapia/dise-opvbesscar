@@ -556,7 +556,7 @@ Mototaxis:
 | Componente | Especificación | Status |
 |-----------|---|---|
 | Solar PV | 4,050 kWp → 8,030 MWh/año | ✓ Verificado |
-| BESS | 2,000 kWh / 1,200 kW | ✓ Verificado |
+| BESS | 4,520 kWh / 2,712 kW | ✓ Verificado (OE2 Real) |
 | Cargadores | 272 kW → 844 MWh/año | ✓ Generado |
 | Perfil carga | 8,760 horas (1 año) | ✓ Generado |
 | Schema JSON | CityLearn compatible | ✓ Generado |
