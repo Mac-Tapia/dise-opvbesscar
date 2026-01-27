@@ -104,7 +104,7 @@ class ChargeTimePredictor:
     Predice tiempo de carga para todos los EVs en el sistema.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Inicializar con perfiles estándar."""
         self.battery_profiles: Dict[str, BatteryProfile] = {
             "moto": BatteryProfile(
@@ -289,7 +289,7 @@ class ChargeScheduler:
     - Prioridades de usuario
     """
 
-    def __init__(self, mall_closing_hour: int = 22):
+    def __init__(self, mall_closing_hour: int = 22) -> None:
         """
         Inicializar programador.
 
