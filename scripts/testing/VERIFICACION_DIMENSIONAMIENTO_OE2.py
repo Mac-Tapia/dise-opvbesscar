@@ -73,7 +73,7 @@ print("    Script: scripts/train_a2c_gpu_fixed.py")
 print("    ✓ Schema correcto: data/processed/citylearn/iquitos_ev_mall/schema_pv_bess.json")
 print("    ✓ Cargadores: 128 MOTO_CH_* con control individual")
 print("    ✓ Solar: 4.162 MW PV generando en tiempo real")
-print("    ✓ BESS: 2 MWh almacenando energía excedente")
+print("    ✓ BESS: 4,520 kWh / 2,712 kW (OE2 Real)")
 print("    ✓ Datos: Reales de Iquitos 2024-2025")
 print("    ✓ Entrenamiento: Con datos reales de irradiancia, precio, carbon")
 
