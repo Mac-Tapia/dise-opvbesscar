@@ -1,0 +1,140 @@
+================================================================================
+                    LANZAR A2C - 5 PASOS EXACTOS
+================================================================================
+
+ESTADO ACTUAL: Python 3.13 -> BLOQUEADO (necesitas 3.11)
+
+================================================================================
+PASO 1: Descargar Python 3.11
+================================================================================
+
+1. Abre: https://www.python.org/downloads/
+2. Ves: "Python 3.11" (click "Download")
+3. Ves: "Windows installer (64-bit)"
+4. Haz click en ".exe"
+5. ESPERA descarga completa
+
+================================================================================
+PASO 2: Instalar Python 3.11
+================================================================================
+
+1. EJECUTA el .exe descargado (double-click)
+2. Ventana de instalación aparece
+3. ☑ MARCA esta casilla:
+
+     "Add python.exe to PATH"  <-- CRITICO!!!
+
+4. Click "Install Now"
+5. ESPERA 2-3 minutos
+6. "Close" cuando termine
+
+================================================================================
+PASO 3: Reabrir PowerShell
+================================================================================
+
+1. CIERRA completamente PowerShell
+2. ABRE PowerShell NUEVA
+   (Windows button -> type "PowerShell" -> open)
+
+================================================================================
+PASO 4: Ejecutar Setup Automático
+================================================================================
+
+En PowerShell NEW, copia y pega EXACTAMENTE:
+
+  cd d:\diseñopvbesscar
+  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+  .\SETUP_AUTOMATIZADO_A2C.ps1
+
+ESPERA 5-10 minutos (instala dependencias)
+
+================================================================================
+PASO 5: Lanzar A2C
+================================================================================
+
+Cuando paso 4 termina, copia y pega:
+
+  python -m scripts.run_a2c_only --config configs/default.yaml
+
+LISTO - A2C está entrenando!
+
+================================================================================
+VERIFICACION RAPIDA
+================================================================================
+
+Antes de empezar, verifica:
+
+1. Conexión a internet: SI [ ] NO [ ]
+2. ~500MB libre en disco: SI [ ] NO [ ]
+3. PowerShell abierto: SI [ ] NO [ ]
+
+================================================================================
+SI ALGO FALLA
+================================================================================
+
+Problema: "python3.11 no se reconoce"
+Solucion:
+  - Python 3.11 no instalado correctamente
+  - Reinstala desde python.org
+  - MARCA "Add python.exe to PATH"
+  - Reabre PowerShell
+
+Problema: "No se puede ejecutar el script"
+Solucion:
+  - Ejecuta primero:
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+Problema: Instalación tarda mucho
+Solucion:
+  - Normal (pip descarga 100+ packages)
+  - NO interrumpas, espera hasta completar
+
+Problema: "Python 3.13" aún aparece
+Solucion:
+  - venv con versión incorrecta
+  - Elimina: Remove-Item -Recurse .venv
+  - Crea: python3.11 -m venv .venv
+  - Activa: .\.venv\Scripts\Activate.ps1
+
+================================================================================
+RESULTADO FINAL ESPERADO
+================================================================================
+
+Una vez completado, verás:
+
+  ================================================================================
+  ENTRENAMIENTO A2C SOLAMENTE
+  ================================================================================
+
+  [1/5] Validando Python 3.11...
+  [2/5] Cargando configuracion...
+  [3/5] Construyendo dataset CityLearn...
+  [4/5] Ejecutando baseline...
+  [5/5] Entrenando A2C...
+
+  Episode 1 | Reward: -1200 | CO2: 9800 | Steps: 8760/8760
+  Episode 2 | Reward: -1050 | CO2: 9500 | Steps: 8760/8760
+  Episode 3 | Reward: -950 | CO2: 9200 | Steps: 8760/8760
+  ...
+
+A2C ESTÁ ENTRENANDO - LISTO!
+
+================================================================================
+RESUMEN
+================================================================================
+
+Hicimos:
+  ✓ Schema CityLearn conectado (8,760 timesteps)
+  ✓ Solar OE2 conectada (8,760 rows)
+  ✓ Chargers OE2 conectados (128 sockets)
+  ✓ BESS OE2 conectado (4,520 kWh)
+  ✓ Scripts de setup automatizados
+
+Solo falta:
+  ✗ Python 3.11 INSTALADO
+
+5 Pasos = 15 minutos de tu tiempo
+
+RESULTADO = A2C entrenando!
+
+================================================================================

@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-SETUP - VERIFICAR E INSTALAR EN PYTHON 3.11
-=============================================
+SETUP - VERIFICAR E INSTALAR EN PYTHON 3.11 EXACTAMENTE
+========================================================
 
 Este script asegura que:
-1. Python 3.11 está siendo usado
-2. Virtual environment está activado
-3. Dependencias correctas instaladas
-4. Todo listo para entrenar A2C
+1. Python 3.11 EXACTAMENTE está siendo usado
+2. NO se use Python 3.12, 3.13, etc
+3. Virtual environment está activado
+4. Dependencias correctas instaladas
+5. Todo listo para entrenar A2C
 
 ⚠️  REQUERIMIENTO: Python 3.11 EXACTAMENTE
 """
@@ -17,19 +18,22 @@ import subprocess
 from pathlib import Path
 
 print("\n" + "="*80)
-print("🔧 SETUP A2C - VERIFICAR PYTHON 3.11")
+print("🔧 SETUP A2C - VERIFICAR PYTHON 3.11 EXACTAMENTE")
 print("="*80)
 
-# ========== VALIDAR PYTHON 3.11 ==========
+# ========== VALIDAR PYTHON 3.11 EXACTAMENTE ==========
 print(f"\n[1/4] Verificando versión de Python...")
 print(f"      Versión actual: {sys.version_info.major}.{sys.version_info.minor}")
-print(f"      Requerida: 3.11")
+print(f"      Requerida: 3.11 EXACTAMENTE (no 3.12, no 3.13)")
 
 if sys.version_info[:2] != (3, 11):
-    print(f"\n❌ ERROR: Se requiere Python 3.11, tienes Python {sys.version_info.major}.{sys.version_info.minor}")
-    print("\nPara usar Python 3.11:")
-    print("  1. Instala Python 3.11 desde python.org")
-    print("  2. O crea venv con Python 3.11:")
+    print(f"\n❌ ERROR: Se requiere EXACTAMENTE Python 3.11")
+    print(f"   Tienes: Python {sys.version_info.major}.{sys.version_info.minor}")
+    print(f"\n❌ NO se soportan: Python 3.12, 3.13, etc")
+    print("\nPara usar Python 3.11 EXACTAMENTE:")
+    print("  1. Descarga Python 3.11 EXACTAMENTE desde python.org")
+    print("  2. Desinstala Python 3.12, 3.13, etc")
+    print("  3. Crea venv con Python 3.11:")
     print("     python3.11 -m venv .venv")
     print("     .venv\\Scripts\\activate  (Windows)")
     print("     pip install -r requirements-training.txt")

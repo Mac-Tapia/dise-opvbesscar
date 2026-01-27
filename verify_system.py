@@ -17,20 +17,21 @@ print("\n" + "="*80)
 print("VERIFICACION DE SISTEMA - PYTHON 3.11")
 print("="*80)
 
-# 1. Python 3.11
-print("\n[1/4] Verificando Python 3.11...")
+# 1. Python 3.11 EXACTAMENTE
+print("\n[1/4] Verificando Python 3.11 EXACTAMENTE...")
 print(f"      Versión: {sys.version_info.major}.{sys.version_info.minor}")
 
 if sys.version_info[:2] != (3, 11):
     print("\n" + "!"*80)
-    print("ERROR: Python 3.11 requerido")
+    print("ERROR: PYTHON 3.11 EXACTAMENTE REQUERIDO - NO usar 3.12, 3.13, etc")
     print("!"*80)
     print(f"Tienes Python {sys.version_info.major}.{sys.version_info.minor}")
     print("\nSolución:")
-    print("  1. Descarga Python 3.11 desde https://www.python.org/downloads/")
-    print("  2. Crea venv: python3.11 -m venv .venv")
-    print("  3. Activa: .venv\\Scripts\\activate")
-    print("  4. Instala: pip install -r requirements-training.txt")
+    print("  1. Descarga Python 3.11 EXACTAMENTE desde https://www.python.org/downloads/")
+    print("  2. Desinstala Python 3.12, 3.13, etc")
+    print("  3. Crea venv: python3.11 -m venv .venv")
+    print("  4. Activa: .venv\\Scripts\\activate")
+    print("  5. Instala: pip install -r requirements-training.txt")
     print("\n" + "="*80 + "\n")
     sys.exit(1)
 
