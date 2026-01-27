@@ -16,11 +16,9 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List
 
-import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +46,7 @@ class EVChargeState:
         if not self.is_occupied:
             return 0.0
         # Simulación: potencia decrece a medida que SOC sube (curva carga Li)
-        return self.power_requested_kw * (1.0 - self.battery_soc ** 0.5)
+        return float(self.power_requested_kw * (1.0 - self.battery_soc ** 0.5))
 
 
 @dataclass
@@ -187,7 +185,7 @@ class EnergyDispatcher:
         ev_demand_immediate = sum(
             ev.current_power_request for ev in ev_states if ev.is_occupied
         )
-        ev_demand_future = sum(
+        _ = sum(
             ev.charge_needed_kwh / max(ev.time_to_charge_hours, 0.1)
             for ev in ev_states
             if ev.is_occupied
@@ -369,7 +367,7 @@ class EnergyDispatcher:
         if average_power < 0.01:
             return float('inf')
 
-        return charge_needed / average_power
+        return float(charge_needed / average_power)
 
     def get_summary_stats(self) -> Dict[str, float]:
         """

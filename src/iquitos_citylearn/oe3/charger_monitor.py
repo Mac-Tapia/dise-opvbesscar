@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 
@@ -24,7 +24,7 @@ class ChargerMonitor:
     """Monitorea estado de todos los chargers y EVs conectados."""
 
     total_chargers: int = 128
-    chargers_per_type: Dict[str, int] = None  # {"motos": 32, "mototaxis": 96}
+    chargers_per_type: Dict[str, int] | None = None  # {"motos": 32, "mototaxis": 96}
 
     def __post_init__(self):
         if self.chargers_per_type is None:
@@ -186,7 +186,7 @@ class ChargerMonitor:
             f"{priority_bar:<15} {estado:<15}"
         )
 
-    def get_charger_report(self, charger_states: Dict[int, Dict]) -> Dict[str, any]:
+    def get_charger_report(self, charger_states: Dict[int, Dict]) -> Dict[str, Any]:
         """
         Generar reporte ejecutivo de estado de chargers.
 
@@ -272,7 +272,7 @@ class PowerAllocationStrategy:
         allocation = {}
         remaining_power = available_power_kw
 
-        for charger_id, priority, requested_kw in sorted_chargers:
+        for charger_id, _, requested_kw in sorted_chargers:
             # Asignar min(solicitado, disponible)
             power_assigned = min(requested_kw, remaining_power)
             allocation[charger_id] = power_assigned
@@ -296,8 +296,8 @@ class PowerAllocationStrategy:
         # Score = (1 - SOC) / time_to_charge
         # Más alto = más urgente
         scored = [
-            (charger_id, (1.0 - soc) / max(ttc, 0.1), min(requested, max_power))
-            for charger_id, soc, ttc, max_power, requested in charger_states
+            (charger_id, (1.0 - soc) / max(ttc, 0.1), max_power)
+            for charger_id, soc, ttc, max_power in charger_states
         ]
 
         # Ordenar por score
@@ -306,7 +306,7 @@ class PowerAllocationStrategy:
         allocation = {}
         remaining_power = available_power_kw
 
-        for charger_id, score, max_power in sorted_chargers:
+        for charger_id, _, max_power in sorted_chargers:
             power_assigned = min(max_power, remaining_power)
             allocation[charger_id] = power_assigned
             remaining_power -= power_assigned

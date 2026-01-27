@@ -11,7 +11,7 @@ Muestra cómo mantener demanda sin variaciones bruscas:
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 
@@ -174,7 +174,7 @@ class DemandCurveAnalyzer:
             mode='valid'
         )
 
-        return smoothed[:len(demands)].tolist()
+        return list(smoothed[:len(demands)])
 
     def print_demand_curve(
         self,
