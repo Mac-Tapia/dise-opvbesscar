@@ -7,7 +7,14 @@ from __future__ import annotations
 
 import json
 import sys
-from pathlib import Path
+
+# Imports que se requieren en runtime dentro del venv
+try:
+    import pandas as pd  # type: ignore  # noqa
+    import citylearn  # type: ignore  # noqa
+    import stable_baselines3  # type: ignore  # noqa
+except ImportError:
+    pass
 
 print("=" * 80)
 print("VERIFICACION FINAL - SCHEMA + DATASETS + PYTHON 3.11")
@@ -29,7 +36,7 @@ try:
     with open("outputs/schema_building.json") as f:
         schema = json.load(f)
 
-    import pandas as pd
+    import pandas as pd  # type: ignore  # noqa
     df_solar = pd.read_csv("data/interim/oe2/solar/pv_generation_timeseries.csv")
 
     with open("data/interim/oe2/chargers/individual_chargers.json") as f:
