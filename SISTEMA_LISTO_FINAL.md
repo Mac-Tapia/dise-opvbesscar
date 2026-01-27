@@ -35,7 +35,7 @@
 ### Data Validation
 - [x] Solar: 8,760 rows (hourly resolution)
 - [x] Chargers: 128 total (32 × 4 sockets)
-- [x] BESS: 2,000 kWh / 1,200 kW
+- [x] BESS: 4,520 kWh / 2,712 kW (OE2 Real)
 - [x] Schema: Completo y validado
 - [x] Config: default.yaml ready
 

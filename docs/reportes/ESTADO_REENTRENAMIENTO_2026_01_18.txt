@@ -5,7 +5,7 @@ Resumen de contexto (OE2 listo)
 --------------------------------
 - Solar dimensionado: 4,162 kWp (DC 3,759.86 kWp), 8.04 GWh anuales, PR 128.5%.
 - Chargers: 128 (272 kW) → 112 motos (2 kW c/u) + 16 mototaxis (3 kW c/u), 101 escenarios estocásticos.
-- BESS: 2,000 kWh / 1,200 kW, DoD 0.70-0.95, eficiencia 0.85-0.98.
+- BESS: 4,520 kWh / 2,712 kW (OE2 Real), DoD 0.70-0.95, eficiencia 0.85-0.98.
 - Dataset CityLearn unificado: `data/processed/citylearn/iquitos_ev_mall` (8760 pasos/año) con esquemas PV+BESS+EVs.
 
 Run de entrenamiento RL más reciente (GPU RTX 4060)

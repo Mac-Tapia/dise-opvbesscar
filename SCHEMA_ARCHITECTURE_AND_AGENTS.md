@@ -86,7 +86,7 @@ data/processed/citylearn/iquitos_ev_mall/
 - `central_agent: true` → All agents coordinate via single central agent
 - `episode_time_steps: 8760` → Exactly 1 year of hourly data
 - `chargers` dict → 128 chargers (112 motos + 16 mototaxis)
-- `electrical_storage` → 2,000 kWh / 1,200 kW BESS (immutable in OE3)
+- `electrical_storage` → 4,520 kWh / 2,712 kW BESS (OE2 Real, immutable in OE3)
 - `pv` → 4,050 kWp solar array
 
 ---
@@ -297,7 +297,7 @@ configs/default.yaml
 [OK] 128 chargers presentes
 [OK] Central agent configurado
 [OK] Timesteps: 8,760
-[OK] BESS: 2,000 kWh / 1,200 kW
+[OK] BESS: 4,520 kWh / 2,712 kW (OE2 Real)
 ```
 
 ✅ **Passed**: `scripts/verify_agents_same_schema.py`

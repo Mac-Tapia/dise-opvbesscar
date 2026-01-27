@@ -242,7 +242,7 @@ data/interim/oe2/
 - [x] Potencia total: 4,050 kWp
 - [x] Configuración módulos: 6,472 × 31 = 200,632
 - [x] Inversores: 2× Eaton Xpert1670
-- [x] BESS: 2,000 kWh / 1,200 kW
+- [x] BESS: 4,520 kWh / 2,712 kW (OE2 Real)
 - [x] Chargers: 128 (112 motos + 16 mototaxis)
 - [x] Sockets: 512 (128 × 4)
 - [x] Datos OE2: 8,760 rows/archivo

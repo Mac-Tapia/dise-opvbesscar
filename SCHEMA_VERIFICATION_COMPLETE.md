@@ -262,7 +262,7 @@ grep -A 5 "evaluation:" configs/default.yaml
 │ (Photovoltaic Design & BESS Sizing)                   │
 │ Solar timeseries: 8,760 hourly (kW)                   │
 │ Charger profiles: 128 units (2-3 kW each)             │
-│ BESS config: 2,000 kWh / 1,200 kW                     │
+│ BESS config: 4,520 kWh / 2,712 kW (OE2 Real)        │
 └──────────────┬──────────────────────────────────────┘
                ↓
         ┌─ OE3 Dataset Builder ─────────────────────┐
