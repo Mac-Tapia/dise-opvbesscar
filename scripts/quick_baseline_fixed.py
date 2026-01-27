@@ -10,7 +10,7 @@ import logging
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 
 # Setup logging
 logging.basicConfig(
@@ -46,8 +46,8 @@ def calculate_baseline():
         raise ValueError("Datos solares inválidos")
 
     # Extraer solar generation (PV) - combinar difusa y directa (W/m2 -> kW)
-    direct_irr = df_weather['direct_solar_irradiance'].values  # W/m2
-    diffuse_irr = df_weather['diffuse_solar_irradiance'].values  # W/m2
+    direct_irr = np.asarray(df_weather['direct_solar_irradiance'].values)  # W/m2
+    diffuse_irr = np.asarray(df_weather['diffuse_solar_irradiance'].values)  # W/m2
     total_irr = direct_irr + diffuse_irr  # W/m2
     pv_power = total_irr * 4162 / 1000  # Convertir a kW usando capacidad OE2 (4162 kWp)
 
@@ -65,7 +65,7 @@ def calculate_baseline():
     # Agrupar por hora (hay 2 filas por hora: 0min y 30min)
     # Usar promedio por hora
     df_hourly = df_profile.groupby('hour_of_day')[['total_demand_kw']].mean()
-    hourly_demand: np.ndarray = df_hourly['total_demand_kw'].values  # kW por hora
+    hourly_demand = np.asarray(df_hourly['total_demand_kw'].values)  # kW por hora
 
     logger.info(f"✓ Demanda de cargadores: prom={np.mean(hourly_demand):.2f} kW, pico={np.max(hourly_demand):.2f} kW")
 
@@ -120,9 +120,9 @@ def calculate_baseline():
             pv_curtailed_kwh += pv_to_bess
 
         # 3. Usar BESS para complementar EVs si falta demanda
-        ev_deficit = max(0, ev_demand - pv_to_ev)
+        ev_deficit: float = float(max(0, ev_demand - pv_to_ev))
         bess_to_ev_max: float = float(bess_soc - bess_capacity_kwh * bess_min_soc)
-        bess_to_ev = min(ev_deficit, bess_power_kw, bess_to_ev_max)
+        bess_to_ev: float = float(min(ev_deficit, bess_power_kw, bess_to_ev_max))
 
         if bess_to_ev > 0:
             bess_soc -= bess_to_ev
@@ -137,6 +137,7 @@ def calculate_baseline():
         ev_demand_total_kwh += ev_demand
 
         # Guardar timestep
+        bess_soc_percent: float = (bess_soc / bess_capacity_kwh) * 100
         results["timesteps"].append({
             "hour": hour % 24,
             "day": hour // 24 + 1,
@@ -144,7 +145,7 @@ def calculate_baseline():
             "ev_demand_kw": float(ev_demand),
             "grid_import_kw": float(grid_import),
             "bess_soc_kwh": float(bess_soc),
-            "bess_soc_percent": float(bess_soc_percent),
+            "bess_soc_percent": bess_soc_percent,
             "pv_to_ev_kw": float(pv_to_ev),
             "pv_to_bess_kw": float(pv_to_bess),
             "bess_to_ev_kw": float(bess_to_ev),
