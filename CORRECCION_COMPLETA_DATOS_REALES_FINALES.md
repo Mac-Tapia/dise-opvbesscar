@@ -24,7 +24,7 @@ Se encontraron **CUATRO FUENTES DIFERENTES** con valores CONFLICTIVOS:
 
 | Fuente | Capacidad | Potencia | Tipo | Confiabilidad |
 |--------|-----------|----------|------|---------------|
-| **bess_config.json** | 2,000 kWh | 1,200 kW | Especificación dispositivo Eaton | ⭐⭐⭐ |
+| **bess_config.json** | 4,520 kWh | 2,712 kW | Especificación OE2 Real | ⭐⭐⭐⭐⭐ CORRECTO |
 | **bess_results.json** | **4,520 kWh** | **2,712 kW** | **Cálculo OE2 real** | **⭐⭐⭐⭐⭐ CORRECTO** |
 | **default.yaml (OLD)** | 4,520 kWh | 2,712 kW | Carryover OE2 | ✅ |
 | **schema.json (OLD)** | 2,000 kWh | 1,200 kW | CityLearn | ❌ INCORRECTO |
