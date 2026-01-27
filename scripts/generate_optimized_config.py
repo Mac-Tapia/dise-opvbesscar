@@ -5,10 +5,10 @@ Basado en papers SAC, PPO, A2C y best practices Stable Baselines3.
 """
 from __future__ import annotations
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 from pathlib import Path
 
-def main() -> None:
+def main() -> int:
     """Lee config actual y genera versión optimizada con cambios sugeridos."""
 
     config_path = Path("configs/default.yaml")
@@ -101,6 +101,8 @@ def main() -> None:
     print(f"  GAE Lambda:         0.9   → 0.92  (↑0.2%)")
     print(f"  Episodes:           3     → 5     (↑67%)")
     print("\n" + "="*80)
+    return 0
 
 if __name__ == "__main__":
-    main()
+    import sys
+    sys.exit(main())
