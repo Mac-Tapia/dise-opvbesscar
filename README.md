@@ -29,12 +29,65 @@ integración fotovoltaica y BESS en Iquitos, Perú.
 
 ## Requisitos
 
-- **Python 3.11+** (activar `.venv`).
+- **Python 3.11+** (activado en `.venv`).
 - **Dependencias**: 
-  - `pip install -r requirements.txt` (base)
-  - `pip install -r requirements-training.txt` (RL con GPU)
+  - `pip install -r requirements.txt` (base) - 221 librerías
+  - `pip install -r requirements-training.txt` (RL con GPU) - 11 adicionales
 - **Herramientas**: `git`, `poetry` (opcional), Docker (despliegues)
 - **GPU** (recomendado): CUDA 11.8+, torch con soporte GPU (10x más rápido)
+- **Validación**: Ejecutar `python validate_requirements_integration.py` para verificar integración
+
+> 📚 **DOCUMENTACIÓN COMPLETA DE LIBRERÍAS**: Ver [INDICE_DOCUMENTACION_INTEGRACION.md](INDICE_DOCUMENTACION_INTEGRACION.md)
+> - QUICK_START.md → Instalación paso a paso
+> - INTEGRACION_FINAL_REQUIREMENTS.md → Referencia técnica
+> - COMANDOS_UTILES.ps1 → Comandos listos para usar
+
+### Instalación Rápida (5 minutos)
+
+```bash
+# 1. Crear entorno virtual
+python -m venv .venv
+
+# 2. Activar entorno
+.venv\Scripts\activate          # Windows PowerShell
+# o
+.venv\Scripts\activate.bat      # Windows CMD
+# o
+source .venv/bin/activate       # Linux/macOS
+
+# 3. Instalar dependencias
+pip install -r requirements.txt
+pip install -r requirements-training.txt
+
+# 4. Validar instalación
+python validate_requirements_integration.py
+```
+
+**Resultado esperado:**
+```
+✅ VALIDACIÓN EXITOSA: Todos los requirements están integrados correctamente
+   • requirements.txt: 221 librerías
+   • requirements-training.txt: 11 librerías
+```
+
+### Configuración GPU (Opcional)
+
+Si tienes CUDA 11.8 instalado:
+
+```bash
+# Reemplazar torch CPU por GPU
+pip install torch==2.10.0 torchvision==0.15.2 \
+  --index-url https://download.pytorch.org/whl/cu118
+
+# Verificar
+python -c "import torch; print(f'GPU disponible: {torch.cuda.is_available()}')"
+```
+
+### Documentación de Instalación
+
+- **QUICK_START.md** - Guía de 5 minutos
+- **INTEGRACION_FINAL_REQUIREMENTS.md** - Referencia técnica completa
+- **COMANDOS_UTILES.ps1** - Comandos listos para copiar/pegar
 
 ## Estructura clave
 
