@@ -81,7 +81,7 @@
     "resumen": "outputs/oe3/simulations/A2C_TRAINING_SUMMARY.json"
   },
   "verificacion": {
-    "python_version": "3.13.9 (recomendado 3.11+)",
+    "python_version": "3.11 EXACTAMENTE (obligatorio: NO 3.12, NO 3.13)",
     "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
     "cuda": "11.8",
     "dataset": "\u2713 Encontrado",

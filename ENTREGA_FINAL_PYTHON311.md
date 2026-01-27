@@ -10,7 +10,7 @@
 
 ### Eliminación de Confusiones
 
-**Archivos Python 3.13 confusos**: 
+**Archivos Python limpios**: 
 - Buscados y eliminados todos los que generaban conflicto
 - Resultado: 0 archivos problematicos encontrados (sistema limpio)
 
@@ -177,7 +177,7 @@ d:\diseñopvbesscar\
 
 ✅ **Python 3.11 REQUERIDO**
 - Todos los scripts validan Python 3.11
-- Si ejecutas con 3.10, 3.12, 3.13, el script se detiene automáticamente
+- Si ejecutas con versiones que no sean 3.11, el script se detiene automáticamente
 - Mensaje claro: "ERROR: PYTHON 3.11 REQUERIDO"
 
 ✅ **Sin encoding errors**

@@ -8,19 +8,19 @@ Verifica que el modelo A2C:
 2. Puede hacer predicciones con 135 dims de observación
 3. Las predicciones responden a cambios en demanda del mall
 
-⚠️  REQUERIMIENTO: Python 3.11 EXACTAMENTE
+⚠️  REQUERIMIENTO: Python 3.11 EXACTAMENTE - NO 3.12, 3.13, etc
 """
 
 import sys
 
-# ========== VALIDAR PYTHON 3.11 ==========
+# ========== VALIDAR PYTHON 3.11 EXACTAMENTE ==========
 if sys.version_info[:2] != (3, 11):
     version_str = f"{sys.version_info[0]}.{sys.version_info[1]}"
     print("\n" + "="*80)
-    print("❌ ERROR: PYTHON 3.11 REQUERIDO")
+    print("❌ ERROR: PYTHON 3.11+ REQUERIDO")
     print("="*80)
     print(f"Versión actual: Python {version_str}")
-    print(f"Versión requerida: Python 3.11")
+    print(f"Versión requerida: Python 3.11 o superior")
     print("\n⚠️  Por favor ejecuta:")
     print("   python -m venv .venv")
     print("   .venv\\Scripts\\activate  (Windows)")

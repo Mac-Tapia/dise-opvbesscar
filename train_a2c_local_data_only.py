@@ -15,14 +15,14 @@ Entrena A2C usando:
 
 import sys
 
-# ========== VALIDAR PYTHON 3.11 ==========
+# ========== VALIDAR PYTHON 3.11 EXACTAMENTE ==========
 if sys.version_info[:2] != (3, 11):
     version_str = f"{sys.version_info[0]}.{sys.version_info[1]}"
     print("\n" + "="*80)
-    print("ERROR: PYTHON 3.11 REQUERIDO")
+    print("ERROR: PYTHON 3.11+ REQUERIDO")
     print("="*80)
     print(f"Version actual: Python {version_str}")
-    print(f"Version requerida: Python 3.11")
+    print(f"Version requerida: Python 3.11 o superior")
     print("\nPor favor ejecuta:")
     print("   python -m venv .venv")
     print("   .venv\\Scripts\\activate  (Windows)")

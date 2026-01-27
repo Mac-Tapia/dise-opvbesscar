@@ -57,9 +57,10 @@ doe_xstock==2.0.0
 eppy==0.5.69
 
 # ============================================================================
-# CITYLEARN ENVIRONMENT
+# CITYLEARN ENVIRONMENT (INSTALAR POR SEPARADO SIN DEPENDENCIAS)
 # ============================================================================
-citylearn==2.5.0
+# Instalar: pip install citylearn --no-deps
+#
 iquitos-citylearn==0.1.0
 
 # ============================================================================
