@@ -1,0 +1,196 @@
+════════════════════════════════════════════════════════════════════════════════
+                    🚀 ENTRENAMIENTO A2C - EN EJECUCIÓN
+════════════════════════════════════════════════════════════════════════════════
+
+⏱️  STATUS EN TIEMPO REAL
+
+   Iniciado:       27-01-2026 00:51:00
+   Proceso:        Dataset Builder (Generando 128 chargers)
+   Terminal ID:    ae14a4f2-809a-4b89-ae02-5e50a1c61a6c
+   Status:         ✅ EN PROGRESO
+
+════════════════════════════════════════════════════════════════════════════════
+
+📊 FASES DEL ENTRENAMIENTO
+
+   Fase 1: Dataset Builder        ████████████░░░░░░░░░░░░  75%  EN PROGRESO
+   ├─ Chargers CSVs:              ✅ 128/128 generados
+   ├─ Rows per CSV:               ✅ 8,760 (hourly, 1 año)
+   └─ Schema:                     ✅ Siendo creado
+
+   Fase 2: Baseline (Uncontrolled) ░░░░░░░░░░░░░░░░░░░░░░░░   0%  PRÓXIMO
+   ├─ Duración estimada:          10-15 minutos
+   └─ Propósito:                  Referencia sin control RL
+
+   Fase 3: SAC Agent Training      ░░░░░░░░░░░░░░░░░░░░░░░░   0%  PENDIENTE
+   ├─ Duración estimada:          35-45 minutos
+   ├─ Batch size:                 1,024
+   ├─ Learning rate:              1.0e-3 (agresivo)
+   └─ Entropía:                   0.20 (máxima exploración)
+
+   Fase 4: PPO Agent Training      ░░░░░░░░░░░░░░░░░░░░░░░░   0%  PENDIENTE
+   ├─ Duración estimada:          40-50 minutos
+   ├─ Batch size:                 512
+   ├─ Learning rate:              3.0e-4 (conservador)
+   └─ Entropía:                   0.001 (bajo)
+
+   Fase 5: A2C Agent Training      ░░░░░░░░░░░░░░░░░░░░░░░░   0%  PENDIENTE ← OBJETIVO
+   ├─ Duración estimada:          30-35 minutos
+   ├─ Batch size:                 1,024
+   ├─ Learning rate:              2.0e-3 (con decay exponencial)
+   └─ Entropía:                   0.01 (moderado)
+
+   Fase 6: Resultados & Comparación ░░░░░░░░░░░░░░░░░░░░░░░░   0%  PENDIENTE
+   ├─ Duración estimada:          5 minutos
+   └─ Output:                     Comparación CO₂ y rewards
+
+════════════════════════════════════════════════════════════════════════════════
+
+📈 PROGRESO TOTAL
+
+   Dataset:      ████████████░░░░░░░░░░░░  75%
+   Baseline:     ░░░░░░░░░░░░░░░░░░░░░░░░   0%
+   SAC:          ░░░░░░░░░░░░░░░░░░░░░░░░   0%
+   PPO:          ░░░░░░░░░░░░░░░░░░░░░░░░   0%
+   A2C:          ░░░░░░░░░░░░░░░░░░░░░░░░   0%
+   ─────────────────────────────────────────
+   TOTAL:        ███░░░░░░░░░░░░░░░░░░░░░   5%
+
+════════════════════════════════════════════════════════════════════════════════
+
+🎯 CONFIGURACIÓN A2C
+
+   Algorithm:              Advantage Actor-Critic
+   Type:                   On-policy, simple y estable
+   Timesteps per episode:  8,760 (1 año horario)
+   Episodios:              3
+   Total timesteps:        26,280
+
+   Batch Size:             1,024
+   Learning Rate:          2.0e-3 (decay exponencial)
+   Entropy Coefficient:    0.01
+   N-steps:                5
+   GAE Lambda:             0.95
+
+   Device:                 CPU (PyTorch 2.10.0+cpu)
+   Expected duration:      30-35 minutos
+
+════════════════════════════════════════════════════════════════════════════════
+
+📊 CONFIGURACIÓN OE3
+
+   Environment:            CityLearn v2 (Iquitos EV+PV/BESS)
+   Building:               1 (Shopping mall + 128 chargers)
+   Observation Space:      534 dimensions (building + chargers + time)
+   Action Space:           126 continuous [0,1]
+
+   PV Generation:          4,050 kWp
+   BESS Storage:           2,000 kWh / 1,200 kW
+   Chargers:               128 (112 motos @2kW, 16 mototaxis @3kW)
+
+   Reward Weights:
+   ├─ CO₂ minimization:    0.50 (PRIMARY)
+   ├─ Solar self-cons:     0.20
+   ├─ Cost minimization:   0.10
+   ├─ EV satisfaction:     0.10
+   └─ Grid stability:      0.10
+
+════════════════════════════════════════════════════════════════════════════════
+
+📁 ARCHIVOS GENERADOS
+
+   ✅ Schema CityLearn:
+      data/processed/citylearn/iquitos_ev_mall/schema.json
+
+   ✅ Charger CSVs (128 archivos):
+      data/processed/citylearn/iquitos_ev_mall/charger_simulation_000.csv
+      data/processed/citylearn/iquitos_ev_mall/charger_simulation_001.csv
+      ...
+      data/processed/citylearn/iquitos_ev_mall/charger_simulation_127.csv
+
+   ⏳ Baseline Uncontrolled:
+      outputs/oe3_simulations/baseline_uncontrolled.csv
+
+   ⏳ Checkpoints:
+      checkpoints/A2C/latest.zip
+      checkpoints/SAC/latest.zip
+      checkpoints/PPO/latest.zip
+
+   ⏳ Resultados Finales:
+      outputs/oe3_simulations/simulation_summary.json
+      outputs/oe3_simulations/a2c_training_results.json
+
+════════════════════════════════════════════════════════════════════════════════
+
+⏱️  TIEMPO ESTIMADO
+
+   Dataset Builder:        5-10 minutos   (EN PROGRESO)
+   Baseline:              10-15 minutos   (PRÓXIMO)
+   SAC Agent:             35-45 minutos   (PENDIENTE)
+   PPO Agent:             40-50 minutos   (PENDIENTE)
+   A2C Agent:             30-35 minutos   (PENDIENTE) ← OBJETIVO
+   Results:                5 minutos      (PENDIENTE)
+   ═══════════════════════════════════════════════════════
+   TOTAL:                ~2-2.5 horas
+
+════════════════════════════════════════════════════════════════════════════════
+
+📊 MÉTRICAS ESPERADAS (A2C)
+
+   CO₂ Emissions:
+   ├─ Baseline:            ~10,200 kg/año
+   ├─ A2C Expected:        ~7,500-7,800 kg/año
+   └─ Reduction:           -24% a -30% ✓
+
+   Solar Self-Consumption:
+   ├─ Baseline:            ~40%
+   ├─ A2C Expected:        ~60-65%
+   └─ Improvement:         +50% ✓
+
+   Training Stability:
+   ├─ Reward trend:        Ascending after warmup
+   ├─ Episodes needed:     5-10 para convergencia
+   └─ Variance:            Moderate (on-policy) ✓
+
+════════════════════════════════════════════════════════════════════════════════
+
+📋 CHECKLIST
+
+   ✅ Python 3.11.9 verificado
+   ✅ PyTorch 2.10.0 instalado
+   ✅ CityLearn v2 cargado
+   ✅ Configuración validada
+   ✅ OE2 artifacts verificados
+   ✅ Dataset Builder iniciado
+   ⏳ Entrenamiento en progreso
+   ⏭️ Resultados finales próximamente
+
+════════════════════════════════════════════════════════════════════════════════
+
+🔗 MONITOREO
+
+   Terminal ID:     ae14a4f2-809a-4b89-ae02-5e50a1c61a6c
+
+   Para ver progreso:
+   $ get_terminal_output ae14a4f2-809a-4b89-ae02-5e50a1c61a6c
+
+   Para ver archivos:
+   $ ls -la data/processed/citylearn/iquitos_ev_mall/
+   $ ls -la outputs/oe3_simulations/
+
+════════════════════════════════════════════════════════════════════════════════
+
+📍 DOCUMENTACIÓN
+
+   Punto de Entrada:        START_HERE.md
+   Instalación Rápida:      QUICK_START.md
+   Índice Completo:         INDICE_DOCUMENTACION_INTEGRACION.md
+   Configuración:           configs/default.yaml
+   Script Principal:        scripts/run_oe3_simulate.py
+   Progreso:                ENTRENAMIENTO_A2C_EN_PROGRESO.md (ESTE ARCHIVO)
+
+════════════════════════════════════════════════════════════════════════════════
+
+Status: 🟡 EN EJECUCIÓN
+Actualizado: 27-01-2026 00:55:00
+Repositorio: https://github.com/Mac-Tapia/dise-opvbesscar.git
