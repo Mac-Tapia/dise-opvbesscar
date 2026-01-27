@@ -34,7 +34,8 @@ oe2:
     sizing_mode: open_hours
     surplus_target_kwh_day: 9630.4
   dispatch_rules:
-    description: "Cubrir bloque pico (18-21h) con prioridades: FV\xE2\u2020\u2019\
+    description:
+      "Cubrir bloque pico (18-21h) con prioridades: FV\xE2\u2020\u2019\
       EV \xE2\u2020\u2019 FV\xE2\u2020\u2019BESS \xE2\u2020\u2019 BESS\xE2\u2020\u2019\
       EV(noche) \xE2\u2020\u2019 BESS\xE2\u2020\u2019MALL(saturada)"
     enabled: true
@@ -57,7 +58,8 @@ oe2:
       pv_night_threshold_kwh: 0.1
     priority_4_bess_to_mall:
       bess_saturation_percent: 95.0
-      description: "BESS saturada + FV excedente \xE2\u2020\u2019 Mall (descargar\
+      description:
+        "BESS saturada + FV excedente \xE2\u2020\u2019 Mall (descargar\
         \ exceso)"
       enabled: true
       mall_power_max_kw: 500.0
@@ -83,10 +85,10 @@ oe2:
     pe_motos: 0.9
     pe_mototaxis: 0.9
     peak_hours:
-    - 18
-    - 19
-    - 20
-    - 21
+      - 18
+      - 19
+      - 20
+      - 21
     peak_share_day: 0.5
     session_minutes: 30
     sockets_per_charger: 4
@@ -108,20 +110,20 @@ oe2:
     import_penalty_weight: 0.3
     peak_cost_multiplier: 1.5
     peak_hours:
-    - 18
-    - 19
-    - 20
-    - 21
+      - 18
+      - 19
+      - 20
+      - 21
     power_limits_kw:
       playa_motos: 120.0
       playa_mototaxis: 48.0
       total_aggregate: 150.0
     soc_reserve_penalty: 0.2
     valley_hours:
-    - 9
-    - 10
-    - 11
-    - 12
+      - 9
+      - 10
+      - 11
+      - 12
   solar:
     area_total_m2: 20637.0
     candidate_count: 5
@@ -182,16 +184,16 @@ oe3:
     project_life_years: 20
   evaluation:
     a2c:
-      batch_size: 1024
+      batch_size: 2048
       checkpoint_freq_steps: 200
       device: cuda
       entropy_coef: 0.02
-      episodes: 3
+      episodes: 5
       gamma: 0.99
       gae_lambda: 0.9
-      learning_rate: 0.002
+      learning_rate: 0.001
       learning_rate_schedule: exponential
-      log_interval: 250
+      log_interval: 100
       max_grad_norm: 1.0
       multi_objective_weights:
         co2: 0.5
@@ -199,7 +201,7 @@ oe3:
         ev: 0.1
         grid: 0.05
         solar: 0.2
-      n_steps: 16
+      n_steps: 128
       progress_interval_episodes: 1
       resume_checkpoints: false
       reward_smooth_lambda: 0.1
@@ -210,9 +212,9 @@ oe3:
       vf_coef: 0.5
       normalize_advantage: true
     agents:
-    - SAC
-    - PPO
-    - A2C
+      - SAC
+      - PPO
+      - A2C
     co2_tracking: true
     multi_objective_priority: co2_focus
     ppo:
@@ -226,7 +228,7 @@ oe3:
       kl_adaptive: true
       learning_rate: 0.0003
       learning_rate_schedule: linear
-      log_interval: 250
+      log_interval: 100
       max_grad_norm: 0.5
       multi_objective_weights:
         co2: 0.5
@@ -234,8 +236,8 @@ oe3:
         ev: 0.1
         grid: 0.05
         solar: 0.2
-      n_epochs: 25
-      n_steps: 4096
+      n_epochs: 40
+      n_steps: 8192
       progress_interval_episodes: 1
       resume_checkpoints: false
       reward_smooth_lambda: 0.15
@@ -253,20 +255,21 @@ oe3:
       co2_direct_weight: 0.12
       co2_indirect_weight: 0.08
     sac:
-      batch_size: 1024
-      buffer_size: 10000000
+      batch_size: 256
+      buffer_size: 1000000
       checkpoint_freq_steps: 200
       deterministic_eval: true
       device: cuda
       episodes: 3
-      ent_coef_init: 0.2
+      ent_coef_init: 0.05
       ent_coef_learned: true
       gradient_steps: 2048
-      learning_rate: 0.001
-      learning_rate_actor: 0.001
-      learning_rate_critic: 0.002
-      learning_starts: 2000
-      log_interval: 100
+      learning_rate: 0.0003
+      learning_rate_actor: 0.0003
+      learning_rate_critic: 0.0005
+      learning_starts: 500
+      log_interval: 50
+      max_grad_norm: 1.0
       multi_objective_weights:
         co2: 0.5
         cost: 0.15
@@ -276,14 +279,14 @@ oe3:
       prefer_citylearn: false
       progress_interval_episodes: 1
       resume_checkpoints: false
-      reward_smooth_lambda: 0.3
-      reward_scale: 1.5
+      reward_smooth_lambda: 0.2
+      reward_scale: 1.0
       save_final: true
-      tau: 0.01
-      target_entropy_scale: 1.5
-      train_freq: 1
+      tau: 0.005
+      target_entropy_scale: 1.0
+      train_freq: 2
       use_amp: true
-      use_sde: true
+      use_sde: false
   grid:
     carbon_intensity_kg_per_kwh: 0.4521
     tariff_usd_per_kwh: 0.2

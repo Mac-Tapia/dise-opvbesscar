@@ -774,50 +774,50 @@ def build_citylearn_dataset(
 
     # === VALIDATION REPORT: BESS, SOLAR, MALL DEMAND ===
     logger.info("")
-    logger.info("════════════════════════════════════════════════════════════════════════════════")
-    logger.info("  📊 VALIDATION REPORT: Dataset Construction Completeness")
-    logger.info("════════════════════════════════════════════════════════════════════════════════")
+    logger.info("=" * 80)
+    logger.info("VALIDATION REPORT: Dataset Construction Completeness")
+    logger.info("=" * 80)
 
     # 1. BESS Validation
     if bess_cap is not None and bess_cap > 0:
-        logger.info("✅ [BESS] CONFIGURED & LOADED")
+        logger.info("[OK] [BESS] CONFIGURED & LOADED")
         logger.info(f"   Capacity: {bess_cap:.0f} kWh")
         logger.info(f"   Power: {bess_pow:.0f} kW")
-        logger.info(f"   File: electrical_storage_simulation.csv (será creado)")
+        logger.info(f"   File: electrical_storage_simulation.csv (sera creado)")
     else:
-        logger.warning("⚠️  [BESS] NOT CONFIGURED - capacity=0 or missing")
+        logger.warning("[WARN] [BESS] NOT CONFIGURED - capacity=0 or missing")
 
     # 2. Solar Generation Validation
     if pv_per_kwp is not None and len(pv_per_kwp) > 0 and pv_per_kwp.sum() > 0:
-        logger.info("✅ [SOLAR GENERATION] CONFIGURED & LOADED")
+        logger.info("[OK] [SOLAR GENERATION] CONFIGURED & LOADED")
         logger.info(f"   Capacity: {pv_dc_kw:.0f} kWp")
         logger.info(f"   Timeseries length: {len(pv_per_kwp)} hours (hourly resolution)")
         logger.info(f"   Total annual generation: {pv_per_kwp.sum():.1f} W/kWp")
         logger.info(f"   Mean hourly: {pv_per_kwp.mean():.3f}, Max: {pv_per_kwp.max():.3f}")
         logger.info(f"   Source: {('PVGIS hourly' if 'solar_ts' in artifacts else 'CityLearn template')}")
     else:
-        logger.warning("⚠️  [SOLAR GENERATION] NOT CONFIGURED - sum=0 or missing")
+        logger.warning("[WARN] [SOLAR GENERATION] NOT CONFIGURED - sum=0 or missing")
 
     # 3. Mall Demand Validation
     if mall_series is not None and len(mall_series) > 0 and mall_series.sum() > 0:
-        logger.info("✅ [MALL DEMAND] CONFIGURED & LOADED")
+        logger.info("[OK] [MALL DEMAND] CONFIGURED & LOADED")
         logger.info(f"   Timeseries length: {len(mall_series)} hours (hourly resolution)")
         logger.info(f"   Total annual demand: {mall_series.sum():.1f} kWh")
         logger.info(f"   Mean hourly: {mall_series.mean():.2f} kW, Max: {mall_series.max():.2f} kW")
         logger.info(f"   Source: {mall_source}")
         logger.info(f"   Daily pattern recognized: {('real demand curve' if 'mall_demand' in artifacts else 'synthetic profile')}")
     else:
-        logger.warning("⚠️  [MALL DEMAND] NOT CONFIGURED - sum=0 or missing")
+        logger.warning("[WARN] [MALL DEMAND] NOT CONFIGURED - sum=0 or missing")
 
     # 4. EV Chargers Validation
-    logger.info("✅ [EV CHARGERS] CONFIGURED")
+    logger.info("[OK] [EV CHARGERS] CONFIGURED")
     logger.info(f"   Total chargers: 128 (for 128 simulation files)")
     logger.info(f"   Operating hours: {cfg['oe2']['ev_fleet']['opening_hour']}-{cfg['oe2']['ev_fleet']['closing_hour']}")
     logger.info(f"   Files will be generated: charger_simulation_001.csv to charger_simulation_128.csv")
 
-    logger.info("════════════════════════════════════════════════════════════════════════════════")
-    logger.info("  ✅ All OE2 artifacts properly integrated into CityLearn dataset")
-    logger.info("════════════════════════════════════════════════════════════════════════════════")
+    logger.info("=" * 80)
+    logger.info("[OK] All OE2 artifacts properly integrated into CityLearn dataset")
+    logger.info("=" * 80)
     logger.info("")
 
     # carbon intensity and pricing
