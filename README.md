@@ -1,5 +1,12 @@
 # Proyecto Iquitos EV + PV/BESS - Sistema Inteligente de Despacho de Energía
 
+**Descripción breve:** Este repositorio contiene el pipeline de dimensionamiento (OE2) y control inteligente (OE3) para un sistema de carga de motos y mototaxis eléctricos con integración fotovoltaica y BESS en Iquitos, Perú.
+
+**Alcance técnico:**
+- **OE2 (Dimensionamiento):** PV 4,050 kWp (Kyocera KS20) con inversor Eaton Xpert1670 (2 unidades, 31 módulos por string, 6,472 strings, 200,632 módulos totales), **BESS 4,520 kWh / 2,712 kW (OE2 Real)** y 128 cargadores (112 motos @2 kW, 16 mototaxis @3 kW).
+- **OE3 (Control RL):** Agentes SAC/PPO/A2C en CityLearn v2 para minimizar CO₂, costo y picos, maximizando uso solar y satisfacción EV.
+- **Reducción CO₂ anual (capacidad OE2):** Directa 3,081.20 tCO₂/año (gasolina → EV), Indirecta 3,626.66 tCO₂/año (PV/BESS desplaza red), Neta 6,707.86 tCO₂/año. Emisiones con PV/BESS: 2,501.49 tCO₂/año.
+
 ## 📋 ¿QUÉ HACE ESTE PROYECTO?
 
 Este proyecto implementa un **sistema inteligente de gestión de energía** para Iquitos (Perú) que:
