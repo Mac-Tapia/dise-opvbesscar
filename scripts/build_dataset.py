@@ -3,7 +3,7 @@ Build Dataset Script
 Construye el dataset completo desde artefactos OE2:
 - Solar generation: PVGIS/pvlib (8,760 hourly values)
 - Chargers: 128 sockets (32 chargers × 4 sockets)
-- BESS: 2 MWh / 1.2 MW
+- BESS: 4,520 kWh / 2,712 kW (OE2 Real)
 """
 
 import sys
