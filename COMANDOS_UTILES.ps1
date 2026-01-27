@@ -148,7 +148,9 @@ pip-compile requirements.txt
 pip list --outdated
 
 # Ver cambios entre requirements
-Compare-Object (Get-Content requirements.txt) (Get-Content requirements-training.txt)
+# fc.exe requirements.txt requirements-training.txt
+# O usar Python:
+python -c "import difflib; f1=open('requirements.txt').readlines(); f2=open('requirements-training.txt').readlines(); print(''.join(difflib.unified_diff(f1, f2)))"
 
 
 # =============================================================================
@@ -222,7 +224,7 @@ python validate_requirements_integration.py
 pip check
 
 # 5. Estar listo
-Write-Output "✅ Entorno listo para usar"
+[Console]::WriteLine('✅ Entorno listo para usar')
 
 # 6. Ejecutar training (ejemplo)
 python -m scripts.run_oe3_simulate --config configs/default.yaml
