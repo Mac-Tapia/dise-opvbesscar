@@ -6,16 +6,38 @@ integración fotovoltaica y BESS en Iquitos, Perú.
 
 ## Alcance
 
-- **OE2 (dimensionamiento):** PV 4,050 kWp (Kyocera KS20) con inversor Eaton
-  - Xpert1670 (2 unidades, 31 módulos por string, 6,472 strings, 200,632 módulos
-    - totales), BESS 2 MWh/1.2 MW y 128 cargadores (112 motos @2 kW, 16 mototaxis
-      - @3 kW).
-- **OE3 (control RL):** Agentes SAC/PPO/A2C en CityLearn v2 para minimizar CO₂,
-  - costo y picos, maximizando uso solar y satisfacción EV.
-- **Reducción CO₂ anual (capacidad OE2):**
-  - Directa: 3,081.20 tCO₂/año (gasolina → EV).
-  - Indirecta: 3,626.66 tCO₂/año (PV/BESS desplaza red).
-  - Neta: 6,707.86 tCO₂/año. Emisiones con PV/BESS: 2,501.49 tCO₂/año.
+### 🔋 OE2 (Dimensionamiento - Infraestructura)
+
+**Sistema Solar Fotovoltaico:**
+- **Potencia Total:** 4,050 kWp
+- **Tecnología:** Módulos Kyocera KS20
+- **Configuración:** 6,472 strings × 31 módulos por string = 200,632 módulos totales
+- **Inversor:** Eaton Xpert1670 (2 unidades)
+
+**Sistema de Almacenamiento (BESS):**
+- **Capacidad:** 2,000 kWh (2 MWh)
+- **Potencia:** 1,200 kW (1.2 MW)
+
+**Infraestructura de Carga (Chargers):**
+- **Total:** 128 cargadores
+- **Motos:** 112 cargadores @ 2 kW c/u
+- **Mototaxis:** 16 cargadores @ 3 kW c/u
+- **Sockets:** 512 total (128 × 4 sockets por charger)
+
+**Reducción de CO₂ Anual:**
+- **Directa:** 3,081.20 tCO₂/año (sustitución gasolina → EV)
+- **Indirecta:** 3,626.66 tCO₂/año (PV/BESS desplaza red)
+- **Neta:** 6,707.86 tCO₂/año
+- **Emisiones finales con PV/BESS:** 2,501.49 tCO₂/año
+
+### 🤖 OE3 (Control - Aprendizaje por Refuerzo)
+
+**Algoritmos de Control:**
+- Agentes SAC, PPO, A2C en CityLearn v2
+- Objetivo primario: Minimizar emisiones de CO₂
+- Objetivo secundario: Maximizar auto-consumo solar
+- Objetivo terciario: Minimizar costo y picos de demanda
+- Restricción: Garantizar satisfacción de usuarios EV (≥95%)
 
 ## 🚀 Estado Actual (2026-01-27)
 
