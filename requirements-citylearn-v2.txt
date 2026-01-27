@@ -1,0 +1,41 @@
+# Requirements para CityLearn v2 - SEPARADO Y SIN DEPENDENCIAS
+# ==============================================================
+#
+# Este archivo SOLO contiene CityLearn v2 y sus dependencias directas.
+# NO incluye las librerías ya instaladas en requirements.txt
+#
+# Instalación (DESPUÉS de requirements.txt):
+#   pip install -r requirements-citylearn-v2.txt
+#
+# ⚠️  SOLO PYTHON 3.11 - NO SOPORTA 3.12, 3.13, etc.
+
+# ============================================================================
+# CITYLEARN v2 - MAIN DEPENDENCY
+# ============================================================================
+# CityLearn v2: Environment para simulación de energía en edificios
+# Incluye: CityLearnEnv, CityLearnDynamics, sensores, actuadores
+# Documentación: https://github.com/intelligent-environments-lab/CityLearn
+citylearn>=2.0.0,<3.0
+
+# ============================================================================
+# CITYLEARN DIRECT DEPENDENCIES (incluidas por citylearn pero especificadas)
+# ============================================================================
+# JSON Schema para validación de configuración de CityLearn
+jsonschema>=4.0.0,<5.0
+
+# ============================================================================
+# NOTA IMPORTANTE
+# ============================================================================
+# Las siguientes librerías ya están en requirements.txt, NO repetir:
+# - numpy
+# - pandas
+# - scipy
+# - matplotlib
+# - gymnasium
+#
+# Para instalar TODO:
+# 1. pip install -r requirements.txt
+# 2. pip install -r requirements-citylearn-v2.txt
+#
+# O todo de una vez:
+# pip install -r requirements.txt -r requirements-citylearn-v2.txt
