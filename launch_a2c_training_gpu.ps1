@@ -82,8 +82,8 @@ Write-Host ""
 Write-Host "🔥 MONITOREO DE GPU EN TIEMPO REAL:" -ForegroundColor Yellow
 Write-Host ""
 
-$monitorCount = 0
-while ($monitorCount -lt 30) {
+$monitor_count = 0
+while ($monitor_count -lt 30) {
     $gpuInfo = nvidia-smi --query-gpu=utilization.gpu, memory.used, memory.total --format=csv, noheader, nounits 2>$null
 
     if ($gpuInfo) {
@@ -107,7 +107,7 @@ while ($monitorCount -lt 30) {
     }
 
     Start-Sleep -Seconds 5
-    $monitorCount++
+    $monitor_count++
 
     # Verificar si el job terminó
     $jobStatus = Get-Job -Id $jobId -ErrorAction SilentlyContinue

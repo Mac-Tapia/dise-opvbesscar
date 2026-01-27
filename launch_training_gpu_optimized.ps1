@@ -42,8 +42,8 @@ function Show-GPUStatus {
     }
 }
 
-# Function to check prerequisites
-function Check-Prerequisites {
+# Function to test prerequisites
+function Test-Prerequisites {
     Write-Host "`n[PREREQUISITES CHECK]" -ForegroundColor Yellow
 
     # Check Python version
@@ -72,8 +72,8 @@ function Start-GPUMonitoring {
     # Create a job to monitor GPU
     $monitor_script = {
         while ($true) {
-            $nvidia_output = & nvidia-smi --query-gpu=index, memory.used, memory.total, utilization.gpu, temperature.gpu `
-                --format=csv, noheader, nounits --loop-ms=5000 2>$null
+            $nvidia_output = & { nvidia-smi --query-gpu=index, memory.used, memory.total, utilization.gpu, temperature.gpu `
+                --format=csv, noheader, nounits --loop-ms=5000 2>&1 }
 
             if ($LASTEXITCODE -eq 0) {
                 foreach ($line in $nvidia_output) {
@@ -148,7 +148,7 @@ function Start-Training {
 }
 
 # Run all functions
-Check-Prerequisites
+Test-Prerequisites
 Show-GPUStatus
 Start-Training
 
