@@ -148,7 +148,7 @@ pip-compile requirements.txt
 pip list --outdated
 
 # Ver cambios entre requirements
-diff requirements.txt requirements-training.txt
+Compare-Object (Get-Content requirements.txt) (Get-Content requirements-training.txt)
 
 
 # =============================================================================
@@ -222,7 +222,7 @@ python validate_requirements_integration.py
 pip check
 
 # 5. Estar listo
-echo "✅ Entorno listo para usar"
+Write-Output "✅ Entorno listo para usar"
 
 # 6. Ejecutar training (ejemplo)
 python -m scripts.run_oe3_simulate --config configs/default.yaml
