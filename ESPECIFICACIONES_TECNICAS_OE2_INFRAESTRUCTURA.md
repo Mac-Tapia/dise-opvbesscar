@@ -71,10 +71,10 @@ Eaton Xpert1670 #2 (2,025 kW)
 ## 🔋 Sistema de Almacenamiento (BESS)
 
 ### Especificaciones
-- **Tecnología:** Batería de iones de litio (LiFePO₄ recomendado)
-- **Capacidad Nominal:** 2,000 kWh
-- **Potencia Nominal:** 1,200 kW
-- **Ratio C:** 1,200 kW / 2,000 kWh = 0.6C (descarga en 1.67 hrs)
+- **Tecnología:** Batería de iones de litio (LiFePO₄)
+- **Capacidad Nominal:** 4,520 kWh (OE2 Real)
+- **Potencia Nominal:** 2,712 kW (OE2 Real)
+- **Ratio C:** 2,712 kW / 4,520 kWh = 0.60C (descarga en 1.67 hrs)
 - **Tiempo Descarga Nominal:** 100 minutos (desde 100% a 0% a potencia nominal)
 
 ### Modo de Operación
