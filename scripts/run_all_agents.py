@@ -6,7 +6,7 @@ Sistema completamente validado: Python 3.11, BESS 4520/2712, Schema 8760 timeste
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
+import sys
 
 from iquitos_citylearn.utils.logging import setup_logging
 from iquitos_citylearn.oe3.dataset_builder import build_citylearn_dataset
@@ -14,7 +14,7 @@ from iquitos_citylearn.oe3.simulate import simulate
 from scripts._common import load_all  # Incluye validación Python 3.11
 
 
-def main() -> None:
+def main() -> int:
     """Entrena SAC, PPO y A2C agents secuencialmente con datos OE2/OE3 sincronizados."""
     ap = argparse.ArgumentParser(
         description="Entrenar los 3 agentes (SAC, PPO, A2C) para control energético en Iquitos"
@@ -53,11 +53,23 @@ def main() -> None:
     training_dir.mkdir(parents=True, exist_ok=True)
 
     # Parámetros globales
-    project_seed = int(cfg["project"].get("seed", 42))
+    _ = int(cfg["project"].get("seed", 42))
     seconds_per_time_step = int(cfg["project"]["seconds_per_time_step"])
     ci = float(cfg["oe3"]["grid"]["carbon_intensity_kg_per_kwh"])
 
     agents_to_train = [a.strip().lower() for a in args.agents.split(",")]
+
+    # Parámetros para simulate()
+    sac_episodes = 10
+    sac_batch_size = 512
+    sac_log_interval = 500
+    sac_use_amp = True
+    ppo_timesteps = 100000
+    ppo_n_steps = 1024
+    ppo_batch_size = 128
+    ppo_use_amp = True
+    a2c_timesteps = 100000
+    a2c_n_steps = 256
 
     print("\n" + "="*80)
     print("ENTRENAMIENTO MÚLTIPLE DE AGENTES - SISTEMA COMPLETO OE2/OE3")
@@ -75,12 +87,22 @@ def main() -> None:
     # Entrenar agentes
     print("[INFO] Iniciando entrenamiento...")
     simulate(
-        config_dict=cfg,
-        dataset_path=dataset_dir,
-        output_dir=out_dir,
+        schema_path=schema_pv,
+        agent_name=",".join([a.upper() for a in agents_to_train]),
+        out_dir=out_dir,
         training_dir=training_dir,
-        agents_to_run=agents_to_train,
-        seed=project_seed,
+        carbon_intensity_kg_per_kwh=ci,
+        seconds_per_time_step=seconds_per_time_step,
+        sac_episodes=sac_episodes,
+        sac_batch_size=sac_batch_size,
+        sac_log_interval=sac_log_interval,
+        sac_use_amp=sac_use_amp,
+        ppo_timesteps=ppo_timesteps,
+        ppo_n_steps=ppo_n_steps,
+        ppo_batch_size=ppo_batch_size,
+        ppo_use_amp=ppo_use_amp,
+        a2c_timesteps=a2c_timesteps,
+        a2c_n_steps=a2c_n_steps,
     )
 
     print("\n" + "="*80)
@@ -89,7 +111,9 @@ def main() -> None:
     print(f"Resultados: {out_dir}")
     print(f"Checkpoints: checkpoints/")
     print("="*80)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    sys.exit(main())

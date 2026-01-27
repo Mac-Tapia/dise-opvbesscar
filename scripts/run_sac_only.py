@@ -6,7 +6,6 @@ Sistema completamente integrado con validación Python 3.11.
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 
 from iquitos_citylearn.utils.logging import setup_logging
 from iquitos_citylearn.oe3.dataset_builder import build_citylearn_dataset
@@ -14,7 +13,7 @@ from iquitos_citylearn.oe3.simulate import simulate
 from scripts._common import load_all  # Incluye validación Python 3.11
 
 
-def main() -> None:
+def main() -> int:
     """Entrena SAC agent con datos OE2/OE3 sincronizados."""
     ap = argparse.ArgumentParser(
         description="Entrenar SAC agent (Soft Actor-Critic) para control energético en Iquitos"
@@ -52,12 +51,16 @@ def main() -> None:
     training_dir.mkdir(parents=True, exist_ok=True)
 
     # Parámetros globales
-    project_seed = int(cfg["project"].get("seed", 42))
+    _ = int(cfg["project"].get("seed", 42))
     seconds_per_time_step = int(cfg["project"]["seconds_per_time_step"])
     ci = float(cfg["oe3"]["grid"]["carbon_intensity_kg_per_kwh"])
 
     # SAC config
     sac_cfg = cfg["oe3"]["evaluation"].get("sac", {})
+    sac_episodes = int(sac_cfg.get("episodes", 10))
+    sac_batch_size = int(sac_cfg.get("batch_size", 512))
+    sac_log_interval = int(sac_cfg.get("log_interval", 500))
+    sac_use_amp = bool(sac_cfg.get("use_amp", True))
 
     print("\n" + "="*80)
     print("ENTRENAMIENTO SAC - SISTEMA COMPLETO OE2/OE3")
@@ -74,12 +77,16 @@ def main() -> None:
     # Entrenar SAC
     print("[INFO] Iniciando entrenamiento SAC...")
     simulate(
-        config_dict=cfg,
-        dataset_path=dataset_dir,
-        output_dir=out_dir,
+        schema_path=schema_pv,
+        agent_name="SAC",
+        out_dir=out_dir,
         training_dir=training_dir,
-        agents_to_run=["sac"],
-        seed=project_seed,
+        carbon_intensity_kg_per_kwh=ci,
+        seconds_per_time_step=seconds_per_time_step,
+        sac_episodes=sac_episodes,
+        sac_batch_size=sac_batch_size,
+        sac_log_interval=sac_log_interval,
+        sac_use_amp=sac_use_amp,
     )
 
     print("\n" + "="*80)
@@ -87,7 +94,8 @@ def main() -> None:
     print("="*80)
     print(f"Resultados: {out_dir}")
     print(f"Checkpoints: checkpoints/SAC/")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    exit(main())

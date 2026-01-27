@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import sys
 import subprocess
-import os
 from pathlib import Path
 
 def main() -> int:

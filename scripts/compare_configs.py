@@ -5,9 +5,9 @@ Visualiza las diferencias entre config original y optimizada.
 """
 from __future__ import annotations
 
-import json
+import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
 def format_change(before: float, after: float, percentage: bool = False) -> str:
     """Formatea cambio con color visual."""
@@ -82,7 +82,7 @@ def print_comparison(config_before: Dict[str, Any], config_after: Dict[str, Any]
     print("RESUMEN DE IMPACTO ESTIMADO")
     print("="*100)
 
-    impacts = {
+    impacts: Dict[str, Dict[str, str]] = {
         "SAC": {
             "exploración": "+0% (automática)",
             "aprendizaje": "+25% (critic LR↑)",
@@ -106,12 +106,13 @@ def print_comparison(config_before: Dict[str, Any], config_after: Dict[str, Any]
         }
     }
 
-    for agent, impact in impacts.items():
-        print(f"\n{agent}:")
-        for key, value in impact.items():
-            print(f"  {key:<25} {value}")
+    for agent_name, impact_data in impacts.items():
+        print(f"\n{agent_name}:")
+        if isinstance(impact_data, dict):
+            for key, value in impact_data.items():
+                print(f"  {key:<25} {value}")
 
-def main() -> None:
+def main() -> int:
     """Carga configs y muestra comparación."""
 
     config_path_before = Path("configs/default.yaml")
@@ -119,14 +120,14 @@ def main() -> None:
 
     if not config_path_before.exists():
         print(f"❌ Config original no encontrada: {config_path_before}")
-        return
+        return 1
 
     if not config_path_after.exists():
         print(f"❌ Config optimizada no encontrada: {config_path_after}")
-        return
+        return 1
 
     # Cargar configs
-    import yaml
+    import yaml  # type: ignore[import-untyped]
 
     with open(config_path_before) as f:
         cfg_before = yaml.safe_load(f)
@@ -185,6 +186,7 @@ RECOMENDACIÓN: Usar configs/default_optimized.yaml para máximo potencial 🚀
 Comando:
   python -m scripts.run_all_agents --config configs/default_optimized.yaml
     """)
+    return 0
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
