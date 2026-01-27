@@ -6,7 +6,7 @@ Ejecuta simulación completa con acciones nulas (sin control inteligente).
 from __future__ import annotations
 
 import json
-from pathlib import Path
+from typing import Any
 
 from citylearn.citylearn import CityLearnEnv
 
@@ -27,7 +27,7 @@ def main() -> None:
     print("PASO 1: CONSTRUYENDO DATASET OE2->OE3")
     print("="*80)
 
-    dataset_name = cfg["oe3"]["dataset"]["name"]
+    _dataset_name = cfg["oe3"]["dataset"]["name"]
 
     built = build_citylearn_dataset(
         cfg=cfg,
@@ -54,13 +54,17 @@ def main() -> None:
     env = CityLearnEnv(str(schema_path))
     ci = float(cfg["oe3"]["grid"]["carbon_intensity_kg_per_kwh"])
 
-    obs, _ = env.reset()
+    _obs, _info = env.reset()
 
     # Almacenar datos por timestep
-    demand_per_step = []
-    solar_per_step = []
-    grid_import_per_step = []
-    co2_per_step = []
+    demand_per_step: list[float] = []
+    solar_per_step: list[float] = []
+    grid_import_per_step: list[float] = []
+    co2_per_step: list[float] = []
+
+    # Variables de control
+    terminated: bool = False
+    truncated: bool = False
 
     # Ejecutar simulación completa (8760 timesteps = 1 año)
     print("[EJECUTANDO] Simulación sin control...")
@@ -69,7 +73,7 @@ def main() -> None:
         # CityLearn espera 130 acciones (128 chargers + 2 para BESS/demanda)
         action = [[0] * 130]  # 1 building × 130 actions
 
-        obs, _, _, _, _ = env.step(action)
+        _obs, _reward, terminated, truncated, _info = env.step(action)
 
         # Extraer datos del timestep actual
         # Las métricas están disponibles en los building.energy_simulation
@@ -113,7 +117,7 @@ def main() -> None:
     baseline_grid_import_kwh = float(sum(grid_import_per_step))
     baseline_co2_kg = float(sum(co2_per_step))
 
-    baseline_data = {
+    baseline_data: dict[str, Any] = {
         "sistema": "Baseline (Uncontrolled)",
         "descripcion": "Sin control inteligente, simulado desde schema OE2→OE3",
         "source": f"CityLearnEnv simulation {schema_path}",
@@ -159,7 +163,8 @@ def main() -> None:
 
     print(f"\n=== PARAMETROS GRID ===")
     print(f"    Intensidad carbono:   {ci:>15.4f} kg CO2/kWh")
-    print(f"    Tarifa:               {baseline_data['parametros_grid']['tarifa_usd_per_kwh']:>14.2f} USD/kWh")
+    tarifa_usd: float = baseline_data.get("parametros_grid", {}).get("tarifa_usd_per_kwh", 0.20)
+    print(f"    Tarifa:               {tarifa_usd:>14.2f} USD/kWh")
 
     print(f"\n[OK] Archivo guardado: {baseline_file}")
     print("\n" + "="*80 + "\n")
