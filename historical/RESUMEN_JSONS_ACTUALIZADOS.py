@@ -25,7 +25,7 @@ ACTUALIZACION Y VERIFICACION DE JSONS OE2 - FINAL
     ✓ Potencia: 1,200 kW
     ✓ Eficiencia: 92%
     ✓ CONEXION: BESS almacena 18.3 horas de energía solar diaria
-              (8.03 GWh / 365 = 22 MWh/día → 22 MWh / 1.2 MW = 18.3h)
+              (8.03 GWh / 365 = 22 GWh/día → 4,520 kWh / 2,712 kW = 1.67h charge time)
 
 [3] CHARGERS JSON
     ✓ Archivo: data/interim/oe2/chargers/individual_chargers.json
@@ -52,7 +52,7 @@ ACTUALIZACION Y VERIFICACION DE JSONS OE2 - FINAL
     │ Solar: 8.03 GWh/año (PVGIS + Sandia)       │
     │        ↓                                     │
     │ ┌──────────────────────────────────────┐   │
-    │ │ BESS: 2 MWh / 1.2 MW                 │   │
+    │ │ BESS: 4,520 kWh / 2,712 kW (OE2 Real)  │   │
     │ │ Almacena: 18.3h de solar/día         │   │
     │ └──────────────────────────────────────┘   │
     │        ↓                                     │

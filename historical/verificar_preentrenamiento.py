@@ -6,7 +6,7 @@ VERIFICACION PRE-ENTRENAMIENTO
 Antes de entrenar, verificar que TODO esté listo:
 - Solar data: 8,760 rows, 8.03 GWh
 - Chargers: 128 sockets configurados
-- BESS: 2 MWh / 1.2 MW
+- BESS: 4,520 kWh / 2,712 kW (OE2 Real)
 - GPU: CUDA disponible
 - Configs: default.yaml actualizado
 """
@@ -90,7 +90,7 @@ def check_chargers():
         return False
 
 def check_bess():
-    """Verificar BESS 2 MWh / 1.2 MW."""
+    """Verificar BESS 4,520 kWh / 2,712 kW (OE2 Real)."""
     bess_path = Path("data/interim/oe2/bess/bess_config.json")
     if not bess_path.exists():
         print("✗ BESS config: NO ENCONTRADO")
@@ -242,7 +242,7 @@ checks = {
     "Dependencias": deps_ok,
     "Solar data (8,760 rows, 8.03 GWh)": solar_ok,
     "Chargers (128 sockets)": chargers_ok,
-    "BESS (2 MWh/1.2 MW)": bess_ok,
+    "BESS (4,520 kWh / 2,712 kW)": bess_ok,
     "Config (target_annual_kwh=8.03M)": config_ok,
     "GPU CUDA": gpu_ok,
 }

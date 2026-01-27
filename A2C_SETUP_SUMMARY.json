@@ -63,7 +63,7 @@
     },
     "infraestructura_oe2": {
       "PV": "4,050 kWp",
-      "BESS": "2 MWh / 1.2 MW",
+      "BESS": "4,520 kWh / 2,712 kW (OE2 Real)",
       "Chargers": "128 sockets (32 physical chargers \u00d7 4 sockets)"
     }
   },

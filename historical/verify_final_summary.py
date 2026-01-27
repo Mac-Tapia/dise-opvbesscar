@@ -68,6 +68,6 @@ print(f"  │  ├─ Motos: 112 tomas × 2.0 kW = 224 kW")
 print(f"  │  └─ Mototaxis: 16 tomas × 3.0 kW = 48 kW")
 print(f"  │  └─ OE3: Cada toma controlada de forma INDEPENDIENTE viendo estado EV")
 print(f"  ├─ Demanda anual EV: ~844 MWh")
-print(f"  └─ BESS: 2 MWh / 1.2 MW")
+print(f"  └─ BESS: 4,520 kWh / 2,712 kW (OE2 Real)")
 
 print(f"\n[OK] NEXT STEP: python -m scripts.run_oe3_build_dataset --config configs/default.yaml")

@@ -94,7 +94,7 @@ def create_bess_config():
 
     try:
         # BESS Specs: Eaton Xpert1670 equivalent
-        # 2 MWh capacity / 1.2 MW power
+        # 4,520 kWh capacity / 2,712 kW power (OE2 Real)
         bess_config = {
             "system_name": "Eaton Xpert 1670 - Iquitos BESS",
             "capacity_kwh": 2000.0,
