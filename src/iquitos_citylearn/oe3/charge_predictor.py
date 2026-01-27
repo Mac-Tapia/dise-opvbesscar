@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 
@@ -304,7 +304,7 @@ class ChargeScheduler:
         current_hour: int,
         charger_states: Dict[int, Dict],
         available_power_kw: float,
-    ) -> Dict[str, any]:
+    ) -> Dict:
         """
         Calcular qué EVs pueden completar carga antes de cierre.
 
@@ -353,7 +353,8 @@ class ChargeScheduler:
 
         print(f"\n{'='*100}")
         print(f"{'ANÁLISIS DE FACTIBILIDAD DE CARGAS':^100}")
-        print(f"{'Hora actual: ' + f'{current_hour}:00 | Cierre: {self.mall_closing_hour}:00 | Tiempo disponible: {feasibility[\"time_to_closing\"]:.1f}h':^100}")
+        time_avail = feasibility["time_to_closing"]
+        print(f"{'Hora actual: ' + f'{current_hour}:00 | Cierre: {self.mall_closing_hour}:00 | Tiempo disponible: {time_avail:.1f}h':^100}")
         print(f"{'='*100}")
 
         print(f"\n✓ FACTIBLES (terminan a tiempo): {len(feasibility['feasible'])} EVs")

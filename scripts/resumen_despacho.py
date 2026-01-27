@@ -69,7 +69,7 @@ def print_executive_summary():
         },
     ]
 
-    for i, rule in enumerate(rules, 1):
+    for _, rule in enumerate(rules, 1):
         print(f"┌─ {rule['num']} - {rule['name']}")
         print(f"├─ Fuente: {rule['source']:20} → Destino: {rule['target']}")
         print(f"├─ Condición: {rule['condition']}")

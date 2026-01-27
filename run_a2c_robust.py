@@ -62,7 +62,8 @@ def main() -> int:
     try:
         result = subprocess.run(
             [sys.executable, "-m", "scripts.run_a2c_only", "--config", "configs/default.yaml"],
-            cwd=Path(__file__).parent
+            cwd=Path(__file__).parent,
+            text=True
         )
         return result.returncode
     except KeyboardInterrupt:
