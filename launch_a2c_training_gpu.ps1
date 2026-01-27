@@ -91,19 +91,13 @@ while ($monitor_count -lt 30) {
         $gpu_util = [int]$parts[0]
         $mem_used = [int]$parts[1]
         $mem_total = [int]$parts[2]
-
         $mem_percent = [math]::Round(($mem_used / $mem_total) * 100, 1)
 
-        # Progress bar visualization
-        $util_bar = "░" * 32
-        $util_filled = [math]::Round($gpu_util / 3.125)
-        $util_bar = ("█" * $util_filled) + ("░" * (32 - $util_filled))
+        # Create progress bars
+        $util_bar = ("█" * [math]::Round($gpu_util / 3.125)) + ("░" * (32 - [math]::Round($gpu_util / 3.125)))
+        $mem_bar = ("█" * [math]::Round($mem_percent / 3.125)) + ("░" * (32 - [math]::Round($mem_percent / 3.125)))
 
-        $mem_bar = "░" * 32
-        $mem_filled = [math]::Round($mem_percent / 3.125)
-        $mem_bar = ("█" * $mem_filled) + ("░" * (32 - $mem_filled))
-
-        Write-Host "`r[$(Get-Date -Format 'HH:mm:ss')] GPU: $util_bar $($gpu_util)%  |  MEM: $mem_bar $($mem_percent)% ($mem_used/$mem_total MB)" -ForegroundColor Cyan -NoNewline
+        Write-Host "`r[$(Get-Date -Format 'HH:mm:ss')] GPU: $util_bar $gpu_util%  |  MEM: $mem_bar $mem_percent% ($mem_used/$mem_total MB)" -ForegroundColor Cyan -NoNewline
     }
 
     Start-Sleep -Seconds 5
