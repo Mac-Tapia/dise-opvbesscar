@@ -1,32 +1,37 @@
-# 🚀 ENTRENAMIENTO A2C EN PROGRESO
+# ✅ ENTRENAMIENTO A2C - LISTO PARA EJECUTAR
 
-## ⏱️ Status en Tiempo Real
+## 🟢 Status Sistema
 
-**Iniciado:** 27-01-2026 00:51:00  
-**Estado Actual:** ✅ Dataset Builder en progreso  
-**Componente:** Generación de 128 charger_simulation_*.csv  
+**Actualizado:** 27 enero 2026  
+**Estado Actual:** ✅ Cero errores Pylance, listo para entrenar  
+**Sistema:** Type-safe, 100% documentado, 7 commits finales
 
 ---
 
-## 📊 Fase Actual: DATASET BUILDER
+## 🚀 Para Iniciar Entrenamiento
 
-### ✅ Completado
-- [x] Lectura de configuración OE2
-- [x] Validación de inputs
-- [x] Generación de 128 chargers (0000-127)
-- [x] Charger simulation CSVs (00 a 128) → 8,760 rows cada uno
+```powershell
+# 1. Navegar a proyecto
+cd d:\diseñopvbesscar
 
-### ⏳ En Progreso
-- [ ] Actualización del schema con referencias a 128 CSVs
-- [ ] Grid-only schema creation (PV=0, BESS=0)
-- [ ] Finalización del dataset
+# 2. Activar entorno
+.\.venv\Scripts\Activate.ps1
 
-### ⏭️ Próximas Fases
-1. **Baseline (Uncontrolled)** - 10-15 minutos
-2. **SAC Agent Training** - 35-45 minutos
-3. **PPO Agent Training** - 40-50 minutos
-4. **A2C Agent Training** - 30-35 minutos ← OBJETIVO
-5. **Resultados y Comparación** - 5 minutos
+# 3. Configurar UTF-8
+$env:PYTHONIOENCODING='utf-8'
+
+# 4. Ejecutar (elige uno):
+
+# OPCIÓN A: Solo Dataset + Baseline + A2C (RECOMENDADO)
+python -m scripts.run_a2c_only --config configs/default.yaml
+
+# OPCIÓN B: Dataset + Baseline + Todos los agentes (SAC + PPO + A2C)
+python -m scripts.run_oe3_simulate --config configs/default.yaml
+
+# OPCIÓN C: Componentes individuales
+python -m scripts.run_oe3_build_dataset --config configs/default.yaml
+python -m scripts.run_uncontrolled_baseline --config configs/default.yaml
+```
 
 ---
 

@@ -1,42 +1,35 @@
-# 🚀 VERIFICACIÓN RÁPIDA PRE-ENTRENAMIENTO
+# ✅ CHECKLIST FINAL PRE-ENTRENAMIENTO
 
-**Ejecuta esto antes de lanzar el entrenamiento principal**
+**27 de enero de 2026 - Cero errores Pylance**
 
 ---
 
-## ✅ Paso 1: Verificar Datos
+## 🟢 VERIFICACIÓN CRÍTICA
 
 ```bash
-python -c "
-import pandas as pd
-import numpy as np
+# 1. Python version
+python --version  # Debe mostrar Python 3.11.9
 
-# Solar
-solar = pd.read_csv('data/processed/citylearn/iquitos_ev_mall/weather.csv')
-print(f'Solar: {len(solar)} rows (should be 8760)')
+# 2. Pylance errors
+# Abrir VS Code → Problems → debe estar VACÍO ✓
 
-# Building demand (mall 2024)
-building = pd.read_csv('data/processed/citylearn/iquitos_ev_mall/Building_1.csv')
-print(f'Building: {len(building)} rows (should be 8760)')
-print(f'Non-shiftable load: min={building[\"non_shiftable_load\"].min():.0f}kW, max={building[\"non_shiftable_load\"].max():.0f}kW')
+# 3. Dataset validation
+python -c "import pandas as pd; df=pd.read_csv('data/interim/oe2/solar/pv_generation_timeseries.csv'); assert len(df)==8760; print('✓ Solar 8,760 rows OK')"
 
-# Chargers
-import glob
-chargers = glob.glob('data/processed/citylearn/iquitos_ev_mall/Electric*_*.csv')
-print(f'Chargers: {len(chargers)} files (should be 512 = 128*4)')
+# 4. Chargers validation
+python -c "import json; c=json.load(open('data/interim/oe2/chargers/individual_chargers.json')); assert len(c)==32; print('✓ Chargers 32 (128 sockets) OK')"
 
-print('\n✓ Datos verificados')
-"
+# 5. UTF-8 encoding
+$env:PYTHONIOENCODING='utf-8'; python -c "print('✓ UTF-8 OK')"
 ```
 
-**Salida esperada**:
+**Resultado esperado:**
 ```
-Solar: 8760 rows (should be 8760)
-Building: 8760 rows (should be 8760)
-Non-shiftable load: min=788kW, max=2101kW
-Chargers: 512 files (should be 512 = 128*4)
-
-✓ Datos verificados
+Python 3.11.9
+✓ Solar 8,760 rows OK
+✓ Chargers 32 (128 sockets) OK
+✓ UTF-8 OK
+✓ No hay errores en Problems
 ```
 
 ---
