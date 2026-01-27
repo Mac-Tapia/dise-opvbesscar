@@ -18,11 +18,11 @@ Había **CUATRO VALORES DIFERENTES** en el sistema:
 
 | Archivo | Capacidad | Potencia | ¿Correcto? |
 |---------|-----------|----------|-----------|
-| bess_config.json | 2,000 kWh | 1,200 kW | ❌ (dispositivo Eaton) |
+| bess_config.json | 4,520 kWh | 2,712 kW | ✅ **OE2 Real** |
 | **bess_results.json** | **4,520 kWh** | **2,712 kW** | ✅ **REAL OE2** |
 | default.yaml | 4,520 kWh | 2,712 kW | ✅ |
-| default_optimized.yaml | 2,000 kWh | 1,200 kW | ❌ |
-| schema.json | 2,000 kWh | 1,200 kW | ❌ |
+| default_optimized.yaml | 4,520 kWh | 2,712 kW | ✅ |
+| schema.json | 4,520 kWh | 2,712 kW | ✅ |
 
 ---
 

@@ -78,7 +78,7 @@ ENTRADA (1 ano)
 Schema CityLearn v2 (8,760 timesteps)
   ├── Solar OE2 (8,760 horas)
   ├── Chargers OE2 (128 chargers, 512 sockets)
-  ├── BESS OE2 (2,000 kWh, 1,200 kW)
+  ├── BESS OE2 (4,520 kWh, 2,712 kW)
   └── Config (dispatch rules, rewards)
   ↓
 Dataset Builder (OE3)

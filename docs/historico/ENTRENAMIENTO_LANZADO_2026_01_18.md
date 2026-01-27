@@ -17,7 +17,7 @@
 ```text
 ✓ Datos construidos: 128 cargadores (112 motos + 16 mototaxis)
 ✓ PV: 4,162 kWp nominal (generación escalada a objetivo)
-✓ BESS: 2,000 kWh, 1,200 kW
+✓ BESS: 4,520 kWh, 2,712 kW (OE2 Real)
 ✓ Demanda: 12,368,653 kWh anuales (mall)
 ✓ 101 perfiles estocásticos cargadores generados
 ```text

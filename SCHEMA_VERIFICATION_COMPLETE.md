@@ -33,7 +33,7 @@
   ├─ 128 Chargers (dict structure)
   │   ├─ 112 Motos:     2.0 kW rated, 4 sockets/charger
   │   └─ 16 Mototaxis:  3.0 kW rated, 4 sockets/charger
-  ├─ 1 BESS:            2,000 kWh capacity / 1,200 kW power
+  ├─ 1 BESS:            4,520 kWh capacity / 2,712 kW power (OE2 Real)
   ├─ 1 PV Array:        4,050 kWp rated capacity
   └─ 1 Central Agent:   Coordinates all RL policies
 ```

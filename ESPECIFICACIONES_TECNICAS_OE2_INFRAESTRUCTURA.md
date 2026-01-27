@@ -203,7 +203,7 @@ data/interim/oe2/
 ### Validaciones Críticas
 - ✅ Solar: Exactamente 8,760 filas (hourly, no 15-min data)
 - ✅ Chargers: 32 entries × 4 sockets = 128 chargers
-- ✅ BESS: Capacidad 2,000 kWh, Potencia 1,200 kW
+- ✅ BESS: Capacidad 4,520 kWh, Potencia 2,712 kW (OE2 Real)
 - ✅ Demanda: Perfil horario coherente con flota
 
 ---
