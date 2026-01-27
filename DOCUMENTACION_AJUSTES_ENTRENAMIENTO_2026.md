@@ -189,13 +189,26 @@ oe3:
     grid_stability: 0.10     # Estabilidad red
 ```
 
-### Infraestructura OE2 (Actuales)
-- **Panel Solar:** 4,050 kWp (AC output → `pv_generation_timeseries.csv`)
-- **BESS:** 2,000 kWh / 1,200 kW (fijo en OE3)
-- **Chargers:** 128 total (32 chargers × 4 sockets)
-  - 64 motos (2 kW c/u)
-  - 64 mototaxis (3 kW c/u)
-- **Timeseries:** 8,760 filas (hourly, 365 días × 24 hrs)
+### Infraestructura OE2 (Actuales - Datos Reales)
+
+**Sistema Fotovoltaico:**
+- **Potencia Total:** 4,050 kWp
+- **Módulos:** Kyocera KS20
+- **Configuración:** 6,472 strings × 31 módulos por string = 200,632 módulos totales
+- **Inversor:** Eaton Xpert1670 (2 unidades)
+
+**Sistema de Almacenamiento (BESS):**
+- **Capacidad:** 2,000 kWh (2 MWh)
+- **Potencia:** 1,200 kW (1.2 MW)
+
+**Infraestructura de Carga:**
+- **Total Cargadores:** 128
+  - 112 motos @ 2 kW c/u
+  - 16 mototaxis @ 3 kW c/u
+- **Sockets Totales:** 512 (128 × 4 sockets por charger)
+- **Potencia Nominal Total Chargers:** 272 kW
+
+**Timeseries:** 8,760 filas (hourly resolution, 365 días × 24 hrs)
 
 ---
 
