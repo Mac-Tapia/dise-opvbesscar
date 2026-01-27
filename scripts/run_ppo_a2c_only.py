@@ -7,6 +7,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
+import sys
+from pathlib import Path
+
+import pandas as pd
 
 from iquitos_citylearn.utils.logging import setup_logging
 from iquitos_citylearn.oe3.dataset_builder import build_citylearn_dataset
@@ -20,7 +25,6 @@ def main() -> None:
         description="Entrenar PPO y A2C agents para control energético en Iquitos"
     )
     ap.add_argument("--config", default="configs/default.yaml", help="Ruta a config YAML")
-    ap.add_argument("--skip-dataset", action="store_true", help="Reutilizar dataset CityLearn")
     args = ap.parse_args()
 
     # Configuración y validación Python 3.11
@@ -28,19 +32,14 @@ def main() -> None:
     cfg, rp = load_all(args.config)
 
     dataset_name = cfg["oe3"]["dataset"]["name"]
-    processed_dataset_dir = rp.processed_dir / "citylearn" / dataset_name
-    if args.skip_dataset and processed_dataset_dir.exists():
-        dataset_dir = processed_dataset_dir
-        print(f"[INFO] Reutilizando dataset: {dataset_dir}")
-    else:
-        print("[INFO] Construyendo dataset CityLearn...")
-        built = build_citylearn_dataset(
-            cfg=cfg,
-            _raw_dir=rp.raw_dir,
-            interim_dir=rp.interim_dir,
-            processed_dir=rp.processed_dir,
-        )
-        dataset_dir = built.dataset_dir
+    print("[INFO] Construyendo dataset CityLearn desde cero...")
+    built = build_citylearn_dataset(
+        cfg=cfg,
+        _raw_dir=rp.raw_dir,
+        interim_dir=rp.interim_dir,
+        processed_dir=rp.processed_dir,
+    )
+    dataset_dir = built.dataset_dir
 
     schema_pv = dataset_dir / "schema_pv_bess.json"
     out_dir = rp.outputs_dir / "oe3" / "simulations"
@@ -51,12 +50,12 @@ def main() -> None:
     print("\n" + "="*80)
     print("ENTRENAMIENTO PPO/A2C - SISTEMA COMPLETO OE2/OE3")
     print("="*80)
-    print(f"[✓] Python 3.11 validado")
-    print(f"[✓] Schema: {schema_pv}")
-    print(f"[✓] Dataset: {dataset_dir}")
-    print(f"[✓] BESS: 4520 kWh / 2712 kW (OE2-calculado)")
-    print(f"[✓] Chargers: 128 sockets (32 chargers)")
-    print(f"[✓] Solar: 8,760 timesteps horarios (1 año)")
+    print(f"[OK] Python 3.11 validado")
+    print(f"[OK] Schema: {schema_pv}")
+    print(f"[OK] Dataset: {dataset_dir}")
+    print(f"[OK] BESS: 4520 kWh / 2712 kW (OE2-calculado)")
+    print(f"[OK] Chargers: 128 sockets (32 chargers)")
+    print(f"[OK] Solar: 8,760 timesteps horarios (1 año)")
     print("="*80 + "\n")
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -100,20 +99,55 @@ def main() -> None:
 
     results = {}
 
-    # VERIFICAR SI BASELINE EXISTE - SI EXISTE, SALTEAR
-    baseline_json = out_dir / "result_Uncontrolled.json"
-    if baseline_json.exists():
-        print("\n" + "="*80)
-        print("✓ BASELINE (Uncontrolled) ya existe - SALTANDO")
-        print("="*80 + "\n")
-        with open(baseline_json) as f:
-            _baseline_data = json.load(f)
+    # BASELINE: Calcular desde datos reales del dataset construido
+    print("\n" + "="*80)
+    print("[CALCULANDO] BASELINE desde datos reales del dataset")
+    print("="*80 + "\n")
+
+    # Leer datos reales del dataset construido
+    building_1_csv = dataset_dir / "Building_1.csv"
+    baseline_json = out_dir / "baseline_real_uncontrolled.json"
+
+    if building_1_csv.exists():
+        try:
+            df_building = pd.read_csv(building_1_csv)
+
+            # Baseline: usar demanda real del building sin control inteligente
+            # IMPORTANTE: El CSV usa 'non_shiftable_load' no 'electricity_demand'
+            baseline_demand_kwh = float(df_building['non_shiftable_load'].sum()) if 'non_shiftable_load' in df_building.columns else 0.0
+            baseline_solar_kwh = float(df_building['solar_generation'].sum()) if 'solar_generation' in df_building.columns else 0.0
+
+            # Grid import = demanda - solar disponible
+            baseline_grid_import_kwh = float(max(0, baseline_demand_kwh - baseline_solar_kwh))
+            baseline_co2_kg = float(baseline_grid_import_kwh * ci)
+
+            baseline_data = {
+                "name": "Uncontrolled",
+                "total_timesteps": len(df_building),
+                "demand_kwh": baseline_demand_kwh,
+                "solar_kwh": baseline_solar_kwh,
+                "grid_import_kwh": baseline_grid_import_kwh,
+                "co2_kg": baseline_co2_kg,
+                "grid_carbon_intensity": ci,
+                "source": "REAL desde Building_1.csv construido con OE2->OE3"
+            }
+
+            with open(baseline_json, 'w') as f:
+                json.dump(baseline_data, f, indent=2)
+
+            print(f"[OK] BASELINE REAL calculado desde Building_1.csv")
+            print(f"    Demanda total: {baseline_demand_kwh:,.0f} kWh")
+            print(f"    Solar total: {baseline_solar_kwh:,.0f} kWh")
+            print(f"    Importacion grid: {baseline_grid_import_kwh:,.0f} kWh")
+            print(f"    CO2 emissions: {baseline_co2_kg:,.0f} kg")
+            print(f"    Archivo: {baseline_json}\n")
+        except Exception as e:
+            print(f"[ERROR] Error al calcular baseline: {e}")
+            baseline_json = None
     else:
-        print("\n" + "="*80)
-        print("⚠️  BASELINE (Uncontrolled) NO ENCONTRADO - Necesario para comparación")
-        print("Por favor ejecutar: python -m scripts.run_uncontrolled_baseline --config configs/default.yaml")
-        print("="*80 + "\n")
-        print("[ADVERTENCIA] Continuando sin baseline... Los resultados serán incompletos")
+        print(f"[ADVERTENCIA] No se encontro Building_1.csv en {building_1_csv}")
+        print(f"[ADVERTENCIA] Baseline no calculado")
+        baseline_json = None
 
     # SOLO PPO
     print("\n" + "="*80)
@@ -143,9 +177,9 @@ def main() -> None:
             multi_objective_priority=mo_priority,
         )
         results["PPO"] = res_ppo.__dict__
-        print("\n" + "✓"*40)
-        print("PPO COMPLETADO EXITOSAMENTE")
-        print("✓"*40 + "\n")
+        print("\n" + "="*40)
+        print("[OK] PPO COMPLETADO EXITOSAMENTE")
+        print("="*40 + "\n")
     except Exception as e:
         print(f"\n[ERROR] PPO falló: {e}\n")
         import traceback
@@ -178,9 +212,9 @@ def main() -> None:
                 multi_objective_priority=mo_priority,
             )
             results["A2C"] = res_a2c.__dict__
-            print("\n" + "✓"*40)
-            print("A2C COMPLETADO EXITOSAMENTE")
-            print("✓"*40 + "\n")
+            print("\n" + "="*40)
+            print("[OK] A2C COMPLETADO EXITOSAMENTE")
+            print("="*40 + "\n")
         except Exception as e:
             print(f"\n[ERROR] A2C falló: {e}\n")
             import traceback
