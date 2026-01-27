@@ -4,7 +4,7 @@
 
 **pvbesscar** is a two-phase reinforcement learning energy management system for Iquitos, Perú designed to optimize EV charging for electric motorcycles (motos) and mototaxis using solar PV and battery storage.
 
-- **OE2 (Dimensioning)**: Photovoltaic (4,050 kWp), BESS (2 MWh/1.2 MW), and 128 EV chargers (32 physical chargers × 4 sockets = 128 controllable outlets, totaling 272 kW)
+- **OE2 (Dimensioning)**: Photovoltaic (4,050 kWp), BESS (2,000 kWh / 1,200 kW), and 128 EV chargers (512 sockets, totaling 272 kW)
 - **OE3 (Control)**: CityLearn v2 RL environment with SAC/PPO/A2C agents minimizing CO₂ emissions and optimizing solar self-consumption
 - **Context**: Iquitos is grid-isolated (thermal generators, 0.45 kg CO₂/kWh). Tariff is low (0.20 USD/kWh), so CO₂ minimization is the primary objective, not cost optimization.
 
@@ -27,7 +27,7 @@
 - `data/interim/oe2/solar/pv_generation_timeseries.csv`: **8,760 hourly AC output (kW)** from PVGIS/pvlib (1 row per hour, exactly 1 year). **NO 15-minute or sub-hourly data supported**
 - `data/interim/oe2/chargers/perfil_horario_carga.csv`: 24-hour load profile (kW by hour)
 - `data/interim/oe2/chargers/individual_chargers.json`: 32 chargers with 4 sockets each, rated power (2kW motos, 3kW mototaxis)
-- `data/interim/oe2/bess/bess_config.json`: Fixed 2 MWh / 1.2 MW
+- `data/interim/oe2/bess/bess_config.json`: Fixed 2,000 kWh / 1,200 kW
 
 **Key Validation Rules** (enforced in dataset builder):
 - Solar timeseries MUST be exactly 8,760 rows (hourly resolution, 1 hour per row). **NO 15-minute data supported**
