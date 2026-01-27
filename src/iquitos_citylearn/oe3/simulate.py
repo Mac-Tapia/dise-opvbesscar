@@ -528,10 +528,21 @@ def simulate(
         # Aplicar wrapper multiobjetivo al environment
         env = CityLearnMultiObjectiveWrapper(raw_env, weights, context)
         reward_tracker = env.reward_fn  # Obtener el tracker del wrapper
-        logger.info(f"[MULTIOBJETIVO] Prioridad: {multi_objective_priority}")
-        logger.info(f"[MULTIOBJETIVO] Pesos: CO2={weights.co2:.2f}, Costo={weights.cost:.2f}, "
-                   f"Solar={weights.solar:.2f}, EV={weights.ev_satisfaction:.2f}, Grid={weights.grid_stability:.2f}")
-        logger.info("[MULTIOBJETIVO] Wrapper aplicado - todos los agentes recibirán rewards multiobjetivo")
+
+        logger.info("")
+        logger.info("════════════════════════════════════════════════════════════════════════════════")
+        logger.info("  🎯 MULTI-OBJECTIVE REWARD CONFIGURATION")
+        logger.info("════════════════════════════════════════════════════════════════════════════════")
+        logger.info(f"  Priority Mode: {multi_objective_priority.upper()}")
+        logger.info(f"  CO₂ Minimization Weight: {weights.co2:.2f} (primary)")
+        logger.info(f"  Solar Self-Consumption Weight: {weights.solar:.2f} (secondary)")
+        logger.info(f"  Cost Optimization Weight: {weights.cost:.2f}")
+        logger.info(f"  EV Satisfaction Weight: {weights.ev_satisfaction:.2f}")
+        logger.info(f"  Grid Stability Weight: {weights.grid_stability:.2f}")
+        logger.info(f"  Total (should be 1.0): {weights.co2 + weights.solar + weights.cost + weights.ev_satisfaction + weights.grid_stability:.2f}")
+        logger.info(f"  Grid Carbon Intensity: {carbon_intensity_kg_per_kwh:.4f} kg CO₂/kWh (Iquitos thermal)")
+        logger.info("════════════════════════════════════════════════════════════════════════════════")
+        logger.info("")
 
     # Choose agent
     agent: Any
@@ -590,6 +601,22 @@ def simulate(
                 resume_path=str(sac_resume) if sac_resume else None,
                 **sac_kwargs,
             )
+            logger.info("")
+            logger.info("════════════════════════════════════════════════════════════════════════════════")
+            logger.info("  🚀 SAC AGENT CONFIGURATION")
+            logger.info("════════════════════════════════════════════════════════════════════════════════")
+            logger.info(f"  Episodes: {sac_episodes}")
+            logger.info(f"  Device: {sac_device or 'auto'}")
+            logger.info(f"  Batch Size: {sac_config.batch_size}")
+            logger.info(f"  Buffer Size: {sac_config.buffer_size}")
+            logger.info(f"  Learning Rate: {sac_config.learning_rate}")
+            logger.info(f"  Entropy Coeff: {sac_config.ent_coef if hasattr(sac_config, 'ent_coef') else 'auto'}")
+            logger.info(f"  Hidden Sizes: {sac_config.hidden_sizes}")
+            logger.info(f"  Checkpoint Dir: {sac_checkpoint_dir}")
+            logger.info(f"  Resume from: {('Última ejecución' if sac_resume else 'Desde cero')}")
+            logger.info(f"  AMP (Mixed Precision): {sac_config.use_amp}")
+            logger.info("════════════════════════════════════════════════════════════════════════════════")
+            logger.info("")
             logger.info(f"[SIMULATE] SAC Config: checkpoint_dir={sac_checkpoint_dir}, checkpoint_freq_steps={sac_checkpoint_freq_steps}")
             agent = make_sac(env, config=sac_config)
         except Exception as e:
@@ -646,6 +673,27 @@ def simulate(
                 resume_path=str(ppo_resume) if ppo_resume else None,
                 **ppo_kwargs,
             )
+            logger.info("")
+            logger.info("════════════════════════════════════════════════════════════════════════════════")
+            logger.info("  🚀 PPO AGENT CONFIGURATION")
+            logger.info("════════════════════════════════════════════════════════════════════════════════")
+            logger.info(f"  Training Timesteps: {ppo_timesteps}")
+            logger.info(f"  N-Steps: {ppo_n_steps}")
+            logger.info(f"  Device: {ppo_device or 'auto'}")
+            logger.info(f"  Batch Size: {ppo_batch_size}")
+            logger.info(f"  N Epochs: {ppo_config.n_epochs}")
+            logger.info(f"  Learning Rate: {ppo_config.learning_rate}")
+            logger.info(f"  LR Schedule: {ppo_config.lr_schedule}")
+            logger.info(f"  Clip Range: {ppo_config.clip_range}")
+            logger.info(f"  Entropy Coeff: {ppo_config.ent_coef}")
+            logger.info(f"  GAE Lambda: {ppo_config.gae_lambda}")
+            logger.info(f"  Hidden Sizes: {ppo_config.hidden_sizes}")
+            logger.info(f"  Checkpoint Dir: {ppo_checkpoint_dir}")
+            logger.info(f"  Resume from: {('Última ejecución' if ppo_resume else 'Desde cero')}")
+            logger.info(f"  AMP (Mixed Precision): {ppo_config.use_amp}")
+            logger.info(f"  KL Adaptive: {ppo_kl_adaptive}")
+            logger.info("════════════════════════════════════════════════════════════════════════════════")
+            logger.info("")
             logger.info(f"[SIMULATE] PPO Config: checkpoint_dir={ppo_checkpoint_dir}, checkpoint_freq_steps={ppo_checkpoint_freq_steps}")
             agent = make_ppo(env, config=ppo_config)
             if hasattr(agent, "learn"):
@@ -693,6 +741,23 @@ def simulate(
                 resume_path=str(a2c_resume) if a2c_resume else None,
                 **a2c_kwargs,
             )
+            logger.info("")
+            logger.info("════════════════════════════════════════════════════════════════════════════════")
+            logger.info("  🚀 A2C AGENT CONFIGURATION")
+            logger.info("════════════════════════════════════════════════════════════════════════════════")
+            logger.info(f"  Training Timesteps: {a2c_steps}")
+            logger.info(f"  N-Steps: {a2c_config.n_steps}")
+            logger.info(f"  Device: {a2c_device or 'auto'}")
+            logger.info(f"  Learning Rate: {a2c_config.learning_rate}")
+            logger.info(f"  Gamma (discount): {a2c_config.gamma}")
+            logger.info(f"  GAE Lambda: {a2c_config.gae_lambda}")
+            logger.info(f"  Entropy Coeff: {a2c_config.ent_coef}")
+            logger.info(f"  Value Fn Coeff: {a2c_config.vf_coef}")
+            logger.info(f"  Hidden Sizes: {a2c_config.hidden_sizes}")
+            logger.info(f"  Checkpoint Dir: {a2c_checkpoint_dir}")
+            logger.info(f"  Resume from: {('Última ejecución' if a2c_resume else 'Desde cero')}")
+            logger.info("════════════════════════════════════════════════════════════════════════════════")
+            logger.info("")
             logger.info(f"[SIMULATE] A2C Config: checkpoint_dir={a2c_checkpoint_dir}, checkpoint_freq_steps={a2c_checkpoint_freq_steps}")
             agent = make_a2c(env, config=a2c_config)
             if hasattr(agent, "learn"):
