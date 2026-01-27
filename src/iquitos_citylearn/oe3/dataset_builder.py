@@ -37,7 +37,7 @@ def _validate_solar_timeseries_hourly(solar_df: pd.DataFrame) -> None:
     # Check exact length (8,760 = 365 days × 24 hours, hourly resolution)
     if n_rows != 8760:
         raise ValueError(
-            f"❌ CRITICAL: Solar timeseries MUST be exactly 8,760 rows (hourly, 1 year).\n"
+            f"[ERROR] CRITICAL: Solar timeseries MUST be exactly 8,760 rows (hourly, 1 year).\n"
             f"   Got {n_rows} rows instead.\n"
             f"   This appears to be {'sub-hourly data' if n_rows > 8760 else 'incomplete data'}.\n"
             f"   If using PVGIS 15-minute data, downsample: "
@@ -47,12 +47,12 @@ def _validate_solar_timeseries_hourly(solar_df: pd.DataFrame) -> None:
     # Sanity check: if 52,560 rows, it's likely 15-minute (8,760 × 6)
     if n_rows == 52560:
         raise ValueError(
-            f"❌ CRITICAL: Solar timeseries has {n_rows} rows = 8,760 × 6 (likely 15-minute data).\n"
+            f"[ERROR] CRITICAL: Solar timeseries has {n_rows} rows = 8,760 × 6 (likely 15-minute data).\n"
             f"   This codebase ONLY supports hourly resolution (8,760 rows per year).\n"
             f"   Downsample using: df.set_index('time').resample('h').mean()"
         )
 
-    logger.info("✅ Solar timeseries validation PASSED: %d rows (hourly, 1 year)", n_rows)
+    logger.info("[OK] Solar timeseries validation PASSED: %d rows (hourly, 1 year)", n_rows)
 
 def _find_first_building(schema: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     buildings = schema.get("buildings")
@@ -309,7 +309,7 @@ def _generate_individual_charger_csvs(
             raise
 
     logger.info(
-        "✅ Generated %d individual charger CSV files",
+        "[OK] Generated %d individual charger CSV files",
         len(generated_files)
     )
 
@@ -709,7 +709,7 @@ def build_citylearn_dataset(
                 if len(pv_per_kwp) > n:
                     ratio = len(pv_per_kwp) // n
                     pv_per_kwp = np.array([pv_per_kwp[i*ratio:(i+1)*ratio].sum() for i in range(n)])
-                logger.info("✅ [PV] Usando solar_ts [%s]: %d registros", col, len(pv_per_kwp))
+                logger.info("[OK] [PV] Usando solar_ts [%s]: %d registros", col, len(pv_per_kwp))
                 logger.info("   Min: %.6f, Max: %.6f, Mean: %.6f, Sum: %.1f", pv_per_kwp.min(), pv_per_kwp.max(), pv_per_kwp.mean(), pv_per_kwp.sum())
                 break
 
@@ -856,11 +856,11 @@ def build_citylearn_dataset(
 
     if "chargers_hourly_profiles_annual" in artifacts:
         charger_profiles_annual = artifacts["chargers_hourly_profiles_annual"]
-        logger.info(f"✅ [CHARGER GENERATION] Cargar perfiles anuales: shape={charger_profiles_annual.shape}")
+        logger.info(f"[OK] [CHARGER GENERATION] Cargar perfiles anuales: shape={charger_profiles_annual.shape}")
 
         # Ensure we have 8760 rows and 128 columns
         if charger_profiles_annual.shape[0] != 8760 or charger_profiles_annual.shape[1] != 128:
-            logger.error(f"❌ Charger profiles shape error: {charger_profiles_annual.shape}, expected (8760, 128)")
+            logger.error(f"[ERROR] Charger profiles shape error: {charger_profiles_annual.shape}, expected (8760, 128)")
             raise ValueError(f"Charger profiles must be (8760, 128), got {charger_profiles_annual.shape}")
 
         # Create output directory (CSVs go in ROOT)

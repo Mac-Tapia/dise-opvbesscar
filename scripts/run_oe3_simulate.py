@@ -23,7 +23,6 @@ def _tailpipe_kg(cfg: dict, ev_kwh: float, simulated_years: float) -> float:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/default.yaml")
-    ap.add_argument("--skip-dataset", action="store_true", help="Reutilizar dataset CityLearn ya construido")
     ap.add_argument("--skip-uncontrolled", action="store_true", help="Reutilizar baseline Uncontrolled si existe en simulation_summary.json")
     args = ap.parse_args()
 
@@ -32,17 +31,13 @@ def main() -> None:
     oe3_cfg = cfg["oe3"]
 
     dataset_name = cfg["oe3"]["dataset"]["name"]
-    processed_dataset_dir = rp.processed_dir / "citylearn" / dataset_name
-    if args.skip_dataset and processed_dataset_dir.exists():
-        dataset_dir = processed_dataset_dir
-    else:
-        built = build_citylearn_dataset(
-            cfg=cfg,
-            _raw_dir=rp.raw_dir,
-            interim_dir=rp.interim_dir,
-            processed_dir=rp.processed_dir,
-        )
-        dataset_dir = built.dataset_dir
+    built = build_citylearn_dataset(
+        cfg=cfg,
+        _raw_dir=rp.raw_dir,
+        interim_dir=rp.interim_dir,
+        processed_dir=rp.processed_dir,
+    )
+    dataset_dir = built.dataset_dir
 
     schema_grid = dataset_dir / "schema_grid_only.json"
     schema_pv = dataset_dir / "schema_pv_bess.json"

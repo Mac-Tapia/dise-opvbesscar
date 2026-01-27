@@ -40,7 +40,7 @@ python -m scripts.run_oe3_simulate --config configs/default.yaml
 
 ```bash
 # Skip dataset building (si ya existe)
-python -m scripts.run_oe3_simulate --config configs/default.yaml --skip-dataset
+python -m scripts.run_oe3_simulate --config configs/default.yaml
 
 # Skip baseline calculation
 python -m scripts.run_oe3_simulate --config configs/default.yaml --skip-baseline

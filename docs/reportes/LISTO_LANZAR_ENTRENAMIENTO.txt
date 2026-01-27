@@ -21,7 +21,7 @@ OPCIÓN 2 (Python directo):
   python train_agents_serial_auto.py
 
 OPCIÓN 3 (Manual):
-  python -m scripts.run_oe3_simulate --config configs/default.yaml --skip-dataset
+  python -m scripts.run_oe3_simulate --config configs/default.yaml
 
 ═══════════════════════════════════════════════════════════════════════
 

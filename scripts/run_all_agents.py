@@ -20,7 +20,6 @@ def main() -> int:
         description="Entrenar los 3 agentes (SAC, PPO, A2C) para control energético en Iquitos"
     )
     ap.add_argument("--config", default="configs/default.yaml", help="Ruta a config YAML")
-    ap.add_argument("--skip-dataset", action="store_true", help="Reutilizar dataset CityLearn")
     ap.add_argument("--agents", default="sac,ppo,a2c", help="Agentes a entrenar (ej: sac,ppo,a2c)")
     args = ap.parse_args()
 
@@ -30,20 +29,14 @@ def main() -> int:
 
     # Dataset
     dataset_name = cfg["oe3"]["dataset"]["name"]
-    processed_dataset_dir = rp.processed_dir / "citylearn" / dataset_name
-
-    if args.skip_dataset and processed_dataset_dir.exists():
-        dataset_dir = processed_dataset_dir
-        print(f"[INFO] Reutilizando dataset: {dataset_dir}")
-    else:
-        print("[INFO] Construyendo dataset CityLearn...")
-        built = build_citylearn_dataset(
-            cfg=cfg,
-            _raw_dir=rp.raw_dir,
-            interim_dir=rp.interim_dir,
-            processed_dir=rp.processed_dir,
-        )
-        dataset_dir = built.dataset_dir
+    print("[INFO] Construyendo dataset CityLearn desde cero...")
+    built = build_citylearn_dataset(
+        cfg=cfg,
+        _raw_dir=rp.raw_dir,
+        interim_dir=rp.interim_dir,
+        processed_dir=rp.processed_dir,
+    )
+    dataset_dir = built.dataset_dir
 
     # Schema y directorios
     schema_pv = dataset_dir / "schema_pv_bess.json"
