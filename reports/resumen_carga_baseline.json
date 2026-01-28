@@ -1,0 +1,26 @@
+{
+  "titulo": "Analisis Carga Sin Control Baseline",
+  "motos": {
+    "chargers": 112,
+    "sockets": 448,
+    "energia_anual_kwh": 977835,
+    "potencia_promedio_kw": 111.62,
+    "potencia_pico_kw": 337.43,
+    "co2_anual_t": 442.0
+  },
+  "taxis": {
+    "chargers": 0,
+    "sockets": 0,
+    "energia_anual_kwh": 209145,
+    "potencia_promedio_kw": 23.88,
+    "potencia_pico_kw": 72.78,
+    "co2_anual_t": 95.0
+  },
+  "total": {
+    "energia_anual_kwh": 1186980,
+    "potencia_promedio_kw": 135.5,
+    "potencia_pico_kw": 410.2,
+    "co2_anual_t": 537.0,
+    "utilizacion_pct": 49.8
+  }
+}

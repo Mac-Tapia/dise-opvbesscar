@@ -56,11 +56,33 @@ Este proyecto implementa un **sistema inteligente de gestión de energía** para
 - Objetivo terciario: Minimizar costo y picos de demanda
 - Restricción: Garantizar satisfacción de usuarios EV (≥95%)
 
-## 🚀 Estado Actual (2026-01-27)
+## 🚀 Estado Actual (2026-01-28)
 
-✅ **SISTEMA PRODUCTIVO - INTEGRACIÓN OE2→OE3 COMPLETA + GPU OPTIMIZATION**
+✅ **SISTEMA PRODUCTIVO - ALINEACIÓN TEMPORAL CORREGIDA + LIMPIEZA MASIVA**
 
-### 🎯 GPU Optimization (Nueva Feature - 27 Enero 2026)
+### 🔴 CORRECCIÓN CRÍTICA (28 Enero 2026) - Alineación Temporal
+
+**Problema detectado:** Building_1.csv iniciaba en `month=8` (agosto) mientras que los datos solares PVGIS inician en enero. Esto causaba **desalineación temporal** donde los agentes veían irradiancia de enero pero demanda de agosto.
+
+**Solución aplicada:**
+- `dataset_builder.py`: Forzar `start_date = "2024-01-01"`
+- `dataset_builder.py`: Regenerar columnas `month`, `hour`, `day_type` desde enero
+- `schema.json`: `start_date: "2024-01-01"` verificado
+- `Building_1.csv`: Ahora `month=1-12` (enero-diciembre) ✅
+
+**Archivos modificados:**
+- `src/iquitos_citylearn/oe3/dataset_builder.py` (líneas 362, 610-621)
+- `src/iquitos_citylearn/oe3/simulate.py` (A2C device=cpu default)
+- `src/iquitos_citylearn/oe3/agents/a2c_sb3.py` (LinearSchedule fix)
+- `src/iquitos_citylearn/oe3/agents/ppo_sb3.py` (LinearSchedule fix)
+- `scripts/run_oe3_simulate.py` (--skip-baseline, --skip-agents flags)
+- `.github/copilot-instructions.md` (documentación temporal alignment)
+
+**Limpieza masiva:** ~150 archivos obsoletos eliminados (.txt, .md, .py, .ps1, .bat, .log)
+
+---
+
+### 🎯 GPU Optimization (27 Enero 2026)
 - **✅ RTX 4060 Laptop Configurada:** 8.6 GB VRAM, Compute Capability 8.9
 - **✅ 10.1x Speedup Logrado:** 110 horas CPU → 10.87 horas GPU
   - SAC: 5,000 → 50,000 ts/h (**10.0x**)
@@ -110,6 +132,18 @@ OE3 OUTPUTS (Dataset Procesado):
   ├─ schema.json → start_date: "2024-01-01" (CRÍTICO: alineado con PVGIS)
   ├─ Building_1.csv (8,760 filas, month=1-12 enero-diciembre)
   └─ charger_simulation_*.csv (128 chargers × 8,760 timesteps c/u)
+
+DESPACHO ENERGÉTICO (lo que optimizan los agentes):
+  ☀️ Solar (4162 kW)
+      ├──► 🚗 EV Chargers (prioridad 1 - directo, sin pérdidas)
+      ├──► 🔋 BESS (prioridad 2 - almacenar exceso, η=95%)
+      └──► ⚡ Grid export (prioridad 3 - si BESS lleno)
+  
+  🔋 BESS (4520 kWh / 2712 kW)
+      └──► 🚗 EV Chargers (descarga nocturna)
+  
+  ⚡ Grid (penalizado 0.4521 kg CO₂/kWh)
+      └──► 🚗 EV Chargers (último recurso)
 
 TEMPORAL ALIGNMENT (CRÍTICO):
   ⚠️ Todos los datos DEBEN iniciar desde Enero 2024
