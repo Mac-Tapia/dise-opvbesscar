@@ -830,6 +830,21 @@ ent_coef: 0.01                    # Exploración moderada
 - **[INICIO_RAPIDO.md](INICIO_RAPIDO.md)** - Setup 5 minutos (Python 3.11, venv, primeros comandos)
 - **[QUICKSTART.md](QUICKSTART.md)** - Guía en inglés
 
+**📊 Análisis de Limitaciones y Soluciones RL (NUEVO - 28 Enero 2026):**
+- **[OBJETIVO_GENERAL_PROYECTO.md](OBJETIVO_GENERAL_PROYECTO.md)** - ¿Por qué? Infraestructura inteligente para reducir CO₂ en Iquitos
+- **[REPORTE_ANALISIS_CARGA_SIN_CONTROL.md](REPORTE_ANALISIS_CARGA_SIN_CONTROL.md)** - ¿Qué problemas? 4 limitaciones clave + cómo RL las corrige
+  - Ocupación desigual (50% ociosa) → Flexibilidad en desplazamiento (+20% uso)
+  - Desaprovechamiento solar (70% GRID) → Sincronización solar (-241 t CO₂/año)
+  - Picos nocturnos (410 kW) → BESS lleno en día (-78 t CO₂/año)
+  - Ciclo inverso (carga noche, solar día) → Ciclo coherente con renovable
+  - **TOTAL: -319 t CO₂/año (-59% vs 537 t baseline)**
+- **[OBJETIVO_ESPECIFICO_ENTRENAMIENTO_AGENTES.md](OBJETIVO_ESPECIFICO_ENTRENAMIENTO_AGENTES.md)** - ¿Cómo seleccionar? Criterios SAC/PPO/A2C con directa+indirecta
+  - Reducción DIRECTA: -241 t/año (sincronización solar 70% → 25% grid)
+  - Reducción INDIRECTA: -78 t/año (BESS 70% picos desde renovables)
+  - Predicciones: SAC (-300-320 t), PPO (-296 t), A2C (-258 t)
+- **[ALINEAMIENTO_COMPLETO_VALIDACION.md](ALINEAMIENTO_COMPLETO_VALIDACION.md)** - ¿Es coherente? Validación matemática 100% (limitaciones→soluciones, reducciones, restricciones, escalabilidad)
+- **[VISUAL_RESUMEN_PROYECTO_ALINEADO.md](VISUAL_RESUMEN_PROYECTO_ALINEADO.md)** - Executive summary con matrices visuales y timeline de entrenamiento
+
 **Ejecución y Monitoreo:**
 - **[COMANDOS_RAPIDOS.md](COMANDOS_RAPIDOS.md)** - Comandos del día a día (dataset, baseline, training, comparación)
 - **[MONITOREO_EJECUCION.md](MONITOREO_EJECUCION.md)** - Monitorear pipeline en tiempo real
@@ -849,6 +864,7 @@ ent_coef: 0.01                    # Exploración moderada
 - [ENTREGA_FINAL.md](ENTREGA_FINAL.md) - Resumen de fases
 - [INDICE_MAESTRO_DOCUMENTACION.md](INDICE_MAESTRO_DOCUMENTACION.md) - Índice completo
 - [STATUS_ACTUAL_2026_01_25.md](STATUS_ACTUAL_2026_01_25.md) - Timeline (26 de enero)
+- [RESUMEN_CAMBIOS_28ENERO_2026.md](RESUMEN_CAMBIOS_28ENERO_2026.md) - Cambios realizados (28 enero)
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Estándares de código
 
 **Archivos de Referencia:**
