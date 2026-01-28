@@ -51,15 +51,15 @@ class A2CConfig:
     """
     # Hiperparámetros de entrenamiento - A2C OPTIMIZADO PARA RTX 4060
     train_steps: int = 500000  # ↓ REDUCIDO: 1M→500k (GPU limitada)
-    n_steps: int = 128         # ↓↓ AGRESIVAMENTE REDUCIDO: 256→128 (crítico para RTX 4060, menos buffer en GPU)
-    learning_rate: float = 3e-4    # ✅ A2C ÓPTIMO: 3e-4 (on-policy simple, más tolerante que PPO)
+    n_steps: int = 64          # ↓↓↓ CRITICAMENTE REDUCIDO: 128→64 (menos buffer en GPU)
+    learning_rate: float = 1e-4    # ↓ CRITICAMENTE REDUCIDO: 3e-4→1e-4 (previene explosión)
     lr_schedule: str = "linear"    # ✅ Decay automático
     gamma: float = 0.99            # ↓ REDUCIDO: 0.999→0.99 (simplifica)
-    gae_lambda: float = 0.90       # ↓ REDUCIDO: 0.95→0.90 (menos varianza)
-    ent_coef: float = 0.01         # ✅ Mantener
-    vf_coef: float = 0.5           # ↓ REDUCIDO: 0.7→0.5
-    max_grad_norm: float = 0.5     # ↓ REDUCIDO: 1.0→0.5
-    hidden_sizes: tuple = (512, 512)   # ↓ REDUCIDA: 1024→512
+    gae_lambda: float = 0.85       # ↓↓ REDUCIDO: 0.90→0.85 (menos varianza)
+    ent_coef: float = 0.001        # ↓ REDUCIDO: 0.01→0.001 (menos exploración)
+    vf_coef: float = 0.3           # ↓ REDUCIDO: 0.5→0.3
+    max_grad_norm: float = 0.25    # ↓ REDUCIDO: 0.5→0.25 (clipping más agresivo)
+    hidden_sizes: tuple = (256, 256)   # ↓↓ CRITICAMENTE REDUCIDA: 512→256
     activation: str = "relu"
     device: str = "auto"
     seed: int = 42
@@ -91,8 +91,9 @@ class A2CConfig:
     # === NORMALIZACIÓN (crítico para estabilidad) ===
     normalize_observations: bool = True
     normalize_rewards: bool = True
-    reward_scale: float = 1.0  # ✅ AUMENTADO: 0.01→1.0 (evita valores reward muy pequeños)
-    clip_obs: float = 10.0
+    reward_scale: float = 0.1  # ↓ REDUCIDO: 1.0→0.1 (evita Q-explosion en critic)
+    clip_obs: float = 5.0      # ↓ REDUCIDO: 10→5 (clipping más agresivo)
+    clip_reward: float = 1.0   # ✅ AGREGADO: Clipear rewards normalizados
 
 
 class A2CAgent:
