@@ -362,6 +362,7 @@ def build_citylearn_dataset(
     schema["central_agent"] = central_agent
     schema["seconds_per_time_step"] = seconds_per_time_step
     schema["root_directory"] = str(out_dir)  # Establecer ruta absoluta para archivos CSV
+    schema["start_date"] = "2024-01-01"  # Alinear con datos solares PVGIS (enero-diciembre)
 
     # === PRESERVAR DEFINICIONES DE EVs ===
     # Copiar electric_vehicles_def del template si existe
@@ -605,6 +606,18 @@ def build_citylearn_dataset(
     # El template original puede tener múltiples observaciones por hora
     n = min(len(df_energy), 8760)
     df_energy = df_energy.iloc[:n].reset_index(drop=True)
+
+    # === REGENERAR COLUMNAS DE TIEMPO PARA EMPEZAR EN ENERO (alinear con PVGIS) ===
+    # Crear índice temporal desde 2024-01-01 00:00 (365 días × 24 horas = 8760 filas)
+    time_index = pd.date_range(start="2024-01-01", periods=n, freq="h")
+    if "month" in df_energy.columns:
+        df_energy["month"] = time_index.month
+    if "hour" in df_energy.columns:
+        df_energy["hour"] = time_index.hour
+    if "day_type" in df_energy.columns:
+        # day_type: 1=weekday, 2=weekend
+        df_energy["day_type"] = np.where(time_index.dayofweek < 5, 1, 2)
+    logger.info("[OK] Columnas de tiempo regeneradas: month=1-12 (enero-diciembre), alineado con PVGIS")
 
     # Build mall load and PV generation series for length n
     # Usar datos de CityLearn preparados si existen

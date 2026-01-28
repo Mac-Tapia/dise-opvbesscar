@@ -107,14 +107,19 @@ OE2 INPUTS (Datos Reales):
   └─ BESS: 4,520 kWh / 2,712 kW (bess_config.json)
 
 OE3 OUTPUTS (Dataset Procesado):
-  ├─ schema_pv_bess.json (Schema único - REALIDAD única)
-  ├─ Building_1.csv (8,760 filas con non_shiftable_load real)
+  ├─ schema.json → start_date: "2024-01-01" (CRÍTICO: alineado con PVGIS)
+  ├─ Building_1.csv (8,760 filas, month=1-12 enero-diciembre)
   └─ charger_simulation_*.csv (128 chargers × 8,760 timesteps c/u)
 
+TEMPORAL ALIGNMENT (CRÍTICO):
+  ⚠️ Todos los datos DEBEN iniciar desde Enero 2024
+  ⚠️ NO usar start_date="2024-08-01" - causa desalineación temporal
+  ⚠️ Building_1.csv: month columna DEBE empezar en 1 (Enero)
+
 AGENTS TRAINING (Mismo Dataset):
-  ├─ PPO: Entrenamiento on-policy
-  ├─ A2C: Entrenamiento actor-critic
-  └─ SAC: Entrenamiento off-policy (sample-efficient)
+  ├─ SAC: Entrenamiento off-policy (sample-efficient)
+  ├─ PPO: Entrenamiento on-policy (estable)
+  └─ A2C: Entrenamiento actor-critic (rápido)
 ```
 
 ### Type Safety & Code Quality
@@ -190,54 +195,32 @@ pip install torch==2.10.0 torchvision==0.15.2 \
 python -c "import torch; print(f'GPU disponible: {torch.cuda.is_available()}')"
 ```
 
-## ⚡ QUICK START - Entrenar Agentes RL (27 Enero 2026)
+## ⚡ QUICK START - Entrenar Agentes RL
 
-### 1️⃣ Validar Sistema Completamente
+### Comando Principal (Recomendado)
 
 ```bash
-# Verificar integridad OE2→OE3 y agentes listos
-python verify_dataset_construction_v3.py   # Valida OE2 inputs + OE3 outputs
-python verify_agents_ready_individual.py   # Verifica PPO, A2C, SAC módulos
-python verify_baseline_uses_real_data.py   # Confirma baseline sobre datos REALES
+# Pipeline completo: Dataset → Baseline → SAC → PPO → A2C
+python -m scripts.run_oe3_simulate --config configs/default.yaml
+
+# Tiempo estimado: ~4-6 horas (GPU RTX 4060) | ~20+ horas (CPU)
 ```
 
-### 2️⃣ Entrenar PPO + A2C (Recomendado Inicio)
+### Comandos Individuales
 
 ```bash
-# Entrena PPO y A2C juntos sobre MISMO dataset (8,760 horas, 1 año)
-py -3.11 -m scripts.run_ppo_a2c_only --config configs/default.yaml
+# Solo construir dataset (validar OE2 inputs)
+python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 
-# Salida esperada:
-# ├─ Baseline calculado desde non_shiftable_load (datos REALES)
-# ├─ PPO entrenado (on-policy, estable)
-# ├─ A2C entrenado (actor-critic, rápido)
-# └─ Comparación CO₂: Baseline vs PPO vs A2C
-# Tiempo: ~2 horas (GPU RTX 4060) | ~10 horas (CPU)
-```
+# Solo baseline (sin entrenamiento RL)
+python -m scripts.run_uncontrolled_baseline --config configs/default.yaml
 
-### 3️⃣ Entrenar SAC (Sample-Efficient)
+# Entrenar agentes individuales
+python -m scripts.run_sac_only --config configs/default.yaml
+python -m scripts.run_ppo_a2c_only --config configs/default.yaml
 
-```bash
-# Entrena SAC solo (off-policy, mejor para datos limitados)
-py -3.11 -m scripts.run_sac_only --config configs/default.yaml
-
-# Tiempo: ~1.5 horas (GPU) | ~8 horas (CPU)
-```
-
-### 4️⃣ Entrenar TODOS (PPO + A2C + SAC)
-
-```bash
-# Secuencia completa: Dataset → Baseline → PPO → A2C → SAC
-py -3.11 -m scripts.run_all_agents --config configs/default.yaml
-
-# Salida:
-# outputs/oe3_simulations/
-#   ├─ baseline_real_uncontrolled.json (Referencia)
-#   ├─ result_PPO.json (PPO metrics)
-#   ├─ result_A2C.json (A2C metrics)
-#   ├─ result_SAC.json (SAC metrics)
-#   └─ simulation_summary.json (Comparación final)
-# Tiempo: ~3.5 horas (GPU) | ~20 horas (CPU)
+# Comparar resultados
+python -m scripts.run_oe3_co2_table --config configs/default.yaml
 ```
 
 ### 🔍 Verificar Resultados
