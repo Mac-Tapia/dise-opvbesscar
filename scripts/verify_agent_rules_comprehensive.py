@@ -16,9 +16,10 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 import pandas as pd  # type: ignore
+import yaml  # type: ignore
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,7 +43,6 @@ def verify_dispatch_rules() -> Dict[str, Any]:
         logger.error(f"❌ No encontrado: {config_path}")
         return {"status": "ERROR", "message": "Config no existe"}
 
-    import yaml
     with open(config_path, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
@@ -380,7 +380,6 @@ def main():
 
     # Determinar estado general
     all_ok = all(r.get("status") == "OK" for r in results.values())
-    any_warning = any(r.get("status") == "WARNING" for r in results.values())
     any_error = any(r.get("status") == "ERROR" for r in results.values())
 
     logger.info("")
