@@ -52,7 +52,7 @@ class A2CConfig:
     # Hiperparámetros de entrenamiento - A2C OPTIMIZADO PARA RTX 4060
     train_steps: int = 500000  # ↓ REDUCIDO: 1M→500k (GPU limitada)
     n_steps: int = 512         # ↓ REDUCIDO: 2048→512 (menos buffer)
-    learning_rate: float = 3e-4    # ↑ AUMENTADO: 1.5e-4→3e-4
+    learning_rate: float = 1e-4    # ✅ REDUCIDO: 3e-4→1e-4 (evita explosión gradientes)
     lr_schedule: str = "linear"    # ✅ Decay automático
     gamma: float = 0.99            # ↓ REDUCIDO: 0.999→0.99 (simplifica)
     gae_lambda: float = 0.90       # ↓ REDUCIDO: 0.95→0.90 (menos varianza)
@@ -91,7 +91,7 @@ class A2CConfig:
     # === NORMALIZACIÓN (crítico para estabilidad) ===
     normalize_observations: bool = True
     normalize_rewards: bool = True
-    reward_scale: float = 0.01
+    reward_scale: float = 1.0  # ✅ AUMENTADO: 0.01→1.0 (evita valores reward muy pequeños)
     clip_obs: float = 10.0
 
 
