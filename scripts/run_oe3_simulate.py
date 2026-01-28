@@ -261,8 +261,13 @@ def main() -> None:
     # Calcular tailpipe y reducciones
     # Usamos el baseline (Uncontrolled + PV+BESS) para calcular el tailpipe equivalente
     baseline = res_uncontrolled
-    tailpipe_kg_y = _tailpipe_kg(cfg, float(baseline["ev_charging_kwh"]), float(baseline["simulated_years"]))
-    grid_only_total = float(baseline["carbon_kg"]) + tailpipe_kg_y  # CO2 si no hubiera PV/BESS
+    if baseline is None:
+        logger.warning("No baseline available - skipping tailpipe calculations")
+        tailpipe_kg_y = 0.0
+        grid_only_total = 0.0
+    else:
+        tailpipe_kg_y = _tailpipe_kg(cfg, float(baseline["ev_charging_kwh"]), float(baseline["simulated_years"]))
+        grid_only_total = float(baseline["carbon_kg"]) + tailpipe_kg_y  # CO2 si no hubiera PV/BESS
     reductions: dict = {}
     if baseline is not None:
         base_carbon = float(baseline["carbon_kg"])

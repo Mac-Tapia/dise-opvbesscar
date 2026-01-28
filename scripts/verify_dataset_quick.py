@@ -1,5 +1,5 @@
 """Script rápido para verificar el dataset antes del entrenamiento."""
-import pandas as pd
+import pandas as pd  # type: ignore
 import json
 from pathlib import Path
 
