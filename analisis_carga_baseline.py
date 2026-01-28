@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
+import pandas as pd  # type: ignore
 
 BASE_DIR = Path("d:\\diseñopvbesscar")
 DATA_DIR = BASE_DIR / "data" / "interim" / "oe2" / "chargers"
