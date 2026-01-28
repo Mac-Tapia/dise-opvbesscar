@@ -2,14 +2,17 @@
 Análisis de Demanda de Carga Sin Control: Motos vs Mototaxis
 Reporte de carga horaria, picos, utilización y patrones energéticos
 """
+from __future__ import annotations
 
-import pandas as pd
-import numpy as np
 import json
-from pathlib import Path
-import matplotlib.pyplot as plt
-import seaborn as sns
 from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
 
 # Configuración
 sns.set_style("whitegrid")
@@ -32,7 +35,7 @@ print("=" * 90)
 print("\n[1/5] Cargando configuración de chargers...")
 
 with open(DATA_DIR / "individual_chargers.json", "r") as f:
-    chargers = json.load(f)
+    chargers: list[dict[str, Any]] = json.load(f)
 
 # Clasificar chargers
 motos_chargers = [c for c in chargers if c["charger_type"] == "moto"]
@@ -96,30 +99,30 @@ horas_por_año = 365
 horas_perfil = len(chargers_hourly)
 
 # Escalar energías anuales
-energia_motos_anual_kwh = chargers_hourly['motos_total_kw'].sum() * horas_por_año
-energia_taxis_anual_kwh = chargers_hourly['taxis_total_kw'].sum() * horas_por_año
-energia_total_anual_kwh = chargers_hourly['total_kw'].sum() * horas_por_año
+energia_motos_anual_kwh: float = float(chargers_hourly['motos_total_kw'].sum()) * horas_por_año
+energia_taxis_anual_kwh: float = float(chargers_hourly['taxis_total_kw'].sum()) * horas_por_año
+energia_total_anual_kwh: float = float(chargers_hourly['total_kw'].sum()) * horas_por_año
 
 # Potencia promedio
-potencia_motos_prom = chargers_hourly['motos_total_kw'].mean()
-potencia_taxis_prom = chargers_hourly['taxis_total_kw'].mean()
-potencia_total_prom = chargers_hourly['total_kw'].mean()
+potencia_motos_prom: float = float(chargers_hourly['motos_total_kw'].mean())
+potencia_taxis_prom: float = float(chargers_hourly['taxis_total_kw'].mean())
+potencia_total_prom: float = float(chargers_hourly['total_kw'].mean())
 
 # Picos
-potencia_motos_pico = chargers_hourly['motos_total_kw'].max()
-potencia_taxis_pico = chargers_hourly['taxis_total_kw'].max()
-potencia_total_pico = chargers_hourly['total_kw'].max()
+potencia_motos_pico: float = float(chargers_hourly['motos_total_kw'].max())
+potencia_taxis_pico: float = float(chargers_hourly['taxis_total_kw'].max())
+potencia_total_pico: float = float(chargers_hourly['total_kw'].max())
 
 # Horas pico
-hora_pico_motos = chargers_hourly.loc[chargers_hourly['motos_total_kw'].idxmax(), 'hour']
-hora_pico_taxis = chargers_hourly.loc[chargers_hourly['taxis_total_kw'].idxmax(), 'hour']
+hora_pico_motos: int = int(chargers_hourly.loc[chargers_hourly['motos_total_kw'].idxmax(), 'hour'])  # type: ignore
+hora_pico_taxis: int = int(chargers_hourly.loc[chargers_hourly['taxis_total_kw'].idxmax(), 'hour'])  # type: ignore
 
 # Demanda promedio por socket
-sockets_motos = len(motos_chargers) * 4  # 112
-sockets_taxis = len(mototaxis_chargers) * 4  # 16
+sockets_motos: int = len(motos_chargers) * 4  # 112
+sockets_taxis: int = len(mototaxis_chargers) * 4  # 16
 
-demanda_per_socket_motos = chargers_hourly['motos_total_kw'].mean() / sockets_motos
-demanda_per_socket_taxis = chargers_hourly['taxis_total_kw'].mean() / sockets_taxis
+demanda_per_socket_motos: float = float(chargers_hourly['motos_total_kw'].mean()) / sockets_motos
+demanda_per_socket_taxis: float = float(chargers_hourly['taxis_total_kw'].mean()) / sockets_taxis
 
 print(f"\n📊 ESTADÍSTICAS ANUALES (extrapoladas de perfil 24h):")
 print(f"\n  MOTOS:")
@@ -169,7 +172,7 @@ reporte_md = f"""# Reporte de Carga Sin Control: Motos vs Mototaxis
 |---------|-------|
 | Energía anual | {energia_motos_anual_kwh:,.0f} kWh |
 | Potencia promedio | {potencia_motos_prom:.2f} kW |
-| Potencia pico | {potencia_motos_pico:.2f} kW (hora {int(hora_pico_motos)}) |
+| Potencia pico | {potencia_motos_pico:.2f} kW (hora {hora_pico_motos:02d}) |
 | Demanda por socket | {demanda_per_socket_motos:.4f} kW/socket |
 | Factor de utilización | {(demanda_per_socket_motos / 2.0)*100:.1f}% (nominal 2 kW) |
 | % del total sistema | {(energia_motos_anual_kwh/energia_total_anual_kwh)*100:.1f}% |
@@ -179,7 +182,7 @@ reporte_md = f"""# Reporte de Carga Sin Control: Motos vs Mototaxis
 |---------|-------|
 | Energía anual | {energia_taxis_anual_kwh:,.0f} kWh |
 | Potencia promedio | {potencia_taxis_prom:.2f} kW |
-| Potencia pico | {potencia_taxis_pico:.2f} kW (hora {int(hora_pico_taxis)}) |
+| Potencia pico | {potencia_taxis_pico:.2f} kW (hora {hora_pico_taxis:02d}) |
 | Demanda por socket | {demanda_per_socket_taxis:.4f} kW/socket |
 | Factor de utilización | {(demanda_per_socket_taxis / 3.0)*100:.1f}% (nominal 3 kW) |
 | % del total sistema | {(energia_taxis_anual_kwh/energia_total_anual_kwh)*100:.1f}% |
@@ -201,10 +204,14 @@ reporte_md = f"""# Reporte de Carga Sin Control: Motos vs Mototaxis
 
 # Tabla horaria
 for idx, row in chargers_hourly.iterrows():
-    reporte_md += f"\n**Hora {int(row['hour']):02d}:00**\n"
-    reporte_md += f"- Motos: {row['motos_total_kw']:.2f} kW ({(row['motos_total_kw']/2.0/sockets_motos)*100:.1f}% utilización)\n"
-    reporte_md += f"- Taxis: {row['taxis_total_kw']:.2f} kW ({(row['taxis_total_kw']/3.0/sockets_taxis)*100:.1f}% utilización)\n"
-    reporte_md += f"- Total: {row['total_kw']:.2f} kW ({(row['total_kw']/272)*100:.1f}% de 272 kW)\n"
+    hora_val: int = int(row['hour'])  # type: ignore
+    motos_val: float = float(row['motos_total_kw'])
+    taxis_val: float = float(row['taxis_total_kw'])
+    total_val: float = float(row['total_kw'])
+    reporte_md += f"\n**Hora {hora_val:02d}:00**\n"
+    reporte_md += f"- Motos: {motos_val:.2f} kW ({(motos_val/2.0/sockets_motos)*100:.1f}% utilización)\n"
+    reporte_md += f"- Taxis: {taxis_val:.2f} kW ({(taxis_val/3.0/sockets_taxis)*100:.1f}% utilización)\n"
+    reporte_md += f"- Total: {total_val:.2f} kW ({(total_val/272)*100:.1f}% de 272 kW)\n"
 
 reporte_md += f"""
 
@@ -271,7 +278,12 @@ reporte_md += "\n| Hora | Motos (kW) | Taxis (kW) | Total (kW) | % Sistema |\n"
 reporte_md += "|------|-----------|-----------|-----------|----------|\n"
 
 for idx, row in chargers_hourly.iterrows():
-    reporte_md += f"| {int(row['hour']):02d}:00 | {row['motos_total_kw']:>9.2f} | {row['taxis_total_kw']:>9.2f} | {row['total_kw']:>9.2f} | {(row['total_kw']/272)*100:>8.1f}% |\n"
+    h_val: int = int(row['hour'])  # type: ignore
+    m_val: float = float(row['motos_total_kw'])
+    t_val: float = float(row['taxis_total_kw'])
+    tot_val: float = float(row['total_kw'])
+    pct_val: float = (tot_val / 272.0) * 100.0
+    reporte_md += f"| {h_val:02d}:00 | {m_val:>9.2f} | {t_val:>9.2f} | {tot_val:>9.2f} | {pct_val:>8.1f}% |\n"
 
 reporte_md += f"""
 
