@@ -144,10 +144,10 @@ class SACConfig:
     Para convergencia óptima, usar 100+ episodios.
     """
 # Hiperparámetros de entrenamiento - SAC OPTIMIZADO PARA RTX 4060 (8GB VRAM)
-    episodes: int = 50  # 50 mínimo para alta dimensionalidad (8760 pasos/ep)
-    batch_size: int = 256                    # ↓ REDUCIDO: 512→256 (evita OOM en GPU RTX 4060)
-    buffer_size: int = 500000              # ↓ REDUCIDO: 1M→500k (menos overhead de memoria)
-    learning_rate: float = 1e-4             # ✅ REDUCIDO: 3e-4→1e-4 (evita explosión gradientes)
+    episodes: int = 5  # REDUCIDO: 50→5 (test rápido, evita OOM)
+    batch_size: int = 128                   # ↓↓ AGRESIVAMENTE REDUCIDO: 256→128 (crítico para RTX 4060)
+    buffer_size: int = 250000              # ↓↓ AGRESIVAMENTE REDUCIDO: 500k→250k (menos overhead)
+    learning_rate: float = 5e-4             # ✅ SAC ÓPTIMO: 5e-4 (off-policy, sample-efficient, estable con reward_scale=1.0)
     gamma: float = 0.99                      # ↓ Reducido: 0.999→0.99 (simplifica Q-function)
     tau: float = 0.001                       # ✅ Mantener para soft updates
 

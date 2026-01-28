@@ -44,8 +44,8 @@ class PPOConfig:
     # Hiperparámetros de entrenamiento - PPO OPTIMIZADO PARA RTX 4060
     train_steps: int = 500000  # ↓ REDUCIDO: 1M→500k (RTX 4060 limitación)
     n_steps: int = 1024         # ↓ REDUCIDO: 2048→1024 (menos buffer)
-    batch_size: int = 64         # ↓ REDUCIDO: 128→64 (mitad para GPU)
-    n_epochs: int = 10           # ↓ REDUCIDO: 20→10 (menos updates)
+    batch_size: int = 32         # ↓↓ AGRESIVAMENTE REDUCIDO: 64→32 (safety margin para RTX 4060)
+    n_epochs: int = 5            # ↓↓ AGRESIVAMENTE REDUCIDO: 10→5 (menos updates, menos memoria)
 
     # Optimización - PPO ADAPTADO A GPU LIMITADA
     learning_rate: float = 1e-4     # ✅ REDUCIDO: 3e-4→1e-4 (evita explosión gradientes)
@@ -116,7 +116,7 @@ class PPOConfig:
     # === NORMALIZACIÓN (crítico para estabilidad) ===
     normalize_observations: bool = True  # Normalizar obs a media=0, std=1
     normalize_rewards: bool = True       # Escalar rewards
-    reward_scale: float = 0.01           # Factor de escala para rewards
+    reward_scale: float = 1.0            # ✅ CORREGIDO: 0.01→1.0 (evita gradient explosion)
     clip_obs: float = 10.0               # Clipear obs normalizadas
 
 

@@ -51,8 +51,8 @@ class A2CConfig:
     """
     # Hiperparámetros de entrenamiento - A2C OPTIMIZADO PARA RTX 4060
     train_steps: int = 500000  # ↓ REDUCIDO: 1M→500k (GPU limitada)
-    n_steps: int = 256         # ✅ REDUCIDO: 512→256 (menos buffer en GPU limitada)
-    learning_rate: float = 1e-4    # ✅ REDUCIDO: 3e-4→1e-4 (evita explosión gradientes)
+    n_steps: int = 128         # ↓↓ AGRESIVAMENTE REDUCIDO: 256→128 (crítico para RTX 4060, menos buffer en GPU)
+    learning_rate: float = 3e-4    # ✅ A2C ÓPTIMO: 3e-4 (on-policy simple, más tolerante que PPO)
     lr_schedule: str = "linear"    # ✅ Decay automático
     gamma: float = 0.99            # ↓ REDUCIDO: 0.999→0.99 (simplifica)
     gae_lambda: float = 0.90       # ↓ REDUCIDO: 0.95→0.90 (menos varianza)
