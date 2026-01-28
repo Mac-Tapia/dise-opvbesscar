@@ -145,18 +145,18 @@ class SACConfig:
     """
 # Hiperparámetros de entrenamiento - SAC OPTIMIZADO PARA RTX 4060 (8GB VRAM)
     episodes: int = 5  # REDUCIDO: 50→5 (test rápido, evita OOM)
-    batch_size: int = 128                   # ↓↓ AGRESIVAMENTE REDUCIDO: 256→128 (crítico para RTX 4060)
-    buffer_size: int = 250000              # ↓↓ AGRESIVAMENTE REDUCIDO: 500k→250k (menos overhead)
-    learning_rate: float = 5e-4             # ✅ SAC ÓPTIMO: 5e-4 (off-policy, sample-efficient, estable con reward_scale=1.0)
+    batch_size: int = 64                    # ↓↓↓ CRITICAMENTE REDUCIDO: 128→64 (estabilidad crítica)
+    buffer_size: int = 150000               # ↓↓↓ CRITICAMENTE REDUCIDO: 250k→150k (evita sesgos)
+    learning_rate: float = 1e-5             # ↓↓↓ CRITICAMENTE REDUCIDO: 5e-4→1e-5 (previene explosión)
     gamma: float = 0.99                      # ↓ Reducido: 0.999→0.99 (simplifica Q-function)
-    tau: float = 0.001                       # ✅ Mantener para soft updates
+    tau: float = 0.005                       # ↑ AUMENTADO: 0.001→0.005 (soft updates más estables)
 
     # Entropía - SAC DINÁMICO para mejor exploración
-    ent_coef: float = 0.01                   # ✅ AUTO adaptativo: comienza bajo, ajusta
+    ent_coef: float = 0.001                  # ↓ REDUCIDO: 0.01→0.001 (menos exploración=menos picos)
     target_entropy: Optional[float] = None   # Auto-calcula based on action space (-dim/2)
 
     # Red neuronal - REDUCIDA para RTX 4060
-    hidden_sizes: tuple = (512, 512)  # type: ignore[type-arg]         # ↓ REDUCIDA: 1024→512 (menos parámetros)
+    hidden_sizes: tuple = (256, 256)  # type: ignore[type-arg]         # ↓↓ REDUCIDA: 512→256 (menos divergencia)
     activation: str = "relu"                 # ✅ Óptimo para SAC
 
     # Escalabilidad
@@ -168,6 +168,12 @@ class SACConfig:
     use_amp: bool = True  # Mixed precision (Automatic Mixed Precision)
     pin_memory: bool = True  # Acelera transferencia CPU->GPU
     num_workers: int = 0  # DataLoader workers (0 para CityLearn)
+
+    # === ESTABILIDAD NUMÉRICA (CRÍTICO POST-DIVERGENCIA) ===
+    clip_gradients: bool = True             # ✅ AGREGADO: Clipear gradientes
+    max_grad_norm: float = 0.5              # ✅ AGREGADO: Límite de gradientes
+    warmup_steps: int = 5000                # ✅ AGREGADO: Dejar que buffer se llene
+    gradient_accumulation_steps: int = 1    # ✅ Agrupa updates, reduce varianza
 
     # === MULTIOBJETIVO / MULTICRITERIO ===
     # Pesos para función de recompensa compuesta (deben sumar 1.0)
@@ -202,8 +208,9 @@ class SACConfig:
     # === NORMALIZACIÓN (crítico para estabilidad) ===
     normalize_observations: bool = True  # Normalizar obs a media=0, std=1
     normalize_rewards: bool = True       # Escalar rewards a [-1, 1]
-    reward_scale: float = 1.0            # ✅ AUMENTADO: 0.01 → 1.0 (evita valores reward muy pequeños)
-    clip_obs: float = 10.0               # Clipear obs normalizadas a [-clip, clip]
+    reward_scale: float = 0.1            # ↓ REDUCIDO: 1.0→0.1 (previene explosión critic_loss)
+    clip_obs: float = 5.0                # ↓ REDUCIDO: 10→5 (clipping más agresivo)
+    clip_reward: float = 1.0             # ✅ AGREGADO: Clipear rewards a [-1, 1]
 
 
 class SACAgent:
