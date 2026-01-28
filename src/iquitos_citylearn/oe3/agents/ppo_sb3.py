@@ -732,13 +732,14 @@ class PPOAgent:
             Learning rate schedule (callable o float)
         """
         try:
-            from stable_baselines3.common.utils import get_linear_fn
+            from stable_baselines3.common.schedules import LinearSchedule
 
             if self.config.lr_schedule == "linear":
-                result: Union[Callable[[float], float], float] = get_linear_fn(
+                # LinearSchedule expects initial_value and final_value
+                result: Union[Callable[[float], float], float] = LinearSchedule(
                     self.config.learning_rate,
                     self.config.learning_rate * 0.1,
-                    1.0
+                    end_fraction=1.0
                 )
                 return result
         except ImportError:

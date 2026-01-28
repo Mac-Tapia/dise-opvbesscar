@@ -15,6 +15,13 @@
 ### ⚠️ CRITICAL: Hourly Data Only
 **Solar timeseries MUST be exactly 8,760 rows per year (hourly resolution).** NO 15-minute, 30-minute, or sub-hourly data. If you have PVGIS 15-min data, downsample: `df.set_index('time').resample('h').mean()`
 
+### ⚠️ CRITICAL: Temporal Alignment (start_date = 2024-01-01)
+**ALL CityLearn data MUST start from January 1, 2024** to align with PVGIS solar data:
+- `schema.json`: `"start_date": "2024-01-01"` (enforced in dataset_builder.py)
+- `Building_1.csv`: month column starts at 1 (January), ends at 12 (December)
+- `solar_generation.csv`: Aligned with PVGIS hourly data (January-December)
+- **DO NOT** use start_date = "2024-08-01" or any other month - this causes temporal misalignment
+
 ### Three-Phase Pipeline
 1. **OE2 Artifacts** (`data/interim/oe2/`): Solar timeseries (8,760 hrs), charger profiles, BESS config
 2. **Dataset Builder** (`src/iquitos_citylearn/oe3/dataset_builder.py`): Constructs CityLearn schema with 534-dim obs space, 126-dim action space (128 chargers - 2 reserved)

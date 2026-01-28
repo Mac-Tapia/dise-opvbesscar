@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from dataclasses import dataclass, asdict
 from pathlib import Path
@@ -484,7 +484,7 @@ def simulate(
     a2c_gae_lambda: float = 0.9,
     a2c_vf_coef: float = 0.5,
     a2c_reward_scale: float = 1.2,
-    a2c_device: Optional[str] = None,
+    a2c_device: Optional[str] = "cpu",  # A2C no es eficiente en GPU (use CPU)
     sac_resume_checkpoints: bool = False,
     ppo_resume_checkpoints: bool = False,
     a2c_resume_checkpoints: bool = False,
@@ -675,7 +675,7 @@ def simulate(
             )
             logger.info("")
             logger.info("════════════════════════════════════════════════════════════════════════════════")
-            logger.info("  🚀 PPO AGENT CONFIGURATION")
+            logger.info("  [A2C] PPO AGENT CONFIGURATION")
             logger.info("════════════════════════════════════════════════════════════════════════════════")
             logger.info(f"  Training Timesteps: {ppo_timesteps}")
             logger.info(f"  N-Steps: {ppo_n_steps}")
@@ -742,9 +742,9 @@ def simulate(
                 **a2c_kwargs,
             )
             logger.info("")
-            logger.info("════════════════════════════════════════════════════════════════════════════════")
-            logger.info("  🚀 A2C AGENT CONFIGURATION")
-            logger.info("════════════════════════════════════════════════════════════════════════════════")
+            logger.info("=" * 80)
+            logger.info("  [A2C] AGENT CONFIGURATION")
+            logger.info("=" * 80)
             logger.info(f"  Training Timesteps: {a2c_steps}")
             logger.info(f"  N-Steps: {a2c_config.n_steps}")
             logger.info(f"  Device: {a2c_device or 'auto'}")
@@ -755,8 +755,8 @@ def simulate(
             logger.info(f"  Value Fn Coeff: {a2c_config.vf_coef}")
             logger.info(f"  Hidden Sizes: {a2c_config.hidden_sizes}")
             logger.info(f"  Checkpoint Dir: {a2c_checkpoint_dir}")
-            logger.info(f"  Resume from: {('Última ejecución' if a2c_resume else 'Desde cero')}")
-            logger.info("════════════════════════════════════════════════════════════════════════════════")
+            logger.info(f"  Resume from: {'Last run' if a2c_resume else 'From scratch'}")
+            logger.info("=" * 80)
             logger.info("")
             logger.info(f"[SIMULATE] A2C Config: checkpoint_dir={a2c_checkpoint_dir}, checkpoint_freq_steps={a2c_checkpoint_freq_steps}")
             agent = make_a2c(env, config=a2c_config)
@@ -1000,3 +1000,4 @@ def simulate(
 
     Path(result.results_path).write_text(json.dumps(result.__dict__, indent=2), encoding="utf-8")
     return result
+

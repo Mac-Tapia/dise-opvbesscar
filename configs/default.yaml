@@ -186,9 +186,9 @@ oe3:
     a2c:
       batch_size: 2048
       checkpoint_freq_steps: 200
-      device: cuda
+      device: cpu
       entropy_coef: 0.02
-      episodes: 5
+      episodes: 3
       gamma: 0.99
       gae_lambda: 0.9
       learning_rate: 0.001

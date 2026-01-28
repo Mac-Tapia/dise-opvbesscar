@@ -605,11 +605,11 @@ class A2CAgent:
 
     def _get_lr_schedule(self) -> Union[Callable[[float], float], float]:
         """Crea scheduler de learning rate."""
-        # Try to import from stable-baselines3
+        # Use LinearSchedule from stable-baselines3
         linear_fn: Union[Callable, None] = None
         try:
-            from stable_baselines3.common.utils import get_linear_fn as sb3_get_linear_fn  # type: ignore[import]
-            linear_fn = sb3_get_linear_fn  # type: ignore[assignment]
+            from stable_baselines3.common.schedules import LinearSchedule
+            linear_fn = LinearSchedule  # type: ignore[assignment]
         except (ImportError, AttributeError):
             pass
 

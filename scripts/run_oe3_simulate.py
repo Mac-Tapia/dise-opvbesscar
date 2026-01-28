@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import json
+import logging
 
 from iquitos_citylearn.utils.logging import setup_logging
 from iquitos_citylearn.oe3.dataset_builder import build_citylearn_dataset
@@ -24,6 +25,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/default.yaml")
     ap.add_argument("--skip-uncontrolled", action="store_true", help="Reutilizar baseline Uncontrolled si existe en simulation_summary.json")
+    ap.add_argument("--skip-baseline", action="store_true", help="Saltar cálculo de baseline Uncontrolled completamente")
+    ap.add_argument("--skip-agents", nargs="+", default=[], help="Saltar estos agentes (ej: SAC PPO). Usa solo agentes que ya terminaron.")
     args = ap.parse_args()
 
     setup_logging()
@@ -111,7 +114,7 @@ def main() -> None:
 
     # Baseline: Electrified transport + PV+BESS + no control (Uncontrolled)
     # Este es el único baseline necesario - también se usa para calcular tailpipe
-    if res_uncontrolled is None:
+    if res_uncontrolled is None and not args.skip_baseline:
         res_uncontrolled_obj = simulate(
             schema_path=schema_pv,
             agent_name="Uncontrolled",
@@ -151,10 +154,20 @@ def main() -> None:
 
     # Scenario B: Electrified transport + PV+BESS + control (evaluate candidate agents)
     agent_names = list(eval_cfg["agents"])
+    # Convertir skip_agents a mayúsculas para comparación
+    skip_agents_upper = [a.upper() for a in args.skip_agents]
+    logger = logging.getLogger(__name__)
+
     results = {}
     for agent in agent_names:
         # Skip Uncontrolled in this loop - it will be run in Scenario C as baseline
         if agent.lower() == "uncontrolled":
+            continue
+
+        # Skip agents especificados en línea de comandos
+        if agent.upper() in skip_agents_upper:
+            logger.info(f"[SKIP] {agent.upper()} - Saltado por --skip-agents")
+            print(f"[SKIP] {agent.upper()} - Saltado por --skip-agents")
             continue
 
         # Skip if results already exist
@@ -167,8 +180,6 @@ def main() -> None:
             if agent.lower() in ["sac", "ppo"]:
                 # Verificar si tiene al menos 2 episodios (simulated_years >= 2.0)
                 if res.get("simulated_years", 0) >= 2.0:
-                    import logging
-                    logger = logging.getLogger(__name__)
                     logger.info(f"[SKIP] {agent.upper()} - Ya completó 2 episodios ({res.get('simulated_years')} años simulados)")
                     print(f"\n{'='*80}")
                     print(f"✓ {agent.upper()} ya completó {int(res.get('simulated_years', 0))} episodios - SALTANDO")
@@ -176,8 +187,6 @@ def main() -> None:
                     results[agent] = res
                     continue
 
-            import logging
-            logger = logging.getLogger(__name__)
             logger.info(f"[SKIP] {agent} - resultados ya existen en {results_json}")
             results[agent] = res
             continue
@@ -222,8 +231,6 @@ def main() -> None:
             )
             results[agent] = res.__dict__
         except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
             logger.error(f"Error entrenando agente {agent}: {e}")
             print(f"[ERROR] El agente {agent} falló: {e}")
             print(f"[INFO] Continuando con los siguientes agentes...")
