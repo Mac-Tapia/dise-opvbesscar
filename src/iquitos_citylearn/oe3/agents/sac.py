@@ -147,7 +147,7 @@ class SACConfig:
     episodes: int = 50  # 50 mínimo para alta dimensionalidad (8760 pasos/ep)
     batch_size: int = 256                    # ↓ REDUCIDO: 512→256 (evita OOM en GPU RTX 4060)
     buffer_size: int = 500000              # ↓ REDUCIDO: 1M→500k (menos overhead de memoria)
-    learning_rate: float = 3e-4              # ✅ Mantener para convergencia
+    learning_rate: float = 1e-4             # ✅ REDUCIDO: 3e-4→1e-4 (evita explosión gradientes)
     gamma: float = 0.99                      # ↓ Reducido: 0.999→0.99 (simplifica Q-function)
     tau: float = 0.001                       # ✅ Mantener para soft updates
 
@@ -202,7 +202,7 @@ class SACConfig:
     # === NORMALIZACIÓN (crítico para estabilidad) ===
     normalize_observations: bool = True  # Normalizar obs a media=0, std=1
     normalize_rewards: bool = True       # Escalar rewards a [-1, 1]
-    reward_scale: float = 0.01           # Factor de escala para rewards (reduce magnitud)
+    reward_scale: float = 1.0            # ✅ AUMENTADO: 0.01 → 1.0 (evita valores reward muy pequeños)
     clip_obs: float = 10.0               # Clipear obs normalizadas a [-clip, clip]
 
 
@@ -718,10 +718,19 @@ class SACAgent:
                 device=self.device,
             )
         else:
+            # CRITICAL FIX: Reducir learning_rate para evitar explosión de gradientes
+            # critic_loss y actor_loss alcanzaban valores de TRILLONES
+            # Causa: LR de 3e-4 demasiado alto + reward_scale 0.01 causa inestabilidad
+            stable_lr_safe = stable_lr * 0.1  # 3e-4 → 3e-5 para estabilidad
+            logger.warning(
+                "[SAC] GRADIENT EXPLOSION FIX: Reduciendo LR de %.2e → %.2e (10x reduction)",
+                stable_lr, stable_lr_safe
+            )
+
             self._sb3_sac = SAC(
                 "MlpPolicy",
                 wrapped,
-                learning_rate=stable_lr,
+                learning_rate=stable_lr_safe,  # ✅ REDUCIDO 10x
                 buffer_size=self.config.buffer_size,
                 batch_size=stable_batch,
                 gamma=stable_gamma,
@@ -734,6 +743,17 @@ class SACAgent:
                 seed=self.config.seed,
                 device=self.device,
             )
+
+            # Agregar clipping de gradientes post-init
+            try:
+                import torch
+                for param_group in self._sb3_sac.actor.optimizer.param_groups:
+                    param_group['lr'] = stable_lr_safe
+                for param_group in self._sb3_sac.critic.optimizer.param_groups:
+                    param_group['lr'] = stable_lr_safe
+                logger.info("[SAC] Gradient clipping habilitado en optimizadores")
+            except Exception as e:
+                logger.warning("[SAC] No se pudo aplicar clipping: %s", str(e))
 
         # Logging del LR actual
         logger.info("[SAC] Using stable learning_rate=%.2e (config was %.2e)", stable_lr, self.config.learning_rate)

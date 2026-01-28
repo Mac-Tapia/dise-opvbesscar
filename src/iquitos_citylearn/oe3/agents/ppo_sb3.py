@@ -48,7 +48,7 @@ class PPOConfig:
     n_epochs: int = 10           # ↓ REDUCIDO: 20→10 (menos updates)
 
     # Optimización - PPO ADAPTADO A GPU LIMITADA
-    learning_rate: float = 3e-4     # ↑ Aumentado: 2e-4→3e-4 (compensar menos epochs)
+    learning_rate: float = 1e-4     # ✅ REDUCIDO: 3e-4→1e-4 (evita explosión gradientes)
     lr_schedule: str = "linear"     # ✅ Decay automático
     gamma: float = 0.99             # ↓ REDUCIDO: 0.999→0.99 (simplifica)
     gae_lambda: float = 0.95        # ↓ REDUCIDO: 0.98→0.95 (menos varianza)

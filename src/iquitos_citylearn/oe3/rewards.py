@@ -248,6 +248,12 @@ class MultiObjectiveReward:
             0.10 * soc_penalty  # SOC penalty ponderada (0.10 weight)
         )
 
+        # ✅ SAFETY FIX: Clipear y validar NaN/Inf
+        reward = float(reward)  # Asegurar que es float
+        if not np.isfinite(reward):
+            logger.warning("[REWARD] NaN/Inf detected in reward: %.6e, clamping to -1.0", reward)
+            reward = -1.0
+
         # Normalizar reward a [-1, 1] con clipping
         reward = np.clip(reward, -1.0, 1.0)
         components["reward_total"] = reward
