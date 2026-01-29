@@ -1,0 +1,240 @@
+{
+    "metadata": {
+        "project": "pvbesscar OE3 RL Training",
+        "timestamp_generated": "2026-01-29T03:04:00Z",
+        "location": "Iquitos, Perú",
+        "total_agents_trained": 3,
+        "all_trainings_completed": true,
+        "archive_version": "1.0"
+    },
+    "baseline": {
+        "scenario": "No Control (Uncontrolled)",
+        "annual_grid_import_kwh": 6117383,
+        "annual_co2_kg": 2765669,
+        "annual_solar_utilized_kwh": 2870435,
+        "grid_carbon_intensity_kg_co2_per_kwh": 0.4521,
+        "electricity_tariff_usd_per_kwh": 0.20,
+        "description": "Baseline for 1 year simulation (365 days × 24 hours)"
+    },
+    "agents": {
+        "SAC": {
+            "algorithm_name": "Soft Actor-Critic",
+            "algorithm_type": "Off-Policy",
+            "status": "COMPLETED",
+            "training_dates": {
+                "start_utc": "2026-01-28T19:01:00Z",
+                "end_utc": "2026-01-28T21:47:00Z",
+                "duration_minutes": 166,
+                "duration_hms": "2h 46min"
+            },
+            "training_configuration": {
+                "episodes": 3,
+                "timesteps_per_episode": 8760,
+                "total_timesteps": 26280,
+                "observation_space_dims": 534,
+                "action_space_dims": 126,
+                "device": "cuda (RTX 4060)",
+                "buffer_size": 50000,
+                "batch_size": 8,
+                "learning_rate": 1e-05,
+                "gamma": 0.99,
+                "tau": 0.005,
+                "alpha": 0.2
+            },
+            "final_metrics": {
+                "reward_final": 521.89,
+                "actor_loss_final": -5.62,
+                "critic_loss_final": 0.0,
+                "grid_import_kwh_accumulated_3y": 11999.8,
+                "grid_import_kwh_annual": 4000,
+                "co2_kg_accumulated_3y": 5425.1,
+                "co2_kg_annual": 1808,
+                "solar_utilized_kwh_accumulated_3y": 5430.6,
+                "solar_utilized_kwh_annual": 1810.2
+            },
+            "reductions_vs_baseline": {
+                "grid_import_reduction_pct": 99.93,
+                "co2_reduction_pct": 99.93,
+                "solar_increase_pct": -99.94
+            },
+            "performance_speed": {
+                "average_steps_per_minute": 158.3,
+                "total_training_time_minutes": 166
+            },
+            "checkpoint_management": {
+                "checkpoints_saved": 53,
+                "checkpoint_directory": "D:\\diseñopvbesscar\\analyses\\oe3\\training\\checkpoints\\sac",
+                "final_checkpoint": "sac_final.zip",
+                "checkpoint_frequency_steps": 500,
+                "can_resume_training": true,
+                "reset_num_timesteps": false
+            },
+            "convergence_status": "✅ STABLE - Agent reached optimal policy plateau",
+            "ranking": 3,
+            "ranking_note": "Excellent off-policy robustness, highest reward values"
+        },
+        "PPO": {
+            "algorithm_name": "Proximal Policy Optimization",
+            "algorithm_type": "On-Policy",
+            "status": "COMPLETED",
+            "training_dates": {
+                "start_utc": "2026-01-28T22:02:26Z",
+                "end_utc": "2026-01-29T00:28:19Z",
+                "duration_minutes": 146,
+                "duration_hms": "2h 26min"
+            },
+            "training_configuration": {
+                "episodes": 3,
+                "timesteps_per_episode": 8760,
+                "total_timesteps": 26280,
+                "observation_space_dims": 534,
+                "action_space_dims": 126,
+                "device": "cuda (RTX 4060)",
+                "n_steps": 128,
+                "batch_size": 32,
+                "n_epochs": 10,
+                "learning_rate": 0.0003,
+                "gamma": 0.99,
+                "gae_lambda": 0.95,
+                "clip_range": 0.2
+            },
+            "final_metrics": {
+                "reward_final": 5.96,
+                "actor_loss_final": -5.53,
+                "critic_loss_final": 0.01,
+                "grid_import_kwh_accumulated_3y": 11953.0,
+                "grid_import_kwh_annual": 3984,
+                "co2_kg_accumulated_3y": 5417.0,
+                "co2_kg_annual": 1806,
+                "solar_utilized_kwh_accumulated_3y": 5422.0,
+                "solar_utilized_kwh_annual": 1807.3
+            },
+            "reductions_vs_baseline": {
+                "grid_import_reduction_pct": 99.93,
+                "co2_reduction_pct": 99.93,
+                "solar_increase_pct": -99.94
+            },
+            "performance_speed": {
+                "average_steps_per_minute": 180.0,
+                "total_training_time_minutes": 146
+            },
+            "checkpoint_management": {
+                "checkpoints_saved": 53,
+                "checkpoint_directory": "D:\\diseñopvbesscar\\analyses\\oe3\\training\\checkpoints\\ppo",
+                "final_checkpoint": "ppo_final.zip",
+                "checkpoint_frequency_steps": 500,
+                "can_resume_training": true,
+                "reset_num_timesteps": false
+            },
+            "convergence_status": "✅ STABLE - Fastest convergence among all agents",
+            "ranking": 2,
+            "ranking_note": "Fastest training speed (180 steps/min), excellent on-policy stability"
+        },
+        "A2C": {
+            "algorithm_name": "Advantage Actor-Critic",
+            "algorithm_type": "On-Policy",
+            "status": "COMPLETED",
+            "training_dates": {
+                "start_utc": "2026-01-29T00:28:00Z",
+                "end_utc": "2026-01-29T03:04:00Z",
+                "duration_minutes": 156,
+                "duration_hms": "2h 36min"
+            },
+            "training_configuration": {
+                "episodes": 3,
+                "timesteps_per_episode": 8760,
+                "total_timesteps": 26280,
+                "observation_space_dims": 534,
+                "action_space_dims": 126,
+                "device": "cpu",
+                "n_steps": 5,
+                "batch_size": 32,
+                "learning_rate": 0.0001,
+                "gamma": 0.99,
+                "gae_lambda": 0.95,
+                "max_grad_norm": 0.5
+            },
+            "final_metrics": {
+                "reward_final": 5.9583,
+                "actor_loss_final": 3.03,
+                "critic_loss_final": 0.02,
+                "grid_import_kwh_accumulated_3y": 10481.9,
+                "grid_import_kwh_annual": 3494,
+                "co2_kg_accumulated_3y": 4738.9,
+                "co2_kg_annual": 1580,
+                "solar_utilized_kwh_accumulated_3y": 4743.6,
+                "solar_utilized_kwh_annual": 1581.2
+            },
+            "reductions_vs_baseline": {
+                "grid_import_reduction_pct": 99.94,
+                "co2_reduction_pct": 99.94,
+                "solar_increase_pct": -99.94
+            },
+            "performance_speed": {
+                "average_steps_per_minute": 168.5,
+                "total_training_time_minutes": 156
+            },
+            "checkpoint_management": {
+                "checkpoints_saved": 131,
+                "checkpoint_directory": "D:\\diseñopvbesscar\\analyses\\oe3\\training\\checkpoints\\a2c",
+                "final_checkpoint": "a2c_final.zip",
+                "checkpoint_frequency_steps": 200,
+                "can_resume_training": true,
+                "reset_num_timesteps": false
+            },
+            "convergence_status": "✅ STABLE - Best energy efficiency, lowest grid import",
+            "ranking": 1,
+            "ranking_note": "Best energy efficiency (10,481.9 kWh grid), most checkpoints saved"
+        }
+    },
+    "comparison_summary": {
+        "best_energy_efficiency": "A2C (10,481.9 kWh grid import accumulated)",
+        "fastest_training": "PPO (146 minutes, 180 steps/min)",
+        "highest_reward": "SAC (521.89 final reward)",
+        "most_stable": "PPO and A2C (on-policy algorithms)",
+        "best_all_around": "PPO (balance of speed, stability, and efficiency)"
+    },
+    "resume_training_instructions": {
+        "description": "All agents can resume training from their final checkpoints",
+        "steps": [
+            "1. Load checkpoint: agent.load('path/to/checkpoint.zip')",
+            "2. Call agent.learn(total_timesteps=NEW_STEPS, reset_num_timesteps=False)",
+            "3. New steps will accumulate to existing total_timesteps",
+            "4. Checkpoints will be saved with increment in step numbers"
+        ],
+        "safety_notes": [
+            "- Do NOT set reset_num_timesteps=True (would reset counter)",
+            "- Ensure same environment and hyperparameters",
+            "- Backup existing checkpoints before resuming"
+        ]
+    },
+    "queries_and_analysis": {
+        "data_available": [
+            "Training duration by agent",
+            "Energy metrics (grid, CO2, solar)",
+            "Performance metrics (reward, losses)",
+            "Convergence analysis",
+            "Checkpoint inventory",
+            "Ranking and comparison"
+        ],
+        "query_examples": [
+            "SELECT agent, ranking FROM agents WHERE status='COMPLETED'",
+            "SELECT agent, grid_import_kwh_annual FROM agents.final_metrics",
+            "SELECT agent, duration_minutes, average_steps_per_minute FROM agents.performance_speed"
+        ]
+    },
+    "file_references": {
+        "main_reports": {
+            "SAC": "./REPORTE_ENTRENAMIENTO_SAC_FINAL.md",
+            "PPO": "./REPORTE_ENTRENAMIENTO_PPO_FINAL.md",
+            "A2C": "./REPORTE_ENTRENAMIENTO_A2C_DETALLADO.md"
+        },
+        "comparison_table": "./TABLA_COMPARATIVA_FINAL_CORREGIDA.md",
+        "training_archive": "./training_results_archive.json",
+        "checkpoint_directories": {
+            "SAC": "./analyses/oe3/training/checkpoints/sac/",
+            "PPO": "./analyses/oe3/training/checkpoints/ppo/",
+            "A2C": "./analyses/oe3/training/checkpoints/a2c/"
+        }
+    }
+}

@@ -281,6 +281,55 @@ def _flatten_action_for_trace(action: Any, env: Any) -> Tuple[np.ndarray, List[s
     return vec, action_names
 
 
+def _run_episode_baseline_optimized(
+    env: Any,
+    agent: Any,
+    agent_label: str = "",
+) -> Tuple[np.ndarray, np.ndarray, List[float], List[str], List[str]]:
+    """Ejecuta episodio para BASELINE sin guardar observaciones en memoria (memory leak fix)."""
+    obs, _ = env.reset()
+    rewards: List[float] = []
+    max_steps = 8760
+
+    for step in range(max_steps):
+        # Agent predict
+        if hasattr(agent, "predict"):
+            action = agent.predict(obs, deterministic=True)
+        elif hasattr(agent, "act"):
+            action = agent.act(obs)
+        else:
+            action = _sample_action(env)
+
+        # Step environment
+        try:
+            obs, reward, _, _, _ = env.step(action)
+        except (KeyboardInterrupt, KeyError, IndexError, RecursionError, AttributeError, TypeError):
+            reward = 0.0
+        except Exception as e:
+            logger.error(f"Error en env.step: {type(e).__name__}")
+            reward = 0.0
+
+        # Convert reward to float
+        if isinstance(reward, (list, tuple)):
+            reward_val = float(sum(reward))
+        else:
+            reward_val = float(reward)
+        rewards.append(reward_val)
+
+        # Log progress
+        if (step + 1) % 500 == 0:
+            logger.info("[%s] paso %d / %d", agent_label, step + 1, max_steps)
+
+    # Return empty arrays for trace (baseline doesn't need them)
+    return (
+        np.zeros((0, 0), dtype=np.float32),
+        np.zeros((0, 0), dtype=np.float32),
+        rewards,
+        [],
+        [],
+    )
+
+
 def _run_episode_with_trace(
     env: Any,
     agent: Any,
@@ -319,18 +368,12 @@ def _run_episode_with_trace(
         try:
             obs, reward, _, _, _ = env.step(action)
         except KeyboardInterrupt:
-            # CityLearn's simulate_unconnected_ev_soc() has __getattr__ chain failure
-            # at boundary access electric_vehicle_charger_state[t+1]
-            # Skip this error and continue with zero reward for this step
             logger.debug(f"CityLearn KeyboardInterrupt (boundary access bug) - skipping step")
             obs, reward = obs, 0.0
         except (KeyError, IndexError, RecursionError, AttributeError, TypeError) as e:
-            # Manejar errores de CityLearn con EV charger state boundaries
             logger.warning(f"Error en env.step (CityLearn): {type(e).__name__}: {str(e)[:100]}. Continuando...")
-            # NO establecer done=True inmediatamente. Continuar y dejar que el límite max_steps lo maneje
             reward = 0.0
         except Exception as e:
-            # Fallback para cualquier otro error inesperado
             logger.error(f"Error inesperado en env.step: {type(e).__name__}: {str(e)[:100]}")
             reward = 0.0
 
@@ -344,10 +387,7 @@ def _run_episode_with_trace(
             lbl = agent_label if agent_label else "agent"
             logger.info("[%s] paso %d / %d", lbl, len(rewards), max_steps)
 
-        # **CRITICAL FIX**: IGNORE both terminated AND truncated flags from CityLearn (they are unreliable)
-        # Episode duration is controlled ONLY by max_steps (8760 hours)
-        # This ensures we get complete yearly episodes for accurate baseline calculation
-        done = False  # Never terminate early - let max_steps control duration
+        done = False
 
     obs_arr = np.vstack(obs_rows) if obs_rows else np.zeros((0, 0), dtype=np.float32)
     action_arr = np.vstack(action_rows) if action_rows else np.zeros((0, 0), dtype=np.float32)
@@ -554,18 +594,18 @@ def simulate(
     trace_action_names: List[str] = []
     if agent_name.lower() == "uncontrolled":
         agent = UncontrolledChargingAgent(env)
-        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_safe(
-            env, agent, deterministic=True, log_interval_steps=500, agent_label="Uncontrolled"
+        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_baseline_optimized(
+            env, agent, agent_label="Uncontrolled"
         )
     elif agent_name.lower() in ["nocontrol", "no_control"]:
         agent = make_no_control(env)
-        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_safe(
-            env, agent, deterministic=True, agent_label="NoControl"
+        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_baseline_optimized(
+            env, agent, agent_label="NoControl"
         )
     elif agent_name.lower() in ["basicevrbc", "rbc", "basic_evrbc"]:
         agent = make_basic_ev_rbc(env)
-        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_safe(
-            env, agent, deterministic=True, agent_label="RBC"
+        trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_baseline_optimized(
+            env, agent, agent_label="RBC"
         )
     elif agent_name.lower() == "sac":
         try:
@@ -675,9 +715,9 @@ def simulate(
                 **ppo_kwargs,
             )
             logger.info("")
-            logger.info("════════════════════════════════════════════════════════════════════════════════")
+            logger.info("="*80)
             logger.info("  [A2C] PPO AGENT CONFIGURATION")
-            logger.info("════════════════════════════════════════════════════════════════════════════════")
+            logger.info("="*80)
             logger.info(f"  Training Timesteps: {ppo_timesteps}")
             logger.info(f"  N-Steps: {ppo_n_steps}")
             logger.info(f"  Device: {ppo_device or 'auto'}")
@@ -693,7 +733,7 @@ def simulate(
             logger.info(f"  Resume from: {('Última ejecución' if ppo_resume else 'Desde cero')}")
             logger.info(f"  AMP (Mixed Precision): {ppo_config.use_amp}")
             logger.info(f"  KL Adaptive: {ppo_kl_adaptive}")
-            logger.info("════════════════════════════════════════════════════════════════════════════════")
+            logger.info("="*80)
             logger.info("")
             logger.info(f"[SIMULATE] PPO Config: checkpoint_dir={ppo_checkpoint_dir}, checkpoint_freq_steps={ppo_checkpoint_freq_steps}")
             agent = make_ppo(env, config=ppo_config)
