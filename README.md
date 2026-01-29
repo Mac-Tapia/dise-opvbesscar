@@ -6,6 +6,21 @@
 
 ---
 
+## 📖 ÍNDICE RÁPIDO
+
+| Sección | Descripción |
+|---------|-------------|
+| **¿Qué Hace?** | Descripción general del proyecto |
+| **Objetivos** | OE.1, OE.2, OE.3 del sistema |
+| **Resultados** | Agentes entrenados y métricas |
+| **Arquitectura** | OE2 (infraestructura) + OE3 (RL) |
+| **Inicio Rápido** | 5 opciones para comenzar |
+| **Scripts** | Herramientas disponibles |
+| **Validación** | Estado del sistema (6/6 checks) |
+| **Requisitos** | Instalación y configuración |
+
+---
+
 ## 🎯 ¿QUÉ HACE ESTE PROYECTO?
 
 Sistema inteligente de gestión de energía que optimiza la carga de **128 motos y mototaxis eléctricos** usando:
@@ -21,27 +36,20 @@ Sistema inteligente de gestión de energía que optimiza la carga de **128 motos
 
 ### OE.1 - Ubicación Estratégica Óptima
 
-**Objetivo:** Determinar la ubicación estratégica óptima que garantice la viabilidad técnica de motos y mototaxis eléctricas, necesaria para la reducción cuantificable de las emisiones de dióxido de carbono en Iquitos.
+Determinar ubicación óptima para motos/mototaxis eléctricas en Iquitos.
 
 **Alcance Logrado:**
-- ✅ **Ubicación:** Iquitos, Perú (ciudad aislada del grid nacional)
-- ✅ **Viabilidad técnica confirmada:** Sistema comprobado en operación
-- ✅ **Infraestructura completa:** 128 chargers para 128 motos/mototaxis eléctricos
-- ✅ **Red confiable:** 6/6 checks de validación de sistema pasados
-- ✅ **Capacidad de carga:** 512 conexiones (4 sockets × 128 chargers)
-
-**Resultados:**
-- Sistema operacional en ubicación óptima
-- Viabilidad técnica garantizada
-- Reducción de CO₂ comprobada en 99.9%
+- ✅ Ubicación: Iquitos, Perú (city aislada del grid nacional)
+- ✅ Viabilidad técnica confirmada
+- ✅ Infraestructura completa: 128 chargers para 128 vehículos
+- ✅ Red confiable: 6/6 validation checks pasados
+- ✅ Capacidad: 512 conexiones (4 sockets × 128 chargers)
 
 ---
 
 ### OE.2 - Dimensionamiento del Sistema
 
-**Objetivo:** Dimensionar la capacidad de generación solar, almacenamiento y cargadores de motos y mototaxis eléctricas para reducir las emisiones de dióxido de carbono en la ciudad de Iquitos.
-
-**Capacidades Dimensionadas:**
+Dimensionar capacidad de generación solar, almacenamiento y cargadores.
 
 | Componente | Capacidad | Especificación |
 |-----------|-----------|----------------|
@@ -50,44 +58,31 @@ Sistema inteligente de gestión de energía que optimiza la carga de **128 motos
 | **Chargers EV** | 128 unidades | 512 conexiones totales |
 | **Potencia Motos** | 112 × 2kW | 224 kW total |
 | **Potencia Mototaxis** | 16 × 3kW | 48 kW total |
-| **Resolución Temporal** | 8,760 hrs/año | Datos horarios reales |
+| **Datos Temporales** | 8,760 hrs/año | Resolución horaria |
 
 **Logros:**
-- ✅ Dimensionamiento validado con 1 año de datos horarios
-- ✅ Capacidad solar cubre demanda de carga
-- ✅ Almacenamiento optimiza uso nocturno
+- ✅ Dimensionamiento validado
 - ✅ Reducción CO₂: **99.93% - 99.94%** vs baseline
 
 ---
 
 ### OE.3 - Agente Inteligente Óptimo
 
-**Objetivo:** Seleccionar el agente inteligente de gestión de carga más apropiado para maximizar la eficiencia operativa del sistema, asegurando la contribución cuantificable a la reducción de las emisiones de dióxido de carbono en Iquitos.
+Seleccionar agente RL más apropiado para maximizar eficiencia operativa.
 
-**Agentes Evaluados y Comparados:**
+**Agentes Evaluados:**
 
 | Métrica | SAC | PPO | A2C | Ganador |
 |--------|-----|-----|-----|---------|
 | **CO₂ Reducción** | 99.93% | 99.93% | 99.94% | **A2C** 🥇 |
 | **Grid Import** | 4,000 kWh | 3,984 kWh | 3,494 kWh | **A2C** 🥇 |
-| **Velocidad Entrenamiento** | 2h 46m | 2h 26m | 2h 36m | **PPO** 🥈 |
-| **Estabilidad** | Alto | Muy Alto | Alto | **PPO** 🥈 |
-| **Eficiencia Energética** | 99.93% | 99.93% | 99.94% | **A2C** 🥇 |
+| **Velocidad** | 2h 46m | 2h 26m | 2h 36m | **PPO** ⚡ |
+| **Eficiencia** | 99.93% | 99.93% | 99.94% | **A2C** 🥇 |
 
 **Agente Seleccionado: A2C**
-
-**Razones:**
-- ✅ **Máxima reducción de CO₂:** 99.94% (mejor que SAC y PPO)
-- ✅ **Mínimo consumo de grid:** 3,494 kWh/año (óptimo)
-- ✅ **Eficiencia operativa:** Mejor aprovechamiento solar
-- ✅ **Implementación robusta:** Stable-Baselines3
-- ✅ **Resumible:** Checkpoints guardados para continuidad
-
-**Resultados Cuantificables:**
-- Reducción CO₂: **2,764,089 kg/año menos** vs baseline
-- Emisión final: **1,580 kg CO₂/año** (vs 2,765,669 baseline)
-- Eficiencia: **99.94%** de reducción sostenida
-- Confiabilidad: **EV satisfaction ≥ 95%** garantizado
+- Máxima reducción CO₂: 99.94%
+- Mínimo grid import: 3,494 kWh/año
+- Mejor eficiencia energética
 
 ---
 
@@ -100,26 +95,15 @@ CO₂ Emissions:  2,765,669 kg/año
 Solar Used:     2,870,435 kWh/año (47%)
 ```
 
-### Agentes RL Entrenados (Después de Control Inteligente)
+### Agentes RL (Después de Control Inteligente)
 
-| Agente | Grid (kWh) | CO₂ (kg) | Reducción | Ranking | Duración |
-|--------|-----------|---------|-----------|---------|----------|
-| **A2C** | 3,494 | 1,580 | **99.94%** 🥇 | Mejor energía | 2h 36m |
-| **PPO** | 3,984 | 1,806 | **99.93%** 🥈 | Más rápido | 2h 26m |
-| **SAC** | 4,000 | 1,808 | **99.93%** 🥉 | Robusto | 2h 46m |
+| Agente | Grid (kWh) | CO₂ (kg) | Reducción |
+|--------|-----------|---------|-----------|
+| **A2C** | 3,494 | 1,580 | **99.94%** 🥇 |
+| **PPO** | 3,984 | 1,806 | **99.93%** 🥈 |
+| **SAC** | 4,000 | 1,808 | **99.93%** 🥉 |
 
-**Reducción total vs Baseline:** ~99.9% de emisiones CO₂
-
-### 📈 Visualizaciones Generadas
-
-**22 gráficas en alta resolución (300 DPI) disponibles:**
-- Comparativas de agentes (SAC, PPO, A2C vs Baseline)
-- Métricas de entrenamiento (rewards, convergencia)
-- Evolución temporal (grid import, solar, CO₂)
-- Análisis de rendimiento vs baseline
-- Matriz consolidada (8 subplots, todo en 1 imagen)
-
-Ubicación: `analyses/oe3/training/graphics/` (PNG files)
+**Reducción Total: ~99.9% de emisiones CO₂**
 
 ---
 
@@ -128,17 +112,17 @@ Ubicación: `analyses/oe3/training/graphics/` (PNG files)
 ### OE2 (Dimensionamiento - Infraestructura)
 
 **Sistema Solar:**
-- Potencia: 4,050 kWp (módulos Kyocera KS20)
-- Configuración: 200,632 módulos en 6,472 strings
+- Potencia: 4,050 kWp
+- Módulos: 200,632 Kyocera KS20
 - Inversores: 2× Eaton Xpert1670
 
 **Almacenamiento (BESS):**
-- Capacidad: 4,520 kWh (real OE2)
+- Capacidad: 4,520 kWh
 - Potencia: 2,712 kW
 - Duración: ~1.67 horas a potencia máxima
 
 **Infraestructura de Carga:**
-- Chargers: 128 (4 sockets cada uno = 512 conexiones)
+- Chargers: 128 (4 sockets cada uno)
 - Motos: 112 chargers × 2 kW
 - Mototaxis: 16 chargers × 3 kW
 
@@ -148,22 +132,22 @@ Ubicación: `analyses/oe3/training/graphics/` (PNG files)
 
 **Observación:** 534 dimensiones
 - Building energy (4 features)
-- Charger states (512 features = 128 chargers × 4)
+- Charger states (512 = 128 chargers × 4)
 - Time features (4 features)
 - Grid state (2 features)
 
 **Acción:** 126 dimensiones
 - Charger power setpoints (0-1 normalized)
-- 2 chargers reservados para baseline
+- 2 chargers reservados
 
-**Función de Recompensa (Multi-objetiva):**
+**Recompensa:** Multi-objetivo
 - CO₂ minimization: 50% (primaria)
 - Solar maximization: 20%
 - Cost minimization: 10%
 - EV satisfaction: 10%
 - Grid stability: 10%
 
-**Episodio:** 8,760 timesteps (1 año, resolución horaria)
+**Episodio:** 8,760 timesteps (1 año, horario)
 
 ---
 
@@ -172,56 +156,36 @@ Ubicación: `analyses/oe3/training/graphics/` (PNG files)
 ### Opción 1: Ver Resultados Actuales
 
 ```bash
-# Ver resumen de todos los agentes
 python scripts/query_training_archive.py summary
-
-# Ver ranking
 python scripts/query_training_archive.py ranking
-
-# Ver energía (grid, CO₂, solar)
 python scripts/query_training_archive.py energy
 ```
 
-### Opción 2: Relanzamiento Completo (Nuevo Entrenamiento)
+### Opción 2: Entrenar desde Cero
 
 ```bash
-# Entrenar todos los agentes desde cero
 python -m scripts.run_oe3_simulate --config configs/default.yaml
-
 # Duración: ~8-9 horas (RTX 4060)
-# Incluye automáticamente:
-#  - Baseline (Uncontrolled)
-#  - SAC Training (26,280 steps)
-#  - PPO Training (26,280 steps)
-#  - A2C Training (26,280 steps)
 ```
 
 ### Opción 3: Entrenamientos Incrementales
 
 ```bash
-# Duplicar pasos desde checkpoints existentes
 python scripts/query_training_archive.py prepare A2C 52560
-# Output: Template listo para usar
 ```
 
 ### Opción 4: Validar Sistema
 
 ```bash
 python validar_sistema_produccion.py
-# Esperado: ✅ 6/6 checks passed
+# Esperado: 6/6 checks passed
 ```
 
-### Opción 5: Ver Gráficas Consolidadas
+### Opción 5: Ver Gráficas
 
 ```bash
-# Generar/ver gráfica consolidada con todos los agentes
 python scripts/generate_consolidated_metrics_graph.py
-
-# Incluye:
-# - 4 Métricas de entrenamiento (rewards, convergencia)
-# - 4 Métricas de mejora vs baseline (CO₂, grid, solar, eficiencia)
-
-# Salida: consolidated_metrics_all_agents.png (300 DPI)
+# Output: consolidated_metrics_all_agents.png (300 DPI)
 ```
 
 ---
@@ -230,29 +194,13 @@ python scripts/generate_consolidated_metrics_graph.py
 
 **Ubicación:** `analyses/oe3/training/graphics/` (22 PNG files @ 300 DPI)
 
-### Gráficas Individuales por Agente
-1. Mean Reward (SAC, PPO, A2C vs Baseline)
-2. CO₂ Emissions Real
-3. Grid Import Real
-4. Solar Generation Real
-5. EV Charging Real
-
-### Comparativas
-6. CO₂ Final Comparison
-7. Grid Import Final Comparison
-8. EV Charging Final Comparison
-
-### Matriz de KPIs
-9. Reducción CO₂ (% vs Baseline)
-
-### Gráficas de Evolución Temporal
-10-15. Training Steps Timeline
-16-20. Checkpoint Progress (SAC, PPO, A2C)
-
-### Consolidada (Recomendada)
-21. **consolidated_metrics_all_agents.png** - Todas las métricas en 1 imagen (8 subplots)
-
-Todos los archivos en resolución **300 DPI** listos para reportes y presentaciones.
+- Mean Reward (SAC, PPO, A2C)
+- CO₂ Emissions Real
+- Grid Import Real
+- Solar Generation Real
+- EV Charging Real
+- Comparativas finales
+- Matriz consolidada (8 subplots recomendado)
 
 ---
 
@@ -260,66 +208,32 @@ Todos los archivos en resolución **300 DPI** listos para reportes y presentacio
 
 ```
 d:\diseñopvbesscar/
+├── README.md (este archivo)
+├── configs/default.yaml
 │
-├── README.md                                    ← Este archivo (actualizado 2026-01-29)
-├── QUICKSTART.md                               ← Comandos rápidos (PRIMERO LEER)
-│
-├── 📊 DOCUMENTACIÓN PRINCIPAL
-│   ├── RELANZAMIENTO_LIMPIO.md                 ← Estado actual (conciso)
-│   ├── LIMPIEZA_Y_PREPARACION_RELANZAMIENTO.md ← Detalles técnicos
-│   ├── RESUMEN_FINAL_LIMPIEZA.md               ← Cambios realizados
-│   ├── INDICE_MAESTRO_SISTEMA_INTEGRAL.md      ← Índice completo
-│   ├── STATUS_OPERACIONAL_SISTEMA.md           ← Tablero de estado
-│   │
-│   ├── TABLA_COMPARATIVA_FINAL_CORREGIDA.md    ← Tabla de agentes
-│   ├── RESUMEN_EJECUTIVO_VALIDACION_COMPLETADA.md
-│   ├── GUIA_CONSULTAS_Y_ENTRENAMIENTOS_INCREMENTALES.md
-│   └── CIERRE_CONSOLIDACION_DATOS_ENTRENAMIENTO.md
-│
-├── 💾 DATOS CONSOLIDADOS
-│   ├── training_results_archive.json            ← BD centralizada (10 KB)
-│   └── validation_results.json                  ← Validación (30 KB)
-│
-├── 📊 GRÁFICAS GENERADAS (22 PNG @ 300 DPI)
+├── 📊 GRÁFICAS (22 PNG @ 300 DPI)
 │   └── analyses/oe3/training/graphics/
-│       ├── consolidated_metrics_all_agents.png ← RECOMENDADO (todas en 1 imagen)
-│       ├── mean_reward_all_agents.png
-│       ├── co2_emissions_real_*.png (SAC, PPO, A2C)
-│       ├── grid_import_real_*.png
-│       ├── solar_real_*.png
-│       ├── ev_charging_real_*.png
-│       └── training_steps_*.png (evolución temporal)
 │
 ├── 🤖 AGENTES ENTRENADOS (1.82 GB)
 │   └── analyses/oe3/training/checkpoints/
-│       ├── sac/                                 ← SAC checkpoints (774.5 MB)
-│       │   ├── sac_final.zip
-│       │   └── sac_step_*.zip (52 intermedios)
-│       ├── ppo/                                 ← PPO checkpoints (392.4 MB)
-│       │   ├── ppo_final.zip
-│       │   └── ppo_step_*.zip (52 intermedios)
-│       └── a2c/                                 ← A2C checkpoints (654.3 MB)
-│           ├── a2c_final.zip
-│           └── a2c_step_*.zip (131 intermedios)
+│       ├── sac/  (774.5 MB)
+│       ├── ppo/  (392.4 MB)
+│       └── a2c/  (654.3 MB)
 │
-├── 🛠️ UTILIDADES
-│   ├── scripts/query_training_archive.py        ← Consultas (10+ comandos)
-│   ├── scripts/run_oe3_simulate.py              ← Entrenamiento principal (LIMPIO)
-│   ├── validar_sistema_produccion.py            ← Validación integral
-│   └── ejemplo_entrenamiento_incremental.py     ← Template para incremental
-│
-├── 📦 CONFIGURACIÓN
-│   ├── configs/default.yaml                     ← Config principal
-│   └── pyproject.toml
+├── 🛠️ SCRIPTS
+│   ├── query_training_archive.py
+│   ├── run_oe3_simulate.py
+│   ├── generate_consolidated_metrics_graph.py
+│   └── validar_sistema_produccion.py
 │
 └── 📚 FUENTES
     └── src/iquitos_citylearn/
         ├── oe3/
-        │   ├── dataset_builder.py               ← Construye schema CityLearn
-        │   ├── simulate.py                      ← Loop de entrenamiento
-        │   ├── rewards.py                       ← Función de recompensa
-        │   └── agents/                          ← SAC, PPO, A2C implementación
-        └── config.py                            ← Carga configuración
+        │   ├── dataset_builder.py
+        │   ├── simulate.py
+        │   ├── rewards.py
+        │   └── agents/
+        └── config.py
 ```
 
 ---
@@ -331,13 +245,13 @@ d:\diseñopvbesscar/
 ```
 CHECK 1: Archive Integrity                      ✅ PASSED
 CHECK 2: Checkpoints Functional                 ✅ PASSED (240 files, 1.82 GB)
-CHECK 3: Training Configuration                 ✅ PASSED (3×8760=26,280 coherent)
-CHECK 4: Metrics & Convergence                  ✅ PASSED (CO₂/Grid ratio 0.45)
-CHECK 5: Scripts & Utilities                    ✅ PASSED (all present)
-CHECK 6: Production Readiness                   ✅ PASSED (all resumible)
+CHECK 3: Training Configuration                 ✅ PASSED
+CHECK 4: Metrics & Convergence                  ✅ PASSED
+CHECK 5: Scripts & Utilities                    ✅ PASSED
+CHECK 6: Production Readiness                   ✅ PASSED
 ```
 
-Ejecutar validación:
+Ejecutar:
 ```bash
 python validar_sistema_produccion.py
 ```
@@ -346,154 +260,56 @@ python validar_sistema_produccion.py
 
 ## 🧹 CALIDAD DE CÓDIGO
 
-**Estado:** ✅ **ZERO PYLANCE ERRORS** (29 ENE 2026)
+**Estado:** ✅ **ZERO PYLANCE ERRORS**
 
-### Correcciones Realizadas
-- **84 errores Pylance** → **0 errores** ✅
-- **Type hints** agregadas en todos los scripts
-- **Imports no usados** eliminados
-- **Unicode/emoji** reemplazados con ASCII
-- **Variables sin usar** comentadas o ignoradas
-- **Compilación Python** verificada exitosamente
-
-### Scripts Corregidos
-| Script | Errores | Estado |
-|--------|---------|--------|
-| `scripts/generar_graficas_training_steps.py` | 11 | ✅ |
-| `scripts/generar_graficas_reales_oe3.py` | 15+ | ✅ |
-| `scripts/query_training_archive.py` | 28 | ✅ |
-| `scripts/generate_consolidated_metrics_graph.py` | 3 | ✅ |
-| `run_ppo_only.py` | 6 | ✅ |
-| Otros archivos | ~20 | ✅ |
-
-### Verificación
-```bash
-# Compilar todos los scripts sin errores
-python -m py_compile scripts/*.py
-
-# Status: ✅ EXITOSA
-```
-
----
-
-## 📚 DOCUMENTACIÓN DE REFERENCIA
-
-### Para Comenzar (Primero)
-- [QUICKSTART.md](./QUICKSTART.md) - Comandos rápidos (1 minuto)
-- [RELANZAMIENTO_LIMPIO.md](./RELANZAMIENTO_LIMPIO.md) - Estado actual (5 minutos)
-
-### Para Entender el Sistema
-- [INDICE_MAESTRO_SISTEMA_INTEGRAL.md](./INDICE_MAESTRO_SISTEMA_INTEGRAL.md) - Índice completo (10 minutos)
-- [STATUS_OPERACIONAL_SISTEMA.md](./STATUS_OPERACIONAL_SISTEMA.md) - Tablero visual (5 minutos)
-
-### Para Resultados y Comparativas
-- [TABLA_COMPARATIVA_FINAL_CORREGIDA.md](./TABLA_COMPARATIVA_FINAL_CORREGIDA.md) - Tabla de agentes
-- [RESUMEN_EJECUTIVO_VALIDACION_COMPLETADA.md](./RESUMEN_EJECUTIVO_VALIDACION_COMPLETADA.md) - Resumen ejecutivo
-
-### Para Desarrolladores
-- [GUIA_CONSULTAS_Y_ENTRENAMIENTOS_INCREMENTALES.md](./GUIA_CONSULTAS_Y_ENTRENAMIENTOS_INCREMENTALES.md) - Cómo usar scripts
-- [LIMPIEZA_Y_PREPARACION_RELANZAMIENTO.md](./LIMPIEZA_Y_PREPARACION_RELANZAMIENTO.md) - Cambios técnicos
-
-### Para Arquitectura
-- [CIERRE_CONSOLIDACION_DATOS_ENTRENAMIENTO.md](./CIERRE_CONSOLIDACION_DATOS_ENTRENAMIENTO.md) - Diseño del sistema
+- Type hints: Agregadas en todos los scripts
+- Imports no usados: Eliminados
+- Unicode/emoji: Reemplazados con ASCII
+- Compilación Python: Verificada
 
 ---
 
 ## 🔧 SCRIPTS DISPONIBLES
 
-### Consultas y Análisis
-| Script | Comando | Descripción |
-|--------|---------|-------------|
-| `query_training_archive.py` | `python scripts/query_training_archive.py summary` | Resumen de todos los agentes |
-| | `python scripts/query_training_archive.py ranking` | Ranking por eficiencia |
-| | `python scripts/query_training_archive.py energy` | Métricas de energía |
-| | `python scripts/query_training_archive.py performance` | Rewards y convergencia |
-| | `python scripts/query_training_archive.py duration` | Velocidad de entrenamiento |
+### Consultas
 
-### Gráficas
-| Script | Comando | Descripción |
-|--------|---------|-------------|
-| `generate_consolidated_metrics_graph.py` | `python scripts/generate_consolidated_metrics_graph.py` | Gráfica consolidada (8 subplots) |
-| `generar_graficas_reales_oe3.py` | `python scripts/generar_graficas_reales_oe3.py` | Gráficas individuales por agente |
-| `generar_graficas_training_steps.py` | `python scripts/generar_graficas_training_steps.py` | Evolución temporal de pasos |
+| Comando | Descripción |
+|---------|-------------|
+| `query_training_archive.py summary` | Resumen de agentes |
+| `query_training_archive.py ranking` | Ranking |
+| `query_training_archive.py energy` | Métricas de energía |
+| `query_training_archive.py performance` | Rewards |
+| `query_training_archive.py duration` | Velocidad |
 
-### Entrenamiento y Simulación
-| Script | Comando | Descripción |
-|--------|---------|-------------|
-| `run_oe3_simulate.py` | `python -m scripts.run_oe3_simulate --config configs/default.yaml` | Entrenamiento completo (SAC, PPO, A2C) |
-| `run_uncontrolled_baseline.py` | `python -m scripts.run_uncontrolled_baseline --config configs/default.yaml` | Baseline sin control inteligente |
+### Entrenamiento
 
-### Validación
-| Script | Comando | Descripción |
-|--------|---------|-------------|
-| `validar_sistema_produccion.py` | `python validar_sistema_produccion.py` | Validación integral (6 checks) |
-| `validate_integration.py` | `python validate_integration.py` | Validación de integración |
+| Comando | Descripción |
+|---------|-------------|
+| `run_oe3_simulate.py` | Entrenamiento completo |
+| `run_uncontrolled_baseline.py` | Baseline sin control |
 
----
+### Utilidades
 
-## 🔧 COMANDOS PRINCIPALES
-
-### Ver Datos
-
-```bash
-# Resumen completo de agentes
-python scripts/query_training_archive.py summary
-
-# Ranking de agentes
-python scripts/query_training_archive.py ranking
-
-# Mejor agente
-python scripts/query_training_archive.py best overall
-
-# Energía (grid, CO₂, solar)
-python scripts/query_training_archive.py energy
-
-# Performance (rewards, losses)
-python scripts/query_training_archive.py performance
-
-# Velocidad de entrenamiento
-python scripts/query_training_archive.py duration
-
-# Reducciones vs baseline
-python scripts/query_training_archive.py reductions
-```
-
-### Entrenar
-
-```bash
-# Relanzamiento completo (RECOMENDADO)
-python -m scripts.run_oe3_simulate --config configs/default.yaml
-
-# Preparar para entrenamientos incrementales
-python scripts/query_training_archive.py prepare A2C 52560
-```
-
-### Validar
-
-```bash
-# Validación integral del sistema
-python validar_sistema_produccion.py
-
-# Output esperado: 🟢 6/6 CHECKS PASSED
-```
+| Comando | Descripción |
+|---------|-------------|
+| `validar_sistema_produccion.py` | Validación (6 checks) |
+| `generate_consolidated_metrics_graph.py` | Gráficas |
 
 ---
 
 ## 🐍 REQUISITOS
 
 - **Python:** 3.11+
-- **Dependencies:** Ver `requirements.txt` y `requirements-training.txt`
-- **GPU:** Recomendado (RTX 4060 o superior)
+- **GPU:** Recomendado (RTX 4060+)
 - **RAM:** 16 GB mínimo
-- **Almacenamiento:** 5 GB (incluye checkpoints)
+- **Almacenamiento:** 5 GB
 
 **Instalación:**
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
-
 pip install -r requirements.txt
-pip install -r requirements-training.txt  # Para GPU training
+pip install -r requirements-training.txt
 ```
 
 ---
@@ -502,22 +318,19 @@ pip install -r requirements-training.txt  # Para GPU training
 
 ### Multi-Objetivo Reward
 
-El sistema optimiza 5 objetivos simultáneamente:
+1. **CO₂ Minimization (50%)** - Reduce grid imports
+2. **Solar Maximization (20%)** - Usa energía solar directa
+3. **Cost Minimization (10%)** - Minimiza tarifa
+4. **EV Satisfaction (10%)** - ≥95% satisfacción
+5. **Grid Stability (10%)** - Reduce picos
 
-1. **CO₂ Minimization (50%)** - Primaria: Reduce grid imports (0.4521 kg CO₂/kWh)
-2. **Solar Maximization (20%)** - Usa energía solar directa en lugar de grid
-3. **Cost Minimization (10%)** - Minimiza tarifa ($0.20/kWh, baja prioridad)
-4. **EV Satisfaction (10%)** - Garantiza ≥95% de satisfacción
-5. **Grid Stability (10%)** - Reduce picos de demanda
+### Dispatch Rules (Prioridad)
 
-### Dispatch Rules (BESS Control)
-
-Prioridad de uso de energía:
-1. **PV→EV** - Solar directo a chargers (costo=0)
-2. **PV→BESS** - Cargar batería en peak solar
-3. **BESS→EV** - Usar batería en noche
-4. **BESS→Grid** - Vender exceso cuando SOC>95%
-5. **Grid Import** - Último recurso si hay deficit
+1. **PV→EV** - Solar directo
+2. **PV→BESS** - Cargar batería
+3. **BESS→EV** - Noche
+4. **BESS→Grid** - Exceso (SOC>95%)
+5. **Grid Import** - Último recurso
 
 ---
 
@@ -527,7 +340,6 @@ Prioridad de uso de energía:
 Agentes Entrenados:      3 (SAC, PPO, A2C)
 Checkpoints:             240 files (1.82 GB)
 Validación:              6/6 CHECKS ✅
-Limpieza:                ✅ COMPLETADA (sin skip flags)
 Ready para Producción:   🟢 YES
 ```
 
@@ -537,61 +349,31 @@ Ready para Producción:   🟢 YES
 
 | Problema | Solución |
 |----------|----------|
-| ¿Qué es esto? | Leer [QUICKSTART.md](./QUICKSTART.md) |
-| ¿Cuál es el mejor agente? | `python scripts/query_training_archive.py best overall` |
-| ¿Cómo relanzar? | `python -m scripts.run_oe3_simulate --config configs/default.yaml` |
-| ¿Sistema roto? | `python validar_sistema_produccion.py` |
-| ¿Ver todos los comandos? | `python scripts/query_training_archive.py --help` |
+| Ver resultados | `python scripts/query_training_archive.py summary` |
+| Mejor agente | `python scripts/query_training_archive.py best overall` |
+| Entrenar | `python -m scripts.run_oe3_simulate --config configs/default.yaml` |
+| Validar | `python validar_sistema_produccion.py` |
+| Ver gráficas | `python scripts/generate_consolidated_metrics_graph.py` |
 
 ---
 
 ## 📈 PRÓXIMOS PASOS
 
-### Inmediato (Hoy)
-1. ✅ Validar sistema: `python validar_sistema_produccion.py`
-2. ✅ Ver resultados: `python scripts/query_training_archive.py summary`
-3. ⚠️ Relanzar si necesario: `python -m scripts.run_oe3_simulate --config configs/default.yaml`
-
-### Corto Plazo (Esta Semana)
-- Entrenamientos incrementales desde checkpoints
-- Análisis comparativo con resultados anteriores
-- Optimización de hyperparámetros si necesario
-
-### Mediano Plazo (Este Mes)
-- Deploying en producción
-- Integración con sistema real Iquitos
-- Monitoring en vivo
+1. **Validar:** `python validar_sistema_produccion.py`
+2. **Ver resultados:** `python scripts/query_training_archive.py summary`
+3. **Entrenar:** `python -m scripts.run_oe3_simulate --config configs/default.yaml`
+4. **Deployment:** Integración en Iquitos
 
 ---
 
-## 📜 HISTORIAL
-
-| Fecha | Evento |
-|-------|--------|
-| 28 ENE | ✅ SAC completado (26,280 steps, 2h 46min) |
-| 28 ENE | ✅ PPO completado (26,280 steps, 2h 26min) |
-| 29 ENE | ✅ A2C completado (26,280 steps, 2h 36min) |
-| 29 ENE | ✅ Validación integral (6/6 checks) |
-| 29 ENE | ✅ Limpieza de skip flags |
-| 29 ENE | ✅ Documentación actualizada |
-| 29 ENE | ✅ Corrección de 84 errores Pylance → ZERO |
-| 29 ENE | ✅ Gráficas consolidadas generadas (22 PNG) |
-
----
-
-## 📄 LICENCIA Y CRÉDITOS
+## 📄 LICENCIA
 
 Proyecto: **PVBESSCAR - EV+PV/BESS Energy Management (Iquitos, Perú)**
 
-**Componentes:**
-- CityLearn v2 (Energy simulation)
-- Stable-Baselines3 (RL algorithms)
-- PyTorch (Deep learning)
+Componentes: CityLearn v2 | Stable-Baselines3 | PyTorch
 
 ---
 
-**Última Actualización:** 29 de Enero de 2026, 03:40 UTC  
+**Última Actualización:** 29 de Enero de 2026  
 **Estado:** 🟢 OPERACIONAL Y VALIDADO  
-**Autor:** GitHub Copilot  
-**Sistema:** INTEGRAL Y SISTEMÁTICO
-
+**Autor:** GitHub Copilot
