@@ -186,7 +186,7 @@ oe3:
     a2c:
       batch_size: 64 # ON-POLICY SIMPLE: Memory ~1.0GB, Batch 64
       checkpoint_freq_steps: 200
-      device: cuda
+      device: cpu # Changed from cuda to avoid PyTorch Dynamo issues
       entropy_coef: 0.001
       episodes: 3
       gamma: 0.99 # Paper standard
