@@ -219,7 +219,7 @@ oe3:
     ppo:
       batch_size: 32 # ON-POLICY: Memory ~600MB, Batch 32 (REDUCED from 64, paper uses 128)
       checkpoint_freq_steps: 500
-      device: cuda
+      device: cpu
       episodes: 3
       ent_coef: 0.001
       gamma: 0.99 # Paper standard

@@ -24,9 +24,6 @@ def _tailpipe_kg(cfg: dict, ev_kwh: float, simulated_years: float) -> float:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/default.yaml")
-    ap.add_argument("--skip-uncontrolled", action="store_true", help="Reutilizar baseline Uncontrolled si existe en simulation_summary.json")
-    ap.add_argument("--skip-baseline", action="store_true", help="Saltar cálculo de baseline Uncontrolled completamente")
-    ap.add_argument("--skip-agents", nargs="+", default=[], help="Saltar estos agentes (ej: SAC PPO). Usa solo agentes que ya terminaron.")
     args = ap.parse_args()
 
     setup_logging()
@@ -104,17 +101,9 @@ def main() -> None:
     det_eval = bool(sac_cfg.get("deterministic_eval", True))
     mo_priority = str(oe3_cfg["evaluation"].get("multi_objective_priority", "balanced"))
 
-    # Opcional: reutilizar baseline de un resumen previo
-    summary_path = out_dir / "simulation_summary.json"
-    res_uncontrolled = None
-    if args.skip_uncontrolled and summary_path.exists():
-        prev = json.loads(summary_path.read_text(encoding="utf-8"))
-        if "pv_bess_uncontrolled" in prev:
-            res_uncontrolled = prev["pv_bess_uncontrolled"]
-
     # Baseline: Electrified transport + PV+BESS + no control (Uncontrolled)
     # Este es el único baseline necesario - también se usa para calcular tailpipe
-    if res_uncontrolled is None and not args.skip_baseline:
+    if True:
         res_uncontrolled_obj = simulate(
             schema_path=schema_pv,
             agent_name="Uncontrolled",
@@ -154,20 +143,12 @@ def main() -> None:
 
     # Scenario B: Electrified transport + PV+BESS + control (evaluate candidate agents)
     agent_names = list(eval_cfg["agents"])
-    # Convertir skip_agents a mayúsculas para comparación
-    skip_agents_upper = [a.upper() for a in args.skip_agents]
     logger = logging.getLogger(__name__)
 
     results = {}
     for agent in agent_names:
         # Skip Uncontrolled in this loop - it will be run in Scenario C as baseline
         if agent.lower() == "uncontrolled":
-            continue
-
-        # Skip agents especificados en línea de comandos
-        if agent.upper() in skip_agents_upper:
-            logger.info(f"[SKIP] {agent.upper()} - Saltado por --skip-agents")
-            print(f"[SKIP] {agent.upper()} - Saltado por --skip-agents")
             continue
 
         # Skip if results already exist
