@@ -455,6 +455,7 @@ def simulate(
     seconds_per_time_step: int,
     sac_episodes: int = 10,
     sac_batch_size: int = 512,
+    sac_learning_rate: float = 1e-5,          # ✅ AGREGADO: default 1e-5
     sac_log_interval: int = 500,
     sac_use_amp: bool = True,
     ppo_timesteps: int = 100000,
@@ -586,9 +587,9 @@ def simulate(
                 device=sac_device or "auto",
                 seed=seed if seed is not None else 42,
                 batch_size=int(sac_kwargs.pop("batch_size", sac_batch_size) if sac_kwargs else sac_batch_size),
-                buffer_size=int(sac_kwargs.pop("buffer_size", 500000) if sac_kwargs else 500000),
-                gradient_steps=int(sac_kwargs.pop("gradient_steps", 4) if sac_kwargs else 4),
-                learning_rate=3e-4,
+                buffer_size=int(sac_kwargs.pop("buffer_size", 50000) if sac_kwargs else 50000),
+                gradient_steps=int(sac_kwargs.pop("gradient_steps", 1) if sac_kwargs else 1),
+                learning_rate=float(sac_learning_rate),  # ✅ USAR PARÁMETRO
                 gamma=0.99,
                 tau=0.005,
                 hidden_sizes=(256, 256),
