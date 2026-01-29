@@ -36,6 +36,17 @@ Solar Used:     2,870,435 kWh/año (47%)
 
 **Reducción total vs Baseline:** ~99.9% de emisiones CO₂
 
+### 📈 Visualizaciones Generadas
+
+**22 gráficas en alta resolución (300 DPI) disponibles:**
+- Comparativas de agentes (SAC, PPO, A2C vs Baseline)
+- Métricas de entrenamiento (rewards, convergencia)
+- Evolución temporal (grid import, solar, CO₂)
+- Análisis de rendimiento vs baseline
+- Matriz consolidada (8 subplots, todo en 1 imagen)
+
+Ubicación: `analyses/oe3/training/graphics/` (PNG files)
+
 ---
 
 ## 🏗️ ARQUITECTURA DEL SISTEMA
@@ -126,6 +137,49 @@ python validar_sistema_produccion.py
 # Esperado: ✅ 6/6 checks passed
 ```
 
+### Opción 5: Ver Gráficas Consolidadas
+
+```bash
+# Generar/ver gráfica consolidada con todos los agentes
+python scripts/generate_consolidated_metrics_graph.py
+
+# Incluye:
+# - 4 Métricas de entrenamiento (rewards, convergencia)
+# - 4 Métricas de mejora vs baseline (CO₂, grid, solar, eficiencia)
+
+# Salida: consolidated_metrics_all_agents.png (300 DPI)
+```
+
+---
+
+## 📈 GRÁFICAS DISPONIBLES
+
+**Ubicación:** `analyses/oe3/training/graphics/` (22 PNG files @ 300 DPI)
+
+### Gráficas Individuales por Agente
+1. Mean Reward (SAC, PPO, A2C vs Baseline)
+2. CO₂ Emissions Real
+3. Grid Import Real
+4. Solar Generation Real
+5. EV Charging Real
+
+### Comparativas
+6. CO₂ Final Comparison
+7. Grid Import Final Comparison
+8. EV Charging Final Comparison
+
+### Matriz de KPIs
+9. Reducción CO₂ (% vs Baseline)
+
+### Gráficas de Evolución Temporal
+10-15. Training Steps Timeline
+16-20. Checkpoint Progress (SAC, PPO, A2C)
+
+### Consolidada (Recomendada)
+21. **consolidated_metrics_all_agents.png** - Todas las métricas en 1 imagen (8 subplots)
+
+Todos los archivos en resolución **300 DPI** listos para reportes y presentaciones.
+
 ---
 
 ## 📁 ESTRUCTURA DEL PROYECTO
@@ -134,7 +188,7 @@ python validar_sistema_produccion.py
 d:\diseñopvbesscar/
 │
 ├── README.md                                    ← Este archivo (actualizado 2026-01-29)
-├── QUICKSTART.md                               ← Comandos rápidos (PRÍ MERO LEER)
+├── QUICKSTART.md                               ← Comandos rápidos (PRIMERO LEER)
 │
 ├── 📊 DOCUMENTACIÓN PRINCIPAL
 │   ├── RELANZAMIENTO_LIMPIO.md                 ← Estado actual (conciso)
@@ -151,6 +205,16 @@ d:\diseñopvbesscar/
 ├── 💾 DATOS CONSOLIDADOS
 │   ├── training_results_archive.json            ← BD centralizada (10 KB)
 │   └── validation_results.json                  ← Validación (30 KB)
+│
+├── 📊 GRÁFICAS GENERADAS (22 PNG @ 300 DPI)
+│   └── analyses/oe3/training/graphics/
+│       ├── consolidated_metrics_all_agents.png ← RECOMENDADO (todas en 1 imagen)
+│       ├── mean_reward_all_agents.png
+│       ├── co2_emissions_real_*.png (SAC, PPO, A2C)
+│       ├── grid_import_real_*.png
+│       ├── solar_real_*.png
+│       ├── ev_charging_real_*.png
+│       └── training_steps_*.png (evolución temporal)
 │
 ├── 🤖 AGENTES ENTRENADOS (1.82 GB)
 │   └── analyses/oe3/training/checkpoints/
@@ -258,6 +322,38 @@ python -m py_compile scripts/*.py
 
 ### Para Arquitectura
 - [CIERRE_CONSOLIDACION_DATOS_ENTRENAMIENTO.md](./CIERRE_CONSOLIDACION_DATOS_ENTRENAMIENTO.md) - Diseño del sistema
+
+---
+
+## 🔧 SCRIPTS DISPONIBLES
+
+### Consultas y Análisis
+| Script | Comando | Descripción |
+|--------|---------|-------------|
+| `query_training_archive.py` | `python scripts/query_training_archive.py summary` | Resumen de todos los agentes |
+| | `python scripts/query_training_archive.py ranking` | Ranking por eficiencia |
+| | `python scripts/query_training_archive.py energy` | Métricas de energía |
+| | `python scripts/query_training_archive.py performance` | Rewards y convergencia |
+| | `python scripts/query_training_archive.py duration` | Velocidad de entrenamiento |
+
+### Gráficas
+| Script | Comando | Descripción |
+|--------|---------|-------------|
+| `generate_consolidated_metrics_graph.py` | `python scripts/generate_consolidated_metrics_graph.py` | Gráfica consolidada (8 subplots) |
+| `generar_graficas_reales_oe3.py` | `python scripts/generar_graficas_reales_oe3.py` | Gráficas individuales por agente |
+| `generar_graficas_training_steps.py` | `python scripts/generar_graficas_training_steps.py` | Evolución temporal de pasos |
+
+### Entrenamiento y Simulación
+| Script | Comando | Descripción |
+|--------|---------|-------------|
+| `run_oe3_simulate.py` | `python -m scripts.run_oe3_simulate --config configs/default.yaml` | Entrenamiento completo (SAC, PPO, A2C) |
+| `run_uncontrolled_baseline.py` | `python -m scripts.run_uncontrolled_baseline --config configs/default.yaml` | Baseline sin control inteligente |
+
+### Validación
+| Script | Comando | Descripción |
+|--------|---------|-------------|
+| `validar_sistema_produccion.py` | `python validar_sistema_produccion.py` | Validación integral (6 checks) |
+| `validate_integration.py` | `python validate_integration.py` | Validación de integración |
 
 ---
 
