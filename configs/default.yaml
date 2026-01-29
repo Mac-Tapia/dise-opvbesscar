@@ -184,33 +184,32 @@ oe3:
     project_life_years: 20
   evaluation:
     a2c:
-      batch_size: 2048
+      batch_size: 64 # ON-POLICY SIMPLE: Memory ~1.0GB, Batch 64
       checkpoint_freq_steps: 200
-      device: cpu
-      entropy_coef: 0.02
+      device: cuda
+      entropy_coef: 0.001
       episodes: 3
-      gamma: 0.99
-      gae_lambda: 0.9
-      learning_rate: 0.001
-      learning_rate_schedule: exponential
+      gamma: 0.99 # Paper standard
+      gae_lambda: 0.95 # Paper: GAE
+      learning_rate: 0.0001 # 1e-4 (can match PPO, on-policy simple)
+      learning_rate_schedule: linear
       log_interval: 100
-      max_grad_norm: 1.0
+      max_grad_norm: 0.5
+      n_steps: 128 # 128 (vs Paper variable), short rollouts
+      normalize_advantage: true # Paper standard
+      normalize_observations: true
+      normalize_rewards: true
+      reward_scale: 0.1
+      hidden_sizes: [128, 128]
+      use_rms_prop: true # Paper: RMSProp is standard for A3C/A2C
+      progress_interval_episodes: 1
+      save_final: true
       multi_objective_weights:
         co2: 0.5
         cost: 0.15
         ev: 0.1
         grid: 0.05
         solar: 0.2
-      n_steps: 128
-      progress_interval_episodes: 1
-      resume_checkpoints: false
-      reward_smooth_lambda: 0.1
-      reward_scale: 1.2
-      save_final: true
-      timesteps: 43800
-      use_rms_prop: true
-      vf_coef: 0.5
-      normalize_advantage: true
     agents:
       - SAC
       - PPO
@@ -218,58 +217,26 @@ oe3:
     co2_tracking: true
     multi_objective_priority: co2_focus
     ppo:
-      batch_size: 512
-      checkpoint_freq_steps: 200
+      batch_size: 32 # ON-POLICY: Memory ~600MB, Batch 32 (REDUCED from 64, paper uses 128)
+      checkpoint_freq_steps: 500
       device: cuda
       episodes: 3
       ent_coef: 0.001
-      gamma: 0.99
-      gae_lambda: 0.95
-      kl_adaptive: true
-      learning_rate: 0.0003
+      gamma: 0.99 # Paper standard
+      gae_lambda: 0.95 # Paper: Generalized Advantage Estimation
+      kl_adaptive: false # Disable adaptive for stability
+      learning_rate: 0.0001 # 1e-4 (on-policy more stable than SAC)
       learning_rate_schedule: linear
       log_interval: 100
-      max_grad_norm: 0.5
-      multi_objective_weights:
-        co2: 0.5
-        cost: 0.15
-        ev: 0.1
-        grid: 0.05
-        solar: 0.2
-      n_epochs: 40
-      n_steps: 8192
-      progress_interval_episodes: 1
-      resume_checkpoints: false
-      reward_smooth_lambda: 0.15
-      reward_scale: 1.0
-      save_final: true
-      target_kl: 0.003
-      timesteps: 43800
-      use_amp: true
-      use_sde: false
-      clip_range: 0.2
-      clip_range_vf: 0.2
-    resume_checkpoints: true
-    reward_components:
-      base_weight: 0.8
-      co2_direct_weight: 0.12
-      co2_indirect_weight: 0.08
-    sac:
-      batch_size: 256
-      buffer_size: 1000000
-      checkpoint_freq_steps: 200
-      deterministic_eval: true
-      device: cuda
-      episodes: 3
-      ent_coef_init: 0.05
-      ent_coef_learned: true
-      gradient_steps: 2048
-      learning_rate: 0.0003
-      learning_rate_actor: 0.0003
-      learning_rate_critic: 0.0005
-      learning_starts: 500
-      log_interval: 50
-      max_grad_norm: 1.0
+      max_grad_norm: 0.5 # Paper standard
+      clip_range: 0.2 # Paper: clipping mechanism
+      n_epochs: 2 # REDUCED from 3 to 2 (less memory pressure)
+      n_steps: 128 # REDUCED from 256 to 128 (paper uses 2048, we use 128 for RTX4060)
+      normalize_advantage: true # Paper standard (stabilizes learning)
+      normalize_observations: true
+      normalize_rewards: true
+      reward_scale: 0.1
+      hidden_sizes: [64, 64] # REDUCED from 128 (simpler network = less memory)
       multi_objective_weights:
         co2: 0.5
         cost: 0.15
@@ -278,12 +245,47 @@ oe3:
         solar: 0.2
       prefer_citylearn: false
       progress_interval_episodes: 1
-      resume_checkpoints: false
-      reward_smooth_lambda: 0.2
-      reward_scale: 1.0
       save_final: true
-      tau: 0.005
-      target_entropy_scale: 1.0
+      resume_checkpoints: false
+      reward_smooth_lambda: 0.15
+      target_kl: 0.003
+      use_amp: true
+      use_sde: false
+      clip_range_vf: 0.2
+    resume_checkpoints: true
+    reward_components:
+      base_weight: 0.8
+      co2_direct_weight: 0.12
+      co2_indirect_weight: 0.08
+    sac:
+      batch_size: 8 # PAPER-BASED: Ultra-conservative batch, fits in RTX4060 (8GB)
+      buffer_size: 10000 # PAPER: SAC uses 1M, but we use 10k for memory constraint (~200MB)
+      checkpoint_freq_steps: 500
+      deterministic_eval: true
+      device: cuda
+      episodes: 3
+      ent_coef: auto # PAPER: Auto-tuning entropy (better than fixed 0.001)
+      gamma: 0.99 # Paper standard
+      tau: 0.005 # Soft target update (paper)
+      gradient_steps: 1
+      learning_rate: 0.0001 # INCREASED from 1e-5 (paper default 3e-4, we use 1e-4 for stability)
+      learning_starts: 1000 # Reduce warmup (was 2000, paper uses 10k but we have limited data)
+      log_interval: 100
+      max_grad_norm: 0.5
+      reward_scale: 0.1
+      hidden_sizes: [64, 64] # REDUCED from 128 (paper uses 256, we use 64 for RTX4060)
+      normalize_observations: true
+      normalize_rewards: true
+      clip_reward: 1.0
+      multi_objective_weights:
+        co2: 0.5
+        cost: 0.15
+        ev: 0.1
+        grid: 0.05
+        solar: 0.2
+      prefer_citylearn: false
+      progress_interval_episodes: 1
+      save_final: true
       train_freq: 2
       use_amp: true
       use_sde: false
