@@ -15,6 +15,7 @@
 | **Resultados** | Agentes entrenados y métricas |
 | **Arquitectura** | OE2 (infraestructura) + OE3 (RL) |
 | **Análisis Detallado** | 📊 [Análisis Completo OE3](ANALISIS_DETALLADO_OE3_RESULTADOS.md) |
+| **📚 Documentación CO₂** | 🎯 [Índice Master](INDICE_DOCUMENTACION_RESULTADOS_CO2.md) \| ⚡ [1 página](CHEATSHEET_EXPLICACION_1PAGINA.md) |
 | **Inicio Rápido** | 5 opciones para comenzar |
 | **Scripts** | Herramientas disponibles |
 | **Validación** | Estado del sistema (6/6 checks) |
