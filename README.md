@@ -16,6 +16,7 @@
 | **Arquitectura** | OE2 (infraestructura) + OE3 (RL) |
 | **Análisis Detallado** | 📊 [Análisis Completo OE3](ANALISIS_DETALLADO_OE3_RESULTADOS.md) |
 | **📚 Documentación CO₂** | 🎯 [Índice Master](INDICE_DOCUMENTACION_RESULTADOS_CO2.md) \| ⚡ [1 página](CHEATSHEET_EXPLICACION_1PAGINA.md) |
+| **🎯 Selección A2C** | 📋 [Multi-Objetivo & Justificación](SELECCION_A2C_MULTI_OBJETIVO_JUSTIFICACION.md) |
 | **Inicio Rápido** | 5 opciones para comenzar |
 | **Scripts** | Herramientas disponibles |
 | **Validación** | Estado del sistema (6/6 checks) |
