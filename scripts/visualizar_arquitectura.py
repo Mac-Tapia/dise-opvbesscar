@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Visualización de la arquitectura de control de agentes RL para Iquitos EV Mall.
-Muestra cómo los agentes controlan 128 chargers, hacen predicciones y ajustan dinámicamente.
+Muestra cómo los agentes controlan 32 cargadores (128 sockets), hacen predicciones y ajustan dinámicamente.
 """
 from __future__ import annotations
 
@@ -257,7 +257,8 @@ def main():
     print_metrics()
     print("\n" + "="*120)
     print("Conclusión: Sistema de control CENTRALIZADO, DINÁMICO, y PREDICTIVO")
-    print("Control granular: 128 chargers × 4 sockets = 512 sockets controlados")
+    print("Control granular: 32 cargadores (128 sockets) × 4 sockets por cargador = 128 observables")
+    print("Configuración: 28 motos (56 kW) + 4 mototaxis (12 kW) = 68 kW potencia total")
     print("Predicción: Implícita en redes neuronales (features temporales)")
     print("Aprendizaje: Continuo (SAC/PPO/A2C mejoran cada episode)")
     print("="*120 + "\n")

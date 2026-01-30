@@ -1,28 +1,29 @@
 """
-Módulo de dimensionamiento de cargadores EV para motos y mototaxis.
+Módulo de dimensionamiento de cargadores EV para motos y mototaxis en Iquitos.
 
 Incluye:
 - Cálculo de cantidad de vehículos a cargar (diario, mensual, anual)
 - Dimensionamiento de cargadores por escenarios
-- Perfil de carga diario con horas pico (96 intervalos de 15 min)
+- Perfil de carga horario (24 intervalos)
 - Preparación de datos para control individual de cargadores en CityLearn
 
-INTEGRACIÓN SISTEMA COMPLETO (OE2):
-====================================
+INTEGRACIÓN SISTEMA COMPLETO (OE2 REAL):
+==========================================
 
 CARGADORES EV (TOMAS CONTROLABLES):
-- Configuración: 112 tomas para motos (2 kW c/u) + 16 tomas para mototaxis (3 kW c/u)
-- Total tomas: 128 (cada toma controlada de forma INDEPENDIENTE)
-- Capacidad instalada: 272 kW máximo
-- Perfil de carga: 15 minutos (96 intervalos/día)
-- Energía diaria: 3,252 kWh (perfil completo)
-- Horario operación: 09:00 - 22:00 (13 horas)
-- Horario pico: 18:00 - 22:00 (4 horas)
+- Configuración: 28 cargadores para motos (2 kW c/u) + 4 cargadores para mototaxis (3 kW c/u)
+- Sockets totales: 128 (4 sockets por cargador, cada socket controlado INDEPENDIENTEMENTE)
+- Potencia simultánea: 68 kW máximo (56 kW motos + 12 kW mototaxis)
+- Energía diaria: 14,976 kWh (demanda total operacional)
+- Horario operación: 09:00 - 22:00 (13 horas/día)
+- Horario pico: 18:00 - 22:00 (4 horas/día)
+- Capacidad anual: 2,912 motos + 416 mototaxis (5,466,240 kWh/año)
 
-CONTROL OE3 - ARQUITECTURA DE TOMAS:
-- Observables: 128 tomas (estado de cada EV conectado)
-- Acciones: 128 tomas (potencia [0-1] asignada a cada toma de forma independiente)
-- Despacho: Por cada toma, sistema detecta EV conectado → asigna potencia según acción RL
+CONTROL OE3 - ARQUITECTURA DE ACCIÓN/OBSERVACIÓN:
+- Observables: 128 sockets (estado de carga individual de cada socket)
+- Acciones: 126 sockets (128 - 2 reservados para baseline comparison)
+- Control: Potencia continua [0, max_kw_socket] para cada socket independiente
+- Despacho: RL agent asigna potencia basado en solar, BESS SOC, demanda EVs, grid CO₂
 - Restricción: Potencia máxima por toma (2 kW motos, 3 kW mototaxis)
 
 BESS (Sistema de Almacenamiento):

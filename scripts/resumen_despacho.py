@@ -13,7 +13,7 @@ def print_executive_summary():
     print("\n" + "█"*100)
     print("█" + " "*98 + "█")
     print("█" + f"{'SISTEMA DE DESPACHO INTELIGENTE - IQUITOS EV MALL':^98}" + "█")
-    print("█" + f"{'Minimización CO₂ | Control independiente 128 chargers | Demanda estable':^98}" + "█")
+    print("█" + f"{'Minimización CO₂ | Control 32 cargadores (128 sockets) | Demanda estable':^98}" + "█")
     print("█" + " "*98 + "█")
     print("█"*100)
 
@@ -78,21 +78,26 @@ def print_executive_summary():
         print()
 
     print("\n" + "━"*100)
-    print("2️⃣  CONTROL INDEPENDIENTE DE 128 CHARGERS")
+    print("2️⃣  CONTROL INDEPENDIENTE DE 32 CARGADORES (128 SOCKETS)")
     print("━"*100 + "\n")
 
-    print("┌─ Distribución por URGENCIA:")
+    print("┌─ Configuración:")
+    print("├─ 28 cargadores para motos (2 kW c/u = 112 sockets = 56 kW)")
+    print("├─ 4 cargadores para mototaxis (3 kW c/u = 16 sockets = 12 kW)")
+    print("├─ Total: 68 kW de potencia simultánea")
+    print("│")
+    print("├─ Distribución por URGENCIA:")
     print("├─ urgencia[i] = (1 - SOC[i]) / tiempo_restante[i]")
     print("├─ Ordenar descendente")
     print("├─ Asignar potencia secuencialmente")
     print("│")
     print("├─ Charger 0 (Moto, urgencia=4.2): 2.0 kW (100%)")
     print("├─ Charger 5 (Moto, urgencia=2.8): 1.5 kW (75%)")
-    print("├─ Charger 40 (Taxi, urgencia=2.1): 2.7 kW (90%)")
+    print("├─ Charger 28 (Taxi, urgencia=2.1): 2.7 kW (90%)")
     print("├─ ...")
-    print("└─ Charger 127 (Taxi, urgencia=0.1): 0.0 kW (0%)")
+    print("└─ Charger 31 (Taxi, urgencia=0.1): 0.0 kW (0%)")
     print()
-    print("Resultado: 126 chargers con control dinámico + 2 reservados para baseline")
+    print("Resultado: 126 observables de carga con control dinámico + 2 reservados para baseline")
     print()
 
     print("\n" + "━"*100)
@@ -184,7 +189,7 @@ def print_executive_summary():
         ("✓", "BESS EXCLUSIVO para EVs", "Nunca para mall (mejor eficiencia)"),
         ("✓", "Mañana: Almacenar", "Solar abundante → Cargar BESS (5-11am)"),
         ("✓", "Tarde: Descargar", "Solar bajo → BESS para EVs (11pm-22h)"),
-        ("✓", "Control decentr.", "128 chargers con urgencia independiente"),
+        ("✓", "Control decentr.", "32 cargadores (128 sockets) con urgencia independiente"),
         ("✓", "Monitor visual", "Ver estado real-time motos/mototaxis"),
         ("✓", "Tiempo preciso", "Predicción curva Li-ion 2 fases"),
         ("✓", "Demanda suave", "Elimina picos, estabiliza grid"),

@@ -124,11 +124,10 @@ clip_obs: 10.0
 
 **Justificación**:
 
-- **CO₂ 0.50**: Prioritario en Iquitos (central térmica aislada, 0.4521 kg
-  - CO₂/kWh)
-- **Solar 0.20**: 4,162 kWp instalados, maximizar autoconsumo
+- **CO₂ 0.50**: Prioritario en Iquitos (central térmica aislada, 0.4521 kg CO₂/kWh)
+- **Solar 0.20**: 4,050 kWp instalados, maximizar autoconsumo
 - **Costo 0.10**: Tarifa baja (0.20 USD/kWh), no es constraint
-- **EV 0.10**: Baseline de operación (128 cargadores)
+- **EV 0.10**: Baseline de operación (32 cargadores, 128 sockets)
 - **Grid 0.10**: Implícito en minimización CO₂
 
 ### Baselines Adaptativos

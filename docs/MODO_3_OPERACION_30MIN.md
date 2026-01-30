@@ -1,9 +1,9 @@
-# Operación Modo 3 IEC 61851 - Chargers 128 Sesiones de 30 Minutos
+# Operación Modo 3 IEC 61851 - Chargers 32 Sesiones de 30 Minutos
 
-## Actualización: 2026-01-24
+## Actualización: 2026-01-31 (DATOS REALES OE2/OE3)
 
 <!-- markdownlint-disable MD013 -->
-### Configuración de Infraestructura | Parámetro | Valor | |-----------|-------| | Cargadores físicos | 32 (28 motos + 4 mototaxis) | | Tomas por cargador | 4 | | **Total tomas** | **128** (112 motos + 16 mototaxis) | | Potencia motos | 2.0 kW/toma | | Potencia mototaxis | 3.0 kW/toma | | **Potencia total** | **272 kW** (224 + 48) | | Horario operación | 9 AM - 10 PM (13 horas) | | Duración sesión | 30 minutos (Modo 3) | ---
+### Configuración de Infraestructura Correcta | Parámetro | Valor | |-----------|-------| | Cargadores físicos | 32 (28 motos + 4 mototaxis) | | Tomas por cargador | 4 | | **Total tomas** | **128** (112 motos + 16 mototaxis) | | Potencia motos | 2.0 kW/toma | | Potencia mototaxis | 3.0 kW/toma | | **Potencia total simultánea** | **68 kW** (56 motos + 12 mototaxis) | | Horario operación | 9 AM - 10 PM (13 horas/día) | | Duración sesión | 30 minutos (Modo 3 IEC 61851) | | Ciclos diarios | 26 por socket (13 horas / 0.5 hora) | ---
 
 <!-- markdownlint-disable MD013 -->
 ## Tabla 13 OE2 - Escenarios de Dimensionamiento |Escenario|PE|FC|Cargadores|Tomas|Energía/Día|Vehíc/Día|Vehíc/20años|
@@ -86,8 +86,8 @@ Cada **toma es una unidad controlable independiente** en el momento de carga:
 
 <!-- markdownlint-disable MD013 -->
 ### 📊 Niveles de Control en CityLearn | Nivel | Observable | Rango | Control | | ------- | ----------- | ------- | --------- |
-|**Agregado Total**|`ev_charging_power_total_kw`|0-272 kW|Potencia global|
-|**Playa**|`ev_charging_power_playa_motos_kw`|0-224 kW|Suma de 112 tomas|
+|**Agregado Total**|`ev_charging_power_total_kw`|0-68 kW|Potencia global (32 chargers × 2.125 kW promedio)|
+|**Playa Motos**|`ev_charging_power_playa_motos_kw`|0-56 kW|Suma de 112 tomas (28 chargers × 2 kW)|
 |**Playa**|`ev_charging_power_playa_mototaxis_kw`|0-48 kW|Suma de 16 tomas|
 |**Individual**|`MOTO_CH_001_ev_charging_power`|0-2 kW|1 toma específica|
 |**Individual**|`MOTO_TAXI_CH_128_ev_charging_power`|0-3 kW|1 toma específica| ### Acción RL: Control Individual por Toma (OE3)

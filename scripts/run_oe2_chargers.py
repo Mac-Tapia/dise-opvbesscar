@@ -73,14 +73,14 @@ def main() -> None:
 
     # Demanda Total Instalada (cargadores × tomas × potencia por playa)
     # Usar valores del resultado si están disponibles, sino calcular
-    pot_moto = result.get('potencia_instalada_motos_kw', 224)  # 28×4×2=224 kW
-    pot_mototaxi = result.get('potencia_instalada_mototaxis_kw', 48)  # 4×4×3=48 kW
-    pot_total = result.get('potencia_total_instalada_kw', 272)  # 272 kW
+    pot_moto = result.get('potencia_instalada_motos_kw', 56)  # 28×2=56 kW
+    pot_mototaxi = result.get('potencia_instalada_mototaxis_kw', 12)  # 4×3=12 kW
+    pot_total = result.get('potencia_total_instalada_kw', 68)  # 68 kW
 
-    print("\nDEMANDA TOTAL INSTALADA (cargadores × tomas × potencia):")
-    print(f"   Playa Motos:     28 carg × 4 tomas × 2.0 kW = {pot_moto:,.0f} kW")
-    print(f"   Playa Mototaxis: 4 carg × 4 tomas × 3.0 kW = {pot_mototaxi:,.0f} kW")
-    print(f"   TOTAL:           {pot_total:,.0f} kW")
+    print("\nDEMANDA TOTAL INSTALADA (cargadores × potencia unitaria):")
+    print(f"   Motos:     28 cargadores × 2.0 kW = {pot_moto:,.0f} kW")
+    print(f"   Mototaxis: 4 cargadores × 3.0 kW = {pot_mototaxi:,.0f} kW")
+    print(f"   TOTAL:     {pot_total:,.0f} kW")
 
 
 if __name__ == "__main__":

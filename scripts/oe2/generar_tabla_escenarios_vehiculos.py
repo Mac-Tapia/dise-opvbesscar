@@ -265,7 +265,7 @@ def main():
     - PE (Penetración): {rec['PE']:.0%}
     - FC (Factor Carga): {rec['FC']:.0%}
     - Cargadores: {rec['Cargadores']} (28 motos + 4 mototaxis)
-    - Tomas: {rec['Tomas']} (112 motos + 16 mototaxis)
+    - Tomas: {rec['Tomas']} (112 motos + 16 mototaxis = 128 sockets en 32 cargadores)
     - Potencia Total: 272 kW
 
     Energía:

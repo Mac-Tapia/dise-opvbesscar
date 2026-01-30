@@ -597,14 +597,15 @@ def generate_bess_plots(
         hours_15min = intervals_15min / 4.0  # type: ignore[operator]  # 0, 0.25, 0.5, 0.75, 1.0, ...
 
         # USAR DIRECTAMENTE energy_kwh del archivo
-        # El archivo ya tiene la energia correcta calculada segun:
-        # - 112 tomas motos (2,679 kWh/dia) + 16 tomas mototaxis (573 kWh/dia) = 3,252 kWh/dia
-        # - Distribuido en 96 intervalos de 15 min segun perfil de demanda horaria
+        # El archivo ya tiene la energía correcta calculada según (Actualizado 2026-01-30):
+        # - 112 sockets motos (11,648 kWh/día @ 4 kWh/ciclo) + 16 sockets mototaxis (3,328 kWh/día @ 8 kWh/ciclo)
+        # - Total: 14,976 kWh/día durante operación 9AM-10PM (Modo 3, 26 ciclos/socket/día)
+        # - Distribuido en 96 intervalos de 15 min según perfil de demanda horaria
         ev_15min_values = df_ev_15min['ev_kwh'].values  # type: ignore[attr-defined]
 
         # Graficar curva real de 15 minutos CON LÍNEA MÁS GRUESA Y VISIBLE
         ax4.plot(hours_15min, ev_15min_values, color='darkmagenta', linestyle='-', linewidth=3.5,
-                 label='Perfil real EV 15 min (112 motos + 16 mototaxis)', zorder=6, alpha=1.0)
+                 label='Perfil real EV 15 min (28 cargadores × 4 sockets = 68 kW)', zorder=6, alpha=1.0)
         # Marcadores en cada hora para visibilidad
         ax4.scatter(hours_15min[::4], ev_15min_values[::4], color='purple', s=60, marker='o',
                     zorder=7, edgecolor='white', linewidth=1.5)
