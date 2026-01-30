@@ -18,7 +18,7 @@
 | **📚 Documentación CO₂** | 🎯 [Índice Master](INDICE_DOCUMENTACION_RESULTADOS_CO2.md) \| ⚡ [1 página](CHEATSHEET_EXPLICACION_1PAGINA.md) |
 | **🎯 Selección A2C Multi-Objetivo** | 📋 [Justificación](SELECCION_A2C_MULTI_OBJETIVO_JUSTIFICACION.md) \| 📊 [Simple](RESPUESTA_MULTI_OBJETIVO_SIMPLE.md) \| 🧠 [Técnico](CONTROL_MULTI_OBJETIVO_MECANISMO_TECNICO.md) |
 | **🔍 Cumplimiento Estricto Reglas** | ✅ [Análisis Riguroso](CUMPLIMIENTO_ESTRICTO_REGLAS_DESPACHO.md) - A2C carga 1.04M EVs/año sin grid |
-| **🔧 Corrección SAC/PPO** | 📝 [Plan de Optimización](PLAN_CORRECCION_OPTIMIZACION_SAC_PPO.md) + 📋 [Cambios de Código](CAMBIOS_CODIGO_PRE_ENTRENAMIENTO_SAC_PPO.md) + 🎨 [Ejemplos Visuales](EJEMPLOS_VISUALES_CAMBIOS_SAC_PPO.md) + 📊 [Resumen Ejecutivo](RESUMEN_EJECUTIVO_CORRECCION_SAC_PPO.md) - **NO descartar, CORREGIR y RE-ENTRENAR** |
+| **🔧 Corrección SAC/PPO** | � [Índice Maestro](INDICE_MAESTRO_CORRECCION_SAC_PPO.md) → 📝 [Plan de Optimización](PLAN_CORRECCION_OPTIMIZACION_SAC_PPO.md) + 📋 [Cambios de Código](CAMBIOS_CODIGO_PRE_ENTRENAMIENTO_SAC_PPO.md) + 🎨 [Ejemplos Visuales](EJEMPLOS_VISUALES_CAMBIOS_SAC_PPO.md) + 📊 [Resumen Ejecutivo](RESUMEN_EJECUTIVO_CORRECCION_SAC_PPO.md) + 🚀 [Guía Práctica](GUIA_PRACTICA_IMPLEMENTACION_PASO_A_PASO.md) - **NO descartar, CORREGIR y RE-ENTRENAR** |
 | **Inicio Rápido** | 5 opciones para comenzar |
 | **Scripts** | Herramientas disponibles |
 | **Validación** | Estado del sistema (6/6 checks) |
