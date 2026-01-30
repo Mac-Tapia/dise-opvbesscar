@@ -118,9 +118,9 @@ print(f"  > Validacion 128 chargers: OK")
 # ========== 4. CALCULAR HASH DEL SCHEMA (INMUTABILIDAD) ==========
 print("\n[4/6] Verificando inmutabilidad del schema...")
 
-schema_hash: str = ""
-with open(schema_file, 'rb') as f:
-    schema_bytes = f.read()
+schema_hash: str
+with open(schema_file, 'rb') as f:  # type: ignore[assignment]
+    schema_bytes: bytes = f.read()
     schema_hash = hashlib.sha256(schema_bytes).hexdigest()
 
 print(f"  > SHA256 del schema: {schema_hash[:16]}...")
