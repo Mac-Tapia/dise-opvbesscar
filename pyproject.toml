@@ -39,4 +39,16 @@ omit = ["*/tests/*"]
 python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
+warn_unused_ignores = false
+check_untyped_defs = false
+ignore_missing_imports = true
+disable_error_code = ["annotation-unchecked"]
+
+# Configuración específica para librerías sin stubs
+[[tool.mypy.overrides]]
+module = "yaml.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "citylearn.*"
 ignore_missing_imports = true
