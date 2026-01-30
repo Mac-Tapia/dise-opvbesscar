@@ -21,7 +21,12 @@ import sys
 import json
 import hashlib
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, TextIO
+
+try:
+    import yaml
+except ImportError:
+    yaml = None  # type: ignore
 
 print("\n" + "="*80)
 print("AUDITORIA DE SCHEMA - INTEGRIDAD Y CONSISTENCIA")
