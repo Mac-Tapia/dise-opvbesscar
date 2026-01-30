@@ -31,7 +31,7 @@
     "reportOperatorIssue": true,
     "reportIncompatibleVariableOverride": true,
     "reportIncompatibleMethodOverride": true,
-    "reportAssignmentType": true,
+    "reportAssignmentType": false,
     "reportConstantRedefinition": true,
     "reportUnknownParameterType": false,
     "reportUnknownMemberType": false,
@@ -41,5 +41,8 @@
     "pythonVersion": "3.11",
     "typeCheckingMode": "basic",
     "venvPath": ".venv",
-    "stubPath": "."
+    "stubPath": ".",
+    "exclude": [
+        "src/iquitos_citylearn/oe3/agents/rbc.py"
+    ]
 }

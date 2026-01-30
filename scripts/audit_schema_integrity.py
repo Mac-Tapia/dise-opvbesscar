@@ -21,7 +21,7 @@ import sys
 import json
 import hashlib
 from pathlib import Path
-from typing import Any, Dict, TextIO
+from typing import Any, Dict, TextIO, BinaryIO
 
 try:
     import yaml
@@ -119,8 +119,8 @@ print(f"  > Validacion 128 chargers: OK")
 print("\n[4/6] Verificando inmutabilidad del schema...")
 
 schema_hash: str
-with open(schema_file, 'rb') as f:  # type: ignore[assignment]
-    schema_bytes: bytes = f.read()
+with open(schema_file, 'rb') as binary_file:  # type: ignore[arg-type]
+    schema_bytes: bytes = binary_file.read()
     schema_hash = hashlib.sha256(schema_bytes).hexdigest()
 
 print(f"  > SHA256 del schema: {schema_hash[:16]}...")
