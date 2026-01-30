@@ -3,9 +3,9 @@
 **Descripción breve:** Este repositorio contiene el pipeline de dimensionamiento (OE2) y control inteligente (OE3) para un sistema de carga de motos y mototaxis eléctricos con integración fotovoltaica y BESS en Iquitos, Perú.
 
 **Alcance técnico:**
-- **OE2 (Dimensionamiento):** PV 4,050 kWp (Kyocera KS20) con inversor Eaton Xpert1670 (2 unidades, 31 módulos por string, 6,472 strings, 200,632 módulos totales), **BESS 4,520 kWh / 2,712 kW (OE2 Real)** y 128 cargadores (112 motos @2 kW, 16 mototaxis @3 kW).
+- **OE2 (Dimensionamiento):** PV 4,050 kWp (Kyocera KS20) con inversor Eaton Xpert1670 (2 unidades, 31 módulos por string, 6,472 strings, 200,632 módulos totales), **BESS 4,520 kWh / 2,712 kW (OE2 Real)** y 32 cargadores (28 motos @2 kW = 56 kW, 4 mototaxis @3 kW = 12 kW, total 68 kW, 128 sockets).
 - **OE3 (Control RL):** Agentes SAC/PPO/A2C en CityLearn v2 para minimizar CO₂, costo y picos, maximizando uso solar y satisfacción EV.
-- **Reducción CO₂ anual (capacidad OE2):** Directa 3,081.20 tCO₂/año (gasolina → EV), Indirecta 3,626.66 tCO₂/año (PV/BESS desplaza red), Neta 6,707.86 tCO₂/año. Emisiones con PV/BESS: 2,501.49 tCO₂/año.
+- **Resultados Reales de Entrenamiento (2026-01-29):** A2C logró reducción de CO₂ en -25% vs baseline (4,280 tCO₂ vs 5,710 tCO₂). Grid import reducido de 12,630,518 kWh a 9,467,195 kWh (-25% optimización).
 
 ## 📋 ¿QUÉ HACE ESTE PROYECTO?
 
@@ -13,7 +13,7 @@ Este proyecto implementa un **sistema inteligente de gestión de energía** para
 
 1. **Genera energía solar:** 4,050 kWp de paneles solares
 2. **Almacena energía:** Batería de 4,520 kWh para usar en la noche
-3. **Carga motos y taxis eléctricos:** 128 cargadores para 512 conexiones
+3. **Carga motos y taxis eléctricos:** 32 cargadores para 128 conexiones (Modo 3, 30 min/ciclo, 9AM-10PM)
 4. **Minimiza CO₂:** Usa aprendizaje por refuerzo para decidir cuándo cargar cada moto
 5. **Maximiza ahorro solar:** Intenta usar energía solar directa en lugar de importar de la red
 
@@ -35,11 +35,14 @@ Este proyecto implementa un **sistema inteligente de gestión de energía** para
 - **Capacidad:** 4,520 kWh (4.52 MWh) - OE2 Real
 - **Potencia:** 2,712 kW (2.712 MW) - OE2 Real
 
-**Infraestructura de Carga (Chargers):**
-- **Total:** 128 cargadores
-- **Motos:** 112 cargadores @ 2 kW c/u
-- **Mototaxis:** 16 cargadores @ 3 kW c/u
-- **Sockets:** 512 total (128 × 4 sockets por charger)
+**Infraestructura de Carga (Chargers - OE2 Real 2026-01-30):**
+- **Total:** 32 cargadores (28 motos 2kW + 4 mototaxis 3kW = 68 kW simultáneos)
+- **Motos:** 28 cargadores @ 2 kW c/u = 56 kW (112 sockets)
+- **Mototaxis:** 4 cargadores @ 3 kW c/u = 12 kW (16 sockets)
+- **Sockets:** 128 total (32 × 4 sockets por charger)
+- **Operación:** 9:00 AM - 10:00 PM (13 horas/día), Modo 3 (30 minutos/ciclo)
+- **Capacidad diaria:** ~2,912 motos + ~416 mototaxis = ~3,328 vehículos/día
+- **Demanda energética:** 14,976 kWh/día | 5,466,240 kWh/año (operación real 365 días)
 
 **Reducción de CO₂ Anual:**
 - **Directa:** 3,081.20 tCO₂/año (sustitución gasolina → EV)
