@@ -128,7 +128,7 @@ print(f"  > SHA256 del schema: {schema_hash[:16]}...")
 # Guardar hash para futuras verificaciones
 hash_file: Path = schema_dir / ".schema_sha256"
 if hash_file.exists():
-    with open(hash_file, 'r') as f:
+    with open(hash_file, 'r', encoding='utf-8') as f:  # type: ignore
         saved_hash: str = f.read().strip()
 
     if saved_hash == schema_hash:

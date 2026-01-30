@@ -89,8 +89,8 @@ class BasicRBCAgent:
         if self.action_space is None:
             raise ValueError("env debe exponer action_space")
 
-        self._subspaces = list(self.action_space) if isinstance(self.action_space, list) else [self.action_space]  # type: ignore
-        self._subnames = list(self.action_names) if self.action_names else [[]]  # type: ignore
+        self._subspaces: list[Any] = list(self.action_space) if isinstance(self.action_space, list) else [self.action_space]  # type: ignore
+        self._subnames: list[Any] = list(self.action_names) if self.action_names else [[]]  # type: ignore
 
         # Identificar índices de acciones EV y BESS
         self._ev_indices: List[List[int]] = []  # type: ignore
