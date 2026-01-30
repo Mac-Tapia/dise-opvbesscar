@@ -145,18 +145,20 @@ class SACConfig:
     """
 # Hiperparámetros de entrenamiento - SAC OPTIMIZADO PARA RTX 4060 (8GB VRAM)
     episodes: int = 5  # REDUCIDO: 50→5 (test rápido, evita OOM)
-    batch_size: int = 32                    # ↓↓↓↓ ULTRA-REDUCIDO: 64→32 (evita OOM warning, memoria crítica)
-    buffer_size: int = 50000                # ↓↓↓↓ ULTRA-REDUCIDO: 150k→50k (OOM prevention, ~1.2GB estimado)
-    learning_rate: float = 1e-5             # ↓↓↓ CRITICAMENTE REDUCIDO: 5e-4→1e-5 (previene explosión)
+    batch_size: int = 256                   # ↑ OPTIMIZADO: 32→256 (4x mayor, mejor gradients)
+    buffer_size: int = 100000               # ↑ OPTIMIZADO: 50k→100k (10x mayor, reduce contamination)
+    learning_rate: float = 5e-5             # ↑ OPTIMIZADO: 1e-5→5e-5 (mejor convergencia)
     gamma: float = 0.99                      # ↓ Reducido: 0.999→0.99 (simplifica Q-function)
-    tau: float = 0.005                       # ↑ AUMENTADO: 0.001→0.005 (soft updates más estables)
+    tau: float = 0.01                        # ↑ OPTIMIZADO: 0.005→0.01 (10x mayor, gradual updates)
 
     # Entropía - SAC DINÁMICO para mejor exploración
-    ent_coef: float = 0.001                  # ↓ REDUCIDO: 0.01→0.001 (menos exploración=menos picos)
+    ent_coef: str | float = 'auto'           # ↑ OPTIMIZADO: 0.001→'auto' (adaptive entropy tuning)
+    ent_coef_init: float = 0.5               # ↑ NUEVO: valor inicial más alto
+    ent_coef_lr: float = 1e-4                # ↑ NUEVO: learning rate para entropy
     target_entropy: Optional[float] = None   # Auto-calcula based on action space (-dim/2)
 
-    # Red neuronal - REDUCIDA para RTX 4060
-    hidden_sizes: tuple = (256, 256)  # type: ignore[type-arg]         # ↓↓ REDUCIDA: 512→256 (menos divergencia)
+    # Red neuronal - OPTIMIZADA
+    hidden_sizes: tuple = (512, 512)  # type: ignore[type-arg]         # ↑ OPTIMIZADO: 256→512 (más capacidad para 126 acciones)
     activation: str = "relu"                 # ✅ Óptimo para SAC
 
     # Escalabilidad
@@ -171,9 +173,18 @@ class SACConfig:
 
     # === ESTABILIDAD NUMÉRICA (CRÍTICO POST-DIVERGENCIA) ===
     clip_gradients: bool = True             # ✅ AGREGADO: Clipear gradientes
-    max_grad_norm: float = 0.5              # ✅ AGREGADO: Límite de gradientes
+    max_grad_norm: float = 1.0              # ↑ OPTIMIZADO: 0.5→1.0 (prevent divergence)
     warmup_steps: int = 5000                # ✅ AGREGADO: Dejar que buffer se llene
     gradient_accumulation_steps: int = 1    # ✅ Agrupa updates, reduce varianza
+
+    # Prioritized Experience Replay
+    use_prioritized_replay: bool = True      # ↑ NUEVO: focus on important transitions
+    per_alpha: float = 0.6                   # ↑ NUEVO: prioritization exponent
+    per_beta: float = 0.4                    # ↑ NUEVO: importance sampling
+    per_epsilon: float = 1e-6                # ↑ NUEVO: min priority
+
+    # Learning rate schedule
+    lr_schedule: str = "linear"              # ↑ NUEVO: linear decay for smooth convergence
 
     # === MULTIOBJETIVO / MULTICRITERIO ===
     # Pesos para función de recompensa compuesta (deben sumar 1.0)

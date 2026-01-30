@@ -43,22 +43,22 @@ class PPOConfig:
     """
     # Hiperparámetros de entrenamiento - PPO OPTIMIZADO PARA RTX 4060
     train_steps: int = 500000  # ↓ REDUCIDO: 1M→500k (RTX 4060 limitación)
-    n_steps: int = 256          # ↓↓↓ ULTRA-REDUCIDO: 512→256 (OOM prevention, ~2GB buffer)
-    batch_size: int = 8         # ↓↓↓↓ ULTRA-REDUCIDO: 16→8 (memoria crítica)
-    n_epochs: int = 2           # ↓↓↓↓ ULTRA-REDUCIDO: 3→2 (menos updates)
+    n_steps: int = 8760         # ↑ OPTIMIZADO: 256→8760 (FULL EPISODE, ver causal chains completo!)
+    batch_size: int = 256       # ↑ OPTIMIZADO: 8→256 (4x mayor, mejor gradient estimation)
+    n_epochs: int = 10          # ↑ OPTIMIZADO: 2→10 (más training passes)
 
     # Optimización - PPO ADAPTADO A GPU LIMITADA
-    learning_rate: float = 5e-5     # ↓ CRITICAMENTE REDUCIDO: 1e-4→5e-5 (previene explosión)
+    learning_rate: float = 1e-4     # ↑ OPTIMIZADO: 5e-5→1e-4 (mejor balancse con nuevo clip)
     lr_schedule: str = "linear"     # ✅ Decay automático
     gamma: float = 0.99             # ↓ REDUCIDO: 0.999→0.99 (simplifica)
-    gae_lambda: float = 0.90        # ↓↓ REDUCIDO: 0.95→0.90 (menos varianza)
+    gae_lambda: float = 0.98        # ↑ OPTIMIZADO: 0.90→0.98 (mejor long-term advantages)
 
     # Clipping y regularización - PPO ESTABLE
-    clip_range: float = 0.15        # ↓ REDUCIDO: 0.2→0.15 (más restrictivo = más estable)
-    clip_range_vf: float = 0.15     # ↓ REDUCIDO: 0.2→0.15
-    ent_coef: float = 0.001         # ↓ REDUCIDO: 0.01→0.001 (menos exploración aleatoria)
+    clip_range: float = 0.5         # ↑ OPTIMIZADO: 0.15→0.5 (2.5x flexibility)
+    clip_range_vf: float = 0.5      # ↑ OPTIMIZADO: 0.15→0.5 (value function clipping)
+    ent_coef: float = 0.01          # ↑ OPTIMIZADO: 0.001→0.01 (exploration incentive)
     vf_coef: float = 0.3            # ↓ REDUCIDO: 0.5→0.3 (menos focus en VF)
-    max_grad_norm: float = 0.25     # ↓ REDUCIDO: 0.5→0.25 (clipping más agresivo)
+    max_grad_norm: float = 1.0      # ↑ OPTIMIZADO: 0.25→1.0 (gradient clipping safety)
 
     # Red neuronal - REDUCIDA PARA RTX 4060
     hidden_sizes: tuple = (256, 256)   # ↓↓ CRITICAMENTE REDUCIDA: 512→256
@@ -66,7 +66,7 @@ class PPOConfig:
     ortho_init: bool = True
 
     # Normalización
-    normalize_advantage: bool = True
+    normalize_advantage: bool = True    # ↑ OPTIMIZADO: agregado para consistency
     normalize_observations: bool = True
     normalize_rewards: bool = True
     reward_scale: float = 0.1          # ✅ AGREGADO: Escalar rewards (previene Q-explosion)
@@ -74,8 +74,11 @@ class PPOConfig:
     clip_reward: float = 1.0           # ✅ AGREGADO: Clipear rewards
 
     # === EXPLORACIÓN MEJORADA ===
-    use_sde: bool = False  # ↓ DESHABILITADO (SDE requiere más memoria)
-    sde_sample_freq: int = -1
+    use_sde: bool = True               # ↑ OPTIMIZADO: TRUE (state-dependent exploration)
+    sde_sample_freq: int = -1          # Resample every step
+
+    # === KL DIVERGENCE SAFETY ===
+    target_kl: float = 0.02            # ↑ NUEVO: stop training if KL > 0.02
 
     # === CONFIGURACIÓN GPU/CUDA ===
     device: str = "auto"  # "auto", "cuda", "cuda:0", "cuda:1", "mps", "cpu"
