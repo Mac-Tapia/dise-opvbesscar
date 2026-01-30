@@ -137,11 +137,12 @@ def verify_bess_control_in_agents() -> Dict[str, Any]:
     n_obs = len(obs_space)
     logger.info(f"\n✓ Observation space size: {n_obs} dimensions")
 
-    # Revisar action space (debe incluir 126 dims para 128 chargers - 2 reserved)
+    # Revisar action space (debe incluir 126 dims para 128 sockets - 2 reserved)
+    # 32 cargadores × 4 sockets = 128 sockets; 128 - 2 reservados = 126 controlables
     action_space = schema.get("action_space", [])
     n_actions = len(action_space)
     logger.info(f"✓ Action space size: {n_actions} dimensions")
-    logger.info(f"  Expected: 126 (128 chargers - 2 reserved)")
+    logger.info(f"  Expected: 126 (32 cargadores × 4 sockets - 2 reservados)")
     if n_actions != 126:
         logger.warning(f"⚠ Action space mismatch: expected 126, got {n_actions}")
 

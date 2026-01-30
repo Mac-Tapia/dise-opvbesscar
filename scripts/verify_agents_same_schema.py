@@ -37,7 +37,8 @@ with open(SCHEMA_PATH, 'r', encoding='utf-8') as f:
 # ========== VERIFICAR ARQUITECTURA SCHEMA ==========
 print("\n[2/4] Verificando arquitectura del schema...")
 
-# Verificar 128 chargers
+# Verificar 128 sockets (32 cargadores × 4 sockets)
+# Composición: 28 para motos + 4 para mototaxis
 chargers = 0
 buildings = schema.get('buildings', {})
 if isinstance(buildings, dict) and len(buildings) > 0:
@@ -49,10 +50,10 @@ if isinstance(buildings, dict) and len(buildings) > 0:
         else:
             chargers = len(chargers_dict) if chargers_dict else 0
 
-print(f"  > Chargers: {chargers}")
+print(f"  > Sockets (observables): {chargers}")
 
 if chargers != 128:
-    print(f"\n  ERROR: Se esperaban 128 chargers, se encontraron {chargers}")
+    print(f"\n  ERROR: Se esperaban 128 sockets (32 cargadores × 4), se encontraron {chargers}")
     print("  El schema NO es compatible con OE3")
     sys.exit(1)
 

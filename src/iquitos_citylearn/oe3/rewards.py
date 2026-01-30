@@ -8,11 +8,14 @@ Objetivos optimizados:
 4. Maximizar satisfacción de carga de EVs
 5. Minimizar picos de demanda (estabilidad de red)
 
-Basado en el contexto de Iquitos:
-- Factor emisión: 0.45 kg CO₂/kWh (central térmica)
-- Tarifa: 0.20 USD/kWh
-- 128 cargadores (112 motos @ 2kW + 16 mototaxis @ 3kW = 272 kW)
-- Conteo pico: 900 motos + 130 mototaxis (19:00h, 19-oct-2025) → usado para dimensionar cargadores
+Contexto Iquitos (OE2/OE3 - DATOS REALES):
+- Factor emisión: 0.4521 kg CO₂/kWh (central térmica aislada)
+- Tariff: 0.20 USD/kWh (bajo, no es constraint)
+- Chargers: 32 cargadores (28 motos @ 2kW + 4 mototaxis @ 3kW = 68 kW simultánea)
+- Sockets: 128 (112 para motos + 16 para mototaxis)
+- Capacidad anual: 2,912 motos + 416 mototaxis
+- BESS: 4,520 kWh / 2,712 kW (fijo, no controlable)
+- Resultado OE3: Agente A2C -25.1% CO₂ (4,280,119 kg/año vs 5,710,257 kg/año baseline)
 """
 
 from __future__ import annotations

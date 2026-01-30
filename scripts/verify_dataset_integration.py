@@ -151,9 +151,9 @@ def verify_mall_demand(interim_dir: Path) -> bool:
 
 
 def verify_chargers_config(cfg: Dict[str, Any], interim_dir: Path) -> bool:
-    """Verifica que 128 cargadores estén configurados."""
+    """Verifica que 32 cargadores (128 sockets) estén configurados correctamente."""
     logger.info("════════════════════════════════════════════════════════════════")
-    logger.info("  🔌 VERIFICACIÓN: 128 Cargadores EV")
+    logger.info("  🔌 VERIFICACIÓN: 32 Cargadores EV (128 sockets, 68 kW)")
     logger.info("════════════════════════════════════════════════════════════════")
 
     chargers_path = interim_dir / "oe2" / "chargers" / "individual_chargers.json"
@@ -320,7 +320,7 @@ def main() -> None:
     logger.info("\n")
     logger.info("╔════════════════════════════════════════════════════════════════╗")
     logger.info("║   VERIFICACIÓN INTEGRAL: DATASET BUILDER                       ║")
-    logger.info("║   Valida integración de: Mall, Solar, 128 Chargers, BESS      ║")
+    logger.info("║   Valida: Mall, Solar, 32 Cargadores (128 sockets), BESS      ║")
     logger.info("╚════════════════════════════════════════════════════════════════╝")
     logger.info("\n")
 
@@ -375,7 +375,7 @@ def main() -> None:
     if all_passed:
         logger.info("\n  🎉 TODAS LAS VERIFICACIONES COMPLETADAS EXITOSAMENTE")
         logger.info("\n  ✅ Dataset está listo para SAC/PPO/A2C training")
-        logger.info("  ✅ BESS, Solar, Mall Demand y 128 Chargers están integrados")
+        logger.info("  ✅ BESS, Solar, Mall Demand y 32 Cargadores (128 sockets) integrados")
     else:
         logger.error("\n  ❌ ALGUNAS VERIFICACIONES FALLARON")
         logger.error("\n  ⚠️  Revisa los errores arriba antes de iniciar training")

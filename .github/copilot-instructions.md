@@ -4,7 +4,7 @@
 
 **pvbesscar** is a two-phase reinforcement learning energy management system for Iquitos, Perú designed to optimize EV charging for electric motorcycles (motos) and mototaxis using solar PV and battery storage.
 
-- **OE2 (Dimensioning)**: Photovoltaic (4,050 kWp), BESS (4,520 kWh / 2,712 kW - OE2 Real), and 128 EV chargers (512 sockets, totaling 272 kW)
+- **OE2 (Dimensioning)**: Photovoltaic (4,050 kWp), BESS (4,520 kWh / 2,712 kW), and 32 EV chargers (128 sockets: 28 motos 2kW + 4 mototaxis 3kW = 68kW total). Operation 9AM-10PM (13h), Mode 3 (30 min/cycle), ~2,912 motos + ~416 mototaxis daily capacity
 - **OE3 (Control)**: CityLearn v2 RL environment with SAC/PPO/A2C agents minimizing CO₂ emissions and optimizing solar self-consumption
 - **Context**: Iquitos is grid-isolated (thermal generators, 0.45 kg CO₂/kWh). Tariff is low (0.20 USD/kWh), so CO₂ minimization is the primary objective, not cost optimization.
 

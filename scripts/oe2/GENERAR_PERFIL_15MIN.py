@@ -8,13 +8,13 @@ sys.path.insert(0, 'src')
 from pathlib import Path
 from iquitos_citylearn.oe2.chargers import build_hourly_profile
 
-# Configuración escenario RECOMENDADO
-ENERGY_DAY_KWH = 3252.0  # Energía total diaria
+# Configuración escenario RECOMENDADO (Actualizado 2026-01-30)
+ENERGY_DAY_KWH = 14976.0  # Energía total diaria operacional (9AM-10PM)
 OPENING_HOUR = 9         # Mall abre 9 AM
-CLOSING_HOUR = 22        # Mall cierra 10 PM
+CLOSING_HOUR = 22        # Mall cierra 10 PM (22:00)
 PEAK_HOURS = [18, 19, 20, 21]  # Horas pico 6-10 PM
-PEAK_SHARE = 0.40        # 40% de energía en hora pico
-MAX_POWER_KW = 272.0     # 112 motos×2kW + 16 mototaxis×3kW = 272 kW
+PEAK_SHARE = 0.40        # 40% de energía en horas pico
+MAX_POWER_KW = 68.0     # 28 motos×2kW + 4 mototaxis×3kW = 68 kW (REAL)
 
 # Generar perfil de 15 minutos
 print("=" * 70)

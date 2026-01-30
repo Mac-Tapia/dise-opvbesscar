@@ -70,7 +70,8 @@ def main() -> None:
     print("[EJECUTANDO] Simulación sin control...")
     for step_idx in range(8760):
         # Acción nula: sin control, los chargers usan su demanda sin restricciones
-        # CityLearn espera 130 acciones (128 chargers + 2 para BESS/demanda)
+        # CityLearn espera 130 acciones (126 cargadores + 2 para BESS/demanda)
+        # Nota: 126 de 128 sockets (32 cargadores × 4 - 2 reservados para comparación)
         action = [[0] * 130]  # 1 building × 130 actions
 
         _obs, _reward, terminated, truncated, _info = env.step(action)

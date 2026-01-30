@@ -6,7 +6,10 @@ Valida que:
 2. No cambia entre entrenamientos de SAC/PPO/A2C
 3. Todos los agentes usan el MISMO schema
 4. Schema es compatible CityLearn v2
-5. Schema contiene 128 chargers (arquitectura OE3 correcta)
+5. Schema contiene 128 observables de cargadores (32 cargadores × 4 sockets)
+   - 28 cargadores para motos (112 sockets) = 56 kW
+   - 4 cargadores para mototaxis (16 sockets) = 12 kW
+   - Total: 68 kW potencia simultánea
 6. Schema generado correctamente en OE2/OE3
 
 Uso:
@@ -27,8 +30,8 @@ print("="*80)
 # ========== CONFIGURACION ==========
 schema_dir: Path = Path("data/processed/citylearn/iquitos_ev_mall")
 schema_file: Path = schema_dir / "schema.json"
-expected_buildings: int = 1  # Un edificio central (mall + 128 chargers)
-expected_chargers: int = 128
+expected_buildings: int = 1  # Un edificio central (mall + 32 cargadores = 128 sockets)
+expected_chargers: int = 128  # 128 observables de sockets individuales
 
 # ========== 1. VERIFICAR SCHEMA EXISTE Y ES UNICO ==========
 print("\n[1/6] Verificando existencia del schema...")
