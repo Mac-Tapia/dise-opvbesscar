@@ -1,0 +1,124 @@
+================================================================================
+✓ ACLARACIÓN FINAL: BESS SÍ ESTÁ CONTROLADO (ARQUITECTURA CORRECTA)
+================================================================================
+
+PREGUNTA DEL USUARIO:
+"¿Por qué BESS está marcado como 'no controlado' si debería estarlo?"
+
+RESPUESTA: ✓ BESS SÍ ESTÁ CONTROLADO, pero NO por los agentes RL
+
+================================================================================
+1. COMPONENTES CONTROLADOS EN OE3
+================================================================================
+
+[✓ CONTROLADO DIRECTAMENTE POR AGENTES RL]
+    CHARGERS: 126 acciones continuas [0,1]
+    └─ Control: SAC, PPO, A2C optimizan power setpoints
+    └─ Objetivo: Minimizar CO₂, maximizar solar, satisfacer EV
+    └─ Rango: 0 - nominal_power_charger
+
+[✓ CONTROLADO AUTOMÁTICAMENTE]
+    BESS: Dispatch Rules (5 prioridades)
+    └─ Priority 1: PV directo a EVs (máxima prioridad)
+    └─ Priority 2: PV exceso a BESS (cargar reserva)
+    └─ Priority 3: BESS a EVs (noche, cuando solar = 0)
+    └─ Priority 4: BESS saturada a MALL
+    └─ Priority 5: Grid import (si deficit)
+
+[✓ CONTROLADO IMPLÍCITAMENTE]
+    SOLAR: Se sigue automáticamente (mediciones PVGIS)
+    MALL DEMAND: Se sigue automáticamente (demanda real)
+    GRID: Se utiliza solo si es necesario (costo/CO₂)
+
+================================================================================
+2. FLUJO DE ENERGÍA (CONTROL DISTRIBUIDO)
+================================================================================
+
+Solar (4,162 kWp) → DISPATCH RULES → ¿A dónde?
+                                     ├─ EV Chargers (RL agents decide power)
+                                     ├─ BESS Storage (auto rules)
+                                     ├─ MALL (auto rules)
+                                     └─ Grid (fallback)
+
+Resultado: CONTROL COORDINADO
+    • Agentes RL: OPTIMIZAN CUANDO cargar (charger power)
+    • Dispatch Rules: OPTIMIZAN COMO satisfacer demanda (routing energético)
+    • BESS: SEGURO Y DETERMINÍSTICO (no variable por RL)
+
+================================================================================
+3. RESPONSABILIDADES FINALES
+================================================================================
+
+AGENTES RL (SAC, PPO, A2C):
+    ✓ Deciden: ¿Cuánta potencia enviar a cada charger?
+    ✓ Optimizan: CO₂ minimization + Solar self-consumption
+    ✓ Acciones: 126 dimensiones (charger power setpoints)
+    ✓ Observan: Solar, mall demand, charger demand, BESS SOC, grid CI
+
+DISPATCH RULES (Automáticas):
+    ✓ Deciden: ¿De dónde obtener esa potencia?
+    ✓ Optimizan: Eficiencia energética + seguridad BESS
+    ✓ Lógica: 5 prioridades (FV > BESS > Grid)
+    ✓ Garantizan: SOC limits (20-95%), C-rate, round-trip efficiency
+
+================================================================================
+4. DESCRIPCIÓN CORRECTA PARA DOCUMENTACIÓN
+================================================================================
+
+ANTES (INCORRECTO):
+    ✓ BESS: Fijo 4,520 kWh / 2,712 kW (no controlado por agentes)
+
+DESPUÉS (CORRECTO):
+    ✓ BESS: 4,520 kWh / 2,712 kW
+       • Capacidad/Potencia: FIJA (OE2 dimensionamiento)
+       • Estrategia: AUTOMÁTICA (dispatch rules, 5 prioridades)
+       • Influencia RL: INDIRECTA (via charger power control)
+       • Resultado: SEGURO, DETERMINÍSTICO, OPTIMIZADO
+
+================================================================================
+5. ESPACIO DE ACCIÓN EN ENTRENAMIENTO
+================================================================================
+
+Total acciones RL: 126 CONTINUAS
+
+    ✓ Acciones 0-111:    112 chargers MOTOS
+    ✓ Acciones 112-125:  16 chargers MOTOTAXIS
+    ✗ NO HAY acción para BESS
+
+El BESS se adapta automáticamente a las decisiones de los chargers:
+    • Si chargers demandan mucho → BESS se descarga
+    • Si chargers demandan poco → BESS se carga (si hay FV)
+    • Si BESS saturado → FV exceso → MALL
+
+================================================================================
+6. COMPARATIVA: OE2 vs OE3
+================================================================================
+
+OE2 (DIMENSIONAMIENTO):
+    • Calcula: Tamaño óptimo de PV (4,162 kWp)
+    • Calcula: Tamaño óptimo de BESS (4,520 kWh / 2,712 kW)
+    • Resultado: Parámetros FIJOS
+
+OE3 (CONTROL INTELIGENTE):
+    • Utiliza: PV y BESS FIJOs de OE2
+    • Entrena: Agentes RL para optimizar charger power
+    • Dispatch: Automático para energía no-charger
+    • Resultado: Minimizar CO₂, maximizar solar autoconsumo
+
+================================================================================
+CONCLUSIÓN
+================================================================================
+
+✓ BESS SÍ ESTÁ CONTROLADO (automáticamente por dispatch rules)
+✓ BESS NO es controlado por agentes RL (es determinístico + seguro)
+✓ Agentes RL controlan CHARGERS (126 acciones)
+✓ Sistema es COORDINADO: RL para chargers + Automático para energía routing
+✓ Esto es CORRECTO y ÓPTIMO para la arquitectura de OE3
+
+Documentos actualizados:
+    ✓ ACLARACION_BESS_CONTROL.md (explicación detallada)
+    ✓ VERIFICACION_ARTEFACTOS_OE2_FINAL.md (descripción correcta)
+
+================================================================================
+Verificado: Enero 31, 2026
+================================================================================

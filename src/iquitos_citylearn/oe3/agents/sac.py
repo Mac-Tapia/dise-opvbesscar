@@ -805,32 +805,14 @@ class SACAgent:
                 # Ventana móvil para reward_avg (últimos 200 pasos)
                 self.recent_rewards: list[float] = []
                 self.reward_window_size = 200
+                # CRÍTICO: Inicializar estado de BESS para cálculo de descarga
+                self._prev_bess_soc = None  # Se actualiza en cada step
 
             def _on_step(self):
                 # ========================================================================
-                # CO₂ DIRECTA: CALCULAR PRIMERO (antes de cualquier try-except)
-                # CRÍTICO: Hardcodear EV_DEMAND_CONSTANT_KW para evitar dependencias
-                # ========================================================================
-                try:
-                    EV_DEMAND_CONSTANT_KW = 50.0  # kW fijo estimado (128 chargers × 54% uptime)
-                    co2_factor_ev_direct = 2.146  # kg CO₂/kWh evitado (EV vs combustion)
-                    co2_direct_step_kg = EV_DEMAND_CONSTANT_KW * co2_factor_ev_direct  # 107.3 kg/h
-
-                    # Actualizar acumuladores
-                    prev_co2 = getattr(self, 'co2_direct_avoided_kg', 0.0)
-                    self.co2_direct_avoided_kg = prev_co2 + co2_direct_step_kg
-
-                    # Vehículos activos: motos 80%, mototaxis 20%
-                    motos_step = int((EV_DEMAND_CONSTANT_KW * 0.80) / 2.0)  # ~20 motos/step
-                    mototaxis_step = int((EV_DEMAND_CONSTANT_KW * 0.20) / 3.0)  # ~3 mototaxis/step
-                    self.motos_cargadas = getattr(self, 'motos_cargadas', 0) + motos_step
-                    self.mototaxis_cargadas = getattr(self, 'mototaxis_cargadas', 0) + mototaxis_step
-
-                    # Logging cada 500 steps
-                    if self.n_calls % 500 == 0:
-                        logger.info(f"[SAC CO2 DIRECTO] step={self.n_calls} | total={self.co2_direct_avoided_kg:.1f} kg | motos={self.motos_cargadas} | mototaxis={self.mototaxis_cargadas}")
-                except Exception as err:
-                    logger.error(f"[SAC CRÍTICO - CO2 DIRECTA] step={self.n_calls} | ERROR: {err}", exc_info=True)
+                # NOTA: CO₂ DIRECTO ahora se calcula DESPUÉS de leer ev_demand_actual
+                # Integrado en sección de despacho (más abajo)
+                # ========================================================================"
 
                 # ========================================================================
                 # Resto del código normal (rewards, energía, etc.)
@@ -873,43 +855,80 @@ class SACAgent:
                     if hasattr(env, 'unwrapped'):
                         env = env.unwrapped  # type: ignore
 
+                    # ============================================================================
+                    # NUEVA ESTRATEGIA: Leer DIRECTAMENTE de la observación (no del building)
+                    # La observación de CityLearn v2 ya contiene toda la energía
+                    # ============================================================================
+
+                    # Obtener última observación del episode (que acaba de ocurrir)
+                    obs = self.locals.get("obs", None)
+                    if obs is None:
+                        obs = self.locals.get("observation", None)
+
+                    # Valores default seguros si no hay observación
                     solar_available_kw = 0.0
+                    ev_demand_kw = 0.0
                     mall_demand_kw = 0.0
                     bess_soc_pct = 50.0
 
-                    # EV DEMAND WORKAROUND: Estimación conservadora constante
-                    # 128 chargers (112 motos 2kW + 16 mototaxis 3kW)
-                    # Horario 9AM-10PM (13h/24h = 54% uptime)
-                    # Demanda promedio: 100 kW durante operación × 0.54 ≈ 54 kW promedio diario
-                    # CRÍTICO: Definir ANTES del if para asegurar que SIEMPRE existe
-                    ev_demand_kw = 50.0  # kW (estimación conservadora promedio diario)
+                    # Si tenemos observación, extraer datos de ella (índices CityLearn)
+                    if obs is not None:
+                        try:
+                            # CRITICAL: obs puede ser lista o numpy array, convertir siempre
+                            if isinstance(obs, (list, tuple)):
+                                obs_arr = np.array(obs, dtype=float)
+                            else:
+                                obs_arr = np.asarray(obs, dtype=float)
 
-                    # WORKAROUND CRÍTICO: CityLearn 2.5.0 bug - chargers no se cargan en building.electric_vehicle_chargers
-                    # Por lo tanto, net_electricity_consumption NO incluye demanda EV
+                            logger.debug(f"[SAC-OBS] type={type(obs)} -> numpy len={len(obs_arr)}")
 
-                    buildings = getattr(env, 'buildings', None)
-                    if buildings and isinstance(buildings, (list, tuple)) and len(buildings) > 0:
-                        b = buildings[0]
+                            # Observación de CityLearn estructura (según dataset_constructor.py):
+                            # obs[0]       = solar_generation (kW)
+                            # obs[1]       = total_demand (chargers + mall)
+                            # obs[2]       = BESS SOC (0-1, multiplicar por 100 para %)
+                            # obs[3]       = mall_demand (kW)
+                            # obs[4:132]   = 128 charger demands (indices 4-131 inclusive)
+                            # obs[132:260] = 128 charger powers (indices 132-259 inclusive)
+                            # obs[260:388] = 128 charger occupancy (0/1)
+                            # obs[388]     = hour_of_day (0-23)
+                            # obs[389]     = month (0-11)
+                            # obs[390]     = day_of_week (0-6)
+                            # obs[391]     = is_peak_hours (0/1)
+                            # obs[392]     = carbon_intensity
+                            # obs[393]     = tariff
+                            # TOTAL: 394 elementos
 
-                        # Solar disponible (funciona correctamente)
-                        if hasattr(b, 'solar_generation'):
-                            solar_gen = b.solar_generation
-                            if isinstance(solar_gen, (list, tuple, np.ndarray)) and len(solar_gen) > 0:
-                                val = solar_gen[0] if len(solar_gen) > 0 else 0.0
-                                solar_available_kw = float(val) if val is not None else 0.0
+                            solar_available_kw = float(obs_arr[0]) if len(obs_arr) > 0 else 0.0
+                            mall_demand_kw = float(obs_arr[3]) if len(obs_arr) > 3 else 0.0
+                            bess_soc_pct = float(obs_arr[2]) * 100.0 if len(obs_arr) > 2 else 50.0
 
-                        # Demanda del mall (funciona correctamente)
-                        if hasattr(b, 'non_shiftable_load'):
-                            non_shift = b.non_shiftable_load
-                            if isinstance(non_shift, (list, tuple, np.ndarray)) and len(non_shift) > 0:
-                                val = non_shift[0] if len(non_shift) > 0 else 0.0
-                                mall_demand_kw = float(val) if val is not None else 0.0
+                            # EV DEMAND: Sumar todos los 128 chargers demandas (obs[4:132])
+                            if len(obs_arr) >= 132:
+                                charger_demands = obs_arr[4:132]  # 128 chargers (indices 4-131)
+                                ev_demand_kw = float(np.sum(np.maximum(charger_demands, 0.0)))
+                                logger.debug(f"[SAC-CHARGERS] ✓ Sumados {len(charger_demands)} chargers, demanda={ev_demand_kw:.2f}kW")
+                            else:
+                                # Fallback si observación es más corta
+                                logger.warning(f"[SAC-CHARGERS] ⚠️ Observación CORTA: {len(obs_arr)} elementos < 132 expected. Usando fallback 50kW.")
+                                ev_demand_kw = 50.0
 
-                        # BESS SOC (funciona correctamente)
-                        battery = getattr(b, 'battery', None)
-                        if battery is not None:
-                            if hasattr(battery, 'soc'):
-                                bess_soc_pct = float(battery.soc) * 100.0 if battery.soc <= 1.0 else float(battery.soc)
+                            # DEBUG: Log estructura observación cada 500 steps
+                            if hasattr(self, 'n_calls') and self.n_calls % 500 == 0:
+                                logger.info(f"[SAC-DEBUG] paso={self.n_calls} | obs_len={len(obs_arr)} | solar={solar_available_kw:.2f}kW | mall={mall_demand_kw:.2f}kW | ev_demand={ev_demand_kw:.2f}kW | bess_soc={bess_soc_pct:.1f}%")
+                        except Exception as e:
+                            logger.error(f"[SAC] ❌ ERROR CRÍTICO parseando observación: {type(e).__name__}: {e}")
+                            import traceback
+                            logger.error(traceback.format_exc())
+                            # Use defaults
+                            pass
+
+                    # Si AÚN no hay datos, usar fallback conservador
+                    if ev_demand_kw <= 0.0:
+                        ev_demand_kw = 50.0  # kW conservador
+                    if solar_available_kw <= 0.0:
+                        solar_available_kw = 1.0  # Mínimo
+                    if mall_demand_kw <= 0.0:
+                        mall_demand_kw = 100.0  # Demanda mall típica
 
                     # Calcular despacho
                     dispatch = calculate_solar_dispatch(
@@ -921,6 +940,24 @@ class SACAgent:
                         bess_capacity_kwh=4520.0,
                     )
 
+                    # CRÍTICO FIX: Calcular bess_discharge_kw ANTES de usarlo
+                    # ========================================================================
+                    bess_discharge_kw = 0.0
+                    try:
+                        if battery is not None and hasattr(battery, 'soc'):
+                            current_soc = float(battery.soc) if battery.soc <= 1.0 else float(battery.soc) / 100.0
+                            prev_soc = getattr(self, '_prev_bess_soc', current_soc)
+                            bess_capacity_kwh = 4520.0
+                            # Power = (SOC_current - SOC_prev) × Capacity (kW asumiendo Δt=1h)
+                            soc_delta = current_soc - prev_soc
+                            bess_power_kw = soc_delta * bess_capacity_kwh
+                            # Descarga = power negativo (batería reduce SOC, entrega energía)
+                            if bess_power_kw < 0:
+                                bess_discharge_kw = abs(bess_power_kw)
+                            self._prev_bess_soc = current_soc
+                    except (ValueError, TypeError, AttributeError) as e:
+                        logger.debug(f"[SAC] BESS discharge calc fail: {e}")
+
                     # Acumular métricas correctas: usar solar_available_kw directamente
                     # (no depender de dispatch que puede faltar claves)
                     self.solar_energy_sum += solar_available_kw
@@ -929,11 +966,53 @@ class SACAgent:
                     grid_needed_kw = max(0.0, total_demand_kw - solar_available_kw)
                     self.grid_energy_sum += grid_needed_kw
 
-                    # NUEVOS: Calcular reducción CO₂ INDIRECTA (solar + BESS) y DIRECTA (EVs)
+                    # NUEVOS: Calcular reducción CO₂ DIRECTA (INTEGRADA y SINCRONIZADA)
+                    # ========================================================================
+                    # CO₂ DIRECTA: Basada en ENERGÍA ENTREGADA a EVs EN ESTE PASO
+                    # Fórmula: ev_demand_kw × solar_availability_ratio × 2.146 [kg CO2/kWh]
+                    try:
+                        # Factor de CO₂: EV vs gasolina
+                        co2_factor_ev_direct = 2.146  # kg CO₂/kWh evitado
+
+                        # CO₂ DIRECTO: Porcentaje de demanda EV cubierto por solar/BESS (no grid)
+                        # Si solar > 0 O BESS está descargando, entonces EVs están usando energía limpia
+                        total_renewable_kw = solar_available_kw + bess_discharge_kw
+
+                        # Fracción de demanda EV que puede ser cubierta por renovables
+                        if ev_demand_kw > 0.0:
+                            renewable_fraction = min(1.0, total_renewable_kw / ev_demand_kw)
+                        else:
+                            renewable_fraction = 0.0
+
+                        # CO2 DIRECTO: Energía EV cubierta por renovables
+                        # (No requiere mínimo de 5%, cualquier cantidad cuenta)
+                        ev_power_delivered_kw = ev_demand_kw * renewable_fraction
+                        mototaxis_power_kw = ev_power_delivered_kw * mototaxis_fraction
+
+                        # Convertir a # vehículos (ciclos completados en este paso)
+                        # Moto: 2 kW de potencia
+                        # Mototaxi: 3 kW de potencia
+                        # (asumiendo # de ciclos = potencia_entregada / potencia_unitaria)
+                        motos_ciclos_step = motos_power_kw / 2.0 if motos_power_kw > 0 else 0
+                        mototaxis_ciclos_step = mototaxis_power_kw / 3.0 if mototaxis_power_kw > 0 else 0
+
+                        self.motos_cargadas = getattr(self, 'motos_cargadas', 0) + int(motos_ciclos_step)
+                        self.mototaxis_cargadas = getattr(self, 'mototaxis_cargadas', 0) + int(mototaxis_ciclos_step)
+
+                        # Logging cada 500 steps - SOLO si hay cambio significativo
+                        if self.n_calls % 500 == 0:
+                            logger.info(f"[SAC METRICAS] step={self.n_calls} | co2_total={self.co2_direct_avoided_kg:.1f}kg | motos={self.motos_cargadas} | taxis={self.mototaxis_cargadas}")
+                    except Exception as err:
+                        logger.error(f"[SAC ❌ ERROR CO2 DIRECTO] step={self.n_calls} | {type(err).__name__}: {err}")
+                        import traceback
+                        logger.error(traceback.format_exc())
+
+                    # ========================================================================
+                    # NUEVOS: Calcular reducción CO₂ INDIRECTA (solar + BESS)
+                    # ========================================================================
                     try:
                         from iquitos_citylearn.oe3.rewards import (
                             calculate_co2_reduction_indirect,
-                            calculate_co2_reduction_direct,
                             calculate_co2_reduction_bess_discharge,
                         )
 
@@ -943,23 +1022,6 @@ class SACAgent:
                         )
 
                         # CO₂ INDIRECTA: Descarga de BESS (energía solar almacenada usada posteriormente)
-                        # Extraer power de batería mediante cambio en SOC
-                        bess_discharge_kw = 0.0
-                        try:
-                            if battery is not None and hasattr(battery, 'soc'):
-                                current_soc = float(battery.soc) if battery.soc <= 1.0 else float(battery.soc) / 100.0
-                                prev_soc = getattr(self, '_prev_bess_soc', current_soc)
-                                bess_capacity_kwh = 4520.0
-                                # Power = (SOC_current - SOC_prev) × Capacity (kW asumiendo Δt=1h)
-                                soc_delta = current_soc - prev_soc
-                                bess_power_kw = soc_delta * bess_capacity_kwh
-                                # Descarga = power negativo (batería reduce SOC, entrega energía)
-                                if bess_power_kw < 0:
-                                    bess_discharge_kw = abs(bess_power_kw)
-                                self._prev_bess_soc = current_soc
-                        except (ValueError, TypeError, AttributeError):
-                            pass
-
                         co2_bess = calculate_co2_reduction_bess_discharge(bess_discharge_kw)
 
                         # Total CO₂ indirecta = solar + BESS discharge

@@ -414,11 +414,30 @@ class A2CAgent:
                     solar_available_kw = 0.0
                     mall_demand_kw = 0.0
                     bess_soc_pct = 50.0
+                    ev_demand_kw = 0.0  # Will be extracted from observation
 
-                    # EV DEMAND WORKAROUND: Estimación conservadora constante
-                    # 128 chargers operando 54% del tiempo (9AM-10PM)
-                    # CRÍTICO: Definir ANTES del if para asegurar que SIEMPRE existe
-                    ev_demand_kw = 50.0  # kW
+                    # Try to extract from observation first (394-dim CityLearn structure)
+                    obs = getattr(self.locals, 'observation', None) or getattr(self.locals, 'obs', None)
+                    if obs is not None:
+                        try:
+                            if isinstance(obs, (list, tuple)):
+                                obs_arr = np.array(obs, dtype=float)
+                            else:
+                                obs_arr = np.asarray(obs, dtype=float)
+
+                            if len(obs_arr) >= 132:
+                                # obs[4:132] = 128 charger demands
+                                charger_demands = obs_arr[4:132]
+                                ev_demand_kw = float(np.sum(np.maximum(charger_demands, 0.0)))
+                                solar_available_kw = float(obs_arr[0]) if len(obs_arr) > 0 else 0.0
+                                mall_demand_kw = float(obs_arr[3]) if len(obs_arr) > 3 else 0.0
+                                bess_soc_pct = float(obs_arr[2]) * 100.0 if len(obs_arr) > 2 else 50.0
+                        except:
+                            pass
+
+                    # Fallback if extraction failed
+                    if ev_demand_kw <= 0.0:
+                        ev_demand_kw = 50.0  # kW fallback
 
                     # WORKAROUND CRÍTICO: CityLearn 2.5.0 bug - chargers no se cargan en building.electric_vehicle_chargers
                     buildings = getattr(env, 'buildings', None)
@@ -496,20 +515,21 @@ class A2CAgent:
                     except Exception as err:
                         logger.warning(f"[A2C] Error calculando CO₂ indirecto: {err}")
 
-                    # CO₂ DIRECTA: HARDCODEADO 50 kW (SOLUCIÓN ROBUSTA)
-                    # CRÍTICO: Usar valor CONSTANTE 50.0 kW directamente, NO variable ev_demand_kw
-                    # Razón: ev_demand_kw puede ser 0 por bugs en environment/dispatch
-                    # Valor 50 kW = 128 chargers × 54% uptime × promedio demand
+                    # CO₂ DIRECTA: Basada en fracción de demanda EV cubierta por renovables
+                    # CRÍTICO: Usar variable ev_demand_kw EXTRAÍDA de la observación
                     try:
-                        EV_DEMAND_CONSTANT_KW = 50.0  # kW fijo estimado
-                        co2_factor_ev_direct = 2.146  # kg CO₂/kWh (evitado vs combustion)
-                        co2_direct_step_kg = EV_DEMAND_CONSTANT_KW * co2_factor_ev_direct  # 107.3 kg/h
+                        total_renewable_kw = solar_available_kw + bess_discharge_kw
 
-                        self.co2_direct_avoided_kg += co2_direct_step_kg
+                        # Fracción de demanda EV que puede ser cubierta por renovables
+                        if ev_demand_kw > 0.0:
+                            renewable_fraction = min(1.0, total_renewable_kw / ev_demand_kw)
+                        else:
+                            renewable_fraction = 0.0
 
-                        # Estimación de vehículos activos
-                        motos_activas = int((EV_DEMAND_CONSTANT_KW * 0.80) / 2.0)  # ~20 motos/step
-                        mototaxis_activas = int((EV_DEMAND_CONSTANT_KW * 0.20) / 3.0)  # ~3 mototaxis/step
+                        # CO2 DIRECTO: Energía EV cubierta por renovables (sin mínimo)
+                        ev_power_delivered_kw = ev_demand_kw * renewable_fraction
+                        mototaxis_activas = int(mototaxis_power_kw / 3.0) if mototaxis_power_kw > 0 else 0
+
                         self.motos_cargadas += motos_activas
                         self.mototaxis_cargadas += mototaxis_activas
                     except Exception as err:
