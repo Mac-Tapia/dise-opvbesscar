@@ -844,16 +844,18 @@ class SACAgent:
                         env = env.unwrapped  # type: ignore
 
                     solar_available_kw = 0.0
-                    ev_demand_kw = 0.0
                     mall_demand_kw = 0.0
                     bess_soc_pct = 50.0
 
-# WORKAROUND CRÍTICO: CityLearn 2.5.0 bug - chargers no se cargan en building.electric_vehicle_chargers
+                    # EV DEMAND WORKAROUND: Estimación conservadora constante
+                    # 128 chargers (112 motos 2kW + 16 mototaxis 3kW)
+                    # Horario 9AM-10PM (13h/24h = 54% uptime)
+                    # Demanda promedio: 100 kW durante operación × 0.54 ≈ 54 kW promedio diario
+                    # CRÍTICO: Definir ANTES del if para asegurar que SIEMPRE existe
+                    ev_demand_kw = 50.0  # kW (estimación conservadora promedio diario)
+
+                    # WORKAROUND CRÍTICO: CityLearn 2.5.0 bug - chargers no se cargan en building.electric_vehicle_chargers
                     # Por lo tanto, net_electricity_consumption NO incluye demanda EV
-                    # SOLUCIÓN: Estimar ev_demand_kw desde configuración conocida
-                    # - 128 chargers: 112 motos @ 2kW + 16 mototaxis @ 3kW
-                    # - Operación: 9AM-10PM (13h), ciclos de 30 min
-                    # - Demanda promedio conservadora: ~100 kW durante horas operativas
 
                     buildings = getattr(env, 'buildings', None)
                     if buildings and isinstance(buildings, (list, tuple)) and len(buildings) > 0:
@@ -872,13 +874,6 @@ class SACAgent:
                             if isinstance(non_shift, (list, tuple, np.ndarray)) and len(non_shift) > 0:
                                 val = non_shift[0] if len(non_shift) > 0 else 0.0
                                 mall_demand_kw = float(val) if val is not None else 0.0
-
-# EV DEMAND WORKAROUND: Estimación conservadora constante
-                        # 128 chargers (112 motos 2kW + 16 mototaxis 3kW)
-                        # Horario 9AM-10PM (13h/24h = 54% uptime)
-                        # Demanda promedio: 100 kW durante operación × 0.54 ≈ 54 kW promedio diario
-                        # Usamos 50 kW como estimación conservadora constante
-                        ev_demand_kw = 50.0  # kW (estimación conservadora promedio diario)
 
                         # BESS SOC (funciona correctamente)
                         battery = getattr(b, 'battery', None)
