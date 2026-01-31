@@ -807,6 +807,34 @@ class SACAgent:
                 self.reward_window_size = 200
 
             def _on_step(self):
+                # ========================================================================
+                # CO₂ DIRECTA: CALCULAR PRIMERO (antes de cualquier try-except)
+                # CRÍTICO: Hardcodear EV_DEMAND_CONSTANT_KW para evitar dependencias
+                # ========================================================================
+                try:
+                    EV_DEMAND_CONSTANT_KW = 50.0  # kW fijo estimado (128 chargers × 54% uptime)
+                    co2_factor_ev_direct = 2.146  # kg CO₂/kWh evitado (EV vs combustion)
+                    co2_direct_step_kg = EV_DEMAND_CONSTANT_KW * co2_factor_ev_direct  # 107.3 kg/h
+
+                    # Actualizar acumuladores
+                    prev_co2 = getattr(self, 'co2_direct_avoided_kg', 0.0)
+                    self.co2_direct_avoided_kg = prev_co2 + co2_direct_step_kg
+
+                    # Vehículos activos: motos 80%, mototaxis 20%
+                    motos_step = int((EV_DEMAND_CONSTANT_KW * 0.80) / 2.0)  # ~20 motos/step
+                    mototaxis_step = int((EV_DEMAND_CONSTANT_KW * 0.20) / 3.0)  # ~3 mototaxis/step
+                    self.motos_cargadas = getattr(self, 'motos_cargadas', 0) + motos_step
+                    self.mototaxis_cargadas = getattr(self, 'mototaxis_cargadas', 0) + mototaxis_step
+
+                    # DEBUG: Log primeros 600 steps o cada 500
+                    if self.n_calls <= 600 or self.n_calls % 500 == 0:
+                        logger.info(f"[SAC CO2 DIRECTO] step={self.n_calls} | added={co2_direct_step_kg:.1f} kg | total={self.co2_direct_avoided_kg:.1f} kg | motos={self.motos_cargadas} | mototaxis={self.mototaxis_cargadas}")
+                except Exception as err:
+                    logger.error(f"[SAC CRÍTICO - CO2 DIRECTA] step={self.n_calls} | ERROR: {err}", exc_info=True)
+
+                # ========================================================================
+                # Resto del código normal (rewards, energía, etc.)
+                # ========================================================================
                 infos = self.locals.get("infos", [])
                 if isinstance(infos, dict):
                     infos = [infos]
@@ -939,26 +967,6 @@ class SACAgent:
 
                     except Exception as err:
                         logger.warning(f"[SAC] Error calculando CO₂ indirecto/BESS: {err}")
-
-                    # CO₂ DIRECTA: HARDCODEADO 50 kW (SOLUCIÓN ROBUSTA)
-                    # CRÍTICO: Usar valor CONSTANTE 50.0 kW directamente, NO variable ev_demand_kw
-                    # Razón: ev_demand_kw puede ser 0 por bugs en environment/dispatch
-                    # Valor 50 kW = 128 chargers × 54% uptime × promedio demand
-                    try:
-                        EV_DEMAND_CONSTANT_KW = 50.0  # kW fijo estimado
-                        co2_factor_ev_direct = 2.146  # kg CO₂/kWh evitado (EV vs combustion)
-                        co2_direct_step_kg = EV_DEMAND_CONSTANT_KW * co2_factor_ev_direct  # 107.3 kg/h
-
-                        self.co2_direct_avoided_kg = getattr(self, 'co2_direct_avoided_kg', 0.0) + co2_direct_step_kg
-
-                        # Estimación conservadora de vehículos: 1 moto ~2kW, 1 mototaxi ~3kW
-                        # Motos activas ≈ 80% del total, mototaxis 20%
-                        motos_activas_step = int((EV_DEMAND_CONSTANT_KW * 0.80) / 2.0)  # ~20 motos/step
-                        mototaxis_activas_step = int((EV_DEMAND_CONSTANT_KW * 0.20) / 3.0)  # ~3 mototaxis/step
-                        self.motos_cargadas = getattr(self, 'motos_cargadas', 0) + motos_activas_step
-                        self.mototaxis_cargadas = getattr(self, 'mototaxis_cargadas', 0) + mototaxis_activas_step
-                    except Exception as err:
-                        logger.error(f"[SAC CRÍTICO] Error calculando CO₂ directo EVs: {err}")
 
                     # DEBUG: si solar_consumed es 0, usar fallback
                     if dispatch["solar_consumed_kw"] <= 0:
