@@ -71,8 +71,12 @@ oe2:
       direct_solar_bonus_weight: 0.01
       grid_import_penalty_weight: 0.0001
   ev_fleet:
-    charger_power_kw_moto: 2.0
-    charger_power_kw_mototaxi: 3.0
+    # Configuración de cargadores (DATOS REALES OE2 2026-01-30)
+    charger_power_kw_moto: 2.0          # 28 cargadores motos @ 2kW
+    charger_power_kw_mototaxi: 3.0      # 4 cargadores mototaxis @ 3kW
+    total_chargers: 32                  # 28 + 4 = 32 físicos
+    total_sockets: 128                  # 32 × 4 = 128 (112 motos + 16 mototaxis)
+    ev_demand_constant_kw: 50.0         # Workaround: demanda constante para CO₂ tracking
     closing_hour: 22
     daily_sessions_factor: 1.0
     fc_motos: 0.9

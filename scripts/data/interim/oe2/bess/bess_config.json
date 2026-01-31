@@ -12,5 +12,7 @@
   "round_trip_efficiency_percent": 92.0,
   "battery_chemistry": "Lithium-ion",
   "warranty_years": 10,
-  "cycle_life": 4500
+  "cycle_life": 4500,
+  "_comment_ev_tracking": "NOTA: Agentes SAC/PPO/A2C usan ev_demand_constant_kw=50kW para tracking CO2 (workaround CityLearn 2.5.0 bug)",
+  "_comment_chargers": "32 chargers físicos (28 motos @2kW + 4 mototaxis @3kW) = 128 sockets totales (126 controlables)"
 }

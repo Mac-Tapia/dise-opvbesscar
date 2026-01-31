@@ -73,8 +73,13 @@ oe2:
       direct_solar_bonus_weight: 0.01
       grid_import_penalty_weight: 0.0001
   ev_fleet:
-    charger_power_kw_moto: 2.0
-    charger_power_kw_mototaxi: 3.0
+    # Configuración de cargadores (DATOS REALES OE2 2026-01-30)
+    charger_power_kw_moto: 2.0          # 28 cargadores motos @ 2kW cada uno
+    charger_power_kw_mototaxi: 3.0      # 4 cargadores mototaxis @ 3kW cada uno
+    total_chargers: 32                  # Total físico: 28 + 4 = 32 cargadores
+    total_sockets: 128                  # Total sockets: 32 × 4 = 128 (112 motos + 16 mototaxis)
+    # Demanda EV constante para tracking CO₂ (workaround CityLearn 2.5.0 bug)
+    ev_demand_constant_kw: 50.0         # Estimación conservadora (54% uptime × 100kW = ~50kW)
     closing_hour: 22
     daily_sessions_factor: 1.0
     fc_motos: 0.9
@@ -152,7 +157,12 @@ oe3:
     bess_discharging_efficiency: 0.95
     bess_standby_loss_percent_day: 0.1
     diesel_backup_factor_kg_kwh: 0.2667
-    grid_import_factor_kg_kwh: 0.4521  # Factor de emisión grid Iquitos (central térmica)
+    grid_import_factor_kg_kwh: 0.4521  # Factor de emisión grid Iquitos (central térmica aislada)
+    # TRACKING CO₂ DIRECTO (workaround CityLearn 2.5.0):
+    # - ev_demand_kw = 50 kW constante (definido en agentes SAC/PPO/A2C)
+    # - co2_direct_kg = 50 kW × 2.146 kg/kWh = 107.3 kg/h acumulativo
+    # - motos_activas = (50 × 0.80) / 2 = 20 motos/h
+    # - mototaxis_activas = (50 × 0.20) / 3 = 3 mototaxis/h
     reduction_strategies:
       bess_efficiency_optimization:
         description: Optimizar ciclos y conversiones BESS
