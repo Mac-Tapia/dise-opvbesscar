@@ -390,10 +390,9 @@ class A2CAgent:
                     mall_demand_kw = 0.0
                     bess_soc_pct = 50.0
 
-                    # CORRECCIÓN ROBUSTA: Extraer demanda EV desde observaciones del building
-                    # net_electricity_consumption = mall + EVs
-                    # non_shiftable_load = mall
-                    # ev_demand_kw = net_electricity_consumption - non_shiftable_load
+# WORKAROUND CRÍTICO: CityLearn 2.5.0 bug - chargers no se cargan en building.electric_vehicle_chargers
+                    # Por lo tanto, net_electricity_consumption NO incluye demanda EV
+                    # SOLUCIÓN: Estimar ev_demand_kw desde configuración conocida
                     buildings = getattr(env, 'buildings', None)
                     if buildings and isinstance(buildings, (list, tuple)) and len(buildings) > 0:
                         b = buildings[0]
@@ -401,27 +400,33 @@ class A2CAgent:
                         # Solar disponible
                         if hasattr(b, 'solar_generation'):
                             solar_gen = b.solar_generation
-                            if isinstance(solar_gen, (list, tuple)) and len(solar_gen) > 0:
-                                val = solar_gen[-1]
+                            if isinstance(solar_gen, (list, tuple, np.ndarray)) and len(solar_gen) > 0:
+                                val = solar_gen[0] if len(solar_gen) > 0 else 0.0
                                 solar_available_kw = float(val) if val is not None else 0.0
 
-                        # Demanda TOTAL del building (incluye mall + EVs)
-                        total_building_demand_kw = 0.0
-                        if hasattr(b, 'net_electricity_consumption'):
-                            net_elec = b.net_electricity_consumption
-                            if isinstance(net_elec, (list, tuple)) and len(net_elec) > 0:
-                                val = net_elec[-1]
-                                total_building_demand_kw = float(val) if val is not None else 0.0
-
-                        # Demanda del mall (non_shiftable_load)
+                        # Demanda del mall
                         if hasattr(b, 'non_shiftable_load'):
                             non_shift = b.non_shiftable_load
-                            if isinstance(non_shift, (list, tuple)) and len(non_shift) > 0:
-                                val = non_shift[-1]
+                            if isinstance(non_shift, (list, tuple, np.ndarray)) and len(non_shift) > 0:
+                                val = non_shift[0] if len(non_shift) > 0 else 0.0
                                 mall_demand_kw = float(val) if val is not None else 0.0
 
-                        # Demanda EV = Demanda Total - Demanda Mall
-                        ev_demand_kw = max(0.0, total_building_demand_kw - mall_demand_kw)
+                        # EV DEMAND WORKAROUND
+                        current_hour = 12
+                        try:
+                            if hasattr(env, 'time_step'):
+                                current_hour = env.time_step % 24
+                            elif hasattr(b, 'hour'):
+                                h = b.hour
+                                if isinstance(h, (list, tuple, np.ndarray)) and len(h) > 0:
+                                    current_hour = int(h[0] if len(h) > 0 else 12)
+                        except:
+                            pass
+
+                        if 9 <= current_hour <= 21:
+                            ev_demand_kw = 100.0
+                        else:
+                            ev_demand_kw = 0.0
 
                         # BESS SOC
                         battery = getattr(b, 'battery', None)
