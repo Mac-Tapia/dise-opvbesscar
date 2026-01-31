@@ -76,6 +76,7 @@ oe2:
     # Configuración de cargadores (DATOS REALES OE2 2026-01-30)
     charger_power_kw_moto: 2.0          # 28 cargadores motos @ 2kW cada uno
     charger_power_kw_mototaxi: 3.0      # 4 cargadores mototaxis @ 3kW cada uno
+    n_chargers: 32                      # Alias para total_chargers (sincronizado con código)
     total_chargers: 32                  # Total físico: 28 + 4 = 32 cargadores
     total_sockets: 128                  # Total sockets: 32 × 4 = 128 (112 motos + 16 mototaxis)
     # Demanda EV constante para tracking CO₂ (workaround CityLearn 2.5.0 bug)
