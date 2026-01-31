@@ -1,10 +1,66 @@
 """
 Funciones de recompensa multiobjetivo y multicriterio para agentes RL.
 
+================================================================================
+TRACKING REDUCCIONES DIRECTAS E INDIRECTAS DE CO₂ (2026-01-31)
+================================================================================
+
+DEFINICIONES CRÍTICAS:
+
+1. CO₂ DIRECTO (Emisiones de demanda EV):
+   - Demanda constante: 50 kW (13 horas/día = 9AM-10PM)
+   - Factor de conversión: 2.146 kg CO₂/kWh
+   - Representa: Combustión equivalente si fueran vehículos a gasolina
+   - CO₂ directo acumulado/hora: 50 × 2.146 = 107.3 kg CO₂/h
+   - CO₂ directo anual SIN control: 50 × 2.146 × 8760 = 938,460 kg CO₂/año
+   - Tracking: Se accumula pero NO se reduce (es la baseline de demanda)
+   - Propósito: Referencia para calcular reducciones indirectas
+
+2. CO₂ INDIRECTO (Emisiones evitadas por solar directo):
+   - Factor grid Iquitos: 0.4521 kg CO₂/kWh (central térmica aislada)
+   - Reducción indirecta = Solar PV directo a EVs × 0.4521
+   - Ejemplo: 100 kWh solar directo → 100 × 0.4521 = 45.21 kg CO₂ evitado
+   - Propósito: Objetivo principal de optimización
+   - Target: Maximizar PV directo para maximizar reducciones indirectas
+
+3. ARQUITECTURA DE REDUCCIONES:
+
+   Baseline (sin control):
+   - CO₂ grid total: 50 kW × 8760 h × 0.4521 kg/kWh = 197,262 kg CO₂/año (indirecto)
+   - CO₂ directo: 107.3 kg/h × 8760 h = 938,460 kg CO₂/año (tracking)
+   - Total: ~1,135,722 kg CO₂/año
+
+   Con RL (con control solar directo):
+   - Solar PV directo: ~X kWh/año (optimizado por agente)
+   - Reducción indirecta: X × 0.4521 kg CO₂/año evitado
+   - Grid import reducido: (potencial - solar) × 0.4521
+   - CO₂ directo: Sigue siendo 938,460 (demanda fija, tracking)
+   - Beneficio neto: Mayor reducción indirecta por más PV directo
+
+4. REWARD FUNCTION DESIGN:
+
+   Componentes de recompensa (multiobjetivo):
+   - r_co2 (0.50 peso): Minimizar importación grid = maximizar PV directo
+   - r_solar (0.20 peso): Bonus por autoconsumo solar
+   - r_cost (0.10 peso): Minimizar costo (secundario, tarifa baja)
+   - r_ev (0.10 peso): Satisfacción de carga EV
+   - r_grid (0.10 peso): Estabilidad de red
+
+   Cálculo simplificado:
+   r_total = 0.50 × r_co2 + 0.20 × r_solar + ...
+   r_co2 = "reward por reducción indirecta" = f(solar_directo)
+
+5. VALORES DE REFERENCIA (OE2 Real):
+   - Co2 grid factor: 0.4521 kg/kWh (GRID IMPORT - indirecto)
+   - EV co2 factor: 2.146 kg/kWh (DEMANDA DIRECTA - tracking)
+   - EV demand: 50.0 kW (CONSTANTE)
+   - Chargers: 32 (128 sockets = 112 motos + 16 mototaxis)
+   - BESS: 4520 kWh / 2712 kW (NO controlable, dispatch automático)
+
 Objetivos optimizados:
-1. Minimizar emisiones de CO₂
+1. Minimizar emisiones de CO₂ (indirectas por grid import)
 2. Minimizar costo eléctrico
-3. Maximizar autoconsumo solar
+3. Maximizar autoconsumo solar (PV directo)
 4. Maximizar satisfacción de carga de EVs
 5. Minimizar picos de demanda (estabilidad de red)
 
@@ -19,6 +75,13 @@ Contexto Iquitos (OE2/OE3 - DATOS REALES 2026-01-31):
 - Capacidad anual: 2,912 motos + 416 mototaxis (13h operación 9AM-10PM)
 - BESS: 4,520 kWh / 2,712 kW (fijo, no controlable por agentes)
 - Resultado OE3: Agente A2C -25.1% CO₂ (4,280,119 kg/año vs 5,710,257 kg/año baseline)
+
+VINCULACIONES EN SISTEMA:
+- config.yaml (SOURCE OF TRUTH): co2_grid_factor_kg_per_kwh, ev_co2_conversion_kg_per_kwh
+- dataset_builder.py: Valida y carga datos
+- rewards.py: Calcula CO₂ directo + indirecto
+- agents: Optimizan para reducir CO₂ indirecto (maximizar PV directo)
+- simulate.py: Acumula y reporta ambas reducciones
 """
 
 from __future__ import annotations

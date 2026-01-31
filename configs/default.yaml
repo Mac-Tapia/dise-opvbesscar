@@ -150,6 +150,9 @@ oe3:
   city_baseline_tpy:
     electricity_generation: 290000.0
     transport: 258250.0
+  rewards:
+    co2_grid_factor_kg_per_kwh: 0.4521  # Iquitos grid (indirecto)
+    ev_co2_conversion_kg_per_kwh: 2.146  # EV demand tracking (directo)
   co2_emissions:
     annual_co2_budget_kg: 7000000
     bess_calendar_aging_kg_per_day: 0.01
@@ -159,6 +162,34 @@ oe3:
     bess_standby_loss_percent_day: 0.1
     diesel_backup_factor_kg_kwh: 0.2667
     grid_import_factor_kg_kwh: 0.4521  # Factor de emisión grid Iquitos (central térmica aislada)
+    #    - ev_co2_conversion_kg_per_kwh: 2.146 (equivalente combustión)
+    #    - Demanda: 50.0 kW constante
+    #    - Acumulado/hora: 50 × 2.146 = 107.3 kg CO₂/h
+    #    - Anual (baseline): 50 × 2.146 × 8760 = 938,460 kg CO₂/año
+    #    - NO SE REDUCE (es la demanda fija)
+    #    - Propósito: Referencia de línea base
+    #
+    # 2. CO₂ INDIRECTO (Grid Import - OBJETIVO PRINCIPAL):
+    #    - co2_grid_factor_kg_per_kwh: 0.4521 (central térmica aislada)
+    #    - Reducción indirecta = Solar PV directo × 0.4521
+    #    - Ejemplo: 1000 kWh PV directo → 1000 × 0.4521 = 452.1 kg CO₂ evitado
+    #    - SE REDUCE por: Maximizar PV directo a EVs
+    #    - Propósito: Objetivo de optimización principal (peso: 0.50)
+    #
+    # 3. ARQUITECTURA DE REDUCCIONES:
+    #    Baseline: Grid import = 50 kW × 8760 h × 0.4521 = 197,262 kg CO₂/año (indirecto)
+    #    Con RL:   Grid import reducido = (50 - solar_directo) × 8760 × 0.4521
+    #    Reducción neta = solar_directo_anual × 0.4521 (kg CO₂ evitado)
+    #
+    # 4. SINCRONIZACIÓN EN SISTEMA:
+    #    - dataset_builder.py: L443-456 - Valida y carga valores
+    #    - rewards.py: Calcula reward basado en reducciones indirectas
+    #    - agents (SAC/PPO/A2C): Optimizan para maximizar PV directo
+    #    - simulate.py: Reporta ambas reducciones (directa + indirecta)
+    #
+    co2_grid_factor_kg_per_kwh: 0.4521        # Grid CO₂ factor [INDIRECTO]
+    ev_co2_conversion_kg_per_kwh: 2.146       # Demanda EV CO₂ [DIRECTO - tracking]
+    ev_demand_constant_kw: 50.0               # Demanda EV constante [DIRECTO - fijo]
     # TRACKING CO₂ DIRECTO (workaround CityLearn 2.5.0):
     # - ev_demand_kw = 50 kW constante (definido en agentes SAC/PPO/A2C)
     # - co2_direct_kg = 50 kW × 2.146 kg/kWh = 107.3 kg/h acumulativo
