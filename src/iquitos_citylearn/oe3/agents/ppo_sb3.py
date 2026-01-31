@@ -603,13 +603,15 @@ class PPOAgent:
                         env = env.unwrapped
 
                     solar_available_kw = 0.0
-                    ev_demand_kw = 0.0
                     mall_demand_kw = 0.0
                     bess_soc_pct = 50.0
 
-# WORKAROUND CRÍTICO: CityLearn 2.5.0 bug - chargers no se cargan en building.electric_vehicle_chargers
-                    # Por lo tanto, net_electricity_consumption NO incluye demanda EV
-                    # SOLUCIÓN: Estimar ev_demand_kw desde configuración conocida
+                    # EV DEMAND WORKAROUND: Estimación conservadora constante
+                    # 128 chargers operando 54% del tiempo (9AM-10PM)
+                    # CRÍTICO: Definir ANTES del if para asegurar que SIEMPRE existe
+                    ev_demand_kw = 50.0  # kW
+
+                    # WORKAROUND CRÍTICO: CityLearn 2.5.0 bug - chargers no se cargan en building.electric_vehicle_chargers
                     buildings_obj: Any = getattr(env, "buildings", None) if env is not None else None
                     if buildings_obj and isinstance(buildings_obj, (list, tuple)) and len(buildings_obj) > 0:
                         b = buildings_obj[0]
@@ -627,11 +629,6 @@ class PPOAgent:
                             if isinstance(non_shift, (list, tuple, np.ndarray)) and len(non_shift) > 0:
                                 val = non_shift[0] if len(non_shift) > 0 else 0.0
                                 mall_demand_kw = float(val) if val is not None else 0.0
-
-# EV DEMAND WORKAROUND: Estimación conservadora constante
-                        # 128 chargers operando 54% del tiempo (9AM-10PM)
-                        # Demanda promedio conservadora: 50 kW
-                        ev_demand_kw = 50.0  # kW
 
                         # BESS SOC
                         battery = getattr(b, 'battery', None)
