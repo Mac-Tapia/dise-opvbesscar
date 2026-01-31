@@ -552,6 +552,30 @@ class PPOAgent:
                     logger.info("[PPO] KL adaptativo: kl=%.4f lr=%.2e", approx_kl, new_lr)
 
             def _on_step(self) -> bool:
+                self.n_calls += 1
+
+                # ========== CO₂ DIRECTA: CALCULAR PRIMERO (antes de cualquier try-except) ==========
+                try:
+                    EV_DEMAND_CONSTANT_KW = 50.0
+                    co2_factor_ev_direct = 2.146
+                    co2_direct_step_kg = EV_DEMAND_CONSTANT_KW * co2_factor_ev_direct  # 107.3 kg/h
+
+                    prev_co2 = getattr(self, 'co2_direct_avoided_kg', 0.0)
+                    self.co2_direct_avoided_kg = prev_co2 + co2_direct_step_kg
+
+                    motos_step = int((EV_DEMAND_CONSTANT_KW * 0.80) / 2.0)
+                    mototaxis_step = int((EV_DEMAND_CONSTANT_KW * 0.20) / 3.0)
+                    self.motos_cargadas = getattr(self, 'motos_cargadas', 0) + motos_step
+                    self.mototaxis_cargadas = getattr(self, 'mototaxis_cargadas', 0) + mototaxis_step
+
+                    # Logging cada 500 steps
+                    if self.n_calls % 500 == 0:
+                        logger.info(
+                            f"[PPO CO2 DIRECTO] step={self.n_calls} | total={self.co2_direct_avoided_kg:.1f} kg | motos={self.motos_cargadas} | mototaxis={self.mototaxis_cargadas}"
+                        )
+                except Exception as err:
+                    logger.error(f"[PPO CRÍTICO - CO2 DIRECTA] step={self.n_calls} | ERROR: {err}", exc_info=True)
+
                 infos = self.locals.get("infos", [])
                 if isinstance(infos, dict):
                     infos = [infos]
