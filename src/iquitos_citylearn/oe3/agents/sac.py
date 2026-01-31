@@ -873,25 +873,12 @@ class SACAgent:
                                 val = non_shift[0] if len(non_shift) > 0 else 0.0
                                 mall_demand_kw = float(val) if val is not None else 0.0
 
-                        # EV DEMAND WORKAROUND: Estimar desde configuración
-                        # Obtener hora actual del environment
-                        current_hour = 12  # Default mediodía
-                        try:
-                            if hasattr(env, 'time_step'):
-                                current_hour = env.time_step % 24
-                            elif hasattr(b, 'hour'):
-                                h = b.hour
-                                if isinstance(h, (list, tuple, np.ndarray)) and len(h) > 0:
-                                    current_hour = int(h[0] if len(h) > 0 else 12)
-                        except:
-                            pass
-
-                        # Chargers operan 9AM-10PM (horas 9-21)
-                        if 9 <= current_hour <= 21:
-                            # Demanda promedio conservadora durante operación
-                            ev_demand_kw = 100.0  # kW (128 chargers con ~78% utilización promedio)
-                        else:
-                            ev_demand_kw = 0.0  # Fuera de horario operativo
+# EV DEMAND WORKAROUND: Estimación conservadora constante
+                        # 128 chargers (112 motos 2kW + 16 mototaxis 3kW)
+                        # Horario 9AM-10PM (13h/24h = 54% uptime)
+                        # Demanda promedio: 100 kW durante operación × 0.54 ≈ 54 kW promedio diario
+                        # Usamos 50 kW como estimación conservadora constante
+                        ev_demand_kw = 50.0  # kW (estimación conservadora promedio diario)
 
                         # BESS SOC (funciona correctamente)
                         battery = getattr(b, 'battery', None)

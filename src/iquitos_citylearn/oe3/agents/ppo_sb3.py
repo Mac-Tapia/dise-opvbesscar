@@ -628,22 +628,10 @@ class PPOAgent:
                                 val = non_shift[0] if len(non_shift) > 0 else 0.0
                                 mall_demand_kw = float(val) if val is not None else 0.0
 
-                        # EV DEMAND WORKAROUND
-                        current_hour = 12
-                        try:
-                            if hasattr(env, 'time_step'):
-                                current_hour = env.time_step % 24
-                            elif hasattr(b, 'hour'):
-                                h = b.hour
-                                if isinstance(h, (list, tuple, np.ndarray)) and len(h) > 0:
-                                    current_hour = int(h[0] if len(h) > 0 else 12)
-                        except:
-                            pass
-
-                        if 9 <= current_hour <= 21:
-                            ev_demand_kw = 100.0
-                        else:
-                            ev_demand_kw = 0.0
+# EV DEMAND WORKAROUND: Estimación conservadora constante
+                        # 128 chargers operando 54% del tiempo (9AM-10PM)
+                        # Demanda promedio conservadora: 50 kW
+                        ev_demand_kw = 50.0  # kW
 
                         # BESS SOC
                         battery = getattr(b, 'battery', None)
