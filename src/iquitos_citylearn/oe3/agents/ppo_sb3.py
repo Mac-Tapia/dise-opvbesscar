@@ -607,7 +607,10 @@ class PPOAgent:
                     mall_demand_kw = 0.0
                     bess_soc_pct = 50.0
 
-                    # Extraer desde buildings
+                    # CORRECCIÓN ROBUSTA: Extraer demanda EV desde observaciones del building
+                    # net_electricity_consumption = mall + EVs
+                    # non_shiftable_load = mall
+                    # ev_demand_kw = net_electricity_consumption - non_shiftable_load
                     buildings_obj: Any = getattr(env, "buildings", None) if env is not None else None
                     if buildings_obj and isinstance(buildings_obj, (list, tuple)) and len(buildings_obj) > 0:
                         b = buildings_obj[0]
@@ -619,25 +622,23 @@ class PPOAgent:
                                 val = solar_gen[-1]
                                 solar_available_kw = float(val) if val is not None else 0.0
 
-                        # Demanda del mall
+                        # Demanda TOTAL del building (incluye mall + EVs)
+                        total_building_demand_kw = 0.0
                         if hasattr(b, 'net_electricity_consumption'):
                             net_elec = b.net_electricity_consumption
                             if isinstance(net_elec, (list, tuple)) and len(net_elec) > 0:
                                 val = net_elec[-1]
+                                total_building_demand_kw = float(val) if val is not None else 0.0
+
+                        # Demanda del mall (non_shiftable_load)
+                        if hasattr(b, 'non_shiftable_load'):
+                            non_shift = b.non_shiftable_load
+                            if isinstance(non_shift, (list, tuple)) and len(non_shift) > 0:
+                                val = non_shift[-1]
                                 mall_demand_kw = float(val) if val is not None else 0.0
 
-                        # Demanda EV
-                        chargers = getattr(b, 'chargers', None) or []
-                        if hasattr(env, 'chargers'):
-                            chargers = env.chargers  # type: ignore
-                        for charger in chargers:
-                            try:
-                                if hasattr(charger, 'current_power'):
-                                    ev_demand_kw += float(charger.current_power)
-                                elif hasattr(charger, 'power'):
-                                    ev_demand_kw += float(charger.power)
-                            except (ValueError, TypeError):
-                                pass
+                        # Demanda EV = Demanda Total - Demanda Mall
+                        ev_demand_kw = max(0.0, total_building_demand_kw - mall_demand_kw)
 
                         # BESS SOC
                         battery = getattr(b, 'battery', None)
