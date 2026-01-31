@@ -937,11 +937,13 @@ class SACAgent:
                         # Total CO₂ indirecta = solar + BESS discharge
                         self.co2_indirect_avoided_kg = getattr(self, 'co2_indirect_avoided_kg', 0.0) + co2_indirect + co2_bess
 
-                        # CO₂ DIRECTA: Usar energía de carga de EVs directamente (sin SOC)
-                        # Simplificación robusta: total kWh entregado a EVs × factor directo
-                        # Factor directo = (km/kWh × kgCO2/km_combustion) - (km/kWh × kgCO2/km_grid)
-                        #                = 35 km/kWh × (8.9/120 - 0.4521/35) kg CO₂/km
-                        #                = 35 × (0.0742 - 0.0129) = 35 × 0.0613 = 2.146 kg CO₂/kWh
+                    except Exception as err:
+                        logger.warning(f"[SAC] Error calculando CO₂ indirecto/BESS: {err}")
+
+                    # CO₂ DIRECTA: SIEMPRE CALCULAR (FUERA del try-except para garantizar ejecución)
+                    # Factor directo = 2.146 kg CO₂/kWh (EV eléctrico vs combustión)
+                    # ev_demand_kw ya está definido como 50.0 kW constante arriba
+                    try:
                         co2_factor_ev_direct = 2.146  # kg CO₂/kWh evitado (EV vs combustion)
                         co2_direct_step_kg = ev_demand_kw * co2_factor_ev_direct
 
@@ -955,7 +957,7 @@ class SACAgent:
                             self.motos_cargadas = getattr(self, 'motos_cargadas', 0) + motos_activas_step
                             self.mototaxis_cargadas = getattr(self, 'mototaxis_cargadas', 0) + mototaxis_activas_step
                     except Exception as err:
-                        logger.warning(f"[SAC] Error calculando CO₂ directo/indirecto: {err}")
+                        logger.error(f"[SAC CRÍTICO] Error calculando CO₂ directo EVs: {err}")
 
                     # DEBUG: si solar_consumed es 0, usar fallback
                     if dispatch["solar_consumed_kw"] <= 0:

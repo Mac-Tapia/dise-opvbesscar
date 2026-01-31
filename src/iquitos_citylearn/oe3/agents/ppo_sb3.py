@@ -672,9 +672,13 @@ class PPOAgent:
                         # Total CO₂ indirecta = solar + BESS discharge
                         self.co2_indirect_avoided_kg = co2_solar + co2_bess
 
-                        # CO₂ DIRECTA: Usar energía de carga de EVs directamente (sin SOC)
-                        # Factor directo = 2.146 kg CO₂/kWh (evitado vs combustion)
-                        co2_factor_ev_direct = 2.146  # kg CO₂/kWh
+                    except Exception as err:
+                        logger.warning(f"[PPO] Error calculando CO₂ indirecto: {err}")
+
+                    # CO₂ DIRECTA: SIEMPRE CALCULAR (FUERA del try-except principal)
+                    # ev_demand_kw ya está definido como 50.0 kW constante
+                    try:
+                        co2_factor_ev_direct = 2.146  # kg CO₂/kWh (evitado vs combustion)
                         co2_direct_step_kg = ev_demand_kw * co2_factor_ev_direct
 
                         self.co2_direct_avoided_kg += co2_direct_step_kg
@@ -686,7 +690,7 @@ class PPOAgent:
                             self.motos_cargadas += motos_activas
                             self.mototaxis_cargadas += mototaxis_activas
                     except Exception as err:
-                        logger.warning(f"[PPO] Error calculando CO₂ directo/indirecto: {err}")
+                        logger.error(f"[PPO CRÍTICO] Error calculando CO₂ directo EVs: {err}")
 
                     # Acumular grid energy (grid import calculado como demanda - solar)
                     total_demand_kw = mall_demand_kw + ev_demand_kw
