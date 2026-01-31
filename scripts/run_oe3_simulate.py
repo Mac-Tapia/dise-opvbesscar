@@ -24,6 +24,7 @@ def _tailpipe_kg(cfg: dict, ev_kwh: float, simulated_years: float) -> float:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/default.yaml")
+    ap.add_argument("--skip-baseline", action="store_true", help="Saltar simulación Uncontrolled baseline")
     args = ap.parse_args()
 
     setup_logging()
@@ -99,11 +100,11 @@ def main() -> None:
     a2c_log_interval = int(a2c_cfg.get("log_interval", 2000))
 
     det_eval = bool(sac_cfg.get("deterministic_eval", True))
-    mo_priority = str(oe3_cfg["evaluation"].get("multi_objective_priority", "balanced"))
+    mo_priority = str(oe3_cfg["evaluation"].get("multi_objective_priority", "co2_focus"))  # ✓ FORZADO: co2_focus (CO2=0.75)
 
     # Baseline: Electrified transport + PV+BESS + no control (Uncontrolled)
     # Este es el único baseline necesario - también se usa para calcular tailpipe
-    if True:
+    if not args.skip_baseline:
         res_uncontrolled_obj = simulate(
             schema_path=schema_pv,
             agent_name="Uncontrolled",
@@ -140,6 +141,11 @@ def main() -> None:
             multi_objective_priority=mo_priority,
         )
         res_uncontrolled = res_uncontrolled_obj.__dict__
+    else:
+        # Si saltamos baseline, crear resultados vacíos
+        logger = logging.getLogger(__name__)
+        logger.info("[SKIP] Saltando simulación Uncontrolled baseline (--skip-baseline)")
+        res_uncontrolled = {}
 
     # Scenario B: Electrified transport + PV+BESS + control (evaluate candidate agents)
     agent_names = list(eval_cfg["agents"])
@@ -150,6 +156,9 @@ def main() -> None:
         # Skip Uncontrolled in this loop - it will be run in Scenario C as baseline
         if agent.lower() == "uncontrolled":
             continue
+
+        logger.info(f"\n{'='*80}\n[INICIO] Procesando agente: {agent.upper()}\n{'='*80}")
+        print(f"\n{'='*80}\n>>> INICIANDO ENTRENAMIENTO: {agent.upper()}\n{'='*80}\n")
 
         # Skip if results already exist
         results_json = out_dir / f"{agent.lower()}_results.json"
@@ -211,10 +220,12 @@ def main() -> None:
                 multi_objective_priority=mo_priority,
             )
             results[agent] = res.__dict__
+            logger.info(f"\n{'='*80}\n[COMPLETADO] Agente {agent.upper()} finalizado exitosamente\n{'='*80}")
+            print(f"\n{'='*80}\n[OK] {agent.upper()} COMPLETADO - Pasando al siguiente agente\n{'='*80}\n")
         except Exception as e:
-            logger.error(f"Error entrenando agente {agent}: {e}")
-            print(f"[ERROR] El agente {agent} falló: {e}")
-            print(f"[INFO] Continuando con los siguientes agentes...")
+            logger.error(f"Error entrenando agente {agent}: {e}", exc_info=True)
+            print(f"\n{'='*80}\n[ERROR] Error en {agent.upper()}: {e}\n{'='*80}")
+            print(f"[INFO] Continuando con los siguientes agentes...\n")
             continue
 
     # Pick best (lowest annualized carbon, then highest autosuficiencia)
@@ -264,19 +275,34 @@ def main() -> None:
     summary = {
         "schema_pv_bess": str(schema_pv.resolve()),
         "pv_bess_results": results,
-        "pv_bess_uncontrolled": res_uncontrolled,
+        "pv_bess_uncontrolled": res_uncontrolled if res_uncontrolled is not None else {},
         "best_agent": best_agent,
-        "best_result": results[best_agent] if best_agent in results else res_uncontrolled,
+        "best_result": results[best_agent] if best_agent in results else (res_uncontrolled if res_uncontrolled is not None else {}),
         "best_agent_criteria": "min_annual_co2_then_max_autosuficiencia",
-        "tailpipe_kg_per_year": tailpipe_kg_y,
-        "grid_only_with_tailpipe_kg": grid_only_total,
+        "tailpipe_kg_per_year": float(tailpipe_kg_y),
+        "grid_only_with_tailpipe_kg": float(grid_only_total),
         "reductions": reductions,
     }
     if chargers_results is not None:
         summary["chargers_results"] = chargers_results
 
     summary_path = out_dir / "simulation_summary.json"
-    summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    # Asegurar que todos los valores son serializables (float, no numpy.float64, etc.)
+    def make_json_serializable(obj):
+        """Convierte tipos numpy a tipos nativos de Python."""
+        if isinstance(obj, dict):
+            return {k: make_json_serializable(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [make_json_serializable(v) for v in obj]
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.integer):
+            return int(obj)
+        else:
+            return obj
+
+    summary_serializable = make_json_serializable(summary)
+    summary_path.write_text(json.dumps(summary_serializable, indent=2), encoding="utf-8")
 
     # Generar tabla comparativa de CO2
     try:

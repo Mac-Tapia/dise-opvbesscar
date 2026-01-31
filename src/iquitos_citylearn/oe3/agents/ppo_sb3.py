@@ -107,7 +107,6 @@ class PPOConfig:
     verbose: int = 0
     tensorboard_log: Optional[str] = None
     log_interval: int = 2000
-    target_kl: Optional[float] = 0.02
     kl_adaptive: bool = True
     kl_adaptive_down: float = 0.5
     kl_adaptive_up: float = 1.05
@@ -121,11 +120,6 @@ class PPOConfig:
     resume_path: Optional[str] = None  # Ruta a checkpoint SB3 para reanudar
     # Suavizado de acciones
     reward_smooth_lambda: float = 0.0
-    # === NORMALIZACIÓN (crítico para estabilidad) ===
-    normalize_observations: bool = True  # Normalizar obs a media=0, std=1
-    normalize_rewards: bool = True       # Escalar rewards
-    reward_scale: float = 1.0            # ✅ CORREGIDO: 0.01→1.0 (evita gradient explosion)
-    clip_obs: float = 10.0               # Clipear obs normalizadas
 
 
 class PPOAgent:
@@ -514,6 +508,10 @@ class PPOAgent:
                 self.grid_energy_sum = 0.0  # kWh consumido de la red
                 self.solar_energy_sum = 0.0  # kWh de solar usado
                 self.co2_intensity = 0.4521  # kg CO2/kWh para Iquitos
+                self.motos_cargadas = 0.0  # Contador de motos cargadas (SOC >= 90%)
+                self.mototaxis_cargadas = 0.0  # Contador de mototaxis cargadas (SOC >= 90%)
+                self.co2_direct_avoided_kg = 0.0  # CO₂ evitado por cargar EVs
+                self.co2_indirect_avoided_kg = 0.0  # CO₂ evitado por usar solar
 
             def _get_approx_kl(self) -> Optional[float]:
                 logger_obj = getattr(self.model, "logger", None)
@@ -590,13 +588,8 @@ class PPOAgent:
                 except Exception as e:
                     logger.debug(f"[PPO CALLBACK] Error sincronizando acumuladores: {e}")
 
-                # Extraer métricas de energía del environment (ROBUST TRIPLE FALLBACK)
-                # Acumular SIEMPRE valores de energía (por cada step)
-                # Estrategia: Intentar desde buildings, sino usar fallback conservador
+                # Extraer métricas de energía del environment
                 try:
-                    extracted_grid = 0.0
-                    extracted_solar = 0.0
-
                     env = None
                     training_env = getattr(self, "training_env", None)
                     if training_env is not None:
@@ -609,44 +602,106 @@ class PPOAgent:
                     if env is not None and hasattr(env, "unwrapped"):
                         env = env.unwrapped
 
-                    # Intentar extraer desde buildings
+                    solar_available_kw = 0.0
+                    ev_demand_kw = 0.0
+                    mall_demand_kw = 0.0
+                    bess_soc_pct = 50.0
+
+                    # Extraer desde buildings
                     buildings_obj: Any = getattr(env, "buildings", None) if env is not None else None
                     if buildings_obj and isinstance(buildings_obj, (list, tuple)) and len(buildings_obj) > 0:
-                        for b in buildings_obj:
+                        b = buildings_obj[0]
+
+                        # Solar disponible
+                        if hasattr(b, 'solar_generation'):
+                            solar_gen = b.solar_generation
+                            if isinstance(solar_gen, (list, tuple)) and len(solar_gen) > 0:
+                                val = solar_gen[-1]
+                                solar_available_kw = float(val) if val is not None else 0.0
+
+                        # Demanda del mall
+                        if hasattr(b, 'net_electricity_consumption'):
+                            net_elec = b.net_electricity_consumption
+                            if isinstance(net_elec, (list, tuple)) and len(net_elec) > 0:
+                                val = net_elec[-1]
+                                mall_demand_kw = float(val) if val is not None else 0.0
+
+                        # Demanda EV
+                        chargers = getattr(b, 'chargers', None) or []
+                        if hasattr(env, 'chargers'):
+                            chargers = env.chargers  # type: ignore
+                        for charger in chargers:
                             try:
-                                # Grid consumption
-                                if hasattr(b, 'net_electricity_consumption'):
-                                    net_elec = b.net_electricity_consumption
-                                    if isinstance(net_elec, (list, tuple)) and len(net_elec) > 0:
-                                        val = net_elec[-1]
-                                        if val is not None and isinstance(val, (int, float)):
-                                            extracted_grid += abs(float(val))
-                                # Solar generation
-                                if hasattr(b, 'solar_generation'):
-                                    solar_gen = b.solar_generation
-                                    if isinstance(solar_gen, (list, tuple)) and len(solar_gen) > 0:
-                                        val = solar_gen[-1]
-                                        if val is not None and isinstance(val, (int, float)):
-                                            extracted_solar += abs(float(val))
-                            except (ValueError, TypeError, AttributeError):
-                                continue
+                                if hasattr(charger, 'current_power'):
+                                    ev_demand_kw += float(charger.current_power)
+                                elif hasattr(charger, 'power'):
+                                    ev_demand_kw += float(charger.power)
+                            except (ValueError, TypeError):
+                                pass
 
-                    # SIEMPRE acumular: si extracción fue exitosa úsala, sino fallback
-                    if extracted_grid > 0:
-                        self.grid_energy_sum += extracted_grid
-                    else:
-                        self.grid_energy_sum += 1.37  # Fallback: ~1.37 kWh/step
+                        # BESS SOC
+                        battery = getattr(b, 'battery', None)
+                        if battery is not None:
+                            if hasattr(battery, 'soc'):
+                                bess_soc_pct = float(battery.soc) * 100.0 if battery.soc <= 1.0 else float(battery.soc)
 
-                    if extracted_solar > 0:
-                        self.solar_energy_sum += extracted_solar
-                    else:
-                        self.solar_energy_sum += 0.62  # Fallback: ~0.62 kWh/step
+                    # NUEVOS: Calcular reducción CO₂ INDIRECTA (solar + BESS) y DIRECTA (EVs)
+                    try:
+                        from iquitos_citylearn.oe3.rewards import (
+                            calculate_co2_reduction_indirect,
+                            calculate_co2_reduction_direct,
+                            calculate_co2_reduction_bess_discharge,
+                        )
 
-                except (AttributeError, TypeError, IndexError, ValueError) as err:
-                    # Last resort: ALWAYS accumulate something
-                    logger.debug(f"[PPO] Error in metric extraction: {err}, using fallback")
-                    self.grid_energy_sum += 1.37
-                    self.solar_energy_sum += 0.62
+                        # CO₂ INDIRECTA: Solar disponible evita importar
+                        self.solar_energy_sum += solar_available_kw
+                        co2_solar = self.solar_energy_sum * self.co2_intensity
+
+                        # CO₂ INDIRECTA: Descarga de BESS (energía solar almacenada usada posteriormente)
+                        bess_discharge_kw = 0.0
+                        try:
+                            # Usar battery ya definido anteriormente (línea ~654)
+                            if battery is not None and hasattr(battery, 'soc'):
+                                current_soc = float(battery.soc) if battery.soc <= 1.0 else float(battery.soc) / 100.0
+                                prev_soc = getattr(self, '_prev_bess_soc', current_soc)
+                                bess_capacity_kwh = 4520.0
+                                soc_delta = current_soc - prev_soc
+                                bess_power_kw = soc_delta * bess_capacity_kwh
+                                if bess_power_kw < 0:  # Descarga = power negativo
+                                    bess_discharge_kw = abs(bess_power_kw)
+                                self._prev_bess_soc = current_soc
+                        except (ValueError, TypeError, AttributeError):
+                            pass
+
+                        co2_bess = calculate_co2_reduction_bess_discharge(bess_discharge_kw)
+
+                        # Total CO₂ indirecta = solar + BESS discharge
+                        self.co2_indirect_avoided_kg = co2_solar + co2_bess
+
+                        # CO₂ DIRECTA: Usar energía de carga de EVs directamente (sin SOC)
+                        # Factor directo = 2.146 kg CO₂/kWh (evitado vs combustion)
+                        co2_factor_ev_direct = 2.146  # kg CO₂/kWh
+                        co2_direct_step_kg = ev_demand_kw * co2_factor_ev_direct
+
+                        self.co2_direct_avoided_kg += co2_direct_step_kg
+
+                        # Estimación de vehículos activos
+                        if ev_demand_kw > 0:
+                            motos_activas = int((ev_demand_kw * 0.80) / 2.0)
+                            mototaxis_activas = int((ev_demand_kw * 0.20) / 3.0)
+                            self.motos_cargadas += motos_activas
+                            self.mototaxis_cargadas += mototaxis_activas
+                    except Exception as err:
+                        logger.warning(f"[PPO] Error calculando CO₂ directo/indirecto: {err}")
+
+                    # Acumular grid energy (grid import calculado como demanda - solar)
+                    total_demand_kw = mall_demand_kw + ev_demand_kw
+                    grid_import_kw = max(0.0, total_demand_kw - solar_available_kw)
+                    self.grid_energy_sum += grid_import_kw
+
+                except Exception as err:
+                    # Fallback
+                    logger.debug(f"[PPO] Error extrayendo métricas: {err}")
 
 
                 if not infos:
@@ -655,14 +710,22 @@ class PPOAgent:
                     approx_episode = max(1, int(self.model.num_timesteps // 8760) + 1)
                     # Usar grid_energy_sum acumulado, si es 0 usar valor mínimo del episodio
                     grid_kwh_to_log = max(self.grid_energy_sum, 100.0) if self.grid_energy_sum == 0 else self.grid_energy_sum
-                    co2_kg = grid_kwh_to_log * self.co2_intensity
+                    co2_grid_kg = grid_kwh_to_log * self.co2_intensity
+                    co2_total_avoided = self.co2_indirect_avoided_kg + self.co2_direct_avoided_kg
                     logger.info(
-                        "[PPO] paso %d | ep~%d | pasos_global=%d | grid_kWh=%.1f | co2_kg=%.1f",
+                        "[PPO] paso %d | ep~%d | pasos_global=%d | grid_kWh=%.1f | co2_grid_kg=%.1f | "
+                        "solar_kWh=%.1f | co2_indirect_kg=%.1f | co2_direct_kg=%.1f | motos=%d | mototaxis=%d | co2_total_avoided_kg=%.1f",
                         self.n_calls,
                         approx_episode,
                         int(self.model.num_timesteps),
                         grid_kwh_to_log,
-                        co2_kg,
+                        co2_grid_kg,
+                        self.solar_energy_sum,
+                        self.co2_indirect_avoided_kg,
+                        self.co2_direct_avoided_kg,
+                        self.motos_cargadas,
+                        self.mototaxis_cargadas,
+                        co2_total_avoided,
                     )
                     if self.progress_path is not None:
                         row = {

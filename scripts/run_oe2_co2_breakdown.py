@@ -18,25 +18,26 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
 from scripts._common import load_all
 
 
-def main(config_path: Path) -> dict:
+def main(config_path: str | Path) -> dict[str, Any]:
     """Ejecuta cálculo de breakdown CO2 OE2."""
-    cfg, rp = load_all(config_path)
-    
+    cfg, rp = load_all(str(config_path))
+
     # Cargar resultados OE2
     bess_path = rp.interim_dir / "oe2" / "bess" / "bess_results.json"
     chargers_path = rp.interim_dir / "oe2" / "chargers" / "chargers_results.json"
     solar_path = rp.interim_dir / "oe2" / "solar" / "solar_results.json"
-    
+
     bess = json.loads(bess_path.read_text(encoding="utf-8"))
     chargers = json.loads(chargers_path.read_text(encoding="utf-8"))
     solar = json.loads(solar_path.read_text(encoding="utf-8"))
-    
+
     # Factores de emisión
     em = cfg["oe3"]["emissions"]
     grid_co2 = cfg["oe3"]["grid"]["carbon_intensity_kg_per_kwh"]
@@ -44,56 +45,56 @@ def main(config_path: Path) -> dict:
     km_per_gallon = em["km_per_gallon"]
     kgco2_per_gallon = em["kgco2_per_gallon"]
     project_life = em.get("project_life_years", 20)
-    
+
     # Línea base ciudad
     city = cfg["oe3"].get("city_baseline_tpy", {})
     transport_tpy = city.get("transport", 258250.0)
     electricity_tpy = city.get("electricity_generation", 290000.0)
-    
+
     # Parámetros de flota EV
     ev_fleet = cfg["oe2"]["ev_fleet"]
     n_motos = ev_fleet["motos_count"]
     n_mototaxis = ev_fleet["mototaxis_count"]
     # pe_* y fc_* no se usan (demanda viene de capacidad de cargadores)
-    
+
     # ==== DEMANDA EV DEL SISTEMA (capacidad de cargadores) ====
     # El sistema está diseñado para atender 3,072 sesiones/día (capacidad cargadores)
     ev_demand_day = chargers["total_daily_energy_kwh"]  # 2,939 kWh/día
     sessions_per_day = chargers["capacity_sessions_per_day"]  # 3,072
-    
+
     # Vehículos atendidos por día (del escenario recomendado)
     esc_rec = chargers.get("esc_rec", {})
     motos_atendidos_dia = esc_rec.get("vehicles_day_motos", 2684)
     mototaxis_atendidos_dia = esc_rec.get("vehicles_day_mototaxis", 388)
     total_vehiculos_dia = motos_atendidos_dia + mototaxis_atendidos_dia
-    
+
     # Proporción de cada tipo de vehículo
     pct_motos = motos_atendidos_dia / total_vehiculos_dia if total_vehiculos_dia > 0 else 0.874
     pct_mototaxis = mototaxis_atendidos_dia / total_vehiculos_dia if total_vehiculos_dia > 0 else 0.126
-    
+
     # Línea base Iquitos (disgregada)
     # Fuente: Plan de Desarrollo de Maynas (70,500 motos, 61,000 mototaxis)
     co2_motos_iquitos_tpy = 105750  # tCO2/año (70,500 motos)
     co2_mototaxis_iquitos_tpy = 152500  # tCO2/año (61,000 mototaxis)
-    
+
     # Datos de balance energético del sistema
     mall_demand_day = bess["mall_demand_kwh_day"]
     pv_gen_day = bess["pv_generation_kwh_day"]
     total_demand_day = mall_demand_day + ev_demand_day
-    
+
     # PV usado = min(PV generado, demanda total)
     pv_used_day = min(pv_gen_day, total_demand_day)
     # Import de red = demanda - PV usado (si demanda > PV)
     grid_import_day = max(total_demand_day - pv_gen_day, 0)
     # Export = PV sobrante (si PV > demanda)
     grid_export_day = max(pv_gen_day - total_demand_day, 0)
-    
+
     # ==== METODOLOGÍA ====
-    # 
+    #
     # DIRECTA: Beneficio de electrificación (reemplazo gasolina por EV)
     # INDIRECTA: Beneficio de generación renovable (PV/BESS desplaza red)
     #
-    
+
     # 1. Valores anuales
     ev_demand_year = ev_demand_day * 365
     pv_used_year = pv_used_day * 365
@@ -102,63 +103,63 @@ def main(config_path: Path) -> dict:
     # 2. Servicio de transporte
     km_year = ev_demand_year * km_per_kwh
     gallons_year = km_year / max(km_per_gallon, 1e-9)
-    
+
     # 3. Baseline: CO2 si usaran gasolina
     transport_base_kgco2_year = gallons_year * kgco2_per_gallon
     transport_base_tco2_year = transport_base_kgco2_year / 1000
-    
+
     # 4. CO2 si toda la carga EV fuera de red (sin PV) - solo referencia
     ev_all_grid_kgco2_year = ev_demand_year * grid_co2
     ev_all_grid_tco2_year = ev_all_grid_kgco2_year / 1000
-    
+
     # 5. Reducción DIRECTA (electrificación): Reemplazo gasolina por EV
     #    = TODO el CO₂ de gasolina que se deja de emitir
     #    NO involucra carga de red - es el beneficio BRUTO de electrificación
     direct_avoided_kgco2_year = transport_base_kgco2_year
     direct_avoided_tco2_year = transport_base_tco2_year
-    
+
     # 5.1 Disgregación DIRECTA por tipo de vehículo
     direct_motos_tco2_year = direct_avoided_tco2_year * pct_motos
     direct_mototaxis_tco2_year = direct_avoided_tco2_year * pct_mototaxis
-    
+
     # 5.2 Contribución disgregada vs Iquitos
     pct_direct_motos_vs_iquitos = 100.0 * direct_motos_tco2_year / co2_motos_iquitos_tpy
     pct_direct_mototaxis_vs_iquitos = 100.0 * direct_mototaxis_tco2_year / co2_mototaxis_iquitos_tpy
-    
+
     # 6. Reducción INDIRECTA (generación renovable): PV/BESS desplaza red
     #    TODO el PV usado localmente desplaza generación térmica de la red
     indirect_avoided_kgco2_year = pv_used_year * grid_co2
     indirect_avoided_tco2_year = indirect_avoided_kgco2_year / 1000
-    
+
     # 6.1 Contribución INDIRECTA vs electricidad Iquitos
     pct_indirect_vs_electricity = 100.0 * indirect_avoided_tco2_year / electricity_tpy
-    
+
     # 7. Reducción NETA TOTAL
     net_avoided_kgco2_year = direct_avoided_kgco2_year + indirect_avoided_kgco2_year
     net_avoided_tco2_year = net_avoided_kgco2_year / 1000
-    
+
     # 8. CO2 real del sistema (importación de red)
     real_grid_kgco2_year = grid_import_year * grid_co2
     real_grid_tco2_year = real_grid_kgco2_year / 1000
-    
+
     # 9. Proyección vida útil
     direct_avoided_tco2_life = direct_avoided_tco2_year * project_life
     direct_motos_tco2_life = direct_motos_tco2_year * project_life
     direct_mototaxis_tco2_life = direct_mototaxis_tco2_year * project_life
     indirect_avoided_tco2_life = indirect_avoided_tco2_year * project_life
     net_avoided_tco2_life = net_avoided_tco2_year * project_life
-    
+
     # 10. Contribución a Iquitos - total
     pct_transport = 100.0 * direct_avoided_tco2_year / transport_tpy
     pct_total = 100.0 * net_avoided_tco2_year / (transport_tpy + electricity_tpy)
-    
+
     # 11. Contribución INDIRECTA a electricidad de Iquitos
     pct_indirect_vs_electricity = 100.0 * indirect_avoided_tco2_year / electricity_tpy
-    
+
     # 12. Vida útil disgregada por tipo de vehículo
     direct_motos_tco2_life = direct_motos_tco2_year * project_life
     direct_mototaxis_tco2_life = direct_mototaxis_tco2_year * project_life
-    
+
     # Resultados
     results = {
         # Sistema
@@ -241,16 +242,16 @@ def main(config_path: Path) -> dict:
         "kgco2_per_gallon": kgco2_per_gallon,
         "project_life_years": project_life,
     }
-    
+
     # Guardar resultados
     out_dir = rp.reports_dir / "oe2" / "co2_breakdown"
     out_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # JSON
     (out_dir / "oe2_co2_breakdown.json").write_text(
         json.dumps(results, indent=2), encoding="utf-8"
     )
-    
+
     # Actualizar chargers_results.json con métricas corregidas
     chargers_updated = chargers.copy()
     chargers_updated.update({
@@ -268,7 +269,7 @@ def main(config_path: Path) -> dict:
     chargers_path.write_text(
         json.dumps(chargers_updated, indent=2), encoding="utf-8"
     )
-    
+
     # Tabla resumen CSV
     rows = [
         ("Sistema PV (kWp)", f"{results['pv_dc_kw']:,.0f}"),
@@ -322,7 +323,7 @@ def main(config_path: Path) -> dict:
     ]
     df = pd.DataFrame(rows, columns=["Métrica", "Valor"])
     df.to_csv(out_dir / "oe2_co2_breakdown.csv", index=False)
-    
+
     # Markdown
     md_lines = [
         "# OE2 - Breakdown de Reducción de CO₂",
@@ -437,7 +438,7 @@ def main(config_path: Path) -> dict:
         "",
     ]
     (out_dir / "oe2_co2_breakdown.md").write_text("\n".join(md_lines), encoding="utf-8")
-    
+
     # Imprimir resumen
     print("=" * 70)
     print("OE2 - BREAKDOWN CO₂")
@@ -473,7 +474,7 @@ def main(config_path: Path) -> dict:
     print(f"  Total ciudad:                      {results['contribution_total_pct']:.4f}%")
     print()
     print(f"Resultados guardados en: {out_dir}")
-    
+
     return results
 
 

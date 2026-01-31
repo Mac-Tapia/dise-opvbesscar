@@ -99,6 +99,11 @@ class IquitosContext:
     # Horas pico Iquitos
     peak_hours: Tuple[int, ...] = (18, 19, 20, 21)
 
+    # Factores de emisiones evitadas (vehículos eléctricos vs combustión)
+    km_per_kwh: float = 35.0           # Motos/mototaxis eléctricas: ~35 km/kWh
+    km_per_gallon: float = 120.0        # Motos/mototaxis combustión: ~120 km/galón
+    kgco2_per_gallon: float = 8.9       # Emisiones combustión: ~8.9 kg CO₂/galón
+
 
 class MultiObjectiveReward:
     """Calcula recompensa multiobjetivo para control de carga EV + BESS.
@@ -156,8 +161,28 @@ class MultiObjectiveReward:
         components = {}
         is_peak = hour in self.context.peak_hours
 
-        # 1. Recompensa CO₂ (minimizar) - TIER 1 FIX: Baselines Realistas
-        co2_kg = grid_import_kwh * self.context.co2_factor_kg_per_kwh
+        # 1. Recompensa CO₂ (minimizar) - TIER 1 FIX: Baselines Realistas + CO₂ EVITADO
+        # CO₂ directo: importación de grid
+        co2_grid_kg = grid_import_kwh * self.context.co2_factor_kg_per_kwh
+
+        # CO₂ EVITADO - COMPONENTE 1: Solar que evita importación de grid (INDIRECTA)
+        # Energía solar consumida → evita importar energía del grid térmico
+        co2_avoided_indirect_kg = solar_generation_kwh * self.context.co2_factor_kg_per_kwh
+
+        # CO₂ EVITADO - COMPONENTE 2: EVs que evitan combustión (DIRECTA)
+        # Cálculo: ev_charging_kwh → km recorridos → gasolina evitada → CO₂ evitado
+        if ev_charging_kwh > 0:
+            total_km = ev_charging_kwh * self.context.km_per_kwh
+            gallons_avoided = total_km / max(self.context.km_per_gallon, 1e-9)
+            co2_avoided_direct_kg = gallons_avoided * self.context.kgco2_per_gallon
+        else:
+            co2_avoided_direct_kg = 0.0
+
+        # CO₂ EVITADO TOTAL = indirecta (solar) + directa (EVs)
+        co2_avoided_total_kg = co2_avoided_indirect_kg + co2_avoided_direct_kg
+
+        # CO₂ NETO = grid emissions - avoided emissions (puede ser negativo si evitamos más de lo que importamos)
+        co2_net_kg = co2_grid_kg - co2_avoided_total_kg
 
         # Baselines basados en operación real Iquitos:
         # Off-peak: mall ~100 kW avg + chargers ~30 kW = 130 kWh/hora típico
@@ -166,18 +191,20 @@ class MultiObjectiveReward:
         co2_baseline_peak = 250.0     # kWh/hora target with BESS support en pico
 
         if is_peak:
-            # En pico: penalizar fuertemente si superas target
-            # Si importas 250 (target), reward = 1 - 2*(250/250) = -1 (penalty)
-            # Si importas 100 (good), reward = 1 - 2*(100/250) = 0.2 (bonus)
-            # Rango [-1, 1] con gradientes claros
-            r_co2 = 1.0 - 2.0 * min(1.0, grid_import_kwh / co2_baseline_peak)
+            # En pico: penalizar fuertemente si superas target (usando CO₂ neto)
+            # Bonus si CO₂ neto < 0 (evitamos más de lo que importamos)
+            r_co2 = 1.0 - 2.0 * min(1.0, max(0, co2_net_kg) / (co2_baseline_peak * self.context.co2_factor_kg_per_kwh))
         else:
             # Off-peak: más tolerante pero aún penaliza exceso
-            r_co2 = 1.0 - 1.0 * min(1.0, grid_import_kwh / co2_baseline_offpeak)
+            r_co2 = 1.0 - 1.0 * min(1.0, max(0, co2_net_kg) / (co2_baseline_offpeak * self.context.co2_factor_kg_per_kwh))
 
         r_co2 = np.clip(r_co2, -1.0, 1.0)
         components["r_co2"] = r_co2
-        components["co2_kg"] = co2_kg
+        components["co2_grid_kg"] = co2_grid_kg
+        components["co2_avoided_indirect_kg"] = co2_avoided_indirect_kg
+        components["co2_avoided_direct_kg"] = co2_avoided_direct_kg
+        components["co2_avoided_total_kg"] = co2_avoided_total_kg
+        components["co2_net_kg"] = co2_net_kg
 
         # 2. Recompensa Costo (minimizar)
         cost_usd = (grid_import_kwh - grid_export_kwh) * self.context.tariff_usd_per_kwh
@@ -547,21 +574,95 @@ def create_iquitos_reward_weights(
     """
     # Versión estándar (todos los casos ahora usan esto)
     presets = {
-        "balanced": MultiObjectiveWeights(
-            co2=0.35, cost=0.25, solar=0.20, ev_satisfaction=0.15, grid_stability=0.05
-        ),
-        "co2_focus": MultiObjectiveWeights(
-            co2=0.50, cost=0.15, solar=0.20, ev_satisfaction=0.10, grid_stability=0.05
-        ),
-        "cost_focus": MultiObjectiveWeights(
-            co2=0.20, cost=0.45, solar=0.15, ev_satisfaction=0.15, grid_stability=0.05
-        ),
-        "ev_focus": MultiObjectiveWeights(
-            co2=0.25, cost=0.20, solar=0.15, ev_satisfaction=0.35, grid_stability=0.05
-        ),
-        "solar_focus": MultiObjectiveWeights(
-            co2=0.25, cost=0.15, solar=0.40, ev_satisfaction=0.15, grid_stability=0.05
-        ),
+        "balanced": MultiObjectiveWeights(co2=0.35, cost=0.25, solar=0.20, ev_satisfaction=0.15, grid_stability=0.05),
+        "co2_focus": MultiObjectiveWeights(co2=0.50, cost=0.15, solar=0.20, ev_satisfaction=0.10, grid_stability=0.05),
+        "cost_focus": MultiObjectiveWeights(co2=0.30, cost=0.35, solar=0.15, ev_satisfaction=0.15, grid_stability=0.05),
+        "ev_focus": MultiObjectiveWeights(co2=0.30, cost=0.20, solar=0.15, ev_satisfaction=0.30, grid_stability=0.05),
+        "solar_focus": MultiObjectiveWeights(co2=0.30, cost=0.20, solar=0.35, ev_satisfaction=0.10, grid_stability=0.05),
+    }
+    return presets.get(priority, presets["co2_focus"])
+
+
+def calculate_co2_reduction_indirect(solar_consumed_kw: float) -> float:
+    """Calcula la reducción INDIRECTA de CO₂ por usar energía solar.
+
+    CO₂ evitado = solar consumido × factor de emisión grid (térmica)
+
+    Args:
+        solar_consumed_kw: Energía solar consumida en este timestep (kW)
+
+    Returns:
+        CO₂ evitado en kg
+    """
+    co2_factor_grid = 0.4521  # kg CO₂/kWh (central térmica Iquitos)
+    return solar_consumed_kw * co2_factor_grid
+
+
+def calculate_co2_reduction_bess_discharge(
+    bess_discharge_kw: float,
+    is_nighttime: bool = False,
+) -> float:
+    """Calcula la reducción INDIRECTA de CO₂ por descargar BESS.
+
+    Cuando el BESS descarga energía (almacenada del solar durante el día),
+    evita importar de la red térmica. Esto es especialmente importante
+    durante la noche cuando no hay generación solar.
+
+    CO₂ evitado = energía descargada × factor de emisión grid
+
+    Args:
+        bess_discharge_kw: Energía descargada del BESS en este timestep (kW)
+        is_nighttime: Si es horario nocturno (opcional, para ajustes futuros)
+
+    Returns:
+        CO₂ evitado en kg
+    """
+    co2_factor_grid = 0.4521  # kg CO₂/kWh (central térmica Iquitos)
+    # Durante la noche, la descarga de BESS directamente reemplaza grid import
+    # Durante el día, puede estar ayudando a cubrir picos
+    return bess_discharge_kw * co2_factor_grid
+
+
+def calculate_co2_reduction_direct(
+    charger_soc_list: List[float],
+    charger_types_list: List[str],
+    co2_factor_moto: float = 2.5,
+    co2_factor_mototaxi: float = 3.5,
+    soc_threshold_full: float = 0.90,
+) -> Dict[str, float]:
+    """Calcula la reducción DIRECTA de CO₂ por cargar vehículos eléctricos.
+
+    CO₂ evitado = kWh cargado × km/kWh × (galones evitados/km) × kg CO₂/galón
+
+    Args:
+        charger_soc_list: Lista de SOC de cada charger [0-1]
+        charger_types_list: Lista de tipos ("moto" o "mototaxi")
+        co2_factor_moto: kg CO₂ evitado por moto completamente cargada
+        co2_factor_mototaxi: kg CO₂ evitado por mototaxi completamente cargada
+        soc_threshold_full: SOC mínimo para considerar "cargado" (0.90 = 90%)
+
+    Returns:
+        Dict con claves:
+            - motos_cargadas: int
+            - mototaxis_cargadas: int
+            - co2_direct_total_kg: float
+    """
+    motos_cargadas = 0
+    mototaxis_cargadas = 0
+    co2_direct_total_kg = 0.0
+
+    for soc, charger_type in zip(charger_soc_list, charger_types_list):
+        if soc >= soc_threshold_full:
+            if charger_type == "moto":
+                motos_cargadas += 1
+                co2_direct_total_kg += co2_factor_moto
+            elif charger_type == "mototaxi":
+                mototaxis_cargadas += 1
+                co2_direct_total_kg += co2_factor_mototaxi
+
+    return {
+        "motos_cargadas": motos_cargadas,
+        "mototaxis_cargadas": mototaxis_cargadas,
+        "co2_direct_total_kg": co2_direct_total_kg,
     }
 
-    return presets.get(priority, presets["balanced"])
