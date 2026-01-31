@@ -110,7 +110,7 @@ class ChargerMonitor:
 
         # Imprimir motos
         print(f"\n{'─'*140}")
-        print(f"MOTOS (32 chargers × 2 kW = 64 kW max)")
+        print(f"MOTOS (28 chargers × 4 sockets × 2 kW = 112 sockets, 224 kW max si todos activos)")
         print(f"{'─'*140}")
         print(f"{'ID':<5} {'Tipo':<8} {'SOC':<10} {'Carga':<20} {'Tiempo':<12} {'Potencia':<20} {'Prioridad':<15} {'Estado':<15}")
         print(f"{'─'*140}")
@@ -121,7 +121,7 @@ class ChargerMonitor:
 
         # Imprimir mototaxis
         print(f"\n{'─'*140}")
-        print(f"MOTOTAXIS (96 chargers × 3 kW = 288 kW max)")
+        print(f"MOTOTAXIS (4 chargers × 4 sockets × 3 kW = 16 sockets, 48 kW max si todos activos)")
         print(f"{'─'*140}")
         print(f"{'ID':<5} {'Tipo':<8} {'SOC':<10} {'Carga':<20} {'Tiempo':<12} {'Potencia':<20} {'Prioridad':<15} {'Estado':<15}")
         print(f"{'─'*140}")

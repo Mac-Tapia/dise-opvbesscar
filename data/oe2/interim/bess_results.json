@@ -13,6 +13,8 @@
   "total_demand_kwh_day": 34698.00000000001,
   "mall_demand_kwh_day": 33885,
   "ev_demand_kwh_day": 3252.0,
+  "_comment_ev_demand": "NOTA: En OE3, agentes SAC/PPO/A2C usan ev_demand_constant_kw=50kW (workaround CityLearn 2.5.0 bug)",
+  "_comment_co2_tracking": "CO2 directo = 50kW x 2.146 kg/kWh = 107.3 kg/h acumulativo",
   "bess_load_scope": "ev_only",
   "pv_available_kwh_day": 22036.0,
   "bess_load_kwh_day": 813.0,

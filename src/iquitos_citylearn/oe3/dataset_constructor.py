@@ -24,13 +24,15 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DatasetConfig:
     """Configuración del dataset a construir."""
-    n_timesteps: int = 8760  # 1 año
-    n_chargers: int = 128  # Total de sockets (32 chargers × 4 sockets)
-    n_controllable_chargers: int = 126  # 2 reservados para baseline
+    n_timesteps: int = 8760  # 1 año horario
+    n_chargers: int = 128  # Total sockets (32 chargers físicos × 4 sockets: 28 motos @2kW + 4 mototaxis @3kW)
+    n_controllable_chargers: int = 126  # 2 sockets reservados para baseline comparison
     observation_dim: int = 394  # Solar(1) + demand(1) + BESS(1) + Mall(1) + charger_demand(128) + charger_power(128) + charger_occ(128) + time(4) + grid(2)
-    action_dim: int = 126  # Continuous setpoints para cargadores
-    carbon_intensity_kg_per_kwh: float = 0.4521  # Iquitos (diesel thermal)
-    tariff_usd_per_kwh: float = 0.20
+    action_dim: int = 126  # Continuous setpoints para 126 sockets controlables
+    carbon_intensity_kg_per_kwh: float = 0.4521  # Iquitos (diesel thermal isolated grid)
+    tariff_usd_per_kwh: float = 0.20  # Tarifa promedio (baja, no es constraint)
+    # TRACKING CO₂: ev_demand_kw=50 constante (workaround CityLearn 2.5.0 bug)
+    ev_demand_constant_kw: float = 50.0  # Demanda promedio estimada (54% uptime × 100kW)
 
     # Reward weights
     reward_co2_weight: float = 0.50
