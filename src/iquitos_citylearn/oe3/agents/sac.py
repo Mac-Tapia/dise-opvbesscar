@@ -195,9 +195,11 @@ class SACConfig:
     weight_grid_stability: float = 0.05   # Minimizar picos de demanda
 
     # Umbrales multicriterio
-    co2_target_kg_per_kwh: float = 0.4521  # Factor emisión Iquitos
+    co2_target_kg_per_kwh: float = 0.4521  # Factor emisión Iquitos (grid import)
+    co2_conversion_factor: float = 2.146   # Para cálculo directo: 50kW × 2.146 = 107.3 kg/h
     cost_target_usd_per_kwh: float = 0.20  # Tarifa objetivo
     ev_soc_target: float = 0.90          # SOC objetivo EVs al partir
+    ev_demand_constant_kw: float = 50.0  # Demanda EV constante (workaround CityLearn 2.5.0)
     peak_demand_limit_kw: float = 200.0  # Límite demanda pico
 
     # Reproducibilidad

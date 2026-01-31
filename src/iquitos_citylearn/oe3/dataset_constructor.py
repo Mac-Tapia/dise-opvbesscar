@@ -23,16 +23,18 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class DatasetConfig:
-    """Configuración del dataset a construir."""
-    n_timesteps: int = 8760  # 1 año horario
-    n_chargers: int = 128  # Total sockets (32 chargers físicos × 4 sockets: 28 motos @2kW + 4 mototaxis @3kW)
+    """Configuraci\u00f3n del dataset a construir - OE2 REAL 2026-01-31."""
+    n_timesteps: int = 8760  # 1 a\u00f1o horario (resoluci\u00f3n exacta)
+    n_chargers_physical: int = 32  # Chargers f\u00edsicos (28 motos + 4 mototaxis)
+    n_chargers: int = 128  # Total sockets (32 \u00d7 4 = 128 individual controllables)
     n_controllable_chargers: int = 126  # 2 sockets reservados para baseline comparison
     observation_dim: int = 394  # Solar(1) + demand(1) + BESS(1) + Mall(1) + charger_demand(128) + charger_power(128) + charger_occ(128) + time(4) + grid(2)
-    action_dim: int = 126  # Continuous setpoints para 126 sockets controlables
+    action_dim: int = 126  # Continuous setpoints [0,1] para 126 sockets controlables
     carbon_intensity_kg_per_kwh: float = 0.4521  # Iquitos (diesel thermal isolated grid)
+    co2_conversion_factor: float = 2.146  # Para c\u00e1lculo directo: 50kW \u00d7 2.146 = 107.3 kg/h
     tariff_usd_per_kwh: float = 0.20  # Tarifa promedio (baja, no es constraint)
-    # TRACKING CO₂: ev_demand_kw=50 constante (workaround CityLearn 2.5.0 bug)
-    ev_demand_constant_kw: float = 50.0  # Demanda promedio estimada (54% uptime × 100kW)
+    # TRACKING CO\u2082: ev_demand_kw=50 constante (workaround CityLearn 2.5.0 bug)
+    ev_demand_constant_kw: float = 50.0  # Demanda constante: 54% uptime \u00d7 100kW total \u2248 50kW
 
     # Reward weights
     reward_co2_weight: float = 0.50

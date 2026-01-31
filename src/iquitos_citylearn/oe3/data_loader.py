@@ -51,16 +51,16 @@ class ChargerData:
     summary: Dict[str, Any]
 
     def validate(self) -> bool:
-        """Validar integridad cargadores."""
-        # Permitir 32 o 128 (si 4 sockets cada uno)
+        """Validar integridad cargadores - OE2 REAL 2026-01-31."""
+        # 32 chargers físicos (28 motos + 4 mototaxis) = 128 sockets (32 × 4)
         if len(self.individual_chargers) not in [32, 128]:
             logger.warning(f"Número de cargadores {len(self.individual_chargers)}, esperado 32 o 128")
 
-        # Verificar que tenemos 128 perfiles (incluso si 32 chargers fisicos)
+        # Verificar que tenemos 128 perfiles individuales (1 por socket)
         if len(self.hourly_profiles) != 128:
-            logger.warning(f"Perfiles disponibles {len(self.hourly_profiles)}, esperado 128")
+            logger.warning(f"Perfiles disponibles {len(self.hourly_profiles)}, esperado 128 (32 chargers × 4 sockets)")
 
-        # Verificar que cada perfil tiene 8,760 horas
+        # Verificar que cada perfil tiene 8,760 horas (1 año horario exacto)
         for charger_id, profile in self.hourly_profiles.items():
             if len(profile) != 8760:
                 logger.warning(f"Charger {charger_id} profile length {len(profile)}, ajustando a 8760")
@@ -76,8 +76,8 @@ class ChargerData:
                 logger.warning(f"Charger {charger_id} demanda negativa, ajustando a 0")
                 self.hourly_profiles[charger_id] = self.hourly_profiles[charger_id].clip(lower=0)
 
-        logger.info(f"✓ Chargers validados: {len(self.individual_chargers)} cargadores, "
-                   f"{len(self.hourly_profiles)} perfiles, 128 sockets esperados")
+        logger.info(f"✓ Chargers validados: {len(self.individual_chargers)} cargadores físicos, "
+                   f"{len(self.hourly_profiles)} perfiles (128 sockets: 112 motos + 16 mototaxis)")
         return True
 
 

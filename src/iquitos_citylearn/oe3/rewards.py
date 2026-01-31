@@ -8,13 +8,16 @@ Objetivos optimizados:
 4. Maximizar satisfacción de carga de EVs
 5. Minimizar picos de demanda (estabilidad de red)
 
-Contexto Iquitos (OE2/OE3 - DATOS REALES):
+Contexto Iquitos (OE2/OE3 - DATOS REALES 2026-01-31):
 - Factor emisión: 0.4521 kg CO₂/kWh (central térmica aislada)
+- Factor conversión: 2.146 kg CO₂/kWh (para cálculos directos con 50kW constante)
 - Tariff: 0.20 USD/kWh (bajo, no es constraint)
-- Chargers: 32 cargadores (28 motos @ 2kW + 4 mototaxis @ 3kW = 68 kW simultánea)
-- Sockets: 128 (112 para motos + 16 para mototaxis)
-- Capacidad anual: 2,912 motos + 416 mototaxis
-- BESS: 4,520 kWh / 2,712 kW (fijo, no controlable)
+- Chargers: 32 cargadores físicos (28 motos @ 2kW + 4 mototaxis @ 3kW)
+- Sockets: 128 totales (32 × 4 sockets = 112 motos + 16 mototaxis)
+- Potencia instalada: 68 kW simultánea (28×2kW + 4×3kW)
+- Demanda EV: 50 kW constante (54% uptime × 100kW = workaround CityLearn 2.5.0)
+- Capacidad anual: 2,912 motos + 416 mototaxis (13h operación 9AM-10PM)
+- BESS: 4,520 kWh / 2,712 kW (fijo, no controlable por agentes)
 - Resultado OE3: Agente A2C -25.1% CO₂ (4,280,119 kg/año vs 5,710,257 kg/año baseline)
 """
 
@@ -74,17 +77,21 @@ class MultiObjectiveWeights:
 
 @dataclass
 class IquitosContext:
-    """Contexto específico de Iquitos para cálculos multiobjetivo."""
+    """Contexto específico de Iquitos para cálculos multiobjetivo - OE2 REAL 2026-01-31."""
     # Factor de emisión (central térmica aislada)
-    co2_factor_kg_per_kwh: float = 0.4521
+    co2_factor_kg_per_kwh: float = 0.4521  # Grid import CO₂ factor
+    co2_conversion_factor: float = 2.146   # Para cálculo directo: 50kW × 2.146 = 107.3 kg/h
 
     # Tarifa eléctrica
     tariff_usd_per_kwh: float = 0.20
 
-    # Configuración de chargers (OE2)
-    n_chargers: int = 31
+    # Configuración de chargers (OE2 - DATOS REALES)
+    n_chargers: int = 32                   # 32 chargers físicos (28 motos + 4 mototaxis)
+    total_sockets: int = 128               # 32 × 4 = 128 sockets (112 motos + 16 mototaxis)
     sockets_per_charger: int = 4
-    charger_power_kw: float = 2.14
+    charger_power_kw_moto: float = 2.0     # Potencia motos
+    charger_power_kw_mototaxi: float = 3.0 # Potencia mototaxis
+    ev_demand_constant_kw: float = 50.0    # Demanda constante (workaround CityLearn 2.5.0)
 
     # Flota EV
     n_motos: int = 900
