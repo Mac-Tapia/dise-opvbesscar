@@ -826,9 +826,9 @@ class SACAgent:
                     self.motos_cargadas = getattr(self, 'motos_cargadas', 0) + motos_step
                     self.mototaxis_cargadas = getattr(self, 'mototaxis_cargadas', 0) + mototaxis_step
 
-                    # DEBUG: Log primeros 600 steps o cada 500
-                    if self.n_calls <= 600 or self.n_calls % 500 == 0:
-                        logger.info(f"[SAC CO2 DIRECTO] step={self.n_calls} | added={co2_direct_step_kg:.1f} kg | total={self.co2_direct_avoided_kg:.1f} kg | motos={self.motos_cargadas} | mototaxis={self.mototaxis_cargadas}")
+                    # Logging cada 500 steps
+                    if self.n_calls % 500 == 0:
+                        logger.info(f"[SAC CO2 DIRECTO] step={self.n_calls} | total={self.co2_direct_avoided_kg:.1f} kg | motos={self.motos_cargadas} | mototaxis={self.mototaxis_cargadas}")
                 except Exception as err:
                     logger.error(f"[SAC CRÍTICO - CO2 DIRECTA] step={self.n_calls} | ERROR: {err}", exc_info=True)
 
