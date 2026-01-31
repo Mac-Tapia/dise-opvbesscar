@@ -348,6 +348,10 @@ class A2CAgent:
                 self.grid_energy_sum = 0.0  # kWh consumido de la red
                 self.solar_energy_sum = 0.0  # kWh de solar usado
                 self.co2_intensity = 0.4521  # kg CO2/kWh para Iquitos
+                self.motos_cargadas = 0  # Contador de motos cargadas (SOC >= 90%)
+                self.mototaxis_cargadas = 0  # Contador de mototaxis cargadas (SOC >= 90%)
+                self.co2_direct_avoided_kg = 0.0  # CO₂ evitado por cargar EVs
+                self.co2_indirect_avoided_kg = 0.0  # CO₂ evitado por usar solar
 
             def _on_step(self):
                 infos = self.locals.get("infos", [])
@@ -371,53 +375,126 @@ class A2CAgent:
                         self.reward_sum += scaled_r
                         self.reward_count += 1
 
-# Acumular SIEMPRE valores de energía (por cada step)
-                # Estrategia: Intentar desde buildings, sino usar fallback conservador
+# Acumular valores de energía con despacho correcto (por cada step)
+# Usa calculate_solar_dispatch() para desglosar solar según prioridades
                 try:
-                    extracted_grid = 0.0
-                    extracted_solar = 0.0
+                    from iquitos_citylearn.oe3.rewards import calculate_solar_dispatch
 
                     envs_list = getattr(self.training_env, 'envs', None)
                     env = envs_list[0] if envs_list else self.training_env
                     if hasattr(env, 'unwrapped'):
                         env = env.unwrapped
 
-                    # Intentar extraer desde buildings
+                    solar_available_kw = 0.0
+                    ev_demand_kw = 0.0
+                    mall_demand_kw = 0.0
+                    bess_soc_pct = 50.0
+
+                    # Extraer desde buildings
                     buildings = getattr(env, 'buildings', None)
                     if buildings and isinstance(buildings, (list, tuple)) and len(buildings) > 0:
-                        for b in buildings:
+                        b = buildings[0]
+
+                        # Solar disponible
+                        if hasattr(b, 'solar_generation'):
+                            solar_gen = b.solar_generation
+                            if isinstance(solar_gen, (list, tuple)) and len(solar_gen) > 0:
+                                val = solar_gen[-1]
+                                solar_available_kw = float(val) if val is not None else 0.0
+
+                        # Demanda del mall
+                        if hasattr(b, 'net_electricity_consumption'):
+                            net_elec = b.net_electricity_consumption
+                            if isinstance(net_elec, (list, tuple)) and len(net_elec) > 0:
+                                val = net_elec[-1]
+                                mall_demand_kw = float(val) if val is not None else 0.0
+
+                        # Demanda EV
+                        chargers = getattr(b, 'chargers', None) or []
+                        if hasattr(env, 'chargers'):
+                            chargers = env.chargers  # type: ignore
+                        for charger in chargers:
                             try:
-                                # Grid consumption
-                                if hasattr(b, 'net_electricity_consumption'):
-                                    net_elec = b.net_electricity_consumption
-                                    if isinstance(net_elec, (list, tuple)) and len(net_elec) > 0:
-                                        val = net_elec[-1]
-                                        if val is not None and isinstance(val, (int, float)):
-                                            extracted_grid += abs(float(val))
-                                # Solar generation
-                                if hasattr(b, 'solar_generation'):
-                                    solar_gen = b.solar_generation
-                                    if isinstance(solar_gen, (list, tuple)) and len(solar_gen) > 0:
-                                        val = solar_gen[-1]
-                                        if val is not None and isinstance(val, (int, float)):
-                                            extracted_solar += abs(float(val))
-                            except (ValueError, TypeError, AttributeError):
-                                continue
+                                if hasattr(charger, 'current_power'):
+                                    ev_demand_kw += float(charger.current_power)
+                                elif hasattr(charger, 'power'):
+                                    ev_demand_kw += float(charger.power)
+                            except (ValueError, TypeError):
+                                pass
 
-                    # SIEMPRE acumular: si extracción fue exitosa úsala, sino fallback
-                    if extracted_grid > 0:
-                        self.grid_energy_sum += extracted_grid
-                    else:
-                        self.grid_energy_sum += 1.37  # Fallback: ~1.37 kWh/step
+                        # BESS SOC
+                        battery = getattr(b, 'battery', None)
+                        if battery is not None:
+                            if hasattr(battery, 'soc'):
+                                bess_soc_pct = float(battery.soc) * 100.0 if battery.soc <= 1.0 else float(battery.soc)
 
-                    if extracted_solar > 0:
-                        self.solar_energy_sum += extracted_solar
-                    else:
-                        self.solar_energy_sum += 0.62  # Fallback: ~0.62 kWh/step
+                    # Calcular despacho
+                    dispatch = calculate_solar_dispatch(
+                        solar_available_kw=solar_available_kw,
+                        ev_demand_kw=ev_demand_kw,
+                        mall_demand_kw=mall_demand_kw,
+                        bess_soc_pct=bess_soc_pct,
+                        bess_max_power_kw=2712.0,
+                        bess_capacity_kwh=4520.0,
+                    )
 
-                except (AttributeError, TypeError, IndexError, ValueError) as err:
-                    # Last resort: ALWAYS accumulate something
-                    logger.debug(f"[A2C] Error in metric extraction: {err}, using fallback")
+                    # NUEVOS: Calcular reducción CO₂ INDIRECTA (solar + BESS) y DIRECTA (EVs)
+                    try:
+                        from iquitos_citylearn.oe3.rewards import (
+                            calculate_co2_reduction_indirect,
+                            calculate_co2_reduction_direct,
+                            calculate_co2_reduction_bess_discharge,
+                        )
+
+                        # CO₂ INDIRECTA: Solar disponible evita importar
+                        self.solar_energy_sum += solar_available_kw
+                        co2_solar = self.solar_energy_sum * self.co2_intensity
+
+                        # CO₂ INDIRECTA: Descarga de BESS (energía solar almacenada usada posteriormente)
+                        bess_discharge_kw = 0.0
+                        try:
+                            # Usar battery ya definido anteriormente (línea ~426)
+                            if battery is not None and hasattr(battery, 'soc'):
+                                current_soc = float(battery.soc) if battery.soc <= 1.0 else float(battery.soc) / 100.0
+                                prev_soc = getattr(self, '_prev_bess_soc', current_soc)
+                                bess_capacity_kwh = 4520.0
+                                soc_delta = current_soc - prev_soc
+                                bess_power_kw = soc_delta * bess_capacity_kwh
+                                if bess_power_kw < 0:  # Descarga = power negativo
+                                    bess_discharge_kw = abs(bess_power_kw)
+                                self._prev_bess_soc = current_soc
+                        except (ValueError, TypeError, AttributeError):
+                            pass
+
+                        co2_bess = calculate_co2_reduction_bess_discharge(bess_discharge_kw)
+
+                        # Total CO₂ indirecta = solar + BESS discharge
+                        self.co2_indirect_avoided_kg = co2_solar + co2_bess
+
+                        # Grid import: calculamos como diferencia
+                        total_demand_kw = mall_demand_kw + ev_demand_kw
+                        grid_needed_kw = max(0.0, total_demand_kw - solar_available_kw)
+                        self.grid_energy_sum += grid_needed_kw
+
+                        # CO₂ DIRECTA: Usar energía de carga de EVs directamente (sin SOC)
+                        # Factor directo = 2.146 kg CO₂/kWh (evitado vs combustion)
+                        co2_factor_ev_direct = 2.146
+                        co2_direct_step_kg = ev_demand_kw * co2_factor_ev_direct
+
+                        self.co2_direct_avoided_kg += co2_direct_step_kg
+
+                        # Estimación de vehículos activos
+                        if ev_demand_kw > 0:
+                            motos_activas = int((ev_demand_kw * 0.80) / 2.0)
+                            mototaxis_activas = int((ev_demand_kw * 0.20) / 3.0)
+                            self.motos_cargadas += motos_activas
+                            self.mototaxis_cargadas += mototaxis_activas
+                    except Exception as err:
+                        logger.warning(f"[A2C] Error calculando CO₂ directo/indirecto: {err}")
+
+                except Exception as err:
+                    # Fallback
+                    logger.debug(f"[A2C] Error en despacho solar: {err}, usando fallback")
                     self.grid_energy_sum += 1.37
                     self.solar_energy_sum += 0.62
 
@@ -462,9 +539,15 @@ class A2CAgent:
                     # Agregar métricas de energía y CO2
                     if self.grid_energy_sum > 0:
                         parts.append(f"grid_kWh={self.grid_energy_sum:.1f}")
-                        parts.append(f"co2_kg={co2_kg:.1f}")
+                        parts.append(f"co2_grid_kg={co2_kg:.1f}")
                     if self.solar_energy_sum > 0:
                         parts.append(f"solar_kWh={self.solar_energy_sum:.1f}")
+                        parts.append(f"co2_indirect_kg={self.co2_indirect_avoided_kg:.1f}")
+                    parts.append(f"co2_direct_kg={self.co2_direct_avoided_kg:.1f}")
+                    parts.append(f"motos={self.motos_cargadas}")
+                    parts.append(f"mototaxis={self.mototaxis_cargadas}")
+                    co2_total_avoided = self.co2_indirect_avoided_kg + self.co2_direct_avoided_kg
+                    parts.append(f"co2_total_avoided_kg={co2_total_avoided:.1f}")
 
                     metrics_str = " | ".join(parts)
 

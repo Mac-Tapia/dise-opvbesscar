@@ -55,7 +55,7 @@
 **Core Modules** (`src/iquitos_citylearn/`):
 - `config.py`: Load YAML + env vars; `RuntimePaths` for directory resolution
 - `oe3/dataset_builder.py`: Reads OE2 artifacts → generates CityLearn schema + CSV files
-- `oe3/rewards.py`: 5-component multi-objective reward (CO₂ 0.50, solar 0.20, cost 0.10, EV 0.10, grid 0.10)
+- `oe3/rewards.py`: 5-component multi-objective reward (CO₂ 0.50, solar 0.20, cost 0.15, EV 0.10, grid 0.05)
 - `oe3/simulate.py`: Main training loop; checkpoint resume; episode orchestration
 - `oe3/agents/{sac.py, ppo_sb3.py, a2c_sb3.py}`: Stable-baselines3 wrappers with GPU config
 

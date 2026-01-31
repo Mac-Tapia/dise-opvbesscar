@@ -176,9 +176,10 @@ oe3:
     name: iquitos_ev_mall
     template_name: citylearn_challenge_2022_phase_all_plus_evs
   emissions:
-    kgco2_per_gallon: 8.9
-    km_per_gallon: 120.0
-    km_per_kwh: 35.0
+    # CO₂ evitado por vehículos eléctricos vs combustión
+    kgco2_per_gallon: 8.9      # kg CO₂ por galón de gasolina (combustión)
+    km_per_gallon: 120.0        # Eficiencia motos/mototaxis a combustión (km/galón)
+    km_per_kwh: 35.0            # Eficiencia motos/mototaxis eléctricos (km/kWh)
     project_life_years: 20
   evaluation:
     a2c:

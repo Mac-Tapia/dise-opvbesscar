@@ -56,10 +56,21 @@ def _validate_solar_timeseries_hourly(solar_df: pd.DataFrame) -> None:
 
 def _find_first_building(schema: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     buildings = schema.get("buildings")
-    if not isinstance(buildings, dict) or len(buildings) == 0:
+
+    # Support both dict (CityLearn template) and list (our format)
+    if isinstance(buildings, list):
+        if len(buildings) == 0:
+            raise ValueError("schema.json has empty buildings list.")
+        first_building = buildings[0]
+        name = first_building.get("name", "Building_1")
+        return name, first_building
+    elif isinstance(buildings, dict):
+        if len(buildings) == 0:
+            raise ValueError("schema.json has empty buildings dict.")
+        name = list(buildings.keys())[0]
+        return name, buildings[name]
+    else:
         raise ValueError("schema.json does not define buildings.")
-    name = list(buildings.keys())[0]
-    return name, buildings[name]
 
 def _guess_file_key(d: Dict[str, Any], contains: str) -> Optional[str]:
     for k, v in d.items():
@@ -363,6 +374,8 @@ def build_citylearn_dataset(
     schema["seconds_per_time_step"] = seconds_per_time_step
     schema["root_directory"] = str(out_dir)  # Establecer ruta absoluta para archivos CSV
     schema["start_date"] = "2024-01-01"  # Alinear con datos solares PVGIS (enero-diciembre)
+    schema["simulation_end_time_step"] = 8759  # Full year (0-indexed: 8760 steps total)
+    schema["episode_time_steps"] = 8760  # CRITICAL FIX: Force full-year episodes (was null causing premature termination)
 
     # === PRESERVAR DEFINICIONES DE EVs ===
     # Copiar electric_vehicles_def del template si existe
@@ -384,9 +397,7 @@ def build_citylearn_dataset(
         b_mall["electric_vehicle_storage"] = {"active": True}
 
     # Configurar schema con UN SOLO building
-    schema["buildings"] = {
-        "Mall_Iquitos": b_mall,
-    }
+    schema["buildings"] = {"Mall_Iquitos": b_mall}
     logger.info("Creado building unificado: Mall_Iquitos (128 chargers, 4162 kWp PV, 2000 kWh BESS)")
 
     # Referencia al building único
@@ -589,10 +600,11 @@ def build_citylearn_dataset(
             power_motos += nominal_power
 
     # Assign ALL chargers to Mall_Iquitos building
+    # CRITICAL FIX: CityLearn requiere la clave "electric_vehicle_chargers" NO "chargers"
     b_mall = schema["buildings"]["Mall_Iquitos"]
-    b_mall["chargers"] = all_chargers
+    b_mall["electric_vehicle_chargers"] = all_chargers
 
-    logger.info(f"[CHARGERS SCHEMA] Creados {total_devices} chargers: {n_motos} motos ({power_motos:.1f} kW) + {n_mototaxis} mototaxis ({power_mototaxis:.1f} kW)")
+    logger.info(f"[CHARGERS SCHEMA] ✓ CORRECCIÓN CRÍTICA: Asignados {total_devices} chargers a 'electric_vehicle_chargers': {n_motos} motos ({power_motos:.1f} kW) + {n_mototaxis} mototaxis ({power_mototaxis:.1f} kW)")
 
     # Discover and overwrite relevant CSVs
     paths = _discover_csv_paths(schema, out_dir)

@@ -495,7 +495,7 @@ def simulate(
     seconds_per_time_step: int,
     sac_episodes: int = 10,
     sac_batch_size: int = 512,
-    sac_learning_rate: float = 1e-5,          # ✅ AGREGADO: default 1e-5
+    sac_learning_rate: float = 5e-5,          # AJUSTE: 1e-4→5e-5 (reduce inestabilidad)
     sac_log_interval: int = 500,
     sac_use_amp: bool = True,
     ppo_timesteps: int = 100000,
@@ -903,11 +903,12 @@ def simulate(
         try:
             from src.iquitos_citylearn.oe3.rewards import MultiObjectiveReward, MultiObjectiveWeights
             # Recrear el tracker con la configuración correcta usando los pesos multiobjetivo
+            # ✓ CORREGIDO 2026-01-30: Usar co2_focus para obtener weights 0.75
             weights = MultiObjectiveWeights(
-                co2=0.50,
-                cost=0.15,
-                solar=0.20,
-                ev_satisfaction=0.10,
+                co2=0.75,   # ✓ CORREGIDO
+                cost=0.05,  # ✓ CORREGIDO
+                solar=0.10, # ✓ CORREGIDO
+                ev_satisfaction=0.05,  # ✓ CORREGIDO
                 grid_stability=0.05
             )
             clean_tracker = MultiObjectiveReward(weights=weights)

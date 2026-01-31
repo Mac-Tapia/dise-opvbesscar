@@ -86,11 +86,11 @@ All weights must sum to 1.0 (auto-normalized in `MultiObjectiveWeights.__post_in
 ```python
 @dataclass
 class MultiObjectiveWeights:
-    co2: float = 0.50              # Primary: grid CO₂ intensity
+    co2: float = 0.50              # Primary: grid CO₂ intensity (Iquitos 0.4521 kg CO₂/kWh)
     solar: float = 0.20            # Secondary: PV self-consumption
-    cost: float = 0.10             # Tertiary: tariff minimization
+    cost: float = 0.15             # Tertiary: tariff minimization (0.20 USD/kWh)
     ev_satisfaction: float = 0.10  # Service level maintenance
-    grid_stability: float = 0.10   # Avoid sudden demand spikes
+    grid_stability: float = 0.05   # Minimize demand peaks
 ```
 
 ### Agent Hyperparameters

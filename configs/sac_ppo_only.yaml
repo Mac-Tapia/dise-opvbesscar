@@ -152,7 +152,7 @@ oe3:
     bess_discharging_efficiency: 0.95
     bess_standby_loss_percent_day: 0.1
     diesel_backup_factor_kg_kwh: 0.2667
-    grid_import_factor_kg_kwh: 0.4521  # Factor de emisión grid Iquitos (central térmica)
+    grid_import_factor_kg_kwh: 0.4521
     reduction_strategies:
       bess_efficiency_optimization:
         description: Optimizar ciclos y conversiones BESS
@@ -185,7 +185,7 @@ oe3:
     project_life_years: 20
   evaluation:
     a2c:
-      batch_size: 146 # ✓ FIXED: 64→146 (perfect divisor: 8760/146=60 mini-batches, no truncation)
+      batch_size: 64 # ON-POLICY SIMPLE: Memory ~1.0GB, Batch 64
       checkpoint_freq_steps: 200
       device: cpu # Changed from cuda to avoid PyTorch Dynamo issues
       entropy_coef: 0.001
@@ -206,99 +206,89 @@ oe3:
       progress_interval_episodes: 1
       save_final: true
       multi_objective_weights:
-        co2: 0.35   # BALANCED: Prioridad principal
-        cost: 0.25  # Optimización de costos
-        ev: 0.15    # Satisfacción de EVs
-        grid: 0.05  # Estabilidad de red
-        solar: 0.20 # Autoconsumo solar
+        co2: 0.5
+        cost: 0.15
+        ev: 0.1
+        grid: 0.05
+        solar: 0.2
     agents:
       - SAC
       - PPO
-      - A2C
     co2_tracking: true
-    multi_objective_priority: balanced
+    multi_objective_priority: co2_focus
     ppo:
-      batch_size: 120 # ✓ FIXED: 256→120 (perfect divisor: 8760/120=73 mini-batches, no truncation)
+      batch_size: 32 # ON-POLICY: Memory ~600MB, Batch 32 (REDUCED from 64, paper uses 128)
       checkpoint_freq_steps: 500
-      device: cuda
+      device: cpu
       episodes: 3
-      ent_coef: 0.01 # ↑ OPTIMIZED: 0.001→0.01 (exploration incentive)
+      ent_coef: 0.001
       gamma: 0.99 # Paper standard
-      gae_lambda: 0.98 # ↑ OPTIMIZED: 0.95→0.98 (better long-term advantages)
-      kl_adaptive: true # ↑ OPTIMIZED: Enable adaptive KL divergence
-      target_kl: 0.02 # ↑ OPTIMIZED: NEW - Early stopping for KL divergence
-      learning_rate: 1e-4 # 1e-4 (3x smaller than before, more stable)
+      gae_lambda: 0.95 # Paper: Generalized Advantage Estimation
+      kl_adaptive: false # Disable adaptive for stability
+      learning_rate: 0.0001 # 1e-4 (on-policy more stable than SAC)
       learning_rate_schedule: linear
       log_interval: 100
-      max_grad_norm: 1.0 # ↑ OPTIMIZED: 0.5→1.0 (gradient clipping)
-      clip_range: 0.5 # ↑ OPTIMIZED: 0.2→0.5 (2.5x more flexible)
-      clip_range_vf: 0.5 # ↑ OPTIMIZED: NEW - Value function clipping
-      n_epochs: 10 # ↑ OPTIMIZED: 2→10 (more training passes)
-      n_steps: 8760 # 🔴 CRITICAL: 128→8760 (FULL EPISODE, see complete causal chains)
-      normalize_advantage: true # ✅ Normalize advantages by batch
-      use_sde: true # ↑ OPTIMIZED: NEW - State-Dependent Exploration
-      sde_sample_freq: -1 # Resample every step
+      max_grad_norm: 0.5 # Paper standard
+      clip_range: 0.2 # Paper: clipping mechanism
+      n_epochs: 2 # REDUCED from 3 to 2 (less memory pressure)
+      n_steps: 128 # REDUCED from 256 to 128 (paper uses 2048, we use 128 for RTX4060)
+      normalize_advantage: true # Paper standard (stabilizes learning)
       normalize_observations: true
       normalize_rewards: true
-      reward_scale: 0.5 # AJUSTE: 0.1→0.5 (evita explosión critic_loss)
-      clip_reward: 1.0 # ✅ CRITICAL: Clip rewards to [-1, 1]
-      clip_obs: 5.0 # ↑ OPTIMIZED: Aggressive obs clipping
-      hidden_sizes: [256, 256] # ↑ OPTIMIZED: 64→256 (more capacity)
+      reward_scale: 0.1
+      hidden_sizes: [64, 64] # REDUCED from 128 (simpler network = less memory)
       multi_objective_weights:
-        co2: 0.35   # BALANCED: Prioridad principal
-        cost: 0.25  # Optimización de costos
-        ev: 0.15    # Satisfacción de EVs
-        grid: 0.05  # Estabilidad de red
-        solar: 0.20 # Autoconsumo solar
+        co2: 0.5
+        cost: 0.15
+        ev: 0.1
+        grid: 0.05
+        solar: 0.2
       prefer_citylearn: false
       progress_interval_episodes: 1
       save_final: true
       resume_checkpoints: false
       reward_smooth_lambda: 0.15
+      target_kl: 0.003
+      use_amp: true
+      use_sde: false
+      clip_range_vf: 0.2
     resume_checkpoints: true
     reward_components:
       base_weight: 0.8
       co2_direct_weight: 0.12
       co2_indirect_weight: 0.08
     sac:
-      batch_size: 512 # ↑ OPTIMIZED: 256→512 (lotes más grandes)
-      buffer_size: 50000 # ↓ OPTIMIZED: 100k→50k (ciclo más rápido)
+      batch_size: 8 # PAPER-BASED: Ultra-conservative batch, fits in RTX4060 (8GB)
+      buffer_size: 10000 # PAPER: SAC uses 1M, but we use 10k for memory constraint (~200MB)
       checkpoint_freq_steps: 500
       deterministic_eval: true
       device: cuda
       episodes: 3
-      ent_coef: auto # ✅ Auto-tuning entropy (adaptive exploration)
-      ent_coef_init: 0.2 # ↑ OPTIMIZED: 0.1→0.2 (más exploración inicial para escapar mínimos locales)
-      ent_coef_lr: 3e-5 # ↑ OPTIMIZED: 1e-5→3e-5 (ajuste entropy más rápido)
-      gamma: 0.995 # ↑ OPTIMIZED: 0.99→0.995 (mayor horizonte temporal)
-      tau: 0.02 # ↑ OPTIMIZED: 0.01→0.02 (target network actualiza más rápido)
-      gradient_steps: 2 # ↑ OPTIMIZED: 1→2 (más pasos de gradiente por sample)
-      learning_rate: 1e-4 # ↑ OPTIMIZED: 5e-5→1e-4 (aprender más rápido)
-      learning_starts: 2000 # ↓ OPTIMIZED: 5000→2000 (empezar antes a aprender)
+      ent_coef: auto # PAPER: Auto-tuning entropy (better than fixed 0.001)
+      gamma: 0.99 # Paper standard
+      tau: 0.005 # Soft target update (paper)
+      gradient_steps: 1
+      learning_rate: 0.0001 # INCREASED from 1e-5 (paper default 3e-4, we use 1e-4 for stability)
+      learning_starts: 1000 # Reduce warmup (was 2000, paper uses 10k but we have limited data)
       log_interval: 100
-      max_grad_norm: 0.5 # 🔴 CRITICAL FIX: 1.0→0.5 (stricter gradient clipping)
-      reward_scale: 0.5 # AJUSTE: 0.1→0.5 (evita explosión critic_loss)
-      hidden_sizes: [256, 256] # 🔴 FIX: 512→256 (prevent overfitting)
-      use_prioritized_replay: false # 🔴 CRITICAL FIX: Disable PER (causing instability)
-      per_alpha: 0.6 # ↑ OPTIMIZED: Prioritization exponent
-      per_beta: 0.4 # ↑ OPTIMIZED: Importance sampling
-      per_epsilon: 1e-6 # ↑ OPTIMIZED: Min priority epsilon
+      max_grad_norm: 0.5
+      reward_scale: 0.1
+      hidden_sizes: [64, 64] # REDUCED from 128 (paper uses 256, we use 64 for RTX4060)
       normalize_observations: true
       normalize_rewards: true
-      clip_reward: 1.0 # ✅ CRITICAL: Clip rewards to [-1, 1]
-      clip_obs: 5.0 # ↑ OPTIMIZED: Aggressive obs clipping
+      clip_reward: 1.0
       multi_objective_weights:
-        co2: 0.35   # BALANCED: Prioridad principal
-        cost: 0.25  # Optimización de costos
-        ev: 0.15    # Satisfacción de EVs
-        grid: 0.05  # Estabilidad de red
-        solar: 0.20 # Autoconsumo solar
+        co2: 0.5
+        cost: 0.15
+        ev: 0.1
+        grid: 0.05
+        solar: 0.2
       prefer_citylearn: false
       progress_interval_episodes: 1
       save_final: true
-      train_freq: 1 # ↑ OPTIMIZED: 2→1 (entrenar cada step)
+      train_freq: 2
       use_amp: true
-      use_sde: true # ↑ OPTIMIZED: false→true (mejor exploración)
+      use_sde: false
   grid:
     carbon_intensity_kg_per_kwh: 0.4521
     tariff_usd_per_kwh: 0.2
