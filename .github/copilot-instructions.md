@@ -38,17 +38,24 @@
 
 **Key Validation Rules** (enforced in dataset builder):
 - Solar timeseries MUST be exactly 8,760 rows (hourly resolution, 1 hour per row). **NO 15-minute data supported**
-- Charger count MUST be 32 (128 sockets = 32 × 4)
-- BESS config immutable in OE3 (not controlled by agents)
-- Observation space: 534 dims (building energy + 128 chargers + time + grid state)
+- Charger count MUST be 128 = 112 motos + 16 mototaxis (NOT 32)
+- **EV Chargers: CONTROLLED by RL agents** (SAC, PPO, A2C) via 126 continuous actions
+- **BESS: AUTOMATIC control** (dispatch rules with 5 priorities, NOT controlled by RL agents)
+- Observation space: 394 dims (solar + mall + BESS SOC + 128 chargers×4 + time + grid state)
 - Action space: 126 dims (continuous [0,1] per charger, 2 reserved)
 
 **Dispatch Rules** (`configs/default.yaml` → `oe3.dispatch_rules`):
-1. **PV→EV**: Direct solar to chargers (priority 1)
-2. **PV→BESS**: Charge battery during peak sun (priority 2)
-3. **BESS→EV**: Night charging from stored solar (priority 3)
-4. **BESS→Grid**: Sell excess when SOC > 95% (priority 4)
-5. **Grid Import**: If deficit (priority 5)
+**⚠️ CRITICAL**: These rules are AUTOMATIC (not controlled by RL agents)
+1. **PV→EV**: Direct solar to chargers (priority 1) - Agents decide HOW MUCH
+2. **PV→BESS**: Charge battery during peak sun (priority 2) - Automatic
+3. **BESS→EV**: Night charging from stored solar (priority 3) - Automatic
+4. **BESS→MALL**: Desaturate when SOC > 95% (priority 4) - Automatic
+5. **Grid Import**: If deficit (priority 5) - Fallback only
+
+**Control Architecture**:
+- **RL Agents**: Optimize EV charger power setpoints (126 actions)
+- **Dispatch Rules**: Determine energy routing (PV/BESS/Grid) automatically
+- **Result**: Coordinated system where RL controls "when to charge" and rules handle "how to supply"
 
 ### Key Files by Responsibility
 

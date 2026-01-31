@@ -554,27 +554,8 @@ class PPOAgent:
             def _on_step(self) -> bool:
                 self.n_calls += 1
 
-                # ========== CO₂ DIRECTA: CALCULAR PRIMERO (antes de cualquier try-except) ==========
-                try:
-                    EV_DEMAND_CONSTANT_KW = 50.0
-                    co2_factor_ev_direct = 2.146
-                    co2_direct_step_kg = EV_DEMAND_CONSTANT_KW * co2_factor_ev_direct  # 107.3 kg/h
-
-                    prev_co2 = getattr(self, 'co2_direct_avoided_kg', 0.0)
-                    self.co2_direct_avoided_kg = prev_co2 + co2_direct_step_kg
-
-                    motos_step = int((EV_DEMAND_CONSTANT_KW * 0.80) / 2.0)
-                    mototaxis_step = int((EV_DEMAND_CONSTANT_KW * 0.20) / 3.0)
-                    self.motos_cargadas = getattr(self, 'motos_cargadas', 0) + motos_step
-                    self.mototaxis_cargadas = getattr(self, 'mototaxis_cargadas', 0) + mototaxis_step
-
-                    # Logging cada 500 steps
-                    if self.n_calls % 500 == 0:
-                        logger.info(
-                            f"[PPO CO2 DIRECTO] step={self.n_calls} | total={self.co2_direct_avoided_kg:.1f} kg | motos={self.motos_cargadas} | mototaxis={self.mototaxis_cargadas}"
-                        )
-                except Exception as err:
-                    logger.error(f"[PPO CRÍTICO - CO2 DIRECTA] step={self.n_calls} | ERROR: {err}", exc_info=True)
+                # ========== CO₂ DIRECTA: CALCULAR DESPUÉS DE EXTRAER OBSERVACIÓN ==========
+                # (Se calcula más abajo cuando tenemos ev_demand_kw, solar_available_kw, etc.)
 
                 infos = self.locals.get("infos", [])
                 if isinstance(infos, dict):
@@ -632,11 +613,30 @@ class PPOAgent:
                     solar_available_kw = 0.0
                     mall_demand_kw = 0.0
                     bess_soc_pct = 50.0
+                    ev_demand_kw = 0.0  # Will be extracted from observation
 
-                    # EV DEMAND WORKAROUND: Estimación conservadora constante
-                    # 128 chargers operando 54% del tiempo (9AM-10PM)
-                    # CRÍTICO: Definir ANTES del if para asegurar que SIEMPRE existe
-                    ev_demand_kw = 50.0  # kW
+                    # Try to extract from observation first (394-dim CityLearn structure)
+                    obs = getattr(self.locals, 'observation', None) or getattr(self.locals, 'obs', None)
+                    if obs is not None:
+                        try:
+                            if isinstance(obs, (list, tuple)):
+                                obs_arr = np.array(obs, dtype=float)
+                            else:
+                                obs_arr = np.asarray(obs, dtype=float)
+
+                            if len(obs_arr) >= 132:
+                                # obs[4:132] = 128 charger demands
+                                charger_demands = obs_arr[4:132]
+                                ev_demand_kw = float(np.sum(np.maximum(charger_demands, 0.0)))
+                                solar_available_kw = float(obs_arr[0]) if len(obs_arr) > 0 else 0.0
+                                mall_demand_kw = float(obs_arr[3]) if len(obs_arr) > 3 else 0.0
+                                bess_soc_pct = float(obs_arr[2]) * 100.0 if len(obs_arr) > 2 else 50.0
+                        except:
+                            pass
+
+                    # Fallback if extraction failed
+                    if ev_demand_kw <= 0.0:
+                        ev_demand_kw = 50.0  # kW fallback
 
                     # WORKAROUND CRÍTICO: CityLearn 2.5.0 bug - chargers no se cargan en building.electric_vehicle_chargers
                     buildings_obj: Any = getattr(env, "buildings", None) if env is not None else None
@@ -699,20 +699,24 @@ class PPOAgent:
                     except Exception as err:
                         logger.warning(f"[PPO] Error calculando CO₂ indirecto: {err}")
 
-                    # CO₂ DIRECTA: HARDCODEADO 50 kW (SOLUCIÓN ROBUSTA)
-                    # CRÍTICO: Usar valor CONSTANTE 50.0 kW directamente, NO variable ev_demand_kw
-                    # Razón: ev_demand_kw puede ser 0 por bugs en environment/dispatch
-                    # Valor 50 kW = 128 chargers × 54% uptime × promedio demand
+                    # CO₂ DIRECTA: Basada en fracción de demanda EV cubierta por renovables
+                    # CRÍTICO: Usar variable ev_demand_kw EXTRAÍDA de la observación
                     try:
-                        EV_DEMAND_CONSTANT_KW = 50.0  # kW fijo estimado
-                        co2_factor_ev_direct = 2.146  # kg CO₂/kWh (evitado vs combustion)
-                        co2_direct_step_kg = EV_DEMAND_CONSTANT_KW * co2_factor_ev_direct  # 107.3 kg/h
+                        total_renewable_kw = solar_available_kw + bess_discharge_kw
 
-                        self.co2_direct_avoided_kg += co2_direct_step_kg
+                        # Fracción de demanda EV que puede ser cubierta por renovables
+                        if ev_demand_kw > 0.0:
+                            renewable_fraction = min(1.0, total_renewable_kw / ev_demand_kw)
+                        else:
+                            renewable_fraction = 0.0
 
-                        # Estimación de vehículos activos
-                        motos_activas = int((EV_DEMAND_CONSTANT_KW * 0.80) / 2.0)  # ~20 motos/step
-                        mototaxis_activas = int((EV_DEMAND_CONSTANT_KW * 0.20) / 3.0)  # ~3 mototaxis/step
+                        # CO2 DIRECTO: Energía EV cubierta por renovables (sin mínimo)
+                        ev_power_delivered_kw = ev_demand_kw * renewable_fraction
+                        mototaxis_power_kw = ev_power_delivered_kw * mototaxis_fraction
+
+                        motos_activas = int(motos_power_kw / 2.0) if motos_power_kw > 0 else 0
+                        mototaxis_activas = int(mototaxis_power_kw / 3.0) if mototaxis_power_kw > 0 else 0
+
                         self.motos_cargadas += motos_activas
                         self.mototaxis_cargadas += mototaxis_activas
                     except Exception as err:
