@@ -474,11 +474,12 @@ class A2CAgent:
                         bess_capacity_kwh=4520.0,
                     )
 
+                    # Inicializar bess_discharge_kw para uso posterior
+                    bess_discharge_kw = 0.0
+
                     # NUEVOS: Calcular reducción CO₂ INDIRECTA (solar + BESS) y DIRECTA (EVs)
                     try:
                         from iquitos_citylearn.oe3.rewards import (
-                            calculate_co2_reduction_indirect,
-                            calculate_co2_reduction_direct,
                             calculate_co2_reduction_bess_discharge,
                         )
 
@@ -487,7 +488,6 @@ class A2CAgent:
                         co2_solar = self.solar_energy_sum * self.co2_intensity
 
                         # CO₂ INDIRECTA: Descarga de BESS (energía solar almacenada usada posteriormente)
-                        bess_discharge_kw = 0.0
                         try:
                             # Usar battery ya definido anteriormente (línea ~426)
                             if battery is not None and hasattr(battery, 'soc'):
@@ -518,20 +518,14 @@ class A2CAgent:
                     # CO₂ DIRECTA: Basada en fracción de demanda EV cubierta por renovables
                     # CRÍTICO: Usar variable ev_demand_kw EXTRAÍDA de la observación
                     try:
-                        total_renewable_kw = solar_available_kw + bess_discharge_kw
-
-                        # Fracción de demanda EV que puede ser cubierta por renovables
-                        if ev_demand_kw > 0.0:
-                            renewable_fraction = min(1.0, total_renewable_kw / ev_demand_kw)
-                        else:
-                            renewable_fraction = 0.0
-
-                        # CO2 DIRECTO: Energía EV cubierta por renovables (sin mínimo)
-                        ev_power_delivered_kw = ev_demand_kw * renewable_fraction
+                        # Calcular motos y mototaxis activas a partir de dispatch
+                        motos_power_kw = dispatch.get('solar_to_ev', 0.0) if dispatch else 0.0
+                        mototaxis_power_kw = dispatch.get('grid_to_ev', 0.0) if dispatch else 0.0
+                        motos_activas = int(motos_power_kw / 2.0) if motos_power_kw > 0 else 0
                         mototaxis_activas = int(mototaxis_power_kw / 3.0) if mototaxis_power_kw > 0 else 0
 
-                        self.motos_cargadas += motos_activas
-                        self.mototaxis_cargadas += mototaxis_activas
+                        self.motos_cargados += motos_activas
+                        self.mototaxis_cargados += mototaxis_activas
                     except Exception as err:
                         logger.error(f"[A2C CRÍTICO] Error calculando CO₂ directo EVs: {err}")
 

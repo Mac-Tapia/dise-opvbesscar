@@ -21,7 +21,7 @@ CARGADORES EV (TOMAS CONTROLABLES):
 
 CONTROL OE3 - ARQUITECTURA DE ACCIÓN/OBSERVACIÓN:
 - Observables: 128 sockets (estado de carga individual de cada socket)
-- Acciones: 126 sockets (128 - 2 reservados para baseline comparison)
+- Acciones: 129 (1 BESS + 112 motos 2kW + 16 mototaxis 3kW)
 - Control: Potencia continua [0, max_kw_socket] para cada socket independiente
 - Despacho: RL agent asigna potencia basado en solar, BESS SOC, demanda EVs, grid CO₂
 - Restricción: Potencia máxima por toma (2 kW motos, 3 kW mototaxis)

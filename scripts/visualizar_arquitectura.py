@@ -14,7 +14,7 @@ def print_architecture():
 
     print("""
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                    ENTRADA: OBSERVACIÓN (534-DIM)                                       │
+│                                    ENTRADA: OBSERVACIÓN (394-DIM)                                       │
 ├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                                          │
 │  ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐                            │
@@ -28,7 +28,7 @@ def print_architecture():
 │  │   kg/kWh           │  │   (Repetido × 128)  │  │                     │                            │
 │  └─────────────────────┘  └─────────────────────┘  └─────────────────────┘                            │
 │                                                                                                          │
-│  Total: 4 dims + 512 dims (128×4) + 7 dims + 3 dims = 534 DIMENSIONES                                │
+│  Total: 4 dims + 512 dims (128×4) + 6 dims (time) + 2 dims (grid) = 394 DIMENSIONES                   │
 │                                                                                                          │
 └─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 
@@ -37,7 +37,7 @@ def print_architecture():
 ├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                                          │
 │                             CAPA ENTRADA                                                                │
-│                             (534 neuronas)                                                              │
+│                             (394 neuronas)                                                              │
 │                                   │                                                                     │
 │                                   ↓                                                                     │
 │                     ╔═════════════════════════════╗                                                    │
@@ -54,7 +54,7 @@ def print_architecture():
 │                                   ↓                                                                    │
 │                     ╔═════════════════════════════╗                                                    │
 │                     ║  Output Layer (Policy)      ║                                                    │
-│                     ║  (126 neuronas, Tanh/Sig)  ║   ← DECIDE POTENCIA POR CHARGER                   │
+│                     ║  (129 neuronas, Tanh/Sig)  ║   ← DECIDE BESS + POTENCIA POR CHARGER            │
 │                     ╚═════════════════════════════╝                                                    │
 │                                   │                                                                     │
 │                                   ↓                                                                    │
@@ -68,20 +68,20 @@ def print_architecture():
 └─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                               SALIDA: ACCIÓN (126-DIM)                                                  │
+│                               SALIDA: ACCIÓN (129-DIM)                                                  │
 ├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                                          │
 │  Agente decide potencia para cada charger:                                                             │
 │  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐   │
-│  │ action = [0.45, 0.78, 0.12, 0.89, ..., 0.55, 0.34] (126 valores ∈ [0, 1])                    │   │
+│  │ action = [0.80, 0.45, 0.78, 0.12, ..., 0.55, 0.34] (129 valores ∈ [0, 1])                    │   │
 │  │                                                                                                 │   │
 │  │ Interpretación:                                                                                │   │
-│  │ • action[0] = 0.45 → Charger 1 al 45% de capacidad                                           │   │
-│  │ • action[1] = 0.78 → Charger 2 al 78% de capacidad                                           │   │
+│  │ • action[0] = 0.80 → BESS al 80% de capacidad (carga/descarga)                               │   │
+│  │ • action[1] = 0.45 → Moto_001 al 45% de capacidad (2kW)                                      │   │
 │  │ • ...                                                                                          │   │
-│  │ • action[125] = 0.34 → Charger 126 al 34% de capacidad                                       │   │
-│  │                                                                                                 │   │
-│  │ Chargers 127-128: RESERVADOS (sin control, para baseline)                                    │   │
+│  │ • action[112] = 0.78 → Moto_112 al 78% de capacidad                                          │   │
+│  │ • action[113] = 0.89 → Mototaxi_001 al 89% de capacidad (3kW)                                │   │
+│  │ • action[128] = 0.34 → Mototaxi_016 al 34% de capacidad                                      │   │
 │  └────────────────────────────────────────────────────────────────────────────────────────────────┘   │
 │                                                                                                          │
 └─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -128,7 +128,7 @@ def print_architecture():
 │  │    │  └─ Socket 4 (vacio):        0 kWh                                                    │       │
 │  │    ├─ Charger 2: 1.56 kW disponible                                                        │       │
 │  │    │  └─ (similar distribución)                                                            │       │
-│  │    └─ ... Chargers 1-126 ...                                                               │       │
+│  │    └─ ... Chargers moto_001-moto_112, mototaxi_001-mototaxi_016 ...                              │       │
 │  │                                                                                              │       │
 │  │ 2. CONSUMO TOTAL                                                                            │       │
 │  │    ├─ Energía a EVs: ~18.5 kWh                                                             │       │
@@ -143,7 +143,7 @@ def print_architecture():
 │  │    └─ CO₂ emitido: 4.5 kWh × 0.4521 = 2.03 kg CO₂                                         │       │
 │  │                                                                                              │       │
 │  │ 4. RETORNO                                                                                  │       │
-│  │    ├─ obs_new: Nuevo estado (534-dim) con valores reales                                   │       │
+│  │    ├─ obs_new: Nuevo estado (394-dim) con valores reales                                   │       │
 │  │    ├─ reward: Multi-objetivo calculado                                                     │       │
 │  │    ├─ done: False (aún no final del episodio)                                              │       │
 │  │    └─ info: {co2, solar_used, cost, ev_satisfaction, grid_stability}                      │       │
@@ -213,7 +213,7 @@ def print_architecture():
 │  └──────────────────────────────────────────────────────────────────────────────────────────┘         │
 │                                                                                                          │
 │  RED NEURONAL PREDICE NUEVA ACCIÓN:                                                                   │
-│  ├─ Input: obs_new(534) ← DATOS REALES ACTUALIZADOS                                                  │
+│  ├─ Input: obs_new(394) ← DATOS REALES ACTUALIZADOS                                                  │
 │  ├─ Hidden layers procesan: Detecta "solar sube, demanda sube, pico cercano"                         │
 │  └─ Output: action_new ≈ [0.72, 0.85, 0.25, 0.92, ...] (MAYOR QUE ANTES)                            │
 │                                                                                                          │

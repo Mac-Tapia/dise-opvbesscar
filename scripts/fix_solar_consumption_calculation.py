@@ -103,7 +103,7 @@ def show_data_sources():
     print("\nDesde CityLearn environment (env):")
     print("  - env.buildings[0].net_electricity_consumption → demanda neta actual [kW]")
     print("  - env.buildings[0].solar_generation → generación solar disponible [kW]")
-    print("  - env.buildings[0].control_space → 126 acciones de carga (chargers)")
+    print("  - env.buildings[0].control_space → 129 acciones (1 BESS + 128 chargers)")
 
     print("\nDesde BESS (battery):")
     print("  - battery.soc → State of Charge actual [%]")

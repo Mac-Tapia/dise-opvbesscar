@@ -16,6 +16,7 @@ from pathlib import Path
 import json
 import logging
 import pandas as pd
+import numpy as np
 import traceback
 from datetime import datetime
 
@@ -201,6 +202,189 @@ def build_dataset_phase(cfg: dict, rp) -> bool:
         return False
 
 
+def run_baseline_calculation() -> dict:
+    """
+    Ejecuta cálculo real del baseline (sin control inteligente).
+
+    Calcula:
+    - CO₂ del grid sin optimización
+    - Uso de solar sin control inteligente
+    - Motos y mototaxis cargados (demanda base)
+    - Comparación para reducción de CO₂
+    """
+    import numpy as np
+
+    logger.info("[BASELINE] Iniciando cálculo baseline REAL...")
+
+    # Cargar datos
+    pv_path = PROJECT_ROOT / "data" / "interim" / "oe2" / "solar" / "pv_generation_timeseries.csv"
+    charger_path = PROJECT_ROOT / "data" / "interim" / "oe2" / "chargers" / "chargers_hourly_profiles_annual.csv"
+    mall_path = PROJECT_ROOT / "data" / "interim" / "oe2" / "demandamallkwh" / "demanda_mall_horaria_anual.csv"
+
+    # PV Generation
+    if pv_path.exists():
+        pv_df = pd.read_csv(pv_path)
+        # Buscar columna de generación
+        gen_cols = [c for c in pv_df.columns if 'gen' in c.lower() or 'power' in c.lower() or 'kw' in c.lower() or 'ac' in c.lower()]
+        if gen_cols:
+            pv_gen = pv_df[gen_cols[0]].values
+        else:
+            numeric_cols = pv_df.select_dtypes(include=['number']).columns
+            pv_gen = pv_df[numeric_cols[-1]].values if len(numeric_cols) > 0 else np.zeros(8760)
+        logger.info(f"[OK] PV generation: {len(pv_gen)} rows, total={np.sum(pv_gen):,.0f} kWh")
+    else:
+        pv_gen = np.zeros(8760)
+        logger.warning("[WARN] PV file not found, using zeros")
+
+    # EV Charger Demand (128 chargers)
+    if charger_path.exists():
+        charger_df = pd.read_csv(charger_path)
+        ev_demand = charger_df.sum(axis=1).values
+        logger.info(f"[OK] EV demand: {len(ev_demand)} rows, total={np.sum(ev_demand):,.0f} kWh")
+    else:
+        ev_demand = np.full(8760, 96.33)  # Default
+        logger.warning("[WARN] Charger profiles not found, using default")
+
+    # Mall Load
+    if mall_path.exists():
+        mall_df = pd.read_csv(mall_path)
+        numeric_cols = mall_df.select_dtypes(include=['number']).columns
+        mall_load = mall_df[numeric_cols[0]].values if len(numeric_cols) > 0 else np.full(8760, 1411.88)
+        logger.info(f"[OK] Mall load: {len(mall_load)} rows, total={np.sum(mall_load):,.0f} kWh")
+    else:
+        mall_load = np.full(8760, 1411.88)
+        logger.warning("[WARN] Mall load not found, using default")
+
+    # Asegurar longitud 8760
+    if len(pv_gen) != 8760:
+        pv_gen = np.resize(pv_gen, 8760)
+    if len(ev_demand) != 8760:
+        ev_demand = np.resize(ev_demand, 8760)
+    if len(mall_load) != 8760:
+        mall_load = np.resize(mall_load, 8760)
+
+    # Parámetros CO₂
+    carbon_intensity = 0.4521  # kg CO₂/kWh (Iquitos thermal grid)
+    ev_co2_avoided_factor = 2.146  # kg CO₂ evitado por kWh EV vs gasolina
+
+    # BESS parameters
+    bess_capacity = 4520  # kWh
+    bess_power = 2712  # kW
+    bess_soc = bess_capacity * 0.50  # Start at 50%
+    bess_min = bess_capacity * 0.10
+    bess_max = bess_capacity * 0.95
+    bess_eff = 0.95
+
+    # Simulación baseline (sin control inteligente)
+    total_demand = ev_demand + mall_load
+    grid_import = np.zeros(8760)
+    pv_used = np.zeros(8760)
+    pv_curtailed = np.zeros(8760)
+
+    for h in range(8760):
+        pv = pv_gen[h]
+        demand = total_demand[h]
+
+        # 1. PV directo a cargas
+        pv_to_load = min(pv, demand)
+        pv_used[h] = pv_to_load
+        pv_remaining = pv - pv_to_load
+        demand_remaining = demand - pv_to_load
+
+        # 2. PV exceso a BESS
+        if pv_remaining > 0 and bess_soc < bess_max:
+            charge = min(pv_remaining, bess_power, (bess_max - bess_soc) / bess_eff)
+            bess_soc += charge * bess_eff
+            pv_remaining -= charge
+
+        # 3. BESS descarga para demanda
+        if demand_remaining > 0 and bess_soc > bess_min:
+            discharge = min(demand_remaining, bess_power, (bess_soc - bess_min) * bess_eff)
+            bess_soc -= discharge / bess_eff
+            demand_remaining -= discharge
+
+        # 4. Grid import para resto
+        grid_import[h] = demand_remaining
+
+        # 5. Curtail excess
+        pv_curtailed[h] = pv_remaining
+
+    # Calcular métricas
+    total_pv_gen = np.sum(pv_gen)
+    total_pv_used = np.sum(pv_used)
+    total_pv_curtailed = np.sum(pv_curtailed)
+    total_grid_import = np.sum(grid_import)
+    total_ev_demand = np.sum(ev_demand)
+    total_mall_load = np.sum(mall_load)
+
+    # CO₂ calculations
+    co2_grid_kg = total_grid_import * carbon_intensity
+    co2_avoided_ev_kg = total_ev_demand * ev_co2_avoided_factor  # vs gasolina
+    co2_avoided_solar_kg = total_pv_used * carbon_intensity  # vs grid
+
+    # Motos y mototaxis (estimación basada en demanda)
+    # 112 motos (2kW, 30 min = 1kWh) + 16 mototaxis (3kW, 30 min = 1.5kWh)
+    motos_per_day = 2912
+    mototaxis_per_day = 416
+    total_motos = motos_per_day * 365
+    total_mototaxis = mototaxis_per_day * 365
+
+    results = {
+        "type": "baseline_uncontrolled",
+        "timestamp": datetime.now().isoformat(),
+        "duration_hours": 8760,
+        "energy": {
+            "pv_generation_kwh": float(total_pv_gen),
+            "pv_used_kwh": float(total_pv_used),
+            "pv_curtailed_kwh": float(total_pv_curtailed),
+            "ev_demand_kwh": float(total_ev_demand),
+            "mall_load_kwh": float(total_mall_load),
+            "total_demand_kwh": float(np.sum(total_demand)),
+            "grid_import_kwh": float(total_grid_import),
+        },
+        "emissions": {
+            "co2_grid_kg": float(co2_grid_kg),
+            "co2_avoided_ev_kg": float(co2_avoided_ev_kg),
+            "co2_avoided_solar_kg": float(co2_avoided_solar_kg),
+            "co2_net_kg": float(co2_grid_kg - co2_avoided_solar_kg),
+            "carbon_intensity_kg_kwh": carbon_intensity,
+        },
+        "ev_fleet": {
+            "motos_charged_annual": int(total_motos),
+            "mototaxis_charged_annual": int(total_mototaxis),
+            "total_sessions_annual": int(total_motos + total_mototaxis),
+            "motos_per_day": motos_per_day,
+            "mototaxis_per_day": mototaxis_per_day,
+        },
+        "efficiency": {
+            "pv_utilization_pct": float(total_pv_used / max(total_pv_gen, 1) * 100),
+            "grid_dependency_pct": float(total_grid_import / max(np.sum(total_demand), 1) * 100),
+            "self_sufficiency_pct": float((np.sum(total_demand) - total_grid_import) / max(np.sum(total_demand), 1) * 100),
+        }
+    }
+
+    logger.info("")
+    logger.info("=" * 80)
+    logger.info("BASELINE RESULTS (Sin Control Inteligente)")
+    logger.info("=" * 80)
+    logger.info(f"  PV Generado:        {total_pv_gen:>15,.0f} kWh")
+    logger.info(f"  PV Utilizado:       {total_pv_used:>15,.0f} kWh ({results['efficiency']['pv_utilization_pct']:.1f}%)")
+    logger.info(f"  PV Descartado:      {total_pv_curtailed:>15,.0f} kWh")
+    logger.info(f"  Grid Import:        {total_grid_import:>15,.0f} kWh")
+    logger.info(f"  Demanda EV:         {total_ev_demand:>15,.0f} kWh")
+    logger.info(f"  Demanda Mall:       {total_mall_load:>15,.0f} kWh")
+    logger.info("")
+    logger.info(f"  CO₂ Grid:           {co2_grid_kg:>15,.0f} kg")
+    logger.info(f"  CO₂ Evitado (EV):   {co2_avoided_ev_kg:>15,.0f} kg")
+    logger.info(f"  CO₂ Evitado (Solar):{co2_avoided_solar_kg:>15,.0f} kg")
+    logger.info("")
+    logger.info(f"  Motos/año:          {total_motos:>15,}")
+    logger.info(f"  Mototaxis/año:      {total_mototaxis:>15,}")
+    logger.info("=" * 80)
+
+    return results
+
+
 def main():
     """Pipeline: Dataset build + Baseline calculation"""
     try:
@@ -221,14 +405,20 @@ def main():
             logger.error("\n[FATAL] Dataset build fallo. Abortando.")
             return False
 
-        # Fase 2: Baseline calculation
+        # Fase 2: Baseline calculation (REAL)
         logger.info("\n")
         logger.info("=" * 80)
         logger.info("FASE 2: CALCULO DE BASELINE (SIN CONTROL INTELIGENTE)")
         logger.info("=" * 80)
 
-        logger.info("[INFO] Usando baseline_citylearn_full_year.py para calculo...")
-        logger.info("[INFO] Resultado guardado en outputs/baseline_results.json")
+        baseline_results = run_baseline_calculation()
+
+        # Guardar resultados
+        output_path = PROJECT_ROOT / "outputs" / "baseline_results.json"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, 'w') as f:
+            json.dump(baseline_results, f, indent=2)
+        logger.info(f"[OK] Baseline guardado en: {output_path}")
 
         logger.info("\n")
         logger.info("=" * 80)

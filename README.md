@@ -23,23 +23,14 @@
 
 ---
 
-## 📖 ÍNDICE RÁPIDO
+## 📖 GUÍA RÁPIDA DE USO
 
 | Sección | Descripción |
 |---------|-------------|
-| **¿Qué Hace?** | Descripción general del proyecto |
-| **Objetivos** | OE.1, OE.2, OE.3 del sistema |
-| **Resultados** | Agentes entrenados y métricas |
-| **Arquitectura** | OE2 (infraestructura) + OE3 (RL) |
-| **Análisis Detallado** | 📊 [Análisis Completo OE3](ANALISIS_DETALLADO_OE3_RESULTADOS.md) |
-| **📚 Documentación CO₂** | 🎯 [Índice Master](INDICE_DOCUMENTACION_RESULTADOS_CO2.md) \| ⚡ [1 página](CHEATSHEET_EXPLICACION_1PAGINA.md) |
-| **🎯 Selección A2C Multi-Objetivo** | 📋 [Justificación](SELECCION_A2C_MULTI_OBJETIVO_JUSTIFICACION.md) \| 📊 [Simple](RESPUESTA_MULTI_OBJETIVO_SIMPLE.md) \| 🧠 [Técnico](CONTROL_MULTI_OBJETIVO_MECANISMO_TECNICO.md) |
-| **🔍 Cumplimiento Estricto Reglas** | ✅ [Análisis Riguroso](CUMPLIMIENTO_ESTRICTO_REGLAS_DESPACHO.md) - A2C carga 1.04M EVs/año sin grid |
-| **🔧 Corrección SAC/PPO** | 🔗 [Índice Maestro](INDICE_MAESTRO_CORRECCION_SAC_PPO.md) → 📝 [Plan de Optimización](PLAN_CORRECCION_OPTIMIZACION_SAC_PPO.md) + 📋 [Cambios de Código](CAMBIOS_CODIGO_PRE_ENTRENAMIENTO_SAC_PPO.md) + 🎨 [Ejemplos Visuales](EJEMPLOS_VISUALES_CAMBIOS_SAC_PPO.md) + 📊 [Resumen Ejecutivo](RESUMEN_EJECUTIVO_CORRECCION_SAC_PPO.md) + 🚀 [Guía Práctica](GUIA_PRACTICA_IMPLEMENTACION_PASO_A_PASO.md) - **RE-ENTRENAR CON CORRECCIONES** |
-| **Inicio Rápido** | 5 opciones para comenzar |
-| **Scripts** | Herramientas disponibles |
-| **Validación** | Estado del sistema (18/18 checks) |
-| **Requisitos** | Instalación y configuración |
+| **🚀 Flujo Actual** | 📋 [FLUJO_TRABAJO_TRAINING_ACTUAL.md](FLUJO_TRABAJO_TRAINING_ACTUAL.md) ← **INICIA AQUÍ** |
+| **⚡ Inicio Rápido** | [QUICKSTART.md](QUICKSTART.md) - 5 minutos para empezar |
+| **🛠️ Instalación** | [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) - Setup completo |
+| **📊 Documentación** | Ver secciones abajo según tu necesidad |
 
 ---
 

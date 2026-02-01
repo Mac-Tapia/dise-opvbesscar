@@ -10,10 +10,10 @@ Relanza el entrenamiento con las correcciones de:
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
-import json
 import logging
 import sys
+
+import pandas as pd
 
 from iquitos_citylearn.utils.logging import setup_logging
 from iquitos_citylearn.oe3.dataset_builder import build_citylearn_dataset
@@ -52,7 +52,6 @@ def main() -> None:
         # Verificar que exista al menos Building_1.csv (debe tener 8760 filas)
         building_csv = dataset_dir / "Building_1.csv"
         if building_csv.exists():
-            import pandas as pd
             try:
                 df = pd.read_csv(building_csv)
                 if len(df) == 8760:
@@ -80,7 +79,6 @@ def main() -> None:
     training_dir = rp.analyses_dir / "oe3" / "training"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    project_seed = int(cfg["project"].get("seed", 42))
     seconds_per_time_step = int(cfg["project"]["seconds_per_time_step"])
     ci = float(cfg["oe3"]["grid"]["carbon_intensity_kg_per_kwh"])
 

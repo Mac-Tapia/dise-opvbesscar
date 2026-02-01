@@ -37,8 +37,8 @@ class RuntimePaths:
 
     @property
     def checkpoints_dir(self) -> Path:
-        """Directorio para checkpoints de agentes"""
-        return self.outputs_dir / "checkpoints"
+        """Directorio para checkpoints de agentes (CENTRALIZADO EN RAÍZ)"""
+        return Path(__file__).resolve().parents[2] / "checkpoints"
 
     def ensure(self) -> None:
         for p in (

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from dataclasses import dataclass, asdict
 from pathlib import Path
@@ -11,10 +11,10 @@ import numpy as np
 import pandas as pd  # type: ignore
 
 from iquitos_citylearn.oe3.agents import (
-    UncontrolledChargingAgent,
     make_basic_ev_rbc,
     make_sac,
     make_no_control,
+    make_uncontrolled,
     make_ppo,
     make_a2c,
     SACConfig,
@@ -236,23 +236,23 @@ def _run_episode(env: Any, agent: Any, deterministic: bool = True) -> None:
 def _flatten_obs_for_trace(obs: Any) -> Tuple[np.ndarray, List[str]]:
     if isinstance(obs, dict):
         values = []
-        names: List[str] = []
+        obs_names_dict: List[str] = []
         for key, value in obs.items():
             arr = np.array(value, dtype=np.float32).ravel()
             values.append(arr)
-            names.extend([f"obs_{key}_{i:03d}" for i in range(len(arr))])
-        return np.concatenate(values) if values else np.array([], dtype=np.float32), names
+            obs_names_dict.extend([f"obs_{key}_{i:03d}" for i in range(len(arr))])
+        return np.concatenate(values) if values else np.array([], dtype=np.float32), obs_names_dict
     if isinstance(obs, (list, tuple)):
         values = []
-        names: List[str] = []
+        obs_names_list: List[str] = []
         for idx, value in enumerate(obs):
             arr = np.array(value, dtype=np.float32).ravel()
             values.append(arr)
-            names.extend([f"obs_{idx}_{i:03d}" for i in range(len(arr))])
-        return np.concatenate(values) if values else np.array([], dtype=np.float32), names
+            obs_names_list.extend([f"obs_{idx}_{i:03d}" for i in range(len(arr))])
+        return np.concatenate(values) if values else np.array([], dtype=np.float32), obs_names_list
     arr = np.array(obs, dtype=np.float32).ravel()
-    names = [f"obs_{i:03d}" for i in range(len(arr))]
-    return arr, names
+    obs_names = [f"obs_{i:03d}" for i in range(len(arr))]
+    return arr, obs_names
 
 
 def _flatten_action_for_trace(action: Any, env: Any) -> Tuple[np.ndarray, List[str]]:
@@ -593,7 +593,7 @@ def simulate(
     trace_obs_names: List[str] = []
     trace_action_names: List[str] = []
     if agent_name.lower() == "uncontrolled":
-        agent = UncontrolledChargingAgent(env)
+        agent = make_uncontrolled(env)
         trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_baseline_optimized(
             env, agent, agent_label="Uncontrolled"
         )
@@ -662,7 +662,7 @@ def simulate(
             agent = make_sac(env, config=sac_config)
         except Exception as e:
             logger.warning("SAC agent could not be created (%s). Falling back to Uncontrolled.", e)
-            agent = UncontrolledChargingAgent(env)
+            agent = make_uncontrolled(env)
         # Train
         if hasattr(agent, "learn"):
             try:
@@ -707,7 +707,7 @@ def simulate(
                 checkpoint_dir=str(ppo_checkpoint_dir) if ppo_checkpoint_dir else None,
                 checkpoint_freq_steps=int(ppo_checkpoint_freq_steps),
                 progress_path=str(ppo_progress_path) if ppo_progress_path else None,
-                target_kl=ppo_target_kl,
+                target_kl=ppo_target_kl if ppo_target_kl is not None else 0.01,
                 kl_adaptive=ppo_kl_adaptive,
                 log_interval=int(ppo_log_interval),
                 use_amp=bool(ppo_kwargs.pop("use_amp", ppo_use_amp) if ppo_kwargs else ppo_use_amp),
@@ -741,7 +741,7 @@ def simulate(
                 agent.learn(total_timesteps=ppo_timesteps)
         except Exception as e:
             logger.warning("PPO agent could not be created (%s). Falling back to Uncontrolled.", e)
-            agent = UncontrolledChargingAgent(env)
+            agent = make_uncontrolled(env)
         _save_training_artifacts(agent_name, agent, training_dir)
         trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_safe(
             env, agent, deterministic=deterministic_eval, agent_label="PPO"
@@ -805,14 +805,14 @@ def simulate(
                 agent.learn(total_timesteps=a2c_steps)
         except Exception as e:
             logger.warning("A2C agent could not be created (%s). Falling back to Uncontrolled.", e)
-            agent = UncontrolledChargingAgent(env)
+            agent = make_uncontrolled(env)
         _save_training_artifacts(agent_name, agent, training_dir)
         trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_safe(
             env, agent, deterministic=deterministic_eval, agent_label="A2C"
         )
     else:
         logger.warning(f"Unknown agent_name: {agent_name}. Falling back to Uncontrolled.")
-        agent = UncontrolledChargingAgent(env)
+        agent = make_uncontrolled(env)
         trace_obs, trace_actions, trace_rewards, trace_obs_names, trace_action_names = _run_episode_safe(
             env, agent, deterministic=True, agent_label="Uncontrolled"
         )
@@ -901,7 +901,7 @@ def simulate(
         # CRÍTICO: Crear una nueva instancia limpia para calcular métricas desde cero
         # La instancia anterior puede estar contaminada con estados previos
         try:
-            from src.iquitos_citylearn.oe3.rewards import MultiObjectiveReward, MultiObjectiveWeights
+            from iquitos_citylearn.oe3.rewards import MultiObjectiveReward, MultiObjectiveWeights
             # Recrear el tracker con la configuración correcta usando los pesos multiobjetivo
             # ✓ CORREGIDO 2026-01-30: Usar co2_focus para obtener weights 0.75
             weights = MultiObjectiveWeights(
@@ -1030,14 +1030,14 @@ def simulate(
         carbon_kg=float(carbon),
         results_path=str((out_dir / f"result_{agent_name}.json").resolve()),
         timeseries_path=str(ts_path.resolve()),
-        # Métricas multiobjetivo
-        multi_objective_priority=mo_metrics["priority"],
-        reward_co2_mean=float(mo_metrics["r_co2_mean"]),
-        reward_cost_mean=float(mo_metrics["r_cost_mean"]),
-        reward_solar_mean=float(mo_metrics["r_solar_mean"]),
-        reward_ev_mean=float(mo_metrics["r_ev_mean"]),
-        reward_grid_mean=float(mo_metrics["r_grid_mean"]),
-        reward_total_mean=float(mo_metrics["reward_total_mean"]),
+        # Métricas multiobjetivo - Usar cast explícito para satisfacer type checker
+        multi_objective_priority=str(mo_metrics.get("priority", "balanced")),  # type: ignore
+        reward_co2_mean=float(mo_metrics.get("r_co2_mean", 0.0)),  # type: ignore
+        reward_cost_mean=float(mo_metrics.get("r_cost_mean", 0.0)),  # type: ignore
+        reward_solar_mean=float(mo_metrics.get("r_solar_mean", 0.0)),  # type: ignore
+        reward_ev_mean=float(mo_metrics.get("r_ev_mean", 0.0)),  # type: ignore
+        reward_grid_mean=float(mo_metrics.get("r_grid_mean", 0.0)),  # type: ignore
+        reward_total_mean=float(mo_metrics.get("reward_total_mean", 0.0)),  # type: ignore
     )
 
     Path(result.results_path).write_text(json.dumps(result.__dict__, indent=2), encoding="utf-8")
