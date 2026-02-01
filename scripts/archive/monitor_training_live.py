@@ -1,146 +1,103 @@
-#!/usr/bin/env python
-"""
-Monitor en vivo del entrenamiento de SAC, PPO, A2C
-Muestra progreso, recompensas, CO2, tiempo estimado
-"""
 from __future__ import annotations
 
+import time
+from pathlib import Path
+import pandas as pd
 import json
 import logging
-import time
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any
+from datetime import datetime
 
-import pandas as pd
-
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def monitor_training_live(check_interval: int = 30, max_duration: int = 3600 * 10):
+    """Monitor entrenamiento en vivo con actualizaciones periódicas"""
 
-class TrainingMonitor:
-    """Monitor en vivo del entrenamiento de agentes RL"""
+    sac_progress = Path("analyses/oe3/training/progress/sac_progress.csv")
+    ppo_progress = Path("analyses/oe3/training/progress/ppo_progress.csv")
+    sac_results = Path("outputs/oe3/simulations/sac_results.json")
+    ppo_results = Path("outputs/oe3/simulations/ppo_results.json")
 
-    def __init__(self, output_dir: str = "outputs/oe3_simulations"):
-        self.output_dir = Path(output_dir)
-        self.start_time = None
-        self.agents = {"SAC": "sac", "PPO": "ppo", "A2C": "a2c"}
+    start_time = time.time()
+    last_sac_rows = 0
+    last_ppo_rows = 0
 
-    def read_checkpoint_summary(self, agent_name: str) -> dict[str, Any] | None:
-        """Lee el archivo de resumen de checkpoints de un agente"""
+    print("\n" + "="*100)
+    print("🎯 MONITOR DE ENTRENAMIENTO EN TIEMPO REAL".center(100))
+    print("="*100 + "\n")
+
+    while time.time() - start_time < max_duration:
         try:
-            summaries = list(self.output_dir.glob(f"TRAINING_CHECKPOINTS_SUMMARY_*_{agent_name.upper()}_*.json"))
-            if not summaries:
-                return None
-            latest = sorted(summaries)[-1]
-            with open(latest) as f:
-                return json.load(f)
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            # Check SAC
+            if sac_progress.exists():
+                sac_df = pd.read_csv(sac_progress)
+                if len(sac_df) > last_sac_rows:
+                    last_row = sac_df.iloc[-1]
+                    print(f"\n[{current_time}] 🔵 SAC - ACTUALIZACIÓN")
+                    print(f"  Episodios: {len(sac_df)} | ", end="")
+
+                    if 'episode_reward_mean' in last_row:
+                        print(f"Reward: {last_row['episode_reward_mean']:.4f} | ", end="")
+                    if 'total_co2_kg' in last_row:
+                        print(f"CO2: {last_row['total_co2_kg']:.2f} kg | ", end="")
+                    if 'total_timesteps' in last_row:
+                        print(f"Steps: {last_row['total_timesteps']:,.0f}", end="")
+                    print()
+
+                    last_sac_rows = len(sac_df)
+
+            # Check PPO
+            if ppo_progress.exists():
+                ppo_df = pd.read_csv(ppo_progress)
+                if len(ppo_df) > last_ppo_rows:
+                    last_row = ppo_df.iloc[-1]
+                    print(f"[{current_time}] 🟢 PPO - ACTUALIZACIÓN")
+                    print(f"  Episodios: {len(ppo_df)} | ", end="")
+
+                    if 'episode_reward_mean' in last_row:
+                        print(f"Reward: {last_row['episode_reward_mean']:.4f} | ", end="")
+                    if 'total_co2_kg' in last_row:
+                        print(f"CO2: {last_row['total_co2_kg']:.2f} kg | ", end="")
+                    if 'total_timesteps' in last_row:
+                        print(f"Steps: {last_row['total_timesteps']:,.0f}", end="")
+                    print()
+
+                    last_ppo_rows = len(ppo_df)
+
+            # Check final results
+            if sac_results.exists():
+                with open(sac_results) as f:
+                    sac_res = json.load(f)
+                    if sac_res.get("status") == "COMPLETED":
+                        print(f"\n✅ SAC ENTRENAMIENTO COMPLETADO")
+                        print(f"   Años simulados: {sac_res.get('simulated_years', 0):.1f}")
+                        print(f"   CO2 final: {sac_res.get('total_co2_kg', 0):.2f} kg")
+
+            if ppo_results.exists():
+                with open(ppo_results) as f:
+                    ppo_res = json.load(f)
+                    if ppo_res.get("status") == "COMPLETED":
+                        print(f"\n✅ PPO ENTRENAMIENTO COMPLETADO")
+                        print(f"   Años simulados: {ppo_res.get('simulated_years', 0):.1f}")
+                        print(f"   CO2 final: {ppo_res.get('total_co2_kg', 0):.2f} kg")
+
+            time.sleep(check_interval)
+
         except Exception as e:
-            logger.debug(f"Error leyendo checkpoint para {agent_name}: {e}")
-            return None
+            logger.error(f"Error en monitoreo: {e}")
+            time.sleep(check_interval)
 
-    def read_timeseries(self, agent_name: str) -> pd.DataFrame | None:
-        """Lee la timeseries de un agente"""
-        try:
-            ts_file = self.output_dir / f"{agent_name.lower()}_episodes_timeseries.csv"
-            if not ts_file.exists():
-                return None
-            return pd.read_csv(ts_file)
-        except Exception as e:
-            logger.debug(f"Error leyendo timeseries para {agent_name}: {e}")
-            return None
-
-    def format_time(self, seconds: float) -> str:
-        """Formatea segundos a hh:mm:ss"""
-        return str(timedelta(seconds=int(seconds)))
-
-    def print_status(self) -> None:
-        """Imprime el estado actual del entrenamiento"""
-        print("\n" + "=" * 100)
-        print(f"🕐 MONITOREO EN VIVO - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        print("=" * 100)
-
-        any_running = False
-
-        for agent_display, agent_key in self.agents.items():
-            summary = self.read_checkpoint_summary(agent_display)
-            ts = self.read_timeseries(agent_display)
-
-            if summary or ts is not None:
-                any_running = True
-                status = "🟢 ENTRENANDO" if summary else "✓ COMPLETADO"
-                print(f"\n{agent_display:>4} {status}")
-                print("-" * 100)
-
-                if summary:
-                    total_steps = summary.get("total_timesteps", 0)
-                    episode = summary.get("episode", 0)
-                    max_episodes = 5  # Ajustar según config
-                    progress = (episode / max_episodes) * 100 if max_episodes > 0 else 0
-
-                    print(f"  Episodio:          {episode}/{max_episodes} ({progress:.1f}%)")
-                    print(f"  Total timesteps:   {total_steps:,} / 43,800 (5 episodios)")
-                    print(f"  Mejor recompensa:  {summary.get('best_reward', 'N/A')}")
-                    print(f"  Recompensa actual: {summary.get('last_reward', 'N/A')}")
-
-                if ts is not None and len(ts) > 0:
-                    last_row = ts.iloc[-1]
-                    avg_reward = ts["reward"].mean()
-                    max_reward = ts["reward"].max()
-                    min_reward = ts["reward"].min()
-
-                    print(f"  Promedio recompensa: {avg_reward:.2f}")
-                    print(f"  Máximo:              {max_reward:.2f}")
-                    print(f"  Mínimo:              {min_reward:.2f}")
-
-                    if "co2_emissions" in ts.columns:
-                        co2 = ts["co2_emissions"].iloc[-1]
-                        print(f"  CO₂ (último):        {co2:,.0f} kg")
-
-                    if "solar_used" in ts.columns:
-                        solar = ts["solar_used"].mean()
-                        print(f"  Solar (promedio):    {solar:.1f}%")
-            else:
-                print(f"\n{agent_display:>4} ⏳ PENDIENTE (no iniciado)")
-
-        if not any_running:
-            print("\n⏳ Ningún entrenamiento activo aún. Esperando...")
-
-        print("\n" + "=" * 100)
-        print("💡 Consejos:")
-        print("  - El entrenamiento puede tardar 30-60 minutos (con GPU)")
-        print("  - Checkpoints guardados en: checkpoints/{SAC,PPO,A2C}/")
-        print("  - Timeseries CSV guardadas en: outputs/oe3_simulations/")
-        print("=" * 100 + "\n")
-
-    def monitor_loop(self, interval: int = 10) -> None:
-        """Loop de monitoreo continuo"""
-        self.start_time = time.time()
-        iteration = 0
-
-        try:
-            while True:
-                iteration += 1
-                self.print_status()
-
-                # Revisar si training completó (archivo de resumen final)
-                summary_file = self.output_dir / "simulation_summary.json"
-                if summary_file.exists():
-                    print("\n✅ ENTRENAMIENTO COMPLETADO - Leyendo resultados finales...")
-                    with open(summary_file) as f:
-                        final = json.load(f)
-                        print(json.dumps(final, indent=2))
-                    break
-
-                print(f"⏳ Próxima actualización en {interval}s (iteración {iteration})...\n")
-                time.sleep(interval)
-        except KeyboardInterrupt:
-            elapsed = time.time() - self.start_time
-            print(f"\n\n⏹️  Monitoreo detenido después de {self.format_time(elapsed)}")
+    print("\n" + "="*100)
+    print("⏱️  Monitoreo finalizado".center(100))
+    print("="*100 + "\n")
 
 
 if __name__ == "__main__":
-    monitor = TrainingMonitor()
-    print("🚀 Iniciando monitor en vivo...")
-    print("📊 Presiona Ctrl+C para detener\n")
-    monitor.monitor_loop(interval=15)
+    import argparse
+    ap = argparse.ArgumentParser(description="Monitor en vivo del entrenamiento")
+    ap.add_argument("--interval", type=int, default=30, help="Intervalo de chequeo en segundos")
+    ap.add_argument("--duration", type=int, default=3600*10, help="Duración máxima en segundos")
+    args = ap.parse_args()
+
+    monitor_training_live(check_interval=args.interval, max_duration=args.duration)
