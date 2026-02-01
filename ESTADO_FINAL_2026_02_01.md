@@ -11,9 +11,10 @@
 
 ### **Limpieza Completada**
 - ✅ **scripts/**: De ~110 archivos caóticos → **6 esenciales + 2 docs + 104 archivados**
+- ✅ **scripts/testing/**: De 21 archivos → **3 esenciales + 18 archivados** (GPU monitoring + utils)
 - ✅ **docs/**: De ~350 documentos duplicados → **Archivados con índice**
 - ✅ **Raíz**: De 100+ archivos → **9 archivos esenciales**
-- ✅ **Duplicados eliminados:** build_dataset.py, query_training_archive.py
+- ✅ **Duplicados eliminados:** build_dataset.py, query_training_archive.py, verificaciones OE2
 - ✅ **Sin pérdida de funcionalidad:** Todo está archivado para referencia
 
 ### **Documentación Nueva**
