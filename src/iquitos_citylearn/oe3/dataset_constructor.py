@@ -27,9 +27,9 @@ class DatasetConfig:
     n_timesteps: int = 8760  # 1 a\u00f1o horario (resoluci\u00f3n exacta)
     n_chargers_physical: int = 32  # Chargers f\u00edsicos (28 motos + 4 mototaxis)
     n_chargers: int = 128  # Total sockets (32 \u00d7 4 = 128 individual controllables)
-    n_controllable_chargers: int = 126  # 2 sockets reservados para baseline comparison
+    n_controllable_chargers: int = 128  # Todos los 128 chargers controlables individualmente
     observation_dim: int = 394  # Solar(1) + demand(1) + BESS(1) + Mall(1) + charger_demand(128) + charger_power(128) + charger_occ(128) + time(4) + grid(2)
-    action_dim: int = 126  # Continuous setpoints [0,1] para 126 sockets controlables
+    action_dim: int = 129  # 1 BESS + 128 chargers individuales (112 motos 2kW + 16 mototaxis 3kW)
     carbon_intensity_kg_per_kwh: float = 0.4521  # Iquitos (diesel thermal isolated grid)
     co2_conversion_factor: float = 2.146  # Para c\u00e1lculo directo: 50kW \u00d7 2.146 = 107.3 kg/h
     tariff_usd_per_kwh: float = 0.20  # Tarifa promedio (baja, no es constraint)

@@ -1,8 +1,13 @@
 {
     "include": [
-        "src",
-        "scripts",
-        "*.py"
+        "src/iquitos_citylearn",
+        "scripts/run_oe*.py",
+        "scripts/run_uncontrolled*.py",
+        "scripts/run_oe2*.py",
+        "scripts/run_sac_ppo_a2c_only.py",
+        "scripts/run_sac_ppo_only.py",
+        "scripts/save_ppo_result.py",
+        "scripts/run_api.py"
     ],
     "exclude": [
         "**/__pycache__",
@@ -12,7 +17,16 @@
         "checkpoints",
         "analyses",
         "reports",
-        "src/iquitos_citylearn/oe3/agents/sac.py"
+        ".github",
+        "scripts/run_a2c_only.py",
+        "scripts/run_all_agents.py",
+        "scripts/run_ppo_a2c_only.py",
+        "scripts/run_ppo_clean.py",
+        "scripts/run_ppo_fast.py",
+        "scripts/run_ppo_only.py",
+        "scripts/run_ppo_simulate_final.py",
+        "scripts/run_sac_only.py",
+        "scripts/run_training_sequence.py"
     ],
     "reportMissingImports": false,
     "reportMissingTypeStubs": false,
@@ -38,11 +52,9 @@
     "reportUnknownVariableType": false,
     "reportUnknownArgumentType": false,
     "reportUnknownReturnType": false,
+    "reportVariableAnnotationRequired": false,
     "pythonVersion": "3.11",
     "typeCheckingMode": "basic",
     "venvPath": ".venv",
-    "stubPath": ".",
-    "exclude": [
-        "src/iquitos_citylearn/oe3/agents/rbc.py"
-    ]
+    "stubPath": "."
 }

@@ -5,6 +5,7 @@ from pathlib import Path
 from iquitos_citylearn.utils.logging import setup_logging
 from iquitos_citylearn.oe3.dataset_builder import build_citylearn_dataset
 from iquitos_citylearn.oe3.simulate import simulate
+from iquitos_citylearn.config import project_root
 from scripts._common import load_all
 
 def main() -> None:
@@ -17,7 +18,8 @@ def main() -> None:
 
     schema_pv = dataset_dir / "schema_pv_bess.json"
     out_dir = rp.outputs_dir / "oe3" / "simulations"
-    training_dir = rp.analyses_dir / "oe3" / "training"
+    # Directorio para guardar checkpoints (CENTRALIZADO EN RAÍZ)
+    training_dir = project_root() / "checkpoints"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     res = simulate(

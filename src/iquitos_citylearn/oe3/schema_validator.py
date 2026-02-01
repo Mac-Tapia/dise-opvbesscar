@@ -375,14 +375,14 @@ class CityLearnSchemaValidator:
 
             obs_dim = len(obs_array)
 
-            # Expected: ~534 dimensions for current Iquitos setup
-            if obs_dim < 500:
+            # Expected: ~394 dimensions for current Iquitos setup (129 actions)
+            if obs_dim < 350:
                 logger.warning(
-                    "⚠️ Observation dimension low: %d (expected ~534)", obs_dim
+                    "⚠️ Observation dimension low: %d (expected ~394)", obs_dim
                 )
-            elif obs_dim > 600:
+            elif obs_dim > 450:
                 logger.warning(
-                    "⚠️ Observation dimension high: %d (expected ~534)", obs_dim
+                    "⚠️ Observation dimension high: %d (expected ~394)", obs_dim
                 )
 
             logger.info("✅ CityLearn load successful, obs_dim=%d", obs_dim)

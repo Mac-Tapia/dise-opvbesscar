@@ -110,7 +110,7 @@ def main():
     logger.info("=" * 80)
     logger.info(f"\nUbicación: {dataset_dir}")
     logger.info(f"   - {len(charger_files)} charger timeseries (8,760 timesteps c/u)")
-    logger.info(f"   - {num_sockets} sockets controllables (126 por agentes)")
+    logger.info(f"   - {num_sockets} sockets controllables (128 chargers, 129 acciones)")
     logger.info(f"   - Listo para baseline y entrenamiento\n")
 
     return 0

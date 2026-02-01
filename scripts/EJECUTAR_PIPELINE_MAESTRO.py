@@ -111,8 +111,8 @@ def phase_2_build_dataset(solar, chargers, bess, mall):
 
     logger.info(f"\n✓ Dataset construido exitosamente")
     logger.info(f"  - Output: {output_dir}")
-    logger.info(f"  - Observations: (8760, 534)")
-    logger.info(f"  - Actions: (8760, 126)")
+    logger.info(f"  - Observations: (8760, 394)")
+    logger.info(f"  - Actions: (8760, 129)")
 
     return metadata, output_dir
 
@@ -165,16 +165,16 @@ def phase_4_prepare_training(output_dir_dataset, baseline_results):
 
     # Cargar observables
     obs_df = pd.read_csv(output_dir_dataset / "observations_raw.csv")
-    observations = obs_df.values  # (8760, 534)
+    observations = obs_df.values  # (8760, 394)
 
     # Crear configuración
     training_config = {
         'version': '1.0',
         'timestamp': datetime.now().isoformat(),
         'timesteps': 8760,
-        'observation_dim': 534,
-        'action_dim': 126,
-        'n_chargers_controllable': 126,
+        'observation_dim': 394,
+        'action_dim': 129,
+        'n_chargers_controllable': 128,
         'agents': [
             {'name': 'SAC', 'train_steps': 50000, 'learning_rate': 2e-4},
             {'name': 'PPO', 'train_steps': 50000, 'learning_rate': 2e-4},
@@ -238,7 +238,7 @@ def phase_5_train_agents(training_dir, training_config):
             def reset(self):
                 return self.observation_space.sample()
 
-        env = DummyEnv(534, 126)
+        env = DummyEnv(394, 129)  # Updated: 394 obs, 129 actions
 
         agents_config = training_config['agents']
 

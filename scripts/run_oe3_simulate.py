@@ -8,6 +8,7 @@ import logging
 from iquitos_citylearn.utils.logging import setup_logging
 from iquitos_citylearn.oe3.dataset_builder import build_citylearn_dataset
 from iquitos_citylearn.oe3.simulate import simulate
+from iquitos_citylearn.config import project_root
 from scripts._common import load_all
 
 def _tailpipe_kg(cfg: dict, ev_kwh: float, simulated_years: float) -> float:
@@ -48,7 +49,7 @@ def main() -> None:
         chargers_results = json.loads(chargers_results_path.read_text(encoding="utf-8"))
 
     out_dir = rp.outputs_dir / "oe3" / "simulations"
-    training_dir = rp.analyses_dir / "oe3" / "training"
+    training_dir = project_root() / "checkpoints"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     project_seed = int(cfg["project"].get("seed", 42))
@@ -62,7 +63,7 @@ def main() -> None:
     ppo_cfg = eval_cfg.get("ppo", {})
     a2c_cfg = eval_cfg.get("a2c", {})
 
-    sac_episodes = int(sac_cfg.get("episodes", 5))
+    sac_episodes = int(sac_cfg.get("episodes", 3))
     sac_batch_size = int(sac_cfg.get("batch_size", 512))
     sac_log_interval = int(sac_cfg.get("log_interval", 500))
     sac_use_amp = bool(sac_cfg.get("use_amp", True))

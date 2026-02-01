@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
-import json
 import logging
 
 from iquitos_citylearn.utils.logging import setup_logging
@@ -18,8 +16,6 @@ def main() -> None:
     setup_logging()
     cfg, rp = load_all(args.config)
     oe3_cfg = cfg["oe3"]
-
-    dataset_name = cfg["oe3"]["dataset"]["name"]
     built = build_citylearn_dataset(
         cfg=cfg,
         _raw_dir=rp.raw_dir,
@@ -29,7 +25,6 @@ def main() -> None:
     dataset_dir = built.dataset_dir
 
     schema_pv = dataset_dir / "schema_pv_bess.json"
-    chargers_results_path = rp.interim_dir / "oe2" / "chargers" / "chargers_results.json"
 
     out_dir = rp.outputs_dir / "oe3" / "simulations"
     training_dir = rp.analyses_dir / "oe3" / "training"

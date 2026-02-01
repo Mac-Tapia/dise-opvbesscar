@@ -97,7 +97,7 @@ def print_executive_summary():
     print("├─ ...")
     print("└─ Charger 31 (Taxi, urgencia=0.1): 0.0 kW (0%)")
     print()
-    print("Resultado: 126 observables de carga con control dinámico + 2 reservados para baseline")
+    print("Resultado: 128 chargers con control dinámico (129 acciones: 1 BESS + 112 motos + 16 mototaxis)")
     print()
 
     print("\n" + "━"*100)

@@ -532,7 +532,7 @@ class CityLearnMultiObjectiveWrapper(gym.Env):
             obs, original_reward, terminated, truncated, info = self.env.step(action)
         except (KeyboardInterrupt, AttributeError, TypeError, Exception) as e:
             # Si falla el step del environment, retornar observación segura
-            obs = np.zeros(534)
+            obs = np.zeros(394)  # 394-dim observation space (129 actions)
             original_reward = 0.0
             terminated = True
             truncated = False
@@ -735,4 +735,83 @@ def calculate_co2_reduction_direct(
         "mototaxis_cargadas": mototaxis_cargadas,
         "co2_direct_total_kg": co2_direct_total_kg,
     }
+
+
+def calculate_solar_dispatch(
+    solar_available_kw: float,
+    ev_demand_kw: float,
+    mall_demand_kw: float,
+    bess_soc_pct: float,
+    bess_max_power_kw: float,
+    bess_capacity_kwh: float,
+) -> dict:
+    """Desglosar disponibilidad solar según 5 prioridades de despacho.
+
+    PRIORIDADES DE DESPACHO (automáticas, NO agente RL):
+    1. EV charging (demand constante 50 kW, 9AM-10PM)
+    2. Mall loads (demanda no-desplazable, típicamente 100 kW)
+    3. BESS charging (cargar batería si SOC < 80% y solar disponible)
+    4. Grid export (vender solar excedente al grid)
+    5. Grid import (comprar si falta)
+
+    Args:
+        solar_available_kw: Generación solar disponible (kW)
+        ev_demand_kw: Demanda EV (típicamente 50 kW constante 9AM-10PM)
+        mall_demand_kw: Demanda mall/no-desplazable (kW)
+        bess_soc_pct: SOC de batería (0-100%)
+        bess_max_power_kw: Máxima potencia carga/descarga (2712 kW)
+        bess_capacity_kwh: Capacidad de batería (4520 kWh)
+
+    Returns:
+        dict: Desglose de despacho {
+            'solar_to_ev': float,
+            'solar_to_mall': float,
+            'solar_to_bess': float,
+            'solar_to_grid': float,
+            'grid_to_ev': float,
+            'grid_to_mall': float,
+            'bess_to_ev': float,
+            'bess_to_mall': float,
+        }
+    """
+    solar_remaining = solar_available_kw
+    dispatch = {
+        "solar_to_ev": 0.0,
+        "solar_to_mall": 0.0,
+        "solar_to_bess": 0.0,
+        "solar_to_grid": 0.0,
+        "grid_to_ev": 0.0,
+        "grid_to_mall": 0.0,
+        "bess_to_ev": 0.0,
+        "bess_to_mall": 0.0,
+    }
+
+    # PRIORIDAD 1: EV Charging (crítico)
+    solar_to_ev = min(ev_demand_kw, solar_remaining)
+    dispatch["solar_to_ev"] = solar_to_ev
+    solar_remaining -= solar_to_ev
+
+    # Si solar no cubre EV, usar grid
+    if solar_to_ev < ev_demand_kw:
+        dispatch["grid_to_ev"] = ev_demand_kw - solar_to_ev
+
+    # PRIORIDAD 2: Mall loads
+    solar_to_mall = min(mall_demand_kw, solar_remaining)
+    dispatch["solar_to_mall"] = solar_to_mall
+    solar_remaining -= solar_to_mall
+
+    # Si solar no cubre mall, usar grid
+    if solar_to_mall < mall_demand_kw:
+        dispatch["grid_to_mall"] = mall_demand_kw - solar_to_mall
+
+    # PRIORIDAD 3: BESS charging (si hay solar excedente y SOC < 80%)
+    if solar_remaining > 0.0 and bess_soc_pct < 80.0:
+        solar_to_bess = min(solar_remaining, bess_max_power_kw)
+        dispatch["solar_to_bess"] = solar_to_bess
+        solar_remaining -= solar_to_bess
+
+    # PRIORIDAD 4: Grid export (solar excedente se vende al grid)
+    dispatch["solar_to_grid"] = max(0.0, solar_remaining)
+
+    return dispatch
 
