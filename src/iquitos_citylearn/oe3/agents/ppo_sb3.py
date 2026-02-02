@@ -43,9 +43,9 @@ class PPOConfig:
     """
     # Hiperparámetros de entrenamiento - PPO OPTIMIZADO PARA RTX 4060
     train_steps: int = 500000  # ↓ REDUCIDO: 1M→500k (RTX 4060 limitación)
-    n_steps: int = 8760         # ↑ OPTIMIZADO: 256→8760 (FULL EPISODE, ver causal chains completo!)
+    n_steps: int = 2048         # ✅ CORREGIDO: 8760→2048 (GPU-friendly, aún captura 85 días variación)
     batch_size: int = 256       # ↑ OPTIMIZADO: 8→256 (4x mayor, mejor gradient estimation)
-    n_epochs: int = 3          # ↑ OPTIMIZADO: 2→10 (más training passes)
+    n_epochs: int = 10          # ✅ AUMENTADO: 3→10 (compensa reducción n_steps)
 
     # Optimización - PPO ADAPTADO A GPU LIMITADA
     learning_rate: float = 1e-4     # ↑ OPTIMIZADO: 5e-5→1e-4 (mejor balancse con nuevo clip)
@@ -258,6 +258,39 @@ class PPOAgent:
             pass
         return info
 
+    def _validate_dataset_completeness(self) -> None:
+        """Validar que el dataset CityLearn tiene exactamente 8,760 timesteps (año completo)."""
+        try:
+            # Usar env si está disponible
+            buildings = getattr(self.env, 'buildings', [])
+            if not buildings:
+                logger.warning("[VALIDACIÓN-PPO] No buildings found in CityLearn environment")
+                return
+
+            b = buildings[0]
+            solar_gen = getattr(b, 'solar_generation', None)
+
+            if solar_gen is None or len(solar_gen) == 0:
+                net_elec = getattr(b, 'net_electricity_consumption', None)
+                if net_elec is None or len(net_elec) == 0:
+                    logger.warning("[VALIDACIÓN-PPO] No se pudo extraer series de tiempo")
+                    return
+                timesteps = len(net_elec)
+            else:
+                timesteps = len(solar_gen)
+
+            if timesteps != 8760:
+                logger.warning(
+                    f"[VALIDACIÓN-PPO] Dataset INCOMPLETO: {timesteps} timesteps vs. 8,760 esperado"
+                )
+                if timesteps < 4380:
+                    raise ValueError(f"[CRÍTICO-PPO] Dataset INCOMPLETO: {timesteps} < 4,380 (6 meses mínimo)")
+            else:
+                logger.info("[VALIDACIÓN-PPO] Dataset CityLearn COMPLETO: 8,760 timesteps ✓")
+
+        except Exception as e:
+            logger.warning(f"[VALIDACIÓN-PPO] No se pudo verificar dataset: {e}")
+
     def learn(self, total_timesteps: Optional[int] = None, **kwargs: Any) -> None:
         """Entrena el agente PPO con optimizadores avanzados.
 
@@ -276,6 +309,9 @@ class PPOAgent:
         except ImportError as e:
             logger.warning("stable_baselines3 no disponible: %s", e)
             return
+
+        # VALIDACIÓN CRÍTICA: Verificar dataset completo antes de entrenar
+        self._validate_dataset_completeness()
 
         steps = total_timesteps or self.config.train_steps
 

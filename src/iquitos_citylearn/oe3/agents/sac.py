@@ -8,7 +8,7 @@ from typing import Any, Optional, Dict, List
 import numpy as np
 import logging
 
-from ..progress import append_progress_row, render_progress_plot
+from ..progress import append_progress_row
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +145,7 @@ class SACConfig:
 # Hiperparámetros de entrenamiento - SAC OPTIMIZADO PARA RTX 4060 (8GB VRAM)
     episodes: int = 3  # REDUCIDO: 50→3 (test rápido, evita OOM)
     batch_size: int = 256                   # ↑ OPTIMIZADO: 32→256 (4x mayor, mejor gradients)
-    buffer_size: int = 100000               # ↑ OPTIMIZADO: 50k→100k (10x mayor, reduce contamination)
+    buffer_size: int = 200000               # ✅ CORREGIDO: 100k→200k (captura variación anual completa)
     learning_rate: float = 5e-5             # AJUSTE: 1e-4→5e-5 (reduce inestabilidad gradient)
     gamma: float = 0.99                      # ↓ Reducido: 0.999→0.99 (simplifica Q-function)
     tau: float = 0.01                        # AJUSTE: 0.005→0.01 (soft target update más stable)
@@ -323,179 +323,58 @@ class SACAgent:
         logger.info("Iniciando entrenamiento SAC en dispositivo: %s", self.device)
         eps = episodes or self.config.episodes
 
-        # Intentar CityLearn SAC solo si está habilitado explícitamente
-        if self.config.prefer_citylearn:
-            try:
-                self._train_citylearn_sac(eps)
-                return
-            except (ImportError, AttributeError) as e:
-                logger.exception("CityLearn SAC no disponible (%s), usando SB3...", e)
+        # VALIDACIÓN CRÍTICA: Verificar dataset completo antes de entrenar
+        self._validate_dataset_completeness()
 
-        # Fallback a Stable-Baselines3 SAC
+        # Usar Stable-Baselines3 SAC
         try:
             steps = total_timesteps or (eps * 8760)  # 1 año = 8760 horas
             self._train_sb3_sac(steps)
         except (ImportError, RuntimeError) as e:
             logger.exception("SB3 SAC falló (%s). Agente sin entrenar.", e)
 
-    def _train_citylearn_sac(self, episodes: int):
-        """Entrena usando CityLearn's native SAC con progress tracking."""
-        from citylearn.agents.sac import SAC  # type: ignore
-        gym_available = False
+    def _validate_dataset_completeness(self) -> None:
+        """Validar que el dataset CityLearn tiene exactamente 8,760 timesteps (año completo).
+
+        Raises:
+            ValueError: Si dataset incompleto o muy corto
+        """
         try:
-            import gymnasium as gym  # type: ignore
-            gym_available = True
-        except ImportError:
-            gym = None  # type: ignore
-        import time
+            # Usar env si está disponible
+            buildings = getattr(self.env, 'buildings', [])
+            if not buildings:
+                raise ValueError("[VALIDACIÓN] No buildings found in CityLearn environment")
 
-        # CityLearn's Agent.learn ignores `truncated`, so ensure truncation ends episodes.
-        train_env = self.env
-        if gym_available and gym is not None:
-            class _TerminateOnTruncate(gym.Wrapper):  # type: ignore[misc, name-defined]
-                def __getattr__(self, name: str):
-                    return getattr(self.env, name)
+            # Verificar timesteps usando solar_generation (proxy para completeness)
+            b = buildings[0]
+            solar_gen = getattr(b, 'solar_generation', None)
 
-                def step(self, action):
-                    obs, reward, terminated, truncated, info = self.env.step(action)
-                    if truncated and not terminated:
-                        terminated = True
-                        truncated = False
-                    return obs, reward, terminated, truncated, info
+            if solar_gen is None or len(solar_gen) == 0:
+                # Fallback: usar net_electricity_consumption
+                net_elec = getattr(b, 'net_electricity_consumption', None)
+                if net_elec is None or len(net_elec) == 0:
+                    logger.warning("[VALIDACIÓN] No se pudo extraer series de tiempo de CityLearn")
+                    return  # No fallar si no se puede verificar
+                timesteps = len(net_elec)
+            else:
+                timesteps = len(solar_gen)
 
-            train_env = _TerminateOnTruncate(self.env)
-
-        progress_path = Path(self.config.progress_path) if self.config.progress_path else None
-        progress_headers = ("timestamp", "agent", "episode", "episode_reward", "episode_length", "global_step")
-        progress_interval_steps = int(self.config.log_interval or 0)
-        progress_interval_episodes = int(self.config.progress_interval_episodes or 0)
-
-        if gym is not None:
-            class _ProgressWrapper(gym.Wrapper):
-                def __init__(
-                    self,
-                    env,
-                    total_episodes: int,
-                    progress_interval_steps: int,
-                    progress_interval_episodes: int,
-                    progress_path: Optional[Path],
-                    progress_headers,
-                ):
-                    super().__init__(env)
-                    self.total_episodes = total_episodes
-                    self.progress_interval_steps = progress_interval_steps
-                    self.progress_interval_episodes = progress_interval_episodes
-                    self.progress_path = progress_path
-                    self.progress_headers = progress_headers
-                    self.episode = 0
-                    self.episode_steps = 0
-                    self.episode_reward = 0.0
-                    self.global_steps = 0
-
-                def reset(self, **kwargs):
-                    # Detener si ya alcanzó el límite de episodios
-                    if self.episode >= self.total_episodes:
-                        raise StopIteration(f"Reached episode limit: {self.total_episodes}")
-
-                    obs, info = self.env.reset(**kwargs)
-                    self.episode += 1
-                    self.episode_steps = 0
-                    self.episode_reward = 0.0
-                    logger.info("[SAC] ep %d/%d iniciado", self.episode, self.total_episodes)
-                    return obs, info
-
-                def __getattr__(self, name: str):
-                    return getattr(self.env, name)
-
-                def step(self, action):
-                    obs, reward, terminated, truncated, info = self.env.step(action)
-                    if isinstance(reward, (list, tuple)):
-                        reward_val = float(sum(reward))
-                    else:
-                        reward_val = float(reward)
-                    self.episode_reward += reward_val
-                    self.episode_steps += 1
-                    self.global_steps += 1
-
-                    if self.progress_interval_steps > 0 and self.episode_steps % self.progress_interval_steps == 0:
-                        logger.info(
-                            "[SAC] ep %d paso %d | pasos_global=%d",
-                            self.episode,
-                            self.episode_steps,
-                            self.global_steps,
-                        )
-
-                    if terminated or truncated:
-                        if self.progress_interval_episodes > 0 and (
-                            self.episode % self.progress_interval_episodes == 0
-                        ):
-                            row = {
-                                "timestamp": datetime.utcnow().isoformat(),
-                                "agent": "sac",
-                                "episode": self.episode,
-                                "episode_reward": self.episode_reward,
-                                "episode_length": self.episode_steps,
-                                "global_step": self.global_steps,
-                            }
-                            if self.progress_path is not None:
-                                append_progress_row(self.progress_path, row, self.progress_headers)
-                                png_path = self.progress_path.with_suffix(".png")
-                                render_progress_plot(self.progress_path, png_path, "SAC progreso")
-                        logger.info(
-                            "[SAC] ep %d/%d terminado reward=%.4f pasos=%d",
-                            self.episode,
-                            self.total_episodes,
-                            self.episode_reward,
-                            self.episode_steps,
-                        )
-
-                    return obs, reward, terminated, truncated, info
-
-            train_env = _ProgressWrapper(
-                train_env,
-                episodes,
-                progress_interval_steps,
-                progress_interval_episodes,
-                progress_path,
-                progress_headers,
-            )
-
-        _patch_citylearn_sac_update()
-
-        # SAC accepts wrapped environments through duck typing
-        self._citylearn_sac = SAC(train_env)  # type: ignore[arg-type]
-
-        # Configurar hiperparámetros si es posible
-        if hasattr(self._citylearn_sac, 'batch_size'):
-            self._citylearn_sac.batch_size = self.config.batch_size  # type: ignore
-        if hasattr(self._citylearn_sac, 'lr'):
-            self._citylearn_sac.lr = self.config.learning_rate  # type: ignore
-        if hasattr(self._citylearn_sac, 'gamma'):
-            self._citylearn_sac.gamma = self.config.gamma  # type: ignore
-        if hasattr(self._citylearn_sac, 'tau'):
-            self._citylearn_sac.tau = self.config.tau  # type: ignore
-
-        # Entrenar con logging de progreso
-        logger.info("=" * 50)
-        logger.info("ENTRENAMIENTO SAC - %d episodios (8760 pasos/episodio)", episodes)
-        logger.info("Dispositivo: %s | Batch: %d | LR: %.2e",
-                    self.device, self.config.batch_size, self.config.learning_rate)
-        logger.info("=" * 50)
-
-        start_time = time.time()
-        try:
-            # CityLearn SAC entrena internamente
-            self._citylearn_sac.learn(episodes=episodes)  # type: ignore
-        except TypeError:
-            self._citylearn_sac.learn(episodes)  # type: ignore
-
-        elapsed = time.time() - start_time
-        logger.info("=" * 50)
-        logger.info("SAC entrenado en %.1f segundos (%.1f min)", elapsed, elapsed / 60)
-        logger.info("=" * 50)
-
-        self._trained = True
-        self._use_sb3 = False
+            # Validar tamaño
+            if timesteps != 8760:
+                logger.warning(
+                    f"[VALIDACIÓN] Dataset INCOMPLETO: {timesteps} timesteps vs. "
+                    f"8,760 esperado. Posible sesgo estacional."
+                )
+                if timesteps < 4380:  # Menos de medio año
+                    raise ValueError(
+                        f"[CRÍTICO] Dataset DEMASIADO CORTO: {timesteps} timesteps "
+                        f"(mínimo 4,380 requerido = 6 meses)"
+                    )
+            else:
+                logger.info("[VALIDACIÓN] Dataset CityLearn COMPLETO: 8,760 timesteps ✓")
+        except Exception as e:
+            logger.error(f"[VALIDACIÓN] Error verificando dataset: {e}")
+            raise
 
     def _train_sb3_sac(self, total_timesteps: int):
         """Entrena usando Stable-Baselines3 SAC con optimizadores avanzados."""
@@ -910,22 +789,45 @@ class SACAgent:
                             mall_demand_kw = float(obs_arr[3]) if len(obs_arr) > 3 else 0.0
                             bess_soc_pct = float(obs_arr[2]) * 100.0 if len(obs_arr) > 2 else 50.0
 
-                            # EV DEMAND: Sumar todos los 128 chargers demandas (obs[4:132])
-                            if len(obs_arr) >= 132:
+                            # ✅ VALIDACIÓN COMPLETA: Verificar 394 elementos (NO solo 132)
+                            if len(obs_arr) >= 394:  # CORREGIDO: Valida tamaño COMPLETO
                                 charger_demands = obs_arr[4:132]  # 128 chargers (indices 4-131)
                                 ev_demand_kw = float(np.sum(np.maximum(charger_demands, 0.0)))
-                                logger.debug(f"[SAC-CHARGERS] ✓ Sumados {len(charger_demands)} chargers, demanda={ev_demand_kw:.2f}kW")
-                            else:
-                                # Fallback si observación es más corta
-                                logger.warning(f"[SAC-CHARGERS] ⚠️ Observación CORTA: {len(obs_arr)} elementos < 132 expected. Usando fallback 50kW.")
-                                ev_demand_kw = 50.0
 
-                            # DEBUG: Log estructura observación cada 500 steps
-                            if hasattr(self, 'n_calls') and self.n_calls % 500 == 0:
-                                logger.info(f"[SAC-DEBUG] paso={self.n_calls} | obs_len={len(obs_arr)} | solar={solar_available_kw:.2f}kW | mall={mall_demand_kw:.2f}kW | ev_demand={ev_demand_kw:.2f}kW | bess_soc={bess_soc_pct:.1f}%")
+                                # Capturar información adicional del vector completo
+                                solar_available_kw = float(obs_arr[0])
+                                mall_demand_kw = float(obs_arr[3])
+                                bess_soc_pct = float(obs_arr[2]) * 100.0
+                                carbon_intensity = float(obs_arr[392]) if len(obs_arr) > 392 else 0.4521
+
+                                # Validación de rangos
+                                if ev_demand_kw < 0:
+                                    logger.debug(f"[SAC-CHARGERS] EV demand negativa: {ev_demand_kw:.2f}kW, usando fallback")
+                                    ev_demand_kw = 50.0
+                                if solar_available_kw < 0:
+                                    logger.debug(f"[SAC-CHARGERS] Solar negativa: {solar_available_kw:.2f}kW, ajustando a 0")
+                                    solar_available_kw = 0.0
+
+                                logger.debug(f"[SAC-CHARGERS] ✓ Sumados {len(charger_demands)} chargers, demanda={ev_demand_kw:.2f}kW | CO2={carbon_intensity:.4f} kg/kWh")
+
+                            elif len(obs_arr) >= 132:  # Fallback parcial
+                                logger.warning(f"[SAC-CHARGERS] ⚠️ Observación INCOMPLETA: {len(obs_arr)}/394 elementos")
+                                charger_demands = obs_arr[4:132]  # 128 chargers (indices 4-131)
+                                ev_demand_kw = float(np.sum(np.maximum(charger_demands, 0.0)))
+                                solar_available_kw = float(obs_arr[0]) if len(obs_arr) > 0 else 1.0
+                                mall_demand_kw = float(obs_arr[3]) if len(obs_arr) > 3 else 100.0
+                                bess_soc_pct = float(obs_arr[2]) * 100.0 if len(obs_arr) > 2 else 50.0
+
+                            else:  # FALLBACK SEGURO (observación muy corta)
+                                logger.error(f"[SAC-CHARGERS] 🔴 Observación CRÍTICA CORTA: {len(obs_arr)} elementos")
+                                ev_demand_kw = 50.0
+                                solar_available_kw = 1.0
+                                mall_demand_kw = 100.0
+                                bess_soc_pct = 50.0
+
                         except Exception as e:
-                            logger.error(f"[SAC] ❌ ERROR CRÍTICO parseando observación: {type(e).__name__}: {e}")
                             import traceback
+                            logger.error(f"[SAC-OBS] Error extrayendo obs: {e}")
                             logger.error(traceback.format_exc())
                             # Use defaults
                             pass

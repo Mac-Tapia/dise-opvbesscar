@@ -18,7 +18,7 @@ from __future__ import annotations
 import gc
 import logging
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional, List, Tuple
 import traceback
@@ -37,9 +37,9 @@ class TransitionState:
     checkpoint_loaded: bool = False
     memory_freed: bool = False
     env_reset: bool = False
-    errors: List[str] = None  # type: ignore
+    errors: List[str] = field(default_factory=list)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.errors is None:
             self.errors = []
 
@@ -54,6 +54,8 @@ class TransitionState:
 
     def add_error(self, error: str) -> None:
         """Registra un error en la transición."""
+        if self.errors is None:
+            self.errors = []
         self.errors.append(error)
         logger.error("[TRANSITION ERROR] %s → %s: %s", self.from_agent, self.to_agent, error)
 
@@ -120,7 +122,8 @@ class TransitionManager:
                 logger.debug("[CLEANUP] ✓ Modelo liberado")
         except Exception as e:
             err_msg = f"Error liberando modelo: {e}"
-            results["errors"].append(err_msg)
+            errors_list: List[str] = results["errors"]  # type: ignore
+            errors_list.append(err_msg)
             logger.warning("[CLEANUP] %s", err_msg)
 
         # 2. Limpiar environment wrapper
@@ -135,7 +138,8 @@ class TransitionManager:
                 logger.debug("[CLEANUP] ✓ Environment wrapper liberado")
         except Exception as e:
             err_msg = f"Error liberando wrapped_env: {e}"
-            results["errors"].append(err_msg)
+            errors_list = results["errors"]  # type: ignore
+            errors_list.append(err_msg)
             logger.warning("[CLEANUP] %s", err_msg)
 
         # 3. Limpiar historiales
@@ -154,7 +158,8 @@ class TransitionManager:
             logger.debug("[CLEANUP] ✓ Garbage collection ejecutado")
         except Exception as e:
             err_msg = f"Error en garbage collection: {e}"
-            results["errors"].append(err_msg)
+            errors_list = results["errors"]  # type: ignore
+            errors_list.append(err_msg)
             logger.warning("[CLEANUP] %s", err_msg)
 
         # 5. GPU cleanup si está disponible
@@ -182,7 +187,7 @@ class TransitionManager:
         Returns:
             Dict con estado del environment
         """
-        state = {
+        state: Dict[str, Any] = {
             "env_exists": self.env is not None,
             "env_type": type(self.env).__name__,
             "has_buildings": False,
@@ -201,7 +206,8 @@ class TransitionManager:
             if hasattr(self.env, "observation_space"):
                 state["has_observation_space"] = self.env.observation_space is not None
         except Exception as e:
-            state["errors"].append(f"Error validando env: {e}")
+            errors_list = state["errors"]  # type: ignore
+            errors_list.append(f"Error validando env: {e}")
 
         return state
 
@@ -214,7 +220,7 @@ class TransitionManager:
         Returns:
             Dict con validación
         """
-        validation = {
+        validation: Dict[str, Any] = {
             "path": str(checkpoint_path),
             "exists": checkpoint_path.exists(),
             "readable": False,
@@ -225,21 +231,25 @@ class TransitionManager:
 
         try:
             if not checkpoint_path.exists():
-                validation["errors"].append(f"Checkpoint no existe: {checkpoint_path}")
+                errors_list = validation["errors"]  # type: ignore
+                errors_list.append(f"Checkpoint no existe: {checkpoint_path}")
                 return validation
 
             if not checkpoint_path.is_file():
-                validation["errors"].append(f"No es archivo: {checkpoint_path}")
+                errors_list = validation["errors"]  # type: ignore
+                errors_list.append(f"No es archivo: {checkpoint_path}")
                 return validation
 
             # Check file is readable
             if not checkpoint_path.stat().st_size > 0:
-                validation["errors"].append(f"Archivo vacío: {checkpoint_path}")
+                errors_list = validation["errors"]  # type: ignore
+                errors_list.append(f"Archivo vacío: {checkpoint_path}")
                 return validation
 
             # Check file extension (should be .zip for SB3)
             if checkpoint_path.suffix not in [".zip", ".pkl"]:
-                validation["errors"].append(f"Extensión inesperada: {checkpoint_path.suffix}")
+                errors_list = validation["errors"]  # type: ignore
+                errors_list.append(f"Extensión inesperada: {checkpoint_path.suffix}")
                 return validation
 
             validation["readable"] = True
@@ -247,7 +257,8 @@ class TransitionManager:
             validation["is_valid"] = True
 
         except Exception as e:
-            validation["errors"].append(f"Error validando checkpoint: {e}")
+            errors_list = validation["errors"]  # type: ignore
+            errors_list.append(f"Error validando checkpoint: {e}")
 
         return validation
 
@@ -261,7 +272,7 @@ class TransitionManager:
         Returns:
             Dict con resultado del reset
         """
-        reset_result = {
+        reset_result: Dict[str, Any] = {
             "reset_success": False,
             "obs_shape": None,
             "errors": [],
@@ -272,7 +283,8 @@ class TransitionManager:
 
             # Attempt reset with timeout
             if not hasattr(self.env, "reset"):
-                reset_result["errors"].append("Environment no tiene método reset()")
+                errors_list = reset_result["errors"]  # type: ignore
+                errors_list.append("Environment no tiene método reset()")
                 return reset_result
 
             obs, info = self.env.reset()
@@ -290,7 +302,8 @@ class TransitionManager:
 
         except Exception as e:
             err_msg = f"Error en reset: {type(e).__name__}: {e}"
-            reset_result["errors"].append(err_msg)
+            errors_list = reset_result["errors"]  # type: ignore
+            errors_list.append(err_msg)
             logger.error("[RESET ENV] ✗ %s", err_msg)
             logger.debug("[RESET ENV] Traceback:\n%s", traceback.format_exc())
 
@@ -366,8 +379,9 @@ class TransitionManager:
         logger.info("[TRANSITION] Fase 3/4: Reset del environment...")
         try:
             reset_result = self.reset_environment()
-            if reset_result["errors"]:
-                for err in reset_result["errors"]:
+            errors_in_reset: List[str] = reset_result["errors"]  # type: ignore
+            if errors_in_reset:
+                for err in errors_in_reset:
                     state.add_error(err)
             else:
                 state.env_reset = True
@@ -392,7 +406,8 @@ class TransitionManager:
                             )
                             state.checkpoint_loaded = True
                         else:
-                            for err in ckpt_validation["errors"]:
+                            errors_in_ckpt: List[str] = ckpt_validation["errors"]  # type: ignore
+                            for err in errors_in_ckpt:
                                 state.add_error(err)
                             logger.warning("[TRANSITION] ⚠ Checkpoint inválido")
                     else:
@@ -436,7 +451,7 @@ class TransitionManager:
 
     def get_transition_summary(self) -> Dict[str, Any]:
         """Retorna resumen de todas las transiciones."""
-        summary = {
+        summary: Dict[str, Any] = {
             "total_transitions": len(self.transition_history),
             "successful": 0,
             "warnings": 0,
@@ -445,20 +460,25 @@ class TransitionManager:
         }
 
         for state in self.transition_history:
-            transition_info = {
+            transition_info: Dict[str, Any] = {
                 "from_agent": state.from_agent,
                 "to_agent": state.to_agent,
                 "status": "✅ OK" if state.is_healthy() else "⚠ WARNINGS" if state.errors else "❌ FAILED",
-                "error_count": len(state.errors),
+                "error_count": len(state.errors) if state.errors else 0,
             }
-            summary["transitions"].append(transition_info)
+            transitions_list: List[Dict[str, Any]] = summary["transitions"]  # type: ignore
+            transitions_list.append(transition_info)
+
+            successful_count: int = summary["successful"]  # type: ignore
+            warnings_count: int = summary["warnings"]  # type: ignore
+            failed_count: int = summary["failed"]  # type: ignore
 
             if state.is_healthy():
-                summary["successful"] += 1
+                summary["successful"] = successful_count + 1
             elif state.errors:
-                summary["warnings"] += 1
+                summary["warnings"] = warnings_count + 1
             else:
-                summary["failed"] += 1
+                summary["failed"] = failed_count + 1
 
         return summary
 
