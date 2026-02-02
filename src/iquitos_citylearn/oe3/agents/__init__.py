@@ -11,6 +11,7 @@ from .sac import make_sac, SACAgent, SACConfig, detect_device as _detect_sac
 from .no_control import NoControlAgent, make_no_control, make_uncontrolled, UncontrolledChargingAgent
 from .ppo_sb3 import make_ppo, PPOAgent, PPOConfig, detect_device as _detect_ppo
 from .a2c_sb3 import make_a2c, A2CAgent, A2CConfig, detect_device as _detect_a2c
+from .transition_manager import TransitionManager, TransitionState, create_transition_manager
 from ..rewards import (
     MultiObjectiveReward,
     MultiObjectiveWeights,
@@ -63,6 +64,10 @@ __all__ = [
     "A2CConfig",
     # Utilidades GPU
     "detect_device",
+    # Transition Manager
+    "TransitionManager",
+    "TransitionState",
+    "create_transition_manager",
     # Multiobjetivo / Multicriterio
     "MultiObjectiveReward",
     "MultiObjectiveWeights",
