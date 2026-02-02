@@ -20,6 +20,9 @@ from iquitos_citylearn.oe3.agents import (
     SACConfig,
     PPOConfig,
     A2CConfig,
+    # Transition Manager
+    TransitionManager,
+    create_transition_manager,
     # Multiobjetivo
     MultiObjectiveReward,
     IquitosContext,
