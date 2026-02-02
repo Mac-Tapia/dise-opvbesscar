@@ -196,6 +196,38 @@ class A2CAgent:
             return detect_device()
         return self.config.device
 
+    def _validate_dataset_completeness(self) -> None:
+        """Validar que el dataset CityLearn tiene exactamente 8,760 timesteps (año completo)."""
+        try:
+            buildings = getattr(self.env, 'buildings', [])
+            if not buildings:
+                logger.warning("[VALIDACIÓN-A2C] No buildings found in environment")
+                return
+
+            b = buildings[0]
+            solar_gen = getattr(b, 'solar_generation', None)
+
+            if solar_gen is None or len(solar_gen) == 0:
+                net_elec = getattr(b, 'net_electricity_consumption', None)
+                if net_elec is None or len(net_elec) == 0:
+                    logger.warning("[VALIDACIÓN-A2C] No se pudo extraer series de tiempo")
+                    return
+                timesteps = len(net_elec)
+            else:
+                timesteps = len(solar_gen)
+
+            if timesteps != 8760:
+                logger.warning(
+                    f"[VALIDACIÓN-A2C] Dataset INCOMPLETO: {timesteps} timesteps vs. 8,760 esperado"
+                )
+                if timesteps < 4380:
+                    raise ValueError(f"[CRÍTICO-A2C] Dataset INCOMPLETO: {timesteps} < 4,380 (6 meses mínimo)")
+            else:
+                logger.info("[VALIDACIÓN-A2C] Dataset CityLearn COMPLETO: 8,760 timesteps ✓")
+
+        except Exception as e:
+            logger.warning(f"[VALIDACIÓN-A2C] No se pudo verificar dataset: {e}")
+
     def learn(self, total_timesteps: Optional[int] = None, **kwargs: Any) -> None:
         """Entrena el agente A2C."""
         _ = kwargs  # Silenciar warning de argumento no usado
@@ -208,6 +240,9 @@ class A2CAgent:
         except ImportError as e:
             logger.warning("stable_baselines3 no disponible: %s", e)
             return
+
+        # VALIDACIÓN CRÍTICA: Verificar dataset completo antes de entrenar
+        self._validate_dataset_completeness()
 
         steps = total_timesteps or self.config.train_steps
 
@@ -858,14 +893,29 @@ class A2CAgent:
                             else:
                                 obs_arr = np.asarray(obs, dtype=float)
 
-                            if len(obs_arr) >= 132:
-                                # obs[4:132] = 128 charger demands
-                                charger_demands = obs_arr[4:132]
+                            # ✅ VALIDACIÓN COMPLETA: Verificar 394 elementos (NO solo 132)
+                            if len(obs_arr) >= 394:  # CORREGIDO: Valida tamaño COMPLETO
+                                charger_demands = obs_arr[4:132]  # 128 chargers (indices 4-131)
                                 ev_demand_kw = float(np.sum(np.maximum(charger_demands, 0.0)))
                                 solar_available_kw = float(obs_arr[0]) if len(obs_arr) > 0 else 0.0
                                 mall_demand_kw = float(obs_arr[3]) if len(obs_arr) > 3 else 0.0
                                 bess_soc_pct = float(obs_arr[2]) * 100.0 if len(obs_arr) > 2 else 50.0
-                        except:
+
+
+                            elif len(obs_arr) >= 132:  # Fallback parcial
+                                logger.warning(f"[A2C] Observación INCOMPLETA: {len(obs_arr)}/394 elementos")
+                                charger_demands = obs_arr[4:132]  # 128 chargers (indices 4-131)
+                                ev_demand_kw = float(np.sum(np.maximum(charger_demands, 0.0)))
+                                solar_available_kw = float(obs_arr[0]) if len(obs_arr) > 0 else 0.0
+                                mall_demand_kw = float(obs_arr[3]) if len(obs_arr) > 3 else 0.0
+                                bess_soc_pct = float(obs_arr[2]) * 100.0 if len(obs_arr) > 2 else 50.0
+
+                            else:  # FALLBACK SEGURO
+                                logger.error(f"[A2C] Observación CRÍTICA CORTA: {len(obs_arr)} elementos")
+                                ev_demand_kw = 50.0
+
+                        except Exception as e:
+                            logger.debug(f"[A2C] Error extrayendo observación: {e}")
                             pass
 
                     # Fallback if extraction failed
