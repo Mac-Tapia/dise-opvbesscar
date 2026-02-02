@@ -39,9 +39,9 @@ class CityLearnDataValidator:
     def __init__(self, processed_dir: Path):
         self.processed_dir = processed_dir
         self.citylearn_dir = processed_dir / "citylearn" / "iquitos_ev_mall"
-        self.errors = []
-        self.warnings = []
-        self.results = {}
+        self.errors: list[str] = []
+        self.warnings: list[str] = []
+        self.results: dict[str, Any] = {}
 
     def run_all_checks(self) -> bool:
         """Ejecutar todas las validaciones. Retorna True si todo OK, False si hay errores críticos."""
@@ -159,16 +159,37 @@ class CityLearnDataValidator:
         result = {"status": "WARN", "details": {}}
 
         # Baseline se genera en outputs/ por run_uncontrolled_baseline.py
-        # En la fase de build_dataset, el baseline NO existe aún
-        baseline_files = list(Path("outputs").glob("baseline*.csv"))
-        if not baseline_files:
+        # También puede existir como JSON (baseline_results.json) o en el directorio del dataset
+        baseline_json = Path("outputs") / "baseline_results.json"
+        baseline_in_dataset = self.citylearn_dir / "baseline_results.json"
+        baseline_csv_files = list(Path("outputs").glob("baseline*.csv"))
+
+        # Check if baseline JSON exists (primary format)
+        if baseline_json.exists() or baseline_in_dataset.exists():
+            baseline_path = baseline_json if baseline_json.exists() else baseline_in_dataset
+            try:
+                with open(baseline_path, "r", encoding="utf-8") as f:
+                    baseline_data = json.load(f)
+                result["status"] = "OK"
+                result["details"] = {
+                    "format": "JSON",
+                    "pv_generated_kwh": baseline_data.get("pv_generated_kwh", 0),
+                    "grid_import_kwh": baseline_data.get("grid_import_kwh", 0),
+                    "co2_grid_kg": baseline_data.get("co2_grid_kg", 0),
+                }
+                return result
+            except Exception as e:
+                self.warnings.append(f"Baseline JSON exists but could not be read: {e}")
+
+        # Fallback: Check for CSV
+        if not baseline_csv_files:
             # Esto es ESPERADO en la fase post-build-dataset
             self.warnings.append("Baseline CSV no generado aún (normal post-build, se genera con run_uncontrolled_baseline)")
             result["status"] = "WARN"  # WARN, no FAIL
             result["details"] = {"note": "Baseline se genera después del dataset"}
             return result
 
-        baseline_path = baseline_files[0]
+        baseline_path = baseline_csv_files[0]
         df = pd.read_csv(baseline_path)
 
         # Check length
@@ -213,13 +234,18 @@ class CityLearnDataValidator:
 
         return result
 
-    def check_energy_simulation(self) -> dict:
-        """Verificar que energy_simulation.csv tiene datos válidos."""
-        result = {"status": "FAIL", "details": {}}
+    def check_energy_simulation(self) -> dict[str, Any]:
+        """Verificar que energy_simulation.csv o Building_*.csv tiene datos válidos."""
+        result: dict[str, Any] = {"status": "FAIL", "details": {}}
 
+        # CityLearn v2 uses Building_*.csv as energy simulation files (NOT energy_simulation.csv)
         energy_files = list(self.citylearn_dir.glob("**/energy_simulation.csv"))
         if not energy_files:
-            self.warnings.append("energy_simulation.csv not found (may be OK if CityLearn generates it)")
+            # Fallback: CityLearn v2 templates use Building_1.csv, Building_2.csv, etc.
+            energy_files = sorted(self.citylearn_dir.glob("Building_*.csv"))
+
+        if not energy_files:
+            self.warnings.append("energy_simulation.csv or Building_*.csv not found")
             result["status"] = "WARN"
             return result
 

@@ -427,7 +427,10 @@ def build_citylearn_dataset(
     # Update schema globals
     schema["central_agent"] = central_agent
     schema["seconds_per_time_step"] = seconds_per_time_step
-    schema["root_directory"] = str(out_dir)  # Establecer ruta absoluta para archivos CSV
+    # CRITICAL FIX: Use relative path "." instead of absolute path
+    # This avoids CityLearn UTF-8 encoding bug with paths containing special characters (ñ, etc.)
+    # The _make_env() function in simulate.py changes to the dataset directory before loading
+    schema["root_directory"] = "."
     schema["start_date"] = "2024-01-01"  # Alinear con datos solares PVGIS (enero-diciembre)
     schema["simulation_end_time_step"] = 8759  # Full year (0-indexed: 8760 steps total)
     schema["episode_time_steps"] = 8760  # CRITICAL FIX: Force full-year episodes (was null causing premature termination)
@@ -453,12 +456,76 @@ def build_citylearn_dataset(
     b = b_mall
     bname = "Mall_Iquitos"
 
-    # === NO PRESERVAR electric_vehicles_def ===
-    # Los EVs son dinámicos (vienen en charger_simulation_*.csv), no permanentes en schema
-    # Remover electric_vehicles_def si está presente
-    if "electric_vehicles_def" in schema:
-        del schema["electric_vehicles_def"]
-        logger.info("[EV ARCHITECTURE] Eliminado electric_vehicles_def - EVs son dinámicos vía CSV")
+    # === LIMPIEZA CRÍTICA: Eliminar recursos NO-OE2 del template ===
+    # El template CityLearn puede incluir recursos que NO son parte del proyecto OE2
+    # Solo se preservan: pv, pv_power_plant, electrical_storage, chargers (key correcta para CityLearn v2.5.0)
+    non_oe2_resources = [
+        'washing_machines',      # Del template - NO es OE2
+        'cooling_device',        # Del template - NO es OE2
+        'heating_device',        # Del template - NO es OE2
+        'dhw_device',            # Del template - NO es OE2
+        'cooling_storage',       # Del template - NO es OE2
+        'heating_storage',       # Del template - NO es OE2
+        'dhw_storage',           # Del template - NO es OE2
+        'electric_vehicle_chargers',  # CityLearn v2.5.0 usa "chargers", NO esta key
+    ]
+    removed_resources = []
+    for resource_key in non_oe2_resources:
+        if resource_key in b_mall:
+            del b_mall[resource_key]
+            removed_resources.append(resource_key)
+    if removed_resources:
+        logger.info("[CLEANUP] Eliminados recursos NO-OE2 del building: %s", removed_resources)
+    else:
+        logger.info("[CLEANUP] Building limpio - sin recursos NO-OE2 detectados")
+
+    # === CREAR electric_vehicles_def ===
+    # CRÍTICO: CityLearn necesita definiciones de EVs con baterías para que los chargers funcionen.
+    # Sin esto, el consumo de chargers será 0 (los EVs no tienen baterías definidas).
+    #
+    # Configuración OE2:
+    # - 112 motos: batería 2.5 kWh, carga 2.0 kW
+    # - 16 mototaxis: batería 4.5 kWh, carga 3.0 kW
+    electric_vehicles_def = {}
+
+    # 112 EVs para motos (chargers 1-112)
+    for i in range(112):
+        ev_name = f'EV_Mall_{i+1}'
+        electric_vehicles_def[ev_name] = {
+            'include': True,
+            'battery': {
+                'type': 'citylearn.energy_model.Battery',
+                'autosize': False,
+                'attributes': {
+                    'capacity': 2.5,           # kWh - batería típica moto eléctrica
+                    'nominal_power': 2.0,      # kW - potencia de carga
+                    'initial_soc': 0.20,       # 20% SOC al llegar (fracción)
+                    'depth_of_discharge': 0.90, # 90% DOD máximo
+                    'efficiency': 0.95,        # 95% eficiencia carga/descarga
+                }
+            }
+        }
+
+    # 16 EVs para mototaxis (chargers 113-128)
+    for i in range(16):
+        ev_name = f'EV_Mall_{112+i+1}'
+        electric_vehicles_def[ev_name] = {
+            'include': True,
+            'battery': {
+                'type': 'citylearn.energy_model.Battery',
+                'autosize': False,
+                'attributes': {
+                    'capacity': 4.5,           # kWh - batería típica mototaxi
+                    'nominal_power': 3.0,      # kW - potencia de carga
+                    'initial_soc': 0.20,       # 20% SOC al llegar (fracción)
+                    'depth_of_discharge': 0.90, # 90% DOD máximo
+                    'efficiency': 0.95,        # 95% eficiencia carga/descarga
+                }
+            }
+        }
+
+    schema['electric_vehicles_def'] = electric_vehicles_def
+    logger.info("[EV ARCHITECTURE] Creado electric_vehicles_def: 128 EVs (112 motos + 16 mototaxis)")
 
     # Update PV + BESS sizes from OE2 artifacts
     pv_dc_kw = float(cfg["oe2"]["solar"]["target_dc_kw"])
@@ -668,11 +735,13 @@ def build_citylearn_dataset(
             power_motos += nominal_power
 
     # Assign ALL chargers to Mall_Iquitos building
-    # CRITICAL FIX: CityLearn requiere la clave "electric_vehicle_chargers" NO "chargers"
+    # CRITICAL FIX: CityLearn v2.5.0 usa la clave "chargers" (NO "electric_vehicle_chargers")
+    # Ver _load_building línea 109 en citylearn/citylearn.py:
+    #   if building_schema.get("chargers", None) is not None:
     b_mall = schema["buildings"]["Mall_Iquitos"]
-    b_mall["electric_vehicle_chargers"] = all_chargers
+    b_mall["chargers"] = all_chargers
 
-    logger.info(f"[CHARGERS SCHEMA] ✓ CORRECCIÓN CRÍTICA: Asignados {total_devices} chargers a 'electric_vehicle_chargers': {n_motos} motos ({power_motos:.1f} kW) + {n_mototaxis} mototaxis ({power_mototaxis:.1f} kW)")
+    logger.info(f"[CHARGERS SCHEMA] ✓ CORRECCIÓN CRÍTICA: Asignados {total_devices} chargers a 'chargers': {n_motos} motos ({power_motos:.1f} kW) + {n_mototaxis} mototaxis ({power_mototaxis:.1f} kW)")
 
     # === ELECTRIC VEHICLES: DINÁMICOS (no permanentes) ===
     # NOTA: Los EVs NO son 128 entidades permanentes
@@ -799,42 +868,73 @@ def build_citylearn_dataset(
         mall_24h = mall_energy_day * mall_shape_arr
         mall_series = _repeat_24h_to_length(mall_24h, n)
 
-    # PV series - Usar solar_generation de CityLearn si existe
-    pv_per_kwp = None
-    if "solar_generation_citylearn" in artifacts:
-        solar_gen = artifacts["solar_generation_citylearn"]
-        if 'solar_generation' in solar_gen.columns:
-            pv_per_kwp = solar_gen['solar_generation'].values
-            logger.info("[PV] Usando solar_generation preparado: %d registros", len(pv_per_kwp))
-            logger.info("   Min: %.6f, Max: %.6f, Mean: %.6f, Sum: %.1f", pv_per_kwp.min(), pv_per_kwp.max(), pv_per_kwp.mean(), pv_per_kwp.sum())
+    # =============================================================================
+    # PV SOLAR GENERATION - CRITICAL FIX (2026-02-02)
+    # =============================================================================
+    # PRIORIDAD: Usar datos ABSOLUTOS de OE2 (kWh), NO normalizados por kWp
+    #
+    # Fuentes de datos (en orden de prioridad):
+    # 1. solar_ts['ac_power_kw'] = 8,030,119 kWh/año (CORRECTO - datos OE2 reales)
+    # 2. solar_generation_citylearn = 1,929 kWh/año (INCORRECTO - normalizado por kWp)
+    #
+    # CityLearn Building.solar_generation espera kWh ABSOLUTOS, no por kWp
+    # =============================================================================
 
-    if pv_per_kwp is None and "solar_ts" in artifacts:
+    pv_absolute_kwh = None  # Valores absolutos en kWh (NO normalizados)
+    pv_source = "none"
+
+    # PRIORIDAD 1: Usar datos OE2 directos (pv_generation_timeseries.csv)
+    if "solar_ts" in artifacts:
         solar_ts = artifacts["solar_ts"]
-        # Resamplear a horario si es necesario
-        for col in ['pv_kwh', 'ac_energy_kwh']:
+        # Buscar columna con potencia/energía absoluta
+        for col in ['ac_power_kw', 'pv_kwh', 'ac_energy_kwh']:
             if col in solar_ts.columns:
-                pv_values = solar_ts[col].values
-                # Normalizar por kWp
-                pv_per_kwp = pv_values / pv_dc_kw if pv_dc_kw > 0 else pv_values
+                pv_absolute_kwh = solar_ts[col].values.copy()
+                pv_source = f"solar_ts[{col}]"
                 # Si es subhorario, agregar a horario
-                if len(pv_per_kwp) > n:
-                    ratio = len(pv_per_kwp) // n
-                    pv_per_kwp = np.array([pv_per_kwp[i*ratio:(i+1)*ratio].sum() for i in range(n)])
-                logger.info("[OK] [PV] Usando solar_ts [%s]: %d registros", col, len(pv_per_kwp))
-                logger.info("   Min: %.6f, Max: %.6f, Mean: %.6f, Sum: %.1f", pv_per_kwp.min(), pv_per_kwp.max(), pv_per_kwp.mean(), pv_per_kwp.sum())
+                if len(pv_absolute_kwh) > n:
+                    ratio = len(pv_absolute_kwh) // n
+                    pv_absolute_kwh = np.array([pv_absolute_kwh[i*ratio:(i+1)*ratio].sum() for i in range(n)])
+                logger.info("[PV] ✓ Usando datos OE2 ABSOLUTOS: %s", pv_source)
+                logger.info("   Registros: %d, Suma: %s kWh/año", len(pv_absolute_kwh), f"{pv_absolute_kwh.sum():,.0f}")
+                logger.info("   Mean: %.2f kW, Max: %.2f kW", pv_absolute_kwh.mean(), pv_absolute_kwh.max())
                 break
 
-    if pv_per_kwp is None or len(pv_per_kwp) < n:
-        # fallback: repeat mean 24h from template solar column if it exists
-        pv_per_kwp = np.zeros(n, dtype=float)
-        logger.warning("[PV] No se encontraron datos solares de OE2, usando ceros")
+    # PRIORIDAD 2: Si solar_ts no tiene datos, usar solar_generation_citylearn PERO ESCALAR
+    if pv_absolute_kwh is None and "solar_generation_citylearn" in artifacts:
+        solar_gen = artifacts["solar_generation_citylearn"]
+        if 'solar_generation' in solar_gen.columns:
+            # ESTOS VALORES ESTÁN NORMALIZADOS POR kWp - NECESITAN ESCALAR
+            pv_normalized = solar_gen['solar_generation'].values
+            pv_absolute_kwh = pv_normalized * pv_dc_kw  # Multiplicar por potencia nominal
+            pv_source = f"solar_generation_citylearn × {pv_dc_kw:.0f} kWp"
+            logger.warning("[PV] ⚠ Usando datos normalizados ESCALADOS: %s", pv_source)
+            logger.info("   Registros: %d, Suma: %s kWh/año", len(pv_absolute_kwh), f"{pv_absolute_kwh.sum():,.0f}")
 
-    pv_per_kwp = pv_per_kwp[:n]
-    logger.info("[PV] ANTES transformación: %d registros, suma=%.1f", len(pv_per_kwp), pv_per_kwp.sum())
+    # FALLBACK: Si no hay datos, usar ceros (con warning)
+    if pv_absolute_kwh is None or len(pv_absolute_kwh) < n:
+        pv_absolute_kwh = np.zeros(n, dtype=float)
+        pv_source = "FALLBACK (zeros)"
+        logger.error("[PV] ✗ NO SE ENCONTRARON DATOS SOLARES DE OE2 - usando ceros")
+        logger.error("   Esto causará que el entrenamiento NO aprenda sobre solar")
 
-    # CityLearn expects normalized generation per kWp (kWh/año/kWp)
-    # NO transformar - los valores ya están en la unidad correcta (W/kW.h = kWh/año/kWp)
-    logger.info("[PV] Valores normalizados por kWp (SIN transformación): suma=%.1f", pv_per_kwp.sum())
+    pv_absolute_kwh = pv_absolute_kwh[:n]
+
+    # VALIDACIÓN: Verificar que los datos solares son razonables
+    expected_annual_kwh = pv_dc_kw * 1930  # ~1930 kWh/kWp típico en Iquitos
+    actual_annual_kwh = pv_absolute_kwh.sum()
+
+    if actual_annual_kwh < expected_annual_kwh * 0.5:
+        logger.error("[PV] ✗ VALIDACIÓN FALLIDA: Solar anual (%.0f kWh) es < 50%% del esperado (%.0f kWh)",
+                    actual_annual_kwh, expected_annual_kwh)
+        logger.error("   Fuente: %s", pv_source)
+        logger.error("   Esto indica que los datos solares NO son correctos")
+    else:
+        logger.info("[PV] ✓ Validación OK: %.0f kWh/año (%.1f%% del esperado)",
+                   actual_annual_kwh, 100 * actual_annual_kwh / expected_annual_kwh)
+
+    # Variable para asignar al DataFrame (mantenemos nombre por compatibilidad)
+    pv_per_kwp = pv_absolute_kwh  # NOTA: Ahora contiene valores ABSOLUTOS, no por kWp
 
     # Identify columns to overwrite in energy_simulation (template-dependent names)
     def find_col(regex_list: List[str]) -> str | None:
@@ -992,10 +1092,26 @@ def build_citylearn_dataset(
             logger.error(f"[BESS] Esperado en: data/interim/oe2/bess/bess_simulation_hourly.csv")
             raise FileNotFoundError("Missing BESS simulation file from OE2 (bess_simulation_hourly.csv)")
 
-        # Actualizar schema
+        # Actualizar schema con referencia al archivo de simulación BESS
         for building_name, building in schema["buildings"].items():
             if isinstance(building.get("electrical_storage"), dict):
                 building["electrical_storage"]["efficiency"] = 0.95  # 95% round-trip efficiency
+                # CRITICAL FIX: Referenciar el archivo de simulación BESS para que CityLearn lo cargue
+                building["electrical_storage"]["energy_simulation"] = "electrical_storage_simulation.csv"
+
+                # CRITICAL: Configurar initial_soc basado en datos OE2
+                # El primer valor de soc_kwh de OE2 representa el estado inicial
+                initial_soc_kwh = soc_values[0] if len(soc_values) > 0 else bess_cap * 0.5
+                initial_soc_frac = initial_soc_kwh / bess_cap if bess_cap > 0 else 0.5
+
+                # Configurar en el schema
+                if isinstance(building["electrical_storage"].get("attributes"), dict):
+                    building["electrical_storage"]["attributes"]["initial_soc"] = initial_soc_frac
+                else:
+                    building["electrical_storage"]["attributes"] = {"initial_soc": initial_soc_frac}
+
+                logger.info(f"[BESS] Schema actualizado: {building_name}.electrical_storage.energy_simulation = electrical_storage_simulation.csv")
+                logger.info(f"[BESS] Initial SOC configurado: {initial_soc_frac:.4f} ({initial_soc_kwh:.0f} kWh de {bess_cap:.0f} kWh)")
     else:
         logger.warning("[BESS] BESS deshabilitado o capacidad=0. No se crea electrical_storage_simulation.csv")
 
@@ -1033,9 +1149,10 @@ def build_citylearn_dataset(
     arr_time = np.zeros(n, dtype=float)  # 0 cuando hay EV conectado
     arr_soc = np.zeros(n, dtype=float)  # 0 cuando hay EV conectado
 
-    # SOC de llegada y salida requerido (en %)
-    soc_arr = 20.0  # 20% SOC al llegar
-    soc_req = 90.0  # 90% SOC requerido al salir
+    # SOC de llegada y salida requerido (como FRACCIÓN 0.0-1.0, NO porcentaje)
+    # CRÍTICO: CityLearn espera valores normalizados (0.20 = 20%, 0.90 = 90%)
+    soc_arr = 0.20  # 20% SOC al llegar (fracción)
+    soc_req = 0.90  # 90% SOC requerido al salir (fracción)
 
     for t in range(n):
         day_step = t % steps_per_day

@@ -5,6 +5,9 @@ from typing import Any, Optional, List, Dict
 import numpy as np
 import logging
 
+# Importar pesos multiobjetivo desde fuente única
+from ..rewards import create_iquitos_reward_weights
+
 logger = logging.getLogger(__name__)
 
 
@@ -44,16 +47,12 @@ class RBCConfig:
     load_balancing: str = "round_robin"  # "round_robin", "solar_priority", "sequential"
 
     # === MULTIOBJETIVO / MULTICRITERIO ===
-    # Pesos para priorización de objetivos
-    weight_co2: float = 0.35           # Minimizar emisiones CO₂
-    weight_cost: float = 0.25          # Minimizar costo eléctrico
-    weight_solar: float = 0.20         # Maximizar autoconsumo solar
-    weight_ev_satisfaction: float = 0.15  # Maximizar satisfacción carga EV
-    weight_grid_stability: float = 0.05   # Minimizar picos de demanda
+    # NOTA: Los pesos multiobjetivo se configuran en rewards.py vía:
+    #   create_iquitos_reward_weights(priority) donde priority = "balanced", "co2_focus", etc.
+    # Ver: src/iquitos_citylearn/oe3/rewards.py línea 634+
+    # NO duplicar pesos aquí - usar rewards.py como fuente única de verdad
 
-    # Umbrales multicriterio
-    co2_threshold_high: float = 0.6    # Factor emisión alto (reducir carga)
-    cost_threshold_high: float = 0.15  # USD/kWh alto (reducir carga de red)
+    # Umbrales operacionales (NO son pesos multiobjetivo)
     ev_soc_target: float = 0.90        # SOC objetivo para EVs
     grid_peak_limit_kw: float = 200.0  # Límite de demanda pico
 
@@ -77,6 +76,10 @@ class BasicRBCAgent:
     def __init__(self, env: Any, config: Optional[RBCConfig] = None):
         self.env = env
         self.config = config or RBCConfig()
+
+        # Cargar pesos multiobjetivo desde fuente única (rewards.py)
+        self._weights = create_iquitos_reward_weights("co2_focus")
+
         self._setup_action_space()
         self._charger_usage = np.zeros(self.config.n_chargers)  # Tracking de uso
         self._step_count = 0
@@ -181,38 +184,40 @@ class BasicRBCAgent:
 
         # === LÓGICA MULTICRITERIO ===
         # Puntaje de carga: valor alto = cargar más, bajo = reducir carga
+        # Pesos cargados desde rewards.py (fuente única)
         charge_score = 0.0
 
         # Criterio 1: Solar (maximizar autoconsumo)
         if solar_excess > 0:
             solar_score = min(1.0, solar_excess / (power_per_charger * self.config.n_chargers))
-            charge_score += self.config.weight_solar * solar_score
+            charge_score += self._weights.solar * solar_score
         else:
-            charge_score -= self.config.weight_solar * 0.3  # Penalización sin solar
+            charge_score -= self._weights.solar * 0.3  # Penalización sin solar
 
         # Criterio 2: CO₂ (minimizar emisiones)
-        if carbon < self.config.co2_threshold_high:
-            charge_score += self.config.weight_co2 * (1 - carbon)
+        co2_threshold_high = 0.6  # Umbral operacional (no es peso)
+        if carbon < co2_threshold_high:
+            charge_score += self._weights.co2 * (1 - carbon)
         else:
-            charge_score -= self.config.weight_co2 * 0.5  # Reducir carga con alto CO₂
+            charge_score -= self._weights.co2 * 0.5  # Reducir carga con alto CO₂
 
         # Criterio 3: Grid stability (evitar picos)
         if is_peak:
-            charge_score -= self.config.weight_grid_stability * 0.8
+            charge_score -= self._weights.grid_stability * 0.8
         else:
-            charge_score += self.config.weight_grid_stability * 0.5
+            charge_score += self._weights.grid_stability * 0.5
 
         # Criterio 4: BESS SOC (usar BESS si disponible en pico)
         if is_peak and soc > self.config.soc_min:
-            charge_score += self.config.weight_ev_satisfaction * 0.3
+            charge_score += self._weights.ev_satisfaction * 0.3
         elif soc < self.config.soc_min:
-            charge_score -= self.config.weight_ev_satisfaction * 0.2
+            charge_score -= self._weights.ev_satisfaction * 0.2
 
         # Criterio 5: Costo (asumir costo correlacionado con hora pico)
         if not is_peak:
-            charge_score += self.config.weight_cost * 0.5
+            charge_score += self._weights.cost * 0.5
         else:
-            charge_score -= self.config.weight_cost * 0.3
+            charge_score -= self._weights.cost * 0.3
 
         # Convertir puntaje a número de chargers y tasa
         # charge_score está en rango ~[-1, 1], mapear a [0.2, 1.0] de chargers
@@ -251,19 +256,20 @@ class BasicRBCAgent:
                     action[i] = charger_rates[charger_idx_global]
                     charger_idx_global += 1
 
-            # Acciones BESS (multicriterio)
+            # Acciones BESS (multicriterio) - usando pesos de rewards.py
+            co2_threshold_high = 0.6  # Umbral operacional
             for i in bess_idx:
                 if solar_excess > 0 and soc < self.config.soc_max:
                     # Cargar BESS con exceso solar (objetivo: maximizar autoconsumo)
                     bess_charge = min(1.0, solar_excess / 100)
-                    action[i] = bess_charge * self.config.weight_solar
+                    action[i] = bess_charge * self._weights.solar
                 elif is_peak and soc > self.config.soc_min:
                     # Descargar en hora pico (objetivo: reducir grid, estabilidad)
-                    discharge_rate = -0.5 * (self.config.weight_grid_stability + self.config.weight_cost)
+                    discharge_rate = -0.5 * (self._weights.grid_stability + self._weights.cost)
                     action[i] = max(-1.0, discharge_rate)
-                elif carbon > self.config.co2_threshold_high and soc > self.config.soc_min:
+                elif carbon > co2_threshold_high and soc > self.config.soc_min:
                     # Descargar cuando alto carbono (objetivo: reducir CO₂)
-                    action[i] = -0.3 * self.config.weight_co2
+                    action[i] = -0.3 * self._weights.co2
                 else:
                     action[i] = 0.0
 

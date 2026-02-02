@@ -12,6 +12,15 @@ from .no_control import NoControlAgent, make_no_control, make_uncontrolled, Unco
 from .ppo_sb3 import make_ppo, PPOAgent, PPOConfig, detect_device as _detect_ppo
 from .a2c_sb3 import make_a2c, A2CAgent, A2CConfig, detect_device as _detect_a2c
 from .transition_manager import TransitionManager, TransitionState, create_transition_manager
+# ✅ FIX (2026-02-02): Extractor de métricas ROBUSTO para callbacks
+from .metrics_extractor import (
+    extract_step_metrics,
+    calculate_co2_metrics,
+    EpisodeMetricsAccumulator,
+    get_unwrapped_env,
+    CO2_GRID_FACTOR_KG_PER_KWH,
+    CO2_EV_FACTOR_KG_PER_KWH,
+)
 from ..rewards import (
     MultiObjectiveReward,
     MultiObjectiveWeights,
@@ -74,4 +83,11 @@ __all__ = [
     "IquitosContext",
     "CityLearnMultiObjectiveWrapper",
     "create_iquitos_reward_weights",
+    # ✅ FIX (2026-02-02): Métricas ROBUSTAS para callbacks
+    "extract_step_metrics",
+    "calculate_co2_metrics",
+    "EpisodeMetricsAccumulator",
+    "get_unwrapped_env",
+    "CO2_GRID_FACTOR_KG_PER_KWH",
+    "CO2_EV_FACTOR_KG_PER_KWH",
 ]

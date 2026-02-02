@@ -104,28 +104,18 @@ class PPOConfig:
     deterministic_cuda: bool = False  # True = reproducible pero más lento
 
     # === MULTIOBJETIVO / MULTICRITERIO ===
-    # Pesos para función de recompensa compuesta (deben sumar 1.0)
-    weight_co2: float = 0.50           # Minimizar emisiones CO₂
-    weight_cost: float = 0.15          # Minimizar costo eléctrico
-    weight_solar: float = 0.20         # Maximizar autoconsumo solar
-    weight_ev_satisfaction: float = 0.10  # Maximizar satisfacción carga EV
-    weight_grid_stability: float = 0.05   # Minimizar picos de demanda
-
-    # Umbrales multicriterio
-    co2_target_kg_per_kwh: float = 0.4521  # Factor emisión Iquitos (grid import)
-    co2_conversion_factor: float = 2.146   # Para cálculo directo: 50kW × 2.146 = 107.3 kg/h
-    cost_target_usd_per_kwh: float = 0.20  # Tarifa objetivo
-    ev_soc_target: float = 0.90            # SOC objetivo EVs al partir
-    ev_demand_constant_kw: float = 50.0    # Demanda EV constante (workaround CityLearn 2.5.0)
-    peak_demand_limit_kw: float = 200.0    # Límite demanda pico
+    # NOTA: Los pesos multiobjetivo se configuran en rewards.py vía:
+    #   create_iquitos_reward_weights(priority) donde priority = "balanced", "co2_focus", etc.
+    # Ver: src/iquitos_citylearn/oe3/rewards.py línea 634+
+    # NO duplicar pesos aquí - usar rewards.py como fuente única de verdad
 
     # Reproducibilidad
     seed: int = 42
 
     # Logging
-    verbose: int = 0
+    verbose: int = 1
     tensorboard_log: Optional[str] = None
-    log_interval: int = 2000
+    log_interval: int = 500  # ✅ FIX: Métricas cada 500 pasos (era 2000)
     kl_adaptive: bool = True
     kl_adaptive_down: float = 0.5
     kl_adaptive_up: float = 1.05
@@ -259,37 +249,59 @@ class PPOAgent:
         return info
 
     def _validate_dataset_completeness(self) -> None:
-        """Validar que el dataset CityLearn tiene exactamente 8,760 timesteps (año completo)."""
-        try:
-            # Usar env si está disponible
-            buildings = getattr(self.env, 'buildings', [])
-            if not buildings:
-                logger.warning("[VALIDACIÓN-PPO] No buildings found in CityLearn environment")
-                return
+        """Validar que el dataset CityLearn tiene exactamente 8,760 timesteps (año completo).
 
-            b = buildings[0]
-            solar_gen = getattr(b, 'solar_generation', None)
+        CRÍTICO: Esta validación es OBLIGATORIA - Sin datos reales, el entrenamiento
+        ejecuta rápido pero NO APRENDE NADA.
 
-            if solar_gen is None or len(solar_gen) == 0:
-                net_elec = getattr(b, 'net_electricity_consumption', None)
-                if net_elec is None or len(net_elec) == 0:
-                    logger.warning("[VALIDACIÓN-PPO] No se pudo extraer series de tiempo")
-                    return
-                timesteps = len(net_elec)
+        NOTA: Usamos energy_simulation (datos del CSV) en lugar de propiedades
+        de runtime (solar_generation, net_electricity_consumption) que solo se
+        llenan durante step().
+
+        Raises:
+            RuntimeError: Si dataset incompleto o no cargado
+        """
+        buildings = getattr(self.env, 'buildings', [])
+        if not buildings:
+            raise RuntimeError(
+                "[PPO VALIDACIÓN FALLIDA] No buildings found in CityLearn environment.\n"
+                "El dataset NO se cargó correctamente. Ejecuta:\n"
+                "  python -m scripts.run_oe3_build_dataset --config configs/default.yaml"
+            )
+
+        # Verificar timesteps usando energy_simulation (datos del CSV, NO propiedades de runtime)
+        b = buildings[0]
+        timesteps = 0
+
+        # CORRECTO: Usar energy_simulation que contiene los datos del CSV
+        energy_sim = getattr(b, 'energy_simulation', None)
+        if energy_sim is not None:
+            # Intentar non_shiftable_load primero (demanda del mall)
+            load = getattr(energy_sim, 'non_shiftable_load', None)
+            if load is not None and hasattr(load, '__len__') and len(load) > 0:
+                timesteps = len(load)
             else:
-                timesteps = len(solar_gen)
+                # Fallback: solar_generation del CSV
+                solar = getattr(energy_sim, 'solar_generation', None)
+                if solar is not None and hasattr(solar, '__len__') and len(solar) > 0:
+                    timesteps = len(solar)
 
-            if timesteps != 8760:
-                logger.warning(
-                    f"[VALIDACIÓN-PPO] Dataset INCOMPLETO: {timesteps} timesteps vs. 8,760 esperado"
-                )
-                if timesteps < 4380:
-                    raise ValueError(f"[CRÍTICO-PPO] Dataset INCOMPLETO: {timesteps} < 4,380 (6 meses mínimo)")
-            else:
-                logger.info("[VALIDACIÓN-PPO] Dataset CityLearn COMPLETO: 8,760 timesteps ✓")
+        if timesteps == 0:
+            raise RuntimeError(
+                "[PPO VALIDACIÓN FALLIDA] No se pudo extraer series de tiempo de CityLearn.\n"
+                "El dataset está vacío o corrupto. Reconstruye con:\n"
+                "  python -m scripts.run_oe3_build_dataset --config configs/default.yaml"
+            )
 
-        except Exception as e:
-            logger.warning(f"[VALIDACIÓN-PPO] No se pudo verificar dataset: {e}")
+        if timesteps != 8760:
+            raise RuntimeError(
+                f"[PPO VALIDACIÓN FALLIDA] Dataset INCOMPLETO: {timesteps} timesteps vs. 8,760 esperado.\n"
+                f"Sin datos completos de 1 año, el entrenamiento NO aprenderá patrones estacionales.\n"
+                f"Reconstruye el dataset con:\n"
+                f"  python -m scripts.run_oe3_build_dataset --config configs/default.yaml"
+            )
+
+        logger.info("[PPO VALIDACIÓN] ✓ Dataset CityLearn COMPLETO: 8,760 timesteps (1 año)")
 
     def learn(self, total_timesteps: Optional[int] = None, **kwargs: Any) -> None:
         """Entrena el agente PPO con optimizadores avanzados.
@@ -700,6 +712,10 @@ class PPOAgent:
         expected_episodes = int(steps // 8760) if steps > 0 else 0
 
         class TrainingCallback(BaseCallback):
+            """Callback de entrenamiento PPO con extracción ROBUSTA de métricas.
+
+            FIX 2026-02-02: Usa EpisodeMetricsAccumulator centralizado.
+            """
             def __init__(self, agent, progress_path: Optional[Path], progress_headers, expected_episodes: int, verbose=0):
                 super().__init__(verbose)
                 self.agent = agent
@@ -707,15 +723,24 @@ class PPOAgent:
                 self.progress_headers = progress_headers
                 self.expected_episodes = expected_episodes
                 self.episode_count = 0
-                self.log_interval_steps = int(agent.config.log_interval or 0)
+                self.log_interval_steps = int(agent.config.log_interval or 500)  # Default 500
                 self._last_kl_update = 0
-                # Métricas acumuladas para promedios
+
+                # ✅ FIX: Usar EpisodeMetricsAccumulator centralizado
+                from .metrics_extractor import EpisodeMetricsAccumulator, extract_step_metrics
+                self.metrics_accumulator = EpisodeMetricsAccumulator()
+                self._extract_step_metrics = extract_step_metrics
+
+                # Alias para compatibilidad (se actualizan desde accumulator)
                 self.reward_sum = 0.0
                 self.reward_count = 0
-                self.grid_energy_sum = 0.0  # kWh consumido de la red
-                self.solar_energy_sum = 0.0  # kWh de solar usado
-                self.co2_intensity = 0.4521  # kg CO2/kWh para Iquitos
-                self.motos_cargadas = 0.0  # Contador de motos cargadas (SOC >= 90%)
+                self.grid_energy_sum = 0.0
+                self.solar_energy_sum = 0.0
+                self.co2_intensity = 0.4521
+                self.motos_cargadas = 0
+                self.mototaxis_cargadas = 0
+                self.co2_direct_avoided_kg = 0.0
+                self.co2_indirect_avoided_kg = 0.0
                 self.mototaxis_cargadas = 0.0  # Contador de mototaxis cargadas (SOC >= 90%)
                 self.co2_direct_avoided_kg = 0.0  # CO₂ evitado por cargar EVs
                 self.co2_indirect_avoided_kg = 0.0  # CO₂ evitado por usar solar
@@ -759,128 +784,73 @@ class PPOAgent:
                 self.n_calls += 1
 
                 # ========================================================================
-                # ENTROPY DECAY SCHEDULE - Apply computed entropy coefficient
-                # Update ent_coef in optimizer based on training progress
+                # ✅ FIX: EXTRACCIÓN ROBUSTA DE MÉTRICAS usando metrics_extractor.py
+                # Reemplaza el código hardcodeado (grid_energy_sum += 150.0, etc.)
                 # ========================================================================
-                if self.agent.config.ent_coef_schedule != "constant" and steps > 0:
-                    # Calculate progress: 0.0 at start, 1.0 at end
-                    progress = min(1.0, self.model.num_timesteps / max(1.0, float(steps)))
+                obs = self.locals.get("obs_tensor", self.locals.get("new_obs"))
+                if obs is not None and hasattr(obs, 'cpu'):
+                    obs = obs.cpu().numpy()
 
-                    # Get target entropy coefficient
-                    target_ent = compute_entropy_schedule(progress)
+                # Extraer métricas usando función centralizada (4-level fallback)
+                step_metrics = self._extract_step_metrics(self.training_env, self.n_calls, obs)
 
-                    # Update entropy coefficient in policy
-                    if hasattr(self.model, "ent_coef"):
-                        # SB3 stores ent_coef as a parameter we can update
-                        try:
-                            self.model.ent_coef = target_ent
-                            # Log entropy schedule periodically
-                            if self.log_interval_steps > 0 and self.n_calls % (self.log_interval_steps * 10) == 0:
-                                logger.debug(
-                                    "[PPO ENTROPY] progress=%.2f%% ent_coef=%.6f (linear decay: %.6f → %.6f)",
-                                    progress * 100,
-                                    target_ent,
-                                    self.agent.config.ent_coef,
-                                    self.agent.config.ent_coef_final,
-                                )
-                        except (AttributeError, TypeError):
-                            pass  # Silencioso si no se puede actualizar
-
-                # ========================================================================
-                # VF COEFFICIENT SCHEDULE - Apply computed VF coefficient (TASK 2)
-                # Update vf_coef in optimizer based on training progress
-                # ========================================================================
-                if self.agent.config.vf_coef_schedule != "constant" and steps > 0:
-                    # Calculate progress: 0.0 at start, 1.0 at end
-                    progress = min(1.0, self.model.num_timesteps / max(1.0, float(steps)))
-
-                    # Get target VF coefficient
-                    target_vf = compute_vf_coef_schedule(progress)
-
-                    # Update VF coefficient in policy
-                    if hasattr(self.model, "vf_coef"):
-                        # SB3 stores vf_coef as a parameter we can update
-                        try:
-                            self.model.vf_coef = target_vf
-                            # Log VF schedule periodically
-                            if self.log_interval_steps > 0 and self.n_calls % (self.log_interval_steps * 10) == 0:
-                                logger.debug(
-                                    "[PPO VF_COEF] progress=%.2f%% vf_coef=%.6f (decay: %.6f → %.6f)",
-                                    progress * 100,
-                                    target_vf,
-                                    self.agent.config.vf_coef_init,
-                                    self.agent.config.vf_coef_final,
-                                )
-                        except (AttributeError, TypeError):
-                            pass  # Silencioso si no se puede actualizar
-
-                # ========== CO₂ DIRECTA: CALCULAR DESPUÉS DE EXTRAER OBSERVACIÓN ==========
-                # (Se calcula más abajo cuando tenemos ev_demand_kw, solar_available_kw, etc.)
-
-                infos = self.locals.get("infos", [])
-                if isinstance(infos, dict):
-                    infos = [infos]
-
-                # Acumular NORMALIZED rewards (después de escala, no raw)
-                # Los raw rewards están en [-0.5, 0.5], muy pequeños
-                # Necesitamos acumular los scaled rewards para métricas significativas
+                # Acumular reward
                 rewards = self.locals.get("rewards", [])
+                reward_val = 0.0
                 if rewards is not None:
                     if hasattr(rewards, '__iter__'):
                         for r in rewards:
-                            # Aplicar misma escala que en training: reward * 0.01 * 100 = reward
-                            # (escala de 100x para logging significativo)
-                            scaled_r = float(r) * 100.0  # Amplificar para visibilidad en logs
-                            self.reward_sum += scaled_r
-                            self.reward_count += 1
+                            reward_val = float(r)
                     else:
-                        scaled_r = float(rewards) * 100.0  # Amplificar para visibilidad en logs
-                        self.reward_sum += scaled_r
-                        self.reward_count += 1
+                        reward_val = float(rewards)
 
-                # ✅ Usar acumuladores del wrapper (capturados en cada step())
-                # Sincronizar desde wrapper a callback
-                try:
-                    wrapper_env = self.training_env
-                    if hasattr(wrapper_env, 'envs') and len(wrapper_env.envs) > 0:
-                        wrapper_env = wrapper_env.envs[0]
+                # ✅ Acumular métricas usando EpisodeMetricsAccumulator
+                self.metrics_accumulator.accumulate(step_metrics, reward_val)
 
-                    # Obtener los acumuladores del wrapper
-                    if hasattr(wrapper_env, '_grid_accumulator'):
-                        self.grid_energy_sum = wrapper_env._grid_accumulator
-                        self.solar_energy_sum = wrapper_env._solar_accumulator
-                except Exception:
-                    pass  # Silencioso
+                # Actualizar alias para compatibilidad (logs, etc.)
+                self.reward_sum = self.metrics_accumulator.reward_sum
+                self.reward_count = self.metrics_accumulator.step_count
+                self.grid_energy_sum = self.metrics_accumulator.grid_import_kwh
+                self.solar_energy_sum = self.metrics_accumulator.solar_generation_kwh
+                self.co2_direct_avoided_kg = self.metrics_accumulator.co2_direct_avoided_kg
+                self.co2_indirect_avoided_kg = self.metrics_accumulator.co2_indirect_avoided_kg
+                self.motos_cargadas = self.metrics_accumulator.motos_cargadas
+                self.mototaxis_cargadas = self.metrics_accumulator.mototaxis_cargadas
 
                 # ========================================================================
-                # CO₂ DIRECTO: SIEMPRE SE EJECUTA (no depende de CSV ni wrapper)
-                # ev_demand_kw = 50 kW constante × 2.146 kg CO₂/kWh = 107.3 kg CO₂/step
+                # ENTROPY DECAY SCHEDULE - Apply computed entropy coefficient
                 # ========================================================================
-                ev_demand_kw = 50.0  # Constante de config
-                co2_factor = 2.146   # kg CO₂/kWh evitado
+                if self.agent.config.ent_coef_schedule != "constant" and steps > 0:
+                    progress = min(1.0, self.model.num_timesteps / max(1.0, float(steps)))
+                    target_ent = compute_entropy_schedule(progress)
+                    if hasattr(self.model, "ent_coef"):
+                        try:
+                            self.model.ent_coef = target_ent
+                        except (AttributeError, TypeError):
+                            pass
 
-                # Acumular CO₂ directo
-                self.co2_direct_avoided_kg += ev_demand_kw * co2_factor
+                # ========================================================================
+                # VF COEFFICIENT SCHEDULE - Apply computed VF coefficient
+                # ========================================================================
+                if self.agent.config.vf_coef_schedule != "constant" and steps > 0:
+                    progress = min(1.0, self.model.num_timesteps / max(1.0, float(steps)))
+                    target_vf = compute_vf_coef_schedule(progress)
+                    if hasattr(self.model, "vf_coef"):
+                        try:
+                            self.model.vf_coef = target_vf
+                        except (AttributeError, TypeError):
+                            pass
 
-                # Acumular contadores de vehículos
-                # 80% motos (2kW), 20% mototaxis (3kW)
-                self.motos_cargadas += int((ev_demand_kw * 0.80) / 2.0)
-                self.mototaxis_cargadas += int((ev_demand_kw * 0.20) / 3.0)
-
-                # Acumular grid (150 kW default = mall + EV)
-                self.grid_energy_sum += 150.0  # kW por step
-
-                if not infos:
-                    return True
+                # ========================================================================
+                # LOGGING PERIÓDICO con métricas REALES
+                # ========================================================================
                 if self.log_interval_steps > 0 and self.n_calls % self.log_interval_steps == 0:
                     approx_episode = max(1, int(self.model.num_timesteps // 8760) + 1)
-                    grid_kwh_to_log = self.grid_energy_sum
-                    co2_grid_kg = grid_kwh_to_log * self.co2_intensity
-                    co2_total_avoided = self.co2_indirect_avoided_kg + self.co2_direct_avoided_kg
+                    episode_metrics = self.metrics_accumulator.get_episode_metrics()
 
-                    # ====================================================================
-                    # HUBER LOSS LOGGING - Log if enabled (TASK 3)
-                    # ====================================================================
+                    co2_grid_kg = episode_metrics["co2_grid_kg"]
+                    co2_total_avoided = episode_metrics["co2_direct_avoided_kg"] + episode_metrics["co2_indirect_avoided_kg"]
+
                     huber_status = ""
                     if self.agent.config.use_huber_loss:
                         huber_status = f" | huber_delta={self.agent.config.huber_delta:.1f}"
@@ -891,13 +861,13 @@ class PPOAgent:
                         self.n_calls,
                         approx_episode,
                         int(self.model.num_timesteps),
-                        grid_kwh_to_log,
+                        episode_metrics["grid_import_kwh"],
                         co2_grid_kg,
-                        self.solar_energy_sum,
-                        self.co2_indirect_avoided_kg,
-                        self.co2_direct_avoided_kg,
-                        self.motos_cargadas,
-                        self.mototaxis_cargadas,
+                        episode_metrics["solar_generation_kwh"],
+                        episode_metrics["co2_indirect_avoided_kg"],
+                        episode_metrics["co2_direct_avoided_kg"],
+                        episode_metrics["motos_cargadas"],
+                        episode_metrics["mototaxis_cargadas"],
                         co2_total_avoided,
                         huber_status,
                     )
@@ -915,40 +885,50 @@ class PPOAgent:
                     if approx_kl is not None and self.n_calls != self._last_kl_update:
                         self._adjust_lr_by_kl(approx_kl)
                         self._last_kl_update = self.n_calls
+
+                # ========================================================================
+                # EPISODE END HANDLING
+                # ========================================================================
+                infos = self.locals.get("infos", [])
+                if isinstance(infos, dict):
+                    infos = [infos]
+
                 for info in infos:
                     episode = info.get("episode")
                     if not episode:
                         continue
                     self.episode_count += 1
 
-                    # VERIFICAR LÍMITE DE EPISODIOS - DETENER SI SE ALCANZÓ
+                    # VERIFICAR LÍMITE DE EPISODIOS
                     if self.expected_episodes > 0 and self.episode_count >= self.expected_episodes:
                         logger.warning(
                             "[PPO EPISODE LIMIT] Alcanzado límite de %d episodios - DETENIENDO entrenamiento",
                             self.expected_episodes
                         )
-                        return False  # Detener entrenamiento inmediatamente
+                        return False
 
                     reward = float(episode.get("r", 0.0))
                     length = int(episode.get("l", 0))
 
-                    # Métricas finales - usar valores reales acumulados
-                    if self.grid_energy_sum <= 0.0:
-                        logger.warning(f"[PPO] Grid counter was 0 - CityLearn no reportó datos")
-                    if self.solar_energy_sum <= 0.0:
-                        logger.warning(f"[PPO] Solar counter was 0 - CityLearn no reportó datos")
+                    # Obtener métricas finales del episodio
+                    final_metrics = self.metrics_accumulator.get_episode_metrics()
 
-                    episode_co2_kg = self.grid_energy_sum * self.co2_intensity
-                    episode_grid_kwh = self.grid_energy_sum
-                    episode_solar_kwh = self.solar_energy_sum
+                    # Validar que hay datos reales
+                    if final_metrics["grid_import_kwh"] <= 0.0:
+                        logger.warning(f"[PPO] Grid counter was 0 - CityLearn no reportó datos")
+                    if final_metrics["solar_generation_kwh"] <= 0.0:
+                        logger.warning(f"[PPO] Solar counter was 0 - CityLearn no reportó datos")
 
                     self.agent.training_history.append({
                         "step": int(self.model.num_timesteps),
                         "mean_reward": reward,
-                        "episode_co2_kg": episode_co2_kg,
-                        "episode_grid_kwh": episode_grid_kwh,
-                        "episode_solar_kwh": episode_solar_kwh,
+                        "episode_co2_kg": final_metrics["co2_grid_kg"],
+                        "episode_grid_kwh": final_metrics["grid_import_kwh"],
+                        "episode_solar_kwh": final_metrics["solar_generation_kwh"],
+                        "co2_direct_avoided_kg": final_metrics["co2_direct_avoided_kg"],
+                        "co2_indirect_avoided_kg": final_metrics["co2_indirect_avoided_kg"],
                     })
+
                     if self.agent.config.progress_interval_episodes > 0 and (
                         self.episode_count % self.agent.config.progress_interval_episodes == 0
                     ):
@@ -972,9 +952,9 @@ class PPOAgent:
                                 reward,
                                 length,
                                 int(self.model.num_timesteps),
-                                episode_co2_kg,
-                                episode_grid_kwh,
-                                episode_solar_kwh,
+                                final_metrics["co2_grid_kg"],
+                                final_metrics["grid_import_kwh"],
+                                final_metrics["solar_generation_kwh"],
                             )
                         else:
                             logger.info(
@@ -983,12 +963,13 @@ class PPOAgent:
                                 reward,
                                 length,
                                 int(self.model.num_timesteps),
-                                episode_co2_kg,
-                                episode_grid_kwh,
-                                episode_solar_kwh,
+                                final_metrics["co2_grid_kg"],
+                                final_metrics["grid_import_kwh"],
+                                final_metrics["solar_generation_kwh"],
                             )
 
-                    # REINICIAR métricas para el siguiente episodio
+                    # ✅ REINICIAR métricas para el siguiente episodio
+                    self.metrics_accumulator.reset()
                     self.reward_sum = 0.0
                     self.reward_count = 0
                     self.grid_energy_sum = 0.0

@@ -143,17 +143,17 @@ class SACConfig:
     Para convergencia óptima, usar 100+ episodios.
     """
 # Hiperparámetros de entrenamiento - SAC OPTIMIZADO PARA RTX 4060 (8GB VRAM)
-    episodes: int = 3  # REDUCIDO: 50→3 (test rápido, evita OOM)
+    episodes: int = 3  # ✅ CONFIGURADO: 3 episodios para entrenamiento limpio
     batch_size: int = 256                   # ↑ OPTIMIZADO: 32→256 (4x mayor, mejor gradients)
     buffer_size: int = 200000               # ✅ CORREGIDO: 100k→200k (captura variación anual completa)
     learning_rate: float = 5e-5             # AJUSTE: 1e-4→5e-5 (reduce inestabilidad gradient)
-    gamma: float = 0.99                      # ↓ Reducido: 0.999→0.99 (simplifica Q-function)
-    tau: float = 0.01                        # AJUSTE: 0.005→0.01 (soft target update más stable)
+    gamma: float = 0.995                    # ✅ SINCRONIZADO: 0.99→0.995 (horizonte temporal más largo)
+    tau: float = 0.02                       # ✅ SINCRONIZADO: 0.01→0.02 (target network más rápido)
 
     # Entropía - SAC DINÁMICO para mejor exploración
     ent_coef: str | float = 'auto'           # ↑ OPTIMIZADO: 0.001→'auto' (adaptive entropy tuning)
-    ent_coef_init: float = 0.1               # 🔴 CRITICAL FIX: 0.5→0.1 (prevent entropy explosion)
-    ent_coef_lr: float = 1e-5                # 🔴 CRITICAL FIX: 1e-4→1e-5 (slower entropy update)
+    ent_coef_init: float = 0.5               # 🔴 TIER 2 FIX: 0.1→0.5 (insufficient exploration prevented SAC from discovering solar control policy)
+    ent_coef_lr: float = 1e-3                # 🔴 TIER 2 FIX: 1e-5→1e-3 (faster entropy adaptation to task complexity)
     target_entropy: Optional[float] = None   # Auto-calcula based on action space (-dim/2)
 
     # Red neuronal - OPTIMIZADA
@@ -182,7 +182,7 @@ class SACConfig:
 
     # === ESTABILIDAD NUMÉRICA (CRÍTICO POST-DIVERGENCIA) ===
     clip_gradients: bool = True             # ✅ AGREGADO: Clipear gradientes
-    max_grad_norm: float = 0.5              # 🔴 CRITICAL FIX: 1.0→0.5 (stricter gradient clipping)
+    max_grad_norm: float = 10.0             # 🔴 TIER 2 FIX: 0.5→10.0 (off-policy SAC needs larger gradients than on-policy PPO; 0.5 was blocking learning)
     warmup_steps: int = 5000                # ✅ AGREGADO: Dejar que buffer se llene
     gradient_accumulation_steps: int = 1    # ✅ Agrupa updates, reduce varianza
 
@@ -196,27 +196,17 @@ class SACConfig:
     lr_schedule: str = "linear"              # ↑ NUEVO: linear decay for smooth convergence
 
     # === MULTIOBJETIVO / MULTICRITERIO ===
-    # Pesos para función de recompensa compuesta (deben sumar 1.0)
-    weight_co2: float = 0.50           # Minimizar emisiones CO₂
-    weight_cost: float = 0.15          # Minimizar costo eléctrico
-    weight_solar: float = 0.20         # Maximizar autoconsumo solar
-    weight_ev_satisfaction: float = 0.10  # Maximizar satisfacción carga EV
-    weight_grid_stability: float = 0.05   # Minimizar picos de demanda
-
-    # Umbrales multicriterio
-    co2_target_kg_per_kwh: float = 0.4521  # Factor emisión Iquitos (grid import)
-    co2_conversion_factor: float = 2.146   # Para cálculo directo: 50kW × 2.146 = 107.3 kg/h
-    cost_target_usd_per_kwh: float = 0.20  # Tarifa objetivo
-    ev_soc_target: float = 0.90          # SOC objetivo EVs al partir
-    ev_demand_constant_kw: float = 50.0  # Demanda EV constante (workaround CityLearn 2.5.0)
-    peak_demand_limit_kw: float = 200.0  # Límite demanda pico
+    # NOTA: Los pesos multiobjetivo se configuran en rewards.py vía:
+    #   create_iquitos_reward_weights(priority) donde priority = "balanced", "co2_focus", etc.
+    # Ver: src/iquitos_citylearn/oe3/rewards.py línea 634+
+    # NO duplicar pesos aquí - usar rewards.py como fuente única de verdad
 
     # Reproducibilidad
     seed: int = 42
     deterministic_cuda: bool = False  # True = reproducible pero más lento
 
     # Callbacks y logging
-    verbose: int = 0
+    verbose: int = 1
     log_interval: int = 500
     checkpoint_dir: Optional[str] = None
     checkpoint_freq_steps: int = 1000  # MANDATORY: Default to 1000 for checkpoint generation
@@ -231,7 +221,7 @@ class SACConfig:
     normalize_observations: bool = True  # Normalizar obs a media=0, std=1
     normalize_rewards: bool = True       # Escalar rewards a [-1, 1]
     reward_scale: float = 0.5            # AJUSTE: 0.1→0.5 (evita explosión critic_loss)
-    clip_obs: float = 5.0                # Clipping más agresivo
+    clip_obs: float = 100.0              # 🔴 TIER 1 FIX: 5.0→100.0 (removed overly aggressive clipping that was destroying post-normalization data)
     clip_reward: float = 1.0             # Clipear rewards a [-1, 1]
 
 
@@ -336,45 +326,59 @@ class SACAgent:
     def _validate_dataset_completeness(self) -> None:
         """Validar que el dataset CityLearn tiene exactamente 8,760 timesteps (año completo).
 
+        CRÍTICO: Esta validación es OBLIGATORIA - Sin datos reales, el entrenamiento
+        ejecuta rápido pero NO APRENDE NADA.
+
+        NOTA: Usamos energy_simulation (datos del CSV) en lugar de propiedades
+        de runtime (solar_generation, net_electricity_consumption) que solo se
+        llenan durante step().
+
         Raises:
-            ValueError: Si dataset incompleto o muy corto
+            RuntimeError: Si dataset incompleto o no cargado
         """
-        try:
-            # Usar env si está disponible
-            buildings = getattr(self.env, 'buildings', [])
-            if not buildings:
-                raise ValueError("[VALIDACIÓN] No buildings found in CityLearn environment")
+        # Usar env si está disponible
+        buildings = getattr(self.env, 'buildings', [])
+        if not buildings:
+            raise RuntimeError(
+                "[SAC VALIDACIÓN FALLIDA] No buildings found in CityLearn environment.\n"
+                "El dataset NO se cargó correctamente. Ejecuta:\n"
+                "  python -m scripts.run_oe3_build_dataset --config configs/default.yaml"
+            )
 
-            # Verificar timesteps usando solar_generation (proxy para completeness)
-            b = buildings[0]
-            solar_gen = getattr(b, 'solar_generation', None)
+        # Verificar timesteps usando energy_simulation (datos del CSV, NO propiedades de runtime)
+        b = buildings[0]
+        timesteps = 0
 
-            if solar_gen is None or len(solar_gen) == 0:
-                # Fallback: usar net_electricity_consumption
-                net_elec = getattr(b, 'net_electricity_consumption', None)
-                if net_elec is None or len(net_elec) == 0:
-                    logger.warning("[VALIDACIÓN] No se pudo extraer series de tiempo de CityLearn")
-                    return  # No fallar si no se puede verificar
-                timesteps = len(net_elec)
+        # CORRECTO: Usar energy_simulation que contiene los datos del CSV
+        energy_sim = getattr(b, 'energy_simulation', None)
+        if energy_sim is not None:
+            # Intentar non_shiftable_load primero (demanda del mall)
+            load = getattr(energy_sim, 'non_shiftable_load', None)
+            if load is not None and hasattr(load, '__len__') and len(load) > 0:
+                timesteps = len(load)
             else:
-                timesteps = len(solar_gen)
+                # Fallback: solar_generation del CSV
+                solar = getattr(energy_sim, 'solar_generation', None)
+                if solar is not None and hasattr(solar, '__len__') and len(solar) > 0:
+                    timesteps = len(solar)
 
-            # Validar tamaño
-            if timesteps != 8760:
-                logger.warning(
-                    f"[VALIDACIÓN] Dataset INCOMPLETO: {timesteps} timesteps vs. "
-                    f"8,760 esperado. Posible sesgo estacional."
-                )
-                if timesteps < 4380:  # Menos de medio año
-                    raise ValueError(
-                        f"[CRÍTICO] Dataset DEMASIADO CORTO: {timesteps} timesteps "
-                        f"(mínimo 4,380 requerido = 6 meses)"
-                    )
-            else:
-                logger.info("[VALIDACIÓN] Dataset CityLearn COMPLETO: 8,760 timesteps ✓")
-        except Exception as e:
-            logger.error(f"[VALIDACIÓN] Error verificando dataset: {e}")
-            raise
+        # VALIDACIÓN ESTRICTA: Debe tener exactamente 8,760 timesteps
+        if timesteps == 0:
+            raise RuntimeError(
+                "[SAC VALIDACIÓN FALLIDA] No se pudo extraer series de tiempo de CityLearn.\n"
+                "El dataset está vacío o corrupto. Reconstruye con:\n"
+                "  python -m scripts.run_oe3_build_dataset --config configs/default.yaml"
+            )
+
+        if timesteps != 8760:
+            raise RuntimeError(
+                f"[SAC VALIDACIÓN FALLIDA] Dataset INCOMPLETO: {timesteps} timesteps vs. 8,760 esperado.\n"
+                f"Sin datos completos de 1 año, el entrenamiento NO aprenderá patrones estacionales.\n"
+                f"Reconstruye el dataset con:\n"
+                f"  python -m scripts.run_oe3_build_dataset --config configs/default.yaml"
+            )
+
+        logger.info("[SAC VALIDACIÓN] ✓ Dataset CityLearn COMPLETO: 8,760 timesteps (1 año)")
 
     def _train_sb3_sac(self, total_timesteps: int):
         """Entrena usando Stable-Baselines3 SAC con optimizadores avanzados."""
@@ -670,6 +674,11 @@ class SACAgent:
         expected_episodes = int(total_timesteps // 8760) if total_timesteps > 0 else 0
 
         class TrainingCallback(BaseCallback):
+            """Callback de entrenamiento SAC con extracción ROBUSTA de métricas.
+
+            FIX 2026-02-02: Usa EpisodeMetricsAccumulator centralizado para
+            garantizar correcta extracción de datos solares, grid y CO₂.
+            """
             def __init__(self, agent, progress_path: Optional[Path], progress_headers, expected_episodes: int, verbose=0):
                 super().__init__(verbose)
                 self.agent = agent
@@ -677,356 +686,112 @@ class SACAgent:
                 self.progress_headers = progress_headers
                 self.expected_episodes = expected_episodes
                 self.episode_count = 0
-                self.log_interval_steps = int(agent.config.log_interval or 0)
-                # Métricas acumuladas para promedios
-                self.reward_sum = 0.0
-                self.reward_count = 0
-                self.grid_energy_sum = 0.0  # kWh consumido de la red
-                self.solar_energy_sum = 0.0  # kWh de solar usado
+                self.log_interval_steps = int(agent.config.log_interval or 500)  # Default 500
+
+                # ✅ FIX: Usar EpisodeMetricsAccumulator centralizado
+                from .metrics_extractor import EpisodeMetricsAccumulator, extract_step_metrics
+                self.metrics_accumulator = EpisodeMetricsAccumulator()
+                self._extract_step_metrics = extract_step_metrics
+
+                # Alias para compatibilidad (se actualizan desde accumulator)
+                self.grid_energy_sum = 0.0
+                self.solar_energy_sum = 0.0
                 self.co2_intensity = 0.4521  # kg CO2/kWh para Iquitos
-                # NUEVAS MÉTRICAS: Reducción CO₂ directa e indirecta
-                self.co2_indirect_avoided_kg = 0.0  # kg CO₂ evitado por solar consumido
-                self.co2_direct_avoided_kg = 0.0  # kg CO₂ evitado por EVs cargadas
-                self.motos_cargadas = 0  # # de motos cargadas (SOC >= 90%)
-                self.mototaxis_cargadas = 0  # # de mototaxis cargadas (SOC >= 90%)
-                # Ventana móvil para reward_avg (últimos 200 pasos)
+                self.co2_indirect_avoided_kg = 0.0
+                self.co2_direct_avoided_kg = 0.0
+                self.motos_cargadas = 0
+                self.mototaxis_cargadas = 0
                 self.recent_rewards: list[float] = []
                 self.reward_window_size = 200
-                # CRÍTICO: Inicializar estado de BESS para cálculo de descarga
-                self._prev_bess_soc = None  # Se actualiza en cada step
 
             def _on_step(self):
+                """Callback ejecutado en cada step de entrenamiento.
+
+                FIX 2026-02-02: Extracción ROBUSTA de métricas usando metrics_extractor.
+                """
                 # ========================================================================
-                # NOTA: CO₂ DIRECTO ahora se calcula DESPUÉS de leer ev_demand_actual
-                # Integrado en sección de despacho (más abajo)
-                # ========================================================================"
+                # EXTRACCIÓN ROBUSTA DE MÉTRICAS (usando módulo centralizado)
+                # ========================================================================
+                try:
+                    obs = self.locals.get("obs", None) or self.locals.get("observation", None)
+                    if obs is not None:
+                        obs = np.asarray(obs, dtype=np.float32).ravel()
+
+                    # Extraer métricas del ambiente
+                    step_metrics = self._extract_step_metrics(
+                        self.training_env,
+                        self.n_calls,
+                        obs
+                    )
+
+                    # Obtener reward del step actual
+                    rewards = self.locals.get("rewards", [])
+                    reward_val = 0.0
+                    if rewards is not None:
+                        if hasattr(rewards, '__iter__'):
+                            for r in rewards:
+                                reward_val = float(r) * 100.0  # Escalar para visibilidad
+                        else:
+                            reward_val = float(rewards) * 100.0
+
+                    # Acumular en EpisodeMetricsAccumulator
+                    self.metrics_accumulator.accumulate(step_metrics, reward_val)
+
+                    # Actualizar alias para logging
+                    self.grid_energy_sum = self.metrics_accumulator.grid_import_kwh
+                    self.solar_energy_sum = self.metrics_accumulator.solar_generation_kwh
+                    self.co2_indirect_avoided_kg = self.metrics_accumulator.co2_indirect_avoided_kg
+                    self.co2_direct_avoided_kg = self.metrics_accumulator.co2_direct_avoided_kg
+                    self.motos_cargadas = self.metrics_accumulator.motos_cargadas
+                    self.mototaxis_cargadas = self.metrics_accumulator.mototaxis_cargadas
+
+                except Exception as err:
+                    logger.debug("[SAC] Error extrayendo métricas: %s", err)
 
                 # ========================================================================
-                # Resto del código normal (rewards, energía, etc.)
+                # LOGGING PERIÓDICO (cada log_interval pasos)
                 # ========================================================================
                 infos = self.locals.get("infos", [])
                 if isinstance(infos, dict):
                     infos = [infos]
 
-                # Acumular NORMALIZED rewards (después de escala, no raw)
-                # Los raw rewards están en [-0.5, 0.5], muy pequeños
-                # Necesitamos acumular los scaled rewards para métricas significativas
-                rewards = self.locals.get("rewards", [])
-                if rewards is not None:
-                    if hasattr(rewards, '__iter__'):
-                        for r in rewards:
-                            # Aplicar misma escala que en training: reward * 0.01 * 100 = reward
-                            # (escala de 100x para logging significativo)
-                            scaled_r = float(r) * 100.0  # Amplificar para visibilidad en logs
-                            self.reward_sum += scaled_r
-                            self.reward_count += 1
-                            # Agregar a ventana móvil
-                            self.recent_rewards.append(scaled_r)
-                            if len(self.recent_rewards) > self.reward_window_size:
-                                self.recent_rewards.pop(0)
-                    else:
-                        scaled_r = float(rewards) * 100.0  # Amplificar para visibilidad en logs
-                        self.reward_sum += scaled_r
-                        self.reward_count += 1
-                        # Agregar a ventana móvil
-                        self.recent_rewards.append(scaled_r)
-                        if len(self.recent_rewards) > self.reward_window_size:
-                            self.recent_rewards.pop(0)
-
-# Acumular valores de energía con despacho correcto (por cada step)
-# Usa calculate_solar_dispatch() para desglosar solar según prioridades
-                try:
-                    from iquitos_citylearn.oe3.rewards import calculate_solar_dispatch
-
-                    env = self.training_env  # type: ignore
-                    if hasattr(env, 'unwrapped'):
-                        env = env.unwrapped  # type: ignore
-
-                    # ============================================================================
-                    # NUEVA ESTRATEGIA: Leer DIRECTAMENTE de la observación (no del building)
-                    # La observación de CityLearn v2 ya contiene toda la energía
-                    # ============================================================================
-
-                    # Obtener última observación del episode (que acaba de ocurrir)
-                    obs = self.locals.get("obs", None)
-                    if obs is None:
-                        obs = self.locals.get("observation", None)
-
-                    # Valores default seguros si no hay observación
-                    solar_available_kw = 0.0
-                    ev_demand_kw = 0.0
-                    mall_demand_kw = 0.0
-                    bess_soc_pct = 50.0
-
-                    # Si tenemos observación, extraer datos de ella (índices CityLearn)
-                    if obs is not None:
-                        try:
-                            # CRITICAL: obs puede ser lista o numpy array, convertir siempre
-                            if isinstance(obs, (list, tuple)):
-                                obs_arr = np.array(obs, dtype=float)
-                            else:
-                                obs_arr = np.asarray(obs, dtype=float)
-
-                            logger.debug(f"[SAC-OBS] type={type(obs)} -> numpy len={len(obs_arr)}")
-
-                            # Observación de CityLearn estructura (según dataset_constructor.py):
-                            # obs[0]       = solar_generation (kW)
-                            # obs[1]       = total_demand (chargers + mall)
-                            # obs[2]       = BESS SOC (0-1, multiplicar por 100 para %)
-                            # obs[3]       = mall_demand (kW)
-                            # obs[4:132]   = 128 charger demands (indices 4-131 inclusive)
-                            # obs[132:260] = 128 charger powers (indices 132-259 inclusive)
-                            # obs[260:388] = 128 charger occupancy (0/1)
-                            # obs[388]     = hour_of_day (0-23)
-                            # obs[389]     = month (0-11)
-                            # obs[390]     = day_of_week (0-6)
-                            # obs[391]     = is_peak_hours (0/1)
-                            # obs[392]     = carbon_intensity
-                            # obs[393]     = tariff
-                            # TOTAL: 394 elementos
-
-                            solar_available_kw = float(obs_arr[0]) if len(obs_arr) > 0 else 0.0
-                            mall_demand_kw = float(obs_arr[3]) if len(obs_arr) > 3 else 0.0
-                            bess_soc_pct = float(obs_arr[2]) * 100.0 if len(obs_arr) > 2 else 50.0
-
-                            # ✅ VALIDACIÓN COMPLETA: Verificar 394 elementos (NO solo 132)
-                            if len(obs_arr) >= 394:  # CORREGIDO: Valida tamaño COMPLETO
-                                charger_demands = obs_arr[4:132]  # 128 chargers (indices 4-131)
-                                ev_demand_kw = float(np.sum(np.maximum(charger_demands, 0.0)))
-
-                                # Capturar información adicional del vector completo
-                                solar_available_kw = float(obs_arr[0])
-                                mall_demand_kw = float(obs_arr[3])
-                                bess_soc_pct = float(obs_arr[2]) * 100.0
-                                carbon_intensity = float(obs_arr[392]) if len(obs_arr) > 392 else 0.4521
-
-                                # Validación de rangos
-                                if ev_demand_kw < 0:
-                                    logger.debug(f"[SAC-CHARGERS] EV demand negativa: {ev_demand_kw:.2f}kW, usando fallback")
-                                    ev_demand_kw = 50.0
-                                if solar_available_kw < 0:
-                                    logger.debug(f"[SAC-CHARGERS] Solar negativa: {solar_available_kw:.2f}kW, ajustando a 0")
-                                    solar_available_kw = 0.0
-
-                                logger.debug(f"[SAC-CHARGERS] ✓ Sumados {len(charger_demands)} chargers, demanda={ev_demand_kw:.2f}kW | CO2={carbon_intensity:.4f} kg/kWh")
-
-                            elif len(obs_arr) >= 132:  # Fallback parcial
-                                logger.warning(f"[SAC-CHARGERS] ⚠️ Observación INCOMPLETA: {len(obs_arr)}/394 elementos")
-                                charger_demands = obs_arr[4:132]  # 128 chargers (indices 4-131)
-                                ev_demand_kw = float(np.sum(np.maximum(charger_demands, 0.0)))
-                                solar_available_kw = float(obs_arr[0]) if len(obs_arr) > 0 else 1.0
-                                mall_demand_kw = float(obs_arr[3]) if len(obs_arr) > 3 else 100.0
-                                bess_soc_pct = float(obs_arr[2]) * 100.0 if len(obs_arr) > 2 else 50.0
-
-                            else:  # FALLBACK SEGURO (observación muy corta)
-                                logger.error(f"[SAC-CHARGERS] 🔴 Observación CRÍTICA CORTA: {len(obs_arr)} elementos")
-                                ev_demand_kw = 50.0
-                                solar_available_kw = 1.0
-                                mall_demand_kw = 100.0
-                                bess_soc_pct = 50.0
-
-                        except Exception as e:
-                            import traceback
-                            logger.error(f"[SAC-OBS] Error extrayendo obs: {e}")
-                            logger.error(traceback.format_exc())
-                            # Use defaults
-                            pass
-
-                    # Si AÚN no hay datos, usar fallback conservador
-                    if ev_demand_kw <= 0.0:
-                        ev_demand_kw = 50.0  # kW conservador
-                    if solar_available_kw <= 0.0:
-                        solar_available_kw = 1.0  # Mínimo
-                    if mall_demand_kw <= 0.0:
-                        mall_demand_kw = 100.0  # Demanda mall típica
-
-                    # Calcular despacho
-                    dispatch = calculate_solar_dispatch(
-                        solar_available_kw=solar_available_kw,
-                        ev_demand_kw=ev_demand_kw,
-                        mall_demand_kw=mall_demand_kw,
-                        bess_soc_pct=bess_soc_pct,
-                        bess_max_power_kw=2712.0,
-                        bess_capacity_kwh=4520.0,
-                    )
-
-                    # NOTA: BESS discharge cálculo removido (no disponible en callback)
-
-                    # Acumular métricas correctas: usar solar_available_kw directamente
-                    # (no depender de dispatch que puede faltar claves)
-                    self.solar_energy_sum += solar_available_kw
-                    # Grid import: calculamos como diferencia si no hay dispatch confiable
-                    total_demand_kw = mall_demand_kw + ev_demand_kw
-                    grid_needed_kw = max(0.0, total_demand_kw - solar_available_kw)
-                    self.grid_energy_sum += grid_needed_kw
-
-                    # NUEVOS: Calcular reducción CO₂ DIRECTA (INTEGRADA y SINCRONIZADA)
-                    # ========================================================================
-                    # CO₂ DIRECTA: Basada en ENERGÍA ENTREGADA a EVs EN ESTE PASO
-                    logger.info(f"[SAC CO2-START] ev_demand={ev_demand_kw:.2f}kW | before_accum={self.co2_direct_avoided_kg:.2f}kg")
-                    try:
-                        co2_factor_ev_direct = 2.146  # kg CO₂/kWh evitado
-
-                        # Distribución: 80% motos (2kW), 20% mototaxis (3kW)
-                        motos_fraction = 0.80
-                        mototaxis_fraction = 0.20
-
-                        # Energía entregada a cada tipo de vehículo
-                        motos_power_kw = ev_demand_kw * motos_fraction
-                        mototaxis_power_kw = ev_demand_kw * mototaxis_fraction
-
-                        # Convertir a ciclos (# de vehículos cargados)
-                        motos_ciclos_step = int(motos_power_kw / 2.0) if motos_power_kw > 0 else 0
-                        mototaxis_ciclos_step = int(mototaxis_power_kw / 3.0) if mototaxis_power_kw > 0 else 0
-
-                        self.motos_cargadas = getattr(self, 'motos_cargadas', 0) + motos_ciclos_step
-                        self.mototaxis_cargadas = getattr(self, 'mototaxis_cargadas', 0) + mototaxis_ciclos_step
-
-                        # CO₂ DIRECTO: co2_factor × ev_demand_kw
-                        co2_direct_step_kg = ev_demand_kw * co2_factor_ev_direct
-                        logger.info(f"[SAC CO2-CALC] antes={self.co2_direct_avoided_kg:.2f}kg | step={co2_direct_step_kg:.2f}kg")
-                        self.co2_direct_avoided_kg += co2_direct_step_kg
-                        logger.info(f"[SAC CO2-AFTER] total={self.co2_direct_avoided_kg:.2f}kg")
-
-                        # Log cada 500 steps (con verificación de n_calls)
-                        if hasattr(self, 'n_calls') and self.n_calls % 500 == 0:
-                            logger.info(f"[SAC CO2 DIRECTO] step={self.n_calls} | ev_demand={ev_demand_kw:.1f}kW | co2_total={self.co2_direct_avoided_kg:.1f}kg | motos={self.motos_cargadas} | taxis={self.mototaxis_cargadas}")
-                    except Exception as err:
-                        logger.error(f"[SAC ❌ ERROR CO2 DIRECTO] {type(err).__name__}: {err}")
-                        import traceback
-                        logger.error(traceback.format_exc())
-
-                    # ========================================================================
-                    # NUEVOS: Calcular reducción CO₂ INDIRECTA (solar + BESS)
-                    # ========================================================================
-                    try:
-                        from iquitos_citylearn.oe3.rewards import (
-                            calculate_co2_reduction_indirect,
-                            calculate_co2_reduction_bess_discharge,
-                        )
-
-                        # CO₂ INDIRECTA: Solar disponible evita importar (usa todo el solar generado)
-                        co2_indirect = calculate_co2_reduction_indirect(
-                            solar_available_kw  # kW de solar disponible en este step
-                        )
-
-                        # CO₂ INDIRECTA: Descarga de BESS (energía solar almacenada usada posteriormente)
-                        # BESS discharge tracking
-                        bess_discharge_kw = 0.0
-                        try:
-                            # Obtener BESS desde el environment buildings
-                            buildings = getattr(self.env, 'buildings', [])
-                            if buildings and len(buildings) > 0:
-                                bess_obj = getattr(buildings[0], 'electrical_storage', None)
-                                if bess_obj is not None and hasattr(bess_obj, 'state_of_charge'):
-                                    current_soc = float(bess_obj.state_of_charge)
-                                    if current_soc > 1.0:  # Convertir 0-100% a 0-1
-                                        current_soc = current_soc / 100.0
-                                    prev_soc = getattr(self, '_prev_bess_soc', current_soc)
-                                    bess_capacity_kwh = 4520.0
-                                    soc_delta = current_soc - prev_soc
-                                    bess_power_kw = soc_delta * bess_capacity_kwh
-                                    if bess_power_kw < 0:  # Descarga = power negativo
-                                        bess_discharge_kw = abs(bess_power_kw)
-                                    self._prev_bess_soc = current_soc
-                        except (ValueError, TypeError, AttributeError, IndexError):
-                            pass
-
-                        co2_bess = calculate_co2_reduction_bess_discharge(bess_discharge_kw)
-
-                        # Total CO₂ indirecta = solar + BESS discharge
-                        self.co2_indirect_avoided_kg = getattr(self, 'co2_indirect_avoided_kg', 0.0) + co2_indirect + co2_bess
-
-                    except Exception as err:
-                        logger.warning(f"[SAC] Error calculando CO₂ indirecto/BESS: {err}")
-
-                    # DEBUG: si solar_consumed es 0, usar fallback
-                    if dispatch["solar_consumed_kw"] <= 0:
-                        self.solar_energy_sum += 0.62  # Fallback conservador
-                    if dispatch["grid_import_needed_kw"] <= 0:
-                        self.grid_energy_sum += 1.37  # Fallback conservador
-
-                except Exception as err:
-                    # Fallback: si hay error en despacho, usar valores conservadores
-                    logger.debug(f"[SAC] Error en despacho solar: {err}, usando fallback")
-                    self.grid_energy_sum += 1.37
-                    self.solar_energy_sum += 0.62
-
-
-                if not infos:
-                    return True
                 if self.log_interval_steps > 0 and self.n_calls % self.log_interval_steps == 0:
                     approx_episode = max(1, int(self.model.num_timesteps // 8760) + 1)
+                    metrics = self.metrics_accumulator.get_episode_metrics()
 
-                    # Calcular reward promedio de ventana móvil (últimos 200 pasos)
-                    if self.recent_rewards:
-                        avg_reward = sum(self.recent_rewards) / len(self.recent_rewards)
-                    else:
-                        avg_reward = 0.0
-
-                    # Usar grid_energy_sum acumulado, si es 0 usar valor mínimo
-                    grid_kwh_to_log = max(self.grid_energy_sum, 100.0) if self.grid_energy_sum == 0 else self.grid_energy_sum
-
-                    # Calcular CO2 estimado (base grid import)
-                    co2_from_grid_kg = grid_kwh_to_log * self.co2_intensity
-
-                    # NUEVAS MÉTRICAS: CO₂ evitado calculado desde acumuladores
-                    # CO₂ INDIRECTO: solar generado × factor de emisión grid (lo que evitamos importar)
-                    co2_indirect = self.solar_energy_sum * self.co2_intensity
-
-                    # CO₂ DIRECTO: motos/mototaxis (calculado en _on_step)
-                    co2_direct = getattr(self, 'co2_direct_avoided_kg', 0.0)
-                    co2_total_avoided = co2_indirect + co2_direct
-
-                    # Obtener métricas de entrenamiento del logger de SB3
-                    parts = []
-                    parts.append(f"reward_avg={avg_reward:.4f}")
-
+                    # Obtener métricas de SB3
+                    parts = [f"reward_avg={metrics['reward_avg']:.4f}"]
                     try:
                         if hasattr(self.model, 'logger') and self.model.logger is not None:
                             name_to_value = getattr(self.model.logger, 'name_to_value', {})
                             if name_to_value:
-                                actor_loss = name_to_value.get('train/actor_loss', None)
-                                critic_loss = name_to_value.get('train/critic_loss', None)
-                                ent_coef = name_to_value.get('train/ent_coef', None)
-                                learning_rate = name_to_value.get('train/learning_rate', None)
-
+                                actor_loss = name_to_value.get('train/actor_loss')
+                                critic_loss = name_to_value.get('train/critic_loss')
+                                ent_coef = name_to_value.get('train/ent_coef')
                                 if actor_loss is not None:
                                     parts.append(f"actor_loss={actor_loss:.2f}")
                                 if critic_loss is not None:
                                     parts.append(f"critic_loss={critic_loss:.2f}")
                                 if ent_coef is not None:
-                                    parts.append(
-                                        f"ent_coef={ent_coef:.4f}")
-                                if learning_rate is not None:
-                                    parts.append(f"lr={learning_rate:.2e}")
-                    except (ImportError, ModuleNotFoundError,
-                            AttributeError):
+                                    parts.append(f"ent_coef={ent_coef:.4f}")
+                    except (AttributeError, KeyError):
                         pass
 
-                    # Agregar métricas de energía y CO2 (GRID + SOLAR) - SIEMPRE mostrar
-                    parts.append(f"grid_kWh={self.grid_energy_sum:.1f}")
-                    parts.append(f"co2_grid_kg={co2_from_grid_kg:.1f}")
-                    parts.append(f"solar_kWh={self.solar_energy_sum:.1f}")
-
-                    # NUEVAS: Métricas de CO₂ directo e indirecto - SIEMPRE mostrar para verificación
-                    parts.append(f"co2_indirect_kg={co2_indirect:.1f}")
-                    motos_cargadas = getattr(self, 'motos_cargadas', 0)
-                    mototaxis_cargadas = getattr(self, 'mototaxis_cargadas', 0)
-                    parts.append(f"co2_direct_kg={co2_direct:.1f}")
-                    parts.append(f"motos={motos_cargadas}")
-                    parts.append(f"mototaxis={mototaxis_cargadas}")
-                    parts.append(f"co2_total_avoided_kg={co2_total_avoided:.1f}")
+                    # Agregar métricas de energía y CO₂
+                    parts.append(f"grid_kWh={metrics['grid_import_kwh']:.1f}")
+                    parts.append(f"solar_kWh={metrics['solar_generation_kwh']:.1f}")
+                    parts.append(f"co2_grid={metrics['co2_grid_kg']:.1f}")
+                    parts.append(f"co2_indirect={metrics['co2_indirect_avoided_kg']:.1f}")
+                    parts.append(f"co2_direct={metrics['co2_direct_avoided_kg']:.1f}")
+                    parts.append(f"motos={metrics['motos_cargadas']}")
+                    parts.append(f"mototaxis={metrics['mototaxis_cargadas']}")
 
                     metrics_str = " | ".join(parts)
-
                     logger.info(
-                        "[SAC] paso %d | ep~%d | pasos_global=%d | %s",
-                        self.n_calls,
-                        approx_episode,
-                        int(self.model.num_timesteps),
-                        metrics_str,
+                        "[SAC] paso %d | ep~%d | global_step=%d | %s",
+                        self.n_calls, approx_episode, int(self.model.num_timesteps), metrics_str
                     )
+
                     if self.progress_path is not None:
                         row = {
                             "timestamp": datetime.utcnow().isoformat(),
@@ -1037,112 +802,56 @@ class SACAgent:
                             "global_step": int(self.model.num_timesteps),
                         }
                         append_progress_row(self.progress_path, row, self.progress_headers)
+
+                # ========================================================================
+                # FIN DE EPISODIO
+                # ========================================================================
                 for info in infos:
                     episode = info.get("episode")
                     if not episode:
                         continue
+
                     self.episode_count += 1
                     reward = float(episode.get("r", 0.0))
                     length = int(episode.get("l", 0))
 
-                    # Calcular métricas finales del episodio ANTES de reiniciar
-                    # FIX: Si contadores son 0 (fallaron), estimar desde reward relativo
-                    if self.grid_energy_sum <= 0.0:
-                        # Reward de ~520 indica ~10,000-12,000 kWh importados en año
-                        # Usar relación: reward ~ (12000 - grid_kwh) / 100
-                        # Por lo tanto: grid_kwh ~ 12000 - (reward * 100)
-                        estimated_grid = max(8000.0, 12000.0 - abs(reward * 100.0))
-                        self.grid_energy_sum = estimated_grid
-                        logger.warning(
-                            f"[SAC] Grid counter was {self.grid_energy_sum:.1f} (falló captura), "
-                            f"estimando desde reward={reward:.2f}: {estimated_grid:.1f} kWh"
-                        )
+                    # Obtener métricas finales del episodio
+                    ep_metrics = self.metrics_accumulator.get_episode_metrics()
 
-                    if self.solar_energy_sum <= 0.0:
-                        # Estimación: solar utilizado típicamente 40-60% en baseline
-                        # Iquitos: ~1,927 MWh/año solar potential
-                        estimated_solar = 1927.0 * 0.5  # ~50% utilización
-                        self.solar_energy_sum = estimated_solar
-                        logger.warning(
-                            f"[SAC] Solar counter was {self.solar_energy_sum:.1f} (falló captura), "
-                            f"estimando: {estimated_solar:.1f} kWh"
-                        )
-
-                    episode_co2_kg = self.grid_energy_sum * self.co2_intensity
-                    episode_grid_kwh = self.grid_energy_sum
-                    episode_solar_kwh = self.solar_energy_sum
-
-                    # NUEVAS: Métricas de CO₂ evitado calculadas desde acumuladores
-                    # CO₂ INDIRECTO: solar generado × factor grid (importación evitada)
-                    episode_co2_indirect_kg = episode_solar_kwh * self.co2_intensity
-                    # CO₂ DIRECTO: motos/mototaxis (acumulado en _on_step)
-                    episode_co2_direct_kg = getattr(self, 'co2_direct_avoided_kg', 0.0)
-                    episode_co2_total_avoided_kg = episode_co2_indirect_kg + episode_co2_direct_kg
-                    episode_co2_net_kg = episode_co2_kg - episode_co2_total_avoided_kg
-
+                    # Guardar en historial de entrenamiento
                     self.agent.training_history.append({
                         "step": int(self.model.num_timesteps),
                         "mean_reward": reward,
-                        "episode_co2_kg": episode_co2_kg,
-                        "episode_grid_kwh": episode_grid_kwh,
-                        "episode_solar_kwh": episode_solar_kwh,
-                        "episode_co2_indirect_kg": episode_co2_indirect_kg,
-                        "episode_co2_direct_kg": episode_co2_direct_kg,
-                        "episode_co2_total_avoided_kg": episode_co2_total_avoided_kg,
-                        "episode_co2_net_kg": episode_co2_net_kg,
+                        "episode_co2_kg": ep_metrics['co2_grid_kg'],
+                        "episode_grid_kwh": ep_metrics['grid_import_kwh'],
+                        "episode_solar_kwh": ep_metrics['solar_generation_kwh'],
+                        "episode_co2_indirect_kg": ep_metrics['co2_indirect_avoided_kg'],
+                        "episode_co2_direct_kg": ep_metrics['co2_direct_avoided_kg'],
+                        "episode_co2_total_avoided_kg": ep_metrics['co2_total_avoided_kg'],
+                        "episode_co2_net_kg": ep_metrics['co2_net_kg'],
                     })
-                    if self.agent.config.progress_interval_episodes > 0 and (
-                        self.episode_count % self.agent.config.progress_interval_episodes == 0
-                    ):
-                        row = {
-                            "timestamp": datetime.utcnow().isoformat(),
-                            "agent": "sac",
-                            "episode": self.episode_count,
-                            "episode_reward": reward,
-                            "episode_length": length,
-                            "global_step": int(self.model.num_timesteps),
-                        }
-                        if self.progress_path is not None:
-                            append_progress_row(self.progress_path, row, self.progress_headers)
-                        if self.expected_episodes > 0:
-                            logger.info(
-                                "[SAC] ep %d/%d | reward=%.4f len=%d step=%d | co2_grid=%.1f co2_indirect=%.1f co2_direct=%.1f co2_net=%.1f | grid_kWh=%.1f solar_kWh=%.1f",
-                                self.episode_count,
-                                self.expected_episodes,
-                                reward,
-                                length,
-                                int(self.model.num_timesteps),
-                                episode_co2_kg,
-                                episode_co2_indirect_kg,
-                                episode_co2_direct_kg,
-                                episode_co2_net_kg,
-                                episode_grid_kwh,
-                                episode_solar_kwh,
-                            )
-                        else:
-                            logger.info(
-                                "[SAC] ep %d | reward=%.4f len=%d step=%d | co2_grid=%.1f co2_indirect=%.1f co2_direct=%.1f co2_net=%.1f | grid_kWh=%.1f solar_kWh=%.1f",
-                                self.episode_count,
-                                reward,
-                                length,
-                                int(self.model.num_timesteps),
-                                episode_co2_kg,
-                                episode_co2_indirect_kg,
-                                episode_co2_direct_kg,
-                                episode_co2_net_kg,
-                                episode_grid_kwh,
-                                episode_solar_kwh,
-                            )
 
-                    # REINICIAR métricas para el siguiente episodio
-                    self.reward_sum = 0.0
-                    self.reward_count = 0
-                    self.grid_energy_sum = 0.0
-                    self.solar_energy_sum = 0.0
-                    self.co2_indirect_avoided_kg = 0.0
-                    self.co2_direct_avoided_kg = 0.0
-                    self.motos_cargadas = 0
-                    self.mototaxis_cargadas = 0
+                    # Log del episodio
+                    self.metrics_accumulator.log_episode_metrics(
+                        "SAC", self.episode_count, reward, length, int(self.model.num_timesteps)
+                    )
+
+                    # Guardar en progress CSV
+                    if self.agent.config.progress_interval_episodes > 0 and \
+                       self.episode_count % self.agent.config.progress_interval_episodes == 0:
+                        if self.progress_path is not None:
+                            row = {
+                                "timestamp": datetime.utcnow().isoformat(),
+                                "agent": "sac",
+                                "episode": self.episode_count,
+                                "episode_reward": reward,
+                                "episode_length": length,
+                                "global_step": int(self.model.num_timesteps),
+                            }
+                            append_progress_row(self.progress_path, row, self.progress_headers)
+
+                    # ✅ CRÍTICO: Resetear acumulador para el siguiente episodio
+                    self.metrics_accumulator.reset()
 
                 return True
 
