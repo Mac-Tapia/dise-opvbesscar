@@ -23,14 +23,163 @@
 
 ---
 
+## 📖 DOCUMENTACIÓN ESENCIAL - COMIENZO RECOMENDADO
+
+### 🎯 COMIENZA AQUÍ (selecciona según necesidad)
+
+| Necesidad | Archivo | Tiempo |
+|-----------|---------|--------|
+| **📊 Entender el Proyecto** | [README_ESTADO_FINAL_RAPIDO.md](README_ESTADO_FINAL_RAPIDO.md) | 5 min |
+| **⚡ Empezar a Entrenar** | [QUICK_START_TRAINING.md](QUICK_START_TRAINING.md) | 10 min |
+| **🛠️ Instalar Sistema** | [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) | 20 min |
+| **❓ Guía General Rápida** | [QUICKSTART.md](QUICKSTART.md) | 5 min |
+
+### 📋 DOCUMENTACIÓN POR TEMA
+
+**🔴 Tema: Cobertura Anual & Agentes (ACTUALIZADO 2026-02-01)**
+- ⭐ [RESPUESTA_DEFINITIVA_COBERTURA_IGUAL_TODOS.md](RESPUESTA_DEFINITIVA_COBERTURA_IGUAL_TODOS.md) ← **Respuesta a: ¿Por qué SAC=PPO=A2C=1 AÑO?**
+- [CLARIFICACION_COBERTURA_IDENTICA_TODOS_AGENTES.md](CLARIFICACION_COBERTURA_IDENTICA_TODOS_AGENTES.md) ← Explicación técnica detallada
+- [CORRECCION_APLICADA_2026_02_01.md](CORRECCION_APLICADA_2026_02_01.md) ← Qué cambió y por qué
+
+**✅ Tema: Estado del Proyecto**
+- [ESTADO_FINAL_AUDITORÍA_COMPLETADA_2026_02_01.md](ESTADO_FINAL_AUDITORÍA_COMPLETADA_2026_02_01.md) ← Estado ACTUAL del sistema
+- [CERTIFICADO_FINALIZACION_AUDITORIA_2026_02_01.md](CERTIFICADO_FINALIZACION_AUDITORIA_2026_02_01.md) ← Certificación de completitud
+- [CHECKLIST_FINAL_LISTO_PARA_ENTRENAR_2026_02_01.md](CHECKLIST_FINAL_LISTO_PARA_ENTRENAR_2026_02_01.md) ← Pre-entrenamiento checklist
+
+**📚 Tema: Documentación Histórica & Auditorías**
+- 📦 [docs/audit_archive/README.md](docs/audit_archive/README.md) ← Índice completo de archivos históricos
+
+---
+
 ## 📖 GUÍA RÁPIDA DE USO
 
 | Sección | Descripción |
 |---------|-------------|
-| **🚀 Flujo Actual** | 📋 [FLUJO_TRABAJO_TRAINING_ACTUAL.md](FLUJO_TRABAJO_TRAINING_ACTUAL.md) ← **INICIA AQUÍ** |
-| **⚡ Inicio Rápido** | [QUICKSTART.md](QUICKSTART.md) - 5 minutos para empezar |
+| **🚀 Inicio Rápido** | [QUICKSTART.md](QUICKSTART.md) - 5 minutos para empezar |
+| **⚡ Entrenamiento** | [QUICK_START_TRAINING.md](QUICK_START_TRAINING.md) - Guía de entrenamiento |
 | **🛠️ Instalación** | [INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md) - Setup completo |
 | **📊 Documentación** | Ver secciones abajo según tu necesidad |
+
+---
+
+## 💾 GUARDADO DE RESULTADOS - ESTRUCTURA DE DIRECTORIOS
+
+### ✅ Capacidades de Guardado - Todos los Agentes
+
+Los tres agentes (SAC, PPO, A2C) están **completamente configurados** para guardar resultados:
+
+| Componente | Ubicación | Descripción |
+|-----------|-----------|-------------|
+| **Checkpoints de Agentes** | `checkpoints/{SAC,PPO,A2C}/` | Modelos entrenados (.zip) - Guardados cada 1,000 pasos |
+| **Timeseries CSV** | `outputs/oe3_simulations/timeseries_{agent}.csv` | 8,760 filas (1 año) con energía horaria |
+| **Trace Completo** | `outputs/oe3_simulations/trace_{agent}.csv` | Observaciones, acciones, rewards, CO₂ detallado |
+| **Resultados JSON** | `outputs/oe3_simulations/result_{agent}.json` | Métricas finales (CO₂, costo, solar, EV) |
+| **Métricas de Progreso** | `outputs/training_progress/{agent}_progress.csv` | Histórico de entrenamiento |
+| **Gráficos** | `outputs/training_progress/{agent}_training.png` | Visualización de convergencia |
+
+### 📁 Estructura Completa de Directorios
+
+```
+pvbesscar/
+├── checkpoints/                          # ← CHECKPOINTS DE AGENTES
+│   ├── sac/
+│   │   ├── sac_step_1000.zip
+│   │   ├── sac_step_2000.zip
+│   │   └── sac_final.zip
+│   ├── ppo/
+│   │   └── (mismo patrón que SAC)
+│   └── a2c/
+│       └── (mismo patrón que SAC)
+│
+├── outputs/                              # ← RESULTADOS DE SIMULACIONES
+│   ├── oe3_simulations/
+│   │   ├── timeseries_SAC.csv           # 8,760 × 7 columnas (grid, EV, solar, etc.)
+│   │   ├── timeseries_PPO.csv
+│   │   ├── timeseries_A2C.csv
+│   │   ├── trace_SAC.csv                # 8,760 × 394+129+7 columnas (obs+acciones+rewards)
+│   │   ├── trace_PPO.csv
+│   │   ├── trace_A2C.csv
+│   │   ├── result_SAC.json              # {agent, steps, CO₂, costo, solar, rewards}
+│   │   ├── result_PPO.json
+│   │   └── result_A2C.json
+│   │
+│   └── training_progress/
+│       ├── sac_progress.csv             # Progreso durante entrenamiento
+│       ├── sac_training.png
+│       ├── ppo_progress.csv
+│       ├── ppo_training.png
+│       ├── a2c_progress.csv
+│       └── a2c_training.png
+│
+├── data/
+│   └── processed/
+│       └── citylearn/
+│           └── oe3_simulations/
+│               └── (Dataset CityLearn)
+│
+└── configs/
+    └── default.yaml                      # Configuración central de simulación
+```
+
+### 🔧 Configuración de Guardado en Agentes
+
+**SAC (sac.py):**
+```python
+SACConfig(
+    checkpoint_dir="checkpoints/sac",
+    checkpoint_freq_steps=1000,           # Guardar cada 1,000 pasos
+    save_final=True,                      # Guardar modelo final
+    progress_path="outputs/training_progress/sac_progress.csv"
+)
+```
+
+**PPO (ppo_sb3.py):**
+```python
+PPOConfig(
+    checkpoint_dir="checkpoints/ppo",
+    checkpoint_freq_steps=1000,
+    save_final=True,
+    progress_path="outputs/training_progress/ppo_progress.csv"
+)
+```
+
+**A2C (a2c_sb3.py):**
+```python
+A2CConfig(
+    checkpoint_dir="checkpoints/a2c",
+    checkpoint_freq_steps=1000,
+    save_final=True,
+    progress_path="outputs/training_progress/a2c_progress.csv"
+)
+```
+
+### 📊 Contenido de Archivos de Salida
+
+**timeseries_{agent}.csv** (8,760 filas):
+```
+net_grid_kwh, grid_import_kwh, grid_export_kwh, ev_charging_kwh, 
+building_load_kwh, pv_generation_kwh, carbon_intensity_kg_per_kwh
+```
+
+**trace_{agent}.csv** (8,760 filas):
+```
+step, obs_0-393 (394 observaciones), action_0-128 (129 acciones),
+reward_env, r_co2, r_cost, r_solar, r_ev, r_grid, reward_total,
+grid_import_kwh, grid_export_kwh, ev_charging_kwh, ...
+```
+
+**result_{agent}.json** (resumen final):
+```json
+{
+  "agent": "SAC/PPO/A2C",
+  "steps": 8760,
+  "grid_import_kwh": 9467195.5,
+  "carbon_kg": 4280119.2,
+  "reward_total_mean": 0.35,
+  "reward_co2_mean": 0.42,
+  "multi_objective_priority": "co2_focus"
+}
+```
 
 ---
 

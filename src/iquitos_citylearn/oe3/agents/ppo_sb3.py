@@ -45,7 +45,7 @@ class PPOConfig:
     train_steps: int = 500000  # ↓ REDUCIDO: 1M→500k (RTX 4060 limitación)
     n_steps: int = 8760         # ↑ OPTIMIZADO: 256→8760 (FULL EPISODE, ver causal chains completo!)
     batch_size: int = 256       # ↑ OPTIMIZADO: 8→256 (4x mayor, mejor gradient estimation)
-    n_epochs: int = 10          # ↑ OPTIMIZADO: 2→10 (más training passes)
+    n_epochs: int = 3          # ↑ OPTIMIZADO: 2→10 (más training passes)
 
     # Optimización - PPO ADAPTADO A GPU LIMITADA
     learning_rate: float = 1e-4     # ↑ OPTIMIZADO: 5e-5→1e-4 (mejor balancse con nuevo clip)
@@ -54,10 +54,10 @@ class PPOConfig:
     gae_lambda: float = 0.98        # ↑ OPTIMIZADO: 0.90→0.98 (mejor long-term advantages)
 
     # Clipping y regularización - PPO ESTABLE
-    clip_range: float = 0.5         # ↑ OPTIMIZADO: 0.15→0.5 (2.5x flexibility)
+    clip_range: float = 0.2         # ✅ OPTIMIZADO: 0.5→0.2 (estándar PPO)
     clip_range_vf: float = 0.5      # ↑ OPTIMIZADO: 0.15→0.5 (value function clipping)
     ent_coef: float = 0.01          # ↑ OPTIMIZADO: 0.001→0.01 (exploration incentive)
-    vf_coef: float = 0.3            # ↓ REDUCIDO: 0.5→0.3 (menos focus en VF)
+    vf_coef: float = 0.5            # ✅ OPTIMIZADO: 0.3→0.5 (value function más importante)
     max_grad_norm: float = 1.0      # ↑ OPTIMIZADO: 0.25→1.0 (gradient clipping safety)
 
     # Red neuronal - REDUCIDA PARA RTX 4060
@@ -79,6 +79,23 @@ class PPOConfig:
 
     # === KL DIVERGENCE SAFETY ===
     target_kl: float = 0.02            # ↑ NUEVO: stop training if KL > 0.02
+
+    # === ENTROPY DECAY SCHEDULE (NEW COMPONENT #1) ===
+    # Exploración decrece durante entrenamiento: high early → low late
+    ent_coef_schedule: str = "linear"   # "constant", "linear", o "exponential"
+    ent_coef_final: float = 0.001       # Target entropy coef at end of training
+    # Rationale: Early exploration (0.01) → Late exploitation (0.001)
+
+    # === VF COEFFICIENT SCHEDULE (NEW COMPONENT #2) ===
+    # Value function importance puede decrecer cuando policy converge
+    vf_coef_schedule: str = "constant"  # "constant" (mantener 0.3) o "decay"
+    vf_coef_init: float = 0.3           # Initial VF coefficient
+    vf_coef_final: float = 0.1          # Final VF coefficient (si schedule="decay")
+
+    # === ROBUST VALUE FUNCTION LOSS (NEW COMPONENT #3) ===
+    # Huber loss en lugar de MSE previene explosión con rewards grandes
+    use_huber_loss: bool = True         # ✅ RECOMENDADO para estabilidad
+    huber_delta: float = 1.0            # Threshold para switch MSE→MAE
 
     # === CONFIGURACIÓN GPU/CUDA ===
     device: str = "auto"  # "auto", "cuda", "cuda:0", "cuda:1", "mps", "cpu"
@@ -122,6 +139,41 @@ class PPOConfig:
     resume_path: Optional[str] = None  # Ruta a checkpoint SB3 para reanudar
     # Suavizado de acciones
     reward_smooth_lambda: float = 0.0
+
+    def __post_init__(self):
+        """Validación y normalización de configuración post-inicialización."""
+        # Validar que ent_coef_final <= ent_coef (decay válido)
+        if self.ent_coef_final > self.ent_coef:
+            logger.warning(
+                "[PPOConfig] ent_coef_final (%.4f) > ent_coef (%.4f). "
+                "Corrigiendo: ent_coef_final = %.4f",
+                self.ent_coef_final, self.ent_coef, self.ent_coef * 0.1
+            )
+            self.ent_coef_final = self.ent_coef * 0.1
+
+        # Validar schedule válido
+        if self.ent_coef_schedule not in ["constant", "linear", "exponential"]:
+            logger.warning(
+                "[PPOConfig] ent_coef_schedule='%s' inválido. Usando 'constant'.",
+                self.ent_coef_schedule
+            )
+            self.ent_coef_schedule = "constant"
+
+        # Validar VF coefficient schedule
+        if self.vf_coef_schedule not in ["constant", "decay"]:
+            logger.warning(
+                "[PPOConfig] vf_coef_schedule='%s' inválido. Usando 'constant'.",
+                self.vf_coef_schedule
+            )
+            self.vf_coef_schedule = "constant"
+
+        logger.info(
+            "[PPOConfig] Inicializado con schedules: "
+            "ent_coef=%s(%.4f→%.4f), vf_coef=%s(%.2f→%.2f), huber_loss=%s",
+            self.ent_coef_schedule, self.ent_coef, self.ent_coef_final,
+            self.vf_coef_schedule, self.vf_coef_init, self.vf_coef_final,
+            self.use_huber_loss
+        )
 
 
 class PPOAgent:
@@ -226,6 +278,62 @@ class PPOAgent:
             return
 
         steps = total_timesteps or self.config.train_steps
+
+        # ========================================================================
+        # HUBER LOSS SUPPORT - PHASE 2 INTEGRATION (TASK 3)
+        # Custom policy class to replace MSE loss with Huber loss for robustness
+        # ========================================================================
+        def create_huber_loss_policy():
+            """
+            Factory function to create a custom PPO policy with Huber loss.
+
+            Huber loss is more robust than MSE for value function training:
+            - Quadratic for small errors: loss = 0.5 * error^2
+            - Linear for large errors: loss = delta * |error| - 0.5 * delta^2
+            - Prevents gradient explosion when value predictions are far off
+
+            Returns:
+                Custom policy class with Huber loss support
+            """
+            from stable_baselines3.ppo.policies import ActorCriticPolicy
+            import torch as th
+            import torch.nn.functional as F
+
+            class HuberLossActorCriticPolicy(ActorCriticPolicy):
+                """PPO policy using Huber loss instead of MSE for value function."""
+
+                def __init__(self, *args, huber_delta: float = 1.0, **kwargs):
+                    super().__init__(*args, **kwargs)
+                    self.huber_delta = huber_delta
+
+                def _get_value_loss(self, returns: th.Tensor, values: th.Tensor, values_pred: th.Tensor) -> th.Tensor:
+                    """
+                    Compute value function loss using Huber loss.
+
+                    Args:
+                        returns: Target returns (Ground truth)
+                        values: Value function predictions before clipping
+                        values_pred: Value function predictions (clipped or not)
+
+                    Returns:
+                        Scalar value function loss (using Huber instead of MSE)
+                    """
+                    if self.huber_delta > 0:
+                        # Huber loss: smooth transition between L2 and L1
+                        value_loss = F.smooth_l1_loss(values_pred, returns, beta=self.huber_delta, reduction='mean')
+                    else:
+                        # Fallback to MSE if delta <= 0
+                        value_loss = F.mse_loss(values_pred, returns)
+
+                    return value_loss
+
+            return HuberLossActorCriticPolicy
+
+        # Crear clase de política personalizada si Huber loss está habilitado
+        custom_policy_class = None
+        if self.config.use_huber_loss:
+            custom_policy_class = create_huber_loss_policy()
+            logger.info("[PPO HUBER LOSS] Habilitado: delta=%.1f", self.config.huber_delta)
 
         # Wrapper robusto para CityLearn
         class CityLearnWrapper(gym.Wrapper):
@@ -450,6 +558,12 @@ class PPOAgent:
             "ortho_init": self.config.ortho_init,
         }
 
+        # ========================================================================
+        # HUBER LOSS SUPPORT - Pass huber_delta to custom policy (TASK 3)
+        # ========================================================================
+        if self.config.use_huber_loss and custom_policy_class is not None:
+            policy_kwargs["huber_delta"] = self.config.huber_delta
+
         # Crear o reanudar modelo PPO con configuración avanzada y GPU
         resume_path = Path(self.config.resume_path) if self.config.resume_path else None
         resuming = resume_path is not None and resume_path.exists()
@@ -461,8 +575,13 @@ class PPOAgent:
                 device=self.device,
             )
         else:
+            # ========================================================================
+            # Use custom policy with Huber loss if enabled (TASK 3)
+            # ========================================================================
+            policy_class = custom_policy_class if self.config.use_huber_loss and custom_policy_class else "MlpPolicy"
+
             self.model = PPO(
-                "MlpPolicy",
+                policy_class,
                 vec_env,
                 learning_rate=lr_schedule,
                 n_steps=self.config.n_steps,
@@ -483,6 +602,61 @@ class PPOAgent:
                 target_kl=self.config.target_kl,
                 device=self.device,  # GPU/CUDA support
             )
+
+        # ========================================================================
+        # ENTROPY DECAY SCHEDULE - PHASE 2 INTEGRATION
+        # Interpolate ent_coef from initial value to ent_coef_final over training
+        # ========================================================================
+        def compute_entropy_schedule(progress: float) -> float:
+            """
+            Computes current entropy coefficient based on training progress.
+
+            Args:
+                progress: Training progress from 0.0 to 1.0
+
+            Returns:
+                Entropy coefficient value for this step
+            """
+            if self.config.ent_coef_schedule == "constant":
+                # No decay - use ent_coef throughout
+                return float(self.config.ent_coef)
+            elif self.config.ent_coef_schedule == "linear":
+                # Linear decay from ent_coef to ent_coef_final
+                return float((1.0 - progress) * self.config.ent_coef + progress * self.config.ent_coef_final)
+            elif self.config.ent_coef_schedule == "exponential":
+                # Exponential decay (faster decay)
+                return float(self.config.ent_coef * np.exp(-3.0 * progress) + self.config.ent_coef_final)
+            else:
+                # Fallback
+                return float(self.config.ent_coef)
+
+        # ========================================================================
+        # VF COEFFICIENT SCHEDULE - PHASE 2 INTEGRATION (TASK 2)
+        # Interpolate vf_coef from vf_coef_init to vf_coef_final over training
+        # ========================================================================
+        def compute_vf_coef_schedule(progress: float) -> float:
+            """
+            Computes current value function coefficient based on training progress.
+
+            Used to reduce value function loss weight when policy converges,
+            allowing policy to fine-tune without value function interference.
+
+            Args:
+                progress: Training progress from 0.0 to 1.0
+
+            Returns:
+                VF coefficient value for this step
+            """
+            if self.config.vf_coef_schedule == "constant":
+                # No change - use vf_coef throughout (typical case)
+                return self.config.vf_coef
+            elif self.config.vf_coef_schedule == "decay":
+                # Linear decay from vf_coef_init to vf_coef_final
+                # vf_coef_init typically 0.3, vf_coef_final typically 0.1
+                return (1.0 - progress) * self.config.vf_coef_init + progress * self.config.vf_coef_final
+            else:
+                # Fallback to initial value
+                return self.config.vf_coef
 
         # Callback para logging
         progress_path = Path(self.config.progress_path) if self.config.progress_path else None
@@ -548,6 +722,62 @@ class PPOAgent:
             def _on_step(self) -> bool:
                 self.n_calls += 1
 
+                # ========================================================================
+                # ENTROPY DECAY SCHEDULE - Apply computed entropy coefficient
+                # Update ent_coef in optimizer based on training progress
+                # ========================================================================
+                if self.agent.config.ent_coef_schedule != "constant" and steps > 0:
+                    # Calculate progress: 0.0 at start, 1.0 at end
+                    progress = min(1.0, self.model.num_timesteps / max(1.0, float(steps)))
+
+                    # Get target entropy coefficient
+                    target_ent = compute_entropy_schedule(progress)
+
+                    # Update entropy coefficient in policy
+                    if hasattr(self.model, "ent_coef"):
+                        # SB3 stores ent_coef as a parameter we can update
+                        try:
+                            self.model.ent_coef = target_ent
+                            # Log entropy schedule periodically
+                            if self.log_interval_steps > 0 and self.n_calls % (self.log_interval_steps * 10) == 0:
+                                logger.debug(
+                                    "[PPO ENTROPY] progress=%.2f%% ent_coef=%.6f (linear decay: %.6f → %.6f)",
+                                    progress * 100,
+                                    target_ent,
+                                    self.agent.config.ent_coef,
+                                    self.agent.config.ent_coef_final,
+                                )
+                        except (AttributeError, TypeError):
+                            pass  # Silencioso si no se puede actualizar
+
+                # ========================================================================
+                # VF COEFFICIENT SCHEDULE - Apply computed VF coefficient (TASK 2)
+                # Update vf_coef in optimizer based on training progress
+                # ========================================================================
+                if self.agent.config.vf_coef_schedule != "constant" and steps > 0:
+                    # Calculate progress: 0.0 at start, 1.0 at end
+                    progress = min(1.0, self.model.num_timesteps / max(1.0, float(steps)))
+
+                    # Get target VF coefficient
+                    target_vf = compute_vf_coef_schedule(progress)
+
+                    # Update VF coefficient in policy
+                    if hasattr(self.model, "vf_coef"):
+                        # SB3 stores vf_coef as a parameter we can update
+                        try:
+                            self.model.vf_coef = target_vf
+                            # Log VF schedule periodically
+                            if self.log_interval_steps > 0 and self.n_calls % (self.log_interval_steps * 10) == 0:
+                                logger.debug(
+                                    "[PPO VF_COEF] progress=%.2f%% vf_coef=%.6f (decay: %.6f → %.6f)",
+                                    progress * 100,
+                                    target_vf,
+                                    self.agent.config.vf_coef_init,
+                                    self.agent.config.vf_coef_final,
+                                )
+                        except (AttributeError, TypeError):
+                            pass  # Silencioso si no se puede actualizar
+
                 # ========== CO₂ DIRECTA: CALCULAR DESPUÉS DE EXTRAER OBSERVACIÓN ==========
                 # (Se calcula más abajo cuando tenemos ev_demand_kw, solar_available_kw, etc.)
 
@@ -611,9 +841,17 @@ class PPOAgent:
                     grid_kwh_to_log = self.grid_energy_sum
                     co2_grid_kg = grid_kwh_to_log * self.co2_intensity
                     co2_total_avoided = self.co2_indirect_avoided_kg + self.co2_direct_avoided_kg
+
+                    # ====================================================================
+                    # HUBER LOSS LOGGING - Log if enabled (TASK 3)
+                    # ====================================================================
+                    huber_status = ""
+                    if self.agent.config.use_huber_loss:
+                        huber_status = f" | huber_delta={self.agent.config.huber_delta:.1f}"
+
                     logger.info(
                         "[PPO] paso %d | ep~%d | pasos_global=%d | grid_kWh=%.1f | co2_grid_kg=%.1f | "
-                        "solar_kWh=%.1f | co2_indirect_kg=%.1f | co2_direct_kg=%.1f | motos=%d | mototaxis=%d | co2_total_avoided_kg=%.1f",
+                        "solar_kWh=%.1f | co2_indirect_kg=%.1f | co2_direct_kg=%.1f | motos=%d | mototaxis=%d | co2_total_avoided_kg=%.1f%s",
                         self.n_calls,
                         approx_episode,
                         int(self.model.num_timesteps),
@@ -625,6 +863,7 @@ class PPOAgent:
                         self.motos_cargadas,
                         self.mototaxis_cargadas,
                         co2_total_avoided,
+                        huber_status,
                     )
                     if self.progress_path is not None:
                         row = {

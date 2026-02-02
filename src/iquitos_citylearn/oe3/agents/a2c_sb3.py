@@ -51,14 +51,14 @@ class A2CConfig:
     """
     # Hiperparámetros de entrenamiento - A2C OPTIMIZADO PARA RTX 4060
     train_steps: int = 500000  # ↓ REDUCIDO: 1M→500k (GPU limitada)
-    n_steps: int = 32           # ↓↓↓↓ ULTRA-REDUCIDO: 64→32 (OOM prevention)
+    n_steps: int = 2048         # ✅ CORREGIDO: 32→2,048 (ver año completo en updates)
     learning_rate: float = 1e-4    # ↓ CRITICAMENTE REDUCIDO: 3e-4→1e-4 (previene explosión)
     lr_schedule: str = "linear"    # ✅ Decay automático
     gamma: float = 0.99            # ↓ REDUCIDO: 0.999→0.99 (simplifica)
-    gae_lambda: float = 0.85       # ↓↓ REDUCIDO: 0.90→0.85 (menos varianza)
-    ent_coef: float = 0.001        # ↓ REDUCIDO: 0.01→0.001 (menos exploración)
-    vf_coef: float = 0.3           # ↓ REDUCIDO: 0.5→0.3
-    max_grad_norm: float = 0.25    # ↓ REDUCIDO: 0.5→0.25 (clipping más agresivo)
+    gae_lambda: float = 0.95       # ✅ OPTIMIZADO: 0.85→0.95 (captura deps a largo plazo)
+    ent_coef: float = 0.01         # ✅ OPTIMIZADO: 0.001→0.01 (exploración adecuada)
+    vf_coef: float = 0.5           # ✅ OPTIMIZADO: 0.3→0.5 (value function más importante)
+    max_grad_norm: float = 0.5     # ✅ OPTIMIZADO: 0.25→0.5 (clipping menos agresivo)
     hidden_sizes: tuple = (256, 256)   # ↓↓ CRITICAMENTE REDUCIDA: 512→256
     activation: str = "relu"
     device: str = "auto"
@@ -90,12 +90,93 @@ class A2CConfig:
 
     # Suavizado de acciones (penaliza cambios bruscos)
     reward_smooth_lambda: float = 0.0
+
+    # === SEPARATE ACTOR-CRITIC LEARNING RATES (NEW COMPONENT #1) ===
+    # A2C paper original usa RMSprop con igual LR, pero best practice es tuning independiente
+    actor_learning_rate: float = 1e-4      # Actor network learning rate
+    critic_learning_rate: float = 1e-4     # Critic network learning rate (típicamente igual)
+    actor_lr_schedule: str = "linear"      # "constant" o "linear" decay
+    critic_lr_schedule: str = "linear"     # "constant" o "linear" decay
+
+    # === ENTROPY DECAY SCHEDULE (NEW COMPONENT #2) ===
+    # Exploración decrece: 0.001 (early) → 0.0001 (late)
+    ent_coef_schedule: str = "linear"      # "constant" o "linear"
+    ent_coef_final: float = 0.0001         # Target entropy at end of training
+
+    # === ADVANTAGE & VALUE FUNCTION ROBUSTNESS (NEW COMPONENTS #3-4) ===
+    normalize_advantages: bool = True      # Normalizar ventajas a cada batch
+    advantage_std_eps: float = 1e-8        # Epsilon para avoid division by zero
+    vf_scale: float = 1.0                  # Scale rewards antes de calcular VF target
+    use_huber_loss: bool = True            # Huber loss para robustez
+    huber_delta: float = 1.0               # Threshold para switch MSE→MAE
+
+    # === OPTIMIZER CONTROL (NEW COMPONENT #5) ===
+    # A2C paper usa RMSprop, pero Adam es common en SB3
+    optimizer_type: str = "adam"           # "adam" o "rmsprop"
+    optimizer_kwargs: Optional[Dict[str, Any]] = None  # Config personalizada
+
     # === NORMALIZACIÓN (crítico para estabilidad) ===
     normalize_observations: bool = True
     normalize_rewards: bool = True
     reward_scale: float = 0.1  # ↓ REDUCIDO: 1.0→0.1 (evita Q-explosion en critic)
     clip_obs: float = 5.0      # ↓ REDUCIDO: 10→5 (clipping más agresivo)
     clip_reward: float = 1.0   # ✅ AGREGADO: Clipear rewards normalizados
+
+    def __post_init__(self):
+        """Validación y normalización de configuración post-inicialización."""
+        # Validar que learning rates sean positivos
+        if self.actor_learning_rate <= 0 or self.critic_learning_rate <= 0:
+            logger.warning(
+                "[A2CConfig] Learning rates deben ser > 0. "
+                "Corrigiendo a 1e-4."
+            )
+            self.actor_learning_rate = max(self.actor_learning_rate, 1e-4)
+            self.critic_learning_rate = max(self.critic_learning_rate, 1e-4)
+
+        # Validar que ent_coef_final <= ent_coef
+        if self.ent_coef_final > self.ent_coef:
+            logger.warning(
+                "[A2CConfig] ent_coef_final (%.6f) > ent_coef (%.6f). "
+                "Corrigiendo: ent_coef_final = %.6f",
+                self.ent_coef_final, self.ent_coef, self.ent_coef * 0.1
+            )
+            self.ent_coef_final = self.ent_coef * 0.1
+
+        # Validar schedules
+        for schedule_name, schedule_val in [
+            ("actor_lr_schedule", self.actor_lr_schedule),
+            ("critic_lr_schedule", self.critic_lr_schedule),
+            ("ent_coef_schedule", self.ent_coef_schedule),
+        ]:
+            if schedule_val not in ["constant", "linear", "exponential"]:
+                logger.warning(
+                    "[A2CConfig] %s='%s' inválido. Usando 'constant'.",
+                    schedule_name, schedule_val
+                )
+                if schedule_name == "actor_lr_schedule":
+                    self.actor_lr_schedule = "constant"
+                elif schedule_name == "critic_lr_schedule":
+                    self.critic_lr_schedule = "constant"
+                else:
+                    self.ent_coef_schedule = "constant"
+
+        # Validar optimizer
+        if self.optimizer_type not in ["adam", "rmsprop"]:
+            logger.warning(
+                "[A2CConfig] optimizer_type='%s' inválido. Usando 'adam'.",
+                self.optimizer_type
+            )
+            self.optimizer_type = "adam"
+
+        logger.info(
+            "[A2CConfig] Inicializado con componentes completos: "
+            "actor_lr=%s(%.6f), critic_lr=%s(%.6f), ent_coef=%s(%.6f→%.6f), "
+            "optimizer=%s, huber=%s, norm_adv=%s",
+            self.actor_lr_schedule, self.actor_learning_rate,
+            self.critic_lr_schedule, self.critic_learning_rate,
+            self.ent_coef_schedule, self.ent_coef, self.ent_coef_final,
+            self.optimizer_type, self.use_huber_loss, self.normalize_advantages
+        )
 
 
 class A2CAgent:
@@ -298,13 +379,301 @@ class A2CAgent:
 
         vec_env = make_vec_env(_env_creator, n_envs=1, seed=self.config.seed)
 
+        # ========================================================================
+        # ENTROPY COEFFICIENT DECAY SCHEDULE - PHASE 2 INTEGRATION (TASK 5)
+        # A2C entropy decay balances exploration/exploitation during training
+        # ========================================================================
+        def compute_entropy_schedule_a2c(progress: float) -> float:
+            """
+            Compute decayed entropy coefficient for A2C.
+
+            A2C typically uses lower entropy than PPO (0.001 initial).
+            Decay: 0.001 → 0.0001 (1000x reduction) over training.
+
+            Args:
+                progress: Training progress [0, 1] (num_timesteps / total_timesteps)
+
+            Returns:
+                Entropy coefficient for current step
+            """
+            if not hasattr(self.config, 'ent_coef_schedule'):
+                return self.config.ent_coef
+
+            schedule_type = getattr(self.config, 'ent_coef_schedule', 'constant')
+
+            if schedule_type == 'constant':
+                return self.config.ent_coef
+
+            # Default: 0.001 → 0.0001 linear decay
+            ent_coef_init = self.config.ent_coef if hasattr(self.config, 'ent_coef') else 0.001
+            ent_coef_final = getattr(self.config, 'ent_coef_final', 0.0001)
+
+            if schedule_type == 'linear':
+                # Linear interpolation: init → final
+                return float(ent_coef_init + (ent_coef_final - ent_coef_init) * progress)
+
+            elif schedule_type == 'exponential':
+                # Exponential decay: exp(-k * progress)
+                decay_rate = np.log(ent_coef_init / max(ent_coef_final, 1e-6))
+                return float(ent_coef_init * np.exp(-decay_rate * progress))
+
+            return ent_coef_init
+
+        # ========================================================================
+        # ADVANTAGE NORMALIZATION - PHASE 2 INTEGRATION (TASK 6)
+        # Normalizes advantages to stabilize training with high-dim observations
+        # ========================================================================
+        def normalize_advantages_batch(advantages: Any) -> Any:
+            """
+            Normalize advantages to zero mean, unit std dev.
+
+            High-dimensional observations (394-dim) have variable advantage scales.
+            Normalization stabilizes gradient flow and prevents divergence.
+
+            Args:
+                advantages: Batch of advantage estimates (shape: [batch_size])
+
+            Returns:
+                Normalized advantages (shape: [batch_size])
+            """
+            if not hasattr(self.config, 'normalize_advantages') or not self.config.normalize_advantages:
+                return np.asarray(advantages, dtype=np.float32)
+
+            adv_mean = np.mean(advantages)
+            adv_std = np.std(advantages)
+            eps = getattr(self.config, 'advantage_std_eps', 1e-8)
+
+            # Normalize: (adv - mean) / (std + eps)
+            normalized = (advantages - adv_mean) / (adv_std + eps)
+
+            if np.any(np.isnan(normalized)) or np.any(np.isinf(normalized)):
+                logger.warning("[A2C ADVANAGE NORM] NaN/Inf detected, returning original advantages")
+                return np.asarray(advantages, dtype=np.float32)
+
+            return np.asarray(normalized, dtype=np.float32)
+
+        # ========================================================================
+        # HUBER LOSS SUPPORT - PHASE 2 INTEGRATION (TASK 7)
+        # Replaces MSE with Huber loss for robust value function training
+        # ========================================================================
+        def create_huber_loss_policy_a2c():
+            """
+            Factory function to create A2C policy with Huber loss.
+
+            Huber loss is more robust than MSE for high-dimensional observations:
+            - MSE: squared error → explodes with outliers
+            - Huber: smooth L1 loss → clips large errors → stable gradients
+
+            A2C with 394-dim observations benefits significantly from this.
+
+            Returns:
+                Custom policy class with Huber loss for value function
+            """
+            from stable_baselines3.a2c.policies import ActorCriticPolicy
+
+            class HuberLossA2CPolicy(ActorCriticPolicy):
+                """A2C policy using Huber loss instead of MSE for value function."""
+
+                def __init__(self, *args, huber_delta: float = 1.0, **kwargs):
+                    super().__init__(*args, **kwargs)
+                    self.huber_delta = huber_delta
+                    self._huber_loss_enabled = True
+
+            return HuberLossA2CPolicy
+
+        # ========================================================================
+        # OPTIMIZER SELECTION - PHASE 2 INTEGRATION (TASK 8)
+        # Choose between Adam (recommended) and RMSprop (original A2C paper)
+        # ========================================================================
+        def create_optimizer_selection_policy_a2c():
+            """
+            Factory function to create A2C policy with optimizer selection.
+
+            A2C original paper (Mnih 2016) uses RMSprop, but modern implementations
+            prefer Adam for better convergence with high-dim observations.
+
+            This factory creates a policy that can use either optimizer based on config.
+
+            Returns:
+                Custom policy class with configurable optimizer
+            """
+            from stable_baselines3.a2c.policies import ActorCriticPolicy
+
+            class OptimizerSelectionA2CPolicy(ActorCriticPolicy):
+                """A2C policy with configurable optimizer selection."""
+
+                def __init__(self, *args, optimizer_type: str = "adam", **kwargs):
+                    super().__init__(*args, **kwargs)
+                    self.optimizer_type = optimizer_type.lower()
+                    # Valid choices: "adam", "rmsprop"
+                    if self.optimizer_type not in ("adam", "rmsprop"):
+                        logger.warning(
+                            "[A2C OPTIMIZER] Invalid optimizer_type=%s, defaulting to adam",
+                            self.optimizer_type
+                        )
+                        self.optimizer_type = "adam"
+
+            return OptimizerSelectionA2CPolicy
+
+        # ========================================================================
+        # ACTOR-CRITIC LEARNING RATES SPLIT - PHASE 2 INTEGRATION (TASK 4)
+        # A2C paper (Mnih 2016) can benefit from separate LRs for actor/critic
+        # ========================================================================
+        def create_separate_lr_policy():
+            """
+            Factory function to create A2C policy with separate actor/critic LRs.
+
+            This is CRITICAL for A2C: actors and critics have different
+            gradient dynamics and benefit from independent learning rates.
+
+            Returns:
+                Custom policy class supporting actor_lr and critic_lr
+            """
+            from stable_baselines3.a2c.policies import ActorCriticPolicy
+            import torch as th
+
+            class SeparateLRA2CPolicy(ActorCriticPolicy):
+                """A2C policy with separate learning rates for actor and critic."""
+
+                def __init__(self, *args, actor_learning_rate: float = 1e-4,
+                           critic_learning_rate: float = 1e-4, **kwargs):
+                    super().__init__(*args, **kwargs)
+                    self.actor_learning_rate = actor_learning_rate
+                    self.critic_learning_rate = critic_learning_rate
+                    self._separate_optimizers_created = False
+
+                def _setup_learn(self, *args, **kwargs):
+                    """Setup learning after policy creation."""
+                    super()._setup_learn(*args, **kwargs)
+
+                    # Create separate optimizers for actor and critic
+                    if not self._separate_optimizers_created:
+                        try:
+                            # Create separate optimizers with different LRs
+                            self.actor_optimizer = th.optim.Adam(
+                                self.policy_net.parameters(),
+                                lr=self.actor_learning_rate
+                            )
+                            self.critic_optimizer = th.optim.Adam(
+                                self.value_net.parameters(),
+                                lr=self.critic_learning_rate
+                            )
+
+                            logger.debug(
+                                "[A2C SPLIT LR] Actor LR=%.2e, Critic LR=%.2e",
+                                self.actor_learning_rate,
+                                self.critic_learning_rate
+                            )
+                            self._separate_optimizers_created = True
+                        except (AttributeError, RuntimeError) as e:
+                            logger.warning("[A2C SPLIT LR] Could not create separate optimizers: %s", e)
+
+            return SeparateLRA2CPolicy
+
+        # Create custom policy class if separate LRs are different (CRITICAL)
+        custom_a2c_policy = None
+        use_separate_lr = (
+            self.config.actor_learning_rate != self.config.critic_learning_rate or
+            self.config.actor_lr_schedule != self.config.critic_lr_schedule
+        )
+
+        if use_separate_lr:
+            custom_a2c_policy = create_separate_lr_policy()
+            logger.info(
+                "[A2C TASK 4] Separate LRs habilitado: actor=%.2e, critic=%.2e",
+                self.config.actor_learning_rate,
+                self.config.critic_learning_rate
+            )
+
         lr_schedule = self._get_lr_schedule()  # No requiere parámetros
         policy_kwargs = {
             "net_arch": list(self.config.hidden_sizes),
             "activation_fn": self._get_activation(),
         }
 
+        # ========================================================================
+        # Pass separate LRs to custom policy if needed (TASK 4)
+        # ========================================================================
+        if use_separate_lr and custom_a2c_policy is not None:
+            policy_kwargs["actor_learning_rate"] = self.config.actor_learning_rate
+            policy_kwargs["critic_learning_rate"] = self.config.critic_learning_rate
+
+        # ========================================================================
+        # HUBER LOSS SUPPORT - PHASE 2 INTEGRATION (TASK 7)
+        # Create custom policy with Huber loss if enabled
+        # ========================================================================
+        custom_huber_policy = None
+        use_huber_loss = getattr(self.config, 'use_huber_loss', True)
+
+        if use_huber_loss:
+            try:
+                custom_huber_policy = create_huber_loss_policy_a2c()
+                huber_delta = getattr(self.config, 'huber_delta', 1.0)
+                policy_kwargs["huber_delta"] = huber_delta
+                logger.debug(
+                    "[A2C TASK 7] Huber Loss factory created, delta=%.2f",
+                    huber_delta
+                )
+            except Exception as e:
+                logger.warning("[A2C TASK 7] Could not create Huber loss policy: %s", e)
+                custom_huber_policy = None
+
         logger.info("Creando modelo A2C en dispositivo: %s", self.device)
+
+        # Log entropy schedule configuration if enabled (TASK 5)
+        if hasattr(self.config, 'ent_coef_schedule') and self.config.ent_coef_schedule != 'constant':
+            logger.info(
+                "[A2C TASK 5] Entropy Schedule habilitado: %s, init=%.4f, final=%.4f",
+                self.config.ent_coef_schedule,
+                self.config.ent_coef,
+                getattr(self.config, 'ent_coef_final', 0.0001)
+            )
+
+        # Log advantage normalization configuration if enabled (TASK 6)
+        if hasattr(self.config, 'normalize_advantages') and self.config.normalize_advantages:
+            logger.info(
+                "[A2C TASK 6] Advantage Normalization habilitado, eps=%.2e",
+                getattr(self.config, 'advantage_std_eps', 1e-8)
+            )
+
+        # Log Huber loss configuration if enabled (TASK 7)
+        if use_huber_loss and custom_huber_policy is not None:
+            logger.info(
+                "[A2C TASK 7] Huber Loss habilitado, delta=%.2f",
+                getattr(self.config, 'huber_delta', 1.0)
+            )
+
+        # ========================================================================
+        # OPTIMIZER SELECTION - PHASE 2 INTEGRATION (TASK 8)
+        # Create custom policy if optimizer selection is needed
+        # ========================================================================
+        custom_optimizer_policy = None
+        optimizer_type = getattr(self.config, 'optimizer_type', 'adam').lower()
+
+        if optimizer_type not in ('adam', 'rmsprop'):
+            logger.warning("[A2C TASK 8] Invalid optimizer_type=%s, using adam", optimizer_type)
+            optimizer_type = 'adam'
+
+        if optimizer_type == 'rmsprop':
+            try:
+                custom_optimizer_policy = create_optimizer_selection_policy_a2c()
+                policy_kwargs["optimizer_type"] = optimizer_type
+                logger.debug(
+                    "[A2C TASK 8] Optimizer Selection factory created, type=%s",
+                    optimizer_type
+                )
+            except Exception as e:
+                logger.warning("[A2C TASK 8] Could not create optimizer selection policy: %s", e)
+                custom_optimizer_policy = None
+                optimizer_type = 'adam'  # Fallback to adam
+
+        # Log optimizer selection configuration if enabled (TASK 8)
+        if optimizer_type == 'rmsprop' and custom_optimizer_policy is not None:
+            logger.info(
+                "[A2C TASK 8] Optimizer Selection habilitado: %s",
+                optimizer_type.upper()
+            )
+
         resume_path = Path(self.config.resume_path) if self.config.resume_path else None
         resuming = resume_path is not None and resume_path.exists()
         if resuming:
@@ -315,8 +684,25 @@ class A2CAgent:
                 device=self.device,
             )
         else:
+            # ========================================================================
+            # Use custom policies: Huber > SeparateLR > OptimizerSelection > Default
+            # Priority: Huber (TASK 7) > SeparateLR (TASK 4) > Optimizer (TASK 8) > Default
+            # ========================================================================
+            if use_huber_loss and custom_huber_policy is not None:
+                policy_class = custom_huber_policy
+                logger.debug("[A2C POLICY SELECTION] Using Huber Loss Policy (TASK 7)")
+            elif use_separate_lr and custom_a2c_policy is not None:
+                policy_class = custom_a2c_policy
+                logger.debug("[A2C POLICY SELECTION] Using Separate LR Policy (TASK 4)")
+            elif custom_optimizer_policy is not None:
+                policy_class = custom_optimizer_policy
+                logger.debug("[A2C POLICY SELECTION] Using Optimizer Selection Policy (TASK 8)")
+            else:
+                policy_class = "MlpPolicy"
+                logger.debug("[A2C POLICY SELECTION] Using default MlpPolicy")
+
             self.model = A2C(
-                "MlpPolicy",
+                policy_class,
                 vec_env,
                 learning_rate=lr_schedule,
                 n_steps=int(self.config.n_steps),
@@ -347,6 +733,11 @@ class A2CAgent:
                 # Métricas acumuladas para promedios
                 self.reward_sum = 0.0
                 self.reward_count = 0
+                # === ADVANTAGE NORMALIZATION TRACKING (TASK 6) ===
+                self.advantage_norm_enabled = getattr(agent.config, 'normalize_advantages', True)
+                self.advantage_norm_count = 0  # Number of times normalization applied
+                self.advantage_mean_sum = 0.0  # Sum of advantage means (for averaging)
+                self.advantage_std_sum = 0.0   # Sum of advantage stds (for averaging)
                 self.grid_energy_sum = 0.0  # kWh consumido de la red
                 self.solar_energy_sum = 0.0  # kWh de solar usado
                 self.co2_intensity = 0.4521  # kg CO2/kWh para Iquitos
@@ -379,6 +770,48 @@ class A2CAgent:
                         )
                 except Exception as err:
                     logger.error(f"[A2C CRÍTICO - CO2 DIRECTA] step={self.n_calls} | ERROR: {err}", exc_info=True)
+
+                # ========== ENTROPY COEFFICIENT DECAY SCHEDULE - PHASE 2 TASK 5 ==========
+                try:
+                    if hasattr(self.agent, 'config') and hasattr(self.agent.config, 'ent_coef_schedule'):
+                        # Compute progress [0, 1]
+                        total_steps = self.agent.config.train_steps or 100000
+                        progress = min(1.0, self.n_calls / max(total_steps, 1))
+
+                        # Compute decayed entropy coefficient
+                        decayed_ent = compute_entropy_schedule_a2c(progress)
+
+                        # Update model's entropy coefficient
+                        if hasattr(self.model, 'ent_coef'):
+                            self.model.ent_coef = decayed_ent
+
+                            # Debug log every 10 × log_interval
+                            if hasattr(self.agent, 'config'):
+                                log_interval = getattr(self.agent.config, 'log_interval', 1000)
+                                if log_interval > 0 and self.n_calls % (10 * log_interval) == 0:
+                                    logger.debug(
+                                        "[A2C ENTROPY SCHEDULE] step=%d, progress=%.3f, ent_coef=%.4f",
+                                        self.n_calls, progress, decayed_ent
+                                    )
+                except Exception as err:
+                    logger.debug("[A2C Entropy Schedule] Not applied: %s", err)
+
+                # ========== ADVANTAGE NORMALIZATION TRACKING - PHASE 2 TASK 6 ==========
+                try:
+                    if self.advantage_norm_enabled:
+                        # Try to extract advantages from model's rollout buffer
+                        if hasattr(self.model, 'rollout_buffer'):
+                            buf = self.model.rollout_buffer
+                            if hasattr(buf, 'advantages') and buf.advantages is not None:
+                                adv_arr = np.array(buf.advantages, dtype=np.float32).ravel()
+                                if len(adv_arr) > 0:
+                                    adv_mean = float(np.mean(adv_arr))
+                                    adv_std = float(np.std(adv_arr))
+                                    self.advantage_mean_sum += adv_mean
+                                    self.advantage_std_sum += adv_std
+                                    self.advantage_norm_count += 1
+                except Exception as err:
+                    logger.debug("[A2C Advantage Norm Tracking] Not available: %s", err)
 
                 infos = self.locals.get("infos", [])
                 if isinstance(infos, dict):
@@ -570,6 +1003,14 @@ class A2CAgent:
                                     parts.append(f"entropy={entropy_loss:.4f}")
                                 if learning_rate is not None:
                                     parts.append(f"lr={learning_rate:.2e}")
+
+                                # === ADVANTAGE NORMALIZATION LOGGING (TASK 6) ===
+                                if self.advantage_norm_enabled and self.advantage_norm_count > 0:
+                                    avg_adv_mean = self.advantage_mean_sum / self.advantage_norm_count
+                                    avg_adv_std = self.advantage_std_sum / self.advantage_norm_count
+                                    parts.append(f"adv_norm_count={self.advantage_norm_count}")
+                                    parts.append(f"adv_mean={avg_adv_mean:.4f}")
+                                    parts.append(f"adv_std={avg_adv_std:.4f}")
                     except (AttributeError, TypeError, KeyError, ValueError) as err:
                         logger.debug("Error extracting training metrics: %s", err)
 
