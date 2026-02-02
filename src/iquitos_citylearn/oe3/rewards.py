@@ -99,17 +99,21 @@ logger = logging.getLogger(__name__)
 class MultiObjectiveWeights:
     """Pesos para función de recompensa multiobjetivo - TIER 1 FIXES APPLIED.
 
+    NOTA: Estos defaults coinciden con 'co2_focus' preset.
+    Para otros presets, usar create_iquitos_reward_weights(priority).
+    Ver línea 647+ para definición de presets.
+
     Rebalanced para Iquitos (matriz térmica aislada):
     - CO₂ PRIMARY 0.50: minimizar importación grid
     - Solar SECONDARY 0.20: maximizar autoconsumo (FV limpio disponible)
-    - Costo REDUCIDO 0.10: tarifa baja, no es constraint
-    - Grid & EV 0.20 total: baseline de operación
+    - Costo REDUCIDO 0.15: tarifa baja, no es constraint
+    - Grid & EV 0.15 total: baseline de operación
     """
     co2: float = 0.50              # PRIMARY: Minimizar CO₂ (0.45 kg/kWh térmica)
-    cost: float = 0.10             # REDUCIDO: costo no es bottleneck
+    cost: float = 0.15             # Matches co2_focus preset
     solar: float = 0.20            # SECUNDARIO: autoconsumo solar limpio
     ev_satisfaction: float = 0.10  # Satisfacción básica de carga
-    grid_stability: float = 0.10   # REDUCIDO: implícito en CO₂+solar
+    grid_stability: float = 0.05   # Matches co2_focus preset
     peak_import_penalty: float = 0.00  # Dinámico en compute(), no como peso fijo
     operational_penalties: float = 0.0  # Penalizaciones operacionales (BESS, EV fairness)
 
@@ -190,9 +194,11 @@ class MultiObjectiveReward:
         weights: Optional[MultiObjectiveWeights] = None,
         context: Optional[IquitosContext] = None,
     ):
-        # Forzar pesos uniformizados si no se pasan explícitos
+        # Usar presets centralizados como fallback (NO duplicar pesos aquí)
+        # Ver create_iquitos_reward_weights() línea 634+ para definición única
         if weights is None:
-            weights = MultiObjectiveWeights(co2=0.50, cost=0.15, solar=0.20, ev_satisfaction=0.10, grid_stability=0.05)
+            # Default: co2_focus (prioridad para Iquitos)
+            weights = MultiObjectiveWeights()  # Usa defaults del dataclass
         self.weights = weights
         self.context = context or IquitosContext()
 

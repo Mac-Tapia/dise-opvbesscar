@@ -4,12 +4,245 @@ import argparse
 from pathlib import Path
 import json
 import logging
+import numpy as np
+import time
+import signal
+import sys
+from datetime import datetime
+from threading import Thread, Event
+from typing import Optional, Dict, Any, List, cast
 
 from iquitos_citylearn.utils.logging import setup_logging
 from iquitos_citylearn.oe3.dataset_builder import build_citylearn_dataset
 from iquitos_citylearn.oe3.simulate import simulate
 from iquitos_citylearn.config import project_root
 from scripts._common import load_all
+
+# ============================================================================
+# SYSTEM FOR ROBUST AGENT TRAINING WITH REAL-TIME MONITORING
+# ============================================================================
+
+class AgentTrainingMonitor:
+    """Monitorea el entrenamiento en tiempo real y detecta bloqueos."""
+
+    def __init__(self, agent_name: str, timeout_seconds: int = 3600, check_interval: int = 30):
+        self.agent_name = agent_name
+        self.timeout_seconds = timeout_seconds
+        self.check_interval = check_interval
+        self.start_time = time.time()
+        self.last_checkpoint_time = self.start_time
+        self.last_checkpoint_path: Optional[Path] = None
+        self.checkpoint_dir: Optional[Path] = None
+        self.is_running = True
+        self.progress_log: List[str] = []
+        self.logger = logging.getLogger(f"AgentMonitor-{agent_name}")
+
+    def set_checkpoint_dir(self, checkpoint_dir: Path):
+        """Configura el directorio donde se guardan checkpoints."""
+        self.checkpoint_dir = checkpoint_dir
+
+    def check_progress(self) -> Dict[str, Any]:
+        """Verifica el progreso del entrenamiento."""
+        elapsed = time.time() - self.start_time
+        since_checkpoint = time.time() - self.last_checkpoint_time
+
+        checkpoint_count = 0
+        latest_checkpoint = None
+
+        if self.checkpoint_dir and self.checkpoint_dir.exists():
+            checkpoints = list(self.checkpoint_dir.glob(f"{self.agent_name.lower()}_*.zip"))
+            checkpoint_count = len(checkpoints)
+            if checkpoints:
+                latest_checkpoint = max(checkpoints, key=lambda p: p.stat().st_mtime)
+                if latest_checkpoint != self.last_checkpoint_path:
+                    self.last_checkpoint_path = latest_checkpoint
+                    self.last_checkpoint_time = time.time()
+                    since_checkpoint = 0
+
+        status = {
+            "agent": self.agent_name,
+            "elapsed_seconds": int(elapsed),
+            "elapsed_minutes": elapsed / 60.0,
+            "checkpoint_count": checkpoint_count,
+            "since_last_checkpoint_seconds": int(since_checkpoint),
+            "last_checkpoint": str(latest_checkpoint) if latest_checkpoint else None,
+            "is_responsive": since_checkpoint < (self.timeout_seconds / 2),
+            "is_timeout": since_checkpoint > self.timeout_seconds,
+        }
+
+        return status
+
+    def log_status(self) -> str:
+        """Retorna un resumen de estado formateado."""
+        status = self.check_progress()
+
+        msg = (
+            f"\n[{datetime.now().strftime('%H:%M:%S')}] "
+            f"🔄 {self.agent_name.upper()}\n"
+            f"   ⏱️  Tiempo: {status['elapsed_minutes']:.1f} min\n"
+            f"   📦 Checkpoints: {status['checkpoint_count']}\n"
+            f"   ⏭️  Último: {status['since_last_checkpoint_seconds']}s hace\n"
+            f"   {'✅ ACTIVO' if status['is_responsive'] else '⚠️  SIN PROGRESO' if status['is_timeout'] else '⏳ PAUSADO'}"
+        )
+
+        self.progress_log.append(msg)
+        return msg
+
+
+class TrainingPipeline:
+    """Gestiona la ejecución secuencial de múltiples agentes con monitoreo robusto."""
+
+    def __init__(self, output_dir: Path, training_dir: Path, config: Dict[str, Any]):
+        self.output_dir = output_dir
+        self.training_dir = training_dir
+        self.config = config
+        self.logger = logging.getLogger("TrainingPipeline")
+        self.monitors: Dict[str, AgentTrainingMonitor] = {}
+        self.results: Dict[str, Dict[str, Any]] = {}
+        self.failed_agents: Dict[str, str] = {}
+        self.status_file = output_dir / "training_status.json"
+        self.monitor_thread: Optional[Thread] = None
+        self.monitor_stop_event = Event()
+
+    def create_monitor(self, agent_name: str, timeout_seconds: int = 3600) -> AgentTrainingMonitor:
+        """Crea un monitor para un agente."""
+        monitor = AgentTrainingMonitor(agent_name, timeout_seconds=timeout_seconds)
+        checkpoint_dir = self.training_dir / agent_name.lower()
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        monitor.set_checkpoint_dir(checkpoint_dir)
+        self.monitors[agent_name] = monitor
+        return monitor
+
+    def start_background_monitoring(self, agents: list[str], interval_seconds: int = 30):
+        """Inicia monitoreo en background de todos los agentes."""
+        if self.monitor_thread and self.monitor_thread.is_alive():
+            return  # Ya está corriendo
+
+        self.monitor_stop_event.clear()
+        self.monitor_thread = Thread(
+            target=self._monitor_loop,
+            args=(agents, interval_seconds),
+            daemon=False
+        )
+        self.monitor_thread.start()
+        self.logger.info(f"[MONITOR] Iniciado monitoreo en background para {len(agents)} agentes")
+
+    def _monitor_loop(self, agents: list[str], interval_seconds: int):
+        """Loop de monitoreo que corre en background."""
+        while not self.monitor_stop_event.is_set():
+            try:
+                print("\n" + "="*80)
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 📊 ESTADO DEL ENTRENAMIENTO")
+                print("="*80)
+
+                for agent in agents:
+                    if agent in self.monitors:
+                        status_msg = self.monitors[agent].log_status()
+                        print(status_msg)
+
+                        # Verificar timeout
+                        status = self.monitors[agent].check_progress()
+                        if status["is_timeout"]:
+                            print(f"   ⚠️  ALERTA: {agent} sin progreso por {status['since_last_checkpoint_seconds']}s")
+
+                # Guardar estado en archivo
+                self._save_status_snapshot()
+
+                # Esperar intervalo
+                time.sleep(interval_seconds)
+
+            except Exception as e:
+                self.logger.error(f"Error en monitor loop: {e}")
+                time.sleep(interval_seconds)
+
+    def stop_background_monitoring(self):
+        """Detiene el monitoreo en background."""
+        self.monitor_stop_event.set()
+        if self.monitor_thread:
+            self.monitor_thread.join(timeout=5)
+            self.logger.info("[MONITOR] Monitoreo detenido")
+
+    def _save_status_snapshot(self):
+        """Guarda snapshot actual del estado."""
+        try:
+            status_data = {
+                "timestamp": datetime.now().isoformat(),
+                "agents": {},
+                "results": self.results,
+                "failed": self.failed_agents,
+            }
+
+            for agent_name, monitor in self.monitors.items():
+                status_data["agents"][agent_name] = monitor.check_progress()
+
+            self.status_file.write_text(json.dumps(status_data, indent=2), encoding="utf-8")
+        except Exception as e:
+            self.logger.debug(f"No se pudo guardar snapshot: {e}")
+
+    def execute_agent_with_recovery(
+        self,
+        agent_name: str,
+        simulate_fn,
+        max_retries: int = 2,
+        timeout_seconds: int = 3600
+    ) -> Optional[Dict[str, Any]]:
+        """Ejecuta un agente con reintentos automáticos en caso de fallo."""
+
+        monitor = self.create_monitor(agent_name, timeout_seconds=timeout_seconds)
+
+        for attempt in range(max_retries):
+            try:
+                attempt_num = attempt + 1
+                print(f"\n{'='*80}")
+                print(f"[INTENTO {attempt_num}/{max_retries}] Entrenando {agent_name.upper()}")
+                print(f"{'='*80}\n")
+
+                self.logger.info(f"[{agent_name}] Intento {attempt_num} de {max_retries}")
+
+                # Ejecutar simulación
+                result = simulate_fn()
+
+                # Verificar resultado
+                if result and hasattr(result, '__dict__'):
+                    self.results[agent_name] = result.__dict__
+                    self.logger.info(f"[{agent_name}] ✅ Completado exitosamente")
+                    print(f"\n{'='*80}")
+                    print(f"✅ {agent_name.upper()} COMPLETADO")
+                    print(f"   CO2: {result.carbon_kg:.0f} kg")
+                    print(f"   PV: {result.pv_generation_kwh:.0f} kWh")
+                    print(f"{'='*80}\n")
+                    return cast(Dict[str, Any], result.__dict__)
+                else:
+                    raise ValueError(f"Resultado inválido de simulate: {result}")
+
+            except KeyboardInterrupt:
+                self.logger.info(f"[{agent_name}] Entrenamiento cancelado por usuario")
+                self.failed_agents[agent_name] = "Cancelado por usuario"
+                return None
+
+            except TimeoutError:
+                error_msg = f"Timeout después de {timeout_seconds}s"
+                self.logger.warning(f"[{agent_name}] {error_msg}")
+                self.failed_agents[agent_name] = error_msg
+                if attempt < max_retries - 1:
+                    print(f"\n⏱️  Timeout en {agent_name}. Reintentando...")
+                    time.sleep(10)
+                    continue
+
+            except Exception as e:
+                error_msg = f"{type(e).__name__}: {str(e)[:100]}"
+                self.logger.error(f"[{agent_name}] Error: {error_msg}")
+                self.failed_agents[agent_name] = error_msg
+
+                if attempt < max_retries - 1:
+                    print(f"\n❌ Error en {agent_name}. Reintentando en 10 segundos...")
+                    time.sleep(10)
+                    continue
+                else:
+                    print(f"\n❌ {agent_name} falló tras {max_retries} intentos: {error_msg}")
+
+        return None
+
 
 def _tailpipe_kg(cfg: dict, ev_kwh: float, simulated_years: float) -> float:
     """Calcula CO2 tailpipe para motos/mototaxis a combustión equivalentes."""
@@ -31,6 +264,16 @@ def main() -> None:
     setup_logging()
     cfg, rp = load_all(args.config)
     oe3_cfg = cfg["oe3"]
+
+    # Configurar señales para interrupciones limpias
+    def signal_handler(sig, frame):
+        print("\n\n" + "="*80)
+        print("⚠️  ENTRENAMIENTO CANCELADO POR USUARIO")
+        print("="*80)
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     dataset_name = cfg["oe3"]["dataset"]["name"]
     built = build_citylearn_dataset(
@@ -152,82 +395,115 @@ def main() -> None:
     agent_names = list(eval_cfg["agents"])
     logger = logging.getLogger(__name__)
 
+    # === INICIALIZAR PIPELINE ROBUSTO ===
+    pipeline = TrainingPipeline(out_dir, training_dir, cfg)
     results = {}
-    for agent in agent_names:
-        # Skip Uncontrolled in this loop - it will be run in Scenario C as baseline
-        if agent.lower() == "uncontrolled":
-            continue
 
-        logger.info(f"\n{'='*80}\n[INICIO] Procesando agente: {agent.upper()}\n{'='*80}")
-        print(f"\n{'='*80}\n>>> INICIANDO ENTRENAMIENTO: {agent.upper()}\n{'='*80}\n")
+    # Iniciar monitoreo en background
+    pipeline.start_background_monitoring(agent_names, interval_seconds=30)
 
-        # Skip if results already exist
-        results_json = out_dir / f"{agent.lower()}_results.json"
-        if results_json.exists():
-            with open(results_json) as f:
-                res = json.load(f)
+    try:
+        for agent in agent_names:
+            # Skip Uncontrolled in this loop - it will be run in Scenario C as baseline
+            if agent.lower() == "uncontrolled":
+                continue
 
-            # Verificar si SAC o PPO ya completaron 2 episodios
-            if agent.lower() in ["sac", "ppo"]:
-                # Verificar si tiene al menos 2 episodios (simulated_years >= 2.0)
-                if res.get("simulated_years", 0) >= 2.0:
-                    logger.info(f"[SKIP] {agent.upper()} - Ya completó 2 episodios ({res.get('simulated_years')} años simulados)")
-                    print(f"\n{'='*80}")
-                    print(f"✓ {agent.upper()} ya completó {int(res.get('simulated_years', 0))} episodios - SALTANDO")
-                    print(f"{'='*80}\n")
-                    results[agent] = res
-                    continue
+            logger.info(f"\n{'='*80}\n[INICIO] Procesando agente: {agent.upper()}\n{'='*80}")
+            print(f"\n{'='*80}\n>>> INICIANDO ENTRENAMIENTO: {agent.upper()}\n{'='*80}\n")
 
-            logger.info(f"[SKIP] {agent} - resultados ya existen en {results_json}")
-            results[agent] = res
-            continue
+            # Skip if results already exist
+            # FIX: simulate() guarda en "result_{agent}.json", no "{agent}_results.json"
+            results_json = out_dir / f"result_{agent}.json"
+            if results_json.exists():
+                with open(results_json) as f:
+                    res = json.load(f)
 
-        try:
-            res = simulate(
-                schema_path=schema_pv,
+                # Verificar si SAC o PPO ya completaron 2 episodios
+                if agent.lower() in ["sac", "ppo"]:
+                    # Verificar si tiene al menos 2 episodios (simulated_years >= 2.0)
+                    if res.get("simulated_years", 0) >= 2.0:
+                        logger.info(f"[SKIP] {agent.upper()} - Ya completó 2 episodios ({res.get('simulated_years')} años simulados)")
+                        print(f"\n{'='*80}")
+                        print(f"✓ {agent.upper()} ya completó {int(res.get('simulated_years', 0))} episodios - SALTANDO")
+                        print(f"{'='*80}\n")
+                        results[agent] = res
+                        continue
+
+                logger.info(f"[SKIP] {agent} - resultados ya existen en {results_json}")
+                results[agent] = res
+                continue
+
+            # === CREAR FUNCIÓN SIMULACIÓN PARA ESTE AGENTE ===
+            def create_simulate_fn(agent_name: str):
+                """Factory para crear función simulación específica del agente."""
+                def simulate_agent():
+                    return simulate(
+                        schema_path=schema_pv,
+                        agent_name=agent_name,
+                        out_dir=out_dir,
+                        training_dir=training_dir,
+                        carbon_intensity_kg_per_kwh=ci,
+                        seconds_per_time_step=seconds_per_time_step,
+                        sac_episodes=sac_episodes,
+                        sac_batch_size=sac_batch_size,
+                        sac_log_interval=sac_log_interval,
+                        sac_use_amp=sac_use_amp,
+                        ppo_timesteps=ppo_timesteps,
+                        deterministic_eval=det_eval,
+                        sac_device=sac_device,
+                        ppo_device=ppo_device,
+                        sac_prefer_citylearn=sac_prefer_citylearn,
+                        sac_checkpoint_freq_steps=sac_checkpoint_freq,
+                        ppo_checkpoint_freq_steps=ppo_checkpoint_freq,
+                        ppo_n_steps=ppo_n_steps,
+                        ppo_batch_size=ppo_batch_size,
+                        ppo_use_amp=ppo_use_amp,
+                        ppo_target_kl=ppo_target_kl,
+                        ppo_kl_adaptive=ppo_kl_adaptive,
+                        ppo_log_interval=ppo_log_interval,
+                        a2c_timesteps=a2c_timesteps,
+                        a2c_checkpoint_freq_steps=a2c_checkpoint_freq,
+                        a2c_n_steps=a2c_n_steps,
+                        a2c_learning_rate=a2c_learning_rate,
+                        a2c_entropy_coef=a2c_entropy_coef,
+                        a2c_device=a2c_device,
+                        a2c_log_interval=a2c_log_interval,
+                        sac_resume_checkpoints=sac_resume,
+                        ppo_resume_checkpoints=ppo_resume,
+                        a2c_resume_checkpoints=a2c_resume,
+                        seed=project_seed,
+                        multi_objective_priority=mo_priority,
+                        use_multi_objective=True,
+                    )
+                return simulate_agent
+
+            # === EJECUTAR CON RECUPERACIÓN AUTOMÁTICA ===
+            timeout_minutes = {
+                "sac": 120,      # SAC: 2 horas max
+                "ppo": 180,      # PPO: 3 horas max
+                "a2c": 180,      # A2C: 3 horas max
+            }
+            timeout_sec = timeout_minutes.get(agent.lower(), 120) * 60
+
+            result = pipeline.execute_agent_with_recovery(
                 agent_name=agent,
-                out_dir=out_dir,
-                training_dir=training_dir,
-                carbon_intensity_kg_per_kwh=ci,
-                seconds_per_time_step=seconds_per_time_step,
-                sac_episodes=sac_episodes,
-                sac_batch_size=sac_batch_size,
-                sac_log_interval=sac_log_interval,
-                sac_use_amp=sac_use_amp,
-                ppo_timesteps=ppo_timesteps,
-                deterministic_eval=det_eval,
-                sac_device=sac_device,
-                ppo_device=ppo_device,
-                sac_prefer_citylearn=sac_prefer_citylearn,
-                sac_checkpoint_freq_steps=sac_checkpoint_freq,
-                ppo_checkpoint_freq_steps=ppo_checkpoint_freq,
-                ppo_n_steps=ppo_n_steps,
-                ppo_batch_size=ppo_batch_size,
-                ppo_use_amp=ppo_use_amp,
-                ppo_target_kl=ppo_target_kl,
-                ppo_kl_adaptive=ppo_kl_adaptive,
-                ppo_log_interval=ppo_log_interval,
-                a2c_timesteps=a2c_timesteps,
-                a2c_checkpoint_freq_steps=a2c_checkpoint_freq,
-                a2c_n_steps=a2c_n_steps,
-                a2c_learning_rate=a2c_learning_rate,
-                a2c_entropy_coef=a2c_entropy_coef,
-                a2c_device=a2c_device,
-                a2c_log_interval=a2c_log_interval,
-                sac_resume_checkpoints=sac_resume,
-                ppo_resume_checkpoints=ppo_resume,
-                a2c_resume_checkpoints=a2c_resume,
-                seed=project_seed,
-                multi_objective_priority=mo_priority,
+                simulate_fn=create_simulate_fn(agent),
+                max_retries=2,
+                timeout_seconds=timeout_sec,
             )
-            results[agent] = res.__dict__
-            logger.info(f"\n{'='*80}\n[COMPLETADO] Agente {agent.upper()} finalizado exitosamente\n{'='*80}")
-            print(f"\n{'='*80}\n[OK] {agent.upper()} COMPLETADO - Pasando al siguiente agente\n{'='*80}\n")
-        except Exception as e:
-            logger.error(f"Error entrenando agente {agent}: {e}", exc_info=True)
-            print(f"\n{'='*80}\n[ERROR] Error en {agent.upper()}: {e}\n{'='*80}")
-            print(f"[INFO] Continuando con los siguientes agentes...\n")
-            continue
+
+            if result:
+                results[agent] = result
+                logger.info(f"\n{'='*80}\n[COMPLETADO] Agente {agent.upper()} finalizado exitosamente\n{'='*80}")
+                print(f"\n{'='*80}\n[OK] {agent.upper()} COMPLETADO - Pasando al siguiente agente\n{'='*80}\n")
+            else:
+                logger.error(f"[FALLÓ] Agente {agent.upper()} no pudo completarse después de reintentos")
+                print(f"\n{'='*80}\n[ERROR] {agent.upper()} no completó (ver log para detalles)\n{'='*80}\n")
+
+    finally:
+        # === DETENER MONITOREO EN BACKGROUND ===
+        pipeline.stop_background_monitoring()
+        logger.info("[PIPELINE] Monitoreo finalizado")
 
     # Pick best (lowest annualized carbon, then highest autosuficiencia)
     def annualized_carbon(r: dict) -> float:
@@ -241,6 +517,27 @@ def main() -> None:
         total_load = max(ev_kwh_y + build_kwh_y, 1e-9)
         return float(1.0 - import_kwh_y / total_load)
 
+    # === IMPRIMIR REPORTE FINAL ===
+    print("\n" + "="*80)
+    print("📊 REPORTE FINAL DE ENTRENAMIENTO")
+    print("="*80)
+
+    if not results and not pipeline.failed_agents:
+        print("[ADVERTENCIA] No se lograron entrenar agentes.")
+    else:
+        print(f"\n✅ AGENTES COMPLETADOS: {len(results)}")
+        for agent_name, res in results.items():
+            co2_annual = annualized_carbon(res)
+            auto = autosuficiencia(res)
+            print(f"   • {agent_name:10s}: {co2_annual:8.0f} kg CO2/año | {auto*100:6.1f}% autoconsumo")
+
+        if pipeline.failed_agents:
+            print(f"\n❌ AGENTES FALLIDOS: {len(pipeline.failed_agents)}")
+            for agent_name, error in pipeline.failed_agents.items():
+                print(f"   • {agent_name:10s}: {error}")
+
+    print("\n" + "="*80)
+
     # Manejar caso cuando no hay resultados de agentes
     if not results:
         print("[ADVERTENCIA] No se lograron entrenar agentes. Usando solo baseline Uncontrolled.")
@@ -250,6 +547,8 @@ def main() -> None:
             results.keys(),
             key=lambda k: (annualized_carbon(results[k]), -autosuficiencia(results[k])),
         )
+        print(f"🏆 MEJOR AGENTE: {best_agent}")
+        print(f"   Emisiones anuales: {annualized_carbon(results[best_agent]):.0f} kg CO2")
 
     # Calcular tailpipe y reducciones
     # Usamos el baseline (Uncontrolled + PV+BESS) para calcular el tailpipe equivalente
@@ -291,13 +590,14 @@ def main() -> None:
     # Asegurar que todos los valores son serializables (float, no numpy.float64, etc.)
     def make_json_serializable(obj):
         """Convierte tipos numpy a tipos nativos de Python."""
+        import numpy as np_local  # Import numpy locally to ensure availability
         if isinstance(obj, dict):
             return {k: make_json_serializable(v) for k, v in obj.items()}
         elif isinstance(obj, (list, tuple)):
             return [make_json_serializable(v) for v in obj]
-        elif isinstance(obj, np.floating):
+        elif isinstance(obj, np_local.floating):
             return float(obj)
-        elif isinstance(obj, np.integer):
+        elif isinstance(obj, np_local.integer):
             return int(obj)
         else:
             return obj

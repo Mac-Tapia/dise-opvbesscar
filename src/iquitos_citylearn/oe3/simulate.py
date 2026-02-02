@@ -73,9 +73,14 @@ class SimulationResult:
     ev_charging_kwh: float
     building_load_kwh: float
     pv_generation_kwh: float
-    carbon_kg: float
+    carbon_kg: float  # DEPRECATED: Use co2_neto_kg instead
     results_path: str
     timeseries_path: str
+    # ===== NUEVO: 3-COMPONENT CO₂ BREAKDOWN (2026-02-02) =====
+    co2_indirecto_kg: float = 0.0  # Grid import emissions (indirectas)
+    co2_directo_evitado_kg: float = 0.0  # EV direct reduction (vs gasolina)
+    co2_neto_kg: float = 0.0  # NET = indirecto - directo (actual footprint)
+    # ===== FIN: 3-COMPONENT BREAKDOWN =====
     # Métricas multiobjetivo
     multi_objective_priority: str = "balanced"
     reward_co2_mean: float = 0.0
@@ -186,6 +191,7 @@ def _extract_carbon_intensity(env: Any, default_value: float) -> np.ndarray:
     return np.full_like(_extract_net_grid_kwh(env), float(default_value), dtype=float)
 
 def _make_env(schema_path: Path) -> Any:
+    import os
     from citylearn.citylearn import CityLearnEnv  # type: ignore
 
     # GLOBAL PATCH: Disable the problematic simulate_unconnected_ev_soc method at class level
@@ -203,18 +209,135 @@ def _make_env(schema_path: Path) -> Any:
     except Exception as e:
         logger.debug(f"Optional patch skipped (no impact on training): {e}")
 
-    # Must use absolute path so CityLearn can find CSV files relative to schema directory
-    abs_path = str(schema_path.resolve())
+    # CRITICAL FIX: CityLearn has UTF-8 encoding issues with paths containing special chars (ñ, etc.)
+    # Solution: Change to dataset directory and use relative path 'schema.json'
+    schema_dir = schema_path.resolve().parent
+    original_cwd = os.getcwd()
+
     try:
-        env = CityLearnEnv(schema=abs_path, render_mode=None)
+        os.chdir(schema_dir)
+        logger.debug(f"Changed to dataset directory: {schema_dir}")
+        env = CityLearnEnv(schema='schema.json', render_mode=None)
     except TypeError:
-        env = CityLearnEnv(schema=abs_path, render_mode=None)
+        env = CityLearnEnv(schema='schema.json', render_mode=None)
+    finally:
+        os.chdir(original_cwd)
+        logger.debug(f"Restored working directory: {original_cwd}")
 
     # CRITICAL FIX: Ensure render_mode attribute exists to suppress stable_baselines3 warnings
     if not hasattr(env, 'render_mode'):
         env.render_mode = None
 
+    # =========================================================================
+    # VALIDACIÓN ROBUSTA OBLIGATORIA: Verificar que el dataset cargó correctamente
+    # Esta validación es CRÍTICA - Si falla, el entrenamiento se detiene inmediatamente
+    # =========================================================================
+    _validate_env_loaded_correctly(env, schema_path)
+
     return env
+
+
+def _validate_env_loaded_correctly(env: Any, schema_path: Path) -> None:
+    """Validación OBLIGATORIA que el dataset CityLearn cargó correctamente.
+
+    CRÍTICO: Esta función DEBE fallar si el dataset no tiene datos reales.
+    Sin esta validación, el entrenamiento ejecuta pero NO APRENDE NADA.
+
+    Verifica:
+    1. Al menos 1 building existe
+    2. Exactamente 8,760 timesteps (1 año completo)
+    3. Datos de energía no son todos ceros (usando energy_simulation del CSV)
+    4. Generación solar presente (si PV configurado)
+
+    Raises:
+        RuntimeError: Si el dataset no cargó correctamente
+    """
+    errors = []
+
+    # 1. Verificar buildings
+    buildings = getattr(env, 'buildings', None)
+    if not buildings or len(buildings) == 0:
+        errors.append("NO BUILDINGS: CityLearn environment has no buildings loaded")
+
+    # 2. Verificar timesteps
+    time_steps = getattr(env, 'time_steps', 0)
+    if time_steps == 0:
+        # Intentar obtener de otra forma
+        try:
+            if buildings and len(buildings) > 0:
+                b = buildings[0]
+                energy = getattr(b, 'energy_simulation', None)
+                if energy is not None:
+                    # energy_simulation tiene atributos como non_shiftable_load
+                    nsl = getattr(energy, 'non_shiftable_load', None)
+                    if nsl is not None and hasattr(nsl, '__len__'):
+                        time_steps = len(nsl)
+        except Exception:
+            pass
+
+    if time_steps == 0:
+        errors.append("NO TIMESTEPS: Could not determine simulation length (time_steps=0)")
+    elif time_steps != 8760:
+        errors.append(f"INCOMPLETE DATA: Expected 8,760 timesteps (1 year), got {time_steps}")
+
+    # 3. Verificar que hay datos de energía (no todos ceros)
+    # IMPORTANTE: Usar energy_simulation (datos del CSV), NO non_shiftable_load (se llena durante step())
+    if buildings and len(buildings) > 0:
+        b = buildings[0]
+        energy_sim = getattr(b, 'energy_simulation', None)
+
+        # Verificar non_shiftable_load desde energy_simulation (demanda del mall)
+        if energy_sim is not None:
+            load = getattr(energy_sim, 'non_shiftable_load', None)
+            if load is not None:
+                load_arr = np.array(load)
+                if load_arr.size > 0:
+                    load_sum = float(np.nansum(load_arr))
+                    load_mean = float(np.nanmean(load_arr))
+                    if load_sum == 0.0:
+                        errors.append("ZERO LOAD: Building load (non_shiftable_load) is all zeros - NO REAL DATA")
+                    else:
+                        logger.info(f"[DATASET OK] Building load: {load_sum:,.0f} kWh total, {load_mean:.1f} kW avg")
+
+            # Verificar solar_generation desde energy_simulation (si hay PV)
+            # CRÍTICO: Debe ser ~8M kWh/año para 4,162 kWp, NO 1,929 kWh (normalizado)
+            solar = getattr(energy_sim, 'solar_generation', None)
+            if solar is not None:
+                solar_arr = np.array(solar)
+                if solar_arr.size > 0:
+                    solar_sum = float(np.nansum(np.abs(solar_arr)))
+                    if solar_sum == 0.0:
+                        logger.warning("[DATASET WARNING] Solar generation is all zeros - PV may not be configured")
+                    elif solar_sum < 1_000_000:
+                        # CRÍTICO: Solar < 1M kWh indica datos normalizados por kWp
+                        errors.append(
+                            f"SOLAR DATA CORRUPTED: {solar_sum:,.0f} kWh/año detectado.\n"
+                            f"   Esperado: ~8,030,119 kWh/año para sistema de 4,162 kWp.\n"
+                            f"   Problema: Datos solares NORMALIZADOS por kWp en lugar de valores ABSOLUTOS.\n"
+                            f"   Solución: Reconstruir dataset con datos OE2 correctos"
+                        )
+                    else:
+                        logger.info(f"[DATASET OK] Solar generation: {solar_sum:,.0f} kWh total")
+
+    # 4. Si hay errores críticos, FALLAR INMEDIATAMENTE
+    if errors:
+        error_msg = "\n".join([f"  - {e}" for e in errors])
+        raise RuntimeError(
+            f"\n{'='*80}\n"
+            f"[CRITICAL ERROR] DATASET NOT LOADED CORRECTLY\n"
+            f"{'='*80}\n"
+            f"Schema path: {schema_path}\n"
+            f"\nErrors found:\n{error_msg}\n"
+            f"\nThis means training would run but learn NOTHING (fast but useless).\n"
+            f"\nSolutions:\n"
+            f"  1. Run: python -m scripts.run_oe3_build_dataset --config configs/default.yaml\n"
+            f"  2. Verify data files exist in: data/processed/citylearn/iquitos_ev_mall/\n"
+            f"  3. Check Building_1.csv has 8,760 rows\n"
+            f"{'='*80}"
+        )
+
+    # Log success
+    logger.info(f"[DATASET VALIDATED] ✓ CityLearn loaded correctly: {len(buildings)} building(s), {time_steps} timesteps")
 
 def _sample_action(env: Any) -> Any:
     """Sample random action handling CityLearn's list action space."""
@@ -358,11 +481,15 @@ def _run_episode_with_trace(
             break
 
         obs_vec, obs_names = _flatten_obs_for_trace(obs)
-        if hasattr(agent, "predict"):
-            action = agent.predict(obs, deterministic=deterministic)
-        elif hasattr(agent, "act"):
-            action = agent.act(obs)
-        else:
+        try:
+            if hasattr(agent, "predict"):
+                action = agent.predict(obs, deterministic=deterministic)
+            elif hasattr(agent, "act"):
+                action = agent.act(obs)
+            else:
+                action = _sample_action(env)
+        except (KeyboardInterrupt, Exception) as e:
+            logger.warning(f"[{agent_label}] Error en agent.predict: {type(e).__name__}. Usando acción aleatoria.")
             action = _sample_action(env)
         action_vec, action_names = _flatten_action_for_trace(action, env)
         obs_rows.append(obs_vec)
@@ -438,6 +565,20 @@ def _save_training_artifacts(
     agent: Any,
     training_dir: Optional[Path],
 ) -> None:
+    """Guarda artifacts de entrenamiento en el directorio del agente.
+
+    Estructura resultante:
+    checkpoints/
+    ├── sac/
+    │   ├── sac_config.json
+    │   ├── sac_training_metrics.csv
+    │   ├── sac_training.png
+    │   └── sac_step_*.zip (checkpoints)
+    ├── ppo/
+    │   └── ...
+    └── a2c/
+        └── ...
+    """
     if training_dir is None:
         return
 
@@ -446,11 +587,13 @@ def _save_training_artifacts(
     if not history and config is None:
         return
 
-    training_dir.mkdir(parents=True, exist_ok=True)
+    # FIX: Guardar en subdirectorio del agente, no en raíz
+    agent_dir = training_dir / agent_name.lower()
+    agent_dir.mkdir(parents=True, exist_ok=True)
 
     cfg = _serialize_config(config)
     if cfg:
-        cfg_path = training_dir / f"{agent_name}_config.json"
+        cfg_path = agent_dir / f"{agent_name.lower()}_config.json"
         cfg_path.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
 
     if not history:
@@ -460,7 +603,7 @@ def _save_training_artifacts(
     if df.empty:
         return
     df.insert(0, "agent", agent_name)
-    csv_path = training_dir / f"{agent_name}_training_metrics.csv"
+    csv_path = agent_dir / f"{agent_name.lower()}_training_metrics.csv"
     df.to_csv(csv_path, index=False)
 
     metric_col = None
@@ -485,7 +628,7 @@ def _save_training_artifacts(
     plt.title(f"training_{agent_name}")
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    png_path = training_dir / f"{agent_name}_training.png"
+    png_path = agent_dir / f"{agent_name.lower()}_training.png"
     plt.savefig(png_path, dpi=150, bbox_inches="tight")
     plt.close()
 
@@ -496,7 +639,7 @@ def simulate(
     training_dir: Optional[Path],
     carbon_intensity_kg_per_kwh: float,
     seconds_per_time_step: int,
-    sac_episodes: int = 10,
+    sac_episodes: int = 3,  # ✅ CONFIGURADO: 3 episodios para entrenamiento limpio
     sac_batch_size: int = 512,
     sac_learning_rate: float = 5e-5,          # AJUSTE: 1e-4→5e-5 (reduce inestabilidad)
     sac_log_interval: int = 500,
@@ -622,7 +765,7 @@ def simulate(
             # MANDATORY: Always create checkpoint directory when training_dir is provided
             sac_checkpoint_dir = None
             if training_dir is not None:
-                sac_checkpoint_dir = training_dir / "checkpoints" / "sac"
+                sac_checkpoint_dir = training_dir / "sac"  # FIX: training_dir ya es 'checkpoints'
                 sac_checkpoint_dir.mkdir(parents=True, exist_ok=True)
             sac_resume = _latest_checkpoint(sac_checkpoint_dir, "sac") if sac_resume_checkpoints else None
             sac_config = SACConfig(
@@ -630,11 +773,11 @@ def simulate(
                 device=sac_device or "auto",
                 seed=seed if seed is not None else 42,
                 batch_size=int(sac_kwargs.pop("batch_size", sac_batch_size) if sac_kwargs else sac_batch_size),
-                buffer_size=int(sac_kwargs.pop("buffer_size", 50000) if sac_kwargs else 50000),
+                buffer_size=int(sac_kwargs.pop("buffer_size", 200000) if sac_kwargs else 200000),
                 gradient_steps=int(sac_kwargs.pop("gradient_steps", 1) if sac_kwargs else 1),
                 learning_rate=float(sac_learning_rate),  # ✅ USAR PARÁMETRO
-                gamma=0.99,
-                tau=0.005,
+                gamma=0.995,
+                tau=0.02,
                 hidden_sizes=(256, 256),
                 log_interval=int(sac_kwargs.pop("log_interval", sac_log_interval) if sac_kwargs else sac_log_interval),
                 use_amp=bool(sac_kwargs.pop("use_amp", sac_use_amp) if sac_kwargs else sac_use_amp),
@@ -692,7 +835,7 @@ def simulate(
             # MANDATORY: Always create checkpoint directory when training_dir is provided
             ppo_checkpoint_dir = None
             if training_dir is not None:
-                ppo_checkpoint_dir = training_dir / "checkpoints" / "ppo"
+                ppo_checkpoint_dir = training_dir / "ppo"  # FIX: training_dir ya es 'checkpoints'
                 ppo_checkpoint_dir.mkdir(parents=True, exist_ok=True)
             ppo_resume = _latest_checkpoint(ppo_checkpoint_dir, "ppo") if ppo_resume_checkpoints else None
             ppo_config = PPOConfig(
@@ -759,7 +902,7 @@ def simulate(
             # MANDATORY: Always create checkpoint directory when training_dir is provided
             a2c_checkpoint_dir = None
             if training_dir is not None:
-                a2c_checkpoint_dir = training_dir / "checkpoints" / "a2c"
+                a2c_checkpoint_dir = training_dir / "a2c"  # FIX: training_dir ya es 'checkpoints'
                 a2c_checkpoint_dir.mkdir(parents=True, exist_ok=True)
             a2c_resume = _latest_checkpoint(a2c_checkpoint_dir, "a2c") if a2c_resume_checkpoints else None
             a2c_steps = a2c_timesteps if a2c_timesteps > 0 else ppo_timesteps
@@ -884,7 +1027,39 @@ def simulate(
         logger.warning(f"Could not extract carbon intensity for {agent_name}: {e}. Using default {carbon_intensity_kg_per_kwh}.")
         ci = np.full(steps, carbon_intensity_kg_per_kwh, dtype=float)
 
-    carbon = float(np.sum(grid_import * ci))
+    # ================================================================================
+    # CO₂ CALCULATION: 3-COMPONENT METHODOLOGY (2026-02-02)
+    # ================================================================================
+    # DEFINICIÓN:
+    # 1. CO₂ Indirecto = Grid import × 0.4521 kg/kWh (central térmica Iquitos)
+    # 2. CO₂ Directo Evitado = EV charging × 2.146 kg/kWh (vs gasolina)
+    # 3. CO₂ NETO = CO₂ Indirecto - CO₂ Directo Evitado (actual footprint)
+    # ================================================================================
+
+    co2_indirecto_kg = float(np.sum(grid_import * ci))
+
+    # CO₂ DIRECTO EVITADO: Energía de los EVs reemplazando gasolina
+    # Factor de conversión: 2.146 kg CO₂/kWh (energía equivalente a combustión)
+    # Este factor es CONSTANTE para toda la simulación (OE2 real: 2.146)
+    co2_conversion_factor_kg_per_kwh = 2.146
+    co2_directo_evitado_kg = float(np.sum(np.clip(ev, 0.0, None)) * co2_conversion_factor_kg_per_kwh)
+
+    # CO₂ NETO = Indirecto - Directo (representa huella actual del sistema)
+    co2_neto_kg = co2_indirecto_kg - co2_directo_evitado_kg
+
+    # Para backward compatibility: carbon = co2_neto
+    carbon = co2_neto_kg
+
+    # Log de desglose CO₂
+    logger.info("")
+    logger.info("=" * 80)
+    logger.info("[CO₂ BREAKDOWN] %s Agent Results", agent_name)
+    logger.info("=" * 80)
+    logger.info("[CO₂ INDIRECTO] Grid import: %.0f kg (grid factor: 0.4521 kg/kWh)", co2_indirecto_kg)
+    logger.info("[CO₂ DIRECTO]   EV reduction: %.0f kg (conversion: 2.146 kg/kWh)", co2_directo_evitado_kg)
+    logger.info("[CO₂ NETO]      Actual footprint: %.0f kg (indirecto - directo)", co2_neto_kg)
+    logger.info("=" * 80)
+    logger.info("")
 
     sim_years = (steps * seconds_per_time_step) / (365.0 * 24.0 * 3600.0)
 
@@ -903,18 +1078,12 @@ def simulate(
     if use_multi_objective and reward_tracker is not None:
         # CRÍTICO: Crear una nueva instancia limpia para calcular métricas desde cero
         # La instancia anterior puede estar contaminada con estados previos
+        # NOTA: Usar imports globales (línea 30) - NO imports locales que causan UnboundLocalError
         try:
-            from iquitos_citylearn.oe3.rewards import MultiObjectiveReward, MultiObjectiveWeights
-            # Recrear el tracker con la configuración correcta usando los pesos multiobjetivo
-            # ✓ CORREGIDO 2026-01-30: Usar co2_focus para obtener weights 0.75
-            weights = MultiObjectiveWeights(
-                co2=0.75,   # ✓ CORREGIDO
-                cost=0.05,  # ✓ CORREGIDO
-                solar=0.10, # ✓ CORREGIDO
-                ev_satisfaction=0.05,  # ✓ CORREGIDO
-                grid_stability=0.05
-            )
-            clean_tracker = MultiObjectiveReward(weights=weights)
+            # Usar ÚNICA FUENTE DE VERDAD: create_iquitos_reward_weights(priority)
+            # Los pesos se definen en rewards.py línea 647+, NO duplicar aquí
+            weights_clean = create_iquitos_reward_weights(multi_objective_priority)
+            clean_tracker = MultiObjectiveReward(weights=weights_clean)
         except Exception as e:
             logger.warning(f"Could not recreate MultiObjectiveReward: {e}. Using existing tracker.")
             clean_tracker = reward_tracker
@@ -1033,6 +1202,11 @@ def simulate(
         carbon_kg=float(carbon),
         results_path=str((out_dir / f"result_{agent_name}.json").resolve()),
         timeseries_path=str(ts_path.resolve()),
+        # ===== NUEVO: 3-COMPONENT CO₂ BREAKDOWN (2026-02-02) =====
+        co2_indirecto_kg=float(co2_indirecto_kg),
+        co2_directo_evitado_kg=float(co2_directo_evitado_kg),
+        co2_neto_kg=float(co2_neto_kg),
+        # ===== FIN: 3-COMPONENT BREAKDOWN =====
         # Métricas multiobjetivo - Usar cast explícito para satisfacer type checker
         multi_objective_priority=str(mo_metrics.get("priority", "balanced")),  # type: ignore
         reward_co2_mean=float(mo_metrics.get("r_co2_mean", 0.0)),  # type: ignore

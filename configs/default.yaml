@@ -229,9 +229,9 @@ oe3:
     a2c:
       batch_size: 146 # ✓ FIXED: 64→146 (perfect divisor: 8760/146=60 mini-batches, no truncation)
       checkpoint_freq_steps: 200
-      device: cpu # Changed from cuda to avoid PyTorch Dynamo issues
+      device: cuda # ✅ FIXED: cpu→cuda (usar GPU para entrenamiento real)
       entropy_coef: 0.001
-      episodes: 3
+      episodes: 3  # Test rápido
       gamma: 0.99 # Paper standard
       gae_lambda: 0.95 # Paper: GAE
       learning_rate: 0.0001 # 1e-4 (can match PPO, on-policy simple)
@@ -247,23 +247,18 @@ oe3:
       use_rms_prop: true # Paper: RMSProp is standard for A3C/A2C
       progress_interval_episodes: 1
       save_final: true
-      multi_objective_weights:
-        co2: 0.35   # BALANCED: Prioridad principal
-        cost: 0.25  # Optimización de costos
-        ev: 0.15    # Satisfacción de EVs
-        grid: 0.05  # Estabilidad de red
-        solar: 0.20 # Autoconsumo solar
+      # NOTA: Pesos multiobjetivo se configuran en rewards.py via multi_objective_priority
     agents:
       - SAC
       - PPO
       - A2C
     co2_tracking: true
-    multi_objective_priority: balanced
+    multi_objective_priority: co2_focus
     ppo:
       batch_size: 120 # ✓ FIXED: 256→120 (perfect divisor: 8760/120=73 mini-batches, no truncation)
       checkpoint_freq_steps: 500
       device: cuda
-      episodes: 3
+      episodes: 3  # Test rápido
       ent_coef: 0.01 # ↑ OPTIMIZED: 0.001→0.01 (exploration incentive)
       gamma: 0.99 # Paper standard
       gae_lambda: 0.98 # ↑ OPTIMIZED: 0.95→0.98 (better long-term advantages)
@@ -276,7 +271,7 @@ oe3:
       clip_range: 0.5 # ↑ OPTIMIZED: 0.2→0.5 (2.5x more flexible)
       clip_range_vf: 0.5 # ↑ OPTIMIZED: NEW - Value function clipping
       n_epochs: 10 # ↑ OPTIMIZED: 2→10 (more training passes)
-      n_steps: 8760 # 🔴 CRITICAL: 128→8760 (FULL EPISODE, see complete causal chains)
+      n_steps: 2048 # ✅ FIXED: 8760→2048 (proper rollout size, ~4 updates/episode)
       normalize_advantage: true # ✅ Normalize advantages by batch
       use_sde: true # ↑ OPTIMIZED: NEW - State-Dependent Exploration
       sde_sample_freq: -1 # Resample every step
@@ -286,12 +281,7 @@ oe3:
       clip_reward: 1.0 # ✅ CRITICAL: Clip rewards to [-1, 1]
       clip_obs: 5.0 # ↑ OPTIMIZED: Aggressive obs clipping
       hidden_sizes: [256, 256] # ↑ OPTIMIZED: 64→256 (more capacity)
-      multi_objective_weights:
-        co2: 0.35   # BALANCED: Prioridad principal
-        cost: 0.25  # Optimización de costos
-        ev: 0.15    # Satisfacción de EVs
-        grid: 0.05  # Estabilidad de red
-        solar: 0.20 # Autoconsumo solar
+      # NOTA: Pesos multiobjetivo se configuran en rewards.py via multi_objective_priority
       prefer_citylearn: false
       progress_interval_episodes: 1
       save_final: true
@@ -303,22 +293,22 @@ oe3:
       co2_direct_weight: 0.12
       co2_indirect_weight: 0.08
     sac:
-      batch_size: 512 # ↑ OPTIMIZED: 256→512 (lotes más grandes)
-      buffer_size: 50000 # ↓ OPTIMIZED: 100k→50k (ciclo más rápido)
+      batch_size: 256 # ✅ FIX: 512→256 (evita OOM en RTX 4060, coincide con SACConfig)
+      buffer_size: 200000 # ✅ FIX: 50k→200k (captura variación anual completa, coincide con SACConfig)
       checkpoint_freq_steps: 500
       deterministic_eval: true
       device: cuda
-      episodes: 3
+      episodes: 3  # Test rápido
       ent_coef: auto # ✅ Auto-tuning entropy (adaptive exploration)
-      ent_coef_init: 0.2 # ↑ OPTIMIZED: 0.1→0.2 (más exploración inicial para escapar mínimos locales)
-      ent_coef_lr: 3e-5 # ↑ OPTIMIZED: 1e-5→3e-5 (ajuste entropy más rápido)
+      ent_coef_init: 0.5 # ✅ FIX: 0.2→0.5 (más exploración para descubrir política solar, coincide con SACConfig)
+      ent_coef_lr: 1e-3 # ✅ FIX: 3e-5→1e-3 (adaptación 33× más rápida, coincide con SACConfig)
       gamma: 0.995 # ↑ OPTIMIZED: 0.99→0.995 (mayor horizonte temporal)
       tau: 0.02 # ↑ OPTIMIZED: 0.01→0.02 (target network actualiza más rápido)
-      gradient_steps: 8 # ↑ CRÍTICO FIXED: 2→8 (más pasos de gradiente por sample, ~270 updates/episodio vs 34)
-      learning_rate: 1e-4 # ↑ OPTIMIZED: 5e-5→1e-4 (aprender más rápido)
+      gradient_steps: 1 # ✅ FIX: 8→1 (coincide con SACConfig, SAC es off-policy con 1 update por sample)
+      learning_rate: 5e-5 # ✅ FIX: 1e-4→5e-5 (reduce inestabilidad gradient, coincide con SACConfig)
       learning_starts: 2000 # ↓ OPTIMIZED: 5000→2000 (empezar antes a aprender)
       log_interval: 100
-      max_grad_norm: 0.5 # 🔴 CRITICAL FIX: 1.0→0.5 (stricter gradient clipping)
+      max_grad_norm: 10.0 # ✅ SINCRONIZADO: 0.5→10.0 (SAC off-policy necesita gradientes más grandes)
       reward_scale: 0.5 # AJUSTE: 0.1→0.5 (evita explosión critic_loss)
       hidden_sizes: [256, 256] # 🔴 FIX: 512→256 (prevent overfitting)
       use_prioritized_replay: false # 🔴 CRITICAL FIX: Disable PER (causing instability)
@@ -328,13 +318,8 @@ oe3:
       normalize_observations: true
       normalize_rewards: true
       clip_reward: 1.0 # ✅ CRITICAL: Clip rewards to [-1, 1]
-      clip_obs: 5.0 # ↑ OPTIMIZED: Aggressive obs clipping
-      multi_objective_weights:
-        co2: 0.35   # BALANCED: Prioridad principal
-        cost: 0.25  # Optimización de costos
-        ev: 0.15    # Satisfacción de EVs
-        grid: 0.05  # Estabilidad de red
-        solar: 0.20 # Autoconsumo solar
+      clip_obs: 100.0 # ✅ SINCRONIZADO: 5.0→100.0 (evita destruir data post-normalización)
+      # NOTA: Pesos multiobjetivo se configuran en rewards.py via multi_objective_priority
       prefer_citylearn: false
       progress_interval_episodes: 1
       save_final: true
