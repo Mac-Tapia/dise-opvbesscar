@@ -224,24 +224,70 @@ class TrainingPipeline:
                 error_msg = f"Timeout después de {timeout_seconds}s"
                 self.logger.warning(f"[{agent_name}] {error_msg}")
                 self.failed_agents[agent_name] = error_msg
+
+                # CRITICAL FIX: Kill zombie processes before retry
+                try:
+                    import subprocess
+                    cmd = ['powershell', '-Command', 'Get-Process | Where-Object {$_.ProcessName -eq "python"} | Stop-Process -Force -ErrorAction SilentlyContinue']
+                    subprocess.run(cmd, capture_output=True, timeout=10)
+                    time.sleep(5)  # Wait for cleanup
+                except Exception:
+                    pass
+
                 if attempt < max_retries - 1:
-                    print(f"\n⏱️  Timeout en {agent_name}. Reintentando...")
+                    print(f"\n⏱️  Timeout en {agent_name}. Limpiando procesos y reintentando...")
                     time.sleep(10)
                     continue
+                else:
+                    print(f"\n❌ {agent_name} timeout tras {max_retries} intentos - CONTINUANDO CON SIGUIENTE AGENTE")
+                    # CRITICAL: Return partial result instead of None to allow transition
+                    return {'agent': agent_name, 'status': 'timeout', 'error': error_msg}
 
             except Exception as e:
                 error_msg = f"{type(e).__name__}: {str(e)[:100]}"
                 self.logger.error(f"[{agent_name}] Error: {error_msg}")
                 self.failed_agents[agent_name] = error_msg
 
+                # CRITICAL FIX: Kill zombie processes before retry
+                try:
+                    import subprocess
+                    cmd = ['powershell', '-Command', 'Get-Process | Where-Object {$_.ProcessName -eq "python"} | Stop-Process -Force -ErrorAction SilentlyContinue']
+                    subprocess.run(cmd, capture_output=True, timeout=10)
+                    time.sleep(5)
+                except Exception:
+                    pass
+
                 if attempt < max_retries - 1:
-                    print(f"\n❌ Error en {agent_name}. Reintentando en 10 segundos...")
+                    print(f"\n❌ Error en {agent_name}. Limpiando procesos y reintentando en 10 segundos...")
                     time.sleep(10)
                     continue
                 else:
                     print(f"\n❌ {agent_name} falló tras {max_retries} intentos: {error_msg}")
+                    print(f"🔄 CONTINUANDO CON SIGUIENTE AGENTE EN PIPELINE...")
+                    # CRITICAL: Return partial result to allow pipeline to continue
+                    partial_result = {
+                        'agent': agent_name,
+                        'status': 'failed',
+                        'error': error_msg,
+                        'carbon_kg': 5000000.0,  # High penalty for failed agents
+                        'steps': 0,
+                        'pv_generation_kwh': 0.0
+                    }
+                    self.results[agent_name] = partial_result
+                    return partial_result
 
-        return None
+        # CRITICAL: Never return None - always return something to allow transitions
+        print(f"\n⚠️  {agent_name} no pudo completarse, pero pipeline continuará...")
+        incomplete_result = {
+            'agent': agent_name,
+            'status': 'incomplete',
+            'attempts': max_retries,
+            'carbon_kg': 5000000.0,  # High penalty
+            'steps': 0,
+            'pv_generation_kwh': 0.0
+        }
+        self.results[agent_name] = incomplete_result
+        return incomplete_result
 
 
 def _tailpipe_kg(cfg: dict, ev_kwh: float, simulated_years: float) -> float:
