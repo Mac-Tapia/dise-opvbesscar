@@ -780,21 +780,12 @@ def build_citylearn_dataset(
     logger.info("[OK] Columnas de tiempo regeneradas: month=1-12 (enero-diciembre), alineado con PVGIS")
 
     # Build mall load and PV generation series for length n
-    # Usar datos de CityLearn preparados si existen
+    # PRIORIDAD: 1) mall_demand (OE2 real) > 2) building_load_citylearn > 3) config default
     mall_series = None
     mall_source = "default"
 
-    if "building_load_citylearn" in artifacts:
-        building_load = artifacts["building_load_citylearn"]
-        if len(building_load) >= n:
-            mall_series = building_load['non_shiftable_load'].values[:n]
-            mall_source = "building_load_citylearn (OE2 processed)"
-            logger.info("[MALL LOAD] Usando demanda de building_load preparado: %d registros", len(mall_series))
-        else:
-            mall_series = _repeat_24h_to_length(building_load['non_shiftable_load'].values, n)
-            mall_source = "building_load_citylearn (expandido)"
-            logger.info("[MALL LOAD] Demanda building_load incompleta, repitiendo perfil diario")
-    elif "mall_demand" in artifacts:
+    # PRIORIDAD 1: mall_demand (datos OE2 REALES)
+    if "mall_demand" in artifacts:
         mall_df = artifacts["mall_demand"].copy()
         if not mall_df.empty:
             date_col = None
@@ -840,14 +831,26 @@ def build_citylearn_dataset(
                 values = series.values
                 if len(values) >= n:
                     mall_series = values[:n]
-                    mall_source = f"mall_demand ({source_path})"
-                    logger.info("Usando demanda real del mall: %d registros", len(mall_series))
+                    mall_source = f"mall_demand ({source_path}) - OE2 REAL DATA"
+                    logger.info("[MALL LOAD] ✓ Usando demanda REAL del mall OE2: %d registros", len(mall_series))
                 else:
                     hourly_profile = series.groupby(series.index.hour).mean()
                     hourly_profile = hourly_profile.reindex(range(24), fill_value=0.0)
                     mall_series = _repeat_24h_to_length(hourly_profile.values, n)
                     mall_source = f"mall_demand ({source_path}) - perfil promedio replicado"
-                    logger.info("Demanda real incompleta, repitiendo perfil horario promedio")
+                    logger.info("[MALL LOAD] Demanda real incompleta, repitiendo perfil horario promedio")
+
+    # PRIORIDAD 2: building_load_citylearn (fallback)
+    if mall_series is None and "building_load_citylearn" in artifacts:
+        building_load = artifacts["building_load_citylearn"]
+        if len(building_load) >= n:
+            mall_series = building_load['non_shiftable_load'].values[:n]
+            mall_source = "building_load_citylearn (OE2 processed)"
+            logger.info("[MALL LOAD] Usando demanda de building_load preparado: %d registros", len(mall_series))
+        else:
+            mall_series = _repeat_24h_to_length(building_load['non_shiftable_load'].values, n)
+            mall_source = "building_load_citylearn (expandido)"
+            logger.info("[MALL LOAD] Demanda building_load incompleta, repitiendo perfil diario")
 
     if mall_series is None:
         mall_energy_day = float(cfg["oe2"]["mall"]["energy_kwh_day"])
