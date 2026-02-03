@@ -340,7 +340,8 @@ def _validate_env_loaded_correctly(env: Any, schema_path: Path) -> None:
         )
 
     # Log success
-    logger.info(f"[DATASET VALIDATED] ✓ CityLearn loaded correctly: {len(buildings)} building(s), {time_steps} timesteps")
+    buildings_count = len(buildings) if buildings else 0
+    logger.info(f"[DATASET VALIDATED] ✓ CityLearn loaded correctly: {buildings_count} building(s), {time_steps} timesteps")
 
 def _sample_action(env: Any) -> Any:
     """Sample random action handling CityLearn's list action space."""

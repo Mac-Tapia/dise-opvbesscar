@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 """Verifica que electrical_storage_simulation.csv tiene datos reales dinámicos del BESS."""
 
-import pandas as pd
-import numpy as np
+try:
+    import pandas as pd
+except ImportError:
+    print("Error: pandas no está instalado. Ejecutar: pip install pandas")
+    exit(1)
 
 bess_file = 'data/processed/citylearn/iquitos_ev_mall/electrical_storage_simulation.csv'
 

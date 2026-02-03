@@ -5,7 +5,12 @@ Verifica que los agentes (SAC, PPO, A2C) accederán a los datos reales correctos
 desde Building_1.csv, charger_simulation_*.csv, electrical_storage_simulation.csv
 """
 
-import pandas as pd
+try:
+    import pandas as pd
+except ImportError:
+    print("Error: pandas no está instalado. Ejecutar: pip install pandas")
+    exit(1)
+
 import json
 from pathlib import Path
 

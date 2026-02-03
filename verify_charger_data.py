@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 """Verifica que charger_simulation_*.csv tienen datos reales individuales correctos."""
 
-import pandas as pd
-import numpy as np
+try:
+    import pandas as pd
+except ImportError:
+    print("Error: pandas no está instalado. Ejecutar: pip install pandas")
+    exit(1)
+
 from pathlib import Path
 
 charger_dir = Path('data/processed/citylearn/iquitos_ev_mall')
