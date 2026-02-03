@@ -9,6 +9,7 @@ All agents compatible with CityLearn v2 and multi-objective reward optimization.
 from .rbc import make_basic_ev_rbc, BasicRBCAgent, RBCConfig
 from .sac import make_sac, SACAgent, SACConfig, detect_device as _detect_sac
 from .no_control import NoControlAgent, make_no_control, make_uncontrolled, UncontrolledChargingAgent
+from .fixed_schedule import FixedScheduleAgent, make_fixed_schedule
 from .ppo_sb3 import make_ppo, PPOAgent, PPOConfig, detect_device as _detect_ppo
 from .a2c_sb3 import make_a2c, A2CAgent, A2CConfig, detect_device as _detect_a2c
 from .transition_manager import TransitionManager, TransitionState, create_transition_manager
@@ -57,6 +58,7 @@ __all__ = [
     "UncontrolledChargingAgent",
     "NoControlAgent",
     "BasicRBCAgent",
+    "FixedScheduleAgent",
     "SACAgent",
     "PPOAgent",
     "A2CAgent",
@@ -64,6 +66,8 @@ __all__ = [
     "make_basic_ev_rbc",
     "make_sac",
     "make_no_control",
+    "make_uncontrolled",
+    "make_fixed_schedule",
     "make_ppo",
     "make_a2c",
     # Configuraciones

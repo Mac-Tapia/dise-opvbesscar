@@ -76,13 +76,22 @@ class AgentTrainingMonitor:
         """Retorna un resumen de estado formateado."""
         status = self.check_progress()
 
+        # ✅ CRITICAL FIX: Replace emoji characters with ASCII-safe equivalents
+        # Windows charmap cannot encode Unicode emoji characters, causing crashes
+        # Use ASCII text alternatives instead
+        status_indicator = (
+            "[OK]" if status['is_responsive'] else
+            "[!!]" if status['is_timeout'] else
+            "[..]"
+        )
+
         msg = (
             f"\n[{datetime.now().strftime('%H:%M:%S')}] "
-            f"🔄 {self.agent_name.upper()}\n"
-            f"   ⏱️  Tiempo: {status['elapsed_minutes']:.1f} min\n"
-            f"   📦 Checkpoints: {status['checkpoint_count']}\n"
-            f"   ⏭️  Último: {status['since_last_checkpoint_seconds']}s hace\n"
-            f"   {'✅ ACTIVO' if status['is_responsive'] else '⚠️  SIN PROGRESO' if status['is_timeout'] else '⏳ PAUSADO'}"
+            f"[TRAIN] {self.agent_name.upper()}\n"
+            f"   [TIME] Tiempo: {status['elapsed_minutes']:.1f} min\n"
+            f"   [CHKPT] Checkpoints: {status['checkpoint_count']}\n"
+            f"   [LAST] Último: {status['since_last_checkpoint_seconds']}s hace\n"
+            f"   {status_indicator} {'ACTIVO' if status['is_responsive'] else 'SIN PROGRESO' if status['is_timeout'] else 'PAUSADO'}"
         )
 
         self.progress_log.append(msg)
@@ -131,8 +140,10 @@ class TrainingPipeline:
         """Loop de monitoreo que corre en background."""
         while not self.monitor_stop_event.is_set():
             try:
+                # ✅ CRITICAL FIX: Replace emoji characters with ASCII-safe equivalents
+                # Windows charmap cannot encode Unicode emoji characters
                 print("\n" + "="*80)
-                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 📊 ESTADO DEL ENTRENAMIENTO")
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [STATS] ESTADO DEL ENTRENAMIENTO")
                 print("="*80)
 
                 for agent in agents:
@@ -143,7 +154,7 @@ class TrainingPipeline:
                         # Verificar timeout
                         status = self.monitors[agent].check_progress()
                         if status["is_timeout"]:
-                            print(f"   ⚠️  ALERTA: {agent} sin progreso por {status['since_last_checkpoint_seconds']}s")
+                            print(f"   [ALERT] ALERTA: {agent} sin progreso por {status['since_last_checkpoint_seconds']}s")
 
                 # Guardar estado en archivo
                 self._save_status_snapshot()
@@ -200,14 +211,16 @@ class TrainingPipeline:
                 self.logger.info(f"[{agent_name}] Intento {attempt_num} de {max_retries}")
 
                 # Ejecutar simulación
+                self.logger.info(f"[{agent_name}] INICIANDO simulate() function...")
                 result = simulate_fn()
+                self.logger.info(f"[{agent_name}] simulate() function COMPLETADA, result={result}")
 
                 # Verificar resultado
                 if result and hasattr(result, '__dict__'):
                     self.results[agent_name] = result.__dict__
-                    self.logger.info(f"[{agent_name}] ✅ Completado exitosamente")
+                    self.logger.info(f"[{agent_name}] [OK] Completado exitosamente")
                     print(f"\n{'='*80}")
-                    print(f"✅ {agent_name.upper()} COMPLETADO")
+                    print(f"[OK] {agent_name.upper()} COMPLETADO")
                     print(f"   CO2: {result.carbon_kg:.0f} kg")
                     print(f"   PV: {result.pv_generation_kwh:.0f} kWh")
                     print(f"{'='*80}\n")
@@ -235,11 +248,11 @@ class TrainingPipeline:
                     pass
 
                 if attempt < max_retries - 1:
-                    print(f"\n⏱️  Timeout en {agent_name}. Limpiando procesos y reintentando...")
+                    print(f"\n[TIMEOUT] Timeout en {agent_name}. Limpiando procesos y reintentando...")
                     time.sleep(10)
                     continue
                 else:
-                    print(f"\n❌ {agent_name} timeout tras {max_retries} intentos - CONTINUANDO CON SIGUIENTE AGENTE")
+                    print(f"\n[FAIL] {agent_name} timeout tras {max_retries} intentos - CONTINUANDO CON SIGUIENTE AGENTE")
                     # CRITICAL: Return partial result instead of None to allow transition
                     return {'agent': agent_name, 'status': 'timeout', 'error': error_msg}
 

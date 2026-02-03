@@ -89,9 +89,9 @@ class A2CConfig:
     critic_lr_schedule: str = "linear"     # "constant" o "linear" decay
 
     # === ENTROPY DECAY SCHEDULE (NEW COMPONENT #2) ===
-    # Exploración decrece: 0.001 (early) → 0.0001 (late)
+    # Exploración decrece: 0.01 (early) → 0.001 (late) - HARMONIZED WITH SAC/PPO (CRITICAL FIX)
     ent_coef_schedule: str = "linear"      # "constant" o "linear"
-    ent_coef_final: float = 0.0001         # Target entropy at end of training
+    ent_coef_final: float = 0.001          # Target entropy at end of training (CORRECTED: was 0.0001, now matches SAC/PPO)
 
     # === ADVANTAGE & VALUE FUNCTION ROBUSTNESS (NEW COMPONENTS #3-4) ===
     normalize_advantages: bool = True      # Normalizar ventajas a cada batch
@@ -180,11 +180,54 @@ class A2CAgent:
         self._trained = False
         self.training_history: List[Dict[str, float]] = []
         self.device = self._setup_device()
+        self._setup_torch_backend()  # CRITICAL FIX: Initialize torch backend
 
     def _setup_device(self) -> str:
         if self.config.device == "auto":
             return detect_device()
         return self.config.device
+
+    def _setup_torch_backend(self):
+        """Configura PyTorch para máximo rendimiento en A2C (CRITICAL FIX - agregado a A2C)."""
+        try:
+            import torch
+
+            # Seed para reproducibilidad
+            torch.manual_seed(self.config.seed)
+
+            if "cuda" in self.device:
+                torch.cuda.manual_seed_all(self.config.seed)
+
+                # Optimizaciones CUDA
+                torch.backends.cudnn.benchmark = True  # Auto-tune kernels
+
+                # Logging de GPU
+                if torch.cuda.is_available():
+                    gpu_mem = torch.cuda.get_device_properties(0).total_memory / 1e9
+                    logger.info("[A2C GPU] CUDA memoria disponible: %.2f GB", gpu_mem)
+
+            if self.config.use_amp and "cuda" in self.device:
+                logger.info("[A2C GPU] Mixed Precision (AMP) habilitado para entrenamiento acelerado")
+
+        except ImportError:
+            logger.warning("[A2C] PyTorch no instalado, usando configuración por defecto")
+
+    def get_device_info(self) -> Dict[str, Any]:
+        """Retorna información detallada del dispositivo para A2C (CRITICAL FIX - agregado a A2C)."""
+        info: dict[str, Any] = {"device": self.device, "backend": "unknown"}
+        try:
+            import torch  # type: ignore[import]
+            info["torch_version"] = str(torch.__version__)
+            info["cuda_available"] = str(torch.cuda.is_available())
+            if torch.cuda.is_available():
+                info["cuda_version"] = str(torch.version.cuda or "unknown")
+                info["gpu_name"] = str(torch.cuda.get_device_name(0))
+                props: Any = torch.cuda.get_device_properties(0)
+                info["gpu_memory_gb"] = str(round(props.total_memory / 1e9, 2))
+                info["gpu_count"] = str(torch.cuda.device_count())
+        except (ImportError, ModuleNotFoundError):
+            pass
+        return info
 
     def _validate_dataset_completeness(self) -> None:
         """Validar que el dataset CityLearn tiene exactamente 8,760 timesteps (año completo).
@@ -452,9 +495,9 @@ class A2CAgent:
             if schedule_type == 'constant':
                 return self.config.ent_coef
 
-            # Default: 0.001 → 0.0001 linear decay
-            ent_coef_init = self.config.ent_coef if hasattr(self.config, 'ent_coef') else 0.001
-            ent_coef_final = getattr(self.config, 'ent_coef_final', 0.0001)
+            # Default: 0.01 → 0.001 linear decay (CORRECTED: was 0.0001, now matches SAC/PPO)
+            ent_coef_init = self.config.ent_coef if hasattr(self.config, 'ent_coef') else 0.01
+            ent_coef_final = getattr(self.config, 'ent_coef_final', 0.001)  # CORRECTED: was 0.0001
 
             if schedule_type == 'linear':
                 # Linear interpolation: init → final
@@ -652,7 +695,7 @@ class A2CAgent:
                 "[A2C TASK 5] Entropy Schedule habilitado: %s, init=%.4f, final=%.4f",
                 self.config.ent_coef_schedule,
                 self.config.ent_coef,
-                getattr(self.config, 'ent_coef_final', 0.0001)
+                getattr(self.config, 'ent_coef_final', 0.001)  # CORRECTED: was 0.0001
             )
 
         # Log advantage normalization configuration if enabled (TASK 6)
