@@ -183,7 +183,7 @@ class SACConfig:
     # === ESTABILIDAD NUMÉRICA (CRÍTICO POST-DIVERGENCIA) ===
     clip_gradients: bool = True             # ✅ AGREGADO: Clipear gradientes
     max_grad_norm: float = 10.0             # 🔴 TIER 2 FIX: 0.5→10.0 (off-policy SAC needs larger gradients than on-policy PPO; 0.5 was blocking learning)
-    warmup_steps: int = 5000                # ✅ AGREGADO: Dejar que buffer se llene
+    warmup_steps: int = 1000                # 🔴 CRITICAL FIX: 5000→1000 (19%→3.8% warmup, más tiempo para aprendizaje activo)
     gradient_accumulation_steps: int = 1    # ✅ Agrupa updates, reduce varianza
 
     # Prioritized Experience Replay
@@ -219,10 +219,10 @@ class SACConfig:
     reward_smooth_lambda: float = 0.0
     # === NORMALIZACIÓN (crítico para estabilidad) ===
     normalize_observations: bool = True  # Normalizar obs a media=0, std=1
-    normalize_rewards: bool = True       # Escalar rewards a [-1, 1]
-    reward_scale: float = 0.5            # AJUSTE: 0.1→0.5 (evita explosión critic_loss)
-    clip_obs: float = 100.0              # 🔴 TIER 1 FIX: 5.0→100.0 (removed overly aggressive clipping that was destroying post-normalization data)
-    clip_reward: float = 1.0             # Clipear rewards a [-1, 1]
+    normalize_rewards: bool = False      # 🔴 CRITICAL FIX: True→False (evita pérdida de información)
+    reward_scale: float = 1.0            # 🔴 CRITICAL FIX: 0.5→1.0 (sin escalar, valores naturales)
+    clip_obs: float = 10.0               # 🔴 CRITICAL FIX: 100.0→10.0 (clipping menos agresivo)
+    clip_reward: float = 10.0            # 🔴 CRITICAL FIX: 1.0→10.0 (preserva información)
 
 
 class SACAgent:
