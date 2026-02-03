@@ -729,10 +729,13 @@ class SACAgent:
                     reward_val = 0.0
                     if rewards is not None:
                         if hasattr(rewards, '__iter__'):
+                            # 🔴 TIER 1 FIX: NO escalar reward aquí - mantener valor original
+                            # El reward ya está normalizado [-1, 1] o [0, 1] del environment
+                            # Escalarlo × 100 causa reward_avg=17.8 (debería ser ~0.178)
                             for r in rewards:
-                                reward_val = float(r) * 100.0  # Escalar para visibilidad
+                                reward_val = float(r)  # Sin escalado
                         else:
-                            reward_val = float(rewards) * 100.0
+                            reward_val = float(rewards)  # Sin escalado
 
                     # Acumular en EpisodeMetricsAccumulator
                     self.metrics_accumulator.accumulate(step_metrics, reward_val)
