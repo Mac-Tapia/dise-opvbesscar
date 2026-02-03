@@ -220,12 +220,13 @@ class A2CAgent:
             info["torch_version"] = str(torch.__version__)
             info["cuda_available"] = str(torch.cuda.is_available())
             if torch.cuda.is_available():
-                info["cuda_version"] = str(torch.version.cuda or "unknown")
+                cuda_ver = torch.version.cuda
+                info["cuda_version"] = str(cuda_ver) if cuda_ver is not None else "unknown"
                 info["gpu_name"] = str(torch.cuda.get_device_name(0))
                 props: Any = torch.cuda.get_device_properties(0)
                 info["gpu_memory_gb"] = str(round(props.total_memory / 1e9, 2))
                 info["gpu_count"] = str(torch.cuda.device_count())
-        except (ImportError, ModuleNotFoundError):
+        except (ImportError, ModuleNotFoundError, AttributeError):
             pass
         return info
 

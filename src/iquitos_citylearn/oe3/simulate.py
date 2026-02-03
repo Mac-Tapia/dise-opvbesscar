@@ -99,6 +99,12 @@ IQUITOS_BASELINE_OE3_WITHOUT_SOLAR_TCO2_YEAR = None
 # Impacto solar: Diferencia entre ambos
 IQUITOS_BASELINE_SOLAR_IMPACT_TCO2_YEAR = None
 
+# ✅ BASELINES IQUITOS TOTALES (REFERENCIA INFORMATIVA)
+# Grid térmico total: 290,000 tCO₂/año
+IQUITOS_BASELINE_TOTAL_TCO2_YEAR: float = 548_250.0  # tCO₂/año (grid + transporte combustión)
+IQUITOS_BASELINE_GRID_TCO2_YEAR: float = 290_000.0  # tCO₂/año (solo grid)
+IQUITOS_BASELINE_TRANSPORT_TCO2_YEAR: float = 258_250.0  # tCO₂/año (transporte combustión)
+
 from iquitos_citylearn.oe3.agents import (
     make_basic_ev_rbc,
     make_sac,
@@ -106,6 +112,7 @@ from iquitos_citylearn.oe3.agents import (
     make_uncontrolled,
     make_ppo,
     make_a2c,
+    make_fixed_schedule,
     SACConfig,
     PPOConfig,
     A2CConfig,
@@ -774,16 +781,16 @@ def simulate(
     a2c_episodes: int = 0,
     a2c_timesteps: int = 0,
     a2c_checkpoint_freq_steps: int = 1000,  # MANDATORY: Default to 1000 steps for checkpoint generation
-    a2c_n_steps: int = 256,
-    a2c_log_interval: int = 2000,
-    a2c_learning_rate: float = 3e-4,
-    a2c_entropy_coef: float = 0.01,
+    a2c_n_steps: int = 2048,  # OPTIMIZED: Same as PPO for consistency
+    a2c_log_interval: int = 500,  # OPTIMIZED: More frequent logging
+    a2c_learning_rate: float = 1e-4,  # OPTIMIZED: Lower LR for stability
+    a2c_entropy_coef: float = 0.01,  # Entropy for exploration
     a2c_batch_size: int = 1024,
     a2c_gamma: float = 0.99,
-    a2c_gae_lambda: float = 0.9,
+    a2c_gae_lambda: float = 0.95,  # OPTIMIZED: Same as PPO for consistency
     a2c_vf_coef: float = 0.5,
-    a2c_reward_scale: float = 1.2,
-    a2c_device: Optional[str] = "cpu",  # A2C no es eficiente en GPU (use CPU)
+    a2c_reward_scale: float = 0.1,  # OPTIMIZED: Smaller scale for stability
+    a2c_device: Optional[str] = None,  # CHANGED: Auto-detect (can use GPU effectively)
     sac_resume_checkpoints: bool = False,
     ppo_resume_checkpoints: bool = False,
     a2c_resume_checkpoints: bool = False,
