@@ -10,6 +10,30 @@
 
 ---
 
+## 🆕 Dual Baselines (2026-02-03)
+
+**Two comparison scenarios** to measure RL agent improvements:
+
+```
+BASELINE 1: "CON SOLAR" (4,050 kWp)
+├─ Mall 100kW + EVs 50kW + Solar 4,050 kWp, no BESS, no RL
+└─ CO₂: ~190,000 kg/año ← REFERENCE POINT FOR RL AGENTS
+
+BASELINE 2: "SIN SOLAR" (0 kWp)  
+├─ Mall 100kW + EVs 50kW + No solar, no BESS, no RL
+└─ CO₂: ~640,000 kg/año ← Shows impact of 4,050 kWp (410k kg CO₂ saved)
+```
+
+**Quick Start:**
+```bash
+python -m scripts.run_dual_baselines --config configs/default.yaml
+# Generates: outputs/baselines/{with_solar,without_solar}/baseline_comparison.csv
+```
+
+See [BASELINE_QUICK_START.md](../BASELINE_QUICK_START.md) for details.
+
+---
+
 ## Architecture & Critical Data Flows
 
 ### ⚠️ CRITICAL: Hourly Data Only (8,760 rows = 1 year)
@@ -21,7 +45,7 @@ OE2 Artifacts (infrastructure specs)
   ↓ [dataset_builder.py]
 CityLearn Schema (8,760 hourly timesteps, 394-dim observations)
   ↓ [simulate.py]
-Train 3 RL Agents (SAC, PPO, A2C) + Baseline
+Baselines (with/without solar) + Train 3 RL Agents (SAC, PPO, A2C)
   ↓
 Results: CO₂ reduction %, solar self-consumption %, timeseries CSV
 ```

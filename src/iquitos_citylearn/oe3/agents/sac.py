@@ -630,12 +630,10 @@ class SACAgent:
                 device=self.device,
             )
         else:
-            # CRITICAL FIX: Reducir learning_rate para evitar explosión de gradientes
-            # critic_loss y actor_loss alcanzaban valores de TRILLONES
-            # Causa: LR de 3e-4 demasiado alto + reward_scale 0.01 causa inestabilidad
-            stable_lr_safe = self.config.learning_rate  # ✅ USAR CONFIG DIRECTO (1e-5)
-            logger.warning(
-                "[SAC] GRADIENT EXPLOSION FIX: Usando configured LR=%.2e (from config)",
+            # Use configured learning rate (stable and validated)
+            stable_lr_safe = self.config.learning_rate  # ✅ USAR CONFIG DIRECTO
+            logger.info(
+                "[SAC] Using learning rate from config: LR=%.2e",
                 stable_lr_safe
             )
 
@@ -666,8 +664,9 @@ class SACAgent:
             except Exception as e:
                 logger.warning("[SAC] No se pudo aplicar clipping: %s", str(e))
 
-        # Logging del LR actual
-        logger.info("[SAC] Using stable learning_rate=%.2e (config was %.2e)", stable_lr, self.config.learning_rate)
+        # Log de confirmación final
+        logger.info("[SAC] SAC model initialized with learning_rate=%.2e, batch_size=%d, gamma=%.3f",
+                    stable_lr, stable_batch, stable_gamma)
 
         progress_path = Path(self.config.progress_path) if self.config.progress_path else None
         progress_headers = ("timestamp", "agent", "episode", "episode_reward", "episode_length", "global_step")

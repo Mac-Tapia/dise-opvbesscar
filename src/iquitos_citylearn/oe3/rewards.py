@@ -245,10 +245,23 @@ class MultiObjectiveReward:
         # Energía solar consumida → evita importar energía del grid térmico
         co2_avoided_indirect_kg = solar_generation_kwh * self.context.co2_factor_kg_per_kwh
 
-        # CO₂ EVITADO - COMPONENTE 2: EVs que evitan combustión (DIRECTA)
-        # Cálculo: ev_charging_kwh → km recorridos → gasolina evitada → CO₂ evitado
-        if ev_charging_kwh > 0:
-            total_km = ev_charging_kwh * self.context.km_per_kwh
+        # CO₂ EVITADO - COMPONENTE 2: EVs que evitan combustión (DIRECTA) - CORREGIDA 2026-02-03
+        # CRÍTICO: Solo contar EV cargada desde SOLAR, NO total EV demand
+        # Razón: co2_grid_kg ya incluye EV del grid en grid_import
+        # Si contamos EV total, hacemos doble conteo (grid CO₂ + EV CO₂)
+        #
+        # Aproximación: EV desde solar ≈ solar_generation (porque primero cubre demanda)
+        # Luego cubre EV. Si hay exportación, entonces solar cubre más que demanda
+        # Fórmula: ev_solar = min(ev_charging_kwh, max(0, solar_generation_kwh - demanda_base))
+        # Simplificación: usar ratio de cobertura
+        if ev_charging_kwh > 0 and solar_generation_kwh > 0:
+            # Aproximación: EV cubierto por solar es proporcional a solar_generation
+            # vs total demanda (mall + EV)
+            # Usando heurística simple: si solar > mall demand, el excedente va a EV
+            mall_baseline = 100.0  # kWh/hora típico (puede parametrizarse)
+            excess_solar = max(0, solar_generation_kwh - mall_baseline)
+            ev_covered = min(ev_charging_kwh, excess_solar)
+            total_km = ev_covered * self.context.km_per_kwh
             gallons_avoided = total_km / max(self.context.km_per_gallon, 1e-9)
             co2_avoided_direct_kg = gallons_avoided * self.context.kgco2_per_gallon
         else:

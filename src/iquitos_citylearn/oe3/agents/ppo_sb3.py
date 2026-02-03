@@ -312,6 +312,10 @@ class PPOAgent:
         """
         _ = kwargs  # Silenciar warning de argumento no usado
         # Nota: usa config.train_steps como default
+
+        # VALIDACIÓN CRÍTICA: Verificar dataset completo antes de entrenar (CRITICAL FIX)
+        self._validate_dataset_completeness()
+
         try:
             import gymnasium as gym
             from stable_baselines3 import PPO
@@ -321,9 +325,6 @@ class PPOAgent:
         except ImportError as e:
             logger.warning("stable_baselines3 no disponible: %s", e)
             return
-
-        # VALIDACIÓN CRÍTICA: Verificar dataset completo antes de entrenar
-        self._validate_dataset_completeness()
 
         steps = total_timesteps or self.config.train_steps
 

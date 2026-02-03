@@ -1237,40 +1237,181 @@ def build_citylearn_dataset(
         building_dir = out_dir  # Use root directory for charger CSVs
 
         # ==========================================
-        # SOLUCIÓN COMPLETA: Generar 128 CSVs individuales
+        # SOLUCIÓN MEJORADA: EVs DINÁMICOS (2026-02-03)
         # ==========================================
-        charger_list = []
+        # Usar cálculo dinámico basado en SOC, capacidad de batería y potencia del charger
+        # - SOC de llegada: 20-25% (vehículos cansados)
+        # - SOC de salida: 85-90% (listos para día siguiente)
+        # - Capacidad: 2.5 kWh (moto), 4.5 kWh (mototaxi)
+        # - Tiempo variable según SOC y potencia disponible
+        # - Variabilidad temporal: picos (18-21h), fin de semana, etc.
 
-        for charger_idx in range(128):
-            charger_name = f"charger_simulation_{charger_idx+1:03d}.csv"
-            csv_path = building_dir / charger_name
-            charger_list.append(csv_path)
+        try:
+            from iquitos_citylearn.oe3.ev_demand_calculator import (
+                EVChargerConfig,
+                EVDemandCalculator,
+                create_ev_configs_iquitos,
+            )
 
-            try:
-                # Obtener charger profile (para referencia, pero no agregamos demand_kw)
-                # charger_profiles_annual.iloc[:, charger_idx] contiene 8760 valores de demanda
+            logger.info("[EV DYNAMIC] Cargando calculadora de demanda dinámica de EVs...")
 
-                # Crear DataFrame con columnas requeridas por CityLearn
-                df_charger = charger_df.iloc[:8760].copy().reset_index(drop=True)
-                # NO agregar demand_kw - CityLearn ChargerSimulation no lo espera
+            # Obtener configuraciones de chargers (moto y mototaxi)
+            moto_configs, mototaxi_configs = create_ev_configs_iquitos()
+            all_configs = moto_configs + mototaxi_configs
 
-                # Asegurar que no hay NaN
-                df_charger = df_charger.fillna({
-                    'electric_vehicle_charger_state': 3,
-                    'electric_vehicle_id': f'EV_Mall_{charger_idx+1}',
-                    'electric_vehicle_departure_time': 0,
-                    'electric_vehicle_required_soc_departure': 0.8,
-                    'electric_vehicle_estimated_arrival_time': 24,
-                    'electric_vehicle_estimated_soc_arrival': 0.2,
+            logger.info(f"[EV DYNAMIC] Configuradas {len(moto_configs)} motos (2.5 kWh, 2.0 kW)")
+            logger.info(f"[EV DYNAMIC] Configuradas {len(mototaxi_configs)} mototaxis (4.5 kWh, 3.0 kW)")
+
+            charger_list = []
+            total_ev_demand_kwh = 0.0
+
+            for charger_idx in range(128):
+                charger_name = f"charger_simulation_{charger_idx+1:03d}.csv"
+                csv_path = building_dir / charger_name
+                charger_list.append(csv_path)
+
+                try:
+                    # ✅ DINÁMICA: Crear calculadora para este charger
+                    config = all_configs[charger_idx]
+                    calculator = EVDemandCalculator(config)
+
+                    # ✅ DINÁMICA: Crear perfil de ocupancia basado en demanda OE2
+                    # Si demanda OE2 > 0: EV conectado; si == 0: disponible
+                    charger_demand = charger_profiles_annual.iloc[:, charger_idx].values
+                    occupancy_profile = np.where(charger_demand > 0, 1, 0).astype(int)
+
+                    # ✅ DINÁMICA: Calcular parámetros en cada hora
+                    states = []
+                    ev_ids = []
+                    departure_times = []
+                    required_socs = []
+                    arrival_times = []
+                    arrival_socs = []
+                    hourly_demands = []
+
+                    for t in range(8760):
+                        hour = t % 24
+                        day_year = t // 24
+                        day_week = day_year % 7
+
+                        is_connected = bool(occupancy_profile[t])
+
+                        if is_connected:
+                            # ✅ DINÁMICA: EV conectado → calcular demanda realista
+                            state = 1  # Charging
+                            ev_id = f"{config.charger_type.upper()}_{config.charger_id:03d}"
+
+                            # ✅ DINÁMICA: Energía y tiempo de carga
+                            energy_req = calculator.calculate_energy_required()
+                            charging_time = calculator.calculate_charging_time()
+
+                            # ✅ DINÁMICA: Demanda modulada (picos, fin de semana)
+                            demand = calculator.calculate_hourly_demand(hour, day_week, is_connected)
+
+                            # ✅ DINÁMICA: Tiempos realistas con variación
+                            # Base + variación aleatoria (-20% a +20%)
+                            variation = np.random.normal(1.0, 0.1)
+                            departure_time = max(0.5, min(8.0, charging_time * variation))
+                            required_soc = config.battery_soc_target
+
+                            # Tiempos de llegada próxima (asumiendo no llegan en la misma hora)
+                            hours_to_next_ev = min(24, max(1, int(np.random.normal(4, 2))))
+                            arrival_time = float(hours_to_next_ev)
+                            arrival_soc = config.battery_soc_arrival
+
+                        else:
+                            # ✅ DINÁMICA: Charger disponible → sin demanda
+                            state = 3  # Available/idle
+                            ev_id = ""
+                            demand = 0.0
+                            departure_time = 0.0
+                            required_soc = 0.0
+                            arrival_time = 2.0  # Próximo EV esperado en ~2h
+                            arrival_soc = 0.0
+
+                        states.append(state)
+                        ev_ids.append(ev_id)
+                        departure_times.append(departure_time)
+                        required_socs.append(required_soc)
+                        arrival_times.append(arrival_time)
+                        arrival_socs.append(arrival_soc)
+                        hourly_demands.append(demand)
+                        total_ev_demand_kwh += demand
+
+                    # Crear DataFrame con datos dinámicos
+                    df_charger = pd.DataFrame({
+                        'electric_vehicle_charger_state': states,
+                        'electric_vehicle_id': ev_ids,
+                        'electric_vehicle_departure_time': departure_times,
+                        'electric_vehicle_required_soc_departure': required_socs,
+                        'electric_vehicle_estimated_arrival_time': arrival_times,
+                        'electric_vehicle_estimated_soc_arrival': arrival_socs,
+                    })
+
+                    # Guardar CSV
+                    df_charger.to_csv(csv_path, index=False, float_format='%.6f')
+                    logger.info(f"  [✓] {charger_name} dinámico ({config.charger_type}, {np.sum(occupancy_profile)} horas conectado)")
+
+                except Exception as e:
+                    logger.error(f"[ERROR] Error generando {charger_name} dinámico: {e}")
+                    raise
+
+            # === LOG RESUMEN DE DEMANDA EV (DINÁMICO) ===
+            logger.info("")
+            logger.info("=" * 80)
+            logger.info("[EV DYNAMIC] RESUMEN DE DEMANDA DINÁMICA DE EVs")
+            logger.info("=" * 80)
+            logger.info(f"Total EV Demand (Dinámica): {total_ev_demand_kwh:,.0f} kWh/año")
+            logger.info(f"Distribución: 112 motos + 16 mototaxis = 128 chargers")
+            logger.info(f"Promedio por charger: {total_ev_demand_kwh/128:,.0f} kWh/año")
+            logger.info(f"")
+            logger.info(f"Configuración de Batería:")
+            logger.info(f"  Motos: 2.5 kWh, SOC llegada 20%, SOC salida 90%")
+            logger.info(f"  Mototaxis: 4.5 kWh, SOC llegada 25%, SOC salida 85%")
+            logger.info(f"")
+            logger.info(f"Potencia de Carga:")
+            logger.info(f"  Motos: 2.0 kW → Tiempo carga ~1.1 horas")
+            logger.info(f"  Mototaxis: 3.0 kW → Tiempo carga ~1.3 horas")
+            logger.info(f"")
+            logger.info(f"Variabilidad Temporal:")
+            logger.info(f"  Picos (18-21h): +30% modulación de demanda")
+            logger.info(f"  Fin de semana: -10% presión de carga")
+            logger.info(f"  Tiempos: Variación aleatoria ±20% sobre base")
+            logger.info("=" * 80)
+            logger.info("")
+
+        except ImportError as e:
+            logger.warning(f"[WARN] No se pudo importar EVDemandCalculator: {e}")
+            logger.warning("[WARN] Utilizando modelo estático fallback...")
+
+            # FALLBACK: Usar modelo estático si EVDemandCalculator no está disponible
+            charger_list = []
+            total_ev_demand_kwh = 0.0
+
+            for charger_idx in range(128):
+                charger_name = f"charger_simulation_{charger_idx+1:03d}.csv"
+                csv_path = building_dir / charger_name
+                charger_list.append(csv_path)
+
+                charger_demand = charger_profiles_annual.iloc[:, charger_idx].values
+                total_ev_demand_kwh += charger_demand.sum()
+                states = np.where(charger_demand > 0, 1, 3).astype(int)
+                is_mototaxi = charger_idx >= 112
+                ev_prefix = "MOTOTAXI" if is_mototaxi else "MOTO"
+
+                df_charger = pd.DataFrame({
+                    'electric_vehicle_charger_state': states,
+                    'electric_vehicle_id': [f'{ev_prefix}_{(charger_idx % 112 if not is_mototaxi else charger_idx - 112) + 1:03d}'
+                                           if s == 1 else '' for s in states],
+                    'electric_vehicle_departure_time': np.where(states == 1, 4.0, 0.0),
+                    'electric_vehicle_required_soc_departure': np.where(states == 1, 0.8, 0.0),
+                    'electric_vehicle_estimated_arrival_time': np.where(states == 3, 2.0, 0.0),
+                    'electric_vehicle_estimated_soc_arrival': np.where(states == 1, 0.3, 0.2),
                 })
 
-                # Guardar CSV
                 df_charger.to_csv(csv_path, index=False, float_format='%.6f')
-                logger.info(f"  [OK] {charger_name} generado (8760 rows)")
 
-            except Exception as e:
-                logger.error(f"[ERROR] Error generando {charger_name}: {e}")
-                raise
+            logger.info(f"[FALLBACK] Demanda total (estática): {total_ev_demand_kwh:,.0f} kWh/año")
 
         # === ACTUALIZAR SCHEMA: Referenciar los 128 CSVs en el schema ===
         logger.info(f"[CHARGER GENERATION] Actualizando schema con referencias a 128 CSVs...")
