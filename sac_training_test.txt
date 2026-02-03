@@ -1,3 +1,3 @@
 _train_sb3_sac called with total_timesteps=26280
 checkpoint_dir=D:\diseñopvbesscar\checkpoints\sac
-checkpoint_freq_steps=500
+checkpoint_freq_steps=1000

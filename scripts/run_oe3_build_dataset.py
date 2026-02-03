@@ -17,19 +17,31 @@ def main() -> None:
     args = ap.parse_args()
 
     setup_logging()
-    cfg, rp = load_all(args.config)
+
+    try:
+        cfg, rp = load_all(args.config)
+        logger.info("✓ Configuration loaded successfully")
+    except Exception as e:
+        logger.error(f"❌ Failed to load configuration: {type(e).__name__}: {e}")
+        raise RuntimeError(f"Configuration loading failed: {e}") from e
 
     logger.info("")
     logger.info("="*80)
     logger.info("STEP 1: BUILD CITYLEARN DATASET")
     logger.info("="*80)
-    build_citylearn_dataset(
-        cfg=cfg,
-        _raw_dir=rp.raw_dir,
-        interim_dir=rp.interim_dir,
-        processed_dir=rp.processed_dir,
-    )
-    logger.info("✓ Dataset construction completed")
+
+    try:
+        build_citylearn_dataset(
+            cfg=cfg,
+            _raw_dir=rp.raw_dir,
+            interim_dir=rp.interim_dir,
+            processed_dir=rp.processed_dir,
+        )
+        logger.info("✓ Dataset construction completed")
+    except Exception as e:
+        logger.error(f"❌ Dataset construction failed: {type(e).__name__}: {e}")
+        logger.error("   This indicates missing OE2 data or corrupted files")
+        raise RuntimeError(f"Dataset construction failed: {e}") from e
 
     # POST-BUILD VALIDATION
     if not args.skip_validation:
@@ -37,7 +49,12 @@ def main() -> None:
         logger.info("="*80)
         logger.info("STEP 2: POST-BUILD VALIDATION")
         logger.info("="*80)
-        validation_passed = validate_citylearn_dataset(rp.processed_dir)
+
+        try:
+            validation_passed = validate_citylearn_dataset(rp.processed_dir)
+        except Exception as e:
+            logger.error(f"❌ Validation process failed: {type(e).__name__}: {e}")
+            raise RuntimeError(f"Validation process failed: {e}") from e
 
         if validation_passed:
             logger.info("")
