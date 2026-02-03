@@ -113,18 +113,20 @@ def print_config_summary(cfg: Dict[str, Any], checkpoint_dir: Path, out_dir: Pat
 
 def detect_gpu() -> Dict[str, Any]:
     """Detecta GPU disponible y retorna info."""
-    info = {"device": "cpu", "name": "CPU", "memory_gb": 0}
+    info: Dict[str, Any] = {"device": "cpu", "name": "CPU", "memory_gb": 0.0}
     try:
-        import torch
+        import torch  # type: ignore
         if torch.cuda.is_available():
             info["device"] = "cuda"
-            info["name"] = torch.cuda.get_device_name(0)
-            info["memory_gb"] = torch.cuda.get_device_properties(0).total_memory / 1e9
-            info["cuda_version"] = torch.version.cuda
+            info["name"] = str(torch.cuda.get_device_name(0))
+            info["memory_gb"] = round(float(torch.cuda.get_device_properties(0).total_memory) / 1e9, 2)
+            cuda_ver = torch.version.cuda
+            if cuda_ver is not None:
+                info["cuda_version"] = str(cuda_ver)
         elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
             info["device"] = "mps"
             info["name"] = "Apple Silicon (MPS)"
-    except ImportError:
+    except (ImportError, AttributeError, RuntimeError):
         pass
     return info
 

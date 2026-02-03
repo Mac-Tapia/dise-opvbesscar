@@ -234,17 +234,16 @@ class PPOAgent:
         """Retorna información del dispositivo."""
         info: Dict[str, Any] = {"device": self.device}
         try:
-            import torch
+            import torch  # type: ignore
             info["torch_version"] = str(torch.__version__)
             info["cuda_available"] = str(torch.cuda.is_available())
             if torch.cuda.is_available():
-                torch_version = torch.__dict__.get("version")
-                cuda_ver = getattr(torch_version, "cuda", None) if torch_version is not None else None
+                cuda_ver = torch.version.cuda
                 info["cuda_version"] = str(cuda_ver) if cuda_ver is not None else "unknown"
                 info["gpu_name"] = str(torch.cuda.get_device_name(0))
                 mem_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
-                info["gpu_memory_gb"] = str(mem_gb)
-        except ImportError:
+                info["gpu_memory_gb"] = str(round(mem_gb, 2))
+        except (ImportError, AttributeError):
             pass
         return info
 
@@ -742,9 +741,6 @@ class PPOAgent:
                 self.mototaxis_cargadas = 0
                 self.co2_direct_avoided_kg = 0.0
                 self.co2_indirect_avoided_kg = 0.0
-                self.mototaxis_cargadas = 0.0  # Contador de mototaxis cargadas (SOC >= 90%)
-                self.co2_direct_avoided_kg = 0.0  # CO₂ evitado por cargar EVs
-                self.co2_indirect_avoided_kg = 0.0  # CO₂ evitado por usar solar
 
             def _get_approx_kl(self) -> Optional[float]:
                 logger_obj = getattr(self.model, "logger", None)

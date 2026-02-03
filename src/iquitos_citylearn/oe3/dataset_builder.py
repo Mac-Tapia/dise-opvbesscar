@@ -1296,10 +1296,20 @@ def build_citylearn_dataset(
 
                         is_connected = bool(occupancy_profile[t])
 
+                        # Inicialización explícita de variables para satisfacer Pylance
+                        # Usar nombres diferentes para evitar shadowing de variables externas
+                        ev_state: int = 3  # Default: Available/idle
+                        ev_id_val: str = ""
+                        demand: float = 0.0
+                        departure_time: float = 0.0
+                        required_soc: float = 0.0
+                        arrival_time: float = 0.0
+                        arrival_soc: float = 0.0
+
                         if is_connected:
                             # ✅ DINÁMICA: EV conectado → calcular demanda realista
-                            state = 1  # Charging
-                            ev_id = f"{config.charger_type.upper()}_{config.charger_id:03d}"
+                            ev_state = 1  # Charging
+                            ev_id_val = f"{config.charger_type.upper()}_{config.charger_id:03d}"
 
                             # ✅ DINÁMICA: Energía y tiempo de carga
                             energy_req = calculator.calculate_energy_required()
@@ -1321,31 +1331,31 @@ def build_citylearn_dataset(
 
                         else:
                             # ✅ DINÁMICA: Charger disponible → sin demanda
-                            state = 3  # Available/idle
-                            ev_id = ""
+                            ev_state = 3  # Available/idle
+                            ev_id_val = ""
                             demand = 0.0
                             departure_time = 0.0
                             required_soc = 0.0
                             arrival_time = 2.0  # Próximo EV esperado en ~2h
                             arrival_soc = 0.0
 
-                        states.append(state)
-                        ev_ids.append(ev_id)
-                        departure_times.append(departure_time)
-                        required_socs.append(required_soc)
-                        arrival_times.append(arrival_time)
-                        arrival_socs.append(arrival_soc)
-                        hourly_demands.append(demand)
-                        total_ev_demand_kwh += demand
+                        states.append(int(ev_state))
+                        ev_ids.append(str(ev_id_val))
+                        departure_times.append(float(departure_time))
+                        required_socs.append(float(required_soc))
+                        arrival_times.append(float(arrival_time))
+                        arrival_socs.append(float(arrival_soc))
+                        hourly_demands.append(float(demand))
+                        total_ev_demand_kwh += float(demand)
 
                     # Crear DataFrame con datos dinámicos
                     df_charger = pd.DataFrame({
-                        'electric_vehicle_charger_state': states,
-                        'electric_vehicle_id': ev_ids,
-                        'electric_vehicle_departure_time': departure_times,
-                        'electric_vehicle_required_soc_departure': required_socs,
-                        'electric_vehicle_estimated_arrival_time': arrival_times,
-                        'electric_vehicle_estimated_soc_arrival': arrival_socs,
+                        'electric_vehicle_charger_state': [int(s) for s in states],
+                        'electric_vehicle_id': [str(ev) for ev in ev_ids],
+                        'electric_vehicle_departure_time': [float(d) for d in departure_times],
+                        'electric_vehicle_required_soc_departure': [float(s) for s in required_socs],
+                        'electric_vehicle_estimated_arrival_time': [float(a) for a in arrival_times],
+                        'electric_vehicle_estimated_soc_arrival': [float(s) for s in arrival_socs],
                     })
 
                     # Guardar CSV
@@ -1395,18 +1405,18 @@ def build_citylearn_dataset(
 
                 charger_demand = charger_profiles_annual.iloc[:, charger_idx].values
                 total_ev_demand_kwh += charger_demand.sum()
-                states = np.where(charger_demand > 0, 1, 3).astype(int)
+                states_array = np.where(charger_demand > 0, 1, 3).astype(int)
                 is_mototaxi = charger_idx >= 112
                 ev_prefix = "MOTOTAXI" if is_mototaxi else "MOTO"
 
                 df_charger = pd.DataFrame({
-                    'electric_vehicle_charger_state': states,
+                    'electric_vehicle_charger_state': states_array,
                     'electric_vehicle_id': [f'{ev_prefix}_{(charger_idx % 112 if not is_mototaxi else charger_idx - 112) + 1:03d}'
-                                           if s == 1 else '' for s in states],
-                    'electric_vehicle_departure_time': np.where(states == 1, 4.0, 0.0),
-                    'electric_vehicle_required_soc_departure': np.where(states == 1, 0.8, 0.0),
-                    'electric_vehicle_estimated_arrival_time': np.where(states == 3, 2.0, 0.0),
-                    'electric_vehicle_estimated_soc_arrival': np.where(states == 1, 0.3, 0.2),
+                                           if int(s) == 1 else '' for s in states_array],
+                    'electric_vehicle_departure_time': np.where(states_array == 1, 4.0, 0.0),
+                    'electric_vehicle_required_soc_departure': np.where(states_array == 1, 0.8, 0.0),
+                    'electric_vehicle_estimated_arrival_time': np.where(states_array == 3, 2.0, 0.0),
+                    'electric_vehicle_estimated_soc_arrival': np.where(states_array == 1, 0.3, 0.2),
                 })
 
                 df_charger.to_csv(csv_path, index=False, float_format='%.6f')
