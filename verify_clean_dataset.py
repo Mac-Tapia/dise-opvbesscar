@@ -1,8 +1,13 @@
 #!/usr/bin/env python
 """Verify cleaned dataset structure"""
 import json
-import pandas as pd
 import os
+
+try:
+    import pandas as pd
+except ImportError:
+    print("Error: pandas no está instalado. Ejecutar: pip install pandas")
+    exit(1)
 
 print("✅ ESTADO FINAL DEL DATASET:\n")
 
