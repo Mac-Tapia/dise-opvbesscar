@@ -14,10 +14,12 @@ CARGADORES EV (TOMAS CONTROLABLES):
 - Configuración: 28 cargadores para motos (2 kW c/u) + 4 cargadores para mototaxis (3 kW c/u)
 - Sockets totales: 128 (4 sockets por cargador, cada socket controlado INDEPENDIENTEMENTE)
 - Potencia simultánea: 68 kW máximo (56 kW motos + 12 kW mototaxis)
-- Energía diaria: 14,976 kWh (demanda total operacional)
+- Energía diaria REAL (Dataset): 903.46 kWh promedio (Tabla 13 OE2, 8,760 horas/año)
+- Rango energía: 92.80 - 3,252 kWh/día (min-max)
 - Horario operación: 09:00 - 22:00 (13 horas/día)
 - Horario pico: 18:00 - 22:00 (4 horas/día)
-- Capacidad anual: 2,912 motos + 416 mototaxis (5,466,240 kWh/año)
+- Flota diaria REAL: 900 motos + 130 mototaxis (1,030 total)
+- Capacidad anual REAL: 328,500 motos + 47,450 mototaxis = 329,763 kWh/año
 
 CONTROL OE3 - ARQUITECTURA DE ACCIÓN/OBSERVACIÓN:
 - Observables: 128 sockets (estado de carga individual de cada socket)
@@ -1539,14 +1541,17 @@ def run_charger_sizing(
     esc_rec.at["vehicles_year_mototaxis"] = VEHICLES_DAY_MOTOTAXIS * 365  # 139,430
 
     # =================================================================
-    # ENERGÍA DIARIA (CALCULADA Y FIJA)
+    # ENERGÍA DIARIA (REAL DATASET - TABLA 13 OE2, 2026-02-04)
     # =================================================================
-    # Motos: 2,679 × 1.0 kWh = 2,679 kWh
-    # Mototaxis: 382 × 1.5 kWh = 573 kWh
-    # TOTAL: 3,252 kWh/día
-    ENERGY_DAY_MOTOS_KWH = 2679.0
-    ENERGY_DAY_MOTOTAXIS_KWH = 573.0
-    ENERGY_DAY_TOTAL_KWH = 3252.0
+    # Fuente: data/interim/oe2/chargers/chargers_hourly_profiles_annual.csv
+    # Estadísticas de 8,760 horas (365 días × 24 horas/día) sumadas sobre 32 chargers
+    # Motos (70% del promedio): ~632.42 kWh/día
+    # Mototaxis (30% del promedio): ~271.04 kWh/día
+    # TOTAL PROMEDIO: 903.46 kWh/día ✅ VALOR REAL CONFIRMADO
+    # Rango: 92.80 (min) - 3,252 (max) - 835.20 (mediana) - 572.07 (std)
+    ENERGY_DAY_MOTOS_KWH = 632.42
+    ENERGY_DAY_MOTOTAXIS_KWH = 271.04
+    ENERGY_DAY_TOTAL_KWH = 903.46
 
     esc_rec.at["energy_day_kwh"] = ENERGY_DAY_TOTAL_KWH
     res.energy_day_kwh = ENERGY_DAY_TOTAL_KWH
