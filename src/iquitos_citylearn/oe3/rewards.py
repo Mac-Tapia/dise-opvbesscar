@@ -113,13 +113,14 @@ class MultiObjectiveWeights:
     cost: float = 0.15             # Matches co2_focus preset
     solar: float = 0.20            # SECUNDARIO: autoconsumo solar limpio
     ev_satisfaction: float = 0.10  # Satisfacción básica de carga
+    ev_utilization: float = 0.05   # 🟢 NUEVO: Bonus por utilización máxima EVs (motos+mototaxis cargadas)
     grid_stability: float = 0.05   # Matches co2_focus preset
     peak_import_penalty: float = 0.00  # Dinámico en compute(), no como peso fijo
     operational_penalties: float = 0.0  # Penalizaciones operacionales (BESS, EV fairness)
 
     def __post_init__(self):
         # Normalizar pesos base (sin peak_import_penalty que se aplica por separado)
-        base_weights = [self.co2, self.cost, self.solar, self.ev_satisfaction, self.grid_stability]
+        base_weights = [self.co2, self.cost, self.solar, self.ev_satisfaction, self.ev_utilization, self.grid_stability]
         total = sum(base_weights)
         if abs(total - 1.0) > 0.01:
             logger.warning(f"Pesos multiobjetivo no suman 1.0 (suma={total:.3f}), normalizando...")
@@ -128,6 +129,7 @@ class MultiObjectiveWeights:
             self.cost *= factor
             self.solar *= factor
             self.ev_satisfaction *= factor
+            self.ev_utilization *= factor
             self.grid_stability *= factor
 
     def as_dict(self) -> Dict[str, float]:
@@ -136,6 +138,7 @@ class MultiObjectiveWeights:
             "cost": self.cost,
             "solar": self.solar,
             "ev_satisfaction": self.ev_satisfaction,
+            "ev_utilization": self.ev_utilization,
             "grid_stability": self.grid_stability,
             "peak_import_penalty": self.peak_import_penalty,
             "operational_penalties": self.operational_penalties,
@@ -149,6 +152,15 @@ class IquitosContext:
     co2_factor_kg_per_kwh: float = 0.4521  # Grid import CO₂ factor
     co2_conversion_factor: float = 2.146   # Para cálculo directo: 50kW × 2.146 = 107.3 kg/h
 
+    # 🟢 NUEVO: Configuración de EVs para bonus de utilización (2026-02-04)
+    # Flota OE3 REAL: 1,800 motos/día + 260 mototaxis/día = 2,060 vehículos/día
+    # Proyección anual: 657,000 motos/año + 94,900 mototaxis/año = 751,900 vehículos/año
+    max_motos_simultaneous: int = 112     # Max motos que pueden cargarse simultáneamente (capacidad sockets)
+    max_mototaxis_simultaneous: int = 16  # Max mototaxis que pueden cargarse simultáneamente (capacidad sockets)
+    max_evs_total: int = 128              # Total sockets/chargers (32 chargers × 4 sockets)
+    motos_daily_capacity: int = 1800      # ✅ CORRECTO: 1,800 motos/día (no 2,912 anual)
+    mototaxis_daily_capacity: int = 260   # ✅ CORRECTO: 260 mototaxis/día (no 416 anual)
+
     # Tarifa eléctrica
     tariff_usd_per_kwh: float = 0.20
 
@@ -160,9 +172,14 @@ class IquitosContext:
     charger_power_kw_mototaxi: float = 3.0 # Potencia mototaxis
     ev_demand_constant_kw: float = 50.0    # Demanda constante (workaround CityLearn 2.5.0)
 
-    # Flota EV
-    n_motos: int = 900
-    n_mototaxis: int = 130
+    # Flota EV (OE3 REAL - 2026-02-04)
+    # VALORES DIARIOS (para control):
+    vehicles_day_motos: int = 1800         # Motos cargadas por día
+    vehicles_day_mototaxis: int = 260      # Mototaxis cargadas por día
+
+    # VALORES ANUALES (para impacto y referencia):
+    vehicles_year_motos: int = 657000      # Proyección anual: 1,800 × 365
+    vehicles_year_mototaxis: int = 94900   # Proyección anual: 260 × 365
 
     # Límites operacionales
     peak_demand_limit_kw: float = 200.0
@@ -314,15 +331,92 @@ class MultiObjectiveReward:
         components["r_solar"] = r_solar
         components["solar_kwh"] = solar_generation_kwh
 
-        # 4. Recompensa Satisfacción EV (maximizar) - REDUCIDA en peso
-        ev_satisfaction = min(1.0, ev_soc_avg / self.context.ev_soc_target)
-        r_ev = 2.0 * ev_satisfaction - 1.0
+        # 4. Recompensa Satisfacción EV (maximizar) - ENHANCED para priorizar carga a 90% SOC
+        # ✅ OBJETIVO: Maximizar carga de EVs a 90% SOC durante 9AM-10PM (Modo 3)
+        # Estructura: Base (ev_satisfaction) + Hitos (80%, 88%) + Urgencia Temporal (20-21h)
+
+        # 4.1 Base: Normalized SOC satisfaction
+        ev_satisfaction = min(1.0, ev_soc_avg / self.context.ev_soc_target)  # [0, 1]
+        r_ev = 2.0 * ev_satisfaction - 1.0  # [-1, 1]
+
+        # 4.2 Hito de Carga 1: Penalidad para SOC muy bajo (<80%)
+        if ev_soc_avg < 0.80:
+            soc_deficit = 0.80 - ev_soc_avg
+            deficit_penalty = -0.3 * min(1.0, soc_deficit / 0.20)  # [-0.3, 0]
+            r_ev += deficit_penalty
+            components["r_ev_soc_deficit"] = deficit_penalty
+        else:
+            components["r_ev_soc_deficit"] = 0.0
+
+        # 4.3 Hito de Carga 2: Bonus para SOC cercano al target (88%+)
+        if ev_soc_avg > 0.88:
+            soc_buffer = ev_soc_avg - 0.88  # [0, 0.02+]
+            completion_bonus = 0.2 * min(1.0, soc_buffer / 0.10)  # [0, 0.2]
+            r_ev += completion_bonus
+            components["r_ev_completion_bonus"] = completion_bonus
+        else:
+            components["r_ev_completion_bonus"] = 0.0
+
+        # 4.4 Urgencia Temporal: PENALIZACIÓN FUERTE en última ventana de carga (8-10 PM)
+        # Contexto: Mall cierra a las 10 PM. EVs deben estar listos antes de salir.
+        if hour in [20, 21]:  # 8-10 PM critical window (horas 20, 21 = 8PM, 9PM)
+            # En picos finales, MÁXIMA urgencia de completar carga
+            if ev_soc_avg < 0.90:
+                # PENALIZACIÓN FUERTE: evita que agents dejen EVs sin cargar al cierre
+                final_window_penalty = -0.8 * min(1.0, (0.90 - ev_soc_avg) / 0.30)  # [-0.8, 0]
+                r_ev += final_window_penalty
+                components["r_ev_final_window_penalty"] = final_window_penalty
+            else:
+                # BONUS en ventana final si EV listo: asegura carga completa antes cierre
+                final_window_bonus = 0.4  # Fuerte bonus por estar listo
+                r_ev += final_window_bonus
+                components["r_ev_final_window_penalty"] = final_window_bonus
+        else:
+            components["r_ev_final_window_penalty"] = 0.0
+
+        # 4.5 Bonus por Solar directo a EVs: Maximizar PV autoconsumo en EV
         if solar_generation_kwh > 0 and ev_charging_kwh > 0:
             solar_ev_ratio = min(1.0, ev_charging_kwh / solar_generation_kwh)
-            r_ev += 0.1 * solar_ev_ratio  # Reducido bonus
+            r_ev += 0.1 * solar_ev_ratio  # Bonus pequeño pero consistente
+
+        # Normalizacion final
         r_ev = np.clip(r_ev, -1.0, 1.0)
         components["r_ev"] = r_ev
+        components["r_ev_base"] = 2.0 * ev_satisfaction - 1.0
         components["ev_soc_avg"] = ev_soc_avg
+        components["hour"] = float(hour)
+
+        # 🟢 5. NUEVO: Recompensa por Utilización de EVs (maximizar motos+mototaxis cargadas)
+        # ✅ OBJETIVO: Premiar cuando SAC carga máxima cantidad de motos y mototaxis
+        # SIN afectar capacidad de cargadores (128 sockets disponibles)
+        #
+        # LÓGICA:
+        # - EVs llegan con diferentes SOC (20-25%)
+        # - Calcular ratio de utilización = ev_soc_avg / max_ev_capacity
+        # - Bonus proporcional al ratio (hasta máximo 1.0)
+        # - Bonus adicional si mantiene balance (no sobrecargar)
+
+        # Heurística: Si ev_soc_avg > 0.75 y se están cargando EVs,
+        # significa que el agente está manteniendo múltiples EVs en buen estado
+        r_ev_utilization = 0.0
+        if ev_soc_avg > 0.70:
+            # Bonus por buen manejo de utilización
+            # Máximo bonus cuando ev_soc_avg ≈ 0.85-0.90 (evita pasar 0.90)
+            utilization_score = min(1.0, (ev_soc_avg - 0.70) / (0.90 - 0.70))  # [0, 1]
+            r_ev_utilization = 2.0 * utilization_score - 1.0  # [-1, 1]
+
+            # Penalización si supera 0.95 (indica que concentra carga en pocos EVs)
+            if ev_soc_avg > 0.95:
+                overcharge_penalty = -0.3 * min(1.0, (ev_soc_avg - 0.95) / 0.05)
+                r_ev_utilization += overcharge_penalty
+        else:
+            # Penalización por utilización baja (EVs no están siendo cargados)
+            underutilization_penalty = -0.2 * min(1.0, (0.70 - ev_soc_avg) / 0.30)
+            r_ev_utilization = underutilization_penalty
+
+        r_ev_utilization = np.clip(r_ev_utilization, -1.0, 1.0)
+        components["r_ev_utilization"] = r_ev_utilization
+        components["ev_utilization_score"] = float(ev_soc_avg)
 
         # 5. Recompensa Estabilidad de Red (minimizar picos) - AHORA TIENE MAS PESO
         demand_ratio = grid_import_kwh / max(1.0, self.context.peak_demand_limit_kw)
@@ -357,12 +451,13 @@ class MultiObjectiveReward:
 
         soc_penalty = (components["r_soc_reserve"] - 1.0) * 0.5  # Escala [-0.5, 0]
 
-        # Recompensa total ponderada - TIER 1 FIX: SOC penalty ahora ponderada
+        # Recompensa total ponderada - INCLUYE EV utilization bonus
         reward = (
             self.weights.co2 * r_co2 +
             self.weights.cost * r_cost +
             self.weights.solar * r_solar +
             self.weights.ev_satisfaction * r_ev +
+            self.weights.ev_utilization * r_ev_utilization +
             self.weights.grid_stability * r_grid +
             0.10 * soc_penalty  # SOC penalty ponderada (0.10 weight)
         )
@@ -663,11 +758,11 @@ def create_iquitos_reward_weights(
     """
     # Versión estándar (todos los casos ahora usan esto)
     presets = {
-        "balanced": MultiObjectiveWeights(co2=0.35, cost=0.25, solar=0.20, ev_satisfaction=0.15, grid_stability=0.05),
-        "co2_focus": MultiObjectiveWeights(co2=0.50, cost=0.15, solar=0.20, ev_satisfaction=0.10, grid_stability=0.05),
-        "cost_focus": MultiObjectiveWeights(co2=0.30, cost=0.35, solar=0.15, ev_satisfaction=0.15, grid_stability=0.05),
-        "ev_focus": MultiObjectiveWeights(co2=0.30, cost=0.20, solar=0.15, ev_satisfaction=0.30, grid_stability=0.05),
-        "solar_focus": MultiObjectiveWeights(co2=0.30, cost=0.20, solar=0.35, ev_satisfaction=0.10, grid_stability=0.05),
+        "balanced": MultiObjectiveWeights(co2=0.30, cost=0.25, solar=0.20, ev_satisfaction=0.10, ev_utilization=0.05, grid_stability=0.10),
+        "co2_focus": MultiObjectiveWeights(co2=0.50, cost=0.15, solar=0.20, ev_satisfaction=0.08, ev_utilization=0.02, grid_stability=0.05),
+        "cost_focus": MultiObjectiveWeights(co2=0.30, cost=0.35, solar=0.15, ev_satisfaction=0.10, ev_utilization=0.05, grid_stability=0.05),
+        "ev_focus": MultiObjectiveWeights(co2=0.25, cost=0.15, solar=0.15, ev_satisfaction=0.25, ev_utilization=0.10, grid_stability=0.10),
+        "solar_focus": MultiObjectiveWeights(co2=0.30, cost=0.15, solar=0.40, ev_satisfaction=0.08, ev_utilization=0.02, grid_stability=0.05),
     }
     return presets.get(priority, presets["co2_focus"])
 

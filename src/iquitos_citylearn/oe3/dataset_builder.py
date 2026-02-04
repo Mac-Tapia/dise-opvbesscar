@@ -481,7 +481,7 @@ def build_citylearn_dataset(
 
     # Configurar schema con UN SOLO building
     schema["buildings"] = {"Mall_Iquitos": b_mall}
-    logger.info("Creado building unificado: Mall_Iquitos (128 chargers, 4162 kWp PV, 2000 kWh BESS)")
+    logger.info("Creado building unificado: Mall_Iquitos (32 chargers × 4 sockets = 128 tomas, 4162 kWp PV, 2000 kWh BESS)")
 
     # Referencia al building único
     b = b_mall
@@ -661,9 +661,9 @@ def build_citylearn_dataset(
                         building["electrical_storage"]["attributes"]["nominal_power"] = bess_pow
             logger.info("%s: BESS %.1f kWh, %.1f kW", building_name, bess_cap, bess_pow)
 
-    # === CREAR CHARGERS EN EL SCHEMA (128 chargers individuales) ===
-    # Los chargers se crean directamente en el schema para control por RL agents
-    # Cada charger es independiente y controlable vía acciones continuas [0, 1]
+    # === CREAR CHARGERS EN EL SCHEMA (128 socket-level chargers = 32 physical chargers × 4 sockets) ===
+    # Los sockets se crean directamente en el schema para control por RL agents
+    # Cada socket (toma) es independiente y controlable vía acciones continuas [0, 1]
 
     # Get charger configuration from OE2
     ev_chargers = artifacts.get("ev_chargers", [])  # list of 32 PHYSICAL chargers
@@ -671,11 +671,11 @@ def build_citylearn_dataset(
     sockets_per_charger = 4
     total_devices = n_physical_chargers * sockets_per_charger  # 32 × 4 = 128 sockets/tomas
 
-    logger.info(f"[CHARGERS SCHEMA] Restaurando {total_devices} sockets ({n_physical_chargers} chargers × {sockets_per_charger} sockets) en schema para control RL")
+    logger.info(f"[CHARGERS SCHEMA] Configurando {total_devices} sockets (32 chargers físicos × 4 sockets = 128 tomas) en schema para control RL")
 
-    # ✓ SOLUCIÓN: Mantener chargers en schema (no eliminar)
-    # - 128 chargers controlables vía acciones RL
-    # - Cada charger tiene CSV con estado (ocupancia, SOC, etc.)
+    # ✓ SOLUCIÓN: Mantener sockets en schema (no eliminar)
+    # - 128 sockets (tomas) controlables vía acciones RL (32 cargadores × 4 sockets)
+    # - Cada socket tiene CSV con estado (ocupancia, SOC, etc.)
     # - RL agents controlan power setpoint via acciones continuas [0, 1]
 
     # ✅ CRITICAL FIX: ALWAYS START WITH EMPTY CHARGERS DICT
@@ -783,7 +783,7 @@ def build_citylearn_dataset(
     all_chargers_backup = dict(all_chargers)  # Deep copy to preserve state
     chargers_count_at_assignment = len(all_chargers)
 
-    logger.info(f"[CHARGERS SCHEMA] ✓ CORRECCIÓN CRÍTICA: Asignados {total_devices} chargers a 'chargers': {n_motos} motos ({power_motos:.1f} kW) + {n_mototaxis} mototaxis ({power_mototaxis:.1f} kW)")
+    logger.info(f"[CHARGERS SCHEMA] ✓ CORRECCIÓN CRÍTICA: Asignados {total_devices} sockets (32 chargers × 4) a 'chargers': {n_motos} motos ({power_motos:.1f} kW) + {n_mototaxis} mototaxis ({power_mototaxis:.1f} kW)")
     logger.info(f"[CHARGERS SCHEMA] ✅ BACKUP: Guardadas {chargers_count_at_assignment} chargers para validación posterior")
 
     # === ELECTRIC VEHICLES: DINÁMICOS (no permanentes) ===
@@ -1520,7 +1520,7 @@ def build_citylearn_dataset(
 
         # ✅ CRITICAL FIX: Update schema with ALL 128 chargers
         b_mall["chargers"] = chargers_to_update
-        logger.info(f"[OK] [CHARGER GENERATION] Schema actualizado: {len(chargers_to_update)}/128 chargers -> {len(chargers_to_update)} CSVs individuales")
+        logger.info(f"[OK] [CHARGER GENERATION] Schema actualizado: {len(chargers_to_update)}/128 sockets (32 chargers × 4) -> {len(chargers_to_update)} CSVs individuales")
 
     else:
         logger.warning("[WARN] [CHARGER GENERATION] No chargers_hourly_profiles_annual en artifacts")

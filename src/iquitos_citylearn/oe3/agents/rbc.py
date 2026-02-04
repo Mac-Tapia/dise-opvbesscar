@@ -35,10 +35,13 @@ class RBCConfig:
     ev_max_rate: float = 1.0  # Tasa máxima de carga EV
     ev_min_rate: float = 0.2  # Tasa mínima de carga EV
 
-    # Configuración de chargers (OE2 Real 2026-01-30: 32 cargadores = 28 motos @ 2kW + 4 mototaxis @ 3kW)
-    n_chargers: int = 32
-    sockets_per_charger: int = 4
-    charger_power_kw: float = 2.125  # Promedio ponderado (56+12)/32
+    # ✅ Configuración de chargers (OE3 ACTUAL - 2026-02-04: 32 chargers = 128 sockets)
+    # Detalle: 28 chargers @ 2kW (motos) + 4 chargers @ 3kW (mototaxis)
+    # ⚠️  LEGACY (OE2): Solo 20 motos + 3 mototaxis totales → DEPRECATED
+    # ACTUAL (OE3): 112 motos + 16 mototaxis = 128 simultáneos en 32 chargers × 4 sockets
+    n_chargers: int = 32                        # 32 chargers físicos
+    sockets_per_charger: int = 4                # 4 sockets por charger = 128 total
+    charger_power_kw: float = 2.125  # Promedio ponderado: (28×2 + 4×3)/32 = 68/32 = 2.125 kW
 
     # Hora pico (para Iquitos: 18-22h)
     peak_hours: tuple = (18, 19, 20, 21)

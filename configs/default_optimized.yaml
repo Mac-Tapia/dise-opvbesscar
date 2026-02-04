@@ -219,7 +219,7 @@ oe3:
     - PPO
     - A2C
     co2_tracking: true
-    multi_objective_priority: co2_focus
+    multi_objective_priority: ev_focus
     ppo:
       batch_size: 512
       checkpoint_freq_steps: 200

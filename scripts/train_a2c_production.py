@@ -329,7 +329,7 @@ def run_training(
         # General
         deterministic_eval=True,
         use_multi_objective=True,
-        multi_objective_priority="co2_focus",
+        multi_objective_priority=cfg["oe3"]["multi_objective"]["multi_objective_priority"],
         seed=42,
     )
 

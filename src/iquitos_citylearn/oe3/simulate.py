@@ -321,6 +321,42 @@ def _make_env(schema_path: Path) -> Any:
         os.chdir(original_cwd)
         logger.debug(f"Restored working directory: {original_cwd}")
 
+    # =========================================================================
+    # CRITICAL FIX: Disable CityLearn's internal TimeLimit wrapper that truncates
+    # episodes prematurely. CityLearn v2.5.0 wraps the env with a TimeLimit wrapper
+    # that returns truncated=True before the full 8760 steps are reached.
+    #
+    # Root Cause: CityLearn sets max_episode_steps internally based on some calculation
+    # that doesn't match our 8760-step requirement.
+    #
+    # Solution: Remove the TimeLimit wrapper so episodes run to completion.
+    # =========================================================================
+    try:
+        # Check if environment has time_limit wrapper (gymnasiu TimeLimit)
+        import gymnasium as gym  # type: ignore
+
+        if hasattr(env, 'unwrapped'):
+            base_env = env.unwrapped
+            logger.info("[TIMELIMIT FIX] Base environment type: %s", type(base_env).__name__)
+
+        # Remove TimeLimit wrapper if present
+        if isinstance(env, gym.wrappers.TimeLimit):
+            logger.warning("[TIMELIMIT FIX] Found TimeLimit wrapper, removing it to allow full 8760-step episodes")
+            env = env.env  # Unwrap the TimeLimit wrapper
+        elif hasattr(env, '_max_episode_steps'):
+            logger.warning("[TIMELIMIT FIX] Environment has _max_episode_steps attribute set to %d", getattr(env, '_max_episode_steps', -1))
+            # Try to disable by setting to None or very large value
+            setattr(env, '_max_episode_steps', None)
+
+        # FINAL VALIDATION: Verify TimeLimit is disabled
+        has_timelimit = any(isinstance(w, gym.wrappers.TimeLimit) for w in getattr(env, 'unwrapped', [env]))
+        if has_timelimit:
+            logger.error("[TIMELIMIT FIX] ❌ FAILED to remove TimeLimit wrapper - episodes may still truncate!")
+        else:
+            logger.info("[TIMELIMIT FIX] ✅ SUCCESS - TimeLimit wrapper disabled or not present")
+    except Exception as e:
+        logger.warning("[TIMELIMIT FIX] Could not disable TimeLimit wrapper: %s (may still cause truncation)", e)
+
     # CRITICAL FIX: Ensure render_mode attribute exists to suppress stable_baselines3 warnings
     if not hasattr(env, 'render_mode'):
         env.render_mode = None

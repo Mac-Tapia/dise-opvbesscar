@@ -50,6 +50,8 @@ class PPOConfig:
     # Optimización - PPO ADAPTADO A GPU LIMITADA
     learning_rate: float = 1e-4     # ↑ OPTIMIZADO: 5e-5→1e-4 (mejor balancse con nuevo clip)
     lr_schedule: str = "linear"     # ✅ Decay automático
+    lr_final_ratio: float = 0.5     # 🔴 DIFERENCIADO: 0.5 (NO 0.1 como SAC)
+                                    #   PPO on-policy: decay suave (50% final LR)
     gamma: float = 0.99             # ↓ REDUCIDO: 0.999→0.99 (simplifica)
     gae_lambda: float = 0.98        # ↑ OPTIMIZADO: 0.90→0.98 (mejor long-term advantages)
 
@@ -58,7 +60,8 @@ class PPOConfig:
     clip_range_vf: float = 0.5      # ↑ OPTIMIZADO: 0.15→0.5 (value function clipping)
     ent_coef: float = 0.01          # ↑ OPTIMIZADO: 0.001→0.01 (exploration incentive)
     vf_coef: float = 0.5            # ✅ OPTIMIZADO: 0.3→0.5 (value function más importante)
-    max_grad_norm: float = 1.0      # ↑ OPTIMIZADO: 0.25→1.0 (gradient clipping safety)
+    max_grad_norm: float = 1.0      # 🔴 DIFERENCIADO PPO: 1.0 (vs SAC 10.0)
+                                    # Justificación: PPO on-policy, gradientes más estables que SAC off-policy
 
     # Red neuronal - REDUCIDA PARA RTX 4060
     hidden_sizes: tuple = (256, 256)   # ↓↓ CRITICAMENTE REDUCIDA: 512→256
@@ -70,8 +73,9 @@ class PPOConfig:
     normalize_observations: bool = True
     normalize_rewards: bool = True
     reward_scale: float = 0.1          # ✅ AGREGADO: Escalar rewards (previene Q-explosion)
-    clip_obs: float = 5.0              # ✅ AGREGADO: Clipear observaciones
-    clip_reward: float = 1.0           # ✅ AGREGADO: Clipear rewards
+    clip_obs: float = 5.0              # ✅ AGREGADO: Clipear observaciones (less aggressively than SAC)
+    clip_reward: float = 1.0           # ✅ AGREGADO (PPO INDIVIDUALIZED): Clipear rewards (1.0 = suave para on-policy)
+                                       # 🔴 DIFERENCIADO vs SAC (10.0): PPO es on-policy, requiere clipping menos agresivo
 
     # === EXPLORACIÓN MEJORADA ===
     use_sde: bool = True               # ↑ OPTIMIZADO: TRUE (state-dependent exploration)
@@ -82,9 +86,21 @@ class PPOConfig:
 
     # === ENTROPY DECAY SCHEDULE (NEW COMPONENT #1) ===
     # Exploración decrece durante entrenamiento: high early → low late
-    ent_coef_schedule: str = "linear"   # "constant", "linear", o "exponential"
-    ent_coef_final: float = 0.001       # Target entropy coef at end of training
+    ent_coef_schedule: str = "exponential"  # "constant", "linear", o "exponential"
+    ent_coef_final: float = 0.001           # Target entropy coef at end of training
+    ent_decay_rate: float = 0.999           # 🔴 DIFERENCIADO: 0.999 (3× más lento que SAC 0.9995)
+                                            #   PPO on-policy: decay agresivo sería contraproducente
     # Rationale: Early exploration (0.01) → Late exploitation (0.001)
+    # Formula: ent_coef *= 0.9995 per 1000 steps (ALIGNED WITH SAC)
+
+    # === 🟢 NUEVO: EV UTILIZATION BONUS (PPO ADAPTATION) ===
+    # PPO on-policy: Reward el máximo simultáneo de motos y mototaxis cargadas
+    # Diferencia vs SAC: PPO integra bonus en advantage function, no en reward raw
+    use_ev_utilization_bonus: bool = True   # Enable/disable bonus
+    ev_utilization_weight: float = 0.05     # PPO: weight del bonus (same as SAC)
+    ev_soc_optimal_min: float = 0.70        # SOC mínimo para considerar "utilizado"
+    ev_soc_optimal_max: float = 0.90        # SOC máximo para considerar "utilizado"
+    ev_soc_overcharge_threshold: float = 0.95  # Penalizar si >95% (concentración)
 
     # === VF COEFFICIENT SCHEDULE (NEW COMPONENT #2) ===
     # Value function importance puede decrecer cuando policy converge
@@ -159,10 +175,11 @@ class PPOConfig:
 
         logger.info(
             "[PPOConfig] Inicializado con schedules: "
-            "ent_coef=%s(%.4f→%.4f), vf_coef=%s(%.2f→%.2f), huber_loss=%s",
+            "ent_coef=%s(%.4f→%.4f), vf_coef=%s(%.2f→%.2f), huber_loss=%s, "
+            "ev_utilization_bonus=%s(weight=%.2f)",
             self.ent_coef_schedule, self.ent_coef, self.ent_coef_final,
             self.vf_coef_schedule, self.vf_coef_init, self.vf_coef_final,
-            self.use_huber_loss
+            self.use_huber_loss, self.use_ev_utilization_bonus, self.ev_utilization_weight
         )
 
 
@@ -174,7 +191,16 @@ class PPOAgent:
     - GAE (Generalized Advantage Estimation)
     - Scheduler de learning rate
     - Normalización de ventajas
+    - 🟢 NUEVO: EV Utilization Bonus - Rewards máximo simultáneo de motos y mototaxis
     - Compatible con CityLearn
+    - Compatible con rewards multiobjetivo (rewards.py)
+
+    **EV Utilization Bonus (PPO Adaptation)**:
+    - Integrado en advantage function de PPO
+    - Penaliza SOC < 0.70 (baja utilización)
+    - Bonus SOC ∈ [0.70, 0.90] (utilización óptima)
+    - Penaliza SOC > 0.95 (concentración en pocos EVs)
+    - Weight: ev_utilization_weight = 0.05 (5% de la pérdida total)
     """
 
     def __init__(self, env: Any, config: Optional[PPOConfig] = None):

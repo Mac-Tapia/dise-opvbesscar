@@ -322,10 +322,11 @@ def run_baseline_calculation() -> dict:
     co2_avoided_ev_kg = total_ev_demand * ev_co2_avoided_factor  # vs gasolina
     co2_avoided_solar_kg = total_pv_used * carbon_intensity  # vs grid
 
-    # Motos y mototaxis (estimación basada en demanda)
-    # 112 motos (2kW, 30 min = 1kWh) + 16 mototaxis (3kW, 30 min = 1.5kWh)
-    motos_per_day = 2912
-    mototaxis_per_day = 416
+    # Motos y mototaxis (OE3 REAL - 2026-02-04)
+    # DIARIO: 1,800 motos + 260 mototaxis = 2,060 vehículos/día
+    # ANUAL: 657,000 motos + 94,900 mototaxis = 751,900 vehículos/año
+    motos_per_day = 1800
+    mototaxis_per_day = 260
     total_motos = motos_per_day * 365
     total_mototaxis = mototaxis_per_day * 365
 
