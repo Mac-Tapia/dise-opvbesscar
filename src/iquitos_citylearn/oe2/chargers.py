@@ -2053,8 +2053,8 @@ def run_charger_sizing(
         "totals": {
             "n_chargers": N_MOTO_CHARGERS_PLAYA + N_MOTOTAXI_CHARGERS_PLAYA,  # 32
             "total_sockets": N_TOMAS_MOTO_PLAYA + N_TOMAS_MOTOTAXI_PLAYA,  # 128
-            "energy_day_kwh": ENERGY_DAY_TOTAL_KWH,  # 3,252 kWh
-            "vehicles_charging_day": VEHICLES_DAY_MOTOS + VEHICLES_DAY_MOTOTAXIS,  # 3,061
+            "energy_day_kwh": ENERGY_DAY_TOTAL_KWH,  # 903.46 kWh (real dataset, Tabla 13 OE2)
+            "vehicles_charging_day": VEHICLES_DAY_MOTOS + VEHICLES_DAY_MOTOTAXIS,  # 1,030 (900 motos + 130 mototaxis)
         }
     }
     (playas_dir / "playas_summary.json").write_text(
