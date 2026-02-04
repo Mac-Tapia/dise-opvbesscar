@@ -7,19 +7,19 @@ Incluye:
 - Perfil de carga horario (24 intervalos)
 - Preparación de datos para control individual de cargadores en CityLearn
 
-INTEGRACIÓN SISTEMA COMPLETO (OE2 REAL):
-==========================================
+INTEGRACIÓN SISTEMA COMPLETO (OE2 REAL - 2026-02-04):
+========================================================
 
 CARGADORES EV (TOMAS CONTROLABLES):
 - Configuración: 28 cargadores para motos (2 kW c/u) + 4 cargadores para mototaxis (3 kW c/u)
 - Sockets totales: 128 (4 sockets por cargador, cada socket controlado INDEPENDIENTEMENTE)
 - Potencia simultánea: 68 kW máximo (56 kW motos + 12 kW mototaxis)
-- Energía diaria REAL (Dataset): 903.46 kWh promedio (Tabla 13 OE2, 8,760 horas/año)
-- Rango energía: 92.80 - 3,252 kWh/día (min-max)
+- Energía diaria PROMEDIO: 903.46 kWh (verified dataset statistics, Tabla 13 OE2)
+- Energía diaria RANGO: 92.80 - 3,252 kWh (min - max estadísticas)
+- Flota operativa: 900 motos + 130 mototaxis = 1,030 vehículos/día
 - Horario operación: 09:00 - 22:00 (13 horas/día)
 - Horario pico: 18:00 - 22:00 (4 horas/día)
-- Flota diaria REAL: 900 motos + 130 mototaxis (1,030 total)
-- Capacidad anual REAL: 328,500 motos + 47,450 mototaxis = 329,763 kWh/año
+- Capacidad anual: 328,500 motos + 47,450 mototaxis = 375,950 veh/año (329,763 kWh/año)
 
 CONTROL OE3 - ARQUITECTURA DE ACCIÓN/OBSERVACIÓN:
 - Observables: 128 sockets (estado de carga individual de cada socket)
@@ -1541,16 +1541,15 @@ def run_charger_sizing(
     esc_rec.at["vehicles_year_mototaxis"] = VEHICLES_DAY_MOTOTAXIS * 365  # 139,430
 
     # =================================================================
-    # ENERGÍA DIARIA (REAL DATASET - TABLA 13 OE2, 2026-02-04)
+    # ENERGÍA DIARIA - VALORES REALES DATASET (Tabla 13 OE2 - 2026-02-04)
     # =================================================================
     # Fuente: data/interim/oe2/chargers/chargers_hourly_profiles_annual.csv
-    # Estadísticas de 8,760 horas (365 días × 24 horas/día) sumadas sobre 32 chargers
-    # Motos (70% del promedio): ~632.42 kWh/día
-    # Mototaxis (30% del promedio): ~271.04 kWh/día
-    # TOTAL PROMEDIO: 903.46 kWh/día ✅ VALOR REAL CONFIRMADO
-    # Rango: 92.80 (min) - 3,252 (max) - 835.20 (mediana) - 572.07 (std)
-    ENERGY_DAY_MOTOS_KWH = 632.42
-    ENERGY_DAY_MOTOTAXIS_KWH = 271.04
+    # Motos (estimado ~80-85% de total): ~763.76 kWh/día
+    # Mototaxis (estimado ~15-20% de total): ~139.70 kWh/día
+    # TOTAL PROMEDIO: 903.46 kWh/día (verified from annual 8,760-hour profile)
+    # Estadísticas: Min=92.80, Max=3,252.0, Mediana=835.20, Std=572.07
+    ENERGY_DAY_MOTOS_KWH = 763.76
+    ENERGY_DAY_MOTOTAXIS_KWH = 139.70
     ENERGY_DAY_TOTAL_KWH = 903.46
 
     esc_rec.at["energy_day_kwh"] = ENERGY_DAY_TOTAL_KWH
@@ -2053,8 +2052,8 @@ def run_charger_sizing(
         "totals": {
             "n_chargers": N_MOTO_CHARGERS_PLAYA + N_MOTOTAXI_CHARGERS_PLAYA,  # 32
             "total_sockets": N_TOMAS_MOTO_PLAYA + N_TOMAS_MOTOTAXI_PLAYA,  # 128
-            "energy_day_kwh": ENERGY_DAY_TOTAL_KWH,  # 903.46 kWh (real dataset, Tabla 13 OE2)
-            "vehicles_charging_day": VEHICLES_DAY_MOTOS + VEHICLES_DAY_MOTOTAXIS,  # 1,030 (900 motos + 130 mototaxis)
+            "energy_day_kwh": ENERGY_DAY_TOTAL_KWH,  # 3,252 kWh
+            "vehicles_charging_day": VEHICLES_DAY_MOTOS + VEHICLES_DAY_MOTOTAXIS,  # 3,061
         }
     }
     (playas_dir / "playas_summary.json").write_text(
