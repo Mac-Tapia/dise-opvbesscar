@@ -104,6 +104,7 @@ class A2CConfig:
     # A2C paper usa RMSprop, pero Adam es common en SB3
     optimizer_type: str = "adam"           # "adam" o "rmsprop"
     optimizer_kwargs: Optional[Dict[str, Any]] = None  # Config personalizada
+    use_amp: bool = True                   # ✅ AGREGADO: Mixed Precision (AMP) para GPU
 
     # === NORMALIZACIÓN (crítico para estabilidad) ===
     normalize_observations: bool = True
@@ -944,9 +945,10 @@ class A2CAgent:
 
                     metrics_str = " | ".join(parts)
 
+                    # ✅ FIX: Usar num_timesteps como pasos (no n_calls que no es comparable)
                     logger.info(
                         "[A2C] paso %d | ep~%d | pasos_global=%d | %s",
-                        self.n_calls,
+                        int(self.model.num_timesteps),
                         approx_episode,
                         int(self.model.num_timesteps),
                         metrics_str,

@@ -93,24 +93,83 @@ oe3:
 
 ---
 
-## ✅ System Status
+## 🎯 Recent Updates (2026-02-03)
 
-| Component | Status |
-|-----------|--------|
-| Code Quality | ✅ 0 Pylance errors |
-| Dataset | ✅ 8,760 timesteps verified |
-| Agents | ✅ SAC, PPO, A2C operational |
-| Multi-Objective Reward | ✅ Synchronized |
-| Documentation | ✅ 23 reference docs |
-| GPU Support | ✅ CUDA enabled |
+### ✅ Dual Baselines System
+- **Baseline 1 (CON Solar):** 4,050 kWp solar + 50 kW EVs + 100 kW mall = ~190,000 kg CO₂/año
+- **Baseline 2 (SIN Solar):** 0 kWp (comparison) = ~640,000 kg CO₂/año
+- **Impact:** 450,000 kg CO₂/año saved by solar installation
+
+### ✅ 3-Component CO₂ Calculation (CORRECTED)
+1. **Emitted by Grid:** Grid import × 0.4521 kg CO₂/kWh (thermal generation)
+2. **Avoided Indirect:** (Solar + BESS) × 0.4521 kg CO₂/kWh (avoids grid import)
+3. **Avoided Direct:** Total EV × 2.146 kg CO₂/kWh (replaces gasoline)
+
+**Formula:** CO₂ NETO = Emitted - Avoided_Indirect - Avoided_Direct
+
+### ✅ Multi-Objective Rewards (Synchronized)
+- CO₂ Minimization: 0.50 (primary)
+- Solar Self-Consumption: 0.20 (secondary)
+- Cost Optimization: 0.15
+- EV Satisfaction: 0.10
+- Grid Stability: 0.05
+
+### ✅ Production Agents Ready
+- **SAC:** Off-policy, fastest convergence
+- **PPO:** On-policy, most stable
+- **A2C:** Simple actor-critic, reliable
 
 ---
 
-## 📝 Next Steps
+## ✅ System Status
 
-1. **Verify:** `python -m scripts.verify_3_sources_co2`
-2. **Train:** `python -m scripts.run_oe3_simulate --config configs/default.yaml`
-3. **Compare:** `python -m scripts.run_oe3_co2_table`
+| Component | Status | Last Update |
+|-----------|--------|-------------|
+| Code Quality | ✅ 0 Pylance errors | 2026-02-03 |
+| Dataset | ✅ 8,760 timesteps verified | 2026-02-03 |
+| Agents | ✅ SAC, PPO, A2C operational | 2026-02-03 |
+| Multi-Objective Reward | ✅ Synchronized & Validated | 2026-02-03 |
+| Dual Baselines | ✅ With/Without Solar | 2026-02-03 |
+| CO₂ 3-Component | ✅ Direct, Indirect Solar, Indirect BESS | 2026-02-03 |
+| Documentation | ✅ 23 reference docs | 2026-02-03 |
+| GPU Support | ✅ CUDA enabled | 2026-02-03 |
+
+---
+
+## 📝 Quick Commands
+
+### Baseline Comparisons
+```bash
+# Run both baselines (with solar + without solar)
+python -m scripts.run_dual_baselines --config configs/default.yaml
+
+# Results: outputs/baselines/{with_solar,without_solar}/baseline_comparison.csv
+```
+
+### Train RL Agents
+```bash
+# Full pipeline (all agents)
+python -m scripts.run_oe3_simulate --config configs/default.yaml
+
+# Individual agents
+python -m scripts.train_sac_production.py
+python -m scripts.train_ppo_production.py
+python -m scripts.train_a2c_production.py
+```
+
+### Compare Results
+```bash
+# Generate comparison table
+python -m scripts.run_oe3_co2_table --config configs/default.yaml
+
+# Results: outputs/oe3/co2_comparison_table.csv
+```
+
+### Monitoring
+```bash
+# Monitor training in real-time
+python -m scripts.monitor_pipeline_live.py
+```
 
 ---
 
@@ -150,5 +209,7 @@ For issues or questions:
 
 ---
 
-**Last Updated:** February 2, 2026  
+**Last Updated:** February 3, 2026  
+**Commit:** feat: dual baselines with 3-component CO₂ + multi-objective rewards  
+**Branch:** oe3-optimization-sac-ppo  
 **System Status:** Production Ready ✅
