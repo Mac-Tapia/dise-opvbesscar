@@ -1907,10 +1907,10 @@ def run_charger_sizing(
     N_TOMAS_MOTOTAXI_PLAYA = 16  # 4 × 4 sockets
 
     # Vehículos y energía por día (VALORES FIJOS)
-    MOTOS_CHARGING_DAY = VEHICLES_DAY_MOTOS        # 2,679
-    MOTOTAXIS_CHARGING_DAY = VEHICLES_DAY_MOTOTAXIS  # 382
-    ENERGY_MOTO_DAY = ENERGY_DAY_MOTOS_KWH          # 2,679 kWh
-    ENERGY_MOTOTAXI_DAY = ENERGY_DAY_MOTOTAXIS_KWH  # 573 kWh
+    MOTOS_CHARGING_DAY = VEHICLES_DAY_MOTOS        # 900 (REAL dataset)
+    MOTOTAXIS_CHARGING_DAY = VEHICLES_DAY_MOTOTAXIS  # 130 (REAL dataset)
+    ENERGY_MOTO_DAY = ENERGY_DAY_MOTOS_KWH          # 763.76 kWh (REAL dataset)
+    ENERGY_MOTOTAXI_DAY = ENERGY_DAY_MOTOTAXIS_KWH  # 139.70 kWh (REAL dataset)
 
     # Baterías (para referencia en PlayaData)
     battery_moto = 2.0  # kWh
@@ -2052,8 +2052,8 @@ def run_charger_sizing(
         "totals": {
             "n_chargers": N_MOTO_CHARGERS_PLAYA + N_MOTOTAXI_CHARGERS_PLAYA,  # 32
             "total_sockets": N_TOMAS_MOTO_PLAYA + N_TOMAS_MOTOTAXI_PLAYA,  # 128
-            "energy_day_kwh": ENERGY_DAY_TOTAL_KWH,  # 3,252 kWh
-            "vehicles_charging_day": VEHICLES_DAY_MOTOS + VEHICLES_DAY_MOTOTAXIS,  # 3,061
+            "energy_day_kwh": ENERGY_DAY_TOTAL_KWH,  # 903.46 kWh (REAL dataset average)
+            "vehicles_charging_day": VEHICLES_DAY_MOTOS + VEHICLES_DAY_MOTOTAXIS,  # 1,030 (900 motos + 130 mototaxis)
         }
     }
     (playas_dir / "playas_summary.json").write_text(
@@ -2232,16 +2232,16 @@ def run_charger_sizing(
                 "n_chargers": N_MOTO_CHARGERS_PLAYA,  # 28
                 "total_sockets": N_TOMAS_MOTO_PLAYA,  # 112
                 "power_kw": charger_power_kw_moto,
-                "vehicles_charging_day": VEHICLES_DAY_MOTOS,  # 2,679
-                "energy_day_kwh": ENERGY_DAY_MOTOS_KWH,  # 2,679 kWh
+                "vehicles_charging_day": VEHICLES_DAY_MOTOS,  # 900 (REAL dataset)
+                "energy_day_kwh": ENERGY_DAY_MOTOS_KWH,  # 763.76 kWh (REAL dataset)
             },
             "Playa_Mototaxis": {
                 "dir": str((playas_dir / "Playa_Mototaxis").resolve()),
                 "n_chargers": N_MOTOTAXI_CHARGERS_PLAYA,  # 4
                 "total_sockets": N_TOMAS_MOTOTAXI_PLAYA,  # 16
                 "power_kw": charger_power_kw_mototaxi,
-                "vehicles_charging_day": VEHICLES_DAY_MOTOTAXIS,  # 382
-                "energy_day_kwh": ENERGY_DAY_MOTOTAXIS_KWH,  # 573 kWh
+                "vehicles_charging_day": VEHICLES_DAY_MOTOTAXIS,  # 130 (REAL dataset)
+                "energy_day_kwh": ENERGY_DAY_MOTOTAXIS_KWH,  # 139.70 kWh (REAL dataset)
             },
         },
     }
