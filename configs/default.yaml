@@ -260,7 +260,7 @@ oe3:
       - PPO
       - A2C
     co2_tracking: true
-    multi_objective_priority: co2_focus
+    multi_objective_priority: ev_focus  # ✅ CHANGED: co2_focus → ev_focus (maximize EV charging to 90% SOC)
     ppo:
       batch_size: 120 # ✓ FIXED: 256→120 (perfect divisor: 8760/120=73 mini-batches, no truncation)
       checkpoint_freq_steps: 500

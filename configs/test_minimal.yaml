@@ -214,7 +214,7 @@ oe3:
     agents:
     - SAC
     co2_tracking: true
-    multi_objective_priority: co2_focus
+    multi_objective_priority: ev_focus
     ppo:
       batch_size: 120
       checkpoint_freq_steps: 500

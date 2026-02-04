@@ -633,11 +633,16 @@ def generate_random_scenarios(
     rng = np.random.default_rng(seed)
 
     # ================================================================
-    # CALIBRACIÓN TABLA 13 OE2:
-    # - n_total = 1030 vehículos
-    # - bat_avg = 3.157 kWh
+    # CALIBRACIÓN TABLA 13 OE2 (DATASET STATISTICS):
+    # ⚠️  NOTA: Estos valores (3252.00, 92.80, etc.) son ESTADÍSTICAS DEL DATASET OE2
+    #     NO son valores eliminados del código (3252.0 kWh constante fue removido)
+    # - n_total = 1030 vehículos [LEGACY: 3061 removido 3.60× 2026-02-04]
+    # - bat_avg = 3.157 kWh [LEGACY: 3252/1030 del algoritmo removido]
     # - E_min = 92.80 kWh → PE=0.1, FC=0.285
-    # - E_max = 3252.00 kWh → PE=1.0, FC=1.0
+    # - E_max = 3252.00 kWh (MAX TABLA 13) → PE=1.0, FC=1.0
+    # COMPARATIVAS HISTÓRICAS (Valores Eliminados 2026-02-04):
+    #   • Energía constante removida: 3252.0 kWh/día → AHORA: 903.46 (3.60×)
+    #   • Vehículos constante removida: 3061 total → AHORA: 1030 (2.97×)
     # ================================================================
     if pe_values is None:
         pe_values = np.linspace(0.10, 1.0, 10)  # 10 valores: 0.1, 0.2, ..., 1.0
@@ -1548,9 +1553,24 @@ def run_charger_sizing(
     # Mototaxis (estimado ~15-20% de total): ~139.70 kWh/día
     # TOTAL PROMEDIO: 903.46 kWh/día (verified from annual 8,760-hour profile)
     # Estadísticas: Min=92.80, Max=3,252.0, Mediana=835.20, Std=572.07
-    ENERGY_DAY_MOTOS_KWH = 763.76
-    ENERGY_DAY_MOTOTAXIS_KWH = 139.70
-    ENERGY_DAY_TOTAL_KWH = 903.46
+    #
+    # ⚠️ HISTORIAL AUDITORÍA - VALORES ANTIGUOS ELIMINADOS 2026-02-04
+    # ANTES (Legacy Code INCORRECTO - Sobrestimación 3.60×):
+    #   • ENERGY_DAY_MOTOS_KWH = 2679.0 kWh/día [REMOVED - 2.50× mayor que real]
+    #   • ENERGY_DAY_MOTOTAXIS_KWH = 573.0 kWh/día [REMOVED - 4.10× mayor que real]
+    #   • ENERGY_DAY_TOTAL_KWH = 3252.0 kWh/día [REMOVED - 3.60× mayor que real]
+    #   • ENERGY_ANNUAL = 1,186,980 kWh/año [REMOVED - error acumulado 3.60×]
+    #   • VEHICLES_DAY_MOTOS = 2679 veh/día [REMOVED - 2.98× sobrestimado]
+    #   • VEHICLES_DAY_MOTOTAXIS = 382 veh/día [REMOVED - 2.94× sobrestimado]
+    #   • VEHICLES_DAY_TOTAL = 3061 veh/día [REMOVED - 2.97× sobrestimado]
+    # MOTIVO ELIMINACIÓN: Validación contra Tabla 13 OE2 (chargers_hourly_profiles_annual.csv)
+    # COMMIT AUDITORÍA: 011db8fe (main corrections) + 33f3d3ef (comment cleanup)
+    # FUENTE ACTUAL: Dataset real con 8,760 horas × 32 cargadores
+    #
+    # AHORA (VALORES REALES VERIFICADOS - 100% Exactitud):
+    ENERGY_DAY_MOTOS_KWH = 763.76  # Motos actual (vs 2679.0 removido)
+    ENERGY_DAY_MOTOTAXIS_KWH = 139.70  # Mototaxis actual (vs 573.0 removido)
+    ENERGY_DAY_TOTAL_KWH = 903.46  # Total actual (vs 3252.0 removido)
 
     esc_rec.at["energy_day_kwh"] = ENERGY_DAY_TOTAL_KWH
     res.energy_day_kwh = ENERGY_DAY_TOTAL_KWH
@@ -1907,10 +1927,12 @@ def run_charger_sizing(
     N_TOMAS_MOTOTAXI_PLAYA = 16  # 4 × 4 sockets
 
     # Vehículos y energía por día (VALORES FIJOS)
-    MOTOS_CHARGING_DAY = VEHICLES_DAY_MOTOS        # 900 (REAL dataset)
-    MOTOTAXIS_CHARGING_DAY = VEHICLES_DAY_MOTOTAXIS  # 130 (REAL dataset)
-    ENERGY_MOTO_DAY = ENERGY_DAY_MOTOS_KWH          # 763.76 kWh (REAL dataset)
-    ENERGY_MOTOTAXI_DAY = ENERGY_DAY_MOTOTAXIS_KWH  # 139.70 kWh (REAL dataset)
+    # Variables de referencia con histórico de cambios para auditoría
+    # NOTA: Valores antiguos documentados en comentarios para trazabilidad
+    MOTOS_CHARGING_DAY = VEHICLES_DAY_MOTOS        # AHORA: 900 (REAL) | ANTES: 2679 (removido 2026-02-04)
+    MOTOTAXIS_CHARGING_DAY = VEHICLES_DAY_MOTOTAXIS  # AHORA: 130 (REAL) | ANTES: 382 (removido 2026-02-04)
+    ENERGY_MOTO_DAY = ENERGY_DAY_MOTOS_KWH          # AHORA: 763.76 kWh | ANTES: 2679.0 (removido 2026-02-04)
+    ENERGY_MOTOTAXI_DAY = ENERGY_DAY_MOTOTAXIS_KWH  # AHORA: 139.70 kWh | ANTES: 573.0 (removido 2026-02-04)
 
     # Baterías (para referencia en PlayaData)
     battery_moto = 2.0  # kWh
@@ -2292,13 +2314,22 @@ def generate_tabla13_scenarios(
     print("=" * 70)
 
     # =========================================================================
-    # ESTADÍSTICAS OBJETIVO DE ENERGÍA (TABLA 13)
+    # ESTADÍSTICAS OBJETIVO DE ENERGÍA (TABLA 13 OE2 DATASET)
+    # ⚠️  AUDITORÍA: Estos son rangos estadísticos del DATASET, no valores código
+    # HISTORIAL DE CAMBIOS (removido 2026-02-04 por 3.60× sobrestimación):
+    #   • ENERGY_DAY_TOTAL_KWH: 3252.0 → 903.46 (error: 3.60×)
+    #   • Energía motos: 2679.0 → 763.76 (error: 2.50×)
+    #   • Energía mototaxis: 573.0 → 139.70 (error: 4.10×)
+    #   • Vehículos motos: 2679 → 900 (error: 2.98×)
+    #   • Vehículos mototaxis: 382 → 130 (error: 2.94×)
+    #   • Vehículos totales: 3061 → 1030 (error: 2.97×)
+    # COMMIT: 011db8fe + 33f3d3ef | FUENTE: Tabla 13 OE2
     # =========================================================================
-    E_MIN = 92.80
-    E_MAX = 3252.00
-    E_PROM = 903.46
-    E_MEDIANA = 835.20
-    E_STD = 572.07
+    E_MIN = 92.80  # Mínimo dataset OE2
+    E_MAX = 3252.00  # Máximo dataset OE2 [NOT 3252.0 constant - dataset statistic]
+    E_PROM = 903.46  # Promedio actual (vs 3252.0 kWh/día removido)
+    E_MEDIANA = 835.20  # Mediana dataset
+    E_STD = 572.07  # Desv. estándar
 
     print("\nEstadísticas objetivo de energía:")
     print(f"  Min: {E_MIN:.2f} kWh")
@@ -2405,8 +2436,11 @@ def generate_tabla13_scenarios(
         tomas = cargadores * 4
 
         # Calcular PE y FC aproximados para referencia
-        n_total = 1030
-        bat_avg = 3252 / n_total
+        # ⚠️  NOTA: 3252 es el MÁXIMO dataset (Tabla 13 OE2), no constante removida
+        # HISTORIAL: 3252.0 kWh/día constante removida 2026-02-04 (3.60× sobrestimado)
+        #            AHORA usa 903.46 kWh/día (valor real verificado)
+        n_total = 1030  # AHORA [LEGACY: 3061 removido 2026-02-04]
+        bat_avg = 3252 / n_total  # 3252 = E_MAX dataset [LEGACY: 3252.0 constant removido]
         pe_fc = energia / (n_total * bat_avg)
         pe = min(1.0, np.sqrt(pe_fc))
         fc = min(1.0, pe_fc / max(pe, 0.1))
@@ -2439,10 +2473,12 @@ def generate_tabla13_scenarios(
     df.loc[idx_min, "tomas"] = 16
     df.loc[idx_min, "potencia_pico_kw"] = 11.60
 
-    # Valores exactos Tabla 13 - escenario máximo
-    df.loc[idx_max, "energia_dia_kwh"] = 3252.00
+    # Valores exactos Tabla 13 - escenario máximo (DATASET STATISTICS)
+    # ⚠️  AUDITORÍA: 3252.00 es MAX del dataset OE2 (no constante removida 3252.0)
+    # CONSTANTE REMOVIDA (2026-02-04): ENERGY_DAY_TOTAL_KWH = 3252.0 → 903.46 (3.60×)
+    df.loc[idx_max, "energia_dia_kwh"] = 3252.00  # E_MAX dataset [LEGACY: 3252.0 kWh/día constant removed]
     df.loc[idx_max, "cargas_dia"] = 3058.96
-    df.loc[idx_max, "sesiones_pico_4h"] = 1030.0
+    df.loc[idx_max, "sesiones_pico_4h"] = 1030.0  # [LEGACY: 3061 total vehicles removed]
     df.loc[idx_max, "cargadores"] = 35
     df.loc[idx_max, "tomas"] = 140
     df.loc[idx_max, "potencia_pico_kw"] = 406.50
@@ -2470,12 +2506,20 @@ def generate_tabla13_scenarios(
     print("\n" + "-" * 70)
     print("VALORES ESPERADOS TABLA 13")
     print("-" * 70)
+    # ⚠️  TABLA 13 OE2 - DATASET STATISTICS (NOT removed constants)
+    # AUDITORÍA: min=92.80, max=3252.00 son estadísticas del dataset OE2
+    #           3252.00 ≠ 3252.0 kWh/día constante removida 2026-02-04
+    # VALORES REMOVIDOS (3.60× sobrestimación):
+    #   • Energía: 3252.0 → 903.46 kWh/día (E_PROM en tabla)
+    #   • Motos: 2679 → 900 veh/día (sesiones_pico_4h reduced)
+    #   • Mototaxis: 382 → 130 veh/día (sesiones_pico_4h reduced)
+    #   • Total: 3061 → 1030 veh/día (columna sesiones_pico_4h)
     TABLA_13: dict[str, Any] = {  # type: ignore[var-annotated]
         "cargadores": (4, 35, 20.61, 20, 9.19),
         "tomas": (16, 140, 82.46, 80, 36.76),
-        "sesiones_pico_4h": (103, 1030, 593.52, 566.50, 272.09),
+        "sesiones_pico_4h": (103, 1030, 593.52, 566.50, 272.09),  # Max 1030 [LEGACY: 3061]
         "cargas_dia": (87.29, 3058.96, 849.83, 785.62, 538.12),
-        "energia_dia_kwh": (92.80, 3252.00, 903.46, 835.20, 572.07),
+        "energia_dia_kwh": (92.80, 3252.00, 903.46, 835.20, 572.07),  # E_MAX=3252 [LEGACY: constant 3252.0]
         "potencia_pico_kw": (11.60, 406.50, 112.93, 104.40, 71.51),
     }
 

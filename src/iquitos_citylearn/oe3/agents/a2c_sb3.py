@@ -58,7 +58,8 @@ class A2CConfig:
     gae_lambda: float = 0.95       # ✅ OPTIMIZADO: 0.85→0.95 (captura deps a largo plazo)
     ent_coef: float = 0.01         # ✅ OPTIMIZADO: 0.001→0.01 (exploración adecuada)
     vf_coef: float = 0.5           # ✅ OPTIMIZADO: 0.3→0.5 (value function más importante)
-    max_grad_norm: float = 0.5     # ✅ OPTIMIZADO: 0.25→0.5 (clipping menos agresivo)
+    max_grad_norm: float = 0.75    # 🔴 DIFERENCIADO A2C: 0.75 (vs SAC 10.0, PPO 1.0)
+                                   #   A2C on-policy simple: ultra-prudente, prone a exploding gradients
     hidden_sizes: tuple = (256, 256)   # ↓↓ CRITICAMENTE REDUCIDA: 512→256
     activation: str = "relu"
     device: str = "auto"
@@ -87,11 +88,27 @@ class A2CConfig:
     critic_learning_rate: float = 1e-4     # Critic network learning rate (típicamente igual)
     actor_lr_schedule: str = "linear"      # "constant" o "linear" decay
     critic_lr_schedule: str = "linear"     # "constant" o "linear" decay
+    actor_lr_final_ratio: float = 0.7      # 🔴 DIFERENCIADO: 0.7 (NO 0.1 SAC, 7× menos agresivo)
+                                           #   A2C on-policy: decay muy suave
+    critic_lr_final_ratio: float = 0.7     # 🔴 DIFERENCIADO: 0.7 (NO 0.1 SAC, 7× menos agresivo)
 
     # === ENTROPY DECAY SCHEDULE (NEW COMPONENT #2) ===
     # Exploración decrece: 0.01 (early) → 0.001 (late) - HARMONIZED WITH SAC/PPO (CRITICAL FIX)
-    ent_coef_schedule: str = "linear"      # "constant" o "linear"
-    ent_coef_final: float = 0.001          # Target entropy at end of training (CORRECTED: was 0.0001, now matches SAC/PPO)
+    ent_coef_schedule: str = "exponential"  # "constant", "linear", o "exponential" (CHANGED FROM LINEAR)
+    ent_coef_final: float = 0.001           # Target entropy at end of training (on-policy stable)
+    ent_decay_rate: float = 0.998           # 🔴 DIFERENCIADO: 0.998 (2× más lento que SAC 0.9995)
+                                            #   A2C on-policy simple: decay mucho más suave
+
+    # === 🟢 NUEVO: EV UTILIZATION BONUS (A2C ADAPTATION) ===
+    # A2C on-policy simple: Reward máximo de EVs simultáneos via advantage modulation
+    # Diferencia vs SAC/PPO: A2C integra bonus directamente en advantage function
+    use_ev_utilization_bonus: bool = True   # Enable/disable bonus
+    ev_utilization_weight: float = 0.05     # A2C: weight del bonus (same as SAC/PPO)
+    ev_soc_optimal_min: float = 0.70        # SOC mínimo para considerar "utilizado"
+    ev_soc_optimal_max: float = 0.90        # SOC máximo para considerar "utilizado"
+    ev_soc_overcharge_threshold: float = 0.95  # Penalizar si >95% (concentración)
+    ev_utilization_decay: float = 0.98      # 🔴 DIFERENCIADO: 0.98 (decay muy suave para A2C)
+                                            #   A2C simple: bonus se mantiene estable más tiempo
 
     # === ADVANTAGE & VALUE FUNCTION ROBUSTNESS (NEW COMPONENTS #3-4) ===
     normalize_advantages: bool = True      # Normalizar ventajas a cada batch
@@ -111,7 +128,8 @@ class A2CConfig:
     normalize_rewards: bool = True
     reward_scale: float = 0.1  # ↓ REDUCIDO: 1.0→0.1 (evita Q-explosion en critic)
     clip_obs: float = 5.0      # ↓ REDUCIDO: 10→5 (clipping más agresivo)
-    clip_reward: float = 1.0   # ✅ AGREGADO: Clipear rewards normalizados
+    clip_reward: float = 1.0   # ✅ AGREGADO (A2C INDIVIDUALIZED): Clipear rewards normalizados
+                               # 🔴 DIFERENCIADO vs SAC (10.0): A2C es simple on-policy, clipping suave
 
     def __post_init__(self):
         """Validación y normalización de configuración post-inicialización."""
@@ -162,16 +180,34 @@ class A2CConfig:
         logger.info(
             "[A2CConfig] Inicializado con componentes completos: "
             "actor_lr=%s(%.6f), critic_lr=%s(%.6f), ent_coef=%s(%.6f→%.6f), "
-            "optimizer=%s, huber=%s, norm_adv=%s",
+            "optimizer=%s, huber=%s, norm_adv=%s, ev_utilization_bonus=%s(weight=%.2f, decay=%.4f)",
             self.actor_lr_schedule, self.actor_learning_rate,
             self.critic_lr_schedule, self.critic_learning_rate,
             self.ent_coef_schedule, self.ent_coef, self.ent_coef_final,
-            self.optimizer_type, self.use_huber_loss, self.normalize_advantages
+            self.optimizer_type, self.use_huber_loss, self.normalize_advantages,
+            self.use_ev_utilization_bonus, self.ev_utilization_weight, self.ev_utilization_decay
         )
 
 
 class A2CAgent:
-    """Agente A2C robusto usando Stable-Baselines3."""
+    """Agente A2C robusto usando Stable-Baselines3.
+
+    Características:
+    - Actor-Critic con synchronous updates
+    - Advantage Actor-Critic (A2C) simple pero poderoso
+    - 🟢 NUEVO: EV Utilization Bonus - Rewards máximo simultáneo de motos y mototaxis
+    - Soporte CUDA/GPU
+    - Compatible con rewards multiobjetivo (rewards.py)
+
+    **EV Utilization Bonus (A2C Adaptation)**:
+    - Integrado directamente en advantage function
+    - Decay suave (0.98) para estabilidad on-policy simple
+    - Penaliza SOC < 0.70 (baja utilización de chargers)
+    - Bonus SOC ∈ [0.70, 0.90] (máxima utilización simultánea)
+    - Penaliza SOC > 0.95 (indica concentración, no máxima utilización)
+    - Weight: ev_utilization_weight = 0.05 (balanceado con otras componentes)
+    - Decay: ev_utilization_decay = 0.98 (muy suave para on-policy)
+    """
 
     def __init__(self, env: Any, config: Optional[A2CConfig] = None):
         self.env = env

@@ -387,10 +387,13 @@ class EpisodeMetricsAccumulator:
         self.co2_indirect_solar_kg += co2.get('co2_indirect_solar_kg', 0.0)
         self.co2_indirect_bess_kg += co2.get('co2_indirect_bess_kg', 0.0)
 
-        # Contar vehículos (80% motos 2kW, 20% mototaxis 3kW)
+        # 🟢 Contar vehículos por potencia (OE3 ACTUAL: 80% motos 2kW, 20% mototaxis 3kW)
+        # ⚠️  NOTA: 0.80/2.0 y 0.20/3.0 son ratios dinámicos BASADOS EN POTENCIA, NO hardcoded 20 y 3
+        # LEGACY (OE2): Eran 20 motos y 3 mototaxis totales → DEPRECATED
+        # ACTUAL (OE3): Son 112 motos y 16 mototaxis simultáneos en 128 sockets
         ev_demand = metrics.get('ev_demand_kwh', EV_DEMAND_CONSTANT_KW)
-        self.motos_cargadas += int((ev_demand * 0.80) / 2.0)
-        self.mototaxis_cargadas += int((ev_demand * 0.20) / 3.0)
+        self.motos_cargadas += int((ev_demand * 0.80) / 2.0)        # 80% de demanda / 2kW por moto
+        self.mototaxis_cargadas += int((ev_demand * 0.20) / 3.0)    # 20% de demanda / 3kW por mototaxi
 
     def get_reward_avg(self) -> float:
         """Retorna reward promedio de la ventana móvil."""
