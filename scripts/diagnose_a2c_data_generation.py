@@ -28,7 +28,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Tuple, Callable
 
 # ==============================================================================
 # LOGGING CONFIGURATION
@@ -92,7 +92,7 @@ def check_config_valid() -> bool:
             config: Dict[str, Any] = yaml.safe_load(f)
 
         # Verificar campos necesarios
-        required_fields: list[str] = [
+        required_fields: List[str] = [
             "oe3",
             "project",
             "paths"
@@ -115,7 +115,7 @@ def check_output_directories() -> bool:
     """Verifica que los directorios de salida existen o pueden crearse."""
     logger.info("4️⃣  Verificando directorios de salida...")
 
-    output_paths: list[Path] = [
+    output_paths: List[Path] = [
         Path("outputs/agents/a2c"),
         Path("outputs/oe3_simulations"),
         Path("checkpoints/a2c"),
@@ -138,7 +138,7 @@ def check_dataset_exists() -> bool:
     """Verifica que el dataset CityLearn existe."""
     logger.info("5️⃣  Verificando dataset CityLearn...")
 
-    dataset_paths: list[Path] = [
+    dataset_paths: List[Path] = [
         Path("data/processed/citylearn/iquitos_ev_mall/schema.json"),
         Path("data/processed/citylearn/iquitos_ev_mall/Building_1.csv"),
     ]
@@ -168,10 +168,10 @@ def check_simulate_function_signature() -> bool:
         from iquitos_citylearn.oe3.simulate import simulate  # type: ignore
 
         sig = inspect.signature(simulate)
-        params: list[str] = list(sig.parameters.keys())
+        params: List[str] = list(sig.parameters.keys())
 
         # Parámetros necesarios para A2C
-        required_params: list[str] = [
+        required_params: List[str] = [
             "schema_path",
             "agent_name",
             "out_dir",
@@ -182,7 +182,7 @@ def check_simulate_function_signature() -> bool:
             "use_multi_objective",
         ]
 
-        missing_params: list[str] = [p for p in required_params if p not in params]
+        missing_params: List[str] = [p for p in required_params if p not in params]
 
         if missing_params:
             logger.error(f"   ❌ Parámetros faltantes: {', '.join(missing_params)}")
@@ -200,7 +200,7 @@ def check_a2c_training_scripts() -> bool:
     """Verifica que los scripts de entrenamiento A2C existen."""
     logger.info("7️⃣  Verificando scripts de entrenamiento A2C...")
 
-    scripts: list[Path] = [
+    scripts: List[Path] = [
         Path("scripts/run_agent_a2c.py"),
         Path("scripts/train_a2c_production.py"),
     ]
@@ -227,13 +227,13 @@ def check_previous_a2c_runs() -> bool:
         logger.warning(f"   ⚠️  Directorio no existe aún: {output_dir}")
         return True  # No es un error, es normal en primera ejecución
 
-    expected_files: list[Path] = [
+    expected_files: List[Path] = [
         output_dir / "result_a2c.json",
         output_dir / "timeseries_a2c.csv",
         output_dir / "trace_a2c.csv",
     ]
 
-    found_files: list[Path] = [f for f in expected_files if f.exists()]
+    found_files: List[Path] = [f for f in expected_files if f.exists()]
 
     if len(found_files) == 0:
         logger.warning(f"   ⚠️  No hay archivos técnicos A2C previos (primera ejecución)")
@@ -296,7 +296,7 @@ def run_diagnostics() -> int:
     logger.info("")
 
     # Lista de checks
-    checks: list[tuple[str, callable]] = [
+    checks: List[Tuple[str, Callable[[], bool]]] = [
         ("simulate() import", check_simulate_import),
         ("A2C agent import", check_a2c_agent_import),
         ("Config validation", check_config_valid),
@@ -308,7 +308,7 @@ def run_diagnostics() -> int:
         ("Multiobjetivo config", check_multiobjetive_config),
     ]
 
-    results: list[tuple[str, bool]] = []
+    results: List[Tuple[str, bool]] = []
 
     for check_name, check_func in checks:
         try:
