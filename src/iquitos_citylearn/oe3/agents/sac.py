@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Dict, List
 import numpy as np
 import logging
+import importlib  # type: ignore
 
 from ..progress import append_progress_row
 
@@ -299,7 +299,12 @@ class SACAgent:
             info["torch_version"] = str(torch.__version__)
             info["cuda_available"] = str(torch.cuda.is_available())
             if torch.cuda.is_available():
-                cuda_ver = torch.version.cuda
+                # Safe access to torch.version.cuda (may not exist in all torch distributions)
+                try:
+                    torch_version_module = importlib.import_module('torch.version')
+                    cuda_ver = getattr(torch_version_module, 'cuda', None)
+                except (AttributeError, ModuleNotFoundError):
+                    cuda_ver = None
                 info["cuda_version"] = str(cuda_ver) if cuda_ver is not None else "unknown"
                 info["gpu_name"] = str(torch.cuda.get_device_name(0))
                 props: Any = torch.cuda.get_device_properties(0)
@@ -390,6 +395,13 @@ class SACAgent:
             f.write(f"checkpoint_freq_steps={self.config.checkpoint_freq_steps}\n")
 
         logger.info("_train_sb3_sac: Iniciando entrenamiento SB3 con %d timesteps", total_timesteps)
+
+        # Disable TensorFlow/Keras verbose logging
+        import os
+        os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+        os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
+
+        # NOW safe to import SB3 (matplotlib backend already set at module level)
         import gymnasium as gym  # type: ignore
         from stable_baselines3 import SAC  # type: ignore
         from stable_baselines3.common.callbacks import BaseCallback, CallbackList  # type: ignore
@@ -565,7 +577,7 @@ class SACAgent:
                 except KeyboardInterrupt:
                     # CityLearn's simulate_unconnected_ev_soc() has boundary access bug
                     # Catch and return zero reward, continue episode
-                    obs = self._prev_obs if hasattr(self, "_prev_obs") else self._get_obs()
+                    obs = self._prev_obs if hasattr(self, "_prev_obs") else np.zeros(394)
                     reward = 0.0
                     terminated, truncated, info = False, False, {}
 

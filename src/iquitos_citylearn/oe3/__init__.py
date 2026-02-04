@@ -12,6 +12,15 @@ Importa todo desde este __init__.py para máxima compatibilidad.
 
 from __future__ import annotations
 
+# ✅ CRITICAL FIX: Patch matplotlib BEFORE importing stable_baselines3
+# See: https://github.com/DLR-RM/stable-baselines3/issues/1474
+# Problem: stable_baselines3.logger imports matplotlib.figure, triggering circular import
+# Solution: Disable matplotlib entirely to prevent logger from trying to use it
+import os
+os.environ['MPLBACKEND'] = 'Agg'  # Set matplotlib backend via environment variable
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow warnings
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
 # =====================================================================
 # AGENTS - Factory functions y clases para agentes RL
 # =====================================================================

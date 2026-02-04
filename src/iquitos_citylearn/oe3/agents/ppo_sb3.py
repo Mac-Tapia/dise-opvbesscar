@@ -852,10 +852,11 @@ class PPOAgent:
                     if self.agent.config.use_huber_loss:
                         huber_status = f" | huber_delta={self.agent.config.huber_delta:.1f}"
 
+                    # ✅ FIX: Usar num_timesteps como pasos (no n_calls que no es comparable)
                     logger.info(
                         "[PPO] paso %d | ep~%d | pasos_global=%d | grid_kWh=%.1f | co2_grid_kg=%.1f | "
                         "solar_kWh=%.1f | co2_indirect_kg=%.1f | co2_direct_kg=%.1f | motos=%d | mototaxis=%d | co2_total_avoided_kg=%.1f%s",
-                        self.n_calls,
+                        int(self.model.num_timesteps),
                         approx_episode,
                         int(self.model.num_timesteps),
                         episode_metrics["grid_import_kwh"],

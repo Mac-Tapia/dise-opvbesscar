@@ -1,46 +1,43 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 ================================================================================
-🚀 A2C PRODUCTION TRAINING PIPELINE - Iquitos EV/Solar/BESS Optimization
+🚀 A2C PRODUCTION TRAINING - ENTRENAMIENTO ROBUSTO LISTO PARA PRODUCCIÓN
 ================================================================================
-
-Script de producción para entrenar agente A2C (Advantage Actor-Critic).
-Sincronizado con: simulate.py, agents/a2c_sb3.py, rewards.py
+Script de entrenamiento A2C optimizado para RTX 4060 con:
+- 500,000 timesteps (escalable a 1M+)
+- n_steps=2048 (captura variación anual: 8,760 ÷ 4 = 2,190 ≈ 2,048 pasos)
+- Entropy decay (0.01 → 0.001) - SINCRONIZADO CON SAC/PPO
+- Multiobjetivo sincronizado (rewards.py)
+- GPU auto-detection
+- Checkpoints cada 1,000 steps
+- Resume-capable
 
 CARACTERÍSTICAS A2C (Advantage Actor-Critic):
 - Actualizaciones síncronas (más estable que A3C asíncrono)
 - GAE (Generalized Advantage Estimation) para reducción de varianza
-- Entropy decay para balance exploración/explotación
-- Normalization de observaciones y rewards
+- On-policy (más data-efficient que SAC offline)
+- Más rápido que PPO (wall-clock) en entrenamiento
 
 USO:
-    # Entrenamiento estándar (500k timesteps por defecto)
-    python -m scripts.train_a2c_production
+    python scripts/train_a2c_production.py
+    python scripts/train_a2c_production.py --resume
+    python scripts/train_a2c_production.py --timesteps 1000000 --priority co2_focus
 
-    # Entrenamiento rápido (testing)
-    python -m scripts.train_a2c_production --timesteps 50000
+MONITOREO:
+    tail -f logs/a2c_training.log
+    tensorboard --logdir outputs/a2c_logs
 
-    # Continuar desde checkpoint
-    python -m scripts.train_a2c_production --resume
-
-    # Solo evaluación
-    python -m scripts.train_a2c_production --eval-only
-
-COMPARATIVA VS SAC/PPO:
-- A2C: Más rápido (wall-clock), menos sample-efficient
-- SAC: Mejor exploration, off-policy (replay buffer)
-- PPO: Balance estabilidad/sample-efficiency, on-policy
-
-HIPERPARÁMETROS CLAVE A2C:
-- n_steps: 2048 (rollout buffer, similar a PPO)
+HIPERPARÁMETROS:
+- n_steps: 2048 (see year variation)
 - learning_rate: 1e-4 (linear decay)
-- gae_lambda: 0.95 (GAE para ventajas)
-- ent_coef: 0.01 → 0.001 (decaying entropy)
-- vf_coef: 0.5 (coeficiente value function)
+- gae_lambda: 0.95 (GAE for variance reduction)
+- ent_coef_schedule: linear (0.01 → 0.001)
+- reward_scale: 0.1 (prevent Q-explosion)
+- use_huber_loss: True (robust VF)
 
-@author: pvbesscar-copilot
+@author: pvbesscar-system
 @date: 2026-02-04
-@version: 1.0.0
+@version: 2.0.0 (SYNCHRONIZED WITH SAC/PPO)
 ================================================================================
 """
 from __future__ import annotations
@@ -48,6 +45,22 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
+from pathlib import Path
+from datetime import datetime
+
+# Set up logging
+Path("logs").mkdir(exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        logging.FileHandler("logs/a2c_training.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 import sys
 import time
 from datetime import datetime, timedelta

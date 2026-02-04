@@ -58,8 +58,7 @@ def main():
     parser.add_argument(
         "--eval-only",
         action="store_true",
-        default=True,
-        help="Solo evaluación usando checkpoint existente (default)",
+        help="Solo evaluación usando checkpoint existente (si no se especifica --train o --resume, auto-entrena si no hay checkpoint)",
     )
     parser.add_argument(
         "--timesteps",
@@ -91,7 +90,7 @@ def main():
     schema_path = rp.processed_dir / "citylearn" / cfg["oe3"]["dataset"]["name"] / "schema.json"
     out_dir = rp.outputs_dir / "agents" / "ppo"
     out_dir.mkdir(parents=True, exist_ok=True)
-    
+
     checkpoint_dir = rp.checkpoints_dir / "ppo"
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
@@ -110,13 +109,21 @@ def main():
     logger.info("")
 
     # Determinar modo de operación
-    if args.train or args.resume:
+    # ✅ CORRECCIÓN: Si no hay checkpoint, automáticamente entrenar
+    if args.train or (args.resume and has_checkpoint):
         mode = "train"
         timesteps = args.timesteps
         resume = args.resume and has_checkpoint
         logger.info(f"  Modo: ENTRENAMIENTO ({timesteps:,} timesteps)")
         if resume:
             logger.info(f"  Resumiendo desde checkpoint existente")
+    elif not has_checkpoint and not args.eval_only:
+        # Auto-entrenar si no hay checkpoint y no es eval-only explícito
+        mode = "train"
+        timesteps = args.timesteps
+        resume = False
+        logger.info(f"  Modo: ENTRENAMIENTO AUTO ({timesteps:,} timesteps)")
+        logger.info(f"  (No hay checkpoint, inicializando desde cero)")
     else:
         mode = "eval"
         timesteps = 0  # No entrenar, solo evaluar
@@ -151,6 +158,8 @@ def main():
         ppo_n_steps=1024,
         ppo_batch_size=128,
         ppo_checkpoint_freq_steps=1000,
+        # ✅ NO CALCULAR BASELINES - Solo entrenamiento PPO
+        # Baselines se calculan en scripts separados: run_dual_baselines.py
     )
 
     # Guardar resumen
