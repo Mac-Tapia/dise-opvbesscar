@@ -241,8 +241,8 @@ def validate_trace_csv(df: pd.DataFrame, expected_rows: int = 8760) -> DataFrame
 
     # Validar sequence de steps
     if "step" in df.columns:
-        steps = df["step"].values
-        expected_steps = np.arange(len(df))
+        steps = np.asarray(df["step"].values, dtype=np.int64)
+        expected_steps = np.arange(len(df), dtype=np.int64)
         if not np.array_equal(steps, expected_steps):
             issues.append("Step sequence is not 0, 1, 2, ..., N-1")
 
