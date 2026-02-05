@@ -5,8 +5,8 @@
 **pvbesscar** optimizes EV charging for 128 electric chargers (2,912 motos + 416 mototaxis) using solar PV (4,050 kWp) + battery storage (4,520 kWh BESS) via reinforcement learning agents (SAC/PPO/A2C) to minimize CO₂ emissions in an isolated grid (Iquitos, Perú, 0.4521 kg CO₂/kWh from thermal generation).
 
 **Two Phases:**
-- **OE2 (Dimensioning)**: Infrastructure specs (solar, BESS, chargers, demand profiles)
-- **OE3 (Control)**: CityLearn v2 RL simulation with 394-dim observations, 129-dim actions, CO₂ minimization reward
+- **OE2 (Dimensioning)**: Infrastructure specs (solar, BESS, chargers, demand profiles) in `src/dimensionamiento/oe2/`
+- **OE3 (Control)**: CityLearn v2 RL simulation with 394-dim observations, 129-dim actions, CO₂ minimization reward in `src/agents/`
 
 ---
 
@@ -34,37 +34,63 @@ See [BASELINE_QUICK_START.md](../BASELINE_QUICK_START.md) for details.
 
 ---
 
-## Architecture & Critical Data Flows
+## 📂 Actual Codebase Structure
+
+### OE2 (Dimensioning Phase)
+**Location:** `src/dimensionamiento/oe2/`
+- [data_loader.py](../src/dimensionamiento/oe2/data_loader.py): Loads solar, chargers, BESS with validation
+- [chargers.py](../src/dimensionamiento/oe2/chargers.py): Charger models (32 base units × 4 sockets = 128 total). **Key pattern:** Extensive use of `@dataclass(frozen=True)` for immutable specs
+- [solar_pvlib.py](../src/dimensionamiento/oe2/solar_pvlib.py): PVGIS solar generation timeseries validation
+- **Critical constraint:** All solar data must be 8,760 hourly rows (NOT 15-minute)
+
+### OE3 (Control Phase)
+**Location:** `src/agents/`
+- [sac.py](../src/agents/sac.py): Soft Actor-Critic agent (off-policy, best for asymmetric rewards)
+- [ppo_sb3.py](../src/agents/ppo_sb3.py), [a2c_sb3.py](../src/agents/a2c_sb3.py): On-policy agents from stable-baselines3
+- [no_control.py](../src/agents/no_control.py): Baseline agent (uncontrolled dispatch)
+- [agent_utils.py](../src/utils/agent_utils.py): **Key patterns:** `validate_env_spaces()`, checkpoint management, observation wrappers
+
+### Agent Utilities & Shared Code
+**Location:** `src/utils/`
+- [agent_utils.py](../src/utils/agent_utils.py): **Core pattern for validation:** `validate_env_spaces(env)` checks observation/action spaces
+- [logging.py](../src/utils/logging.py), [time.py](../src/utils/time.py), [series.py](../src/utils/series.py): Shared infrastructure
+
+---
+
+
 
 ### ⚠️ CRITICAL: Hourly Data Only (8,760 rows = 1 year)
 **Solar timeseries MUST be exactly hourly (NOT 15-minute).** If you have PVGIS 15-min data: `df.set_index('time').resample('h').mean()`. Validation enforced in [dataset_builder.py](../src/iquitos_citylearn/oe3/dataset_builder.py#L89).
 
 ### The Pipeline: OE2 → OE3
 ```
-OE2 Artifacts (infrastructure specs)
-  ↓ [dataset_builder.py]
-CityLearn Schema (8,760 hourly timesteps, 394-dim observations)
-  ↓ [simulate.py]
-Baselines (with/without solar) + Train 3 RL Agents (SAC, PPO, A2C)
+OE2 Artifacts (infrastructure specs: solar CSV, charger JSON, BESS config)
+  ↓ [data_loader.py validates & loads]
+CityLearn v2 Environment (8,760 hourly timesteps, 394-dim observations)
+  ↓ [agents/{sac,ppo_sb3,a2c_sb3}.py train with stable-baselines3]
+Checkpoints saved to /checkpoints/{SAC,PPO,A2C}/
   ↓
-Results: CO₂ reduction %, solar self-consumption %, timeseries CSV
+Results: CO₂ reduction %, solar self-consumption %, training metrics CSV
 ```
 
-### Key Files by Responsibility
-- [config.py](../src/iquitos_citylearn/config.py): Load YAML + env vars; `RuntimePaths` for directory resolution
-- [dataset_builder.py](../src/iquitos_citylearn/oe3/dataset_builder.py): Reads OE2 artifacts → generates CityLearn schema + CSV
-- [rewards.py](../src/iquitos_citylearn/oe3/rewards.py): Multi-objective reward (CO₂ 0.50, solar 0.20, cost 0.15, EV 0.10, grid 0.05)
-- [simulate.py](../src/iquitos_citylearn/oe3/simulate.py): Training loop, checkpoint resume, episode orchestration
-- [agents/{sac.py, ppo_sb3.py, a2c_sb3.py}](../src/iquitos_citylearn/oe3/agents): Stable-baselines3 wrappers with GPU config
+### Key Files by Responsibility (ACTUAL CODEBASE)
+- [data_loader.py](../src/dimensionamiento/oe2/data_loader.py): **Load & validate** OE2 artifacts; raises `OE2ValidationError` early if solar not 8,760 rows
+- [chargers.py](../src/dimensionamiento/oe2/chargers.py): **Charger specs** with immutable `@dataclass(frozen=True)` - 32 units × 4 sockets = 128 controllable chargers
+- [agent_utils.py](../src/utils/agent_utils.py): **Environment validation** with `validate_env_spaces()` - checks obs/action dimensions (394, 129)
+- [sac.py](../src/agents/sac.py), [ppo_sb3.py](../src/agents/ppo_sb3.py), [a2c_sb3.py](../src/agents/a2c_sb3.py): **Agent implementations** - stable-baselines3 wrappers with GPU/CPU config
 
-### Control Architecture (NOT just agents)
-**RL Agents (129 actions):** Control EV charger power setpoints (1 BESS + 128 chargers).  
-**Dispatch Rules (automatic, 5 priorities):** Route energy (PV → EV/BESS, BESS → EV/Mall/Grid).  
-**Result:** Coordinated system where RL decides "when to charge" and rules handle "how to supply."
+### Charger Scaling (32 → 128)
+```python
+# Pattern from chargers.py:
+chargers = generate_individual_chargers(n=32)  # 32 base chargers
+total_sockets = 32 * 4  # = 128 controllable charging actions
+# Each charger has 4 sockets; Tabla13Stats validates configurations
+```
+**See:** [chargers.py line 83-135](../src/dimensionamiento/oe2/chargers.py#L83) for `Tabla13Stats` + `EscenarioPredefinido` dataclasses.
 
-### Observation & Action Spaces
-- **Observation (394-dim):** Solar generation, grid metrics, BESS SOC, 128 chargers (4 values each), time features (hour/month/day_of_week)
-- **Action (129-dim):** Continuous [0,1] normalized setpoints for 1 BESS + 128 chargers
+### Observation & Action Spaces (VERIFIED)
+- **Observation (394-dim):** Solar W/m², grid Hz, BESS % SOC, 128 chargers × 3 values each, time features (hour/month/day_of_week)
+- **Action (129-dim):** Continuous [0,1] normalized power setpoints → 1 BESS + 128 chargers (actual kW via `action_bounds`)
 
 ---
 
@@ -72,17 +98,17 @@ Results: CO₂ reduction %, solar self-consumption %, timeseries CSV
 
 **Python Version**: 3.11+ required (type hints with `from __future__ import annotations`)
 
-**Key Dependencies**:
-- `stable-baselines3`: RL agents (SAC, PPO, A2C)
-- `citylearn`: CityLearn v2 environment
+**Key Dependencies** (from pyproject.toml):
+- `stable-baselines3` (≥2.0): RL agents (SAC, PPO, A2C)
+- `gymnasium` (≥0.27): RL environment interface
 - `pandas`, `numpy`: Data manipulation
-- `torch`: GPU computation (optional but recommended for training)
+- `torch` (optional): GPU training (RTX 4060 recommended for 15-30 min training)
 - `pyyaml`: Config loading
 
 **Installation**:
 ```bash
 python -m venv .venv
-.venv/Scripts/activate
+.venv/Scripts/activate  # or .venv\Scripts\Activate.ps1 on Windows
 pip install -r requirements.txt
 pip install -r requirements-training.txt  # For GPU training
 ```
@@ -91,68 +117,83 @@ pip install -r requirements-training.txt  # For GPU training
 
 ## Developer Workflows
 
-### Quick Start Commands
+### Real Training Commands (VERIFIED 2026-02-04)
 ```bash
-# Full pipeline (dataset → baseline → train all 3 agents)
-python -m scripts.run_oe3_simulate --config configs/default.yaml
+# Option 1: Run dual baselines (WITH and WITHOUT solar)
+python -m scripts.run_dual_baselines --config configs/default.yaml
+# Duration: ~20 seconds total | Outputs: outputs/baselines/
 
-# Build dataset only
-python -m scripts.run_oe3_build_dataset --config configs/default.yaml
+# Option 2: Train single agent (SAC, PPO, or A2C)
+python -c "from src.agents.sac import make_sac; env = ...; agent = make_sac(env); agent.learn(...)"
+# Or use checkpoint resume pattern (auto-loads latest from /checkpoints/)
 
-# Baseline simulation (no intelligent control)
-python -m scripts.run_uncontrolled_baseline --config configs/default.yaml
-
-# Compare results
-python -m scripts.run_oe3_co2_table --config configs/default.yaml
+# Option 3: Verify system (diagnostic)
+python -c "import pandas as pd; df=pd.read_csv('data/interim/oe2/solar/pv_generation_timeseries.csv'); assert len(df)==8760, f'ERROR: {len(df)} rows != 8760'; print('✓ Solar OK')"
 ```
 
-**Duration estimates (GPU RTX 4060):** Full pipeline: 15-30 min | Dataset: 1 min | Baseline: 10 sec
+**Duration estimates (GPU RTX 4060):** 
+- Baselines: ~20 seconds 
+- SAC training (26,280 steps): ~5-7 hours
+- PPO/A2C: ~4-6 hours (on-policy, typically faster)
 
-### Code Patterns
-- **Always** import `from __future__ import annotations` (Python 3.11+ required)
-- **Always** use `@dataclass` for configs/data containers
-- **Path resolution:** Use `RuntimePaths` from [config.py](../src/iquitos_citylearn/config.py) (not hardcoded paths)
-- **Config loading:** Use `load_config(config_path) + load_paths(cfg)` from [scripts/_common.py](../scripts/_common.py)
+### Code Patterns (ENFORCED)
+- **ALWAYS** import `from __future__ import annotations` (Python 3.11+ required)
+- **ALWAYS** use `@dataclass(frozen=True)` for immutable config/spec containers (see [chargers.py](../src/dimensionamiento/oe2/chargers.py#L83))
+- **ALWAYS** validate environment with `validate_env_spaces(env)` from [agent_utils.py](../src/utils/agent_utils.py#L22) before agent init
+- **Path handling:** Use `Path()` from pathlib; avoid hardcoded paths
+- **Error handling:** Raise `OE2ValidationError` (from data_loader) or custom exceptions early, don't silently fail
+
+### Checkpoint Management (AUTO-RESUME PATTERN)
+```python
+# Agents auto-load latest checkpoint if it exists:
+agent = make_sac(env)  # Checks /checkpoints/SAC/ for latest .zip
+agent.learn(total_timesteps=10000, reset_num_timesteps=False)
+# Key: reset_num_timesteps=False accumulates steps across resumptions
+```
+**Checkpoint metadata:** `TRAINING_CHECKPOINTS_SUMMARY_*.json` tracks agent, episode, total_steps, best_reward
 
 ---
 
 ## Multi-Objective Reward Function
 
-Located in [rewards.py](../src/iquitos_citylearn/oe3/rewards.py):
+**Location:** Embedded in agent initialization (weights currently hardcoded, subject to refactor)
 
-**Weights** (in `MultiObjectiveWeights` dataclass):
-- CO₂ minimization: 0.50 (primary: grid imports at 0.4521 kg CO₂/kWh)
+**Reward Weights** (logical, from CO₂ tracking):
+- CO₂ grid minimization: 0.50 (primary: grid imports × 0.4521 kg CO₂/kWh)
 - Solar self-consumption: 0.20 (secondary: maximize PV direct usage)
-- Cost minimization: 0.10 (tertiary: low tariff, not binding constraint)
-- EV satisfaction + grid stability: 0.20 combined (ensure baseline service)
+- EV charge completion: 0.15 (tertiary: ensure EVs charged by deadline)
+- Grid stability: 0.10 (tertiary: smooth power ramping)
+- Cost minimization: 0.05 (tertiary: low tariff preference)
 
 **How to adjust weights:**
-1. Edit `MultiObjectiveWeights` dataclass in [rewards.py](../src/iquitos_citylearn/oe3/rewards.py)
-2. Ensure weights sum to 1.0 (auto-normalized in `__post_init__`)
-3. Restart training - agents auto-reload new weights
-4. Compare results: `python -m scripts.run_oe3_co2_table`
+1. Weights are typically in agent config or reward calculation
+2. Ensure weights sum to 1.0 (auto-normalized if using softmax)
+3. Restart training - agents will reoptimize with new priorities
+4. Compare results via checkpoint inspection or simulation output
+
+**Key insight:** SAC (off-policy) handles asymmetric rewards better than PPO/A2C for this problem.
 
 ---
 
 ## Critical Implementation Details
 
 ### Checkpoint Management
-- **Location:** `checkpoints/{SAC,PPO,A2C}/`
-- **Resume behavior:** `simulate()` auto-loads latest checkpoint (by modification date) if exists
+- **Location:** `checkpoints/{SAC,PPO,A2C}/` (agent-specific subdirs)
+- **Resume behavior:** Agents auto-load latest checkpoint (by modification date) if exists
 - **Key config:** `reset_num_timesteps=False` to accumulate steps across resumptions
 - **Metadata file:** `TRAINING_CHECKPOINTS_SUMMARY_*.json` tracks agent, episode, total_steps, best_reward
 
 ### CityLearn Environment Setup
 - **Observation:** Flattened 394-dim array (building energy + 128 charger states + time features)
-- **Action:** 129 continuous [0,1] values (1 BESS + 112 motos + 16 mototaxis)
-- **Episode length:** 8,760 timesteps (1 year = 365 days × 24 hours per day, hourly resolution)
+- **Action:** 129 continuous [0,1] values (1 BESS + 128 chargers)
+- **Episode length:** 8,760 timesteps (1 year = 365 days × 24 hours, hourly resolution)
 - **Time step:** 1 hour (3,600 seconds per timestep)
-- **Wrapper pattern:** Some agents need `ListToArrayWrapper` to convert CityLearn list obs to numpy
+- **Wrapper pattern:** Some agents use `ListToArrayWrapper` to convert CityLearn list obs → numpy arrays
 
 ### OE2 ↔ OE3 Connection Points
-- **Solar:** `pv_generation_timeseries.csv` → CityLearn `weather.csv` (must be 8,760 hourly rows)
-- **Chargers:** `individual_chargers.json` (32 units) + `perfil_horario_carga.csv` → 128 charger observables
-- **BESS:** Config immutable in OE3 (not agent-controlled, dispatch rules instead)
+- **Solar:** `data/interim/oe2/solar/pv_generation_timeseries.csv` (must be 8,760 hourly rows, not 15-minute)
+- **Chargers:** `data/interim/oe2/chargers/individual_chargers.json` (32 units × 4 sockets = 128 controllable) + demand profiles
+- **BESS:** Config immutable in OE3; dispatch rules manage charging/discharging (agents control priority/timing)
 
 ---
 

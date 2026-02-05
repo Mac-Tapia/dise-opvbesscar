@@ -1,0 +1,32 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-01-25T17:50:34.535534",
+  "timesteps": 8760,
+  "observation_dim": 534,
+  "action_dim": 126,
+  "n_chargers_controllable": 126,
+  "agents": [
+    {
+      "name": "SAC",
+      "train_steps": 50000,
+      "learning_rate": 0.0002
+    },
+    {
+      "name": "PPO",
+      "train_steps": 50000,
+      "learning_rate": 0.0002
+    }
+  ],
+  "reward_config": {
+    "co2_weight": 0.5,
+    "solar_weight": 0.2,
+    "cost_weight": 0.1,
+    "ev_weight": 0.1,
+    "grid_weight": 0.1
+  },
+  "baseline": {
+    "co2_kg_per_year": 682559.3226052087,
+    "cost_usd_per_year": 301950.5961535982,
+    "grid_import_kwh_per_year": 1509752.9807679912
+  }
+}

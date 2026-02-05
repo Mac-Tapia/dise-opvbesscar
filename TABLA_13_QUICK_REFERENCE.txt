@@ -1,0 +1,200 @@
+# ⚡ TABLA 13 OE2 - QUICK REFERENCE
+
+**Integración completada: 2026-02-04**
+
+---
+
+## 🎯 Lo Esencial (30 segundos)
+
+### Importar
+```python
+from iquitos_citylearn.oe2.chargers import TABLA_13_ESTADISTICAS
+```
+
+### Usar
+```python
+# Cualquier métrica
+valor = TABLA_13_ESTADISTICAS.energia_dia_mean  # 903.46 kWh
+
+# Rangos para validación
+min_chargers = TABLA_13_ESTADISTICAS.chargers_min  # 4
+max_chargers = TABLA_13_ESTADISTICAS.chargers_max  # 35
+```
+
+---
+
+## 📊 Los 30 Campos (Rápida Referencia)
+
+### 1️⃣ Cargadores (6 campos)
+```python
+chargers_min = 4.00         # Mínimo
+chargers_max = 35.00        # Máximo
+chargers_mean = 20.61       # Promedio
+chargers_median = 20.00     # Mediana
+chargers_std = 9.19         # Desv. Estándar
+```
+
+### 2️⃣ Tomas (6 campos)
+```python
+sockets_min = 16.00         # 4 sockets × 4 chargers mínimo
+sockets_max = 140.00        # 4 sockets × 35 chargers máximo
+sockets_mean = 82.46
+sockets_median = 80.00
+sockets_std = 36.76
+```
+
+### 3️⃣ Sesiones Pico 4h (6 campos)
+```python
+sesiones_pico_min = 103.00
+sesiones_pico_max = 1030.00
+sesiones_pico_mean = 593.52
+sesiones_pico_median = 566.50
+sesiones_pico_std = 272.09
+```
+
+### 4️⃣ Cargas Día Total (6 campos)
+```python
+cargas_dia_min = 87.29
+cargas_dia_max = 3058.96
+cargas_dia_mean = 849.83
+cargas_dia_median = 785.62
+cargas_dia_std = 538.12
+```
+
+### 5️⃣ Energía Día [kWh] (6 campos) ⭐ VALIDADA
+```python
+energia_dia_min = 92.80      # ~92.8 kWh/día mínimo
+energia_dia_max = 3252.00    # ~3,252 kWh/día máximo
+energia_dia_mean = 903.46    # ~903 kWh/día promedio (VALIDADO)
+energia_dia_median = 835.20  # Mediana
+energia_dia_std = 572.07     # Desviación
+```
+
+### 6️⃣ Potencia Pico [kW] (6 campos)
+```python
+potencia_pico_min = 11.60
+potencia_pico_max = 406.50
+potencia_pico_mean = 112.93
+potencia_pico_median = 104.40
+potencia_pico_std = 71.51
+```
+
+---
+
+## 💻 Casos de Uso Comunes
+
+### ✅ Validar escenario dentro de Tabla 13
+```python
+from iquitos_citylearn.oe2.chargers import TABLA_13_ESTADISTICAS
+
+energia_kwh = 920
+is_valid = (TABLA_13_ESTADISTICAS.energia_dia_min <= energia_kwh <=
+            TABLA_13_ESTADISTICAS.energia_dia_max)
+print(f"¿Dentro de rango?: {is_valid}")  # True
+```
+
+### 📊 Comparar contra promedio
+```python
+proyecto_energia = 1000
+delta_pct = ((proyecto_energia - TABLA_13_ESTADISTICAS.energia_dia_mean) /
+             TABLA_13_ESTADISTICAS.energia_dia_mean * 100)
+print(f"Desviación: {delta_pct:+.1f}%")  # +10.7%
+```
+
+### 🎯 Crear rango de confianza
+```python
+mean = TABLA_13_ESTADISTICAS.energia_dia_mean      # 903.46
+std = TABLA_13_ESTADISTICAS.energia_dia_std        # 572.07
+lower = mean - std                                  # 331.39
+upper = mean + std                                  # 1475.53
+print(f"Rango 1σ: [{lower:.0f}, {upper:.0f}] kWh/día")
+```
+
+### 🔄 Iterar todos los campos
+```python
+from dataclasses import fields
+
+for field in fields(TABLA_13_ESTADISTICAS):
+    val = getattr(TABLA_13_ESTADISTICAS, field.name)
+    print(f"{field.name}: {val}")
+```
+
+---
+
+## 📁 Archivos de Referencia
+
+| Archivo | Propósito |
+|---------|-----------|
+| `src/iquitos_citylearn/oe2/chargers.py` | Implementación (líneas 68-128) |
+| `docs/TABLA_13_INTEGRACION_COMPLETA.md` | Documentación técnica completa |
+| `scripts/ejemplo_tabla13_estadisticas.py` | 5 ejemplos ejecutables |
+| `outputs/TABLA_13_VALIDACION_ESTADISTICAS.txt` | Reporte de validación |
+
+---
+
+## 🧪 Verificaciones Rápidas
+
+```bash
+# Ver todos los campos
+python -c "from iquitos_citylearn.oe2.chargers import TABLA_13_ESTADISTICAS; import dataclasses; [print(f'{f.name}: {getattr(TABLA_13_ESTADISTICAS, f.name)}') for f in dataclasses.fields(TABLA_13_ESTADISTICAS)]"
+
+# Ejecutar ejemplos
+python scripts/ejemplo_tabla13_estadisticas.py
+
+# Ver valores específicos
+python -c "from iquitos_citylearn.oe2.chargers import TABLA_13_ESTADISTICAS; print(f'Energía media: {TABLA_13_ESTADISTICAS.energia_dia_mean} kWh'); print(f'Rango: [{TABLA_13_ESTADISTICAS.energia_dia_min}, {TABLA_13_ESTADISTICAS.energia_dia_max}] kWh')"
+```
+
+---
+
+## ✨ Puntos Clave
+
+| Punto | Detalle |
+|-------|---------|
+| **30 campos** | 6 métricas × 5 estadísticos (min, max, mean, median, std) |
+| **Inmutable** | Dataclass con `frozen=True` |
+| **Tipado** | Type hints para IDE autocomplete |
+| **Validado** | 101 escenarios, delta 0.8% energía día |
+| **Global** | Importable desde `chargers.py` |
+| **Documentado** | Headers, docstrings, ejemplos |
+
+---
+
+## 📞 Soporte Rápido
+
+**¿Cómo accedo a un valor?**
+```python
+TABLA_13_ESTADISTICAS.energia_dia_mean  # 903.46
+```
+
+**¿Cómo valido un escenario?**
+```python
+assert min_val <= mi_valor <= max_val
+```
+
+**¿Cuáles son los rangos?**
+```python
+print(f"Min: {TABLA_13_ESTADISTICAS.energia_dia_min}")
+print(f"Max: {TABLA_13_ESTADISTICAS.energia_dia_max}")
+```
+
+**¿Dónde está la documentación?**
+- Completa: `docs/TABLA_13_INTEGRACION_COMPLETA.md`
+- Ejemplos: `scripts/ejemplo_tabla13_estadisticas.py`
+
+---
+
+## 🎓 Resumen 60 Segundos
+
+```
+✅ 30 constantes Tabla 13 OE2 integradas en chargers.py
+✅ Acceso: from iquitos_citylearn.oe2.chargers import TABLA_13_ESTADISTICAS
+✅ Uso: TABLA_13_ESTADISTICAS.energia_dia_mean = 903.46 kWh
+✅ Validación: Dentro de rango [92.80, 3252.00] kWh/día
+✅ Listo: Para validaciones, benchmarks y documentación
+```
+
+---
+
+**Última actualización:** 2026-02-04
+**Status:** ✅ Producción Lista
