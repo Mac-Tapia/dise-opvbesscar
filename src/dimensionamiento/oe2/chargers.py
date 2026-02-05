@@ -138,41 +138,45 @@ def validate_charger_set(charger_set: ChargerSet) -> dict[str, Any]:
     Returns:
         Diccionario con resultados de validación
     """
-    results = {
-        "is_valid": True,
-        "errors": [],
-        "warnings": [],
-    }
+    errors: list[str] = []
+    warnings: list[str] = []
+    is_valid = True
 
     # Verificar cantidad mínima
     if charger_set.count < 32:
-        results["errors"].append(f"Too few chargers: {charger_set.count} < 32")
-        results["is_valid"] = False
+        errors.append(f"Too few chargers: {charger_set.count} < 32")
+        is_valid = False
 
     # Verificar cantidad máxima de sockets
     if charger_set.total_sockets > 256:
-        results["errors"].append(
+        errors.append(
             f"Too many sockets: {charger_set.total_sockets} > 256"
         )
-        results["is_valid"] = False
+        is_valid = False
 
     # Verificar IDs únicos y secuenciales
     ids = [c.charger_id for c in charger_set.chargers]
     if len(ids) != len(set(ids)):
-        results["errors"].append("Charger IDs are not unique")
-        results["is_valid"] = False
+        errors.append("Charger IDs are not unique")
+        is_valid = False
 
     if ids != list(range(len(ids))):
-        results["warnings"].append(
+        warnings.append(
             f"Charger IDs are not sequential: {ids}"
         )
 
     # Verificar distribución
     if charger_set.motos_count == 0:
-        results["warnings"].append("No chargers for motos")
+        warnings.append("No chargers for motos")
 
     if charger_set.mototaxis_count == 0:
-        results["warnings"].append("No chargers for mototaxis")
+        warnings.append("No chargers for mototaxis")
+
+    results: dict[str, Any] = {
+        "is_valid": is_valid,
+        "errors": errors,
+        "warnings": warnings,
+    }
 
     return results
 

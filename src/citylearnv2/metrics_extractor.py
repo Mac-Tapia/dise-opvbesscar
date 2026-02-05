@@ -40,7 +40,7 @@ class EpisodeMetricsAccumulator:
         """Acumula métricas de un step.
 
         Args:
-            step_metrics: Diccionario con grid_kWh, solar_kWh, co2_kg, etc.
+            step_metrics: Diccionario con grid_kWh, solar_kWh, co2_kg, motos_charged, etc.
             reward: Recompensa del step
         """
         self.grid_import_kwh += float(step_metrics.get("grid_kWh", 0.0))
@@ -48,10 +48,18 @@ class EpisodeMetricsAccumulator:
         self.reward_sum += float(reward)
         self.step_count += 1
 
-        # CO2
+        # CO2 grid (desde grid_kWh)
         grid_value = float(step_metrics.get("grid_kWh", 0.0))
         if grid_value > 0:
             self.co2_grid_kg += grid_value * self.co2_intensity_grid
+
+        # CO2 evitado (directo e indirecto desde mock env)
+        self.co2_direct_avoided_kg += float(step_metrics.get("co2_direct_avoided_kg", 0.0))
+        self.co2_indirect_avoided_kg += float(step_metrics.get("co2_indirect_avoided_kg", 0.0))
+
+        # Contadores de VE
+        self.motos_cargadas += int(step_metrics.get("motos_charged", 0))
+        self.mototaxis_cargadas += int(step_metrics.get("mototaxis_charged", 0))
 
     def get_episode_metrics(self) -> dict[str, float]:
         """Retorna métricas acumuladas del episodio.
@@ -100,19 +108,21 @@ class EpisodeMetricsAccumulator:
 def extract_step_metrics(
     env: Any,
     step_num: int,
-    observation: Optional[np.ndarray] = None
-) -> Dict[str, float]:
+    observation: Optional[np.ndarray] = None,
+    info: Optional[dict[str, Any]] = None
+) -> dict[str, float]:
     """Extrae métricas de un step del ambiente.
 
     Args:
-        env: CityLearn environment
+        env: Environment (CityLearn o mock)
         step_num: Número del step actual
         observation: Observación actual (opcional)
+        info: Diccionario info del step (opcional, preferido para mock envs)
 
     Returns:
         Diccionario con métricas del step
     """
-    metrics: Dict[str, float] = {
+    metrics: dict[str, float] = {
         "grid_kWh": 0.0,
         "solar_kWh": 0.0,
         "co2_kg": 0.0,
@@ -121,6 +131,28 @@ def extract_step_metrics(
         "bess_soc": 0.0,
     }
 
+    # PREFERENCIA: Si info (de mock) tiene valores, usarlos
+    if info is not None:
+        if "charging_kwh" in info:
+            metrics["grid_kWh"] = float(info.get("charging_kwh", 0.0))
+        if "solar_direct_kwh" in info:
+            metrics["solar_kWh"] = float(info.get("solar_direct_kwh", 0.0))
+        if "motos_cumulative" in info:
+            metrics["motos_charged"] = int(info.get("motos_cumulative", 0))
+        if "mototaxis_cumulative" in info:
+            metrics["mototaxis_charged"] = int(info.get("mototaxis_cumulative", 0))
+        if "co2_direct_kg" in info:
+            metrics["co2_direct_avoided_kg"] = float(info.get("co2_direct_kg", 0.0))
+        if "co2_indirect_kg" in info:
+            metrics["co2_indirect_avoided_kg"] = float(info.get("co2_indirect_kg", 0.0))
+
+        # CO2 del grid
+        if metrics["grid_kWh"] > 0:
+            metrics["co2_kg"] = metrics["grid_kWh"] * 0.4521
+
+        return metrics
+
+    # FALLBACK: Intentar extraer de CityLearn buildings
     try:
         buildings = getattr(env, "buildings", [])
         if not buildings:

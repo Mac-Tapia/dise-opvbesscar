@@ -97,24 +97,29 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class MultiObjectiveWeights:
-    """Pesos para función de recompensa multiobjetivo - TIER 1 FIXES APPLIED.
+    """Pesos para función de recompensa multiobjetivo - REBALANCED PARA MÁXIMA PRIORIDAD EVCS.
 
-    NOTA: Estos defaults coinciden con 'co2_focus' preset.
-    Para otros presets, usar create_iquitos_reward_weights(priority).
-    Ver línea 647+ para definición de presets.
+    ✅ CAMBIO 2026-02-05: Realinear prioridades según arquitectura documentada
+    Prioridad de despacho real (OE2):
+    1. SOLAR → EVs (MÁXIMA PRIORIDAD)
+    2. SOLAR EXCESO → BESS
+    3. SOLAR EXCESO → MALL
+    4. BESS → EVs (noche)
+    5. GRID → Deficit
 
-    Rebalanced para Iquitos (matriz térmica aislada):
-    - CO₂ PRIMARY 0.50: minimizar importación grid
-    - Solar SECONDARY 0.20: maximizar autoconsumo (FV limpio disponible)
-    - Costo REDUCIDO 0.15: tarifa baja, no es constraint
-    - Grid & EV 0.15 total: baseline de operación
+    Pesos actualizados para reflejar MÁXIMA PRIORIDAD en carga EV:
+    - EV_SATISFACTION 0.30: TRIPLICADO (0.10 → 0.30) ← MÁXIMA PRIORIDAD
+    - CO₂ 0.35: REDUCIDO (0.50 → 0.35) - EVs cargados desde solar ayudan
+    - Solar 0.20: MANTENER (PV limpio es crítico)
+    - Costo 0.10: REDUCIDO (tarifa baja, no es constraint)
+    - Grid & EV utilization 0.05 total: baseline
     """
-    co2: float = 0.50              # PRIMARY: Minimizar CO₂ (0.45 kg/kWh térmica)
-    cost: float = 0.15             # Matches co2_focus preset
+    co2: float = 0.35              # PRIMARY (reducido): Minimizar CO₂ grid
+    cost: float = 0.10             # REDUCIDO: tarifa baja, no es constraint [ERA 0.15]
     solar: float = 0.20            # SECUNDARIO: autoconsumo solar limpio
-    ev_satisfaction: float = 0.10  # Satisfacción básica de carga
-    ev_utilization: float = 0.05   # 🟢 NUEVO: Bonus por utilización máxima EVs (motos+mototaxis cargadas)
-    grid_stability: float = 0.05   # Matches co2_focus preset
+    ev_satisfaction: float = 0.30  # ✅ TRIPLICADO: MÁXIMA PRIORIDAD [ERA 0.10 → 0.30]
+    ev_utilization: float = 0.05   # Bonus por utilización máxima EVs (motos+mototaxis cargadas)
+    grid_stability: float = 0.05   # Matches: báseline de operación
     peak_import_penalty: float = 0.00  # Dinámico en compute(), no como peso fijo
     operational_penalties: float = 0.0  # Penalizaciones operacionales (BESS, EV fairness)
 
@@ -187,7 +192,12 @@ class IquitosContext:
     bess_soc_min: float = 0.10
     bess_soc_max: float = 0.90
 
-    # Horas pico Iquitos
+    # Horario de operación - OE3 IQUITOS
+    operation_start_hour: int = 9      # 9 AM - Inicio de operación
+    operation_end_hour: int = 22        # 10 PM (22:00) - Cierre de operación
+    operation_duration_hours: int = 13  # 13 horas de operación (9 AM a 10 PM)
+
+    # Horas pico Iquitos: 6 PM a 9 PM (18:00 a 21:00)
     peak_hours: Tuple[int, ...] = (18, 19, 20, 21)
 
     # Factores de emisiones evitadas (vehículos eléctricos vs combustión)

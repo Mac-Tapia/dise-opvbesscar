@@ -1,0 +1,60 @@
+{
+  "timestamp": "D:\\diseñopvbesscar",
+  "pytorch": {
+    "version": "2.5.1+cu121",
+    "installed": true
+  },
+  "cuda": {
+    "available": true,
+    "version": "12.1",
+    "cudnn_version": 90100,
+    "cudnn_enabled": true
+  },
+  "gpu": {
+    "count": 1,
+    "gpu_0": {
+      "name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "total_memory_gb": 8.585216,
+      "capability": "8.9"
+    },
+    "memory_allocated_gb": 0.0,
+    "memory_reserved_gb": 0.0
+  },
+  "device_recommendation": "cuda:0",
+  "issues": [],
+  "warnings": [],
+  "recommended_config": {
+    "device": "cuda:0",
+    "notes": "OPCIÓN A - Reducción de learning rates para estabilidad GPU",
+    "sac": {
+      "learning_rate": 0.0002,
+      "batch_size": 128,
+      "buffer_size": 2000000,
+      "network_arch": [256, 256],
+      "notes": "Reducido -33% (3e-4 → 2e-4)"
+    },
+    "ppo": {
+      "learning_rate": 0.0002,
+      "batch_size": 256,
+      "n_steps": 2048,
+      "network_arch": [256, 256],
+      "notes": "Reducido -33% (3e-4 → 2e-4), mini-batches ~8 óptimas"
+    },
+    "a2c": {
+      "learning_rate": 0.0005,
+      "batch_size": 128,
+      "n_steps": 5,
+      "network_arch": [256, 256],
+      "notes": "Reducido -28% (7e-4 → 5e-4), sync optimization"
+    },
+    "training_time_estimate": {
+      "sac": "5-7 hours GPU",
+      "ppo": "8-12 hours GPU",
+      "a2c": "6-10 hours GPU",
+      "total": "20-28 hours GPU vs 40+ hours CPU"
+    },
+    "mixed_precision": true,
+    "num_workers": 4,
+    "pin_memory": true
+  }
+}

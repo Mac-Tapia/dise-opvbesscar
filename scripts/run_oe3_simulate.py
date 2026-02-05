@@ -179,34 +179,34 @@ def create_agent(env: Any, agent_type: str, config: dict[str, Any]) -> Any:
     agent_type = agent_type.lower()
 
     if agent_type == "sac":
-        cfg = SACConfig(
+        sac_cfg = SACConfig(
             episodes=config.get("sac_episodes", 5),
             learning_rate=config.get("sac_lr", 5e-5),
             checkpoint_dir=str(Path(config.get("checkpoint_dir", "checkpoints")) / "SAC"),
             progress_path=str(Path(config.get("output_dir", "outputs")) / "sac_progress.csv")
         )
-        logger.info(f"Creating SAC agent: {cfg.episodes} episodes, lr={cfg.learning_rate}")
-        return make_sac(env, cfg)
+        logger.info(f"Creating SAC agent: {sac_cfg.episodes} episodes, lr={sac_cfg.learning_rate}")
+        return make_sac(env, sac_cfg)
 
     elif agent_type == "ppo":
-        cfg = PPOConfig(
+        ppo_cfg = PPOConfig(
             train_steps=config.get("ppo_steps", 500000),
             learning_rate=config.get("ppo_lr", 1e-4),
             checkpoint_dir=str(Path(config.get("checkpoint_dir", "checkpoints")) / "PPO"),
             progress_path=str(Path(config.get("output_dir", "outputs")) / "ppo_progress.csv")
         )
-        logger.info(f"Creating PPO agent: {cfg.train_steps} steps, lr={cfg.learning_rate}")
-        return make_ppo(env, cfg)
+        logger.info(f"Creating PPO agent: {ppo_cfg.train_steps} steps, lr={ppo_cfg.learning_rate}")
+        return make_ppo(env, ppo_cfg)
 
     elif agent_type == "a2c":
-        cfg = A2CConfig(
+        a2c_cfg = A2CConfig(
             train_steps=config.get("a2c_steps", 500000),
             learning_rate=config.get("a2c_lr", 1e-4),
             checkpoint_dir=str(Path(config.get("checkpoint_dir", "checkpoints")) / "A2C"),
             progress_path=str(Path(config.get("output_dir", "outputs")) / "a2c_progress.csv")
         )
-        logger.info(f"Creating A2C agent: {cfg.train_steps} steps, lr={cfg.learning_rate}")
-        return make_a2c(env, cfg)
+        logger.info(f"Creating A2C agent: {a2c_cfg.train_steps} steps, lr={a2c_cfg.learning_rate}")
+        return make_a2c(env, a2c_cfg)
 
     else:
         raise ValueError(f"Unknown agent type: {agent_type}")

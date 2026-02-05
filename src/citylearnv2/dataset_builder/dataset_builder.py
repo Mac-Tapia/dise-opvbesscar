@@ -240,10 +240,124 @@ def _load_real_charger_dataset(charger_data_path: Path) -> Optional[pd.DataFrame
 def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
     artifacts: Dict[str, Any] = {}
 
+    # ========================================================================
+    # SECCIÓN CRÍTICA: CARGAR OBLIGATORIAMENTE 5 ARCHIVOS REALES DESDE data/oe2/
+    # Estas rutas son FIJAS y NO se pueden mover. Son los datos reales que DEBEN
+    # ser usados en entrenamiento de agentes y cálculo de métricas baseline.
+    # ========================================================================
+    logger.info("\n" + "="*80)
+    logger.info("[CRITICAL] Cargando datos OE2 REALES desde rutas FIJAS y OBLIGATORIAS (5 archivos)")
+    logger.info("="*80)
+
+    oe2_base_path = interim_dir.parent.parent / "oe2"  # data/oe2/
+
+    # 1. CHARGERS_REAL_HOURLY (OBLIGATORIO)
+    chargers_real_fixed_path = oe2_base_path / "chargers" / "chargers_real_hourly_2024.csv"
+    if not chargers_real_fixed_path.exists():
+        raise FileNotFoundError(
+            f"[CRITICAL ERROR] ARCHIVO OBLIGATORIO NO ENCONTRADO:\n"
+            f"  Ruta fija requerida: {chargers_real_fixed_path}\n"
+            f"  Este archivo es OBLIGATORIO para entrenar con datos REALES.\n"
+            f"  NO HAY FALLBACK disponible - debes proporcionar el archivo en esa ubicación."
+        )
+    try:
+        chargers_real_df = _load_real_charger_dataset(chargers_real_fixed_path)
+        if chargers_real_df is None or chargers_real_df.shape != (8760, 128):
+            raise ValueError(f"Shape inválido: {chargers_real_df.shape if chargers_real_df is not None else 'None'} (requiere 8760, 128)")
+        artifacts["chargers_real_hourly_2024"] = chargers_real_df
+        logger.info("[✓ CARGAR] Cargadores reales horarios 2024 - 8,760 horas × 128 sockets")
+    except Exception as e:
+        raise RuntimeError(f"[ERROR CRÍTICO] No se puede cargar chargers_real_hourly_2024.csv: {e}")
+
+    # 2. CHARGERS_REAL_STATISTICS (OBLIGATORIO)
+    chargers_stats_fixed_path = oe2_base_path / "chargers" / "chargers_real_statistics.csv"
+    if not chargers_stats_fixed_path.exists():
+        raise FileNotFoundError(
+            f"[CRITICAL ERROR] ARCHIVO OBLIGATORIO NO ENCONTRADO:\n"
+            f"  Ruta fija requerida: {chargers_stats_fixed_path}\n"
+            f"  Este archivo es OBLIGATORIO para validar estadísticas de cargadores.\n"
+            f"  NO HAY FALLBACK disponible."
+        )
+    try:
+        chargers_stats_df = pd.read_csv(chargers_stats_fixed_path)
+        artifacts["chargers_real_statistics"] = chargers_stats_df
+        logger.info("[✓ CARGAR] Estadísticas cargadores reales - {} registros".format(len(chargers_stats_df)))
+    except Exception as e:
+        raise RuntimeError(f"[ERROR CRÍTICO] No se puede cargar chargers_real_statistics.csv: {e}")
+
+    # 3. BESS_HOURLY_DATASET (OBLIGATORIO)
+    bess_hourly_fixed_path = oe2_base_path / "bess" / "bess_hourly_dataset_2024.csv"
+    if not bess_hourly_fixed_path.exists():
+        raise FileNotFoundError(
+            f"[CRITICAL ERROR] ARCHIVO OBLIGATORIO NO ENCONTRADO:\n"
+            f"  Ruta fija requerida: {bess_hourly_fixed_path}\n"
+            f"  Este archivo es OBLIGATORIO para simular BESS con datos REALES.\n"
+            f"  NO HAY FALLBACK disponible."
+        )
+    try:
+        bess_df = pd.read_csv(bess_hourly_fixed_path, index_col=0, parse_dates=True)
+        if len(bess_df) != 8760 or "soc_percent" not in bess_df.columns:
+            raise ValueError(f"BESS dataset inválido: {len(bess_df)} rows, columnas={bess_df.columns.tolist()}")
+        artifacts["bess_hourly_2024"] = bess_df
+        logger.info("[✓ CARGAR] BESS horario 2024 - 8,760 horas | SOC: {:.1f}% a {:.1f}%".format(
+            bess_df["soc_percent"].min(), bess_df["soc_percent"].max()))
+    except Exception as e:
+        raise RuntimeError(f"[ERROR CRÍTICO] No se puede cargar bess_hourly_dataset_2024.csv: {e}")
+
+    # 4. MALL_DEMAND_HOURLY (OBLIGATORIO)
+    mall_demand_fixed_path = oe2_base_path / "demandamallkwh" / "demandamallhorakwh.csv"
+    if not mall_demand_fixed_path.exists():
+        raise FileNotFoundError(
+            f"[CRITICAL ERROR] ARCHIVO OBLIGATORIO NO ENCONTRADO:\n"
+            f"  Ruta fija requerida: {mall_demand_fixed_path}\n"
+            f"  Este archivo es OBLIGATORIO para demanda del mall REAL.\n"
+            f"  NO HAY FALLBACK disponible."
+        )
+    try:
+        mall_df = pd.read_csv(mall_demand_fixed_path)
+        if len(mall_df) < 8760:
+            raise ValueError(f"Mall demand inválido: {len(mall_df)} rows (requiere ≥8,760)")
+        artifacts["mall_demand"] = mall_df
+        artifacts["mall_demand_path"] = str(mall_demand_fixed_path)
+        logger.info("[✓ CARGAR] Demanda mall horaria - {} horas".format(len(mall_df)))
+    except Exception as e:
+        raise RuntimeError(f"[ERROR CRÍTICO] No se puede cargar demandamallhorakwh.csv: {e}")
+
+    # 5. SOLAR_GENERATION_HOURLY (OBLIGATORIO)
+    solar_generation_fixed_path = oe2_base_path / "Generacionsolar" / "pv_generation_hourly_citylearn_v2.csv"
+    if not solar_generation_fixed_path.exists():
+        raise FileNotFoundError(
+            f"[CRITICAL ERROR] ARCHIVO OBLIGATORIO NO ENCONTRADO:\n"
+            f"  Ruta fija requerida: {solar_generation_fixed_path}\n"
+            f"  Este archivo es OBLIGATORIO para generación solar REAL de PVGIS.\n"
+            f"  NO HAY FALLBACK disponible."
+        )
+    try:
+        solar_df = pd.read_csv(solar_generation_fixed_path)
+        if len(solar_df) < 8760:
+            raise ValueError(f"Solar generation inválido: {len(solar_df)} rows (requiere ≥8,760)")
+        artifacts["pv_generation_hourly"] = solar_df
+        artifacts["pv_generation_path"] = str(solar_generation_fixed_path)
+        logger.info("[✓ CARGAR] Generación solar horaria PVGIS - {} horas".format(len(solar_df)))
+    except Exception as e:
+        raise RuntimeError(f"[ERROR CRÍTICO] No se puede cargar pv_generation_hourly_citylearn_v2.csv: {e}")
+
+    logger.info("[SUMMARY] 5 archivos reales OBLIGATORIOS cargados exitosamente de data/oe2/")
+    logger.info("="*80 + "\n")
+
     # Solar - cargar parámetros de CityLearn si existen
-    solar_citylearn_params = interim_dir / "oe2" / "solar" / "citylearn" / "solar_schema_params.json"
-    if solar_citylearn_params.exists():
-        artifacts["solar_params"] = json.loads(solar_citylearn_params.read_text(encoding="utf-8"))
+    solar_params_candidates = [
+        interim_dir.parent.parent / "oe2" / "solar" / "citylearn" / "solar_schema_params.json",  # data/oe2/solar/
+        interim_dir / "solar" / "citylearn" / "solar_schema_params.json",  # data/interim/oe2/solar/
+    ]
+    for solar_params_path in solar_params_candidates:
+        if solar_params_path.exists():
+            try:
+                artifacts["solar_params"] = json.loads(solar_params_path.read_text(encoding="utf-8"))
+                logger.info("[SOLAR] Schema params loaded from %s", solar_params_path)
+                break
+            except Exception as e:
+                logger.warning("[SOLAR] Error loading params from %s: %s", solar_params_path, e)
 
     # ========================================================================
     # PRIORITY 1: NEW Hourly solar dataset for CityLearn v2 (2026-02-04)
@@ -252,8 +366,19 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
     # Columns: timestamp, ghi_wm2, dni_wm2, dhi_wm2, temp_air_c, wind_speed_ms,
     #          dc_power_kw, ac_power_kw, dc_energy_kwh, ac_energy_kwh, pv_generation_kwh
     # ========================================================================
-    solar_hourly_v2_path = interim_dir / "oe2" / "Generacionsolar" / "pv_generation_hourly_citylearn_v2.csv"
-    if solar_hourly_v2_path.exists():
+    # Try both locations: data/oe2/ (REAL LOCATION) and interim_dir (FALLBACK)
+    solar_hourly_v2_candidates = [
+        interim_dir.parent.parent / "oe2" / "Generacionsolar" / "pv_generation_hourly_citylearn_v2.csv",  # data/oe2/Generacionsolar/
+        interim_dir / "Generacionsolar" / "pv_generation_hourly_citylearn_v2.csv",  # data/interim/oe2/Generacionsolar/
+    ]
+
+    solar_hourly_v2_path = None
+    for candidate in solar_hourly_v2_candidates:
+        if candidate.exists():
+            solar_hourly_v2_path = candidate
+            break
+
+    if solar_hourly_v2_path is not None:
         try:
             artifacts["solar_ts"] = pd.read_csv(solar_hourly_v2_path)
             _validate_solar_timeseries_hourly(artifacts["solar_ts"])
@@ -265,28 +390,37 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
             logger.error("[SOLAR] ✗ Error cargando v2: %s. Fallback a pv_generation_timeseries.csv", e)
             artifacts["solar_ts"] = None
     else:
-        logger.info("[SOLAR] v2 no disponible en %s, usando fallback...", solar_hourly_v2_path)
+        logger.info("[SOLAR] v2 no disponible en: %s o %s, usando fallback...", solar_hourly_v2_candidates[0], solar_hourly_v2_candidates[1])
         artifacts["solar_ts"] = None
 
     # ========================================================================
     # FALLBACK: Original timeseries si v2 no disponible
     # ========================================================================
     if artifacts.get("solar_ts") is None:
-        solar_path = interim_dir / "oe2" / "solar" / "pv_generation_timeseries.csv"
-        if solar_path.exists():
+        solar_fallback_candidates = [
+            interim_dir.parent.parent / "oe2" / "solar" / "pv_generation_timeseries.csv",  # data/oe2/solar/
+            interim_dir / "solar" / "pv_generation_timeseries.csv",  # data/interim/oe2/solar/
+        ]
+        solar_path = None
+        for candidate in solar_fallback_candidates:
+            if candidate.exists():
+                solar_path = candidate
+                break
+
+        if solar_path is not None:
             try:
                 artifacts["solar_ts"] = pd.read_csv(solar_path)
                 # CRITICAL: Validate that solar data is hourly (8,760 rows per year)
                 _validate_solar_timeseries_hourly(artifacts["solar_ts"])
-                logger.info("[SOLAR] Fallback: Cargado pv_generation_timeseries.csv")
+                logger.info("[SOLAR] Fallback: Cargado pv_generation_timeseries.csv desde %s", solar_path)
             except Exception as e:
                 logger.error("[SOLAR] ✗ Error en fallback: %s", e)
                 artifacts["solar_ts"] = None
 
     # Solar generation para CityLearn (horario)
     solar_citylearn_candidates = [
-        interim_dir / "oe2" / "citylearn" / "solar_generation.csv",
-        interim_dir.parent / "oe2" / "citylearn" / "solar_generation.csv",  # Ruta alternativa (data/oe2/...)
+        interim_dir / "citylearn" / "solar_generation.csv",
+        (interim_dir.parent / "oe2" / "citylearn" / "solar_generation.csv") if (interim_dir.parent / "oe2").exists() else Path(),
     ]
     for solar_citylearn_csv in solar_citylearn_candidates:
         if solar_citylearn_csv.exists():
@@ -295,46 +429,44 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
             break
 
     # EV profile
-    ev_path = interim_dir / "oe2" / "chargers" / "perfil_horario_carga.csv"
-    if ev_path.exists():
-        artifacts["ev_profile_24h"] = pd.read_csv(ev_path)
+    ev_profile_candidates = [
+        interim_dir.parent.parent / "oe2" / "chargers" / "perfil_horario_carga.csv",  # data/oe2/chargers/
+        interim_dir / "chargers" / "perfil_horario_carga.csv",  # data/interim/oe2/chargers/
+    ]
+    for ev_path in ev_profile_candidates:
+        if ev_path.exists():
+            try:
+                artifacts["ev_profile_24h"] = pd.read_csv(ev_path)
+                logger.info("[EV] Hourly profile loaded from %s", ev_path)
+                break
+            except Exception as e:
+                logger.warning("[EV] Error loading profile from %s: %s", ev_path, e)
 
     # EV chargers individuales
-    ev_chargers = interim_dir / "oe2" / "chargers" / "individual_chargers.json"
-    if ev_chargers.exists():
-        artifacts["ev_chargers"] = json.loads(ev_chargers.read_text(encoding="utf-8"))
-
-    # === PRIORITY 1: REAL CHARGER DATASET (NEW - 2026-02-04) ===
-    # Load chargers_real_hourly_2024.csv with 128 individual sockets
-    # Location: data/oe2/chargers/chargers_real_hourly_2024.csv
-    # This dataset is generated from run_chargers_real_fixed.py with:
-    # - 128 individual socket columns (MOTO_XX_SOCKET_Y, MOTOTAXI_XX_SOCKET_Y)
-    # - 8,760 hourly rows (complete year 2024)
-    # - Each column independently controllable by RL agents in CityLearnv2
-    # - Realistic demand patterns with seasonal/daily/hourly variation
-    chargers_real_path = interim_dir / "oe2" / "chargers" / "chargers_real_hourly_2024.csv"
-    if chargers_real_path.exists():
-        try:
-            chargers_real_df = _load_real_charger_dataset(chargers_real_path)
-            if chargers_real_df is not None and chargers_real_df.shape == (8760, 128):
-                artifacts["chargers_real_hourly_2024"] = chargers_real_df
-                logger.info("[CHARGERS] ✅ PRIORITY 1: Real charger dataset (128 sockets, 8760 hours) loaded successfully")
-                logger.info("[CHARGERS]    Individual socket control: ENABLED for RL agents")
-                logger.info("[CHARGERS]    Annual energy: %.0f kWh", chargers_real_df.sum().sum())
-            else:
-                logger.warning("[CHARGERS] Real charger dataset invalid shape, fallback to legacy profiles")
-        except Exception as e:
-            logger.warning(f"[CHARGERS] Error loading real dataset: {e}. Using fallback...")
-    else:
-        logger.info(f"[CHARGERS] Real charger dataset not found at {chargers_real_path}")
+    ev_chargers_candidates = [
+        interim_dir.parent.parent / "oe2" / "chargers" / "individual_chargers.json",  # data/oe2/chargers/
+        interim_dir / "chargers" / "individual_chargers.json",  # data/interim/oe2/chargers/
+        interim_dir / "oe2" / "chargers" / "individual_chargers.json",  # Legacy path
+    ]
+    for ev_chargers_path in ev_chargers_candidates:
+        if ev_chargers_path.exists():
+            try:
+                artifacts["ev_chargers"] = json.loads(ev_chargers_path.read_text(encoding="utf-8"))
+                logger.info("[EV] Individual chargers JSON loaded from %s", ev_chargers_path)
+                break
+            except Exception as e:
+                logger.warning("[EV] Error loading chargers from %s: %s", ev_chargers_path, e)
+    # NOTE: chargers_real_hourly_2024.csv YA FUE CARGADO OBLIGATORIAMENTE
+    # en la sección CRÍTICA al inicio de _load_oe2_artifacts().
+    # No es necesario intentar cargar nuevamente aquí.
 
     # === PRIORITY 2: LEGACY CHARGER HOURLY PROFILES (FALLBACK) ===
     # Fallback to old 32-charger profiles if real dataset unavailable
-    chargers_hourly_annual = interim_dir / "oe2" / "chargers" / "chargers_hourly_profiles_annual.csv"
+    chargers_hourly_annual = interim_dir / "chargers" / "chargers_hourly_profiles_annual.csv"
     logger.info(f"[CHARGER DEBUG] Checking chargers_hourly_annual: {chargers_hourly_annual.exists()}")
     if not chargers_hourly_annual.exists():
         # Fallback: load daily profile and expand
-        chargers_daily = interim_dir / "oe2" / "chargers" / "chargers_hourly_profiles.csv"
+        chargers_daily = interim_dir / "chargers" / "chargers_hourly_profiles.csv"
         logger.info(f"[CHARGER DEBUG] Checking chargers_daily: {chargers_daily.exists()}")
         if chargers_daily.exists():
             logger.info(
@@ -360,13 +492,13 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
         logger.info("Loaded annual charger profiles: %s", df_annual.shape)
 
     # === CHARGERS RESULTS (dimensionamiento OE2) ===
-    chargers_results = interim_dir / "oe2" / "chargers" / "chargers_results.json"
+    chargers_results = interim_dir / "chargers" / "chargers_results.json"
     if chargers_results.exists():
         artifacts["chargers_results"] = json.loads(chargers_results.read_text(encoding="utf-8"))
         logger.info("Cargados resultados de chargers OE2: %d chargers", artifacts['chargers_results'].get('n_chargers_recommended', 0))
 
     # === DATASETS ANUALES POR PLAYA (8760 horas) ===
-    annual_datasets_dir = interim_dir / "oe2" / "chargers" / "annual_datasets"
+    annual_datasets_dir = interim_dir / "chargers" / "annual_datasets"
     if annual_datasets_dir.exists():
         artifacts["annual_datasets_dir"] = annual_datasets_dir
         artifacts["annual_datasets"] = {}
@@ -385,7 +517,7 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
                     }
                     logger.info("Cargados datasets anuales %s: %d chargers", playa_name, len(playa_meta.get('charger_ids', [])))
 
-    charger_profile_variants = interim_dir / "oe2" / "chargers" / "charger_profile_variants.json"
+    charger_profile_variants = interim_dir / "chargers" / "charger_profile_variants.json"
     if charger_profile_variants.exists():
         artifacts["charger_profile_variants"] = json.loads(charger_profile_variants.read_text(encoding="utf-8"))
         variants_dir = charger_profile_variants.parent / "charger_profile_variants"
@@ -395,14 +527,32 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
             artifacts["charger_profile_variants_dir"] = None
 
     # BESS - cargar parámetros de CityLearn si existen
-    bess_citylearn_params = interim_dir / "oe2" / "citylearn" / "bess_schema_params.json"
-    if bess_citylearn_params.exists():
-        artifacts["bess_params"] = json.loads(bess_citylearn_params.read_text(encoding="utf-8"))
+    bess_citylearn_params_candidates = [
+        interim_dir.parent.parent / "oe2" / "citylearn" / "bess_schema_params.json",  # data/oe2/citylearn/
+        interim_dir / "citylearn" / "bess_schema_params.json",  # data/interim/oe2/citylearn/
+    ]
+    for bess_params_path in bess_citylearn_params_candidates:
+        if bess_params_path.exists():
+            try:
+                artifacts["bess_params"] = json.loads(bess_params_path.read_text(encoding="utf-8"))
+                logger.info("[BESS] Schema params loaded from %s", bess_params_path)
+                break
+            except Exception as e:
+                logger.warning("[BESS] Error loading params from %s: %s", bess_params_path, e)
 
     # BESS results
-    bess_path = interim_dir / "oe2" / "bess" / "bess_results.json"
-    if bess_path.exists():
-        artifacts["bess"] = json.loads(bess_path.read_text(encoding="utf-8"))
+    bess_results_candidates = [
+        interim_dir.parent.parent / "oe2" / "bess" / "bess_results.json",  # data/oe2/bess/
+        interim_dir / "bess" / "bess_results.json",  # data/interim/oe2/bess/
+    ]
+    for bess_path in bess_results_candidates:
+        if bess_path.exists():
+            try:
+                artifacts["bess"] = json.loads(bess_path.read_text(encoding="utf-8"))
+                logger.info("[BESS] Results loaded from %s", bess_path)
+                break
+            except Exception as e:
+                logger.warning("[BESS] Error loading results from %s: %s", bess_path, e)
 
     # === PRIORITY 1: NEW BESS Hourly Dataset (2026-02-04) ===
     # Location: data/oe2/bess/bess_hourly_dataset_2024.csv
@@ -410,25 +560,13 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
     # Columns: DatetimeIndex (UTC-5), pv_kwh, ev_kwh, mall_kwh, pv_to_ev_kwh, pv_to_bess_kwh,
     #          pv_to_mall_kwh, grid_to_ev_kwh, grid_to_mall_kwh, bess_charge_kwh, bess_discharge_kwh, soc_percent
     # ========================================================================
-    bess_hourly_path = interim_dir / "oe2" / "bess" / "bess_hourly_dataset_2024.csv"
-    if bess_hourly_path.exists():
-        try:
-            bess_df = pd.read_csv(bess_hourly_path, index_col=0, parse_dates=True)
-            if len(bess_df) == 8760 and "soc_percent" in bess_df.columns:
-                artifacts["bess_hourly_2024"] = bess_df
-                logger.info("[BESS HOURLY] ✅ PRIORITY 1: Loaded 8,760 hourly BESS dataset from %s", bess_hourly_path)
-                logger.info("              Columns: %s", ", ".join(bess_df.columns.tolist()[:5]) + "...")
-                logger.info("              Annual SOC range: %.1f - %.1f %%", bess_df["soc_percent"].min(), bess_df["soc_percent"].max())
-            else:
-                logger.warning("[BESS HOURLY] Dataset invalid: %d rows (need 8760), columns=%s", len(bess_df), bess_df.columns.tolist())
-        except Exception as e:
-            logger.warning("[BESS HOURLY] Error loading: %s", e)
-    else:
-        logger.info("[BESS HOURLY] File not found: %s (fallback to bess_results.json)", bess_hourly_path)
+    # NOTE: bess_hourly_dataset_2024.csv YA FUE CARGADO OBLIGATORIAMENTE
+    # en la sección CRÍTICA al inicio de _load_oe2_artifacts().
+    # No es necesario intentar cargar nuevamente aquí.
 
     # Building load para CityLearn
     building_load_candidates = [
-        interim_dir / "oe2" / "citylearn" / "building_load.csv",
+        interim_dir / "citylearn" / "building_load.csv",
         interim_dir.parent / "oe2" / "citylearn" / "building_load.csv",  # Ruta alternativa (data/oe2/...)
     ]
     for building_load_path in building_load_candidates:
@@ -437,49 +575,9 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
             logger.info("[LOAD] Building load encontrado en: %s", building_load_path)
             break
 
-    # Mall demand - TRY MULTIPLE SEPARATORS (comma vs semicolon)
-    # PRIORITY: demandamallhorakwh.csv (8,760 hourly records - EXACT) > demanda_mall_horaria_anual > 15-min alternatives
-    mall_demand_candidates = [
-        interim_dir / "oe2" / "demandamallkwh" / "demandamallhorakwh.csv",  # PRIORITY 1: Converted to exact 8,760 hourly (NEW - 2026-02-04)
-        interim_dir / "oe2" / "demandamallkwh" / "demanda_mall_horaria_anual.csv",  # PRIORITY 2: Annual hourly data
-        interim_dir / "oe2" / "demandamall" / "demanda_mall_kwh.csv",  # PRIORITY 3: 15-min data (needs aggregation)
-        interim_dir / "oe2" / "demandamallkwh" / "demandamallkwh.csv",  # PRIORITY 4: Original 15-min data
-    ]
-    for path in mall_demand_candidates:
-        if path.exists():
-            # Try comma first (demanda_mall_horaria_anual.csv uses comma separator)
-            try:
-                df = pd.read_csv(path, sep=",", decimal=".")
-                if len(df) >= 8760:  # Hourly annual data must have at least 8,760 rows
-                    artifacts["mall_demand"] = df
-                    artifacts["mall_demand_path"] = str(path)
-                    logger.info("[MALL DEMAND] ✓ Loaded hourly annual data from %s (%d rows, separator=',')",
-                               path.name, len(df))
-                    break
-                else:
-                    logger.warning("[MALL DEMAND] File %s has only %d rows (need ≥8,760). Skipping.",
-                                 path.name, len(df))
-            except Exception as e_comma:
-                # Try semicolon as fallback (15-min data uses semicolon, or converted hourly data)
-                try:
-                    df = pd.read_csv(path, sep=";", decimal=".")
-                    if len(df) >= 8760:  # Must be hourly or better
-                        artifacts["mall_demand"] = df
-                        artifacts["mall_demand_path"] = str(path)
-                        logger.info("[MALL DEMAND] ✓ Loaded from %s with separator=';' (%d rows)",
-                                   path.name, len(df))
-                        break
-                    else:
-                        # Si es 15-minutos, agregarlo pero marcar para conversión posterior si es necesario
-                        logger.warning("[MALL DEMAND] File %s has %d rows (15-min data). Will aggregate to hourly.",
-                                     path.name, len(df))
-                        # Aún así lo cargamos por si acaso
-                        artifacts["mall_demand"] = df
-                        artifacts["mall_demand_path"] = str(path)
-                        break
-                except Exception as e_semi:
-                    logger.warning("[MALL DEMAND] Could not load %s: comma=%s, semi=%s",
-                                 path.name, str(e_comma)[:50], str(e_semi)[:50])
+    # NOTE: demandamallhorakwh.csv YA FUE CARGADO OBLIGATORIAMENTE
+    # en la sección CRÍTICA al inicio de _load_oe2_artifacts().
+    # No es necesario intentar cargar nuevamente aquí.
 
     # ==========================================================================
     # INTEGRACIÓN: Cargar contexto de Iquitos (rewards.py)
