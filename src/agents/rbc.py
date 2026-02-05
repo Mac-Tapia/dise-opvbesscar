@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional, List, Dict
+from typing import Any, Optional
 import numpy as np
 import logging
 
@@ -99,9 +99,9 @@ class BasicRBCAgent:
         self._subnames: list[Any] = list(self.action_names) if self.action_names else [[]]  # type: ignore[assignment]
 
         # Identificar índices de acciones EV y BESS
-        self._ev_indices: List[List[int]] = []  # type: ignore[assignment]
-        self._bess_indices: List[List[int]] = []
-        self._charger_indices: List[List[int]] = []  # Índices específicos por charger
+        self._ev_indices: list[list[int]] = []  # type: ignore[assignment]
+        self._bess_indices: list[list[int]] = []
+        self._charger_indices: list[list[int]] = []  # Índices específicos por charger
 
         for names in self._subnames:
             ev_idx = [i for i, n in enumerate(names) if "electric_vehicle" in str(n).lower()]
@@ -159,7 +159,7 @@ class BasicRBCAgent:
 
         return rates
 
-    def predict(self, observations: Any, deterministic: bool = True) -> List[List[float]]:
+    def predict(self, observations: Any, deterministic: bool = True) -> list[list[float]]:
         """Genera acciones basadas en reglas multicriterio para 128 cargadores.
 
         Criterios de decisión (ponderados):
@@ -241,7 +241,7 @@ class BasicRBCAgent:
         # Distribuir carga entre chargers
         charger_rates = self._distribute_charging_load(available_power, n_active)
 
-        actions: List[List[float]] = []
+        actions: list[list[float]] = []
         charger_idx_global = 0
 
         for idx, (sp, ev_idx, bess_idx, ch_idx) in enumerate(zip(
@@ -285,9 +285,9 @@ class BasicRBCAgent:
 
         return actions
 
-    def _parse_observations(self, observations: Any) -> Dict[str, float]:
+    def _parse_observations(self, observations: Any) -> dict[str, float]:
         """Extrae observaciones relevantes."""
-        obs_dict: Dict[str, float] = {}
+        obs_dict: dict[str, float] = {}
 
         if isinstance(observations, dict):
             for k, v in observations.items():

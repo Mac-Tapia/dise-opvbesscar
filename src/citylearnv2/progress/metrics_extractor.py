@@ -74,7 +74,7 @@ def extract_step_metrics(
     training_env: Any,
     time_step: int,
     obs: Optional[np.ndarray] = None,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Extrae métricas del paso actual desde CityLearn.
 
     MÉTODO ROBUSTO: Intenta múltiples fuentes de datos:

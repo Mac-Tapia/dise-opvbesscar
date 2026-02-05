@@ -102,7 +102,7 @@ def perfil_horario(df: pd.DataFrame, fecha: pd.Timestamp) -> pd.DataFrame:
     return day_data[['ac_energy_kwh', 'ac_power_kw', 'temp_air_c', 'ghi_wm2']]
 
 
-def exportar_resumen_json(df: pd.DataFrame, output_path: Optional[str] = None) -> Dict[str, Any]:
+def exportar_resumen_json(df: pd.DataFrame, output_path: Optional[str] = None) -> dict[str, Any]:
     """Exportar resumen a JSON."""
     if output_path is None:
         output_path = "data/oe2/Generacionsolar/resumen_generacion.json"

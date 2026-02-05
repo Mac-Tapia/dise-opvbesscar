@@ -36,7 +36,7 @@ import json
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import numpy as np
 import pandas as pd  # type: ignore[import]
@@ -508,7 +508,7 @@ def _evaluate_candidate_combinations(
     target_dc_kw: float,
     target_ac_kw: float,
     selection_metric: str,
-) -> Tuple[List[Dict[str, Any]], Optional[Dict[str, Any]]]:
+) -> Tuple[list[dict[str, Any]], Optional[dict[str, Any]]]:
     """Evalua combinaciones modulo/inversor y retorna ranking y mejor candidato."""
     if module_candidates.empty or inverter_candidates.empty:
         return [], None
@@ -588,8 +588,8 @@ def _evaluate_candidate_combinations(
         return [], None
 
     df = pd.DataFrame(rows).sort_values(by=["score", "annual_kwh"], ascending=False).reset_index(drop=True)  # type: ignore[attr-defined]
-    records: List[Dict[str, Any]] = [{str(k): v for k, v in record.items()} for record in df.to_dict(orient="records")]  # type: ignore[attr-defined]
-    best_row: Dict[str, Any] = {str(k): v for k, v in df.iloc[0].to_dict().items()}  # type: ignore[attr-defined]
+    records: list[dict[str, Any]] = [{str(k): v for k, v in record.items()} for record in df.to_dict(orient="records")]  # type: ignore[attr-defined]
+    best_row: dict[str, Any] = {str(k): v for k, v in df.iloc[0].to_dict().items()}  # type: ignore[attr-defined]
     return records, best_row
 
 
@@ -781,7 +781,7 @@ def run_pv_simulation(
     total_modules: int,
     num_inverters: int,
     log: bool = True,
-) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+) -> Tuple[pd.DataFrame, dict[str, Any]]:
     """
     Ejecuta simulación PV usando ModelChain de pvlib.
     """
@@ -943,7 +943,7 @@ def calculate_statistics(
     system_ac_kw: float,
     ghi_annual: float,
     dt_hours: float,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Calcula estadísticas detalladas del sistema.
     """
@@ -1032,7 +1032,7 @@ def calculate_monthly_energy(results: pd.DataFrame) -> "pd.Series":
     return monthly
 
 
-def calculate_representative_days(results: pd.DataFrame) -> Dict[str, Any]:
+def calculate_representative_days(results: pd.DataFrame) -> dict[str, Any]:
     """
     Calcula días representativos según GHI diario:
     - Despejado (GHI máx): día con mayor irradiancia
@@ -1111,7 +1111,7 @@ def build_pv_timeseries_sandia(
     candidate_count: int = 5,
     selection_metric: str = "energy_per_m2",
     **kwargs: Any,
-) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+) -> Tuple[pd.DataFrame, dict[str, Any]]:
     """
     Construye serie temporal de generación FV usando modelo Sandia completo
     con datos TMY de PVGIS.
@@ -1185,7 +1185,7 @@ def build_pv_timeseries_sandia(
     module_candidates = pd.DataFrame()
     inverter_candidates = pd.DataFrame()
     selection_results: list[dict[str, Any]] = []
-    selection_best: Optional[Dict[str, Any]] = None
+    selection_best: Optional[dict[str, Any]] = None
     if candidate_count > 0:
         module_candidates = _rank_modules_by_density(modules_db, config.area_utilizada_m2, top_n=candidate_count)
         inverter_candidates = _rank_inverters_by_score(inverters_db, target_ac_kw, top_n=candidate_count)
@@ -1327,7 +1327,7 @@ def run_solar_sizing(
     candidate_count: int = 5,
     selection_metric: str = "energy_per_m2",
     **kwargs: Any,
-) -> Dict[str, object]:
+) -> dict[str, object]:
     """
     Ejecuta dimensionamiento solar completo con modelo Sandia y PVGIS.
     """
@@ -1437,7 +1437,7 @@ def run_solar_sizing(
 
 
 def _generate_technical_report(
-    out_dir: Path, summary: SolarSizingOutput, meta_dict: Dict[str, Any], monthly: "pd.Series[Any]"
+    out_dir: Path, summary: SolarSizingOutput, meta_dict: dict[str, Any], monthly: "pd.Series[Any]"
 ) -> None:
     """Genera reporte técnico detallado."""
 
@@ -1617,7 +1617,7 @@ def prepare_solar_for_citylearn(
     pv_dc_kw: float,
     pv_ac_kw: float,
     year: int = 2024,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Prepara los datos de generación solar para el schema de CityLearn (OE3).
 
