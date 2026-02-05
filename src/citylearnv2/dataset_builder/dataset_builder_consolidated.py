@@ -295,7 +295,7 @@ class OE2DataLoader:
             f"❌ Charger data not found. Checked: {[p.name for p in candidates]}"
         )
 
-    def load_bess(self) -> pd.DataFrame:
+    def load_bess(self) -> Optional[pd.DataFrame]:
         """Load BESS hourly dataset (8,760 records)."""
         path = self.oe2_dir / "bess" / "bess_hourly_dataset_2024.csv"
 
@@ -311,7 +311,7 @@ class OE2DataLoader:
         logger.info("ℹ️  BESS hourly data not found, will use defaults")
         return None
 
-    def load_mall_demand(self) -> pd.DataFrame:
+    def load_mall_demand(self) -> Optional[pd.DataFrame]:
         """Load mall demand (8,760 hourly records)."""
         candidates = [
             self.oe2_dir / "demandamallkwh" / "demandamallhorakwh.csv",
@@ -435,22 +435,8 @@ def build_citylearn_dataset(
 
     if REWARDS_AVAILABLE:
         try:
-            artifacts["iquitos_context"] = IquitosContext(
-                co2_factor_kg_per_kwh=SPECS["co2_grid_kg_per_kwh"],
-                co2_conversion_factor=SPECS["co2_ev_conversion_kg_per_kwh"],
-                max_motos_simultaneous=SPECS["motos"],
-                max_mototaxis_simultaneous=SPECS["mototaxis"],
-                max_evs_total=SPECS["total_sockets"],
-                motos_daily_capacity=1800,
-                mototaxis_daily_capacity=260,
-                tariff_usd_per_kwh=0.20,
-                n_chargers=SPECS["chargers_physical"],
-                total_sockets=SPECS["total_sockets"],
-                vehicles_year_motos=657000,
-                vehicles_year_mototaxis=94900,
-                peak_hours=(18, 19, 20, 21),
-                km_per_kwh=35.0,
-            )
+            # IquitosContext usa atributos de clase, no parámetros del constructor
+            artifacts["iquitos_context"] = IquitosContext()
             logger.info("✅ IquitosContext loaded:")
             logger.info("   CO₂ grid: %.4f kg/kWh", SPECS["co2_grid_kg_per_kwh"])
             logger.info("   CO₂ EV: %.3f kg/kWh", SPECS["co2_ev_conversion_kg_per_kwh"])
@@ -649,9 +635,9 @@ def _generate_charger_csvs(
 
     building_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info("Generating %d charger CSVs...", SPECS["total_sockets"])
+    logger.info("Generating %d charger CSVs...", int(SPECS["total_sockets"]))
 
-    for i in range(SPECS["total_sockets"]):
+    for i in range(int(SPECS["total_sockets"])):
         csv_name = f"charger_simulation_{i+1:03d}.csv"
         csv_path = building_dir / csv_name
 
@@ -659,11 +645,13 @@ def _generate_charger_csvs(
             logger.debug("  Skipped %s (exists)", csv_name)
             continue
 
-        demand = chargers_df.iloc[:, i].values.reshape(-1, 1)
+        # Convertir ExtensionArray a numpy array explícitamente
+        demand_ext = chargers_df.iloc[:, i].values
+        demand: np.ndarray = np.asarray(demand_ext, dtype=np.float64).reshape(-1, 1)
         df_charger = pd.DataFrame(demand, columns=["kw"])
         df_charger.to_csv(csv_path, index=False)
 
-    logger.info("✅ Generated %d charger CSVs in %s", SPECS["total_sockets"], building_dir)
+    logger.info("✅ Generated %d charger CSVs in %s", int(SPECS["total_sockets"]), building_dir)
 
 # =============================================================================
 # POST-VALIDATION

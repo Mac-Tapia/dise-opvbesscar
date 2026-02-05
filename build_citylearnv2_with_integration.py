@@ -92,7 +92,22 @@ def build_dataset():
         logger.info("      - Converting units if needed")
 
         logger.info("\n[3/5] Building CityLearn schema...")
-        schema = build_citylearn_dataset()
+
+        # Setup dataset paths and configuration
+        raw_dir = Path("data/raw")
+        interim_dir = Path("data/interim/oe2")
+        processed_dir = Path("processed/citylearn/oe3_iquitos")
+
+        # Create minimal config for dataset builder
+        cfg = {
+            "raw_dir": str(raw_dir),
+            "interim_dir": str(interim_dir),
+            "processed_dir": str(processed_dir),
+            "seed": 42,
+            "debug": False,
+        }
+
+        schema = build_citylearn_dataset(cfg, raw_dir, interim_dir, processed_dir)
 
         if schema is not None:
             logger.info("✅ Schema built successfully")
