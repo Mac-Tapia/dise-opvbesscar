@@ -37,7 +37,7 @@ class TransitionState:
     checkpoint_loaded: bool = False
     memory_freed: bool = False
     env_reset: bool = False
-    errors: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         if self.errors is None:
@@ -75,7 +75,7 @@ class TransitionManager:
         self.checkpoint_base_dir = checkpoint_base_dir or Path("checkpoints")
         self.current_agent: Optional[Any] = None
         self.previous_agent: Optional[Any] = None
-        self.transition_history: List[TransitionState] = []
+        self.transition_history: list[TransitionState] = []
 
     # =========================================================================
     # LIMPIEZA DE MEMORIA Y RECURSOS
@@ -122,7 +122,7 @@ class TransitionManager:
                 logger.debug("[CLEANUP] ✓ Modelo liberado")
         except Exception as e:
             err_msg = f"Error liberando modelo: {e}"
-            errors_list: List[str] = results["errors"]  # type: ignore
+            errors_list: list[str] = results["errors"]  # type: ignore
             errors_list.append(err_msg)
             logger.warning("[CLEANUP] %s", err_msg)
 
@@ -379,7 +379,7 @@ class TransitionManager:
         logger.info("[TRANSITION] Fase 3/4: Reset del environment...")
         try:
             reset_result = self.reset_environment()
-            errors_in_reset: List[str] = reset_result["errors"]  # type: ignore
+            errors_in_reset: list[str] = reset_result["errors"]  # type: ignore
             if errors_in_reset:
                 for err in errors_in_reset:
                     state.add_error(err)
@@ -406,7 +406,7 @@ class TransitionManager:
                             )
                             state.checkpoint_loaded = True
                         else:
-                            errors_in_ckpt: List[str] = ckpt_validation["errors"]  # type: ignore
+                            errors_in_ckpt: list[str] = ckpt_validation["errors"]  # type: ignore
                             for err in errors_in_ckpt:
                                 state.add_error(err)
                             logger.warning("[TRANSITION] ⚠ Checkpoint inválido")
@@ -466,7 +466,7 @@ class TransitionManager:
                 "status": "✅ OK" if state.is_healthy() else "⚠ WARNINGS" if state.errors else "❌ FAILED",
                 "error_count": len(state.errors) if state.errors else 0,
             }
-            transitions_list: List[Dict[str, Any]] = summary["transitions"]  # type: ignore
+            transitions_list: list[dict[str, Any]] = summary["transitions"]  # type: ignore
             transitions_list.append(transition_info)
 
             successful_count: int = summary["successful"]  # type: ignore

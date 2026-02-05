@@ -345,7 +345,7 @@ class SACAgent:
 
     def get_device_info(self) -> dict[str, Any]:
         """Retorna información detallada del dispositivo."""
-        info: Dict[str, Any] = {"device": self.device, "backend": "unknown"}
+        info: dict[str, Any] = {"device": self.device, "backend": "unknown"}
         try:
             import torch  # type: ignore[import]
             info["torch_version"] = str(torch.__version__)
@@ -915,7 +915,7 @@ class SACAgent:
                 self.reward_window_size = 200
 
                 # 🔴 CRITICAL FIX 2026-02-04: Dynamic critic loss monitoring and stabilization
-                self.critic_loss_history: List[float] = []
+                self.critic_loss_history: list[float] = []
                 self.critic_loss_max_window = 100  # Monitor last 100 losses
                 self.critic_loss_explosion_threshold = 100.0  # If > 100, we have a problem
                 self.critic_lr_scale = 1.0  # Start at full LR, can reduce to 0.1x

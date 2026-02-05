@@ -120,7 +120,7 @@ def download_pvgis_tmy(
         return None
 
 
-def get_sandia_module_spec() -> Dict[str, float]:
+def get_sandia_module_spec() -> dict[str, float]:
     """
     Obtiene especificaciones de módulo Sandia.
     Usa módulo común de alta eficiencia.
@@ -147,7 +147,7 @@ def get_sandia_module_spec() -> Dict[str, float]:
     }
 
 
-def get_inverter_spec() -> Dict[str, float]:
+def get_inverter_spec() -> dict[str, float]:
     """
     Obtiene especificaciones de inversor CEC.
     """
@@ -204,8 +204,8 @@ def estimate_poa_irradiance(
 
 def calculate_pv_output(
     tmy_data: pd.DataFrame,
-    module_spec: Dict[str, float],
-    inverter_spec: Dict[str, float],
+    module_spec: dict[str, float],
+    inverter_spec: dict[str, float],
     num_modules: int,
     num_inverters: int,
     verbose: bool = True,

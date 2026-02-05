@@ -139,7 +139,7 @@ class SolarGenerationAnalyzer:
     # DÍAS REPRESENTATIVOS
     # =========================================================================
 
-    def find_representative_days(self) -> Dict[str, Dict[str, Any]]:
+    def find_representative_days(self) -> dict[str, dict[str, Any]]:
         """Encontrar días representativos: despejado, nublado, templado."""
         if self.daily_energy is None:
             raise ValueError("No hay datos de energía diaria calculados")
@@ -191,7 +191,7 @@ class SolarGenerationAnalyzer:
     # ESTADÍSTICAS DETALLADAS
     # =========================================================================
 
-    def get_temperature_analysis(self) -> Dict[str, float]:
+    def get_temperature_analysis(self) -> dict[str, float]:
         """Análisis detallado de temperatura."""
         if self.df is None:
             raise ValueError("No hay datos cargados")
@@ -208,7 +208,7 @@ class SolarGenerationAnalyzer:
             'q75': float(temps.quantile(0.75)),
         }
 
-    def get_irradiance_analysis(self) -> Dict[str, float]:
+    def get_irradiance_analysis(self) -> dict[str, float]:
         """Análisis detallado de irradiancia."""
         if self.df is None:
             raise ValueError("No hay datos cargados")
@@ -225,7 +225,7 @@ class SolarGenerationAnalyzer:
             'q75': float(ghi.quantile(0.75)),
         }
 
-    def get_power_analysis(self) -> Dict[str, float]:
+    def get_power_analysis(self) -> dict[str, float]:
         """Análisis detallado de potencia."""
         if self.df is None:
             raise ValueError("No hay datos cargados")

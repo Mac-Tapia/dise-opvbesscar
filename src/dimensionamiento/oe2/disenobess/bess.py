@@ -255,7 +255,7 @@ def simulate_bess_operation(
     discharge_hours: Optional[set[int]] = None,
     hours: Optional[np.ndarray] = None,  # type: ignore[attr-defined]
     discharge_to_mall: bool = True,
-) -> Tuple[pd.DataFrame, Dict[str, float]]:
+) -> Tuple[pd.DataFrame, dict[str, float]]:
     """
     Simula la operacion del BESS hora a hora con cargas separadas (EV y mall).
 
@@ -718,7 +718,7 @@ def prepare_citylearn_data(
     power_kw: float,
     pv_dc_kw: float,
     out_dir: Path,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Prepara los datos del BESS para el schema de CityLearn.
 
@@ -800,7 +800,7 @@ def run_bess_sizing(
     sizing_mode: str = "ev_open_hours",
     soc_min_percent: Optional[float] = None,
     load_scope: str = "total",
-    discharge_hours: Optional[List[int]] = None,
+    discharge_hours: Optional[list[int]] = None,
     discharge_only_no_solar: bool = False,
     pv_night_threshold_kwh: float = 0.1,
     surplus_target_kwh_day: float = 0.0,
@@ -809,7 +809,7 @@ def run_bess_sizing(
     reports_dir: Optional[Path] = None,
     fixed_capacity_kwh: float = 0.0,
     fixed_power_kw: float = 0.0,
-) -> Dict[str, object]:
+) -> dict[str, object]:
     """
     Ejecuta el dimensionamiento completo del BESS.
 
