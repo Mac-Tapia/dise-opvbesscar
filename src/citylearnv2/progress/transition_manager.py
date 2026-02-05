@@ -20,7 +20,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Optional, List, Tuple
+from typing import Any, Optional, Tuple
 import traceback
 
 import numpy as np
@@ -81,7 +81,7 @@ class TransitionManager:
     # LIMPIEZA DE MEMORIA Y RECURSOS
     # =========================================================================
 
-    def cleanup_agent(self, agent: Any, agent_name: str) -> Dict[str, Any]:
+    def cleanup_agent(self, agent: Any, agent_name: str) -> dict[str, Any]:
         """Limpia recursos de un agente de forma segura.
 
         Args:
@@ -181,13 +181,13 @@ class TransitionManager:
     # VALIDACIÓN DE ESTADO
     # =========================================================================
 
-    def validate_env_state(self) -> Dict[str, Any]:
+    def validate_env_state(self) -> dict[str, Any]:
         """Valida el estado actual del environment.
 
         Returns:
             Dict con estado del environment
         """
-        state: Dict[str, Any] = {
+        state: dict[str, Any] = {
             "env_exists": self.env is not None,
             "env_type": type(self.env).__name__,
             "has_buildings": False,
@@ -211,7 +211,7 @@ class TransitionManager:
 
         return state
 
-    def validate_checkpoint(self, checkpoint_path: Path) -> Dict[str, Any]:
+    def validate_checkpoint(self, checkpoint_path: Path) -> dict[str, Any]:
         """Valida que un checkpoint sea accesible y legible.
 
         Args:
@@ -220,7 +220,7 @@ class TransitionManager:
         Returns:
             Dict con validación
         """
-        validation: Dict[str, Any] = {
+        validation: dict[str, Any] = {
             "path": str(checkpoint_path),
             "exists": checkpoint_path.exists(),
             "readable": False,
@@ -266,13 +266,13 @@ class TransitionManager:
     # RESET DEL ENVIRONMENT
     # =========================================================================
 
-    def reset_environment(self) -> Dict[str, Any]:
+    def reset_environment(self) -> dict[str, Any]:
         """Hace reset seguro del environment.
 
         Returns:
             Dict con resultado del reset
         """
-        reset_result: Dict[str, Any] = {
+        reset_result: dict[str, Any] = {
             "reset_success": False,
             "obs_shape": None,
             "errors": [],
@@ -449,9 +449,9 @@ class TransitionManager:
 
         return state
 
-    def get_transition_summary(self) -> Dict[str, Any]:
+    def get_transition_summary(self) -> dict[str, Any]:
         """Retorna resumen de todas las transiciones."""
-        summary: Dict[str, Any] = {
+        summary: dict[str, Any] = {
             "total_transitions": len(self.transition_history),
             "successful": 0,
             "warnings": 0,
@@ -460,7 +460,7 @@ class TransitionManager:
         }
 
         for state in self.transition_history:
-            transition_info: Dict[str, Any] = {
+            transition_info: dict[str, Any] = {
                 "from_agent": state.from_agent,
                 "to_agent": state.to_agent,
                 "status": "✅ OK" if state.is_healthy() else "⚠ WARNINGS" if state.errors else "❌ FAILED",

@@ -6,7 +6,7 @@ Define estructuras de datos inmutables para cargadores y sus características.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Dict, Any
+from typing import Any
 import logging
 
 logger = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ class ChargerSet:
         """Número de cargadores para mototaxis."""
         return sum(1 for c in self.chargers if c.vehicle_type == "mototaxi")
 
-    def to_dict_list(self) -> List[Dict[str, Any]]:
+    def to_dict_list(self) -> list[dict[str, Any]]:
         """Convierte a lista de diccionarios para serializar."""
         return [
             {
@@ -123,7 +123,7 @@ def create_iquitos_chargers() -> ChargerSet:
     return ChargerSet(chargers=tuple(specs))
 
 
-def validate_charger_set(charger_set: ChargerSet) -> Dict[str, Any]:
+def validate_charger_set(charger_set: ChargerSet) -> dict[str, Any]:
     """Valida un conjunto de cargadores.
 
     Verifica:

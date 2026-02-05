@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Dict, List, Callable, Union
+from typing import Any, Optional, Callable, Union
 import warnings
 import numpy as np
 import logging
@@ -120,7 +120,7 @@ class A2CConfig:
     # === OPTIMIZER CONTROL (NEW COMPONENT #5) ===
     # A2C paper usa RMSprop, pero Adam es common en SB3
     optimizer_type: str = "adam"           # "adam" o "rmsprop"
-    optimizer_kwargs: Optional[Dict[str, Any]] = None  # Config personalizada
+    optimizer_kwargs: Optional[dict[str, Any]] = None  # Config personalizada
     use_amp: bool = True                   # ✅ AGREGADO: Mixed Precision (AMP) para GPU
 
     # === NORMALIZACIÓN (crítico para estabilidad) ===
@@ -215,7 +215,7 @@ class A2CAgent:
         self.model: Optional[Any] = None
         self.wrapped_env: Optional[Any] = None
         self._trained = False
-        self.training_history: List[Dict[str, float]] = []
+        self.training_history: list[dict[str, float]] = []
         self.device = self._setup_device()
         self._setup_torch_backend()  # CRITICAL FIX: Initialize torch backend
 
@@ -249,7 +249,7 @@ class A2CAgent:
         except ImportError:
             logger.warning("[A2C] PyTorch no instalado, usando configuración por defecto")
 
-    def get_device_info(self) -> Dict[str, Any]:
+    def get_device_info(self) -> dict[str, Any]:
         """Retorna información detallada del dispositivo para A2C (CRITICAL FIX - agregado a A2C)."""
         info: dict[str, Any] = {"device": self.device, "backend": "unknown"}
         try:

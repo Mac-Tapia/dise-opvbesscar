@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional, Tuple
 import csv
 import logging
 import numpy as np
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 def append_progress_row(
     progress_path: Path,
-    row: Dict[str, Any],
+    row: dict[str, Any],
     headers: Tuple[str, ...] = ("timestamp", "agent", "episode", "episode_reward", "episode_length", "global_step")
 ) -> None:
     """Append a row to progress CSV file.
@@ -180,7 +180,7 @@ def extract_step_metrics(
     env: Any,
     step_num: int,
     observation: Optional[np.ndarray] = None
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Extract metrics from environment at current step.
 
     Extracts:
@@ -203,7 +203,7 @@ def extract_step_metrics(
         >>> print(metrics["grid_kWh"])
         150.5
     """
-    metrics: Dict[str, float] = {
+    metrics: dict[str, float] = {
         "grid_kWh": 0.0,
         "solar_kWh": 0.0,
         "co2_kg": 0.0,
@@ -254,7 +254,7 @@ def extract_step_metrics(
     return metrics
 
 
-def get_episode_summary(training_history: list[Dict[str, float]]) -> Dict[str, Any]:
+def get_episode_summary(training_history: list[dict[str, float]]) -> dict[str, Any]:
     """Generate summary statistics from training history.
 
     Calculates:

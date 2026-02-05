@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 import logging
 import numpy as np
 
@@ -36,7 +36,7 @@ class EpisodeMetricsAccumulator:
         self.mototaxis_cargadas = 0
         self.co2_intensity_grid = 0.4521  # kg CO2/kWh (Iquitos)
 
-    def accumulate(self, step_metrics: Dict[str, float], reward: float = 0.0):
+    def accumulate(self, step_metrics: dict[str, float], reward: float = 0.0):
         """Acumula métricas de un step.
 
         Args:
@@ -53,7 +53,7 @@ class EpisodeMetricsAccumulator:
         if grid_value > 0:
             self.co2_grid_kg += grid_value * self.co2_intensity_grid
 
-    def get_episode_metrics(self) -> Dict[str, float]:
+    def get_episode_metrics(self) -> dict[str, float]:
         """Retorna métricas acumuladas del episodio.
 
         Returns:

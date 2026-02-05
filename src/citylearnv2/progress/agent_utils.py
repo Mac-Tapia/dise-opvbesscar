@@ -10,14 +10,14 @@ Proporciona:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Optional, Dict, Tuple
+from typing import Any, Optional, Tuple
 import logging
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
 
-def validate_env_spaces(env: Any) -> Dict[str, Any]:
+def validate_env_spaces(env: Any) -> dict[str, Any]:
     """Valida que el entorno tenga espacios de observación y acción válidos.
 
     Args:

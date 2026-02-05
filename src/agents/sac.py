@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Dict, List
+from typing import Any, Optional
 import numpy as np
 import logging
 import importlib  # type: ignore
@@ -302,7 +302,7 @@ class SACAgent:
         self._wrapped_env: Any = None  # type: ignore
 
         # Métricas de entrenamiento
-        self.training_history: List[Dict[str, float]] = []
+        self.training_history: list[dict[str, float]] = []
 
         # === Configurar dispositivo GPU/CUDA ===
         self.device = self._setup_device()
@@ -343,7 +343,7 @@ class SACAgent:
         except ImportError:
             logger.warning("PyTorch no instalado, usando configuración por defecto")
 
-    def get_device_info(self) -> Dict[str, Any]:
+    def get_device_info(self) -> dict[str, Any]:
         """Retorna información detallada del dispositivo."""
         info: Dict[str, Any] = {"device": self.device, "backend": "unknown"}
         try:

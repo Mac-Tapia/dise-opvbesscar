@@ -31,7 +31,7 @@ AUTOR: GitHub Copilot
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 import numpy as np
 import logging
 
@@ -100,7 +100,7 @@ def extract_step_metrics(
         - source: Fuente de los datos ('energy_simulation', 'building', 'observation', 'fallback')
     """
     # Usar Dict[str, Any] para permitir valores float y string
-    metrics: Dict[str, Any] = {
+    metrics: dict[str, Any] = {
         'grid_import_kwh': 0.0,
         'grid_export_kwh': 0.0,
         'solar_generation_kwh': 0.0,
@@ -343,7 +343,7 @@ class EpisodeMetricsAccumulator:
         self.co2_indirect_avoided_kg = 0.0
         self.co2_direct_avoided_kg = 0.0
 
-    def accumulate(self, metrics: Dict[str, float], reward: Optional[float] = None):
+    def accumulate(self, metrics: dict[str, float], reward: Optional[float] = None):
         """Acumula métricas de un step.
 
         Args:
@@ -401,7 +401,7 @@ class EpisodeMetricsAccumulator:
             return sum(self._rewards_window) / len(self._rewards_window)
         return 0.0
 
-    def get_episode_metrics(self) -> Dict[str, float]:
+    def get_episode_metrics(self) -> dict[str, float]:
         """Retorna métricas acumuladas del episodio - FIXED: Now includes BESS component breakdown."""
         # Initialize component tracking if needed (FIXED: for robustness)
         if not hasattr(self, 'co2_indirect_solar_kg'):
