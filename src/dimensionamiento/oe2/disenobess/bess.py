@@ -79,6 +79,17 @@ def load_mall_demand_real(
     Los datos del archivo estan en kW (potencia) a intervalos de 15 minutos.
     Se convierten a kWh (energia) horaria.
 
+    TRANSFORMACIÓN 15 MIN → HORA:
+    ==============================
+    Si time_diff = 15 minutos:
+    1. Potencia 15min [kW] → Energía 15min [kWh] = power_kw × (15/60) = power_kw × 0.25
+    2. Resamplear cada hora: 4×(power_kw × 0.25) = power_kw × 1.0 [kWh/hora]
+
+    Ejemplo para demanda de 100 kW en 96 intervalos/día:
+    - Intervalo de 15min: 100 kW × 0.25 = 25 kWh
+    - Suma 4 intervalos/hora: 4 × 25 = 100 kWh/hora
+    - Día completo: 24 horas × 100 kWh = 2,400 kWh/día
+
     Args:
         mall_demand_path: Ruta al archivo CSV con demanda del mall
         year: Año de simulacion
@@ -131,17 +142,40 @@ def load_mall_demand_real(
     df = df.dropna(subset=["power_kw"])  # type: ignore[attr-defined]
 
     if unit_is_energy:
-        # Los valores son energia por intervalo (kWh). Convertir a potencia y luego a energia horaria.
+        # Los valores ya son energia por intervalo (kWh). Usar directamente.
         df["energy_kwh"] = df["power_kw"]
         df["power_kw"] = df["energy_kwh"] * 60.0 / time_diff
+        # Validación: verificar que sea coherente
+        assert df["energy_kwh"].min() >= 0, "❌ ERROR: Energía negativa detectada"
+        print(f"      ✓ Datos en formato ENERGÍA (kWh): {len(df)} registros")
     else:
         # Los valores son potencia (kW). Convertir a energia por intervalo.
+        # FÓRMULA: energy = power × (interval_minutes / 60)
+        # Para 15 min: energy_kwh = power_kw × (15 / 60) = power_kw × 0.25
         df["energy_kwh"] = df["power_kw"] * (time_diff / 60.0)
+        # Validación: verificar conversión
+        assert df["energy_kwh"].min() >= 0, "❌ ERROR: Energía negativa detectada"
+        print(f"      ✓ Datos en formato POTENCIA (kW): Convertida a {len(df)} registros × {time_diff} min")
+        print(f"      ✓ Factor conversión: power_kw × {time_diff / 60.0:.4f} = energy_kwh")
 
     if time_diff < 60:
+        # RESAMPLEAR: Sumar intervalos menores de 1 hora a valor horario
+        # Para 15 min: 4 intervalos/hora → sum() suma todos los 4
+        # Validación de coherencia:
+        intervals_per_hour = int(60 / time_diff)
         df_hourly = df["energy_kwh"].resample("h").sum().to_frame("mall_kwh")  # type: ignore[attr-defined]
+        # Verificar que el resampleo sea correcto
+        if len(df) >= intervals_per_hour * 24:  # Al menos 1 día completo
+            sample_day = df["energy_kwh"].iloc[:intervals_per_hour*24]
+            sample_daily = sample_day.resample("h").sum()
+            expected_intervals = intervals_per_hour * 24
+            actual_intervals = len(df[:intervals_per_hour*24])
+            assert actual_intervals == expected_intervals, f"❌ ERROR: Mismatch {actual_intervals} vs {expected_intervals}"
+            print(f"      ✓ Resampleo {intervals_per_hour} intervalos/hora → horario: {len(df)} → {len(df_hourly)} registros")
     else:
+        # Los datos ya están en formato horario
         df_hourly = df["energy_kwh"].to_frame("mall_kwh")  # type: ignore[attr-defined]
+        print(f"      ✓ Datos ya son horarios: {len(df_hourly)} registros")
     # Si los datos no cubren un año completo, repetir para llenar
     if len(df_hourly) < 8760:
         # Calcular perfil promedio diario
@@ -160,12 +194,25 @@ def load_mall_demand_real(
 
 
 def load_pv_generation(pv_timeseries_path: Path) -> pd.DataFrame:
-    """Carga la generacion PV desde timeseries (formato horario)."""
+    """
+    Carga la generacion PV desde timeseries (formato horario).
+
+    TRANSFORMACIÓN SUBHORARIA → HORA:
+    ==================================
+    Si hay más de 8,760 registros → es subhoraria (15 min o menor)
+    Resamplear sumando intervalos: resample('h').sum()
+
+    Para datos de 15 minutos (35,040 registros):
+    - 4 intervalos/hora × 8,760 horas = 35,040 total
+    - Suma de 4 valores cada hora da valor horario
+
+    NOTA: Los datos deben estar en formato de ENERGÍA (kWh), NO potencia (kW).
+    """
     df = pd.read_csv(pv_timeseries_path)  # type: ignore[attr-defined]
 
     # Detectar columna de tiempo
     time_col = None
-    for col in ['datetime', 'timestamp', 'time', 'Timestamp']:
+    for col in ['datetime', 'timestamp', 'time', 'Timestamp', 'fecha', 'date']:
         if col in df.columns:
             time_col = col
             break
@@ -174,39 +221,57 @@ def load_pv_generation(pv_timeseries_path: Path) -> pd.DataFrame:
         df[time_col] = pd.to_datetime(df[time_col])  # type: ignore[attr-defined]
         df = df.set_index(time_col)  # type: ignore[attr-defined]
 
-    # Resamplear a horario si es subhorario
+    # RESAMPLEAR a horario si es subhorario
     if len(df) > 8760:
-        df_hourly = df.resample('h').sum()  # type: ignore[attr-defined]
-    else:
-        df_hourly = df
-
-    # Buscar columna de generacion PV
-    pv_col = None
-    for col in ['pv_kwh', 'ac_energy_kwh', 'ac_power_kw', 'p_ac']:
-        if col in df_hourly.columns:
-            pv_col = col
-            break
-
-    if pv_col:
-        if 'power' in pv_col.lower() or 'p_ac' in pv_col.lower():
-            df_hourly['pv_kwh'] = df_hourly[pv_col]
+        # TRANSFORMACIÓN: Datos subhorarios → Horarios
+        # Contar intervalos para validar
+        n_intervals = len(df)
+        if n_intervals == 35040:
+            # 96 intervalos/día × 365 días = 35,040 (formato 15 min)
+            intervals_per_hour = 4
+            print(f"      ✓ Datos en formato 15 minutos: {n_intervals} intervalos")
+        elif n_intervals == 8760 * 2:
+            # 2 intervalos/hora (30 min)
+            intervals_per_hour = 2
+            print(f"      ✓ Datos en formato 30 minutos")
         else:
-            df_hourly['pv_kwh'] = df_hourly[pv_col]
-    else:
-        df_hourly['pv_kwh'] = 0.0
+            intervals_per_hour = int(n_intervals / 8760)
+            print(f"      ✓ Datos subhorarios: {n_intervals} intervalos ({intervals_per_hour} por hora)")
 
-    return df_hourly[['pv_kwh']]
+        # SUMA HORARIA: Resamplear sumando (para datos en kWh)
+        df_hourly = df.resample('h').sum()  # type: ignore[attr-defined]
+        print(f"      ✓ Resampleo: {n_intervals} → {len(df_hourly)} registros (horarios)")
+    else:
+        # Ya está en formato horario (8,760 registros)
+        df_hourly = df
+        print(f"      ✓ Datos ya son horarios: {len(df_hourly)} registros")
+
+    # Buscar columna de generacion PV\n    pv_col = None\n    for col in ['pv_kwh', 'ac_energy_kwh', 'ac_power_kw', 'p_ac', 'energia_kwh', 'energy_kwh', 'power_kw']:\n        if col in df_hourly.columns:\n            pv_col = col\n            break\n\n    if pv_col:\n        # VALIDACION: Si es potencia, convertir a energia\n        if 'power' in pv_col.lower() or 'p_ac' in pv_col.lower():\n            # Estos son valores de potencia (kW), necesitan conversion\n            # Para datos horarios: kW = kWh/1hora, entonces asignamos directamente\n            df_hourly['pv_kwh'] = df_hourly[pv_col]\n            print(f\"      \u2713 Detectada columna potencia: {pv_col}\")\n        else:\n            # Estos ya son energia (kWh)\n            df_hourly['pv_kwh'] = df_hourly[pv_col]\n            print(f\"      \u2713 Detectada columna energia: {pv_col}\")\n        \n        # VALIDACION: Verificar valores positivos\n        assert (df_hourly['pv_kwh'] >= 0).all(), \"\u274c ERROR: Generacion PV negativa detectada\"\n        energía_total = df_hourly['pv_kwh'].sum()\n        print(f\"      \u2713 Generacion total: {energía_total:,.0f} kWh, promedio: {df_hourly['pv_kwh'].mean():.1f} kWh/h\")\n    else:\n        print(f\"      \u26a0 ADVERTENCIA: No se encontro columna PV. Usando ceros.\")\n        df_hourly['pv_kwh'] = 0.0\n\n    # VALIDACION FINAL: Debe haber 8,760 registros horarios\n    assert len(df_hourly) == 8760, f\"\u274c ERROR: Se esperaban 8,760 horas, se obtuvieron {len(df_hourly)}\"\n    \n    return df_hourly[['pv_kwh']]
 
 def load_ev_demand(ev_profile_path: Path, year: int = 2024) -> pd.DataFrame:
     """Carga el perfil de demanda EV (formato horario 8,760 horas).
 
     El archivo CSV puede tener:
-    - 96 intervalos (15 minutos) para un dia tipico → se suma/promedia a 24 horas
+    - 96 intervalos (15 minutos) para un dia tipico → se suma a 24 horas horarias
+      TRANSFORMACIÓN: Agrupar cada 4 intervalos (0-3, 4-7, ..., 92-95) e sumar energy_kwh
     - 8,760 intervalos (horario) → se retorna tal cual
     - 24 horas (formato antiguo) → se expande a 8,760 horas/año
 
+    TRANSFORMACIÓN 96 INTERVALOS (15 MIN) → 24 HORAS:
+    ===================================================
+    96 intervalos = 24 horas × 4 intervalos/hora
+
+    Agrupación por hora:
+    - Hora 0: intervalos 0-3 (00:00-00:45)
+    - Hora 1: intervalos 4-7 (01:00-01:45)
+    - ...
+    - Hora 23: intervalos 92-95 (23:00-23:45)
+
+    Cada intervalo debe estar en kWh (energía por 15 minutos).
+    La suma de 4 intervalos da el kWh total para esa hora.
+
     Returns:
-        DataFrame con columnas 'hour' y 'ev_kwh' (energia en kWh por hora)
+        DataFrame con 8,760 registros horarios con columna 'ev_kwh' (energia en kWh por hora)
     """
     df = pd.read_csv(ev_profile_path)  # type: ignore[attr-defined]
 
@@ -214,33 +279,85 @@ def load_ev_demand(ev_profile_path: Path, year: int = 2024) -> pd.DataFrame:
     if 'interval' in df.columns and 'energy_kwh' in df.columns:
         # Formato nuevo: 96 intervalos de 15 minutos para un dia
         if len(df) == 96:
-            # Agrupar cada 4 intervalos (1 hora)
+            # VALIDACIÓN: Verificar que interval sea 0-95 (96 valores)
+            assert df['interval'].min() >= 0 and df['interval'].max() == 95, "❌ ERROR: Intervalo no es 0-95"
+
+            # AGRUPACIÓN POR HORA: Cada 4 intervalos = 1 hora
+            # interval 0-3   → hour 0 (00:00-00:45)
+            # interval 4-7   → hour 1 (01:00-01:45)
+            # interval 92-95 → hour 23 (23:00-23:45)
             df['hour'] = df['interval'] // 4
+
+            # VALIDACIÓN: Verificar que energy_kwh sea positivo
+            assert (df['energy_kwh'] >= 0).all(), "❌ ERROR: Energía negativa detectada"
+
+            # SUMA HORARIA: Sumar los 4 intervalos de 15 min en cada hora
             df_hourly = df.groupby('hour')['energy_kwh'].sum().reset_index()  # type: ignore[attr-defined]
             df_hourly.columns = ['hour', 'ev_kwh']
 
-            # Expandir a 365 dias (8,760 horas)
+            # VALIDACIÓN: Debe haber 24 horas
+            assert len(df_hourly) == 24, f"❌ ERROR: Se esperaban 24 horas, se obtuvieron {len(df_hourly)}"
+            print(f"      ✓ Transformación 96 intervalos → 24 horas: {len(df)} → {len(df_hourly)} registros")
+            print(f"      ✓ Energía diaria: {df_hourly['ev_kwh'].sum():.0f} kWh/día")
+
+            # EXPANSIÓN A AÑO COMPLETO: 365 días × 24 horas/día = 8,760 horas
             df_annual = []
-            for _ in range(365):
+            for day in range(365):
                 for _, row in df_hourly.iterrows():
-                    df_annual.append({'hour': int(row['hour']), 'ev_kwh': float(row['ev_kwh'])})  # type: ignore[attr-defined]
-            return pd.DataFrame(df_annual)
+                    df_annual.append({
+                        'hour': int(row['hour']),
+                        'ev_kwh': float(row['ev_kwh']),
+                        'day': day
+                    })  # type: ignore[attr-defined]
+            df_result = pd.DataFrame(df_annual)
+
+            # VALIDACIÓN FINAL:
+            assert len(df_result) == 8760, f"❌ ERROR: Se esperaban 8,760 horas, se obtuvieron {len(df_result)}"
+            assert (df_result['ev_kwh'] >= 0).all(), "❌ ERROR: Energía negativa en resultado"
+            print(f"      ✓ Expansión a año completo: {len(df_result)} registros (365 × 24)")
+
+            return df_result[['ev_kwh']]
         elif len(df) == 8760:
-            # Ya es formato horario
+            # Ya es formato horario (8,760 registros = 1 año)
+            assert (df['energy_kwh'] >= 0).all(), "❌ ERROR: Energía negativa detectada"
+            print(f"      ✓ Datos ya son horarios/anuales: {len(df)} registros")
             return df[['energy_kwh']].rename(columns={'energy_kwh': 'ev_kwh'})
 
     # Formato antiguo: 24 horas (retrocompatibilidad)
     if 'hour' in df.columns and 'energy_kwh' in df.columns:
-        # Perfil de 24 horas, expandir a año
+        # VALIDACIÓN: Verificar que haya 24 horas
+        assert len(df) == 24, f"❌ ERROR: Se esperaban 24 horas, se encontraron {len(df)}"
+        assert (df['energy_kwh'] >= 0).all(), "❌ ERROR: Energía negativa detectada"
+
+        # Perfil de 24 horas, expandir a año completo
         hourly_profile = df.set_index('hour')['energy_kwh']  # type: ignore[attr-defined]
         df_full = []
-        for _ in range(365):
+        for day in range(365):
             for hour in range(24):
                 ev_kwh = hourly_profile.get(hour, 0.0)
-                df_full.append({'hour': hour, 'ev_kwh': ev_kwh})  # type: ignore[attr-defined]
-        return pd.DataFrame(df_full)
+                df_full.append({
+                    'hour': hour,
+                    'ev_kwh': ev_kwh,
+                    'day': day
+                })  # type: ignore[attr-defined]
 
-    raise ValueError("Formato de CSV no reconocido. Se esperan columnas 'interval' y 'energy_kwh' (96 intervalos), 'hour' y 'energy_kwh' (24 horas), o 8,760 horas")
+        df_result = pd.DataFrame(df_full)
+        # VALIDACIÓN FINAL
+        assert len(df_result) == 8760, f"❌ ERROR: Se esperaban 8,760 horas, se obtuvieron {len(df_result)}"
+        print(f"      ✓ Expansión formato 24h a año completo: {len(df_result)} registros (365 × 24)")
+
+        return df_result[['ev_kwh']]
+
+    # ERROR: Formato no reconocido
+    error_msg = (
+        "❌ ERROR: Formato de CSV no reconocido.\n"
+        "Se esperan:"
+        "  • 96 intervalos: columnas 'interval' (0-95) y 'energy_kwh' (kWh/15min)\n"
+        "  • 24 horas: columnas 'hour' (0-23) y 'energy_kwh' (kWh/hora)\n"
+        "  • 8,760 horas: más de 8,000 registros horarios\n"
+        f"Se encontró: {len(df)} registros con columnas {list(df.columns)}"
+    )
+    raise ValueError(error_msg)
 
 def simulate_bess_operation(
     pv_kwh: np.ndarray,  # type: ignore[attr-defined]

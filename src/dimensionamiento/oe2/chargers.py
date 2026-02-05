@@ -138,7 +138,7 @@ def validate_charger_set(charger_set: ChargerSet) -> dict[str, Any]:
     Returns:
         Diccionario con resultados de validación
     """
-    results = {
+    results: dict[str, Any] = {
         "is_valid": True,
         "errors": [],
         "warnings": [],

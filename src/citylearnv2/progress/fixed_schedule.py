@@ -107,7 +107,7 @@ class FixedScheduleAgent:
         self._mototaxi_indices = list(range(113, 129))  # 113-128 (chargers 113-128)
         self._bess_index = 0  # No tocar
 
-    def predict(self, observations: Any = None, deterministic: bool = True) -> List[List[float]]:
+    def predict(self, observations: Any = None, deterministic: bool = True) -> list[list[float]]:
         """Devuelve acciones basadas en horario fijo.
 
         ESTRATEGIA:
@@ -119,7 +119,7 @@ class FixedScheduleAgent:
         # Extraer hora actual
         hour = self._get_current_hour(observations)
 
-        actions: List[List[float]] = []
+        actions: list[list[float]] = []
 
         if isinstance(self.action_space, list):
             for i, sp in enumerate(self.action_space):

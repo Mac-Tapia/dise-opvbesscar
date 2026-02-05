@@ -14,6 +14,9 @@ from typing import Any, Optional, Tuple
 import logging
 import numpy as np
 
+# Type alias for Python 3.11+
+Dict = dict
+
 logger = logging.getLogger(__name__)
 
 

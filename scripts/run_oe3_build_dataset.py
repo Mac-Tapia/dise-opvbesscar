@@ -7,7 +7,7 @@ import json
 import argparse
 import logging
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 import pandas as pd
 import numpy as np
 
@@ -19,7 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def load_config(config_path: str) -> Dict[str, Any]:
+def load_config(config_path: str) -> dict[str, Any]:
     """Load YAML configuration."""
     import yaml
     with open(config_path, 'r') as f:
@@ -29,7 +29,7 @@ def load_config(config_path: str) -> Dict[str, Any]:
         return config
 
 
-def build_schema(output_dir: Path, config: Dict[str, Any]) -> Dict[str, Any]:
+def build_schema(output_dir: Path, config: dict[str, Any]) -> dict[str, Any]:
     """Build schema.json with CityLearn configuration."""
 
     logger.info("Building schema.json...")
@@ -56,8 +56,16 @@ def build_schema(output_dir: Path, config: Dict[str, Any]) -> Dict[str, Any]:
 
     # Build schema
     schema = {
+        "root_directory": str(output_dir.resolve()),  # CityLearn v2 requires root_directory
         "episode_time_steps": timesteps,
         "time_step_minutes": 60,
+        "central_agent": False,  # CityLearn required field
+        "observations": {
+            "building_0": ["solar_generation", "net_electricity_consumption"]
+        },
+        "actions": {
+            "building_0": ["electrical_storage", "electric_vehicle_charging"]
+        },
         "buildings": [
             {
                 "name": "Iquitos_Mall",
@@ -105,7 +113,7 @@ def build_schema(output_dir: Path, config: Dict[str, Any]) -> Dict[str, Any]:
     return schema
 
 
-def build_charger_files(output_dir: Path, schema: Dict[str, Any]) -> None:
+def build_charger_files(output_dir: Path, schema: dict[str, Any]) -> None:
     """Generate charger CSV files (128 total: 32 chargers × 4 sockets)."""
 
     logger.info("Building charger CSV files...")

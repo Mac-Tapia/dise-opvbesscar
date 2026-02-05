@@ -117,10 +117,11 @@ def build_iquitos_env(
         return result
 
     try:
-        if dataset_dir:
-            env = CityLearnEnv(dataset_dir)
+        if dataset_dir and result["schema"]:
+            # CityLearn requiere el schema como dict, no como path
+            env = CityLearnEnv(result["schema"])
         else:
-            logger.warning("No dataset_dir provided, cannot create CityLearn env")
+            logger.warning("No dataset_dir or schema provided, cannot create CityLearn env")
             result["is_valid"] = len(result["errors"]) == 0
             return result
 

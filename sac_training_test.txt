@@ -1,0 +1,3 @@
+_train_sb3_sac called with total_timesteps=43800
+checkpoint_dir=checkpoints\SAC
+checkpoint_freq_steps=1000

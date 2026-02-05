@@ -1973,3 +1973,127 @@ if __name__ == "__main__":
         print("\n⚠ matplotlib no disponible para gráficas visuales")
     except (ValueError, TypeError, RuntimeError) as e:
         print(f"\n⚠ No se pudieron mostrar las gráficas: {e}")
+
+    # =========================================================================
+    # GUARDAR DATASETS EN CSV - DATOS REALES COMPLETOS
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("  GUARDANDO DATASETS EN CSV")
+    print("=" * 70)
+
+    # Crear directorio si no existe
+    from pathlib import Path as PathlibPath
+    output_dir = PathlibPath("data/oe2/Generacionsolar")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. DATOS HORARIOS COMPLETOS (8760 o 35040 registros según resolución)
+    print(f"\n✓ Guardando datos horarios completos...")
+    hourly_csv_path = output_dir / "pv_generation_hourly_complete.csv"
+    demo_results.to_csv(hourly_csv_path, index=True)
+    print(f"  Archivo: {hourly_csv_path}")
+    print(f"  Registros: {len(demo_results)}")
+    print(f"  Columnas: {list(demo_results.columns)}")
+
+    # 2. DATOS DIARIOS (365 registros)
+    print(f"\n✓ Guardando datos diarios...")
+    daily_summary = pd.DataFrame({
+        'fecha': demo_daily_energy.index.strftime('%Y-%m-%d'),
+        'energia_diaria_kwh': demo_daily_energy.values,
+    })
+    daily_csv_path = output_dir / "pv_generation_daily_summary.csv"
+    daily_summary.to_csv(daily_csv_path, index=False)
+    print(f"  Archivo: {daily_csv_path}")
+    print(f"  Registros: {len(daily_summary)}")
+    print(f"  Rango energía diaria: {daily_summary['energia_diaria_kwh'].min():.1f} - {daily_summary['energia_diaria_kwh'].max():.1f} kWh")
+
+    # 3. DATOS MENSUALES (12 registros)
+    print(f"\n✓ Guardando datos mensuales...")
+    monthly_summary = pd.DataFrame({
+        'periodo': [pd.Timestamp(ts).strftime('%Y-%m') for ts in demo_monthly_energy.index],
+        'energia_mensual_kwh': demo_monthly_energy.values,
+    })
+    monthly_csv_path = output_dir / "pv_generation_monthly_summary.csv"
+    monthly_summary.to_csv(monthly_csv_path, index=False)
+    print(f"  Archivo: {monthly_csv_path}")
+    print(f"  Registros: {len(monthly_summary)}")
+    for _, row in monthly_summary.iterrows():
+        print(f"    {row['periodo']}: {row['energia_mensual_kwh']:>12,.0f} kWh")
+
+    # 4. DATOS ANUALES (1 registro con resumen completo)
+    print(f"\n✓ Guardando datos anuales...")
+    annual_summary = pd.DataFrame({
+        'año': [2024],
+        'energia_anual_kwh': [demo_annual_energy],
+        'energia_anual_mwh': [demo_annual_energy / 1e3],
+        'energia_anual_gwh': [demo_annual_energy / 1e6],
+        'capacidad_instalada_kwp': [demo_metadata['system_dc_kw']],
+        'capacidad_ac_kw': [demo_metadata['system_ac_kw']],
+        'potencia_maxima_kw': [demo_metadata['max_power_kw']],
+        'potencia_media_kw': [demo_metadata['mean_power_kw']],
+        'yield_especifico_kwh_kwp_ano': [demo_metadata['specific_yield']],
+        'factor_capacidad_percent': [demo_metadata['capacity_factor'] * 100],
+        'performance_ratio_percent': [demo_metadata['performance_ratio'] * 100],
+        'horas_equivalentes_ano': [demo_metadata['equivalent_hours']],
+        'modulos_totales': [demo_metadata['total_modules']],
+        'numero_inversores': [demo_metadata['num_inverters']],
+        'area_utilizada_m2': [demo_metadata['area_utilizada_m2']],
+    })
+    annual_csv_path = output_dir / "pv_generation_annual_summary.csv"
+    annual_summary.to_csv(annual_csv_path, index=False)
+    print(f"  Archivo: {annual_csv_path}")
+    print(f"  Energía anual: {demo_annual_energy:,.0f} kWh ({demo_annual_energy/1e6:.3f} GWh)")
+    print(f"  Capacidad: {demo_metadata['system_dc_kw']:,.1f} kWp → {demo_metadata['system_ac_kw']:,.1f} kW AC")
+
+    # 5. INFORMACIÓN TÉCNICA (componentes seleccionados)
+    print(f"\n✓ Guardando información técnica...")
+    technical_info = pd.DataFrame({
+        'parametro': [
+            'Módulo seleccionado',
+            'Inversor seleccionado',
+            'Potencia DC instalada',
+            'Potencia AC nominal',
+            'Ratio DC/AC',
+            'Módulos totales',
+            'Módulos por string',
+            'Strings en paralelo',
+            'Número de inversores',
+            'Área total utilizada',
+            'Inclinación (tilt)',
+            'Azimut',
+            'Latitud',
+            'Longitud',
+            'Altitud',
+        ],
+        'valor': [
+            demo_metadata['module_name'],
+            demo_metadata['inverter_name'],
+            f"{demo_metadata['system_dc_kw']:.1f} kWp",
+            f"{demo_metadata['system_ac_kw']:.1f} kW",
+            f"{demo_metadata['system_dc_kw']/demo_metadata['system_ac_kw']:.2f}",
+            f"{demo_metadata['total_modules']}",
+            f"{demo_metadata['modules_per_string']}",
+            f"{demo_metadata['strings_parallel']}",
+            f"{demo_metadata['num_inverters']}",
+            f"{demo_metadata['area_utilizada_m2']:.1f} m²",
+            f"{IQUITOS_PARAMS['surface_tilt']:.1f}°",
+            f"{IQUITOS_PARAMS['surface_azimuth']:.1f}°",
+            f"{IQUITOS_PARAMS['lat']}°",
+            f"{IQUITOS_PARAMS['lon']}°",
+            f"{IQUITOS_PARAMS['alt']:.1f} m",
+        ],
+    })
+    technical_csv_path = output_dir / "pv_system_technical_info.csv"
+    technical_info.to_csv(technical_csv_path, index=False)
+    print(f"  Archivo: {technical_csv_path}")
+
+    print("\n" + "=" * 70)
+    print("  ✅ DATASETS GUARDADOS CORRECTAMENTE")
+    print("=" * 70)
+    print(f"\nLugar: {output_dir.resolve()}")
+    print(f"\nArchivos generados:")
+    print(f"  1. pv_generation_hourly_complete.csv      ({len(demo_results)} registros)")
+    print(f"  2. pv_generation_daily_summary.csv        ({len(daily_summary)} registros)")
+    print(f"  3. pv_generation_monthly_summary.csv      ({len(monthly_summary)} registros)")
+    print(f"  4. pv_generation_annual_summary.csv       (1 registro)")
+    print(f"  5. pv_system_technical_info.csv           (información técnica)")
+    print(f"\n✓ Datos reales completos listos para OE3 + agentes RL")

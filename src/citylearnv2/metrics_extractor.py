@@ -101,7 +101,7 @@ def extract_step_metrics(
     env: Any,
     step_num: int,
     observation: Optional[np.ndarray] = None
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Extrae métricas de un step del ambiente.
 
     Args:
@@ -112,7 +112,7 @@ def extract_step_metrics(
     Returns:
         Diccionario con métricas del step
     """
-    metrics: Dict[str, float] = {
+    metrics: dict[str, float] = {
         "grid_kWh": 0.0,
         "solar_kWh": 0.0,
         "co2_kg": 0.0,

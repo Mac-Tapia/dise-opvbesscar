@@ -99,7 +99,7 @@ def load_solar_data(csv_path: Path | str) -> SolarData:
     if not numeric_cols:
         raise OE2ValidationError("No numeric columns found in solar CSV")
 
-    values = df[numeric_cols[0]].astype(float).values
+    values = np.asarray(df[numeric_cols[0]].astype(float).values)
 
     if len(values) != 8760:
         raise OE2ValidationError(
@@ -259,7 +259,7 @@ def validate_oe2_complete(
     Raises:
         OE2ValidationError: Si alguna validación falla
     """
-    results = {
+    results: dict[str, Any] = {
         "solar": None,
         "bess": None,
         "chargers": None,

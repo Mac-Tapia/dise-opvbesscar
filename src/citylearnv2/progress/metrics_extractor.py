@@ -254,7 +254,7 @@ def calculate_co2_metrics(
     solar_generation_kwh: float,
     ev_demand_kwh: float,
     bess_discharge_kwh: float = 0.0,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Calcula métricas de CO₂ para un step - FIXED: Now includes BESS discharge component.
 
     Args:

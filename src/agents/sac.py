@@ -152,7 +152,7 @@ class SACConfig:
     episodes: int = 5  # ✅ ACTUALIZADO: 5 episodios para convergencia robusta (43,800 pasos totales)
     batch_size: int = 256                   # ↑ OPTIMIZADO: 32→256 (4x mayor, mejor gradients)
     buffer_size: int = 200000               # ✅ CORREGIDO: 100k→200k (captura variación anual completa)
-    learning_rate: float = 5e-5             # AJUSTE: 1e-4→5e-5 (reduce inestabilidad gradient)
+    learning_rate: float = 1e-5             # ✅ FIXED: 5e-5→1e-5 (más conservador para estabilidad)
     gamma: float = 0.995                    # ✅ SINCRONIZADO: 0.99→0.995 (horizonte temporal más largo)
     tau: float = 0.02                       # ✅ SINCRONIZADO: 0.01→0.02 (target network más rápido)
 
@@ -197,7 +197,7 @@ class SACConfig:
     clip_gradients: bool = True             # ✅ ENABLED: Clipear gradientes del actor
     max_grad_norm: float = 10.0             # 🔴 TIER 2 FIX: 0.5→10.0 (off-policy SAC needs larger gradients)
     actor_loss_scale: float = 1.0           # ✅ NEW: Scale actor loss (default 1.0, reduce if diverging)
-    warmup_steps: int = 1000                # 🔴 CRITICAL FIX: 5000→1000 (19%→3.8% warmup)
+    warmup_steps: int = 5000                # ✅ FIXED: 1000→5000 (más warmup para buffer lleno)
     gradient_accumulation_steps: int = 1    # ✅ Agrupa updates, reduce varianza
 
     # === CRITIC Q-VALUE STABILIZATION (CRUCIAL FOR CRITIC LOSS EXPLOSION FIX) ===
@@ -209,12 +209,12 @@ class SACConfig:
     critic_max_grad_norm: float = 1.0       # ✅ NEW: CRITICAL - Más agresivo que actor (1.0 vs 10.0)
                                             #   Justificación: Critic es más inestable (off-policy bias)
                                             #   Valores típicos: 0.5-2.0 (usamos 1.0 como balance)
-    critic_loss_scale: float = 0.1          # ✅ NEW: CRITICAL - Scale down critic loss antes de backward
-                                            #   Ratio: critic_loss × 0.1 antes de backprop
+    critic_loss_scale: float = 0.01         # ✅ FIXED: 0.1→0.01 (más agresivo para estabilidad)
+                                            #   Ratio: critic_loss × 0.01 antes de backprop
                                             #   Previene gradient explosion sin limitar learning
-    q_target_clip: float = 10.0             # ✅ NEW: CRITICAL - Clip Q-target values a ±10.0
+    q_target_clip: float = 5.0              # ✅ FIXED: 10.0→5.0 (más restrictivo)
                                             #   Previene numerical instability en target computation
-    q_value_clip: float = 10.0              # ✅ NEW: CRITICAL - Clip predicted Q-values a ±10.0
+    q_value_clip: float = 5.0               # ✅ FIXED: 10.0→5.0 (más restrictivo)
                                             #   Previene divergencia de prediction network
 
     # === ENTROPY REGULARIZATION CONTROL (FIX ENTROPY EXPLOSION) ===
@@ -467,8 +467,11 @@ class SACAgent:
         logger.info("Iniciando entrenamiento SAC en dispositivo: %s", self.device)
         eps = episodes or self.config.episodes
 
-        # VALIDACIÓN CRÍTICA: Verificar dataset completo antes de entrenar
-        self._validate_dataset_completeness()
+        # VALIDACIÓN: Solo para environments CityLearn (tienen attr 'buildings')
+        if hasattr(self.env, 'buildings'):
+            self._validate_dataset_completeness()
+        else:
+            logger.info("Environment sin 'buildings' attr - saltando validación CityLearn")
 
         # Usar Stable-Baselines3 SAC
         try:
