@@ -40,7 +40,11 @@
         "scripts/continue_*.py",
         "scripts/compare_*.py",
         "scripts/monitor_*.py",
-        "scripts/testing/**"
+        "scripts/testing/**",
+        "src/dimensionamiento/**",
+        "scripts/**/generacionsolar/**",
+        "scripts/**/disenobess/**",
+        "scripts/**/disenocargadoresev/**"
     ],
     "reportMissingImports": false,
     "reportMissingTypeStubs": false,

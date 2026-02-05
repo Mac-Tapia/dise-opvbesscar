@@ -1,0 +1,105 @@
+{
+  "metadata": {
+    "name": "Mall Hourly Demand",
+    "description": "Demanda horaria del mall (Centro Comercial) - Converted from 15-minute to hourly resolution",
+    "version": "2.0",
+    "date_created": "2026-02-03T22:06:31.274259",
+    "source": "data/interim/oe2/demandamallkwh/demandamallkwh.csv (15-minute) → demandamallhorakwh.csv (1-hour)",
+    "location": "Iquitos, Perú",
+    "project": "pvbesscar OE3 - CityLearn v2 Integration"
+  },
+  "file": {
+    "path": "data\\interim\\oe2\\demandamallkwh\\demandamallhorakwh.csv",
+    "format": "CSV",
+    "separator": ";",
+    "encoding": "utf-8",
+    "file_size_bytes": 198322
+  },
+  "data": {
+    "rows": 8785,
+    "columns": [
+      "FECHAHORA",
+      "kWh",
+      "datetime"
+    ],
+    "time_resolution": "Hourly (1 hour per record)",
+    "time_format": "%d/%m/%Y %H:%M",
+    "start_datetime": "2024-01-01",
+    "end_datetime": "2025-01-01",
+    "days_covered": 366,
+    "year": 2024
+  },
+  "columns": {
+    "FECHAHORA": {
+      "name": "FECHAHORA",
+      "type": "datetime",
+      "format": "%d/%m/%Y %H:%M",
+      "description": "Timestamp of the hour (end of interval)",
+      "unit": "datetime",
+      "nullable": false
+    },
+    "kWh": {
+      "name": "kWh",
+      "type": "float64",
+      "description": "Energy consumption of mall during this hour",
+      "unit": "kWh (kilowatt-hours)",
+      "nullable": false,
+      "statistics": {
+        "total": 12403168.0,
+        "mean": 1411.857484348321,
+        "min": 0.0,
+        "max": 2763.0,
+        "std": 805.1217665185493
+      }
+    }
+  },
+  "citylearn_v2": {
+    "field_mapping": {
+      "FECHAHORA": "timestamp",
+      "kWh": "non_shiftable_load"
+    },
+    "compatible": true,
+    "use_case": "Building non-shiftable load (mall energy demand)",
+    "notes": [
+      "This file represents the non-shiftable demand of the shopping center (mall)",
+      "Compatible with CityLearn v2's building.non_shiftable_load attribute",
+      "Time resolution: 1 hour per record (8,785 records for 2024-2025)",
+      "Values are energy (kWh), not power (kW)",
+      "Includes all mall operations: lighting, cooling, ventilation, equipment"
+    ]
+  },
+  "validation": {
+    "has_duplicates": false,
+    "has_nulls": false,
+    "has_negative_values": false,
+    "is_hourly": true,
+    "complete_year": true,
+    "status": "VALID"
+  },
+  "quality_metrics": {
+    "completeness": "100.3%",
+    "data_availability": "Full year 2024",
+    "temporal_gaps": "None detected",
+    "outliers_detected": "Max peak: 2763 kWh (realistic)"
+  },
+  "temporal_patterns": {
+    "peak_hours": "13:00-17:00 (2,200-2,280 kWh average)",
+    "off_peak_hours": "02:00-05:00 (434-470 kWh average)",
+    "night_hours": "22:00-06:00 (reduced activity)",
+    "business_hours": "09:00-21:00 (peak shopping)"
+  },
+  "energy_metrics": {
+    "annual_demand_kwh": 12403168.0,
+    "daily_average_kwh": 33888.43715846995,
+    "hourly_average_kwh": 1411.857484348321,
+    "peak_hour_kwh": 2763.0,
+    "off_peak_hour_kwh": 0.0
+  },
+  "transformations_applied": {
+    "source_resolution": "15 minutes (35,136 records)",
+    "target_resolution": "1 hour (8,785 records)",
+    "aggregation_method": "Sum of 4 consecutive 15-minute intervals",
+    "energy_conservation": "12,403,168 kWh preserved",
+    "conversion_date": "2026-02-03T22:06:31.275260"
+  }
+}
