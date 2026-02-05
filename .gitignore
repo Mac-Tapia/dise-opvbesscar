@@ -85,8 +85,12 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# VS Code
-.vscode/
+# VS Code - exclude workspace state but keep debug/task configs
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
 
 # Project-specific - Ignore generated data (reproducible from pipeline)
 analyses/
@@ -100,6 +104,8 @@ reports/oe3/
 *.log
 *_log.txt
 serial_training_log.txt
+logs/
+!logs/README.md
 
 # Documentos de tesis (en docs/thesis/)
 docs/thesis/

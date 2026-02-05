@@ -18,5 +18,29 @@
   "[python]": {
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "ms-python.python"
+  },
+  "python.terminal.activateEnvironment": true,
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.autoImportCompletions": true,
+  "debug.console.wordWrap": false,
+  "debug.showBreakpointsInOverviewRuler": true,
+  "debug.inlineValues": "on",
+  "debug.toolBarLocation": "docked",
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/*/**": true,
+    "**/.mypy_cache/**": true,
+    "**/.pytest_cache/**": true,
+    "**/__pycache__/**": true,
+    "**/checkpoints/**": true,
+    "**/outputs/**": true
+  },
+  "search.exclude": {
+    "**/checkpoints": true,
+    "**/outputs": true,
+    "**/.mypy_cache": true,
+    "**/.pytest_cache": true,
+    "**/__pycache__": true
   }
 }

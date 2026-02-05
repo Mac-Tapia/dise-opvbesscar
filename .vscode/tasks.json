@@ -1,0 +1,139 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "PPO Training (with Tracing)",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "-m",
+        "scripts.ppo_training_pipeline",
+        "--config",
+        "configs/default.yaml",
+        "--verbose"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "PYTHONUNBUFFERED": "1",
+          "LOG_LEVEL": "DEBUG"
+        }
+      },
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "SAC Training (with Tracing)",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "-m",
+        "scripts.sac_training_pipeline",
+        "--config",
+        "configs/default.yaml",
+        "--verbose"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "PYTHONUNBUFFERED": "1",
+          "LOG_LEVEL": "DEBUG"
+        }
+      },
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "Run Dual Baselines (with Tracing)",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "-m",
+        "scripts.run_baselines",
+        "--config",
+        "configs/default.yaml"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "PYTHONUNBUFFERED": "1",
+          "LOG_LEVEL": "INFO"
+        }
+      },
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": false
+      }
+    },
+    {
+      "label": "Verify Installation",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "verify_installation.py"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Clean Cache (mypy, pytest)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "rm -rf .mypy_cache .pytest_cache __pycache__ **/__pycache__ && echo 'Cache cleaned'"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Lint with Pylint",
+      "type": "shell",
+      "command": "pylint",
+      "args": [
+        "src",
+        "--rcfile=.pylintrc"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$pylint",
+      "group": "test"
+    }
+  ]
+}
