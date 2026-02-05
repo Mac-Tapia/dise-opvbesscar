@@ -899,7 +899,7 @@ class SACAgent:
                 self.log_interval_steps = int(agent.config.log_interval or 500)  # Default 500
 
                 # ✅ FIX: Usar EpisodeMetricsAccumulator centralizado
-                from ..citylearnv2.progress.metrics_extractor import EpisodeMetricsAccumulator, extract_step_metrics
+                from ..citylearnv2.metrics_extractor import EpisodeMetricsAccumulator, extract_step_metrics
                 self.metrics_accumulator = EpisodeMetricsAccumulator()
                 self._extract_step_metrics = extract_step_metrics
 

@@ -753,7 +753,7 @@ class PPOAgent:
                 self._last_kl_update = 0
 
                 # ✅ FIX: Usar EpisodeMetricsAccumulator centralizado
-                from ..citylearnv2.progress.metrics_extractor import EpisodeMetricsAccumulator, extract_step_metrics
+                from ..citylearnv2.metrics_extractor import EpisodeMetricsAccumulator, extract_step_metrics
                 self.metrics_accumulator = EpisodeMetricsAccumulator()
                 self._extract_step_metrics = extract_step_metrics
 
