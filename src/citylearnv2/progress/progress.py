@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
-from typing import Any, Dict, Iterable
+from typing import Any, Iterable
 import logging
 
 logger = logging.getLogger(__name__)
 
-def append_progress_row(path: Path, row: Dict[str, Any], headers: Iterable[str]) -> None:
+def append_progress_row(path: Path, row: dict[str, Any], headers: Iterable[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     write_header = not path.exists()
     with path.open("a", newline="", encoding="utf-8") as handle:
@@ -71,3 +71,33 @@ def render_progress_plot(progress_csv: Path, png_path: Path, title: str, metric_
         logger.info("Gráfica guardada: %s (%d puntos)", png_path, len(df_valid))
     except Exception:  # pylint: disable=broad-except
         logger.debug("No se pudo renderizar plot de progreso")
+
+
+def get_episode_summary(training_history: list[dict[str, float]]) -> dict[str, Any]:
+    """Generate summary statistics from training history.
+
+    Args:
+        training_history: List of episode metrics
+
+    Returns:
+        Summary dictionary with aggregate statistics
+    """
+    if not training_history:
+        return {
+            "total_episodes": 0,
+            "mean_reward": 0.0,
+            "max_reward": 0.0,
+            "min_reward": 0.0,
+            "mean_co2": 0.0,
+        }
+
+    rewards = [e.get("mean_reward", 0.0) for e in training_history if "mean_reward" in e]
+    co2_vals = [e.get("episode_co2_kg", 0.0) for e in training_history if "episode_co2_kg" in e]
+
+    return {
+        "total_episodes": len(training_history),
+        "mean_reward": float(sum(rewards) / len(rewards)) if rewards else 0.0,
+        "max_reward": float(max(rewards)) if rewards else 0.0,
+        "min_reward": float(min(rewards)) if rewards else 0.0,
+        "mean_co2": float(sum(co2_vals) / len(co2_vals)) if co2_vals else 0.0,
+    }

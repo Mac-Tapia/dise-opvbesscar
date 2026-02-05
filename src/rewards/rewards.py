@@ -87,7 +87,7 @@ VINCULACIONES EN SISTEMA:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional, Tuple
 import numpy as np
 import logging
 import gymnasium as gym
@@ -132,7 +132,7 @@ class MultiObjectiveWeights:
             self.ev_utilization *= factor
             self.grid_stability *= factor
 
-    def as_dict(self) -> Dict[str, float]:
+    def as_dict(self) -> dict[str, float]:
         return {
             "co2": self.co2,
             "cost": self.cost,
@@ -220,7 +220,7 @@ class MultiObjectiveReward:
         self.context = context or IquitosContext()
 
         # Historial para normalización adaptativa
-        self._reward_history: List[Dict[str, float]] = []
+        self._reward_history: list[dict[str, float]] = []
         self._max_history = 1000
 
     def compute(
@@ -233,7 +233,7 @@ class MultiObjectiveReward:
         bess_soc: float,
         hour: int,
         ev_demand_kwh: float = 0.0,
-    ) -> Tuple[float, Dict[str, float]]:
+    ) -> tuple[float, dict[str, float]]:
         """Calcula recompensa multiobjetivo.
 
         MEJORADO: Penalizaciones más fuertes en horas pico (18-21h).
@@ -489,8 +489,8 @@ class MultiObjectiveReward:
         bess_soc: float,
         hour: int,
         ev_demand_kwh: float = 0.0,
-        operational_state: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[float, Dict[str, float]]:
+        operational_state: Optional[dict[str, Any]] = None,
+    ) -> tuple[float, dict[str, float]]:
         """Computa recompensa multiobjetivo CON penalizaciones operacionales.
 
         Similar a compute() pero añade penalizaciones por:
@@ -583,12 +583,12 @@ class MultiObjectiveReward:
 
         return reward_total, components
 
-    def get_pareto_metrics(self) -> Dict[str, float]:
+    def get_pareto_metrics(self) -> dict[str, float]:
         """Retorna métricas para análisis de Pareto."""
         if not self._reward_history:
             return {}
 
-        metrics: Dict[str, float] = {}
+        metrics: dict[str, float] = {}
         for key in ["r_co2", "r_cost", "r_solar", "r_ev", "r_grid", "reward_total"]:
             values = [h.get(key, 0) for h in self._reward_history]
             metrics[f"{key}_mean"] = float(np.mean(values))
@@ -808,12 +808,12 @@ def calculate_co2_reduction_bess_discharge(
 
 
 def calculate_co2_reduction_direct(
-    charger_soc_list: List[float],
-    charger_types_list: List[str],
+    charger_soc_list: list[float],
+    charger_types_list: list[str],
     co2_factor_moto: float = 2.5,
     co2_factor_mototaxi: float = 3.5,
     soc_threshold_full: float = 0.90,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Calcula la reducción DIRECTA de CO₂ por cargar vehículos eléctricos.
 
     CO₂ evitado = kWh cargado × km/kWh × (galones evitados/km) × kg CO₂/galón

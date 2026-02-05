@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Dict, List, Callable, Union
+from typing import Any, Optional, Callable, Union
 import warnings
 import numpy as np
 import logging
@@ -211,7 +211,7 @@ class PPOAgent:
         self._trained = False
 
         # Métricas
-        self.training_history: List[Dict[str, float]] = []
+        self.training_history: list[dict[str, float]] = []
 
         # === Configurar dispositivo GPU/CUDA ===
         self.device = self._setup_device()
@@ -256,9 +256,9 @@ class PPOAgent:
         except ImportError:
             logger.warning("PyTorch no instalado")
 
-    def get_device_info(self) -> Dict[str, Any]:
+    def get_device_info(self) -> dict[str, Any]:
         """Retorna información del dispositivo."""
-        info: Dict[str, Any] = {"device": self.device}
+        info: dict[str, Any] = {"device": self.device}
         try:
             import torch  # type: ignore
             info["torch_version"] = str(torch.__version__)

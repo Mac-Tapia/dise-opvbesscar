@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional, Dict, List
+from typing import Any, Optional
 import logging
 import numpy as np
 
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class NoControlAgent:
     """Baseline agent that does nothing (zero control)."""
 
-    def __init__(self, env: Any, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, env: Any, config: Optional[dict[str, Any]] = None):
         """Initialize no-control agent.
 
         Args:
@@ -22,7 +22,7 @@ class NoControlAgent:
         self.env = env
         self.config = config or {}
         self._trained = False
-        self.training_history: List[Dict[str, float]] = []
+        self.training_history: list[dict[str, float]] = []
 
     def learn(self, episodes: Optional[int] = None, **kwargs: Any) -> None:
         """No-op learning (doesn't actually train)."""
@@ -56,11 +56,11 @@ class UncontrolledChargingAgent(NoControlAgent):
         return [[1.0] * self.env.action_space.shape[0]]
 
 
-def make_no_control(env: Any, config: Optional[Dict[str, Any]] = None) -> NoControlAgent:
+def make_no_control(env: Any, config: Optional[dict[str, Any]] = None) -> NoControlAgent:
     """Factory function for no-control baseline agent."""
     return NoControlAgent(env, config)
 
 
-def make_uncontrolled(env: Any, config: Optional[Dict[str, Any]] = None) -> UncontrolledChargingAgent:
+def make_uncontrolled(env: Any, config: Optional[dict[str, Any]] = None) -> UncontrolledChargingAgent:
     """Factory function for uncontrolled charging baseline agent."""
     return UncontrolledChargingAgent(env, config)

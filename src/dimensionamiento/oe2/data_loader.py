@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, List
+from typing import Any, Optional
 import json
 import logging
 import numpy as np
@@ -117,7 +117,7 @@ def load_solar_data(csv_path: Path | str) -> SolarData:
     )
 
 
-def load_bess_data(config: Dict[str, Any]) -> BESSData:
+def load_bess_data(config: dict[str, Any]) -> BESSData:
     """Carga datos de BESS desde configuración.
 
     Args:
@@ -143,7 +143,7 @@ def load_bess_data(config: Dict[str, Any]) -> BESSData:
     )
 
 
-def load_chargers_data(json_path: Path | str) -> List[ChargerData]:
+def load_chargers_data(json_path: Path | str) -> list[ChargerData]:
     """Carga datos de cargadores desde JSON.
 
     El JSON debe ser:
@@ -203,7 +203,7 @@ def load_chargers_data(json_path: Path | str) -> List[ChargerData]:
     return chargers
 
 
-def _create_default_chargers() -> List[ChargerData]:
+def _create_default_chargers() -> list[ChargerData]:
     """Crea 32 cargadores default (128 sockets totales × 4 c/u).
 
     Distribución:
@@ -238,9 +238,9 @@ def _create_default_chargers() -> List[ChargerData]:
 
 def validate_oe2_complete(
     solar_path: Path | str,
-    bess_config: Dict[str, Any],
+    bess_config: dict[str, Any],
     chargers_path: Optional[Path | str] = None
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Validación completa de todos los datos OE2.
 
     Verifica:

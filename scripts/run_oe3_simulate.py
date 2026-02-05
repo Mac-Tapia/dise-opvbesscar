@@ -11,7 +11,7 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
-from typing import Optional, Any, Dict
+from typing import Optional, Any
 import sys
 
 # Setup logging
@@ -22,7 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def load_config(config_path: str | Path) -> Dict[str, Any]:
+def load_config(config_path: str | Path) -> dict[str, Any]:
     """Carga configuración desde YAML.
 
     Args:
@@ -57,7 +57,7 @@ def load_config(config_path: str | Path) -> Dict[str, Any]:
         raise
 
 
-def build_environment(config: Dict[str, Any]) -> Any:
+def build_environment(config: dict[str, Any]) -> Any:
     """Construye CityLearn environment con datos OE3.
 
     Args:
@@ -111,7 +111,7 @@ def build_environment(config: Dict[str, Any]) -> Any:
     return env
 
 
-def _create_mock_env(config: Dict[str, Any]) -> Any:
+def _create_mock_env(config: dict[str, Any]) -> Any:
     """Crea mock environment para testing (sin CityLearn real).
 
     Args:
@@ -158,7 +158,7 @@ def _create_mock_env(config: Dict[str, Any]) -> Any:
     return MockEnv(config)
 
 
-def create_agent(env: Any, agent_type: str, config: Dict[str, Any]) -> Any:
+def create_agent(env: Any, agent_type: str, config: dict[str, Any]) -> Any:
     """Crea agente RL del tipo especificado.
 
     Args:

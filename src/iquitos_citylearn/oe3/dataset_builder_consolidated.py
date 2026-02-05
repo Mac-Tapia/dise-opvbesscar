@@ -6,7 +6,7 @@ Integra OE2 (dimensionamiento) con CityLearn v2 (simulación).
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 import logging
 import json
 
@@ -14,11 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 def build_iquitos_env(
-    config: Dict[str, Any],
+    config: dict[str, Any],
     solar_csv_path: Optional[str] = None,
     chargers_json_path: Optional[str] = None,
     dataset_dir: Optional[str] = None
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Construye ambiente CityLearn para Iquitos con datos OE2.
 
     Args:
@@ -38,7 +38,7 @@ def build_iquitos_env(
     Raises:
         ValueError: Si dataset no se carga correctamente
     """
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "env": None,
         "schema": None,
         "solar_data": None,
@@ -136,7 +136,7 @@ def build_iquitos_env(
     return result
 
 
-def _create_default_schema(config: Dict[str, Any]) -> Dict[str, Any]:
+def _create_default_schema(config: dict[str, Any]) -> dict[str, Any]:
     """Crea schema CityLearn por defecto.
 
     Returns:
@@ -177,7 +177,7 @@ def _create_default_schema(config: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def validate_dataset(dataset_dir: str | Path) -> Dict[str, Any]:
+def validate_dataset(dataset_dir: str | Path) -> dict[str, Any]:
     """Valida completitud del dataset OE3.
 
     Verifica:

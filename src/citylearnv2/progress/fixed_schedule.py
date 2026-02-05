@@ -13,7 +13,7 @@ sin control inteligente (RL). Comparación entre:
 
 from __future__ import annotations
 
-from typing import Any, List, Optional
+from typing import Any, Optional
 import numpy as np
 import logging
 
@@ -32,7 +32,7 @@ class FixedScheduleAgent:
     Comparación entre:
     - Uncontrolled (RL control) → Decisión por agente
     - FixedSchedule (perfil fijo) → Decisión por humano/regla fija
-    
+
     Esto mide: ¿Cuánto aprenden los agentes RL comparado con perfil óptimo fijo?
     """
 
