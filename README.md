@@ -2256,6 +2256,57 @@ python scripts/generate_consolidated_metrics_graph.py
 
 ---
 
+## 🔍 DEBUGGING & TRACING (NEW - FEB 2026)
+
+### VS Code Integrated Debugging
+
+The workspace now includes comprehensive tracing infrastructure for monitoring training performance and debugging.
+
+**Quick Start:**
+1. Press `F5` → Select "PPO Training (Debug with Tracing)"
+2. Set breakpoints as needed
+3. View performance metrics in console
+
+**Available Debug Configurations:**
+- PPO Training (Debug with Tracing) - Full TRACE-level logging
+- SAC Training (Debug with Tracing) - Full TRACE-level logging  
+- Run Baseline (with Tracing) - DEBUG-level logging
+- Python: Current File - Debug any script
+- Python: Attach to Running Process - Attach to long-running jobs
+
+**Available Tasks (Ctrl+Shift+P → "Tasks: Run Task"):**
+- PPO/SAC Training (with Tracing) - Run in dedicated terminal
+- Run Dual Baselines - Compare WITH/WITHOUT solar
+- Verify Installation - Check dependencies
+- Clean Cache - Remove `.mypy_cache`, `.pytest_cache`
+- Lint with Pylint - Code quality checks
+
+**Documentation:**
+- **Full Guide:** [docs/TRACING_GUIDE.md](docs/TRACING_GUIDE.md) - Comprehensive tracing documentation
+- **Quick Reference:** [TRACING_QUICK_REF.md](TRACING_QUICK_REF.md) - Quick reference card
+- **Example Script:** [examples/tracing_example.py](examples/tracing_example.py) - Working examples
+
+**Example Usage:**
+```python
+from src.utils import setup_logging, trace_operation, TrainingTracer
+
+# Setup enhanced logging
+setup_logging(level="DEBUG", log_file=Path("logs/training.log"))
+
+# Trace operations
+with trace_operation("agent_initialization"):
+    agent = create_agent()
+
+# Training-specific tracing
+tracer = TrainingTracer(log_dir="logs/traces")
+for episode in range(n_episodes):
+    with tracer.trace_episode(episode):
+        train_episode()
+tracer.log_training_summary()
+```
+
+---
+
 ## 📈 GRÁFICAS DISPONIBLES
 
 **Ubicación:** `analyses/oe3/training/graphics/` (22 PNG files @ 300 DPI)
