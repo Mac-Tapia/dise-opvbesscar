@@ -1,0 +1,58 @@
+agents:
+  sac:
+    name: "Soft Actor-Critic"
+    type: "off-policy"
+    enabled: true
+
+  ppo:
+    name: "Proximal Policy Optimization"
+    type: "on-policy"
+    enabled: true
+
+  a2c:
+    name: "Advantage Actor-Critic"
+    type: "on-policy"
+    enabled: true
+
+training:
+  episodes: 5
+  max_timesteps: 43800  # 5 years × 8,760 hours
+  evaluation_frequency: 1
+  checkpoint_frequency: 1000
+
+environment:
+  episode_length: 8760  # 1 year in hours
+  time_step_minutes: 60
+
+# Reward weights
+reward_weights:
+  co2_grid_minimization: 0.50
+  solar_self_consumption: 0.20
+  ev_charge_completion: 0.15
+  grid_stability: 0.10
+  cost_minimization: 0.05
+
+# Infrastructure
+infrastructure:
+  solar_capacity_kwp: 4050
+  bess_capacity_kwh: 4520
+  bess_power_kw: 600
+  num_chargers: 128
+  charger_power_kw_per_socket: 10.0
+
+# CO2 context
+co2_context:
+  region: "Iquitos"
+  country: "Peru"
+  grid_co2_intensity: 0.4521  # kg CO2/kWh
+
+# Data paths
+data:
+  solar: "data/interim/oe2/solar/pv_generation_timeseries.csv"
+  chargers: "data/interim/oe2/chargers/individual_chargers.json"
+  schema: "data/interim/oe3/schema.json"
+
+outputs:
+  checkpoints_dir: "outputs/checkpoints"
+  agents_dir: "outputs/agents"
+  results_dir: "outputs/results"

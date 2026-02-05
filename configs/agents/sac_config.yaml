@@ -1,0 +1,52 @@
+sac:
+  name: "Soft Actor-Critic"
+  description: "Off-policy actor-critic agent with entropy regularization"
+
+  # Training hyperparameters
+  training:
+    episodes: 5
+    total_timesteps: 43800  # 5 × 8760
+    learning_rate: 5e-5
+    buffer_size: 200000
+    batch_size: 256
+    gamma: 0.995
+    tau: 0.02
+
+  # Entropy (exploration)
+  entropy:
+    ent_coef: "auto"
+    ent_coef_init: 0.5
+    ent_coef_lr: 1e-3
+    ent_coef_min: 0.01
+    ent_coef_max: 1.0
+
+  # Network architecture
+  network:
+    hidden_sizes: [256, 256]
+    activation: "relu"
+
+  # Stability features
+  stability:
+    clip_gradients: true
+    max_grad_norm: 10.0
+    critic_max_grad_norm: 1.0
+    critic_loss_scale: 0.1
+    q_target_clip: 10.0
+
+  # Device
+  device: "auto"  # "cuda", "mps", "cpu", or "auto"
+  use_amp: true
+
+  # Logging
+  verbose: 1
+  log_interval: 500
+  checkpoint_freq_steps: 1000
+  save_final: true
+
+  # Reproducibility
+  seed: 42
+
+performance:
+  expected_co2_reduction: 0.26  # 26% reduction vs baseline
+  expected_solar_utilization: 0.65  # 65% utilization
+  training_time_hours: 6  # Approximate on RTX 4060

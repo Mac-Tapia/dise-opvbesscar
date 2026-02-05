@@ -1,0 +1,83 @@
+a2c:
+  name: "Advantage Actor-Critic"
+  description: "Synchronous on-policy agent with shared network"
+
+  # Training hyperparameters
+  training:
+    train_steps: 500000
+    n_steps: 2048
+    learning_rate: 1e-4
+    lr_schedule: "linear"
+    lr_final_ratio: 0.7
+
+  # A2C-specific
+  a2c:
+    gamma: 0.99
+    gae_lambda: 0.95
+    ent_coef: 0.01
+    vf_coef: 0.5
+    max_grad_norm: 0.75
+    normalize_advantage: true
+
+  # Learning rates (separate actor/critic)
+  separate_learning_rates:
+    actor_learning_rate: 1e-4
+    critic_learning_rate: 1e-4
+    actor_lr_schedule: "linear"
+    critic_lr_schedule: "linear"
+    actor_lr_final_ratio: 0.7
+    critic_lr_final_ratio: 0.7
+
+  # Entropy decay schedule
+  entropy_schedule:
+    type: "exponential"  # "constant", "linear", or "exponential"
+    initial_value: 0.01
+    final_value: 0.001
+    decay_rate: 0.998
+
+  # EV Utilization Bonus
+  ev_utilization:
+    enabled: true
+    weight: 0.05
+    optimal_soc_min: 0.70
+    optimal_soc_max: 0.90
+    overcharge_threshold: 0.95
+    decay_rate: 0.98
+
+  # Network architecture
+  network:
+    hidden_sizes: [256, 256]
+    activation: "relu"
+
+  # Advanced features
+  advanced:
+    use_huber_loss: true
+    huber_delta: 1.0
+    optimizer_type: "adam"  # "adam" or "rmsprop"
+    use_amp: true
+
+  # Normalizations
+  normalization:
+    normalize_observations: true
+    normalize_rewards: true
+    reward_scale: 0.1
+    clip_obs: 5.0
+    clip_reward: 1.0
+
+  # Device
+  device: "auto"  # "cuda", "mps", "cpu", or "auto"
+  deterministic_cuda: false
+
+  # Logging
+  verbose: 1
+  log_interval: 500
+  checkpoint_freq_steps: 1000
+  save_final: true
+
+  # Reproducibility
+  seed: 42
+
+performance:
+  expected_co2_reduction: 0.24  # 24% reduction vs baseline
+  expected_solar_utilization: 0.60  # 60% utilization
+  training_time_hours: 4  # Approximate on RTX 4060 (fastest)

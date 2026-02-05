@@ -333,6 +333,96 @@ class OE2DataLoader:
         logger.info("ℹ️  Mall demand data not found, will use default (100 kW constant)")
         return None
 
+    def load_carbon_intensity(self) -> Optional[pd.DataFrame]:
+        """Load carbon intensity timeseries (kg CO₂/kWh, 8,760 hourly records).
+
+        Returns:
+            DataFrame with time index and carbon_intensity column, or None if not found
+        """
+        # Try multiple path candidates (relative and absolute)
+        candidates = [
+            Path("src/citylearnv2/climate_zone") / "carbon_intensity.csv",
+            Path(__file__).parent.parent / "climate_zone" / "carbon_intensity.csv",
+        ]
+
+        for path in candidates:
+            if path.exists():
+                try:
+                    df = pd.read_csv(path)
+                    # Ensure we have time column for indexing
+                    if "time" in df.columns:
+                        df.set_index("time", inplace=True)
+                    # Validate row count
+                    if len(df) >= SPECS["timesteps"]:
+                        logger.info("✅ Carbon intensity loaded from %s", path.name)
+                        return df[:int(SPECS["timesteps"])]  # Ensure exactly 8,760 rows
+                except Exception as e:
+                    logger.warning("⚠️  Error loading carbon_intensity.csv: %s", str(e)[:100])
+
+        logger.info("ℹ️  Carbon intensity data not found, will use grid default (0.4521 kg CO₂/kWh)")
+        return None
+
+    def load_pricing(self) -> Optional[pd.DataFrame]:
+        """Load electricity pricing timeseries (USD/kWh, 8,760 hourly records).
+
+        Returns:
+            DataFrame with time index and electricity_pricing column, or None if not found
+        """
+        # Try multiple path candidates (relative and absolute)
+        candidates = [
+            Path("src/citylearnv2/climate_zone") / "pricing.csv",
+            Path(__file__).parent.parent / "climate_zone" / "pricing.csv",
+        ]
+
+        for path in candidates:
+            if path.exists():
+                try:
+                    df = pd.read_csv(path)
+                    # Ensure we have time column for indexing
+                    if "time" in df.columns:
+                        df.set_index("time", inplace=True)
+                    # Validate row count
+                    if len(df) >= SPECS["timesteps"]:
+                        logger.info("✅ Electricity pricing loaded from %s", path.name)
+                        return df[:int(SPECS["timesteps"])]  # Ensure exactly 8,760 rows
+                except Exception as e:
+                    logger.warning("⚠️  Error loading pricing.csv: %s", str(e)[:100])
+
+        logger.info("ℹ️  Pricing data not found, will use default (0.20 USD/kWh)")
+        return None
+
+    def load_weather(self) -> Optional[pd.DataFrame]:
+        """Load weather data (temperature, humidity, wind, irradiance, 8,760 hourly records).
+
+        Expected columns: time, dry_bulb_temperature, relative_humidity, wind_speed,
+                         direct_normal_irradiance, diffuse_horizontal_irradiance
+
+        Returns:
+            DataFrame with time index and weather feature columns, or None if not found
+        """
+        # Try multiple path candidates (relative and absolute)
+        candidates = [
+            Path("src/citylearnv2/climate_zone") / "weather.csv",
+            Path(__file__).parent.parent / "climate_zone" / "weather.csv",
+        ]
+
+        for path in candidates:
+            if path.exists():
+                try:
+                    df = pd.read_csv(path)
+                    # Ensure we have time column for indexing
+                    if "time" in df.columns:
+                        df.set_index("time", inplace=True)
+                    # Validate row count
+                    if len(df) >= SPECS["timesteps"]:
+                        logger.info("✅ Weather data loaded from %s", path.name)
+                        return df[:int(SPECS["timesteps"])]  # Ensure exactly 8,760 rows
+                except Exception as e:
+                    logger.warning("⚠️  Error loading weather.csv: %s", str(e)[:100])
+
+        logger.info("ℹ️  Weather data not found, will use defaults (Iquitos typical climate)")
+        return None
+
 # =============================================================================
 # DATASET CONSTRUCTION
 # =============================================================================
@@ -424,6 +514,9 @@ def build_citylearn_dataset(
 
     artifacts["bess_hourly"] = loader.load_bess()  # Optional
     artifacts["mall_demand"] = loader.load_mall_demand()  # Optional
+    artifacts["carbon_intensity"] = loader.load_carbon_intensity()  # Optional
+    artifacts["pricing"] = loader.load_pricing()  # Optional
+    artifacts["weather"] = loader.load_weather()  # Optional
 
     # =========================================================================
     # STEP 3: LOAD REWARD CONTEXT
@@ -501,6 +594,16 @@ def build_citylearn_dataset(
     _generate_charger_csvs(chargers_df, building_dir, overwrite=overwrite)
 
     # =========================================================================
+    # STEP 6B: GENERATE CLIMATE ZONE CSV FILES
+    # =========================================================================
+
+    logger.info("\n" + "="*80)
+    logger.info("GENERATING CLIMATE ZONE CSV FILES")
+    logger.info("="*80)
+
+    _generate_climate_csvs(artifacts, building_dir, overwrite=overwrite)
+
+    # =========================================================================
     # STEP 7: POST-VALIDATION
     # =========================================================================
 
@@ -569,6 +672,8 @@ def _build_schema(artifacts: Dict[str, Any], building_name: str) -> Dict[str, An
                 "solar_generation": f"solar_generation.csv",
                 "net_electricity_consumption": f"net_electricity_consumption.csv",
                 "carbon_intensity": f"carbon_intensity.csv",
+                "electricity_pricing": f"electricity_pricing.csv",
+                "weather": f"weather.csv",
             }
         ],
     }
@@ -652,6 +757,57 @@ def _generate_charger_csvs(
         df_charger.to_csv(csv_path, index=False)
 
     logger.info("✅ Generated %d charger CSVs in %s", int(SPECS["total_sockets"]), building_dir)
+
+
+def _generate_climate_csvs(
+    artifacts: Dict[str, Any],
+    building_dir: Path,
+    overwrite: bool = False,
+) -> None:
+    """
+    Generate climate zone CSV files (carbon_intensity, electricity_pricing, weather).
+
+    CityLearn v2 supports optional climate data files:
+    - carbon_intensity.csv: kg CO₂/kWh (8,760 rows)
+    - electricity_pricing.csv: USD/kWh (8,760 rows)
+    - weather.csv: Temperature, humidity, wind, irradiance (8,760 rows)
+    """
+
+    building_dir.mkdir(parents=True, exist_ok=True)
+
+    climate_files = {
+        "carbon_intensity": artifacts.get("carbon_intensity"),
+        "electricity_pricing": artifacts.get("pricing"),
+        "weather": artifacts.get("weather"),
+    }
+
+    for file_key, df in climate_files.items():
+        if df is None:
+            logger.info("ℹ️  Skipped %s (not loaded)", file_key)
+            continue
+
+        # Determine output filename based on artifact key
+        if file_key == "carbon_intensity":
+            csv_name = "carbon_intensity.csv"
+        elif file_key == "electricity_pricing":
+            csv_name = "electricity_pricing.csv"
+        elif file_key == "weather":
+            csv_name = "weather.csv"
+        else:
+            continue
+
+        csv_path = building_dir / csv_name
+
+        if csv_path.exists() and not overwrite:
+            logger.debug("  Skipped %s (exists)", csv_name)
+            continue
+
+        # Reset index if present (to include time column)
+        df_out = df.reset_index() if df.index.name else df
+        df_out.to_csv(csv_path, index=False)
+        logger.info("✅ Generated %s (%d rows)", csv_name, int(len(df_out)))
+
+    logger.info("✅ Climate zone CSVs generated in %s", building_dir)
 
 # =============================================================================
 # POST-VALIDATION
