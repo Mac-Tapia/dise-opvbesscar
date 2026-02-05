@@ -55,15 +55,9 @@ def test_iquitos_context_initialization() -> Tuple[bool, str]:
     try:
         from src.rewards.rewards import IquitosContext
 
-        ctx = IquitosContext(
-            co2_factor_kg_per_kwh=0.4521,
-            co2_conversion_factor=2.146,
-            motos_daily_capacity=1800,
-            mototaxis_daily_capacity=260,
-            max_evs_total=128,
-        )
+        ctx = IquitosContext()
 
-        # Validar valores críticos
+        # Validar valores críticos (class attributes, no constructor params)
         assert abs(ctx.co2_factor_kg_per_kwh - 0.4521) < 0.0001, "CO₂ grid factor incorrecto"
         assert abs(ctx.co2_conversion_factor - 2.146) < 0.001, "CO₂ EV conversion incorrecto"
         assert ctx.motos_daily_capacity == 1800, "Capacidad motos incorrecta"
@@ -190,15 +184,26 @@ def test_schema_generation() -> Tuple[bool, str]:
         assert len(peak_hours_list) == 4
 
         weights = expected_schema["reward_weights"]
-        weights_dict: dict[str, float] = dict(weights) if hasattr(weights, 'items') else weights
+        # Type-safe conversion: cast weights to dict[str, float]
+        # Handle both dict-like objects and actual dicts
+        weights_dict: dict[str, float] = {}
+        weights_items = weights.items() if hasattr(weights, 'items') else dict(weights).items()
+        for k, v in weights_items:
+            try:
+                # Cast v to appropriate type: could be int, float, or str
+                v_val: Any = v
+                weights_dict[k] = float(v_val)
+            except (TypeError, ValueError):
+                weights_dict[k] = 0.0
+
         assert float(weights_dict.get("co2", 0.0)) == 0.50
         assert float(weights_dict.get("solar", 0.0)) == 0.20
 
         logger.info("✅ TEST 5 PASS: Schema structure válida")
         co2_ctx_dict: dict[str, Any] = dict(co2_ctx) if hasattr(co2_ctx, 'items') else co2_ctx
-        weights_dict_log: dict[str, Any] = dict(weights_dict) if hasattr(weights_dict, 'items') else weights_dict
+        weights_dict_any: dict[str, Any] = {k: v for k, v in weights_dict.items()}
         logger.info("   ✓ co2_context: %d atributos", len(co2_ctx_dict) if isinstance(co2_ctx_dict, dict) else 1)
-        logger.info("   ✓ reward_weights: %d atributos", len(weights_dict_log) if isinstance(weights_dict_log, dict) else 1)
+        logger.info("   ✓ reward_weights: %d atributos", len(weights_dict_any) if isinstance(weights_dict_any, dict) else 1)
         logger.info("   ✓ Total schema keys: %d", len(expected_schema))
         return True, "✅ Schema structure valid"
     except Exception as e:

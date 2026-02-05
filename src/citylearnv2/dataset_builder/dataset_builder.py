@@ -489,22 +489,8 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
     if REWARDS_AVAILABLE:
         try:
             # Crear instancia de IquitosContext con valores reales de OE2
-            iquitos_ctx = IquitosContext(
-                co2_factor_kg_per_kwh=0.4521,           # Grid térmico Iquitos
-                co2_conversion_factor=2.146,            # Equivalente combustión para EVs
-                max_motos_simultaneous=112,             # 128 sockets × (112/128)
-                max_mototaxis_simultaneous=16,          # 128 sockets × (16/128)
-                max_evs_total=128,                      # Total sockets (32 chargers × 4 sockets)
-                motos_daily_capacity=1800,              # Capacidad diaria real
-                mototaxis_daily_capacity=260,           # Capacidad diaria real
-                tariff_usd_per_kwh=0.20,                # Tarifa local Iquitos
-                n_chargers=32,                          # Número de cargadores
-                total_sockets=128,                      # Número de sockets
-                vehicles_year_motos=657000,             # Proyección anual motos
-                vehicles_year_mototaxis=94900,          # Proyección anual mototaxis
-                peak_hours=(18, 19, 20, 21),            # Horas pico locales
-                km_per_kwh=35.0,                        # Eficiencia eléctrica
-            )
+            # NOTA: IquitosContext usa atributos de clase, NO parámetros del constructor
+            iquitos_ctx = IquitosContext()  # Acceso directo a valores predefinidos
             artifacts["iquitos_context"] = iquitos_ctx
             logger.info("[REWARDS] ✅ Loaded IquitosContext with CO₂ factors and EV specs")
             logger.info("[REWARDS]    Grid CO₂: %.4f kg/kWh", iquitos_ctx.co2_factor_kg_per_kwh)
@@ -1545,10 +1531,10 @@ def build_citylearn_dataset(
                 charger_col = chargers_df_legacy.columns[i]
                 charger_demand = chargers_df_legacy[charger_col].values
                 # Divide demand equally among 4 sockets
-                socket_demand = charger_demand / 4.0
+                socket_demand_divided = charger_demand / 4.0
                 for socket_idx in range(4):
                     socket_col = f"{charger_col}_SOCKET_{socket_idx}"
-                    expanded_data[socket_col] = socket_demand
+                    expanded_data[socket_col] = socket_demand_divided
             chargers_df_for_generation = pd.DataFrame(expanded_data)
             logger.info(f"[CHARGERS GENERATION]    Expansion result: {chargers_df_for_generation.shape}")
         else:
@@ -1582,12 +1568,13 @@ def build_citylearn_dataset(
             csv_path = building_dir / charger_name
             charger_list.append(csv_path)
 
-            # Extract socket demand from prepared dataset
-            socket_demand = chargers_df_for_generation.iloc[:, socket_idx].values
-            total_ev_demand_kwh += socket_demand.sum()
+            # Extract socket demand from prepared dataset y convertir a numpy array
+            socket_demand_ext = chargers_df_for_generation.iloc[:, socket_idx].values
+            socket_demand: np.ndarray = np.asarray(socket_demand_ext, dtype=np.float64)
+            total_ev_demand_kwh += float(np.sum(socket_demand))
 
             # Create state array (1=connected, 3=idle)
-            states_array = np.where(socket_demand > 0, 1, 3).astype(int)
+            states_array: np.ndarray = np.where(socket_demand > 0, 1, 3).astype(int)
 
             # Determine socket type (motos=0-111, mototaxis=112-127)
             is_mototaxi = socket_idx >= 112
