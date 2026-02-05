@@ -5,8 +5,8 @@ a2c:
   # Training hyperparameters
   training:
     train_steps: 500000
-    n_steps: 2048
-    learning_rate: 1e-4
+    n_steps: 5  # OPCIÓN A: Reduced para GPU (fue 2048, optimizado para sync on-policy)
+    learning_rate: 5e-4  # OPCIÓN A: Reducido 28% para GPU (batch_size=128, n_steps=5)
     lr_schedule: "linear"
     lr_final_ratio: 0.7
 

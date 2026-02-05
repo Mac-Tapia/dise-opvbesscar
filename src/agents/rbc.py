@@ -6,7 +6,11 @@ import numpy as np
 import logging
 
 # Importar pesos multiobjetivo desde fuente única
-from ..rewards import create_iquitos_reward_weights
+try:
+    from ..rewards.rewards import create_iquitos_reward_weights
+except ImportError:
+    # Fallback para ejecución directa
+    from src.rewards.rewards import create_iquitos_reward_weights  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 

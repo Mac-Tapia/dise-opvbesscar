@@ -26,7 +26,7 @@ def load_config(config_path: str) -> Dict[str, Any]:
         config = yaml.safe_load(f)
         if config is None:
             return {}
-        return config
+        return config if isinstance(config, dict) else {}
 
 
 def build_schema(output_dir: Path, config: Dict[str, Any]) -> Dict[str, Any]:
@@ -43,9 +43,28 @@ def build_schema(output_dir: Path, config: Dict[str, Any]) -> Dict[str, Any]:
         solar_df = pd.read_csv(oe2_solar)
         timesteps = len(solar_df)
         logger.info(f"Loaded solar data: {timesteps} timesteps")
+
+        # Copy solar file to OE3 directory
+        import shutil
+        oe3_solar = output_dir / "pv_generation_timeseries.csv"
+        shutil.copy(oe2_solar, oe3_solar)
+        logger.info(f"✓ Solar data copied to {oe3_solar}")
+        solar_path = str(oe3_solar)  # Use absolute path
     else:
         timesteps = 8760  # Default: 1 year
         logger.warning(f"Solar data not found, using default {timesteps} timesteps")
+        solar_path = "pv_generation_timeseries.csv"  # Reference in OE3 directory
+
+    # Generate mall demand data (100 kW base load from config)
+    logger.info("Generating mall demand timeseries...")
+    mall_demand_data = {
+        "timestamp": pd.date_range("2024-01-01", periods=timesteps, freq="h"),
+        "power_kw": np.full(timesteps, 100.0),  # 100 kW constant (from default.yaml)
+    }
+    mall_df = pd.DataFrame(mall_demand_data)
+    mall_demand_path = output_dir / "mall_demand_hourly.csv"
+    mall_df.to_csv(mall_demand_path, index=False)
+    logger.info(f"✓ Mall demand created: {mall_demand_path}")
 
     # Read charger specs
     chargers_list = []
@@ -56,14 +75,15 @@ def build_schema(output_dir: Path, config: Dict[str, Any]) -> Dict[str, Any]:
 
     # Build schema
     schema = {
+        "root_directory": str(output_dir.resolve()),  # CityLearn needs this
         "episode_time_steps": timesteps,
         "time_step_minutes": 60,
         "buildings": [
             {
                 "name": "Iquitos_Mall",
                 "energy_simulation": {
-                    "solar_generation": "oe2/solar/pv_generation_timeseries.csv",
-                    "non_shiftable_load": "oe2/mall_demand_hourly.csv",
+                    "solar_generation": str((output_dir / "pv_generation_timeseries.csv").resolve()),
+                    "non_shiftable_load": str((output_dir / "mall_demand_hourly.csv").resolve()),
                 },
                 "electrical_storage": {
                     "capacity": 4520,  # kWh

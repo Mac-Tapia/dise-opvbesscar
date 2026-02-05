@@ -40,7 +40,7 @@ See [BASELINE_QUICK_START.md](../BASELINE_QUICK_START.md) for details.
 **Location:** `src/dimensionamiento/oe2/`
 - [data_loader.py](../src/dimensionamiento/oe2/data_loader.py): Loads solar, chargers, BESS with validation
 - [chargers.py](../src/dimensionamiento/oe2/chargers.py): Charger models (32 base units × 4 sockets = 128 total). **Key pattern:** Extensive use of `@dataclass(frozen=True)` for immutable specs
-- [solar_pvlib.py](../src/dimensionamiento/oe2/solar_pvlib.py): PVGIS solar generation timeseries validation
+- [solar_pvlib.py](../src/dimensionamiento/oe2/generacionsolar/disenopvlib/solar_pvlib.py): PVGIS solar generation timeseries validation
 - **Critical constraint:** All solar data must be 8,760 hourly rows (NOT 15-minute)
 
 ### OE3 (Control Phase)
@@ -60,7 +60,7 @@ See [BASELINE_QUICK_START.md](../BASELINE_QUICK_START.md) for details.
 
 
 ### ⚠️ CRITICAL: Hourly Data Only (8,760 rows = 1 year)
-**Solar timeseries MUST be exactly hourly (NOT 15-minute).** If you have PVGIS 15-min data: `df.set_index('time').resample('h').mean()`. Validation enforced in [dataset_builder.py](../src/iquitos_citylearn/oe3/dataset_builder.py#L89).
+**Solar timeseries MUST be exactly hourly (NOT 15-minute).** If you have PVGIS 15-min data: `df.set_index('time').resample('h').mean()`. Validation enforced in [dataset_builder.py](../src/citylearnv2/dataset_builder/dataset_builder.py).
 
 ### The Pipeline: OE2 → OE3
 ```
@@ -86,7 +86,7 @@ chargers = generate_individual_chargers(n=32)  # 32 base chargers
 total_sockets = 32 * 4  # = 128 controllable charging actions
 # Each charger has 4 sockets; Tabla13Stats validates configurations
 ```
-**See:** [chargers.py line 83-135](../src/dimensionamiento/oe2/chargers.py#L83) for `Tabla13Stats` + `EscenarioPredefinido` dataclasses.
+**See:** [chargers.py](../src/dimensionamiento/oe2/chargers.py) for charger specifications with `ChargerSpec` and `ChargerSet` dataclasses.
 
 ### Observation & Action Spaces (VERIFIED)
 - **Observation (394-dim):** Solar W/m², grid Hz, BESS % SOC, 128 chargers × 3 values each, time features (hour/month/day_of_week)
@@ -138,8 +138,8 @@ python -c "import pandas as pd; df=pd.read_csv('data/interim/oe2/solar/pv_genera
 
 ### Code Patterns (ENFORCED)
 - **ALWAYS** import `from __future__ import annotations` (Python 3.11+ required)
-- **ALWAYS** use `@dataclass(frozen=True)` for immutable config/spec containers (see [chargers.py](../src/dimensionamiento/oe2/chargers.py#L83))
-- **ALWAYS** validate environment with `validate_env_spaces(env)` from [agent_utils.py](../src/utils/agent_utils.py#L22) before agent init
+- **ALWAYS** use `@dataclass(frozen=True)` for immutable config/spec containers (see [chargers.py](../src/dimensionamiento/oe2/chargers.py))
+- **ALWAYS** validate environment with `validate_env_spaces(env)` from [agent_utils.py](../src/utils/agent_utils.py) before agent init
 - **Path handling:** Use `Path()` from pathlib; avoid hardcoded paths
 - **Error handling:** Raise `OE2ValidationError` (from data_loader) or custom exceptions early, don't silently fail
 
