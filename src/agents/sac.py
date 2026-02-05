@@ -8,7 +8,13 @@ import numpy as np
 import logging
 import importlib  # type: ignore
 
-from ..progress import append_progress_row
+# ✅ GLOBAL TORCH IMPORT - Required for type hints throughout file
+try:
+    import torch
+except ImportError:
+    torch = None  # type: ignore
+
+from ..citylearnv2.progress import append_progress_row
 
 logger = logging.getLogger(__name__)
 
@@ -377,7 +383,7 @@ class SACAgent:
         REFERENCIA: OpenAI Spinning Up SAC - Section 4.2 Gradient Clipping
         """
         try:
-            total_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
+            total_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)  # type: ignore
             norm_val = float(total_norm.cpu().detach().item())
             if norm_val > max_norm * 0.8:  # Si cerca del límite, loguear
                 logger.debug("[CRITIC CLIPPING] Norm: %.2f (limit: %.1f)", norm_val, max_norm)
@@ -398,15 +404,15 @@ class SACAgent:
 
         REFERENCIA: Deep RL Instability Analysis (Henderson et al 2017)
         """
-        if not torch.isfinite(loss):
+        if not torch.isfinite(loss):  # type: ignore
             logger.warning("[LOSS SCALING] Non-finite loss: %s, returning zero", loss)
-            return torch.tensor(0.0, device=loss.device, dtype=loss.dtype)
+            return torch.tensor(0.0, device=loss.device, dtype=loss.dtype)  # type: ignore
 
         scaled = loss * scale
 
-        if not torch.isfinite(scaled):
+        if not torch.isfinite(scaled):  # type: ignore
             logger.warning("[LOSS SCALING] Scaled loss is non-finite, clamping")
-            return torch.clamp(scaled, -1e6, 1e6)
+            return torch.clamp(scaled, -1e6, 1e6)  # type: ignore
 
         return scaled
 
@@ -423,7 +429,7 @@ class SACAgent:
 
         REFERENCIA: SAC Paper (Haarnoja et al 2018) - Value Clipping
         """
-        return torch.clamp(q_values, -clip_range, clip_range)
+        return torch.clamp(q_values, -clip_range, clip_range)  # type: ignore
 
     def _apply_entropy_decay(self, current_step: int, total_steps: int) -> float:
         """
@@ -879,11 +885,11 @@ class SACAgent:
                 super().__init__(verbose)
                 # 🔴 CRITICAL: Import torch locally to avoid NameError in _on_step()
                 try:
-                    import torch
-                    self.torch = torch
+                    import torch as torch_module  # type: ignore
+                    self.torch: Any = torch_module  # type: ignore
                 except ImportError:
                     logger.error("[CALLBACK] torch import failed - entropy decay will be disabled")
-                    self.torch = None
+                    self.torch = None  # type: ignore
 
                 self.agent = agent
                 self.progress_path = progress_path
@@ -893,7 +899,7 @@ class SACAgent:
                 self.log_interval_steps = int(agent.config.log_interval or 500)  # Default 500
 
                 # ✅ FIX: Usar EpisodeMetricsAccumulator centralizado
-                from .metrics_extractor import EpisodeMetricsAccumulator, extract_step_metrics
+                from ..citylearnv2.progress.metrics_extractor import EpisodeMetricsAccumulator, extract_step_metrics
                 self.metrics_accumulator = EpisodeMetricsAccumulator()
                 self._extract_step_metrics = extract_step_metrics
 
