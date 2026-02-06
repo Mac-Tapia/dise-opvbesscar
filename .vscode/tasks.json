@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "pylance: restart",
+      "type": "shell",
+      "command": "echo",
+      "args": ["Restarting Pylance..."],
+      "presentation": {
+        "reveal": "silent"
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    },
+    {
+      "label": "pylance: clean-cache",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-Command",
+        "Write-Host '🧹 Limpiando caché de análisis...' -ForegroundColor Yellow; $vscodePath = [Environment]::GetFolderPath('ApplicationData') + '\\.vscode'; if (Test-Path $vscodePath) { Get-ChildItem $vscodePath -Filter '*pylance*' -Recurse | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }; Write-Host '✅ Caché limpio' -ForegroundColor Green"
+      ],
+      "presentation": {
+        "reveal": "silent"
+      }
+    }
+  ]
+}

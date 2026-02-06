@@ -1,0 +1,8 @@
+{
+  "agent": "PPO",
+  "steps": 8760,
+  "carbon_kg": 4500000.0,
+  "pv_generation_kwh": 8030119.0,
+  "simulated_years": 1.0,
+  "status": "test_synthetic"
+}
