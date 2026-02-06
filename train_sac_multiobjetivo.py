@@ -80,8 +80,11 @@ try:
     print(f'  OK Config loaded: {len(cfg)} keys')
 
     # Cargar rewards (contexto Iquitos + pesos multiobjetivo)
-    from src.rewards.rewards import IquitosContext, MultiObjectiveReward
-    from src.rewards.rewards import create_iquitos_reward_weights
+    from src.rewards.rewards import (
+        IquitosContext,
+        MultiObjectiveReward,
+        create_iquitos_reward_weights,
+    )
 
     # Usar preset "co2_focus" para maximizar reducción CO2
     weights = create_iquitos_reward_weights("co2_focus")
@@ -225,7 +228,7 @@ try:
                 self.mall_hourly_kwh = mall_demand_kwh
             except (FileNotFoundError, KeyError, ValueError) as e:
                 print(f'    [ERROR] Mall: {e}')
-                self.mall_hourly_kwh = None
+                self.mall_hourly_kwh = np.zeros(8760, dtype=np.float32)  # Fallback
 
             # ========== INICIALIZAR MONITOREO DE BATERIAS (128 SOCKETS) ==========
             # Cada socket monitorea estado de bateria del vehiculo conectado
@@ -293,30 +296,19 @@ try:
             # ========== LEER DATOS REALES OE2 ==========
 
             # 1. SOLAR REAL - 4050 kWp instalado, 8292514 kWh/anio
-            if self.solar_hourly_kw is not None:
-                solar_generation_kwh = float(self.solar_hourly_kw[hour_index])
-            else:
-                solar_generation_kwh = 0.0  # Sin aproximacion - datos reales obligatorios
+            solar_generation_kwh = float(self.solar_hourly_kw[hour_index])
 
             # 2. CHARGERS REAL - 128 SOCKETS (DEMANDA REAL POR SOCKET)
             # chargers_hourly_kw es (8760 horas, 128 sockets)
-            # Ejemplo: chargers_hourly_kw[100][5] = 4.2 kW (demanda real socket 5 en hora 100)
-            if self.chargers_hourly_kw is not None:
-                charger_action = action[1:129]  # Control [0,1] para 128 sockets
-                # Multiplicación elemento-a-elemento: demanda real * setpoint agente
-                # Cada socket se controla INDEPENDIENTEMENTE
-                ev_charging_kwh = float(np.sum(self.chargers_hourly_kw[hour_index] * charger_action))
-            else:
-                ev_charging_kwh = 0.0  # Sin aproximacion
+            # Multiplicación elemento-a-elemento: demanda real * setpoint agente
+            charger_action = action[1:129]  # Control [0,1] para 128 sockets
+            ev_charging_kwh = float(np.sum(self.chargers_hourly_kw[hour_index] * charger_action))
 
             # 3. BESS REAL - State of Charge actual (50-100%, media 90.5%)
             bess_soc = float(self.bess_soc_percent[hour_index])
 
             # 4. DEMANDA MALL REAL - 12.3M kWh/año (no controlable)
-            if self.mall_hourly_kwh is not None:
-                mall_demand = float(self.mall_hourly_kwh[hour_index])
-            else:
-                mall_demand = 0.0  # Sin aproximación
+            mall_demand = float(self.mall_hourly_kwh[hour_index])
 
             # === CALCULO GRID IMPORT/EXPORT ===
             total_demand = max(0, mall_demand + ev_charging_kwh)
@@ -329,11 +321,8 @@ try:
 
             # === MONITOREO DE BATERIAS (128 SOCKETS) ===
             # Actualizar SOC de bateria por socket (demanda real * control agente)
-            if self.chargers_hourly_kw is not None:
-                charger_powers = self.chargers_hourly_kw[hour_index] * action[1:129]  # Potencia por socket [kW]
-            else:
-                charger_powers = np.zeros(128, dtype=np.float32)
-            energy_charged = charger_powers * 1.0  # Energia en 1 hora [kWh]
+            charger_powers = self.chargers_hourly_kw[hour_index] * charger_action  # Potencia por socket [kW]
+            energy_charged = charger_powers  # Energia en 1 hora [kWh] (1h timestep)
             battery_soc_new = self.battery_soc_episode[hour_index] + (energy_charged / self.battery_capacity) * 100.0
             battery_soc_new = np.clip(battery_soc_new, 0, 100)  # Limitar [0-100]%
             self.battery_soc_episode[hour_index] = battery_soc_new
@@ -407,14 +396,9 @@ try:
             motos_action = action[29:129]  # 100 motos en sockets 28-127
             mototaxis_action = action[1:29]  # 28 mototaxis en sockets 0-27
 
-            if self.chargers_hourly_kw is not None and self.chargers_hourly_kw.shape[0] > hour_index:
-                # Mototaxis power: chargers 0:28 (mototaxis)
-                mototaxis_power = float(np.sum(self.chargers_hourly_kw[hour_index, 0:28] * mototaxis_action))
-                # Motos power: chargers 28:128 (motos)
-                motos_power = float(np.sum(self.chargers_hourly_kw[hour_index, 28:128] * motos_action))
-            else:
-                motos_power = 0.0
-                mototaxis_power = 0.0
+            # Potencia por tipo de vehiculo
+            mototaxis_power = float(np.sum(self.chargers_hourly_kw[hour_index, 0:28] * mototaxis_action))
+            motos_power = float(np.sum(self.chargers_hourly_kw[hour_index, 28:128] * motos_action))
 
             # BESS: potencia es setpoint (action[0]) x capacidad maxima (2712 kW)
             bess_power_kw = float((bess_setpoint - 0.5) * 2.0 * 2712.0)  # Rango [-2712, +2712] kW
