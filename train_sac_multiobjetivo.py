@@ -285,7 +285,7 @@ try:
             #
             # a_socket_i (action[i+1], i=0..127): Control individual de 128 sockets [0, 1]
             #   - Cada socket es una TOMA de carga individual
-            #   - 128 sockets = 128 tomas (2 mototaxis + 112 motos)
+            #   - 128 sockets = 128 tomas (28 mototaxis + 100 motos)
             #   - action[1] controla socket 0 (mototaxi socket 0)
             #   - action[128] controla socket 127 (moto socket 127)
             #   - Demanda real: D_real[hora][socket_i] en chargers_hourly_kw
