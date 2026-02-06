@@ -3,27 +3,27 @@ from __future__ import annotations
 ================================================================================
 OE3 DATASET BUILDER - CityLearn v2.5.0 Integration
 
-TRACKING DE REDUCCIONES DIRECTAS E INDIRECTAS DE CO₂:
+TRACKING DE REDUCCIONES DIRECTAS E INDIRECTAS DE CO2:
 
-1. CO₂ DIRECTO (Direct CO₂ from EV charging):
+1. CO2 DIRECTO (Direct CO2 from EV charging):
    - Demanda constante: 50 kW
-   - Factor conversión: 2.146 kg CO₂/kWh (combustión equivalente)
-   - CO₂ directo/hora: 50 kW × 2.146 kg/kWh = 107.3 kg CO₂/h
-   - Acumulado anual (sin control): 50 × 2.146 × 8760 = 938,460 kg CO₂/año
+   - Factor conversion: 2.146 kg CO2/kWh (combustion equivalente)
+   - CO2 directo/hora: 50 kW x 2.146 kg/kWh = 107.3 kg CO2/h
+   - Acumulado anual (sin control): 50 x 2.146 x 8760 = 938,460 kg CO2/ano
 
-2. CO₂ INDIRECTO (Grid import emissions avoided):
-   - Factor grid Iquitos: 0.4521 kg CO₂/kWh (central térmica aislada)
-   - Si PV directa → EV: Se evita importación = se evita 0.4521 kg CO₂/kWh
-   - Reducción indirecta = PV solar directo × 0.4521
-   - Objetivo: Maximizar PV directo para maximizar reducción indirecta
+2. CO2 INDIRECTO (Grid import emissions avoided):
+   - Factor grid Iquitos: 0.4521 kg CO2/kWh (central termica aislada)
+   - Si PV directa --> EV: Se evita importacion = se evita 0.4521 kg CO2/kWh
+   - Reduccion indirecta = PV solar directo x 0.4521
+   - Objetivo: Maximizar PV directo para maximizar reduccion indirecta
 
-3. REDUCCIÓN NETA:
-   - Reducción = (Solar PV directo) × 0.4521 kg CO₂/kWh
-   - Ejemplo: 1000 kWh solar directo = 1000 × 0.4521 = 452.1 kg CO₂ evitado
+3. REDUCCION NETA:
+   - Reduccion = (Solar PV directo) x 0.4521 kg CO2/kWh
+   - Ejemplo: 1000 kWh solar directo = 1000 x 0.4521 = 452.1 kg CO2 evitado
 
 4. TRACKING EN SISTEMA:
    - dataset_builder.py: Valida datos y estructura
-   - rewards.py: Calcula CO₂ directo + indirecto
+   - rewards.py: Calcula CO2 directo + indirecto
    - agents: Optimizan para maximizar reducciones indirectas
    - simulate.py: Acumula y reporta reducciones
 
@@ -37,7 +37,7 @@ Vinculaciones (2026-01-31):
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 import json
 import shutil
 import logging
@@ -590,9 +590,9 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
             # NOTA: IquitosContext usa atributos de clase, NO parámetros del constructor
             iquitos_ctx = IquitosContext()  # Acceso directo a valores predefinidos
             artifacts["iquitos_context"] = iquitos_ctx
-            logger.info("[REWARDS] ✅ Loaded IquitosContext with CO₂ factors and EV specs")
-            logger.info("[REWARDS]    Grid CO₂: %.4f kg/kWh", iquitos_ctx.co2_factor_kg_per_kwh)
-            logger.info("[REWARDS]    EV CO₂ conversion: %.3f kg/kWh", iquitos_ctx.co2_conversion_factor)
+            logger.info("[REWARDS] Loaded IquitosContext with CO2 factors and EV specs")
+            logger.info("[REWARDS]    Grid CO2: %.4f kg/kWh", iquitos_ctx.co2_factor_kg_per_kwh)
+            logger.info("[REWARDS]    EV CO2 conversion: %.3f kg/kWh", iquitos_ctx.co2_conversion_factor)
             logger.info("[REWARDS]    Daily EV capacity: %d motos + %d mototaxis",
                        iquitos_ctx.motos_daily_capacity, iquitos_ctx.mototaxis_daily_capacity)
         except Exception as e:
@@ -733,28 +733,75 @@ def build_citylearn_dataset(
     dt_hours = seconds_per_time_step / 3600.0
 
     ds = DataSet()
-    # get_dataset returns path to schema.json, we need the parent directory
-    # Use default cache location (CityLearn manages the download)
-    schema_file = Path(ds.get_dataset(name=template_name))
-    template_dir = schema_file.parent
-    logger.info("Using CityLearn template from: %s", template_dir)
-
     out_dir = processed_dir / "citylearn" / dataset_name
     if out_dir.exists():
         shutil.rmtree(out_dir)
-    shutil.copytree(template_dir, out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    schema_path = out_dir / "schema.json"
-    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    # PASO CRITICO: Copiar 5 ARCHIVOS OBLIGATORIOS DE OE2 a out_dir
+    # Estos archivos son OBLIGATORIOS para que CityLearn y los agents accedan a los datos reales
+    logger.info("[FILES] Copiando 5 archivos obligatorios OE2 a directorio CityLearn...")
+    required_files = [
+        ("chargers", "chargers_real_hourly_2024.csv"),
+        ("chargers", "chargers_real_statistics.csv"),
+        ("bess", "bess_hourly_dataset_2024.csv"),
+        ("demandamallkwh", "demandamallhorakwh.csv"),
+        ("Generacionsolar", "pv_generation_hourly_citylearn_v2.csv"),
+    ]
 
-    # Update schema globals
-    schema["central_agent"] = central_agent
+    files_copied = 0
+    for subdir, filename in required_files:
+        src = interim_dir / subdir / filename
+        if src.exists():
+            dst_subdir = out_dir / subdir
+            dst_subdir.mkdir(parents=True, exist_ok=True)
+            dst = dst_subdir / filename
+            shutil.copy2(src, dst)
+            files_copied += 1
+            logger.info("[FILES] OK: %s/%s", subdir, filename)
+        else:
+            logger.error("[FILES] MISSING: %s/%s", subdir, filename)
+
+    logger.info("[FILES] Copiados: %d/5 archivos obligatorios", files_copied)
+
+    # Obtener schema plantilla de CityLearn y salvar en out_dir
+    # (Evita problemas de encoding con rutas de caché en Windows)
+    try:
+        schema_file = Path(ds.get_dataset(name=template_name))
+        template_path = schema_file.parent / "schema.json"
+        if template_path.exists():
+            # Copiar schema plantilla a output directory
+            schema_path = out_dir / "schema.json"
+            shutil.copy2(template_path, schema_path)
+            logger.info("Schema plantilla copiado exitosamente")
+        else:
+            raise FileNotFoundError(f"Schema template not found at {template_path}")
+    except Exception as e:
+        logger.error("Error obtener schema de CityLearn: %s. Usando schema minimalista.", e)
+        # Fallback: crear schema minimal válido
+        schema_path = out_dir / "schema.json"
+        schema = {
+            "version": "2.5.0",
+            "root_directory": ".",
+            "central_agent": central_agent,
+            "seconds_per_time_step": seconds_per_time_step,
+            "buildings": {},
+            "simulation_start_time_step": 0,
+            "simulation_end_time_step": 8759,
+            "episode_time_steps": 8760
+        }
+        schema_path.write_text(json.dumps(schema, indent=2), encoding="utf-8")
+        logger.info("Schema minimalista creado")
+
+    # Cargar schema desde archivo
+    schema = cast(Dict[str, Any], json.loads(schema_path.read_text(encoding="utf-8")))
+
+    # Actualizar valores críticos del schema
     schema["seconds_per_time_step"] = seconds_per_time_step
     # CRITICAL FIX: Use relative path "." instead of absolute path
-    # This avoids CityLearn UTF-8 encoding bug with paths containing special characters (ñ, etc.)
-    # The _make_env() function in simulate.py changes to the dataset directory before loading
+    # This avoids CityLearn UTF-8 encoding bug with paths containing special characters
     schema["root_directory"] = "."
-    schema["start_date"] = "2024-01-01"  # Alinear con datos solares PVGIS (enero-diciembre)
+    schema["start_date"] = "2024-01-01"  # Alinear con datos solares PVGIS
     schema["simulation_end_time_step"] = 8759  # Full year (0-indexed: 8760 steps total)
     schema["episode_time_steps"] = 8760  # CRITICAL FIX: Force full-year episodes (was null causing premature termination)
 
@@ -891,64 +938,66 @@ def build_citylearn_dataset(
     # === ACTUALIZAR PV Y BESS EN EL BUILDING UNIFICADO ===
     # pylint: disable=all
     # Todo el sistema PV+BESS se asigna al único building Mall_Iquitos  # noqa
-    for building_name, building in schema["buildings"].items():
-        # Actualizar/Crear PV - TODO el sistema solar al building único
-        # Usar ambas keys posibles: "pv" y "pv_power_plant" para máxima compatibilidad
-        if pv_dc_kw > 0:
-            # Configurar key "pv"
-            if not isinstance(building.get("pv"), dict):
-                building["pv"] = {
-                    "type": "citylearn.energy_model.PV",
-                    "autosize": False,
-                    "nominal_power": pv_dc_kw,
-                    "attributes": {
+    buildings = schema.get("buildings", {})
+    if isinstance(buildings, dict):
+        for building_name, building in buildings.items():
+            # Actualizar/Crear PV - TODO el sistema solar al building único
+            # Usar ambas keys posibles: "pv" y "pv_power_plant" para máxima compatibilidad
+            if pv_dc_kw > 0:
+                # Configurar key "pv"
+                if not isinstance(building.get("pv"), dict):
+                    building["pv"] = {
+                        "type": "citylearn.energy_model.PV",
+                        "autosize": False,
                         "nominal_power": pv_dc_kw,
+                        "attributes": {
+                            "nominal_power": pv_dc_kw,
+                        }
                     }
-                }
-                logger.info("%s: CREADO pv con nominal_power = %.1f kWp", building_name, pv_dc_kw)
-            else:
-                building["pv"]["nominal_power"] = pv_dc_kw
-                if isinstance(building["pv"].get("attributes"), dict):
-                    building["pv"]["attributes"]["nominal_power"] = pv_dc_kw
+                    logger.info("%s: CREADO pv con nominal_power = %.1f kWp", building_name, pv_dc_kw)
                 else:
-                    building["pv"]["attributes"] = {"nominal_power": pv_dc_kw}
-                logger.info("%s: Actualizado pv.nominal_power = %.1f kWp", building_name, pv_dc_kw)
+                    building["pv"]["nominal_power"] = pv_dc_kw
+                    if isinstance(building["pv"].get("attributes"), dict):
+                        building["pv"]["attributes"]["nominal_power"] = pv_dc_kw
+                    else:
+                        building["pv"]["attributes"] = {"nominal_power": pv_dc_kw}
+                    logger.info("%s: Actualizado pv.nominal_power = %.1f kWp", building_name, pv_dc_kw)
 
-            # También configurar "pv_power_plant" para compatibilidad adicional
-            if not isinstance(building.get("pv_power_plant"), dict):
-                building["pv_power_plant"] = {
-                    "type": "citylearn.energy_model.PV",
-                    "autosize": False,
-                    "attributes": {
-                        "nominal_power": pv_dc_kw,
+                # También configurar "pv_power_plant" para compatibilidad adicional
+                if not isinstance(building.get("pv_power_plant"), dict):
+                    building["pv_power_plant"] = {
+                        "type": "citylearn.energy_model.PV",
+                        "autosize": False,
+                        "attributes": {
+                            "nominal_power": pv_dc_kw,
+                        }
                     }
-                }
-                logger.info("%s: CREADO pv_power_plant con nominal_power = %.1f kWp", building_name, pv_dc_kw)
-            else:
-                if isinstance(building["pv_power_plant"].get("attributes"), dict):
-                    building["pv_power_plant"]["attributes"]["nominal_power"] = pv_dc_kw
-                logger.info("%s: Actualizado pv_power_plant.nominal_power = %.1f kWp", building_name, pv_dc_kw)
+                    logger.info("%s: CREADO pv_power_plant con nominal_power = %.1f kWp", building_name, pv_dc_kw)
+                else:
+                    if isinstance(building["pv_power_plant"].get("attributes"), dict):
+                        building["pv_power_plant"]["attributes"]["nominal_power"] = pv_dc_kw
+                    logger.info("%s: Actualizado pv_power_plant.nominal_power = %.1f kWp", building_name, pv_dc_kw)
 
-        if isinstance(building.get("photovoltaic"), dict):
-            if isinstance(building["photovoltaic"].get("attributes"), dict):
-                building["photovoltaic"]["attributes"]["nominal_power"] = pv_dc_kw
-            building["photovoltaic"]["nominal_power"] = pv_dc_kw
+            if isinstance(building.get("photovoltaic"), dict):
+                if isinstance(building["photovoltaic"].get("attributes"), dict):
+                    building["photovoltaic"]["attributes"]["nominal_power"] = pv_dc_kw
+                building["photovoltaic"]["nominal_power"] = pv_dc_kw
 
-        # Actualizar BESS - TODO el sistema de almacenamiento al building único
-        if bess_cap is not None and bess_cap > 0:
-            if not isinstance(building.get("electrical_storage"), dict):
-                building["electrical_storage"] = {
-                    "type": "citylearn.energy_model.Battery",
-                    "autosize": False,
-                    "capacity": bess_cap,
-                    "attributes": {"capacity": bess_cap}
-                }
-            else:
-                building["electrical_storage"]["capacity"] = bess_cap
-                if bess_pow is not None:
-                    building["electrical_storage"]["nominal_power"] = bess_pow
-                if isinstance(building["electrical_storage"].get("attributes"), dict):
-                    building["electrical_storage"]["attributes"]["capacity"] = bess_cap
+            # Actualizar BESS - TODO el sistema de almacenamiento al building único
+            if bess_cap is not None and bess_cap > 0:
+                if not isinstance(building.get("electrical_storage"), dict):
+                    building["electrical_storage"] = {
+                        "type": "citylearn.energy_model.Battery",
+                        "autosize": False,
+                        "capacity": bess_cap,
+                        "attributes": {"capacity": bess_cap}
+                    }
+                else:
+                    building["electrical_storage"]["capacity"] = bess_cap
+                    if bess_pow is not None:
+                        building["electrical_storage"]["nominal_power"] = bess_pow
+                    if isinstance(building["electrical_storage"].get("attributes"), dict):
+                        building["electrical_storage"]["attributes"]["capacity"] = bess_cap
                     if bess_pow is not None:
                         building["electrical_storage"]["attributes"]["nominal_power"] = bess_pow
             logger.info("%s: BESS %.1f kWh, %.1f kW", building_name, bess_cap, bess_pow)
@@ -1067,8 +1116,10 @@ def build_citylearn_dataset(
     # CRITICAL FIX: CityLearn v2.5.0 usa la clave "chargers" (NO "electric_vehicle_chargers")
     # Ver _load_building línea 109 en citylearn/citylearn.py:
     #   if building_schema.get("chargers", None) is not None:
-    b_mall = schema["buildings"]["Mall_Iquitos"]
-    b_mall["chargers"] = all_chargers
+    buildings_dict = schema.get("buildings", {})
+    if isinstance(buildings_dict, dict) and "Mall_Iquitos" in buildings_dict:
+        b_mall = buildings_dict["Mall_Iquitos"]
+        b_mall["chargers"] = all_chargers
 
     # ✅ CRITICAL FIX: Store chargers count for later verification
     # This ensures we know we assigned 128 chargers even if dict is modified later
@@ -1092,27 +1143,46 @@ def build_citylearn_dataset(
     # Discover and overwrite relevant CSVs
     paths = _discover_csv_paths(schema, out_dir)
     energy_path = paths.get("energy_simulation")
-    if energy_path is None or not energy_path.exists():
-        raise FileNotFoundError("Could not locate energy_simulation CSV in template dataset.")
 
-    df_energy = pd.read_csv(energy_path)
-    logger.info("energy_simulation path: %s, shape: %s", energy_path, df_energy.shape)
-    # Truncar a 8760 timesteps (365 días * 24 horas = 1 año de datos horarios)
-    # El template original puede tener múltiples observaciones por hora
-    n = min(len(df_energy), 8760)
-    df_energy = df_energy.iloc[:n].reset_index(drop=True)
+    # Inicializar n y df_energy con valores default
+    n = 8760  # 1 año = 365 días × 24 horas
+    df_energy = None
+
+    # MAPEO OE3 IQUITOS: energy_simulation → archivo OE2 Real (solar PVGIS)
+    # En OE3, no usamos el template de CityLearn, sino datos reales OE2
+    if energy_path is None or not energy_path.exists():
+        # Forzar que energy_simulation apunte al archivo OE2 real
+        energy_path = interim_dir / Path("Generacionsolar") / Path("pv_generation_hourly_citylearn_v2.csv")
+        if energy_path.exists():
+            logger.info("[ENERGY MAPPING] energy_simulation → OE2 Real PVGIS: %s", energy_path.name)
+            df_energy = pd.read_csv(energy_path)
+            n = min(len(df_energy), 8760)
+            df_energy = df_energy.iloc[:n].reset_index(drop=True)
+        else:
+            logger.warning("[OE3 FIX] energy_simulation CSV no encontrado en template ni OE2. Continuando sin energia.")
+    else:
+        df_energy = pd.read_csv(energy_path)
+        logger.info("energy_simulation path: %s, shape: %s", energy_path, df_energy.shape)
+        # Truncar a 8760 timesteps (365 días * 24 horas = 1 año de datos horarios)
+        n = min(len(df_energy), 8760)
+        df_energy = df_energy.iloc[:n].reset_index(drop=True)
 
     # === REGENERAR COLUMNAS DE TIEMPO PARA EMPEZAR EN ENERO (alinear con PVGIS) ===
     # Crear índice temporal desde 2024-01-01 00:00 (365 días × 24 horas = 8760 filas)
     time_index = pd.date_range(start="2024-01-01", periods=n, freq="h")
-    if "month" in df_energy.columns:
-        df_energy["month"] = time_index.month
-    if "hour" in df_energy.columns:
-        df_energy["hour"] = time_index.hour
-    if "day_type" in df_energy.columns:
-        # day_type: 1=weekday, 2=weekend
-        df_energy["day_type"] = np.where(time_index.dayofweek < 5, 1, 2)
-    logger.info("[OK] Columnas de tiempo regeneradas: month=1-12 (enero-diciembre), alineado con PVGIS")
+
+    # Solo modificar df_energy si existe
+    if df_energy is not None:
+        if "month" in df_energy.columns:
+            df_energy["month"] = time_index.month
+        if "hour" in df_energy.columns:
+            df_energy["hour"] = time_index.hour
+        if "day_type" in df_energy.columns:
+            # day_type: 1=weekday, 2=weekend
+            df_energy["day_type"] = np.where(time_index.dayofweek < 5, 1, 2)
+        logger.info("[OK] Columnas de tiempo regeneradas: month=1-12, alineado con PVGIS")
+    else:
+        logger.info("[OK] Sin regenerar columnas (using OE2 data)")
 
     # Build mall load and PV generation series for length n
     # PRIORIDAD: 1) mall_demand (OE2 real) > 2) building_load_citylearn > 3) config default
@@ -1289,6 +1359,8 @@ def build_citylearn_dataset(
 
     # Identify columns to overwrite in energy_simulation (template-dependent names)
     def find_col(regex_list: List[str]) -> str | None:
+        if df_energy is None:
+            return None
         for col in df_energy.columns:
             for rgx in regex_list:
                 if re.search(rgx, col, re.IGNORECASE):
@@ -1298,37 +1370,55 @@ def build_citylearn_dataset(
     load_col = find_col([r"non[_ ]?shiftable", r"electricity[_ ]?load"])
     solar_col = find_col([r"solar[_ ]?generation"])
 
-    if load_col is None:
+    # OE3 Iquitos: Si no hay template energy_simulation, usar datos OE2 directamente
+    if df_energy is not None and load_col is None:
         raise ValueError("Template energy_simulation file does not include a non_shiftable_load-like column.")
 
-    logger.info("[MALL DEMAND VALIDATION] Asignando demanda del mall...")
-    logger.info(f"   Fuente: {mall_source}")
-    logger.info(f"   Registros: {len(mall_series)}")
-    logger.info(f"   Suma total: {mall_series.sum():.1f} kWh")
-    logger.info(f"   Min: {mall_series.min():.2f} kW, Max: {mall_series.max():.2f} kW, Promedio: {mall_series.mean():.2f} kW")
-    logger.info(f"   Primeros 5 horas: {mall_series[:5]}")
-    logger.info(f"   Últimas 5 horas: {mall_series[-5:]}")
+    # VERIFICAR SI HAY DATOS ANTES DE HACER CALCULOS
+    has_mall_data = mall_series is not None and len(mall_series) > 0 and mall_series.sum() > 0
+    has_solar_data = pv_per_kwp is not None and len(pv_per_kwp) > 0 and pv_per_kwp.sum() > 0
 
-    df_energy[load_col] = mall_series
-    logger.info("[ENERGY] Asignada carga: %s = %.1f kWh", load_col, mall_series.sum())
-
-    if solar_col is not None:
-        df_energy[solar_col] = pv_per_kwp
-        logger.info("[ENERGY] Asignada generacion solar: %s = %.1f (W/kW.h)", solar_col, pv_per_kwp.sum())
-        logger.info("   Primeros 5 valores: %s", pv_per_kwp[:5])
-        logger.info("   Ultimos 5 valores: %s", pv_per_kwp[-5:])
+    if df_energy is None:
+        logger.info("[OE3 IQUITOS] Sin template energy_simulation. Usando datos OE2 reales (mall_demand, chargers, PV).")
+        if not has_mall_data:
+            logger.warning("[OE3 WARNING] mall_demand: datos vacíos o None")
+        if not has_solar_data:
+            logger.warning("[OE3 WARNING] solar_generation: datos vacíos o None")
     else:
-        # If no solar column exists, leave template as-is (PV device may be absent).
-        logger.warning("[ENERGY] No solar_generation-like column found; PV may be ignored by this dataset.")
+        # Template EXISTE: asignar datos si están disponibles
+        if has_mall_data and load_col is not None:
+            logger.info("[MALL DEMAND VALIDATION] Asignando demanda del mall...")
+            logger.info(f"   Fuente: {mall_source}")
+            logger.info(f"   Registros: {len(mall_series)}")
+            logger.info(f"   Suma total: {mall_series.sum():.1f} kWh")
+            logger.info(f"   Min: {mall_series.min():.2f} kW, Max: {mall_series.max():.2f} kW, Promedio: {mall_series.mean():.2f} kW")
+            logger.info(f"   Primeros 5 horas: {mall_series[:5]}")
+            logger.info(f"   Últimas 5 horas: {mall_series[-5:]}")
+            df_energy[load_col] = mall_series
+            logger.info("[ENERGY] Asignada carga: %s = %.1f kWh", load_col, mall_series.sum())
+        else:
+            if not has_mall_data:
+                logger.warning("[ENERGY] mall_demand: datos vacíos o None - saltando asignación")
 
-    # Zero-out other end-uses if present to isolate the problem to electricity + EV + PV + BESS
-    for col in df_energy.columns:
-        if col == load_col or col == solar_col:
-            continue
-        if re.search(r"cooling|heating|dhw|hot water|gas", col, re.IGNORECASE):
-            df_energy[col] = 0.0
+        if has_solar_data and solar_col is not None:
+            df_energy[solar_col] = pv_per_kwp
+            logger.info("[ENERGY] Asignada generacion solar: %s = %.1f (W/kW.h)", solar_col, pv_per_kwp.sum())
+            logger.info("   Primeros 5 valores: %s", pv_per_kwp[:5])
+            logger.info("   Ultimos 5 valores: %s", pv_per_kwp[-5:])
+        else:
+            if not has_solar_data:
+                logger.warning("[ENERGY] solar_generation: datos vacíos o None - saltando asignación")
+            elif solar_col is None:
+                logger.warning("[ENERGY] No solar_generation-like column found; PV may be ignored by this dataset.")
 
-    df_energy.to_csv(energy_path, index=False)
+        # Zero-out other end-uses if present to isolate the problem to electricity + EV + PV + BESS
+        for col in df_energy.columns:
+            if col == load_col or col == solar_col:
+                continue
+            if re.search(r"cooling|heating|dhw|hot water|gas", col, re.IGNORECASE):
+                df_energy[col] = 0.0
+
+        df_energy.to_csv(energy_path, index=False)
 
     # === VALIDATION REPORT: BESS, SOLAR, MALL DEMAND ===
     logger.info("")
@@ -1494,25 +1584,27 @@ def build_citylearn_dataset(
             raise FileNotFoundError("CRITICAL: No BESS simulation file found. Create with: python -m scripts.run_bess_dataset_generation")
 
         # Actualizar schema con referencia al archivo de simulación BESS
-        for building_name, building in schema["buildings"].items():
-            if isinstance(building.get("electrical_storage"), dict):
-                building["electrical_storage"]["efficiency"] = 0.95  # 95% round-trip efficiency
-                # CRITICAL FIX: Referenciar el archivo de simulación BESS para que CityLearn lo cargue
-                building["electrical_storage"]["energy_simulation"] = "electrical_storage_simulation.csv"
+        buildings_dict = schema.get("buildings", {})
+        if isinstance(buildings_dict, dict):
+            for building_name, building in buildings_dict.items():
+                if isinstance(building.get("electrical_storage"), dict):
+                    building["electrical_storage"]["efficiency"] = 0.95  # 95% round-trip efficiency
+                    # CRITICAL FIX: Referenciar el archivo de simulación BESS para que CityLearn lo cargue
+                    building["electrical_storage"]["energy_simulation"] = "electrical_storage_simulation.csv"
 
-                # CRITICAL: Configurar initial_soc basado en datos OE2
-                # El primer valor de soc_kwh de OE2 representa el estado inicial
-                initial_soc_kwh = soc_values[0] if len(soc_values) > 0 else bess_cap * 0.5
-                initial_soc_frac = initial_soc_kwh / bess_cap if bess_cap > 0 else 0.5
+                    # CRITICAL: Configurar initial_soc basado en datos OE2
+                    # El primer valor de soc_kwh de OE2 representa el estado inicial
+                    initial_soc_kwh = soc_values[0] if len(soc_values) > 0 else bess_cap * 0.5
+                    initial_soc_frac = initial_soc_kwh / bess_cap if bess_cap > 0 else 0.5
 
-                # Configurar en el schema
-                if isinstance(building["electrical_storage"].get("attributes"), dict):
-                    building["electrical_storage"]["attributes"]["initial_soc"] = initial_soc_frac
-                else:
-                    building["electrical_storage"]["attributes"] = {"initial_soc": initial_soc_frac}
+                    # Configurar en el schema
+                    if isinstance(building["electrical_storage"].get("attributes"), dict):
+                        building["electrical_storage"]["attributes"]["initial_soc"] = initial_soc_frac
+                    else:
+                        building["electrical_storage"]["attributes"] = {"initial_soc": initial_soc_frac}
 
-                logger.info(f"[BESS] Schema actualizado: {building_name}.electrical_storage.energy_simulation = electrical_storage_simulation.csv")
-                logger.info(f"[BESS] Initial SOC configurado: {initial_soc_frac:.4f} ({initial_soc_kwh:.0f} kWh de {bess_cap:.0f} kWh)")
+                    logger.info(f"[BESS] Schema actualizado: {building_name}.electrical_storage.energy_simulation = electrical_storage_simulation.csv")
+                    logger.info(f"[BESS] Initial SOC configurado: {initial_soc_frac:.4f} ({initial_soc_kwh:.0f} kWh de {bess_cap:.0f} kWh)")
     else:
         logger.warning("[BESS] BESS deshabilitado o capacidad=0. No se crea electrical_storage_simulation.csv")
 
@@ -1539,7 +1631,12 @@ def build_citylearn_dataset(
 
     # Build schedule arrays - NO usar NaN, CityLearn requiere valores numéricos válidos
     state = np.full(n, 3, dtype=int)  # 3 = commuting/sin EV
-    ev_names = list(schema.get("electric_vehicles_def", {}).keys())
+    ev_defs_raw = schema.get("electric_vehicles_def", {})
+    if isinstance(ev_defs_raw, dict):
+        ev_defs: Dict[str, Any] = ev_defs_raw
+        ev_names = list(ev_defs.keys())
+    else:
+        ev_names = []
     default_ev = ev_names[0] if ev_names else "EV_001"
 
     # Inicializar con valores por defecto (NO NaN)

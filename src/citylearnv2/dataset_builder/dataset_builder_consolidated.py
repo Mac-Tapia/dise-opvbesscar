@@ -530,12 +530,12 @@ def build_citylearn_dataset(
         try:
             # IquitosContext usa atributos de clase, no parámetros del constructor
             artifacts["iquitos_context"] = IquitosContext()
-            logger.info("✅ IquitosContext loaded:")
-            logger.info("   CO₂ grid: %.4f kg/kWh", SPECS["co2_grid_kg_per_kwh"])
-            logger.info("   CO₂ EV: %.3f kg/kWh", SPECS["co2_ev_conversion_kg_per_kwh"])
-            logger.info("   EV capacity: %d motos + %d mototaxis/day", 1800, 260)
+            logger.info("IquitosContext loaded:")
+            logger.info("   CO2 grid: %.4f kg/kWh", SPECS["co2_grid_kg_per_kwh"])
+            logger.info("   CO2 EV: %.3f kg/kWh", SPECS["co2_ev_conversion_kg_per_kwh"])
+            logger.info("   EV capacity: %d motos + %d mototaxis/day", 2685, 388)
         except Exception as e:
-            logger.error("❌ Failed to load IquitosContext: %s", e)
+            logger.error("Failed to load IquitosContext: %s", e)
 
         try:
             artifacts["reward_weights"] = create_iquitos_reward_weights(priority="balanced")

@@ -157,14 +157,14 @@ class IquitosContext:
     co2_factor_kg_per_kwh: float = 0.4521  # Grid import CO₂ factor
     co2_conversion_factor: float = 2.146   # Para cálculo directo: 50kW × 2.146 = 107.3 kg/h
 
-    # 🟢 NUEVO: Configuración de EVs para bonus de utilización (2026-02-04)
-    # Flota OE3 REAL: 1,800 motos/día + 260 mototaxis/día = 2,060 vehículos/día
-    # Proyección anual: 657,000 motos/año + 94,900 mototaxis/año = 751,900 vehículos/año
+    # NUEVO: Configuración de EVs para bonus de utilización (2026-02-04)
+    # Flota OE3 REAL: 2,685 motos/día + 388 mototaxis/día = 3,073 vehículos/día
+    # Proyección anual: 979,759 motos/año + 141,520 mototaxis/año = 1,121,279 vehículos/año
     max_motos_simultaneous: int = 112     # Max motos que pueden cargarse simultáneamente (capacidad sockets)
     max_mototaxis_simultaneous: int = 16  # Max mototaxis que pueden cargarse simultáneamente (capacidad sockets)
     max_evs_total: int = 128              # Total sockets/chargers (32 chargers × 4 sockets)
-    motos_daily_capacity: int = 1800      # ✅ CORRECTO: 1,800 motos/día (no 2,912 anual)
-    mototaxis_daily_capacity: int = 260   # ✅ CORRECTO: 260 mototaxis/día (no 416 anual)
+    motos_daily_capacity: int = 2685      # REAL: 2,685 motos/día
+    mototaxis_daily_capacity: int = 388   # REAL: 388 mototaxis/día
 
     # Tarifa eléctrica
     tariff_usd_per_kwh: float = 0.20
@@ -177,10 +177,10 @@ class IquitosContext:
     charger_power_kw_mototaxi: float = 3.0 # Potencia mototaxis
     ev_demand_constant_kw: float = 50.0    # Demanda constante (workaround CityLearn 2.5.0)
 
-    # Flota EV (OE3 REAL - 2026-02-04)
+    # Flota EV (OE3 REAL - 2026-02-05)
     # VALORES DIARIOS (para control):
-    vehicles_day_motos: int = 1800         # Motos cargadas por día
-    vehicles_day_mototaxis: int = 260      # Mototaxis cargadas por día
+    vehicles_day_motos: int = 2685        # Motos cargadas por día
+    vehicles_day_mototaxis: int = 388     # Mototaxis cargadas por día
 
     # VALORES ANUALES (para impacto y referencia):
     vehicles_year_motos: int = 657000      # Proyección anual: 1,800 × 365

@@ -4,8 +4,8 @@ sac:
 
   # Training hyperparameters
   training:
-    episodes: 5
-    total_timesteps: 43800  # 5 × 8760
+    episodes: 3
+    total_timesteps: 26280  # 3 complete years × 8,760 hours for seasonal pattern learning
     learning_rate: 2e-4  # OPCIÓN A: Reducido 33% para GPU (batch_size=128)
     buffer_size: 2000000  # Aumentado para GPU (era 200000)
     batch_size: 128  # GPU optimized (era 256, ajustado para estabilidad)
@@ -49,4 +49,4 @@ sac:
 performance:
   expected_co2_reduction: 0.26  # 26% reduction vs baseline
   expected_solar_utilization: 0.65  # 65% utilization
-  training_time_hours: 6  # Approximate on RTX 4060
+  training_time_hours: 6.5  # 5-7 hours on RTX 4060 (26,280 timesteps ≈ 3 years of hourly data)

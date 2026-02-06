@@ -1,19 +1,28 @@
 {
   "version": "1.0",
-  "timestamp": "2026-01-25T17:50:34.535534",
+  "timestamp": "2026-02-05T00:00:00.000000",
   "timesteps": 8760,
+  "total_training_timesteps": 26280,
   "observation_dim": 534,
   "action_dim": 126,
   "n_chargers_controllable": 126,
   "agents": [
     {
       "name": "SAC",
-      "train_steps": 50000,
+      "train_steps": 26280,
+      "expected_duration_hours": 6.5,
       "learning_rate": 0.0002
     },
     {
       "name": "PPO",
-      "train_steps": 50000,
+      "train_steps": 26280,
+      "expected_duration_hours": 5.5,
+      "learning_rate": 0.0002
+    },
+    {
+      "name": "A2C",
+      "train_steps": 26280,
+      "expected_duration_hours": 4.5,
       "learning_rate": 0.0002
     }
   ],

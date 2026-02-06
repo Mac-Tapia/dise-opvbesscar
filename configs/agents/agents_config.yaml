@@ -15,8 +15,8 @@ agents:
     enabled: true
 
 training:
-  episodes: 5
-  max_timesteps: 43800  # 5 years × 8,760 hours
+  episodes: 3
+  max_timesteps: 26280  # 3 complete years × 8,760 hours (required for seasonal pattern learning)
   evaluation_frequency: 1
   checkpoint_frequency: 1000
 
