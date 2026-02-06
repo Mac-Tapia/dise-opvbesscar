@@ -1,0 +1,12 @@
+{
+  "baseline": "CON_SOLAR",
+  "description": "Uncontrolled with 4,050 kWp solar (reference)",
+  "timesteps": 8760,
+  "co2_intensity_grid": 0.4521,
+  "solar_capacity_kwp": 4050.0,
+  "grid_import_kwh": 711749.9999999999,
+  "solar_generation_kwh": 7298475.286138371,
+  "co2_grid_kg": 321782.17499999993,
+  "co2_avoided_by_solar_kg": 3299640.676863157,
+  "co2_net_kg": -2977858.5018631574
+}

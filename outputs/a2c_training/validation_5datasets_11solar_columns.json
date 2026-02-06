@@ -1,0 +1,114 @@
+{
+  "timestamp": "2026-02-05T19:39:16.887914",
+  "datasets": {
+    "chargers": {
+      "path": "data/oe2/chargers/chargers_real_hourly_2024.csv",
+      "shape": [
+        8760,
+        128
+      ],
+      "total_energy_kwh": 1024817.819688338,
+      "columns_count": 128,
+      "status": "OK"
+    },
+    "bess": {
+      "path": "data/oe2/bess/bess_hourly_dataset_2024.csv",
+      "shape": [
+        8760,
+        12
+      ],
+      "columns": [
+        "datetime",
+        "pv_kwh",
+        "ev_kwh",
+        "mall_kwh",
+        "pv_to_ev_kwh",
+        "pv_to_bess_kwh",
+        "pv_to_mall_kwh",
+        "grid_to_ev_kwh",
+        "grid_to_mall_kwh",
+        "bess_charge_kwh",
+        "bess_discharge_kwh",
+        "soc_percent"
+      ],
+      "status": "OK"
+    },
+    "mall": {
+      "path": "data/oe2/demandamallkwh/demandamallhorakwh.csv",
+      "shape": [
+        8785,
+        2
+      ],
+      "total_energy_kwh": 12368653.0,
+      "column_used": "kWh",
+      "status": "OK"
+    },
+    "solar": {
+      "path": "data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv",
+      "shape": [
+        8760,
+        11
+      ],
+      "columns_total": 11,
+      "column_names": [
+        "timestamp",
+        "ghi_wm2",
+        "dni_wm2",
+        "dhi_wm2",
+        "temp_air_c",
+        "wind_speed_ms",
+        "dc_power_kw",
+        "ac_power_kw",
+        "dc_energy_kwh",
+        "ac_energy_kwh",
+        "pv_generation_kwh"
+      ],
+      "ac_power_column": "ac_power_kw",
+      "total_energy_kwh": 8292514.207800001,
+      "status": "OK"
+    },
+    "ev_profiles": {
+      "path": "data/interim/oe2/chargers/individual_chargers.json",
+      "profiles_count": 32,
+      "status": "OK"
+    }
+  },
+  "solar_columns": {
+    "ac_power_column": {
+      "name": "ac_power_kw",
+      "total_energy_kwh": 8292514.207800001,
+      "in_training": true
+    }
+  },
+  "agents": {
+    "SAC": {
+      "status": "ERROR",
+      "error": "'charmap' codec can't decode byte 0x9d in position 6035: character maps to <undefined>"
+    },
+    "PPO": {
+      "status": "OK",
+      "datasets_loaded": {
+        "chargers": true,
+        "bess": true,
+        "mall": true,
+        "solar": true
+      },
+      "ac_power_column": true,
+      "chargers_matrix": true
+    },
+    "A2C": {
+      "status": "OK",
+      "datasets_loaded": {
+        "chargers": true,
+        "bess": true,
+        "mall": true,
+        "solar": true
+      },
+      "ac_power_column": true,
+      "chargers_matrix": true
+    }
+  },
+  "sync_status": {
+    "all_8760": true
+  }
+}

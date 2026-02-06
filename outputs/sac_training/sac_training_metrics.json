@@ -1,0 +1,31 @@
+{
+  "timestamp": "2026-02-05T22:37:05.496752",
+  "total_timesteps": 26280,
+  "training_duration_seconds": 231.502649,
+  "episodes_trained": 3,
+  "validation_metrics": {
+    "mean_reward": 781902.2075232565,
+    "std_reward": 33.62217383957822,
+    "mean_co2_avoided_kg": 4450291.810797838,
+    "mean_solar_kwh": 8292514.2078002505,
+    "mean_cost_usd": 924421.5326577257,
+    "mean_grid_import_kwh": 6836784.332944394
+  },
+  "reward_weights": {
+    "co2": 0.5,
+    "cost": 0.15,
+    "solar": 0.2,
+    "ev_satisfaction": 0.08,
+    "ev_utilization": 0.02,
+    "grid_stability": 0.05,
+    "peak_import_penalty": 0.0,
+    "operational_penalties": 0.0
+  },
+  "context": {
+    "co2_grid_factor": 0.4521,
+    "chargers": 32,
+    "sockets": 128,
+    "motos_daily": 2685,
+    "mototaxis_daily": 388
+  }
+}

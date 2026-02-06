@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-02-06T15:21:20.969629",
+  "total_timesteps": 43800,
+  "training_duration_seconds": 81.2876603603363,
+  "validation_metrics": {
+    "mean_reward": 662133.2924943077,
+    "mean_co2_avoided_kg": 16458432694.91392,
+    "mean_solar_kwh": 36005275867.10466,
+    "mean_cost_usd": 819917.3475616452,
+    "mean_grid_import_kwh": 27979663002.82742
+  }
+}
