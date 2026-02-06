@@ -1,5 +1,26 @@
 {
+  "// CONFIGURACIÓN DE AMBIENTE - SIEMPRE USAR .venv": "",
   "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+  "python.terminal.executeInFileDir": false,
+  "python.terminal.launchArgs": [],
+  "python.venvPath": "${workspaceFolder}\\.venv",
+
+  "// TERMINAL - ACTIVAR .venv AUTOMÁTICAMENTE": "",
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.profiles.windows": {
+    "PowerShell": {
+      "source": "PowerShell",
+      "args": ["-NoExit", "-Command", "& '${workspaceFolder}\\.venv\\Scripts\\Activate.ps1'"],
+      "icon": "terminal-powershell"
+    }
+  },
+
+  "// TESTING - USAR .venv PARA TESTS": "",
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+
   "python.linting.enabled": true,
   "python.linting.pylintEnabled": true,
   "python.linting.pylintArgs": [

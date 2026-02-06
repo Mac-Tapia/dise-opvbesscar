@@ -306,8 +306,8 @@ def _create_simple_env(config: dict[str, Any]) -> Any:
             self.episode_steps = cfg.get("episode_time_steps", 8760)
 
             # Constantes del proyecto Iquitos
-            self.total_motos = 2912  # Número total de motos
-            self.total_mototaxis = 416  # Número total de mototaxis
+            self.total_motos = 2685  # Número total de motos cargadas/día (real proyecto Iquitos 2024)
+            self.total_mototaxis = 388  # Número total de mototaxis cargadas/día (real proyecto Iquitos 2024)
             self.grid_co2_intensity = 0.4521  # kg CO2/kWh en Iquitos
             self.charger_power_kw = 272.0 / 128  # kW por charger
             self.bess_capacity_kwh = 2000.0  # kWh de BESS
