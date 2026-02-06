@@ -37,7 +37,7 @@ Vinculaciones (2026-01-31):
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple
 import json
 import shutil
 import logging
@@ -794,7 +794,7 @@ def build_citylearn_dataset(
         logger.info("Schema minimalista creado")
 
     # Cargar schema desde archivo
-    schema = cast(Dict[str, Any], json.loads(schema_path.read_text(encoding="utf-8")))
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
     # Actualizar valores críticos del schema
     schema["seconds_per_time_step"] = seconds_per_time_step
@@ -938,66 +938,64 @@ def build_citylearn_dataset(
     # === ACTUALIZAR PV Y BESS EN EL BUILDING UNIFICADO ===
     # pylint: disable=all
     # Todo el sistema PV+BESS se asigna al único building Mall_Iquitos  # noqa
-    buildings = schema.get("buildings", {})
-    if isinstance(buildings, dict):
-        for building_name, building in buildings.items():
-            # Actualizar/Crear PV - TODO el sistema solar al building único
-            # Usar ambas keys posibles: "pv" y "pv_power_plant" para máxima compatibilidad
-            if pv_dc_kw > 0:
-                # Configurar key "pv"
-                if not isinstance(building.get("pv"), dict):
-                    building["pv"] = {
-                        "type": "citylearn.energy_model.PV",
-                        "autosize": False,
+    for building_name, building in schema["buildings"].items():
+        # Actualizar/Crear PV - TODO el sistema solar al building único
+        # Usar ambas keys posibles: "pv" y "pv_power_plant" para máxima compatibilidad
+        if pv_dc_kw > 0:
+            # Configurar key "pv"
+            if not isinstance(building.get("pv"), dict):
+                building["pv"] = {
+                    "type": "citylearn.energy_model.PV",
+                    "autosize": False,
+                    "nominal_power": pv_dc_kw,
+                    "attributes": {
                         "nominal_power": pv_dc_kw,
-                        "attributes": {
-                            "nominal_power": pv_dc_kw,
-                        }
                     }
-                    logger.info("%s: CREADO pv con nominal_power = %.1f kWp", building_name, pv_dc_kw)
+                }
+                logger.info("%s: CREADO pv con nominal_power = %.1f kWp", building_name, pv_dc_kw)
+            else:
+                building["pv"]["nominal_power"] = pv_dc_kw
+                if isinstance(building["pv"].get("attributes"), dict):
+                    building["pv"]["attributes"]["nominal_power"] = pv_dc_kw
                 else:
-                    building["pv"]["nominal_power"] = pv_dc_kw
-                    if isinstance(building["pv"].get("attributes"), dict):
-                        building["pv"]["attributes"]["nominal_power"] = pv_dc_kw
-                    else:
-                        building["pv"]["attributes"] = {"nominal_power": pv_dc_kw}
-                    logger.info("%s: Actualizado pv.nominal_power = %.1f kWp", building_name, pv_dc_kw)
+                    building["pv"]["attributes"] = {"nominal_power": pv_dc_kw}
+                logger.info("%s: Actualizado pv.nominal_power = %.1f kWp", building_name, pv_dc_kw)
 
-                # También configurar "pv_power_plant" para compatibilidad adicional
-                if not isinstance(building.get("pv_power_plant"), dict):
-                    building["pv_power_plant"] = {
-                        "type": "citylearn.energy_model.PV",
-                        "autosize": False,
-                        "attributes": {
-                            "nominal_power": pv_dc_kw,
-                        }
+            # También configurar "pv_power_plant" para compatibilidad adicional
+            if not isinstance(building.get("pv_power_plant"), dict):
+                building["pv_power_plant"] = {
+                    "type": "citylearn.energy_model.PV",
+                    "autosize": False,
+                    "attributes": {
+                        "nominal_power": pv_dc_kw,
                     }
-                    logger.info("%s: CREADO pv_power_plant con nominal_power = %.1f kWp", building_name, pv_dc_kw)
-                else:
-                    if isinstance(building["pv_power_plant"].get("attributes"), dict):
-                        building["pv_power_plant"]["attributes"]["nominal_power"] = pv_dc_kw
-                    logger.info("%s: Actualizado pv_power_plant.nominal_power = %.1f kWp", building_name, pv_dc_kw)
+                }
+                logger.info("%s: CREADO pv_power_plant con nominal_power = %.1f kWp", building_name, pv_dc_kw)
+            else:
+                if isinstance(building["pv_power_plant"].get("attributes"), dict):
+                    building["pv_power_plant"]["attributes"]["nominal_power"] = pv_dc_kw
+                logger.info("%s: Actualizado pv_power_plant.nominal_power = %.1f kWp", building_name, pv_dc_kw)
 
-            if isinstance(building.get("photovoltaic"), dict):
-                if isinstance(building["photovoltaic"].get("attributes"), dict):
-                    building["photovoltaic"]["attributes"]["nominal_power"] = pv_dc_kw
-                building["photovoltaic"]["nominal_power"] = pv_dc_kw
+        if isinstance(building.get("photovoltaic"), dict):
+            if isinstance(building["photovoltaic"].get("attributes"), dict):
+                building["photovoltaic"]["attributes"]["nominal_power"] = pv_dc_kw
+            building["photovoltaic"]["nominal_power"] = pv_dc_kw
 
-            # Actualizar BESS - TODO el sistema de almacenamiento al building único
-            if bess_cap is not None and bess_cap > 0:
-                if not isinstance(building.get("electrical_storage"), dict):
-                    building["electrical_storage"] = {
-                        "type": "citylearn.energy_model.Battery",
-                        "autosize": False,
-                        "capacity": bess_cap,
-                        "attributes": {"capacity": bess_cap}
-                    }
-                else:
-                    building["electrical_storage"]["capacity"] = bess_cap
-                    if bess_pow is not None:
-                        building["electrical_storage"]["nominal_power"] = bess_pow
-                    if isinstance(building["electrical_storage"].get("attributes"), dict):
-                        building["electrical_storage"]["attributes"]["capacity"] = bess_cap
+        # Actualizar BESS - TODO el sistema de almacenamiento al building único
+        if bess_cap is not None and bess_cap > 0:
+            if not isinstance(building.get("electrical_storage"), dict):
+                building["electrical_storage"] = {
+                    "type": "citylearn.energy_model.Battery",
+                    "autosize": False,
+                    "capacity": bess_cap,
+                    "attributes": {"capacity": bess_cap}
+                }
+            else:
+                building["electrical_storage"]["capacity"] = bess_cap
+                if bess_pow is not None:
+                    building["electrical_storage"]["nominal_power"] = bess_pow
+                if isinstance(building["electrical_storage"].get("attributes"), dict):
+                    building["electrical_storage"]["attributes"]["capacity"] = bess_cap
                     if bess_pow is not None:
                         building["electrical_storage"]["attributes"]["nominal_power"] = bess_pow
             logger.info("%s: BESS %.1f kWh, %.1f kW", building_name, bess_cap, bess_pow)
@@ -1116,10 +1114,8 @@ def build_citylearn_dataset(
     # CRITICAL FIX: CityLearn v2.5.0 usa la clave "chargers" (NO "electric_vehicle_chargers")
     # Ver _load_building línea 109 en citylearn/citylearn.py:
     #   if building_schema.get("chargers", None) is not None:
-    buildings_dict = schema.get("buildings", {})
-    if isinstance(buildings_dict, dict) and "Mall_Iquitos" in buildings_dict:
-        b_mall = buildings_dict["Mall_Iquitos"]
-        b_mall["chargers"] = all_chargers
+    b_mall = schema["buildings"]["Mall_Iquitos"]
+    b_mall["chargers"] = all_chargers
 
     # ✅ CRITICAL FIX: Store chargers count for later verification
     # This ensures we know we assigned 128 chargers even if dict is modified later
@@ -1584,27 +1580,25 @@ def build_citylearn_dataset(
             raise FileNotFoundError("CRITICAL: No BESS simulation file found. Create with: python -m scripts.run_bess_dataset_generation")
 
         # Actualizar schema con referencia al archivo de simulación BESS
-        buildings_dict = schema.get("buildings", {})
-        if isinstance(buildings_dict, dict):
-            for building_name, building in buildings_dict.items():
-                if isinstance(building.get("electrical_storage"), dict):
-                    building["electrical_storage"]["efficiency"] = 0.95  # 95% round-trip efficiency
-                    # CRITICAL FIX: Referenciar el archivo de simulación BESS para que CityLearn lo cargue
-                    building["electrical_storage"]["energy_simulation"] = "electrical_storage_simulation.csv"
+        for building_name, building in schema["buildings"].items():
+            if isinstance(building.get("electrical_storage"), dict):
+                building["electrical_storage"]["efficiency"] = 0.95  # 95% round-trip efficiency
+                # CRITICAL FIX: Referenciar el archivo de simulación BESS para que CityLearn lo cargue
+                building["electrical_storage"]["energy_simulation"] = "electrical_storage_simulation.csv"
 
-                    # CRITICAL: Configurar initial_soc basado en datos OE2
-                    # El primer valor de soc_kwh de OE2 representa el estado inicial
-                    initial_soc_kwh = soc_values[0] if len(soc_values) > 0 else bess_cap * 0.5
-                    initial_soc_frac = initial_soc_kwh / bess_cap if bess_cap > 0 else 0.5
+                # CRITICAL: Configurar initial_soc basado en datos OE2
+                # El primer valor de soc_kwh de OE2 representa el estado inicial
+                initial_soc_kwh = soc_values[0] if len(soc_values) > 0 else bess_cap * 0.5
+                initial_soc_frac = initial_soc_kwh / bess_cap if bess_cap > 0 else 0.5
 
-                    # Configurar en el schema
-                    if isinstance(building["electrical_storage"].get("attributes"), dict):
-                        building["electrical_storage"]["attributes"]["initial_soc"] = initial_soc_frac
-                    else:
-                        building["electrical_storage"]["attributes"] = {"initial_soc": initial_soc_frac}
+                # Configurar en el schema
+                if isinstance(building["electrical_storage"].get("attributes"), dict):
+                    building["electrical_storage"]["attributes"]["initial_soc"] = initial_soc_frac
+                else:
+                    building["electrical_storage"]["attributes"] = {"initial_soc": initial_soc_frac}
 
-                    logger.info(f"[BESS] Schema actualizado: {building_name}.electrical_storage.energy_simulation = electrical_storage_simulation.csv")
-                    logger.info(f"[BESS] Initial SOC configurado: {initial_soc_frac:.4f} ({initial_soc_kwh:.0f} kWh de {bess_cap:.0f} kWh)")
+                logger.info(f"[BESS] Schema actualizado: {building_name}.electrical_storage.energy_simulation = electrical_storage_simulation.csv")
+                logger.info(f"[BESS] Initial SOC configurado: {initial_soc_frac:.4f} ({initial_soc_kwh:.0f} kWh de {bess_cap:.0f} kWh)")
     else:
         logger.warning("[BESS] BESS deshabilitado o capacidad=0. No se crea electrical_storage_simulation.csv")
 
@@ -1631,12 +1625,7 @@ def build_citylearn_dataset(
 
     # Build schedule arrays - NO usar NaN, CityLearn requiere valores numéricos válidos
     state = np.full(n, 3, dtype=int)  # 3 = commuting/sin EV
-    ev_defs_raw = schema.get("electric_vehicles_def", {})
-    if isinstance(ev_defs_raw, dict):
-        ev_defs: Dict[str, Any] = ev_defs_raw
-        ev_names = list(ev_defs.keys())
-    else:
-        ev_names = []
+    ev_names = list(schema.get("electric_vehicles_def", {}).keys())
     default_ev = ev_names[0] if ev_names else "EV_001"
 
     # Inicializar con valores por defecto (NO NaN)

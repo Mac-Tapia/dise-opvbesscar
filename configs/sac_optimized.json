@@ -1,0 +1,52 @@
+{
+  "training": {
+    "episodes": 5,
+    "timesteps_per_episode": 8760,
+    "total_timesteps": 43800,
+    "device": "cuda",
+    "batch_size": 256,
+    "buffer_size": 2000000,
+    "network_architecture": [
+      512,
+      512
+    ],
+    "learning_rate": 0.0003,
+    "tau": 0.005,
+    "gamma": 0.99,
+    "learning_starts": 1000,
+    "entropy_coeff": "auto"
+  },
+  "data": {
+    "solar_file": "data/interim/oe2/solar/pv_generation_timeseries.csv",
+    "chargers_file": "data/interim/oe2/chargers/chargers_real_hourly_2024.csv",
+    "bess_file": "data/interim/oe2/bess/bess_hourly_dataset_2024.csv",
+    "mall_file": "data/interim/oe2/demandamallkwh/demandamallhorakwh.csv",
+    "year": 2024,
+    "total_hours": 8760,
+    "chargers_total": 128,
+    "chargers_motos": 100,
+    "chargers_mototaxis": 28
+  },
+  "rewards": {
+    "co2_weight": 0.5,
+    "solar_weight": 0.2,
+    "cost_weight": 0.15,
+    "ev_satisfaction_weight": 0.1,
+    "grid_stability_weight": 0.05
+  },
+  "infrastructure": {
+    "solar_capacity_kwp": 4050,
+    "bess_capacity_kwh": 4520,
+    "bess_power_kw": 2712,
+    "mall_avg_kw": 1411.946689497717,
+    "chargers_avg_kw": 116.98835616438356
+  },
+  "gpu": {
+    "device_name": "NVIDIA GeForce RTX 4060 Laptop",
+    "memory_gb": 8.6,
+    "cuda_version": "12.1",
+    "estimated_speed_ts_per_sec": 1350,
+    "estimated_training_minutes": 0.5,
+    "estimated_training_seconds": 32
+  }
+}

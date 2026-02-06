@@ -7,28 +7,15 @@ Integracion completa: Calculos CO2 + Rewards multiobjetivo + BESS + Chargers dif
 
 import sys
 import os
-from pathlib import Path
 
 # CONFIGURAR ENCODING ANTES DE OTROS IMPORTS
 os.environ['PYTHONIOENCODING'] = 'utf-8'
-if hasattr(sys.stdout, 'reconfigure'):
-    try:
-        sys.stdout.reconfigure(encoding='utf-8')
-    except (AttributeError, TypeError, RuntimeError):
-        pass
+sys.stdout.reconfigure(encoding='utf-8') if hasattr(sys.stdout, 'reconfigure') else None
 
-# VALIDAR AMBIENTE .venv AL INICIO
-try:
-    from src.utils.environment_validator import validate_venv_active
-    validate_venv_active()
-except ImportError:
-    print("⚠️  WARNING: environment_validator no disponible, saltando validación")
-except RuntimeError as e:
-    print(f"❌ {e}", file=sys.stderr)
-    sys.exit(1)
+from pathlib import Path
 import json
 import yaml
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 import warnings
 import numpy as np
@@ -49,33 +36,29 @@ print('='*80)
 print(f'Inicio: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
 print()
 
-# SAC OPTIMIZADO PARA GPU RTX 4060 (8.6GB VRAM)
-# Problema: buffer_size×obs_dim requiere memoria
-# Cálculo: 500k × 1045 × 4 bytes = 1.95 GB (¡Ya no cabe!)
-# Solución: usar buffer = 100k (cabe en GPU + deja espacio para modelo)
+# AUTO-DETECTAR GPU Y CONFIGURAR
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-
 if DEVICE == 'cuda':
     GPU_NAME = torch.cuda.get_device_name(0)
     GPU_MEMORY = torch.cuda.get_device_properties(0).total_memory / 1e9
-    cuda_version: str | None = getattr(torch.version, 'cuda', None)
+    cuda_version: str | None = getattr(torch.version, 'cuda', None)  # type: ignore[attr-defined]
     print(f'GPU DISPONIBLE: {GPU_NAME}')
     print(f'   Memoria: {GPU_MEMORY:.1f} GB')
     print(f'   CUDA Version: {cuda_version}')
-    print(f'   ✓ ENTRENAMIENTO SAC CON GPU')
-    # SAC off-policy: buffer grande funciona en GPU (máximo probado: 300k)
-    BATCH_SIZE = 128
-    BUFFER_SIZE = 300000  # Máximo probado en GPU RTX 4060 (test find_max_buffer.py)
-    NETWORK_ARCH = [256, 256]
+    # Optimizar configuración para GPU
+    BATCH_SIZE = 128  # Aprovechar más memoria
+    BUFFER_SIZE = 2000000  # Replay buffer más grande para GPU
+    NETWORK_ARCH = [512, 512]  # Red más grande aprovecha GPU
 else:
     print('CPU mode - GPU no disponible')
+    print(f'   Optimizando para CPU...')
     BATCH_SIZE = 64
-    BUFFER_SIZE = 50000
+    BUFFER_SIZE = 1000000
     NETWORK_ARCH = [256, 256]
 
-print(f'   Device: {DEVICE.upper()}')
+print(f'   Device: {DEVICE}')
 print(f'   Batch size: {BATCH_SIZE}')
-print(f'   Buffer size: {BUFFER_SIZE:,}')
+print(f'   Buffer size: {BUFFER_SIZE}')
 print(f'   Network: {NETWORK_ARCH}')
 print()
 
@@ -120,19 +103,19 @@ try:
     print(f'    - Daily capacity: {context.motos_daily_capacity} motos + {context.mototaxis_daily_capacity} mototaxis')
     print()
 
-    print('[2] CARGAR DATASET CITYLEARN V2 (COMPILADO)')
+    print('[2] CONTRUIR DATASET CITYLEARN V2')
     print('-' * 80)
 
-    # Dataset ya compilado en data/processed/citylearn/iquitos_ev_mall
-    processed_path = Path('data/processed/citylearn/iquitos_ev_mall')
-    if not processed_path.exists():
-        print(f'❌ ERROR: Dataset no encontrado en {processed_path}')
-        print('   Crea el dataset primero con: python build.py')
-        sys.exit(1)
+    from src.citylearnv2.dataset_builder.dataset_builder import build_citylearn_dataset
 
-    print(f'  ✓ Dataset precompilado: {processed_path}')
-    dataset_dir = processed_path
-    print(f'  OK Dataset: {dataset_dir}')
+    dataset = build_citylearn_dataset(
+        cfg=cfg,
+        _raw_dir=Path('data/raw'),
+        interim_dir=Path('data/interim/oe2'),
+        processed_dir=Path('data/processed')
+    )
+
+    print(f'  OK Dataset: {dataset.dataset_dir}')
     print()
 
     print('[3] CREAR ENVIRONMENT CON REWARD MULTIOBJETIVO REAL')
@@ -181,9 +164,8 @@ try:
                 # Cargar todas las columnas (excluir timestamp si es indice)
                 solar_cols = [c for c in df_solar.columns if c.lower() != 'timestamp']
                 self.solar_all_columns = df_solar[solar_cols].values  # (8760, 10)
-                self.solar_hourly_kw = df_solar['ac_power_kw'].to_numpy(dtype=np.float64, na_value=0.0)  # ac_power_kw en indice 6
-                solar_sum = float(np.sum(self.solar_hourly_kw))
-                print(f'    [OK] Solar: {solar_sum:.0f} kWh/anio')
+                self.solar_hourly_kw = df_solar['ac_power_kw'].values  # ac_power_kw en indice 6
+                print(f'    [OK] Solar: {self.solar_hourly_kw.sum():.0f} kWh/anio')
             except Exception as e:
                 print(f'    [ERROR] Solar: {e}')
                 self.solar_hourly_kw = None
@@ -209,14 +191,12 @@ try:
                 self.bess_real_data = pd.read_csv(bess_path)
                 # Usar columna de SOC
                 if 'soc_percent' in self.bess_real_data.columns:
-                    soc_values = self.bess_real_data['soc_percent'].to_numpy(dtype=np.float64, na_value=0.0)
-                    self.bess_soc_percent = soc_values / 100.0  # Convertir a [0,1]
+                    self.bess_soc_percent = self.bess_real_data['soc_percent'].values / 100.0  # Convertir a [0,1]
                 else:
                     # Fallback: usar primera columna numerica
                     numeric_cols = self.bess_real_data.select_dtypes(include=['float64', 'int64']).columns
                     if len(numeric_cols) > 0:
-                        soc_values = self.bess_real_data[numeric_cols[0]].to_numpy(dtype=np.float64, na_value=0.0)
-                        self.bess_soc_percent = soc_values / 100.0
+                        self.bess_soc_percent = self.bess_real_data[numeric_cols[0]].values / 100.0
                     else:
                         self.bess_soc_percent = None
                 if self.bess_soc_percent is not None:
@@ -234,16 +214,14 @@ try:
                 self.mall_real_data = pd.read_csv(mall_path, sep=';')
                 # Obtener ultima columna (contiene demanda en kWh)
                 demand_col = self.mall_real_data.columns[-1]
-                mall_demand_kwh = self.mall_real_data[demand_col].to_numpy(dtype=np.float64, na_value=0.0)
+                mall_demand_kwh = self.mall_real_data[demand_col].values
 
                 # SINCRONIZAR: si tiene 8785 horas, truncar a 8760 (1 anio completo)
                 if len(mall_demand_kwh) > 8760:
                     mall_demand_kwh = mall_demand_kwh[:8760]
-                    mall_sum = float(np.sum(mall_demand_kwh))
-                    print(f'    [OK] Mall: 8760 horas, {mall_sum:.0f} kWh/anio')
+                    print(f'    [OK] Mall: 8760 horas, {mall_demand_kwh.sum():.0f} kWh/anio')
                 else:
-                    mall_sum = float(np.sum(mall_demand_kwh))
-                    print(f'    [OK] Mall: {len(mall_demand_kwh)} horas, {mall_sum:.0f} kWh/anio')
+                    print(f'    [OK] Mall: {len(mall_demand_kwh)} horas, {mall_demand_kwh.sum():.0f} kWh/anio')
 
                 self.mall_hourly_kwh = mall_demand_kwh
             except Exception as e:
@@ -352,7 +330,7 @@ try:
 
             # === MONITOREO DE BATERIAS (128 SOCKETS) ===
             # Actualizar SOC de bateria por socket (demanda real * control agente)
-            charger_powers = (self.chargers_hourly_kw[hour_index] if self.chargers_hourly_kw is not None else np.ones(128)) * action[1:129]  # Potencia por socket [kW]
+            charger_powers = self.chargers_hourly_kw[hour_index] * action[1:129]  # Potencia por socket [kW]
             energy_charged = charger_powers * 1.0  # Energia en 1 hora [kWh]
             battery_soc_new = self.battery_soc_episode[hour_index] + (energy_charged / self.battery_capacity) * 100.0
             battery_soc_new = np.clip(battery_soc_new, 0, 100)  # Limitar [0-100]%
@@ -361,9 +339,7 @@ try:
             # Calcular estado de baterias
             battery_charge_needed = np.maximum(0, (100 - battery_soc_new) / 100.0 * self.battery_capacity)  # kWh faltante
             battery_charge_power = charger_powers  # kW actuales
-            # Usar epsilon para evitar division por cero (RuntimeWarning)
-            epsilon = 1e-8
-            battery_time_to_full = np.where(charger_powers > 0.1, (battery_charge_needed / np.maximum(charger_powers, epsilon)) * 60, 0)  # minutos
+            battery_time_to_full = np.where(charger_powers > 0.1, (battery_charge_needed / charger_powers) * 60, 0)  # minutos
             battery_plugged_in = (charger_powers > 0.5).astype(np.float32)  # 1.0 si conectado
 
             # EV Satisfaction: recompensa por baterias cargadas
@@ -489,24 +465,22 @@ try:
     from torch import nn as torch_nn
 
     sac_config: dict[str, Any] = {
-        'learning_rate': 1e-4,  # Reducido para estabilidad (SAC es sensible a LR)
-        'batch_size': 64,  # Reducido para evitar inestabilidad
-        'buffer_size': 100000,  # Reducido pero suficiente
-        'learning_starts': 500,  # Menos steps antes de entrenar
+        'learning_rate': 2e-4,  # OPCIÓN A: Reducido 33% (3e-4 → 2e-4) para GPU batch_size=128
+        'batch_size': BATCH_SIZE,  # Dinámico según GPU/CPU
+        'buffer_size': BUFFER_SIZE,  # Dinámico según GPU/CPU
+        'learning_starts': 1000,
         'train_freq': 1,
-        'gradient_steps': 1,  # 1 paso de gradiente por step
         'tau': 0.005,
         'gamma': 0.99,
-        'ent_coef': 'auto',  # Auto-tune entropy
+        'ent_coef': 'auto',
         'target_entropy': 'auto',
         'policy_kwargs': {
-            'net_arch': [128, 128],  # Red más pequeña para mayor estabilidad
+            'net_arch': NETWORK_ARCH,  # Dinámico según GPU/CPU
             'activation_fn': torch_nn.ReLU,
-            'log_std_init': -2.3,  # Log std inicial más bajo (menos varianza)
         },
-        'device': DEVICE,
+        'device': DEVICE,  # Usar GPU si disponible
         'verbose': 0,
-        'tensorboard_log': None,  # Desabilitar tensorboard
+        'tensorboard_log': None  # Desabilitar tensorboard si no está instalado
     }
 
     agent = SAC('MlpPolicy', env, **sac_config)
@@ -537,80 +511,24 @@ try:
 
             return True
 
-    class DiskSpaceCallback(BaseCallback):
-        """Monitorea espacio en disco y limpia checkpoints antiguos si es necesario"""
-        def __init__(self, min_free_gb: float = 50, check_freq: int = 5000):
-            super().__init__()
-            self.min_free_gb = min_free_gb
-            self.check_freq = check_freq
-
-        def _on_step(self) -> bool:
-            if self.num_timesteps % self.check_freq == 0:
-                import shutil
-                total, used, free = shutil.disk_usage('D:/')
-                free_gb = free / 1e9
-
-                if free_gb < self.min_free_gb:
-                    print(f'    ⚠️  ESPACIO BAJO ({free_gb:.1f} GB). Limpiando checkpoints antiguos...')
-
-                    # Limpiar checkpoints antiguos (mantener 3 recientes)
-                    from pathlib import Path
-                    checkpoint_dir = Path('checkpoints/SAC')
-                    if checkpoint_dir.exists():
-                        checkpoints = sorted(checkpoint_dir.glob('sac_checkpoint_*.zip'))
-                        for cp in checkpoints[:-3]:  # Mantener 3 más recientes
-                            try:
-                                cp.unlink()
-                                print(f'    🗑️  Eliminado: {cp.name}')
-                            except:
-                                pass
-
-            return True
-
     checkpoint_callback = CheckpointCallback(
-        save_freq=1000,  # Guardar cada 1000 pasos para resumir fácilmente
+        save_freq=50000,
         save_path=str(CHECKPOINT_DIR),
         name_prefix='sac_checkpoint',
-        save_replay_buffer=False  # DESACTIVADO: Ahorra ~2GB espacio en disco
+        save_replay_buffer=True
     )
 
     logging_callback = DetailedLoggingCallback(env)
-    disk_space_callback = DiskSpaceCallback(min_free_gb=50, check_freq=5000)
 
-    # ENTRENAMIENTO SAC EN GPU: 3 episodios con buffer optimizado (300k)
-    # Velocidad REAL CON GPU + buffer=300k + batch=128:
-    # - GPU speed: ~500-700 timesteps/seg (SAC off-policy con buffer grande)
-    # - 3 episodios × 8760 = 26,280 timesteps
-    # - 26,280 / 600 ≈ 44 segundos
-    EPISODES_TARGET = 3
-    TOTAL_TIMESTEPS = EPISODES_TARGET * 8760  # 26,280 timesteps
+    TOTAL_TIMESTEPS = 10000  # Entrenamiento real (10k timesteps = ~1-2 episodios completos)
 
-    # Velocidad dinámica según device
-    if DEVICE == 'cuda':
-        SPEED_OBSERVED = 600  # GPU RTX 4060 con buffer=300k (estimado)
-        DURATION_MINUTES = TOTAL_TIMESTEPS / SPEED_OBSERVED / 60
-        DURATION_TEXT = f'~{int(DURATION_MINUTES*60)} segundos (GPU RTX 4060)'
-    else:
-        SPEED_OBSERVED = 0.8  # CPU fallback
-        DURATION_MINUTES = TOTAL_TIMESTEPS / SPEED_OBSERVED / 60
-        DURATION_TEXT = f'~{int(DURATION_MINUTES/60)} horas (CPU fallback)'
-
-    print()
-    print('='*76)
-    print(f'  📊 CONFIGURACION ENTRENAMIENTO SAC')
-    print(f'     Episodios: {EPISODES_TARGET} × 8,760 timesteps = {TOTAL_TIMESTEPS:,} pasos')
-    print(f'     Device: {DEVICE.upper()}')
-    print(f'     Velocidad: ~{SPEED_OBSERVED:,} timesteps/segundo')
-    print(f'     Duración: {DURATION_TEXT}')
-    print(f'     Inicio: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
-    print(f'     Fin: {(datetime.now() + timedelta(minutes=DURATION_MINUTES)).strftime("%Y-%m-%d %H:%M:%S")}')
-    print('='*76)
-    print(f'  REWARD WEIGHTS (Multi-objetivo):')
-    print(f'    • CO2 grid (0.50): Minimizar importacion')
-    print(f'    • Solar (0.20): Autoconsumo PV')
-    print(f'    • Cost (0.15): Minimizar costo')
-    print(f'    • EV satisfaction (0.10): SOC 90%')
-    print(f'    • Grid stability (0.05): Suavizar picos')
+    print(f'  CONFIGURACION: {TOTAL_TIMESTEPS:,} timesteps')
+    print(f'  REWARD WEIGHTS:')
+    print(f'    CO2 grid (0.50): Minimizar importacion')
+    print(f'    Solar (0.20): Autoconsumo PV')
+    print(f'    Cost (0.15): Minimizar costo')
+    print(f'    EV satisfaction (0.10): SOC 90%')
+    print(f'    Grid stability (0.05): Suavizar picos')
     print()
     print('  ENTRENAMIENTO EN PROGRESO:')
     print('  ' + '-'*76)
@@ -619,7 +537,7 @@ try:
 
     agent.learn(
         total_timesteps=TOTAL_TIMESTEPS,
-        callback=[checkpoint_callback, logging_callback, disk_space_callback],
+        callback=[checkpoint_callback, logging_callback],
         progress_bar=False,
         log_interval=1000
     )
@@ -628,12 +546,11 @@ try:
 
     print()
     print('-'*76)
-    print(f'  ✓ RESULTADO ENTRENAMIENTO:')
-    print(f'    Tiempo: {elapsed/60:.1f} minutos ({elapsed:.0f} segundos)')
+    print(f'  RESULTADO ENTRENAMIENTO:')
+    print(f'    Tiempo: {elapsed:.2f} segundos ({elapsed/60:.2f} minutos)')
     print(f'    Timesteps ejecutados: {TOTAL_TIMESTEPS:,}')
-    print(f'    Velocidad real: {TOTAL_TIMESTEPS/elapsed:.0f} timesteps/segundo')
-    print(f'    Episodios completados: {EPISODES_TARGET}')
-    print(f'    Duración promedio: {elapsed / EPISODES_TARGET / 60:.1f} minutos/episodio')
+    print(f'    Velocidad: {TOTAL_TIMESTEPS/elapsed:.0f} timesteps/segundo')
+    print(f'    Episodios completados: {TOTAL_TIMESTEPS // 8760 + 1}')
     print()
 
     # Guardar modelo final
@@ -700,9 +617,7 @@ try:
         'timestamp': datetime.now().isoformat(),
         'total_timesteps': TOTAL_TIMESTEPS,
         'training_duration_seconds': elapsed,
-        'training_duration_hours': elapsed / 3600,
-        'episodes_trained': EPISODES_TARGET,
-        'avg_minutes_per_episode': elapsed / EPISODES_TARGET / 60,
+        'episodes_trained': TOTAL_TIMESTEPS // 8760,
         'validation_metrics': {
             'mean_reward': float(np.mean(val_metrics['rewards'])),
             'std_reward': float(np.std(val_metrics['rewards'])),
@@ -721,7 +636,7 @@ try:
         }
     }
 
-    metrics_file = OUTPUT_DIR / f'sac_training_metrics_{EPISODES_TARGET}episodes.json'
+    metrics_file = OUTPUT_DIR / 'sac_training_metrics.json'
     with open(metrics_file, 'w') as f:
         json.dump(summary, f, indent=2)
 
@@ -751,11 +666,7 @@ try:
         print(f'    Ahorro economico por ep       {mean_cost:>12.2f} USD')
         print(f'    Grid import reducido por ep   {mean_grid:>12.1f} kWh')
         print()
-        print(f'  ESTADISTICAS DE ENTRENAMIENTO:')
-        print(f'    Timesteps ejecutados: {TOTAL_TIMESTEPS:,}')
-        print(f'    Duración total: {summary.get("training_duration_hours", 0):.2f} horas')
-        print(f'    Episodios entrenados: {EPISODES_TARGET}')
-        print(f'    Duración promedio: {summary.get("avg_minutes_per_episode", 0):.1f} minutos/episodio')
+        print('  ESTADO: Entrenamiento exitoso. Validacion completada.')
         print()
         print('  OK ENTRENAMIENTO VALIDADO CORRECTAMENTE')
     else:
