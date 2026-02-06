@@ -1,0 +1,226 @@
+{
+  "root_directory": "D:\\dise\u00f1opvbesscar\\data\\interim\\oe3",
+  "episode_time_steps": 8760,
+  "time_step_minutes": 60,
+  "buildings": [
+    {
+      "name": "Iquitos_Mall",
+      "energy_simulation": {
+        "solar_generation": "D:\\dise\u00f1opvbesscar\\data\\interim\\oe3\\pv_generation_timeseries.csv",
+        "non_shiftable_load": "D:\\dise\u00f1opvbesscar\\data\\interim\\oe3\\mall_demand_hourly.csv"
+      },
+      "electrical_storage": {
+        "capacity": 4520,
+        "power_rating": 600
+      },
+      "controllable_charging": [
+        {
+          "name": "charger_0",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_1",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_2",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_3",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_4",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_5",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_6",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_7",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_8",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_9",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_10",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_11",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_12",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_13",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_14",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_15",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_16",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_17",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_18",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_19",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_20",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_21",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_22",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_23",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_24",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_25",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_26",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_27",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "moto_110cc"
+        },
+        {
+          "name": "charger_28",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "mototaxi_250cc"
+        },
+        {
+          "name": "charger_29",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "mototaxi_250cc"
+        },
+        {
+          "name": "charger_30",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "mototaxi_250cc"
+        },
+        {
+          "name": "charger_31",
+          "power_rating": 10.0,
+          "sockets": 4,
+          "vehicle_type": "mototaxi_250cc"
+        }
+      ]
+    }
+  ],
+  "co2_context": {
+    "region": "Iquitos",
+    "country": "Peru",
+    "co2_intensity_grid": 0.4521
+  },
+  "reward_weights": {
+    "co2_grid_minimization": 0.5,
+    "solar_self_consumption": 0.2,
+    "ev_charge_completion": 0.15,
+    "grid_stability": 0.1,
+    "cost_minimization": 0.05
+  },
+  "dataset_version": "OE3-v2.0",
+  "created_at": "2026-02-06T15:14:05.037738"
+}
