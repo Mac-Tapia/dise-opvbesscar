@@ -1,0 +1,3 @@
+baseline,description,timesteps,co2_intensity_grid,solar_capacity_kwp,grid_import_kwh,solar_generation_kwh,co2_grid_kg,co2_avoided_by_solar_kg,co2_net_kg
+CON_SOLAR,"Uncontrolled with 4,050 kWp solar (reference)",8760,0.4521,4050.0,711749.9999999999,7298475.286138371,321782.17499999993,3299640.676863157,-2977858.5018631574
+SIN_SOLAR,Uncontrolled without solar (0 kWp),8760,0.4521,0.0,1314000.0,0.0,594059.4,0.0,594059.4

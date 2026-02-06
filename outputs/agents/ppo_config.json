@@ -1,0 +1,104 @@
+{
+  "agent": "PPO",
+  "version": "2.0",
+  "description": "Proximal Policy Optimization with clipped objective and GAE",
+
+  "hyperparameters": {
+    "train_steps": 500000,
+    "n_steps": 2048,
+    "batch_size": 256,
+    "n_epochs": 10,
+    "learning_rate": 1e-4,
+    "lr_schedule": "linear",
+    "lr_final_ratio": 0.5
+  },
+
+  "ppo_specific": {
+    "gamma": 0.99,
+    "gae_lambda": 0.98,
+    "clip_range": 0.2,
+    "clip_range_vf": 0.5,
+    "normalize_advantage": true,
+    "max_grad_norm": 1.0
+  },
+
+  "losses": {
+    "ent_coef": 0.01,
+    "vf_coef": 0.5,
+    "use_huber_loss": true,
+    "huber_delta": 1.0
+  },
+
+  "entropy_schedule": {
+    "type": "exponential",
+    "initial_value": 0.01,
+    "final_value": 0.001,
+    "decay_rate": 0.999
+  },
+
+  "network": {
+    "hidden_sizes": [256, 256],
+    "activation": "relu",
+    "ortho_init": true
+  },
+
+  "normalization": {
+    "normalize_observations": true,
+    "normalize_rewards": true,
+    "reward_scale": 0.1,
+    "clip_obs": 5.0,
+    "clip_reward": 1.0
+  },
+
+  "advanced": {
+    "use_sde": true,
+    "sde_sample_freq": -1,
+    "target_kl": 0.02,
+    "kl_adaptive": true,
+    "kl_adaptive_down": 0.5,
+    "kl_adaptive_up": 1.05,
+    "kl_min_lr": 1e-6,
+    "kl_max_lr": 1e-3
+  },
+
+  "device": {
+    "type": "auto",
+    "use_amp": true,
+    "pin_memory": true,
+    "deterministic_cuda": false
+  },
+
+  "checkpoint": {
+    "save_dir": "outputs/checkpoints/PPO",
+    "save_frequency": 1000,
+    "save_final": true,
+    "resume_path": null
+  },
+
+  "logging": {
+    "verbose": 1,
+    "log_interval": 500,
+    "progress_path": "outputs/agents/ppo_progress.csv",
+    "progress_interval_episodes": 1
+  },
+
+  "reproducibility": {
+    "seed": 42,
+    "deterministic_cuda": false
+  },
+
+  "performance_targets": {
+    "expected_co2_reduction_percent": 29,
+    "expected_solar_utilization_percent": 68,
+    "expected_training_hours_rtx4060": 5
+  },
+
+  "best_practices": {
+    "on_policy": "Collect n_steps=2048 before each policy update",
+    "clipping": "Use clip_range=0.2 for stable updates",
+    "gae": "Generalized Advantage Estimation with lambda=0.98",
+    "entropy_decay": "Gradually reduce exploration as policy converges",
+    "adaptive_kl": "Adjust learning rate based on KL divergence",
+    "state_dependent_exploration": "Use SDE for exploration in action space"
+  }
+}
