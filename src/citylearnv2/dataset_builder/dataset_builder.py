@@ -1830,7 +1830,7 @@ def build_citylearn_dataset(
     # Permite a los agentes OE3 (SAC, PPO, A2C) acceder a:
     # - Factores CO₂ (0.4521 grid, 2.146 EV directo)
     # - Capacidad diaria EVs (1,800 motos + 260 mototaxis)
-    # - Pesos de recompensa multiobjetivo (CO₂=0.50, solar=0.20, cost=0.15, etc.)
+    # - Pesos de recompensa multiobjetivo (CO₂=0.35, solar=0.20, EV=0.30, cost=0.10, grid=0.05)
     # ==========================================================================
     artifacts = _load_oe2_artifacts(interim_dir)
 

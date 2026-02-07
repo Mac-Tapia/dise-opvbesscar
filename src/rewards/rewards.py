@@ -39,15 +39,15 @@ DEFINICIONES CRÍTICAS:
 
 4. REWARD FUNCTION DESIGN:
 
-   Componentes de recompensa (multiobjetivo):
-   - r_co2 (0.50 peso): Minimizar importación grid = maximizar PV directo
+   Componentes de recompensa (multiobjetivo) - ACTUALIZADO 2026-02-07:
+   - r_co2 (0.35 peso): Minimizar importación grid = maximizar PV directo
    - r_solar (0.20 peso): Bonus por autoconsumo solar
+   - r_ev (0.30 peso): Satisfacción de carga EV (PRIORIDAD MÁXIMA)
    - r_cost (0.10 peso): Minimizar costo (secundario, tarifa baja)
-   - r_ev (0.10 peso): Satisfacción de carga EV
-   - r_grid (0.10 peso): Estabilidad de red
+   - r_grid (0.05 peso): Estabilidad de red
 
    Cálculo simplificado:
-   r_total = 0.50 × r_co2 + 0.20 × r_solar + ...
+   r_total = 0.35 × r_co2 + 0.30 × r_ev + 0.20 × r_solar + 0.10 × r_cost + 0.05 × r_grid
    r_co2 = "reward por reducción indirecta" = f(solar_directo)
 
 5. VALORES DE REFERENCIA (OE2 Real):
@@ -118,7 +118,7 @@ class MultiObjectiveWeights:
     cost: float = 0.10             # REDUCIDO: tarifa baja, no es constraint [ERA 0.15]
     solar: float = 0.20            # SECUNDARIO: autoconsumo solar limpio
     ev_satisfaction: float = 0.30  # ✅ TRIPLICADO: MÁXIMA PRIORIDAD [ERA 0.10 → 0.30]
-    ev_utilization: float = 0.05   # Bonus por utilización máxima EVs (motos+mototaxis cargadas)
+    ev_utilization: float = 0.00   # Incluido en ev_satisfaction (2026-02-07)
     grid_stability: float = 0.05   # Matches: báseline de operación
     peak_import_penalty: float = 0.00  # Dinámico en compute(), no como peso fijo
     operational_penalties: float = 0.0  # Penalizaciones operacionales (BESS, EV fairness)

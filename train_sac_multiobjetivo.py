@@ -75,11 +75,11 @@ try:
     print('-' * 80, flush=True)
 
     OE2_FILES = {
-        'solar': Path('data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv'),
-        'chargers_hourly': Path('data/oe2/chargers/chargers_real_hourly_2024.csv'),
-        'chargers_stats': Path('data/oe2/chargers/chargers_real_statistics.csv'),
-        'bess': Path('data/oe2/bess/bess_hourly_dataset_2024.csv'),
-        'mall_demand': Path('data/oe2/demandamallkwh/demandamallhorakwh.csv'),
+        'solar': Path('data/interim/oe2/solar/pv_generation_citylearn_v2.csv'),
+        'chargers_hourly': Path('data/interim/oe2/chargers/chargers_real_hourly_2024.csv'),
+        'chargers_stats': Path('data/interim/oe2/chargers/chargers_real_statistics.csv'),
+        'bess': Path('data/interim/oe2/bess/bess_hourly_dataset_2024.csv'),
+        'mall_demand': Path('data/interim/oe2/demandamallkwh/demandamallhorakwh.csv'),
     }
 
     oe2_validation_ok = True
@@ -200,97 +200,113 @@ try:
             # CARGAR TODOS LOS DATOS REALES OE2 - NO APROXIMACIONES
             print('  [OE2] Cargando datasets reales...')
 
-            # 1. SOLAR PVGIS REAL - TODAS LAS 11 COLUMNAS
-            try:
-                solar_path = Path('data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv')
-                df_solar = pd.read_csv(solar_path)
-                # Cargar todas las columnas (excluir timestamp si es indice)
-                solar_cols = [c for c in df_solar.columns if c.lower() != 'timestamp']
-                self.solar_all_columns = np.array(df_solar[solar_cols].values)  # (8760, 10)
-                # Usar pv_generation_kwh (energía) - consistente con CityLearn v2
-                if 'pv_generation_kwh' in df_solar.columns:
-                    self.solar_hourly_kwh = np.array(df_solar['pv_generation_kwh'].values)
-                elif 'ac_energy_kwh' in df_solar.columns:
-                    self.solar_hourly_kwh = np.array(df_solar['ac_energy_kwh'].values)
+            # 1. SOLAR PVGIS REAL - OBLIGATORIO (sin fallback)
+            solar_path = Path('data/interim/oe2/solar/pv_generation_citylearn_v2.csv')
+            if not solar_path.exists():
+                raise FileNotFoundError(f"OBLIGATORIO: {solar_path} no encontrado - ejecutar generación OE2 primero")
+            
+            df_solar = pd.read_csv(solar_path)
+            # Cargar todas las columnas (excluir timestamp si es indice)
+            solar_cols = [c for c in df_solar.columns if c.lower() != 'timestamp']
+            self.solar_all_columns = np.array(df_solar[solar_cols].values)  # (8760, 10)
+            # Usar pv_generation_kwh (energía) - consistente con CityLearn v2
+            if 'pv_generation_kwh' in df_solar.columns:
+                self.solar_hourly_kwh = np.array(df_solar['pv_generation_kwh'].values)
+            elif 'ac_energy_kwh' in df_solar.columns:
+                self.solar_hourly_kwh = np.array(df_solar['ac_energy_kwh'].values)
+            elif 'ac_power_kw' in df_solar.columns:
+                self.solar_hourly_kwh = np.array(df_solar['ac_power_kw'].values)
+            else:
+                raise KeyError(f"Solar CSV debe tener 'pv_generation_kwh', 'ac_energy_kwh' o 'ac_power_kw'. Columnas: {list(df_solar.columns)}")
+            print(f'    [OK] Solar REAL: {float(np.sum(self.solar_hourly_kwh)):.0f} kWh/año')
+
+            # 2. CHARGERS REAL - 128 SOCKETS - OBLIGATORIO (sin fallback)
+            chargers_path = Path('data/interim/oe2/chargers/chargers_real_hourly_2024.csv')
+            if not chargers_path.exists():
+                raise FileNotFoundError(f"OBLIGATORIO: {chargers_path} no encontrado - ejecutar generación OE2 primero")
+            
+            self.chargers_real_data = pd.read_csv(chargers_path)
+            # Extraer columnas de sockets (excluir timestamp)
+            socket_cols = [c for c in self.chargers_real_data.columns if 'SOCKET' in c or 'MOTO' in c]
+            if not socket_cols:
+                # Intentar columnas genéricas si no hay SOCKET/MOTO
+                socket_cols = [c for c in self.chargers_real_data.columns if 'timestamp' not in c.lower()]
+            if not socket_cols:
+                raise KeyError(f"Chargers CSV debe tener columnas de sockets. Columnas: {list(self.chargers_real_data.columns)}")
+            
+            self.chargers_hourly_kw = np.array(self.chargers_real_data[socket_cols].values)  # (8760, 128)
+            self.chargers_total_kwh = float(self.chargers_real_data[socket_cols].sum().sum())
+            print(f'    [OK] Chargers REAL: {len(socket_cols)} sockets, {self.chargers_total_kwh:.0f} kWh/año')
+
+            # 3. BESS REAL - STATE OF CHARGE - OBLIGATORIO (sin fallback)
+            bess_path = Path('data/interim/oe2/bess/bess_hourly_dataset_2024.csv')
+            if not bess_path.exists():
+                raise FileNotFoundError(f"OBLIGATORIO: {bess_path} no encontrado - ejecutar generación OE2 primero")
+            
+            self.bess_real_data = pd.read_csv(bess_path)
+            # Usar columna de SOC
+            if 'soc_percent' in self.bess_real_data.columns:
+                self.bess_soc_percent = np.array(self.bess_real_data['soc_percent'].values, dtype=np.float32) / 100.0  # Convertir a [0,1]
+            else:
+                # Buscar primera columna numérica con 'soc' en el nombre
+                soc_cols = [c for c in self.bess_real_data.columns if 'soc' in c.lower()]
+                if soc_cols:
+                    soc_raw = np.array(self.bess_real_data[soc_cols[0]].values, dtype=np.float32)
+                    self.bess_soc_percent = soc_raw / 100.0 if float(np.max(soc_raw)) > 1.0 else soc_raw
                 else:
-                    # Fallback a potencia (para datos horarios kW ≈ kWh)
-                    self.solar_hourly_kwh = np.array(df_solar['ac_power_kw'].values)
-                print(f'    [OK] Solar: {float(np.sum(self.solar_hourly_kwh)):.0f} kWh/anio')
-            except (FileNotFoundError, KeyError, ValueError) as e:
-                print(f'    [ERROR] Solar: {e}')
-                self.solar_hourly_kwh = np.zeros(8760, dtype=np.float32)  # Fallback
-                # Fallback: crear array de ceros con forma correcta (8760, 10)
-                self.solar_all_columns = np.zeros((8760, 10), dtype=np.float32)
+                    raise KeyError(f"BESS CSV debe tener columna 'soc_percent' o similar. Columnas: {list(self.bess_real_data.columns)}")
+            
+            # Flujos de energía reales del BESS (columnas CityLearn v2) - opcionales, con default a 0
+            self.pv_to_ev_kwh = np.array(self.bess_real_data['pv_to_ev_kwh'].values) if 'pv_to_ev_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
+            self.pv_to_bess_kwh = np.array(self.bess_real_data['pv_to_bess_kwh'].values) if 'pv_to_bess_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
+            self.grid_to_ev_kwh = np.array(self.bess_real_data['grid_to_ev_kwh'].values) if 'grid_to_ev_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
+            self.grid_to_mall_kwh = np.array(self.bess_real_data['grid_to_mall_kwh'].values) if 'grid_to_mall_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
+            self.bess_charge_kwh = np.array(self.bess_real_data['bess_charge_kwh'].values) if 'bess_charge_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
+            self.bess_discharge_kwh = np.array(self.bess_real_data['bess_discharge_kwh'].values) if 'bess_discharge_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
+            pv_ev_total = float(np.sum(self.pv_to_ev_kwh))
+            grid_ev_total = float(np.sum(self.grid_to_ev_kwh))
+            print(f'    [OK] BESS REAL: {len(self.bess_soc_percent)} horas, SOC media {float(np.mean(self.bess_soc_percent))*100:.1f}%')
+            print(f'       Flujos: pv_to_ev={pv_ev_total:.0f}kWh, grid_to_ev={grid_ev_total:.0f}kWh')
 
-            # 2. CHARGERS REAL - 128 SOCKETS
-            try:
-                chargers_path = Path('data/oe2/chargers/chargers_real_hourly_2024.csv')
-                self.chargers_real_data = pd.read_csv(chargers_path)
-                # Extraer columnas de sockets (excluir timestamp)
-                socket_cols = [c for c in self.chargers_real_data.columns if 'SOCKET' in c or 'MOTO' in c]
-                self.chargers_hourly_kw = np.array(self.chargers_real_data[socket_cols].values)  # (8760, 128)
-                self.chargers_total_kwh = float(self.chargers_real_data[socket_cols].sum().sum())
-                print(f'    [OK] Chargers: 128 sockets, {self.chargers_total_kwh:.0f} kWh/anio')
-            except (FileNotFoundError, KeyError, ValueError) as e:
-                print(f'    [ERROR] Chargers: {e}')
-                self.chargers_hourly_kw = np.zeros((8760, 128), dtype=np.float32)
+            # 4. DEMANDA MALL REAL - OBLIGATORIO (sin fallback)
+            mall_path = Path('data/interim/oe2/demandamallkwh/demandamallhorakwh.csv')
+            if not mall_path.exists():
+                raise FileNotFoundError(f"OBLIGATORIO: {mall_path} no encontrado - ejecutar generación OE2 primero")
+            
+            self.mall_real_data = pd.read_csv(mall_path, sep=';')
+            # Obtener ultima columna (contiene demanda en kWh)
+            demand_col = self.mall_real_data.columns[-1]
+            mall_demand_kwh = self.mall_real_data[demand_col].values
 
-            # 3. BESS REAL - STATE OF CHARGE
-            try:
-                bess_path = Path('data/oe2/bess/bess_hourly_dataset_2024.csv')
-                self.bess_real_data = pd.read_csv(bess_path)
-                # Usar columna de SOC
-                if 'soc_percent' in self.bess_real_data.columns:
-                    self.bess_soc_percent = np.array(self.bess_real_data['soc_percent'].values, dtype=np.float32) / 100.0  # Convertir a [0,1]
+            # SINCRONIZAR: si tiene más de 8760 horas, truncar a 8760 (1 año completo)
+            mall_demand_kwh = np.array(mall_demand_kwh, dtype=np.float32)
+            if len(mall_demand_kwh) > 8760:
+                mall_demand_kwh = mall_demand_kwh[:8760]
+            elif len(mall_demand_kwh) < 8760:
+                raise ValueError(f"Mall: {len(mall_demand_kwh)} horas < 8760 requeridas")
+            
+            print(f'    [OK] Mall REAL: 8760 horas, {np.sum(mall_demand_kwh):.0f} kWh/año, media {np.mean(mall_demand_kwh):.1f} kW')
+            self.mall_hourly_kwh = mall_demand_kwh
+
+            # 5. CHARGER STATISTICS (5to dataset OE2) - potencia máxima/media por socket
+            charger_stats_path = Path('data/interim/oe2/chargers/chargers_real_statistics.csv')
+            if charger_stats_path.exists():
+                df_stats = pd.read_csv(charger_stats_path)
+                if len(df_stats) >= 128:
+                    self.charger_max_power_kw = np.array(df_stats['max_power_kw'].values[:128], dtype=np.float32)
+                    self.charger_mean_power_kw = np.array(df_stats['mean_power_kw'].values[:128], dtype=np.float32)
+                    min_pwr = float(np.min(self.charger_max_power_kw))
+                    max_pwr = float(np.max(self.charger_max_power_kw))
+                    mean_pwr = float(np.mean(self.charger_mean_power_kw))
+                    print(f'    [OK] Charger STATS (5to OE2): max_power={min_pwr:.2f}-{max_pwr:.2f} kW, mean={mean_pwr:.2f} kW')
                 else:
-                    # Fallback: usar primera columna numerica
-                    numeric_cols = self.bess_real_data.select_dtypes(include=['float64', 'int64']).columns
-                    if len(numeric_cols) > 0:
-                        self.bess_soc_percent = np.array(self.bess_real_data[numeric_cols[0]].values, dtype=np.float32) / 100.0
-                    else:
-                        self.bess_soc_percent = np.full(8760, 0.5, dtype=np.float32)  # Fallback 50%
-                        print('    [WARN] BESS: No hay columna SOC, usando fallback 50%')
-                # Flujos de energía reales del BESS (columnas CityLearn v2)
-                self.pv_to_ev_kwh = np.array(self.bess_real_data['pv_to_ev_kwh'].values) if 'pv_to_ev_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
-                self.pv_to_bess_kwh = np.array(self.bess_real_data['pv_to_bess_kwh'].values) if 'pv_to_bess_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
-                self.grid_to_ev_kwh = np.array(self.bess_real_data['grid_to_ev_kwh'].values) if 'grid_to_ev_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
-                self.grid_to_mall_kwh = np.array(self.bess_real_data['grid_to_mall_kwh'].values) if 'grid_to_mall_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
-                self.bess_charge_kwh = np.array(self.bess_real_data['bess_charge_kwh'].values) if 'bess_charge_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
-                self.bess_discharge_kwh = np.array(self.bess_real_data['bess_discharge_kwh'].values) if 'bess_discharge_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
-                pv_ev_total = float(np.sum(self.pv_to_ev_kwh))
-                grid_ev_total = float(np.sum(self.grid_to_ev_kwh))
-                print(f'    [OK] BESS: {len(self.bess_soc_percent)} horas')
-                print(f'       Flujos: pv_to_ev={pv_ev_total:.0f}kWh, grid_to_ev={grid_ev_total:.0f}kWh')
-            except (FileNotFoundError, KeyError, ValueError) as e:
-                print(f'    [ERROR] BESS: {e}')
-                self.bess_soc_percent = np.full(8760, 0.5, dtype=np.float32)  # Fallback 50%
-                self.pv_to_ev_kwh = np.zeros(8760)
-                self.pv_to_bess_kwh = np.zeros(8760)
-                self.grid_to_ev_kwh = np.zeros(8760)
-                self.grid_to_mall_kwh = np.zeros(8760)
-                self.bess_charge_kwh = np.zeros(8760)
-                self.bess_discharge_kwh = np.zeros(8760)
-
-            # 4. DEMANDA MALL REAL - SINCRONIZAR A 8760 HORAS
-            try:
-                mall_path = Path('data/oe2/demandamallkwh/demandamallhorakwh.csv')
-                self.mall_real_data = pd.read_csv(mall_path, sep=';')
-                # Obtener ultima columna (contiene demanda en kWh)
-                demand_col = self.mall_real_data.columns[-1]
-                mall_demand_kwh = self.mall_real_data[demand_col].values
-
-                # SINCRONIZAR: si tiene 8785 horas, truncar a 8760 (1 anio completo)
-                mall_demand_kwh = np.array(mall_demand_kwh, dtype=np.float32)
-                if len(mall_demand_kwh) > 8760:
-                    mall_demand_kwh = mall_demand_kwh[:8760]
-                    print(f'    [OK] Mall: 8760 horas, {np.sum(mall_demand_kwh):.0f} kWh/anio')
-                else:
-                    print(f'    [OK] Mall: {len(mall_demand_kwh)} horas, {np.sum(mall_demand_kwh):.0f} kWh/anio')
-
-                self.mall_hourly_kwh = mall_demand_kwh
-            except (FileNotFoundError, KeyError, ValueError) as e:
-                print(f'    [ERROR] Mall: {e}')
-                self.mall_hourly_kwh = np.zeros(8760, dtype=np.float32)  # Fallback
+                    print(f'    [WARN] Charger STATS: {len(df_stats)} filas < 128, usando valores por defecto')
+                    self.charger_max_power_kw = np.full(128, 2.5, dtype=np.float32)
+                    self.charger_mean_power_kw = np.full(128, 0.89, dtype=np.float32)
+            else:
+                print('    [WARN] Charger STATS: archivo no encontrado, usando valores por defecto')
+                self.charger_max_power_kw = np.full(128, 2.5, dtype=np.float32)
+                self.charger_mean_power_kw = np.full(128, 0.89, dtype=np.float32)
 
             # ========== INICIALIZAR MONITOREO DE BATERIAS (128 SOCKETS) ==========
             # Distribución correcta según IquitosContext:
@@ -463,9 +479,12 @@ try:
 
             # 2. CHARGERS REAL - 128 SOCKETS (DEMANDA REAL POR SOCKET)
             # chargers_hourly_kw es (8760 horas, 128 sockets)
-            # Multiplicación elemento-a-elemento: demanda real * setpoint agente
+            # Usar max_power real de cada socket (del 5to dataset OE2)
+            # para escalar setpoints a potencia efectiva
             charger_action = action[1:129]  # Control [0,1] para 128 sockets
-            ev_charging_kwh = float(np.sum(self.chargers_hourly_kw[hour_index] * charger_action))
+            charger_power_effective = charger_action * self.charger_max_power_kw  # Potencia máxima escalada
+            charger_demand = self.chargers_hourly_kw[hour_index]
+            ev_charging_kwh = float(np.sum(np.minimum(charger_power_effective, charger_demand)))
 
             # 3. BESS REAL - State of Charge actual (50-100%, media 90.5%)
             bess_soc = float(self.bess_soc_percent[hour_index])
@@ -1145,6 +1164,39 @@ try:
             'motos_daily': context.motos_daily_capacity,
             'mototaxis_daily': context.mototaxis_daily_capacity,
         },
+        # ✅ NUEVAS SECCIONES DE MÉTRICAS (SINCRONIZADO CON A2C)
+        'summary_metrics': {
+            'total_co2_grid_kg': float(sum(logging_callback.episode_co2_grid)),
+            'total_co2_avoided_indirect_kg': float(sum(logging_callback.episode_co2_avoided_indirect)),
+            'total_co2_avoided_direct_kg': float(sum(logging_callback.episode_co2_avoided_direct)),
+            'total_co2_avoided_kg': float(sum(logging_callback.episode_co2_avoided_indirect) + sum(logging_callback.episode_co2_avoided_direct)),
+            'total_cost_usd': float(sum(logging_callback.episode_cost_usd)) if logging_callback.episode_cost_usd else 0.0,
+            'avg_grid_stability': float(np.mean(logging_callback.episode_r_grid)) if logging_callback.episode_r_grid else 0.0,
+            'max_motos_charged': int(max(logging_callback.episode_motos)) if logging_callback.episode_motos else 0,
+            'max_mototaxis_charged': int(max(logging_callback.episode_mototaxis)) if logging_callback.episode_mototaxis else 0,
+            'avg_bess_soc': float(np.mean(logging_callback.episode_bess_soc_avg)) if logging_callback.episode_bess_soc_avg else 0.0,
+            'avg_ev_soc': float(np.mean(logging_callback.episode_ev_soc_avg)) if logging_callback.episode_ev_soc_avg else 0.0,
+        },
+        'reward_components_avg': {
+            'r_solar': float(np.mean(logging_callback.episode_r_solar)) if logging_callback.episode_r_solar else 0.0,
+            'r_cost': float(np.mean(logging_callback.episode_r_cost)) if logging_callback.episode_r_cost else 0.0,
+            'r_ev': float(np.mean(logging_callback.episode_r_ev)) if logging_callback.episode_r_ev else 0.0,
+            'r_grid': float(np.mean(logging_callback.episode_r_grid)) if logging_callback.episode_r_grid else 0.0,
+            '_weights_description': 'CO2=0.35, Solar=0.20, EV=0.30, Cost=0.10, Grid=0.05',
+        },
+        'vehicle_charging': {
+            'motos_total': 112,
+            'mototaxis_total': 16,
+            'motos_per_episode': logging_callback.episode_motos,
+            'mototaxis_per_episode': logging_callback.episode_mototaxis,
+            'description': 'Conteo vehiculo-horas por episodio',
+        },
+        'control_progress': {
+            'bess_soc_evolution': logging_callback.episode_bess_soc_avg,
+            'ev_soc_evolution': logging_callback.episode_ev_soc_avg,
+            'cost_savings_evolution': logging_callback.episode_cost_savings,
+            'description': 'Evolución del aprendizaje de control por episodio',
+        },
         'training_evolution': {
             'episode_rewards': logging_callback.episode_rewards,
             'episode_co2_grid': logging_callback.episode_co2_grid,
@@ -1153,6 +1205,7 @@ try:
             'episode_solar_kwh': logging_callback.episode_solar_kwh,
             'episode_ev_charging': logging_callback.episode_ev_charging,
             'episode_grid_import': logging_callback.episode_grid_import,
+            'episode_cost_usd': logging_callback.episode_cost_usd,
         }
     }
 
@@ -1206,14 +1259,47 @@ try:
         mean_grid = validation_metrics.get("mean_grid_import_kwh", 0.0)
 
         print()
-        print('  PARAMETROS CALCULADOS:')
+        print('  ➤ MÉTRICAS DE RECOMPENSA:')
         print(f'    Reward promedio               {mean_reward:>12.4f} puntos')
-        print(f'    CO2 evitado por episodio      {mean_co2:>12.1f} kg')
-        print(f'    Solar aprovechada por ep      {mean_solar:>12.1f} kWh')
-        print(f'    Ahorro economico por ep       {mean_cost:>12.2f} USD')
-        print(f'    Grid import reducido por ep   {mean_grid:>12.1f} kWh')
         print()
-        print('  ESTADO: Entrenamiento exitoso. Validacion completada.')
+        print('  ➤ REDUCCIÓN CO2 (kg):')
+        total_indirect = float(sum(logging_callback.episode_co2_avoided_indirect))
+        total_direct = float(sum(logging_callback.episode_co2_avoided_direct))
+        total_grid = float(sum(logging_callback.episode_co2_grid))
+        print(f'    CO2 Grid (emitido)            {total_grid:>12.1f} kg')
+        print(f'    Reducción INDIRECTA (solar)   {total_indirect:>12.1f} kg')
+        print(f'    Reducción DIRECTA (EVs)       {total_direct:>12.1f} kg')
+        print(f'    Reducción TOTAL               {total_indirect + total_direct:>12.1f} kg')
+        co2_net = total_grid - (total_indirect + total_direct)
+        print(f'    CO2 NETO                      {co2_net:>12.1f} kg')
+        print()
+        print('  ➤ VEHÍCULOS CARGADOS (máximo por episodio):')
+        max_motos = max(logging_callback.episode_motos) if logging_callback.episode_motos else 0
+        max_mototaxis = max(logging_callback.episode_mototaxis) if logging_callback.episode_mototaxis else 0
+        print(f'    Motos (de 112)                {max_motos:>12,} veh-horas')
+        print(f'    Mototaxis (de 16)             {max_mototaxis:>12,} veh-horas')
+        print()
+        print('  ➤ ESTABILIDAD DE RED:')
+        avg_r_grid = np.mean(logging_callback.episode_r_grid) if logging_callback.episode_r_grid else 0.0
+        print(f'    Componente r_grid promedio    {avg_r_grid:>12.4f}')
+        print(f'    Grid import promedio/ep       {mean_grid:>12.1f} kWh')
+        print()
+        print('  ➤ AHORRO ECONÓMICO:')
+        total_cost = sum(logging_callback.episode_cost_usd) if logging_callback.episode_cost_usd else 0.0
+        total_savings = sum(logging_callback.episode_cost_savings) if logging_callback.episode_cost_savings else 0.0
+        print(f'    Costo total (10 episodios)    ${total_cost:>11.2f} USD')
+        print(f'    Ahorro desde baseline         ${total_savings:>11.2f} USD')
+        print()
+        print('  ➤ CONTROL BESS + EV:')
+        avg_bess_soc = np.mean(logging_callback.episode_bess_soc_avg) if logging_callback.episode_bess_soc_avg else 0.0
+        avg_ev_soc = np.mean(logging_callback.episode_ev_soc_avg) if logging_callback.episode_ev_soc_avg else 0.0
+        print(f'    BESS SOC Promedio             {avg_bess_soc:>12.1f}%')
+        print(f'    EV SOC Promedio               {avg_ev_soc:>12.1f}%')
+        print()
+        print('  ➤ SOLAR:')
+        print(f'    Solar aprovechada por ep      {mean_solar:>12.1f} kWh')
+        print()
+        print('  ESTADO: Entrenamiento SAC exitoso. Validacion completada.')
         print()
         print('  OK ENTRENAMIENTO VALIDADO CORRECTAMENTE')
     else:

@@ -166,7 +166,11 @@ class EnergyDispatcher:
         self,
         balance: EnergyBalance,
         ev_states: List[EVChargeState],
-        co2_weight: float = 0.50,
+        co2_weight: float = 0.35,
+        solar_weight: float = 0.20,
+        ev_weight: float = 0.30,
+        cost_weight: float = 0.10,
+        grid_weight: float = 0.05,
     ) -> DispatchDecision:
         """
         Ejecutar despacho de energía para un timestep.
@@ -174,10 +178,17 @@ class EnergyDispatcher:
         Args:
             balance: Estado energético actual
             ev_states: Estados de todos los EVs
-            co2_weight: Peso de CO₂ en decisiones (0.50 = máxima prioridad)
+            co2_weight: Peso de CO2 en decisiones (0.35 = prioridad, actualizado 2026-02-07)
+            solar_weight: Peso de autoconsumo solar (0.20)
+            ev_weight: Peso de satisfaccion EV (0.30 = MAXIMA PRIORIDAD)
+            cost_weight: Peso de minimizacion costo (0.10)
+            grid_weight: Peso de estabilidad grid (0.05)
 
         Returns:
             DispatchDecision con detalles del despacho
+        
+        Note:
+            Los pesos deben sumar 1.0 (sincronizados con rewards.py co2_focus)
         """
         decision = DispatchDecision()
 

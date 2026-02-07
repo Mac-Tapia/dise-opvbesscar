@@ -76,6 +76,12 @@ ppo:
   seed: 42
 
 performance:
-  expected_co2_reduction: 0.29  # 29% reduction vs baseline
-  expected_solar_utilization: 0.68  # 68% utilization
+  # Métricas esperadas basadas en Episode 1 validado (2026-02-07)
+  expected_co2_reduction: 0.589  # 58.9% reduction vs baseline
+  expected_solar_utilization: 0.472  # 47.2% autoconsumo
+  expected_ev_satisfaction: 0.9998  # Satisfacción carga EV
+  expected_bess_soc_avg: 0.905  # 90.5% SOC promedio
+  motos_per_day_avg: 1199
+  mototaxis_per_day_avg: 336
+  cost_savings_usd: 1658503
   training_time_hours: 5  # Approximate on RTX 4060

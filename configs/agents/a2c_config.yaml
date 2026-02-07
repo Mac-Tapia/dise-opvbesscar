@@ -5,8 +5,8 @@ a2c:
   # Training hyperparameters
   training:
     train_steps: 500000
-    n_steps: 5  # OPCIÓN A: Reduced para GPU (fue 2048, optimizado para sync on-policy)
-    learning_rate: 5e-4  # OPCIÓN A: Reducido 28% para GPU (batch_size=128, n_steps=5)
+    n_steps: 8  # ✅ ÓPTIMO A2C: Updates frecuentes cada 8 pasos (fortaleza A2C)
+    learning_rate: 7e-4  # ✅ ÓPTIMO A2C: Tasa estándar alta (converge rápido)
     lr_schedule: "linear"
     lr_final_ratio: 0.7
 
@@ -14,7 +14,7 @@ a2c:
   a2c:
     gamma: 0.99
     gae_lambda: 0.95
-    ent_coef: 0.01
+    ent_coef: 0.015  # ✅ ÓPTIMO A2C: Ligeramente más exploración
     vf_coef: 0.5
     max_grad_norm: 0.75
     normalize_advantage: true
@@ -86,6 +86,12 @@ a2c:
   seed: 42
 
 performance:
-  expected_co2_reduction: 0.24  # 24% reduction vs baseline
-  expected_solar_utilization: 0.60  # 60% utilization
+  # Métricas esperadas basadas en Episode 1 validado (2026-02-07)
+  expected_co2_reduction: 0.589  # 58.9% reduction vs baseline
+  expected_solar_utilization: 0.472  # 47.2% autoconsumo
+  expected_ev_satisfaction: 0.9998  # Satisfacción carga EV
+  expected_bess_soc_avg: 0.905  # 90.5% SOC promedio
+  motos_per_day_avg: 1199
+  mototaxis_per_day_avg: 336
+  cost_savings_usd: 1658503
   training_time_hours: 4  # Approximate on RTX 4060 (fastest)

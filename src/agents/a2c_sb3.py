@@ -51,12 +51,12 @@ class A2CConfig:
     """
     # Hiperparámetros de entrenamiento - A2C OPTIMIZADO PARA RTX 4060
     train_steps: int = 500000  # ↓ REDUCIDO: 1M→500k (GPU limitada)
-    n_steps: int = 2048         # ✅ CORREGIDO: 32→2,048 (ver año completo en updates)
-    learning_rate: float = 1e-4    # ↓ CRITICAMENTE REDUCIDO: 3e-4→1e-4 (previene explosión)
+    n_steps: int = 8            # ✅ ÓPTIMO A2C: Updates frecuentes cada 8 pasos (fortaleza A2C)
+    learning_rate: float = 7e-4 # ✅ ÓPTIMO A2C: Tasa estándar alta (converge rápido)
     lr_schedule: str = "linear"    # ✅ Decay automático
     gamma: float = 0.99            # ↓ REDUCIDO: 0.999→0.99 (simplifica)
     gae_lambda: float = 0.95       # ✅ OPTIMIZADO: 0.85→0.95 (captura deps a largo plazo)
-    ent_coef: float = 0.01         # ✅ OPTIMIZADO: 0.001→0.01 (exploración adecuada)
+    ent_coef: float = 0.015        # ✅ ÓPTIMO A2C: Ligeramente más exploración
     vf_coef: float = 0.5           # ✅ OPTIMIZADO: 0.3→0.5 (value function más importante)
     max_grad_norm: float = 0.75    # 🔴 DIFERENCIADO A2C: 0.75 (vs SAC 10.0, PPO 1.0)
                                    #   A2C on-policy simple: ultra-prudente, prone a exploding gradients
@@ -84,8 +84,8 @@ class A2CConfig:
 
     # === SEPARATE ACTOR-CRITIC LEARNING RATES (NEW COMPONENT #1) ===
     # A2C paper original usa RMSprop con igual LR, pero best practice es tuning independiente
-    actor_learning_rate: float = 1e-4      # Actor network learning rate
-    critic_learning_rate: float = 1e-4     # Critic network learning rate (típicamente igual)
+    actor_learning_rate: float = 7e-4      # Actor network learning rate (✅ ÓPTIMO A2C)
+    critic_learning_rate: float = 7e-4     # Critic network learning rate (típicamente igual)
     actor_lr_schedule: str = "linear"      # "constant" o "linear" decay
     critic_lr_schedule: str = "linear"     # "constant" o "linear" decay
     actor_lr_final_ratio: float = 0.7      # 🔴 DIFERENCIADO: 0.7 (NO 0.1 SAC, 7× menos agresivo)

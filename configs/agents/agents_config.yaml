@@ -24,15 +24,14 @@ environment:
   episode_length: 8760  # 1 year in hours
   time_step_minutes: 60
 
-# Reward weights (2026-02-05 - UPDATED)
+# Reward weights (2026-02-06 - SYNCHRONIZED)
 reward_weights:
-  co2_grid_minimization: 0.35  # Reduced from 0.50
-  solar_self_consumption: 0.20  # Maintained
-  ev_satisfaction: 0.30  # TRIPLICADO from 0.10 ⭐
-  cost_minimization: 0.10  # Reduced from 0.15
-  grid_stability: 0.05  # Maintained
-  ev_utilization: 0.05  # Added
-  total: 1.00
+  co2_grid_minimization: 0.35  # Primary: CO₂ minimization
+  solar_self_consumption: 0.20  # Secondary: Solar utilization
+  ev_satisfaction: 0.30  # Tertiary: EV charge completion
+  cost_minimization: 0.10  # Tertiary: Cost optimization
+  grid_stability: 0.05  # Tertiary: Grid smoothing
+  total: 1.00  # VERIFIED: 0.35+0.20+0.30+0.10+0.05=1.00
 
 # Infrastructure
 infrastructure:
