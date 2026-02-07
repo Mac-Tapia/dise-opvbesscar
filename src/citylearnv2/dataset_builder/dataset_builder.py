@@ -601,10 +601,10 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
     # Cargar pesos de recompensa multiobjetivo
     if REWARDS_AVAILABLE:
         try:
-            reward_weights = create_iquitos_reward_weights(priority="balanced")
+            reward_weights = create_iquitos_reward_weights(priority="co2_focus")
             artifacts["reward_weights"] = reward_weights
-            logger.info("[REWARDS] ✅ Created reward weights: CO₂=%.2f, solar=%.2f, cost=%.2f",
-                       reward_weights.co2, reward_weights.solar, reward_weights.cost)
+            logger.info("[REWARDS] ✅ Created reward weights: CO₂=%.2f, solar=%.2f, EV satisfaction=%.2f, cost=%.2f, grid_stability=%.2f",
+                       reward_weights.co2, reward_weights.solar, reward_weights.ev_satisfaction, reward_weights.cost, reward_weights.grid_stability)
         except Exception as e:
             logger.error("[REWARDS] Failed to create reward weights: %s", e)
 
