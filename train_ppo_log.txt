@@ -296,3 +296,15 @@
 2026-02-07 10:23:41,214 | __main__ | INFO |   Action: (129,)
 2026-02-07 10:23:41,214 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
 2026-02-07 10:23:42,431 | __main__ | INFO | PPO creado: LR=0.0003, n_steps=2048, device=cuda
+2026-02-07 10:31:33,325 | __main__ | INFO | Device: cuda | Batch: 256 | Epochs: 20
+2026-02-07 10:31:33,346 | __main__ | INFO | Config validado: default.yaml OK
+2026-02-07 10:31:33,354 | __main__ | INFO | Solar REAL (CityLearn v2): columna='pv_generation_kwh' | 8292514 kWh/ano (8760h)
+2026-02-07 10:31:33,472 | __main__ | INFO | Chargers REALES (128 sockets directos): 128 sockets | Demanda anual: 1024818 kWh
+2026-02-07 10:31:33,474 | __main__ | INFO | Charger STATS (5to OE2): max_power=2.45-3.03 kW, mean_power=0.91 kW
+2026-02-07 10:31:33,478 | __main__ | INFO | Mall REAL: 12368653 kWh/año (promedio 1411.9 kW/h)
+2026-02-07 10:31:33,487 | __main__ | INFO | BESS REAL: SOC media 90.5% (archivo: bess_hourly_dataset_2024.csv)
+2026-02-07 10:31:33,488 | __main__ | INFO | Environment creado:
+2026-02-07 10:31:33,488 | __main__ | INFO |   Observation: (394,)
+2026-02-07 10:31:33,488 | __main__ | INFO |   Action: (129,)
+2026-02-07 10:31:33,488 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-07 10:31:34,141 | __main__ | INFO | PPO creado: LR=0.0003, n_steps=2048, device=cuda
