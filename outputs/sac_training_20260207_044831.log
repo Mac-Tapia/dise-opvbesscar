@@ -1,0 +1,842 @@
+================================================================================
+ENTRENAR SAC - CON MULTIOBJETIVO REAL (CO2, SOLAR, COST, EV, GRID)
+================================================================================
+Inicio: 2026-02-07 04:48:33
+
+GPU DISPONIBLE: NVIDIA GeForce RTX 4060 Laptop GPU
+   Memoria: 8.6 GB
+   CUDA Version: 12.1
+   Device: cuda
+   Batch size: 128
+   Buffer size: 2000000
+   Network: [512, 512]
+
+[0] VALIDAR SINCRONIZACION CON 5 DATASETS OE2
+--------------------------------------------------------------------------------
+  [OK] solar: 8,760 filas x 11 columnas (pv_generation_hourly_citylearn_v2.csv)
+  [OK] chargers_hourly: 8,760 filas x 129 columnas (chargers_real_hourly_2024.csv)
+  [OK] chargers_stats: 128 filas x 4 columnas (chargers_real_statistics.csv)
+  [OK] bess: 8,760 filas x 12 columnas (bess_hourly_dataset_2024.csv)
+  [OK] mall_demand: 8,785 filas x 2 columnas (demandamallhorakwh.csv)
+
+  SINCRONIZACION OE2 -> CityLearn:
+    Solar PVGIS:       8,760 horas
+    Chargers 128 sockets: 8,760 horas x 129 cols
+    BESS SOC:          8,760 horas
+    Mall Demand:       8,785 horas
+  [OK] Todos los datasets OE2 sincronizados con CityLearn schema
+
+[1] CARGAR CONFIGURACION Y CONTEXTO MULTIOBJETIVO
+--------------------------------------------------------------------------------
+2026-02-07 04:48:35,707 - INFO - [FILES] Copiando 5 archivos obligatorios OE2 a directorio CityLearn...
+2026-02-07 04:48:35,717 - INFO - [FILES] OK: chargers/chargers_real_hourly_2024.csv
+2026-02-07 04:48:35,718 - INFO - [FILES] OK: chargers/chargers_real_statistics.csv
+2026-02-07 04:48:35,720 - INFO - [FILES] OK: bess/bess_hourly_dataset_2024.csv
+2026-02-07 04:48:35,721 - INFO - [FILES] OK: demandamallkwh/demandamallhorakwh.csv
+2026-02-07 04:48:35,724 - INFO - [FILES] OK: Generacionsolar/pv_generation_hourly_citylearn_v2.csv
+2026-02-07 04:48:35,724 - INFO - [FILES] Copiados: 5/5 archivos obligatorios
+2026-02-07 04:48:35,724 - INFO - Go here C:\Users\Lenovo Legion\AppData\Local\intelligent-environments-lab\citylearn\Cache\v2.5.0\datasets\citylearn_challenge_2022_phase_all_plus_evs\schema.json 
+2026-02-07 04:48:35,731 - INFO - Schema plantilla copiado exitosamente
+2026-02-07 04:48:35,734 - INFO - Creado building unificado: Mall_Iquitos (32 chargers Î 4 sockets = 128 tomas, 4162 kWp PV, 2000 kWh BESS)
+2026-02-07 04:48:35,734 - INFO - [CLEANUP] Eliminados recursos NO-OE2 del building: ['washing_machines']
+2026-02-07 04:48:35,734 - INFO - [EV ARCHITECTURE] Creado electric_vehicles_def: 128 EVs (112 motos + 16 mototaxis)
+2026-02-07 04:48:35,734 - INFO - 
+================================================================================
+2026-02-07 04:48:35,734 - INFO - [CRITICAL] Cargando datos OE2 REALES desde rutas FIJAS y OBLIGATORIAS (5 archivos)
+2026-02-07 04:48:35,734 - INFO - ================================================================================
+2026-02-07 04:48:35,851 - INFO - [CHARGERS REAL] \u2705 Loaded: (8760, 128) (8760 hours Î 128 sockets)
+2026-02-07 04:48:35,851 - INFO - [CHARGERS REAL]   Value range: [0.17, 3.03] kW
+2026-02-07 04:48:35,851 - INFO - [CHARGERS REAL]   Annual energy: 1,024,818 kWh
+2026-02-07 04:48:35,851 - INFO - [CHARGERS REAL]   Period: 2024-01-01 to 2024-12-30
+2026-02-07 04:48:35,851 - INFO - [CHARGERS REAL]   Sockets: 112 motos + 16 mototaxis
+2026-02-07 04:48:35,851 - INFO - [\u2713 CARGAR] Cargadores reales horarios 2024 - 8,760 horas Î 128 sockets
+2026-02-07 04:48:35,851 - INFO - [\u2713 CARGAR] EstadÝsticas cargadores reales - 128 registros
+2026-02-07 04:48:35,917 - INFO - [\u2713 CARGAR] BESS horario 2024 - 8,760 horas | SOC: 50.0% a 100.0%
+2026-02-07 04:48:35,921 - INFO - [\u2713 CARGAR] Demanda mall horaria - 8785 horas
+2026-02-07 04:48:35,928 - INFO - [\u2713 CARGAR] Generaci¾n solar horaria PVGIS - 8760 horas
+2026-02-07 04:48:35,928 - INFO - [SUMMARY] 5 archivos reales OBLIGATORIOS cargados exitosamente de data/oe2/
+2026-02-07 04:48:35,928 - INFO - ================================================================================
+
+2026-02-07 04:48:35,930 - INFO - [OK] Solar timeseries validation PASSED: 8760 rows (hourly, 1 year)
+2026-02-07 04:48:35,930 - INFO - [SOLAR] \u2705 PRIORITY 1: Cargado dataset horario v2 desde data\oe2\Generacionsolar\pv_generation_hourly_citylearn_v2.csv
+2026-02-07 04:48:35,930 - INFO -          Total registros: 8760 horas
+2026-02-07 04:48:35,930 - INFO -          Potencia AC anual: 8292514 kWh
+2026-02-07 04:48:35,930 - INFO - [EV] Individual chargers JSON loaded from data\interim\oe2\chargers\individual_chargers.json
+2026-02-07 04:48:35,930 - INFO - [CHARGER DEBUG] Checking chargers_hourly_annual: True
+2026-02-07 04:48:35,957 - INFO - Loaded annual charger profiles: (8760, 32)
+2026-02-07 04:48:35,958 - INFO - [REWARDS] Loaded IquitosContext with CO2 factors and EV specs
+2026-02-07 04:48:35,958 - INFO - [REWARDS]    Grid CO2: 0.4521 kg/kWh
+2026-02-07 04:48:35,958 - INFO - [REWARDS]    EV CO2 conversion: 2.146 kg/kWh
+2026-02-07 04:48:35,958 - INFO - [REWARDS]    Daily EV capacity: 2685 motos + 388 mototaxis
+2026-02-07 04:48:35,958 - INFO - [REWARDS] \u2705 Created reward weights: CO\u2082=0.30, solar=0.20, cost=0.25
+2026-02-07 04:48:35,958 - WARNING - [EMBEDDED-FIX] BESS config no encontrado, usando OE2 Real: 4520.0 kWh / 2712.0 kW [FALLBACK]
+2026-02-07 04:48:35,958 - INFO - Mall_Iquitos: Actualizado pv.nominal_power = 4162.0 kWp
+2026-02-07 04:48:35,958 - INFO - Mall_Iquitos: CREADO pv_power_plant con nominal_power = 4162.0 kWp
+2026-02-07 04:48:35,958 - INFO - Mall_Iquitos: BESS 4520.0 kWh, 2712.0 kW
+2026-02-07 04:48:35,958 - INFO - [CHARGERS SCHEMA] Configurando 128 sockets (32 chargers fÝsicos Î 4 sockets = 128 tomas) en schema para control RL
+2026-02-07 04:48:35,958 - INFO - [CHARGERS SCHEMA] Configurando 128 chargers en el schema...
+2026-02-07 04:48:35,958 - INFO - [CHARGERS SCHEMA] \u2713 CORRECCIËN CR═TICA: Asignados 128 sockets (32 chargers Î 4) a 'chargers': 128 motos (256.0 kW) + 0 mototaxis (0.0 kW)
+2026-02-07 04:48:35,958 - INFO - [CHARGERS SCHEMA] \u2705 BACKUP: Guardadas 128 chargers para validaci¾n posterior
+2026-02-07 04:48:35,958 - INFO - [EV DYNAMICS] EVs son dinßmicos (basados en charger_simulation_*.csv), no permanentes en schema
+2026-02-07 04:48:35,958 - INFO - [ENERGY MAPPING] energy_simulation \u2192 OE2 Real PVGIS: pv_generation_hourly_citylearn_v2.csv
+2026-02-07 04:48:35,969 - INFO - [OK] Columnas de tiempo regeneradas: month=1-12, alineado con PVGIS
+2026-02-07 04:48:35,973 - INFO - [MALL LOAD] Split combined column using separator ';'
+2026-02-07 04:48:35,988 - INFO - [MALL LOAD] Demanda real incompleta, repitiendo perfil horario promedio
+2026-02-07 04:48:35,988 - INFO - [PV] \u2713 Usando datos OE2 ABSOLUTOS: solar_ts[ac_power_kw]
+2026-02-07 04:48:35,988 - INFO -    Registros: 8760, Suma: 8,292,514 kWh/a±o
+2026-02-07 04:48:35,988 - INFO -    Mean: 946.63 kW, Max: 2886.69 kW
+2026-02-07 04:48:35,988 - INFO - [PV] \u2713 Validaci¾n OK: 8292514 kWh/a±o (103.2% del esperado)
+2026-02-07 04:48:35,989 - INFO - [MALL DEMAND VALIDATION] Asignando demanda del mall...
+2026-02-07 04:48:35,989 - INFO -    Fuente: mall_demand (data\oe2\demandamallkwh\demandamallhorakwh.csv) - perfil promedio replicado
+2026-02-07 04:48:35,989 - INFO -    Registros: 8760
+2026-02-07 04:48:35,989 - INFO -    Suma total: 12322765.1 kWh
+2026-02-07 04:48:35,989 - INFO -    Min: 436.88 kW, Max: 2274.95 kW, Promedio: 1406.71 kW
+2026-02-07 04:48:35,989 - INFO -    Primeros 5 horas: [527.95862069 485.78472222 473.96527778 462.71527778 456.27083333]
+2026-02-07 04:48:35,990 - INFO -    ┌ltimas 5 horas: [2182.25       2140.02083333 1981.25       1210.33333333  645.94444444]
+2026-02-07 04:48:35,990 - INFO - [ENERGY] Asignada carga: non_shiftable_load = 12322765.1 kWh
+2026-02-07 04:48:35,990 - INFO - [ENERGY] Asignada generacion solar: solar_generation = 8292514.2 (W/kW.h)
+2026-02-07 04:48:35,990 - INFO -    Primeros 5 valores: [0. 0. 0. 0. 0.]
+2026-02-07 04:48:35,990 - INFO -    Ultimos 5 valores: [0. 0. 0. 0. 0.]
+2026-02-07 04:48:36,026 - INFO - 
+2026-02-07 04:48:36,026 - INFO - ================================================================================
+2026-02-07 04:48:36,026 - INFO - VALIDATION REPORT: Dataset Construction Completeness
+2026-02-07 04:48:36,026 - INFO - ================================================================================
+2026-02-07 04:48:36,026 - INFO - [OK] [BESS] CONFIGURED & LOADED
+2026-02-07 04:48:36,026 - INFO -    Capacity: 4520 kWh
+2026-02-07 04:48:36,026 - INFO -    Power: 2712 kW
+2026-02-07 04:48:36,026 - INFO -    File: electrical_storage_simulation.csv (sera creado)
+2026-02-07 04:48:36,026 - INFO - [OK] [SOLAR GENERATION] CONFIGURED & LOADED
+2026-02-07 04:48:36,026 - INFO -    Capacity: 4162 kWp
+2026-02-07 04:48:36,026 - INFO -    Timeseries length: 8760 hours (hourly resolution)
+2026-02-07 04:48:36,026 - INFO -    Total annual generation: 8292514.2 W/kWp
+2026-02-07 04:48:36,026 - INFO -    Mean hourly: 946.634, Max: 2886.689
+2026-02-07 04:48:36,026 - INFO -    Source: PVGIS hourly
+2026-02-07 04:48:36,026 - INFO - [OK] [MALL DEMAND] CONFIGURED & LOADED
+2026-02-07 04:48:36,026 - INFO -    Timeseries length: 8760 hours (hourly resolution)
+2026-02-07 04:48:36,026 - INFO -    Total annual demand: 12322765.1 kWh
+2026-02-07 04:48:36,026 - INFO -    Mean hourly: 1406.71 kW, Max: 2274.95 kW
+2026-02-07 04:48:36,026 - INFO -    Source: mall_demand (data\oe2\demandamallkwh\demandamallhorakwh.csv) - perfil promedio replicado
+2026-02-07 04:48:36,026 - INFO -    Daily pattern recognized: real demand curve
+2026-02-07 04:48:36,026 - INFO - [OK] [EV CHARGERS] CONFIGURED
+2026-02-07 04:48:36,026 - INFO -    Total chargers: 128 (for 128 simulation files)
+2026-02-07 04:48:36,027 - INFO -    Operating hours: 9-22
+2026-02-07 04:48:36,027 - INFO -    Files will be generated: charger_simulation_001.csv to charger_simulation_128.csv
+2026-02-07 04:48:36,027 - INFO - ================================================================================
+2026-02-07 04:48:36,027 - INFO - [OK] All OE2 artifacts properly integrated into CityLearn dataset
+2026-02-07 04:48:36,027 - INFO - ================================================================================
+2026-02-07 04:48:36,027 - INFO - 
+2026-02-07 04:48:36,027 - INFO - [BESS] \u2705 PRIORITY 1: USING NEW DATASET: bess_hourly_dataset_2024.csv (NEW - 2026-02-04)
+2026-02-07 04:48:36,027 - INFO - [BESS]    Columns: ['pv_kwh', 'ev_kwh', 'mall_kwh', 'pv_to_ev_kwh', 'pv_to_bess_kwh', 'pv_to_mall_kwh', 'grid_to_ev_kwh', 'grid_to_mall_kwh', 'bess_charge_kwh', 'bess_discharge_kwh', 'soc_percent']
+2026-02-07 04:48:36,027 - INFO - [BESS]    Converted soc_percent (%) to kWh using capacity 4520 kWh
+2026-02-07 04:48:36,034 - INFO - [BESS] \u2705 USING REAL DATA FROM OE2: bess_hourly_dataset_2024.csv (NEW - 2026-02-04)
+2026-02-07 04:48:36,034 - INFO - [BESS] Capacidad: 4520 kWh, Potencia: 2712 kW
+2026-02-07 04:48:36,034 - INFO - [BESS] SOC Dinßmico: min=2260 kWh, max=4520 kWh, mean=4093 kWh
+2026-02-07 04:48:36,034 - INFO - [BESS] Variabilidad: 426 kWh (std dev), 2219 valores ·nicos
+2026-02-07 04:48:36,034 - INFO - [BESS] Escritura: data\processed\citylearn\iquitos_ev_mall\electrical_storage_simulation.csv
+2026-02-07 04:48:36,034 - INFO - [BESS] Schema actualizado: Mall_Iquitos.electrical_storage.energy_simulation = electrical_storage_simulation.csv
+2026-02-07 04:48:36,034 - INFO - [BESS] Initial SOC configurado: 0.0111 (50 kWh de 4520 kWh)
+2026-02-07 04:48:36,037 - INFO - [CHARGERS GENERATION] \u2705 Using REAL dataset: (8760, 128)
+2026-02-07 04:48:36,037 - INFO - [CHARGERS GENERATION]    128 individual socket columns (ready for RL agents)
+2026-02-07 04:48:36,037 - INFO - [CHARGERS GENERATION]    8,760 hourly timesteps (complete year)
+2026-02-07 04:48:36,037 - INFO - [CHARGERS GENERATION] \u2705 Dataset ready: REAL (chargers_real_hourly_2024.csv)
+2026-02-07 04:48:36,037 - INFO - [CHARGERS GENERATION]    Dimensions: 8,760 hours Î 128 sockets
+2026-02-07 04:48:36,041 - INFO - [CHARGERS GENERATION]    Annual energy: 1,024,818 kWh
+2026-02-07 04:48:36,043 - INFO - [CHARGERS GENERATION]    Mean power: 117.0 kW
+2026-02-07 04:48:36,043 - INFO - [CHARGERS CSV GENERATION] Generando 128 archivos CSV...
+2026-02-07 04:48:36,068 - INFO -   [\u2713] charger_simulation_001.csv (MOTO, 8760 horas conectado)
+2026-02-07 04:48:36,883 - INFO -   [\u2713] charger_simulation_033.csv (MOTO, 8760 horas conectado)
+2026-02-07 04:48:37,718 - INFO -   [\u2713] charger_simulation_065.csv (MOTO, 8760 horas conectado)
+2026-02-07 04:48:38,524 - INFO -   [\u2713] charger_simulation_097.csv (MOTO, 8760 horas conectado)
+2026-02-07 04:48:39,294 - INFO -   [\u2713] charger_simulation_128.csv (MOTOTAXI, 8760 horas conectado)
+2026-02-07 04:48:39,294 - INFO - 
+2026-02-07 04:48:39,294 - INFO - ================================================================================
+2026-02-07 04:48:39,294 - INFO - [CHARGERS CSV GENERATION] \u2705 COMPLETADO
+2026-02-07 04:48:39,294 - INFO - ================================================================================
+2026-02-07 04:48:39,294 - INFO - Total arquivos generados: 128 (charger_simulation_001.csv to 128.csv)
+2026-02-07 04:48:39,294 - INFO - Total EV demand anual: 1,024,818 kWh
+2026-02-07 04:48:39,294 - INFO - Promedio por socket: 8,006 kWh/a±o
+2026-02-07 04:48:39,294 - INFO - Fuente de datos: REAL (chargers_real_hourly_2024.csv)
+2026-02-07 04:48:39,294 - INFO - Estructura: 112 motos (MOTO_001 to 112) + 16 mototaxis (MOTOTAXI_001 to 016)
+2026-02-07 04:48:39,294 - INFO - ================================================================================
+2026-02-07 04:48:39,294 - INFO - 
+2026-02-07 04:48:39,294 - INFO - [CHARGER GENERATION] Actualizando schema con referencias a 128 CSVs...
+2026-02-07 04:48:39,296 - INFO - [OK] Schema actualizado: 128/128 chargers con referencias CSV
+2026-02-07 04:48:39,296 - INFO - 
+================================================================================
+2026-02-07 04:48:39,296 - INFO - [CRITICAL] Cargando datos OE2 REALES desde rutas FIJAS y OBLIGATORIAS (5 archivos)
+2026-02-07 04:48:39,296 - INFO - ================================================================================
+2026-02-07 04:48:39,402 - INFO - [CHARGERS REAL] \u2705 Loaded: (8760, 128) (8760 hours Î 128 sockets)
+2026-02-07 04:48:39,402 - INFO - [CHARGERS REAL]   Value range: [0.17, 3.03] kW
+2026-02-07 04:48:39,406 - INFO - [CHARGERS REAL]   Annual energy: 1,024,818 kWh
+2026-02-07 04:48:39,406 - INFO - [CHARGERS REAL]   Period: 2024-01-01 to 2024-12-30
+2026-02-07 04:48:39,406 - INFO - [CHARGERS REAL]   Sockets: 112 motos + 16 mototaxis
+2026-02-07 04:48:39,406 - INFO - [\u2713 CARGAR] Cargadores reales horarios 2024 - 8,760 horas Î 128 sockets
+2026-02-07 04:48:39,406 - INFO - [\u2713 CARGAR] EstadÝsticas cargadores reales - 128 registros
+2026-02-07 04:48:39,463 - INFO - [\u2713 CARGAR] BESS horario 2024 - 8,760 horas | SOC: 50.0% a 100.0%
+2026-02-07 04:48:39,468 - INFO - [\u2713 CARGAR] Demanda mall horaria - 8785 horas
+2026-02-07 04:48:39,475 - INFO - [\u2713 CARGAR] Generaci¾n solar horaria PVGIS - 8760 horas
+2026-02-07 04:48:39,475 - INFO - [SUMMARY] 5 archivos reales OBLIGATORIOS cargados exitosamente de data/oe2/
+2026-02-07 04:48:39,475 - INFO - ================================================================================
+
+2026-02-07 04:48:39,481 - INFO - [OK] Solar timeseries validation PASSED: 8760 rows (hourly, 1 year)
+2026-02-07 04:48:39,481 - INFO - [SOLAR] \u2705 PRIORITY 1: Cargado dataset horario v2 desde data\oe2\Generacionsolar\pv_generation_hourly_citylearn_v2.csv
+2026-02-07 04:48:39,481 - INFO -          Total registros: 8760 horas
+2026-02-07 04:48:39,481 - INFO -          Potencia AC anual: 8292514 kWh
+2026-02-07 04:48:39,481 - INFO - [EV] Individual chargers JSON loaded from data\interim\oe2\chargers\individual_chargers.json
+2026-02-07 04:48:39,481 - INFO - [CHARGER DEBUG] Checking chargers_hourly_annual: True
+2026-02-07 04:48:39,497 - INFO - Loaded annual charger profiles: (8760, 32)
+2026-02-07 04:48:39,497 - INFO - [REWARDS] Loaded IquitosContext with CO2 factors and EV specs
+2026-02-07 04:48:39,503 - INFO - [REWARDS]    Grid CO2: 0.4521 kg/kWh
+2026-02-07 04:48:39,503 - INFO - [REWARDS]    EV CO2 conversion: 2.146 kg/kWh
+2026-02-07 04:48:39,503 - INFO - [REWARDS]    Daily EV capacity: 2685 motos + 388 mototaxis
+2026-02-07 04:48:39,503 - INFO - [REWARDS] \u2705 Created reward weights: CO\u2082=0.30, solar=0.20, cost=0.25
+2026-02-07 04:48:39,503 - INFO - [REWARDS] \u2705 Added CO\u2082 context to schema: grid=0.4521, EV=2.146 kg/kWh
+2026-02-07 04:48:39,503 - INFO - [REWARDS] \u2705 Added reward weights to schema: CO\u2082=0.30, solar=0.20, cost=0.25
+2026-02-07 04:48:39,508 - INFO - [OK] Schema guardado en data\processed\citylearn\iquitos_ev_mall\schema.json
+2026-02-07 04:48:39,515 - INFO - Schema grid-only creado con PV=0 y BESS=0 en todos los buildings
+  OK Config loaded: 5 keys
+  OK Reward weights (CO2 focus):
+    - CO2: 0.50  (minimizar grid import)
+    - Solar: 0.20  (maximizar autoconsumo)
+    - Cost: 0.15  (minimizar tarifa)
+    - EV: 0.08  (satisfaccion carga)
+    - Grid: 0.05  (estabilidad)
+
+  OK Contexto Iquitos:
+    - Grid CO2: 0.4521 kg CO2/kWh (termica aislada)
+    - EV CO2 factor: 2.146 kg CO2/kWh (combustion equivalente)
+    - Chargers: 32 (28 motos@2kW + 4 mototaxis@3kW)
+    - Sockets: 128 (112 motos + 16 mototaxis)
+    - Daily capacity: 2685 motos + 388 mototaxis
+
+[2] CONTRUIR DATASET CITYLEARN V2
+--------------------------------------------------------------------------------
+  OK Dataset: data\processed\citylearn\iquitos_ev_mall
+
+[3] CREAR ENVIRONMENT CON REWARD MULTIOBJETIVO REAL
+--------------------------------------------------------------------------------
+  [OE2] Cargando datasets reales...
+    [OK] Solar: 8292514 kWh/anio
+    [OK] Chargers: 128 sockets, 1024818 kWh/anio
+    [OK] BESS: 8760 horas
+       Flujos: pv_to_ev=535008kWh, grid_to_ev=161324kWh
+    [OK] Mall: 8760 horas, 12368653 kWh/anio
+    [OK] Baterias: 128 sockets monitorizados
+  OK Environment: (1045,) obs | (129,) action
+
+  OK Environment creado con recompensa multiobjetivo
+    - Observation: (1045,)
+    - Action: (129,)
+    - Reward: Multiobjetivo (CO2, Solar, Cost, EV, Grid)
+
+[4] CREAR SAC AGENT - CONFIGURACION OPTIMA PARA GPU/CPU
+--------------------------------------------------------------------------------
+  OK SAC agent creado (DEVICE: CUDA)
+    - Learning rate: 0.0002
+    - Batch size: 128
+    - Buffer size: 2,000,000
+    - Network: [512, 512]
+    - Entropy: auto-tuned
+
+[5] ENTRENAR SAC
+--------------------------------------------------------------------------------
+  CONFIGURACION: 87,600 timesteps
+  REWARD WEIGHTS (ACTUALIZADOS 2026-02-07):
+    CO2 grid (0.35): Minimizar importacion
+    Solar (0.20): Autoconsumo PV
+    EV satisfaction (0.30): SOC 90% (PRIORIDAD MAXIMA)
+    Cost (0.10): Minimizar costo
+    Grid stability (0.05): Suavizar picos
+
+  ENTRENAMIENTO EN PROGRESO:
+  ----------------------------------------------------------------------------
+    Steps:   1,000 | Ep:  0 | Progreso:  11.4% | CO2_grid:  364,061 kg | CO2_evitado:  483,445 kg
+    Steps:   2,000 | Ep:  0 | Progreso:  22.8% | CO2_grid:  713,901 kg | CO2_evitado:  978,779 kg
+    Steps:   3,000 | Ep:  0 | Progreso:  34.2% | CO2_grid: 1,059,281 kg | CO2_evitado: 1,486,450 kg
+    Steps:   4,000 | Ep:  0 | Progreso:  45.7% | CO2_grid: 1,374,481 kg | CO2_evitado: 1,990,767 kg
+    Steps:   5,000 | Ep:  0 | Progreso:  57.1% | CO2_grid: 1,708,093 kg | CO2_evitado: 2,491,873 kg
+    Steps:   6,000 | Ep:  0 | Progreso:  68.5% | CO2_grid: 2,049,760 kg | CO2_evitado: 3,035,249 kg
+    Steps:   7,000 | Ep:  0 | Progreso:  79.9% | CO2_grid: 2,413,318 kg | CO2_evitado: 3,564,763 kg
+    Steps:   8,000 | Ep:  0 | Progreso:  91.3% | CO2_grid: 2,786,463 kg | CO2_evitado: 4,066,518 kg
+
+  ============================================================================
+  EPISODIO 1 COMPLETADO (8,760 pasos)
+  ============================================================================
+    Reward Total Episodio:         2,129.46
+
+    --- METRICAS CO2 (desde 5 datasets OE2) ---
+    CO2 Grid (emitido):         3,079,718.9 kg
+    CO2 Evitado Indirecto:      3,749,045.7 kg  (solar -> grid)
+    CO2 Evitado Directo:          675,046.0 kg  (EVs desde solar)
+    CO2 Evitado TOTAL:          4,424,091.6 kg
+    CO2 NETO:                  -1,344,372.7 kg  ( 59.0% reduccion)
+
+    --- COMPONENTES REWARD (0.20 Solar, 0.10 Cost, 0.30 EV, 0.05 Grid, 0.35 CO2) ---
+    r_solar (autoconsumo):         -0.2476  [ponderado 0.20]
+    r_cost (minimizar tarifa):     -0.2798  [ponderado 0.10]
+    r_ev (satisfaccion carga):      0.9997  [ponderado 0.30]
+    r_grid (estabilidad):          -0.0192  [ponderado 0.05]
+    r_co2 (reduccion CO2):          0.2496  [ponderado 0.35]
+
+    --- ENERGIA (sincronizada con CityLearn) ---
+    Solar Generada:             8,292,514.2 kWh
+    EV Cargados:                  514,247.6 kWh
+    Grid Import:                6,812,030.3 kWh
+    Autoconsumo Solar:                47.3%
+
+    --- VEHICULOS CARGADOS (MOTOS + MOTOTAXIS) ---
+    Motos cargando (total):         440,211 vehiculo-horas
+    Mototaxis cargando (total):     123,640 vehiculo-horas
+    Motos/dia (promedio):             1206 motos/dia
+    Mototaxis/dia (promedio):          339 mototaxis/dia
+
+    --- METRICAS OPERATIVAS (BESS, EV, COSTO) ---
+    BESS SOC Promedio:                90.5%
+    EV SOC Promedio:                 100.0%
+    Costo Total:               $918,077.27 USD
+    Ahorro desde Baseline:     $1,658,502.84 USD
+
+    --- PROGRESO DE CONTROL (BESS + SOCKETS) ---
+    Sockets Activos (promedio):       50.3% de 128
+    BESS Control Intensidad:          52.0% (intensidad promedio)
+    Grid Ramp Promedio:              207.5 kWh/h (estabilidad)
+  ============================================================================
+
+    Steps:   9,000 | Ep:  1 | Progreso:   2.7% | CO2_grid:   86,371 kg | CO2_evitado:  113,562 kg
+    Steps:  10,000 | Ep:  1 | Progreso:  14.2% | CO2_grid:  453,297 kg | CO2_evitado:  597,722 kg
+    Steps:  11,000 | Ep:  1 | Progreso:  25.6% | CO2_grid:  797,187 kg | CO2_evitado: 1,098,645 kg
+    Steps:  12,000 | Ep:  1 | Progreso:  37.0% | CO2_grid: 1,141,919 kg | CO2_evitado: 1,608,290 kg
+    Steps:  13,000 | Ep:  1 | Progreso:  48.4% | CO2_grid: 1,453,550 kg | CO2_evitado: 2,107,540 kg
+    Steps:  14,000 | Ep:  1 | Progreso:  59.8% | CO2_grid: 1,788,017 kg | CO2_evitado: 2,619,274 kg
+    Steps:  15,000 | Ep:  1 | Progreso:  71.2% | CO2_grid: 2,139,593 kg | CO2_evitado: 3,164,180 kg
+    Steps:  16,000 | Ep:  1 | Progreso:  82.6% | CO2_grid: 2,504,638 kg | CO2_evitado: 3,691,413 kg
+    Steps:  17,000 | Ep:  1 | Progreso:  94.1% | CO2_grid: 2,876,231 kg | CO2_evitado: 4,186,290 kg
+
+  ============================================================================
+  EPISODIO 2 COMPLETADO (8,760 pasos)
+  ============================================================================
+    Reward Total Episodio:         2,129.30
+
+    --- METRICAS CO2 (desde 5 datasets OE2) ---
+    CO2 Grid (emitido):         3,079,732.9 kg
+    CO2 Evitado Indirecto:      3,749,045.7 kg  (solar -> grid)
+    CO2 Evitado Directo:          673,362.3 kg  (EVs desde solar)
+    CO2 Evitado TOTAL:          4,422,408.0 kg
+    CO2 NETO:                  -1,342,675.1 kg  ( 58.9% reduccion)
+
+    --- COMPONENTES REWARD (0.20 Solar, 0.10 Cost, 0.30 EV, 0.05 Grid, 0.35 CO2) ---
+    r_solar (autoconsumo):         -0.2477  [ponderado 0.20]
+    r_cost (minimizar tarifa):     -0.2797  [ponderado 0.10]
+    r_ev (satisfaccion carga):      0.9997  [ponderado 0.30]
+    r_grid (estabilidad):          -0.0193  [ponderado 0.05]
+    r_co2 (reduccion CO2):          0.2496  [ponderado 0.35]
+
+    --- ENERGIA (sincronizada con CityLearn) ---
+    Solar Generada:             8,292,514.2 kWh
+    EV Cargados:                  513,965.6 kWh
+    Grid Import:                6,812,061.2 kWh
+    Autoconsumo Solar:                47.3%
+
+    --- VEHICULOS CARGADOS (MOTOS + MOTOTAXIS) ---
+    Motos cargando (total):         431,946 vehiculo-horas
+    Mototaxis cargando (total):     132,018 vehiculo-horas
+    Motos/dia (promedio):             1183 motos/dia
+    Mototaxis/dia (promedio):          362 mototaxis/dia
+
+    --- METRICAS OPERATIVAS (BESS, EV, COSTO) ---
+    BESS SOC Promedio:                90.5%
+    EV SOC Promedio:                 100.0%
+    Costo Total:               $918,020.89 USD
+    Ahorro desde Baseline:     $1,658,502.84 USD
+
+    --- PROGRESO DE CONTROL (BESS + SOCKETS) ---
+    Sockets Activos (promedio):       50.3% de 128
+    BESS Control Intensidad:          51.7% (intensidad promedio)
+    Grid Ramp Promedio:              207.6 kWh/h (estabilidad)
+  ============================================================================
+
+    Steps:  18,000 | Ep:  2 | Progreso:   5.5% | CO2_grid:  169,093 kg | CO2_evitado:  237,740 kg
+    Steps:  19,000 | Ep:  2 | Progreso:  16.9% | CO2_grid:  543,629 kg | CO2_evitado:  714,707 kg
+    Steps:  20,000 | Ep:  2 | Progreso:  28.3% | CO2_grid:  879,755 kg | CO2_evitado: 1,222,883 kg
+    Steps:  21,000 | Ep:  2 | Progreso:  39.7% | CO2_grid: 1,221,562 kg | CO2_evitado: 1,721,244 kg
+    Steps:  22,000 | Ep:  2 | Progreso:  51.1% | CO2_grid: 1,534,737 kg | CO2_evitado: 2,227,248 kg
+    Steps:  23,000 | Ep:  2 | Progreso:  62.6% | CO2_grid: 1,866,636 kg | CO2_evitado: 2,747,433 kg
+    Steps:  24,000 | Ep:  2 | Progreso:  74.0% | CO2_grid: 2,230,636 kg | CO2_evitado: 3,283,711 kg
+    Steps:  25,000 | Ep:  2 | Progreso:  85.4% | CO2_grid: 2,595,557 kg | CO2_evitado: 3,802,467 kg
+    Steps:  26,000 | Ep:  2 | Progreso:  96.8% | CO2_grid: 2,962,379 kg | CO2_evitado: 4,296,801 kg
+
+  ============================================================================
+  EPISODIO 3 COMPLETADO (8,760 pasos)
+  ============================================================================
+    Reward Total Episodio:         2,127.42
+
+    --- METRICAS CO2 (desde 5 datasets OE2) ---
+    CO2 Grid (emitido):         3,079,394.3 kg
+    CO2 Evitado Indirecto:      3,749,045.7 kg  (solar -> grid)
+    CO2 Evitado Directo:          659,775.7 kg  (EVs desde solar)
+    CO2 Evitado TOTAL:          4,408,821.3 kg
+    CO2 NETO:                  -1,329,427.1 kg  ( 58.9% reduccion)
+
+    --- COMPONENTES REWARD (0.20 Solar, 0.10 Cost, 0.30 EV, 0.05 Grid, 0.35 CO2) ---
+    r_solar (autoconsumo):         -0.2482  [ponderado 0.20]
+    r_cost (minimizar tarifa):     -0.2800  [ponderado 0.10]
+    r_ev (satisfaccion carga):      0.9997  [ponderado 0.30]
+    r_grid (estabilidad):          -0.0203  [ponderado 0.05]
+    r_co2 (reduccion CO2):          0.2494  [ponderado 0.35]
+
+    --- ENERGIA (sincronizada con CityLearn) ---
+    Solar Generada:             8,292,514.2 kWh
+    EV Cargados:                  508,650.9 kWh
+    Grid Import:                6,811,312.3 kWh
+    Autoconsumo Solar:                47.2%
+
+    --- VEHICULOS CARGADOS (MOTOS + MOTOTAXIS) ---
+    Motos cargando (total):         429,374 vehiculo-horas
+    Mototaxis cargando (total):     132,822 vehiculo-horas
+    Motos/dia (promedio):             1176 motos/dia
+    Mototaxis/dia (promedio):          364 mototaxis/dia
+
+    --- METRICAS OPERATIVAS (BESS, EV, COSTO) ---
+    BESS SOC Promedio:                90.5%
+    EV SOC Promedio:                 100.0%
+    Costo Total:               $916,957.93 USD
+    Ahorro desde Baseline:     $1,658,502.84 USD
+
+    --- PROGRESO DE CONTROL (BESS + SOCKETS) ---
+    Sockets Activos (promedio):       50.1% de 128
+    BESS Control Intensidad:          53.4% (intensidad promedio)
+    Grid Ramp Promedio:              207.5 kWh/h (estabilidad)
+  ============================================================================
+
+    Steps:  27,000 | Ep:  3 | Progreso:   8.2% | CO2_grid:  258,203 kg | CO2_evitado:  349,334 kg
+    Steps:  28,000 | Ep:  3 | Progreso:  19.6% | CO2_grid:  617,155 kg | CO2_evitado:  826,974 kg
+    Steps:  29,000 | Ep:  3 | Progreso:  31.1% | CO2_grid:  961,444 kg | CO2_evitado: 1,308,711 kg
+    Steps:  30,000 | Ep:  3 | Progreso:  42.5% | CO2_grid: 1,289,544 kg | CO2_evitado: 1,816,138 kg
+    Steps:  31,000 | Ep:  3 | Progreso:  53.9% | CO2_grid: 1,608,910 kg | CO2_evitado: 2,325,388 kg
+    Steps:  32,000 | Ep:  3 | Progreso:  65.3% | CO2_grid: 1,947,101 kg | CO2_evitado: 2,843,030 kg
+    Steps:  33,000 | Ep:  3 | Progreso:  76.7% | CO2_grid: 2,312,480 kg | CO2_evitado: 3,375,898 kg
+    Steps:  34,000 | Ep:  3 | Progreso:  88.1% | CO2_grid: 2,680,270 kg | CO2_evitado: 3,887,290 kg
+    Steps:  35,000 | Ep:  3 | Progreso:  99.5% | CO2_grid: 3,059,791 kg | CO2_evitado: 4,348,362 kg
+
+  ============================================================================
+  EPISODIO 4 COMPLETADO (8,760 pasos)
+  ============================================================================
+    Reward Total Episodio:         2,124.98
+
+    --- METRICAS CO2 (desde 5 datasets OE2) ---
+    CO2 Grid (emitido):         3,075,746.7 kg
+    CO2 Evitado Indirecto:      3,749,045.7 kg  (solar -> grid)
+    CO2 Evitado Directo:          619,981.7 kg  (EVs desde solar)
+    CO2 Evitado TOTAL:          4,369,027.4 kg
+    CO2 NETO:                  -1,293,280.6 kg  ( 58.7% reduccion)
+
+    --- COMPONENTES REWARD (0.20 Solar, 0.10 Cost, 0.30 EV, 0.05 Grid, 0.35 CO2) ---
+    r_solar (autoconsumo):         -0.2497  [ponderado 0.20]
+    r_cost (minimizar tarifa):     -0.2794  [ponderado 0.10]
+    r_ev (satisfaccion carga):      0.9997  [ponderado 0.30]
+    r_grid (estabilidad):          -0.0191  [ponderado 0.05]
+    r_co2 (reduccion CO2):          0.2491  [ponderado 0.35]
+
+    --- ENERGIA (sincronizada con CityLearn) ---
+    Solar Generada:             8,292,514.2 kWh
+    EV Cargados:                  487,838.7 kWh
+    Grid Import:                6,803,244.3 kWh
+    Autoconsumo Solar:                46.9%
+
+    --- VEHICULOS CARGADOS (MOTOS + MOTOTAXIS) ---
+    Motos cargando (total):         402,091 vehiculo-horas
+    Mototaxis cargando (total):     131,775 vehiculo-horas
+    Motos/dia (promedio):             1102 motos/dia
+    Mototaxis/dia (promedio):          361 mototaxis/dia
+
+    --- METRICAS OPERATIVAS (BESS, EV, COSTO) ---
+    BESS SOC Promedio:                90.5%
+    EV SOC Promedio:                 100.0%
+    Costo Total:               $912,795.49 USD
+    Ahorro desde Baseline:     $1,658,502.84 USD
+
+    --- PROGRESO DE CONTROL (BESS + SOCKETS) ---
+    Sockets Activos (promedio):       47.6% de 128
+    BESS Control Intensidad:          59.9% (intensidad promedio)
+    Grid Ramp Promedio:              207.3 kWh/h (estabilidad)
+  ============================================================================
+
+    Steps:  36,000 | Ep:  4 | Progreso:  11.0% | CO2_grid:  352,869 kg | CO2_evitado:  461,824 kg
+    Steps:  37,000 | Ep:  4 | Progreso:  22.4% | CO2_grid:  697,273 kg | CO2_evitado:  952,514 kg
+    Steps:  38,000 | Ep:  4 | Progreso:  33.8% | CO2_grid: 1,041,630 kg | CO2_evitado: 1,436,322 kg
+    Steps:  39,000 | Ep:  4 | Progreso:  45.2% | CO2_grid: 1,363,536 kg | CO2_evitado: 1,938,689 kg
+    Steps:  40,000 | Ep:  4 | Progreso:  56.6% | CO2_grid: 1,687,941 kg | CO2_evitado: 2,451,904 kg
+    Steps:  41,000 | Ep:  4 | Progreso:  68.0% | CO2_grid: 2,034,248 kg | CO2_evitado: 2,977,663 kg
+    Steps:  42,000 | Ep:  4 | Progreso:  79.5% | CO2_grid: 2,401,416 kg | CO2_evitado: 3,505,087 kg
+    Steps:  43,000 | Ep:  4 | Progreso:  90.9% | CO2_grid: 2,767,697 kg | CO2_evitado: 4,007,485 kg
+
+  ============================================================================
+  EPISODIO 5 COMPLETADO (8,760 pasos)
+  ============================================================================
+    Reward Total Episodio:         2,125.71
+
+    --- METRICAS CO2 (desde 5 datasets OE2) ---
+    CO2 Grid (emitido):         3,078,297.9 kg
+    CO2 Evitado Indirecto:      3,749,045.7 kg  (solar -> grid)
+    CO2 Evitado Directo:          625,046.2 kg  (EVs desde solar)
+    CO2 Evitado TOTAL:          4,374,091.9 kg
+    CO2 NETO:                  -1,295,794.1 kg  ( 58.7% reduccion)
+
+    --- COMPONENTES REWARD (0.20 Solar, 0.10 Cost, 0.30 EV, 0.05 Grid, 0.35 CO2) ---
+    r_solar (autoconsumo):         -0.2494  [ponderado 0.20]
+    r_cost (minimizar tarifa):     -0.2796  [ponderado 0.10]
+    r_ev (satisfaccion carga):      0.9997  [ponderado 0.30]
+    r_grid (estabilidad):          -0.0195  [ponderado 0.05]
+    r_co2 (reduccion CO2):          0.2493  [ponderado 0.35]
+
+    --- ENERGIA (sincronizada con CityLearn) ---
+    Solar Generada:             8,292,514.2 kWh
+    EV Cargados:                  494,229.4 kWh
+    Grid Import:                6,808,887.1 kWh
+    Autoconsumo Solar:                47.0%
+
+    --- VEHICULOS CARGADOS (MOTOS + MOTOTAXIS) ---
+    Motos cargando (total):         409,287 vehiculo-horas
+    Mototaxis cargando (total):     132,951 vehiculo-horas
+    Motos/dia (promedio):             1121 motos/dia
+    Mototaxis/dia (promedio):          364 mototaxis/dia
+
+    --- METRICAS OPERATIVAS (BESS, EV, COSTO) ---
+    BESS SOC Promedio:                90.5%
+    EV SOC Promedio:                 100.0%
+    Costo Total:               $914,073.64 USD
+    Ahorro desde Baseline:     $1,658,502.84 USD
+
+    --- PROGRESO DE CONTROL (BESS + SOCKETS) ---
+    Sockets Activos (promedio):       48.4% de 128
+    BESS Control Intensidad:          78.7% (intensidad promedio)
+    Grid Ramp Promedio:              207.5 kWh/h (estabilidad)
+  ============================================================================
+
+    Steps:  44,000 | Ep:  5 | Progreso:   2.3% | CO2_grid:   70,398 kg | CO2_evitado:   91,368 kg
+    Steps:  45,000 | Ep:  5 | Progreso:  13.7% | CO2_grid:  443,165 kg | CO2_evitado:  573,276 kg
+    Steps:  46,000 | Ep:  5 | Progreso:  25.1% | CO2_grid:  780,914 kg | CO2_evitado: 1,089,266 kg
+    Steps:  47,000 | Ep:  5 | Progreso:  36.5% | CO2_grid: 1,129,118 kg | CO2_evitado: 1,590,208 kg
+    Steps:  48,000 | Ep:  5 | Progreso:  47.9% | CO2_grid: 1,447,864 kg | CO2_evitado: 2,091,228 kg
+    Steps:  49,000 | Ep:  5 | Progreso:  59.4% | CO2_grid: 1,775,997 kg | CO2_evitado: 2,616,618 kg
+    Steps:  50,000 | Ep:  5 | Progreso:  70.8% | CO2_grid: 2,126,953 kg | CO2_evitado: 3,150,676 kg
+    Steps:  51,000 | Ep:  5 | Progreso:  82.2% | CO2_grid: 2,499,859 kg | CO2_evitado: 3,677,937 kg
+    Steps:  52,000 | Ep:  5 | Progreso:  93.6% | CO2_grid: 2,864,650 kg | CO2_evitado: 4,183,807 kg
+
+  ============================================================================
+  EPISODIO 6 COMPLETADO (8,760 pasos)
+  ============================================================================
+    Reward Total Episodio:         2,133.88
+
+    --- METRICAS CO2 (desde 5 datasets OE2) ---
+    CO2 Grid (emitido):         3,085,880.3 kg
+    CO2 Evitado Indirecto:      3,749,045.7 kg  (solar -> grid)
+    CO2 Evitado Directo:          686,830.1 kg  (EVs desde solar)
+    CO2 Evitado TOTAL:          4,435,875.8 kg
+    CO2 NETO:                  -1,349,995.5 kg  ( 59.0% reduccion)
+
+    --- COMPONENTES REWARD (0.20 Solar, 0.10 Cost, 0.30 EV, 0.05 Grid, 0.35 CO2) ---
+    r_solar (autoconsumo):         -0.2465  [ponderado 0.20]
+    r_cost (minimizar tarifa):     -0.2800  [ponderado 0.10]
+    r_ev (satisfaccion carga):      0.9996  [ponderado 0.30]
+    r_grid (estabilidad):          -0.0215  [ponderado 0.05]
+    r_co2 (reduccion CO2):          0.2506  [ponderado 0.35]
+
+    --- ENERGIA (sincronizada con CityLearn) ---
+    Solar Generada:             8,292,514.2 kWh
+    EV Cargados:                  528,032.1 kWh
+    Grid Import:                6,825,658.7 kWh
+    Autoconsumo Solar:                47.5%
+
+    --- VEHICULOS CARGADOS (MOTOS + MOTOTAXIS) ---
+    Motos cargando (total):         435,158 vehiculo-horas
+    Mototaxis cargando (total):     133,759 vehiculo-horas
+    Motos/dia (promedio):             1192 motos/dia
+    Mototaxis/dia (promedio):          366 mototaxis/dia
+
+    --- METRICAS OPERATIVAS (BESS, EV, COSTO) ---
+    BESS SOC Promedio:                90.5%
+    EV SOC Promedio:                 100.0%
+    Costo Total:               $920,834.18 USD
+    Ahorro desde Baseline:     $1,658,502.84 USD
+
+    --- PROGRESO DE CONTROL (BESS + SOCKETS) ---
+    Sockets Activos (promedio):       50.7% de 128
+    BESS Control Intensidad:          79.6% (intensidad promedio)
+    Grid Ramp Promedio:              208.2 kWh/h (estabilidad)
+  ============================================================================
+
+    Steps:  53,000 | Ep:  6 | Progreso:   5.0% | CO2_grid:  155,347 kg | CO2_evitado:  211,744 kg
+    Steps:  54,000 | Ep:  6 | Progreso:  16.4% | CO2_grid:  533,574 kg | CO2_evitado:  692,626 kg
+    Steps:  55,000 | Ep:  6 | Progreso:  27.9% | CO2_grid:  864,113 kg | CO2_evitado: 1,208,886 kg
+    Steps:  56,000 | Ep:  6 | Progreso:  39.3% | CO2_grid: 1,206,478 kg | CO2_evitado: 1,700,861 kg
+    Steps:  57,000 | Ep:  6 | Progreso:  50.7% | CO2_grid: 1,524,614 kg | CO2_evitado: 2,201,009 kg
+    Steps:  58,000 | Ep:  6 | Progreso:  62.1% | CO2_grid: 1,850,273 kg | CO2_evitado: 2,732,270 kg
+    Steps:  59,000 | Ep:  6 | Progreso:  73.5% | CO2_grid: 2,215,941 kg | CO2_evitado: 3,264,351 kg
+    Steps:  60,000 | Ep:  6 | Progreso:  84.9% | CO2_grid: 2,588,427 kg | CO2_evitado: 3,793,905 kg
+    Steps:  61,000 | Ep:  6 | Progreso:  96.3% | CO2_grid: 2,952,865 kg | CO2_evitado: 4,304,151 kg
+
+  ============================================================================
+  EPISODIO 7 COMPLETADO (8,760 pasos)
+  ============================================================================
+    Reward Total Episodio:         2,133.60
+
+    --- METRICAS CO2 (desde 5 datasets OE2) ---
+    CO2 Grid (emitido):         3,086,611.2 kg
+    CO2 Evitado Indirecto:      3,749,045.7 kg  (solar -> grid)
+    CO2 Evitado Directo:          682,243.5 kg  (EVs desde solar)
+    CO2 Evitado TOTAL:          4,431,289.2 kg
+    CO2 NETO:                  -1,344,678.0 kg  ( 58.9% reduccion)
+
+    --- COMPONENTES REWARD (0.20 Solar, 0.10 Cost, 0.30 EV, 0.05 Grid, 0.35 CO2) ---
+    r_solar (autoconsumo):         -0.2466  [ponderado 0.20]
+    r_cost (minimizar tarifa):     -0.2799  [ponderado 0.10]
+    r_ev (satisfaccion carga):      0.9996  [ponderado 0.30]
+    r_grid (estabilidad):          -0.0217  [ponderado 0.05]
+    r_co2 (reduccion CO2):          0.2505  [ponderado 0.35]
+
+    --- ENERGIA (sincronizada con CityLearn) ---
+    Solar Generada:             8,292,514.2 kWh
+    EV Cargados:                  527,648.9 kWh
+    Grid Import:                6,827,275.3 kWh
+    Autoconsumo Solar:                47.5%
+
+    --- VEHICULOS CARGADOS (MOTOS + MOTOTAXIS) ---
+    Motos cargando (total):         431,567 vehiculo-horas
+    Mototaxis cargando (total):     135,803 vehiculo-horas
+    Motos/dia (promedio):             1182 motos/dia
+    Mototaxis/dia (promedio):          372 mototaxis/dia
+
+    --- METRICAS OPERATIVAS (BESS, EV, COSTO) ---
+    BESS SOC Promedio:                90.5%
+    EV SOC Promedio:                 100.0%
+    Costo Total:               $920,757.54 USD
+    Ahorro desde Baseline:     $1,658,502.84 USD
+
+    --- PROGRESO DE CONTROL (BESS + SOCKETS) ---
+    Sockets Activos (promedio):       50.6% de 128
+    BESS Control Intensidad:          82.8% (intensidad promedio)
+    Grid Ramp Promedio:              208.3 kWh/h (estabilidad)
+  ============================================================================
+
+    Steps:  62,000 | Ep:  7 | Progreso:   7.8% | CO2_grid:  243,325 kg | CO2_evitado:  327,658 kg
+    Steps:  63,000 | Ep:  7 | Progreso:  19.2% | CO2_grid:  610,718 kg | CO2_evitado:  817,237 kg
+    Steps:  64,000 | Ep:  7 | Progreso:  30.6% | CO2_grid:  950,206 kg | CO2_evitado: 1,314,239 kg
+    Steps:  65,000 | Ep:  7 | Progreso:  42.0% | CO2_grid: 1,280,579 kg | CO2_evitado: 1,815,455 kg
+    Steps:  66,000 | Ep:  7 | Progreso:  53.4% | CO2_grid: 1,606,151 kg | CO2_evitado: 2,327,417 kg
+    Steps:  67,000 | Ep:  7 | Progreso:  64.8% | CO2_grid: 1,937,253 kg | CO2_evitado: 2,860,508 kg
+    Steps:  68,000 | Ep:  7 | Progreso:  76.3% | CO2_grid: 2,304,186 kg | CO2_evitado: 3,387,320 kg
+    Steps:  69,000 | Ep:  7 | Progreso:  87.7% | CO2_grid: 2,677,603 kg | CO2_evitado: 3,903,114 kg
+    Steps:  70,000 | Ep:  7 | Progreso:  99.1% | CO2_grid: 3,051,447 kg | CO2_evitado: 4,381,717 kg
+
+  ============================================================================
+  EPISODIO 8 COMPLETADO (8,760 pasos)
+  ============================================================================
+    Reward Total Episodio:         2,131.37
+
+    --- METRICAS CO2 (desde 5 datasets OE2) ---
+    CO2 Grid (emitido):         3,084,894.8 kg
+    CO2 Evitado Indirecto:      3,749,045.7 kg  (solar -> grid)
+    CO2 Evitado Directo:          666,548.6 kg  (EVs desde solar)
+    CO2 Evitado TOTAL:          4,415,594.3 kg
+    CO2 NETO:                  -1,330,699.5 kg  ( 58.9% reduccion)
+
+    --- COMPONENTES REWARD (0.20 Solar, 0.10 Cost, 0.30 EV, 0.05 Grid, 0.35 CO2) ---
+    r_solar (autoconsumo):         -0.2474  [ponderado 0.20]
+    r_cost (minimizar tarifa):     -0.2800  [ponderado 0.10]
+    r_ev (satisfaccion carga):      0.9996  [ponderado 0.30]
+    r_grid (estabilidad):          -0.0213  [ponderado 0.05]
+    r_co2 (reduccion CO2):          0.2502  [ponderado 0.35]
+
+    --- ENERGIA (sincronizada con CityLearn) ---
+    Solar Generada:             8,292,514.2 kWh
+    EV Cargados:                  519,827.5 kWh
+    Grid Import:                6,823,478.8 kWh
+    Autoconsumo Solar:                47.4%
+
+    --- VEHICULOS CARGADOS (MOTOS + MOTOTAXIS) ---
+    Motos cargando (total):         442,577 vehiculo-horas
+    Mototaxis cargando (total):     120,717 vehiculo-horas
+    Motos/dia (promedio):             1213 motos/dia
+    Mototaxis/dia (promedio):          331 mototaxis/dia
+
+    --- METRICAS OPERATIVAS (BESS, EV, COSTO) ---
+    BESS SOC Promedio:                90.5%
+    EV SOC Promedio:                 100.0%
+    Costo Total:               $919,193.25 USD
+    Ahorro desde Baseline:     $1,658,502.84 USD
+
+    --- PROGRESO DE CONTROL (BESS + SOCKETS) ---
+    Sockets Activos (promedio):       50.2% de 128
+    BESS Control Intensidad:          77.5% (intensidad promedio)
+    Grid Ramp Promedio:              208.1 kWh/h (estabilidad)
+  ============================================================================
+
+    Steps:  71,000 | Ep:  8 | Progreso:  10.5% | CO2_grid:  336,268 kg | CO2_evitado:  444,689 kg
+    Steps:  72,000 | Ep:  8 | Progreso:  21.9% | CO2_grid:  690,439 kg | CO2_evitado:  941,649 kg
+    Steps:  73,000 | Ep:  8 | Progreso:  33.3% | CO2_grid: 1,029,403 kg | CO2_evitado: 1,444,621 kg
+    Steps:  74,000 | Ep:  8 | Progreso:  44.7% | CO2_grid: 1,352,611 kg | CO2_evitado: 1,934,014 kg
+    Steps:  75,000 | Ep:  8 | Progreso:  56.2% | CO2_grid: 1,680,701 kg | CO2_evitado: 2,444,178 kg
+    Steps:  76,000 | Ep:  8 | Progreso:  67.6% | CO2_grid: 2,019,203 kg | CO2_evitado: 2,981,391 kg
+    Steps:  77,000 | Ep:  8 | Progreso:  79.0% | CO2_grid: 2,385,858 kg | CO2_evitado: 3,502,783 kg
+    Steps:  78,000 | Ep:  8 | Progreso:  90.4% | CO2_grid: 2,759,476 kg | CO2_evitado: 4,006,675 kg
+
+  ============================================================================
+  EPISODIO 9 COMPLETADO (8,760 pasos)
+  ============================================================================
+    Reward Total Episodio:         2,128.03
+
+    --- METRICAS CO2 (desde 5 datasets OE2) ---
+    CO2 Grid (emitido):         3,081,244.0 kg
+    CO2 Evitado Indirecto:      3,749,045.7 kg  (solar -> grid)
+    CO2 Evitado Directo:          652,137.4 kg  (EVs desde solar)
+    CO2 Evitado TOTAL:          4,401,183.0 kg
+    CO2 NETO:                  -1,319,939.1 kg  ( 58.8% reduccion)
+
+    --- COMPONENTES REWARD (0.20 Solar, 0.10 Cost, 0.30 EV, 0.05 Grid, 0.35 CO2) ---
+    r_solar (autoconsumo):         -0.2484  [ponderado 0.20]
+    r_cost (minimizar tarifa):     -0.2796  [ponderado 0.10]
+    r_ev (satisfaccion carga):      0.9996  [ponderado 0.30]
+    r_grid (estabilidad):          -0.0204  [ponderado 0.05]
+    r_co2 (reduccion CO2):          0.2496  [ponderado 0.35]
+
+    --- ENERGIA (sincronizada con CityLearn) ---
+    Solar Generada:             8,292,514.2 kWh
+    EV Cargados:                  508,826.1 kWh
+    Grid Import:                6,815,403.6 kWh
+    Autoconsumo Solar:                47.2%
+
+    --- VEHICULOS CARGADOS (MOTOS + MOTOTAXIS) ---
+    Motos cargando (total):         435,912 vehiculo-horas
+    Mototaxis cargando (total):     119,143 vehiculo-horas
+    Motos/dia (promedio):             1194 motos/dia
+    Mototaxis/dia (promedio):          326 mototaxis/dia
+
+    --- METRICAS OPERATIVAS (BESS, EV, COSTO) ---
+    BESS SOC Promedio:                90.5%
+    EV SOC Promedio:                 100.0%
+    Costo Total:               $916,992.97 USD
+    Ahorro desde Baseline:     $1,658,502.84 USD
+
+    --- PROGRESO DE CONTROL (BESS + SOCKETS) ---
+    Sockets Activos (promedio):       49.5% de 128
+    BESS Control Intensidad:          85.0% (intensidad promedio)
+    Grid Ramp Promedio:              207.7 kWh/h (estabilidad)
+  ============================================================================
+
+    Steps:  79,000 | Ep:  9 | Progreso:   1.8% | CO2_grid:   54,531 kg | CO2_evitado:   77,542 kg
+    Steps:  80,000 | Ep:  9 | Progreso:  13.2% | CO2_grid:  428,822 kg | CO2_evitado:  550,693 kg
+    Steps:  81,000 | Ep:  9 | Progreso:  24.7% | CO2_grid:  771,617 kg | CO2_evitado: 1,061,881 kg
+    Steps:  82,000 | Ep:  9 | Progreso:  36.1% | CO2_grid: 1,110,536 kg | CO2_evitado: 1,561,246 kg
+    Steps:  83,000 | Ep:  9 | Progreso:  47.5% | CO2_grid: 1,431,160 kg | CO2_evitado: 2,045,374 kg
+    Steps:  84,000 | Ep:  9 | Progreso:  58.9% | CO2_grid: 1,761,529 kg | CO2_evitado: 2,561,562 kg
+    Steps:  85,000 | Ep:  9 | Progreso:  70.3% | CO2_grid: 2,103,416 kg | CO2_evitado: 3,103,143 kg
+    Steps:  86,000 | Ep:  9 | Progreso:  81.7% | CO2_grid: 2,477,306 kg | CO2_evitado: 3,616,670 kg
+    Steps:  87,000 | Ep:  9 | Progreso:  93.2% | CO2_grid: 2,848,028 kg | CO2_evitado: 4,122,658 kg
+
+  ============================================================================
+  EPISODIO 10 COMPLETADO (8,760 pasos)
+  ============================================================================
+    Reward Total Episodio:         2,126.47
+
+    --- METRICAS CO2 (desde 5 datasets OE2) ---
+    CO2 Grid (emitido):         3,079,112.2 kg
+    CO2 Evitado Indirecto:      3,749,045.7 kg  (solar -> grid)
+    CO2 Evitado Directo:          644,307.9 kg  (EVs desde solar)
+    CO2 Evitado TOTAL:          4,393,353.6 kg
+    CO2 NETO:                  -1,314,241.4 kg  ( 58.8% reduccion)
+
+    --- COMPONENTES REWARD (0.20 Solar, 0.10 Cost, 0.30 EV, 0.05 Grid, 0.35 CO2) ---
+    r_solar (autoconsumo):         -0.2488  [ponderado 0.20]
+    r_cost (minimizar tarifa):     -0.2794  [ponderado 0.10]
+    r_ev (satisfaccion carga):      0.9996  [ponderado 0.30]
+    r_grid (estabilidad):          -0.0192  [ponderado 0.05]
+    r_co2 (reduccion CO2):          0.2492  [ponderado 0.35]
+
+    --- ENERGIA (sincronizada con CityLearn) ---
+    Solar Generada:             8,292,514.2 kWh
+    EV Cargados:                  501,932.6 kWh
+    Grid Import:                6,810,688.3 kWh
+    Autoconsumo Solar:                47.1%
+
+    --- VEHICULOS CARGADOS (MOTOS + MOTOTAXIS) ---
+    Motos cargando (total):         427,050 vehiculo-horas
+    Mototaxis cargando (total):     123,536 vehiculo-horas
+    Motos/dia (promedio):             1170 motos/dia
+    Mototaxis/dia (promedio):          338 mototaxis/dia
+
+    --- METRICAS OPERATIVAS (BESS, EV, COSTO) ---
+    BESS SOC Promedio:                90.5%
+    EV SOC Promedio:                 100.0%
+    Costo Total:               $915,614.27 USD
+    Ahorro desde Baseline:     $1,658,502.84 USD
+
+    --- PROGRESO DE CONTROL (BESS + SOCKETS) ---
+    Sockets Activos (promedio):       49.1% de 128
+    BESS Control Intensidad:          81.1% (intensidad promedio)
+    Grid Ramp Promedio:              207.5 kWh/h (estabilidad)
+  ============================================================================
+
+
+----------------------------------------------------------------------------
+  RESULTADO ENTRENAMIENTO:
+    Tiempo: 823.76 segundos (13.73 minutos)
+    Timesteps ejecutados: 87,600
+    Velocidad: 106 timesteps/segundo
+    Episodios completados: 10
+
+  EVOLUCION DEL APRENDIZAJE:
+  ----------------------------------------------------------------------------
+   Ep |       Reward | CO2_Grid(kg) | CO2_Evit(kg) | Reduccion%
+  ----------------------------------------------------------------------------
+    1 |     2,129.46 |    3,079,719 |    4,424,092 |      59.0%
+    2 |     2,129.30 |    3,079,733 |    4,422,408 |      58.9%
+    3 |     2,127.42 |    3,079,394 |    4,408,821 |      58.9%
+    4 |     2,124.98 |    3,075,747 |    4,369,027 |      58.7%
+    5 |     2,125.71 |    3,078,298 |    4,374,092 |      58.7%
+    6 |     2,133.88 |    3,085,880 |    4,435,876 |      59.0%
+    7 |     2,133.60 |    3,086,611 |    4,431,289 |      58.9%
+    8 |     2,131.37 |    3,084,895 |    4,415,594 |      58.9%
+    9 |     2,128.03 |    3,081,244 |    4,401,183 |      58.8%
+   10 |     2,126.47 |    3,079,112 |    4,393,354 |      58.8%
+  ----------------------------------------------------------------------------
+  Mejora Reward (Ep1 vs EpN): -0.1%
+  Mejora CO2 Evitado (Ep1 vs EpN): -0.7%
+
+  OK Modelo guardado: checkpoints\SAC\sac_final_model.zip
+
+[6] VALIDACION FINAL - EVALUACION DE POLITICAS APRENDIDAS
+--------------------------------------------------------------------------------
+  Validacion: 3 episodios
+  ----------------------------------------------------------------------------
+
+  Episodio 1/3: Reward= 2129.95 | CO2_avoided= 4415686.0kg | Solar= 8292514.2kWh | Steps=8760
+  Episodio 2/3: Reward= 2129.95 | CO2_avoided= 4415686.0kg | Solar= 8292514.2kWh | Steps=8760
+  Episodio 3/3: Reward= 2129.95 | CO2_avoided= 4415686.0kg | Solar= 8292514.2kWh | Steps=8760
+
+  GUARDANDO ARCHIVOS DE SALIDA:
+    [OK] outputs\sac_training\result_sac.json
+    [OK] outputs\sac_training\timeseries_sac.csv (87,600 registros)
+    [OK] outputs\sac_training\trace_sac.csv (87,600 registros)
+
+================================================================================
+ENTRENAMIENTO SAC COMPLETADO
+================================================================================
+
+RESULTADOS FINALES - VALIDACION 3 EPISODIOS:
+--------------------------------------------------------------------------------
+
+  PARAMETROS CALCULADOS:
+    Reward promedio                  2129.9541 puntos
+    CO2 evitado por episodio         4415686.0 kg
+    Solar aprovechada por ep         8292514.2 kWh
+    Ahorro economico por ep          918469.72 USD
+    Grid import reducido por ep      6819440.9 kWh
+
+  ESTADO: Entrenamiento exitoso. Validacion completada.
+
+  OK ENTRENAMIENTO VALIDADO CORRECTAMENTE
+
+STATUS: SAC CON MULTIOBJETIVO ENTRENADO Y VALIDADO EN TIEMPO REAL
+================================================================================
+

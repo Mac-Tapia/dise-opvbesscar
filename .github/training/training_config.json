@@ -27,11 +27,11 @@
     }
   ],
   "reward_config": {
-    "co2_weight": 0.5,
-    "solar_weight": 0.2,
-    "cost_weight": 0.1,
-    "ev_weight": 0.1,
-    "grid_weight": 0.1
+    "co2_weight": 0.35,
+    "solar_weight": 0.20,
+    "cost_weight": 0.10,
+    "ev_weight": 0.30,
+    "grid_weight": 0.05
   },
   "baseline": {
     "co2_kg_per_year": 682559.3226052087,

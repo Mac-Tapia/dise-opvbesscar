@@ -28,10 +28,10 @@
     "chargers_mototaxis": 28
   },
   "rewards": {
-    "co2_weight": 0.5,
-    "solar_weight": 0.2,
-    "cost_weight": 0.15,
-    "ev_satisfaction_weight": 0.1,
+    "co2_weight": 0.35,
+    "solar_weight": 0.20,
+    "cost_weight": 0.10,
+    "ev_satisfaction_weight": 0.30,
     "grid_stability_weight": 0.05
   },
   "infrastructure": {
