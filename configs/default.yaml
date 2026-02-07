@@ -151,11 +151,11 @@ oe3:
     electricity_generation: 290000.0
     transport: 258250.0
   rewards:
-    # Multi-Objective Reward Weights (must sum to 1.0)
-    co2_weight: 0.50              # PRIMARY: Minimize grid CO2 emissions
+    # Multi-Objective Reward Weights (must sum to 1.0) - ACTUALIZADO 2026-02-07
+    co2_weight: 0.35              # PRIMARY: Minimize grid CO2 emissions (reducido de 0.50)
     solar_weight: 0.20            # SECONDARY: Maximize solar self-consumption
-    cost_weight: 0.15             # Minimize electricity cost
-    ev_satisfaction_weight: 0.10  # EV charging satisfaction
+    cost_weight: 0.10             # Minimize electricity cost (reducido de 0.15)
+    ev_satisfaction_weight: 0.30  # EV charging satisfaction (TRIPLICADO de 0.10)
     grid_stability_weight: 0.05   # Grid peak minimization
     # CO2 Factors
     co2_grid_factor_kg_per_kwh: 0.4521  # Iquitos grid (indirecto)

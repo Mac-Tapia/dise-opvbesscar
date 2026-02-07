@@ -566,6 +566,34 @@ try:
             # BESS: potencia es setpoint (action[0]) x capacidad maxima (2712 kW)
             bess_power_kw = float((bess_setpoint - 0.5) * 2.0 * 2712.0)  # Rango [-2712, +2712] kW
 
+            # === CONTEO DE VEHICULOS CARGADOS (MOTOS + MOTOTAXIS) ===
+            # Motos (sockets 28-127): contar cuántas están cargando activamente (action > 0.5)
+            motos_charging_count = int(np.sum(motos_action > 0.5))  # Motos con carga activa
+            mototaxis_charging_count = int(np.sum(mototaxis_action > 0.5))  # Mototaxis con carga activa
+            total_evs_charging = motos_charging_count + mototaxis_charging_count
+
+            # === ESTABILIDAD DE RED (r_grid) ===
+            # Penalizar cambios bruscos en importación de grid (suavizar curva)
+            if not hasattr(self, 'prev_grid_import'):
+                self.prev_grid_import = grid_import_kwh
+            grid_ramp = abs(grid_import_kwh - self.prev_grid_import)
+            # Baseline: 50 kWh/h de rampa es aceptable, más es penalizado
+            r_grid = 1.0 - min(1.0, grid_ramp / 100.0)  # [0, 1] normalizado
+            r_grid = 2.0 * r_grid - 1.0  # Escalar a [-1, 1]
+            self.prev_grid_import = grid_import_kwh
+
+            # === PROGRESO DE CONTROL SOCKETS ===
+            # Porcentaje de sockets activos vs disponibles
+            sockets_active_pct = (total_evs_charging / 128.0) * 100.0
+            # Control efectivo del BESS (qué tan activo está el control)
+            bess_control_intensity = abs(bess_setpoint - 0.5) * 2.0  # [0, 1] donde 1 = máximo control
+
+            # === AHORRO DE COSTOS (baseline vs actual) ===
+            # Baseline sin solar: todo de grid a 0.20 USD/kWh
+            cost_baseline_usd = (ev_charging_kwh + float(self.mall_hourly_kwh[hour_index])) * 0.20
+            cost_actual_usd = float(components.get('cost_usd', 0))
+            cost_savings_usd = max(0, cost_baseline_usd - cost_actual_usd)
+
             terminated = self.step_count >= self.max_steps
             truncated = False
             info = {
@@ -573,23 +601,40 @@ try:
                 'hour': hour,
                 'episode': self.episode_num,
                 'episode_reward': self.episode_reward,
-                # Componentes de recompensa para inspección
+                # === COMPONENTES DE REWARD (multiobjetivo) ===
                 'r_co2': float(components.get('r_co2', 0)),
                 'r_solar': float(components.get('r_solar', 0)),
                 'r_cost': float(components.get('r_cost', 0)),
                 'r_ev': float(components.get('r_ev', 0)),
-                # Métricas de CO2
+                'r_grid': float(r_grid),  # Estabilidad de red
+                # === METRICAS CO2 (directa e indirecta) ===
                 'co2_grid_kg': float(components.get('co2_grid_kg', 0)),
                 'co2_avoided_indirect_kg': float(components.get('co2_avoided_indirect_kg', 0)),
                 'co2_avoided_direct_kg': float(components.get('co2_avoided_direct_kg', 0)),
                 'co2_avoided_total_kg': float(components.get('co2_avoided_total_kg', 0)),
-                # Dispatch
+                # === CONTEO VEHICULOS CARGADOS ===
+                'motos_charging_count': motos_charging_count,
+                'mototaxis_charging_count': mototaxis_charging_count,
+                'total_evs_charging': total_evs_charging,
+                # === DISPATCH ENERGIA ===
                 'ev_charging_kwh': float(ev_charging_kwh),
                 'bess_power_kw': float(bess_power_kw),
                 'motos_power_kw': float(motos_power),
                 'mototaxis_power_kw': float(mototaxis_power),
                 'grid_import_kwh': float(grid_import_kwh),
                 'solar_generation_kwh': float(solar_generation_kwh),
+                # === CONTROL Y PROGRESO ===
+                'bess_soc': float(bess_soc),
+                'bess_control_intensity': float(bess_control_intensity),
+                'sockets_active_pct': float(sockets_active_pct),
+                'ev_soc_avg': float(ev_soc_avg),
+                'ev_satisfaction': float(ev_satisfaction),
+                # === COSTOS Y AHORRO ===
+                'cost_usd': float(cost_actual_usd),
+                'cost_baseline_usd': float(cost_baseline_usd),
+                'cost_savings_usd': float(cost_savings_usd),
+                # === ESTABILIDAD ===
+                'grid_ramp_kwh': float(grid_ramp),
             }
 
             return obs, total_reward, terminated, truncated, info
@@ -648,9 +693,10 @@ try:
     class DetailedLoggingCallback(BaseCallback):
         """Callback con métricas detalladas de CO2, Solar y EV durante entrenamiento."""
 
-        def __init__(self, env_ref: CityLearnRealEnv, verbose: int = 1):
+        def __init__(self, env_ref: CityLearnRealEnv, output_dir: Path, verbose: int = 1):
             super().__init__(verbose)
             self.env_ref = env_ref
+            self.output_dir = output_dir
             self.step_log_freq = 1000  # Cada 1000 pasos
 
             # Acumuladores por episodio
@@ -661,17 +707,55 @@ try:
             self.episode_solar_kwh: list[float] = []
             self.episode_ev_charging: list[float] = []
             self.episode_grid_import: list[float] = []
+            # Nuevas métricas
+            self.episode_cost_usd: list[float] = []
+            self.episode_bess_soc_avg: list[float] = []
+            self.episode_ev_soc_avg: list[float] = []
+
+            # TRACE: registro paso a paso
+            self.trace_records: list[dict[str, Any]] = []
+
+            # TIMESERIES: registro horario por episodio
+            self.timeseries_records: list[dict[str, Any]] = []
 
             # Tracking actual
             self.current_episode = 0
             self.ep_co2_grid = 0.0
             self.ep_co2_avoided_indirect = 0.0
+            # Nuevas métricas tracking
+            self.ep_cost_usd = 0.0
+            self.ep_bess_soc_sum = 0.0
+            self.ep_ev_soc_sum = 0.0
             self.ep_co2_avoided_direct = 0.0
             self.ep_solar = 0.0
             self.ep_ev = 0.0
             self.ep_grid = 0.0
             self.ep_reward = 0.0
             self.ep_steps = 0
+            
+            # === NUEVAS MÉTRICAS DETALLADAS ===
+            # Componentes de reward
+            self.ep_r_solar_sum = 0.0
+            self.ep_r_cost_sum = 0.0
+            self.ep_r_ev_sum = 0.0
+            self.ep_r_grid_sum = 0.0
+            self.ep_r_co2_sum = 0.0
+            # Conteo vehículos
+            self.ep_motos_count = 0
+            self.ep_mototaxis_count = 0
+            # Ahorro y control
+            self.ep_cost_savings = 0.0
+            self.ep_sockets_active_sum = 0.0
+            self.ep_bess_control_sum = 0.0
+            self.ep_grid_ramp_sum = 0.0
+            # Listas históricas para análisis
+            self.episode_r_solar: list[float] = []
+            self.episode_r_cost: list[float] = []
+            self.episode_r_ev: list[float] = []
+            self.episode_r_grid: list[float] = []
+            self.episode_motos: list[int] = []
+            self.episode_mototaxis: list[int] = []
+            self.episode_cost_savings: list[float] = []
 
         def _on_step(self) -> bool:
             # Obtener info del último step
@@ -685,12 +769,75 @@ try:
             self.ep_solar += info.get('solar_generation_kwh', 0)
             self.ep_ev += info.get('ev_charging_kwh', 0)
             self.ep_grid += info.get('grid_import_kwh', 0)
+            # Nuevas métricas
+            self.ep_cost_usd += info.get('cost_usd', 0)
+            self.ep_bess_soc_sum += info.get('bess_soc', 0)
+            self.ep_ev_soc_sum += info.get('ev_soc_avg', 0)
             self.ep_steps += 1
+            
+            # === ACUMULAR MÉTRICAS DETALLADAS ===
+            # Componentes de reward individuales
+            self.ep_r_solar_sum += info.get('r_solar', 0)
+            self.ep_r_cost_sum += info.get('r_cost', 0)
+            self.ep_r_ev_sum += info.get('r_ev', 0)
+            self.ep_r_grid_sum += info.get('r_grid', 0)
+            self.ep_r_co2_sum += info.get('r_co2', 0)
+            # Conteo de vehículos cargados
+            self.ep_motos_count += info.get('motos_charging_count', 0)
+            self.ep_mototaxis_count += info.get('mototaxis_charging_count', 0)
+            # Costos y control
+            self.ep_cost_savings += info.get('cost_savings_usd', 0)
+            self.ep_sockets_active_sum += info.get('sockets_active_pct', 0)
+            self.ep_bess_control_sum += info.get('bess_control_intensity', 0)
+            self.ep_grid_ramp_sum += info.get('grid_ramp_kwh', 0)
+
+            # TRACE: guardar cada paso
+            rewards = self.locals.get('rewards', [0.0])
+            reward_val = float(rewards[0]) if rewards else 0.0
+            trace_record = {
+                'timestep': self.num_timesteps,
+                'episode': self.current_episode,
+                'step_in_episode': self.ep_steps,
+                'hour': info.get('hour', 0),
+                'reward': reward_val,
+                'co2_grid_kg': info.get('co2_grid_kg', 0),
+                'co2_avoided_indirect_kg': info.get('co2_avoided_indirect_kg', 0),
+                'co2_avoided_direct_kg': info.get('co2_avoided_direct_kg', 0),
+                'solar_generation_kwh': info.get('solar_generation_kwh', 0),
+                'ev_charging_kwh': info.get('ev_charging_kwh', 0),
+                'grid_import_kwh': info.get('grid_import_kwh', 0),
+                'bess_power_kw': info.get('bess_power_kw', 0),
+                'motos_power_kw': info.get('motos_power_kw', 0),
+                'mototaxis_power_kw': info.get('mototaxis_power_kw', 0),
+            }
+            self.trace_records.append(trace_record)
+
+            # TIMESERIES: guardar por hora (cada 1 hora = 1 step)
+            ts_record = {
+                'episode': self.current_episode,
+                'hour_of_year': self.ep_steps - 1,
+                'hour_of_day': info.get('hour', 0),
+                'solar_generation_kwh': info.get('solar_generation_kwh', 0),
+                'ev_charging_kwh': info.get('ev_charging_kwh', 0),
+                'grid_import_kwh': info.get('grid_import_kwh', 0),
+                'bess_power_kw': info.get('bess_power_kw', 0),
+                'co2_avoided_total_kg': info.get('co2_avoided_total_kg', 0),
+                'reward': reward_val,
+            }
+            self.timeseries_records.append(ts_record)
+
+            # Acumular reward por step (FIX: SB3 resetea el ambiente antes del callback)
+            self.ep_reward += reward_val
 
             # Detectar fin de episodio
             dones = self.locals.get('dones', [False])
             if dones[0]:
-                self.ep_reward = self.env_ref.episode_reward
+                # FIX: Leer episode_reward de info (el ambiente ya fue reseteado por SB3)
+                # El info contiene el valor ANTES del reset
+                ep_reward_from_info = info.get('episode_reward', self.ep_reward)
+                if ep_reward_from_info != 0:
+                    self.ep_reward = ep_reward_from_info
+                # Si ambos son 0, usamos el acumulado en el callback (self.ep_reward)
                 self._log_episode_summary()
                 self._reset_episode_tracking()
                 self.current_episode += 1
@@ -732,6 +879,21 @@ try:
             print(f'    CO2 Evitado TOTAL:         {co2_avoided_total:>12,.1f} kg', flush=True)
             print(f'    CO2 NETO:                  {co2_net:>12,.1f} kg  ({co2_reduction_pct:>5.1f}% reduccion)', flush=True)
             print(flush=True)
+            
+            # === COMPONENTES DE REWARD MULTIOBJETIVO ===
+            print('    --- COMPONENTES REWARD (0.20 Solar, 0.10 Cost, 0.30 EV, 0.05 Grid, 0.35 CO2) ---', flush=True)
+            r_solar_avg = self.ep_r_solar_sum / max(1, self.ep_steps)
+            r_cost_avg = self.ep_r_cost_sum / max(1, self.ep_steps)
+            r_ev_avg = self.ep_r_ev_sum / max(1, self.ep_steps)
+            r_grid_avg = self.ep_r_grid_sum / max(1, self.ep_steps)
+            r_co2_avg = self.ep_r_co2_sum / max(1, self.ep_steps)
+            print(f'    r_solar (autoconsumo):     {r_solar_avg:>11.4f}  [ponderado 0.20]', flush=True)
+            print(f'    r_cost (minimizar tarifa): {r_cost_avg:>11.4f}  [ponderado 0.10]', flush=True)
+            print(f'    r_ev (satisfaccion carga): {r_ev_avg:>11.4f}  [ponderado 0.30]', flush=True)
+            print(f'    r_grid (estabilidad):      {r_grid_avg:>11.4f}  [ponderado 0.05]', flush=True)
+            print(f'    r_co2 (reduccion CO2):     {r_co2_avg:>11.4f}  [ponderado 0.35]', flush=True)
+            print(flush=True)
+            
             print('    --- ENERGIA (sincronizada con CityLearn) ---', flush=True)
             print(f'    Solar Generada:            {self.ep_solar:>12,.1f} kWh', flush=True)
             print(f'    EV Cargados:               {self.ep_ev:>12,.1f} kWh', flush=True)
@@ -742,6 +904,36 @@ try:
                 solar_used = min(self.ep_solar, self.ep_ev + self.ep_grid * 0.5)
                 autoconsumo_pct = (solar_used / self.ep_solar) * 100
                 print(f'    Autoconsumo Solar:         {autoconsumo_pct:>11.1f}%', flush=True)
+            print(flush=True)
+            
+            # === CONTEO DE VEHÍCULOS CARGADOS ===
+            print('    --- VEHICULOS CARGADOS (MOTOS + MOTOTAXIS) ---', flush=True)
+            motos_daily_avg = self.ep_motos_count / max(1, self.ep_steps / 24)
+            mototaxis_daily_avg = self.ep_mototaxis_count / max(1, self.ep_steps / 24)
+            print(f'    Motos cargando (total):    {self.ep_motos_count:>12,} vehiculo-horas', flush=True)
+            print(f'    Mototaxis cargando (total):{self.ep_mototaxis_count:>12,} vehiculo-horas', flush=True)
+            print(f'    Motos/dia (promedio):      {motos_daily_avg:>11.0f} motos/dia', flush=True)
+            print(f'    Mototaxis/dia (promedio):  {mototaxis_daily_avg:>11.0f} mototaxis/dia', flush=True)
+            print(flush=True)
+            
+            # === MÉTRICAS OPERATIVAS ===
+            print('    --- METRICAS OPERATIVAS (BESS, EV, COSTO) ---', flush=True)
+            bess_soc_avg = self.ep_bess_soc_sum / max(1, self.ep_steps) * 100  # Convertir a %
+            ev_soc_avg = self.ep_ev_soc_sum / max(1, self.ep_steps) * 100  # Convertir a %
+            print(f'    BESS SOC Promedio:         {bess_soc_avg:>11.1f}%', flush=True)
+            print(f'    EV SOC Promedio:           {ev_soc_avg:>11.1f}%', flush=True)
+            print(f'    Costo Total:               ${self.ep_cost_usd:>10,.2f} USD', flush=True)
+            print(f'    Ahorro desde Baseline:     ${self.ep_cost_savings:>10,.2f} USD', flush=True)
+            print(flush=True)
+            
+            # === PROGRESO DE CONTROL ===
+            print('    --- PROGRESO DE CONTROL (BESS + SOCKETS) ---', flush=True)
+            sockets_active_avg = self.ep_sockets_active_sum / max(1, self.ep_steps)
+            bess_control_avg = self.ep_bess_control_sum / max(1, self.ep_steps) * 100
+            grid_ramp_avg = self.ep_grid_ramp_sum / max(1, self.ep_steps)
+            print(f'    Sockets Activos (promedio):{sockets_active_avg:>11.1f}% de 128', flush=True)
+            print(f'    BESS Control Intensidad:   {bess_control_avg:>11.1f}% (intensidad promedio)', flush=True)
+            print(f'    Grid Ramp Promedio:        {grid_ramp_avg:>11.1f} kWh/h (estabilidad)', flush=True)
             print('  ' + '='*76, flush=True)
             print(flush=True)
             sys.stdout.flush()  # Forzar flush
@@ -754,6 +946,18 @@ try:
             self.episode_solar_kwh.append(self.ep_solar)
             self.episode_ev_charging.append(self.ep_ev)
             self.episode_grid_import.append(self.ep_grid)
+            # Nuevas métricas guardadas
+            self.episode_cost_usd.append(self.ep_cost_usd)
+            self.episode_bess_soc_avg.append(bess_soc_avg)
+            self.episode_ev_soc_avg.append(ev_soc_avg)
+            # Guardar métricas detalladas
+            self.episode_r_solar.append(r_solar_avg)
+            self.episode_r_cost.append(r_cost_avg)
+            self.episode_r_ev.append(r_ev_avg)
+            self.episode_r_grid.append(r_grid_avg)
+            self.episode_motos.append(self.ep_motos_count)
+            self.episode_mototaxis.append(self.ep_mototaxis_count)
+            self.episode_cost_savings.append(self.ep_cost_savings)
 
         def _reset_episode_tracking(self) -> None:
             """Reset acumuladores para nuevo episodio."""
@@ -765,6 +969,22 @@ try:
             self.ep_grid = 0.0
             self.ep_reward = 0.0
             self.ep_steps = 0
+            # Reset nuevas métricas
+            self.ep_cost_usd = 0.0
+            self.ep_bess_soc_sum = 0.0
+            self.ep_ev_soc_sum = 0.0
+            # === RESET MÉTRICAS DETALLADAS ===
+            self.ep_r_solar_sum = 0.0
+            self.ep_r_cost_sum = 0.0
+            self.ep_r_ev_sum = 0.0
+            self.ep_r_grid_sum = 0.0
+            self.ep_r_co2_sum = 0.0
+            self.ep_motos_count = 0
+            self.ep_mototaxis_count = 0
+            self.ep_cost_savings = 0.0
+            self.ep_sockets_active_sum = 0.0
+            self.ep_bess_control_sum = 0.0
+            self.ep_grid_ramp_sum = 0.0
 
     checkpoint_callback = CheckpointCallback(
         save_freq=50000,
@@ -773,7 +993,7 @@ try:
         save_replay_buffer=True
     )
 
-    logging_callback = DetailedLoggingCallback(env)
+    logging_callback = DetailedLoggingCallback(env, OUTPUT_DIR)
 
     # TIMESTEPS: 8760 steps = 1 episodio (1 año completo)
     # Mínimo recomendado: 26,280 (3 episodios) para verificar aprendizaje
@@ -781,11 +1001,11 @@ try:
     TOTAL_TIMESTEPS = 87600  # 10 episodios completos con datos reales OE2
 
     print(f'  CONFIGURACION: {TOTAL_TIMESTEPS:,} timesteps')
-    print('  REWARD WEIGHTS:')
-    print('    CO2 grid (0.50): Minimizar importacion')
+    print('  REWARD WEIGHTS (ACTUALIZADOS 2026-02-07):')
+    print('    CO2 grid (0.35): Minimizar importacion')
     print('    Solar (0.20): Autoconsumo PV')
-    print('    Cost (0.15): Minimizar costo')
-    print('    EV satisfaction (0.10): SOC 90%')
+    print('    EV satisfaction (0.30): SOC 90% (PRIORIDAD MAXIMA)')
+    print('    Cost (0.10): Minimizar costo')
     print('    Grid stability (0.05): Suavizar picos')
     print()
     print('  ENTRENAMIENTO EN PROGRESO:')
@@ -853,7 +1073,7 @@ try:
     print('[6] VALIDACION FINAL - EVALUACION DE POLITICAS APRENDIDAS')
     print('-' * 80)
 
-    print('  Validacion: 3 episodios')
+    print('  Validacion: 10 episodios')
     print('  ' + '-'*76)
     print()
 
@@ -865,7 +1085,7 @@ try:
         'grid_import': [],
     }
 
-    for ep in range(3):
+    for ep in range(10):
         obs_val, _ = env.reset()
         done = False
         steps = 0
@@ -873,7 +1093,7 @@ try:
         ep_solar = 0.0
         ep_grid = 0.0
 
-        print(f'  Episodio {ep+1}/3: ', end='', flush=True)
+        print(f'  Episodio {ep+1}/10: ', end='', flush=True)
 
         while not done:
             action_result = agent.predict(obs_val, deterministic=True)
@@ -924,14 +1144,50 @@ try:
             'sockets': context.total_sockets,
             'motos_daily': context.motos_daily_capacity,
             'mototaxis_daily': context.mototaxis_daily_capacity,
+        },
+        'training_evolution': {
+            'episode_rewards': logging_callback.episode_rewards,
+            'episode_co2_grid': logging_callback.episode_co2_grid,
+            'episode_co2_avoided_indirect': logging_callback.episode_co2_avoided_indirect,
+            'episode_co2_avoided_direct': logging_callback.episode_co2_avoided_direct,
+            'episode_solar_kwh': logging_callback.episode_solar_kwh,
+            'episode_ev_charging': logging_callback.episode_ev_charging,
+            'episode_grid_import': logging_callback.episode_grid_import,
         }
     }
 
+    # ========== GUARDAR 3 ARCHIVOS DE SALIDA ==========
+    print('  GUARDANDO ARCHIVOS DE SALIDA:')
+
+    # 1. result_sac.json - Resumen completo del entrenamiento
+    result_file = OUTPUT_DIR / 'result_sac.json'
+    with open(result_file, 'w', encoding='utf-8') as f:
+        json.dump(summary, f, indent=2, ensure_ascii=False)
+    print(f'    [OK] {result_file}')
+
+    # 2. timeseries_sac.csv - Series temporales por hora
+    timeseries_file = OUTPUT_DIR / 'timeseries_sac.csv'
+    if logging_callback.timeseries_records:
+        df_timeseries = pd.DataFrame(logging_callback.timeseries_records)
+        df_timeseries.to_csv(timeseries_file, index=False, encoding='utf-8')
+        print(f'    [OK] {timeseries_file} ({len(df_timeseries):,} registros)')
+    else:
+        print(f'    [WARN] {timeseries_file} - sin datos')
+
+    # 3. trace_sac.csv - Trazabilidad paso a paso
+    trace_file = OUTPUT_DIR / 'trace_sac.csv'
+    if logging_callback.trace_records:
+        df_trace = pd.DataFrame(logging_callback.trace_records)
+        df_trace.to_csv(trace_file, index=False, encoding='utf-8')
+        print(f'    [OK] {trace_file} ({len(df_trace):,} registros)')
+    else:
+        print(f'    [WARN] {trace_file} - sin datos')
+
+    # Mantener compatibilidad con archivo anterior
     metrics_file = OUTPUT_DIR / 'sac_training_metrics.json'
     with open(metrics_file, 'w', encoding='utf-8') as f:
         json.dump(summary, f, indent=2)
 
-    print(f'  OK Metricas guardadas: {metrics_file}')
     print()
 
     print('='*80)
@@ -939,7 +1195,7 @@ try:
     print('='*80)
     print()
 
-    print('RESULTADOS FINALES - VALIDACION 3 EPISODIOS:')
+    print('RESULTADOS FINALES - VALIDACION 10 EPISODIOS:')
     print('-'*80)
     validation_metrics = summary.get("validation_metrics", {})
     if isinstance(validation_metrics, dict):

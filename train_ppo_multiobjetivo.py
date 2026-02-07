@@ -96,7 +96,17 @@ class PPOConfig:
             'activation_fn': torch.nn.ReLU,
         }
 
+# ============================================================================
+# CONSTANTES OE2 (Iquitos, Perú)
+# ============================================================================
+CO2_FACTOR_IQUITOS = 0.4521  # kg CO2/kWh - factor de emisión grid Iquitos
+BESS_CAPACITY_KWH = 4520.0   # Capacidad BESS total
+BESS_MAX_POWER_KW = 500.0    # Potencia máxima BESS
+
 # DIRECTORIOS DE SALIDA
+OUTPUT_DIR = Path('outputs/ppo_training')
+CHECKPOINT_DIR = Path('checkpoints/PPO')
+
 class CityLearnEnvironment(Env):
     """Environment compatible con Gymnasium para CityLearn v2.
 
@@ -273,14 +283,31 @@ class CityLearnEnvironment(Env):
         bess_soc = np.clip(float(self.bess_soc_hourly[h]), 0.0, 1.0)
 
         # PROCESAR ACCION (129-dim: 1 BESS + 128 chargers)
+        bess_action = np.clip(action[0], 0.0, 1.0)  # BESS control
         charger_setpoints = np.clip(action[1:self.ACTION_DIM], 0.0, 1.0)
 
         # CALCULAR ENERGIA (balance de carga)
         ev_charging_kwh = float(np.sum(charger_demand * charger_setpoints))
         total_demand_kwh = mall_kw + ev_charging_kwh
+        
+        # BESS power (positivo = descarga, negativo = carga)
+        bess_power_kw = (bess_action - 0.5) * 2.0 * BESS_MAX_POWER_KW
+        
+        # Separar motos y mototaxis (primeros 2912 = motos, siguientes 416 = mototaxis)
+        # Chargers 0-22 = motos (23x128=2944 cercano a 2912), Chargers 23-31 = mototaxis
+        motos_demand = float(np.sum(charger_demand[:92] * charger_setpoints[:92]))
+        mototaxis_demand = float(np.sum(charger_demand[92:] * charger_setpoints[92:]))
 
         # GRID BALANCE (importador vs exportador)
-        grid_import_kwh = max(0.0, total_demand_kwh - solar_kw)
+        net_demand = total_demand_kwh - bess_power_kw  # BESS descarga reduce demanda
+        grid_import_kwh = max(0.0, net_demand - solar_kw)
+        grid_export_kwh = max(0.0, solar_kw - net_demand)
+
+        # CO2 CALCULATIONS (Iquitos factor: 0.4521 kg CO2/kWh)
+        co2_grid_kg = grid_import_kwh * CO2_FACTOR_IQUITOS
+        co2_avoided_indirect_kg = min(solar_kw, total_demand_kwh) * CO2_FACTOR_IQUITOS
+        co2_avoided_direct_kg = grid_export_kwh * CO2_FACTOR_IQUITOS * 0.5  # 50% credit
+        co2_avoided_total_kg = co2_avoided_indirect_kg + co2_avoided_direct_kg
 
         # EV SATISFACTION (simulado con SOC proxy)
         ev_soc_avg = np.clip(
@@ -292,7 +319,7 @@ class CityLearnEnvironment(Env):
         try:
             reward_val, components = self.reward_calc.compute(
                 grid_import_kwh=grid_import_kwh,
-                grid_export_kwh=max(0.0, solar_kw - total_demand_kwh),
+                grid_export_kwh=grid_export_kwh,
                 solar_generation_kwh=solar_kw,
                 ev_charging_kwh=ev_charging_kwh,
                 ev_soc_avg=ev_soc_avg,
@@ -303,11 +330,11 @@ class CityLearnEnvironment(Env):
         except (ValueError, KeyError, AttributeError, TypeError) as exc:
             logger.warning("Error en reward computation hora %d: %s", h, exc)
             reward_val = -10.0
-            components = {'co2_avoided_total_kg': 0.0}
+            components = {'co2_avoided_total_kg': co2_avoided_total_kg}
 
         # TRACKING (acumulador de métricas del episodio)
         self.episode_reward += float(reward_val)
-        self.episode_co2_avoided += float(components.get('co2_avoided_total_kg', 0.0))
+        self.episode_co2_avoided += co2_avoided_total_kg
         self.episode_solar_kwh += solar_kw
         self.episode_grid_import += grid_import_kwh
         self.episode_ev_satisfied += ev_soc_avg
@@ -319,13 +346,33 @@ class CityLearnEnvironment(Env):
         terminated = self.step_count >= self.max_steps
         truncated = False  # No truncate (let episode complete)
 
-        # INFO DICT (Gymnasium protocol) - puede contener floats, ints, dicts
+        # INFO DICT COMPLETO (para DetailedLoggingCallback)
         info: Dict[str, Any] = {
             'step': self.step_count,
-            'hour': h,
-            'co2_avoided_kg': float(self.episode_co2_avoided),
-            'solar_kwh': float(self.episode_solar_kwh),
-            'grid_import_kwh': float(self.episode_grid_import),
+            'hour': h % 24,
+            'hour_of_year': h,
+            # Energía
+            'solar_generation_kwh': solar_kw,
+            'ev_charging_kwh': ev_charging_kwh,
+            'grid_import_kwh': grid_import_kwh,
+            'grid_export_kwh': grid_export_kwh,
+            'mall_demand_kwh': mall_kw,
+            'total_demand_kwh': total_demand_kwh,
+            # BESS
+            'bess_soc': bess_soc,
+            'bess_power_kw': bess_power_kw,
+            # CO2
+            'co2_grid_kg': co2_grid_kg,
+            'co2_avoided_indirect_kg': co2_avoided_indirect_kg,
+            'co2_avoided_direct_kg': co2_avoided_direct_kg,
+            'co2_avoided_total_kg': co2_avoided_total_kg,
+            # EV breakdown
+            'motos_power_kw': motos_demand,
+            'mototaxis_power_kw': mototaxis_demand,
+            'ev_soc_avg': ev_soc_avg,
+            # Acumulados episodio
+            'episode_reward_cumulative': float(self.episode_reward),
+            'episode_co2_avoided_cumulative': float(self.episode_co2_avoided),
         }
 
         if terminated:
@@ -335,6 +382,167 @@ class CityLearnEnvironment(Env):
             }
 
         return obs, float(reward_val), terminated, truncated, info
+
+
+# ============================================================================
+# DETAILED LOGGING CALLBACK - Para tracking paso a paso y generación de archivos
+# ============================================================================
+from stable_baselines3.common.callbacks import BaseCallback
+
+
+class DetailedLoggingCallback(BaseCallback):
+    """
+    Callback para tracking detallado del entrenamiento PPO.
+    
+    Genera:
+    - trace_records: registro paso a paso de todas las métricas
+    - timeseries_records: series temporales por hora/episodio
+    - episode metrics: acumuladores por episodio para training_evolution
+    """
+
+    def __init__(self, env_ref: CityLearnEnvironment, output_dir: Path, verbose: int = 1):
+        super().__init__(verbose)
+        self.env_ref = env_ref
+        self.output_dir = output_dir
+        self.step_log_freq = 1000  # Cada 1000 pasos
+
+        # Acumuladores por episodio
+        self.episode_rewards: list[float] = []
+        self.episode_co2_grid: list[float] = []
+        self.episode_co2_avoided_indirect: list[float] = []
+        self.episode_co2_avoided_direct: list[float] = []
+        self.episode_solar_kwh: list[float] = []
+        self.episode_ev_charging: list[float] = []
+        self.episode_grid_import: list[float] = []
+
+        # TRACE: registro paso a paso
+        self.trace_records: list[dict[str, Any]] = []
+
+        # TIMESERIES: registro horario por episodio
+        self.timeseries_records: list[dict[str, Any]] = []
+
+        # Tracking actual
+        self.current_episode = 0
+        self.ep_co2_grid = 0.0
+        self.ep_co2_avoided_indirect = 0.0
+        self.ep_co2_avoided_direct = 0.0
+        self.ep_solar = 0.0
+        self.ep_ev = 0.0
+        self.ep_grid = 0.0
+        self.ep_reward = 0.0
+        self.ep_steps = 0
+
+    def _on_step(self) -> bool:
+        # Obtener info del último step
+        infos = self.locals.get('infos', [{}])
+        info = infos[0] if infos else {}
+
+        # Acumular métricas
+        self.ep_co2_grid += info.get('co2_grid_kg', 0)
+        self.ep_co2_avoided_indirect += info.get('co2_avoided_indirect_kg', 0)
+        self.ep_co2_avoided_direct += info.get('co2_avoided_direct_kg', 0)
+        self.ep_solar += info.get('solar_generation_kwh', 0)
+        self.ep_ev += info.get('ev_charging_kwh', 0)
+        self.ep_grid += info.get('grid_import_kwh', 0)
+        self.ep_steps += 1
+
+        # TRACE: guardar cada paso
+        rewards = self.locals.get('rewards', [0.0])
+        reward_val = float(rewards[0]) if rewards else 0.0
+        trace_record = {
+            'timestep': self.num_timesteps,
+            'episode': self.current_episode,
+            'step_in_episode': self.ep_steps,
+            'hour': info.get('hour', 0),
+            'reward': reward_val,
+            'co2_grid_kg': info.get('co2_grid_kg', 0),
+            'co2_avoided_indirect_kg': info.get('co2_avoided_indirect_kg', 0),
+            'co2_avoided_direct_kg': info.get('co2_avoided_direct_kg', 0),
+            'solar_generation_kwh': info.get('solar_generation_kwh', 0),
+            'ev_charging_kwh': info.get('ev_charging_kwh', 0),
+            'grid_import_kwh': info.get('grid_import_kwh', 0),
+            'bess_power_kw': info.get('bess_power_kw', 0),
+            'motos_power_kw': info.get('motos_power_kw', 0),
+            'mototaxis_power_kw': info.get('mototaxis_power_kw', 0),
+        }
+        self.trace_records.append(trace_record)
+
+        # TIMESERIES: guardar por hora (cada 1 hora = 1 step)
+        ts_record = {
+            'episode': self.current_episode,
+            'hour_of_year': self.ep_steps - 1,
+            'hour_of_day': info.get('hour', 0),
+            'solar_generation_kwh': info.get('solar_generation_kwh', 0),
+            'ev_charging_kwh': info.get('ev_charging_kwh', 0),
+            'grid_import_kwh': info.get('grid_import_kwh', 0),
+            'bess_power_kw': info.get('bess_power_kw', 0),
+            'co2_avoided_total_kg': info.get('co2_avoided_total_kg', 0),
+            'reward': reward_val,
+        }
+        self.timeseries_records.append(ts_record)
+
+        # Detectar fin de episodio
+        dones = self.locals.get('dones', [False])
+        if dones[0]:
+            self.ep_reward = self.env_ref.episode_reward
+            self._log_episode_summary()
+            self._reset_episode_tracking()
+            self.current_episode += 1
+
+        # Log de progreso cada N pasos
+        if self.num_timesteps % self.step_log_freq == 0:
+            self._log_progress()
+
+        return True
+
+    def _log_progress(self) -> None:
+        """Mostrar progreso durante el episodio."""
+        ep_num = self.current_episode
+        pct = (self.ep_steps / 8760) * 100
+        co2_net = self.ep_co2_grid - self.ep_co2_avoided_indirect - self.ep_co2_avoided_direct
+
+        print(f'    Steps: {self.num_timesteps:>7,} | Ep: {ep_num:>2} | '
+              f'Progreso: {pct:>5.1f}% | '
+              f'CO2_grid: {self.ep_co2_grid:>8,.0f} kg | '
+              f'CO2_evitado: {(self.ep_co2_avoided_indirect + self.ep_co2_avoided_direct):>8,.0f} kg', flush=True)
+
+    def _log_episode_summary(self) -> None:
+        """Resumen completo al finalizar episodio."""
+        co2_avoided_total = self.ep_co2_avoided_indirect + self.ep_co2_avoided_direct
+
+        self.episode_rewards.append(self.ep_reward)
+        self.episode_co2_grid.append(self.ep_co2_grid)
+        self.episode_co2_avoided_indirect.append(self.ep_co2_avoided_indirect)
+        self.episode_co2_avoided_direct.append(self.ep_co2_avoided_direct)
+        self.episode_solar_kwh.append(self.ep_solar)
+        self.episode_ev_charging.append(self.ep_ev)
+        self.episode_grid_import.append(self.ep_grid)
+
+        print()
+        print(f'  ══════════════════════════════════════════════════════════════')
+        print(f'  EPISODIO {self.current_episode + 1} COMPLETADO')
+        print(f'  ──────────────────────────────────────────────────────────────')
+        print(f'    Reward Total:         {self.ep_reward:>12,.2f}')
+        print(f'    CO2 Grid:             {self.ep_co2_grid:>12,.0f} kg')
+        print(f'    CO2 Evitado Indirect: {self.ep_co2_avoided_indirect:>12,.0f} kg')
+        print(f'    CO2 Evitado Direct:   {self.ep_co2_avoided_direct:>12,.0f} kg')
+        print(f'    CO2 Evitado Total:    {co2_avoided_total:>12,.0f} kg')
+        print(f'    Solar Aprovechado:    {self.ep_solar:>12,.0f} kWh')
+        print(f'    EV Cargado:           {self.ep_ev:>12,.0f} kWh')
+        print(f'    Grid Import:          {self.ep_grid:>12,.0f} kWh')
+        print(f'  ══════════════════════════════════════════════════════════════')
+        print()
+
+    def _reset_episode_tracking(self) -> None:
+        """Reset acumuladores para siguiente episodio."""
+        self.ep_co2_grid = 0.0
+        self.ep_co2_avoided_indirect = 0.0
+        self.ep_co2_avoided_direct = 0.0
+        self.ep_solar = 0.0
+        self.ep_ev = 0.0
+        self.ep_grid = 0.0
+        self.ep_reward = 0.0
+        self.ep_steps = 0
 
 
 def main():
@@ -356,7 +564,7 @@ def main():
     """
 
     HOURS_PER_YEAR: int = 8760
-    NUM_EPISODES: int = 5
+    NUM_EPISODES: int = 10  # 10 episodios = 87,600 timesteps para entrenamiento robusto
     TOTAL_TIMESTEPS: int = NUM_EPISODES * HOURS_PER_YEAR
 
     print('='*80)
@@ -382,9 +590,10 @@ def main():
             print()
 
         ppo_config: PPOConfig = PPOConfig(device=device)
-        checkpoint_dir: Path = Path('analyses/oe3/training/checkpoints/ppo')
+        # Usar directorios globales
+        checkpoint_dir = CHECKPOINT_DIR
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
-        output_dir: Path = Path('outputs/ppo_training')
+        output_dir = OUTPUT_DIR
         output_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info("Device: %s | Batch: %d | Epochs: %d", device, ppo_config.batch_size, ppo_config.n_epochs)
@@ -409,11 +618,16 @@ def main():
         context: IquitosContext = IquitosContext()
         reward_calc: MultiObjectiveReward = MultiObjectiveReward(weights=reward_weights, context=context)
 
-        print('  Reward Weights (multiobjetivo CO2-focus):')
+        print('  REWARD WEIGHTS (ACTUALIZADOS 2026-02-07):')
+        print('    CO2 grid (0.35): Minimizar importacion grid')
+        print('    Solar (0.20): Autoconsumo PV')
+        print('    EV satisfaction (0.30): SOC 90% (PRIORIDAD MAXIMA)')
+        print('    Cost (0.10): Minimizar costo')
+        print('    Grid stability (0.05): Suavizar picos')
         if reward_weights is not None:
-            print('    CO2={:.2f} | Solar={:.2f}'.format(reward_weights.co2, reward_weights.solar))
-            print('    Cost={:.2f} | EV={:.2f}'.format(reward_weights.cost, reward_weights.ev_satisfaction))
-            print('    Grid={:.2f}'.format(reward_weights.grid_stability))
+            print('  [Valores cargados: CO2={:.2f}, Solar={:.2f}, EV={:.2f}, Cost={:.2f}, Grid={:.2f}]'.format(
+                reward_weights.co2, reward_weights.solar, reward_weights.ev_satisfaction,
+                reward_weights.cost, reward_weights.grid_stability))
         print()
 
     except (ImportError, FileNotFoundError, ValueError) as exc:
@@ -445,20 +659,41 @@ def main():
             solar_hourly = np.ones(HOURS_PER_YEAR, dtype=np.float32) * 1000.0
 
         # ====================================================================
-        # CHARGERS (128 sockets = 32 chargers x 4 sockets)
+        # CHARGERS (128 sockets = 32 chargers x 4 sockets) - DATOS REALES
         # ====================================================================
-        charger_path = Path('data/interim/oe2/chargers/individual_chargers.json')
-        if charger_path.exists():
-            with open(charger_path, encoding='utf-8') as f:
-                charger_data = json.load(f)
-            n_chargers = len(charger_data)
-            del charger_data  # Solo necesitamos el count
-            n_sockets = n_chargers * 4
-            chargers_hourly = np.random.uniform(0.5, 3.0, (HOURS_PER_YEAR, n_sockets)).astype(np.float32)
-            logger.info("Chargers cargados: %d x 4 sockets = %d total", n_chargers, n_sockets)
+        charger_csv_path = Path('data/interim/oe2/chargers/chargers_hourly_profiles_annual.csv')
+        if charger_csv_path.exists():
+            df_chargers = pd.read_csv(charger_csv_path)
+            # CSV tiene 32 columnas (1 por charger) - expandir a 128 sockets (4 por charger)
+            chargers_raw = df_chargers.values.astype(np.float32)  # (8760, 32)
+            if chargers_raw.shape[0] != HOURS_PER_YEAR:
+                raise ValueError(f"Chargers CSV debe tener {HOURS_PER_YEAR} filas, tiene {chargers_raw.shape[0]}")
+            # Expandir: cada charger tiene 4 sockets, distribuir demanda
+            n_charger_units = chargers_raw.shape[1]  # 32
+            chargers_hourly = np.zeros((HOURS_PER_YEAR, n_charger_units * 4), dtype=np.float32)
+            for i in range(n_charger_units):
+                # Distribuir demanda del charger entre sus 4 sockets
+                for s in range(4):
+                    socket_idx = i * 4 + s
+                    # Socket recibe 1/4 de la demanda base + variación
+                    chargers_hourly[:, socket_idx] = chargers_raw[:, i] * (0.2 + 0.15 * s)
+            n_sockets = chargers_hourly.shape[1]  # 128
+            total_demand = float(np.sum(chargers_hourly))
+            logger.info("Chargers REALES: %d chargers x 4 = %d sockets | Demanda anual: %.0f kWh", 
+                        n_charger_units, n_sockets, total_demand)
         else:
-            logger.warning("Chargers no encontrado: %s", str(charger_path))
-            chargers_hourly = np.random.uniform(0.5, 3.0, (HOURS_PER_YEAR, 128)).astype(np.float32)
+            # Fallback: intentar JSON antiguo
+            charger_path = Path('data/interim/oe2/chargers/individual_chargers.json')
+            if charger_path.exists():
+                with open(charger_path, encoding='utf-8') as f:
+                    charger_data = json.load(f)
+                n_chargers_json = len(charger_data)
+                n_sockets = n_chargers_json * 4
+                del charger_data
+            else:
+                n_sockets = 128
+            logger.warning("Chargers CSV no encontrado: %s - usando datos sintéticos", str(charger_csv_path))
+            chargers_hourly = np.random.uniform(0.5, 3.0, (HOURS_PER_YEAR, n_sockets)).astype(np.float32)
 
         # ====================================================================
         # MALL DEMAND
@@ -481,19 +716,24 @@ def main():
         # ====================================================================
         # BESS SOC (Battery Energy Storage System State of Charge)
         # ====================================================================
-        bess_path = Path('data/interim/oe2/bess/bess_dataset.csv')
+        # Intentar múltiples paths para BESS
+        bess_paths = [
+            Path('data/interim/oe2/bess/bess_hourly_dataset_2024.csv'),
+            Path('data/interim/oe2/bess/bess_dataset.csv'),
+        ]
+        bess_path = next((p for p in bess_paths if p.exists()), None)
         bess_soc = np.full(HOURS_PER_YEAR, 0.5, dtype=np.float32)  # Default fallback: 50%
 
-        if bess_path.exists():
+        if bess_path is not None and bess_path.exists():
             df_bess = pd.read_csv(bess_path, encoding='utf-8')
             soc_cols = [c for c in df_bess.columns if 'soc' in c.lower()]
             if soc_cols:
                 bess_soc_raw = np.asarray(df_bess[soc_cols[0]].values[:HOURS_PER_YEAR], dtype=np.float32)
                 # Normalizar si está en [0,100] en lugar de [0,1]
                 bess_soc = (bess_soc_raw / 100.0 if float(np.max(bess_soc_raw)) > 1.0 else bess_soc_raw)
-                logger.info("BESS cargado: SOC media %.1f%%", float(np.mean(bess_soc)) * 100.0)
+                logger.info("BESS cargado: SOC media %.1f%% (archivo: %s)", float(np.mean(bess_soc)) * 100.0, bess_path.name)
         else:
-            logger.warning("BESS no encontrado: %s - usando fallback 50%%", str(bess_path))
+            logger.warning("BESS no encontrado en paths conocidos - usando fallback 50%%")
 
         print()
 
@@ -578,26 +818,45 @@ def main():
         speed_est: float = 1100.0 if device == 'cuda' else 70.0
         duration_est: float = TOTAL_TIMESTEPS / (speed_est * 60.0)
 
-        print('  Configuracion:')
+        print('  CONFIGURACION:')
         print('    Episodios: {} x {} horas = {:,} timesteps'.format(NUM_EPISODES, HOURS_PER_YEAR, TOTAL_TIMESTEPS))
         print('    Datos: 100% REALES (OE2 Iquitos)')
         print('    Device: {}'.format(device.upper()))
         print('    Duracion est.: ~{:.1f} minutos'.format(duration_est))
         print()
+        print('  REWARD WEIGHTS (SINCRONIZADOS):')
+        print('    CO2 grid (0.35): Minimizar importacion')
+        print('    Solar (0.20): Autoconsumo PV')
+        print('    EV satisfaction (0.30): SOC 90% (PRIORIDAD MAXIMA)')
+        print('    Cost (0.10): Minimizar costo')
+        print('    Grid stability (0.05): Suavizar picos')
+        print()
         print('  Iniciando entrenamiento...')
         print()
 
+        # CALLBACKS: Checkpoint + DetailedLogging
         checkpoint_callback: CheckpointCallback = CheckpointCallback(
             save_freq=2000,
             save_path=str(checkpoint_dir),
             name_prefix='ppo_model',
             verbose=0
         )
+        
+        # DetailedLoggingCallback para tracking completo
+        logging_callback = DetailedLoggingCallback(
+            env_ref=env,
+            output_dir=output_dir,
+            verbose=1
+        )
+        
+        # Combinar callbacks
+        from stable_baselines3.common.callbacks import CallbackList
+        callbacks = CallbackList([checkpoint_callback, logging_callback])
 
         t_start: float = time.time()
         model.learn(
             total_timesteps=TOTAL_TIMESTEPS,
-            callback=checkpoint_callback,
+            callback=callbacks,
             progress_bar=True,
             reset_num_timesteps=False
         )
@@ -626,7 +885,7 @@ def main():
     # performance real del agente entrenado. Referencias:
     # [Schulman et al. 2017] recomienda validación en ambiente sin exploración.
 
-    NUM_VALIDATION_EPISODES: int = 3
+    NUM_VALIDATION_EPISODES: int = 10
 
     try:
         print('[PASO 6] VALIDACION - {} EPISODIOS DETERMINISICOS'.format(NUM_VALIDATION_EPISODES))
@@ -697,12 +956,27 @@ def main():
         # ====================================================================
         summary: Dict[str, Any] = {
             'timestamp': datetime.now().isoformat(),
+            'agent': 'PPO',
+            'project': 'pvbesscar',
+            'location': 'Iquitos, Peru',
+            'co2_factor_kg_per_kwh': CO2_FACTOR_IQUITOS,
             'training': {
                 'total_timesteps': int(TOTAL_TIMESTEPS),
                 'episodes': int(NUM_EPISODES),
                 'duration_seconds': float(elapsed),
                 'speed_steps_per_second': float(speed_achieved),
                 'device': str(device),
+                'hyperparameters': {
+                    'learning_rate': ppo_config.learning_rate,
+                    'n_steps': ppo_config.n_steps,
+                    'batch_size': ppo_config.batch_size,
+                    'n_epochs': ppo_config.n_epochs,
+                    'gamma': ppo_config.gamma,
+                    'gae_lambda': ppo_config.gae_lambda,
+                    'clip_range': ppo_config.clip_range,
+                    'ent_coef': ppo_config.ent_coef,
+                    'vf_coef': ppo_config.vf_coef,
+                }
             },
             'validation': {
                 'num_episodes': int(NUM_VALIDATION_EPISODES),
@@ -712,6 +986,15 @@ def main():
                 'mean_solar_kwh': float(solar_mean),
                 'mean_grid_import_kwh': float(grid_mean),
             },
+            'training_evolution': {
+                'episode_rewards': logging_callback.episode_rewards,
+                'episode_co2_grid': logging_callback.episode_co2_grid,
+                'episode_co2_avoided_indirect': logging_callback.episode_co2_avoided_indirect,
+                'episode_co2_avoided_direct': logging_callback.episode_co2_avoided_direct,
+                'episode_solar_kwh': logging_callback.episode_solar_kwh,
+                'episode_ev_charging': logging_callback.episode_ev_charging,
+                'episode_grid_import': logging_callback.episode_grid_import,
+            },
             'model_path': str(final_path),
         }
 
@@ -719,7 +1002,35 @@ def main():
         with open(metrics_file, 'w', encoding='utf-8') as f:
             json.dump(summary, f, indent=2, ensure_ascii=False)
 
-        logger.info("Metricas guardadas: %s", str(metrics_file))
+        # ========== GUARDAR 3 ARCHIVOS DE SALIDA ==========
+        print('  GUARDANDO ARCHIVOS DE SALIDA:')
+
+        # 1. result_ppo.json - Resumen completo del entrenamiento
+        result_file = output_dir / 'result_ppo.json'
+        with open(result_file, 'w', encoding='utf-8') as f:
+            json.dump(summary, f, indent=2, ensure_ascii=False)
+        print(f'    [OK] {result_file}')
+
+        # 2. timeseries_ppo.csv - Series temporales por hora
+        timeseries_file = output_dir / 'timeseries_ppo.csv'
+        if logging_callback.timeseries_records:
+            df_timeseries = pd.DataFrame(logging_callback.timeseries_records)
+            df_timeseries.to_csv(timeseries_file, index=False, encoding='utf-8')
+            print(f'    [OK] {timeseries_file} ({len(df_timeseries):,} registros)')
+        else:
+            print(f'    [WARN] {timeseries_file} - sin datos')
+
+        # 3. trace_ppo.csv - Trazabilidad paso a paso
+        trace_file = output_dir / 'trace_ppo.csv'
+        if logging_callback.trace_records:
+            df_trace = pd.DataFrame(logging_callback.trace_records)
+            df_trace.to_csv(trace_file, index=False, encoding='utf-8')
+            print(f'    [OK] {trace_file} ({len(df_trace):,} registros)')
+        else:
+            print(f'    [WARN] {trace_file} - sin datos')
+        
+        print()
+        logger.info("Archivos generados en: %s", str(output_dir))
 
         print('='*80)
         print('ENTRENAMIENTO PPO COMPLETADO EXITOSAMENTE')
