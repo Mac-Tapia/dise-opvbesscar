@@ -308,3 +308,29 @@
 2026-02-07 10:31:33,488 | __main__ | INFO |   Action: (129,)
 2026-02-07 10:31:33,488 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
 2026-02-07 10:31:34,141 | __main__ | INFO | PPO creado: LR=0.0003, n_steps=2048, device=cuda
+2026-02-07 10:33:45,959 | __main__ | INFO | Entrenamiento exitoso: 2.2 min (speed: 665 steps/s)
+2026-02-07 10:33:45,960 | __main__ | INFO | Modelo guardado: checkpoints\PPO\ppo_final.zip
+2026-02-07 10:33:51,187 | __main__ | INFO |   Episodio 1/10: 8760 steps | R=  2958.0 | CO2=   2971695 kg
+2026-02-07 10:33:56,684 | __main__ | INFO |   Episodio 2/10: 8760 steps | R=  2957.9 | CO2=   2971695 kg
+2026-02-07 10:34:02,756 | __main__ | INFO |   Episodio 3/10: 8760 steps | R=  2957.9 | CO2=   2971695 kg
+2026-02-07 10:34:08,817 | __main__ | INFO |   Episodio 4/10: 8760 steps | R=  2957.9 | CO2=   2971695 kg
+2026-02-07 10:34:14,588 | __main__ | INFO |   Episodio 5/10: 8760 steps | R=  2957.9 | CO2=   2971695 kg
+2026-02-07 10:34:20,033 | __main__ | INFO |   Episodio 6/10: 8760 steps | R=  2957.9 | CO2=   2971695 kg
+2026-02-07 10:34:26,068 | __main__ | INFO |   Episodio 7/10: 8760 steps | R=  2957.9 | CO2=   2971695 kg
+2026-02-07 10:34:31,964 | __main__ | INFO |   Episodio 8/10: 8760 steps | R=  2957.9 | CO2=   2971695 kg
+2026-02-07 10:34:37,364 | __main__ | INFO |   Episodio 9/10: 8760 steps | R=  2957.9 | CO2=   2971695 kg
+2026-02-07 10:34:42,724 | __main__ | INFO |   Episodio 10/10: 8760 steps | R=  2957.9 | CO2=   2971695 kg
+2026-02-07 10:34:43,786 | __main__ | INFO | Archivos generados en: outputs\ppo_training
+2026-02-07 10:35:38,024 | __main__ | INFO | Device: cuda | Batch: 256 | Epochs: 20
+2026-02-07 10:35:38,035 | __main__ | INFO | Config validado: default.yaml OK
+2026-02-07 10:35:38,045 | __main__ | INFO | Solar REAL (CityLearn v2): columna='pv_generation_kwh' | 8292514 kWh/ano (8760h)
+2026-02-07 10:35:38,149 | __main__ | INFO | Chargers REALES (128 sockets directos): 128 sockets | Demanda anual: 1024818 kWh
+2026-02-07 10:35:38,150 | __main__ | INFO | Charger STATS (5to OE2): max_power=2.45-3.03 kW, mean_power=0.91 kW
+2026-02-07 10:35:38,154 | __main__ | INFO | Mall REAL: 12368653 kWh/año (promedio 1411.9 kW/h)
+2026-02-07 10:35:38,163 | __main__ | INFO | BESS REAL: SOC media 90.5% (archivo: bess_hourly_dataset_2024.csv)
+2026-02-07 10:35:38,164 | __main__ | INFO | Environment creado:
+2026-02-07 10:35:38,164 | __main__ | INFO |   Observation: (394,)
+2026-02-07 10:35:38,164 | __main__ | INFO |   Action: (129,)
+2026-02-07 10:35:38,164 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-07 10:35:39,280 | __main__ | INFO | PPO creado: LR=0.0003, n_steps=2048, device=cuda
+2026-02-07 10:35:51,567 | __main__ | ERROR | ERROR en entrenamiento: 'DetailedLoggingCallback' object has no attribute 'episode_reward'
