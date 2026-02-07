@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-02-07T00:17:42.499966",
+  "training": {
+    "total_timesteps": 43800,
+    "episodes": 5,
+    "duration_seconds": 66.0965325832367,
+    "speed_steps_per_second": 662.6671368099647,
+    "device": "cuda"
+  },
+  "validation": {
+    "num_episodes": 3,
+    "mean_reward": -849.1156111133974,
+    "std_reward": 0.018178574874389883,
+    "mean_co2_avoided_kg": 7923.535511390449,
+    "mean_solar_kwh": 17526.068372905254,
+    "mean_grid_import_kwh": 13289153.26142039
+  },
+  "model_path": "analyses\\oe3\\training\\checkpoints\\ppo\\ppo_final.zip"
+}

@@ -257,7 +257,7 @@ class A2CAgent:
             info["torch_version"] = str(torch.__version__)
             info["cuda_available"] = str(torch.cuda.is_available())
             if torch.cuda.is_available():
-                cuda_ver = torch.version.cuda
+                cuda_ver = getattr(torch.version, 'cuda', None)  # type: ignore[attr-defined]
                 info["cuda_version"] = str(cuda_ver) if cuda_ver is not None else "unknown"
                 info["gpu_name"] = str(torch.cuda.get_device_name(0))
                 props: Any = torch.cuda.get_device_properties(0)
@@ -576,7 +576,7 @@ class A2CAgent:
             Returns:
                 Custom policy class with Huber loss for value function
             """
-            from stable_baselines3.a2c.policies import ActorCriticPolicy
+            from stable_baselines3.common.policies import ActorCriticPolicy
 
             class HuberLossA2CPolicy(ActorCriticPolicy):
                 """A2C policy using Huber loss instead of MSE for value function."""
@@ -604,7 +604,7 @@ class A2CAgent:
             Returns:
                 Custom policy class with configurable optimizer
             """
-            from stable_baselines3.a2c.policies import ActorCriticPolicy
+            from stable_baselines3.common.policies import ActorCriticPolicy
 
             class OptimizerSelectionA2CPolicy(ActorCriticPolicy):
                 """A2C policy with configurable optimizer selection."""
@@ -636,11 +636,19 @@ class A2CAgent:
             Returns:
                 Custom policy class supporting actor_lr and critic_lr
             """
-            from stable_baselines3.a2c.policies import ActorCriticPolicy
+            from stable_baselines3.common.policies import ActorCriticPolicy
             import torch as th
 
             class SeparateLRA2CPolicy(ActorCriticPolicy):
-                """A2C policy with separate learning rates for actor and critic."""
+                """A2C policy with separate learning rates for actor and critic.
+
+                Note: Separate optimizers are configured post-initialization via
+                configure_separate_optimizers() method, not via _setup_learn which
+                doesn't exist in ActorCriticPolicy.
+                """
+                # Class-level type hints for Pylance
+                actor_optimizer: Optional[th.optim.Adam]  # type: ignore[name-defined]
+                critic_optimizer: Optional[th.optim.Adam]  # type: ignore[name-defined]
 
                 def __init__(self, *args, actor_learning_rate: float = 1e-4,
                            critic_learning_rate: float = 1e-4, **kwargs):
@@ -648,32 +656,37 @@ class A2CAgent:
                     self.actor_learning_rate = actor_learning_rate
                     self.critic_learning_rate = critic_learning_rate
                     self._separate_optimizers_created = False
+                    # Initialize optimizer attributes in __init__
+                    self.actor_optimizer = None
+                    self.critic_optimizer = None
 
-                def _setup_learn(self, *args, **kwargs):
-                    """Setup learning after policy creation."""
-                    super()._setup_learn(*args, **kwargs)
+                def configure_separate_optimizers(self) -> None:
+                    """Configure separate optimizers for actor and critic networks.
 
-                    # Create separate optimizers for actor and critic
-                    if not self._separate_optimizers_created:
-                        try:
-                            # Create separate optimizers with different LRs
-                            self.actor_optimizer = th.optim.Adam(
-                                self.policy_net.parameters(),
-                                lr=self.actor_learning_rate
-                            )
-                            self.critic_optimizer = th.optim.Adam(
-                                self.value_net.parameters(),
-                                lr=self.critic_learning_rate
-                            )
+                    Call this after the policy is attached to the algorithm.
+                    """
+                    if self._separate_optimizers_created:
+                        return
 
-                            logger.debug(
-                                "[A2C SPLIT LR] Actor LR=%.2e, Critic LR=%.2e",
-                                self.actor_learning_rate,
-                                self.critic_learning_rate
-                            )
-                            self._separate_optimizers_created = True
-                        except (AttributeError, RuntimeError) as e:
-                            logger.warning("[A2C SPLIT LR] Could not create separate optimizers: %s", e)
+                    try:
+                        # Create separate optimizers with different LRs
+                        self.actor_optimizer = th.optim.Adam(
+                            self.mlp_extractor.policy_net.parameters(),
+                            lr=self.actor_learning_rate
+                        )
+                        self.critic_optimizer = th.optim.Adam(
+                            self.mlp_extractor.value_net.parameters(),
+                            lr=self.critic_learning_rate
+                        )
+
+                        logger.debug(
+                            "[A2C SPLIT LR] Actor LR=%.2e, Critic LR=%.2e",
+                            self.actor_learning_rate,
+                            self.critic_learning_rate
+                        )
+                        self._separate_optimizers_created = True
+                    except (AttributeError, RuntimeError) as e:
+                        logger.warning("[A2C SPLIT LR] Could not create separate optimizers: %s", e)
 
             return SeparateLRA2CPolicy
 
@@ -721,7 +734,7 @@ class A2CAgent:
                     "[A2C TASK 7] Huber Loss factory created, delta=%.2f",
                     huber_delta
                 )
-            except Exception as e:
+            except (ImportError, AttributeError, RuntimeError, TypeError, ValueError) as e:
                 logger.warning("[A2C TASK 7] Could not create Huber loss policy: %s", e)
                 custom_huber_policy = None
 
@@ -769,7 +782,7 @@ class A2CAgent:
                     "[A2C TASK 8] Optimizer Selection factory created, type=%s",
                     optimizer_type
                 )
-            except Exception as e:
+            except (ImportError, AttributeError, RuntimeError, TypeError, ValueError) as e:
                 logger.warning("[A2C TASK 8] Could not create optimizer selection policy: %s", e)
                 custom_optimizer_policy = None
                 optimizer_type = 'adam'  # Fallback to adam
@@ -909,16 +922,18 @@ class A2CAgent:
                         total_steps = self.agent.config.train_steps or 100000
                         progress = min(1.0, self.n_calls / max(total_steps, 1))
                         decayed_ent = compute_entropy_schedule_a2c(progress)
+                        # Use setattr for dynamic attribute assignment (bypasses type checking)
                         if hasattr(self.model, 'ent_coef'):
-                            self.model.ent_coef = decayed_ent
-                except Exception as err:
+                            setattr(self.model, 'ent_coef', decayed_ent)
+                except (AttributeError, TypeError, ValueError, KeyError, RuntimeError) as err:
                     logger.debug("[A2C Entropy Schedule] Not applied: %s", err)
 
                 # ========== ADVANTAGE NORMALIZATION - PHASE 2 TASK 6 ==========
                 if self.advantage_norm_enabled and self.n_calls % 5000 == 0:
                     try:
-                        if hasattr(self.model, 'rollout_buffer'):
-                            buf = self.model.rollout_buffer
+                        # Use getattr to safely access rollout_buffer (A2C-specific attribute)
+                        buf = getattr(self.model, 'rollout_buffer', None)
+                        if buf is not None:
                             if hasattr(buf, 'advantages') and buf.advantages is not None:
                                 adv_arr = np.array(buf.advantages, dtype=np.float32).ravel()
                                 if len(adv_arr) > 0:
@@ -926,7 +941,7 @@ class A2CAgent:
                                         "[A2C TASK 6] Advantage stats: mean=%.4f, std=%.4f, min=%.4f, max=%.4f",
                                         np.mean(adv_arr), np.std(adv_arr), np.min(adv_arr), np.max(adv_arr)
                                     )
-                    except Exception as err:
+                    except (AttributeError, TypeError, ValueError, KeyError, RuntimeError) as err:
                         logger.debug("[A2C Advantage Stats] Not available: %s", err)
 
                 # ========================================================================
@@ -1016,9 +1031,9 @@ class A2CAgent:
 
                     # Validar que hay datos reales
                     if final_metrics["grid_import_kwh"] <= 0.0:
-                        logger.warning(f"[A2C] Grid counter was 0 - CityLearn no reportó datos")
+                        logger.warning("[A2C] Grid counter was 0 - CityLearn no reportó datos")
                     if final_metrics["solar_generation_kwh"] <= 0.0:
-                        logger.warning(f"[A2C] Solar counter was 0 - CityLearn no reportó datos")
+                        logger.warning("[A2C] Solar counter was 0 - CityLearn no reportó datos")
 
                     self.agent.training_history.append({
                         "step": int(self.model.num_timesteps),

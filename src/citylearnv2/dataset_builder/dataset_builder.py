@@ -1154,6 +1154,15 @@ def build_citylearn_dataset(
             df_energy = pd.read_csv(energy_path)
             n = min(len(df_energy), 8760)
             df_energy = df_energy.iloc[:n].reset_index(drop=True)
+            # OE3 FIX: Add required columns for CityLearn compatibility
+            # When using PV-only data, add placeholder non_shiftable_load column
+            if "non_shiftable_load" not in df_energy.columns:
+                df_energy["non_shiftable_load"] = 0.0  # Will be populated with mall_series later
+                logger.info("[OE3 FIX] Added non_shiftable_load column (placeholder)")
+            # Rename pv_generation_kwh to solar_generation if needed
+            if "pv_generation_kwh" in df_energy.columns and "solar_generation" not in df_energy.columns:
+                df_energy["solar_generation"] = df_energy["pv_generation_kwh"]
+                logger.info("[OE3 FIX] Mapped pv_generation_kwh → solar_generation")
         else:
             logger.warning("[OE3 FIX] energy_simulation CSV no encontrado en template ni OE2. Continuando sin energia.")
     else:

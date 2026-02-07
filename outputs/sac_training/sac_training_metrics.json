@@ -1,15 +1,15 @@
 {
-  "timestamp": "2026-02-05T22:37:05.496752",
-  "total_timesteps": 26280,
-  "training_duration_seconds": 231.502649,
-  "episodes_trained": 3,
+  "timestamp": "2026-02-06T20:51:40.237835",
+  "total_timesteps": 87600,
+  "training_duration_seconds": 813.42658,
+  "episodes_trained": 10,
   "validation_metrics": {
-    "mean_reward": 781902.2075232565,
-    "std_reward": 33.62217383957822,
-    "mean_co2_avoided_kg": 4450291.810797838,
+    "mean_reward": 2138.5962465956986,
+    "std_reward": 0.0,
+    "mean_co2_avoided_kg": 4497974.033613804,
     "mean_solar_kwh": 8292514.2078002505,
-    "mean_cost_usd": 924421.5326577257,
-    "mean_grid_import_kwh": 6836784.332944394
+    "mean_cost_usd": 930841.5197570232,
+    "mean_grid_import_kwh": 6856677.581426158
   },
   "reward_weights": {
     "co2": 0.5,
