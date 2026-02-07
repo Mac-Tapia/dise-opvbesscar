@@ -73,7 +73,7 @@ try:
     # ========== VALIDACION CRITICA: 5 ARCHIVOS OE2 OBLIGATORIOS ==========
     print('[0] VALIDAR SINCRONIZACION CON 5 DATASETS OE2', flush=True)
     print('-' * 80, flush=True)
-    
+
     OE2_FILES = {
         'solar': Path('data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv'),
         'chargers_hourly': Path('data/oe2/chargers/chargers_real_hourly_2024.csv'),
@@ -81,10 +81,10 @@ try:
         'bess': Path('data/oe2/bess/bess_hourly_dataset_2024.csv'),
         'mall_demand': Path('data/oe2/demandamallkwh/demandamallhorakwh.csv'),
     }
-    
+
     oe2_validation_ok = True
     oe2_summary = {}
-    
+
     for name, path in OE2_FILES.items():
         if path.exists():
             df = pd.read_csv(path, nrows=5, sep=';' if 'mall' in name else ',')
@@ -96,10 +96,10 @@ try:
         else:
             print(f'  [ERROR] {name}: NO ENCONTRADO ({path})', flush=True)
             oe2_validation_ok = False
-    
+
     if not oe2_validation_ok:
         raise FileNotFoundError('Faltan archivos OE2 obligatorios. Ver errores arriba.')
-    
+
     print(flush=True)
     print('  SINCRONIZACION OE2 -> CityLearn:', flush=True)
     print(f'    Solar PVGIS:       {oe2_summary["solar"]["rows"]:,} horas', flush=True)
@@ -108,7 +108,7 @@ try:
     print(f'    Mall Demand:       {oe2_summary["mall_demand"]["rows"]:,} horas', flush=True)
     print('  [OK] Todos los datasets OE2 sincronizados con CityLearn schema', flush=True)
     print(flush=True)
-    
+
     print('[1] CARGAR CONFIGURACION Y CONTEXTO MULTIOBJETIVO', flush=True)
     print('-' * 80, flush=True)
 
@@ -647,12 +647,12 @@ try:
 
     class DetailedLoggingCallback(BaseCallback):
         """Callback con métricas detalladas de CO2, Solar y EV durante entrenamiento."""
-        
+
         def __init__(self, env_ref: CityLearnRealEnv, verbose: int = 1):
             super().__init__(verbose)
             self.env_ref = env_ref
             self.step_log_freq = 1000  # Cada 1000 pasos
-            
+
             # Acumuladores por episodio
             self.episode_rewards: list[float] = []
             self.episode_co2_grid: list[float] = []
@@ -661,7 +661,7 @@ try:
             self.episode_solar_kwh: list[float] = []
             self.episode_ev_charging: list[float] = []
             self.episode_grid_import: list[float] = []
-            
+
             # Tracking actual
             self.current_episode = 0
             self.ep_co2_grid = 0.0
@@ -672,12 +672,12 @@ try:
             self.ep_grid = 0.0
             self.ep_reward = 0.0
             self.ep_steps = 0
-            
+
         def _on_step(self) -> bool:
             # Obtener info del último step
             infos = self.locals.get('infos', [{}])
             info = infos[0] if infos else {}
-            
+
             # Acumular métricas
             self.ep_co2_grid += info.get('co2_grid_kg', 0)
             self.ep_co2_avoided_indirect += info.get('co2_avoided_indirect_kg', 0)
@@ -686,7 +686,7 @@ try:
             self.ep_ev += info.get('ev_charging_kwh', 0)
             self.ep_grid += info.get('grid_import_kwh', 0)
             self.ep_steps += 1
-            
+
             # Detectar fin de episodio
             dones = self.locals.get('dones', [False])
             if dones[0]:
@@ -694,31 +694,31 @@ try:
                 self._log_episode_summary()
                 self._reset_episode_tracking()
                 self.current_episode += 1
-            
+
             # Log de progreso cada N pasos
             if self.num_timesteps % self.step_log_freq == 0:
                 self._log_progress()
-                
+
             return True
-        
+
         def _log_progress(self) -> None:
             """Mostrar progreso durante el episodio."""
             ep_num = self.current_episode
             pct = (self.ep_steps / 8760) * 100
             # co2_net calculado pero no mostrado (reservado para futuro)
             _ = self.ep_co2_grid - self.ep_co2_avoided_indirect - self.ep_co2_avoided_direct
-            
+
             print(f'    Steps: {self.num_timesteps:>7,} | Ep: {ep_num:>2} | '
                   f'Progreso: {pct:>5.1f}% | '
                   f'CO2_grid: {self.ep_co2_grid:>8,.0f} kg | '
                   f'CO2_evitado: {(self.ep_co2_avoided_indirect + self.ep_co2_avoided_direct):>8,.0f} kg', flush=True)
-        
+
         def _log_episode_summary(self) -> None:
             """Resumen completo al finalizar episodio."""
             co2_avoided_total = self.ep_co2_avoided_indirect + self.ep_co2_avoided_direct
             co2_net = self.ep_co2_grid - co2_avoided_total
             co2_reduction_pct = (co2_avoided_total / max(1, self.ep_co2_grid + co2_avoided_total)) * 100
-            
+
             print(flush=True)
             print('  ' + '='*76, flush=True)
             print(f'  EPISODIO {self.current_episode + 1} COMPLETADO ({self.ep_steps:,} pasos)', flush=True)
@@ -736,7 +736,7 @@ try:
             print(f'    Solar Generada:            {self.ep_solar:>12,.1f} kWh', flush=True)
             print(f'    EV Cargados:               {self.ep_ev:>12,.1f} kWh', flush=True)
             print(f'    Grid Import:               {self.ep_grid:>12,.1f} kWh', flush=True)
-            
+
             # Autoconsumo solar
             if self.ep_solar > 0:
                 solar_used = min(self.ep_solar, self.ep_ev + self.ep_grid * 0.5)
@@ -745,7 +745,7 @@ try:
             print('  ' + '='*76, flush=True)
             print(flush=True)
             sys.stdout.flush()  # Forzar flush
-            
+
             # Guardar para análisis posterior
             self.episode_rewards.append(self.ep_reward)
             self.episode_co2_grid.append(self.ep_co2_grid)
@@ -754,7 +754,7 @@ try:
             self.episode_solar_kwh.append(self.ep_solar)
             self.episode_ev_charging.append(self.ep_ev)
             self.episode_grid_import.append(self.ep_grid)
-        
+
         def _reset_episode_tracking(self) -> None:
             """Reset acumuladores para nuevo episodio."""
             self.ep_co2_grid = 0.0
@@ -810,7 +810,7 @@ try:
     print(f'    Velocidad: {TOTAL_TIMESTEPS/elapsed:.0f} timesteps/segundo')
     print(f'    Episodios completados: {len(logging_callback.episode_rewards)}')
     print()
-    
+
     # RESUMEN DE APRENDIZAJE POR EPISODIO
     if len(logging_callback.episode_rewards) > 1:
         print('  EVOLUCION DEL APRENDIZAJE:')
@@ -828,17 +828,17 @@ try:
             reduction_pct = (co2_avoided / max(1, co2g + co2_avoided)) * 100
             print(f'  {ep_idx+1:>3} | {rew:>12,.2f} | {co2g:>12,.0f} | {co2_avoided:>12,.0f} | {reduction_pct:>9.1f}%')
         print('  ' + '-'*76)
-        
+
         # Tendencia de mejora
         if len(logging_callback.episode_rewards) >= 2:
             first_reward = logging_callback.episode_rewards[0]
             last_reward = logging_callback.episode_rewards[-1]
             improvement = ((last_reward - first_reward) / abs(first_reward)) * 100 if first_reward != 0 else 0
             print(f'  Mejora Reward (Ep1 vs EpN): {improvement:>+.1f}%')
-            
-            first_co2_reduction = (logging_callback.episode_co2_avoided_indirect[0] + 
+
+            first_co2_reduction = (logging_callback.episode_co2_avoided_indirect[0] +
                                    logging_callback.episode_co2_avoided_direct[0])
-            last_co2_reduction = (logging_callback.episode_co2_avoided_indirect[-1] + 
+            last_co2_reduction = (logging_callback.episode_co2_avoided_indirect[-1] +
                                   logging_callback.episode_co2_avoided_direct[-1])
             co2_improvement = ((last_co2_reduction - first_co2_reduction) / max(1, first_co2_reduction)) * 100
             print(f'  Mejora CO2 Evitado (Ep1 vs EpN): {co2_improvement:>+.1f}%')
