@@ -1,142 +1,22 @@
-"""Objetivo Específico 3 (OE.3): CityLearn v2 con carga EV.
+"""
+Métricas y utilidades para CityLearn v2 - OE3.
 
-Este paquete contiene:
-- Construcción de dataset CityLearn (schema + series temporales) a partir de los resultados del OE.2.
-- Simulación y evaluación de agentes (sin control, RBC, RL/SAC).
-- Cálculo de emisiones CO₂ y tabla comparativa anual y a 20 años.
+Este módulo proporciona utilidades para:
+- Monitoreo de chargers
+- Análisis de curva de demanda
+- Despacho de energía
+- Validación de schema
+- Cálculo de EV demand
 
-SINCRONIZACIÓN CENTRALIZADA (2026-02-01):
-Todos los módulos principales están vinculados para evitar duplicación.
-Importa todo desde este __init__.py para máxima compatibilidad.
+Los módulos principales (agents, rewards, dataset_builder) se importan
+directamente desde sus ubicaciones originales.
 """
 
 from __future__ import annotations
 
-# ✅ CRITICAL FIX: Patch matplotlib BEFORE importing stable_baselines3
-# See: https://github.com/DLR-RM/stable-baselines3/issues/1474
-# Problem: stable_baselines3.logger imports matplotlib.figure, triggering circular import
-# Solution: Disable matplotlib entirely to prevent logger from trying to use it
-import os
-os.environ['MPLBACKEND'] = 'Agg'  # Set matplotlib backend via environment variable
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow warnings
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
-
-# =====================================================================
-# AGENTS - Factory functions y clases para agentes RL
-# =====================================================================
-from .agents import (
-    A2CAgent,
-    A2CConfig,
-    BasicRBCAgent,
-    NoControlAgent,
-    PPOAgent,
-    PPOConfig,
-    RBCConfig,
-    SACAgent,
-    SACConfig,
-    UncontrolledChargingAgent,
-    detect_device,
-    make_a2c,
-    make_basic_ev_rbc,
-    make_no_control,
-    make_ppo,
-    make_sac,
-    make_uncontrolled,
-)
-
-# =====================================================================
-# REWARDS - Multi-objetivo y contexto Iquitos
-# =====================================================================
-from .rewards import (
-    CityLearnMultiObjectiveWrapper,
-    IquitosContext,
-    MultiObjectiveReward,
-    MultiObjectiveWeights,
-    calculate_co2_reduction_bess_discharge,
-    calculate_co2_reduction_direct,
-    calculate_co2_reduction_indirect,
-    calculate_solar_dispatch,
-    create_iquitos_reward_weights,
-)
-
-# =====================================================================
-# EMISSIONS - Constantes y cálculos centralizados
-# =====================================================================
-from .emissions_constants import (
-    EMISSIONS,
-    EmissionsConstants,
-    calculate_ev_co2_avoided,
-    calculate_solar_co2_avoided,
-    validate_config_consistency,
-)
-
-# =====================================================================
-# CO₂ ANALYSIS - Tablas y comparación de emisiones
-# =====================================================================
-from .co2_table import (
-    CityBaseline,
-    EmissionsFactors,
-)
-
-# =====================================================================
-# DATA LOADING - Carga de datos OE2
-# =====================================================================
-from .data_loader import (
-    BESSData,
-    ChargerData,
-    MallData,
-    OE2DataLoader,
-    SolarData,
-)
-
-# =====================================================================
-# DATASET CONSTRUCTION - Build CityLearn schema y series
-# =====================================================================
-from .dataset_builder import (
-    BuiltDataset,
-    build_citylearn_dataset,
-)
-
-# =====================================================================
-# BASELINE SIMULATION - Simulación sin control inteligente
-# =====================================================================
-from .baseline_simulator import (
-    BaselineResults,
-    BaselineSimulator,
-)
-
-# =====================================================================
-# VALIDATION - Validadores de schema y dataset
-# =====================================================================
-from .schema_validator import (
-    CityLearnSchemaValidator,
-    SchemaValidationError,
-)
-
-from .validate_citylearn_build import (
-    CityLearnDataValidator,
-    validate_citylearn_dataset,
-)
-
-# =====================================================================
-# SIMULATION - Motor principal de simulación RL
-# =====================================================================
-from .simulate import (
-    SimulationResult,
-    simulate,
-)
-
-# =====================================================================
-# MONITORING - Progress tracking y visualización
-# =====================================================================
-from .progress import (
-    append_progress_row,
-    render_progress_plot,
-)
-
-# =====================================================================
-# ENERGY DISPATCH - Despacho inteligente de energía
-# =====================================================================
+# Imports desde archivos que existen en este directorio
+from .charger_monitor import ChargerMonitor
+from .demand_curve import DemandCurveAnalyzer
 from .dispatcher import (
     DispatchDecision,
     DispatchRule,
@@ -144,137 +24,60 @@ from .dispatcher import (
     EnergyDispatcher,
     EVChargeState,
 )
-
-# =====================================================================
-# OBSERVABLE ENRICHMENT - Enriquecimiento de observables
-# =====================================================================
-from .enriched_observables import (
-    EnrichedObservableWrapper,
-    OperationalConstraints,
+from .ev_demand_calculator import (
+    EVDemandCalculator,
+)
+from .schema_validator import (
+    CityLearnSchemaValidator,
+    SchemaValidationError,
 )
 
-# =====================================================================
-# CHARGER MONITORING - Monitoreo en tiempo real
-# =====================================================================
-from .charger_monitor import (
-    ChargerMonitor,
-)
-
-# =====================================================================
-# CHARGE PREDICTION - Predicción de tiempo de carga
-# =====================================================================
-from .charge_predictor import (
-    BatteryProfile,
-    ChargeScheduler,
-    ChargeTimePredictor,
-    ChargeTimingEstimate,
-)
-
-# =====================================================================
-# DEMAND CURVE - Modelado de curva demanda
-# =====================================================================
-from .demand_curve import (
-    DemandCurveAnalyzer,
-)
-
-# =====================================================================
-# DATASET CONSTRUCTION (Advanced) - Constructor auxiliar
-# =====================================================================
+# Re-export desde ubicaciones correctas para compatibilidad
+# Dataset builder (desde el módulo correcto)
 try:
-    from .dataset_constructor import (
-        DatasetBuilder,
-        DatasetConfig,
-        DatasetMetadata,
+    from src.citylearnv2.dataset_builder import (
+        build_citylearn_dataset,
+        BuiltDataset,
+        CityLearnDataValidator,
     )
 except ImportError:
-    # Fallback si el módulo no está disponible
-    pass
+    build_citylearn_dataset = None  # type: ignore
+    BuiltDataset = None  # type: ignore
+    CityLearnDataValidator = None  # type: ignore
 
-# =====================================================================
-# EXPORTS - Todas las clases y funciones públicas
-# =====================================================================
+# Rewards (desde módulo raíz)
+try:
+    from src.rewards.rewards import (
+        IquitosContext,
+        MultiObjectiveReward,
+        MultiObjectiveWeights,
+        create_iquitos_reward_weights,
+    )
+except ImportError:
+    IquitosContext = None  # type: ignore
+    MultiObjectiveReward = None  # type: ignore
+    MultiObjectiveWeights = None  # type: ignore
+    create_iquitos_reward_weights = None  # type: ignore
+
 __all__ = [
-    # Agents
-    "NoControlAgent",
-    "UncontrolledChargingAgent",
-    "SACAgent",
-    "SACConfig",
-    "PPOAgent",
-    "PPOConfig",
-    "A2CAgent",
-    "A2CConfig",
-    "BasicRBCAgent",
-    "RBCConfig",
-    "make_sac",
-    "make_ppo",
-    "make_a2c",
-    "make_no_control",
-    "make_uncontrolled",
-    "make_basic_ev_rbc",
-    "detect_device",
-    # Rewards
-    "MultiObjectiveWeights",
+    # Local modules
+    "ChargerMonitor",
+    "DemandCurveAnalyzer",
+    "DispatchDecision",
+    "DispatchRule",
+    "EnergyBalance",
+    "EnergyDispatcher",
+    "EVChargeState",
+    "EVDemandCalculator",
+    "CityLearnSchemaValidator",
+    "SchemaValidationError",
+    # Re-exported from dataset_builder
+    "build_citylearn_dataset",
+    "BuiltDataset",
+    "CityLearnDataValidator",
+    # Re-exported from rewards
     "IquitosContext",
     "MultiObjectiveReward",
-    "CityLearnMultiObjectiveWrapper",
+    "MultiObjectiveWeights",
     "create_iquitos_reward_weights",
-    "calculate_co2_reduction_indirect",
-    "calculate_co2_reduction_bess_discharge",
-    "calculate_co2_reduction_direct",
-    "calculate_solar_dispatch",
-    # Emissions
-    "EmissionsConstants",
-    "EMISSIONS",
-    "calculate_ev_co2_avoided",
-    "calculate_solar_co2_avoided",
-    "validate_config_consistency",
-    # CO₂ Analysis
-    "EmissionsFactors",
-    "CityBaseline",
-    # Data Loading
-    "SolarData",
-    "ChargerData",
-    "BESSData",
-    "MallData",
-    "OE2DataLoader",
-    # Dataset
-    "BuiltDataset",
-    "build_citylearn_dataset",
-    "CityLearnDatasetConstructor",  # May not exist
-    # Baseline
-    "BaselineResults",
-    "BaselineSimulator",
-    # Validation
-    "SchemaValidationError",
-    "CityLearnSchemaValidator",
-    "CityLearnDataValidator",
-    "validate_citylearn_dataset",
-    # Simulation
-    "SimulationResult",
-    "simulate",
-    # Progress
-    "append_progress_row",
-    "render_progress_plot",
-    # Dispatch
-    "EVChargeState",
-    "EnergyBalance",
-    "DispatchRule",
-    "DispatchDecision",
-    "EnergyDispatcher",
-    # Observables
-    "OperationalConstraints",
-    "EnrichedObservableWrapper",
-    # Charger
-    "ChargerMonitor",
-    # Charge Prediction
-    "BatteryProfile",
-    "ChargeTimingEstimate",
-    "ChargeTimePredictor",
-    "ChargeScheduler",
-    # Demand
-    "DemandCurveAnalyzer",
-    # Dataset Constructor
-    "DatasetConfig",
-    "DatasetMetadata",
-    "DatasetBuilder",
 ]

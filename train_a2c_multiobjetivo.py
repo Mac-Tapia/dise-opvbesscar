@@ -14,7 +14,7 @@ from pathlib import Path
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 if hasattr(sys.stdout, 'reconfigure'):
     try:
-        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stdout.reconfigure(encoding='utf-8')  # type: ignore[union-attr]
     except (AttributeError, TypeError, RuntimeError):
         pass
 
@@ -57,18 +57,16 @@ DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'  # USA GPU AUTOMATICAMEN
 if DEVICE == 'cuda':
     GPU_NAME = torch.cuda.get_device_name(0)
     GPU_MEMORY = torch.cuda.get_device_properties(0).total_memory / 1e9
-    cuda_version: str | None = getattr(torch.version, 'cuda', None)
+    cuda_version: str | None = getattr(torch.version, 'cuda', None)  # type: ignore[attr-defined]
     print(f'GPU DISPONIBLE: {GPU_NAME}')
     print(f'   Memoria: {GPU_MEMORY:.1f} GB')
     print(f'   CUDA Version: {cuda_version}')
-    print(f'   ✓ ENTRENAMIENTO CON GPU')
-    BATCH_SIZE = 256
-    BUFFER_SIZE = 300000  # Buffer máximo probado en GPU
+    print('   \u2713 ENTRENAMIENTO CON GPU')
+    BATCH_SIZE = 256  # No usado en A2C (on-policy)
     NETWORK_ARCH = [256, 256]
 else:
     print('CPU mode - GPU no disponible, usando CPU')
-    BATCH_SIZE = 64
-    BUFFER_SIZE = 50000
+    BATCH_SIZE = 64  # No usado en A2C (on-policy)
     NETWORK_ARCH = [256, 256]
 
 print(f'   Device: {DEVICE.upper()}')
@@ -86,19 +84,19 @@ try:
     print('[1] CARGAR CONFIGURACION Y CONTEXTO MULTIOBJETIVO')
     print('-' * 80)
 
-    with open('configs/default.yaml', 'r') as f:
+    with open('configs/default.yaml', 'r', encoding='utf-8') as f:
         cfg = yaml.safe_load(f)
 
     print(f'  OK Config loaded: {len(cfg)} keys')
 
-    from src.rewards.rewards import IquitosContext, MultiObjectiveWeights, MultiObjectiveReward
+    from src.rewards.rewards import IquitosContext, MultiObjectiveReward
     from src.rewards.rewards import create_iquitos_reward_weights
 
     weights = create_iquitos_reward_weights("co2_focus")
     context = IquitosContext()
     reward_calculator = MultiObjectiveReward(weights=weights, context=context)
 
-    print(f'  OK Reward weights (CO2 focus):')
+    print('  OK Reward weights (CO2 focus):')
     print(f'    - CO2: {weights.co2:.2f}  (minimizar grid import)')
     print(f'    - Solar: {weights.solar:.2f}  (maximizar autoconsumo)')
     print(f'    - Cost: {weights.cost:.2f}  (minimizar tarifa)')
@@ -106,7 +104,7 @@ try:
     print(f'    - Grid: {weights.grid_stability:.2f}  (estabilidad)')
     print()
 
-    print(f'  OK Contexto Iquitos:')
+    print('  OK Contexto Iquitos:')
     print(f'    - Grid CO2: {context.co2_factor_kg_per_kwh} kg CO2/kWh')
     print(f'    - EV CO2 factor: {context.co2_conversion_factor} kg CO2/kWh')
     print(f'    - Chargers: {context.n_chargers}')
@@ -136,12 +134,12 @@ try:
     from stable_baselines3 import A2C
     from stable_baselines3.common.callbacks import CheckpointCallback
 
-    class CityLearnRealEnv(Env):
+    class CityLearnRealEnv(Env):  # type: ignore[type-arg]
         """Environment con datos REALES OE2 (chargers, BESS, mall demand, solar)"""
 
-        def __init__(self, reward_calc, context, obs_dim=1045, action_dim=129, max_steps=8760):
+        def __init__(self, reward_calc: Any, ctx: Any, obs_dim: int = 1045, action_dim: int = 129, max_steps: int = 8760) -> None:
             self.reward_calculator = reward_calc
-            self.context = context
+            self.context = ctx
             self.obs_dim = obs_dim
             self.action_dim = action_dim
             self.max_steps = max_steps
@@ -161,7 +159,10 @@ try:
             self.solar_kwh_total = 0.0
             self.cost_total = 0.0
             self.grid_import_total = 0.0
-            self.ev_soc_trajectory = []
+            self.ev_soc_trajectory: list[float] = []
+
+            # Atributo para reset (inicializado aquí para Pylance)
+            self.battery_soc_episode: np.ndarray = np.zeros((8760, 128), dtype=np.float32)
 
             # CARGAR LOS 4 DATASETS REALES OE2
             try:
@@ -173,16 +174,27 @@ try:
                 self.chargers_total_kwh = df_chargers[chargers_cols].sum().sum()
                 print(f'  [CHARGERS] Cargado: {self.chargers_hourly_kw.shape} (horas x sockets), {self.chargers_total_kwh:.0f} kWh/año')
 
-                # 2. BESS REAL - STATE OF CHARGE
+                # 2. BESS REAL - STATE OF CHARGE Y FLUJOS DE ENERGÍA
                 bess_path = Path('data/oe2/bess/bess_hourly_dataset_2024.csv')
                 df_bess = pd.read_csv(bess_path)
+                # SOC del BESS
                 if 'soc_percent' in df_bess.columns:
-                    self.bess_soc_percent = (df_bess['soc_percent'].values / 100.0)  # [0,1]
+                    self.bess_soc_percent: np.ndarray | None = df_bess['soc_percent'].values / 100.0  # [0,1]
                 else:
                     numeric_cols = df_bess.select_dtypes(include=['float64', 'int64']).columns
-                    self.bess_soc_percent = (df_bess[numeric_cols[0]].values / 100.0) if len(numeric_cols) > 0 else None
-                avg_soc = self.bess_soc_percent.mean() * 100 if self.bess_soc_percent is not None else 0
+                    self.bess_soc_percent = df_bess[numeric_cols[0]].values / 100.0 if len(numeric_cols) > 0 else None
+                # Flujos de energía reales del BESS (columnas CityLearn v2)
+                self.pv_to_ev_kwh = df_bess['pv_to_ev_kwh'].values if 'pv_to_ev_kwh' in df_bess.columns else np.zeros(len(df_bess))
+                self.pv_to_bess_kwh = df_bess['pv_to_bess_kwh'].values if 'pv_to_bess_kwh' in df_bess.columns else np.zeros(len(df_bess))
+                self.grid_to_ev_kwh = df_bess['grid_to_ev_kwh'].values if 'grid_to_ev_kwh' in df_bess.columns else np.zeros(len(df_bess))
+                self.grid_to_mall_kwh = df_bess['grid_to_mall_kwh'].values if 'grid_to_mall_kwh' in df_bess.columns else np.zeros(len(df_bess))
+                self.bess_charge_kwh = df_bess['bess_charge_kwh'].values if 'bess_charge_kwh' in df_bess.columns else np.zeros(len(df_bess))
+                self.bess_discharge_kwh = df_bess['bess_discharge_kwh'].values if 'bess_discharge_kwh' in df_bess.columns else np.zeros(len(df_bess))
+                avg_soc = float(np.mean(self.bess_soc_percent) * 100) if self.bess_soc_percent is not None else 0.0
                 print(f'  [BESS] Cargado: {len(df_bess)} horas, SOC promedio: {avg_soc:.1f}%')
+                pv_ev_total = float(np.sum(np.asarray(self.pv_to_ev_kwh)))
+                grid_ev_total = float(np.sum(np.asarray(self.grid_to_ev_kwh)))
+                print(f'       Flujos: pv_to_ev={pv_ev_total:.0f}kWh, grid_to_ev={grid_ev_total:.0f}kWh')
 
                 # 3. DEMANDA MALL REAL - SINCRONIZAR A 8760
                 mall_path = Path('data/oe2/demandamallkwh/demandamallhorakwh.csv')
@@ -192,27 +204,43 @@ try:
                 if len(mall_demand_kwh) > 8760:
                     mall_demand_kwh = mall_demand_kwh[:8760]
                 self.mall_hourly_kw = mall_demand_kwh
-                print(f'  [MALL] Cargado: {len(self.mall_hourly_kw)} horas (SINCRONIZADO), {self.mall_hourly_kw.sum():.0f} kWh/año')
+                mall_total = float(np.sum(np.array(self.mall_hourly_kw, dtype=np.float64)))
+                print(f'  [MALL] Cargado: {len(self.mall_hourly_kw)} horas (SINCRONIZADO), {mall_total:.0f} kWh/año')
 
                 # 4. SOLAR REAL - TODAS LAS 11 COLUMNAS
                 solar_path = Path('data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv')
                 df_solar = pd.read_csv(solar_path)
                 solar_cols = [c for c in df_solar.columns if c.lower() != 'timestamp']
-                self.solar_all_columns = df_solar[solar_cols].values  # (8760, 11)
-                self.solar_hourly_kw = df_solar['ac_power_kw'].values
-                print(f'  [SOLAR] Cargado: {self.solar_all_columns.shape} (horas x 11 columns), {self.solar_hourly_kw.sum():.0f} kWh/año')
+                self.solar_all_columns = df_solar[solar_cols].values  # (8760, 10)
+                # Usar pv_generation_kwh (energía) - consistente con CityLearn v2
+                if 'pv_generation_kwh' in df_solar.columns:
+                    self.solar_hourly_kwh = df_solar['pv_generation_kwh'].values
+                elif 'ac_energy_kwh' in df_solar.columns:
+                    self.solar_hourly_kwh = df_solar['ac_energy_kwh'].values
+                else:
+                    # Fallback a potencia (para datos horarios kW ≈ kWh)
+                    self.solar_hourly_kwh = df_solar['ac_power_kw'].values
+                solar_total = float(np.sum(np.array(self.solar_hourly_kwh, dtype=np.float64)))
+                print(f'  [SOLAR] Cargado: {self.solar_all_columns.shape} (horas x columnas), {solar_total:.0f} kWh/año')
                 print(f'       Columnas: {list(solar_cols)}')
 
-            except Exception as e:
+            except (FileNotFoundError, KeyError, ValueError, pd.errors.ParserError) as e:
                 print(f'  [ERROR] Fallo al cargar datos OE2: {e}')
                 raise
 
-            # INICIALIZAR BATERIAS
+            # INICIALIZAR BATERIAS EV (112 motos + 16 mototaxis = 128 sockets)
+            # Distribución correcta según IquitosContext:
+            #   - 28 chargers motos × 4 sockets = 112 sockets motos @ 2.0 kWh bateria
+            #   - 4 chargers mototaxis × 4 sockets = 16 sockets mototaxis @ 4.5 kWh bateria
             self.battery_soc = np.random.uniform(20, 80, size=(8760, 128)).astype(np.float32)
             self.battery_capacity = np.zeros(128, dtype=np.float32)
-            self.battery_capacity[0:28] = np.random.uniform(10.0, 12.0, 28)
-            self.battery_capacity[28:128] = np.random.uniform(4.0, 5.0, 100)
-            print(f'  OK Baterias: obs 405 -> 1045')
+            self.battery_capacity[0:112] = np.random.uniform(1.8, 2.2, 112)    # Motos: ~2.0 kWh
+            self.battery_capacity[112:128] = np.random.uniform(4.0, 5.0, 16)   # Mototaxis: ~4.5 kWh
+            print('  OK Baterías EV: 112 motos (2kWh) + 16 mototaxis (4.5kWh) = 128 sockets')
+
+        def render(self) -> None:
+            """Render no implementado para este environment."""
+            return  # No-op render
 
         def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[Any, dict[str, Any]]:
             super().reset(seed=seed)
@@ -229,10 +257,10 @@ try:
             # Reset battery
             self.battery_soc_episode = self.battery_soc.copy()
 
-            obs = np.random.randn(self.obs_dim).astype(np.float32) * 0.1
-            return obs, {}
+            obs_reset = np.random.randn(self.obs_dim).astype(np.float32) * 0.1
+            return obs_reset, {}
 
-        def step(self, action):
+        def step(self, action: np.ndarray):
             self.step_count += 1
             hour_index = self.step_count % 8760
 
@@ -251,12 +279,10 @@ try:
             #   - Demanda real: D_real[hora][socket_i] en chargers_hourly_kw
             #   - Potencia ejecutada: P_socket_i = D_real[hora][i] * a_socket_i
 
-            bess_setpoint = action[0]
-
             # ========== LEER DATOS REALES OE2 ==========
 
-            # 1. SOLAR REAL - 4050 kWp instalado, 8292514 kWh/año
-            solar_generation_kw = float(self.solar_hourly_kw[hour_index])
+            # 1. SOLAR REAL - 4050 kWp instalado, ~8.3M kWh/año
+            solar_generation_kwh = float(self.solar_hourly_kwh[hour_index])
 
             # 2. CHARGERS REAL - 128 SOCKETS (DEMANDA REAL POR SOCKET)
             # chargers_hourly_kw es (8760 horas, 128 sockets)
@@ -273,16 +299,16 @@ try:
             else:
                 bess_soc = 0.5
 
-            # CONTROL DEL AGENTE - BESS setpoint
-            bess_setpoint = action[0]
+            # CONTROL DEL AGENTE - BESS setpoint (reserved for future use)
+            _bess_setpoint = action[0]
 
             # Grid balance - DATOS REALES CORRELACIONADOS
             total_demand = max(0, mall_demand_kw + ev_charging_kwh)
-            if solar_generation_kw >= total_demand:
+            if solar_generation_kwh >= total_demand:
                 grid_import_kwh = 0.0
-                grid_export_kwh = max(0, solar_generation_kw - total_demand)
+                grid_export_kwh = max(0, solar_generation_kwh - total_demand)
             else:
-                grid_import_kwh = total_demand - solar_generation_kw
+                grid_import_kwh = total_demand - solar_generation_kwh
                 grid_export_kwh = 0.0
 
             # EV SOC - CALCULAR ESTADO DE BATERIAS
@@ -305,7 +331,7 @@ try:
             total_reward, components = self.reward_calculator.compute(
                 grid_import_kwh=grid_import_kwh,
                 grid_export_kwh=grid_export_kwh,
-                solar_generation_kwh=solar_generation_kw,
+                solar_generation_kwh=solar_generation_kwh,
                 ev_charging_kwh=ev_charging_kwh,
                 ev_soc_avg=ev_soc_avg,
                 bess_soc=bess_soc,
@@ -319,7 +345,7 @@ try:
 
             # TRACKING ACUMULATIVO
             self.co2_avoided_total += components.get('co2_avoided_total_kg', 0)
-            self.solar_kwh_total += solar_generation_kw
+            self.solar_kwh_total += solar_generation_kwh
             self.cost_total += components.get('cost_usd', 0)
             self.grid_import_total += grid_import_kwh
             self.episode_reward += total_reward
@@ -354,7 +380,7 @@ try:
 
     # Crear environment
     env = CityLearnRealEnv(reward_calculator, context)
-    print(f'  OK Environment creado')
+    print('  OK Environment creado')
     print(f'    - Observation: {env.observation_space.shape}')
     print(f'    - Action: {env.action_space.shape}')
     print()
@@ -363,27 +389,23 @@ try:
     print('-' * 80)
 
     # Configuración A2C optimizada para GPU RTX 4060
-    a2c_config = {
-        'learning_rate': 5e-4 if DEVICE == 'cuda' else 1e-4,  # Higher LR con GPU (A2C es más estáble)
-        'n_steps': 5,  # A2C es muy rápido
-        'gamma': 0.99,
-        'gae_lambda': 0.95,
-        'ent_coef': 0.001 if DEVICE == 'cuda' else 0.01,  # Less exploration con GPU (más muestras)
-        'verbose': 0,
-        'device': DEVICE,
-    }
-
     a2c_agent = A2C(
         'MlpPolicy',
         env,
-        **a2c_config,
+        learning_rate=5e-4 if DEVICE == 'cuda' else 1e-4,  # Higher LR con GPU (A2C es más estáble)
+        n_steps=5,  # A2C es muy rápido
+        gamma=0.99,
+        gae_lambda=0.95,
+        ent_coef=0.001 if DEVICE == 'cuda' else 0.01,  # Less exploration con GPU (más muestras)
+        verbose=0,
+        device=DEVICE,
         tensorboard_log=None,  # Desactivado: evita requerir tensorboard
     )
 
     print(f'  OK A2C agent creado (DEVICE: {DEVICE.upper()})')
-    print(f'    - Learning rate: {a2c_config["learning_rate"]}')
-    print(f'    - N steps: {a2c_config["n_steps"]}')
-    print(f'    - Entropy coef: {a2c_config["ent_coef"]}')
+    print(f'    - Learning rate: {5e-4 if DEVICE == "cuda" else 1e-4}')
+    print('    - N steps: 5')
+    print(f'    - Entropy coef: {0.001 if DEVICE == "cuda" else 0.01}')
     print()
 
     print('[5] ENTRENAR A2C')
@@ -404,22 +426,22 @@ try:
 
     print()
     print('='*80)
-    print(f'  📊 CONFIGURACION ENTRENAMIENTO A2C')
-    print(f'     Episodios: {EPISODES} × 8,760 timesteps = {TOTAL_TIMESTEPS:,} pasos')
+    print('  \U0001F4CA CONFIGURACION ENTRENAMIENTO A2C')
+    print(f'     Episodios: {EPISODES} \u00d7 8,760 timesteps = {TOTAL_TIMESTEPS:,} pasos')
     print(f'     Device: {DEVICE.upper()}')
     print(f'     Velocidad: ~{SPEED_ESTIMATED:,} timesteps/segundo')
-    print(f'     Duración: {DURATION_TEXT}')
-    print(f'     Datos: 100% REALES OE2 (128 chargers, 4.52MWh BESS, 4.05MWp solar)')
+    print(f'     Duraci\u00f3n: {DURATION_TEXT}')
+    print('     Datos: 100% REALES OE2 (128 chargers, 4.52MWh BESS, 4.05MWp solar)')
     print('='*80)
-    print(f'  ENTRENAMIENTO EN PROGRESO:')
-    print(f'  ' + '-' * 76)
+    print('  ENTRENAMIENTO EN PROGRESO:')
+    print('  ' + '-' * 76)
 
     import time
     start_time = time.time()
 
     checkpoint_callback = CheckpointCallback(
         save_freq=1000,  # Guardar cada 1000 pasos para resumir fácilmente
-        save_path=CHECKPOINT_DIR,
+        save_path=str(CHECKPOINT_DIR),
         name_prefix='a2c_checkpoint'
         # Nota: A2C no tiene save_replay_buffer (es on-policy)
     )
@@ -434,7 +456,7 @@ try:
     a2c_agent.save(CHECKPOINT_DIR / 'a2c_final_model.zip')
 
     print()
-    print(f'  ✓ RESULTADO ENTRENAMIENTO:')
+    print('  \u2713 RESULTADO ENTRENAMIENTO:')
     print(f'    Tiempo: {elapsed/60:.1f} minutos ({elapsed:.0f} segundos)')
     print(f'    Timesteps ejecutados: {TOTAL_TIMESTEPS:,}')
     print(f'    Velocidad real: {TOTAL_TIMESTEPS/elapsed:.0f} timesteps/segundo')
@@ -442,8 +464,8 @@ try:
     print('[6] VALIDACION - 3 EPISODIOS')
     print('-' * 80)
 
-    obs, _ = env.reset()
-    val_metrics = {
+    val_obs, _ = env.reset()
+    val_metrics: dict[str, list[float]] = {
         'rewards': [],
         'co2_avoided': [],
         'solar_kwh': [],
@@ -452,8 +474,8 @@ try:
     }
 
     for ep in range(3):
-        obs, _ = env.reset()
-        done = False
+        val_obs, _ = env.reset()
+        val_done = False
         steps = 0
         ep_co2 = 0.0
         ep_solar = 0.0
@@ -461,15 +483,16 @@ try:
 
         print(f'  Episodio {ep+1}/3: ', end='', flush=True)
 
-        while not done:
-            action, _ = a2c_agent.predict(obs, deterministic=True)
-            obs, reward, terminated, truncated, info = env.step(action)
-            done = terminated or truncated
+        while not val_done:
+            action_result = a2c_agent.predict(val_obs, deterministic=True)
+            action_arr = action_result[0] if action_result is not None else np.zeros(129)
+            val_obs, reward, terminated, val_truncated, step_info = env.step(action_arr)
+            val_done = terminated or val_truncated
             steps += 1
 
-            ep_co2 += info.get('co2_avoided_total_kg', 0)
-            ep_solar += info.get('solar_generation_kwh', 0)
-            ep_grid += info.get('grid_import_kwh', 0)
+            ep_co2 += step_info.get('co2_avoided_total_kg', 0)
+            ep_solar += step_info.get('solar_generation_kwh', 0)
+            ep_grid += step_info.get('grid_import_kwh', 0)
 
         val_metrics['rewards'].append(env.episode_reward)
         val_metrics['co2_avoided'].append(ep_co2)
@@ -495,19 +518,27 @@ try:
     }
 
     metrics_file = OUTPUT_DIR / 'a2c_training_metrics.json'
-    with open(metrics_file, 'w') as f:
+    with open(metrics_file, 'w', encoding='utf-8') as f:
         json.dump(summary, f, indent=2)
+
+    # Extraer métricas para impresión (casting explícito para tipado)
+    vm_dict: dict[str, float] = summary['validation_metrics']  # type: ignore[assignment]
+    mean_reward = vm_dict['mean_reward']
+    mean_co2 = vm_dict['mean_co2_avoided_kg']
+    mean_solar = vm_dict['mean_solar_kwh']
+    mean_cost = vm_dict['mean_cost_usd']
+    mean_grid = vm_dict['mean_grid_import_kwh']
 
     print()
     print('RESULTADOS FINALES - VALIDACION 3 EPISODIOS:')
     print('-'*80)
     print()
     print('  PARAMETROS CALCULADOS:')
-    print(f'    Reward promedio               {summary["validation_metrics"]["mean_reward"]:>12.4f} puntos')
-    print(f'    CO2 evitado por episodio      {summary["validation_metrics"]["mean_co2_avoided_kg"]:>12.1f} kg')
-    print(f'    Solar aprovechada por ep      {summary["validation_metrics"]["mean_solar_kwh"]:>12.1f} kWh')
-    print(f'    Ahorro economico por ep       {summary["validation_metrics"]["mean_cost_usd"]:>12.2f} USD')
-    print(f'    Grid import reducido por ep   {summary["validation_metrics"]["mean_grid_import_kwh"]:>12.1f} kWh')
+    print(f'    Reward promedio               {mean_reward:>12.4f} puntos')
+    print(f'    CO2 evitado por episodio      {mean_co2:>12.1f} kg')
+    print(f'    Solar aprovechada por ep      {mean_solar:>12.1f} kWh')
+    print(f'    Ahorro economico por ep       {mean_cost:>12.2f} USD')
+    print(f'    Grid import reducido por ep   {mean_grid:>12.1f} kWh')
     print()
     print('  ESTADO: Entrenamiento exitoso. Validacion completada.')
     print()
@@ -518,7 +549,7 @@ try:
     print('ENTRENAMIENTO A2C COMPLETADO')
     print('='*80)
 
-except Exception as e:
+except (FileNotFoundError, KeyError, ValueError, RuntimeError, OSError, IOError) as e:
     print(f'\n[ERROR] {e}')
     import traceback
     traceback.print_exc()

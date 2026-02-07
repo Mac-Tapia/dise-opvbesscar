@@ -390,7 +390,7 @@ class SACAgent:
             if norm_val > max_norm * 0.8:  # Si cerca del límite, loguear
                 logger.debug("[CRITIC CLIPPING] Norm: %.2f (limit: %.1f)", norm_val, max_norm)
             return norm_val
-        except Exception as e:
+        except (RuntimeError, AttributeError, TypeError) as e:
             logger.warning("[CRITIC CLIPPING] Falló: %s", str(e))
             return 0.0
 
@@ -433,7 +433,7 @@ class SACAgent:
         """
         return torch.clamp(q_values, -clip_range, clip_range)  # type: ignore
 
-    def _apply_entropy_decay(self, current_step: int, total_steps: int) -> float:
+    def _apply_entropy_decay(self, current_step: int, _total_steps: int) -> float:
         """
         🔴 CRÍTICO PARA FIX: Prevent entropy coefficient from exploding.
 
@@ -569,6 +569,7 @@ class SACAgent:
                 self.act_dim = self._get_act_dim()
                 self._smooth_lambda = smooth_lambda
                 self._prev_action = None
+                self._prev_obs = None  # type: ignore[var-annotated]
 
                 # Normalización
                 self._normalize_obs = normalize_obs
@@ -859,7 +860,7 @@ class SACAgent:
                 logger.info("   Critic Loss Scale: %.3f (PREVENTS explosion)", self.config.critic_loss_scale)
                 logger.info("   Entropy Bounds: [%.4f, %.3f] (PREVENTS excessive growth)", self.config.ent_coef_min, self.config.ent_coef_max)
 
-            except Exception as e:
+            except (RuntimeError, AttributeError, TypeError, ValueError) as e:
                 logger.warning("[SAC] ❌ Post-init stabilization failed: %s", str(e))
 
         # Log de confirmación final
@@ -974,7 +975,7 @@ class SACAgent:
                                     logger.info("[ENTROPY DECAY] Step %d: %.4f→%.4f (decay=%.4f, bounded=[%.4f, %.3f])",
                                               current_step, old_ent, new_ent, decay_rate,
                                               self.agent.config.ent_coef_min, self.agent.config.ent_coef_max)
-                        except Exception as e:
+                        except (RuntimeError, AttributeError, TypeError) as e:
                             logger.warning("[ENTROPY DECAY] Error applying decay: %s", str(e))
 
                 # ========================================================================
@@ -1031,7 +1032,7 @@ class SACAgent:
                                                              self.base_critic_lr * (self.critic_lr_scale / 0.95),
                                                              new_critic_lr,
                                                          new_lr_scale * 100)
-                                        except Exception as e:
+                                        except (RuntimeError, AttributeError) as e:
                                             logger.debug("[CRITIC STABILITY] Could not adjust critic LR: %s", e)
 
                                 # Log statistics cada 5000 pasos
@@ -1041,7 +1042,7 @@ class SACAgent:
                                     logger.info("[CRITIC STATS] Step %d: current=%.2f, mean=%.2f, min=%.2f, max=%.2f, scale=%.0f%%",
                                               current_step, critic_loss, mean_recent, min_loss, max_loss,
                                               self.critic_lr_scale * 100)
-                except Exception as e:
+                except (RuntimeError, AttributeError, TypeError, KeyError) as e:
                     logger.debug("[CRITIC MONITORING] Error monitoring critic loss: %s", str(e))
 
                 # ========================================================================
@@ -1092,7 +1093,7 @@ class SACAgent:
                     self.motos_cargadas = self.metrics_accumulator.motos_cargadas
                     self.mototaxis_cargadas = self.metrics_accumulator.mototaxis_cargadas
 
-                except Exception as err:
+                except (RuntimeError, AttributeError, TypeError, KeyError) as err:
                     logger.debug("[SAC] Error extrayendo métricas: %s", err)
 
                 # ========================================================================

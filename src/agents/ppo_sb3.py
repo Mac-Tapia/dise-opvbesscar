@@ -264,7 +264,7 @@ class PPOAgent:
             info["torch_version"] = str(torch.__version__)
             info["cuda_available"] = str(torch.cuda.is_available())
             if torch.cuda.is_available():
-                cuda_ver = torch.version.cuda
+                cuda_ver = getattr(torch.version, 'cuda', None)  # type: ignore[attr-defined]
                 info["cuda_version"] = str(cuda_ver) if cuda_ver is not None else "unknown"
                 info["gpu_name"] = str(torch.cuda.get_device_name(0))
                 mem_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
@@ -369,7 +369,7 @@ class PPOAgent:
             Returns:
                 Custom policy class with Huber loss support
             """
-            from stable_baselines3.ppo.policies import ActorCriticPolicy
+            from stable_baselines3.common.policies import ActorCriticPolicy
             import torch as th
             import torch.nn.functional as F
 
@@ -380,13 +380,13 @@ class PPOAgent:
                     super().__init__(*args, **kwargs)
                     self.huber_delta = huber_delta
 
-                def _get_value_loss(self, returns: th.Tensor, values: th.Tensor, values_pred: th.Tensor) -> th.Tensor:
+                def _get_value_loss(self, returns: th.Tensor, _values: th.Tensor, values_pred: th.Tensor) -> th.Tensor:
                     """
                     Compute value function loss using Huber loss.
 
                     Args:
                         returns: Target returns (Ground truth)
-                        values: Value function predictions before clipping
+                        _values: Value function predictions before clipping (unused, kept for API compat)
                         values_pred: Value function predictions (clipped or not)
 
                     Returns:
@@ -559,7 +559,7 @@ class PPOAgent:
                 try:
                     env_unwrapped = self.env
                     while hasattr(env_unwrapped, 'env'):
-                        env_unwrapped = env_unwrapped.env
+                        env_unwrapped = env_unwrapped.env  # type: ignore[attr-defined]
 
                     buildings = getattr(env_unwrapped, 'buildings', None)
                     if buildings and isinstance(buildings, (list, tuple)):
@@ -577,11 +577,11 @@ class PPOAgent:
                                     val = solar_gen[-1]
                                     if val is not None and isinstance(val, (int, float)):
                                         self._solar_accumulator += abs(float(val))
-                            except:
+                            except (AttributeError, TypeError, IndexError):
                                 pass
 
                     # Ya NO usamos fallback de valores fijos - contadores usan valores reales
-                except:
+                except (AttributeError, TypeError, IndexError):
                     pass  # No agregar valores fijos en caso de error
 
                 if truncated and not terminated:
@@ -848,7 +848,7 @@ class PPOAgent:
                     target_ent = compute_entropy_schedule(progress)
                     if hasattr(self.model, "ent_coef"):
                         try:
-                            self.model.ent_coef = target_ent
+                            self.model.ent_coef = target_ent  # type: ignore[attr-defined]
                         except (AttributeError, TypeError):
                             pass
 
@@ -860,7 +860,7 @@ class PPOAgent:
                     target_vf = compute_vf_coef_schedule(progress)
                     if hasattr(self.model, "vf_coef"):
                         try:
-                            self.model.vf_coef = target_vf
+                            self.model.vf_coef = target_vf  # type: ignore[attr-defined]
                         except (AttributeError, TypeError):
                             pass
 
@@ -939,9 +939,9 @@ class PPOAgent:
 
                     # Validar que hay datos reales
                     if final_metrics["grid_import_kwh"] <= 0.0:
-                        logger.warning(f"[PPO] Grid counter was 0 - CityLearn no reportó datos")
+                        logger.warning("[PPO] Grid counter was 0 - CityLearn no reportó datos")
                     if final_metrics["solar_generation_kwh"] <= 0.0:
-                        logger.warning(f"[PPO] Solar counter was 0 - CityLearn no reportó datos")
+                        logger.warning("[PPO] Solar counter was 0 - CityLearn no reportó datos")
 
                     self.agent.training_history.append({
                         "step": int(self.model.num_timesteps),

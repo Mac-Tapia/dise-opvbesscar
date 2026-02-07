@@ -31,11 +31,11 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-print('='*80)
-print('ENTRENAR SAC - CON MULTIOBJETIVO REAL (CO2, SOLAR, COST, EV, GRID)')
-print('='*80)
-print(f'Inicio: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
-print()
+print('='*80, flush=True)
+print('ENTRENAR SAC - CON MULTIOBJETIVO REAL (CO2, SOLAR, COST, EV, GRID)', flush=True)
+print('='*80, flush=True)
+print(f'Inicio: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}', flush=True)
+print(flush=True)
 
 # AUTO-DETECTAR GPU Y CONFIGURAR
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -70,8 +70,47 @@ OUTPUT_DIR = Path('outputs/sac_training')
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 try:
-    print('[1] CARGAR CONFIGURACION Y CONTEXTO MULTIOBJETIVO')
-    print('-' * 80)
+    # ========== VALIDACION CRITICA: 5 ARCHIVOS OE2 OBLIGATORIOS ==========
+    print('[0] VALIDAR SINCRONIZACION CON 5 DATASETS OE2', flush=True)
+    print('-' * 80, flush=True)
+    
+    OE2_FILES = {
+        'solar': Path('data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv'),
+        'chargers_hourly': Path('data/oe2/chargers/chargers_real_hourly_2024.csv'),
+        'chargers_stats': Path('data/oe2/chargers/chargers_real_statistics.csv'),
+        'bess': Path('data/oe2/bess/bess_hourly_dataset_2024.csv'),
+        'mall_demand': Path('data/oe2/demandamallkwh/demandamallhorakwh.csv'),
+    }
+    
+    oe2_validation_ok = True
+    oe2_summary = {}
+    
+    for name, path in OE2_FILES.items():
+        if path.exists():
+            df = pd.read_csv(path, nrows=5, sep=';' if 'mall' in name else ',')
+            rows = len(pd.read_csv(path, sep=';' if 'mall' in name else ','))
+            cols = len(df.columns)
+            oe2_summary[name] = {'rows': rows, 'cols': cols}
+            status = 'OK' if rows >= 8760 or name == 'chargers_stats' else 'WARN'
+            print(f'  [{status}] {name}: {rows:,} filas x {cols} columnas ({path.name})', flush=True)
+        else:
+            print(f'  [ERROR] {name}: NO ENCONTRADO ({path})', flush=True)
+            oe2_validation_ok = False
+    
+    if not oe2_validation_ok:
+        raise FileNotFoundError('Faltan archivos OE2 obligatorios. Ver errores arriba.')
+    
+    print(flush=True)
+    print('  SINCRONIZACION OE2 -> CityLearn:', flush=True)
+    print(f'    Solar PVGIS:       {oe2_summary["solar"]["rows"]:,} horas', flush=True)
+    print(f'    Chargers 128 sockets: {oe2_summary["chargers_hourly"]["rows"]:,} horas x {oe2_summary["chargers_hourly"]["cols"]} cols', flush=True)
+    print(f'    BESS SOC:          {oe2_summary["bess"]["rows"]:,} horas', flush=True)
+    print(f'    Mall Demand:       {oe2_summary["mall_demand"]["rows"]:,} horas', flush=True)
+    print('  [OK] Todos los datasets OE2 sincronizados con CityLearn schema', flush=True)
+    print(flush=True)
+    
+    print('[1] CARGAR CONFIGURACION Y CONTEXTO MULTIOBJETIVO', flush=True)
+    print('-' * 80, flush=True)
 
     # Cargar config
     with open('configs/default.yaml', 'r', encoding='utf-8') as f:
@@ -168,11 +207,18 @@ try:
                 # Cargar todas las columnas (excluir timestamp si es indice)
                 solar_cols = [c for c in df_solar.columns if c.lower() != 'timestamp']
                 self.solar_all_columns = np.array(df_solar[solar_cols].values)  # (8760, 10)
-                self.solar_hourly_kw = np.array(df_solar['ac_power_kw'].values)  # ac_power_kw en indice 6
-                print(f'    [OK] Solar: {np.sum(self.solar_hourly_kw):.0f} kWh/anio')
+                # Usar pv_generation_kwh (energía) - consistente con CityLearn v2
+                if 'pv_generation_kwh' in df_solar.columns:
+                    self.solar_hourly_kwh = np.array(df_solar['pv_generation_kwh'].values)
+                elif 'ac_energy_kwh' in df_solar.columns:
+                    self.solar_hourly_kwh = np.array(df_solar['ac_energy_kwh'].values)
+                else:
+                    # Fallback a potencia (para datos horarios kW ≈ kWh)
+                    self.solar_hourly_kwh = np.array(df_solar['ac_power_kw'].values)
+                print(f'    [OK] Solar: {float(np.sum(self.solar_hourly_kwh)):.0f} kWh/anio')
             except (FileNotFoundError, KeyError, ValueError) as e:
                 print(f'    [ERROR] Solar: {e}')
-                self.solar_hourly_kw = np.zeros(8760, dtype=np.float32)  # Fallback
+                self.solar_hourly_kwh = np.zeros(8760, dtype=np.float32)  # Fallback
                 # Fallback: crear array de ceros con forma correcta (8760, 10)
                 self.solar_all_columns = np.zeros((8760, 10), dtype=np.float32)
 
@@ -204,10 +250,26 @@ try:
                     else:
                         self.bess_soc_percent = np.full(8760, 0.5, dtype=np.float32)  # Fallback 50%
                         print('    [WARN] BESS: No hay columna SOC, usando fallback 50%')
+                # Flujos de energía reales del BESS (columnas CityLearn v2)
+                self.pv_to_ev_kwh = np.array(self.bess_real_data['pv_to_ev_kwh'].values) if 'pv_to_ev_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
+                self.pv_to_bess_kwh = np.array(self.bess_real_data['pv_to_bess_kwh'].values) if 'pv_to_bess_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
+                self.grid_to_ev_kwh = np.array(self.bess_real_data['grid_to_ev_kwh'].values) if 'grid_to_ev_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
+                self.grid_to_mall_kwh = np.array(self.bess_real_data['grid_to_mall_kwh'].values) if 'grid_to_mall_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
+                self.bess_charge_kwh = np.array(self.bess_real_data['bess_charge_kwh'].values) if 'bess_charge_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
+                self.bess_discharge_kwh = np.array(self.bess_real_data['bess_discharge_kwh'].values) if 'bess_discharge_kwh' in self.bess_real_data.columns else np.zeros(len(self.bess_real_data))
+                pv_ev_total = float(np.sum(self.pv_to_ev_kwh))
+                grid_ev_total = float(np.sum(self.grid_to_ev_kwh))
                 print(f'    [OK] BESS: {len(self.bess_soc_percent)} horas')
+                print(f'       Flujos: pv_to_ev={pv_ev_total:.0f}kWh, grid_to_ev={grid_ev_total:.0f}kWh')
             except (FileNotFoundError, KeyError, ValueError) as e:
                 print(f'    [ERROR] BESS: {e}')
                 self.bess_soc_percent = np.full(8760, 0.5, dtype=np.float32)  # Fallback 50%
+                self.pv_to_ev_kwh = np.zeros(8760)
+                self.pv_to_bess_kwh = np.zeros(8760)
+                self.grid_to_ev_kwh = np.zeros(8760)
+                self.grid_to_mall_kwh = np.zeros(8760)
+                self.bess_charge_kwh = np.zeros(8760)
+                self.bess_discharge_kwh = np.zeros(8760)
 
             # 4. DEMANDA MALL REAL - SINCRONIZAR A 8760 HORAS
             try:
@@ -231,16 +293,18 @@ try:
                 self.mall_hourly_kwh = np.zeros(8760, dtype=np.float32)  # Fallback
 
             # ========== INICIALIZAR MONITOREO DE BATERIAS (128 SOCKETS) ==========
-            # Cada socket monitorea estado de bateria del vehiculo conectado
+            # Distribución correcta según IquitosContext:
+            #   - 28 chargers motos × 4 sockets = 112 sockets motos @ 2.0 kWh bateria
+            #   - 4 chargers mototaxis × 4 sockets = 16 sockets mototaxis @ 4.5 kWh bateria
             self.battery_soc = np.random.uniform(20, 80, size=(8760, 128)).astype(np.float32)  # SOC inicial 20-80%
 
-            # Capacidad nominal por socket (motos 3-5 kWh, mototaxis 8-12 kWh)
+            # Capacidad nominal por socket (consistente con CityLearn v2 schema)
             self.battery_capacity = np.zeros(128, dtype=np.float32)
-            self.battery_capacity[0:28] = np.random.uniform(10.0, 12.0, 28)  # Mototaxis (indices 0-27) - Sin acento
-            self.battery_capacity[28:128] = np.random.uniform(4.0, 5.0, 100)  # Motos (indices 28-127)
+            self.battery_capacity[0:112] = np.random.uniform(1.8, 2.2, 112)    # Motos (indices 0-111) @ ~2.0 kWh
+            self.battery_capacity[112:128] = np.random.uniform(4.0, 5.0, 16)   # Mototaxis (indices 112-127) @ ~4.5 kWh
 
-            # Tipos vehiculo (asignacion)
-            self.vehicle_types = np.array(["mototaxi"]*28 + ["moto"]*100)
+            # Tipos vehiculo (asignacion - 112 motos + 16 mototaxis = 128 total)
+            self.vehicle_types = np.array(["moto"]*112 + ["mototaxi"]*16)
 
             print('    [OK] Baterias: 128 sockets monitorizados')
             print('  OK Environment: (1045,) obs | (129,) action')
@@ -265,14 +329,113 @@ try:
             # Reset battery SOC para este episodio (copia de la distribucion)
             self.battery_soc_episode = self.battery_soc.copy()
 
-            # Observación inicial
-            obs = np.random.randn(self.obs_dim).astype(np.float32) * 0.1
+            # Observación inicial REAL (no random) - hora 0
+            obs = self._build_observation_from_real_data(hour_index=0)
             return obs, {}
 
+        def _build_observation_from_real_data(self, hour_index: int) -> np.ndarray:
+            """Construir observación desde datos reales OE2 (1045 dimensiones)."""
+            obs = np.zeros(self.obs_dim, dtype=np.float32)
+            hour_index = hour_index % 8760  # Garantizar índice válido
+
+            # ========== PRIMERAS 394 DIMENSIONES: ESTADO DEL SISTEMA ==========
+            # Formato: [solar_features, bess_features, mall_features, time_features, charger_stats]
+
+            # 1. Solar features (0-49): Generación PV horaria y estadísticas
+            solar_gen = self.solar_hourly_kwh[hour_index] if hour_index < len(self.solar_hourly_kwh) else 0.0
+            obs[0] = solar_gen / 3000.0  # Normalizado (max ~3000 kW)
+            obs[1] = solar_gen  # Valor absoluto
+            obs[2] = float(np.mean(self.solar_hourly_kwh)) / 3000.0  # Media normalizada
+            obs[3] = float(np.max(self.solar_hourly_kwh)) / 3000.0  # Max normalizado
+            obs[4] = float(np.std(self.solar_hourly_kwh)) / 1000.0  # Std normalizada
+            # Solar últimas 24 horas (5-28)
+            start_idx = max(0, hour_index - 23)
+            solar_window = self.solar_hourly_kwh[start_idx:hour_index+1]
+            for idx, val in enumerate(solar_window[-24:]):
+                obs[5 + idx] = val / 3000.0
+            # Padding si menos de 24 horas
+            if len(solar_window) < 24:
+                pass  # Ya es 0 por defecto
+
+            # 2. BESS features (50-99): Estado de batería
+            bess_soc = self.bess_soc_percent[hour_index] if hour_index < len(self.bess_soc_percent) else 0.5
+            obs[50] = bess_soc  # SOC [0-1]
+            obs[51] = bess_soc * 4520.0 / 1000.0  # Energía almacenada kWh normalizada
+            obs[52] = 4520.0 / 10000.0  # Capacidad BESS normalizada
+            obs[53] = 2712.0 / 5000.0  # Potencia BESS normalizada
+            # BESS últimas 24 horas (54-77)
+            bess_window = self.bess_soc_percent[start_idx:hour_index+1]
+            for bess_idx, bess_val in enumerate(bess_window[-24:]):
+                obs[54 + bess_idx] = bess_val
+
+            # 3. Mall demand features (100-149): Demanda del mall
+            mall_demand = self.mall_hourly_kwh[hour_index] if hour_index < len(self.mall_hourly_kwh) else 0.0
+            obs[100] = mall_demand / 3000.0  # Demanda normalizada
+            obs[101] = mall_demand  # Valor absoluto
+            obs[102] = np.mean(self.mall_hourly_kwh) / 3000.0  # Media
+            obs[103] = np.max(self.mall_hourly_kwh) / 3000.0  # Max
+            # Mall últimas 24 horas (104-127)
+            mall_window = self.mall_hourly_kwh[start_idx:hour_index+1]
+            for mall_idx, mall_val in enumerate(mall_window[-24:]):
+                obs[104 + mall_idx] = mall_val / 3000.0
+
+            # 4. Time features (150-199): Características temporales
+            hour_of_day = hour_index % 24
+            day_of_year = hour_index // 24
+            month = min(11, day_of_year // 30)
+            obs[150] = hour_of_day / 24.0  # Hora [0-1]
+            obs[151] = day_of_year / 365.0  # Día [0-1]
+            obs[152] = month / 12.0  # Mes [0-1]
+            obs[153] = np.sin(2 * np.pi * hour_of_day / 24)  # Sinusoidal hora
+            obs[154] = np.cos(2 * np.pi * hour_of_day / 24)  # Cosinusoidal hora
+            obs[155] = np.sin(2 * np.pi * day_of_year / 365)  # Sinusoidal año
+            obs[156] = np.cos(2 * np.pi * day_of_year / 365)  # Cosinusoidal año
+            obs[157] = 1.0 if 6 <= hour_of_day <= 18 else 0.0  # Es día
+            obs[158] = 1.0 if 9 <= hour_of_day <= 22 else 0.0  # Horario carga
+            obs[159] = 1.0 if hour_of_day in [7, 8, 17, 18, 19] else 0.0  # Hora pico
+
+            # 5. Charger statistics (200-393): 128 sockets × 1.5 features
+            for socket_idx in range(128):
+                charger_power = self.chargers_hourly_kw[hour_index, socket_idx] if hour_index < len(self.chargers_hourly_kw) else 0.0
+                obs[200 + socket_idx] = charger_power / 5.0  # Potencia normalizada (max 5 kW)
+            # Estadísticas agregadas de chargers
+            total_charger_power = np.sum(self.chargers_hourly_kw[hour_index]) if hour_index < len(self.chargers_hourly_kw) else 0.0
+            obs[328] = total_charger_power / 400.0  # Total normalizado
+            obs[329] = np.mean(self.chargers_hourly_kw[hour_index]) / 5.0  # Media socket
+            obs[330] = np.max(self.chargers_hourly_kw[hour_index]) / 5.0  # Max socket
+
+            # ========== COLUMNAS SOLAR (394-403): 10 columnas dataset PVGIS ==========
+            if self.solar_all_columns is not None and hour_index < len(self.solar_all_columns):
+                obs[394:404] = self.solar_all_columns[hour_index].astype(np.float32)[:10]
+
+            # ========== ESTADO BATERÍAS (404-1044): 128 sockets × 5 features ==========
+            battery_soc = self.battery_soc_episode[hour_index] if hour_index < len(self.battery_soc_episode) else np.full(128, 50.0)
+            battery_charge_needed = np.maximum(0, (100 - battery_soc) / 100.0 * self.battery_capacity)
+            charger_powers = self.chargers_hourly_kw[hour_index] if hour_index < len(self.chargers_hourly_kw) else np.zeros(128)
+            battery_time_to_full = np.divide(
+                battery_charge_needed * 60,
+                charger_powers,
+                out=np.zeros_like(charger_powers, dtype=np.float32),
+                where=charger_powers > 0.1
+            )
+            battery_plugged_in = (charger_powers > 0.5).astype(np.float32)
+
+            obs[404:532] = battery_soc  # SOC %
+            obs[532:660] = battery_charge_needed  # kWh faltante
+            obs[660:788] = charger_powers  # kW actuales
+            obs[788:916] = np.clip(battery_time_to_full, 0, 500)  # minutos (limitado)
+            obs[916:1044] = battery_plugged_in  # conectado [0,1]
+
+            # Última dimensión: contador de paso normalizado
+            obs[1044] = hour_index / 8760.0
+
+            return obs
+
         def step(self, action):
+            """Ejecutar un paso usando datos reales de 5 archivos OE2."""
             self.step_count += 1
-            hour_index = self.step_count % 8760  # Indice [0-8759]
-            hour = hour_index // 24  # Hora del día [0-23]
+            hour_index = (self.step_count - 1) % 8760  # Índice [0-8759]
+            hour = hour_index % 24  # Hora del día [0-23]
 
             # ========== ACTION SPACE - 129 DIMENSIONES ==========
             # action = [a_bess, a_socket_0, a_socket_1, ..., a_socket_127]
@@ -296,7 +459,7 @@ try:
             # ========== LEER DATOS REALES OE2 ==========
 
             # 1. SOLAR REAL - 4050 kWp instalado, 8292514 kWh/anio
-            solar_generation_kwh = float(self.solar_hourly_kw[hour_index])
+            solar_generation_kwh = float(self.solar_hourly_kwh[hour_index])
 
             # 2. CHARGERS REAL - 128 SOCKETS (DEMANDA REAL POR SOCKET)
             # chargers_hourly_kw es (8760 horas, 128 sockets)
@@ -330,7 +493,13 @@ try:
             # Calcular estado de baterias
             battery_charge_needed = np.maximum(0, (100 - battery_soc_new) / 100.0 * self.battery_capacity)  # kWh faltante
             battery_charge_power = charger_powers  # kW actuales
-            battery_time_to_full = np.where(charger_powers > 0.1, (battery_charge_needed / charger_powers) * 60, 0)  # minutos
+            # FIX: Usar np.divide con where para evitar division por cero
+            battery_time_to_full = np.divide(
+                battery_charge_needed * 60,
+                charger_powers,
+                out=np.zeros_like(charger_powers),
+                where=charger_powers > 0.1
+            )  # minutos hasta carga completa
             battery_plugged_in = (charger_powers > 0.5).astype(np.float32)  # 1.0 si conectado
 
             # EV Satisfaction: recompensa por baterias cargadas
@@ -352,9 +521,12 @@ try:
                 ev_demand_kwh=self.context.ev_demand_constant_kw
             )
 
-            # AGREGAR BONUS POR SATISFACTION DE BATERIAS (15% del reward)
-            ev_bonus = ev_satisfaction * 1000.0  # Bonus escalado
-            total_reward += ev_bonus * 0.15
+            # AGREGAR BONUS POR SATISFACTION DE BATERIAS (integrado en escala [-1,1])
+            # ev_satisfaction está en [0,1], convertir a [-1,1] y ponderar
+            ev_bonus = (2.0 * ev_satisfaction - 1.0)  # Escala [-1, 1]
+            total_reward = total_reward * 0.85 + ev_bonus * 0.15  # Ponderación 85%/15%
+            # Mantener en rango estable para SAC
+            total_reward = float(np.clip(total_reward, -1.0, 1.0))
 
             # === TRACKING ACUMULATIVO ===
             self.co2_avoided_total += components.get('co2_avoided_total_kg', 0)
@@ -364,28 +536,19 @@ try:
 
             self.episode_reward += total_reward
 
-            # Observación siguiente - AMPLIADA CON ESTADO DE BATERIAS (1045 dims)
-            obs = np.zeros(self.obs_dim, dtype=np.float32)
+            # Actualizar battery_soc_episode para el siguiente step
+            if hour_index + 1 < len(self.battery_soc_episode):
+                self.battery_soc_episode[hour_index + 1] = battery_soc_new
 
-            # Primeras 394 referencias de estado
-            obs[:394] = np.random.randn(394).astype(np.float32) * 0.1
+            # Construir observación siguiente desde datos reales OE2
+            next_hour_index = (hour_index + 1) % 8760
+            obs = self._build_observation_from_real_data(next_hour_index)
 
-            # 10 columnas del dataset solar (indices 394-403)
-            if self.solar_all_columns is not None and hour_index < len(self.solar_all_columns):
-                obs[394:404] = self.solar_all_columns[hour_index].astype(np.float32)
-            else:
-                obs[394:404] = 0.0
-
-            # 640 dimensiones de ESTADO DE BATERIAS (indices 404-1044)
-            # obs[404:532]   = 128 x SOC_percent
+            # Actualizar estado de baterías en observación (datos más recientes)
             obs[404:532] = battery_soc_new
-            # obs[532:660]   = 128 x charge_needed
             obs[532:660] = battery_charge_needed
-            # obs[660:788]   = 128 x charge_power
             obs[660:788] = battery_charge_power
-            # obs[788:916]   = 128 x time_to_full
-            obs[788:916] = battery_time_to_full
-            # obs[916:1044]  = 128 x plugged_in
+            obs[788:916] = np.clip(battery_time_to_full, 0, 500)
             obs[916:1044] = battery_plugged_in
 
             # === Calcular potencias por tipo de vehiculo (estadisticas derivadas) ===
@@ -483,19 +646,125 @@ try:
     print('-' * 80)
 
     class DetailedLoggingCallback(BaseCallback):
-        def __init__(self, env_ref):
-            super().__init__()
+        """Callback con métricas detalladas de CO2, Solar y EV durante entrenamiento."""
+        
+        def __init__(self, env_ref: CityLearnRealEnv, verbose: int = 1):
+            super().__init__(verbose)
             self.env_ref = env_ref
-            self.step_log_freq = 1000
-
+            self.step_log_freq = 1000  # Cada 1000 pasos
+            
+            # Acumuladores por episodio
+            self.episode_rewards: list[float] = []
+            self.episode_co2_grid: list[float] = []
+            self.episode_co2_avoided_indirect: list[float] = []
+            self.episode_co2_avoided_direct: list[float] = []
+            self.episode_solar_kwh: list[float] = []
+            self.episode_ev_charging: list[float] = []
+            self.episode_grid_import: list[float] = []
+            
+            # Tracking actual
+            self.current_episode = 0
+            self.ep_co2_grid = 0.0
+            self.ep_co2_avoided_indirect = 0.0
+            self.ep_co2_avoided_direct = 0.0
+            self.ep_solar = 0.0
+            self.ep_ev = 0.0
+            self.ep_grid = 0.0
+            self.ep_reward = 0.0
+            self.ep_steps = 0
+            
         def _on_step(self) -> bool:
-            # Mostrar progreso cada 1000 pasos
+            # Obtener info del último step
+            infos = self.locals.get('infos', [{}])
+            info = infos[0] if infos else {}
+            
+            # Acumular métricas
+            self.ep_co2_grid += info.get('co2_grid_kg', 0)
+            self.ep_co2_avoided_indirect += info.get('co2_avoided_indirect_kg', 0)
+            self.ep_co2_avoided_direct += info.get('co2_avoided_direct_kg', 0)
+            self.ep_solar += info.get('solar_generation_kwh', 0)
+            self.ep_ev += info.get('ev_charging_kwh', 0)
+            self.ep_grid += info.get('grid_import_kwh', 0)
+            self.ep_steps += 1
+            
+            # Detectar fin de episodio
+            dones = self.locals.get('dones', [False])
+            if dones[0]:
+                self.ep_reward = self.env_ref.episode_reward
+                self._log_episode_summary()
+                self._reset_episode_tracking()
+                self.current_episode += 1
+            
+            # Log de progreso cada N pasos
             if self.num_timesteps % self.step_log_freq == 0:
-                ep_num = self.num_timesteps // 8760
-                pct = (self.num_timesteps % 8760) / 8760 * 100
-                print(f'    Steps: {self.num_timesteps:>7,} | Episodio: {ep_num:>2} | Progreso: {pct:>5.1f}%')
-
+                self._log_progress()
+                
             return True
+        
+        def _log_progress(self) -> None:
+            """Mostrar progreso durante el episodio."""
+            ep_num = self.current_episode
+            pct = (self.ep_steps / 8760) * 100
+            # co2_net calculado pero no mostrado (reservado para futuro)
+            _ = self.ep_co2_grid - self.ep_co2_avoided_indirect - self.ep_co2_avoided_direct
+            
+            print(f'    Steps: {self.num_timesteps:>7,} | Ep: {ep_num:>2} | '
+                  f'Progreso: {pct:>5.1f}% | '
+                  f'CO2_grid: {self.ep_co2_grid:>8,.0f} kg | '
+                  f'CO2_evitado: {(self.ep_co2_avoided_indirect + self.ep_co2_avoided_direct):>8,.0f} kg', flush=True)
+        
+        def _log_episode_summary(self) -> None:
+            """Resumen completo al finalizar episodio."""
+            co2_avoided_total = self.ep_co2_avoided_indirect + self.ep_co2_avoided_direct
+            co2_net = self.ep_co2_grid - co2_avoided_total
+            co2_reduction_pct = (co2_avoided_total / max(1, self.ep_co2_grid + co2_avoided_total)) * 100
+            
+            print(flush=True)
+            print('  ' + '='*76, flush=True)
+            print(f'  EPISODIO {self.current_episode + 1} COMPLETADO ({self.ep_steps:,} pasos)', flush=True)
+            print('  ' + '='*76, flush=True)
+            print(f'    Reward Total Episodio:     {self.ep_reward:>12,.2f}', flush=True)
+            print(flush=True)
+            print('    --- METRICAS CO2 (desde 5 datasets OE2) ---', flush=True)
+            print(f'    CO2 Grid (emitido):        {self.ep_co2_grid:>12,.1f} kg', flush=True)
+            print(f'    CO2 Evitado Indirecto:     {self.ep_co2_avoided_indirect:>12,.1f} kg  (solar -> grid)', flush=True)
+            print(f'    CO2 Evitado Directo:       {self.ep_co2_avoided_direct:>12,.1f} kg  (EVs desde solar)', flush=True)
+            print(f'    CO2 Evitado TOTAL:         {co2_avoided_total:>12,.1f} kg', flush=True)
+            print(f'    CO2 NETO:                  {co2_net:>12,.1f} kg  ({co2_reduction_pct:>5.1f}% reduccion)', flush=True)
+            print(flush=True)
+            print('    --- ENERGIA (sincronizada con CityLearn) ---', flush=True)
+            print(f'    Solar Generada:            {self.ep_solar:>12,.1f} kWh', flush=True)
+            print(f'    EV Cargados:               {self.ep_ev:>12,.1f} kWh', flush=True)
+            print(f'    Grid Import:               {self.ep_grid:>12,.1f} kWh', flush=True)
+            
+            # Autoconsumo solar
+            if self.ep_solar > 0:
+                solar_used = min(self.ep_solar, self.ep_ev + self.ep_grid * 0.5)
+                autoconsumo_pct = (solar_used / self.ep_solar) * 100
+                print(f'    Autoconsumo Solar:         {autoconsumo_pct:>11.1f}%', flush=True)
+            print('  ' + '='*76, flush=True)
+            print(flush=True)
+            sys.stdout.flush()  # Forzar flush
+            
+            # Guardar para análisis posterior
+            self.episode_rewards.append(self.ep_reward)
+            self.episode_co2_grid.append(self.ep_co2_grid)
+            self.episode_co2_avoided_indirect.append(self.ep_co2_avoided_indirect)
+            self.episode_co2_avoided_direct.append(self.ep_co2_avoided_direct)
+            self.episode_solar_kwh.append(self.ep_solar)
+            self.episode_ev_charging.append(self.ep_ev)
+            self.episode_grid_import.append(self.ep_grid)
+        
+        def _reset_episode_tracking(self) -> None:
+            """Reset acumuladores para nuevo episodio."""
+            self.ep_co2_grid = 0.0
+            self.ep_co2_avoided_indirect = 0.0
+            self.ep_co2_avoided_direct = 0.0
+            self.ep_solar = 0.0
+            self.ep_ev = 0.0
+            self.ep_grid = 0.0
+            self.ep_reward = 0.0
+            self.ep_steps = 0
 
     checkpoint_callback = CheckpointCallback(
         save_freq=50000,
@@ -506,7 +775,10 @@ try:
 
     logging_callback = DetailedLoggingCallback(env)
 
-    TOTAL_TIMESTEPS = 10000  # Entrenamiento real (10k timesteps = ~1-2 episodios completos)
+    # TIMESTEPS: 8760 steps = 1 episodio (1 año completo)
+    # Mínimo recomendado: 26,280 (3 episodios) para verificar aprendizaje
+    # Óptimo: 87,600 (10 episodios) para convergencia estable
+    TOTAL_TIMESTEPS = 87600  # 10 episodios completos con datos reales OE2
 
     print(f'  CONFIGURACION: {TOTAL_TIMESTEPS:,} timesteps')
     print('  REWARD WEIGHTS:')
@@ -536,8 +808,41 @@ try:
     print(f'    Tiempo: {elapsed:.2f} segundos ({elapsed/60:.2f} minutos)')
     print(f'    Timesteps ejecutados: {TOTAL_TIMESTEPS:,}')
     print(f'    Velocidad: {TOTAL_TIMESTEPS/elapsed:.0f} timesteps/segundo')
-    print(f'    Episodios completados: {TOTAL_TIMESTEPS // 8760 + 1}')
+    print(f'    Episodios completados: {len(logging_callback.episode_rewards)}')
     print()
+    
+    # RESUMEN DE APRENDIZAJE POR EPISODIO
+    if len(logging_callback.episode_rewards) > 1:
+        print('  EVOLUCION DEL APRENDIZAJE:')
+        print('  ' + '-'*76)
+        print('  {:>3} | {:>12} | {:>12} | {:>12} | {:>10}'.format(
+            'Ep', 'Reward', 'CO2_Grid(kg)', 'CO2_Evit(kg)', 'Reduccion%'))
+        print('  ' + '-'*76)
+        for ep_idx, (rew, co2g, co2i, co2d) in enumerate(zip(
+            logging_callback.episode_rewards,
+            logging_callback.episode_co2_grid,
+            logging_callback.episode_co2_avoided_indirect,
+            logging_callback.episode_co2_avoided_direct
+        )):
+            co2_avoided = co2i + co2d
+            reduction_pct = (co2_avoided / max(1, co2g + co2_avoided)) * 100
+            print(f'  {ep_idx+1:>3} | {rew:>12,.2f} | {co2g:>12,.0f} | {co2_avoided:>12,.0f} | {reduction_pct:>9.1f}%')
+        print('  ' + '-'*76)
+        
+        # Tendencia de mejora
+        if len(logging_callback.episode_rewards) >= 2:
+            first_reward = logging_callback.episode_rewards[0]
+            last_reward = logging_callback.episode_rewards[-1]
+            improvement = ((last_reward - first_reward) / abs(first_reward)) * 100 if first_reward != 0 else 0
+            print(f'  Mejora Reward (Ep1 vs EpN): {improvement:>+.1f}%')
+            
+            first_co2_reduction = (logging_callback.episode_co2_avoided_indirect[0] + 
+                                   logging_callback.episode_co2_avoided_direct[0])
+            last_co2_reduction = (logging_callback.episode_co2_avoided_indirect[-1] + 
+                                  logging_callback.episode_co2_avoided_direct[-1])
+            co2_improvement = ((last_co2_reduction - first_co2_reduction) / max(1, first_co2_reduction)) * 100
+            print(f'  Mejora CO2 Evitado (Ep1 vs EpN): {co2_improvement:>+.1f}%')
+        print()
 
     # Guardar modelo final
     final_model_path = CHECKPOINT_DIR / 'sac_final_model'
