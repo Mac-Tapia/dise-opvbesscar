@@ -1,12 +1,12 @@
 {
-  "timestamp": "2026-02-06T15:25:01.356286",
+  "timestamp": "2026-02-07T02:44:22.303033",
   "total_timesteps": 43800,
-  "training_duration_seconds": 88.0547981262207,
+  "training_duration_seconds": 77.02240180969238,
   "validation_metrics": {
-    "mean_reward": 732981.297389995,
-    "mean_co2_avoided_kg": 18423122530.02858,
+    "mean_reward": 824101.9919904601,
+    "mean_co2_avoided_kg": 18549875628.302963,
     "mean_solar_kwh": 36005275867.10466,
-    "mean_cost_usd": 886362.0026048537,
-    "mean_grid_import_kwh": 28970152841.21371
+    "mean_cost_usd": 891057.7805062425,
+    "mean_grid_import_kwh": 29043374402.636578
   }
 }

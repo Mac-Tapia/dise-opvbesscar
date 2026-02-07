@@ -4,13 +4,14 @@
 [![Stable-Baselines3](https://img.shields.io/badge/RL-Stable--Baselines3-green.svg)](https://stable-baselines3.readthedocs.io/)
 [![CityLearn](https://img.shields.io/badge/Env-CityLearn%20v2-orange.svg)](https://www.citylearn.net/)
 
-**Optimización de carga EV con Solar PV + BESS mediante Reinforcement Learning**
+> Optimización de carga EV con Solar PV + BESS mediante Reinforcement Learning
 
 ---
 
 ## 🎯 Descripción del Proyecto
 
 **pvbesscar** optimiza la carga de 128 cargadores eléctricos (2,912 motos + 416 mototaxis) utilizando:
+
 - **Solar PV**: 4,050 kWp de generación fotovoltaica
 - **BESS**: 4,520 kWh de almacenamiento en baterías
 - **RL Agents**: SAC, PPO, A2C para minimizar emisiones CO₂
@@ -65,7 +66,7 @@ python scripts/verify_5_datasets.py
 
 ## 📊 Arquitectura del Sistema
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    CityLearn v2 Environment                         │
 │  ┌──────────────┐  ┌──────────────┐  ┌─────────────────────────┐   │
@@ -86,22 +87,22 @@ python scripts/verify_5_datasets.py
 
 ### Espacios de Observación y Acción
 
-| Componente | Dimensiones | Descripción |
-|------------|-------------|-------------|
-| **Observación** | 394-dim | Solar W/m², BESS SOC %, 128 chargers × 3, tiempo |
-| **Acción** | 129-dim | 1 BESS + 128 chargers, valores continuos [0,1] |
+| Componente       | Dimensiones | Descripción                                       |
+| ---------------- | ----------- | ------------------------------------------------- |
+| **Observación**  | 394-dim     | Solar W/m², BESS SOC %, 128 chargers × 3, tiempo  |
+| **Acción**       | 129-dim     | 1 BESS + 128 chargers, valores continuos [0,1]    |
 
 ---
 
 ## 🎯 Sistema de Recompensa Multi-Objetivo
 
-| Objetivo | Peso | Descripción |
-|----------|------|-------------|
-| **Minimización CO₂** | 0.50 | Grid imports × 0.4521 kg CO₂/kWh |
-| **Autoconsumo Solar** | 0.20 | Maximizar uso directo de PV |
-| **Carga EV Completa** | 0.15 | EVs cargados antes del deadline |
-| **Estabilidad Red** | 0.10 | Rampas de potencia suaves |
-| **Minimización Costo** | 0.05 | Preferencia horario bajo |
+| Objetivo               | Peso | Descripción                        |
+| ---------------------- | ---- | ---------------------------------- |
+| **Minimización CO₂**   | 0.50 | Grid imports × 0.4521 kg CO₂/kWh   |
+| **Autoconsumo Solar**  | 0.20 | Maximizar uso directo de PV        |
+| **Carga EV Completa**  | 0.15 | EVs cargados antes del deadline    |
+| **Estabilidad Red**    | 0.10 | Rampas de potencia suaves          |
+| **Minimización Costo** | 0.05 | Preferencia horario bajo           |
 
 ---
 
@@ -109,19 +110,19 @@ python scripts/verify_5_datasets.py
 
 ### Baseline vs RL Agents
 
-| Escenario | CO₂ (kg/año) | Reducción |
-|-----------|--------------|-----------|
-| **Baseline Sin Solar** | ~640,000 | - |
-| **Baseline Con Solar** | ~190,000 | -70% |
-| **SAC (RL)** | ~7,200 | -96% |
-| **PPO (RL)** | ~7,000 | -96% |
-| **A2C (RL)** | ~7,400 | -96% |
+| Escenario              | CO₂ (kg/año) | Reducción |
+| ---------------------- | ------------ | --------- |
+| **Baseline Sin Solar** | ~640,000     | -         |
+| **Baseline Con Solar** | ~190,000     | -70%      |
+| **SAC (RL)**           | ~7,200       | -96%      |
+| **PPO (RL)**           | ~7,000       | -96%      |
+| **A2C (RL)**           | ~7,400       | -96%      |
 
 ---
 
 ## 📁 Estructura del Proyecto
 
-```
+```text
 pvbesscar/
 ├── src/
 │   ├── agents/            # SAC, PPO, A2C implementations
@@ -168,13 +169,13 @@ oe3:
 
 ## ✅ Estado del Sistema (2026-02-07)
 
-| Componente | Estado |
-|------------|--------|
-| Código | ✅ 0 errores Pylance |
-| Dataset | ✅ 8,760 timesteps verificados |
-| Agentes | ✅ SAC, PPO, A2C operacionales |
-| GPU | ✅ CUDA habilitado |
-| 128 Chargers | ✅ Datasets generados |
+| Componente   | Estado                          |
+| ------------ | ------------------------------- |
+| Código       | ✅ 0 errores Pylance            |
+| Dataset      | ✅ 8,760 timesteps verificados  |
+| Agentes      | ✅ SAC, PPO, A2C operacionales  |
+| GPU          | ✅ CUDA habilitado              |
+| 128 Chargers | ✅ Datasets generados           |
 
 ---
 

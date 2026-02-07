@@ -5,38 +5,40 @@ ENTRENAR A2C CON MULTIOBJETIVO REAL
 Entrenamiento INDIVIDUAL con datos OE2 reales (chargers, BESS, mall demand, solar)
 NO se usa ninguna formula de aproximacion - SOLO DATOS REALES
 """
-
-import sys
-import os
-from pathlib import Path
-
-# CONFIGURAR ENCODING ANTES DE OTROS IMPORTS
-os.environ['PYTHONIOENCODING'] = 'utf-8'
-if hasattr(sys.stdout, 'reconfigure'):
-    try:
-        sys.stdout.reconfigure(encoding='utf-8')  # type: ignore[union-attr]
-    except (AttributeError, TypeError, RuntimeError):
-        pass
-
-# VALIDAR AMBIENTE .venv AL INICIO
-try:
-    from src.utils.environment_validator import validate_venv_active
-    validate_venv_active()
-except ImportError:
-    pass
-except RuntimeError as e:
-    print(f"❌ {e}", file=sys.stderr)
-    sys.exit(1)
+from __future__ import annotations
 
 import json
-import yaml
-from datetime import datetime
 import logging
+import os
+import sys
+import time
+import traceback
 import warnings
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
 import numpy as np
 import pandas as pd
 import torch
-from typing import Any
+import yaml
+from gymnasium import Env, spaces
+from stable_baselines3 import A2C
+from stable_baselines3.common.callbacks import CheckpointCallback
+
+from src.rewards.rewards import (
+    IquitosContext,
+    MultiObjectiveReward,
+    create_iquitos_reward_weights,
+)
+
+# Configurar encoding UTF-8
+os.environ['PYTHONIOENCODING'] = 'utf-8'
+if hasattr(sys.stdout, 'reconfigure'):
+    try:
+        getattr(sys.stdout, 'reconfigure')(encoding='utf-8')
+    except (AttributeError, TypeError, RuntimeError):
+        pass
 
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 
@@ -89,9 +91,6 @@ try:
 
     print(f'  OK Config loaded: {len(cfg)} keys')
 
-    from src.rewards.rewards import IquitosContext, MultiObjectiveReward
-    from src.rewards.rewards import create_iquitos_reward_weights
-
     weights = create_iquitos_reward_weights("co2_focus")
     context = IquitosContext()
     reward_calculator = MultiObjectiveReward(weights=weights, context=context)
@@ -130,14 +129,17 @@ try:
     print('[3] CREAR ENVIRONMENT CON DATOS OE2 REALES')
     print('-' * 80)
 
-    from gymnasium import Env, spaces
-    from stable_baselines3 import A2C
-    from stable_baselines3.common.callbacks import CheckpointCallback
-
     class CityLearnRealEnv(Env):  # type: ignore[type-arg]
         """Environment con datos REALES OE2 (chargers, BESS, mall demand, solar)"""
 
-        def __init__(self, reward_calc: Any, ctx: Any, obs_dim: int = 1045, action_dim: int = 129, max_steps: int = 8760) -> None:
+        def __init__(
+            self,
+            reward_calc: Any,
+            ctx: Any,
+            obs_dim: int = 1045,
+            action_dim: int = 129,
+            max_steps: int = 8760
+        ) -> None:
             self.reward_calculator = reward_calc
             self.context = ctx
             self.obs_dim = obs_dim
@@ -172,7 +174,9 @@ try:
                 chargers_cols = [c for c in df_chargers.columns if 'SOCKET' in c or 'MOTO' in c]
                 self.chargers_hourly_kw = df_chargers[chargers_cols].values  # (8760, 128) - NO sumado
                 self.chargers_total_kwh = df_chargers[chargers_cols].sum().sum()
-                print(f'  [CHARGERS] Cargado: {self.chargers_hourly_kw.shape} (horas x sockets), {self.chargers_total_kwh:.0f} kWh/año')
+                charger_shape = self.chargers_hourly_kw.shape
+                print(f'  [CHARGERS] Cargado: {charger_shape} (horas x sockets)')
+                print(f'             Total: {self.chargers_total_kwh:.0f} kWh/año')
 
                 # 2. BESS REAL - STATE OF CHARGE Y FLUJOS DE ENERGÍA
                 bess_path = Path('data/oe2/bess/bess_hourly_dataset_2024.csv')
@@ -184,12 +188,32 @@ try:
                     numeric_cols = df_bess.select_dtypes(include=['float64', 'int64']).columns
                     self.bess_soc_percent = df_bess[numeric_cols[0]].values / 100.0 if len(numeric_cols) > 0 else None
                 # Flujos de energía reales del BESS (columnas CityLearn v2)
-                self.pv_to_ev_kwh = df_bess['pv_to_ev_kwh'].values if 'pv_to_ev_kwh' in df_bess.columns else np.zeros(len(df_bess))
-                self.pv_to_bess_kwh = df_bess['pv_to_bess_kwh'].values if 'pv_to_bess_kwh' in df_bess.columns else np.zeros(len(df_bess))
-                self.grid_to_ev_kwh = df_bess['grid_to_ev_kwh'].values if 'grid_to_ev_kwh' in df_bess.columns else np.zeros(len(df_bess))
-                self.grid_to_mall_kwh = df_bess['grid_to_mall_kwh'].values if 'grid_to_mall_kwh' in df_bess.columns else np.zeros(len(df_bess))
-                self.bess_charge_kwh = df_bess['bess_charge_kwh'].values if 'bess_charge_kwh' in df_bess.columns else np.zeros(len(df_bess))
-                self.bess_discharge_kwh = df_bess['bess_discharge_kwh'].values if 'bess_discharge_kwh' in df_bess.columns else np.zeros(len(df_bess))
+                n_rows = len(df_bess)
+                cols = df_bess.columns
+                self.pv_to_ev_kwh = (
+                    df_bess['pv_to_ev_kwh'].values
+                    if 'pv_to_ev_kwh' in cols else np.zeros(n_rows)
+                )
+                self.pv_to_bess_kwh = (
+                    df_bess['pv_to_bess_kwh'].values
+                    if 'pv_to_bess_kwh' in cols else np.zeros(n_rows)
+                )
+                self.grid_to_ev_kwh = (
+                    df_bess['grid_to_ev_kwh'].values
+                    if 'grid_to_ev_kwh' in cols else np.zeros(n_rows)
+                )
+                self.grid_to_mall_kwh = (
+                    df_bess['grid_to_mall_kwh'].values
+                    if 'grid_to_mall_kwh' in cols else np.zeros(n_rows)
+                )
+                self.bess_charge_kwh = (
+                    df_bess['bess_charge_kwh'].values
+                    if 'bess_charge_kwh' in cols else np.zeros(n_rows)
+                )
+                self.bess_discharge_kwh = (
+                    df_bess['bess_discharge_kwh'].values
+                    if 'bess_discharge_kwh' in cols else np.zeros(n_rows)
+                )
                 avg_soc = float(np.mean(self.bess_soc_percent) * 100) if self.bess_soc_percent is not None else 0.0
                 print(f'  [BESS] Cargado: {len(df_bess)} horas, SOC promedio: {avg_soc:.1f}%')
                 pv_ev_total = float(np.sum(np.asarray(self.pv_to_ev_kwh)))
@@ -221,7 +245,9 @@ try:
                     # Fallback a potencia (para datos horarios kW ≈ kWh)
                     self.solar_hourly_kwh = df_solar['ac_power_kw'].values
                 solar_total = float(np.sum(np.array(self.solar_hourly_kwh, dtype=np.float64)))
-                print(f'  [SOLAR] Cargado: {self.solar_all_columns.shape} (horas x columnas), {solar_total:.0f} kWh/año')
+                shape_info = self.solar_all_columns.shape
+                print(f'  [SOLAR] Cargado: {shape_info} (horas x columnas)')
+                print(f'          Total: {solar_total:.0f} kWh/año')
                 print(f'       Columnas: {list(solar_cols)}')
 
             except (FileNotFoundError, KeyError, ValueError, pd.errors.ParserError) as e:
@@ -242,7 +268,12 @@ try:
             """Render no implementado para este environment."""
             return  # No-op render
 
-        def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[Any, dict[str, Any]]:
+        def reset(
+            self,
+            *,
+            seed: int | None = None,
+            options: dict[str, Any] | None = None
+        ) -> tuple[Any, dict[str, Any]]:
             super().reset(seed=seed)
             self.step_count = 0
             self.episode_reward = 0.0
@@ -436,7 +467,6 @@ try:
     print('  ENTRENAMIENTO EN PROGRESO:')
     print('  ' + '-' * 76)
 
-    import time
     start_time = time.time()
 
     checkpoint_callback = CheckpointCallback(
@@ -475,32 +505,35 @@ try:
 
     for ep in range(3):
         val_obs, _ = env.reset()
-        val_done = False
-        steps = 0
-        ep_co2 = 0.0
-        ep_solar = 0.0
-        ep_grid = 0.0
+        validation_done = False
+        step_count = 0
+        episode_co2 = 0.0
+        episode_solar = 0.0
+        episode_grid = 0.0
 
         print(f'  Episodio {ep+1}/3: ', end='', flush=True)
 
-        while not val_done:
+        while not validation_done:
             action_result = a2c_agent.predict(val_obs, deterministic=True)
             action_arr = action_result[0] if action_result is not None else np.zeros(129)
             val_obs, reward, terminated, val_truncated, step_info = env.step(action_arr)
-            val_done = terminated or val_truncated
-            steps += 1
+            validation_done = terminated or val_truncated
+            step_count += 1
 
-            ep_co2 += step_info.get('co2_avoided_total_kg', 0)
-            ep_solar += step_info.get('solar_generation_kwh', 0)
-            ep_grid += step_info.get('grid_import_kwh', 0)
+            episode_co2 += step_info.get('co2_avoided_total_kg', 0)
+            episode_solar += step_info.get('solar_generation_kwh', 0)
+            episode_grid += step_info.get('grid_import_kwh', 0)
 
         val_metrics['rewards'].append(env.episode_reward)
-        val_metrics['co2_avoided'].append(ep_co2)
-        val_metrics['solar_kwh'].append(ep_solar)
+        val_metrics['co2_avoided'].append(episode_co2)
+        val_metrics['solar_kwh'].append(episode_solar)
         val_metrics['cost_usd'].append(env.cost_total)
-        val_metrics['grid_import'].append(ep_grid)
+        val_metrics['grid_import'].append(episode_grid)
 
-        print(f'Reward={env.episode_reward:>8.2f} | CO2_avoided={ep_co2:>10.1f}kg | Solar={ep_solar:>10.1f}kWh | Steps={steps}')
+        print(
+            f'Reward={env.episode_reward:>8.2f} | CO2_avoided={episode_co2:>10.1f}kg'
+            f' | Solar={episode_solar:>10.1f}kWh | Steps={step_count}'
+        )
 
     print()
 
@@ -551,6 +584,5 @@ try:
 
 except (FileNotFoundError, KeyError, ValueError, RuntimeError, OSError, IOError) as e:
     print(f'\n[ERROR] {e}')
-    import traceback
     traceback.print_exc()
     sys.exit(1)

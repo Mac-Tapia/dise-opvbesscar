@@ -21,21 +21,11 @@
     "tests"
   ],
 
-  "python.linting.enabled": true,
-  "python.linting.pylintEnabled": true,
-  "python.linting.pylintArgs": [
-    "--disable=consider-using-f-string",
-    "--disable=line-too-long",
-    "--disable=missing-module-docstring",
-    "--disable=missing-class-docstring",
-    "--disable=missing-function-docstring",
-    "--disable=too-many-arguments",
-    "--disable=too-many-instance-attributes",
-    "--disable=too-many-locals",
-    "--disable=broad-except",
-    "--disable=unused-argument",
-    "--disable=protected-access"
-  ],
+  "// LINTING DESACTIVADO - Usar Pylance para análisis de tipos": "",
+  "python.linting.enabled": false,
+  "python.linting.pylintEnabled": false,
+  "pylint.enabled": false,
+  "pylint.args": ["--disable=all"],
   "[python]": {
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "ms-python.python"
