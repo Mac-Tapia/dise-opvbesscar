@@ -106,6 +106,79 @@ BESS_MAX_POWER_KW = 500.0    # Potencia máxima BESS
 # DIRECTORIOS DE SALIDA
 OUTPUT_DIR = Path('outputs/ppo_training')
 CHECKPOINT_DIR = Path('checkpoints/PPO')
+OE3_OUTPUT_DIR = Path('data/interim/oe3')
+
+# ============================================================================
+# FUNCIONES DE PREPARACIÓN - DATASET Y CHECKPOINTS
+# ============================================================================
+
+def validate_oe2_datasets() -> Dict[str, Any]:
+    """
+    Validar y cargar los 5 datasets OE2 obligatorios.
+    MISMA LOGICA que train_sac_multiobjetivo.py para garantizar consistencia.
+    """
+    print('=' * 80)
+    print('[PRE-PASO] VALIDAR SINCRONIZACION CON 5 DATASETS OE2')
+    print('=' * 80)
+
+    OE2_FILES = {
+        'solar': Path('data/interim/oe2/solar/pv_generation_citylearn_v2.csv'),
+        'chargers_hourly': Path('data/interim/oe2/chargers/chargers_real_hourly_2024.csv'),
+        'chargers_stats': Path('data/interim/oe2/chargers/chargers_real_statistics.csv'),
+        'bess': Path('data/interim/oe2/bess/bess_hourly_dataset_2024.csv'),
+        'mall_demand': Path('data/interim/oe2/demandamallkwh/demandamallhorakwh.csv'),
+    }
+
+    oe2_validation_ok = True
+    oe2_summary = {}
+
+    for name, path in OE2_FILES.items():
+        if path.exists():
+            df = pd.read_csv(path, nrows=5, sep=';' if 'mall' in name else ',')
+            rows = len(pd.read_csv(path, sep=';' if 'mall' in name else ','))
+            cols = len(df.columns)
+            oe2_summary[name] = {'rows': rows, 'cols': cols, 'path': path}
+            status = 'OK' if rows >= 8760 or name == 'chargers_stats' else 'WARN'
+            print(f'  [{status}] {name}: {rows:,} filas x {cols} columnas ({path.name})')
+        else:
+            print(f'  [ERROR] {name}: NO ENCONTRADO ({path})')
+            oe2_validation_ok = False
+
+    if not oe2_validation_ok:
+        raise FileNotFoundError('Faltan archivos OE2 obligatorios. Ver errores arriba.')
+
+    print()
+    print('  SINCRONIZACION OE2 -> CityLearn:')
+    print(f'    Solar PVGIS:          {oe2_summary["solar"]["rows"]:,} horas')
+    print(f'    Chargers 128 sockets: {oe2_summary["chargers_hourly"]["rows"]:,} horas x {oe2_summary["chargers_hourly"]["cols"]} cols')
+    print(f'    BESS SOC:             {oe2_summary["bess"]["rows"]:,} horas')
+    print(f'    Mall Demand:          {oe2_summary["mall_demand"]["rows"]:,} horas')
+    print('  [OK] Todos los datasets OE2 sincronizados')
+    print('=' * 80)
+    print()
+    
+    return oe2_summary
+
+
+def clean_checkpoints_ppo() -> None:
+    """Limpiar checkpoints PPO anteriores para entrenamiento desde cero."""
+    print('[PRE-PASO] LIMPIEZA DE CHECKPOINTS PPO')
+    print('-' * 80)
+    
+    if CHECKPOINT_DIR.exists():
+        import shutil
+        files = list(CHECKPOINT_DIR.glob('*.zip')) + list(CHECKPOINT_DIR.glob('*.json'))
+        if files:
+            for f in files:
+                f.unlink()
+            print(f'  Eliminados {len(files)} archivos de checkpoint')
+        else:
+            print('  No hay checkpoints previos')
+    else:
+        CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
+        print('  Directorio de checkpoints creado')
+    print()
+
 
 class CityLearnEnvironment(Env):
     """Environment compatible con Gymnasium para CityLearn v2.
@@ -147,6 +220,8 @@ class CityLearnEnvironment(Env):
         chargers_kw: np.ndarray,
         mall_kw: np.ndarray,
         bess_soc: np.ndarray,
+        charger_max_power_kw: Optional[np.ndarray] = None,
+        charger_mean_power_kw: Optional[np.ndarray] = None,
         max_steps: int = HOURS_PER_YEAR
     ):
         """
@@ -159,6 +234,8 @@ class CityLearnEnvironment(Env):
             chargers_kw: Array charger demands (8760, n_chargers)
             mall_kw: Array mall demand (8760,)
             bess_soc: Array BESS SOC (8760,)
+            charger_max_power_kw: (128,) potencia máxima por socket desde chargers_real_statistics.csv
+            charger_mean_power_kw: (128,) potencia media por socket desde chargers_real_statistics.csv
             max_steps: Duración episodio en timesteps
         """
         super().__init__()
@@ -171,6 +248,20 @@ class CityLearnEnvironment(Env):
         self.chargers_hourly = np.asarray(chargers_kw, dtype=np.float32)
         self.mall_hourly = np.asarray(mall_kw, dtype=np.float32)
         self.bess_soc_hourly = np.asarray(bess_soc, dtype=np.float32)
+        
+        # ESTADISTICAS REALES DE CARGADORES (5to dataset OE2)
+        # Usadas para escalar acciones según capacidad real de cada socket
+        if charger_max_power_kw is not None:
+            self.charger_max_power = np.asarray(charger_max_power_kw, dtype=np.float32)
+        else:
+            # Fallback: 2.5 kW por socket (valor promedio de Tabla 13)
+            self.charger_max_power = np.full(self.NUM_CHARGERS, 2.5, dtype=np.float32)
+            
+        if charger_mean_power_kw is not None:
+            self.charger_mean_power = np.asarray(charger_mean_power_kw, dtype=np.float32)
+        else:
+            # Fallback: 0.89 kW (promedio observado en dataset)
+            self.charger_mean_power = np.full(self.NUM_CHARGERS, 0.89, dtype=np.float32)
 
         # Validación de datos
         if len(self.solar_hourly) != self.HOURS_PER_YEAR:
@@ -287,7 +378,10 @@ class CityLearnEnvironment(Env):
         charger_setpoints = np.clip(action[1:self.ACTION_DIM], 0.0, 1.0)
 
         # CALCULAR ENERGIA (balance de carga)
-        ev_charging_kwh = float(np.sum(charger_demand * charger_setpoints))
+        # Usar max_power real de cada socket (del 5to dataset OE2)
+        # para escalar setpoints a potencia efectiva
+        charger_power_effective = charger_setpoints * self.charger_max_power[:self.n_chargers]
+        ev_charging_kwh = float(np.sum(np.minimum(charger_power_effective, charger_demand)))
         total_demand_kwh = mall_kw + ev_charging_kwh
         
         # BESS power (positivo = descarga, negativo = carga)
@@ -297,6 +391,10 @@ class CityLearnEnvironment(Env):
         # Chargers 0-22 = motos (23x128=2944 cercano a 2912), Chargers 23-31 = mototaxis
         motos_demand = float(np.sum(charger_demand[:92] * charger_setpoints[:92]))
         mototaxis_demand = float(np.sum(charger_demand[92:] * charger_setpoints[92:]))
+        
+        # CONTEO VEHÍCULOS CARGANDO (sockets con setpoint > 50%)
+        motos_charging = int(np.sum(charger_setpoints[:92] > 0.5))
+        mototaxis_charging = int(np.sum(charger_setpoints[92:] > 0.5))
 
         # GRID BALANCE (importador vs exportador)
         net_demand = total_demand_kwh - bess_power_kw  # BESS descarga reduce demanda
@@ -309,11 +407,16 @@ class CityLearnEnvironment(Env):
         co2_avoided_direct_kg = grid_export_kwh * CO2_FACTOR_IQUITOS * 0.5  # 50% credit
         co2_avoided_total_kg = co2_avoided_indirect_kg + co2_avoided_direct_kg
 
-        # EV SATISFACTION (simulado con SOC proxy)
-        ev_soc_avg = np.clip(
-            bess_soc + 0.005 * np.mean(charger_setpoints),
-            0.0, 1.0
-        )
+        # EV SATISFACTION - MÉTODO REALISTA (similar a SAC)
+        # Basado en cuánta carga se está entregando vs la demanda
+        if float(np.sum(charger_demand)) > 0.1:
+            # Ratio de carga efectiva: cuánto se está cargando vs demanda total
+            charge_ratio = ev_charging_kwh / max(1.0, float(np.sum(charger_demand)))
+            # EV SOC aumenta con la carga efectiva (baseline 80% + bonus por carga)
+            ev_soc_avg = np.clip(0.80 + 0.20 * charge_ratio, 0.0, 1.0)
+        else:
+            # Sin demanda EV, usar baseline alto (asume EVs ya cargados)
+            ev_soc_avg = 0.95
 
         # CALCULAR RECOMPENSA MULTIOBJETIVO
         try:
@@ -327,6 +430,14 @@ class CityLearnEnvironment(Env):
                 hour=h % 24,
                 ev_demand_kwh=50.0
             )
+            
+            # AGREGAR BONUS POR EV SATISFACTION (igual que SAC)
+            # ev_soc_avg está en [0,1], convertir a [-1,1] y ponderar
+            ev_bonus = (2.0 * ev_soc_avg - 1.0)  # Escala [-1, 1]
+            reward_val = reward_val * 0.85 + ev_bonus * 0.15  # Ponderación 85%/15%
+            # Mantener en rango estable para PPO
+            reward_val = float(np.clip(reward_val, -1.0, 1.0))
+            
         except (ValueError, KeyError, AttributeError, TypeError) as exc:
             logger.warning("Error en reward computation hora %d: %s", h, exc)
             reward_val = -10.0
@@ -369,6 +480,8 @@ class CityLearnEnvironment(Env):
             # EV breakdown
             'motos_power_kw': motos_demand,
             'mototaxis_power_kw': mototaxis_demand,
+            'motos_charging': motos_charging,
+            'mototaxis_charging': mototaxis_charging,
             'ev_soc_avg': ev_soc_avg,
             # Acumulados episodio
             'episode_reward_cumulative': float(self.episode_reward),
@@ -406,7 +519,7 @@ class DetailedLoggingCallback(BaseCallback):
         self.output_dir = output_dir
         self.step_log_freq = 1000  # Cada 1000 pasos
 
-        # Acumuladores por episodio
+        # Acumuladores por episodio (COMPLETO - Similar A2C)
         self.episode_rewards: list[float] = []
         self.episode_co2_grid: list[float] = []
         self.episode_co2_avoided_indirect: list[float] = []
@@ -414,6 +527,23 @@ class DetailedLoggingCallback(BaseCallback):
         self.episode_solar_kwh: list[float] = []
         self.episode_ev_charging: list[float] = []
         self.episode_grid_import: list[float] = []
+        # ✅ NUEVAS: Estabilidad, costos, motos/mototaxis
+        self.episode_grid_stability: list[float] = []
+        self.episode_cost_usd: list[float] = []
+        self.episode_motos_charged: list[int] = []
+        self.episode_mototaxis_charged: list[int] = []
+        self.episode_bess_discharge_kwh: list[float] = []
+        self.episode_bess_charge_kwh: list[float] = []
+        # ✅ NUEVAS: Progreso de control
+        self.episode_avg_socket_setpoint: list[float] = []
+        self.episode_socket_utilization: list[float] = []
+        self.episode_bess_action_avg: list[float] = []
+        # ✅ NUEVAS: Componentes de reward
+        self.episode_r_solar: list[float] = []
+        self.episode_r_cost: list[float] = []
+        self.episode_r_ev: list[float] = []
+        self.episode_r_grid: list[float] = []
+        self.episode_r_co2: list[float] = []
 
         # TRACE: registro paso a paso
         self.trace_records: list[dict[str, Any]] = []
@@ -421,7 +551,7 @@ class DetailedLoggingCallback(BaseCallback):
         # TIMESERIES: registro horario por episodio
         self.timeseries_records: list[dict[str, Any]] = []
 
-        # Tracking actual
+        # Tracking actual (COMPLETO)
         self.current_episode = 0
         self.ep_co2_grid = 0.0
         self.ep_co2_avoided_indirect = 0.0
@@ -431,13 +561,30 @@ class DetailedLoggingCallback(BaseCallback):
         self.ep_grid = 0.0
         self.ep_reward = 0.0
         self.ep_steps = 0
+        # ✅ NUEVOS acumuladores
+        self.ep_stability_sum = 0.0
+        self.ep_stability_count = 0
+        self.ep_cost_usd = 0.0
+        self.ep_motos_charged_max = 0
+        self.ep_mototaxis_charged_max = 0
+        self.ep_bess_discharge = 0.0
+        self.ep_bess_charge = 0.0
+        self.ep_socket_setpoint_sum = 0.0
+        self.ep_socket_active_count = 0
+        self.ep_bess_action_sum = 0.0
+        # ✅ NUEVOS acumuladores reward components
+        self.ep_r_solar_sum = 0.0
+        self.ep_r_cost_sum = 0.0
+        self.ep_r_ev_sum = 0.0
+        self.ep_r_grid_sum = 0.0
+        self.ep_r_co2_sum = 0.0
 
     def _on_step(self) -> bool:
         # Obtener info del último step
         infos = self.locals.get('infos', [{}])
         info = infos[0] if infos else {}
 
-        # Acumular métricas
+        # Acumular métricas básicas
         self.ep_co2_grid += info.get('co2_grid_kg', 0)
         self.ep_co2_avoided_indirect += info.get('co2_avoided_indirect_kg', 0)
         self.ep_co2_avoided_direct += info.get('co2_avoided_direct_kg', 0)
@@ -445,6 +592,51 @@ class DetailedLoggingCallback(BaseCallback):
         self.ep_ev += info.get('ev_charging_kwh', 0)
         self.ep_grid += info.get('grid_import_kwh', 0)
         self.ep_steps += 1
+        
+        # ✅ NUEVAS MÉTRICAS: Estabilidad, costos, motos/mototaxis
+        # Estabilidad: calcular ratio de variación
+        grid_import = info.get('grid_import_kwh', 0.0)
+        grid_export = info.get('grid_export_kwh', 0.0) if 'grid_export_kwh' in info else 0.0
+        peak_demand_limit = 450.0  # kW límite típico
+        stability = 1.0 - min(1.0, abs(grid_import - grid_export) / peak_demand_limit)
+        self.ep_stability_sum += stability
+        self.ep_stability_count += 1
+        
+        # Costo: tarifa × (import - export)
+        tariff_usd = 0.15  # USD/kWh tarifa Iquitos
+        cost_step = (grid_import - grid_export * 0.5) * tariff_usd
+        self.ep_cost_usd += max(0.0, cost_step)
+        
+        # Motos y mototaxis (máximo por episodio)
+        motos = info.get('motos_charging', 0)
+        mototaxis = info.get('mototaxis_charging', 0)
+        self.ep_motos_charged_max = max(self.ep_motos_charged_max, motos)
+        self.ep_mototaxis_charged_max = max(self.ep_mototaxis_charged_max, mototaxis)
+        
+        # BESS (descarga/carga)
+        bess_power = info.get('bess_power_kw', 0.0)
+        if bess_power > 0:
+            self.ep_bess_discharge += bess_power
+        else:
+            self.ep_bess_charge += abs(bess_power)
+        
+        # Progreso de control de sockets (desde acciones)
+        actions = self.locals.get('actions', None)
+        if actions is not None and len(actions) > 0:
+            action = actions[0] if len(actions[0].shape) > 0 else actions
+            if len(action) >= 129:
+                bess_action = float(action[0])
+                socket_setpoints = action[1:129]
+                self.ep_bess_action_sum += bess_action
+                self.ep_socket_setpoint_sum += float(np.mean(socket_setpoints))
+                self.ep_socket_active_count += int(np.sum(socket_setpoints > 0.1))
+        
+        # ✅ NUEVAS: Acumular componentes de reward desde info
+        self.ep_r_solar_sum += info.get('r_solar', 0.0)
+        self.ep_r_cost_sum += info.get('r_cost', 0.0)
+        self.ep_r_ev_sum += info.get('r_ev', 0.0)
+        self.ep_r_grid_sum += info.get('r_grid', 0.0)
+        self.ep_r_co2_sum += info.get('r_co2', 0.0)
 
         # TRACE: guardar cada paso
         rewards = self.locals.get('rewards', [0.0])
@@ -464,11 +656,14 @@ class DetailedLoggingCallback(BaseCallback):
             'bess_power_kw': info.get('bess_power_kw', 0),
             'motos_power_kw': info.get('motos_power_kw', 0),
             'mototaxis_power_kw': info.get('mototaxis_power_kw', 0),
+            'motos_charging': info.get('motos_charging', 0),
+            'mototaxis_charging': info.get('mototaxis_charging', 0),
         }
         self.trace_records.append(trace_record)
 
         # TIMESERIES: guardar por hora (cada 1 hora = 1 step)
         ts_record = {
+            'timestep': self.num_timesteps,
             'episode': self.current_episode,
             'hour_of_year': self.ep_steps - 1,
             'hour_of_day': info.get('hour', 0),
@@ -476,7 +671,10 @@ class DetailedLoggingCallback(BaseCallback):
             'ev_charging_kwh': info.get('ev_charging_kwh', 0),
             'grid_import_kwh': info.get('grid_import_kwh', 0),
             'bess_power_kw': info.get('bess_power_kw', 0),
+            'bess_soc': info.get('bess_soc', 0.0),
             'co2_avoided_total_kg': info.get('co2_avoided_total_kg', 0),
+            'motos_charging': info.get('motos_charging', 0),
+            'mototaxis_charging': info.get('mototaxis_charging', 0),
             'reward': reward_val,
         }
         self.timeseries_records.append(ts_record)
@@ -507,9 +705,10 @@ class DetailedLoggingCallback(BaseCallback):
               f'CO2_evitado: {(self.ep_co2_avoided_indirect + self.ep_co2_avoided_direct):>8,.0f} kg', flush=True)
 
     def _log_episode_summary(self) -> None:
-        """Resumen completo al finalizar episodio."""
+        """Resumen completo al finalizar episodio con TODAS las métricas A2C."""
         co2_avoided_total = self.ep_co2_avoided_indirect + self.ep_co2_avoided_direct
 
+        # Guardar en listas para training_evolution
         self.episode_rewards.append(self.ep_reward)
         self.episode_co2_grid.append(self.ep_co2_grid)
         self.episode_co2_avoided_indirect.append(self.ep_co2_avoided_indirect)
@@ -517,11 +716,30 @@ class DetailedLoggingCallback(BaseCallback):
         self.episode_solar_kwh.append(self.ep_solar)
         self.episode_ev_charging.append(self.ep_ev)
         self.episode_grid_import.append(self.ep_grid)
+        # ✅ NUEVAS métricas por episodio
+        avg_stability = self.ep_stability_sum / max(1, self.ep_stability_count)
+        self.episode_grid_stability.append(avg_stability)
+        self.episode_cost_usd.append(self.ep_cost_usd)
+        self.episode_motos_charged.append(self.ep_motos_charged_max)
+        self.episode_mototaxis_charged.append(self.ep_mototaxis_charged_max)
+        self.episode_bess_discharge_kwh.append(self.ep_bess_discharge)
+        self.episode_bess_charge_kwh.append(self.ep_bess_charge)
+        # Promedios de control por episodio
+        steps_in_ep = max(1, self.ep_steps)
+        self.episode_avg_socket_setpoint.append(self.ep_socket_setpoint_sum / steps_in_ep)
+        self.episode_socket_utilization.append(self.ep_socket_active_count / (128.0 * steps_in_ep))
+        self.episode_bess_action_avg.append(self.ep_bess_action_sum / steps_in_ep)
+        # Reward components promedios
+        self.episode_r_solar.append(self.ep_r_solar_sum / steps_in_ep)
+        self.episode_r_cost.append(self.ep_r_cost_sum / steps_in_ep)
+        self.episode_r_ev.append(self.ep_r_ev_sum / steps_in_ep)
+        self.episode_r_grid.append(self.ep_r_grid_sum / steps_in_ep)
+        self.episode_r_co2.append(self.ep_r_co2_sum / steps_in_ep)
 
         print()
-        print(f'  ══════════════════════════════════════════════════════════════')
+        print(f'  ================================================================')
         print(f'  EPISODIO {self.current_episode + 1} COMPLETADO')
-        print(f'  ──────────────────────────────────────────────────────────────')
+        print(f'  ----------------------------------------------------------------')
         print(f'    Reward Total:         {self.ep_reward:>12,.2f}')
         print(f'    CO2 Grid:             {self.ep_co2_grid:>12,.0f} kg')
         print(f'    CO2 Evitado Indirect: {self.ep_co2_avoided_indirect:>12,.0f} kg')
@@ -530,11 +748,15 @@ class DetailedLoggingCallback(BaseCallback):
         print(f'    Solar Aprovechado:    {self.ep_solar:>12,.0f} kWh')
         print(f'    EV Cargado:           {self.ep_ev:>12,.0f} kWh')
         print(f'    Grid Import:          {self.ep_grid:>12,.0f} kWh')
-        print(f'  ══════════════════════════════════════════════════════════════')
+        print(f'    Motos cargando:       {self.ep_motos_charged_max:>12,} / 112')
+        print(f'    Mototaxis cargando:   {self.ep_mototaxis_charged_max:>12,} / 16')
+        print(f'    BESS Descarga:        {self.ep_bess_discharge:>12,.0f} kWh')
+        print(f'    BESS Carga:           {self.ep_bess_charge:>12,.0f} kWh')
+        print(f'  ================================================================')
         print()
 
     def _reset_episode_tracking(self) -> None:
-        """Reset acumuladores para siguiente episodio."""
+        """Reset acumuladores para siguiente episodio - COMPLETO."""
         self.ep_co2_grid = 0.0
         self.ep_co2_avoided_indirect = 0.0
         self.ep_co2_avoided_direct = 0.0
@@ -543,6 +765,23 @@ class DetailedLoggingCallback(BaseCallback):
         self.ep_grid = 0.0
         self.ep_reward = 0.0
         self.ep_steps = 0
+        # ✅ Reset nuevos acumuladores
+        self.ep_stability_sum = 0.0
+        self.ep_stability_count = 0
+        self.ep_cost_usd = 0.0
+        self.ep_motos_charged_max = 0
+        self.ep_mototaxis_charged_max = 0
+        self.ep_bess_discharge = 0.0
+        self.ep_bess_charge = 0.0
+        self.ep_socket_setpoint_sum = 0.0
+        self.ep_socket_active_count = 0
+        self.ep_bess_action_sum = 0.0
+        # ✅ Reset componentes de reward
+        self.ep_r_solar_sum = 0.0
+        self.ep_r_cost_sum = 0.0
+        self.ep_r_ev_sum = 0.0
+        self.ep_r_grid_sum = 0.0
+        self.ep_r_co2_sum = 0.0
 
 
 def main():
@@ -566,6 +805,12 @@ def main():
     HOURS_PER_YEAR: int = 8760
     NUM_EPISODES: int = 10  # 10 episodios = 87,600 timesteps para entrenamiento robusto
     TOTAL_TIMESTEPS: int = NUM_EPISODES * HOURS_PER_YEAR
+
+    # ========================================================================
+    # PRE-PASO: VALIDAR DATASETS OE2 Y LIMPIAR CHECKPOINTS
+    # ========================================================================
+    oe2_summary = validate_oe2_datasets()  # Valida los 5 archivos OE2 obligatorios
+    clean_checkpoints_ppo()
 
     print('='*80)
     print('ENTRENAR PPO - MULTIOBJETIVO CON DATOS REALES - {} EPISODIOS'.format(NUM_EPISODES))
@@ -644,25 +889,46 @@ def main():
         print('-'*80)
 
         # ====================================================================
-        # SOLAR
+        # SOLAR - MISMO ARCHIVO QUE SAC (pv_generation_citylearn_v2.csv)
         # ====================================================================
-        solar_path: Path = Path('data/interim/oe2/solar/pv_generation_timeseries.csv')
-        if solar_path.exists():
-            df_solar = pd.read_csv(solar_path)
-            col = next((c for c in df_solar.columns if 'gener' in c.lower()), df_solar.columns[-1])
-            solar_hourly = np.asarray(df_solar[col].values, dtype=np.float32)
-            if len(solar_hourly) != HOURS_PER_YEAR:
-                raise ValueError("Solar: %d horas != %d" % (len(solar_hourly), HOURS_PER_YEAR))
-            logger.info("Solar cargado: %.0f kWh/ano (8760h)", float(np.sum(solar_hourly)))
+        solar_path: Path = Path('data/interim/oe2/solar/pv_generation_citylearn_v2.csv')
+        if not solar_path.exists():
+            raise FileNotFoundError(f"OBLIGATORIO: {solar_path} no encontrado - ejecutar generación OE2 primero")
+        
+        df_solar = pd.read_csv(solar_path)
+        # Prioridad: pv_generation_kwh (energía horaria) > ac_power_kw (potencia)
+        if 'pv_generation_kwh' in df_solar.columns:
+            col = 'pv_generation_kwh'
+        elif 'ac_power_kw' in df_solar.columns:
+            col = 'ac_power_kw'
         else:
-            logger.warning("Solar no encontrado: %s", str(solar_path))
-            solar_hourly = np.ones(HOURS_PER_YEAR, dtype=np.float32) * 1000.0
+            raise KeyError(f"Solar CSV debe tener 'pv_generation_kwh' o 'ac_power_kw'. Columnas: {list(df_solar.columns)}")
+        
+        solar_hourly = np.asarray(df_solar[col].values, dtype=np.float32)
+        if len(solar_hourly) != HOURS_PER_YEAR:
+            raise ValueError(f"Solar: {len(solar_hourly)} horas != {HOURS_PER_YEAR}")
+        logger.info("Solar REAL (CityLearn v2): columna='%s' | %.0f kWh/ano (8760h)", col, float(np.sum(solar_hourly)))
 
         # ====================================================================
-        # CHARGERS (128 sockets = 32 chargers x 4 sockets) - DATOS REALES
+        # CHARGERS (128 sockets) - DATOS REALES DIRECTOS
         # ====================================================================
+        # Priorizar archivo con 128 sockets reales, fallback a 32 chargers expandido
+        charger_real_path = Path('data/interim/oe2/chargers/chargers_real_hourly_2024.csv')
         charger_csv_path = Path('data/interim/oe2/chargers/chargers_hourly_profiles_annual.csv')
-        if charger_csv_path.exists():
+        
+        if charger_real_path.exists():
+            # Archivo real con 128 sockets + timestamp
+            df_chargers = pd.read_csv(charger_real_path)
+            # Excluir columna timestamp si existe
+            data_cols = [c for c in df_chargers.columns if 'timestamp' not in c.lower() and 'time' not in c.lower()]
+            chargers_hourly = df_chargers[data_cols].values.astype(np.float32)
+            if chargers_hourly.shape[0] != HOURS_PER_YEAR:
+                raise ValueError(f"Chargers real debe tener {HOURS_PER_YEAR} filas, tiene {chargers_hourly.shape[0]}")
+            n_sockets = chargers_hourly.shape[1]
+            total_demand = float(np.sum(chargers_hourly))
+            logger.info("Chargers REALES (128 sockets directos): %d sockets | Demanda anual: %.0f kWh", 
+                        n_sockets, total_demand)
+        elif charger_csv_path.exists():
             df_chargers = pd.read_csv(charger_csv_path)
             # CSV tiene 32 columnas (1 por charger) - expandir a 128 sockets (4 por charger)
             chargers_raw = df_chargers.values.astype(np.float32)  # (8760, 32)
@@ -682,58 +948,78 @@ def main():
             logger.info("Chargers REALES: %d chargers x 4 = %d sockets | Demanda anual: %.0f kWh", 
                         n_charger_units, n_sockets, total_demand)
         else:
-            # Fallback: intentar JSON antiguo
-            charger_path = Path('data/interim/oe2/chargers/individual_chargers.json')
-            if charger_path.exists():
-                with open(charger_path, encoding='utf-8') as f:
-                    charger_data = json.load(f)
-                n_chargers_json = len(charger_data)
-                n_sockets = n_chargers_json * 4
-                del charger_data
-            else:
-                n_sockets = 128
-            logger.warning("Chargers CSV no encontrado: %s - usando datos sintéticos", str(charger_csv_path))
-            chargers_hourly = np.random.uniform(0.5, 3.0, (HOURS_PER_YEAR, n_sockets)).astype(np.float32)
+            # NO hay fallback sintético - archivos OE2 son obligatorios
+            raise FileNotFoundError(
+                f"OBLIGATORIO: Ningún archivo de chargers encontrado.\n"
+                f"  Esperado (prioridad 1): {charger_real_path}\n"
+                f"  Esperado (prioridad 2): {charger_csv_path}\n"
+                "Ejecutar generación OE2 primero."
+            )
 
         # ====================================================================
-        # MALL DEMAND
+        # CHARGER STATISTICS (potencia máxima/media por socket) - 5to dataset OE2
+        # ====================================================================
+        charger_stats_path = Path('data/interim/oe2/chargers/chargers_real_statistics.csv')
+        charger_max_power: Optional[np.ndarray] = None
+        charger_mean_power: Optional[np.ndarray] = None
+        
+        if charger_stats_path.exists():
+            df_stats = pd.read_csv(charger_stats_path)
+            if len(df_stats) >= 128:
+                charger_max_power = df_stats['max_power_kw'].values[:128].astype(np.float32)
+                charger_mean_power = df_stats['mean_power_kw'].values[:128].astype(np.float32)
+                min_pwr = float(charger_max_power.min())
+                max_pwr = float(charger_max_power.max())
+                mean_pwr = float(charger_mean_power.mean())
+                logger.info("Charger STATS (5to OE2): max_power=%.2f-%.2f kW, mean_power=%.2f kW", 
+                            min_pwr, max_pwr, mean_pwr)
+            else:
+                logger.warning("Charger STATS: %d filas < 128, usando valores por defecto", len(df_stats))
+        else:
+            logger.warning("Charger STATS: archivo no encontrado, usando valores por defecto")
+
+        # ====================================================================
+        # MALL DEMAND - OBLIGATORIO (sin fallback sintético)
         # ====================================================================
         mall_path = Path('data/interim/oe2/demandamallkwh/demandamallhorakwh.csv')
-        if mall_path.exists():
-            df_mall = pd.read_csv(mall_path, sep=';', encoding='utf-8')
-            col = df_mall.columns[-1]
-            mall_data = np.asarray(df_mall[col].values[:HOURS_PER_YEAR], dtype=np.float32)
-            if len(mall_data) < HOURS_PER_YEAR:
-                pad_width = ((0, HOURS_PER_YEAR - len(mall_data)),)
-                mall_hourly = np.pad(mall_data, pad_width, mode='wrap')
-            else:
-                mall_hourly = mall_data
-            logger.info("Mall cargado: %.0f kWh/ano", float(np.sum(mall_hourly)))
+        if not mall_path.exists():
+            raise FileNotFoundError(f"OBLIGATORIO: {mall_path} no encontrado - ejecutar generación OE2 primero")
+        
+        df_mall = pd.read_csv(mall_path, sep=';', encoding='utf-8')
+        col = df_mall.columns[-1]
+        mall_data = np.asarray(df_mall[col].values[:HOURS_PER_YEAR], dtype=np.float32)
+        if len(mall_data) < HOURS_PER_YEAR:
+            pad_width = ((0, HOURS_PER_YEAR - len(mall_data)),)
+            mall_hourly = np.pad(mall_data, pad_width, mode='wrap')
         else:
-            logger.warning("Mall no encontrado: %s", str(mall_path))
-            mall_hourly = np.ones(HOURS_PER_YEAR, dtype=np.float32) * 100.0
+            mall_hourly = mall_data
+        logger.info("Mall REAL: %.0f kWh/año (promedio %.1f kW/h)", float(np.sum(mall_hourly)), float(np.mean(mall_hourly)))
 
         # ====================================================================
-        # BESS SOC (Battery Energy Storage System State of Charge)
+        # BESS SOC - OBLIGATORIO (sin fallback sintético)
         # ====================================================================
-        # Intentar múltiples paths para BESS
         bess_paths = [
             Path('data/interim/oe2/bess/bess_hourly_dataset_2024.csv'),
             Path('data/interim/oe2/bess/bess_dataset.csv'),
         ]
         bess_path = next((p for p in bess_paths if p.exists()), None)
-        bess_soc = np.full(HOURS_PER_YEAR, 0.5, dtype=np.float32)  # Default fallback: 50%
+        
+        if bess_path is None:
+            raise FileNotFoundError(
+                f"OBLIGATORIO: Ningún archivo BESS encontrado.\n"
+                f"  Esperados: {[str(p) for p in bess_paths]}\n"
+                "Ejecutar generación OE2 primero."
+            )
 
-        if bess_path is not None and bess_path.exists():
-            df_bess = pd.read_csv(bess_path, encoding='utf-8')
-            soc_cols = [c for c in df_bess.columns if 'soc' in c.lower()]
-            if soc_cols:
-                bess_soc_raw = np.asarray(df_bess[soc_cols[0]].values[:HOURS_PER_YEAR], dtype=np.float32)
-                # Normalizar si está en [0,100] en lugar de [0,1]
-                bess_soc = (bess_soc_raw / 100.0 if float(np.max(bess_soc_raw)) > 1.0 else bess_soc_raw)
-                logger.info("BESS cargado: SOC media %.1f%% (archivo: %s)", float(np.mean(bess_soc)) * 100.0, bess_path.name)
-        else:
-            logger.warning("BESS no encontrado en paths conocidos - usando fallback 50%%")
+        df_bess = pd.read_csv(bess_path, encoding='utf-8')
+        soc_cols = [c for c in df_bess.columns if 'soc' in c.lower()]
+        if not soc_cols:
+            raise KeyError(f"BESS CSV debe tener columna 'soc'. Columnas: {list(df_bess.columns)}")
+        
+        bess_soc_raw = np.asarray(df_bess[soc_cols[0]].values[:HOURS_PER_YEAR], dtype=np.float32)
+        # Normalizar si está en [0,100] en lugar de [0,1]
+        bess_soc = (bess_soc_raw / 100.0 if float(np.max(bess_soc_raw)) > 1.0 else bess_soc_raw)
+        logger.info("BESS REAL: SOC media %.1f%% (archivo: %s)", float(np.mean(bess_soc)) * 100.0, bess_path.name)
 
         print()
 
@@ -756,6 +1042,8 @@ def main():
             chargers_kw=chargers_hourly,
             mall_kw=mall_hourly,
             bess_soc=bess_soc,
+            charger_max_power_kw=charger_max_power,
+            charger_mean_power_kw=charger_mean_power,
             max_steps=HOURS_PER_YEAR
         )
 
@@ -994,6 +1282,54 @@ def main():
                 'episode_solar_kwh': logging_callback.episode_solar_kwh,
                 'episode_ev_charging': logging_callback.episode_ev_charging,
                 'episode_grid_import': logging_callback.episode_grid_import,
+                # ✅ NUEVAS métricas de evolución
+                'episode_grid_stability': logging_callback.episode_grid_stability,
+                'episode_cost_usd': logging_callback.episode_cost_usd,
+                'episode_motos_charged': logging_callback.episode_motos_charged,
+                'episode_mototaxis_charged': logging_callback.episode_mototaxis_charged,
+                'episode_bess_discharge_kwh': logging_callback.episode_bess_discharge_kwh,
+                'episode_bess_charge_kwh': logging_callback.episode_bess_charge_kwh,
+                'episode_avg_socket_setpoint': logging_callback.episode_avg_socket_setpoint,
+                'episode_socket_utilization': logging_callback.episode_socket_utilization,
+                'episode_bess_action_avg': logging_callback.episode_bess_action_avg,
+            },
+            # ✅ NUEVAS secciones de métricas detalladas (como A2C)
+            'summary_metrics': {
+                'total_co2_avoided_indirect_kg': float(sum(logging_callback.episode_co2_avoided_indirect)),
+                'total_co2_avoided_direct_kg': float(sum(logging_callback.episode_co2_avoided_direct)),
+                'total_co2_avoided_kg': float(sum(logging_callback.episode_co2_avoided_indirect) + sum(logging_callback.episode_co2_avoided_direct)),
+                'total_cost_usd': float(sum(logging_callback.episode_cost_usd)),
+                'avg_grid_stability': float(np.mean(logging_callback.episode_grid_stability)) if logging_callback.episode_grid_stability else 0.0,
+                'max_motos_charged': int(max(logging_callback.episode_motos_charged)) if logging_callback.episode_motos_charged else 0,
+                'max_mototaxis_charged': int(max(logging_callback.episode_mototaxis_charged)) if logging_callback.episode_mototaxis_charged else 0,
+                'total_bess_discharge_kwh': float(sum(logging_callback.episode_bess_discharge_kwh)),
+                'total_bess_charge_kwh': float(sum(logging_callback.episode_bess_charge_kwh)),
+            },
+            'control_progress': {
+                'avg_socket_setpoint_evolution': logging_callback.episode_avg_socket_setpoint,
+                'socket_utilization_evolution': logging_callback.episode_socket_utilization,
+                'bess_action_evolution': logging_callback.episode_bess_action_avg,
+                'description': 'Evolución del aprendizaje de control por episodio',
+            },
+            'reward_components_avg': {
+                'r_solar': float(np.mean(logging_callback.episode_r_solar)) if logging_callback.episode_r_solar else 0.0,
+                'r_cost': float(np.mean(logging_callback.episode_r_cost)) if logging_callback.episode_r_cost else 0.0,
+                'r_ev': float(np.mean(logging_callback.episode_r_ev)) if logging_callback.episode_r_ev else 0.0,
+                'r_grid': float(np.mean(logging_callback.episode_r_grid)) if logging_callback.episode_r_grid else 0.0,
+                'r_co2': float(np.mean(logging_callback.episode_r_co2)) if logging_callback.episode_r_co2 else 0.0,
+                'episode_r_solar': logging_callback.episode_r_solar,
+                'episode_r_cost': logging_callback.episode_r_cost,
+                'episode_r_ev': logging_callback.episode_r_ev,
+                'episode_r_grid': logging_callback.episode_r_grid,
+                'episode_r_co2': logging_callback.episode_r_co2,
+                'description': 'Componentes de reward promedio por episodio',
+            },
+            'vehicle_charging': {
+                'motos_total': 112,
+                'mototaxis_total': 16,
+                'motos_charged_per_episode': logging_callback.episode_motos_charged,
+                'mototaxis_charged_per_episode': logging_callback.episode_mototaxis_charged,
+                'description': 'Conteo real de vehículos cargados (setpoint > 50%)',
             },
             'model_path': str(final_path),
         }

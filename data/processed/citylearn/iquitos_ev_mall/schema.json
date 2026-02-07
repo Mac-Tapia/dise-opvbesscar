@@ -3882,12 +3882,11 @@
     "description": "Contexto real de Iquitos para cálculo de CO₂ y recompensas"
   },
   "reward_weights": {
-    "co2": 0.3,
-    "cost": 0.25,
-    "solar": 0.2,
-    "ev_satisfaction": 0.1,
-    "ev_utilization": 0.05,
-    "grid_stability": 0.1,
-    "description": "Pesos multiobjetivo para cálculo de recompensa en agentes OE3"
+    "co2": 0.35,
+    "solar": 0.20,
+    "ev": 0.30,
+    "cost": 0.10,
+    "grid": 0.05,
+    "description": "Pesos multiobjetivo para cálculo de recompensa en agentes OE3 (sincronizados 2026-02-06)"
   }
 }

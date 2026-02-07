@@ -1,15 +1,13 @@
 {
   "training": {
-    "episodes": 5,
+    "episodes": 10,
     "timesteps_per_episode": 8760,
-    "total_timesteps": 43800,
+    "total_timesteps": 87600,
+    "validation_episodes": 10,
     "device": "cuda",
     "batch_size": 256,
     "buffer_size": 2000000,
-    "network_architecture": [
-      512,
-      512
-    ],
+    "network_architecture": [512, 512],
     "learning_rate": 0.0003,
     "tau": 0.005,
     "gamma": 0.99,
@@ -32,21 +30,76 @@
     "solar_weight": 0.20,
     "cost_weight": 0.10,
     "ev_satisfaction_weight": 0.30,
-    "grid_stability_weight": 0.05
+    "grid_stability_weight": 0.05,
+    "ev_bonus_weight": 0.15,
+    "base_reward_weight": 0.85,
+    "description": "Multi-objective weights sum to 1.0, ev_bonus applied post-compute"
+  },
+  "reference_metrics": {
+    "_description": "Métricas de referencia CityLearn v2 - Episodio 1 validado 2026-02-07",
+    "_validation_date": "2026-02-07",
+    "reward_components": {
+      "r_solar": -0.2478,
+      "r_cost": -0.2797,
+      "r_ev": 0.9998,
+      "r_grid": -0.0196,
+      "r_co2": 0.2496,
+      "weights": {
+        "co2": 0.35,
+        "solar": 0.20,
+        "cost": 0.10,
+        "ev_satisfaction": 0.30,
+        "grid_stability": 0.05
+      }
+    },
+    "co2_annual_kg": {
+      "co2_grid_emitted": 3079263,
+      "co2_avoided_indirect": 3749046,
+      "co2_avoided_direct": 671684,
+      "co2_avoided_total": 4420730,
+      "co2_net": -1341467,
+      "reduction_pct": 58.9,
+      "factor_grid_kg_per_kwh": 0.4521,
+      "factor_ev_kg_per_gallon": 8.9
+    },
+    "vehicles_charged": {
+      "motos_vehicle_hours": 437635,
+      "motos_per_day_avg": 1199,
+      "mototaxis_vehicle_hours": 122630,
+      "mototaxis_per_day_avg": 336,
+      "motos_sockets": 112,
+      "mototaxis_sockets": 16,
+      "total_sockets": 128
+    },
+    "control_operation": {
+      "sockets_active_pct": 50.0,
+      "bess_control_intensity": 0.517,
+      "bess_soc_avg": 0.905,
+      "ev_soc_avg": 1.0,
+      "grid_ramp_kwh_per_h": 207.5,
+      "grid_stability_score": 0.80
+    },
+    "cost_savings_usd": {
+      "cost_total": 917705,
+      "savings_vs_baseline": 1658503,
+      "tariff_usd_per_kwh": 0.15
+    }
   },
   "infrastructure": {
     "solar_capacity_kwp": 4050,
     "bess_capacity_kwh": 4520,
     "bess_power_kw": 2712,
-    "mall_avg_kw": 1411.946689497717,
-    "chargers_avg_kw": 116.98835616438356
+    "mall_avg_kw": 1411.95,
+    "chargers_avg_kw": 116.99,
+    "total_sockets": 128,
+    "n_chargers_physical": 32
   },
   "gpu": {
     "device_name": "NVIDIA GeForce RTX 4060 Laptop",
     "memory_gb": 8.6,
     "cuda_version": "12.1",
     "estimated_speed_ts_per_sec": 1350,
-    "estimated_training_minutes": 0.5,
-    "estimated_training_seconds": 32
+    "estimated_training_minutes": 1.1,
+    "estimated_training_seconds": 65
   }
 }

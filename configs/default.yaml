@@ -150,6 +150,51 @@ oe3:
   city_baseline_tpy:
     electricity_generation: 290000.0
     transport: 258250.0
+  
+  # ===========================================================================
+  # MÉTRICAS DE REFERENCIA EPISODIO 1 VALIDADO (CityLearn v2 - 2026-02-07)
+  # ===========================================================================
+  reference_metrics:
+    # Componentes de Reward (multiobjetivo) - VALIDADO
+    reward_components:
+      r_solar: -0.2478          # Autoconsumo solar (47.2%)
+      r_cost: -0.2797           # Minimizar tarifa
+      r_ev: 0.9998              # Satisfacción carga EV (excelente)
+      r_grid: -0.0196           # Estabilidad de red
+      r_co2: 0.2496             # Reducción CO2
+    
+    # CO2 - Reducción Directa e Indirecta (kg/año)
+    co2_annual:
+      grid_emitted_kg: 3079263        # CO2 desde importación grid
+      avoided_indirect_kg: 3749046    # Solar evita grid (0.4521 kg/kWh)
+      avoided_direct_kg: 671684       # EVs cargados desde solar (combustión evitada)
+      avoided_total_kg: 4420730       # Reducción combinada total
+      net_kg: -1341467                # CO2 neto (negativo = reducción)
+      reduction_pct: 58.9             # Porcentaje reducción vs baseline
+    
+    # Vehículos Cargados (datos reales del dataset)
+    vehicles_charged:
+      motos_vehicle_hours: 437635     # Vehículo-horas motos/año
+      motos_per_day_avg: 1199         # Promedio motos/día (112 sockets)
+      mototaxis_vehicle_hours: 122630 # Vehículo-horas mototaxis/año
+      mototaxis_per_day_avg: 336      # Promedio mototaxis/día (16 sockets)
+      total_sockets: 128              # 112 motos + 16 mototaxis
+    
+    # Control y Operación - MÉTRICAS VALIDADAS
+    control_operation:
+      sockets_active_pct: 50.0        # % sockets activos (de 128)
+      bess_control_intensity: 0.517   # 51.7% intensidad de control BESS
+      bess_soc_avg: 0.905             # 90.5% SOC promedio BESS
+      ev_soc_avg: 1.000               # 100% SOC promedio EVs
+      grid_ramp_kwh_per_h: 207.5      # kWh/h rampa de grid
+      grid_stability_score: 0.8       # 1 - |rampa|/max_rampa
+    
+    # Ahorro de Costos (USD/año) - VALIDADO
+    cost_savings:
+      cost_total_usd: 917705          # Costo total operación
+      savings_vs_baseline: 1658503    # Ahorro vs baseline sin solar
+      tariff_usd_per_kwh: 0.15        # Tarifa eléctrica Iquitos
+
   rewards:
     # Multi-Objective Reward Weights (must sum to 1.0) - ACTUALIZADO 2026-02-07
     co2_weight: 0.35              # PRIMARY: Minimize grid CO2 emissions (reducido de 0.50)

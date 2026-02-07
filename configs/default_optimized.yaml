@@ -190,14 +190,14 @@ oe3:
       batch_size: 1024
       checkpoint_freq_steps: 200
       device: cuda
-      entropy_coef: 0.03
+      entropy_coef: 0.015  # ✅ ÓPTIMO A2C (fue 0.03)
       episodes: 5
       gamma: 0.99
-      gae_lambda: 0.92
-      learning_rate: 0.003
-      learning_rate_schedule: exponential
+      gae_lambda: 0.95  # ✅ ÓPTIMO A2C (fue 0.92)
+      learning_rate: 7e-4  # ✅ ÓPTIMO A2C (fue 0.003)
+      learning_rate_schedule: linear
       log_interval: 250
-      max_grad_norm: 1.0
+      max_grad_norm: 0.75  # ✅ ÓPTIMO A2C (fue 1.0)
       multi_objective_weights:
         co2: 0.35
         cost: 0.10

@@ -106,13 +106,13 @@ def build_schema(output_dir: Path, config: Dict[str, Any]) -> Dict[str, Any]:
             "co2_intensity_grid": 0.4521,  # kg CO2/kWh (thermal generation)
         },
         "reward_weights": {
-            "co2_grid_minimization": 0.50,
+            "co2_grid_minimization": 0.35,
             "solar_self_consumption": 0.20,
-            "ev_charge_completion": 0.15,
-            "grid_stability": 0.10,
-            "cost_minimization": 0.05,
+            "ev_charge_completion": 0.30,
+            "grid_stability": 0.05,
+            "cost_minimization": 0.10,
         },
-        "dataset_version": "OE3-v2.0",
+        "dataset_version": "OE3-v2.1",
         "created_at": pd.Timestamp.now().isoformat(),
     }
 

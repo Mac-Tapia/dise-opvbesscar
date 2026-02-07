@@ -1,0 +1,171 @@
+================================================================================
+ENTRENAR A2C - CON MULTIOBJETIVO REAL (CO2, SOLAR, COST, EV, GRID)
+================================================================================
+Inicio: 2026-02-07 08:54:57
+
+­ƒÜÇ GPU M├üXIMO: NVIDIA GeForce RTX 4060 Laptop GPU
+   VRAM: 8.6 GB
+   CUDA: 12.1
+   Ô£ô ENTRENAMIENTO GPU AL M├üXIMO (512x512 net, 4096 n_steps)
+   Device: CUDA
+   Network: [512, 512]
+
+[1] CARGAR CONFIGURACION Y CONTEXTO MULTIOBJETIVO
+--------------------------------------------------------------------------------
+  OK Config loaded: 5 keys
+  REWARD WEIGHTS (ACTUALIZADOS 2026-02-07):
+    CO2 grid (0.35): Minimizar importacion grid
+    Solar (0.20): Autoconsumo PV
+    EV satisfaction (0.30): SOC 90% (PRIORIDAD MAXIMA)
+    Cost (0.10): Minimizar costo
+    Grid stability (0.05): Suavizar picos
+  [Valores cargados: CO2=0.35, Solar=0.20, EV=0.30, Cost=0.10, Grid=0.05]
+
+  OK Contexto Iquitos:
+    - Grid CO2: 0.4521 kg CO2/kWh
+    - EV CO2 factor: 2.146 kg CO2/kWh
+    - Chargers: 32
+    - Sockets: 128
+    - Daily capacity: 2685 motos + 388 mototaxis
+
+[2] CARGAR DATASET CITYLEARN V2 (COMPILADO)
+--------------------------------------------------------------------------------
+  Dataset precompilado: data\processed\citylearn\iquitos_ev_mall
+  OK Dataset: data\processed\citylearn\iquitos_ev_mall
+
+[3] CARGAR DATOS DEL DATASET CITYLEARN V2 CONSTRUIDO (8760 horas = 1 a├▒o)
+--------------------------------------------------------------------------------
+  [SOLAR] REAL (CityLearn v2): columna=pv_generation_kwh | 8292514 kWh/a├▒o (8760h)
+  [CHARGERS] Cargando datos REALES desde: chargers_real_hourly_2024.csv
+  [CHARGERS] DATASET REAL: 128 sockets | Demanda: 1024818 kWh/a├▒o | Promedio: 0.91 kW/socket
+  [MALL] DATASET: 12368653 kWh/a├▒o (promedio 1411.9 kW/h)
+  [BESS] DATASET: SOC media 90.5% (4520 kWh capacidad)
+  [CHARGER STATS] (5to OE2): max_power=2.45-3.03 kW, mean=0.91 kW
+
+[4] CREAR ENVIRONMENT CON DATOS OE2 REALES
+--------------------------------------------------------------------------------
+  OK Environment creado
+    - Observation: (394,)
+    - Action: (129,)
+
+[5] CREAR A2C AGENT
+--------------------------------------------------------------------------------
+  OK A2C agent creado (DEVICE: CUDA)
+    - Learning rate: 0.0007
+    - N steps: 8
+    - Entropy coef: 0.015
+
+[6] ENTRENAR A2C
+--------------------------------------------------------------------------------
+
+================================================================================
+  ­ƒôè CONFIGURACION ENTRENAMIENTO A2C
+     Episodios: 10 ├ù 8,760 timesteps = 87,600 pasos
+     Device: CUDA
+     Velocidad: ~1,200 timesteps/segundo
+     Duraci├│n: ~73 segundos (GPU AL MAXIMO)
+     Datos: 100% REALES OE2 (128 chargers, 4.52MWh BESS, 4.05MWp solar)
+     Output: result_a2c.json, timeseries_a2c.csv, trace_a2c.csv
+
+  REWARD WEIGHTS (SINCRONIZADOS):
+    CO2 grid (0.35): Minimizar importacion
+    Solar (0.20): Autoconsumo PV
+    EV satisfaction (0.30): SOC 90% (PRIORIDAD MAXIMA)
+    Cost (0.10): Minimizar costo
+    Grid stability (0.05): Suavizar picos
+================================================================================
+  ENTRENAMIENTO EN PROGRESO:
+  ----------------------------------------------------------------------------
+  Step   5,000/87,600 (  5.7%) | Ep=0 | R_avg=  0.00 | 638 sps | ETA=2.2min
+  Step  10,000/87,600 ( 11.4%) | Ep=1 | R_avg=4261.10 | 619 sps | ETA=2.1min
+  Step  15,000/87,600 ( 17.1%) | Ep=1 | R_avg=4261.10 | 610 sps | ETA=2.0min
+  Step  20,000/87,600 ( 22.8%) | Ep=2 | R_avg=4326.37 | 605 sps | ETA=1.9min
+  Step  25,000/87,600 ( 28.5%) | Ep=2 | R_avg=4326.37 | 604 sps | ETA=1.7min
+  Step  30,000/87,600 ( 34.2%) | Ep=3 | R_avg=4358.09 | 603 sps | ETA=1.6min
+  Step  35,000/87,600 ( 40.0%) | Ep=3 | R_avg=4358.09 | 604 sps | ETA=1.5min
+  Step  40,000/87,600 ( 45.7%) | Ep=4 | R_avg=4372.81 | 606 sps | ETA=1.3min
+  Step  45,000/87,600 ( 51.4%) | Ep=5 | R_avg=4380.95 | 604 sps | ETA=1.2min
+  Step  50,000/87,600 ( 57.1%) | Ep=5 | R_avg=4380.95 | 604 sps | ETA=1.0min
+  Step  55,000/87,600 ( 62.8%) | Ep=6 | R_avg=4411.41 | 604 sps | ETA=0.9min
+  Step  60,000/87,600 ( 68.5%) | Ep=6 | R_avg=4411.41 | 605 sps | ETA=0.8min
+  Step  65,000/87,600 ( 74.2%) | Ep=7 | R_avg=4417.37 | 604 sps | ETA=0.6min
+  Step  70,000/87,600 ( 79.9%) | Ep=7 | R_avg=4417.37 | 605 sps | ETA=0.5min
+  Step  75,000/87,600 ( 85.6%) | Ep=8 | R_avg=4414.41 | 605 sps | ETA=0.3min
+  Step  80,000/87,600 ( 91.3%) | Ep=9 | R_avg=4411.85 | 606 sps | ETA=0.2min
+  Step  85,000/87,600 ( 97.0%) | Ep=9 | R_avg=4411.85 | 607 sps | ETA=0.1min
+
+  Ô£ô RESULTADO ENTRENAMIENTO:
+    Tiempo: 2.4 minutos (145 segundos)
+    Timesteps ejecutados: 87,600
+    Velocidad real: 606 timesteps/segundo
+    Episodios completados: 10
+
+[6] GUARDAR ARCHIVOS DE SALIDA
+--------------------------------------------------------------------------------
+  Ô£ô trace_a2c.csv: 87600 registros ÔåÆ outputs\a2c_training\trace_a2c.csv
+  Ô£ô timeseries_a2c.csv: 87600 registros ÔåÆ outputs\a2c_training\timeseries_a2c.csv
+
+[7] VALIDACION - 10 EPISODIOS
+--------------------------------------------------------------------------------
+  Episodio 1/10: Reward= 4397.60 | CO2_avoided= 3603598.2kg | Solar= 8292514.1kWh | Steps=8760
+  Episodio 2/10: Reward= 4397.60 | CO2_avoided= 3603598.2kg | Solar= 8292514.1kWh | Steps=8760
+  Episodio 3/10: Reward= 4397.60 | CO2_avoided= 3603598.2kg | Solar= 8292514.1kWh | Steps=8760
+  Episodio 4/10: Reward= 4397.60 | CO2_avoided= 3603598.2kg | Solar= 8292514.1kWh | Steps=8760
+  Episodio 5/10: Reward= 4397.60 | CO2_avoided= 3603598.2kg | Solar= 8292514.1kWh | Steps=8760
+  Episodio 6/10: Reward= 4397.60 | CO2_avoided= 3603598.2kg | Solar= 8292514.1kWh | Steps=8760
+  Episodio 7/10: Reward= 4397.59 | CO2_avoided= 3603598.2kg | Solar= 8292514.1kWh | Steps=8760
+  Episodio 8/10: Reward= 4397.60 | CO2_avoided= 3603598.2kg | Solar= 8292514.1kWh | Steps=8760
+  Episodio 9/10: Reward= 4397.60 | CO2_avoided= 3603598.2kg | Solar= 8292514.1kWh | Steps=8760
+  Episodio 10/10: Reward= 4397.60 | CO2_avoided= 3603598.2kg | Solar= 8292514.1kWh | Steps=8760
+
+  Ô£ô result_a2c.json: Resumen completo ÔåÆ outputs\a2c_training\result_a2c.json
+
+================================================================================
+RESULTADOS FINALES - VALIDACION 10 EPISODIOS:
+================================================================================
+
+  Ô×ñ M├ëTRICAS DE RECOMPENSA:
+    Reward promedio                  4397.5979 puntos
+
+  Ô×ñ REDUCCI├ôN CO2 (kg):
+    Reducci├│n INDIRECTA (solar)     27524441.2 kg
+    Reducci├│n DIRECTA (EVs)          8510986.7 kg
+    Reducci├│n TOTAL                 36035427.9 kg
+    CO2 evitado promedio/ep          3603598.2 kg
+
+  Ô×ñ VEH├ìCULOS CARGADOS (m├íximo por episodio):
+    Motos (de 112)                          73 unidades
+    Mototaxis (de 16)                       12 unidades
+    Total veh├¡culos                         85 / 128
+
+  Ô×ñ ESTABILIDAD DE RED:
+    Estabilidad promedio                  28.7 %
+    Grid import promedio/ep          4046487.8 kWh
+
+  Ô×ñ AHORRO ECON├ôMICO:
+    Costo total (10 episodios)    $ 6104714.15 USD
+    Costo promedio por episodio   $   55208.39 USD
+
+  Ô×ñ CONTROL BESS:
+    Descarga total BESS             43551879.2 kWh
+    Carga total BESS                  158336.2 kWh
+    Acci├│n BESS promedio                25.668 (0=carga, 1=descarga)
+
+  Ô×ñ PROGRESO DE CONTROL SOCKETS:
+    Setpoint promedio sockets            1.026 [0-1]
+    Utilizaci├│n sockets                   56.0 %
+
+  Ô×ñ SOLAR:
+    Solar aprovechada por ep         8292514.1 kWh
+
+  ARCHIVOS GENERADOS:
+    Ô£ô outputs\a2c_training/result_a2c.json
+    Ô£ô outputs\a2c_training/timeseries_a2c.csv
+    Ô£ô outputs\a2c_training/trace_a2c.csv
+    Ô£ô checkpoints\A2C/a2c_final_model.zip
+
+  ESTADO: Entrenamiento A2C exitoso con datos reales OE2.
+
+================================================================================
+ENTRENAMIENTO A2C COMPLETADO
+================================================================================

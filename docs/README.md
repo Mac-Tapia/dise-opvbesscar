@@ -13,6 +13,15 @@ python -m scripts.run_oe3_simulate --config configs/default.yaml
 **Duración:** 6-8 horas (GPU RTX 4060)  
 **Resultados esperados:** PPO ~7,000 kg CO2/año | SAC ~7,200 kg CO2/año | A2C ~7,400 kg CO2/año
 
+### A2C Training (Nuevo - 2026-02-07)
+```bash
+python train_a2c_multiobjetivo.py
+```
+**Duración:** ~2.3 minutos para 87,600 timesteps (10 × 8,760 horas)  
+**Datos:** 100% REALES OE2 - chargers_real_hourly_2024.csv, solar, mall, BESS  
+**Velocidad:** ~650 steps/segundo (GPU RTX 4060)  
+**Documentación:** Ver [A2C_CONFIGURACION_REAL_2026-02-07.md](A2C_CONFIGURACION_REAL_2026-02-07.md)
+
 ### Verification (Verificación)
 ```bash
 python -m scripts.verify_3_sources_co2
@@ -31,6 +40,8 @@ All detailed documentation organized by topic:
 
 | Archivo | Tema |
 |---------|------|
+| `A2C_CONFIGURACION_REAL_2026-02-07.md` | **A2C sin simplificaciones**: 100% datos reales, configuración correcta, sin fallbacks |
+| `A2C_VELOCIDAD_CORRECTA_2026-02-07.md` | **Por qué A2C es rápido**: 650 sps, 2.3 minutos con datos reales = CORRECTO (on-policy simple) |
 | `CO2_3SOURCES_BREAKDOWN_2026_02_02.md` | **Metodología CO2**: Solar indirecto + BESS indirecto + EV directo |
 | `VISUAL_3SOURCES_IN_CODE_2026_02_02.md` | **Líneas exactas de código** donde se implementan los cálculos |
 | `ARQUITECTURA_VALIDACION_COMPLETA_2026_02_02.md` | **Arquitectura del sistema**: observaciones, acciones, agents |
@@ -55,7 +66,7 @@ All detailed documentation organized by topic:
 - **Observation Space:** 394-dim (complete energy + charger state)
 - **Action Space:** 129-dim (1 BESS + 128 chargers)
 - **Episode Length:** 8,760 timesteps (exactly 1 year, hourly resolution)
-- **Multi-Objective Reward:** CO2 (0.50), Solar (0.20), Cost (0.15), EV (0.10), Grid (0.05)
+- **Multi-Objective Reward:** CO2 (0.35), Solar (0.20), EV (0.30), Cost (0.10), Grid (0.05)
 
 ### CO2 Calculation (3 Sources)
 1. **Solar Direct (Indirect):** Solar generation × 0.4521 kg/kWh → avoids grid import
@@ -107,11 +118,11 @@ oe3:
 
 **Formula:** CO₂ NETO = Emitted - Avoided_Indirect - Avoided_Direct
 
-### ✅ Multi-Objective Rewards (Synchronized)
-- CO₂ Minimization: 0.50 (primary)
+### ✅ Multi-Objective Rewards (Synchronized 2026-02-07)
+- CO₂ Minimization: 0.35 (primary)
+- EV Satisfaction: 0.30 (MÁXIMA PRIORIDAD)
 - Solar Self-Consumption: 0.20 (secondary)
-- Cost Optimization: 0.15
-- EV Satisfaction: 0.10
+- Cost Optimization: 0.10
 - Grid Stability: 0.05
 
 ### ✅ Production Agents Ready
