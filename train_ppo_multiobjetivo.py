@@ -682,7 +682,7 @@ class DetailedLoggingCallback(BaseCallback):
         # Detectar fin de episodio
         dones = self.locals.get('dones', [False])
         if dones[0]:
-            self.ep_reward = self.env_ref.episode_reward
+            self.ep_reward = self.episode_reward  # ✅ FIXED: usar reward acumulado del callback, no del env
             self._log_episode_summary()
             self._reset_episode_tracking()
             self.current_episode += 1
