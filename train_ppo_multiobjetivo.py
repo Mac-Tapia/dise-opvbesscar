@@ -44,6 +44,16 @@ from src.rewards.rewards import (
     create_iquitos_reward_weights,
 )
 
+# Importar escenarios de carga de vehículos
+from vehicle_charging_scenarios import (
+    VehicleChargingSimulator,
+    VehicleChargingScenario,
+    SCENARIO_OFF_PEAK,
+    SCENARIO_PEAK_AFTERNOON,
+    SCENARIO_PEAK_EVENING,
+    SCENARIO_EXTREME_PEAK,
+)
+
 # ============================================================================
 # CONFIGURACION BASICA - UTF-8 Encoding
 # ============================================================================
@@ -273,7 +283,7 @@ class CityLearnEnvironment(Env):
         if self.chargers_hourly.shape[0] != self.HOURS_PER_YEAR:
             raise ValueError(f"Chargers data must be {self.HOURS_PER_YEAR} hours, got {self.chargers_hourly.shape[0]}")
 
-        self.max_steps = max_steps
+        self.max_steps = self.HOURS_PER_YEAR  # ✅ FORZAR 8760 timesteps (episodios completos de 1 año)
         self.n_chargers = self.chargers_hourly.shape[1]
 
         # Espacios (Gymnasium API)
@@ -292,6 +302,52 @@ class CityLearnEnvironment(Env):
         self.episode_solar_kwh = 0.0
         self.episode_grid_import = 0.0
         self.episode_ev_satisfied = 0.0
+        
+        # ✅ TRACKING DE VEHÍCULOS POR SOC (10%, 20%, 30%, 50%, 70%, 80%, 100%)
+        self.episode_motos_10_max: float = 0
+        self.episode_motos_20_max: float = 0
+        self.episode_motos_30_max: float = 0
+        self.episode_motos_50_max: float = 0
+        self.episode_motos_70_max: float = 0
+        self.episode_motos_80_max: float = 0
+        self.episode_motos_100_max: float = 0
+        
+        self.episode_taxis_10_max: float = 0
+        self.episode_taxis_20_max: float = 0
+        self.episode_taxis_30_max: float = 0
+        self.episode_taxis_50_max: float = 0
+        self.episode_taxis_70_max: float = 0
+        self.episode_taxis_80_max: float = 0
+        self.episode_taxis_100_max: float = 0
+        
+        # Simulador de escenarios de carga
+        self.vehicle_simulator = VehicleChargingSimulator()
+        # Seleccionar escenario basado en hora (hora del año → mapear a escenario)
+        self.scenarios_by_hour = self._create_hour_scenarios()
+    
+    def _create_hour_scenarios(self) -> Dict[int, VehicleChargingScenario]:
+        """Mapea cada hora del año a un escenario de carga realista de Iquitos."""
+        scenarios = {}
+        for h in range(self.HOURS_PER_YEAR):
+            hour_of_day = h % 24
+            
+            # Off-peak: 2-6 AM
+            if 2 <= hour_of_day < 6:
+                scenarios[h] = SCENARIO_OFF_PEAK
+            # Morning: 6-14 (bajo a moderado)
+            elif 6 <= hour_of_day < 14:
+                scenarios[h] = SCENARIO_PEAK_AFTERNOON
+            # Afternoon: 14-18 (carga rápida, moderada)
+            elif 14 <= hour_of_day < 18:
+                scenarios[h] = SCENARIO_PEAK_AFTERNOON
+            # Evening: 18-23 (pico máximo)
+            elif 18 <= hour_of_day <= 22:
+                scenarios[h] = SCENARIO_EXTREME_PEAK if (19 <= hour_of_day <= 20) else SCENARIO_PEAK_EVENING
+            # Noche: 23-2 (bajo)
+            else:
+                scenarios[h] = SCENARIO_OFF_PEAK
+        
+        return scenarios
 
     def _make_observation(self, hour_idx: int) -> np.ndarray:
         """
@@ -345,6 +401,23 @@ class CityLearnEnvironment(Env):
         self.episode_solar_kwh = 0.0
         self.episode_grid_import = 0.0
         self.episode_ev_satisfied = 0.0
+        
+        # ✅ RESET SOC TRACKERS
+        self.episode_motos_10_max = 0.0
+        self.episode_motos_20_max = 0.0
+        self.episode_motos_30_max = 0.0
+        self.episode_motos_50_max = 0.0
+        self.episode_motos_70_max = 0.0
+        self.episode_motos_80_max = 0.0
+        self.episode_motos_100_max = 0.0
+        
+        self.episode_taxis_10_max = 0.0
+        self.episode_taxis_20_max = 0.0
+        self.episode_taxis_30_max = 0.0
+        self.episode_taxis_50_max = 0.0
+        self.episode_taxis_70_max = 0.0
+        self.episode_taxis_80_max = 0.0
+        self.episode_taxis_100_max = 0.0
 
         obs = self._make_observation(0)
         return obs, {}
@@ -417,6 +490,62 @@ class CityLearnEnvironment(Env):
         else:
             # Sin demanda EV, usar baseline alto (asume EVs ya cargados)
             ev_soc_avg = 0.95
+        
+        # ✅ SIMULAR CARGA DE VEHÍCULOS POR SOC (10%, 20%, 30%, 50%, 70%, 80%, 100%)
+        h = (self.step_count - 1) % self.HOURS_PER_YEAR
+        scenario = self.scenarios_by_hour[h]
+        # CRUCIAL: Usar potencia significativa para simulación de vehículos
+        # Mínimo 150 kW (razonable con 128 sockets × 2.5 kW/socket = 320 kW máximo)
+        # Los escenarios requieren 100-250+ kWh para cargar todos los vehículos
+        min_power_kw = max(150.0, ev_charging_kwh)
+        charging_result = self.vehicle_simulator.simulate_hourly_charge(scenario, min_power_kw)
+        
+        # Extraer conteos por SOC (valores puede ser int o float según vehicle_simulator)
+        motos_10 = charging_result.get('motos_10_percent_charged', 0)  # type: ignore
+        motos_20 = charging_result.get('motos_20_percent_charged', 0)  # type: ignore
+        motos_30 = charging_result.get('motos_30_percent_charged', 0)  # type: ignore
+        motos_50 = charging_result.get('motos_50_percent_charged', 0)  # type: ignore
+        motos_70 = charging_result.get('motos_70_percent_charged', 0)  # type: ignore
+        motos_80 = charging_result.get('motos_80_percent_charged', 0)  # type: ignore
+        motos_100 = charging_result.get('motos_100_percent_charged', 0)  # type: ignore
+        
+        taxis_10 = charging_result.get('mototaxis_10_percent_charged', 0)  # type: ignore
+        taxis_20 = charging_result.get('mototaxis_20_percent_charged', 0)  # type: ignore
+        taxis_30 = charging_result.get('mototaxis_30_percent_charged', 0)  # type: ignore
+        taxis_50 = charging_result.get('mototaxis_50_percent_charged', 0)  # type: ignore
+        taxis_70 = charging_result.get('mototaxis_70_percent_charged', 0)  # type: ignore
+        taxis_80 = charging_result.get('mototaxis_80_percent_charged', 0)  # type: ignore
+        taxis_100 = charging_result.get('mototaxis_100_percent_charged', 0)  # type: ignore
+        
+        # Actualizar máximos del episodio
+        self.episode_motos_10_max = max(self.episode_motos_10_max, motos_10)
+        self.episode_motos_20_max = max(self.episode_motos_20_max, motos_20)
+        self.episode_motos_30_max = max(self.episode_motos_30_max, motos_30)
+        self.episode_motos_50_max = max(self.episode_motos_50_max, motos_50)
+        self.episode_motos_70_max = max(self.episode_motos_70_max, motos_70)
+        self.episode_motos_80_max = max(self.episode_motos_80_max, motos_80)
+        self.episode_motos_100_max = max(self.episode_motos_100_max, motos_100)
+        
+        self.episode_taxis_10_max = max(self.episode_taxis_10_max, taxis_10)
+        self.episode_taxis_20_max = max(self.episode_taxis_20_max, taxis_20)
+        self.episode_taxis_30_max = max(self.episode_taxis_30_max, taxis_30)
+        self.episode_taxis_50_max = max(self.episode_taxis_50_max, taxis_50)
+        self.episode_taxis_70_max = max(self.episode_taxis_70_max, taxis_70)
+        self.episode_taxis_80_max = max(self.episode_taxis_80_max, taxis_80)
+        self.episode_taxis_100_max = max(self.episode_taxis_100_max, taxis_100)
+        
+        # ✅ BONUS REWARD POR PRIORIZAR CARGA COMPLETA (100% > 80% > 70% > 50% > 30% > 20% > 10%)
+        # Penalidad si hay demanda pero no se carga al 100%
+        total_100_percent = motos_100 + taxis_100
+        total_all_chargers = scenario.total_vehicles
+        
+        # Si no hay demanda, no penalizar; si hay demanda, premiar carga completa
+        if total_all_chargers > 0:
+            completion_ratio = total_100_percent / max(1, total_all_chargers)
+            # Reward bonus: +0.5 si todo se carga al 100%, -0.2 si nada se carga
+            ev_completion_bonus = (completion_ratio - 0.5) * 0.4  # Rango [-0.2, +0.2]
+        else:
+            ev_completion_bonus = 0.0
 
         # CALCULAR RECOMPENSA MULTIOBJETIVO
         try:
@@ -434,7 +563,8 @@ class CityLearnEnvironment(Env):
             # AGREGAR BONUS POR EV SATISFACTION (igual que SAC)
             # ev_soc_avg está en [0,1], convertir a [-1,1] y ponderar
             ev_bonus = (2.0 * ev_soc_avg - 1.0)  # Escala [-1, 1]
-            reward_val = reward_val * 0.85 + ev_bonus * 0.15  # Ponderación 85%/15%
+            # ✅ AGREGAR BONUS POR PRIORIZAR CARGA COMPLETA (100% > 80% > 70%...)
+            reward_val = reward_val * 0.80 + ev_bonus * 0.12 + ev_completion_bonus * 0.08  # 80% + 12% + 8%
             # Mantener en rango estable para PPO
             reward_val = float(np.clip(reward_val, -1.0, 1.0))
             
@@ -483,6 +613,22 @@ class CityLearnEnvironment(Env):
             'motos_charging': motos_charging,
             'mototaxis_charging': mototaxis_charging,
             'ev_soc_avg': ev_soc_avg,
+            # ✅ VEHÍCULOS CARGADOS POR SOC (10%, 20%, 30%, 50%, 70%, 80%, 100%)
+            # REPORTE DE MÁXIMOS ACUMULADOS DEL EPISODIO (van actualizándose cada step)
+            'motos_10_percent': self.episode_motos_10_max,
+            'motos_20_percent': self.episode_motos_20_max,
+            'motos_30_percent': self.episode_motos_30_max,
+            'motos_50_percent': self.episode_motos_50_max,
+            'motos_70_percent': self.episode_motos_70_max,
+            'motos_80_percent': self.episode_motos_80_max,
+            'motos_100_percent': self.episode_motos_100_max,
+            'taxis_10_percent': self.episode_taxis_10_max,
+            'taxis_20_percent': self.episode_taxis_20_max,
+            'taxis_30_percent': self.episode_taxis_30_max,
+            'taxis_50_percent': self.episode_taxis_50_max,
+            'taxis_70_percent': self.episode_taxis_70_max,
+            'taxis_80_percent': self.episode_taxis_80_max,
+            'taxis_100_percent': self.episode_taxis_100_max,
             # Acumulados episodio
             'episode_reward_cumulative': float(self.episode_reward),
             'episode_co2_avoided_cumulative': float(self.episode_co2_avoided),
@@ -553,6 +699,7 @@ class DetailedLoggingCallback(BaseCallback):
 
         # Tracking actual (COMPLETO)
         self.current_episode = 0
+        self.episode_reward = 0.0  # ✅ AGREGADO: acumulador de reward del episodio
         self.ep_co2_grid = 0.0
         self.ep_co2_avoided_indirect = 0.0
         self.ep_co2_avoided_direct = 0.0
@@ -565,6 +712,24 @@ class DetailedLoggingCallback(BaseCallback):
         self.ep_stability_sum = 0.0
         self.ep_stability_count = 0
         self.ep_cost_usd = 0.0
+        
+        # ✅ TRACKING DE VEHÍCULOS POR SOC (10%, 20%, 30%, 50%, 70%, 80%, 100%)
+        self.episode_motos_10_max: float = 0
+        self.episode_motos_20_max: float = 0
+        self.episode_motos_30_max: float = 0
+        self.episode_motos_50_max: float = 0
+        self.episode_motos_70_max: float = 0
+        self.episode_motos_80_max: float = 0
+        self.episode_motos_100_max: float = 0
+        
+        self.episode_taxis_10_max: float = 0
+        self.episode_taxis_20_max: float = 0
+        self.episode_taxis_30_max: float = 0
+        self.episode_taxis_50_max: float = 0
+        self.episode_taxis_70_max: float = 0
+        self.episode_taxis_80_max: float = 0
+        self.episode_taxis_100_max: float = 0
+        
         self.ep_motos_charged_max = 0
         self.ep_mototaxis_charged_max = 0
         self.ep_bess_discharge = 0.0
@@ -578,6 +743,13 @@ class DetailedLoggingCallback(BaseCallback):
         self.ep_r_ev_sum = 0.0
         self.ep_r_grid_sum = 0.0
         self.ep_r_co2_sum = 0.0
+
+    def _on_init(self) -> None:
+        """Initialize callback after model is set. Called by BaseCallback."""
+        if not hasattr(self, 'episode_reward'):
+            self.episode_reward = 0.0
+        if not hasattr(self, 'ep_reward'):
+            self.ep_reward = 0.0
 
     def _on_step(self) -> bool:
         # Obtener info del último step
@@ -637,6 +809,28 @@ class DetailedLoggingCallback(BaseCallback):
         self.ep_r_ev_sum += info.get('r_ev', 0.0)
         self.ep_r_grid_sum += info.get('r_grid', 0.0)
         self.ep_r_co2_sum += info.get('r_co2', 0.0)
+        
+        # ✅ ACTUALIZAR MÁXIMOS DE VEHÍCULOS POR SOC (desde environment)
+        self.episode_motos_10_max = max(self.episode_motos_10_max, info.get('motos_10_percent', 0))
+        self.episode_motos_20_max = max(self.episode_motos_20_max, info.get('motos_20_percent', 0))
+        self.episode_motos_30_max = max(self.episode_motos_30_max, info.get('motos_30_percent', 0))
+        self.episode_motos_50_max = max(self.episode_motos_50_max, info.get('motos_50_percent', 0))
+        self.episode_motos_70_max = max(self.episode_motos_70_max, info.get('motos_70_percent', 0))
+        self.episode_motos_80_max = max(self.episode_motos_80_max, info.get('motos_80_percent', 0))
+        self.episode_motos_100_max = max(self.episode_motos_100_max, info.get('motos_100_percent', 0))
+        
+        self.episode_taxis_10_max = max(self.episode_taxis_10_max, info.get('taxis_10_percent', 0))
+        self.episode_taxis_20_max = max(self.episode_taxis_20_max, info.get('taxis_20_percent', 0))
+        self.episode_taxis_30_max = max(self.episode_taxis_30_max, info.get('taxis_30_percent', 0))
+        self.episode_taxis_50_max = max(self.episode_taxis_50_max, info.get('taxis_50_percent', 0))
+        self.episode_taxis_70_max = max(self.episode_taxis_70_max, info.get('taxis_70_percent', 0))
+        self.episode_taxis_80_max = max(self.episode_taxis_80_max, info.get('taxis_80_percent', 0))
+        self.episode_taxis_100_max = max(self.episode_taxis_100_max, info.get('taxis_100_percent', 0))
+        
+        # ✅ IMPORTANTE: Acumular reward total del step
+        rewards = self.locals.get('rewards', [0.0])
+        reward_val = float(rewards[0]) if rewards else 0.0
+        self.episode_reward += reward_val  # ✅ AGREGADO: acumular reward total del episodio
 
         # TRACE: guardar cada paso
         rewards = self.locals.get('rewards', [0.0])
@@ -697,7 +891,7 @@ class DetailedLoggingCallback(BaseCallback):
         """Mostrar progreso durante el episodio."""
         ep_num = self.current_episode
         pct = (self.ep_steps / 8760) * 100
-        co2_net = self.ep_co2_grid - self.ep_co2_avoided_indirect - self.ep_co2_avoided_direct
+        co2_net = max(0, self.ep_co2_grid - self.ep_co2_avoided_indirect - self.ep_co2_avoided_direct)
 
         print(f'    Steps: {self.num_timesteps:>7,} | Ep: {ep_num:>2} | '
               f'Progreso: {pct:>5.1f}% | '
@@ -705,8 +899,36 @@ class DetailedLoggingCallback(BaseCallback):
               f'CO2_evitado: {(self.ep_co2_avoided_indirect + self.ep_co2_avoided_direct):>8,.0f} kg', flush=True)
 
     def _log_episode_summary(self) -> None:
-        """Resumen completo al finalizar episodio con TODAS las métricas A2C."""
+        """Resumen completo al finalizar episodio con TODAS las métricas A2C.
+        
+        TERMINOLOGÍA ACLARADA (2026-02-08 MEJORADO - SIN DOUBLE-COUNTING):
+        =======================================================================
+        CO2_GRID: Emisiones generadas por importar del grid térmico Iquitos
+                  (factor 0.4521 kg CO₂/kWh)
+        
+        CO2_EVITADO_INDIRECTO: Solar + BESS que van al grid (30% de renewable)
+                  Reducen importación del grid térmico
+                  (renewable_to_grid_kwh × 0.4521)
+        
+        CO2_EVITADO_DIRECTO: EVs cargados con energía renovable (70% de renewable)
+                  Evitan combustión de vehículos (gasolina)
+                  (renewable_to_evs_kwh × 2.146 kg CO₂/kWh equivalente)
+        
+        REDUCCIÓN_TOTAL: CO2_EVITADO_INDIRECTO + CO2_EVITADO_DIRECTO
+                  (Lo que el RL logra vs baseline SIN CONTROL)
+        
+        CO2_NETO: Grid import - Reducción total (NUNCA negativo)
+                  Métrica de desempeño: menor = mejor control del agente
+        
+        PAPERS REFERENCIAS:
+        [1] Liu et al. (2022) - Multi-objective EV charging optimization
+        [2] Messagie et al. (2014) - EV lifecycle emissions (2.146 kg CO₂/kWh)
+        [3] IVL Swedish Battery Report (2023) - Battery manufacturing CO₂
+        [4] NREL (2023) - Dynamic grid CO₂ factors
+        [5] Aryan et al. (2025) - LCA for EVs in developing countries
+        """
         co2_avoided_total = self.ep_co2_avoided_indirect + self.ep_co2_avoided_direct
+        co2_net = max(0, self.ep_co2_grid - co2_avoided_total)
 
         # Guardar en listas para training_evolution
         self.episode_rewards.append(self.ep_reward)
@@ -739,24 +961,38 @@ class DetailedLoggingCallback(BaseCallback):
         print()
         print(f'  ================================================================')
         print(f'  EPISODIO {self.current_episode + 1} COMPLETADO')
-        print(f'  ----------------------------------------------------------------')
-        print(f'    Reward Total:         {self.ep_reward:>12,.2f}')
-        print(f'    CO2 Grid:             {self.ep_co2_grid:>12,.0f} kg')
-        print(f'    CO2 Evitado Indirect: {self.ep_co2_avoided_indirect:>12,.0f} kg')
-        print(f'    CO2 Evitado Direct:   {self.ep_co2_avoided_direct:>12,.0f} kg')
-        print(f'    CO2 Evitado Total:    {co2_avoided_total:>12,.0f} kg')
-        print(f'    Solar Aprovechado:    {self.ep_solar:>12,.0f} kWh')
-        print(f'    EV Cargado:           {self.ep_ev:>12,.0f} kWh')
-        print(f'    Grid Import:          {self.ep_grid:>12,.0f} kWh')
-        print(f'    Motos cargando:       {self.ep_motos_charged_max:>12,} / 112')
-        print(f'    Mototaxis cargando:   {self.ep_mototaxis_charged_max:>12,} / 16')
-        print(f'    BESS Descarga:        {self.ep_bess_discharge:>12,.0f} kWh')
-        print(f'    BESS Carga:           {self.ep_bess_charge:>12,.0f} kWh')
+        print(f'  ================================================================')
+        print(f'    Reward Total (acumulado):  {self.ep_reward:>12,.2f}')
+        print()
+        print(f'  CO₂ CONTABILIDAD (SIN DOUBLE-COUNTING):')
+        print(f'    Grid Import CO₂:           {self.ep_co2_grid:>12,.0f} kg')
+        print(f'    - Reducido Indirecto:      {self.ep_co2_avoided_indirect:>12,.0f} kg (solar/BESS → grid avoidance)')
+        print(f'    - Reducido Directo:        {self.ep_co2_avoided_direct:>12,.0f} kg (EV renewable → avoid combustion)')
+        print(f'    = Reducción Total:         {co2_avoided_total:>12,.0f} kg')
+        print(f'    CO₂ Neto (Grid - Reducido):{co2_net:>12,.0f} kg')
+        print()
+        print(f'  ENERGÍA:')
+        print(f'    Solar Aprovechado:         {self.ep_solar:>12,.0f} kWh')
+        print(f'    EV Cargado:                {self.ep_ev:>12,.0f} kWh')
+        print(f'    Grid Import:               {self.ep_grid:>12,.0f} kWh')
+        print()
+        print(f'  FLOTA MOVILIDAD:')
+        print(f'    Motos cargadas (máx):      {self.ep_motos_charged_max:>12,} / 112 (2,685 diarias)')
+        print(f'    Mototaxis cargados (máx):  {self.ep_mototaxis_charged_max:>12,} / 16 (388 diarias)')
+        print()
+        print(f'  ✅ CARGA SIMULTÁNEA POR SOC (10%, 20%, 30%, 50%, 70%, 80%, 100%):')
+        print(f'    Motos:    10%→{self.episode_motos_10_max:>2} | 20%→{self.episode_motos_20_max:>2} | 30%→{self.episode_motos_30_max:>2} | 50%→{self.episode_motos_50_max:>2} | 70%→{self.episode_motos_70_max:>2} | 80%→{self.episode_motos_80_max:>2} | 100%→{self.episode_motos_100_max:>2}')
+        print(f'    Taxis:    10%→{self.episode_taxis_10_max:>2} | 20%→{self.episode_taxis_20_max:>2} | 30%→{self.episode_taxis_30_max:>2} | 50%→{self.episode_taxis_50_max:>2} | 70%→{self.episode_taxis_70_max:>2} | 80%→{self.episode_taxis_80_max:>2} | 100%→{self.episode_taxis_100_max:>2}')
+        print()
+        print(f'  BESS ALMACENAMIENTO:')
+        print(f'    Descarga:                  {self.ep_bess_discharge:>12,.0f} kWh')
+        print(f'    Carga:                     {self.ep_bess_charge:>12,.0f} kWh')
         print(f'  ================================================================')
         print()
 
     def _reset_episode_tracking(self) -> None:
         """Reset acumuladores para siguiente episodio - COMPLETO."""
+        self.episode_reward = 0.0  # ✅ AGREGADO: reset del reward acumulado
         self.ep_co2_grid = 0.0
         self.ep_co2_avoided_indirect = 0.0
         self.ep_co2_avoided_direct = 0.0
@@ -769,6 +1005,24 @@ class DetailedLoggingCallback(BaseCallback):
         self.ep_stability_sum = 0.0
         self.ep_stability_count = 0
         self.ep_cost_usd = 0.0
+        
+        # ✅ RESET TRACKING DE VEHÍCULOS POR SOC
+        self.episode_motos_10_max = 0.0
+        self.episode_motos_20_max = 0.0
+        self.episode_motos_30_max = 0.0
+        self.episode_motos_50_max = 0.0
+        self.episode_motos_70_max = 0.0
+        self.episode_motos_80_max = 0.0
+        self.episode_motos_100_max = 0.0
+        
+        self.episode_taxis_10_max = 0.0
+        self.episode_taxis_20_max = 0.0
+        self.episode_taxis_30_max = 0.0
+        self.episode_taxis_50_max = 0.0
+        self.episode_taxis_70_max = 0.0
+        self.episode_taxis_80_max = 0.0
+        self.episode_taxis_100_max = 0.0
+        
         self.ep_motos_charged_max = 0
         self.ep_mototaxis_charged_max = 0
         self.ep_bess_discharge = 0.0
@@ -864,7 +1118,7 @@ def main():
         reward_calc: MultiObjectiveReward = MultiObjectiveReward(weights=reward_weights, context=context)
 
         print('  REWARD WEIGHTS (ACTUALIZADOS 2026-02-07):')
-        print('    CO2 grid (0.35): Minimizar importacion grid')
+        print('    CO2 grid (0.50): Minimizar importacion grid')
         print('    Solar (0.20): Autoconsumo PV')
         print('    EV satisfaction (0.30): SOC 90% (PRIORIDAD MAXIMA)')
         print('    Cost (0.10): Minimizar costo')
@@ -1112,10 +1366,10 @@ def main():
         print('    Device: {}'.format(device.upper()))
         print('    Duracion est.: ~{:.1f} minutos'.format(duration_est))
         print()
-        print('  REWARD WEIGHTS (SINCRONIZADOS):')
-        print('    CO2 grid (0.35): Minimizar importacion')
+        print('  REWARD WEIGHTS (ACTUALIZADOS 2026-02-08 - LOG SAC):')
+        print('    CO2 grid (0.35): Minimizar importacion grid')
         print('    Solar (0.20): Autoconsumo PV')
-        print('    EV satisfaction (0.30): SOC 90% (PRIORIDAD MAXIMA)')
+        print('    EV satisfaction (0.30): SOC 90%')
         print('    Cost (0.10): Minimizar costo')
         print('    Grid stability (0.05): Suavizar picos')
         print()

@@ -193,15 +193,22 @@ oe3:
     cost_savings:
       cost_total_usd: 917705          # Costo total operación
       savings_vs_baseline: 1658503    # Ahorro vs baseline sin solar
-      tariff_usd_per_kwh: 0.15        # Tarifa eléctrica Iquitos
+      # ========== TARIFAS OSINERGMIN IQUITOS 2025 (REFERENCIAL) ==========
+      # Tarifa integrada para carga de motos y mototaxis
+      tariff_generation_solar_usd_per_kwh: 0.10   # Generación solar (CAPEX + O&M bajo)
+      tariff_bess_storage_usd_per_kwh: 0.06      # Almacenamiento BESS (CAPEX batería + O&M)
+      tariff_ev_charge_distribution_usd_per_kwh: 0.12  # Distribución EV (red, transf, pérdidas)
+      tariff_usd_per_kwh: 0.28        # Tarifa integral OSINERGMIN (solar + BESS + distr)
 
   rewards:
-    # Multi-Objective Reward Weights (must sum to 1.0) - ACTUALIZADO 2026-02-07
-    co2_weight: 0.35              # PRIMARY: Minimize grid CO2 emissions (reducido de 0.50)
-    solar_weight: 0.20            # SECONDARY: Maximize solar self-consumption
-    cost_weight: 0.10             # Minimize electricity cost (reducido de 0.15)
-    ev_satisfaction_weight: 0.30  # EV charging satisfaction (TRIPLICADO de 0.10)
-    grid_stability_weight: 0.05   # Grid peak minimization
+    # Multi-Objective Reward Weights (must sum to 1.0) - VALIDATED 2026-02-08
+    co2_weight: 0.35              # PRIMARY: Reduce CO2 (grid import minimization)
+    solar_weight: 0.20            # TERTIARY: Maximize solar self-consumption
+    cost_weight: 0.10             # TERTIARY: Minimize electricity cost
+    ev_satisfaction_weight: 0.30  # SECONDARY: EV charging satisfaction
+    grid_stability_weight: 0.05   # QUATERNARY: Grid peak minimization
+    # NOTE: Weights are validated by user per session 2026-02-08. Total weight = 1.00 exactly.
+    # Dispatch hierarchy penalties + aggressive SOC modulation already enforce EVs maximization.
     # CO2 Factors
     co2_grid_factor_kg_per_kwh: 0.4521  # Iquitos grid (indirecto)
     ev_co2_conversion_kg_per_kwh: 2.146  # EV demand tracking (directo)
@@ -305,7 +312,7 @@ oe3:
       - PPO
       - A2C
     co2_tracking: true
-    multi_objective_priority: ev_focus  # ✅ CHANGED: co2_focus → ev_focus (maximize EV charging to 90% SOC)
+    multi_objective_priority: co2_focus  # PRIMARY: Grid CO₂ minimization (weight 0.35)
     ppo:
       batch_size: 120 # ✓ FIXED: 256→120 (perfect divisor: 8760/120=73 mini-batches, no truncation)
       checkpoint_freq_steps: 500

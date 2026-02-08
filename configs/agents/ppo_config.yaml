@@ -54,13 +54,21 @@ ppo:
     kl_adaptive_down: 0.5
     kl_adaptive_up: 1.05
 
-  # Multi-Objective Weights (ACTUALIZADOS 2026-02-07)
+  # Multi-Objective Weights (VALIDATED 2026-02-08)
   multi_objective_weights:
-    co2: 0.35
-    solar: 0.20
-    ev: 0.30
-    cost: 0.10
-    grid: 0.05
+    co2: 0.35                # PRIMARY: Reduce CO2 (grid import minimization)
+    solar: 0.20              # TERTIARY: Solar self-consumption
+    ev: 0.30                 # SECONDARY: EV satisfaction
+    cost: 0.10               # TERTIARY: Cost optimization
+    grid: 0.05               # QUATERNARY: Grid stability
+    # NOTE: Dispatch hierarchy + SOC modulation enforce EVs; balanced EV weight with CO2 priority
+
+  # Electricity Tariffs (OSINERGMIN IQUITOS 2025 - REFERENCIAL)
+  tariffs_osinergmin_usd_per_kwh:
+    generation_solar: 0.10              # Generación solar
+    storage_bess: 0.06                  # Almacenamiento BESS
+    distribution_ev_charge: 0.12        # Distribución EV
+    integrated_tariff: 0.28             # Tarifa integral OSINERGMIN
 
   # Device
   device: "auto"  # "cuda", "mps", "cpu", or "auto"

@@ -31,13 +31,31 @@
     "cost_weight": 0.10,
     "ev_satisfaction_weight": 0.30,
     "grid_stability_weight": 0.05,
-    "ev_bonus_weight": 0.15,
-    "base_reward_weight": 0.85,
-    "description": "Multi-objective weights sum to 1.0, ev_bonus applied post-compute"
+    "base_reward_weight": 0.65,
+    "ev_reward_weight": 0.35,
+    "description": "Multi-objective 2026-02-08 VALIDATED: total_reward = (base*0.65 + ev*0.35), weights sum to 1.0 for 5 metrics",
+    "dispatch_hierarchy_penalties": {
+      "day_solar_to_ev_penalty": -0.80,
+      "day_bess_priority_penalty": -0.40,
+      "night_bess_over_grid_penalty": -0.90,
+      "night_bess_soc_closure_penalty": -0.95,
+      "description": "Enforce strict day/night dispatch with exponential penalties"
+    },
+    "soc_modulation_factors": {
+      "soc_critical_daytime": [1.80, 2.20],
+      "soc_critical_nighttime": [1.50, 1.80],
+      "soc_normal_daytime": [1.30, 1.60],
+      "soc_normal_nighttime": [1.10, 1.35],
+      "soc_high_daytime": [0.95, 1.25],
+      "soc_high_nighttime": [0.85, 1.10],
+      "target_events_per_day": "2500-3073"
+    }
   },
   "reference_metrics": {
-    "_description": "Métricas de referencia CityLearn v2 - Episodio 1 validado 2026-02-07",
-    "_validation_date": "2026-02-07",
+    "_description": "Métricas de referencia CityLearn v2 - ACTUALIZADO 2026-02-08 Despacho Jerárquico",
+    "_validation_date": "2026-02-08",
+    "_training_config": "SAC with dispatch hierarchy (penalties -0.80/-0.90/-0.95), SOC modulation aggressive (1.80-2.20), EV 45%",
+    "_target_improvement": "+1,000 events/day to reach 2,500-3,073 baseline",
     "reward_components": {
       "r_solar": -0.2478,
       "r_cost": -0.2797,

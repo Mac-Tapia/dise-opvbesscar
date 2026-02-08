@@ -2999,3 +2999,158 @@ if __name__ == "__main__":
     print("  - Potencia: 272 kW (224 kW motos + 48 kW mototaxis)")
     recomendado_total = int(escenarios_data[2]["total_dia"])
     print(f"  - Vehículos en 20 años: {recomendado_total * DAYS_YEAR * PROJECT_YEARS:,}")
+
+
+# ================================================================================
+# GENERACIÓN DE DATASET SOC DINÁMICO - 8,760 FILAS (1 AÑO × 24 HORAS)
+# ================================================================================
+def generate_soc_dynamic_dataset(output_dir: Path | str | None = None) -> pd.DataFrame:
+    """Genera dataset con SOC dinámico para 8,760 horas (exacto: 1 año × 24 horas).
+    
+    Parámetros OE2 Iquitos:
+    - Motos/día: 2,685
+    - Mototaxis/día: 388
+    - SOC_arrival: [20%, 35%] uniforme
+    - SOC_target: [80%, 95%] uniforme
+    - Batería: 3.5 kWh (motos), 4.5 kWh (mototaxis)
+    
+    Returns:
+        DataFrame con 8,760 filas (horario exacto) + 15 columnas
+    """
+    from datetime import datetime
+    
+    # Parámetros
+    MOTOS_PER_DAY = 2685
+    MOTOTAXIS_PER_DAY = 388
+    DAYS_YEAR = 365
+    HOURS_YEAR = DAYS_YEAR * 24
+    
+    # SOC Range (MODO 3)
+    SOC_ARRIVAL_MIN = 0.20
+    SOC_ARRIVAL_MAX = 0.35
+    SOC_TARGET_MIN = 0.80
+    SOC_TARGET_MAX = 0.95
+    
+    # Batería
+    BAT_MOTO = 3.5  # kWh
+    BAT_MOTOTAXI = 4.5  # kWh
+    
+    print("\n" + "="*80)
+    print("[FASE 1] Generando dataset SOC dinámico (8,760 filas - 1 año × 24 horas)")
+    print("="*80)
+    
+    # 1. Crear índice horario (EXACTO: 8,760 horas)
+    print("[1] Generando índice horario...")
+    start_date = datetime(2024, 1, 1)
+    dates = pd.date_range(start=start_date, periods=HOURS_YEAR, freq='H')
+    assert len(dates) == 8760, f"ERROR: {len(dates)} horas, esperaba 8760"
+    print(f"    ✅ Rango: {dates[0]} a {dates[-1]}")
+    print(f"    ✅ Total: {len(dates)} filas (CORRECTO: 1 año × 24 horas)\n")
+    
+    # 2. Distribución horaria
+    print("[2] Aplicando distribución horaria...")
+    hourly_dist = np.zeros(24)
+    hourly_dist[10:12] = 0.12   # 10:00-12:00: 12%
+    hourly_dist[12:17] = 0.38/5  # 12:00-17:00: 38%
+    hourly_dist[18:21] = 0.50/3  # 18:00-21:00: 50%
+    hourly_dist = hourly_dist / hourly_dist.sum()
+    
+    # Repetir patrón para todo el año
+    vehicles_motos_hourly = np.tile(
+        (MOTOS_PER_DAY * hourly_dist).astype(int),
+        DAYS_YEAR
+    )
+    vehicles_mototaxis_hourly = np.tile(
+        (MOTOTAXIS_PER_DAY * hourly_dist).astype(int),
+        DAYS_YEAR
+    )
+    
+    print(f"    ✅ Motos/hora promedio: {vehicles_motos_hourly.mean():.1f}")
+    print(f"    ✅ Mototaxis/hora promedio: {vehicles_mototaxis_hourly.mean():.1f}\n")
+    
+    # 3. Generar SOC variables
+    print("[3] Generando SOC variables...")
+    np.random.seed(2024)  # Reproducibilidad
+    
+    soc_arrival_motos = np.random.uniform(SOC_ARRIVAL_MIN, SOC_ARRIVAL_MAX, HOURS_YEAR)
+    soc_arrival_mototaxis = np.random.uniform(SOC_ARRIVAL_MIN, SOC_ARRIVAL_MAX, HOURS_YEAR)
+    soc_target_motos = np.random.uniform(SOC_TARGET_MIN, SOC_TARGET_MAX, HOURS_YEAR)
+    soc_target_mototaxis = np.random.uniform(SOC_TARGET_MIN, SOC_TARGET_MAX, HOURS_YEAR)
+    
+    soc_current_motos = soc_arrival_motos.copy()
+    soc_current_mototaxis = soc_arrival_mototaxis.copy()
+    
+    print(f"    ✅ SOC_arrival motos: {soc_arrival_motos.mean():.1%} ± {soc_arrival_motos.std():.1%}")
+    print(f"    ✅ SOC_target motos: {soc_target_motos.mean():.1%} ± {soc_target_motos.std():.1%}\n")
+    
+    # 4. Calcular fully_charged
+    print("[4] Calculando fully_charged ratio...")
+    
+    charging_time_motos = (soc_target_motos - soc_arrival_motos) / 0.80 * 30  # minutos
+    charging_time_mototaxis = (soc_target_mototaxis - soc_arrival_mototaxis) / 0.80 * 30
+    
+    fully_charged_motos = (charging_time_motos <= 60).astype(int)
+    fully_charged_mototaxis = (charging_time_mototaxis <= 60).astype(int)
+    fully_charged_total = (fully_charged_motos * vehicles_motos_hourly + 
+                          fully_charged_mototaxis * vehicles_mototaxis_hourly)
+    
+    fully_ratio = fully_charged_total.sum() / (vehicles_motos_hourly.sum() + vehicles_mototaxis_hourly.sum())
+    print(f"    ✅ Fully charged motos: {fully_charged_motos.sum() / len(fully_charged_motos):.1%}")
+    print(f"    ✅ Fully charged mototaxis: {fully_charged_mototaxis.sum() / len(fully_charged_mototaxis):.1%}")
+    print(f"    ✅ Fully charged ratio total: {fully_ratio:.1%}\n")
+    
+    # 5. Crear DataFrame
+    print("[5] Creando DataFrame...")
+    
+    df = pd.DataFrame({
+        'timestamp': dates,
+        'hour': dates.hour,
+        'day_of_year': dates.dayofyear,
+        'soc_arrival_motos_mean': soc_arrival_motos,
+        'soc_target_motos_mean': soc_target_motos,
+        'soc_current_motos_mean': soc_current_motos,
+        'soc_arrival_mototaxis_mean': soc_arrival_mototaxis,
+        'soc_target_mototaxis_mean': soc_target_mototaxis,
+        'soc_current_mototaxis_mean': soc_current_mototaxis,
+        'fully_charged_motos': fully_charged_motos,
+        'fully_charged_mototaxis': fully_charged_mototaxis,
+        'fully_charged_total': fully_charged_total.astype(int),
+        'vehicles_charging_motos': vehicles_motos_hourly,
+        'vehicles_charging_mototaxis': vehicles_mototaxis_hourly,
+        'charging_time_motos_min': charging_time_motos,
+        'charging_time_mototaxis_min': charging_time_mototaxis,
+    })
+    
+    print(f"    ✅ Shape: {df.shape}")
+    print(f"    ✅ Filas: {len(df)} (debe ser 8,760)")
+    print(f"    ✅ Columnas: {len(df.columns)}\n")
+    
+    # 6. Guardar CSV
+    if output_dir is not None:
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_file = output_dir / "chargers_real_hourly_2024.csv"
+        
+        print("[6] Guardando CSV...")
+        df.to_csv(output_file, index=False)
+        print(f"    ✅ Guardado: {output_file}")
+        print(f"    ✅ Tamaño: {output_file.stat().st_size / 1024:.1f} KB\n")
+    
+    # 7. Validar
+    print("[7] Validando integridad...")
+    assert len(df) == 8760, f"ERROR: {len(df)} filas, esperaba 8760"
+    assert 'fully_charged_total' in df.columns, "ERROR: columna missing"
+    print("    ✅ Validación OK\n")
+    
+    print("="*80)
+    print("✅ DATASET SOC DINÁMICO GENERADO CON ÉXITO")
+    print("="*80)
+    print(f"\nResumen:")
+    print(f"  • Período: {df['timestamp'].min().date()} a {df['timestamp'].max().date()}")
+    print(f"  • Filas: {len(df)} (1 año × 24 horas = CORRECTO)")
+    print(f"  • Columnas: {len(df.columns)}")
+    print(f"  • Vehículos motos/día: {vehicles_motos_hourly.sum() / DAYS_YEAR:.0f}")
+    print(f"  • Vehículos mototaxis/día: {vehicles_mototaxis_hourly.sum() / DAYS_YEAR:.0f}")
+    print(f"  • Fully charged ratio: {fully_ratio:.1%}\n")
+    
+    return df
