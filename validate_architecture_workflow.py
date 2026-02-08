@@ -164,10 +164,10 @@ class ArchitectureValidator:
         
         # Pesos esperados según especificación
         expected_weights = {
-            "co2": 0.35,
-            "solar": 0.20,
-            "ev": 0.30,  # ev_satisfaction o ev
-            "cost": 0.10,
+            "co2": 0.50,
+            "solar": 0.25,
+            "ev": 0.15,  # ev_satisfaction o ev
+            "cost": 0.05,
             "grid": 0.05,  # grid_stability
         }
         

@@ -193,12 +193,14 @@ def main():
     # Build schema
     schema = build_schema(output_dir, config)
 
-    # Build charger files
-    build_charger_files(output_dir, schema)
+    # NOTE: Individual charger CSVs are NOT generated here.
+    # Training uses data/interim/oe2/chargers/ files directly:
+    #   - chargers_real_hourly_2024.csv
+    #   - chargers_real_statistics.csv
+    # The 128 charger sockets are control actions, not separate CSV files.
 
     logger.info(f"\n✅ Dataset generation COMPLETE!")
     logger.info(f"   Schema: {output_dir / 'schema.json'}")
-    logger.info(f"   Chargers: {output_dir / 'chargers'}")
 
 
 if __name__ == "__main__":

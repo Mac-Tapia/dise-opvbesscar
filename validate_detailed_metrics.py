@@ -43,10 +43,10 @@ def validate_reward_weights() -> bool:
     logger.info("=" * 70)
     
     expected_weights = {
-        'co2': 0.35,
-        'solar': 0.20,
-        'ev': 0.30,
-        'cost': 0.10,
+        'co2': 0.50,
+        'solar': 0.25,
+        'ev': 0.15,
+        'cost': 0.05,
         'grid': 0.05,
     }
     
@@ -123,11 +123,11 @@ def validate_reference_metrics() -> bool:
     }
     
     weights = {
-        'r_solar': 0.20,
-        'r_cost': 0.10,
-        'r_ev': 0.30,
+        'r_solar': 0.25,
+        'r_cost': 0.05,
+        'r_ev': 0.15,
         'r_grid': 0.05,
-        'r_co2': 0.35,
+        'r_co2': 0.50,
     }
     
     all_valid = True

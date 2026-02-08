@@ -3872,7 +3872,7 @@
     "motos_daily_capacity": 2685,
     "mototaxis_daily_capacity": 388,
     "max_evs_total": 128,
-    "tariff_usd_per_kwh": 0.2,
+    "tariff_usd_per_kwh": 0.28,
     "peak_hours": [
       18,
       19,
@@ -3882,12 +3882,12 @@
     "description": "Contexto real de Iquitos para c\u00e1lculo de CO\u2082 y recompensas"
   },
   "reward_weights": {
-    "co2": 0.3,
-    "cost": 0.25,
+    "co2": 0.35,
+    "cost": 0.1,
     "solar": 0.2,
-    "ev_satisfaction": 0.1,
-    "ev_utilization": 0.05,
-    "grid_stability": 0.1,
+    "ev_satisfaction": 0.3,
+    "ev_utilization": 0.0,
+    "grid_stability": 0.05,
     "description": "Pesos multiobjetivo para c\u00e1lculo de recompensa en agentes OE3"
   }
 }

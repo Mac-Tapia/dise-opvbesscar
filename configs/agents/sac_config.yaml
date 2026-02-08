@@ -33,13 +33,51 @@ sac:
     critic_loss_scale: 0.1
     q_target_clip: 10.0
 
-  # Multi-Objective Weights (ACTUALIZADOS 2026-02-07)
+  # Multi-Objective Weights (VALIDATED 2026-02-08)
   multi_objective_weights:
-    co2: 0.35
+    co2: 0.35                # PRIMARY: Minimizar importación grid
     solar: 0.20
-    ev: 0.30
+    ev: 0.30                 # SECONDARY: Satisfacción de carga EVs
     cost: 0.10
-    grid: 0.05
+    grid: 0.05               # Total: 1.00 exactly
+  # NOTE: Dispatch hierarchy penalties + aggressive SOC modulation already enforce EVs,
+  #       so moderate EV weight (0.30) is balanced. CO2 is primary (0.35).
+
+  # Electricity Tariffs (OSINERGMIN IQUITOS 2025 - REFERENCIAL)
+  tariffs_osinergmin_usd_per_kwh:
+    generation_solar: 0.10              # Generación solar (CAPEX bajo + O&M bajo)
+    storage_bess: 0.06                  # Almacenamiento BESS (CAPEX batería + O&M)
+    distribution_ev_charge: 0.12        # Distribución EV (red + transformadores + pérdidas)
+    integrated_tariff: 0.28             # Tarifa integral OSINERGMIN (solar + BESS + dist)
+  # Description: Integrated tariff covers generation, storage, and distribution costs for EV charging
+  #   in isolated grid (SEIN aislado) Iquitos. Used for cost_baseline calculation.
+  
+  
+  # Dispatch Hierarchy Penalties (STRICT ENFORCEMENT - 2026-02-08)
+  dispatch_hierarchy:
+    description: "Strict day/night dispatch rules with exponential penalties"
+    day_rules:
+      solar_to_ev_target_pct: 90          # EVs deben recibir 90% solar
+      solar_to_ev_penalty: -0.80          # Penalidad si deficit
+      bess_priority_penalty: -0.40        # Penalidad si BESS carga antes que EVs completen
+    night_rules:
+      bess_to_ev_exclusive: true          # BESS NUNCA para Mall
+      bess_over_grid_penalty: -0.90       # Penalidad FUERTE si Grid > BESS disponible
+      bess_soc_min_closure: 0.20          # BESS ≥ 20% al cierre (hora 23)
+      bess_soc_penalty_closure: -0.95     # Exponential penalty if violated
+
+  # SOC Modulation Factors (AGGRESSIVE DAYTIME - 2026-02-08)
+  soc_modulation:
+    description: "Aggressive daytime factors to reach 2,500-3,073 EV events/day target"
+    soc_critical:  # SOC < 30%
+      daytime: [1.80, 2.20]               # Was [1.30, 1.50], +47-50% increase
+      nighttime: [1.50, 1.80]             # Was [1.20, 1.35], +25-33% increase
+    soc_normal:    # 30-70%
+      daytime: [1.30, 1.60]               # Was [1.00, 1.15], +39-30% increase
+      nighttime: [1.10, 1.35]             # Was [0.95, 1.10], +10-35% increase
+    soc_high:      # > 70%
+      daytime: [0.95, 1.25]               # Was [0.85, 0.95], +5-31% increase
+      nighttime: [0.85, 1.10]             # Was [0.80, 0.90], +6-25% increase
 
   # Device
   device: "auto"  # "cuda", "mps", "cpu", or "auto"

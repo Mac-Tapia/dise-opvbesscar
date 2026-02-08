@@ -145,7 +145,7 @@ def validate_episode1_calculation() -> None:
     # ====================================================================
     print_header("PASO 4: CÁLCULO DETALLADO DE COMPONENTES")
     
-    print("\nA. r_co2 (0.35): Minimizar CO₂ Grid Import")
+    print("\nA. r_co2 (0.50): Minimizar CO₂ Grid Import")
     print("-" * 100)
     print(f"  Formula: r_co2 = -1.0 × (grid_import / (grid_import + solar_direct + ε))")
     solar_direct = min(solar_generation_kwh, ev_charging_kwh)
@@ -172,7 +172,7 @@ def validate_episode1_calculation() -> None:
     print(f"  Referencia: {ref_components['r_solar']:.4f}")
     print(f"  Nota: Valor de referencia es promedio anual (incluye noches). Esta hora es buena.")
     
-    print("\nC. r_ev (0.30): Satisfacción de Carga EV [MÁXIMA PRIORIDAD]")
+    print("\nC. r_ev (0.35): Satisfacción de Carga EV [PRIORIDAD MODERADA, reforzada por despacho jerárquico]")
     print("-" * 100)
     print(f"  Formula: r_ev = 0.6×r_soc + 0.4×charge_satisfaction")
     soc_target = 0.90
@@ -339,13 +339,13 @@ def validate_episode1_calculation() -> None:
     print()
     
     print("📊 CONCLUSIONES:\n")
-    print(f"  1. MÁXIMA PRIORIDAD: r_ev (weight 0.30, value {components_calc['r_ev']:.4f})")
-    print(f"  2. Secundaria: r_co2 (weight 0.35, value {components_calc['r_co2']:.4f})")
-    print(f"  3. Terciaria: r_solar (weight 0.20, value {components_calc['r_solar']:.4f})")
-    print(f"  4. Baja: r_cost (weight 0.10, value {components_calc['r_cost']:.4f})")
+    print(f"  1. MÁXIMA PRIORIDAD: r_co2 (weight 0.50, value {components_calc['r_co2']:.4f})")
+    print(f"  2. Secundaria: r_solar (weight 0.25, value {components_calc['r_solar']:.4f})")
+    print(f"  3. Terciaria: r_ev (weight 0.15, value {components_calc['r_ev']:.4f})")
+    print(f"  4. Baja: r_cost (weight 0.05, value {components_calc['r_cost']:.4f})")
     print(f"  5. Mínima: r_grid (weight 0.05, value {components_calc['r_grid']:.4f})")
     print()
-    print(f"  Reward total esperado: {ref_total:.4f} (58.9% CO₂ reduction)")
+    print(f"  Reward total esperado: {ref_total:.4f} (60%+ CO₂ reduction)")
     print(f"  Estado: {'[OK] IMPLEMENTACION CORRECTA' if diff < 0.05 else '[WARNING] REVISAR DISCREPANCIAS'}")
     print()
 

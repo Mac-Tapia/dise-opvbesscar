@@ -32,6 +32,16 @@ from src.rewards.rewards import (
     create_iquitos_reward_weights,
 )
 
+# Importar escenarios de carga de vehículos
+from vehicle_charging_scenarios import (
+    VehicleChargingSimulator,
+    VehicleChargingScenario,
+    SCENARIO_OFF_PEAK,
+    SCENARIO_PEAK_AFTERNOON,
+    SCENARIO_PEAK_EVENING,
+    SCENARIO_EXTREME_PEAK,
+)
+
 # ===== CONSTANTES IQUITOS =====
 CO2_FACTOR_IQUITOS: float = 0.4521  # kg CO2/kWh (grid térmico aislado)
 BESS_CAPACITY_KWH: float = 4520.0   # 4.52 MWh capacidad total
@@ -132,6 +142,136 @@ OUTPUT_DIR = Path('outputs/a2c_training')
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
+# ===== DATASET CONSTRUCTION HELPERS - Build CityLearn v2 environment from OE2 data =====
+
+def validate_solar_timeseries_hourly(solar_df: pd.DataFrame) -> None:
+    """
+    CRITICAL VALIDATION: Ensure solar timeseries is EXACTLY hourly (8,760 rows per year).
+    
+    NO 15-minute, 30-minute, or sub-hourly data allowed.
+    """
+    n_rows = len(solar_df)
+    
+    if n_rows != 8760:
+        raise ValueError(
+            f"[ERROR] CRITICAL: Solar timeseries MUST be exactly 8,760 rows (hourly, 1 year).\n"
+            f"   Got {n_rows} rows instead.\n"
+            f"   If using PVGIS 15-minute data, downsample: "
+            f"df.set_index('time').resample('h').mean()"
+        )
+    
+    if n_rows == 52560:
+        raise ValueError(
+            f"[ERROR] CRITICAL: Solar timeseries has {n_rows} rows = 8,760 × 6 (likely 15-minute data).\n"
+            f"   This codebase ONLY supports hourly resolution (8,760 rows per year).\n"
+            f"   Downsample using: df.set_index('time').resample('h').mean()"
+        )
+
+
+def load_real_charger_dataset(charger_data_path: Path) -> Optional[pd.DataFrame]:
+    """
+    Load real charger dataset from data/oe2/chargers/chargers_real_hourly_2024.csv
+    
+    CRITICAL: This is the NEW REAL DATASET with:
+    - 128 individual socket columns (112 motos + 16 mototaxis)
+    - 8,760 hourly timesteps (full year 2024)
+    - Individual socket control capability for RL agents
+    """
+    if not charger_data_path.exists():
+        return None
+    
+    try:
+        df = pd.read_csv(charger_data_path, index_col=0, parse_dates=True)
+        
+        if df.shape[0] != 8760:
+            raise ValueError(f"Charger dataset MUST have 8,760 rows (hourly), got {df.shape[0]}")
+        
+        if df.shape[1] != 128:
+            raise ValueError(f"Charger dataset MUST have 128 columns (sockets), got {df.shape[1]}")
+        
+        if len(df.index) > 1:
+            dt = (df.index[1] - df.index[0]).total_seconds() / 3600
+            if abs(dt - 1.0) > 0.01:
+                raise ValueError(f"Charger dataset MUST be hourly frequency, got {dt:.2f} hours")
+        
+        min_val = df.min().min()
+        max_val = df.max().max()
+        print(f"[CHARGERS REAL] ✅ Loaded: {df.shape} (8760 hours × 128 sockets)")
+        print(f"[CHARGERS REAL]   Value range: [{min_val:.2f}, {max_val:.2f}] kW")
+        print(f"[CHARGERS REAL]   Annual energy: {df.sum().sum():,.0f} kWh")
+        
+        return df
+        
+    except Exception as e:
+        print(f"[CHARGERS REAL] Error loading: {e}")
+        raise
+
+
+def build_oe2_dataset(interim_oe2_dir: Path) -> dict[str, Any]:
+    """
+    Build complete OE2 dataset from 5 required files.
+    
+    SECCIÓN CRÍTICA: Carga obligatoriamente 5 archivos REALES desde data/interim/oe2/
+    Estas rutas son FIJAS y NO se pueden mover. Son los datos reales.
+    """
+    print("\n" + "="*80)
+    print("[DATASET BUILD] Cargando 5 archivos OE2 REALES OBLIGATORIOS")
+    print("="*80)
+    
+    result: dict[str, Any] = {}
+    
+    # 1. SOLAR (pv_generation_timeseries.csv)
+    solar_path = interim_oe2_dir / 'solar' / 'pv_generation_timeseries.csv'
+    if not solar_path.exists():
+        raise ValueError(f"❌ Solar REQUERIDO no encontrado: {solar_path}")
+    solar_df = pd.read_csv(solar_path)
+    validate_solar_timeseries_hourly(solar_df)
+    solar_hourly = np.asarray(solar_df.iloc[:, 0], dtype=np.float32)
+    result['solar'] = solar_hourly
+    print(f"[SOLAR] ✅ Cargado: {len(solar_hourly)} horas, {solar_hourly.sum():.0f} kWh/año")
+    
+    # 2. CHARGERS (chargers_real_hourly_2024.csv)
+    chargers_path = interim_oe2_dir / 'chargers' / 'chargers_real_hourly_2024.csv'
+    chargers_df = load_real_charger_dataset(chargers_path)
+    if chargers_df is None or chargers_df.empty:
+        raise ValueError(f"❌ Chargers REQUERIDO no cargado: {chargers_path}")
+    chargers_hourly = np.asarray(chargers_df, dtype=np.float32)
+    result['chargers'] = chargers_hourly
+    
+    # 3. MALL (demandamallhorakwh.csv)
+    mall_path = interim_oe2_dir / 'demandamallkwh' / 'demandamallhorakwh.csv'
+    if not mall_path.exists():
+        raise ValueError(f"❌ Mall demand REQUERIDO no encontrado: {mall_path}")
+    mall_df = pd.read_csv(mall_path)
+    if len(mall_df) != 8760:
+        raise ValueError(f"❌ Mall demand debe tener 8,760 filas, tiene {len(mall_df)}")
+    mall_hourly = np.asarray(mall_df.iloc[:, 0], dtype=np.float32)
+    result['mall'] = mall_hourly
+    print(f"[MALL] ✅ Cargado: {len(mall_hourly)} horas, {mall_hourly.sum():.0f} kWh/año")
+    
+    # 4. BESS (bess_hourly_dataset_2024.csv)
+    bess_path = interim_oe2_dir / 'bess' / 'bess_hourly_dataset_2024.csv'
+    if not bess_path.exists():
+        raise ValueError(f"❌ BESS REQUERIDO no encontrado: {bess_path}")
+    bess_df = pd.read_csv(bess_path)
+    if len(bess_df) != 8760:
+        raise ValueError(f"❌ BESS debe tener 8,760 filas, tiene {len(bess_df)}")
+    bess_soc = np.asarray(bess_df.iloc[:, 1] if len(bess_df.columns) > 1 else bess_df.iloc[:, 0], dtype=np.float32)
+    result['bess'] = bess_soc
+    print(f"[BESS] ✅ Cargado: {len(bess_soc)} horas, SOC promedio {bess_soc.mean():.1f}%")
+    
+    # 5. CONTEXT (Iquitos parameters)
+    context = IquitosContext()
+    result['context'] = context  # type: ignore[assignment]
+    print(f"[CONTEXT] ✅ Cargado: CO2={context.co2_factor_kg_per_kwh} kg/kWh, Chargers={context.n_chargers}")
+    
+    print("="*80)
+    print("[DATASET BUILD] ✅ Todos los 5 archivos OE2 cargados exitosamente")
+    print("="*80)
+    
+    return result
+
+
 # ===== DETAILED LOGGING CALLBACK (IGUAL QUE PPO) =====
 class DetailedLoggingCallback(BaseCallback):
     """Callback para registrar métricas detalladas en cada step - misma estructura que PPO."""
@@ -209,6 +349,27 @@ class DetailedLoggingCallback(BaseCallback):
         self._current_r_ev_sum = 0.0
         self._current_r_grid_sum = 0.0
         self._current_r_co2_sum = 0.0
+        
+        # ✅ TRACKING DE VEHÍCULOS POR SOC (10%, 20%, 30%, 50%, 70%, 80%, 100%)
+        self.episode_motos_10_max: float = 0
+        self.episode_motos_20_max: float = 0
+        self.episode_motos_30_max: float = 0
+        self.episode_motos_50_max: float = 0
+        self.episode_motos_70_max: float = 0
+        self.episode_motos_80_max: float = 0
+        self.episode_motos_100_max: float = 0
+        
+        self.episode_taxis_10_max: float = 0
+        self.episode_taxis_20_max: float = 0
+        self.episode_taxis_30_max: float = 0
+        self.episode_taxis_50_max: float = 0
+        self.episode_taxis_70_max: float = 0
+        self.episode_taxis_80_max: float = 0
+        self.episode_taxis_100_max: float = 0
+
+    def _on_init(self) -> None:
+        """Initialize callback after model is set. Called by BaseCallback."""
+        pass
 
     def _on_step(self) -> bool:
         """Llamado en cada step del entrenamiento."""
@@ -287,6 +448,23 @@ class DetailedLoggingCallback(BaseCallback):
             self._current_r_ev_sum += info.get('r_ev', 0.0)
             self._current_r_grid_sum += info.get('r_grid', 0.0)
             self._current_r_co2_sum += info.get('r_co2', 0.0)
+            
+            # ✅ ACTUALIZAR MÁXIMOS DE VEHÍCULOS POR SOC (desde environment)
+            self.episode_motos_10_max = max(self.episode_motos_10_max, info.get('motos_10_percent', 0))
+            self.episode_motos_20_max = max(self.episode_motos_20_max, info.get('motos_20_percent', 0))
+            self.episode_motos_30_max = max(self.episode_motos_30_max, info.get('motos_30_percent', 0))
+            self.episode_motos_50_max = max(self.episode_motos_50_max, info.get('motos_50_percent', 0))
+            self.episode_motos_70_max = max(self.episode_motos_70_max, info.get('motos_70_percent', 0))
+            self.episode_motos_80_max = max(self.episode_motos_80_max, info.get('motos_80_percent', 0))
+            self.episode_motos_100_max = max(self.episode_motos_100_max, info.get('motos_100_percent', 0))
+            
+            self.episode_taxis_10_max = max(self.episode_taxis_10_max, info.get('taxis_10_percent', 0))
+            self.episode_taxis_20_max = max(self.episode_taxis_20_max, info.get('taxis_20_percent', 0))
+            self.episode_taxis_30_max = max(self.episode_taxis_30_max, info.get('taxis_30_percent', 0))
+            self.episode_taxis_50_max = max(self.episode_taxis_50_max, info.get('taxis_50_percent', 0))
+            self.episode_taxis_70_max = max(self.episode_taxis_70_max, info.get('taxis_70_percent', 0))
+            self.episode_taxis_80_max = max(self.episode_taxis_80_max, info.get('taxis_80_percent', 0))
+            self.episode_taxis_100_max = max(self.episode_taxis_100_max, info.get('taxis_100_percent', 0))
 
             # Registrar trace (cada step)
             trace_record = {
@@ -383,6 +561,23 @@ class DetailedLoggingCallback(BaseCallback):
                 self._current_r_ev_sum = 0.0
                 self._current_r_grid_sum = 0.0
                 self._current_r_co2_sum = 0.0
+                
+                # ✅ RESET TRACKING DE VEHÍCULOS POR SOC
+                self.episode_motos_10_max = 0.0
+                self.episode_motos_20_max = 0.0
+                self.episode_motos_30_max = 0.0
+                self.episode_motos_50_max = 0.0
+                self.episode_motos_70_max = 0.0
+                self.episode_motos_80_max = 0.0
+                self.episode_motos_100_max = 0.0
+                
+                self.episode_taxis_10_max = 0.0
+                self.episode_taxis_20_max = 0.0
+                self.episode_taxis_30_max = 0.0
+                self.episode_taxis_50_max = 0.0
+                self.episode_taxis_70_max = 0.0
+                self.episode_taxis_80_max = 0.0
+                self.episode_taxis_100_max = 0.0
 
         return True
 
@@ -404,10 +599,10 @@ try:
     context = IquitosContext()
     reward_calculator = MultiObjectiveReward(weights=weights, context=context)
 
-    print('  REWARD WEIGHTS (ACTUALIZADOS 2026-02-07):')
+    print('  REWARD WEIGHTS (ACTUALIZADOS 2026-02-08 - LOG SAC):')
     print('    CO2 grid (0.35): Minimizar importacion grid')
     print('    Solar (0.20): Autoconsumo PV')
-    print('    EV satisfaction (0.30): SOC 90% (PRIORIDAD MAXIMA)')
+    print('    EV satisfaction (0.30): SOC 90%')
     print('    Cost (0.10): Minimizar costo')
     print('    Grid stability (0.05): Suavizar picos')
     if weights is not None:
@@ -541,12 +736,20 @@ try:
         Path('data/interim/oe2/bess/bess_dataset.csv'),
     ]
     
-    bess_path = bess_dataset_path if bess_dataset_path.exists() else next((p for p in bess_interim_paths if p.exists()), None)
+    bess_path: Path | None = None
+    if bess_dataset_path.exists():
+        bess_path = bess_dataset_path
+    else:
+        for p in bess_interim_paths:
+            if p.exists():
+                bess_path = p
+                break
     
     if bess_path is None:
         raise FileNotFoundError("OBLIGATORIO: BESS data no encontrado en dataset")
-
-    df_bess = pd.read_csv(bess_path, encoding='utf-8')
+    
+    assert bess_path is not None  # Type guard for Pylance
+    df_bess = pd.read_csv(str(bess_path), encoding='utf-8')
     # El archivo del dataset tiene soc_stored_kwh (kWh absolutos, no %)
     if 'soc_stored_kwh' in df_bess.columns:
         # Convertir kWh a SOC normalizado [0,1] usando capacidad 4520 kWh
@@ -684,6 +887,52 @@ try:
             self.cost_total = 0.0
             self.grid_import_total = 0.0
             
+            # ✅ TRACKING DE VEHÍCULOS POR SOC (10%, 20%, 30%, 50%, 70%, 80%, 100%)
+            self.episode_motos_10_max: float = 0
+            self.episode_motos_20_max: float = 0
+            self.episode_motos_30_max: float = 0
+            self.episode_motos_50_max: float = 0
+            self.episode_motos_70_max: float = 0
+            self.episode_motos_80_max: float = 0
+            self.episode_motos_100_max: float = 0
+            
+            self.episode_taxis_10_max: float = 0
+            self.episode_taxis_20_max: float = 0
+            self.episode_taxis_30_max: float = 0
+            self.episode_taxis_50_max: float = 0
+            self.episode_taxis_70_max: float = 0
+            self.episode_taxis_80_max: float = 0
+            self.episode_taxis_100_max: float = 0
+            
+            # Simulador de escenarios de carga
+            self.vehicle_simulator = VehicleChargingSimulator()
+            # Seleccionar escenario basado en hora
+            self.scenarios_by_hour = self._create_hour_scenarios()
+        
+        def _create_hour_scenarios(self) -> Dict[int, VehicleChargingScenario]:
+            """Mapea cada hora del año a un escenario de carga realista de Iquitos."""
+            scenarios = {}
+            for h in range(self.HOURS_PER_YEAR):
+                hour_of_day = h % 24
+                
+                # Off-peak: 2-6 AM
+                if 2 <= hour_of_day < 6:
+                    scenarios[h] = SCENARIO_OFF_PEAK
+                # Morning: 6-14 (bajo a moderado)
+                elif 6 <= hour_of_day < 14:
+                    scenarios[h] = SCENARIO_PEAK_AFTERNOON
+                # Afternoon: 14-18 (carga rápida, moderada)
+                elif 14 <= hour_of_day < 18:
+                    scenarios[h] = SCENARIO_PEAK_AFTERNOON
+                # Evening: 18-23 (pico máximo)
+                elif 18 <= hour_of_day <= 22:
+                    scenarios[h] = SCENARIO_EXTREME_PEAK if (19 <= hour_of_day <= 20) else SCENARIO_PEAK_EVENING
+                # Noche: 23-2 (bajo)
+                else:
+                    scenarios[h] = SCENARIO_OFF_PEAK
+            
+            return scenarios
+            
         def _make_observation(self, hour_idx: int) -> np.ndarray:
             """Crea observación CityLearn v2 (394-dim) - IGUAL QUE PPO."""
             obs = np.zeros(self.OBS_DIM, dtype=np.float32)
@@ -741,6 +990,23 @@ try:
             self.solar_kwh_total = 0.0
             self.cost_total = 0.0
             self.grid_import_total = 0.0
+            
+            # ✅ RESET SOC TRACKERS
+            self.episode_motos_10_max = 0.0
+            self.episode_motos_20_max = 0.0
+            self.episode_motos_30_max = 0.0
+            self.episode_motos_50_max = 0.0
+            self.episode_motos_70_max = 0.0
+            self.episode_motos_80_max = 0.0
+            self.episode_motos_100_max = 0.0
+            
+            self.episode_taxis_10_max = 0.0
+            self.episode_taxis_20_max = 0.0
+            self.episode_taxis_30_max = 0.0
+            self.episode_taxis_50_max = 0.0
+            self.episode_taxis_70_max = 0.0
+            self.episode_taxis_80_max = 0.0
+            self.episode_taxis_100_max = 0.0
 
             obs = self._make_observation(0)
             return obs, {}
@@ -792,6 +1058,45 @@ try:
                 ev_soc_avg = np.clip(0.80 + 0.20 * charge_ratio, 0.0, 1.0)
             else:
                 ev_soc_avg = 0.95
+            
+            # ✅ SIMULAR CARGA DE VEHÍCULOS POR SOC (10%, 20%, 30%, 50%, 70%, 80%, 100%)
+            scenario = self.scenarios_by_hour[h]
+            min_power_kw = max(150.0, ev_charging_kwh)
+            charging_result = self.vehicle_simulator.simulate_hourly_charge(scenario, min_power_kw)
+            
+            # Extraer conteos por SOC
+            motos_10 = charging_result.get('motos_10_percent_charged', 0)  # type: ignore
+            motos_20 = charging_result.get('motos_20_percent_charged', 0)  # type: ignore
+            motos_30 = charging_result.get('motos_30_percent_charged', 0)  # type: ignore
+            motos_50 = charging_result.get('motos_50_percent_charged', 0)  # type: ignore
+            motos_70 = charging_result.get('motos_70_percent_charged', 0)  # type: ignore
+            motos_80 = charging_result.get('motos_80_percent_charged', 0)  # type: ignore
+            motos_100 = charging_result.get('motos_100_percent_charged', 0)  # type: ignore
+            
+            taxis_10 = charging_result.get('mototaxis_10_percent_charged', 0)  # type: ignore
+            taxis_20 = charging_result.get('mototaxis_20_percent_charged', 0)  # type: ignore
+            taxis_30 = charging_result.get('mototaxis_30_percent_charged', 0)  # type: ignore
+            taxis_50 = charging_result.get('mototaxis_50_percent_charged', 0)  # type: ignore
+            taxis_70 = charging_result.get('mototaxis_70_percent_charged', 0)  # type: ignore
+            taxis_80 = charging_result.get('mototaxis_80_percent_charged', 0)  # type: ignore
+            taxis_100 = charging_result.get('mototaxis_100_percent_charged', 0)  # type: ignore
+            
+            # Actualizar máximos del episodio
+            self.episode_motos_10_max = max(self.episode_motos_10_max, motos_10)
+            self.episode_motos_20_max = max(self.episode_motos_20_max, motos_20)
+            self.episode_motos_30_max = max(self.episode_motos_30_max, motos_30)
+            self.episode_motos_50_max = max(self.episode_motos_50_max, motos_50)
+            self.episode_motos_70_max = max(self.episode_motos_70_max, motos_70)
+            self.episode_motos_80_max = max(self.episode_motos_80_max, motos_80)
+            self.episode_motos_100_max = max(self.episode_motos_100_max, motos_100)
+            
+            self.episode_taxis_10_max = max(self.episode_taxis_10_max, taxis_10)
+            self.episode_taxis_20_max = max(self.episode_taxis_20_max, taxis_20)
+            self.episode_taxis_30_max = max(self.episode_taxis_30_max, taxis_30)
+            self.episode_taxis_50_max = max(self.episode_taxis_50_max, taxis_50)
+            self.episode_taxis_70_max = max(self.episode_taxis_70_max, taxis_70)
+            self.episode_taxis_80_max = max(self.episode_taxis_80_max, taxis_80)
+            self.episode_taxis_100_max = max(self.episode_taxis_100_max, taxis_100)
 
             # CALCULAR RECOMPENSA MULTIOBJETIVO
             try:
@@ -862,6 +1167,21 @@ try:
                 'r_ev': components.get('r_ev', 0.0),
                 'r_grid': components.get('r_grid', 0.0),
                 'r_co2': components.get('r_co2', 0.0),
+                # ✅ VEHÍCULOS CARGADOS POR SOC (10%, 20%, 30%, 50%, 70%, 80%, 100%)
+                'motos_10_percent': self.episode_motos_10_max,
+                'motos_20_percent': self.episode_motos_20_max,
+                'motos_30_percent': self.episode_motos_30_max,
+                'motos_50_percent': self.episode_motos_50_max,
+                'motos_70_percent': self.episode_motos_70_max,
+                'motos_80_percent': self.episode_motos_80_max,
+                'motos_100_percent': self.episode_motos_100_max,
+                'taxis_10_percent': self.episode_taxis_10_max,
+                'taxis_20_percent': self.episode_taxis_20_max,
+                'taxis_30_percent': self.episode_taxis_30_max,
+                'taxis_50_percent': self.episode_taxis_50_max,
+                'taxis_70_percent': self.episode_taxis_70_max,
+                'taxis_80_percent': self.episode_taxis_80_max,
+                'taxis_100_percent': self.episode_taxis_100_max,
             }
 
             return obs, float(reward_val), done, truncated, info
@@ -946,7 +1266,7 @@ try:
     print('  REWARD WEIGHTS (CO2_FOCUS):')
     print('    CO2 grid (0.35): Minimizar importacion')
     print('    Solar (0.20): Autoconsumo PV')
-    print('    EV satisfaction (0.30): SOC 90% (PRIORIDAD MAXIMA)')
+    print('    EV satisfaction (0.30): SOC 90%')
     print('    Cost (0.10): Minimizar costo')
     print('    Grid stability (0.05): Suavizar picos')
     print('='*80)
