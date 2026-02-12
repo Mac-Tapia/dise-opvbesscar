@@ -210,7 +210,7 @@ Donde:
 
 ## 🎯 VALIDACIÓN: LOS AGENTES VEN LAS 3 FUENTES
 
-### Espacio de Observación (394-dim):
+### Espacio de Observación (124-dim):
 
 ```python
 observation = [
@@ -225,7 +225,7 @@ observation = [
     bess_soc,                                      # ← Fuente 2: Cuánta carga
     bess_power_out,                                # ← Fuente 2: Qué descarga
     
-    # EV Chargers (128 chargers)
+    # EV Chargers (38 sockets)
     charger_1_state, charger_1_soc,               # ← Fuente 3: Cada charger
     charger_2_state, charger_2_soc,
     ...
@@ -236,7 +236,7 @@ observation = [
 ]
 ```
 
-### Espacio de Acción (129-dim):
+### Espacio de Acción (39-dim):
 
 ```python
 action = [
@@ -247,7 +247,7 @@ action = [
     charger_128_power_setpoint,
 ]
 
-# NOTA: Aunque hay 129 acciones, RL SOLO controla 128 (chargers)
+# NOTA: Aunque hay 39 acciones, RL SOLO controla 128 (chargers)
 # La acción BESS es ignorada (auto-dispatch lo maneja)
 ```
 

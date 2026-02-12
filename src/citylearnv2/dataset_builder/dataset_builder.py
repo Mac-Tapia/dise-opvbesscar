@@ -1,37 +1,56 @@
 from __future__ import annotations
 """
 ================================================================================
-OE3 DATASET BUILDER - CityLearn v2.5.0 Integration
+OE3 DATASET BUILDER v5.3 - CityLearn v2.5.0 Integration
 
 TRACKING DE REDUCCIONES DIRECTAS E INDIRECTAS DE CO2:
 
-1. CO2 DIRECTO (Direct CO2 from EV charging):
-   - Demanda constante: 50 kW
-   - Factor conversion: 2.146 kg CO2/kWh (combustion equivalente)
-   - CO2 directo/hora: 50 kW x 2.146 kg/kWh = 107.3 kg CO2/h
-   - Acumulado anual (sin control): 50 x 2.146 x 8760 = 938,460 kg CO2/ano
+1. CO2 DIRECTO (Direct CO2 from EV charging - fuel switch):
+   - Factor CO2 gasolina: 2.31 kg CO2/L (IPCC AR5)
+   - Factor neto moto: 0.87 kg CO2/kWh (después de restar emisiones red)
+   - Factor neto mototaxi: 0.47 kg CO2/kWh
+   - Acumulado anual: ~357 toneladas CO2/año evitadas
 
-2. CO2 INDIRECTO (Grid import emissions avoided):
-   - Factor grid Iquitos: 0.4521 kg CO2/kWh (central termica aislada)
-   - Si PV directa --> EV: Se evita importacion = se evita 0.4521 kg CO2/kWh
-   - Reduccion indirecta = PV solar directo x 0.4521
-   - Objetivo: Maximizar PV directo para maximizar reduccion indirecta
+2. CO2 INDIRECTO (Grid import emissions avoided by solar):
+   - Factor grid Iquitos: 0.4521 kg CO2/kWh (central térmica aislada)
+   - Si PV directa --> consumo: Se evita importación = 0.4521 kg CO2/kWh evitado
+   - Acumulado anual: ~3,749 toneladas CO2/año evitadas
 
-3. REDUCCION NETA:
-   - Reduccion = (Solar PV directo) x 0.4521 kg CO2/kWh
-   - Ejemplo: 1000 kWh solar directo = 1000 x 0.4521 = 452.1 kg CO2 evitado
+3. VARIABLES OBSERVABLES v5.3 (nuevas columnas para agentes):
+   
+   CHARGERS (chargers_ev_ano_2024_v3.csv - 353 columnas):
+   - is_hora_punta: bool (18:00-22:59 = True)
+   - tarifa_aplicada_soles: S/.0.45 HP / S/.0.28 HFP (OSINERGMIN MT3)
+   - ev_energia_total_kwh: energía EV por hora
+   - costo_carga_ev_soles: costo × tarifa aplicada
+   - ev_energia_motos_kwh: energía motos por hora
+   - ev_energia_mototaxis_kwh: energía mototaxis por hora
+   - co2_reduccion_motos_kg: CO2 evitado motos (factor 0.87)
+   - co2_reduccion_mototaxis_kg: CO2 evitado mototaxis (factor 0.47)
+   - reduccion_directa_co2_kg: total CO2 evitado EVs
+   - ev_demand_kwh: demanda EV total (alias)
+
+   SOLAR (pv_generation_hourly_citylearn_v2.csv - 18 columnas):
+   - is_hora_punta: bool (18:00-22:59 = True)
+   - tarifa_aplicada_soles: S/.0.45 HP / S/.0.28 HFP
+   - ahorro_solar_soles: ahorro monetario por generación solar
+   - reduccion_indirecta_co2_kg: CO2 evitado por solar (factor 0.4521)
+   - co2_evitado_mall_kg: CO2 evitado asignado a Mall (67%)
+   - co2_evitado_ev_kg: CO2 evitado asignado a EV (33%)
 
 4. TRACKING EN SISTEMA:
-   - dataset_builder.py: Valida datos y estructura
-   - rewards.py: Calcula CO2 directo + indirecto
-   - agents: Optimizan para maximizar reducciones indirectas
-   - simulate.py: Acumula y reporta reducciones
+   - dataset_builder.py: Valida datos, estructura y genera observables_oe2.csv
+   - rewards.py: Calcula CO2 directo + indirecto usando variables observables
+   - agents: Optimizan para maximizar reducciones (directas + indirectas)
+   - simulate.py: Acumula y reporta reducciones totales
 
-Vinculaciones (2026-01-31):
+Vinculaciones v5.3 (2026-02-12):
    - config.yaml: co2_grid_factor_kg_per_kwh = 0.4521
-   - config.yaml: ev_co2_conversion_kg_per_kwh = 2.146
-   - rewards.py: IquitosContext con ambos valores
-   - agents: Reciben rewards basados en reducciones indirectas (PV directo)
+   - config.yaml: ev_co2_conversion_kg_per_kwh = 2.146 (deprecated, usar factors directos)
+   - rewards.py: IquitosContext con factores CO2 netos
+   - chargers.py: FACTOR_CO2_NETO_MOTO = 0.87, FACTOR_CO2_NETO_MOTOTAXI = 0.47
+   - solar_pvlib.py: FACTOR_CO2_KG_KWH = 0.4521
+   - agents: Reciben observables_oe2.csv con todas las variables de tracking
 ================================================================================
 """
 
@@ -48,6 +67,74 @@ import numpy as np
 import pandas as pd  # type: ignore
 
 logger = logging.getLogger(__name__)
+
+# =============================================================================
+# CONSTANTES OSINERGMIN v5.3 - Sistema Aislado Iquitos
+# Tarifas MT3 para aplicar en rewards según hora del día
+# =============================================================================
+TARIFA_ENERGIA_HP_SOLES = 0.45   # Hora Punta: S/.0.45/kWh (18:00-22:59)
+TARIFA_ENERGIA_HFP_SOLES = 0.28  # Fuera Punta: S/.0.28/kWh
+HORA_INICIO_HP = 18              # Hora inicio Hora Punta
+HORA_FIN_HP = 22                 # Hora fin Hora Punta (inclusive)
+
+# =============================================================================
+# CONSTANTES CO2 v5.3 - Factores de Emisión y Reducción
+# =============================================================================
+FACTOR_CO2_RED_KG_KWH = 0.4521       # kg CO2/kWh - red diésel Iquitos (aislada)
+FACTOR_CO2_GASOLINA_KG_L = 2.31      # kg CO2/L gasolina (IPCC AR5)
+FACTOR_CO2_NETO_MOTO_KG_KWH = 0.87   # kg CO2/kWh evitado neto (moto)
+FACTOR_CO2_NETO_MOTOTAXI_KG_KWH = 0.47  # kg CO2/kWh evitado neto (mototaxi)
+
+# =============================================================================
+# COLUMNAS OBSERVABLES v5.3 - Variables para tracking en agentes
+# =============================================================================
+CHARGERS_OBSERVABLE_COLS = [
+    'is_hora_punta',
+    'tarifa_aplicada_soles',
+    'ev_energia_total_kwh',
+    'costo_carga_ev_soles',
+    'ev_energia_motos_kwh',
+    'ev_energia_mototaxis_kwh',
+    'co2_reduccion_motos_kg',
+    'co2_reduccion_mototaxis_kg',
+    'reduccion_directa_co2_kg',
+    'ev_demand_kwh',
+]
+
+SOLAR_OBSERVABLE_COLS = [
+    'is_hora_punta',
+    'tarifa_aplicada_soles',
+    'ahorro_solar_soles',
+    'reduccion_indirecta_co2_kg',
+    'co2_evitado_mall_kg',
+    'co2_evitado_ev_kg',
+]
+
+# Todas las columnas observables combinadas (para el archivo observables_oe2.csv)
+ALL_OBSERVABLE_COLS = [
+    # Chargers (prefijo "ev_" para evitar colisiones)
+    'ev_is_hora_punta',
+    'ev_tarifa_aplicada_soles',
+    'ev_energia_total_kwh',
+    'ev_costo_carga_soles',
+    'ev_energia_motos_kwh',
+    'ev_energia_mototaxis_kwh',
+    'ev_co2_reduccion_motos_kg',
+    'ev_co2_reduccion_mototaxis_kg',
+    'ev_reduccion_directa_co2_kg',
+    'ev_demand_kwh',
+    # Solar (prefijo "solar_")
+    'solar_is_hora_punta',
+    'solar_tarifa_aplicada_soles',
+    'solar_ahorro_soles',
+    'solar_reduccion_indirecta_co2_kg',
+    'solar_co2_mall_kg',
+    'solar_co2_ev_kg',
+    # Totales combinados
+    'total_reduccion_co2_kg',
+    'total_costo_soles',
+    'total_ahorro_soles',
+]
 
 # =============================================================================
 # INTEGRACIÓN: Reward Functions (from src/rewards/rewards.py)
@@ -168,20 +255,21 @@ def _discover_csv_paths(schema: Dict[str, Any], dataset_dir: Path) -> Dict[str, 
     return out
 
 def _load_real_charger_dataset(charger_data_path: Path) -> Optional[pd.DataFrame]:
-    """Load real charger dataset from data/oe2/chargers/chargers_real_hourly_2024.csv
+    """Load real charger dataset from data/oe2/chargers/chargers_ev_ano_2024_v3.csv
 
-    CRITICAL: This is the NEW REAL DATASET with:
-    - 128 individual socket columns (112 motos + 16 mototaxis)
+    CRITICAL: This is the NEW REAL DATASET v5.2 with:
+    - 38 individual sockets (30 motos + 8 mototaxis)
+    - 19 cargadores x 2 tomas = 38 tomas totales
+    - 7.4 kW por toma (Modo 3 monofasico 32A @ 230V)
+    - 281.2 kW potencia instalada total
     - 8,760 hourly timesteps (full year 2024)
     - Individual socket control capability for RL agents
-    - Realistic demand patterns (seasonal, daily, hourly variation)
-    - Proper datetime indexing
 
     Args:
-        charger_data_path: Path to chargers_real_hourly_2024.csv
+        charger_data_path: Path to chargers_ev_ano_2024_v3.csv
 
     Returns:
-        DataFrame with shape (8760, 128) or None if not found
+        DataFrame with 8760 rows and socket columns or None if not found
 
     Raises:
         ValueError: If dataset structure is invalid
@@ -198,8 +286,12 @@ def _load_real_charger_dataset(charger_data_path: Path) -> Optional[pd.DataFrame
         if df.shape[0] != 8760:
             raise ValueError(f"Charger dataset MUST have 8,760 rows (hourly), got {df.shape[0]}")
 
-        if df.shape[1] != 128:
-            raise ValueError(f"Charger dataset MUST have 128 columns (sockets), got {df.shape[1]}")
+        # v5.2: Dataset tiene 345 columnas (3 base + 38 sockets x 9 features)
+        # Validar que tenga columnas de socket
+        socket_cols = [c for c in df.columns if 'socket_' in c]
+        n_sockets = len(set(c.split('_')[1] for c in socket_cols if c.split('_')[1].isdigit()))
+        if n_sockets != 38:
+            raise ValueError(f"Charger dataset MUST have 38 sockets (v5.2), got {n_sockets}")
 
         # VALIDATION: Hourly frequency
         if len(df.index) > 1:
@@ -217,24 +309,187 @@ def _load_real_charger_dataset(charger_data_path: Path) -> Optional[pd.DataFrame
         if min_val < 0 or max_val > 5.0:
             logger.warning(f"[CHARGERS REAL] Unexpected value range: [{min_val:.2f}, {max_val:.2f}] kW")
 
-        # VALIDATION: Socket distribution (112 motos + 16 mototaxis)
-        moto_cols = [c for c in df.columns if 'MOTO' in str(c) and 'MOTOTAXI' not in str(c)]
-        mototaxi_cols = [c for c in df.columns if 'MOTOTAXI' in str(c)]
+        # VALIDATION: Socket distribution v5.2 (30 motos + 8 mototaxis = 38 sockets)
+        # Sockets 000-029: motos, sockets 030-037: mototaxis
+        socket_ids = [int(c.split('_')[1]) for c in df.columns if 'socket_' in c and c.split('_')[1].isdigit()]
+        unique_sockets = len(set(socket_ids))
+        n_motos = len([s for s in set(socket_ids) if s < 30])
+        n_mototaxis = len([s for s in set(socket_ids) if s >= 30])
 
-        if len(moto_cols) != 112 or len(mototaxi_cols) != 16:
-            logger.warning(f"[CHARGERS REAL] Socket distribution: {len(moto_cols)} motos, {len(mototaxi_cols)} mototaxis (expected 112+16)")
+        if unique_sockets != 38:
+            logger.warning(f"[CHARGERS REAL] Socket count: {unique_sockets} (expected 38 v5.2)")
 
-        logger.info(f"[CHARGERS REAL] ✅ Loaded: {df.shape} (8760 hours × 128 sockets)")
-        logger.info(f"[CHARGERS REAL]   Value range: [{min_val:.2f}, {max_val:.2f}] kW")
-        logger.info(f"[CHARGERS REAL]   Annual energy: {df.sum().sum():,.0f} kWh")
+        logger.info(f"[CHARGERS REAL] v5.3 Loaded: {df.shape} (8760 hours)")
+        logger.info(f"[CHARGERS REAL]   Sockets v5.2: {n_motos} motos + {n_mototaxis} mototaxis = {unique_sockets} total")
         logger.info(f"[CHARGERS REAL]   Period: {df.index[0].date()} to {df.index[-1].date()}")
-        logger.info(f"[CHARGERS REAL]   Sockets: {len(moto_cols)} motos + {len(mototaxi_cols)} mototaxis")
+
+        # =====================================================================
+        # VALIDACIÓN v5.3: Columnas OSINERGMIN y CO2 (observables para agentes)
+        # =====================================================================
+        observable_cols_found = []
+        observable_cols_missing = []
+        
+        for col in CHARGERS_OBSERVABLE_COLS:
+            if col in df.columns:
+                observable_cols_found.append(col)
+            else:
+                observable_cols_missing.append(col)
+        
+        if observable_cols_found:
+            logger.info(f"[CHARGERS REAL] ✅ Columnas observables v5.3 encontradas: {len(observable_cols_found)}/{len(CHARGERS_OBSERVABLE_COLS)}")
+            for col in observable_cols_found:
+                col_sum = df[col].sum()
+                col_mean = df[col].mean()
+                logger.info(f"   - {col}: sum={col_sum:,.2f}, mean={col_mean:.4f}")
+            
+            # Estadísticas OSINERGMIN
+            if 'is_hora_punta' in df.columns:
+                horas_hp = df['is_hora_punta'].sum()
+                logger.info(f"[CHARGERS REAL]   Horas HP: {horas_hp:,.0f} ({100*horas_hp/8760:.1f}%)")
+            
+            # Estadísticas CO2
+            if 'reduccion_directa_co2_kg' in df.columns:
+                co2_total_ton = df['reduccion_directa_co2_kg'].sum() / 1000
+                logger.info(f"[CHARGERS REAL]   CO2 evitado (directo): {co2_total_ton:,.1f} ton/año")
+            
+            # Estadísticas costos
+            if 'costo_carga_ev_soles' in df.columns:
+                costo_total = df['costo_carga_ev_soles'].sum()
+                logger.info(f"[CHARGERS REAL]   Costo carga EVs: S/.{costo_total:,.0f}/año")
+        
+        if observable_cols_missing:
+            logger.warning(f"[CHARGERS REAL] ⚠️  Columnas observables faltantes: {observable_cols_missing}")
+            logger.warning(f"   Ejecutar: python -m src.dimensionamiento.oe2.disenocargadoresev.chargers")
 
         return df
 
     except Exception as e:
         logger.error(f"[CHARGERS REAL] Error loading: {e}")
         raise
+
+
+def _extract_observable_variables(
+    chargers_df: Optional[pd.DataFrame],
+    solar_df: Optional[pd.DataFrame],
+    n_timesteps: int = 8760
+) -> pd.DataFrame:
+    """Extrae y combina variables observables de chargers y solar para agentes.
+    
+    Esta función crea un DataFrame unificado con todas las variables de tracking
+    que los agentes RL pueden usar como observaciones adicionales.
+    
+    Args:
+        chargers_df: DataFrame de chargers_ev_ano_2024_v3.csv (o None)
+        solar_df: DataFrame de pv_generation_hourly_citylearn_v2.csv (o None)
+        n_timesteps: Número de timesteps (default: 8760 = 1 año)
+    
+    Returns:
+        DataFrame con columnas observables combinadas (8760 x N columnas)
+    """
+    # Crear DataFrame base con índice horario
+    time_index = pd.date_range(start="2024-01-01", periods=n_timesteps, freq="h")
+    obs_df = pd.DataFrame(index=time_index)
+    
+    # =========================================================================
+    # EXTRAER VARIABLES DE CHARGERS (prefijo "ev_")
+    # =========================================================================
+    if chargers_df is not None:
+        logger.info("[OBSERVABLES] Extrayendo variables de chargers...")
+        
+        # Mapeo de columnas chargers -> observables
+        charger_col_map = {
+            'is_hora_punta': 'ev_is_hora_punta',
+            'tarifa_aplicada_soles': 'ev_tarifa_aplicada_soles',
+            'ev_energia_total_kwh': 'ev_energia_total_kwh',
+            'costo_carga_ev_soles': 'ev_costo_carga_soles',
+            'ev_energia_motos_kwh': 'ev_energia_motos_kwh',
+            'ev_energia_mototaxis_kwh': 'ev_energia_mototaxis_kwh',
+            'co2_reduccion_motos_kg': 'ev_co2_reduccion_motos_kg',
+            'co2_reduccion_mototaxis_kg': 'ev_co2_reduccion_mototaxis_kg',
+            'reduccion_directa_co2_kg': 'ev_reduccion_directa_co2_kg',
+            'ev_demand_kwh': 'ev_demand_kwh',
+        }
+        
+        for src_col, dst_col in charger_col_map.items():
+            if src_col in chargers_df.columns:
+                # Asegurar alineación de índice
+                values = chargers_df[src_col].values[:n_timesteps]
+                if len(values) < n_timesteps:
+                    values = np.pad(values, (0, n_timesteps - len(values)), mode='constant')
+                obs_df[dst_col] = values
+            else:
+                obs_df[dst_col] = 0.0
+                logger.warning(f"   - {src_col} no encontrado, usando 0.0")
+    else:
+        logger.warning("[OBSERVABLES] chargers_df es None, usando valores por defecto")
+        for col in ['ev_is_hora_punta', 'ev_tarifa_aplicada_soles', 'ev_energia_total_kwh',
+                    'ev_costo_carga_soles', 'ev_energia_motos_kwh', 'ev_energia_mototaxis_kwh',
+                    'ev_co2_reduccion_motos_kg', 'ev_co2_reduccion_mototaxis_kg',
+                    'ev_reduccion_directa_co2_kg', 'ev_demand_kwh']:
+            obs_df[col] = 0.0
+    
+    # =========================================================================
+    # EXTRAER VARIABLES DE SOLAR (prefijo "solar_")
+    # =========================================================================
+    if solar_df is not None:
+        logger.info("[OBSERVABLES] Extrayendo variables de solar...")
+        
+        # Mapeo de columnas solar -> observables
+        solar_col_map = {
+            'is_hora_punta': 'solar_is_hora_punta',
+            'tarifa_aplicada_soles': 'solar_tarifa_aplicada_soles',
+            'ahorro_solar_soles': 'solar_ahorro_soles',
+            'reduccion_indirecta_co2_kg': 'solar_reduccion_indirecta_co2_kg',
+            'co2_evitado_mall_kg': 'solar_co2_mall_kg',
+            'co2_evitado_ev_kg': 'solar_co2_ev_kg',
+        }
+        
+        for src_col, dst_col in solar_col_map.items():
+            if src_col in solar_df.columns:
+                values = solar_df[src_col].values[:n_timesteps]
+                if len(values) < n_timesteps:
+                    values = np.pad(values, (0, n_timesteps - len(values)), mode='constant')
+                obs_df[dst_col] = values
+            else:
+                obs_df[dst_col] = 0.0
+                logger.warning(f"   - {src_col} no encontrado en solar, usando 0.0")
+    else:
+        logger.warning("[OBSERVABLES] solar_df es None, usando valores por defecto")
+        for col in ['solar_is_hora_punta', 'solar_tarifa_aplicada_soles', 'solar_ahorro_soles',
+                    'solar_reduccion_indirecta_co2_kg', 'solar_co2_mall_kg', 'solar_co2_ev_kg']:
+            obs_df[col] = 0.0
+    
+    # =========================================================================
+    # CALCULAR TOTALES COMBINADOS
+    # =========================================================================
+    # Total CO2 evitado = directo (EVs) + indirecto (solar)
+    obs_df['total_reduccion_co2_kg'] = (
+        obs_df['ev_reduccion_directa_co2_kg'] + 
+        obs_df['solar_reduccion_indirecta_co2_kg']
+    )
+    
+    # Total costo = costo carga EVs
+    obs_df['total_costo_soles'] = obs_df['ev_costo_carga_soles']
+    
+    # Total ahorro = ahorro solar
+    obs_df['total_ahorro_soles'] = obs_df['solar_ahorro_soles']
+    
+    # Hora del día (0-23) para observación temporal
+    obs_df['hour_of_day'] = obs_df.index.hour
+    
+    # Mes del año (1-12) para observación de estacionalidad
+    obs_df['month_of_year'] = obs_df.index.month
+    
+    # Día de la semana (0=lunes, 6=domingo)
+    obs_df['day_of_week'] = obs_df.index.dayofweek
+    
+    logger.info(f"[OBSERVABLES] ✅ DataFrame creado: {obs_df.shape}")
+    logger.info(f"   Columnas: {list(obs_df.columns)}")
+    logger.info(f"   Total CO2 evitado: {obs_df['total_reduccion_co2_kg'].sum()/1000:,.1f} ton/año")
+    logger.info(f"   Total costo EVs: S/.{obs_df['total_costo_soles'].sum():,.0f}/año")
+    logger.info(f"   Total ahorro solar: S/.{obs_df['total_ahorro_soles'].sum():,.0f}/año")
+    
+    return obs_df
 
 
 def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
@@ -252,7 +507,8 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
     oe2_base_path = interim_dir.parent.parent / "oe2"  # data/oe2/
 
     # 1. CHARGERS_REAL_HOURLY (OBLIGATORIO)
-    chargers_real_fixed_path = oe2_base_path / "chargers" / "chargers_real_hourly_2024.csv"
+    # ACTUALIZACIÓN OE2 v3.0: Usar archivo real generado por chargers.py v3.0
+    chargers_real_fixed_path = oe2_base_path / "chargers" / "chargers_ev_ano_2024_v3.csv"
     if not chargers_real_fixed_path.exists():
         raise FileNotFoundError(
             f"[CRITICAL ERROR] ARCHIVO OBLIGATORIO NO ENCONTRADO:\n"
@@ -262,12 +518,12 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
         )
     try:
         chargers_real_df = _load_real_charger_dataset(chargers_real_fixed_path)
-        if chargers_real_df is None or chargers_real_df.shape != (8760, 128):
-            raise ValueError(f"Shape inválido: {chargers_real_df.shape if chargers_real_df is not None else 'None'} (requiere 8760, 128)")
+        if chargers_real_df is None or chargers_real_df.shape[0] != 8760:
+            raise ValueError(f"Shape invalido: {chargers_real_df.shape if chargers_real_df is not None else 'None'} (requiere 8760 filas)")
         artifacts["chargers_real_hourly_2024"] = chargers_real_df
-        logger.info("[✓ CARGAR] Cargadores reales horarios 2024 - 8,760 horas × 128 sockets")
+        logger.info("[OK CARGAR] Cargadores reales horarios 2024 v5.2 - 8,760 horas x 38 sockets")
     except Exception as e:
-        raise RuntimeError(f"[ERROR CRÍTICO] No se puede cargar chargers_real_hourly_2024.csv: {e}")
+        raise RuntimeError(f"[ERROR CRITICO] No se puede cargar chargers_ev_ano_2024_v3.csv: {e}")
 
     # 2. CHARGERS_REAL_STATISTICS (OBLIGATORIO)
     chargers_stats_fixed_path = oe2_base_path / "chargers" / "chargers_real_statistics.csv"
@@ -286,7 +542,8 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
         raise RuntimeError(f"[ERROR CRÍTICO] No se puede cargar chargers_real_statistics.csv: {e}")
 
     # 3. BESS_HOURLY_DATASET (OBLIGATORIO)
-    bess_hourly_fixed_path = oe2_base_path / "bess" / "bess_hourly_dataset_2024.csv"
+    # ACTUALIZACIÓN OE2: Usar archivo real de simulación BESS
+    bess_hourly_fixed_path = oe2_base_path / "bess" / "bess_simulation_hourly.csv"
     if not bess_hourly_fixed_path.exists():
         raise FileNotFoundError(
             f"[CRITICAL ERROR] ARCHIVO OBLIGATORIO NO ENCONTRADO:\n"
@@ -302,7 +559,7 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
         logger.info("[✓ CARGAR] BESS horario 2024 - 8,760 horas | SOC: {:.1f}% a {:.1f}%".format(
             bess_df["soc_percent"].min(), bess_df["soc_percent"].max()))
     except Exception as e:
-        raise RuntimeError(f"[ERROR CRÍTICO] No se puede cargar bess_hourly_dataset_2024.csv: {e}")
+        raise RuntimeError(f"[ERROR CRÍTICO] No se puede cargar bess_simulation_hourly.csv: {e}")
 
     # 4. MALL_DEMAND_HOURLY (OBLIGATORIO)
     mall_demand_fixed_path = oe2_base_path / "demandamallkwh" / "demandamallhorakwh.csv"
@@ -456,7 +713,7 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
                 break
             except Exception as e:
                 logger.warning("[EV] Error loading chargers from %s: %s", ev_chargers_path, e)
-    # NOTE: chargers_real_hourly_2024.csv YA FUE CARGADO OBLIGATORIAMENTE
+    # NOTE: chargers_ev_ano_2024_v3.csv YA FUE CARGADO OBLIGATORIAMENTE
     # en la sección CRÍTICA al inicio de _load_oe2_artifacts().
     # No es necesario intentar cargar nuevamente aquí.
 
@@ -555,12 +812,12 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
                 logger.warning("[BESS] Error loading results from %s: %s", bess_path, e)
 
     # === PRIORITY 1: NEW BESS Hourly Dataset (2026-02-04) ===
-    # Location: data/oe2/bess/bess_hourly_dataset_2024.csv
+    # Location: data/oe2/bess/bess_simulation_hourly.csv
     # Contains: 8,760 hourly records with REAL BESS simulation data
     # Columns: DatetimeIndex (UTC-5), pv_kwh, ev_kwh, mall_kwh, pv_to_ev_kwh, pv_to_bess_kwh,
     #          pv_to_mall_kwh, grid_to_ev_kwh, grid_to_mall_kwh, bess_charge_kwh, bess_discharge_kwh, soc_percent
     # ========================================================================
-    # NOTE: bess_hourly_dataset_2024.csv YA FUE CARGADO OBLIGATORIAMENTE
+    # NOTE: bess_simulation_hourly.csv YA FUE CARGADO OBLIGATORIAMENTE
     # en la sección CRÍTICA al inicio de _load_oe2_artifacts().
     # No es necesario intentar cargar nuevamente aquí.
 
@@ -635,20 +892,20 @@ def _generate_individual_charger_csvs(
     building_dir: Path,
     overwrite: bool = False,
 ) -> Dict[str, Path]:
-    """Generate 128 individual charger_simulation_XXX.csv files required by CityLearn v2.
+    """Generate 38 individual charger_simulation_0XX.csv files for v5.2 required by CityLearn v2.
 
     **CRITICAL**: CityLearn v2 expects each charger's load profile in a separate CSV file:
-    - buildings/building_name/charger_simulation_001.csv through charger_simulation_128.csv
-    - Each file: 8,760 rows × 1 column (demand in kW)
+    - buildings/building_name/charger_simulation_001.csv through charger_simulation_038.csv
+    - Each file: 8,760 rows x 1 column (demand in kW)
 
     Args:
-        charger_profiles_annual: DataFrame with shape (8760, 128)
+        charger_profiles_annual: DataFrame with shape (8760, 38) or wider
                                 Columns are charger IDs (MOTO_CH_001, etc.)
         building_dir: Path to buildings/building_name/ directory
         overwrite: If True, overwrite existing files
 
     Returns:
-        Dict mapping charger index → CSV file path
+        Dict mapping charger index -> CSV file path
 
     Raises:
         ValueError: If invalid shape or columns
@@ -659,9 +916,11 @@ def _generate_individual_charger_csvs(
             f"got {charger_profiles_annual.shape[0]}"
         )
 
-    if charger_profiles_annual.shape[1] != 128:
+    # v5.2: 38 sockets (flexible validation)
+    n_sockets = charger_profiles_annual.shape[1]
+    if n_sockets < 38:
         raise ValueError(
-            f"Charger profiles must have 128 columns, "
+            f"Charger profiles must have at least 38 columns (v5.2), "
             f"got {charger_profiles_annual.shape[1]}"
         )
 
@@ -669,8 +928,9 @@ def _generate_individual_charger_csvs(
 
     generated_files = {}
 
-    # Generate 128 individual CSVs (charger_simulation_001.csv through 128.csv)
-    for charger_idx in range(128):
+    # v5.2: Generate 38 individual CSVs (charger_simulation_001.csv through 038.csv)
+    n_files = min(n_sockets, 38)  # Use 38 sockets
+    for charger_idx in range(n_files):
         csv_filename = f"charger_simulation_{charger_idx + 1:03d}.csv"
         csv_path = building_dir / csv_filename
 
@@ -740,18 +1000,22 @@ def build_citylearn_dataset(
 
     # PASO CRITICO: Copiar 5 ARCHIVOS OBLIGATORIOS DE OE2 a out_dir
     # Estos archivos son OBLIGATORIOS para que CityLearn y los agents accedan a los datos reales
+    # Definir ruta base de datos OE2
+    oe2_base_path = interim_dir.parent.parent / "oe2"  # data/oe2/
+
     logger.info("[FILES] Copiando 5 archivos obligatorios OE2 a directorio CityLearn...")
+    # ACTUALIZACIÓN OE2 v3.0: Usar nombres de archivos REALES generados
     required_files = [
-        ("chargers", "chargers_real_hourly_2024.csv"),
+        ("chargers", "chargers_ev_ano_2024_v3.csv"),  # ✓ Nombre real del archivo
         ("chargers", "chargers_real_statistics.csv"),
-        ("bess", "bess_hourly_dataset_2024.csv"),
+        ("bess", "bess_simulation_hourly.csv"),  # ✓ Nombre real del archivo
         ("demandamallkwh", "demandamallhorakwh.csv"),
         ("Generacionsolar", "pv_generation_hourly_citylearn_v2.csv"),
     ]
 
     files_copied = 0
     for subdir, filename in required_files:
-        src = interim_dir / subdir / filename
+        src = oe2_base_path / subdir / filename  # ✓ Buscar en data/oe2/ (no en interim_dir)
         if src.exists():
             dst_subdir = out_dir / subdir
             dst_subdir.mkdir(parents=True, exist_ok=True)
@@ -807,7 +1071,7 @@ def build_citylearn_dataset(
 
     # === UN SOLO BUILDING: Mall_Iquitos (unifica ambas playas de estacionamiento) ===
     # Arquitectura: 1 edificio Mall con 2 áreas de estacionamiento (motos + mototaxis)
-    # Todos los 128 chargers, PV y BESS se gestionan como una única unidad
+    # Todos los 38 chargers v5.2, PV y BESS se gestionan como una única unidad
     _bname_template, b_template = _find_first_building(schema)
 
     # Crear building unificado para el Mall
@@ -820,7 +1084,7 @@ def build_citylearn_dataset(
 
     # Configurar schema con UN SOLO building
     schema["buildings"] = {"Mall_Iquitos": b_mall}
-    logger.info("Creado building unificado: Mall_Iquitos (32 chargers × 4 sockets = 128 tomas, 4162 kWp PV, 2000 kWh BESS)")
+    logger.info("Creado building unificado: Mall_Iquitos v5.2 (19 chargers x 2 sockets = 38 tomas, 281.2 kW, 4050 kWp PV, 940 kWh BESS)")
 
     # Referencia al building único
     b = b_mall
@@ -850,16 +1114,18 @@ def build_citylearn_dataset(
         logger.info("[CLEANUP] Building limpio - sin recursos NO-OE2 detectados")
 
     # === CREAR electric_vehicles_def ===
-    # CRÍTICO: CityLearn necesita definiciones de EVs con baterías para que los chargers funcionen.
-    # Sin esto, el consumo de chargers será 0 (los EVs no tienen baterías definidas).
+    # CRITICO: CityLearn necesita definiciones de EVs con baterias para que los chargers funcionen.
+    # Sin esto, el consumo de chargers sera 0 (los EVs no tienen baterias definidas).
     #
-    # Configuración OE2:
-    # - 112 motos: batería 2.5 kWh, carga 2.0 kW
-    # - 16 mototaxis: batería 4.5 kWh, carga 3.0 kW
+    # Configuracion OE2 v5.2:
+    # - 30 motos: bateria 4.6 kWh, carga 7.4 kW (Modo 3), tiempo real 60 min
+    # - 8 mototaxis: bateria 7.4 kWh, carga 7.4 kW (Modo 3), tiempo real 90 min
+    # - 19 cargadores x 2 tomas = 38 sockets totales
+    # - Potencia instalada: 281.2 kW
     electric_vehicles_def = {}
 
-    # 112 EVs para motos (chargers 1-112)
-    for i in range(112):
+    # 30 EVs para motos (sockets 0-29)
+    for i in range(30):
         ev_name = f'EV_Mall_{i+1}'
         electric_vehicles_def[ev_name] = {
             'include': True,
@@ -867,35 +1133,35 @@ def build_citylearn_dataset(
                 'type': 'citylearn.energy_model.Battery',
                 'autosize': False,
                 'attributes': {
-                    'capacity': 2.5,           # kWh - batería típica moto eléctrica
-                    'nominal_power': 2.0,      # kW - potencia de carga
-                    'initial_soc': 0.20,       # 20% SOC al llegar (fracción)
-                    'depth_of_discharge': 0.90, # 90% DOD máximo
+                    'capacity': 4.6,           # kWh - bateria moto electrica v5.2
+                    'nominal_power': 7.4,      # kW - Modo 3 monofasico 32A @ 230V
+                    'initial_soc': 0.20,       # 20% SOC al llegar (fraccion)
+                    'depth_of_discharge': 0.90, # 90% DOD maximo
                     'efficiency': 0.95,        # 95% eficiencia carga/descarga
                 }
             }
         }
 
-    # 16 EVs para mototaxis (chargers 113-128)
-    for i in range(16):
-        ev_name = f'EV_Mall_{112+i+1}'
+    # 8 EVs para mototaxis (sockets 30-37)
+    for i in range(8):
+        ev_name = f'EV_Mall_{30+i+1}'
         electric_vehicles_def[ev_name] = {
             'include': True,
             'battery': {
                 'type': 'citylearn.energy_model.Battery',
                 'autosize': False,
                 'attributes': {
-                    'capacity': 4.5,           # kWh - batería típica mototaxi
-                    'nominal_power': 3.0,      # kW - potencia de carga
-                    'initial_soc': 0.20,       # 20% SOC al llegar (fracción)
-                    'depth_of_discharge': 0.90, # 90% DOD máximo
+                    'capacity': 7.4,           # kWh - bateria mototaxi v5.2
+                    'nominal_power': 7.4,      # kW - Modo 3 monofasico 32A @ 230V
+                    'initial_soc': 0.20,       # 20% SOC al llegar (fraccion)
+                    'depth_of_discharge': 0.90, # 90% DOD maximo
                     'efficiency': 0.95,        # 95% eficiencia carga/descarga
                 }
             }
         }
 
     schema['electric_vehicles_def'] = electric_vehicles_def
-    logger.info("[EV ARCHITECTURE] Creado electric_vehicles_def: 128 EVs (112 motos + 16 mototaxis)")
+    logger.info("[EV ARCHITECTURE] Creado electric_vehicles_def v5.2: 38 EVs (30 motos + 8 mototaxis)")
 
     # Update PV + BESS sizes from OE2 artifacts
     pv_dc_kw = float(cfg["oe2"]["solar"]["target_dc_kw"])
@@ -916,13 +1182,13 @@ def build_citylearn_dataset(
         bess_pow = float(artifacts["bess"].get("nominal_power_kw", 0.0)) or float(artifacts["bess"].get("power_rating_kw", 0.0))
         logger.info("Usando resultados BESS de OE2: %s kWh, %s kW", bess_cap, bess_pow)
 
-        # ✅ CORRECCIÓN AUTOMÁTICA EMBEDDED (L443-456): Si los valores son 0/None, usar valores OE2 reales
+        # ✅ CORRECCIÓN AUTOMÁTICA EMBEDDED (L443-456): Si los valores son 0/None, usar valores OE2 reales v5.2
         if bess_cap is None or bess_cap == 0.0:
-            bess_cap = 4520.0  # OE2 Real: 4,520 kWh [EMBEDDED-FIX-L1]
-            logger.warning("[EMBEDDED-FIX] BESS capacity corregido a OE2 Real: 4520.0 kWh")
+            bess_cap = 940.0  # OE2 v5.2: 940 kWh (exclusivo EV, 100% cobertura) [EMBEDDED-FIX-L1]
+            logger.warning("[EMBEDDED-FIX] BESS capacity corregido a OE2 v5.2: 940.0 kWh")
         if bess_pow is None or bess_pow == 0.0:
-            bess_pow = 2712.0  # OE2 Real: 2,712 kW [EMBEDDED-FIX-L1]
-            logger.warning("[EMBEDDED-FIX] BESS power corregido a OE2 Real: 2712.0 kW")
+            bess_pow = 342.0  # OE2 v5.2: 342 kW [EMBEDDED-FIX-L1]
+            logger.warning("[EMBEDDED-FIX] BESS power corregido a OE2 v5.2: 342.0 kW")
 
     elif "bess_params" in artifacts:
         bess_params = artifacts["bess_params"]
@@ -930,10 +1196,10 @@ def build_citylearn_dataset(
         bess_pow = float(bess_params.get("electrical_storage", {}).get("nominal_power", 0.0))
         logger.info("Usando parametros BESS de OE2 (schema): %s kWh, %s kW", bess_cap, bess_pow)
     else:
-        # ✅ CORRECCIÓN AUTOMÁTICA EMBEDDED (L456-463): Si no hay artifacts, usar OE2 Real
-        bess_cap = 4520.0
-        bess_pow = 2712.0
-        logger.warning("[EMBEDDED-FIX] BESS config no encontrado, usando OE2 Real: 4520.0 kWh / 2712.0 kW [FALLBACK]")
+        # ✅ CORRECCIÓN AUTOMÁTICA EMBEDDED (L456-463): Si no hay artifacts, usar OE2 v5.2
+        bess_cap = 940.0   # v5.2: 940 kWh (exclusivo EV, 100% cobertura)
+        bess_pow = 342.0   # v5.2: 342 kW
+        logger.warning("[EMBEDDED-FIX] BESS config no encontrado, usando OE2 v5.2: 940.0 kWh / 342.0 kW [FALLBACK]")
 
     # === ACTUALIZAR PV Y BESS EN EL BUILDING UNIFICADO ===
     # pylint: disable=all
@@ -1000,32 +1266,31 @@ def build_citylearn_dataset(
                         building["electrical_storage"]["attributes"]["nominal_power"] = bess_pow
             logger.info("%s: BESS %.1f kWh, %.1f kW", building_name, bess_cap, bess_pow)
 
-    # === CREAR CHARGERS EN EL SCHEMA (128 socket-level chargers = 32 physical chargers × 4 sockets) ===
+    # === CREAR CHARGERS EN EL SCHEMA v5.2 (38 sockets = 19 cargadores x 2 tomas) ===
     # Los sockets se crean directamente en el schema para control por RL agents
-    # Cada socket (toma) es independiente y controlable vía acciones continuas [0, 1]
+    # Cada socket (toma) es independiente y controlable via acciones continuas [0, 1]
 
-    # Get charger configuration from OE2
-    ev_chargers = artifacts.get("ev_chargers", [])  # list of 32 PHYSICAL chargers
-    n_physical_chargers = len(ev_chargers) if ev_chargers else 32
-    sockets_per_charger = 4
-    total_devices = n_physical_chargers * sockets_per_charger  # 32 × 4 = 128 sockets/tomas
+    # Configuracion v5.2
+    n_physical_chargers = 19  # 19 cargadores fisicos (15 motos + 4 mototaxis)
+    sockets_per_charger = 2   # 2 tomas por cargador (Modo 3)
+    total_devices = n_physical_chargers * sockets_per_charger  # 19 x 2 = 38 sockets
 
-    logger.info(f"[CHARGERS SCHEMA] Configurando {total_devices} sockets (32 chargers físicos × 4 sockets = 128 tomas) en schema para control RL")
+    logger.info(f"[CHARGERS SCHEMA] Configurando {total_devices} sockets v5.2 (19 chargers x 2 sockets = 38 tomas) en schema para control RL")
 
-    # ✓ SOLUCIÓN: Mantener sockets en schema (no eliminar)
-    # - 128 sockets (tomas) controlables vía acciones RL (32 cargadores × 4 sockets)
+    # v5.2: 38 sockets (tomas) controlables via acciones RL
+    # - Sockets 0-29: 30 tomas para motos (15 cargadores x 2)
+    # - Sockets 30-37: 8 tomas para mototaxis (4 cargadores x 2)
     # - Cada socket tiene CSV con estado (ocupancia, SOC, etc.)
     # - RL agents controlan power setpoint via acciones continuas [0, 1]
 
-    # ✅ CRITICAL FIX: ALWAYS START WITH EMPTY CHARGERS DICT
-    # Do NOT use existing chargers from template (they are only 32 and outdated)
-    # We MUST create exactly 128 new chargers for proper control
-    b["chargers"] = {}  # FORCE EMPTY - we'll populate with 128
+    # CRITICAL FIX: ALWAYS START WITH EMPTY CHARGERS DICT
+    # We create exactly 38 chargers for proper control
+    b["chargers"] = {}  # FORCE EMPTY - we'll populate with 38
 
-    logger.info(f"[CHARGERS SCHEMA] Configurando {total_devices} chargers en el schema...")
+    logger.info(f"[CHARGERS SCHEMA] Configurando {total_devices} chargers v5.2 en el schema...")
 
     # === NOTA SOBRE EVs ===
-    # NO crear 128 EVs permanentes en el schema
+    # NO crear 38 EVs permanentes en el schema
     # Los EVs son dinámicos (vehículos que llegan/se van)
     # El schema NO tiene electric_vehicles_def global
     # Los chargers tienen datos dinámicos en charger_simulation_*.csv
@@ -1037,37 +1302,26 @@ def build_citylearn_dataset(
     if backup_existing_chargers:
         charger_template = list(backup_existing_chargers.values())[0]
 
-    # === CREAR EXACTAMENTE 128 CHARGERS EN EL SCHEMA ===
+    # === CREAR EXACTAMENTE 38 CHARGERS EN EL SCHEMA v5.2 ===
     all_chargers: Dict[str, Any] = {}
     n_motos = 0
     n_mototaxis = 0
     power_motos = 0.0
     power_mototaxis = 0.0
 
-    for charger_idx in range(total_devices):  # 128 iteraciones = 32 chargers × 4 sockets
+    for charger_idx in range(total_devices):  # 38 iteraciones = 19 chargers x 2 sockets
         # Generate charger name
         charger_name = f"charger_mall_{charger_idx + 1}"
 
-        # Get power info from OE2 if available
-        # CORRECCIÓN CRÍTICA: socket_idx 0-127 mapea a charger_idx 0-31 con socket 0-3
-        physical_charger_idx = charger_idx // sockets_per_charger  # Cual charger físico (0-31)
-        socket_in_charger = charger_idx % sockets_per_charger  # Cual socket dentro del charger (0-3)
-
-        if physical_charger_idx < len(ev_chargers):
-            charger_info = ev_chargers[physical_charger_idx]
-            power_kw = float(charger_info.get("power_kw", 2.0))
-            sockets = 1  # Individual socket power (NOT total charger power × 4)
-            charger_type = charger_info.get("charger_type", "moto").lower()
-        else:
-            # Default: motos have 2kW, mototaxis have 3kW
-            if physical_charger_idx < 28:  # First 28 are motos
-                power_kw = 2.0
-                sockets = 1
-                charger_type = "moto"
-            else:  # Last 4 are mototaxis
-                power_kw = 3.0
-                sockets = 1
-                charger_type = "moto_taxi"
+        # v5.2: Todos los sockets tienen 7.4 kW (Modo 3 monofasico 32A @ 230V)
+        # Sockets 0-29: motos (30 tomas)
+        # Sockets 30-37: mototaxis (8 tomas)
+        power_kw = 7.4  # Modo 3 - igual para todos
+        
+        if charger_idx < 30:  # Sockets 0-29 = motos
+            charger_type = "moto"
+        else:  # Sockets 30-37 = mototaxis
+            charger_type = "moto_taxi"
 
         # Create charger entry in schema
         if charger_template:
@@ -1117,18 +1371,18 @@ def build_citylearn_dataset(
     b_mall = schema["buildings"]["Mall_Iquitos"]
     b_mall["chargers"] = all_chargers
 
-    # ✅ CRITICAL FIX: Store chargers count for later verification
-    # This ensures we know we assigned 128 chargers even if dict is modified later
+    # CRITICAL FIX: Store chargers count for later verification
+    # This ensures we know we assigned 38 chargers even if dict is modified later
     all_chargers_backup = dict(all_chargers)  # Deep copy to preserve state
     chargers_count_at_assignment = len(all_chargers)
 
-    logger.info(f"[CHARGERS SCHEMA] ✓ CORRECCIÓN CRÍTICA: Asignados {total_devices} sockets (32 chargers × 4) a 'chargers': {n_motos} motos ({power_motos:.1f} kW) + {n_mototaxis} mototaxis ({power_mototaxis:.1f} kW)")
-    logger.info(f"[CHARGERS SCHEMA] ✅ BACKUP: Guardadas {chargers_count_at_assignment} chargers para validación posterior")
+    logger.info(f"[CHARGERS SCHEMA] OK CORRECCION CRITICA v5.2: Asignados {total_devices} sockets (19 chargers x 2) a 'chargers': {n_motos} motos ({power_motos:.1f} kW) + {n_mototaxis} mototaxis ({power_mototaxis:.1f} kW)")
+    logger.info(f"[CHARGERS SCHEMA] OK BACKUP: Guardadas {chargers_count_at_assignment} chargers para validacion posterior")
 
     # === ELECTRIC VEHICLES: DINÁMICOS (no permanentes) ===
-    # NOTA: Los EVs NO son 128 entidades permanentes
+    # NOTA: Los EVs NO son 38 entidades permanentes
     # Los EVs son VEHÍCULOS DINÁMICOS que llegan/se van cada hora
-    # El schema NO necesita 128 EVs definidos - eso es incorrecto
+    # El schema NO necesita 38 EVs definidos - eso es incorrecto
     # Los datos de occupancy/SOC vienen en charger_simulation_*.csv
     # CityLearn los interpreta dinámicamente basado en los datos de ocupancia
 
@@ -1464,9 +1718,9 @@ def build_citylearn_dataset(
 
     # 4. EV Chargers Validation
     logger.info("[OK] [EV CHARGERS] CONFIGURED")
-    logger.info(f"   Total chargers: 128 (for 128 simulation files)")
+    logger.info(f"   Total chargers: 38 (v5.2) (for 38 simulation files)")
     logger.info(f"   Operating hours: {cfg['oe2']['ev_fleet']['opening_hour']}-{cfg['oe2']['ev_fleet']['closing_hour']}")
-    logger.info(f"   Files will be generated: charger_simulation_001.csv to charger_simulation_128.csv")
+    logger.info(f"   Files will be generated: charger_simulation_001.csv to charger_simulation_038.csv")
 
     logger.info("=" * 80)
     logger.info("[OK] All OE2 artifacts properly integrated into CityLearn dataset")
@@ -1500,12 +1754,12 @@ def build_citylearn_dataset(
         bess_oe2_df = None
         bess_source = "unknown"
 
-        # PRIORITY 1: NEW bess_hourly_dataset_2024.csv (2026-02-04)
+        # PRIORITY 1: NEW bess_simulation_hourly.csv (2026-02-04 - OE2 v3.0 real data)
         if "bess_hourly_2024" in artifacts:
             try:
                 bess_oe2_df = artifacts["bess_hourly_2024"].copy()
-                bess_source = "bess_hourly_dataset_2024.csv (NEW - 2026-02-04)"
-                logger.info(f"[BESS] ✅ PRIORITY 1: USING NEW DATASET: {bess_source}")
+                bess_source = "bess_simulation_hourly.csv (OE2 v3.0 real data - 2026-02-04)"
+                logger.info(f"[BESS] ✅ PRIORITY 1: USING REAL DATASET: {bess_source}")
                 logger.info(f"[BESS]    Columns: {bess_oe2_df.columns.tolist()}")
             except Exception as e:
                 logger.warning(f"[BESS] ⚠️  Error con PRIORITY 1: {e}")
@@ -1584,7 +1838,7 @@ def build_citylearn_dataset(
             logger.info(f"[BESS] Escritura: {bess_simulation_path}")
         else:
             logger.error(f"[BESS] ✗ No se encontró ningún archivo de simulación BESS de OE2")
-            logger.error(f"[BESS]    PRIORITY 1 buscado: data/oe2/bess/bess_hourly_dataset_2024.csv")
+            logger.error(f"[BESS]    PRIORITY 1 buscado: data/oe2/bess/bess_simulation_hourly.csv")
             logger.error(f"[BESS]    PRIORITY 2 buscado: data/interim/oe2/bess/bess_simulation_hourly.csv")
             raise FileNotFoundError("CRITICAL: No BESS simulation file found. Create with: python -m scripts.run_bess_dataset_generation")
 
@@ -1684,20 +1938,20 @@ def build_citylearn_dataset(
         }
     )
 
-    # === GENERAR 128 CSVs INDIVIDUALES PARA CHARGERS ===
-    # PRIORITY 1: Use real charger dataset (chargers_real_hourly_2024.csv) if available
-    # PRIORITY 2: Fallback to legacy 32-charger profiles and expand to 128 sockets
+    # === GENERAR 38 CSVs INDIVIDUALES v5.2 PARA CHARGERS ===
+    # PRIORITY 1: Use real charger dataset (chargers_ev_ano_2024_v3.csv) if available
+    # PRIORITY 2: Fallback to legacy profiles (deprecated - use v5.2 38 sockets)
     #
     # Real Dataset Structure:
-    # - 128 columns: MOTO_XX_SOCKET_Y (112) + MOTOTAXI_XX_SOCKET_Y (16)
+    # - 38 columns: socket_000 to socket_037 (30 motos + 8 mototaxis v5.2)
     # - 8,760 rows: hourly timesteps (complete year)
     # - Each column contains power demand for ONE socket in kW
     # - Ready for direct use: no expansion needed
     #
     # Legacy Dataset Structure (FALLBACK):
-    # - 32 columns: charger IDs (one per charger)
+    # - 19 columns: charger IDs (one per charger v5.2)
     # - 8,760 rows: hourly timesteps
-    # - Each charger has 4 sockets → need to expand 32→128 columns
+    # - Each charger has 2 sockets → need to expand 19→38 columns [v5.2]
 
     chargers_source = "unknown"
     chargers_df_for_generation = None
@@ -1705,9 +1959,9 @@ def build_citylearn_dataset(
     # PRIORITY 1: Load real dataset if available
     if "chargers_real_hourly_2024" in artifacts:
         chargers_df_for_generation = artifacts["chargers_real_hourly_2024"].copy()
-        chargers_source = "REAL (chargers_real_hourly_2024.csv)"
+        chargers_source = "REAL (chargers_ev_ano_2024_v3.csv)"
         logger.info(f"[CHARGERS GENERATION] ✅ Using REAL dataset: {chargers_df_for_generation.shape}")
-        logger.info(f"[CHARGERS GENERATION]    128 individual socket columns (ready for RL agents)")
+        logger.info(f"[CHARGERS GENERATION]    38 individual socket columns v5.2 (ready for RL agents)")
         logger.info(f"[CHARGERS GENERATION]    8,760 hourly timesteps (complete year)")
 
     # PRIORITY 2: Fallback to legacy profiles
@@ -1716,16 +1970,16 @@ def build_citylearn_dataset(
         chargers_source = "LEGACY (chargers_hourly_profiles_annual.csv)"
         logger.info(f"[CHARGERS GENERATION] ⚠️  Using LEGACY dataset: {chargers_df_legacy.shape}")
 
-        # Expand 32 chargers to 128 sockets (4 sockets per charger)
-        if chargers_df_legacy.shape[1] == 32:
-            logger.info(f"[CHARGERS GENERATION]    Expanding 32 chargers → 128 sockets (4 per charger)")
+        # v5.2: 19 chargers x 2 sockets = 38 tomas
+        if chargers_df_legacy.shape[1] == 19:
+            logger.info(f"[CHARGERS GENERATION]    v5.2: Expanding 19 chargers to 38 sockets")
             expanded_data = {}
-            for i in range(32):
+            for i in range(19):
                 charger_col = chargers_df_legacy.columns[i]
                 charger_demand = chargers_df_legacy[charger_col].values
-                # Divide demand equally among 4 sockets
-                socket_demand_divided = charger_demand / 4.0
-                for socket_idx in range(4):
+                # Divide demand equally among 2 sockets (v5.2)
+                socket_demand_divided = charger_demand / 2.0
+                for socket_idx in range(2):
                     socket_col = f"{charger_col}_SOCKET_{socket_idx}"
                     expanded_data[socket_col] = socket_demand_divided
             chargers_df_for_generation = pd.DataFrame(expanded_data)
@@ -1738,25 +1992,25 @@ def build_citylearn_dataset(
         raise RuntimeError("No charger dataset found - neither real nor legacy profiles available")
 
     # VALIDATION: Final dimensions
-    if chargers_df_for_generation.shape != (8760, 128):
-        logger.error(f"[CHARGERS GENERATION] ❌ INVALID SHAPE: {chargers_df_for_generation.shape} (expected 8760×128)")
-        raise ValueError(f"Charger profiles must be (8760, 128), got {chargers_df_for_generation.shape}")
+    if chargers_df_for_generation.shape != (8760, 38):
+        logger.error(f"[CHARGERS GENERATION] ❌ INVALID SHAPE: {chargers_df_for_generation.shape} (expected 8760x38)")
+        raise ValueError(f"Charger profiles must be (8760, 38), got {chargers_df_for_generation.shape}")
 
     logger.info(f"[CHARGERS GENERATION] ✅ Dataset ready: {chargers_source}")
-    logger.info(f"[CHARGERS GENERATION]    Dimensions: 8,760 hours × 128 sockets")
+    logger.info(f"[CHARGERS GENERATION]    Dimensions: 8,760 hours x 38 sockets v5.2")
     logger.info(f"[CHARGERS GENERATION]    Annual energy: {chargers_df_for_generation.sum().sum():,.0f} kWh")
     logger.info(f"[CHARGERS GENERATION]    Mean power: {chargers_df_for_generation.sum(axis=1).mean():.1f} kW")
 
-    # ===== GENERAR 128 CSVs INDIVIDUALES PARA CHARGERS (desde dataset real o legacy) =====
-    # Use the chargers_df_for_generation prepared above (128 columns, 8760 rows)
-    if chargers_df_for_generation is not None and chargers_df_for_generation.shape == (8760, 128):
+    # ===== GENERAR 38 CSVs INDIVIDUALES v5.2 PARA CHARGERS (desde dataset real o legacy) =====
+    # Use the chargers_df_for_generation prepared above (38 columns, 8760 rows)
+    if chargers_df_for_generation is not None and chargers_df_for_generation.shape == (8760, 38):
         building_dir = out_dir  # Root directory for charger CSVs
         charger_list = []
         total_ev_demand_kwh = 0.0
 
-        logger.info("[CHARGERS CSV GENERATION] Generando 128 archivos CSV...")
+        logger.info("[CHARGERS CSV GENERATION] Generando 38 archivos CSV...")
 
-        for socket_idx in range(128):
+        for socket_idx in range(38):
             charger_name = f"charger_simulation_{socket_idx+1:03d}.csv"
             csv_path = building_dir / charger_name
             charger_list.append(csv_path)
@@ -1770,10 +2024,10 @@ def build_citylearn_dataset(
             states_array: np.ndarray = np.where(socket_demand > 0, 1, 3).astype(int)
 
             # Determine socket type (motos=0-111, mototaxis=112-127)
-            is_mototaxi = socket_idx >= 112
+            is_mototaxi = socket_idx >= 30
             if is_mototaxi:
                 socket_type = "MOTOTAXI"
-                local_idx = socket_idx - 112 + 1
+                local_idx = socket_idx - 30 + 1
             else:
                 socket_type = "MOTO"
                 local_idx = socket_idx + 1
@@ -1799,31 +2053,31 @@ def build_citylearn_dataset(
         logger.info("=" * 80)
         logger.info("[CHARGERS CSV GENERATION] ✅ COMPLETADO")
         logger.info("=" * 80)
-        logger.info(f"Total arquivos generados: 128 (charger_simulation_001.csv to 128.csv)")
+        logger.info(f"Total arquivos generados: 38 (charger_simulation_001.csv to 038.csv)")
         logger.info(f"Total EV demand anual: {total_ev_demand_kwh:,.0f} kWh")
-        logger.info(f"Promedio por socket: {total_ev_demand_kwh/128:,.0f} kWh/año")
+        logger.info(f"Promedio por socket: {total_ev_demand_kwh/38:,.0f} kWh/año")
         logger.info(f"Fuente de datos: {chargers_source}")
-        logger.info(f"Estructura: 112 motos (MOTO_001 to 112) + 16 mototaxis (MOTOTAXI_001 to 016)")
+        logger.info(f"Estructura v5.2: 30 motos (socket_000-029) + 8 mototaxis (socket_030-037)")
         logger.info("=" * 80)
         logger.info("")
 
-        # === ACTUALIZAR SCHEMA: Referenciar los 128 CSVs ===
-        logger.info("[CHARGER GENERATION] Actualizando schema con referencias a 128 CSVs...")
+        # === ACTUALIZAR SCHEMA: Referenciar los 38 CSVs ===
+        logger.info("[CHARGER GENERATION] Actualizando schema con referencias a 38 CSVs...")
 
         chargers_to_update = b_mall.get("chargers", {})
-        if len(chargers_to_update) != 128:
-            logger.warning(f"[WARN] Se esperaban 128 chargers, se encontraron {len(chargers_to_update)}")
+        if len(chargers_to_update) != 38:
+            logger.warning(f"[WARN] Se esperaban 38 sockets, se encontraron {len(chargers_to_update)}")
 
         for charger_idx, charger_name in enumerate(chargers_to_update.keys()):
             csv_filename = f"charger_simulation_{charger_idx+1:03d}.csv"
             chargers_to_update[charger_name]["charger_simulation"] = csv_filename
 
         b_mall["chargers"] = chargers_to_update
-        logger.info(f"[OK] Schema actualizado: {len(chargers_to_update)}/128 chargers con referencias CSV")
+        logger.info(f"[OK] Schema actualizado: {len(chargers_to_update)}/38 sockets con referencias CSV")
 
     else:
         logger.error("[CHARGERS CSV GENERATION] ❌ No charger dataset available for CSV generation")
-        raise RuntimeError("Charger dataset must be (8760, 128) - no valid data found")
+        raise RuntimeError("Charger dataset must be (8760, 38) - no valid data found")
 
     # ==========================================================================
     # INTEGRACIÓN: Agregar contexto de recompensa al schema
@@ -1862,6 +2116,77 @@ def build_citylearn_dataset(
         }
         logger.info("[REWARDS] ✅ Added reward weights to schema: CO₂=%.2f, solar=%.2f, cost=%.2f",
                    weights.co2, weights.solar, weights.cost)
+
+    # ==========================================================================
+    # GENERACIÓN v5.3: observables_oe2.csv - Variables para agentes RL
+    # Combina variables OSINERGMIN y CO2 de chargers y solar en un solo archivo
+    # ==========================================================================
+    logger.info("")
+    logger.info("=" * 80)
+    logger.info("[OBSERVABLES v5.3] Generando archivo de variables observables...")
+    logger.info("=" * 80)
+    
+    # Obtener DataFrames de chargers y solar con columnas observables
+    chargers_obs_df = artifacts.get("chargers_real_hourly_2024")
+    solar_obs_df = artifacts.get("solar_ts") if "solar_ts" in artifacts else artifacts.get("pv_generation_hourly")
+    
+    # Extraer y combinar variables observables
+    observables_df = _extract_observable_variables(
+        chargers_df=chargers_obs_df,
+        solar_df=solar_obs_df,
+        n_timesteps=n
+    )
+    
+    # Guardar archivo de observables
+    observables_path = out_dir / "observables_oe2.csv"
+    observables_df.to_csv(observables_path, index=True, float_format='%.4f')
+    logger.info(f"[OBSERVABLES v5.3] ✅ Archivo guardado: {observables_path}")
+    logger.info(f"   Dimensiones: {observables_df.shape}")
+    logger.info(f"   Columnas: {len(observables_df.columns)}")
+    
+    # Agregar referencia al schema
+    schema["observables_file"] = "observables_oe2.csv"
+    schema["observables_columns"] = list(observables_df.columns)
+    
+    # Agregar constantes OSINERGMIN y CO2 al schema para referencia
+    schema["osinergmin_config"] = {
+        "tarifa_hp_soles": TARIFA_ENERGIA_HP_SOLES,
+        "tarifa_hfp_soles": TARIFA_ENERGIA_HFP_SOLES,
+        "hora_inicio_hp": HORA_INICIO_HP,
+        "hora_fin_hp": HORA_FIN_HP,
+        "description": "Tarifas OSINERGMIN MT3 para Sistema Aislado Iquitos"
+    }
+    schema["co2_factors"] = {
+        "factor_red_kg_kwh": FACTOR_CO2_RED_KG_KWH,
+        "factor_gasolina_kg_l": FACTOR_CO2_GASOLINA_KG_L,
+        "factor_neto_moto_kg_kwh": FACTOR_CO2_NETO_MOTO_KG_KWH,
+        "factor_neto_mototaxi_kg_kwh": FACTOR_CO2_NETO_MOTOTAXI_KG_KWH,
+        "description": "Factores CO2 para cálculo de reducciones directas e indirectas"
+    }
+    
+    # Resumen de métricas anuales para validación
+    annual_summary = {
+        "ev_energia_total_kwh": float(observables_df['ev_energia_total_kwh'].sum()),
+        "ev_costo_total_soles": float(observables_df['ev_costo_carga_soles'].sum()),
+        "ev_co2_evitado_ton": float(observables_df['ev_reduccion_directa_co2_kg'].sum() / 1000),
+        "solar_ahorro_total_soles": float(observables_df['solar_ahorro_soles'].sum()),
+        "solar_co2_evitado_ton": float(observables_df['solar_reduccion_indirecta_co2_kg'].sum() / 1000),
+        "total_co2_evitado_ton": float(observables_df['total_reduccion_co2_kg'].sum() / 1000),
+    }
+    schema["annual_summary_v53"] = annual_summary
+    
+    logger.info("")
+    logger.info("=" * 80)
+    logger.info("[RESUMEN ANUAL v5.3]")
+    logger.info("=" * 80)
+    logger.info(f"   EV Energía: {annual_summary['ev_energia_total_kwh']:,.0f} kWh/año")
+    logger.info(f"   EV Costo: S/.{annual_summary['ev_costo_total_soles']:,.0f}/año")
+    logger.info(f"   EV CO2 evitado (directo): {annual_summary['ev_co2_evitado_ton']:,.1f} ton/año")
+    logger.info(f"   Solar Ahorro: S/.{annual_summary['solar_ahorro_total_soles']:,.0f}/año")
+    logger.info(f"   Solar CO2 evitado (indirecto): {annual_summary['solar_co2_evitado_ton']:,.1f} ton/año")
+    logger.info(f"   TOTAL CO2 evitado: {annual_summary['total_co2_evitado_ton']:,.1f} ton/año")
+    logger.info("=" * 80)
+    logger.info("")
 
     # Save the updated schema
     schema_path = out_dir / "schema.json"

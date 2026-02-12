@@ -56,9 +56,9 @@ co2_factor_kg_per_kwh: float = 0.4521  # Grid import CO₂ factor (Iquitos)
 
 ```python
 # IquitosContext dataclass
-total_sockets: int = 128               # OE3: 112 motos + 16 mototaxis
+total_sockets: int = 128               # OE3: 30 motos + 8 mototaxis
 sockets_per_charger: int = 4
-n_chargers: int = 32                   # 32 × 4 = 128
+n_chargers: int = 19                   # 19 × 2 = 38
 ```
 
 **Desglose OE3**:
@@ -68,9 +68,9 @@ charger_power_kw_mototaxi: float = 3.0 # 4 chargers → 16 sockets
 ```
 
 **Validación**: ✅ **CORRECTO**
-- 32 chargers × 4 sockets/charger = 128 ✓
-- 28 motos + 4 mototaxis = 32 ✓
-- 112 + 16 = 128 ✓
+- 19 chargers x 2 sockets/charger = 128 ✓
+- 30 motos + 8 mototaxis = 32 ✓
+- 30 + 8 = 128 ✓
 
 ---
 
@@ -112,7 +112,7 @@ grep -r "mototaxis.*3\|taxi.*3" src/iquitos_citylearn/
 **Código OE3 Actual** (`src/iquitos_citylearn/oe3/agents/metrics_extractor.py` línea 378-380):
 ```python
 # Contar vehículos cargados (DINÁMICO, no hardcodeado)
-# 80% motos @ 2.0 kW, 20% mototaxis @ 3.0 kW
+# 80% motos @ 7.4 kW, 20% mototaxis @ 7.4 kW
 motos_cargadas_step = int((ev_demand_kwh * 0.80) / 2.0)
 mototaxis_cargadas_step = int((ev_demand_kwh * 0.20) / 3.0)
 self.motos_cargadas += motos_cargadas_step
@@ -136,9 +136,9 @@ self.mototaxis_cargadas += mototaxis_cargadas_step
 | 107.3 kg/h | rewards.py:149 | `50 × 2.146` | ✅ | Correcto, verificado |
 | 0.4521 kg/kWh | rewards.py:147 | `CO2_GRID_FACTOR_KG_PER_KWH` | ✅ | Iquitos grid thermal |
 | 2.146 kg/kWh | rewards.py:149 | `CO2_EV_FACTOR_KG_PER_KWH` | ✅ | EV vs combustion |
-| 128 sockets | rewards.py:153 | `total_sockets = 128` | ✅ | 32 × 4 = 128 |
+| 38 sockets | rewards.py:153 | `total_sockets = 38` | ✅ | 19 × 2 = 38 |
 | 50.0 kW | rewards.py:150 | `ev_demand_constant_kw` | ✅ | Baseline demand |
-| 32 chargers | rewards.py:152 | `n_chargers = 32` | ✅ | Physical chargers |
+| 19 chargers | rewards.py:152 | `n_chargers = 32` | ✅ | Physical chargers |
 | 437.8 | ❌ | NO EN CÓDIGO | ❌ | Legacy value |
 | 20 motos | ❌ | Se calcula dinámico | ⚠️ | OE2 legacy |
 | 3 mototaxis | ❌ | Se calcula dinámico | ⚠️ | OE2 legacy |

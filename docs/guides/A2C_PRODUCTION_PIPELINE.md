@@ -238,7 +238,7 @@ python -m scripts.train_a2c_production --config configs/custom.yaml
 │  ┌────────────────────────────────────────────────────────┐    │
 │  │ • Cargar configs/default.yaml                          │    │
 │  │ • Detectar GPU (CUDA/MPS/CPU)                          │    │
-│  │ • Validar dataset (128 chargers, 8760 timesteps)       │    │
+│  │ • Validar dataset (38 sockets, 8760 timesteps)       │    │
 │  │ • Configurar logging y directorios                     │    │
 │  └────────────────────────────────────────────────────────┘    │
 │                          ↓                                      │

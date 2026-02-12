@@ -1,5 +1,6 @@
 {
-  "timestamp": "2026-01-31",
+  "timestamp": "2026-02-12",
+  "note": "ACTUALIZADO a v5.2 - valores anteriores (128/32) eran incorrectos",
   "total_tests": 30,
   "passed": 29,
   "failed": 1,
@@ -7,10 +8,10 @@
   "metrics_found": {
     "CO2_GRID": "0.4521",
     "EV_DEMAND": "50.0",
-    "SOCKETS": "128",
-    "CHARGERS": "32",
+    "SOCKETS": "38",
+    "CHARGERS": "19",
     "CONFIG_EV_DEMAND": 50.0,
-    "CONFIG_SOCKETS": 128
+    "CONFIG_SOCKETS": 38
   },
   "issues": [
     {

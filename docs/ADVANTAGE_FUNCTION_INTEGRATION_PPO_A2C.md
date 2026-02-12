@@ -88,10 +88,10 @@ PPO observations include EV SOC data. Extract and compute bonus:
 def extract_ev_utilization_from_obs(self, rollouts) -> np.ndarray:
     """Extract EV utilization scores from PPO observations.
     
-    Observations (394-dim) structure:
+    Observations (124-dim) structure:
     - [0-100]: Weather/Grid metrics
     - [101-228]: Building load + Solar + BESS states
-    - [229-356]: 128 chargers × 1 metric (SOC or state)
+    - [229-356]: 38 sockets × 1 metric (SOC or state)
     - [357-393]: Time features (hour, month, day_of_week)
     
     Returns:
@@ -100,8 +100,8 @@ def extract_ev_utilization_from_obs(self, rollouts) -> np.ndarray:
     obs = rollouts.observations  # shape (n_steps, 394)
     
     # Extract EV-related observations (charger SOC data)
-    # Assuming columns 229-356 contain charger SOC (128 chargers)
-    charger_soc_cols = slice(229, 357)  # 128 columns
+    # Assuming columns 229-356 contain charger SOC (38 sockets)
+    charger_soc_cols = slice(229, 267)  # 38 columns
     charger_soc = obs[:, charger_soc_cols]  # shape (n_steps, 128)
     
     # Compute average SOC per step

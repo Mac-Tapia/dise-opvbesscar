@@ -165,9 +165,9 @@ class CityLearnSchemaValidator:
                     len(missing_chargers), missing_chargers
                 )
         else:
-            logger.info("✅ All 128 charger files present and valid (8,760 rows each)")
+            logger.info("✅ All 38 socket files present and valid (8,760 rows each)")
 
-        logger.info("✅ Building files valid (%d/128 chargers)", 128 - len(missing_chargers))
+        logger.info("✅ Building files valid (%d/38 sockets)", 128 - len(missing_chargers))
         return len(missing_chargers) == 0
 
     def validate_climate_zone_files(self) -> bool:

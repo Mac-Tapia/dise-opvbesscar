@@ -25,8 +25,8 @@ TABLA 13 RANGOS: [4-35 cargadores] | [16-140 tomas] | [92.8-3,252 kWh]
 
 ✅ 3 DE 4 ESCENARIOS SON VÁLIDOS CONTRA TABLA 13 OE2
 
-El diseño actual del sistema OE3 (ESCENARIO RECOMENDADO con 32 cargadores,
-128 tomas y 3,252 kWh) está correctamente dimensionado en los límites máximos
+El diseño actual del sistema OE3 (ESCENARIO RECOMENDADO con 19 cargadores,
+38 tomas y 3,252 kWh) está correctamente dimensionado en los límites máximos
 permitidos por Tabla 13.
 
 El escenario MÁXIMO es un límite teórico para expansión futura, no validado
@@ -83,7 +83,7 @@ Notas:
 ════════════════════════════════════════════════════════════════════════════════════════
 
 ✅ SISTEMA OE3 BIEN DIMENSIONADO
-   • Configuración actual (32 cargadores, 128 tomas) = MÁXIMO de Tabla 13
+   • Configuración actual (19 cargadores, 38 tomas) = MÁXIMO de Tabla 13
    • No hay desperdicio de infraestructura
    • Energía (3,252 kWh) = máximo histórico permitido
 
@@ -108,7 +108,7 @@ ACCESO:
 
   # Usar un escenario
   recomendado = ESCENARIOS_PREDEFINIDOS['RECOMENDADO']
-  # → 32 cargadores, 128 tomas, 3,252 kWh
+  # → 19 cargadores, 38 tomas, 3,252 kWh
 
 VALIDACIÓN:
   from iquitos_citylearn.oe2.chargers import validar_escenarios_predefinidos

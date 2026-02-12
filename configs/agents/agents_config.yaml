@@ -33,13 +33,14 @@ reward_weights:
   grid: 0.05             # Tertiary: Grid stability
   # NOTE: Total = 1.00 (sum verified: 0.35+0.20+0.30+0.10+0.05)
 
-# Infrastructure
+# Infrastructure (v5.2 - 2026-02-12 - exclusivo EV)
 infrastructure:
   solar_capacity_kwp: 4050
-  bess_capacity_kwh: 4520
-  bess_power_kw: 600
-  num_chargers: 128
-  charger_power_kw_per_socket: 10.0
+  bess_capacity_kwh: 940   # v5.2: exclusivo EV, 100% cobertura
+  bess_power_kw: 342        # v5.2: 0.36 C-rate
+  num_chargers: 19                    # 15 motos + 4 mototaxis
+  num_sockets: 38                     # 19 × 2 = 38 tomas (30 motos + 8 mototaxis)
+  charger_power_kw_per_socket: 7.4    # Modo 3 monofásico 32A @ 230V
 
 # CO2 context
 co2_context:

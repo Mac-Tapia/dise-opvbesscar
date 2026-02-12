@@ -67,11 +67,11 @@ try:
     df_chargers = pd.read_csv(checks["Chargers (REAL)"])
     data_cols = [c for c in df_chargers.columns if 'timestamp' not in c.lower() and 'time' not in c.lower()]
     n_sockets = len(data_cols)
-    if len(df_chargers) == 8760 and n_sockets == 128:
+    if len(df_chargers) == 8760 and n_sockets == 38:
         total_demand = df_chargers[data_cols].sum().sum()
         print(f"  ✅ Chargers: {len(df_chargers)} filas × {n_sockets} sockets (demanda: {total_demand:.0f} kWh/año)")
     else:
-        print(f"  ❌ Chargers: {len(df_chargers)} filas × {n_sockets} sockets (esperado 8,760 × 128)")
+        print(f"  ❌ Chargers: {len(df_chargers)} filas × {n_sockets} sockets (esperado 8,760 x 38)")
     
     # Mall
     df_mall = pd.read_csv(checks["Mall Demand"])

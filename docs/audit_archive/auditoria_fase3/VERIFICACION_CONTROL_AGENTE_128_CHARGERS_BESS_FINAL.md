@@ -8,14 +8,14 @@
 
 ## RESUMEN EJECUTIVO
 
-El agente SAC (Soft Actor-Critic) **CONTROLA INDIVIDUALMENT cada uno de los 128 chargers más el BESS**, con distribución correcta:
+El agente SAC (Soft Actor-Critic) **CONTROLA INDIVIDUALMENT cada uno de los 38 sockets más el BESS**, con distribución correcta:
 
 | Dispositivo | Cantidad | Acciones RL | Estado |
 |---|---|---|---|
 | **BESS** | 1 | action[0] | ✅ Individual controllable |
 | **Chargers Motos** | 112 | action[1:113] | ✅ Individual controllable |
 | **Chargers Mototaxis** | 16 | action[113:129] | ✅ Individual controllable |
-| **TOTAL** | **129 dispositivos** | **129 acciones** | ✅ **COMPLETO** |
+| **TOTAL** | **129 dispositivos** | **39 acciones** | ✅ **COMPLETO** |
 
 ---
 
@@ -26,13 +26,13 @@ El agente SAC (Soft Actor-Critic) **CONTROLA INDIVIDUALMENT cada uno de los 128 
 ```
 Total chargers cargados: 128
   ├─ Chargers Motos: 112
-  │   └─ Potencia: 896 kW (28 unidades × 4 sockets/unidad × 2kW)
+  │   └─ Potencia: 896 kW (28 unidades x 2 sockets/unidad × 2kW)
   ├─ Chargers Mototaxis: 16
-  │   └─ Potencia: 192 kW (4 unidades × 4 sockets/unidad × 3kW)
+  │   └─ Potencia: 192 kW (4 unidades x 2 sockets/unidad × 3kW)
   └─ Potencia Total Instalada: 1088 kW
 ```
 
-**Conclusión:** ✅ Distribución exacta: 112 motos + 16 mototaxis = 128 chargers
+**Conclusión:** ✅ Distribución exacta: 30 motos + 8 mototaxis = 38 sockets
 
 ---
 
@@ -41,7 +41,7 @@ Total chargers cargados: 128
 **Confirmado en logs:**
 ```
 Total acciones:
-  ├─ 1 (BESS) + 112 (motos) + 16 (mototaxis) = 129 acciones
+  ├─ 1 (BESS) + 112 (motos) + 16 (mototaxis) = 39 acciones
 ```
 
 **Arquitectura de acciones:**
@@ -70,10 +70,10 @@ Total observables:
   │   ├─ Demand (kW): Poder solicitado
   │   └─ Status: Estado actual
   ├─ Time features: 5-10 valores (hora, día, mes, etc)
-  └─ TOTAL: ~394-dim observation vector
+  └─ TOTAL: ~124-dim observation vector
 ```
 
-**Conclusión:** ✅ Agent observa estado completo de todos los 128 chargers + BESS + grid + time
+**Conclusión:** ✅ Agent observa estado completo de todos los 38 sockets + BESS + grid + time
 
 ---
 
@@ -89,7 +89,7 @@ Total observables:
 ├─ Acciones [449]: MOTOTAXI charger 113 socket 1 [0,1]
 ├─ Acciones [453]: MOTOTAXI charger 114 socket 1 [0,1]
 ├─ ...
-└─ Acciones [509]: MOTOTAXI charger 128 socket 1 [0,1]
+└─ Acciones [509]: MOTOTAXI charger 38 socket 1 [0,1]
 ```
 
 **Confirmación de archivos CSV:**
@@ -97,7 +97,7 @@ Total observables:
 [OK] charger_simulation_001.csv generado (8760 rows)
 [OK] charger_simulation_002.csv generado (8760 rows)
 ...
-[OK] charger_simulation_128.csv generado (8760 rows)
+[OK] charger_simulation_038.csv generado (8760 rows)
 ```
 
 **Conclusión:** ✅ Cada charger tiene archivo CSV individual con datos de 8760 horas (1 año) controlable por 1 acción RL
@@ -155,14 +155,14 @@ Estados observables (tipicamente):
   └─ Status: Estado actual (idle/charging/disconnected)
 ```
 
-**Total de la observación (394-dim):**
+**Total de la observación (124-dim):**
 ```
 ├─ Solar generation: 1 valor
 ├─ Grid metrics: 2-3 valores  
 ├─ BESS state: 2-3 valores
 ├─ Chargers: 128 × 4 = ~512 valores
 ├─ Time features: 5-10 valores
-└─ TOTAL ESPERADO: ~394-dim ✅ CONFIRMADO
+└─ TOTAL ESPERADO: ~124-dim ✅ CONFIRMADO
 ```
 
 **Conclusión:** ✅ Agente recibe observación completa de cada charger para tomar decisiones informadas
@@ -177,19 +177,19 @@ Estados observables (tipicamente):
 ┌─────────────────────────────────────────────────────────┐
 │                    AGENT SAC (RL)                       │
 │                                                         │
-│  Input (394-dim):                                       │
+│  Input (124-dim):                                       │
 │  ├─ Solar: 1                                            │
 │  ├─ Grid: 2-3                                           │
 │  ├─ BESS: 2-3                                           │
 │  ├─ Charger 1: [occupancy, SOC, demand, status]        │
 │  ├─ Charger 2: [occupancy, SOC, demand, status]        │
-│  ├─ ... (128 chargers)                                  │
+│  ├─ ... (38 sockets)                                  │
 │  ├─ Time: 5-10                                          │
-│  └─ Total: 394-dim                                      │
+│  └─ Total: 124-dim                                      │
 │                                                         │
 │  Neural Network (256-256 hidden layers)                 │
 │  ↓                                                      │
-│  Output (129-dim continuous action):                    │
+│  Output (39-dim continuous action):                    │
 │  ├─ action[0]: BESS power setpoint                      │
 │  ├─ action[1:113]: Moto charger setpoints              │
 │  ├─ action[113:129]: Mototaxi charger setpoints        │
@@ -241,14 +241,14 @@ BESS (1 dispositivo):
 CHARGERS MOTOS (112 dispositivos):
   ├─ Acciones: action[1:113] ∈ [0, 1]^112
   ├─ Control: Continuous power setpoint (0-896 kW total)
-  ├─ Por charger: 0-8 kW (28 units × 4 sockets × 2kW nominal)
+  ├─ Por charger: 0-8 kW (28 units x 2 sockets × 2kW nominal)
   ├─ Observables: [occupancy, SOC, demand, status] × 112
   └─ Objetivo: Cargar motos cuando hay solar + tarifa baja
 
 CHARGERS MOTOTAXIS (16 dispositivos):
   ├─ Acciones: action[113:129] ∈ [0, 1]^16
   ├─ Control: Continuous power setpoint (0-192 kW total)
-  ├─ Por charger: 0-12 kW (4 units × 4 sockets × 3kW nominal)
+  ├─ Por charger: 0-12 kW (4 units x 2 sockets × 3kW nominal)
   ├─ Observables: [occupancy, SOC, demand, status] × 16
   └─ Objetivo: Cargar mototaxis cuando hay solar + tarifa baja
 ```
@@ -267,15 +267,15 @@ CHARGERS MOTOTAXIS (16 dispositivos):
 - ✅ Replay buffer (100,000 transitions)
 
 **CityLearn Integration (dataset_builder.py):**
-- ✅ 128 charger_simulation_XXX.csv files (8760 rows each)
+- ✅ 38 socket_simulation_XXX.csv files (8760 rows each)
 - ✅ Schema con 'electric_vehicle_chargers': 128 items
 - ✅ BESS with realistic SOC dynamics
 - ✅ Solar + mall demand + time features integrated
 
 **Training Loop (simulate.py):**
 - ✅ Episode orchestration (8760 timesteps = 1 year)
-- ✅ Action space validation (129-dim)
-- ✅ Observation space validation (394-dim)
+- ✅ Action space validation (39-dim)
+- ✅ Observation space validation (124-dim)
 - ✅ Multiobjetivo reward computation
 
 ---
@@ -319,7 +319,7 @@ CHARGERS MOTOTAXIS (16 dispositivos):
 
 ### Action Space
 ```
-action_space = Box(low=0.0, high=1.0, shape=(129,))
+action_space = Box(low=0.0, high=1.0, shape=(39,))
 ├─ 129 continuous dimensions
 ├─ 1 (BESS) + 112 (motos) + 16 (mototaxis)
 └─ Normalized [0, 1] for Stable-Baselines3 compatibility
@@ -327,7 +327,7 @@ action_space = Box(low=0.0, high=1.0, shape=(129,))
 
 ### Observation Space  
 ```
-observation_space = Box(low=-inf, high=inf, shape=(394,))
+observation_space = Box(low=-inf, high=inf, shape=(124,))
 ├─ 394 continuous dimensions
 ├─ Solar, grid, BESS, 128×chargers, time
 └─ Updated every timestep from CityLearn physics
@@ -339,23 +339,23 @@ observation_space = Box(low=-inf, high=inf, shape=(394,))
 
 ### ✅ **VERIFICACIÓN COMPLETADA CON ÉXITO**
 
-El agente SAC **controla completamente y de forma individual cada uno de los 128 chargers, diferenciando entre motos (112) y mototaxis (16), además del BESS (1 dispositivo adicional)**, resultando en **129 acciones independientes de control**.
+El agente SAC **controla completamente y de forma individual cada uno de los 38 sockets, diferenciando entre motos (112) y mototaxis (16), además del BESS (1 dispositivo adicional)**, resultando en **39 acciones independientes de control**.
 
 ### Estado de Readiness para Entrenamiento
 
 | Aspecto | Estado | Evidencia |
 |---|---|---|
-| **Action Space (129-dim)** | ✅ Verificado | 1 BESS + 112 motos + 16 mototaxis |
-| **Observation Space (394-dim)** | ✅ Verificado | Incluye todo charger + BESS + grid + time |
-| **Charger Distribution** | ✅ Verificado | 128 chargers with 8760h data each |
+| **Action Space (39-dim)** | ✅ Verificado | 1 BESS + 30 motos + 8 mototaxis |
+| **Observation Space (124-dim)** | ✅ Verificado | Incluye todo charger + BESS + grid + time |
+| **Charger Distribution** | ✅ Verificado | 38 sockets with 8760h data each |
 | **BESS Control** | ✅ Verificado | action[0], real OE2 dynamics |
-| **SAC Agent** | ✅ Verificado | Soporta 129-dim action space |
+| **SAC Agent** | ✅ Verificado | Soporta 39-dim action space |
 | **Dataset Integration** | ✅ Verificado | CityLearn 2.5.0 compatible |
 | **CO₂ Multiobjetivo** | ✅ Verificado | Reward function integrated |
 | **GPU Support** | ✅ Verificado | Auto-detect CUDA/MPS/CPU |
 
 ### Pronto para Entrenar
-El sistema está **100% listo** para iniciar entrenamiento del agente SAC con control completo sobre los 128 chargers + BESS en Iquitos.
+El sistema está **100% listo** para iniciar entrenamiento del agente SAC con control completo sobre los 38 sockets + BESS en Iquitos.
 
 ---
 

@@ -221,7 +221,7 @@ rewards:
 oe2:
   chargers:
     n_chargers: 32
-    total_sockets: 128  ✅ 112 motos + 16 mototaxis
+    total_sockets: 128  ✅ 30 motos + 8 mototaxis
     
 # BESS
   bess:
@@ -266,19 +266,19 @@ class MultiObjectiveWeights:
 
 | Agente | Observación | Acción | Recompensa | Estado |
 |--------|------------|--------|-----------|--------|
-| SAC | 394-dim | 129-dim | Multiobj | ✅ Listo |
-| PPO | 394-dim | 129-dim | Multiobj | ✅ Listo |
-| A2C | 394-dim | 129-dim | Multiobj | ✅ Listo |
+| SAC | 124-dim | 39-dim | Multiobj | ✅ Listo |
+| PPO | 124-dim | 39-dim | Multiobj | ✅ Listo |
+| A2C | 124-dim | 39-dim | Multiobj | ✅ Listo |
 
-**Observation Space (394-dim):**
+**Observation Space (124-dim):**
 - Solar generation ✅
 - BESS SOC ✅
 - 128 Charger states (SOC each) ✅
 - Grid metrics ✅
 - Time features ✅
 
-**Action Space (129-dim):**
-- 128 charger power setpoints (0-1) ✅
+**Action Space (39-dim):**
+- 38 socket power setpoints (0-1) ✅
 - 1 BESS discharge power (0-1) ✅
 
 **Reward Structure (5 components):**

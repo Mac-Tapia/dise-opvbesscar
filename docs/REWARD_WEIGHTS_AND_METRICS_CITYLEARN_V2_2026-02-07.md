@@ -268,9 +268,9 @@ CO₂ NETO:                  -1,341,467 kg  ✓ 58.9% REDUCCIÓN
 ### Configuración de Sockets
 ```
 Chargers: 32 unidades (físicos)
-Sockets:  32 × 4 = 128 total
-  ├─ Motos (0-111):        112 sockets (28 chargers × 4 sockets)
-  └─ Mototaxis (112-127):   16 sockets (4 chargers × 4 sockets)
+Sockets:  19 × 2 = 38 total
+  ├─ Motos (0-111):        112 sockets (28 chargers x 2 sockets)
+  └─ Mototaxis (112-127):   16 sockets (4 chargers x 2 sockets)
 ```
 
 ### Conteos Episodio (Vehículo-horas)
@@ -302,7 +302,7 @@ Estrategia:
 
 ### Sockets Activos
 ```
-Promedio episodio: 50.0% de 128 sockets activos
+Promedio episodio: 50.0% de 38 sockets activos
                  = 64 sockets energizados (motos + mototaxis)
                  = 64 × 2.5 kW avg = 160 kW carga simultánea
 ```

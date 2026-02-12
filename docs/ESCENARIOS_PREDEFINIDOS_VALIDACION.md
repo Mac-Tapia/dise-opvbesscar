@@ -129,7 +129,7 @@ Se han validado **4 escenarios predefinidos** contra los rangos de **Tabla 13 OE
 
 **Interpretación**:
 - Representa la **configuración RECOMENDADA del proyecto**
-- 32 cargadores × 4 tomas = 128 sockets controlables
+- 19 cargadores x 2 tomas = 38 sockets controlables
 - Es el **MÁXIMO dentro de los límites Tabla 13**
 - Penetración muy alta (90%) con carga al máximo (90%)
 - Energía máxima permitida por Tabla 13: 3,252 kWh
@@ -215,7 +215,7 @@ Se han validado **4 escenarios predefinidos** contra los rangos de **Tabla 13 OE
 
 ### Para Desarrollo OE3
 
-- El sistema OE3 actual (32 cargadores, 128 tomas) corresponde al escenario **RECOMENDADO**
+- El sistema OE3 actual (19 cargadores, 38 tomas) corresponde al escenario **RECOMENDADO**
 - Este es el punto de diseño óptimo dentro de Tabla 13
 - Los 3 escenarios válidos (CONSERVADOR, MEDIANO, RECOMENDADO) pueden usarse para análisis de sensibilidad
 - El escenario MÁXIMO es para referencia solo (expansión futura)
@@ -229,7 +229,7 @@ from iquitos_citylearn.oe2.chargers import ESCENARIOS_PREDEFINIDOS, validar_esce
 
 # Acceder a un escenario
 recomendado = ESCENARIOS_PREDEFINIDOS['RECOMENDADO']
-# Resultado: 32 cargadores, 128 tomas, 3,252 kWh
+# Resultado: 19 cargadores, 38 tomas, 3,252 kWh
 
 # Validar todos los escenarios
 resultados = validar_escenarios_predefinidos()

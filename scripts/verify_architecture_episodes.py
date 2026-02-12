@@ -60,10 +60,10 @@ df_chargers = pd.read_csv(charger_real_path)
 data_cols = [c for c in df_chargers.columns if 'timestamp' not in c.lower() and 'time' not in c.lower()]
 chargers_hourly = df_chargers[data_cols].values[:HOURS_PER_YEAR].astype(np.float32)
 print(f"  Chargers: {len(chargers_hourly)} timesteps × {chargers_hourly.shape[1]} sockets", end="")
-if len(chargers_hourly) == 8760 and chargers_hourly.shape[1] == 128:
+if len(chargers_hourly) == 8760 and chargers_hourly.shape[1] == 38:
     print(" ✅")
 else:
-    print(f" ❌ (esperado 8,760 × 128)")
+    print(f" ❌ (esperado 8,760 x 38)")
 
 # Mall
 mall_path = dataset_dir / 'demandamallkwh' / 'demandamallhorakwh.csv'
@@ -88,7 +88,7 @@ bess_path = dataset_dir / 'electrical_storage_simulation.csv'
 df_bess = pd.read_csv(bess_path, encoding='utf-8')
 if 'soc_stored_kwh' in df_bess.columns:
     bess_soc_kwh = np.asarray(df_bess['soc_stored_kwh'].values[:HOURS_PER_YEAR], dtype=np.float32)
-    bess_soc = bess_soc_kwh / 4520.0
+    bess_soc = bess_soc_kwh / 940.0  # BESS 940 kWh v5.2
 else:
     soc_cols = [c for c in df_bess.columns if 'soc' in c.lower()]
     bess_soc_raw = np.asarray(df_bess[soc_cols[0]].values[:HOURS_PER_YEAR], dtype=np.float32)
@@ -115,7 +115,7 @@ reward_calculator = MultiObjectiveReward(weights=weights, context=context)
 class VerifyEnvironment(Env):
     """Environment minimal para verificar."""
     HOURS_PER_YEAR = 8760
-    NUM_CHARGERS = 128
+    NUM_CHARGERS = 38
     OBS_DIM = 394
     ACTION_DIM = 129
     

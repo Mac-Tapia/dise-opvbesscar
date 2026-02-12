@@ -76,7 +76,7 @@ TOTAL:             1.00  ✓ Verificado
 ### 4. Infraestructura
 - ✅ Solar: 4,050 kWp
 - ✅ BESS: 4,520 kWh
-- ✅ Chargers: 128 sockets (112 motos + 16 mototaxis)
+- ✅ Chargers: 38 sockets (30 motos + 8 mototaxis)
 
 ### 5. Entrenamiento
 - ✅ Episodios: 10 (en train_a2c_multiobjetivo.py)
@@ -199,7 +199,7 @@ TOTAL:             1.00  ✓ Verificado
 ```
 Device:        GPU (RTX 4060, 8GB VRAM)
 Algorithm:     A2C (on-policy, CUDA subóptimo pero funciona)
-Data:          Real (OE2: 128 chargers, 4.52MWh BESS, 4.05MWp solar)
+Data:          Real (OE2: 38 sockets, 4.52MWh BESS, 4.05MWp solar)
 Speed:         ~1,200 timesteps/segundo
 Duración:      10 episodios (87,600 steps) = ~1.2 minutos
 ```
@@ -281,16 +281,16 @@ Stability:
 - **Fortaleza**: Updates frecuentes (low n_steps) mejoran convergencia en problemas simples
 
 ### CityLearn v2 Environment
-- **Observation space**: (394,) - 128 chargers × 3 features + mall + BESS + time
-- **Action space**: (129,) - 1 BESS + 128 chargers, continuous [0,1]
+- **Observation space**: (124,) - 38 sockets × 3 features + mall + BESS + time
+- **Action space**: (39,) - 1 BESS + 38 sockets, continuous [0,1]
 - **Episode length**: 8,760 timesteps (1 año, resolución horaria)
 - **Reward**: Multiobjetivo (CO2, solar, EV, cost, grid)
 
 ### Iquitos Context
 - **Location**: Iquitos, Perú (aislado)
 - **Grid**: Térmico (0.4521 kg CO2/kWh)
-- **Fleet**: 2,912 motos + 416 mototaxis (112:16 ratio)
-- **Infrastructure**: 4.05MWp solar + 4.52MWh BESS + 128 chargers
+- **Fleet**: 2,912 motos + 48 mototaxis (112:16 ratio)
+- **Infrastructure**: 4.05MWp solar + 4.52MWh BESS + 38 sockets
 
 ---
 

@@ -20,13 +20,13 @@ oe1:
 oe2:
   bess:
     autonomy_hours: 4.0
-    c_rate: 0.6
+    c_rate: 0.36  # v5.2: 0.36 C-rate
     discharge_only_ev_hours: true
     discharge_only_no_solar: true
     dod: 0.8
-    efficiency_roundtrip: 0.9
-    fixed_capacity_kwh: 4520.0
-    fixed_power_kw: 2712.0
+    efficiency_roundtrip: 0.95   # v5.2
+    fixed_capacity_kwh: 940.0    # v5.2: exclusivo EV
+    fixed_power_kw: 342.0        # v5.2: 0.36 C-rate
     load_scope: ev_only
     min_soc_percent: 25.86
     pv_night_threshold_kwh: 0.1
@@ -44,13 +44,13 @@ oe2:
       ev_power_limit_kw: 150.0
       pv_threshold_kwh: 0.5
     priority_2_pv_to_bess:
-      bess_power_max_kw: 2712.0
+      bess_power_max_kw: 342.0  # v5.2: 0.36 C-rate
       bess_soc_max_percent: 95.0
       bess_soc_target_percent: 85.0
       description: FV excedente a BESS (cargar reserva para pico)
       enabled: true
     priority_3_bess_to_ev:
-      bess_power_max_kw: 2712.0
+      bess_power_max_kw: 342.0  # v5.2
       bess_soc_min_percent: 20.0
       description: BESS a EVs cuando cae el sol (noche)
       enabled: true
@@ -91,9 +91,9 @@ oe2:
     - 21
     peak_share_day: 0.5
     session_minutes: 30
-    sockets_per_charger: 4
-    total_chargers: 32
-    total_sockets: 128
+    sockets_per_charger: 2             # 2 tomas por cargador (Modo 3)
+    total_chargers: 19                  # 15 motos + 4 mototaxis
+    total_sockets: 38                   # 19 × 2 = 38 (30 motos + 8 mototaxis)
     utilization: 0.92
   location:
     alt: 104.0

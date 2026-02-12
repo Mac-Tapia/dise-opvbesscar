@@ -26,7 +26,7 @@
     "chargers_sockets": 128,
     "chargers_total_kwh": 1024817.5625,
     "bess_path": "data/interim/oe2/bess/bess_hourly_dataset_2024.csv",
-    "bess_capacity_kwh": 4520.0,
+    "bess_capacity_kwh": 940.0,
     "solar_path": "data/interim/oe2/solar/pv_generation_citylearn_v2.csv",
     "solar_total_kwh": 8292513.5,
     "mall_path": "data/interim/oe2/demandamallkwh/demandamallhorakwh.csv",

@@ -55,12 +55,12 @@ DEFINICIONES CRÍTICAS:
    NOTE: Dispatch hierarchy penalties (-0.80/-0.90/-0.95) + aggressive SOC modulation (1.80-2.20)
          already enforce EVs priority, so moderate EV weight (0.35) is sufficient.
 
-5. VALORES DE REFERENCIA (OE2 Real):
+5. VALORES DE REFERENCIA (OE2 v5.2 Real - 2026-02-12):
    - Co2 grid factor: 0.4521 kg/kWh (GRID IMPORT - indirecto)
    - EV co2 factor: 2.146 kg/kWh (DEMANDA DIRECTA - tracking)
    - EV demand: 50.0 kW (CONSTANTE)
-   - Chargers: 32 (128 sockets = 112 motos + 16 mototaxis)
-   - BESS: 4520 kWh / 2712 kW (NO controlable, dispatch automático)
+   - Chargers: 19 (38 tomas = 30 motos + 8 mototaxis) @ 7.4 kW/toma
+   - BESS: 940 kWh / 342 kW (exclusivo EV, 100% cobertura)
 
 Objetivos optimizados:
 1. Minimizar emisiones de CO₂ (indirectas por grid import)
@@ -69,16 +69,16 @@ Objetivos optimizados:
 4. Maximizar satisfacción de carga de EVs
 5. Minimizar picos de demanda (estabilidad de red)
 
-Contexto Iquitos (OE2/OE3 - DATOS REALES 2026-01-31):
+Contexto Iquitos (OE2/OE3 - DATOS REALES v5.2 2026-02-12):
 - Factor emisión: 0.4521 kg CO₂/kWh (central térmica aislada)
 - Factor conversión: 2.146 kg CO₂/kWh (para cálculos directos con 50kW constante)
 - Tariff: 0.20 USD/kWh (bajo, no es constraint)
-- Chargers: 32 cargadores físicos (28 motos @ 2kW + 4 mototaxis @ 3kW)
-- Sockets: 128 totales (32 × 4 sockets = 112 motos + 16 mototaxis)
-- Potencia instalada: 68 kW simultánea (28×2kW + 4×3kW)
+- Chargers: 19 cargadores físicos (15 motos + 4 mototaxis) @ 7.4 kW/toma
+- Tomas: 38 totales (19 × 2 tomas = 30 motos + 8 mototaxis)
+- Potencia instalada: 281.2 kW simultánea (38 × 7.4 kW Modo 3)
 - Demanda EV: 50 kW constante (54% uptime × 100kW = workaround CityLearn 2.5.0)
-- Capacidad anual: 2,912 motos + 416 mototaxis (13h operación 9AM-10PM)
-- BESS: 4,520 kWh / 2,712 kW (fijo, no controlable por agentes)
+- Capacidad diaria: 270 motos + 39 mototaxis (pe=0.30, fc=0.55)
+- BESS: 940 kWh / 342 kW (exclusivo EV, 100% cobertura)
 - Resultado OE3: Agente A2C -25.1% CO₂ (4,280,119 kg/año vs 5,710,257 kg/año baseline)
 
 VINCULACIONES EN SISTEMA:
@@ -162,14 +162,13 @@ class IquitosContext:
     co2_factor_kg_per_kwh: float = 0.4521  # Grid import CO₂ factor
     co2_conversion_factor: float = 2.146   # Para cálculo directo: 50kW × 2.146 = 107.3 kg/h
 
-    # NUEVO: Configuración de EVs para bonus de utilización (2026-02-04)
-    # Flota OE3 REAL: 2,685 motos/día + 388 mototaxis/día = 3,073 vehículos/día
-    # Proyección anual: 979,759 motos/año + 141,520 mototaxis/año = 1,121,279 vehículos/año
-    max_motos_simultaneous: int = 112     # Max motos que pueden cargarse simultáneamente (capacidad sockets)
-    max_mototaxis_simultaneous: int = 16  # Max mototaxis que pueden cargarse simultáneamente (capacidad sockets)
-    max_evs_total: int = 128              # Total sockets/chargers (32 chargers × 4 sockets)
-    motos_daily_capacity: int = 2685      # REAL: 2,685 motos/día
-    mototaxis_daily_capacity: int = 388   # REAL: 388 mototaxis/día
+    # NUEVO: Configuración de EVs para bonus de utilización (v5.2 2026-02-12)
+    # Flota OE3 REAL: 270 motos/día + 39 mototaxis/día = 309 vehículos/día
+    max_motos_simultaneous: int = 30      # Max motos que pueden cargarse simultáneamente (30 tomas)
+    max_mototaxis_simultaneous: int = 8   # Max mototaxis que pueden cargarse simultáneamente (8 tomas)
+    max_evs_total: int = 38               # Total tomas (19 chargers × 2 tomas)
+    motos_daily_capacity: int = 270       # REAL v5.2: 270 motos/día
+    mototaxis_daily_capacity: int = 39    # REAL v5.2: 39 mototaxis/día
 
     # ========== TARIFAS OSINERGMIN IQUITOS 2025 (REFERENCIAL) ==========
     # Tarifa integrada (promedio): 0.28 USD/kWh
@@ -180,22 +179,22 @@ class IquitosContext:
     # Tarifa eléctrica promedio (grid import)
     tariff_usd_per_kwh: float = 0.28    # Tarifa integral OSINERGMIN Iquitos (solar + BESS + dist)
 
-    # Configuración de chargers (OE2 - DATOS REALES)
-    n_chargers: int = 32                   # 32 chargers físicos (28 motos + 4 mototaxis)
-    total_sockets: int = 128               # 32 × 4 = 128 sockets (112 motos + 16 mototaxis)
-    sockets_per_charger: int = 4
-    charger_power_kw_moto: float = 2.0     # Potencia motos
-    charger_power_kw_mototaxi: float = 3.0 # Potencia mototaxis
+    # Configuración de chargers (OE2 - DATOS REALES v5.2)
+    n_chargers: int = 19                   # 19 chargers físicos (15 motos + 4 mototaxis)
+    total_sockets: int = 38                # 19 × 2 = 38 tomas (30 motos + 8 mototaxis)
+    sockets_per_charger: int = 2
+    charger_power_kw_moto: float = 7.4     # Potencia motos (Modo 3)
+    charger_power_kw_mototaxi: float = 7.4 # Potencia mototaxis (Modo 3)
     ev_demand_constant_kw: float = 50.0    # Demanda constante (workaround CityLearn 2.5.0)
 
-    # Flota EV (OE3 REAL - 2026-02-05)
+    # Flota EV (OE3 REAL v5.2 - 2026-02-12)
     # VALORES DIARIOS (para control):
-    vehicles_day_motos: int = 2685        # Motos cargadas por día
-    vehicles_day_mototaxis: int = 388     # Mototaxis cargadas por día
+    vehicles_day_motos: int = 270          # Motos cargadas por día (pe=0.30, fc=0.55)
+    vehicles_day_mototaxis: int = 39       # Mototaxis cargadas por día
 
-    # VALORES ANUALES (para impacto y referencia):
-    vehicles_year_motos: int = 657000      # Proyección anual: 1,800 × 365
-    vehicles_year_mototaxis: int = 94900   # Proyección anual: 260 × 365
+    # VALORES ANUALES (para impacto y referencia v5.2):
+    vehicles_year_motos: int = 98550       # Proyección anual: 270 × 365
+    vehicles_year_mototaxis: int = 14235   # Proyección anual: 39 × 365
 
     # Límites operacionales
     peak_demand_limit_kw: float = 200.0
@@ -299,11 +298,11 @@ class MultiObjectiveReward:
 
         # 1. Recompensa CO₂ (minimizar) - ACTUALIZADO 2026-02-08: DUAL REDUCTION (Directa + Indirecta)
         # 
-        # MODELO REALISTA IQUITOS:
-        # ========================
+        # MODELO REALISTA IQUITOS v5.2:
+        # ==============================
         # CO₂ REDUCCIÓN DIRECTA (Principal): Motos/Mototaxis que evitan combustible
-        #   - Motos cargadas: ev_charging_kwh / 2.0 kWh = cantidad motos
-        #   - Mototaxis cargadas: ev_charging_kwh / 4.5 kWh = cantidad mototaxis
+        #   - Motos cargadas: ev_charging_kwh / 4.6 kWh = cantidad motos (v5.2)
+        #   - Mototaxis cargadas: ev_charging_kwh / 7.4 kWh = cantidad mototaxis (v5.2)
         #   - CO₂ evitado: (km_viajes × 35 km/kWh) / 120 km/galón × 8.9 kg CO₂/galón
         #
         # CO₂ REDUCCIÓN INDIRECTA (Secundaria): Solar + BESS generan energía limpia
@@ -331,10 +330,10 @@ class MultiObjectiveReward:
         #   - BESS discharge → EVs: Mismo como solar (renovable storage)
         #   - BESS discharge → Grid: Indirecto
         
-        # Flota Iquitos: 2,685 motos/día + 388 mototaxis/día = 3,073 vehículos/día
-        #   Motos: 2.0 kWh capacidad @ 35 km/kWh = 70 km/carga
-        #   Mototaxis: 4.5 kWh @ 35 km/kWh = 157.5 km/carga
-        avg_battery_capacity_kwh = 0.80 * 2.0 + 0.20 * 4.5  # = 2.5 kWh promedio
+        # Flota Iquitos v5.2: 270 motos/día + 39 mototaxis/día = 309 vehículos/día
+        #   Motos: 4.6 kWh capacidad @ 35 km/kWh = 161 km/carga
+        #   Mototaxis: 7.4 kWh @ 35 km/kWh = 259 km/carga
+        avg_battery_capacity_kwh = 0.87 * 4.6 + 0.13 * 7.4  # = ~5.0 kWh promedio (270/309 motos)
         vehicles_charged_equivalent = ev_charging_kwh / max(avg_battery_capacity_kwh, 1e-6)
         
         # ===== SEGREGACIÓN DE ENERGÍA POR DESTINO (SIN DOUBLE-COUNT) =====
@@ -478,7 +477,7 @@ class MultiObjectiveReward:
 
         # 🟢 5. NUEVO: Recompensa por Utilización de EVs (maximizar motos+mototaxis cargadas)
         # ✅ OBJETIVO: Premiar cuando SAC carga máxima cantidad de motos y mototaxis
-        # SIN afectar capacidad de cargadores (128 sockets disponibles)
+        # SIN afectar capacidad de cargadores (38 sockets disponibles v5.2)
         #
         # LÓGICA:
         # - EVs llegan con diferentes SOC (20-25%)
@@ -964,8 +963,8 @@ def calculate_solar_dispatch(
         ev_demand_kw: Demanda EV (típicamente 50 kW constante 9AM-10PM)
         mall_demand_kw: Demanda mall/no-desplazable (kW)
         bess_soc_pct: SOC de batería (0-100%)
-        bess_max_power_kw: Máxima potencia carga/descarga (2712 kW)
-        bess_capacity_kwh: Capacidad de batería (4520 kWh)
+        bess_max_power_kw: Máxima potencia carga/descarga (342 kW v5.2)
+        bess_capacity_kwh: Capacidad de batería (940 kWh v5.2)
 
     Returns:
         dict: Desglose de despacho {

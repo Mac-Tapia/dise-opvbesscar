@@ -64,8 +64,8 @@ grep -r "indirect.*437"  # 0 matches
 **En código OE3 (ACTUAL)**:
 ```python
 # src/iquitos_citylearn/oe3/rewards.py IquitosContext (línea 155-160)
-n_chargers: int = 32                   # 32 cargadores físicos
-total_sockets: int = 128               # 128 tomas totales
+n_chargers: int = 19                   # 19 cargadores físicos
+total_sockets: int = 128               # 38 tomas totales
 sockets_per_charger: int = 4           # 4 tomas por cargador
 
 # Distribución:
@@ -148,7 +148,7 @@ def calculate_co2_metrics(
 | **Factor Grid CO₂** | 0.4521 kg/kWh | Central térmica Iquitos | ✅ Correcto |
 | **Factor EV CO₂** | 2.146 kg/kWh | EV vs combustión | ✅ Correcto |
 | **Solar anual** | 8,030,119 kWh | 4,050 kWp × 1,930 kWh/kWp | ✅ OE2 real |
-| **Chargers** | 32 físicos, 128 sockets | 28 motos + 4 mototaxis | ✅ Correcto OE3 |
+| **Chargers** | 19 físicos, 38 sockets | 30 motos + 8 mototaxis | ✅ Correcto OE3 |
 | **CO₂ directo/hora** | **107.3 kg** | 50 × 2.146 | ✅ **VALIDADO** |
 | **CO₂ directo/año** | 938,460 kg | 107.3 × 8,760 | ✅ Cálculo correcto |
 | **CO₂ indirecto/año (solo solar)** | 3,630,417 kg | 8,030,119 × 0.4521 | ✅ Si se usa todo |
@@ -169,8 +169,8 @@ def calculate_co2_metrics(
 
 ### OE3 (Actual - EN PRODUCCIÓN)
 ```
-- Motos: 112 (28 chargers × 4 sockets)
-- Mototaxis: 16 (4 chargers × 4 sockets)
+- Motos: 112 (28 chargers x 2 sockets)
+- Mototaxis: 16 (4 chargers x 2 sockets)
 - Total: 128
 - Chargers: 32
 - Sockets: 128
@@ -186,7 +186,7 @@ def calculate_co2_metrics(
 1. ✅ **co2_direct = 107.3 kg CO₂/h** - Calculado correctamente (50 × 2.146)
 2. ✅ **co2_factor_grid = 0.4521 kg CO₂/kWh** - Factor Iquitos correcto
 3. ✅ **co2_factor_ev = 2.146 kg CO₂/kWh** - Factor combustión correcto
-4. ✅ **Chargers = 32 físicos, 128 sockets** - Distribución OE3 correcta
+4. ✅ **Chargers = 19 físicos, 38 sockets** - Distribución OE3 correcta
 5. ✅ **Motos = 112, Mototaxis = 16** - Configuración OE3 correcta
 
 ### VALORES NO ENCONTRADOS / LEGACY:

@@ -38,7 +38,7 @@ col = 'pv_generation_kwh' if 'pv_generation_kwh' in df_solar.columns else 'ac_po
 solar_hourly = np.asarray(df_solar[col].values, dtype=np.float32)
 print(f"✅ Solar: {len(solar_hourly)} timesteps (esperado 8,760)")
 
-# Chargers - CRÍTICO: Datos reales con 128 sockets
+# Chargers - CRÍTICO: Datos reales con 38 sockets
 charger_real_path = dataset_dir / 'chargers' / 'chargers_real_hourly_2024.csv'
 df_chargers = pd.read_csv(charger_real_path)
 data_cols = [c for c in df_chargers.columns if 'timestamp' not in c.lower() and 'time' not in c.lower()]
@@ -64,7 +64,7 @@ bess_path = dataset_dir / 'electrical_storage_simulation.csv'
 df_bess = pd.read_csv(bess_path, encoding='utf-8')
 if 'soc_stored_kwh' in df_bess.columns:
     bess_soc_kwh = np.asarray(df_bess['soc_stored_kwh'].values[:HOURS_PER_YEAR], dtype=np.float32)
-    bess_soc = bess_soc_kwh / 4520.0
+    bess_soc = bess_soc_kwh / 940.0  # BESS 940 kWh v5.2
 else:
     soc_cols = [c for c in df_bess.columns if 'soc' in c.lower()]
     bess_soc_raw = np.asarray(df_bess[soc_cols[0]].values[:HOURS_PER_YEAR], dtype=np.float32)
@@ -117,8 +117,8 @@ class TestCityLearnEnvironment(Env):
         self.max_steps = 8760
         
         # Spaces
-        self.observation_space = spaces.Box(low=0, high=1e8, shape=(394,), dtype=np.float32)
-        self.action_space = spaces.Box(low=0, high=1, shape=(129,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=0, high=1e8, shape=(124,), dtype=np.float32)
+        self.action_space = spaces.Box(low=0, high=1, shape=(39,), dtype=np.float32)
         
         self.current_step = 0
     
@@ -138,7 +138,7 @@ class TestCityLearnEnvironment(Env):
         return obs, reward, done, False, {}
     
     def _get_obs(self):
-        """Construct 394-dim observation using real hourly data."""
+        """Construct 124-dim observation using real hourly data."""
         idx = min(self.current_step, self.max_steps - 1)
         
         obs = np.zeros(394, dtype=np.float32)
@@ -146,9 +146,9 @@ class TestCityLearnEnvironment(Env):
         obs[1] = 50.0  # Grid frequency constant
         obs[2] = self.bess_soc[idx]
         
-        # Charger states (128 sockets × 3 features each = 384 values)
+        # Charger states (38 sockets × 3 features each = 384 values)
         charger_idx = 3
-        for socket in range(128):
+        for socket in range(38):
             demand = self.chargers_kw[idx, socket] if socket < self.chargers_kw.shape[1] else 0
             obs[charger_idx] = demand / 100.0
             charger_idx += 1
@@ -165,7 +165,7 @@ class TestCityLearnEnvironment(Env):
         return obs
 
 # Crear environment con datos REALES
-print("  Creando environment con datos REALES (8,760 × 128 sockets)...")
+print("  Creando environment con datos REALES (8,760 × 38 sockets)...")
 test_env = TestCityLearnEnvironment(
     solar_kw=solar_hourly,
     chargers_kw=chargers_hourly,
@@ -212,7 +212,7 @@ print("-" * 80)
 if step_count == 8760 and test_env.current_step == 8760:
     print(f"✅ EPISODE COMPLETÓ 8,760 TIMESTEPS (100% de datos reales procesados)")
     print(f"   - Steps ejecutados: {step_count}")
-    print(f"   - Datos reales cargados: 8,760 horas × 128 sockets")
+    print(f"   - Datos reales cargados: 8,760 horas × 38 sockets")
     print(f"   - Total reward acumulado: {total_reward:.0f}")
     print()
     print("✅ CONCLUSIÓN: A2C ENTRENA CORRECTAMENTE CON 8,760 TIMESTEPS REALES")

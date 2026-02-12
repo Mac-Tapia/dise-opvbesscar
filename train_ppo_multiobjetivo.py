@@ -5,7 +5,7 @@ ENTRENAR PPO CON MULTIOBJETIVO REAL - OPTIMIZADO
 ================================================================================
 Entrenamiento de agente PPO con datos reales OE2 (Iquitos, Peru)
 - 5 episodios completos (43,800 timesteps = 1 año x 5)
-- Datos: 128 chargers, mall demand, BESS SOC, solar generation
+- Datos: 38 sockets, mall demand, BESS SOC, solar generation
 - Reward: Multiobjetivo (CO2 focus, solar self-consumption, EV satisfaction)
 - Optimizacion: GPU CUDA, batch normalization, gradient clipping
 
@@ -107,11 +107,11 @@ class PPOConfig:
         }
 
 # ============================================================================
-# CONSTANTES OE2 (Iquitos, Perú)
+# CONSTANTES OE2 v5.2 (Iquitos, Perú) - 2026-02-12
 # ============================================================================
 CO2_FACTOR_IQUITOS = 0.4521  # kg CO2/kWh - factor de emisión grid Iquitos
-BESS_CAPACITY_KWH = 4520.0   # Capacidad BESS total
-BESS_MAX_POWER_KW = 500.0    # Potencia máxima BESS
+BESS_CAPACITY_KWH = 940.0    # 940 kWh (exclusivo EV, 100% cobertura)
+BESS_MAX_POWER_KW = 342.0    # 342 kW potencia máxima BESS
 
 # DIRECTORIOS DE SALIDA
 OUTPUT_DIR = Path('outputs/ppo_training')
@@ -160,7 +160,7 @@ def validate_oe2_datasets() -> Dict[str, Any]:
     print()
     print('  SINCRONIZACION OE2 -> CityLearn:')
     print(f'    Solar PVGIS:          {oe2_summary["solar"]["rows"]:,} horas')
-    print(f'    Chargers 128 sockets: {oe2_summary["chargers_hourly"]["rows"]:,} horas x {oe2_summary["chargers_hourly"]["cols"]} cols')
+    print(f'    Chargers 38 sockets:  {oe2_summary["chargers_hourly"]["rows"]:,} horas x {oe2_summary["chargers_hourly"]["cols"]} cols (v5.2)')
     print(f'    BESS SOC:             {oe2_summary["bess"]["rows"]:,} horas')
     print(f'    Mall Demand:          {oe2_summary["mall_demand"]["rows"]:,} horas')
     print('  [OK] Todos los datasets OE2 sincronizados')
@@ -200,25 +200,25 @@ class CityLearnEnvironment(Env):
       - CityLearn v2 Documentation: https://github.com/intelligent-environments-lab/CityLearn
       - Gymnasium API: https://gymnasium.farama.org/
 
-    Observation Space (394-dim):
+    Observation Space (124-dim v5.2):
     - [0]: Solar generation (kW)
     - [1]: Total demand (kW)
     - [2]: BESS SOC normalized [0,1]
     - [3]: Mall demand (kW)
-    - [4:132]: 128 charger demands (kW)
-    - [132:260]: 128 charger powers (kW)
-    - [260:388]: 128 occupancy (binary)
-    - [388:394]: Time features (hour, dow, month, peak, co2, tariff)
+    - [4:42]: 38 socket demands (kW)
+    - [42:80]: 38 socket powers (kW)
+    - [80:118]: 38 occupancy (binary)
+    - [118:124]: Time features (hour, dow, month, peak, co2, tariff)
 
-    Action Space (129-dim):
+    Action Space (39-dim v5.2):
     - [0]: BESS control [0,1]
-    - [1:129]: 128 charger setpoints [0,1]
+    - [1:39]: 38 socket setpoints [0,1]
     """
 
     HOURS_PER_YEAR: int = 8760  # Constant for year length
-    NUM_CHARGERS: int = 128
-    OBS_DIM: int = 394
-    ACTION_DIM: int = 129
+    NUM_CHARGERS: int = 38      # v5.2: 19 cargadores × 2 tomas = 38 sockets
+    OBS_DIM: int = 124          # v5.2: 4 + 38*3 + 6 = 124
+    ACTION_DIM: int = 39        # v5.2: 1 BESS + 38 sockets
 
     metadata = {'render_modes': []}
 
@@ -244,8 +244,8 @@ class CityLearnEnvironment(Env):
             chargers_kw: Array charger demands (8760, n_chargers)
             mall_kw: Array mall demand (8760,)
             bess_soc: Array BESS SOC (8760,)
-            charger_max_power_kw: (128,) potencia máxima por socket desde chargers_real_statistics.csv
-            charger_mean_power_kw: (128,) potencia media por socket desde chargers_real_statistics.csv
+            charger_max_power_kw: (38,) potencia máxima por socket desde chargers_real_statistics.csv
+            charger_mean_power_kw: (38,) potencia media por socket desde chargers_real_statistics.csv
             max_steps: Duración episodio en timesteps
         """
         super().__init__()
@@ -264,14 +264,14 @@ class CityLearnEnvironment(Env):
         if charger_max_power_kw is not None:
             self.charger_max_power = np.asarray(charger_max_power_kw, dtype=np.float32)
         else:
-            # Fallback: 2.5 kW por socket (valor promedio de Tabla 13)
-            self.charger_max_power = np.full(self.NUM_CHARGERS, 2.5, dtype=np.float32)
+            # Fallback v5.2: 7.4 kW por socket (Modo 3 monofásico 32A @ 230V)
+            self.charger_max_power = np.full(self.NUM_CHARGERS, 7.4, dtype=np.float32)
             
         if charger_mean_power_kw is not None:
             self.charger_mean_power = np.asarray(charger_mean_power_kw, dtype=np.float32)
         else:
-            # Fallback: 0.89 kW (promedio observado en dataset)
-            self.charger_mean_power = np.full(self.NUM_CHARGERS, 0.89, dtype=np.float32)
+            # Fallback v5.2: potencia efectiva = 7.4 × 0.62 = 4.6 kW 
+            self.charger_mean_power = np.full(self.NUM_CHARGERS, 4.6, dtype=np.float32)
 
         # Validación de datos
         if len(self.solar_hourly) != self.HOURS_PER_YEAR:
@@ -351,7 +351,7 @@ class CityLearnEnvironment(Env):
 
     def _make_observation(self, hour_idx: int) -> np.ndarray:
         """
-        Crea observación CityLearn v2 (394-dim).
+        Crea observación CityLearn v2 (124-dim).
 
         Basado en la especificación del benchmark CityLearn v2 que define
         las características observables en sistemas de energía distribuida.
@@ -366,27 +366,27 @@ class CityLearnEnvironment(Env):
         obs[2] = np.clip(float(self.bess_soc_hourly[h]), 0.0, 1.0)
         obs[3] = float(self.mall_hourly[h])
 
-        # CHARGER DEMANDS Y POWERS (indices 4-259)
+        # SOCKET DEMANDS Y POWERS v5.2 (indices 4-79)
         if self.chargers_hourly.shape[1] >= self.NUM_CHARGERS:
-            obs[4:132] = np.clip(self.chargers_hourly[h, :self.NUM_CHARGERS], 0.0, 100.0)
+            obs[4:42] = np.clip(self.chargers_hourly[h, :self.NUM_CHARGERS], 0.0, 100.0)
         else:
             obs[4:4+self.chargers_hourly.shape[1]] = np.clip(self.chargers_hourly[h], 0.0, 100.0)
 
-        obs[132:260] = obs[4:132] * 0.5  # Simplified power from demand
+        obs[42:80] = obs[4:42] * 0.5  # Simplified power from demand
 
-        # OCCUPANCY (indices 260-387)
+        # OCCUPANCY v5.2 (indices 80-117)
         hour_24 = h % 24
         base_occupancy = 0.3 if 6 <= hour_24 <= 22 else 0.1  # Peak hours 6-22
-        obs[260:388] = np.random.binomial(1, base_occupancy, self.NUM_CHARGERS).astype(np.float32)
+        obs[80:118] = np.random.binomial(1, base_occupancy, self.NUM_CHARGERS).astype(np.float32)
 
-        # TIME FEATURES (indices 388-393)
-        obs[388] = float(hour_24) / 24.0  # Hour normalized
+        # TIME FEATURES v5.2 (indices 118-123)
+        obs[118] = float(hour_24) / 24.0  # Hour normalized
         day_of_year = (h // 24) % 365
-        obs[389] = float(day_of_year % 7) / 7.0  # Day of week normalized
-        obs[390] = float((day_of_year // 30) % 12) / 12.0  # Month normalized
-        obs[391] = 1.0 if 6 <= hour_24 <= 22 else 0.0  # Peak indicator
-        obs[392] = float(self.context.co2_factor_kg_per_kwh)  # CO2 factor
-        obs[393] = 0.15  # Tariff (USD/kWh)
+        obs[119] = float(day_of_year % 7) / 7.0  # Day of week normalized
+        obs[120] = float((day_of_year // 30) % 12) / 12.0  # Month normalized
+        obs[121] = 1.0 if 6 <= hour_24 <= 22 else 0.0  # Peak indicator
+        obs[122] = float(self.context.co2_factor_kg_per_kwh)  # CO2 factor
+        obs[123] = 0.15  # Tariff (USD/kWh)
 
         return obs
 
@@ -446,7 +446,7 @@ class CityLearnEnvironment(Env):
         charger_demand = self.chargers_hourly[h].astype(np.float32)
         bess_soc = np.clip(float(self.bess_soc_hourly[h]), 0.0, 1.0)
 
-        # PROCESAR ACCION (129-dim: 1 BESS + 128 chargers)
+        # PROCESAR ACCION (39-dim: 1 BESS + 38 sockets)
         bess_action = np.clip(action[0], 0.0, 1.0)  # BESS control
         charger_setpoints = np.clip(action[1:self.ACTION_DIM], 0.0, 1.0)
 
@@ -460,14 +460,14 @@ class CityLearnEnvironment(Env):
         # BESS power (positivo = descarga, negativo = carga)
         bess_power_kw = (bess_action - 0.5) * 2.0 * BESS_MAX_POWER_KW
         
-        # Separar motos y mototaxis (primeros 2912 = motos, siguientes 416 = mototaxis)
-        # Chargers 0-22 = motos (23x128=2944 cercano a 2912), Chargers 23-31 = mototaxis
-        motos_demand = float(np.sum(charger_demand[:92] * charger_setpoints[:92]))
-        mototaxis_demand = float(np.sum(charger_demand[92:] * charger_setpoints[92:]))
+        # Separar motos y mototaxis (v5.2: 15 chargers motos × 2 sockets = 30, 4 chargers mototaxis × 2 = 8)
+        # Chargers 0-14 = motos (30 sockets), Chargers 15-18 = mototaxis (8 sockets)
+        motos_demand = float(np.sum(charger_demand[:30] * charger_setpoints[:30]))
+        mototaxis_demand = float(np.sum(charger_demand[30:] * charger_setpoints[30:]))
         
         # CONTEO VEHÍCULOS CARGANDO (sockets con setpoint > 50%)
-        motos_charging = int(np.sum(charger_setpoints[:92] > 0.5))
-        mototaxis_charging = int(np.sum(charger_setpoints[92:] > 0.5))
+        motos_charging = int(np.sum(charger_setpoints[:30] > 0.5))
+        mototaxis_charging = int(np.sum(charger_setpoints[30:] > 0.5))
 
         # GRID BALANCE (importador vs exportador)
         net_demand = total_demand_kwh - bess_power_kw  # BESS descarga reduce demanda
@@ -495,7 +495,7 @@ class CityLearnEnvironment(Env):
         h = (self.step_count - 1) % self.HOURS_PER_YEAR
         scenario = self.scenarios_by_hour[h]
         # CRUCIAL: Usar potencia significativa para simulación de vehículos
-        # Mínimo 150 kW (razonable con 128 sockets × 2.5 kW/socket = 320 kW máximo)
+        # Mínimo 150 kW (razonable con 38 sockets × 7.4 kW/socket = 281.2 kW máximo v5.2)
         # Los escenarios requieren 100-250+ kWh para cargar todos los vehículos
         min_power_kw = max(150.0, ev_charging_kwh)
         charging_result = self.vehicle_simulator.simulate_hourly_charge(scenario, min_power_kw)
@@ -796,9 +796,9 @@ class DetailedLoggingCallback(BaseCallback):
         actions = self.locals.get('actions', None)
         if actions is not None and len(actions) > 0:
             action = actions[0] if len(actions[0].shape) > 0 else actions
-            if len(action) >= 129:
+            if len(action) >= 39:  # v5.2: 1 BESS + 38 sockets
                 bess_action = float(action[0])
-                socket_setpoints = action[1:129]
+                socket_setpoints = action[1:39]  # v5.2: 38 sockets
                 self.ep_bess_action_sum += bess_action
                 self.ep_socket_setpoint_sum += float(np.mean(socket_setpoints))
                 self.ep_socket_active_count += int(np.sum(socket_setpoints > 0.1))
@@ -949,7 +949,7 @@ class DetailedLoggingCallback(BaseCallback):
         # Promedios de control por episodio
         steps_in_ep = max(1, self.ep_steps)
         self.episode_avg_socket_setpoint.append(self.ep_socket_setpoint_sum / steps_in_ep)
-        self.episode_socket_utilization.append(self.ep_socket_active_count / (128.0 * steps_in_ep))
+        self.episode_socket_utilization.append(self.ep_socket_active_count / (38.0 * steps_in_ep))
         self.episode_bess_action_avg.append(self.ep_bess_action_sum / steps_in_ep)
         # Reward components promedios
         self.episode_r_solar.append(self.ep_r_solar_sum / steps_in_ep)
@@ -1164,14 +1164,14 @@ def main():
         logger.info("Solar REAL (CityLearn v2): columna='%s' | %.0f kWh/ano (8760h)", col, float(np.sum(solar_hourly)))
 
         # ====================================================================
-        # CHARGERS (128 sockets) - DATOS REALES DIRECTOS
+        # CHARGERS (38 sockets) - DATOS REALES DIRECTOS
         # ====================================================================
-        # Priorizar archivo con 128 sockets reales, fallback a 32 chargers expandido
+        # Priorizar archivo con 38 sockets reales, fallback a 19 chargers expandido
         charger_real_path = Path('data/interim/oe2/chargers/chargers_real_hourly_2024.csv')
         charger_csv_path = Path('data/interim/oe2/chargers/chargers_hourly_profiles_annual.csv')
         
         if charger_real_path.exists():
-            # Archivo real con 128 sockets + timestamp
+            # Archivo real con 38 sockets + timestamp
             df_chargers = pd.read_csv(charger_real_path)
             # Excluir columna timestamp si existe
             data_cols = [c for c in df_chargers.columns if 'timestamp' not in c.lower() and 'time' not in c.lower()]
@@ -1180,24 +1180,24 @@ def main():
                 raise ValueError(f"Chargers real debe tener {HOURS_PER_YEAR} filas, tiene {chargers_hourly.shape[0]}")
             n_sockets = chargers_hourly.shape[1]
             total_demand = float(np.sum(chargers_hourly))
-            logger.info("Chargers REALES (128 sockets directos): %d sockets | Demanda anual: %.0f kWh", 
+            logger.info("Chargers REALES (38 sockets directos): %d sockets | Demanda anual: %.0f kWh", 
                         n_sockets, total_demand)
         elif charger_csv_path.exists():
             df_chargers = pd.read_csv(charger_csv_path)
-            # CSV tiene 32 columnas (1 por charger) - expandir a 128 sockets (4 por charger)
-            chargers_raw = df_chargers.values.astype(np.float32)  # (8760, 32)
+            # CSV tiene 19 columnas (1 por charger) - expandir a 38 sockets (2 por charger) v5.2
+            chargers_raw = df_chargers.values.astype(np.float32)  # (8760, 19)
             if chargers_raw.shape[0] != HOURS_PER_YEAR:
                 raise ValueError(f"Chargers CSV debe tener {HOURS_PER_YEAR} filas, tiene {chargers_raw.shape[0]}")
-            # Expandir: cada charger tiene 4 sockets, distribuir demanda
-            n_charger_units = chargers_raw.shape[1]  # 32
-            chargers_hourly = np.zeros((HOURS_PER_YEAR, n_charger_units * 4), dtype=np.float32)
+            # Expandir: cada charger tiene 2 sockets, distribuir demanda (v5.2)
+            n_charger_units = chargers_raw.shape[1]  # 19
+            chargers_hourly = np.zeros((HOURS_PER_YEAR, n_charger_units * 2), dtype=np.float32)
             for i in range(n_charger_units):
-                # Distribuir demanda del charger entre sus 4 sockets
-                for s in range(4):
-                    socket_idx = i * 4 + s
-                    # Socket recibe 1/4 de la demanda base + variación
-                    chargers_hourly[:, socket_idx] = chargers_raw[:, i] * (0.2 + 0.15 * s)
-            n_sockets = chargers_hourly.shape[1]  # 128
+                # Distribuir demanda del charger entre sus 2 sockets (v5.2)
+                for s in range(2):
+                    socket_idx = i * 2 + s
+                    # Socket recibe 50% de la demanda base (balanced)
+                    chargers_hourly[:, socket_idx] = chargers_raw[:, i] * 0.5
+            n_sockets = chargers_hourly.shape[1]  # 38
             total_demand = float(np.sum(chargers_hourly))
             logger.info("Chargers REALES: %d chargers x 4 = %d sockets | Demanda anual: %.0f kWh", 
                         n_charger_units, n_sockets, total_demand)
@@ -1219,16 +1219,16 @@ def main():
         
         if charger_stats_path.exists():
             df_stats = pd.read_csv(charger_stats_path)
-            if len(df_stats) >= 128:
-                charger_max_power = df_stats['max_power_kw'].values[:128].astype(np.float32)
-                charger_mean_power = df_stats['mean_power_kw'].values[:128].astype(np.float32)
+            if len(df_stats) >= 38:
+                charger_max_power = df_stats['max_power_kw'].values[:38].astype(np.float32)
+                charger_mean_power = df_stats['mean_power_kw'].values[:38].astype(np.float32)
                 min_pwr = float(charger_max_power.min())
                 max_pwr = float(charger_max_power.max())
                 mean_pwr = float(charger_mean_power.mean())
                 logger.info("Charger STATS (5to OE2): max_power=%.2f-%.2f kW, mean_power=%.2f kW", 
                             min_pwr, max_pwr, mean_pwr)
             else:
-                logger.warning("Charger STATS: %d filas < 128, usando valores por defecto", len(df_stats))
+                logger.warning("Charger STATS: %d filas < 38, usando valores por defecto", len(df_stats))
         else:
             logger.warning("Charger STATS: archivo no encontrado, usando valores por defecto")
 

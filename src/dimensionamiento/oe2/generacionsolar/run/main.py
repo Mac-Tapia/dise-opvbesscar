@@ -59,8 +59,11 @@ class SolarGenerationAnalyzer:
         print(f"📂 Cargando datos desde: {self.csv_path}")
         self.df = pd.read_csv(self.csv_path)
 
-        # Convertir timestamp a datetime si es necesario
-        if 'timestamp' in self.df.columns:
+        # Convertir datetime/timestamp a índice si es necesario
+        if 'datetime' in self.df.columns:
+            self.df['datetime'] = pd.to_datetime(self.df['datetime'])
+            self.df.set_index('datetime', inplace=True)
+        elif 'timestamp' in self.df.columns:
             self.df['timestamp'] = pd.to_datetime(self.df['timestamp'])
             self.df.set_index('timestamp', inplace=True)
 

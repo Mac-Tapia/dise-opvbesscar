@@ -92,11 +92,11 @@ class FixedScheduleAgent:
 
         SCHEMA DE ACCIONES (CityLearn v2.5.0):
         action[0] = BESS setpoint (0-1)
-        action[1:129] = charger_mall_1 to charger_mall_128 setpoints
+        action[1:39] = charger_mall_1 to charger_mall_38 setpoints
 
         MAPEO DE CHARGERS:
         - charger_mall_1 to charger_mall_112: Motos (112 chargers)
-        - charger_mall_113 to charger_mall_128: Mototaxis (16 chargers)
+        - charger_mall_113 to charger_mall_38: Mototaxis (16 chargers)
 
         Esto deja action_index:
         - index 0: BESS (NO tocar)

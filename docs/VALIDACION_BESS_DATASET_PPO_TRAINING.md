@@ -277,7 +277,7 @@ class PPOConfig:
 
 **✅ CONFIGURACIÓN PARA BESS:**
 - `observation_space`: 394 dimensiones (incluyendo `electrical_storage_soc`)
-- `action_space`: 129 dimensiones (1 BESS + 128 chargers)
+- `action_space`: 129 dimensiones (1 BESS + 38 sockets)
 - `n_steps=2048`: Captura dinámica de BESS (85 días de variación)
 
 ### 3.2 Validación Dataset Antes de Entrenar
@@ -321,7 +321,7 @@ def _validate_dataset_completeness(self) -> None:
 En cada timestep, PPO recibe un vector de observación de 394 dimensiones:
 
 ```
-Observation Vector (394-dim):
+Observation Vector (124-dim):
 ┌────────────────────────────────────────────────────┐
 │ SECTION 1: Building Energy (50-dim)               │
 ├────────────────────────────────────────────────────┤
@@ -342,7 +342,7 @@ Observation Vector (394-dim):
 ├────────────────────────────────────────────────────┤
 │ • charger_001_state, charger_001_soc             │
 │ • charger_002_state, charger_002_soc             │
-│ • ... (128 chargers × 2 valores = 256 dim)      │
+│ • ... (38 sockets × 2 valores = 256 dim)      │
 └────────────────────────────────────────────────────┘
 │ SECTION 4: Time Encoding (78-dim)                │
 ├────────────────────────────────────────────────────┤
@@ -359,10 +359,10 @@ Observation Vector (394-dim):
 
 ### 3.4 Acciones PPO Controlando BESS
 
-**En cada timestep, PPO produce 129 acciones:**
+**En cada timestep, PPO produce 39 acciones:**
 
 ```
-Action Vector (129-dim):
+Action Vector (39-dim):
 ┌──────────────────────────────────────┐
 │ BESS Control (1-dim)                │
 ├──────────────────────────────────────┤
@@ -371,8 +371,8 @@ Action Vector (129-dim):
 └──────────────────────────────────────┘
 │ Charger Controls (128-dim)          │
 ├──────────────────────────────────────┤
-│ action[1:129] ∈ [0, 1]             │
-│ → Setpoints para 128 chargers       │
+│ action[1:39] ∈ [0, 1]             │
+│ → Setpoints para 38 sockets       │
 └──────────────────────────────────────┘
 ```
 
@@ -405,7 +405,7 @@ def learn(self, total_timesteps: Optional[int] = None, **kwargs: Any) -> None:
             # a. Obs actual (incluyendo electrical_storage_soc)
             obs = wrapped_env.reset()  # ✅ BESS SOC del CSV
             
-            # b. Predecir acciones (1 BESS + 128 chargers)
+            # b. Predecir acciones (1 BESS + 38 sockets)
             actions = ppo_agent.predict(obs)
             
             # c. Aplicar a environment
@@ -470,9 +470,9 @@ def learn(self, total_timesteps: Optional[int] = None, **kwargs: Any) -> None:
 │ FASE 4: PPO TRAINING                               │
 ├─────────────────────────────────────────────────────┤
 │ ppo_sb3.py + simulate.py                          │
-│ ├─ Observación 394-dim:                           │
+│ ├─ Observación 124-dim:                           │
 │ │  └─ electrical_storage_soc ✅ (del CSV)         │
-│ ├─ Acciones 129-dim:                              │
+│ ├─ Acciones 39-dim:                              │
 │ │  └─ action[0] = BESS setpoint                   │
 │ ├─ Training Loop (500,000 timesteps):             │
 │ │  ├─ Step 1: obs = [soc=1188.3, ...]            │
@@ -564,7 +564,7 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 - ✅ **Schema Update**: `schema.json` referencia `electrical_storage_simulation.csv`
 - ✅ **Initial SOC**: `initial_soc` establecido desde primer valor OE2 (26.3%)
 - ✅ **CityLearn Load**: Environment carga CSV en initialization
-- ✅ **PPO Observation**: `electrical_storage_soc` en vector de 394-dim
+- ✅ **PPO Observation**: `electrical_storage_soc` en vector de 124-dim
 - ✅ **PPO Actions**: Control BESS via `action[0]` ∈ [0,1]
 - ✅ **Training Loop**: PPO aprende política 500,000 timesteps
 - ✅ **Validation**: Dataset completeness check antes de entrenar

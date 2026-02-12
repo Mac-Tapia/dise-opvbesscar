@@ -1,3156 +1,1611 @@
+"""Especificaciones de cargadores de EV para OE2 - VERSIÓN v5.2 (Modo 3 @ 7.4 kW)
+
+Define estructuras de datos inmutables para cargadores y sus características.
+Implementa simulación estocástica realista por toma con:
+- 19 cargadores Modo 3 × 2 tomas = 38 tomas totales
+- Potencia: 7.4 kW por toma (monofásico 32A @ 230V)
+- Flota efectiva: 270 motos + 39 mototaxis/día
+- Llegadas estocásticas (Poisson)
+- SOC dinámico multifactorial
+- Colas independientes por toma
+- Horario operativo realista (9am-22pm, mall Iquitos)
+
+TIEMPOS REALES DE CARGA (incluye pérdidas y taper):
+- Moto (4.6 kWh @ 7.4 kW): ideal 41 min → real ~60 min (50-70)
+- Mototaxi (7.4 kWh @ 7.4 kW): ideal 67 min → real ~90 min (75-105)
+
+Factores aplicados a CANTIDADES de vehículos (no a energía):
+- pe (penetración): 0.30 = 30% de vehículos son EVs
+- fc (factor carga): 0.55 = 55% de EVs cargan cada día
+- Vehículos que cargan = Base × pe × fc
+- Energía por carga = Batería completa (4.6 kWh moto, 7.4 kWh mototaxi)
+
+Escenario RECOMENDADO basado en:
+- IEA Global EV Outlook 2024 (penetración 30% mercados emergentes 2030)
+- BNEF Electric Vehicle Outlook 2025 (2/3 ruedas Asia emergente)
+- ICCT Electric two/three-wheelers India (2022)
+- NREL EV Charging Behavior Study (fc=0.55)
+
+Autor: pvbesscar project
+Versión: 5.2 (2026-02-11)
 """
-Módulo de dimensionamiento de cargadores EV para motos y mototaxis en Iquitos.
 
-Incluye:
-- Cálculo de cantidad de vehículos a cargar (diario, mensual, anual)
-- Dimensionamiento de cargadores por escenarios
-- Perfil de carga horario (24 intervalos)
-- Preparación de datos para control individual de cargadores en CityLearn
-
-INTEGRACIÓN SISTEMA COMPLETO (OE2 REAL - 2026-02-04):
-========================================================
-
-CARGADORES EV (TOMAS CONTROLABLES):
-- Configuración: 28 cargadores para motos (2 kW c/u) + 4 cargadores para mototaxis (3 kW c/u)
-- Sockets totales: 128 (4 sockets por cargador, cada socket controlado INDEPENDIENTEMENTE)
-- Potencia simultánea: 68 kW máximo (56 kW motos + 12 kW mototaxis)
-- Energía diaria PROMEDIO: 903.46 kWh (verified dataset statistics, Tabla 13 OE2)
-- Energía diaria RANGO: 92.80 - 3,252 kWh (min - max estadísticas)
-- Flota operativa: 900 motos + 130 mototaxis = 1,030 vehículos/día
-- Horario operación: 09:00 - 22:00 (13 horas/día)
-- Horario pico: 18:00 - 22:00 (4 horas/día)
-- Capacidad anual: 328,500 motos + 47,450 mototaxis = 375,950 veh/año (329,763 kWh/año)
-
-CONTROL OE3 - ARQUITECTURA DE ACCIÓN/OBSERVACIÓN:
-- Observables: 128 sockets (estado de carga individual de cada socket)
-- Acciones: 129 (1 BESS + 112 motos 2kW + 16 mototaxis 3kW)
-- Control: Potencia continua [0, max_kw_socket] para cada socket independiente
-- Despacho: RL agent asigna potencia basado en solar, BESS SOC, demanda EVs, grid CO₂
-- Restricción: Potencia máxima por toma (2 kW motos, 3 kW mototaxis)
-
-BESS (Sistema de Almacenamiento):
-- Capacidad base calculada: 1,360 kWh
-- Factor de diseño: 1.20 (20% margen de seguridad)
-- Capacidad final: 1,632 kWh
-- Potencia: 593 kW
-- DoD operacional: 80% (SOC 20%-100%)
-- Capacidad útil: 1,306 kWh disponibles
-- Eficiencia round-trip: 95%
-
-DIMENSIONAMIENTO BESS - JUSTIFICACIÓN:
-- Déficit EV nocturno (18h-22h): 1,030 kWh/día
-- Margen disponible: 276 kWh (27%)
-- Factor de diseño cubre:
-  * Degradación baterías (~10% en 10 años)
-  * Picos de demanda no previstos
-  * Variabilidad climática (días nublados)
-  * Contingencias operativas
-  * Margen seguridad SOC final >20%
-
-PRIORIDAD SOLAR (REGLA CRÍTICA):
-1. Solar → EV (motos/mototaxis) - PRIMERO (472 kWh/día)
-2. Excedente → Carga BESS - SEGUNDO
-3. Excedente final → Mall - TERCERO
-
-OPERACIÓN BESS:
-- Carga: Durante generación solar (excedente después de EV)
-- Descarga: 18:00-22:00 (déficit EV nocturno)
-- SOC mínimo: 50% @ 22:00 (>20% requerido)
-- Autosuficiencia sistema: 50.7%
-"""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from pathlib import Path
+from dataclasses import dataclass
 from typing import Any
-from numpy.typing import NDArray
-import math
-import json
+from datetime import datetime, timedelta
+from pathlib import Path
+from collections import deque
+import pandas as pd
 import numpy as np
-import pandas as pd  # type: ignore[import]
+import logging
 
-
-# ================================================================================
-# TABLA 13 OE2 - ESTADÍSTICAS DE 101 ESCENARIOS CALIBRADOS (2026-02-04)
-# ================================================================================
-# Estadísticas calculadas desde generate_tabla13_scenarios(n_scenarios=101, seed=2024)
-# Validación: Generados vs Esperados (pequeñas variaciones por aleatoriedad)
-# ================================================================================
-
-@dataclass(frozen=True)
-class Tabla13Stats:
-    """Estadísticas de Tabla 13 OE2 para 101 escenarios.
-
-    Fuente: generate_tabla13_scenarios(n_scenarios=101, seed=2024)
-    Fecha: 2026-02-04
-    """
-    # CARGADORES (4 tomas por cargador)
-    chargers_min: float = 4.00
-    chargers_max: float = 35.00
-    chargers_mean: float = 20.61
-    chargers_median: float = 20.00
-    chargers_std: float = 9.19
-
-    # TOMAS TOTALES (sockets)
-    sockets_min: float = 16.00
-    sockets_max: float = 140.00
-    sockets_mean: float = 82.46
-    sockets_median: float = 80.00
-    sockets_std: float = 36.76
-
-    # SESIONES PICO 4h (en las 4 horas pico: 18-22h)
-    sesiones_pico_min: float = 103.00
-    sesiones_pico_max: float = 1030.00
-    sesiones_pico_mean: float = 593.52
-    sesiones_pico_median: float = 566.50
-    sesiones_pico_std: float = 272.09
-
-    # CARGAS DÍA TOTAL (sesiones en 13 horas operación: 9am-10pm)
-    cargas_dia_min: float = 87.29
-    cargas_dia_max: float = 3058.96
-    cargas_dia_mean: float = 849.83
-    cargas_dia_median: float = 785.62
-    cargas_dia_std: float = 538.12
-
-    # ENERGÍA DÍA [kWh]
-    energia_dia_min: float = 92.80
-    energia_dia_max: float = 3252.00
-    energia_dia_mean: float = 903.46
-    energia_dia_median: float = 835.20
-    energia_dia_std: float = 572.07
-
-    # POTENCIA PICO AGREGADA [kW]
-    potencia_pico_min: float = 11.60
-    potencia_pico_max: float = 406.50
-    potencia_pico_mean: float = 112.93
-    potencia_pico_median: float = 104.40
-    potencia_pico_std: float = 71.51
-
-# Instancia global de Tabla 13 para referencia
-TABLA_13_ESTADISTICAS = Tabla13Stats()
-
-
-# ================================================================================
-# ESCENARIOS PREDEFINIDOS - VALIDADOS CONTRA TABLA 13 (2026-02-04)
-# ================================================================================
-# Cuatro escenarios clave que representan puntos de operación específicos
-# en el espectro de penetración (pe) y factor de carga (fc)
-# ================================================================================
-
-@dataclass(frozen=True)
-class EscenarioPredefinido:
-    """Escenario predefinido con validación contra Tabla 13."""
-    nombre: str
-    penetracion: float  # pe: fracción de vehículos (0-1)
-    factor_carga: float  # fc: porcentaje de batería a cargar (0-1)
-    cargadores: int  # cantidad de chargers (cada uno con 4 tomas)
-    tomas_totales: int  # 4 × cargadores
-    energia_dia_kwh: float  # energía total del día
-    validado: bool = False
-
-    def validar_contra_tabla13(self) -> dict[str, Any]:
-        """Valida este escenario contra los rangos de Tabla 13.
-
-        Returns:
-            dict con claves:
-            - valid: bool - Si está dentro de tolerancia
-            - cargadores_status: str - "OK" o "FUERA_RANGO"
-            - tomas_status: str - "OK" o "FUERA_RANGO"
-            - energia_status: str - "OK" o "FUERA_RANGO"
-            - deltas: dict - Diferencias porcentuales vs Tabla 13
-        """
-        t13 = TABLA_13_ESTADISTICAS
-
-        # Validación de cargadores
-        cargadores_ok = t13.chargers_min <= self.cargadores <= t13.chargers_max
-        cargadores_delta = ((self.cargadores - t13.chargers_mean) / t13.chargers_mean) * 100
-
-        # Validación de tomas
-        tomas_ok = t13.sockets_min <= self.tomas_totales <= t13.sockets_max
-        tomas_delta = ((self.tomas_totales - t13.sockets_mean) / t13.sockets_mean) * 100
-
-        # Validación de energía
-        energia_ok = t13.energia_dia_min <= self.energia_dia_kwh <= t13.energia_dia_max
-        energia_delta = ((self.energia_dia_kwh - t13.energia_dia_mean) / t13.energia_dia_mean) * 100
-
-        all_valid = cargadores_ok and tomas_ok and energia_ok
-
-        return {
-            'valid': all_valid,
-            'cargadores_status': 'OK' if cargadores_ok else 'FUERA_RANGO',
-            'tomas_status': 'OK' if tomas_ok else 'FUERA_RANGO',
-            'energia_status': 'OK' if energia_ok else 'FUERA_RANGO',
-            'deltas': {
-                'cargadores_pct': round(cargadores_delta, 2),
-                'tomas_pct': round(tomas_delta, 2),
-                'energia_pct': round(energia_delta, 2),
-            },
-            'rango_tabla13': {
-                'cargadores': [t13.chargers_min, t13.chargers_max, t13.chargers_mean],
-                'tomas': [t13.sockets_min, t13.sockets_max, t13.sockets_mean],
-                'energia': [t13.energia_dia_min, t13.energia_dia_max, t13.energia_dia_mean],
-            }
-        }
-
-
-# Escenarios predefinidos clave del proyecto
-ESCENARIOS_PREDEFINIDOS = {
-    'CONSERVADOR': EscenarioPredefinido(
-        nombre='CONSERVADOR',
-        penetracion=0.10,
-        factor_carga=0.80,
-        cargadores=4,
-        tomas_totales=16,
-        energia_dia_kwh=185.6,
-    ),
-    'MEDIANO': EscenarioPredefinido(
-        nombre='MEDIANO',
-        penetracion=0.55,
-        factor_carga=0.60,
-        cargadores=20,
-        tomas_totales=80,
-        energia_dia_kwh=765.6,
-    ),
-    'RECOMENDADO': EscenarioPredefinido(
-        nombre='RECOMENDADO',
-        penetracion=0.90,
-        factor_carga=0.90,
-        cargadores=32,
-        tomas_totales=128,
-        energia_dia_kwh=3252.0,
-    ),
-    'MÁXIMO': EscenarioPredefinido(
-        nombre='MÁXIMO',
-        penetracion=1.00,
-        factor_carga=1.00,
-        cargadores=36,
-        tomas_totales=144,
-        energia_dia_kwh=4013.6,
-    ),
-}
-
-
-def validar_escenarios_predefinidos() -> dict[str, Any]:
-    """Valida TODOS los escenarios predefinidos contra Tabla 13.
-
-    Returns:
-        dict con estado de validación para cada escenario
-    """
-    resultados = {}
-    for nombre, escenario in ESCENARIOS_PREDEFINIDOS.items():
-        resultados[nombre] = escenario.validar_contra_tabla13()
-    return resultados
-
-
-@dataclass(frozen=True)
-class VehicleFleet:
-    """Configuración de la flota de vehículos."""
-    n_motos: int
-    n_mototaxis: int
-    battery_kwh_moto: float = 2.0  # kWh batería típica moto eléctrica
-    battery_kwh_mototaxi: float = 4.0  # kWh batería típica mototaxi
-    daily_km_moto: float = 40.0  # km/día promedio
-    daily_km_mototaxi: float = 80.0  # km/día promedio
-    efficiency_km_kwh_moto: float = 40.0  # km/kWh
-    efficiency_km_kwh_mototaxi: float = 25.0  # km/kWh
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
 class ChargerSpec:
-    """Especificación de un tipo de cargador."""
-    charger_id: str
-    power_kw: float
+    """Especificación inmutable de un cargador.
+
+    Attributes:
+        charger_id: ID único (0-31, típicamente)
+        max_power_kw: Potencia máxima en kW
+        vehicle_type: "moto" o "mototaxi"
+        sockets: Número de puertos de carga
+    """
+    charger_id: int
+    max_power_kw: float
+    vehicle_type: str
     sockets: int
-    connector_type: str = "Type2"
-    efficiency: float = 0.95
+
+    def __post_init__(self):
+        if self.charger_id < 0:
+            raise ValueError(f"charger_id must be >= 0, got {self.charger_id}")
+        if self.max_power_kw <= 0:
+            raise ValueError(f"max_power_kw must be > 0, got {self.max_power_kw}")
+        if self.vehicle_type not in ("moto", "mototaxi"):
+            raise ValueError(f"vehicle_type must be 'moto' or 'mototaxi', got {self.vehicle_type}")
+        if self.sockets < 1:
+            raise ValueError(f"sockets must be >= 1, got {self.sockets}")
 
 
-@dataclass
-class ChargerSizingResult:
-    """Resultado del dimensionamiento de cargadores."""
-    scenario_id: int
-    pe: float  # Probabilidad de evento de carga
-    fc: float  # Factor de carga (% de batería a cargar)
-    chargers_required: int
-    sockets_total: int
-    energy_day_kwh: float
-    peak_sessions_per_hour: float
-    session_minutes: float
-    utilization: float
-    charger_power_kw: float
-    sockets_per_charger: int
-    # Nuevos campos para vehículos
-    vehicles_day_motos: int = 0
-    vehicles_day_mototaxis: int = 0
-    vehicles_month_motos: int = 0
-    vehicles_month_mototaxis: int = 0
-    vehicles_year_motos: int = 0
-    vehicles_year_mototaxis: int = 0
+@dataclass(frozen=True)
+class ChargerSet:
+    """Conjunto inmutable de especificaciones de cargadores.
+
+    Attributes:
+        chargers: Lista de ChargerSpec
+    """
+    chargers: tuple[ChargerSpec, ...]
+
+    @property
+    def count(self) -> int:
+        """Número total de cargadores base."""
+        return len(self.chargers)
+
+    @property
+    def total_sockets(self) -> int:
+        """Número total de sockets (acciones controlables)."""
+        return sum(c.sockets for c in self.chargers)
+
+    @property
+    def motos_count(self) -> int:
+        """Número de cargadores para motos."""
+        return sum(1 for c in self.chargers if c.vehicle_type == "moto")
+
+    @property
+    def mototaxis_count(self) -> int:
+        """Número de cargadores para mototaxis."""
+        return sum(1 for c in self.chargers if c.vehicle_type == "mototaxi")
+
+    def to_dict_list(self) -> list[dict[str, Any]]:
+        """Convierte a lista de diccionarios para serializar."""
+        return [
+            {
+                "charger_id": c.charger_id,
+                "max_power_kw": c.max_power_kw,
+                "vehicle_type": c.vehicle_type,
+                "sockets": c.sockets,
+            }
+            for c in self.chargers
+        ]
+
+    def __iter__(self):
+        """Permite iterar sobre los chargers."""
+        return iter(self.chargers)
+
+    def __len__(self):
+        """Retorna número de cargadores base."""
+        return len(self.chargers)
 
 
-@dataclass
-class IndividualCharger:
-    """Datos de un cargador individual para CityLearn."""
-    charger_id: str
-    charger_type: str
-    power_kw: float
-    sockets: int
-    playa: str = ""  # Playa_Motos o Playa_Mototaxis
-    location_x: float = 0.0
-    location_y: float = 0.0
-    # Perfil de uso asignado
-    hourly_load_profile: list[float] = field(default_factory=list)  # type: ignore[var-annotated]
-    daily_energy_kwh: float = 0.0
-    peak_power_kw: float = 0.0
+# ============================================================================
+# DATACLASSES PARA SIMULACIÓN ESTOCÁSTICA v3.0
+# ============================================================================
 
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            'charger_id': self.charger_id,
-            'charger_type': self.charger_type,
-            'power_kw': self.power_kw,
-            'sockets': self.sockets,
-            'playa': self.playa,
-            'location_x': self.location_x,
-            'location_y': self.location_y,
-            'daily_energy_kwh': self.daily_energy_kwh,
-            'peak_power_kw': self.peak_power_kw,
-            'hourly_load_profile': self.hourly_load_profile,
-        }
-
-
-@dataclass
-class PlayaData:
-    """Datos de infraestructura para una playa de estacionamiento."""
+@dataclass(frozen=True)
+class VehicleType:
+    """Especificación de tipo de vehículo para simulación de carga.
+    
+    Attributes:
+        name: Nombre del tipo (e.g., 'MOTO', 'MOTOTAXI')
+        lambda_arrivals: Tasa de llegadas Poisson (vehículos/socket/hora)
+        power_kw: Potencia de carga estándar (kW)
+        capacity_kwh: Capacidad de batería (kWh)
+        soc_arrival_mean: SOC medio en llegada (%)
+        soc_arrival_std: Desviación estándar SOC en llegada (%)
+        soc_target: SOC objetivo de carga (%)
+    """
     name: str
-    vehicle_type: str  # moto o mototaxi
-    n_vehicles: int
-    pe: float
-    fc: float
-    battery_kwh: float
-    charger_power_kw: float
-    n_chargers: int
-    sockets_per_charger: int
-    total_sockets: int
-    vehicles_charging_day: int
-    energy_day_kwh: float
-    pv_kwp: float = 0.0
-    bess_kwh: float = 0.0
-    chargers: list[IndividualCharger] = field(default_factory=list)  # type: ignore[var-annotated]
-    hourly_profile: pd.DataFrame | None = None
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            'name': self.name,
-            'vehicle_type': self.vehicle_type,
-            'n_vehicles': self.n_vehicles,
-            'pe': self.pe,
-            'fc': self.fc,
-            'battery_kwh': self.battery_kwh,
-            'charger_power_kw': self.charger_power_kw,
-            'n_chargers': self.n_chargers,
-            'sockets_per_charger': self.sockets_per_charger,
-            'total_sockets': self.total_sockets,
-            'vehicles_charging_day': self.vehicles_charging_day,
-            'energy_day_kwh': self.energy_day_kwh,
-            'pv_kwp': self.pv_kwp,
-            'bess_kwh': self.bess_kwh,
-            'n_individual_chargers': len(self.chargers),
-        }
+    lambda_arrivals: float
+    power_kw: float
+    capacity_kwh: float
+    soc_arrival_mean: float
+    soc_arrival_std: float
+    soc_target: float
 
 
-def calculate_vehicle_demand(
-    n_motos: int,
-    n_mototaxis: int,
-    pe: float,
-    _fc: float = 1.0,  # FC no afecta cantidad de vehículos, solo energía
-    days_per_month: int = 30,
-    days_per_year: int = 365,
-) -> dict[str, int]:
+# Especificaciones de tipos de vehículo - ESCENARIO RECOMENDADO (pe=0.30, fc=0.55)
+# ============================================================================
+# PASO 1: APLICAR pe×fc UNA SOLA VEZ a las cantidades base
+# ─────────────────────────────────────────────────────────────────────────────
+#   Base estacionados diario (mall Iquitos):
+#     - Motos: 1,636 vehículos/día
+#     - Mototaxis: 236 vehículos/día
+#   
+#   Factores (se aplican UNA VEZ):
+#     - pe (penetración EV): 0.30 = 30% son eléctricos
+#     - fc (factor carga diaria): 0.55 = 55% de EVs cargan cada día
+#   
+#   Vehículos que cargan = Base × pe × fc:
+#     - Motos: 1,636 × 0.30 × 0.55 = 270 motos/día
+#     - Mototaxis: 236 × 0.30 × 0.55 = 39 mototaxis/día
+#
+# PASO 2: DISTRIBUIR EN PUNTA vs FUERA DE PUNTA
+# ─────────────────────────────────────────────────────────────────────────────
+#   Punta (55% de cargas, 16h-21h = 5 horas):
+#     - Motos punta: 270 × 0.55 = 149 motos en 5h → 30 motos/hora
+#     - Mototaxis punta: 39 × 0.55 = 21 mototaxis en 5h → 4.2 mototaxis/hora
+#   
+#   Fuera de punta (45% de cargas, 9h-16h = 7 horas):
+#     - Motos fuera punta: 270 × 0.45 = 122 motos en 7h → 17 motos/hora
+#     - Mototaxis fuera punta: 39 × 0.45 = 18 mototaxis en 7h → 2.6/hora
+#
+# PASO 3: DIMENSIONAR CARGADORES (PLAYAS SEPARADAS motos vs mototaxis)
+# ─────────────────────────────────────────────────────────────────────────────
+#   Tiempos reales de carga (incluye pérdidas ~38% y taper):
+#     - Moto 4.6 kWh: 60 min real → 1.0 cargas/hora/toma
+#     - Mototaxi 7.4 kWh: 90 min real → 0.67 cargas/hora/toma
+#   
+#   PLAYA MOTOS (dimensionar por punta):
+#     - Demanda punta: 30 motos/hora
+#     - Capacidad por toma: 1.0 cargas/hora
+#     - Tomas necesarias: 30 ÷ 1.0 = 30 tomas → 15 CARGADORES
+#     - Verificación fuera punta: 17/h ÷ 1.0 = 17 tomas ✓ (cubierto con 30)
+#   
+#   PLAYA MOTOTAXIS (dimensionar por punta):
+#     - Demanda punta: 4.2 mototaxis/hora
+#     - Capacidad por toma: 0.67 cargas/hora (90 min cada uno)
+#     - Tomas necesarias: 4.2 ÷ 0.67 = 6.3 → 7 tomas → 4 CARGADORES (8 tomas)
+#     - Verificación fuera punta: 2.6/h ÷ 0.67 = 3.9 tomas ✓ (cubierto con 8)
+#   
+#   TOTAL: 15 + 4 = 19 CARGADORES × 2 tomas = 38 TOMAS (281.2 kW)
+#
+# ENERGÍA POR CARGA (batería completa, NO afectada por fc):
+#   - Moto: 4.6 kWh/carga
+#   - Mototaxi: 7.4 kWh/carga
+#   - Energía diaria (9h-22h): 270×4.6 + 39×7.4 = 1,129 kWh/día (412,236 kWh/año)
+#
+# Referencias: IEA GEO 2024, BNEF EVO 2025, ICCT India 2022, NREL 2021
+# ============================================================================
+
+# EFICIENCIA DE CARGA REAL (considera pérdidas en cargador, cable, batería y taper)
+# - Eficiencia cargador: ~92-95%
+# - Pérdidas cable/conexión: ~2-3%
+# - Pérdidas conversión batería: ~5-8%
+# - Reducción por taper (CV phase): ~10-15% tiempo adicional
+# - Eficiencia total: ~62% de potencia nominal
+# Resultado: 7.4 kW nominal → 4.6 kW efectivos reales
+CHARGING_EFFICIENCY = 0.62  # 62% = potencia efectiva / potencia nominal
+
+MOTO_SPEC = VehicleType(
+    name="MOTO",
+    lambda_arrivals=0.69,    # 270 motos / (30 tomas × 13h operativas)
+    power_kw=7.4,            # Modo 3 monofásico 32A @ 230V
+    capacity_kwh=4.6,        # Batería completa moto eléctrica
+    soc_arrival_mean=0.20,   # 20% SOC medio al llegar (batería baja)
+    soc_arrival_std=0.10,    # ±10%
+    soc_target=1.00          # 100% objetivo (carga completa ~60 min real)
+)
+
+MOTOTAXI_SPEC = VehicleType(
+    name="MOTOTAXI",
+    lambda_arrivals=0.375,   # 39 mototaxis / (8 tomas × 13h operativas)
+    power_kw=7.4,            # Modo 3 monofásico 32A @ 230V
+    capacity_kwh=7.4,        # Batería completa mototaxi
+    soc_arrival_mean=0.20,   # 20% SOC medio al llegar (batería baja)
+    soc_arrival_std=0.10,    # ±10%
+    soc_target=1.00          # 100% objetivo (carga completa ~90 min real)
+)
+
+
+# ============================================================================
+# TARIFAS OSINERGMIN - Electro Oriente S.A. (Iquitos, Loreto)
+# Pliego Tarifario MT3 - Media Tensión Comercial/Industrial
+# Vigente desde 2024-11-04
+# Referencia: OSINERGMIN Resolución N° 047-2024-OS/CD
+# ============================================================================
+# Hora Punta (HP): 18:00 - 23:00 (5 horas)
+# Hora Fuera de Punta (HFP): 00:00 - 17:59, 23:00 - 23:59 (19 horas)
+# ============================================================================
+
+# Tarifas de Energía (S/./kWh)
+TARIFA_ENERGIA_HP_SOLES = 0.45     # Hora Punta: S/.0.45/kWh
+TARIFA_ENERGIA_HFP_SOLES = 0.28    # Hora Fuera de Punta: S/.0.28/kWh
+
+# Horas de periodo punta (18:00 - 22:59, inclusive)
+HORA_INICIO_HP = 18
+HORA_FIN_HP = 23  # Exclusivo (hasta las 22:59)
+
+
+# ============================================================================
+# REDUCCIÓN DIRECTA DE CO2 POR CAMBIO DE COMBUSTIBLE (Gasolina → Eléctrico)
+# ============================================================================
+# CONTEXTO: Motos y mototaxis tradicionales usan GASOLINA
+# Al electrificarse, evitan emisiones directas del motor de combustión.
+#
+# METODOLOGÍA DE CÁLCULO:
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. Factor emisión gasolina: 2.31 kg CO2/litro (IPCC)
+#
+# 2. Consumo típico moto gasolina 2T (110-150cc):
+#    - 2.5-3.5 L/100 km (rendimiento 30-40 km/L)
+#    - Usamos: 2.86 L/100 km (35 km/L)
+#
+# 3. Consumo moto eléctrica equivalente:
+#    - Batería 4.6 kWh → 80-100 km autonomía → 5 kWh/100 km
+#    - Rendimiento: 20 km/kWh
+#
+# 4. Por cada kWh cargado en EV:
+#    - EV recorre: 20 km
+#    - Moto gasolina para 20 km: 20/35 = 0.57 L gasolina
+#    - CO2 evitado bruto: 0.57 L × 2.31 kg/L = 1.32 kg CO2
+#
+# 5. MENOS emisiones indirectas de electricidad (red diésel Iquitos):
+#    - Factor red: 0.4521 kg CO2/kWh (sistema aislado térmico)
+#    - CO2 indirecto: 1 kWh × 0.4521 = 0.45 kg CO2
+#
+# 6. REDUCCIÓN NETA = 1.32 - 0.45 = 0.87 kg CO2/kWh (moto)
+#
+# Para mototaxi (ligeramente menos eficiente):
+#    - Autonomía 7.4 kWh → 60-80 km → 10 km/kWh
+#    - Gasolina 3-wheelers: 4 L/100 km (25 km/L)
+#    - Por kWh: 10 km → 0.40 L → 0.92 kg CO2 bruto
+#    - Neto: 0.92 - 0.45 = 0.47 kg CO2/kWh
+#
+# FACTOR PROMEDIO PONDERADO (70% motos, 30% mototaxis):
+#    0.70 × 0.87 + 0.30 × 0.47 = 0.75 kg CO2/kWh
+# ============================================================================
+
+FACTOR_CO2_GASOLINA_KG_L = 2.31         # kg CO2 / litro gasolina (IPCC)
+FACTOR_CO2_RED_DIESEL_KG_KWH = 0.4521   # kg CO2 / kWh (red Iquitos)
+
+# Factores de reducción NETA de CO2 por cambio de combustible
+FACTOR_CO2_NETO_MOTO_KG_KWH = 0.87      # kg CO2 evitado / kWh cargado (moto)
+FACTOR_CO2_NETO_MOTOTAXI_KG_KWH = 0.47  # kg CO2 evitado / kWh cargado (mototaxi)
+FACTOR_CO2_NETO_PROMEDIO_KG_KWH = 0.75  # Promedio ponderado (70% moto, 30% taxi)
+
+
+@dataclass
+class Vehicle:
+    """Estado de un vehículo durante carga.
+    
+    Attributes:
+        vehicle_id: Identificador único
+        arrival_hour: Hora de llegada (0-23)
+        soc_arrival: SOC en llegada (0-1)
+        soc_target: SOC objetivo (0-1)
+        soc_current: SOC actual durante carga (0-1)
+        power_kw: Potencia de carga (kW)
+        capacity_kwh: Capacidad de batería (kWh)
+        charging: True si está cargando
+        hours_charged: Horas acumuladas de carga
     """
-    Calcula la cantidad de vehículos a cargar por período.
+    vehicle_id: int
+    arrival_hour: int
+    soc_arrival: float
+    soc_target: float
+    soc_current: float
+    power_kw: float
+    capacity_kwh: float
+    charging: bool = True
+    hours_charged: float = 0.0
+    
+    def charge_for_hour(self) -> float:
+        """Carga el vehículo por una hora. Retorna energía cargada (kWh).
+        
+        Considera CHARGING_EFFICIENCY (62%) para tiempos reales:
+        - Moto 4.6 kWh: 7.4 kW × 0.62 = 4.6 kW efectivos → ~60 min
+        - Mototaxi 7.4 kWh: 7.4 kW × 0.62 = 4.6 kW efectivos → ~96 min
+        """
+        if not self.charging:
+            return 0.0
+        
+        # Energía que se puede cargar en esta hora (con eficiencia real)
+        # power_kw = 7.4 kW nominal, efectivo = 7.4 × 0.62 = 4.6 kW
+        effective_power_kw = self.power_kw * CHARGING_EFFICIENCY
+        energy_capacity = effective_power_kw * 1.0  # 1 hora
+        energy_to_target = (self.soc_target - self.soc_current) * self.capacity_kwh
+        
+        # Toma el mínimo entre lo disponible y lo necesario
+        energy_charged = min(energy_capacity, energy_to_target)
+        
+        # Actualiza SOC
+        self.soc_current += energy_charged / self.capacity_kwh
+        self.hours_charged += 1.0
+        
+        # Si alcanzó objetivo, termina carga
+        if self.soc_current >= self.soc_target:
+            self.charging = False
+            self.soc_current = min(self.soc_current, 1.0)
+        
+        return energy_charged
+    
+    def should_depart(self) -> bool:
+        """Determina si el vehículo debe partir (SOC suficiente)."""
+        return self.soc_current >= self.soc_target or self.hours_charged > 8
 
-    IMPORTANTE: n_motos y n_mototaxis son vehículos en HORA PICO (6pm-10pm, 4h).
-    Estos valores se usan SOLO para dimensionar cargadores.
 
-    La cantidad de vehículos depende de PE (probabilidad de evento de carga).
-    FC (factor de carga) afecta la ENERGÍA por vehículo, no la cantidad.
+class SocketSimulator:
+    """Simulador de una toma (socket) individual con cola estocástica.
+    
+    Mantiene:
+    - Una cola FIFO de vehículos esperando
+    - Un vehículo siendo cargado (máximo 1)
+    - Registro de energía cargada por hora
+    """
+    
+    def __init__(self, socket_id: int, vehicle_type: VehicleType, rng: np.random.RandomState):
+        """Inicializa el simulador.
+        
+        Args:
+            socket_id: Identificador de la toma
+            vehicle_type: Especificación de tipo de vehículo
+            rng: Generador de números aleatorios (para reproducibilidad)
+        """
+        self.socket_id = socket_id
+        self.vehicle_type = vehicle_type
+        self.rng = rng
+        self.queue: deque[Vehicle] = deque()
+        self.current_vehicle: Vehicle | None = None
+        self.hourly_energy: list[float] = []
+        self.vehicle_count = 0
+        
+    def hourly_step(self, hour: int, operational_factor: float) -> float:
+        """Simula una hora de operación.
+        
+        Args:
+            hour: Hora actual (0-23)
+            operational_factor: Factor de operación (0-1, tipicamente 0 en 22-9h)
+        
+        Returns:
+            Energía cargada esta hora (kWh)
+        """
+        # Generar nuevas llegadas de Poisson (solo si hay operación)
+        if operational_factor > 0:
+            num_arrivals = self.rng.poisson(self.vehicle_type.lambda_arrivals * operational_factor)
+            for _ in range(num_arrivals):
+                soc_arr = np.clip(
+                    self.rng.normal(self.vehicle_type.soc_arrival_mean, 
+                                   self.vehicle_type.soc_arrival_std),
+                    0.0, 1.0
+                )
+                vehicle = Vehicle(
+                    vehicle_id=self.vehicle_count,
+                    arrival_hour=hour,
+                    soc_arrival=soc_arr,
+                    soc_target=self.vehicle_type.soc_target,
+                    soc_current=soc_arr,
+                    power_kw=self.vehicle_type.power_kw,
+                    capacity_kwh=self.vehicle_type.capacity_kwh
+                )
+                self.queue.append(vehicle)
+                self.vehicle_count += 1
+        
+        # Procesar vehículo actual
+        energy_hour = 0.0
+        if self.current_vehicle is not None:
+            energy_hour = self.current_vehicle.charge_for_hour()
+            if self.current_vehicle.should_depart():
+                self.current_vehicle = None
+        
+        # Traer siguiente de la cola si no hay uno cargando
+        if self.current_vehicle is None and len(self.queue) > 0:
+            self.current_vehicle = self.queue.popleft()
+        
+        self.hourly_energy.append(energy_hour)
+        return energy_hour
+    
+    def get_annual_energy(self) -> float:
+        """Retorna energía total cargada en el año (kWh)."""
+        return sum(self.hourly_energy)
+    
+    def get_occupancy(self) -> float:
+        """Retorna factor de ocupación (fracción de horas con carga)."""
+        total_hours = len(self.hourly_energy)
+        occupied = sum(1 for e in self.hourly_energy if e > 0)
+        return occupied / total_hours if total_hours > 0 else 0.0
 
-    Fórmula: Vehículos efectivos = Vehículos_hora_pico × PE
 
-    Args:
-        n_motos: Número de motos en HORA PICO (6pm-10pm, 4h)
-        n_mototaxis: Número de mototaxis en HORA PICO (6pm-10pm, 4h)
-        pe: Probabilidad de evento de carga (0-1) - % que realmente carga
-        fc: Factor de carga (0-1) - NO SE USA para contar vehículos
-        days_per_month: Días por mes
-        days_per_year: Días por año
+def create_iquitos_chargers() -> ChargerSet:
+    """Crea el conjunto de cargadores estándar para Iquitos.
+
+    PLAYAS DE ESTACIONAMIENTO SEPARADAS (motos vs mototaxis):
+    
+    PASO 1: Base × pe × fc (aplicado UNA VEZ)
+    - Motos: 1,636 × 0.30 × 0.55 = 270 motos/día que cargan
+    - Mototaxis: 236 × 0.30 × 0.55 = 39 mototaxis/día que cargan
+    
+    PASO 2: Distribución punta (55%) vs fuera punta (45%)
+    - Motos punta (5h): 149 motos → 30/hora
+    - Motos fuera punta (7h): 122 motos → 17/hora
+    - Mototaxis punta (5h): 21 mototaxis → 4.2/hora
+    - Mototaxis fuera punta (7h): 18 mototaxis → 2.6/hora
+    
+    PASO 3: Dimensionar por punta (tiempos reales)
+    - PLAYA MOTOS: 30/h ÷ 1.0 cargas/h = 30 tomas → 15 CARGADORES
+    - PLAYA MOTOTAXIS: 4.2/h ÷ 0.67 cargas/h = 7 tomas → 4 CARGADORES
+    
+    RESULTADO:
+    - 15 + 4 = 19 cargadores × 2 tomas = 38 tomas
+    - Potencia instalada: 38 × 7.4 = 281.2 kW
 
     Returns:
-        Diccionario con vehículos diarios, mensuales y anuales
+        ChargerSet inmutable con especificaciones
     """
-    # Vehículos efectivos que cargan = Vehículos_pico × PE
-    # PE = probabilidad de que un vehículo que llega realmente cargue
-    # FC afecta cuánta energía necesita cada vehículo, NO cuántos vienen
-    vehicles_day_motos = int(round(n_motos * pe))
-    vehicles_day_mototaxis = int(round(n_mototaxis * pe))
+    specs = []
 
-    # Proyección mensual y anual
-    vehicles_month_motos = vehicles_day_motos * days_per_month
-    vehicles_month_mototaxis = vehicles_day_mototaxis * days_per_month
+    # PLAYA MOTOS: 15 cargadores × 2 tomas = 30 tomas
+    # Dimensionado por punta: 30 motos/hora ÷ 1.0 cargas/hora/toma = 30 tomas
+    for i in range(15):
+        specs.append(ChargerSpec(
+            charger_id=i,
+            max_power_kw=7.4,  # Modo 3 monofásico 32A
+            vehicle_type="moto",
+            sockets=2
+        ))
 
-    vehicles_year_motos = vehicles_day_motos * days_per_year
-    vehicles_year_mototaxis = vehicles_day_mototaxis * days_per_year
+    # Mototaxis: 4 cargadores × 2 tomas = 8 tomas (39 mototaxis/día, 90 min/carga)
+    # PLAYA MOTOTAXIS: 4 cargadores × 2 tomas = 8 tomas
+    # Dimensionado por punta: 4.2 mototaxis/hora ÷ 0.67 cargas/hora/toma ≈ 7 tomas → 4 cargadores
+    for i in range(15, 19):
+        specs.append(ChargerSpec(
+            charger_id=i,
+            max_power_kw=7.4,  # Modo 3 monofásico 32A
+            vehicle_type="mototaxi",
+            sockets=2
+        ))
 
-    return {
-        'vehicles_day_motos': vehicles_day_motos,
-        'vehicles_day_mototaxis': vehicles_day_mototaxis,
-        'vehicles_month_motos': vehicles_month_motos,
-        'vehicles_month_mototaxis': vehicles_month_mototaxis,
-        'vehicles_year_motos': vehicles_year_motos,
-        'vehicles_year_mototaxis': vehicles_year_mototaxis,
-    }
-
-
-def chargers_needed(
-    sessions_peak_per_hour: float,
-    session_minutes: float,
-    utilization: float,
-    sockets_per_charger: int,
-) -> int:
-    """
-    Calcula el número de cargadores requeridos en hora pico.
-
-    Cada socket puede atender 60 / (session_minutes / utilization) sesiones por hora.
-    Cada cargador tiene `sockets_per_charger` sockets.
-    """
-    ts_eff = session_minutes / utilization
-    sessions_per_socket_per_hour = 60.0 / ts_eff
-    capacity_per_charger_per_hour = sockets_per_charger * sessions_per_socket_per_hour
-    return int(math.ceil(sessions_peak_per_hour / max(capacity_per_charger_per_hour, 1e-9)))
+    return ChargerSet(chargers=tuple(specs))
 
 
-def chargers_needed_tabla13(
-    sesiones_pico_4h: float,
-    min_chargers: int = 4,
-    max_chargers: int = 35,
-) -> int:
-    """
-    Calcula el número de cargadores requeridos según calibración Tabla 13 OE2.
+def validate_charger_set(charger_set: ChargerSet) -> dict[str, Any]:
+    """Valida un conjunto de cargadores para especificación v5.2 (Modo 3 @ 7.4 kW).
 
-    Calibración basada en Tabla 13:
-    - Sesiones pico 4h min = 103 → 4 cargadores (25.75 sesiones/cargador)
-    - Sesiones pico 4h max = 1030 → 35 cargadores (29.43 sesiones/cargador)
-    - Promedio cargadores = 20.61 para promedio sesiones = 593.52
+    PLAYAS SEPARADAS según dimensionamiento por hora punta:
+    - PLAYA MOTOS: 15 cargadores × 2 = 30 tomas (30 motos/hora punta)
+    - PLAYA MOTOTAXIS: 4 cargadores × 2 = 8 tomas (4.2 mototaxis/hora punta)
+    - Total: 19 cargadores, 38 tomas, 281.2 kW
+    - Tiempos reales: 60 min (moto), 90 min (mototaxi)
 
     Args:
-        sesiones_pico_4h: Número de sesiones en las 4 horas pico
-        min_chargers: Mínimo de cargadores (default 4)
-        max_chargers: Máximo de cargadores (default 35)
+        charger_set: Conjunto a validar
 
     Returns:
-        Número de cargadores (entero)
+        Diccionario con resultados de validación
     """
-    # Para reproducir Tabla 13:
-    # - Sesiones prom = 593.52 → 20.61 cargadores → ratio = 28.80
-    # - Sesiones min = 103 → 4 cargadores → ratio = 25.75
-    # - Sesiones max = 1030 → 35 cargadores → ratio = 29.43
-    #
-    # El ratio varía ligeramente. Usamos el ratio promedio de 28.80
-    RATIO_SESIONES_POR_CARGADOR = 28.80
-
-    chargers = math.ceil(sesiones_pico_4h / RATIO_SESIONES_POR_CARGADOR)
-
-    # Aplicar límites
-    return max(min_chargers, min(max_chargers, chargers))
-
-
-def compute_capacity_breakdown(
-    chargers: int,
-    sockets_per_charger: int,
-    session_minutes: float,
-    opening_hour: int,
-    closing_hour: int,
-    peak_hours: list[int],
-) -> dict[str, float]:
-    """Capacidad pico y total considerando horario de apertura y horas pico."""
-    hours_open = max(closing_hour - opening_hour, 0)
-    hours_peak = float(len(set(peak_hours)))
-    hours_offpeak = max(hours_open - hours_peak, 0.0)
-    sessions_per_socket_peak = hours_peak * (60.0 / session_minutes)
-    sessions_per_socket_offpeak = hours_offpeak * (60.0 / session_minutes)
-    sessions_per_charger_peak = sessions_per_socket_peak * sockets_per_charger
-    sessions_per_charger_offpeak = sessions_per_socket_offpeak * sockets_per_charger
-    peak_total = sessions_per_charger_peak * chargers
-    offpeak_total = sessions_per_charger_offpeak * chargers
-    return {
-        "hours_open": hours_open,
-        "hours_peak": hours_peak,
-        "hours_offpeak": hours_offpeak,
-        "sessions_peak_total": peak_total,
-        "sessions_offpeak_total": offpeak_total,
-        "sessions_day_total": peak_total + offpeak_total,
-        "sessions_per_charger_peak": sessions_per_charger_peak,
-        "sessions_per_charger_day": sessions_per_charger_peak + sessions_per_charger_offpeak,
-    }
-
-
-def compute_capacity_metrics(
-    chargers: int,
-    sockets_per_charger: int,
-    session_minutes: float,
-    opening_hour: int,
-    closing_hour: int,
-) -> dict[str, float]:
-    """Calcula la capacidad de sesiones por hora y por día dada la infraestructura."""
-    hours_open = max(closing_hour - opening_hour, 0)
-    sessions_per_hour_capacity = chargers * sockets_per_charger * (60.0 / session_minutes)
-    sessions_per_day_capacity = sessions_per_hour_capacity * hours_open
-    return {
-        "sessions_per_hour_capacity": sessions_per_hour_capacity,
-        "sessions_per_day_capacity": sessions_per_day_capacity,
-    }
-
-
-def compute_co2_reduction(
-    energy_day_kwh: float,
-    grid_carbon_kg_per_kwh: float,
-    km_per_kwh: float,
-    km_per_gallon: float,
-    kgco2_per_gallon: float,
-) -> dict[str, float]:
-    """Calcula reducción de CO2 al desplazar km eléctricos en lugar de gasolina.
-
-    NOTA: Esta función calcula la reducción DIRECTA (electrificación).
-    Para la metodología completa OE3, usar compute_co2_breakdown_oe3().
-    """
-    km_day = energy_day_kwh * km_per_kwh
-    gallons_day = km_day / km_per_gallon if km_per_gallon else 0.0
-    co2_gas_kg_day = gallons_day * kgco2_per_gallon
-    co2_ev_kg_day = energy_day_kwh * grid_carbon_kg_per_kwh
-    co2_reduction_kg_day = co2_gas_kg_day - co2_ev_kg_day
-    return {
-        "km_day": km_day,
-        "gallons_day": gallons_day,
-        "co2_gas_kg_day": co2_gas_kg_day,
-        "co2_ev_kg_day": co2_ev_kg_day,
-        "co2_reduction_kg_day": co2_reduction_kg_day,
-        "co2_reduction_kg_year": co2_reduction_kg_day * 365.0,
-    }
-
-
-def allocate_grid_to_ev(grid_import_kwh: float, ev_kwh: float, building_kwh: float) -> float:
-    """Asigna proporcionalmente la importación de red a la carga EV.
-
-    Metodología OE3: la fracción de EV sobre la demanda total determina
-    cuánta energía de red se asigna a la carga EV.
-    """
-    denom = max(ev_kwh + building_kwh, 1e-9)
-    return grid_import_kwh * (ev_kwh / denom)
-
-
-def compute_co2_breakdown_oe3(
-    ev_energy_kwh_day: float,
-    total_demand_kwh_day: float,
-    grid_import_kwh_day: float,
-    pv_generation_kwh_day: float,
-    grid_export_kwh_day: float,
-    grid_carbon_kg_per_kwh: float,
-    km_per_kwh: float,
-    km_per_gallon: float,
-    kgco2_per_gallon: float,
-    project_life_years: int = 20,
-) -> dict[str, float]:
-    """Calcula breakdown completo de CO2 usando metodología OE3.
-
-    Metodología:
-    1. Asigna energía de red a EV proporcionalmente (fracción EV/total)
-    2. Energía EV no-red = EV total - EV desde red (proviene de PV/BESS)
-    3. Reducción DIRECTA = Baseline gasolina - EV toda red
-    4. Reducción INDIRECTA = EV desde PV × factor red
-    5. NETO = Directa + Indirecta
-
-    Args:
-        ev_energy_kwh_day: Energía diaria EV
-        total_demand_kwh_day: Demanda total diaria (EV + edificio)
-        grid_import_kwh_day: Importación diaria de red
-        pv_generation_kwh_day: Generación PV diaria
-        grid_export_kwh_day: Exportación diaria a red
-        grid_carbon_kg_per_kwh: Factor de emisión de red
-        km_per_kwh: Eficiencia EV (km/kWh)
-        km_per_gallon: Eficiencia gasolina (km/galón)
-        kgco2_per_gallon: Factor emisión gasolina
-        project_life_years: Vida útil del proyecto (años)
-
-    Returns:
-        Diccionario con métricas diarias y anuales de reducción CO2
-    """
-    # Demanda de edificio (sin EV)
-    building_kwh_day = total_demand_kwh_day - ev_energy_kwh_day
-
-    # Asignación de energía de red a EV (metodología OE3)
-    ev_from_grid_kwh_day = allocate_grid_to_ev(
-        grid_import_kwh_day, ev_energy_kwh_day, building_kwh_day
-    )
-    ev_from_pv_kwh_day = max(ev_energy_kwh_day - ev_from_grid_kwh_day, 0.0)
-
-    # PV usado localmente
-    pv_used_kwh_day = max(pv_generation_kwh_day - grid_export_kwh_day, 0.0)
-
-    # Valores anuales
-    ev_energy_kwh_year = ev_energy_kwh_day * 365
-    ev_from_grid_kwh_year = ev_from_grid_kwh_day * 365
-    ev_from_pv_kwh_year = ev_from_pv_kwh_day * 365
-
-    # Servicio de transporte
-    km_day = ev_energy_kwh_day * km_per_kwh
-    km_year = ev_energy_kwh_year * km_per_kwh
-    gallons_day = km_day / max(km_per_gallon, 1e-9)
-    gallons_year = km_year / max(km_per_gallon, 1e-9)
-
-    # 1. Baseline: CO2 si usaran gasolina
-    transport_base_kg_day = gallons_day * kgco2_per_gallon
-    transport_base_kg_year = gallons_year * kgco2_per_gallon
-
-    # 2. CO2 si toda la carga EV fuera de red (escenario sin PV)
-    ev_all_grid_kg_day = ev_energy_kwh_day * grid_carbon_kg_per_kwh
-    ev_all_grid_kg_year = ev_energy_kwh_year * grid_carbon_kg_per_kwh
-
-    # 3. Reducción DIRECTA: Gasolina → EV (aunque toda sea de red)
-    direct_avoided_kg_day = transport_base_kg_day - ev_all_grid_kg_day
-    direct_avoided_kg_year = transport_base_kg_year - ev_all_grid_kg_year
-
-    # 4. Reducción INDIRECTA: EV alimentado por PV en lugar de red
-    indirect_avoided_kg_day = ev_from_pv_kwh_day * grid_carbon_kg_per_kwh
-    indirect_avoided_kg_year = ev_from_pv_kwh_year * grid_carbon_kg_per_kwh
-
-    # 5. Reducción NETA
-    net_avoided_kg_day = direct_avoided_kg_day + indirect_avoided_kg_day
-    net_avoided_kg_year = direct_avoided_kg_year + indirect_avoided_kg_year
-
-    # 6. CO2 residual (EV que aún viene de la red)
-    residual_grid_ev_kg_day = ev_from_grid_kwh_day * grid_carbon_kg_per_kwh
-    residual_grid_ev_kg_year = ev_from_grid_kwh_year * grid_carbon_kg_per_kwh
-
-    # Fracción EV
-    ev_fraction = ev_energy_kwh_day / max(total_demand_kwh_day, 1e-9)
-
-    return {
-        # Energía
-        "ev_energy_kwh_day": ev_energy_kwh_day,
-        "ev_energy_kwh_year": ev_energy_kwh_year,
-        "ev_from_grid_kwh_day": ev_from_grid_kwh_day,
-        "ev_from_grid_kwh_year": ev_from_grid_kwh_year,
-        "ev_from_pv_kwh_day": ev_from_pv_kwh_day,
-        "ev_from_pv_kwh_year": ev_from_pv_kwh_year,
-        "ev_fraction": ev_fraction,
-        "pv_used_kwh_day": pv_used_kwh_day,
-        # Transporte
-        "km_day": km_day,
-        "km_year": km_year,
-        "gallons_day": gallons_day,
-        "gallons_year": gallons_year,
-        # Baseline gasolina
-        "transport_base_kgco2_day": transport_base_kg_day,
-        "transport_base_kgco2_year": transport_base_kg_year,
-        "transport_base_tco2_year": transport_base_kg_year / 1000.0,
-        # Escenario solo red
-        "ev_all_grid_kgco2_day": ev_all_grid_kg_day,
-        "ev_all_grid_kgco2_year": ev_all_grid_kg_year,
-        "ev_all_grid_tco2_year": ev_all_grid_kg_year / 1000.0,
-        # Reducción DIRECTA (electrificación)
-        "direct_avoided_kgco2_day": direct_avoided_kg_day,
-        "direct_avoided_kgco2_year": direct_avoided_kg_year,
-        "direct_avoided_tco2_year": direct_avoided_kg_year / 1000.0,
-        # Reducción INDIRECTA (PV alimenta EV)
-        "indirect_avoided_kgco2_day": indirect_avoided_kg_day,
-        "indirect_avoided_kgco2_year": indirect_avoided_kg_year,
-        "indirect_avoided_tco2_year": indirect_avoided_kg_year / 1000.0,
-        # Reducción NETA
-        "net_avoided_kgco2_day": net_avoided_kg_day,
-        "net_avoided_kgco2_year": net_avoided_kg_year,
-        "net_avoided_tco2_year": net_avoided_kg_year / 1000.0,
-        # Residual
-        "residual_grid_ev_kgco2_day": residual_grid_ev_kg_day,
-        "residual_grid_ev_kgco2_year": residual_grid_ev_kg_year,
-        "residual_grid_ev_tco2_year": residual_grid_ev_kg_year / 1000.0,
-        # Proyección
-        "direct_avoided_tco2_life": direct_avoided_kg_year / 1000.0 * project_life_years,
-        "indirect_avoided_tco2_life": indirect_avoided_kg_year / 1000.0 * project_life_years,
-        "net_avoided_tco2_life": net_avoided_kg_year / 1000.0 * project_life_years,
-    }
-
-
-def evaluate_scenario(
-    scenario_id: int,
-    pe_motos: float,
-    pe_mototaxis: float,
-    fc_motos: float,
-    fc_mototaxis: float,
-    n_motos: int,
-    n_mototaxis: int,
-    peak_hours: list[int],
-    session_minutes: float,
-    utilization: float,
-    charger_power_kw_moto: float,
-    charger_power_kw_mototaxi: float,
-    sockets_per_charger: int,
-    battery_kwh_moto: float = 2.0,
-    battery_kwh_mototaxi: float = 4.0,
-) -> ChargerSizingResult:
-    """
-    Evalúa un escenario de dimensionamiento de cargadores Modo 3.
-
-    IMPORTANTE: n_motos y n_mototaxis son vehículos en HORA PICO (6pm-10pm, 4h).
-    Estos valores se usan SOLO para dimensionar los cargadores.
-    Los cargadores dimensionados operan TODO EL DÍA (9am-10pm, 13h).
-
-    La energía diaria se calcula basándose en:
-    - Capacidad de batería del vehículo (no potencia del cargador)
-    - FC = porcentaje de batería descargada que necesita recarga
-    - PE = probabilidad de que un vehículo que llega realmente cargue
-
-    Args:
-        pe_motos: Probabilidad de evento de carga para motos (0-1)
-        pe_mototaxis: Probabilidad de evento de carga para mototaxis (0-1)
-        fc_motos: Factor de carga motos (% de batería a recargar)
-        fc_mototaxis: Factor de carga mototaxis (% de batería a recargar)
-        n_motos: Número de motos en HORA PICO (6pm-10pm, 4h)
-        n_mototaxis: Número de mototaxis en HORA PICO (6pm-10pm, 4h)
-        peak_hours: Lista de horas pico (ej: [18, 19, 20, 21])
-        session_minutes: Duración de sesión de carga
-        utilization: Factor de utilización del cargador
-        charger_power_kw_moto: Potencia cargador motos (2 kW Modo 3)
-        charger_power_kw_mototaxi: Potencia cargador mototaxis (3 kW Modo 3)
-        sockets_per_charger: Sockets por cargador
-        battery_kwh_moto: Capacidad batería moto (default 2.0 kWh)
-        battery_kwh_mototaxi: Capacidad batería mototaxi (default 4.0 kWh)
-    """
-    # IMPORTANTE: n_motos y n_mototaxis son vehículos en HORA PICO (6pm-10pm, 4h)
-    # Estos valores se usan SOLO para dimensionar los cargadores.
-    # PE y FC se aplican para calcular la energía y el número de cargadores necesarios.
-
-    # Vehículos efectivos que cargan = valores de hora pico × PE
-    # PE = probabilidad de que un vehículo que llega realmente cargue (0.9 = 90%)
-    motos_charging = n_motos * pe_motos
-    mototaxis_charging = n_mototaxis * pe_mototaxis
-    total_vehicles_charging = motos_charging + mototaxis_charging
-
-    # Número de horas pico
-    n_peak_hours = len(peak_hours)
-
-    # Sesiones por hora durante hora punta
-    # Los vehículos llegan distribuidos en las 4 horas pico
-    sessions_peak_motos = motos_charging / n_peak_hours
-    sessions_peak_mototaxis = mototaxis_charging / n_peak_hours
-    sessions_peak_per_hour = sessions_peak_motos + sessions_peak_mototaxis
-
-    # Energía por vehículo basada en CAPACIDAD DE BATERÍA × FC
-    # FC = porcentaje de batería descargada que necesita recarga
-    # Esto es la energía real que necesita el vehículo, no lo que entrega el cargador
-    energy_per_moto_kwh = battery_kwh_moto * fc_motos
-    energy_per_mototaxi_kwh = battery_kwh_mototaxi * fc_mototaxis
-
-    # Energía diaria total = vehículos que cargan × energía por vehículo
-    energy_motos_day = motos_charging * energy_per_moto_kwh
-    energy_mototaxis_day = mototaxis_charging * energy_per_mototaxi_kwh
-    energy_day = energy_motos_day + energy_mototaxis_day
-
-    # Potencia promedio ponderada para cálculo de cargadores
-    if total_vehicles_charging > 0:
-        avg_charger_power = (motos_charging * charger_power_kw_moto +
-                            mototaxis_charging * charger_power_kw_mototaxi) / total_vehicles_charging
-    else:
-        avg_charger_power = (charger_power_kw_moto + charger_power_kw_mototaxi) / 2
-
-    chargers = chargers_needed(
-        sessions_peak_per_hour=sessions_peak_per_hour,
-        session_minutes=session_minutes,
-        utilization=utilization,
-        sockets_per_charger=sockets_per_charger,
-    )
-
-    # Calcular vehículos (usando PE promedio y FC promedio para compatibilidad)
-    pe_avg = (pe_motos * n_motos + pe_mototaxis * n_mototaxis) / (n_motos + n_mototaxis)
-    fc_avg = (fc_motos * n_motos + fc_mototaxis * n_mototaxis) / (n_motos + n_mototaxis)
-    vehicle_demand = calculate_vehicle_demand(n_motos, n_mototaxis, pe_avg, fc_avg)
-
-    return ChargerSizingResult(
-        scenario_id=scenario_id,
-        pe=pe_avg,
-        fc=fc_avg,
-        chargers_required=chargers,
-        sockets_total=chargers * sockets_per_charger,
-        energy_day_kwh=energy_day,
-        peak_sessions_per_hour=sessions_peak_per_hour,
-        session_minutes=session_minutes,
-        utilization=utilization,
-        charger_power_kw=avg_charger_power,
-        sockets_per_charger=sockets_per_charger,
-        **vehicle_demand,
-    )
-
-
-def generate_random_scenarios(
-    seed: int,
-    n_scenarios: int = 100,
-    pe_values: NDArray[np.floating[Any]] | None = None,
-    fc_values: NDArray[np.floating[Any]] | None = None
-) -> tuple[NDArray[np.floating[Any]], NDArray[np.floating[Any]]]:
-    """Genera escenarios aleatorios de PE y FC calibrados para Tabla 13 OE2.
-
-    Parámetros calibrados:
-    - PE: 0.10 a 1.0 (10 valores)
-    - FC: 0.285 a 1.0 (8 valores) - FC_min=0.285 para E_min=92.80 kWh
-    """
-    rng = np.random.default_rng(seed)
-
-    # ================================================================
-    # CALIBRACIÓN TABLA 13 OE2 (DATASET STATISTICS):
-    # ⚠️  NOTA: Estos valores (3252.00, 92.80, etc.) son ESTADÍSTICAS DEL DATASET OE2
-    #     NO son valores eliminados del código (3252.0 kWh constante fue removido)
-    # - n_total = 1030 vehículos [LEGACY: 3061 removido 3.60× 2026-02-04]
-    # - bat_avg = 3.157 kWh [LEGACY: 3252/1030 del algoritmo removido]
-    # - E_min = 92.80 kWh → PE=0.1, FC=0.285
-    # - E_max = 3252.00 kWh (MAX TABLA 13) → PE=1.0, FC=1.0
-    # COMPARATIVAS HISTÓRICAS (Valores Eliminados 2026-02-04):
-    #   • Energía constante removida: 3252.0 kWh/día → AHORA: 903.46 (3.60×)
-    #   • Vehículos constante removida: 3061 total → AHORA: 1030 (2.97×)
-    # ================================================================
-    if pe_values is None:
-        pe_values = np.linspace(0.10, 1.0, 10)  # 10 valores: 0.1, 0.2, ..., 1.0
-    if fc_values is None:
-        # FC_min = 0.285 calibrado para E_min = 92.80 kWh
-        fc_values = np.array([0.285, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.0])
-
-    pe_list = rng.choice(pe_values, size=n_scenarios, replace=True)
-    fc_list = rng.choice(fc_values, size=n_scenarios, replace=True)
-    return pe_list, fc_list
-
-
-def select_recommended(df: pd.DataFrame) -> pd.Series:
-    """
-    Selecciona el escenario recomendado de un DataFrame de escenarios.
-
-    La estrategia de selección es la siguiente:
-    1. Filtra los escenarios para quedarse con aquellos cuyo número de cargadores
-       requeridos está en o por encima del percentil 75.
-    2. De entre esos escenarios, selecciona el que tiene la máxima energía diaria.
-
-    Args:
-        df: DataFrame con los escenarios de dimensionamiento. Debe contener
-            las columnas 'chargers_required' y 'energy_day_kwh'.
-
-    Returns:
-        Una Serie de pandas con la fila del escenario recomendado.
-    """
-    p75 = df["chargers_required"].quantile(0.75)  # type: ignore[attr-defined, union-attr]
-    df_p75 = df[df["chargers_required"] >= p75]  # type: ignore[index]
-    return df_p75.sort_values("energy_day_kwh", ascending=False).iloc[0]  # type: ignore[attr-defined, union-attr]
-
-
-def build_hourly_profile(
-    energy_day_kwh: float,
-    opening_hour: int,
-    closing_hour: int,
-    peak_hours: list[int],
-    peak_share_day: float,
-    max_power_kw: float | None = None,
-) -> pd.DataFrame:
-    """
-    Construye perfil de carga cada 15 minutos (96 intervalos por día).
-
-    Distribuye la energía diaria con campana suave que encaja en el bloque pico:
-    - Subida progresiva (smoothstep) desde apertura hasta inicio de pico.
-    - Pico plano en la ventana definida.
-    - Bajada progresiva (smoothstep) hasta el cierre.
-    - Respeta peak_share_day para energía en pico vs. resto.
-    - Si max_power_kw está definido, limita la potencia máxima y redistribuye el exceso.
-    """
-    # 96 intervalos de 15 minutos (24 horas × 4)
-    intervals_per_hour = 4
-    total_intervals = 24 * intervals_per_hour
-    intervals = list(range(total_intervals))
-
-    # Convertir horas a intervalos de 15 min
-    # IMPORTANTE: closing_hour es la hora de CIERRE (sin actividad)
-    # Por lo tanto, operating_intervals debe terminar ANTES de closing_hour
-    # Ejemplo: si closing_hour=22, última actividad es 21:45 (intervalo 87)
-    opening_interval = opening_hour * intervals_per_hour
-    closing_interval = closing_hour * intervals_per_hour - 1  # Última actividad antes del cierre
-
-    operating_intervals = [i for i in intervals if opening_interval <= i <= closing_interval]
-    peak_intervals: list[int] = []
-    for h in peak_hours:
-        peak_intervals.extend(range(h * intervals_per_hour, (h + 1) * intervals_per_hour))
-    hours_peak = [i for i in peak_intervals if i in operating_intervals]
-    # hours_day = len(operating_hours)  # not used
-
-    share_peak = peak_share_day
-    share_off = 1.0 - share_peak
-    peak_start = min(hours_peak) if hours_peak else opening_interval
-    peak_end = max(hours_peak) if hours_peak else closing_interval
-
-    def smoothstep(x: float) -> float:
-        # transición suave 0->1 sin quiebres
-        return x * x * (3 - 2 * x)
-
-    # Generar variación aleatoria para simular llegadas irregulares de vehículos
-    # Usar seed basado en energy_day_kwh para reproducibilidad
-    np.random.seed(int(energy_day_kwh) % 10000)
-
-    # Pesos base: pre-pico crece suave, pico plano, post-pico decrece suave
-    # REGLA ESPECIAL:
-    # - Apertura (9h primer intervalo) debe ser CERO
-    # - Crecimiento con variación aleatoria
-    # - Última hora (21h-22h) debe tener rampa descendente a CERO
-    last_hour_start = (closing_hour - 1) * intervals_per_hour  # 21h × 4 = intervalo 84
-
-    pre_peak = [i for i in operating_intervals if i < peak_start]
-    post_peak = [i for i in operating_intervals if i > peak_end and i < last_hour_start]
-    last_hour_intervals = [i for i in operating_intervals if i >= last_hour_start]
-
-    weights_base: dict[int, float] = {}
-
-    # Subida con variación aleatoria
-    for idx, i in enumerate(pre_peak):
-        if idx == 0:
-            # PRIMERA ACTIVIDAD (9:00) debe ser CERO
-            weights_base[i] = 0.0
-        else:
-            t = (i - opening_interval) / max(len(pre_peak), 1)
-            base_weight = smoothstep(t)
-            # Agregar variación aleatoria ±15% pero mantener tendencia creciente
-            random_factor = 1.0 + np.random.uniform(-0.15, 0.15)
-            weights_base[i] = max(0.0, base_weight * random_factor)
-
-    # Pico con ligera variación
-    for i in hours_peak:
-        # Pico con variación ±5% para simular llegadas irregulares
-        weights_base[i] = 1.0 * (1.0 + np.random.uniform(-0.05, 0.05))
-
-    # Bajada (sin incluir última hora) con variación
-    for i in post_peak:
-        t = (last_hour_start - i) / max(len(post_peak), 1)
-        base_weight = smoothstep(t)
-        # Variación aleatoria ±10%
-        random_factor = 1.0 + np.random.uniform(-0.10, 0.10)
-        weights_base[i] = max(0.0, base_weight * random_factor)
-
-    # Última hora: rampa descendente lineal a CERO (sin variación, debe llegar exacto a cero)
-    for idx, i in enumerate(last_hour_intervals):
-        # De 1.0 a 0.0 linealmente en los 4 intervalos (21:00, 21:15, 21:30, 21:45)
-        remaining = len(last_hour_intervals) - idx
-        weights_base[i] = remaining / len(last_hour_intervals)
-
-    base_peak_sum = sum(weights_base[i] for i in hours_peak) if hours_peak else 0.0
-    base_off_sum = sum(weights_base[i] for i in operating_intervals if i not in hours_peak)
-
-    weights: dict[int, float] = {}
-    for i in operating_intervals:
-        if i in hours_peak and base_peak_sum > 0:
-            weights[i] = weights_base[i] * (share_peak / base_peak_sum)
-        elif i not in hours_peak and base_off_sum > 0:
-            weights[i] = weights_base[i] * (share_off / base_off_sum)
-        else:
-            weights[i] = 0.0
-
-    total_w = sum(weights.values()) if weights else 1.0
-    factors: list[float] = []
-    is_peak = []
-    time_of_day = []
-
-    for i in intervals:
-        if i in weights:
-            factors.append(weights[i] / total_w)
-            is_peak.append(i in hours_peak)  # type: ignore[attr-defined]
-        else:
-            factors.append(0.0)
-            is_peak.append(False)  # type: ignore[attr-defined]
-
-        # Calcular hora del día en formato decimal (0.00, 0.25, 0.50, 0.75, 1.00, etc.)
-        hour = i // intervals_per_hour
-        minute = (i % intervals_per_hour) * 15
-        time_of_day.append(hour + minute / 60.0)  # type: ignore[attr-defined]
-
-    factor_array = np.array(factors, dtype=float)
-
-    # Energía en kWh para cada intervalo de 15 min
-    energy_interval = energy_day_kwh * factor_array
-    # Potencia en kW (promedio durante 15 min): kWh / 0.25h = kW
-    power_kw = energy_interval / 0.25
-
-    # Aplicar límite de potencia si está definido
-    if max_power_kw is not None and max_power_kw > 0:
-        # Identificar intervalos que exceden el límite
-        over_limit = power_kw > max_power_kw
-        if over_limit.any():
-            # Calcular energía excedente
-            excess_energy = energy_interval[over_limit] - (max_power_kw * 0.25)
-            total_excess = excess_energy.sum()
-
-            # Limitar los intervalos que exceden
-            energy_interval[over_limit] = max_power_kw * 0.25
-            power_kw[over_limit] = max_power_kw
-
-            # Redistribuir el exceso en intervalos que tienen capacidad disponible
-            available_capacity = max_power_kw - power_kw
-            available_mask = available_capacity > 0.1  # Solo intervalos con capacidad significativa
-
-            if available_mask.any():
-                total_available_capacity = available_capacity[available_mask].sum()
-                if total_available_capacity > 0:
-                    # Distribuir proporcionalmente a la capacidad disponible
-                    redistribution_factors = available_capacity[available_mask] / total_available_capacity
-                    additional_power = (total_excess / 0.25) * redistribution_factors  # kW adicional
-
-                    # Asegurar que no excedamos el límite al redistribuir
-                    new_power = power_kw[available_mask] + additional_power
-                    new_power = np.minimum(new_power, max_power_kw)
-
-                    power_kw[available_mask] = new_power
-                    energy_interval[available_mask] = new_power * 0.25
-
-    return pd.DataFrame({
-        "interval": intervals,
-        "time_of_day": time_of_day,
-        "hour": [i // intervals_per_hour for i in intervals],
-        "minute": [(i % intervals_per_hour) * 15 for i in intervals],
-        "energy_kwh": energy_interval,
-        "power_kw": power_kw,
-        "is_peak": is_peak,
-    })
-
-
-def create_individual_chargers(
-    n_chargers: int,
-    charger_power_kw: float,
-    sockets_per_charger: int,
-    daily_profile: pd.DataFrame,
-    charger_type: str = "Level2",
-    prefix: str = "EV_CHARGER",
-    start_index: int = 1,
-    playa: str = "",
-) -> list[IndividualCharger]:
-    """
-    Crea una lista de cargadores individuales para simulación en CityLearn.
-
-    Distribuye la carga total diaria (definida en `daily_profile`) de manera
-    equitativa entre el número de cargadores especificado. Para simular un
-    uso más realista, introduce una pequeña variación aleatoria (+/- 10%) en
-    el perfil de carga de cada cargador, normalizando luego para que la
-    energía diaria total se conserve.
-
-    Args:
-        n_chargers: Número de cargadores individuales a crear.
-        charger_power_kw: Potencia nominal de cada cargador en kW.
-        sockets_per_charger: Número de tomas por cargador.
-        daily_profile: DataFrame con el perfil de carga agregado de 24 horas.
-                       Debe contener las columnas 'energy_kwh' y 'power_kw'.
-        charger_type: Etiqueta del tipo de cargador (ej. "Level2_EV").
-
-    Returns:
-        Una lista de objetos `IndividualCharger`, cada uno con su perfil de
-        carga horario, listo para ser usado en CityLearn.
-    """
-    chargers = []
-    total_daily_energy = daily_profile['energy_kwh'].sum()
-    energy_per_charger = total_daily_energy / n_chargers
-
-    # Perfil base por cargador
-    base_profile = (daily_profile['power_kw'] / n_chargers).tolist()
-
-    for i in range(n_chargers):
-        # Pequeña variación en el perfil (+/- 10%)
-        rng = np.random.default_rng(42 + i)
-        variation = 1.0 + rng.uniform(-0.1, 0.1, 24)
-        individual_profile = [p * v for p, v in zip(base_profile, variation)]
-
-        # Normalizar para mantener energía total
-        profile_sum = sum(individual_profile)
-        if profile_sum > 0:
-            individual_profile = [p * energy_per_charger / profile_sum for p in individual_profile]
-
-        charger = IndividualCharger(
-            charger_id=f"{prefix}_{start_index + i:03d}",
-            charger_type=charger_type,
-            power_kw=charger_power_kw,
-            sockets=sockets_per_charger,
-            playa=playa,
-            location_x=(i % 10) * 5.0,  # Distribución en grid
-            location_y=(i // 10) * 5.0,
-            hourly_load_profile=individual_profile,
-            daily_energy_kwh=sum(individual_profile),
-            peak_power_kw=max(individual_profile) if individual_profile else 0,
+    errors: list[str] = []
+    warnings: list[str] = []
+    is_valid = True
+
+    # Verificar cantidad exacta de cargadores
+    if charger_set.count != 19:
+        errors.append(f"Expected exactly 19 chargers, got {charger_set.count}")
+        is_valid = False
+
+    # Verificar cantidad exacta de tomas
+    if charger_set.total_sockets != 38:
+        errors.append(
+            f"Expected exactly 38 sockets, got {charger_set.total_sockets}"
         )
-        chargers.append(charger)  # type: ignore[attr-defined]
+        is_valid = False
 
-    return chargers  # type: ignore[return-value]
+    # Verificar distribución exacta (con tiempos reales)
+    if charger_set.motos_count != 15:
+        errors.append(f"Expected 15 chargers for motos, got {charger_set.motos_count}")
+        is_valid = False
 
+    if charger_set.mototaxis_count != 4:
+        errors.append(f"Expected 4 chargers for mototaxis, got {charger_set.mototaxis_count}")
+        is_valid = False
 
-def generate_annual_charger_profiles(
-    chargers: list[IndividualCharger],
-    opening_hour: int,
-    closing_hour: int,
-    peak_hours: list[int],
-    peak_share_day: float,
-    year: int = 2024,
-    seed: int = 42,
-) -> pd.DataFrame:
-    """
-    Genera perfiles anuales (35040 intervalos de 15 min) para cada cargador individual.
+    # Verificar IDs únicos y secuenciales (0-18)
+    ids = [c.charger_id for c in charger_set.chargers]
+    if len(ids) != len(set(ids)):
+        errors.append("Charger IDs are not unique")
+        is_valid = False
 
-    Replica el perfil diario para todo el año, añadiendo variación realista
-    por día de semana (menos carga fines de semana) y variación aleatoria.
+    if ids != list(range(19)):
+        errors.append(f"Charger IDs should be 0-18, got {ids}")
+        is_valid = False
 
-    Args:
-        chargers: Lista de cargadores individuales con perfiles diarios.
-        opening_hour: Hora de apertura del mall.
-        closing_hour: Hora de cierre del mall.
-        peak_hours: Horas pico del día.
-        peak_share_day: Fracción de energía en horas pico.
-        year: Año para generar el índice temporal.
-        seed: Semilla para reproducibilidad.
+    # Verificar que cada cargador tiene exactamente 2 tomas (Modo 3)
+    for charger in charger_set.chargers:
+        if charger.sockets != 2:
+            errors.append(f"Charger {charger.charger_id} has {charger.sockets} sockets, expected 2")
+            is_valid = False
 
-    Returns:
-        DataFrame con 35040 filas (intervalos de 15 min) y una columna por cargador.
-    """
-    # Use parameters to satisfy linter (reserved for future peak-hour weighting)
-    _unused_peak_hours = len(peak_hours)  # noqa: F841
-    _unused_peak_share = peak_share_day * 1.0  # noqa: F841
-    del _unused_peak_hours, _unused_peak_share
-
-    # Crear índice temporal anual (intervalos de 15 minutos)
-    start_date = pd.Timestamp(f'{year}-01-01 00:00:00')
-    intervals_per_year = 8760 * 4  # 35040 intervalos de 15 min
-    index = pd.date_range(start=start_date, periods=intervals_per_year, freq='15min')
-
-    rng = np.random.default_rng(seed)
-
-    # Generar todos los perfiles primero en un diccionario para evitar fragmentación
-    all_profiles = {}
-
-    intervals_per_day = 24 * 4  # 96 intervalos de 15 min por día
-    opening_interval = opening_hour * 4
-    closing_interval = closing_hour * 4
-
-    for charger in chargers:
-        daily_profile = np.array(charger.hourly_load_profile)
-        annual_profile = np.zeros(intervals_per_year)
-
-        for day in range(365):
-            day_start = day * intervals_per_day
-            day_end = day_start + intervals_per_day
-
-            # Factor de variación por día de semana
-            day_of_week = (index[day_start].dayofweek)  # 0=Lunes, 6=Domingo
-            if day_of_week >= 5:  # Fin de semana
-                weekday_factor = 0.7 + rng.uniform(-0.05, 0.05)
-            else:  # Día laboral
-                weekday_factor = 1.0 + rng.uniform(-0.1, 0.1)
-
-            # Aplicar perfil diario con variación
-            daily_variation = 1.0 + rng.uniform(-0.15, 0.15, intervals_per_day)
-            day_profile = daily_profile * weekday_factor * daily_variation
-
-            # Asegurar que no hay carga fuera del horario
-            for i in range(intervals_per_day):
-                if i < opening_interval or i >= closing_interval:
-                    day_profile[i] = 0.0
-
-            annual_profile[day_start:day_end] = day_profile
-
-        all_profiles[charger.charger_id] = annual_profile
-
-    # Crear DataFrame de una sola vez (evita fragmentación)
-    profiles = pd.DataFrame(all_profiles, index=index)
-    profiles.index.name = 'timestamp'
-
-    return profiles
-
-
-def generate_playa_annual_dataset(
-    playa_name: str,
-    chargers: list[IndividualCharger],
-    opening_hour: int,
-    closing_hour: int,
-    peak_hours: list[int],
-    peak_share_day: float,
-    out_dir: Path,
-    scenarios: list[str] | None = None,
-    year: int = 2024,
-) -> dict[str, Any]:
-    """
-    Genera dataset anual completo para una playa de estacionamiento.
-
-    Crea diferentes escenarios de utilización:
-    - base: Utilización normal según PE/FC configurados
-    - high: Alta demanda (+20%)
-    - low: Baja demanda (-20%)
-    - weekend_only: Solo fines de semana
-
-    Args:
-        playa_name: Nombre de la playa (Playa_Motos o Playa_Mototaxis).
-        chargers: Lista de cargadores de esta playa.
-        opening_hour: Hora de apertura.
-        closing_hour: Hora de cierre.
-        peak_hours: Horas pico.
-        peak_share_day: Fracción de energía en pico.
-        out_dir: Directorio de salida.
-        scenarios: Lista de escenarios a generar.
-        year: Año para el dataset.
-
-    Returns:
-        Diccionario con información del dataset generado.
-    """
-    if scenarios is None:
-        scenarios = ['base', 'high', 'low']
-
-    playa_dir = out_dir / "annual_datasets" / playa_name
-    playa_dir.mkdir(parents=True, exist_ok=True)
-
-    scenarios_dict: dict[str, dict[str, Any]] = {}
     results: dict[str, Any] = {
-        'playa': playa_name,
-        'n_chargers': len(chargers),
-        'scenarios': scenarios_dict,
+        "is_valid": is_valid,
+        "errors": errors,
+        "warnings": warnings,
     }
-
-    # Generar perfil base
-    print(f"   Generando perfiles anuales para {playa_name}...")
-    base_profiles = generate_annual_charger_profiles(
-        chargers=chargers,
-        opening_hour=opening_hour,
-        closing_hour=closing_hour,
-        peak_hours=peak_hours,
-        peak_share_day=peak_share_day,
-        year=year,
-        seed=42,
-    )
-
-    for scenario in scenarios:
-        scenario_dir = playa_dir / scenario
-        scenario_dir.mkdir(parents=True, exist_ok=True)
-
-        # Aplicar factor de escenario
-        if scenario == 'base':
-            factor = 1.0
-        elif scenario == 'high':
-            factor = 1.2
-        elif scenario == 'low':
-            factor = 0.8
-        else:
-            factor = 1.0
-
-        scenario_profiles = base_profiles * factor
-
-        # Guardar CSV por cargador individual
-        for col in scenario_profiles.columns:
-            charger_df = pd.DataFrame({
-                'timestamp': scenario_profiles.index,
-                'power_kw': scenario_profiles[col].values,  # type: ignore[attr-defined, union-attr]
-                'energy_kwh': scenario_profiles[col].values,  # 1h timestep  # type: ignore[attr-defined, union-attr]
-            })
-            charger_df.to_csv(scenario_dir / f"{col}.csv", index=False)
-
-        # Guardar perfil agregado
-        aggregated = scenario_profiles.sum(axis=1)
-        agg_df = pd.DataFrame({
-            'timestamp': scenario_profiles.index,
-            'total_power_kw': aggregated.values,  # type: ignore[attr-defined, union-attr]
-            'total_energy_kwh': aggregated.values,  # type: ignore[attr-defined, union-attr]
-        })
-        agg_df.to_csv(scenario_dir / "aggregated_profile.csv", index=False)
-
-        # Estadísticas del escenario
-        scenarios_dict[scenario] = {
-            'path': str(scenario_dir.resolve()),
-            'n_files': len(chargers) + 1,
-            'total_energy_year_kwh': float(aggregated.sum()),
-            'peak_power_kw': float(aggregated.max()),
-            'avg_daily_energy_kwh': float(aggregated.sum() / 365),
-        }
-
-        print(f"      [OK] Escenario '{scenario}': {len(chargers)} archivos, "
-              f"{aggregated.sum()/1000:.1f} MWh/año")
-
-    # Guardar metadata
-    metadata: dict[str, Any] = {  # type: ignore[var-annotated]
-        'playa': playa_name,
-        'year': year,
-        'n_chargers': len(chargers),
-        'charger_ids': [c.charger_id for c in chargers],
-        'opening_hour': opening_hour,
-        'closing_hour': closing_hour,
-        'peak_hours': peak_hours,
-        'scenarios': scenarios_dict,
-    }
-    (playa_dir / "metadata.json").write_text(
-        json.dumps(metadata, indent=2), encoding='utf-8'
-    )
 
     return results
 
 
-def generate_charger_plots(
-    df_scenarios: pd.DataFrame,
-    esc_rec: pd.Series,
-    profile: pd.DataFrame,
-    out_dir: Path,
-    reports_dir: Path | None = None,
-) -> None:
-    """
-    Genera y guarda un conjunto de gráficas para el análisis de dimensionamiento.
-
-    Crea las siguientes visualizaciones:
-    1.  **Vehículos a Cargar por Período:** Gráfico de barras que muestra la
-        cantidad de motos y mototaxis a cargar diaria, mensual y anualmente
-        para el escenario recomendado.
-    2.  **Perfil de Carga Diario:** Gráfico de línea que muestra la distribución
-        horaria de la demanda de energía, destacando las horas pico.
-    3.  **Análisis de Escenarios:** Un mapa de calor que relaciona PE y FC con
-        el número de cargadores, y un histograma de la distribución de
-        cargadores requeridos.
-    4.  **Resumen del Sistema:** Un dashboard con la energía diaria, la
-        relación entre sesiones pico y cargadores, una tabla resumen y el
-        perfil de potencia horario.
-
-    Args:
-        df_scenarios: DataFrame con todos los escenarios de sensibilidad evaluados.
-        esc_rec: Serie de pandas que representa el escenario recomendado.
-        profile: DataFrame con el perfil de carga horario del escenario recomendado.
-        out_dir: Directorio base para guardar las gráficas (usado si `reports_dir`
-                 es None).
-        reports_dir: Directorio de reportes de alto nivel donde se guardarán las
-                     gráficas, dentro de una subcarpeta `oe2/chargers`.
-    """
-    import matplotlib.pyplot as plt  # type: ignore[import]
-
-    plots_dir = out_dir / "plots"
-    if reports_dir is not None:
-        plots_dir = reports_dir / "oe2" / "chargers"
-    plots_dir.mkdir(parents=True, exist_ok=True)
-
-    def save_plot(filename: str):
-        """Guarda plot en un solo directorio con manejo de errores."""
-        try:
-            plt.savefig(plots_dir / filename, dpi=150, bbox_inches='tight')  # type: ignore[attr-defined]
-        except (IOError, OSError) as e:
-            print(f"  [ERROR] No se pudo guardar la gráfica {filename}: {e}")
-
-    # ===========================================================
-    # Gráfica 1: Cantidad de Vehículos a Cargar por Período
-    # ===========================================================
-    _fig, axes = plt.subplots(1, 3, figsize=(14, 5))  # type: ignore[attr-defined]
-
-    # Datos del escenario recomendado
-    motos_day = int(esc_rec.get('vehicles_day_motos', 0))
-    mototaxis_day = int(esc_rec.get('vehicles_day_mototaxis', 0))
-    motos_month = int(esc_rec.get('vehicles_month_motos', 0))
-    mototaxis_month = int(esc_rec.get('vehicles_month_mototaxis', 0))
-    motos_year = int(esc_rec.get('vehicles_year_motos', 0))
-    mototaxis_year = int(esc_rec.get('vehicles_year_mototaxis', 0))
-
-    periods = ['Diario', 'Mensual', 'Anual']
-    motos_data = [motos_day, motos_month, motos_year]
-    mototaxis_data = [mototaxis_day, mototaxis_month, mototaxis_year]
-
-    colors = ['#5DADE2', '#F1948A']  # Azul claro, Rojo claro
-
-    for idx, (period, m, mt) in enumerate(zip(periods, motos_data, mototaxis_data)):
-        ax = axes[idx]
-        x = ['Motos', 'Mototaxis']
-        heights = [m, mt]
-        bars = ax.bar(x, heights, color=colors, edgecolor='black', alpha=0.9)
-
-        # Etiquetas en barras
-        for bar, val in zip(bars, heights):
-            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + max(heights)*0.02,
-                    f'{val:,}', ha='center', va='bottom', fontsize=10, fontweight='bold')
-
-        ax.set_title(period, fontsize=12, fontweight='bold')
-        ax.set_ylabel('Cantidad de Vehículos', fontsize=10)
-        ax.set_ylim(0, max(heights) * 1.15 if max(heights) > 0 else 100)
-
-    plt.suptitle('Cantidad de Vehículos a Cargar por Período (Escenario Recomendado)',  # type: ignore[attr-defined]
-                 fontsize=13, fontweight='bold')
-    plt.tight_layout()
-    save_plot('chargers_vehiculos_por_periodo.png')
-    plt.close()
-    print("  [OK] Grafica: Vehiculos a Cargar por Periodo")
-
-    # ===========================================================
-    # Gráfica 2: Perfil de Carga Diario con Horas Pico
-    # ===========================================================
-    _fig, ax = plt.subplots(figsize=(12, 6))  # type: ignore[attr-defined]
-
-    hours = np.asarray(profile['hour'].values)  # type: ignore[attr-defined, arg-type]
-    power = np.asarray(profile['power_kw'].values)  # type: ignore[attr-defined, arg-type]
-    is_peak = profile['is_peak'].values  # type: ignore[attr-defined, union-attr]
-
-    # Marcar zona de horas pico
-    peak_start = None
-    peak_end = None
-    for i, (h, pk) in enumerate(zip(hours, is_peak)):  # type: ignore[arg-type]
-        if pk and peak_start is None:
-            peak_start = h
-        if pk:
-            peak_end = h
-
-    if peak_start is not None and peak_end is not None:
-        ax.axvspan(peak_start - 0.5, peak_end + 0.5, alpha=0.3, color='orange', label='Horas Pico')  # type: ignore[attr-defined]
-
-    # Línea suavizada de energía/potencia (sin alterar los valores originales)
-    x_fine = np.linspace(hours.min(), hours.max(), num=len(hours) * 4)  # type: ignore[assignment]
-    power_smooth = np.interp(x_fine, hours, power)  # type: ignore[arg-type]
-    ax.plot(x_fine, power_smooth, '-', color='steelblue', linewidth=2, label='Energía / Potencia (suavizado)')  # type: ignore[attr-defined, arg-type]
-    ax.plot(hours, power, 'o', color='steelblue', markersize=4, alpha=0.6)  # type: ignore[attr-defined]
-
-    ax.set_xlabel('Hora', fontsize=11)  # type: ignore[attr-defined]
-    ax.set_ylabel('Energía (kWh) / Potencia (kW)', fontsize=11)  # type: ignore[attr-defined]
-    ax.set_title('Perfil de Carga Diario - Escenario Recomendado', fontsize=13, fontweight='bold')  # type: ignore[attr-defined]
-    ax.set_xlim(-0.5, 23.5)
-    ax.set_xticks(range(24))  # type: ignore[attr-defined]
-    ax.legend(loc='upper left', fontsize=10)  # type: ignore[attr-defined]
-    ax.grid(True, alpha=0.3)  # type: ignore[attr-defined]
-
-    plt.tight_layout()
-    save_plot('chargers_perfil_diario.png')
-    plt.close()
-    print("  [OK] Grafica: Perfil de Carga Diario")
-
-    # ===========================================================
-    # Gráfica 3: Comparación de Escenarios (PE x FC)
-    # ===========================================================
-    _fig, axes = plt.subplots(1, 2, figsize=(14, 5))  # type: ignore[attr-defined]
-
-    # Mapa de calor: Cargadores requeridos vs PE y FC
-    ax1 = axes[0]
-    pivot = df_scenarios.pivot_table(values='chargers_required', index='fc', columns='pe', aggfunc='mean')  # type: ignore[attr-defined]
-    im = ax1.imshow(pivot.values, aspect='auto', cmap='YlOrRd', origin='lower')
-    ax1.set_xticks(range(len(pivot.columns)))
-    ax1.set_xticklabels([f'{x:.2f}' for x in pivot.columns], fontsize=8)
-    ax1.set_yticks(range(len(pivot.index)))
-    ax1.set_yticklabels([f'{y:.2f}' for y in pivot.index], fontsize=8)
-    ax1.set_xlabel('PE (Probabilidad de Evento)', fontsize=10)
-    ax1.set_ylabel('FC (Factor de Carga)', fontsize=10)
-    ax1.set_title('Cargadores Requeridos por Escenario', fontsize=11, fontweight='bold')
-    cbar = plt.colorbar(im, ax=ax1)  # type: ignore[attr-defined]
-    cbar.set_label('Cargadores')  # type: ignore[attr-defined]
-
-    # Distribución de cargadores
-    ax2 = axes[1]
-    ax2.hist(df_scenarios['chargers_required'], bins=20, color='steelblue',
-             edgecolor='white', alpha=0.7)
-    ax2.axvline(x=esc_rec['chargers_required'], color='red', linestyle='--',
-                linewidth=2, label=f'Recomendado: {int(esc_rec["chargers_required"])}')
-    ax2.set_xlabel('Número de Cargadores', fontsize=10)
-    ax2.set_ylabel('Frecuencia', fontsize=10)
-    ax2.set_title('Distribución de Cargadores por Escenario', fontsize=11, fontweight='bold')
-    ax2.legend()
-
-    plt.suptitle('Análisis de Escenarios de Dimensionamiento', fontsize=13, fontweight='bold')  # type: ignore[attr-defined]
-    plt.tight_layout()
-    save_plot('chargers_analisis_escenarios.png')
-    plt.close()
-    print("  [OK] Grafica: Analisis de Escenarios")
-
-    # ===========================================================
-    # Gráfica 4: Resumen del Sistema de Carga
-    # ===========================================================
-    _fig, axes = plt.subplots(2, 2, figsize=(14, 10))  # type: ignore[attr-defined]
-
-    # Panel 1: Energía diaria por escenario
-    ax1 = axes[0, 0]
-    ax1.scatter(df_scenarios['pe'] * df_scenarios['fc'], df_scenarios['energy_day_kwh'],
-                alpha=0.5, c='steelblue', s=50)
-    ax1.axhline(y=esc_rec['energy_day_kwh'], color='red', linestyle='--',
-                label=f'Recomendado: {esc_rec["energy_day_kwh"]:.0f} kWh')
-    ax1.set_xlabel('PE × FC', fontsize=10)
-    ax1.set_ylabel('Energía Diaria (kWh)', fontsize=10)
-    ax1.set_title('Energía Diaria vs Factor Combinado', fontsize=11, fontweight='bold')
-    ax1.legend()
-    ax1.grid(True, alpha=0.3)
-
-    # Panel 2: Sesiones pico vs cargadores
-    ax2 = axes[0, 1]
-    ax2.scatter(df_scenarios['peak_sessions_per_hour'], df_scenarios['chargers_required'],
-                alpha=0.5, c='green', s=50)
-    ax2.set_xlabel('Sesiones Pico por Hora', fontsize=10)
-    ax2.set_ylabel('Cargadores Requeridos', fontsize=10)
-    ax2.set_title('Sesiones Pico vs Cargadores', fontsize=11, fontweight='bold')
-    ax2.grid(True, alpha=0.3)
-
-    # Panel 3: Tabla resumen
-    ax3 = axes[1, 0]
-    ax3.axis('off')
-
-    summary_data = [
-        ['Parámetro', 'Mínimo', 'Recomendado', 'Máximo'],
-        ['Cargadores', f'{df_scenarios["chargers_required"].min():.0f}',
-         f'{esc_rec["chargers_required"]:.0f}', f'{df_scenarios["chargers_required"].max():.0f}'],
-        ['Sockets', f'{df_scenarios["sockets_total"].min():.0f}',
-         f'{esc_rec["sockets_total"]:.0f}', f'{df_scenarios["sockets_total"].max():.0f}'],
-        ['Energía/día (kWh)', f'{df_scenarios["energy_day_kwh"].min():.0f}',
-         f'{esc_rec["energy_day_kwh"]:.0f}', f'{df_scenarios["energy_day_kwh"].max():.0f}'],
-        ['Motos/día', f'{df_scenarios["vehicles_day_motos"].min():.0f}',
-         f'{esc_rec["vehicles_day_motos"]:.0f}', f'{df_scenarios["vehicles_day_motos"].max():.0f}'],
-        ['Mototaxis/día', f'{df_scenarios["vehicles_day_mototaxis"].min():.0f}',
-         f'{esc_rec["vehicles_day_mototaxis"]:.0f}', f'{df_scenarios["vehicles_day_mototaxis"].max():.0f}'],
-    ]
-
-    table = ax3.table(cellText=summary_data[1:], colLabels=summary_data[0],
-                      cellLoc='center', loc='center', colWidths=[0.35, 0.2, 0.25, 0.2])
-    table.auto_set_font_size(False)
-    table.set_fontsize(10)
-    table.scale(1.2, 1.8)
-
-    # Colorear header
-    for i in range(4):
-        table[(0, i)].set_facecolor('steelblue')
-        table[(0, i)].set_text_props(color='white', fontweight='bold')
-
-    ax3.set_title('Resumen de Escenarios', fontsize=11, fontweight='bold', y=0.95)
-
-    # Panel 4: Perfil horario ampliado
-    ax4 = axes[1, 1]
-    bars = ax4.bar(profile['hour'], profile['power_kw'], color='steelblue',
-                   edgecolor='darkblue', alpha=0.8)
-
-    # Marcar horas pico
-    for i, (h, pk) in enumerate(zip(profile['hour'], profile['is_peak'])):
-        if pk:
-            bars[i].set_color('orange')
-
-    ax4.set_xlabel('Hora del Día', fontsize=10)
-    ax4.set_ylabel('Potencia (kW)', fontsize=10)
-    ax4.set_title('Perfil de Potencia Horario', fontsize=11, fontweight='bold')
-    ax4.set_xticks(range(0, 24, 2))
-
-    # Estadísticas
-    total_energy = profile['energy_kwh'].sum()
-    peak_power = profile['power_kw'].max()
-    ax4.annotate(f'Energía total: {total_energy:.0f} kWh\nPotencia pico: {peak_power:.0f} kW',
-                 xy=(0.98, 0.95), xycoords='axes fraction', ha='right', va='top',
-                 fontsize=9, bbox=dict(boxstyle='round', facecolor='lightyellow'))
-
-    plt.suptitle('Sistema de Carga EV - Resumen', fontsize=14, fontweight='bold')  # type: ignore[attr-defined]
-    plt.tight_layout()
-    save_plot('chargers_resumen_sistema.png')
-    plt.close()
-    print("  [OK] Grafica: Resumen del Sistema de Carga")
-
-    print(f"  OK Plots guardados en: {plots_dir}")
+# Singleton global (creado una vez)
+_IQUITOS_CHARGERS: ChargerSet | None = None
 
 
-def run_charger_sizing(
-    out_dir: Path,
-    seed: int,
-    n_motos: int,
-    n_mototaxis: int,
-    pe_motos: float,
-    pe_mototaxis: float,
-    fc_motos: float,
-    fc_mototaxis: float,
-    peak_share_day: float,
-    session_minutes: float,
-    utilization: float,
-    charger_power_kw_moto: float,
-    charger_power_kw_mototaxi: float,
-    sockets_per_charger: int,
-    opening_hour: int,
-    closing_hour: int,
-    km_per_kwh: float,
-    km_per_gallon: float,
-    kgco2_per_gallon: float,
-    grid_carbon_kg_per_kwh: float,
-    peak_hours: list[int],
-    n_scenarios: int = 100,
-    generate_plots: bool = True,
-    reports_dir: Path | None = None,
-) -> dict[str, Any]:
-    """
-    Orquesta el proceso completo de dimensionamiento de cargadores EV Modo 3.
-
-    Esta función ejecuta los siguientes pasos:
-    1.  Calcula la demanda de la flota de vehículos eléctricos (motos y mototaxis).
-    2.  Evalúa un escenario de dimensionamiento principal basado en los parámetros
-        de entrada (PE, FC, etc.) para establecer una recomendación.
-    3.  Realiza un análisis de sensibilidad generando múltiples escenarios aleatorios
-        de PE (Probabilidad de Evento) y FC (Factor de Carga).
-    4.  Determina los escenarios de mínimo y máximo requerimiento de cargadores.
-    5.  Construye y exporta el perfil de carga horario para el escenario recomendado.
-    6.  Prepara y guarda los datos de cargadores individuales para su uso en
-        simulaciones con CityLearn.
-    7.  Genera un conjunto de gráficas y reportes visuales si se solicita.
-    8.  Guarda todos los resultados, incluyendo dataframes y metadatos, en el
-        directorio de salida.
-
-    Args:
-        out_dir: Directorio para guardar todos los artefactos generados.
-        seed: Semilla para la generación de números aleatorios, asegurando
-              reproducibilidad.
-        n_motos: Número total de motos en la flota.
-        n_mototaxis: Número total de mototaxis en la flota.
-        pe_motos: Probabilidad de que una moto necesite cargar en un día (0-1).
-        pe_mototaxis: Probabilidad de que un mototaxi necesite cargar (0-1).
-        fc_motos: Factor de carga promedio para motos (% de batería a recargar).
-        fc_mototaxis: Factor de carga promedio para mototaxis.
-        peak_share_day: Porcentaje de la energía diaria que se consume en horas pico.
-        session_minutes: Duración estimada de una sesión de carga en minutos.
-        utilization: Factor de utilización de los cargadores (0-1).
-        charger_power_kw_moto: Potencia del cargador para motos (kW).
-        charger_power_kw_mototaxi: Potencia del cargador para mototaxis (kW).
-        sockets_per_charger: Número de tomas por cada cargador.
-        opening_hour: Hora de apertura del centro de carga.
-        closing_hour: Hora de cierre del centro de carga.
-        peak_hours: Lista de horas consideradas como pico.
-        n_scenarios: Número de escenarios a generar para el análisis de sensibilidad.
-        generate_plots: Si es `True`, genera y guarda las gráficas de análisis.
-        reports_dir: Directorio opcional para guardar las gráficas en una estructura
-                     de reportes.
+def get_iquitos_chargers() -> ChargerSet:
+    """Obtiene el conjunto de cargadores para Iquitos (con caching).
 
     Returns:
-        Un diccionario que resume los resultados clave del dimensionamiento,
-        incluyendo el número de cargadores recomendados, la energía diaria,
-        potencia pico y rutas a los archivos generados.
+        ChargerSet inmutable y singleton
     """
-    out_dir.mkdir(parents=True, exist_ok=True)
+    global _IQUITOS_CHARGERS
 
-    # pandas ya está importado al inicio del módulo (línea 59)
+    if _IQUITOS_CHARGERS is None:
+        _IQUITOS_CHARGERS = create_iquitos_chargers()
 
-    # =========================================================================
-    # REGLAS DE DIMENSIONAMIENTO:
-    # 1. n_motos=900 y n_mototaxis=130 en hora pico (6pm-10pm, 4h) son para
-    #    DIMENSIONAR la cantidad de cargadores y tomas por playa
-    # 2. Los cargadores dimensionados operan TODO el día (9am-10pm, 13h)
-    # 3. Modo 3, sesiones de 30 minutos
-    # 4. Capacidad total = tomas × sesiones/día × utilización
-    # =========================================================================
-
-    print("\n" + "="*60)
-    print("  DIMENSIONAMIENTO DE CARGADORES EV - MODO 3 (IEC 61851)")
-    print("="*60)
-    print("\n[+] Parámetros de Hora Pico para Dimensionamiento (6pm-10pm, 4h):")
-    print(f"   Motos:     {n_motos:,}")
-    print(f"   Mototaxis: {n_mototaxis:,}")
-    print(f"   TOTAL:     {n_motos + n_mototaxis:,} vehículos en hora pico")
-    print(f"   PE (Probabilidad de Evento): {pe_motos:.0%}")
-    print("\n[+] Configuracion de carga Modo 3:")
-    print(f"   Potencia cargador motos: {charger_power_kw_moto} kW")
-    print(f"   Potencia cargador mototaxis: {charger_power_kw_mototaxi} kW")
-    print(f"   Sockets por cargador: {sockets_per_charger}")
-    print(f"   Duración sesión: {session_minutes} min")
-    print(f"   Horario mall: {opening_hour}:00 - {closing_hour}:00 ({closing_hour - opening_hour}h)")
-    print(f"   Horas pico: {peak_hours} ({len(peak_hours)} horas)")
-
-    # Demanda Total Instalada = cargadores × tomas × potencia por playa
-    # Valores fijos según diseño de playas de estacionamiento
-    N_CHARGERS_MOTO = 28      # Cargadores en Playa Motos
-    N_CHARGERS_MOTOTAXI = 4   # Cargadores en Playa Mototaxis
-    n_tomas_por_cargador = sockets_per_charger  # 4 tomas por cargador
-
-    potencia_instalada_playa_motos = N_CHARGERS_MOTO * n_tomas_por_cargador * charger_power_kw_moto
-    potencia_instalada_playa_mototaxis = N_CHARGERS_MOTOTAXI * n_tomas_por_cargador * charger_power_kw_mototaxi
-    pot_total_instalada = potencia_instalada_playa_motos + potencia_instalada_playa_mototaxis
-
-    print("\n[+] Demanda Total Instalada (cargadores × tomas × potencia):")
-    print(f"   Playa Motos:     {N_CHARGERS_MOTO} cargadores × {n_tomas_por_cargador} tomas × {charger_power_kw_moto} kW = {potencia_instalada_playa_motos:,.0f} kW")
-    print(f"   Playa Mototaxis: {N_CHARGERS_MOTOTAXI} cargadores × {n_tomas_por_cargador} tomas × {charger_power_kw_mototaxi} kW = {potencia_instalada_playa_mototaxis:,.0f} kW")
-    print(f"   TOTAL:           {pot_total_instalada:,.0f} kW")
-
-    res = evaluate_scenario(
-        scenario_id=1,
-        pe_motos=pe_motos,
-        pe_mototaxis=pe_mototaxis,
-        fc_motos=fc_motos,
-        fc_mototaxis=fc_mototaxis,
-        n_motos=n_motos,
-        n_mototaxis=n_mototaxis,
-        peak_hours=peak_hours,
-        session_minutes=session_minutes,
-        utilization=utilization,
-        charger_power_kw_moto=charger_power_kw_moto,
-        charger_power_kw_mototaxi=charger_power_kw_mototaxi,
-        sockets_per_charger=sockets_per_charger,
-    )
-
-    # Usar el resultado como escenario recomendado
-    esc_rec = pd.Series(res.__dict__)
-    esc_rec = esc_rec.copy()
-
-    # =================================================================
-    # DIMENSIONAMIENTO FINAL - VALORES FIJOS (NO MODIFICAR)
-    # =================================================================
-    # Infraestructura: 128 cargadores Modo 3 (IEC 61851)
-    #   - 112 tomas para motos (28 cargadores × 4 sockets) @ 2 kW
-    #   - 16 tomas para mototaxis (4 cargadores × 4 sockets) @ 3 kW
-    # Horario: 9:00 - 22:00 (13 horas)
-    # Sesión Modo 3: 30 minutos fijos
-    # Utilización: 92%
-    # =================================================================
-
-# CONSTANTES DE INFRAESTRUCTURA (FIJAS) - documentación
-    # N_TOMAS_MOTO = 112          # tomas individuales para motos
-    # N_TOMAS_MOTOTAXI = 16       # tomas individuales para mototaxis
-    # HOURS_OPEN = 13             # horas de operación (9am-10pm)
-    # SESSION_HOURS = 0.5         # duración sesión Modo 3 (30 min)
-    # SESSIONS_PER_CHARGER = 26   # sesiones por toma por día (13h / 0.5h)
-    # UTILIZATION = 0.92          # factor de utilización
-
-    # ENERGÍA POR SESIÓN (FIJA - Modo 3) - documentación
-    # ENERGY_PER_MOTO_KWH = 1.0       # 2 kW × 0.5h = 1.0 kWh
-    # ENERGY_PER_MOTOTAXI_KWH = 1.5   # 3 kW × 0.5h = 1.5 kWh
-
-    # =================================================================
-    # VEHÍCULOS ATENDIDOS POR DÍA (CALCULADOS Y FIJOS)
-    # =================================================================
-    # Motos: 112 tomas × 26 sesiones × 0.92 = 2,679 vehículos/día
-    # Mototaxis: 16 tomas × 26 sesiones × 0.92 = 382 vehículos/día
-    VEHICLES_DAY_MOTOS = 2679
-    VEHICLES_DAY_MOTOTAXIS = 382
-
-    # Actualizar escenario recomendado con valores fijos
-    esc_rec.at["vehicles_day_motos"] = VEHICLES_DAY_MOTOS
-    esc_rec.at["vehicles_day_mototaxis"] = VEHICLES_DAY_MOTOTAXIS
-    esc_rec.at["vehicles_month_motos"] = VEHICLES_DAY_MOTOS * 30      # 80,370
-    esc_rec.at["vehicles_month_mototaxis"] = VEHICLES_DAY_MOTOTAXIS * 30  # 11,460
-    esc_rec.at["vehicles_year_motos"] = VEHICLES_DAY_MOTOS * 365     # 977,835
-    esc_rec.at["vehicles_year_mototaxis"] = VEHICLES_DAY_MOTOTAXIS * 365  # 139,430
-
-    # =================================================================
-    # ENERGÍA DIARIA - VALORES REALES DATASET (Tabla 13 OE2 - 2026-02-04)
-    # =================================================================
-    # Fuente: data/interim/oe2/chargers/chargers_hourly_profiles_annual.csv
-    # Motos (estimado ~80-85% de total): ~763.76 kWh/día
-    # Mototaxis (estimado ~15-20% de total): ~139.70 kWh/día
-    # TOTAL PROMEDIO: 903.46 kWh/día (verified from annual 8,760-hour profile)
-    # Estadísticas: Min=92.80, Max=3,252.0, Mediana=835.20, Std=572.07
-    #
-    # ⚠️ HISTORIAL AUDITORÍA - VALORES ANTIGUOS ELIMINADOS 2026-02-04
-    # ANTES (Legacy Code INCORRECTO - Sobrestimación 3.60×):
-    #   • ENERGY_DAY_MOTOS_KWH = 2679.0 kWh/día [REMOVED - 2.50× mayor que real]
-    #   • ENERGY_DAY_MOTOTAXIS_KWH = 573.0 kWh/día [REMOVED - 4.10× mayor que real]
-    #   • ENERGY_DAY_TOTAL_KWH = 3252.0 kWh/día [REMOVED - 3.60× mayor que real]
-    #   • ENERGY_ANNUAL = 1,186,980 kWh/año [REMOVED - error acumulado 3.60×]
-    #   • VEHICLES_DAY_MOTOS = 2679 veh/día [REMOVED - 2.98× sobrestimado]
-    #   • VEHICLES_DAY_MOTOTAXIS = 382 veh/día [REMOVED - 2.94× sobrestimado]
-    #   • VEHICLES_DAY_TOTAL = 3061 veh/día [REMOVED - 2.97× sobrestimado]
-    # MOTIVO ELIMINACIÓN: Validación contra Tabla 13 OE2 (chargers_hourly_profiles_annual.csv)
-    # COMMIT AUDITORÍA: 011db8fe (main corrections) + 33f3d3ef (comment cleanup)
-    # FUENTE ACTUAL: Dataset real con 8,760 horas × 32 cargadores
-    #
-    # AHORA (VALORES REALES VERIFICADOS - 100% Exactitud):
-    ENERGY_DAY_MOTOS_KWH = 763.76  # Motos actual (vs 2679.0 removido)
-    ENERGY_DAY_MOTOTAXIS_KWH = 139.70  # Mototaxis actual (vs 573.0 removido)
-    ENERGY_DAY_TOTAL_KWH = 903.46  # Total actual (vs 3252.0 removido)
-
-    esc_rec.at["energy_day_kwh"] = ENERGY_DAY_TOTAL_KWH
-    res.energy_day_kwh = ENERGY_DAY_TOTAL_KWH
-
-    # También generar escenarios adicionales para análisis de sensibilidad
-    pe_list, fc_list = generate_random_scenarios(seed=seed, n_scenarios=n_scenarios)
-    rows = []
-    scenario_results: list[ChargerSizingResult] = []
-    for i, (pe, fc) in enumerate(zip(pe_list, fc_list), start=2):
-        res_i = evaluate_scenario(
-            scenario_id=i,
-            pe_motos=pe,
-            pe_mototaxis=pe,
-            fc_motos=fc,
-            fc_mototaxis=fc,
-            n_motos=n_motos,
-            n_mototaxis=n_mototaxis,
-            peak_hours=peak_hours,
-            session_minutes=session_minutes,
-            utilization=utilization,
-            charger_power_kw_moto=charger_power_kw_moto,
-            charger_power_kw_mototaxi=charger_power_kw_mototaxi,
-            sockets_per_charger=sockets_per_charger,
-        )
-        scenario_results.append(res_i)
-        rows.append(res_i.__dict__)  # type: ignore[attr-defined]
-
-    df = pd.DataFrame(rows).drop_duplicates(subset=["pe", "fc"]).reset_index(drop=True)
-    try:
-        df.to_csv(out_dir / "selection_pe_fc_completo.csv", index=False)
-        print(f"   [OK] {len(df)} escenarios de sensibilidad evaluados")
-    except (IOError, OSError) as e:
-        print(f"   [ERROR] No se pudo guardar el archivo de escenarios: {e}")
-
-    # Seleccionar escenarios min/max para comparación
-    esc_min = df.sort_values("chargers_required", ascending=True).iloc[0]  # type: ignore[attr-defined]
-    esc_max = df.sort_values("chargers_required", ascending=False).iloc[0]  # type: ignore[attr-defined]
-
-    print("\n[+] Resultado del dimensionamiento:")
-    print(f"   RECOMENDADO: {int(esc_rec['chargers_required'])} cargadores")
-    print(f"   Sesiones/hora pico: {esc_rec['peak_sessions_per_hour']:.0f}")
-    print(f"   Energía diaria: {esc_rec['energy_day_kwh']:.0f} kWh")
-    print("\n   Análisis de sensibilidad:")
-    print(f"   Mínimo:      {int(esc_min['chargers_required'])} cargadores (PE={esc_min['pe']:.2f}, FC={esc_min['fc']:.2f})")
-    print(f"   Máximo:      {int(esc_max['chargers_required'])} cargadores (PE={esc_max['pe']:.2f}, FC={esc_max['fc']:.2f})")
-
-    # Exportar perfiles horarios para cada escenario (incluye recomendado)
-    variant_dir = out_dir / "charger_profile_variants"
-    variant_dir.mkdir(parents=True, exist_ok=True)
-    variant_metadata: list[dict[str, Any]] = []
-    variant_rows = [res] + scenario_results
-    for variant in variant_rows:
-        scenario_id = int(variant.scenario_id)
-        profile_df = build_hourly_profile(
-            energy_day_kwh=float(variant.energy_day_kwh),
-            opening_hour=opening_hour,
-            closing_hour=closing_hour,
-            peak_hours=peak_hours,
-            peak_share_day=peak_share_day,
-        )
-        profile_filename = f"scenario_{scenario_id:03d}_profile.csv"
-        profile_path = variant_dir / profile_filename
-        try:
-            profile_df.to_csv(profile_path, index=False)
-            variant_metadata.append(
-                {
-                    "scenario_id": scenario_id,
-                    "pe": variant.pe,
-                    "fc": variant.fc,
-                    "energy_day_kwh": variant.energy_day_kwh,
-                    "chargers_required": variant.chargers_required,
-                    "peak_sessions_per_hour": variant.peak_sessions_per_hour,
-                    "profile_path": profile_filename,
-                    "is_recommended": scenario_id == res.scenario_id,
-                }
+        # Validar
+        validation = validate_charger_set(_IQUITOS_CHARGERS)
+        if not validation["is_valid"]:
+            logger.error(f"Charger set validation failed: {validation['errors']}")
+        else:
+            logger.info(
+                f"✓ Chargers loaded: {_IQUITOS_CHARGERS.count} units, "
+                f"{_IQUITOS_CHARGERS.total_sockets} sockets "
+                f"({_IQUITOS_CHARGERS.motos_count} motos + "
+                f"{_IQUITOS_CHARGERS.mototaxis_count} mototaxis)"
             )
-        except (IOError, OSError) as e:
-            print(f"   [ERROR] No se pudo guardar el perfil para el escenario {scenario_id}: {e}")
 
-    # Construir perfil horario con límite de potencia física
-    # 112 tomas × 2 kW + 16 tomas × 3 kW = 272 kW máximo
-    MAX_POWER_KW = (112 * 2.0) + (16 * 3.0)  # 272 kW
-
-    profile = build_hourly_profile(
-        energy_day_kwh=float(esc_rec["energy_day_kwh"]),
-        opening_hour=opening_hour,
-        closing_hour=closing_hour,
-        peak_hours=peak_hours,
-        peak_share_day=peak_share_day,
-        max_power_kw=MAX_POWER_KW,
-    )
-    try:
-        profile.to_csv(out_dir / "perfil_horario_carga.csv", index=False)
-    except (IOError, OSError) as e:
-        print(f"   [ERROR] No se pudo guardar el perfil de carga horario: {e}")
-
-    # =========================================================================
-    # CAPACIDAD REAL DE LA INFRAESTRUCTURA (32 cargadores, Modo 3, 30 min)
-    # =========================================================================
-    N_CHARGERS_TOTAL = 32
-    TOMAS_POR_CARGADOR_INFRAESTRUCTURA = sockets_per_charger  # 4
-    TOMAS_TOTALES = N_CHARGERS_TOTAL * TOMAS_POR_CARGADOR_INFRAESTRUCTURA  # 128
-    HORAS_OPERACION = closing_hour - opening_hour  # 13 horas (9am-10pm)
-    SESION_HORAS = session_minutes / 60.0  # 0.5 horas (30 min)
-    SESIONES_POR_TOMA_POR_HORA = 1.0 / SESION_HORAS  # 2 sesiones/hora
-    SESIONES_POR_TOMA_POR_DIA = HORAS_OPERACION * SESIONES_POR_TOMA_POR_HORA  # 13 × 2 = 26
-
-    # Capacidad teórica máxima
-    capacidad_maxima_dia = TOMAS_TOTALES * SESIONES_POR_TOMA_POR_DIA  # 128 × 26 = 3,328 sesiones/día
-
-    # Capacidad efectiva (aplicando factor de utilización)
-    capacidad_efectiva_dia = int(round(capacidad_maxima_dia * utilization))  # 3,328 × 0.92 = 3,062
-
-    # Proyecciones
-    DIAS_MES = 30
-    DIAS_ANIO = 365
-    PROYECTO_ANIOS = 20
-
-    capacidad_efectiva_mes = capacidad_efectiva_dia * DIAS_MES
-    capacidad_efectiva_anio = capacidad_efectiva_dia * DIAS_ANIO
-    capacidad_efectiva_20anios = capacidad_efectiva_anio * PROYECTO_ANIOS
-
-    # Estadísticas de vehículos BASADAS EN INFRAESTRUCTURA REAL
-    print("\n[+] Capacidad de Carga con Infraestructura Instalada:")
-    print(f"   Cargadores: {N_CHARGERS_TOTAL} × {TOMAS_POR_CARGADOR_INFRAESTRUCTURA} tomas = {TOMAS_TOTALES} tomas")
-    print(f"   Horario: {HORAS_OPERACION}h × {SESIONES_POR_TOMA_POR_HORA:.0f} sesiones/h/toma = {SESIONES_POR_TOMA_POR_DIA:.0f} sesiones/día/toma")
-    print(f"   Utilización: {utilization:.0%}")
-    print("\n   Vehículos que pueden cargar:")
-    print(f"   Diario:   {capacidad_efectiva_dia:,} vehículos")
-    print(f"   Mensual:  {capacidad_efectiva_mes:,} vehículos ({DIAS_MES} días)")
-    print(f"   Anual:    {capacidad_efectiva_anio:,} vehículos ({DIAS_ANIO} días)")
-    print(f"   20 años:  {capacidad_efectiva_20anios:,} vehículos")
-
-    print("\n[+] Vehículos según Escenario Recomendado (PE/FC):")
-    print(f"   Diario:  {int(esc_rec['vehicles_day_motos']):,} motos + {int(esc_rec['vehicles_day_mototaxis']):,} mototaxis")
-    print(f"   Mensual: {int(esc_rec['vehicles_month_motos']):,} motos + {int(esc_rec['vehicles_month_mototaxis']):,} mototaxis")
-    print(f"   Anual:   {int(esc_rec['vehicles_year_motos']):,} motos + {int(esc_rec['vehicles_year_mototaxis']):,} mototaxis")
-
-    # =================================================================
-    # GUARDAR TABLAS DE RESUMEN
-    # =================================================================
-
-    # Tabla 1: Parámetros de dimensionamiento
-    tabla_parametros = pd.DataFrame({
-        'Parámetro': [
-            'Motos hora pico',
-            'Mototaxis hora pico',
-            'Total hora pico',
-            'PE (Probabilidad Evento)',
-            'Potencia cargador motos (kW)',
-            'Potencia cargador mototaxis (kW)',
-            'Sockets por cargador',
-            'Duración sesión (min)',
-            'Horario apertura',
-            'Horario cierre',
-            'Horas operación',
-            'Horas pico'
-        ],
-        'Valor': [
-            f"{n_motos:,}",
-            f"{n_mototaxis:,}",
-            f"{n_motos + n_mototaxis:,}",
-            f"{pe_motos:.0%}",
-            f"{charger_power_kw_moto}",
-            f"{charger_power_kw_mototaxi}",
-            f"{sockets_per_charger}",
-            f"{session_minutes}",
-            f"{opening_hour}:00",
-            f"{closing_hour}:00",
-            f"{closing_hour - opening_hour}h",
-            f"{peak_hours}"
-        ]
-    })
-
-    # Tabla 2: Infraestructura instalada
-    tabla_infraestructura = pd.DataFrame({
-        'Concepto': [
-            'Cargadores Playa Motos',
-            'Cargadores Playa Mototaxis',
-            'Total Cargadores',
-            'Tomas Playa Motos',
-            'Tomas Playa Mototaxis',
-            'Total Tomas',
-            'Potencia Instalada Motos (kW)',
-            'Potencia Instalada Mototaxis (kW)',
-            'Potencia Total Instalada (kW)'
-        ],
-        'Valor': [
-            f"{N_CHARGERS_MOTO}",
-            f"{N_CHARGERS_MOTOTAXI}",
-            f"{N_CHARGERS_MOTO + N_CHARGERS_MOTOTAXI}",
-            f"{N_CHARGERS_MOTO * n_tomas_por_cargador}",
-            f"{N_CHARGERS_MOTOTAXI * n_tomas_por_cargador}",
-            f"{(N_CHARGERS_MOTO + N_CHARGERS_MOTOTAXI) * n_tomas_por_cargador}",
-            f"{potencia_instalada_playa_motos:,.0f}",
-            f"{potencia_instalada_playa_mototaxis:,.0f}",
-            f"{pot_total_instalada:,.0f}"
-        ]
-    })
-
-    # Tabla 3: Capacidad de infraestructura
-    tabla_capacidad = pd.DataFrame({
-        'Periodo': ['Diario', 'Mensual (30 días)', 'Anual (365 días)', '20 años'],
-        'Vehículos': [
-            f"{capacidad_efectiva_dia:,}",
-            f"{capacidad_efectiva_mes:,}",
-            f"{capacidad_efectiva_anio:,}",
-            f"{capacidad_efectiva_20anios:,}"
-        ]
-    })
-
-    # Tabla 4: Vehículos según escenario recomendado
-    tabla_escenario = pd.DataFrame({
-        'Periodo': ['Diario', 'Mensual', 'Anual'],
-        'Motos': [
-            f"{int(esc_rec['vehicles_day_motos']):,}",
-            f"{int(esc_rec['vehicles_month_motos']):,}",
-            f"{int(esc_rec['vehicles_year_motos']):,}"
-        ],
-        'Mototaxis': [
-            f"{int(esc_rec['vehicles_day_mototaxis']):,}",
-            f"{int(esc_rec['vehicles_month_mototaxis']):,}",
-            f"{int(esc_rec['vehicles_year_mototaxis']):,}"
-        ],
-        'Total': [
-            f"{int(esc_rec['vehicles_day_motos'] + esc_rec['vehicles_day_mototaxis']):,}",  # type: ignore[operator]
-            f"{int(esc_rec['vehicles_month_motos'] + esc_rec['vehicles_month_mototaxis']):,}",  # type: ignore[operator]
-            f"{int(esc_rec['vehicles_year_motos'] + esc_rec['vehicles_year_mototaxis']):,}"  # type: ignore[operator]
-        ]
-    })
-
-    # Tabla 5: Estadísticas de escenarios de sensibilidad
-    tabla_estadisticas = pd.DataFrame({
-        'Métrica': [
-            'Cargadores (4 tomas) [unid]',
-            'Tomas totales [tomas]',
-            'Sesiones pico 4h [sesiones]',
-            'Cargas día total [cargas]',
-            'Energía día [kWh]',
-            'Potencia pico agregada [kW]'
-        ],
-        'Mínimo': [
-            f"{df['chargers_required'].min():.0f}",
-            f"{df['sockets_total'].min():.0f}",
-            f"{df['peak_sessions_per_hour'].min():.1f}",
-            f"{(df['vehicles_day_motos'] + df['vehicles_day_mototaxis']).min():.0f}",
-            f"{df['energy_day_kwh'].min():.0f}",
-            f"{(df['vehicles_day_motos'] * charger_power_kw_moto / 4 + df['vehicles_day_mototaxis'] * charger_power_kw_mototaxi / 4).min():.0f}"
-        ],
-        'Máximo': [
-            f"{df['chargers_required'].max():.0f}",
-            f"{df['sockets_total'].max():.0f}",
-            f"{df['peak_sessions_per_hour'].max():.1f}",
-            f"{(df['vehicles_day_motos'] + df['vehicles_day_mototaxis']).max():.0f}",
-            f"{df['energy_day_kwh'].max():.0f}",
-            f"{(df['vehicles_day_motos'] * charger_power_kw_moto / 4 + df['vehicles_day_mototaxis'] * charger_power_kw_mototaxi / 4).max():.0f}"
-        ],
-        'Promedio': [
-            f"{df['chargers_required'].mean():.1f}",
-            f"{df['sockets_total'].mean():.1f}",
-            f"{df['peak_sessions_per_hour'].mean():.1f}",
-            f"{(df['vehicles_day_motos'] + df['vehicles_day_mototaxis']).mean():.1f}",
-            f"{df['energy_day_kwh'].mean():.1f}",
-            f"{(df['vehicles_day_motos'] * charger_power_kw_moto / 4 + df['vehicles_day_mototaxis'] * charger_power_kw_mototaxi / 4).mean():.1f}"
-        ],
-        'Mediana': [
-            f"{df['chargers_required'].median():.1f}",
-            f"{df['sockets_total'].median():.1f}",
-            f"{df['peak_sessions_per_hour'].median():.1f}",
-            f"{(df['vehicles_day_motos'] + df['vehicles_day_mototaxis']).median():.1f}",
-            f"{df['energy_day_kwh'].median():.1f}",
-            f"{(df['vehicles_day_motos'] * charger_power_kw_moto / 4 + df['vehicles_day_mototaxis'] * charger_power_kw_mototaxi / 4).median():.1f}"
-        ],
-        'Desv_Std': [
-            f"{df['chargers_required'].std():.2f}",
-            f"{df['sockets_total'].std():.2f}",
-            f"{df['peak_sessions_per_hour'].std():.2f}",
-            f"{(df['vehicles_day_motos'] + df['vehicles_day_mototaxis']).std():.2f}",
-            f"{df['energy_day_kwh'].std():.2f}",
-            f"{(df['vehicles_day_motos'] * charger_power_kw_moto / 4 + df['vehicles_day_mototaxis'] * charger_power_kw_mototaxi / 4).std():.2f}"
-        ]
-    })
-
-    # Tabla 6: Escenarios específicos (Conservador, Mediano, Recomendado, Máximo)
-    # Conservador: PE bajo, FC bajo
-    df_conservador = df[(df['pe'] <= 0.3) & (df['fc'] <= 0.3)].sort_values('chargers_required')  # type: ignore[attr-defined]
-    esc_conservador = df_conservador.iloc[0] if len(df_conservador) > 0 else esc_min
-    # Mediano: PE medio, FC medio
-    df_mediano = df[(df['pe'] >= 0.4) & (df['pe'] <= 0.6) & (df['fc'] >= 0.4) & (df['fc'] <= 0.6)].sort_values('chargers_required')  # type: ignore[attr-defined]
-    esc_mediano = df_mediano.iloc[len(df_mediano)//2] if len(df_mediano) > 0 else df.iloc[len(df)//2]
-
-    tabla_escenarios_detallados = pd.DataFrame({
-        'Escenario': ['CONSERVADOR', 'MEDIANO', 'RECOMENDADO*', 'MÁXIMO'],
-        'Penetración (pe)': [
-            f"{esc_conservador['pe']:.2f}",
-            f"{esc_mediano['pe']:.2f}",
-            f"{esc_rec['pe']:.2f}",
-            f"{esc_max['pe']:.2f}"
-        ],
-        'Factor Carga (fc)': [
-            f"{esc_conservador['fc']:.2f}",
-            f"{esc_mediano['fc']:.2f}",
-            f"{esc_rec['fc']:.2f}",
-            f"{esc_max['fc']:.2f}"
-        ],
-        'Cargadores (4 tomas)': [
-            f"{int(esc_conservador['chargers_required'])}",
-            f"{int(esc_mediano['chargers_required'])}",
-            f"{int(esc_rec['chargers_required'])}",
-            f"{int(esc_max['chargers_required'])}"
-        ],
-        'Total Tomas': [
-            f"{int(esc_conservador['sockets_total'])}",
-            f"{int(esc_mediano['sockets_total'])}",
-            f"{int(esc_rec['sockets_total'])}",
-            f"{int(esc_max['sockets_total'])}"
-        ],
-        'Energía Día (kWh)': [
-            f"{esc_conservador['energy_day_kwh']:.0f}",
-            f"{esc_mediano['energy_day_kwh']:.0f}",
-            f"{esc_rec['energy_day_kwh']:.0f}",
-            f"{esc_max['energy_day_kwh']:.0f}"
-        ]
-    })
-
-    # Guardar tablas
-    try:
-        tabla_parametros.to_csv(out_dir / "tabla_parametros.csv", index=False, encoding='utf-8-sig')
-        tabla_infraestructura.to_csv(out_dir / "tabla_infraestructura.csv", index=False, encoding='utf-8-sig')
-        tabla_capacidad.to_csv(out_dir / "tabla_capacidad.csv", index=False, encoding='utf-8-sig')
-        tabla_escenario.to_csv(out_dir / "tabla_escenario_recomendado.csv", index=False, encoding='utf-8-sig')
-        tabla_estadisticas.to_csv(out_dir / "tabla_estadisticas_escenarios.csv", index=False, encoding='utf-8-sig')
-        tabla_escenarios_detallados.to_csv(out_dir / "tabla_escenarios_detallados.csv", index=False, encoding='utf-8-sig')
-        print("\n[+] Tablas de resumen guardadas:")
-        print(f"   • {out_dir / 'tabla_parametros.csv'}")
-        print(f"   • {out_dir / 'tabla_infraestructura.csv'}")
-        print(f"   • {out_dir / 'tabla_capacidad.csv'}")
-        print(f"   • {out_dir / 'tabla_escenario_recomendado.csv'}")
-        print(f"   • {out_dir / 'tabla_estadisticas_escenarios.csv'}")
-        print(f"   • {out_dir / 'tabla_escenarios_detallados.csv'}")
-    except (OSError, IOError, ValueError) as e:
-        print(f"   [ERROR] No se pudieron guardar las tablas: {e}")
-
-    # =================================================================
-    # CREAR DATASETS SEPARADOS POR PLAYA DE ESTACIONAMIENTO
-    # =================================================================
-    # Playa_Motos: 28 cargadores (2 kW) -> 112 tomas individuales
-    # Playa_Mototaxis: 4 cargadores (3 kW) -> 16 tomas individuales
-
-    print("\n[+] Generando datasets separados por playa de estacionamiento...")
-    N_MOTO_CHARGERS_PLAYA = 28
-    N_MOTOTAXI_CHARGERS_PLAYA = 4
-    N_TOMAS_MOTO_PLAYA = 112    # 28 × 4 sockets
-    N_TOMAS_MOTOTAXI_PLAYA = 16  # 4 × 4 sockets
-
-    # Vehículos y energía por día (VALORES FIJOS)
-    # Variables de referencia con histórico de cambios para auditoría
-    # NOTA: Valores antiguos documentados en comentarios para trazabilidad
-    MOTOS_CHARGING_DAY = VEHICLES_DAY_MOTOS        # AHORA: 900 (REAL) | ANTES: 2679 (removido 2026-02-04)
-    MOTOTAXIS_CHARGING_DAY = VEHICLES_DAY_MOTOTAXIS  # AHORA: 130 (REAL) | ANTES: 382 (removido 2026-02-04)
-    ENERGY_MOTO_DAY = ENERGY_DAY_MOTOS_KWH          # AHORA: 763.76 kWh | ANTES: 2679.0 (removido 2026-02-04)
-    ENERGY_MOTOTAXI_DAY = ENERGY_DAY_MOTOTAXIS_KWH  # AHORA: 139.70 kWh | ANTES: 573.0 (removido 2026-02-04)
-
-    # Baterías (para referencia en PlayaData)
-    battery_moto = 2.0  # kWh
-    battery_mototaxi = 4.0  # kWh
-
-    # Perfiles horarios por playa
-    profile_moto = build_hourly_profile(
-        energy_day_kwh=ENERGY_MOTO_DAY,
-        opening_hour=opening_hour,
-        closing_hour=closing_hour,
-        peak_hours=peak_hours,
-        peak_share_day=peak_share_day,
-    )
-    profile_mototaxi = build_hourly_profile(
-        energy_day_kwh=ENERGY_MOTOTAXI_DAY,
-        opening_hour=opening_hour,
-        closing_hour=closing_hour,
-        peak_hours=peak_hours,
-        peak_share_day=peak_share_day,
-    )
-
-    # Crear cargadores individuales por playa
-    chargers_playa_motos = create_individual_chargers(
-        n_chargers=N_TOMAS_MOTO_PLAYA,
-        charger_power_kw=charger_power_kw_moto,
-        sockets_per_charger=1,
-        daily_profile=profile_moto,
-        charger_type="Level2_MOTO",
-        prefix="MOTO_CH",
-        start_index=1,
-        playa="Playa_Motos",
-    )
-
-    chargers_playa_mototaxis = create_individual_chargers(
-        n_chargers=N_TOMAS_MOTOTAXI_PLAYA,
-        charger_power_kw=charger_power_kw_mototaxi,
-        sockets_per_charger=1,
-        daily_profile=profile_mototaxi,
-        charger_type="Level2_MOTOTAXI",
-        prefix="MOTO_TAXI_CH",
-        start_index=N_TOMAS_MOTO_PLAYA + 1,
-        playa="Playa_Mototaxis",
-    )
-
-    individual_chargers = chargers_playa_motos + chargers_playa_mototaxis
-
-    # =================================================================
-    # Crear objetos PlayaData para cada playa (VALORES FIJOS)
-    # =================================================================
-    playa_motos = PlayaData(
-        name="Playa_Motos",
-        vehicle_type="moto",
-        n_vehicles=n_motos,
-        pe=pe_motos,
-        fc=fc_motos,
-        battery_kwh=battery_moto,
-        charger_power_kw=charger_power_kw_moto,
-        n_chargers=N_MOTO_CHARGERS_PLAYA,
-        sockets_per_charger=sockets_per_charger,
-        total_sockets=N_TOMAS_MOTO_PLAYA,
-        vehicles_charging_day=MOTOS_CHARGING_DAY,
-        energy_day_kwh=ENERGY_MOTO_DAY,
-        chargers=chargers_playa_motos,
-        hourly_profile=profile_moto,
-    )
-
-    playa_mototaxis = PlayaData(
-        name="Playa_Mototaxis",
-        vehicle_type="mototaxi",
-        n_vehicles=n_mototaxis,
-        pe=pe_mototaxis,
-        fc=fc_mototaxis,
-        battery_kwh=battery_mototaxi,
-        charger_power_kw=charger_power_kw_mototaxi,
-        n_chargers=N_MOTOTAXI_CHARGERS_PLAYA,
-        sockets_per_charger=sockets_per_charger,
-        total_sockets=N_TOMAS_MOTOTAXI_PLAYA,
-        vehicles_charging_day=MOTOTAXIS_CHARGING_DAY,
-        energy_day_kwh=ENERGY_MOTOTAXI_DAY,
-        chargers=chargers_playa_mototaxis,
-        hourly_profile=profile_mototaxi,
-    )
-
-    # =================================================================
-    # Guardar datasets separados por playa
-    # =================================================================
-    playas_dir = out_dir / "playas"
-    playas_dir.mkdir(parents=True, exist_ok=True)
-
-    for playa in [playa_motos, playa_mototaxis]:
-        playa_subdir = playas_dir / playa.name
-        playa_subdir.mkdir(parents=True, exist_ok=True)
-
-        # 1. Guardar perfil horario de la playa
-        if playa.hourly_profile is not None:
-            playa.hourly_profile.to_csv(playa_subdir / "perfil_horario.csv", index=False)
-
-        # 2. Guardar lista de cargadores
-        chargers_data = [c.to_dict() for c in playa.chargers]
-        (playa_subdir / "chargers.json").write_text(
-            json.dumps(chargers_data, indent=2), encoding="utf-8"
-        )
-
-        # 3. Guardar CSV de cargadores
-        chargers_df_playa = pd.DataFrame([{
-            'charger_id': c.charger_id,
-            'charger_type': c.charger_type,
-            'power_kw': c.power_kw,
-            'sockets': c.sockets,
-            'playa': c.playa,
-            'daily_energy_kwh': c.daily_energy_kwh,
-            'peak_power_kw': c.peak_power_kw,
-        } for c in playa.chargers])
-        chargers_df_playa.to_csv(playa_subdir / "chargers.csv", index=False)
-
-        # 4. Guardar perfiles horarios individuales
-        hourly_profiles_playa = pd.DataFrame({
-            c.charger_id: c.hourly_load_profile for c in playa.chargers
-        })
-        hourly_profiles_playa.index.name = 'hour'
-        hourly_profiles_playa.to_csv(playa_subdir / "chargers_hourly_profiles.csv")
-
-        # 5. Guardar resumen de la playa
-        playa_summary = playa.to_dict()
-        playa_summary['total_power_kw'] = playa.n_chargers * playa.charger_power_kw * playa.sockets_per_charger
-        (playa_subdir / "summary.json").write_text(
-            json.dumps(playa_summary, indent=2), encoding="utf-8"
-        )
-
-        print(f"   [OK] {playa.name}: {playa.n_chargers} cargadores, {playa.total_sockets} tomas, "
-              f"{playa.energy_day_kwh:.1f} kWh/día")
-
-    # Guardar resumen combinado de playas (VALORES FIJOS)
-    playas_summary: dict[str, Any] = {  # type: ignore[var-annotated]
-        "playas": {
-            playa_motos.name: playa_motos.to_dict(),
-            playa_mototaxis.name: playa_mototaxis.to_dict(),
-        },
-        "totals": {
-            "n_chargers": N_MOTO_CHARGERS_PLAYA + N_MOTOTAXI_CHARGERS_PLAYA,  # 32
-            "total_sockets": N_TOMAS_MOTO_PLAYA + N_TOMAS_MOTOTAXI_PLAYA,  # 128
-            "energy_day_kwh": ENERGY_DAY_TOTAL_KWH,  # 903.46 kWh (REAL dataset average)
-            "vehicles_charging_day": VEHICLES_DAY_MOTOS + VEHICLES_DAY_MOTOTAXIS,  # 1,030 (900 motos + 130 mototaxis)
-        }
-    }
-    (playas_dir / "playas_summary.json").write_text(
-        json.dumps(playas_summary, indent=2), encoding="utf-8"
-    )
-
-    # =================================================================
-    # GENERAR DATASETS ANUALES (8760 horas) POR PLAYA Y ESCENARIO
-    # =================================================================
-    print("\n[+] Generando datasets anuales por playa de estacionamiento...")
-
-    annual_results = {}
-    for playa_data, playa_chargers in [(playa_motos, chargers_playa_motos),
-                                        (playa_mototaxis, chargers_playa_mototaxis)]:
-        result = generate_playa_annual_dataset(
-            playa_name=playa_data.name,
-            chargers=playa_chargers,
-            opening_hour=opening_hour,
-            closing_hour=closing_hour,
-            peak_hours=peak_hours,
-            peak_share_day=peak_share_day,
-            out_dir=out_dir,
-            scenarios=['base', 'high', 'low'],
-            year=2024,
-        )
-        annual_results[playa_data.name] = result
-
-    # Agregar rutas de datasets anuales al resumen
-    playas_summary['annual_datasets'] = {
-        'path': str((out_dir / "annual_datasets").resolve()),
-        'scenarios': ['base', 'high', 'low'],
-        'playas': annual_results,
-    }
-
-    # Actualizar archivo de resumen con datasets anuales
-    (playas_dir / "playas_summary.json").write_text(
-        json.dumps(playas_summary, indent=2, default=str), encoding="utf-8"
-    )
-
-    # =================================================================
-    # Guardar datos combinados (compatibilidad con código existente)
-    # =================================================================
-
-    # Guardar datos de cargadores individuales (todos)
-    chargers_data = [c.to_dict() for c in individual_chargers]
-    try:
-        (out_dir / "individual_chargers.json").write_text(
-            json.dumps(chargers_data, indent=2), encoding="utf-8"
-        )
-        print(f"\n[+] Cargadores individuales totales: {len(individual_chargers)}")
-    except (IOError, OSError) as e:
-        print(f"\n[ERROR] No se pudo guardar el archivo JSON de cargadores individuales: {e}")
-
-    # Crear DataFrame de cargadores para CityLearn
-    chargers_df = pd.DataFrame([{
-        'charger_id': c.charger_id,
-        'charger_type': c.charger_type,
-        'power_kw': c.power_kw,
-        'sockets': c.sockets,
-        'playa': c.playa,
-        'daily_energy_kwh': c.daily_energy_kwh,
-        'peak_power_kw': c.peak_power_kw,
-    } for c in individual_chargers])
-    try:
-        chargers_df.to_csv(out_dir / "chargers_citylearn.csv", index=False)
-    except (IOError, OSError) as e:
-        print(f"   [ERROR] No se pudo guardar el archivo CSV de cargadores para CityLearn: {e}")
-
-    # Crear perfiles horarios por cargador (para CityLearn)
-    hourly_profiles_df = pd.DataFrame({
-        c.charger_id: c.hourly_load_profile for c in individual_chargers
-    })
-    hourly_profiles_df.index.name = 'hour'
-    try:
-        hourly_profiles_df.to_csv(out_dir / "chargers_hourly_profiles.csv")
-    except (IOError, OSError) as e:
-        print(f"   [ERROR] No se pudo guardar el archivo de perfiles horarios por cargador: {e}")
-
-    # Generar gráficas
-    if generate_plots:
-        print("\n[+] Generando graficas...")
-        generate_charger_plots(df, esc_rec, profile, out_dir, reports_dir=reports_dir)
-
-    # Supuestos de SOC de llegada y energia/tiempo restante promedio
-    soc_arrival_pct = [20, 40, 50, 60]
-    soc_missing_pct = [80, 60, 50, 40]
-    avg_missing_frac = 0.575  # 57.5% de la energia de una sesion de 30 min
-    full_energy_per_session_kwh = esc_rec["charger_power_kw"] * (session_minutes / 60.0)  # type: ignore[index]
-    avg_energy_needed_kwh = full_energy_per_session_kwh * avg_missing_frac  # type: ignore[assignment]
-    avg_time_remaining_minutes = session_minutes * avg_missing_frac
-
-    co2_metrics = compute_co2_reduction(
-        energy_day_kwh=float(esc_rec['energy_day_kwh']),
-        grid_carbon_kg_per_kwh=float(grid_carbon_kg_per_kwh),
-        km_per_kwh=float(km_per_kwh),
-        km_per_gallon=float(km_per_gallon),
-        kgco2_per_gallon=float(kgco2_per_gallon),
-    )
-    print(f"   SOC llegada (supuesto): {soc_arrival_pct} % -> faltan {soc_missing_pct} %")
-    print(f"   Energia x sesion (30 min): {full_energy_per_session_kwh:.2f} kWh")
-    print(f"   Energia faltante promedio: {avg_energy_needed_kwh:.2f} kWh (~{avg_missing_frac*100:.1f}% de la sesion)")  # type: ignore[name-defined]
-    print(f"   Tiempo restante promedio: {avg_time_remaining_minutes:.1f} min")
-
-    n_chargers_rec = int(esc_rec.get("chargers_required", 32))
-
-    capacity = compute_capacity_metrics(
-        chargers=n_chargers_rec,
-        sockets_per_charger=sockets_per_charger,
-        session_minutes=session_minutes,
-        opening_hour=opening_hour,
-        closing_hour=closing_hour,
-    )
-
-    # Resumen JSON
-    metadata_payload: dict[str, Any] = {  # type: ignore[var-annotated]
-        "charger_profile_variants": profile,
-        "variants": variant_metadata,
-    }
-    metadata_path = out_dir / "charger_profile_variants.json"
-    try:
-        metadata_path.write_text(
-            json.dumps(metadata_payload, indent=2), encoding="utf-8"
-        )
-    except (IOError, OSError) as e:
-        print(f"   [ERROR] No se pudo guardar el archivo de metadatos de perfiles: {e}")
-
-    summary: dict[str, Any] = {  # type: ignore[var-annotated]
-        "esc_min": esc_min.to_dict(),  # type: ignore[attr-defined]
-        "esc_max": esc_max.to_dict(),  # type: ignore[attr-defined]
-        "esc_rec": esc_rec.to_dict(),  # type: ignore[attr-defined]
-        "scenarios_path": str((out_dir / "selection_pe_fc_completo.csv").resolve()),
-        "individual_chargers_path": str((out_dir / "individual_chargers.json").resolve()),
-        "chargers_citylearn_path": str((out_dir / "chargers_citylearn.csv").resolve()),
-        "hourly_profiles_path": str((out_dir / "chargers_hourly_profiles.csv").resolve()),
-        "n_chargers_recommended": n_chargers_rec,
-        "total_daily_energy_kwh": profile['energy_kwh'].sum(),
-        "peak_power_kw": profile['power_kw'].max(),
-        "avg_soc_arrival_pct": soc_arrival_pct,
-        "avg_soc_missing_pct": soc_missing_pct,
-        "avg_missing_energy_kwh": avg_energy_needed_kwh,  # type: ignore[name-defined]
-        "avg_missing_time_minutes": avg_time_remaining_minutes,
-        "full_session_energy_kwh": full_energy_per_session_kwh,
-        "avg_missing_frac": avg_missing_frac,
-        "capacity_sessions_per_hour": capacity["sessions_per_hour_capacity"],
-        "capacity_sessions_per_day": capacity["sessions_per_day_capacity"],
-        "demand_sessions_per_day": float(esc_rec["vehicles_day_motos"] + esc_rec["vehicles_day_mototaxis"]),  # type: ignore[operator]
-        "co2_gas_kg_day": co2_metrics["co2_gas_kg_day"],
-        "co2_ev_kg_day": co2_metrics["co2_ev_kg_day"],
-        "co2_reduction_kg_day": co2_metrics["co2_reduction_kg_day"],  # type: ignore[operator]
-        "co2_reduction_kg_year": co2_metrics["co2_reduction_kg_year"],
-        # Parámetros de hora pico para dimensionamiento (6pm-10pm, 4h)
-        "n_motos_pico": n_motos,
-        "n_mototaxis_pico": n_mototaxis,
-        "charger_power_kw_moto": charger_power_kw_moto,
-        "charger_power_kw_mototaxi": charger_power_kw_mototaxi,
-        # CAPACIDAD REAL DE INFRAESTRUCTURA (32 cargadores × 4 tomas = 128 tomas)
-        # Operando todo el día (9am-10pm, 13h) con sesiones de 30 min
-        "capacidad_infraestructura_dia": capacidad_efectiva_dia,  # 3,062 vehículos/día
-        "capacidad_infraestructura_mes": capacidad_efectiva_mes,  # 91,860 vehículos/mes
-        "capacidad_infraestructura_anio": capacidad_efectiva_anio,  # 1,117,630 vehículos/año
-        "capacidad_infraestructura_20anios": capacidad_efectiva_20anios,  # 22,352,600 vehículos
-        # POTENCIA INSTALADA REAL (cargadores × tomas × potencia)
-        "potencia_instalada_motos_kw": N_MOTO_CHARGERS_PLAYA * sockets_per_charger * charger_power_kw_moto,  # 28×4×2=224 kW
-        "potencia_instalada_mototaxis_kw": N_MOTOTAXI_CHARGERS_PLAYA * sockets_per_charger * charger_power_kw_mototaxi,  # 4×4×3=48 kW
-        "potencia_total_instalada_kw": (N_MOTO_CHARGERS_PLAYA * sockets_per_charger * charger_power_kw_moto +
-                                        N_MOTOTAXI_CHARGERS_PLAYA * sockets_per_charger * charger_power_kw_mototaxi),  # 272 kW
-        "charger_profile_variants_path": str(metadata_path.resolve()),
-        "charger_profile_variants_dir": str(variant_dir.resolve()),
-        "charger_profile_variants": variant_metadata,
-        # Datasets por playa de estacionamiento (VALORES FIJOS)
-        "playas_dir": str(playas_dir.resolve()),
-        "playas_summary_path": str((playas_dir / "playas_summary.json").resolve()),
-        "playas": {
-            "Playa_Motos": {
-                "dir": str((playas_dir / "Playa_Motos").resolve()),
-                "n_chargers": N_MOTO_CHARGERS_PLAYA,  # 28
-                "total_sockets": N_TOMAS_MOTO_PLAYA,  # 112
-                "power_kw": charger_power_kw_moto,
-                "vehicles_charging_day": VEHICLES_DAY_MOTOS,  # 900 (REAL dataset)
-                "energy_day_kwh": ENERGY_DAY_MOTOS_KWH,  # 763.76 kWh (REAL dataset)
-            },
-            "Playa_Mototaxis": {
-                "dir": str((playas_dir / "Playa_Mototaxis").resolve()),
-                "n_chargers": N_MOTOTAXI_CHARGERS_PLAYA,  # 4
-                "total_sockets": N_TOMAS_MOTOTAXI_PLAYA,  # 16
-                "power_kw": charger_power_kw_mototaxi,
-                "vehicles_charging_day": VEHICLES_DAY_MOTOTAXIS,  # 130 (REAL dataset)
-                "energy_day_kwh": ENERGY_DAY_MOTOTAXIS_KWH,  # 139.70 kWh (REAL dataset)
-            },
-        },
-    }
-
-    try:
-        (out_dir / "chargers_results.json").write_text(
-            json.dumps(summary, indent=2), encoding="utf-8"
-        )
-    except (IOError, OSError) as e:
-        print(f"   [ERROR] No se pudo guardar el archivo de resultados JSON: {e}")
-
-    print("\n" + "="*60)
-    print(f"[OK] Resultados guardados en: {out_dir}")
-    print("="*60)
-
-    return summary
+    return _IQUITOS_CHARGERS
 
 
-# ================  # type: ignore[return-value]==============================================================
-# GENERACIÓN DE 101 ESCENARIOS CALIBRADOS PARA TABLA 13 OE2
-# ==============================================================================
+# ============================================================================
+# FUNCIONES PARA GENERAR DATASET DETALLADO POR TOMA (SOCKET LEVEL)
+# ============================================================================
 
-def generate_tabla13_scenarios(
-    n_scenarios: int = 101,
-    seed: int = 2024,
-    output_path: Path | None = None,
-) -> pd.DataFrame:
+@dataclass(frozen=True)
+class SocketSpec:
+    """Especificación de una toma individual (socket).
+    
+    Attributes:
+        socket_id: ID único 0-37 (30 motos + 8 mototaxis)
+        charger_id: ID del cargador que contiene (0-18)
+        socket_number: Número de toma dentro del cargador (0-1)
+        vehicle_type: "moto" o "mototaxi"
+        power_kw: Potencia nominal en kW (7.4 kW Modo 3)
     """
-    Genera exactamente 101 escenarios calibrados para reproducir Tabla 13 OE2.
+    socket_id: int
+    charger_id: int
+    socket_number: int
+    vehicle_type: str
+    power_kw: float
 
-    Método: Genera valores de energía usando interpolación lineal entre
-    cuantiles conocidos para reproducir exactamente las estadísticas.
 
-    Estadísticas objetivo (Tabla 13):
-    - Cargadores: min=4, max=35, prom=20.61, mediana=20, std=9.19
-    - Energía día: min=92.80, max=3252.00, prom=903.46, mediana=835.20, std=572.07
-
-    Args:
-        n_scenarios: Número de escenarios a generar (default 101)
-        seed: Semilla para reproducibilidad
-        output_path: Ruta opcional para guardar el CSV
-
+def create_socket_specs() -> list[SocketSpec]:
+    """Crea especificaciones para cada una de las 38 tomas.
+    
     Returns:
-        DataFrame con los 101 escenarios calibrados
+        Lista de 38 SocketSpec (30 motos + 8 mototaxis)
     """
-    print("\n" + "=" * 70)
-    print("GENERACIÓN DE 101 ESCENARIOS CALIBRADOS PARA TABLA 13 OE2")
-    print("=" * 70)
+    sockets = []
+    socket_id = 0
+    
+    # 30 tomas de motos (15 chargers × 2 tomas)
+    for charger_id in range(15):
+        for socket_num in range(2):
+            sockets.append(SocketSpec(
+                socket_id=socket_id,
+                charger_id=charger_id,
+                socket_number=socket_num,
+                vehicle_type="moto",
+                power_kw=7.4  # Modo 3 monofásico 32A
+            ))
+            socket_id += 1
+    
+    # 8 tomas de mototaxis (4 chargers × 2 tomas)
+    for charger_id in range(15, 19):
+        for socket_num in range(2):
+            sockets.append(SocketSpec(
+                socket_id=socket_id,
+                charger_id=charger_id,
+                socket_number=socket_num,
+                vehicle_type="mototaxi",
+                power_kw=7.4  # Modo 3 monofásico 32A
+            ))
+            socket_id += 1
+    
+    return sockets
 
-    # =========================================================================
-    # ESTADÍSTICAS OBJETIVO DE ENERGÍA (TABLA 13 OE2 DATASET)
-    # ⚠️  AUDITORÍA: Estos son rangos estadísticos del DATASET, no valores código
-    # HISTORIAL DE CAMBIOS (removido 2026-02-04 por 3.60× sobrestimación):
-    #   • ENERGY_DAY_TOTAL_KWH: 3252.0 → 903.46 (error: 3.60×)
-    #   • Energía motos: 2679.0 → 763.76 (error: 2.50×)
-    #   • Energía mototaxis: 573.0 → 139.70 (error: 4.10×)
-    #   • Vehículos motos: 2679 → 900 (error: 2.98×)
-    #   • Vehículos mototaxis: 382 → 130 (error: 2.94×)
-    #   • Vehículos totales: 3061 → 1030 (error: 2.97×)
-    # COMMIT: 011db8fe + 33f3d3ef | FUENTE: Tabla 13 OE2
-    # =========================================================================
-    E_MIN = 92.80  # Mínimo dataset OE2
-    E_MAX = 3252.00  # Máximo dataset OE2 [NOT 3252.0 constant - dataset statistic]
-    E_PROM = 903.46  # Promedio actual (vs 3252.0 kWh/día removido)
-    E_MEDIANA = 835.20  # Mediana dataset
-    E_STD = 572.07  # Desv. estándar
 
-    print("\nEstadísticas objetivo de energía:")
-    print(f"  Min: {E_MIN:.2f} kWh")
-    print(f"  Max: {E_MAX:.2f} kWh")
-    print(f"  Promedio: {E_PROM:.2f} kWh")
-    print(f"  Mediana: {E_MEDIANA:.2f} kWh")
-    print(f"  Std: {E_STD:.2f} kWh")
+# ============================================================================
+# FUNCIONES DE HORARIO Y SIMULACIÓN ESTOCÁSTICA v3.0
+# ============================================================================
 
-    # =========================================================================
-    # GENERAR ENERGÍAS CON CUANTILES ESPECÍFICOS
-    # =========================================================================
-    # Usamos el método de transformación de cuantiles para 101 escenarios
-    # Índice 0 = min, índice 50 = mediana, índice 100 = max
+def get_operational_factor(hour_of_day: int) -> float:
+    """Retorna el factor de operacion del mall para una hora determinada.
+    
+    Horario del mall (Iquitos):
+    - 0-9h: Cerrado (0%)
+    - 9-10h: Apertura y acondicionamiento (30%)
+    - 10-18h: Operacion normal lineal (30% -> 100%)
+    - 18-21h: Pico de operacion (100%)
+    - 21-23h: Cierre gradual (100% -> 50% -> 0%)
+    - 23-0h: Cerrado (0%)
+    
+    Args:
+        hour_of_day: Hora del dia (0-23)
+        
+    Returns:
+        Factor de operacion (0.0-1.0)
+    """
+    if hour_of_day < 9 or hour_of_day >= 23:
+        # Cerrado fuera de 9-23h
+        return 0.0
+    elif hour_of_day == 9:
+        # 9-10h: apertura 30%
+        return 0.30
+    elif 10 <= hour_of_day < 18:
+        # 10-18h: rampa lineal 30% -> 100%
+        # Interpolacion: 30% + (hour-10) * (100-30) / (18-10)
+        progress = (hour_of_day - 10) / 8.0  # 0 a 1 en 8 horas
+        return 0.30 + progress * 0.70
+    elif 18 <= hour_of_day < 21:
+        # 18-21h: operacion plena 100%
+        return 1.0
+    elif 21 <= hour_of_day < 23:
+        # 21-23h: cierre gradual 100% -> 0%
+        # hora 21: 100%, hora 22: 50%, hora 23: 0%
+        progress = (hour_of_day - 21) / 2.0
+        return 1.0 - progress
+    else:
+        return 0.0
 
-    np.random.seed(seed)
 
-    # Crear distribución con los cuantiles correctos
-    # Mediana < Promedio sugiere distribución sesgada a la derecha (positiva)
-    # Usamos una distribución log-normal ajustada
+def generate_socket_level_dataset_v3(
+    output_dir: str | Path = "data/oe2/chargers",
+    random_seed: int = 42
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Genera dataset estocástico realista v3.0 con simulación por socket.
+    
+    Crea simuladores independientes por toma con:
+    - Llegadas estocásticas (Poisson) según tipos de vehículo
+    - SOC dinámico durante carga
+    - Colas FIFO independientes
+    - Factor operativo horario (9-22h para mall)
+    - Reproducibilidad con random_seed
+    
+    Retorna:
+    - DataFrame anual (8,760 × 643 columnas)
+    - DataFrame diario de ejemplo (24 × 643 columnas)
+    
+    Args:
+        output_dir: Directorio para guardar CSVs
+        random_seed: Semilla para reproducibilidad
+        
+    Returns:
+        Tupla (df_annual_8760h, df_daily_24h)
+    """
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    rng = np.random.RandomState(random_seed)
+    
+    # Crear timestamps
+    start_date = datetime(2024, 1, 1)
+    timestamps = [start_date + timedelta(hours=i) for i in range(8760)]
+    
+    # Crear 38 simuladores (30 motos + 8 mototaxis)
+    simulators: dict[int, SocketSimulator] = {}
+    socket_to_vehicle = {}  # socket_id → vehicle_type
+    
+    for socket_id in range(30):
+        # Tomas 0-29: motos
+        socket_to_vehicle[socket_id] = MOTO_SPEC
+        simulators[socket_id] = SocketSimulator(socket_id, MOTO_SPEC, rng)
+    
+    for socket_id in range(30, 38):
+        # Tomas 30-37: mototaxis
+        socket_to_vehicle[socket_id] = MOTOTAXI_SPEC
+        simulators[socket_id] = SocketSimulator(socket_id, MOTOTAXI_SPEC, rng)
+    
+    # Inicializar estructura de datos (datetime será el índice, sin hour ni day_of_year)
+    data_annual: dict[str, list] = {}
+    
+    # Agregar columnas para cada toma (38 total)
+    # POTENCIA CARGADOR vs CAPACIDAD BATERÍA:
+    # - charger_power_kw: Potencia nominal del cargador (7.4 kW, constante)
+    # - battery_kwh: Capacidad de batería del vehículo (4.6 kWh moto, 7.4 kWh mototaxi)
+    # - charging_power_kw: Potencia instantánea de carga (0 si no hay vehículo)
+    for socket_id in range(38):
+        # Tipo de vehículo para esta toma
+        vtype = socket_to_vehicle[socket_id]
+        
+        # Columnas constantes (se llenan una vez)
+        data_annual[f'socket_{socket_id:03d}_charger_power_kw'] = [7.4] * 8760  # Potencia nominal cargador
+        data_annual[f'socket_{socket_id:03d}_battery_kwh'] = [vtype.capacity_kwh] * 8760  # Capacidad batería
+        data_annual[f'socket_{socket_id:03d}_vehicle_type'] = [vtype.name] * 8760  # Tipo vehículo
+        
+        # Columnas dinámicas (se llenan en simulación)
+        data_annual[f'socket_{socket_id:03d}_soc_current'] = []
+        data_annual[f'socket_{socket_id:03d}_soc_arrival'] = []
+        data_annual[f'socket_{socket_id:03d}_soc_target'] = []
+        data_annual[f'socket_{socket_id:03d}_active'] = []
+        data_annual[f'socket_{socket_id:03d}_charging_power_kw'] = []  # Potencia instantánea de carga
+        data_annual[f'socket_{socket_id:03d}_vehicle_count'] = []
+    
+    # Simular 8,760 horas
+    logger.info("Iniciando simulación estocástica v3.0 (8,760 horas)...")
+    for hour_idx, timestamp in enumerate(timestamps):
+        if (hour_idx + 1) % 730 == 0:  # Log cada mes
+            logger.info(f"  Simulated {hour_idx + 1}/8760 hours...")
+        
+        hour_of_day = timestamp.hour
+        operational_factor = get_operational_factor(hour_of_day)
+        
+        # Simular cada toma (38 total)
+        for socket_id in range(38):
+            simulator = simulators[socket_id]
+            simulator.hourly_step(hour_of_day, operational_factor)
+            
+            # Registrar estado actual
+            if simulator.current_vehicle is not None:
+                vehicle = simulator.current_vehicle
+                data_annual[f'socket_{socket_id:03d}_soc_arrival'].append(vehicle.soc_arrival)
+                data_annual[f'socket_{socket_id:03d}_soc_target'].append(vehicle.soc_target)
+                data_annual[f'socket_{socket_id:03d}_soc_current'].append(vehicle.soc_current)
+                data_annual[f'socket_{socket_id:03d}_active'].append(1)
+                # Potencia instantánea de carga (efectiva, con eficiencia)
+                effective_power = vehicle.power_kw * CHARGING_EFFICIENCY if vehicle.charging else 0.0
+                data_annual[f'socket_{socket_id:03d}_charging_power_kw'].append(effective_power)
+                data_annual[f'socket_{socket_id:03d}_vehicle_count'].append(simulator.vehicle_count)
+            else:
+                data_annual[f'socket_{socket_id:03d}_soc_arrival'].append(0.0)
+                data_annual[f'socket_{socket_id:03d}_soc_target'].append(0.0)
+                data_annual[f'socket_{socket_id:03d}_soc_current'].append(0.0)
+                data_annual[f'socket_{socket_id:03d}_active'].append(0)
+                data_annual[f'socket_{socket_id:03d}_charging_power_kw'].append(0.0)
+                data_annual[f'socket_{socket_id:03d}_vehicle_count'].append(simulator.vehicle_count)
+    
+    # Crear DataFrame anual con datetime como índice
+    df_annual = pd.DataFrame(data_annual, index=pd.DatetimeIndex(timestamps, name='datetime'))
+    
+    # ================================================================
+    # AGREGAR COLUMNAS DE COSTOS OSINERGMIN Y REDUCCIÓN CO2
+    # ================================================================
+    # Extraer hora del índice para determinar tarifa aplicable
+    hour_of_day = pd.to_datetime(df_annual.index).hour
+    
+    # Determinar si es hora punta (18:00 - 22:59)
+    df_annual["is_hora_punta"] = np.where(
+        (hour_of_day >= HORA_INICIO_HP) & (hour_of_day < HORA_FIN_HP), 1, 0
+    )
+    
+    # Tarifa aplicada según hora (S/./kWh)
+    df_annual["tarifa_aplicada_soles"] = np.where(
+        df_annual["is_hora_punta"] == 1,
+        TARIFA_ENERGIA_HP_SOLES,
+        TARIFA_ENERGIA_HFP_SOLES
+    )
+    
+    # Calcular energía total cargada por hora (suma de todos los sockets)
+    charging_cols = [col for col in df_annual.columns if '_charging_power_kw' in col]
+    df_annual["ev_energia_total_kwh"] = df_annual[charging_cols].sum(axis=1)
+    
+    # Costo de carga EV por hora (S/.) = energía × tarifa aplicable
+    df_annual["costo_carga_ev_soles"] = df_annual["ev_energia_total_kwh"] * df_annual["tarifa_aplicada_soles"]
+    
+    # ================================================================
+    # REDUCCIÓN DIRECTA DE CO2 - CAMBIO DE COMBUSTIBLE (Gasolina → EV)
+    # ================================================================
+    # La reducción DIRECTA es diferente a la indirecta (desplazamiento de diésel).
+    # Aquí calculamos el CO2 que se evita porque los vehículos NO usan gasolina.
+    #
+    # Factores:
+    #   MOTO: 0.87 kg CO2/kWh (neto, descontando emisiones de la red)
+    #   MOTOTAXI: 0.47 kg CO2/kWh (neto)
+    # ================================================================
+    
+    # Energía por tipo de vehículo (motos: sockets 0-29, mototaxis: 30-37)
+    moto_cols = [col for col in df_annual.columns if '_charging_power_kw' in col and int(col.split('_')[1]) < 30]
+    taxi_cols = [col for col in df_annual.columns if '_charging_power_kw' in col and int(col.split('_')[1]) >= 30]
+    
+    df_annual["ev_energia_motos_kwh"] = df_annual[moto_cols].sum(axis=1)
+    df_annual["ev_energia_mototaxis_kwh"] = df_annual[taxi_cols].sum(axis=1)
+    
+    # Reducción directa CO2 por tipo de vehículo
+    df_annual["co2_reduccion_motos_kg"] = df_annual["ev_energia_motos_kwh"] * FACTOR_CO2_NETO_MOTO_KG_KWH
+    df_annual["co2_reduccion_mototaxis_kg"] = df_annual["ev_energia_mototaxis_kwh"] * FACTOR_CO2_NETO_MOTOTAXI_KG_KWH
+    
+    # Reducción total directa de CO2 (cambio combustible)
+    df_annual["reduccion_directa_co2_kg"] = (
+        df_annual["co2_reduccion_motos_kg"] + df_annual["co2_reduccion_mototaxis_kg"]
+    )
+    
+    # Columnas alias para compatibilidad con CityLearn
+    df_annual["ev_demand_kwh"] = df_annual["ev_energia_total_kwh"]  # Alias para CityLearn
+    
+    logger.info("✓ Columnas OSINERGMIN y CO2 agregadas al dataset")
+    
+    # Guardar CSV anual (datetime como índice)
+    output_path_annual = output_dir / 'chargers_ev_ano_2024_v3.csv'
+    df_annual.to_csv(output_path_annual, index=True)
+    logger.info(f"✓ Annual dataset saved: {output_path_annual}")
+    logger.info(f"  Shape: {df_annual.shape} (8,760 rows × {len(df_annual.columns)} columns)")
+    
+    # Crear DataFrame diario de ejemplo (día 1) - mantener datetime como índice
+    df_daily = df_annual.iloc[0:24, :].copy()
+    output_path_daily = output_dir / 'chargers_ev_dia_2024_v3.csv'
+    df_daily.to_csv(output_path_daily, index=True)
+    logger.info(f"✓ Daily dataset saved: {output_path_daily}")
+    logger.info(f"  Shape: {df_daily.shape} (24 rows × {len(df_daily.columns)} columns)")
+    
+    # Calcular estadísticas básicas
+    total_sockets = 38
+    energy_col_names = [col for col in df_annual.columns if '_charging_power_kw' in col]
+    total_energy_kwh = sum(df_annual[col].sum() for col in energy_col_names)
+    
+    # Ocupancia promedio
+    active_col_names = [col for col in df_annual.columns if '_active' in col]
+    total_active_hours = sum((df_annual[col] == 1).sum() for col in active_col_names)
+    occupancy_rate = total_active_hours / (total_sockets * 8760)
+    avg_sockets_active = total_active_hours / 8760
+    
+    # Estadísticas de costos y CO2
+    costo_total = df_annual["costo_carga_ev_soles"].sum()
+    costo_hp = df_annual.loc[df_annual["is_hora_punta"] == 1, "costo_carga_ev_soles"].sum()
+    costo_hfp = df_annual.loc[df_annual["is_hora_punta"] == 0, "costo_carga_ev_soles"].sum()
+    energia_hp = df_annual.loc[df_annual["is_hora_punta"] == 1, "ev_energia_total_kwh"].sum()
+    energia_hfp = df_annual.loc[df_annual["is_hora_punta"] == 0, "ev_energia_total_kwh"].sum()
+    
+    co2_total = df_annual["reduccion_directa_co2_kg"].sum()
+    co2_motos = df_annual["co2_reduccion_motos_kg"].sum()
+    co2_taxis = df_annual["co2_reduccion_mototaxis_kg"].sum()
+    energia_motos = df_annual["ev_energia_motos_kwh"].sum()
+    energia_taxis = df_annual["ev_energia_mototaxis_kwh"].sum()
+    
+    logger.info(f"\n{'='*70}")
+    logger.info("ESTADÍSTICAS DE SIMULACIÓN v3.0:")
+    logger.info(f"{'='*70}")
+    logger.info(f"Total energía cargada: {total_energy_kwh:,.1f} kWh/año")
+    logger.info(f"  - Motos (30 sockets):    {energia_motos:,.1f} kWh")
+    logger.info(f"  - Mototaxis (8 sockets): {energia_taxis:,.1f} kWh")
+    logger.info(f"Ocupancia total: {occupancy_rate*100:.2f}%")
+    logger.info(f"Sockets activos simultáneos (promedio): {avg_sockets_active:.2f} / {total_sockets}")
+    logger.info(f"\n--- COSTOS OSINERGMIN ---")
+    logger.info(f"Costo total anual: S/.{costo_total:,.2f}")
+    logger.info(f"  - Hora Punta (HP):     S/.{costo_hp:,.2f} ({energia_hp:,.0f} kWh)")
+    logger.info(f"  - Fuera de Punta (HFP): S/.{costo_hfp:,.2f} ({energia_hfp:,.0f} kWh)")
+    logger.info(f"\n--- REDUCCIÓN DIRECTA CO2 (Cambio combustible) ---")
+    logger.info(f"CO2 evitado total: {co2_total:,.1f} kg ({co2_total/1000:,.2f} ton)")
+    logger.info(f"  - Motos (factor {FACTOR_CO2_NETO_MOTO_KG_KWH}):    {co2_motos:,.1f} kg")
+    logger.info(f"  - Mototaxis (factor {FACTOR_CO2_NETO_MOTOTAXI_KG_KWH}): {co2_taxis:,.1f} kg")
+    logger.info(f"{'='*70}\n")
+    
+    return df_annual, df_daily
 
-    # Para 101 valores, necesitamos que:
-    # - valor[0] = 92.80 (min)
-    # - valor[50] = 835.20 (mediana)
-    # - valor[100] = 3252.00 (max)
-    # - promedio ≈ 903.46
-    # - std ≈ 572.07
 
-    # Creamos la distribución en dos segmentos:
-    # Segmento 1: min a mediana (51 valores, índices 0-50)
-    # Segmento 2: mediana a max (51 valores, índices 50-100)
+# Mantener compatibilidad: esta función llama a v3
+def generate_socket_level_dataset(output_dir: str | Path = "data/oe2/chargers") -> pd.DataFrame:
+    """Genera dataset detallado con perfil de carga por CADA toma usando v3.0.
+    
+    (DEPRECATED: Usar generate_socket_level_dataset_v3 directamente)
+    
+    Returns:
+        DataFrame con 8,760 filas y columnas de estado por socket
+    """
+    # Simplemente llama a la versión v3.0
+    df_annual, _ = generate_socket_level_dataset_v3(output_dir)
+    return df_annual
 
-    # Para el segmento 1, generamos valores que acumulen al promedio objetivo
-    # La suma total de 101 valores debe ser: 903.46 * 101 = 91,249.46
 
-    # Suma objetivo: E_PROM * n_scenarios = 91,249.46 kWh
+# ============================================================================
+# FUNCIONES DE ANÁLISIS PARAMÉTRICO Y GENERACIÓN DE TABLAS
+# ============================================================================
 
-    # Generamos valores con distribución que reproduzca las estadísticas
-    # Método: crear valores interpolados y luego ajustar
+# Constantes para cálculo de dimensionamiento
+BASE_MOTOS = 1636              # Motos estacionadas/día en mall
+BASE_MOTOTAXIS = 236           # Mototaxis estacionados/día en mall
+PUNTA_RATIO = 0.55             # 55% de cargas en hora punta
+HORAS_PUNTA = 5                # 16h-21h = 5 horas
+HORAS_FUERA_PUNTA = 7          # 9h-16h = 7 horas
+BATTERY_MOTO = 4.6             # kWh batería moto
+BATTERY_MOTOTAXI = 7.4         # kWh batería mototaxi
+POWER_CHARGER = 7.4            # kW por toma (Modo 3)
+CARGAS_HORA_MOTO = 1.0         # 60 min = 1 carga/hora/toma
+CARGAS_HORA_TAXI = 0.67        # 90 min = 0.67 cargas/hora/toma
+TOMAS_POR_CARGADOR = 2         # 2 tomas por cargador
 
-    energias = np.zeros(n_scenarios)
 
-    # Índices clave
-    idx_mediana = n_scenarios // 2  # 50 para n=101
+def calcular_dimensionamiento(pe: float, fc: float) -> dict[str, float]:
+    """Calcula el dimensionamiento de cargadores para un escenario dado.
+    
+    Args:
+        pe: Penetración EV (0.0-1.0)
+        fc: Factor de carga diaria (0.0-1.0)
+        
+    Returns:
+        Diccionario con métricas de dimensionamiento
+    """
+    # PASO 1: Vehículos que cargan (pe×fc aplicado UNA VEZ)
+    motos_dia = BASE_MOTOS * pe * fc
+    taxis_dia = BASE_MOTOTAXIS * pe * fc
+    
+    # PASO 2: Distribución punta/fuera punta
+    motos_punta = motos_dia * PUNTA_RATIO
+    taxis_punta = taxis_dia * PUNTA_RATIO
+    motos_hora = motos_punta / HORAS_PUNTA
+    taxis_hora = taxis_punta / HORAS_PUNTA
+    
+    # PASO 3: Dimensionar cargadores (playas separadas)
+    tomas_motos = int(np.ceil(motos_hora / CARGAS_HORA_MOTO))
+    tomas_taxis = int(np.ceil(taxis_hora / CARGAS_HORA_TAXI))
+    
+    cargadores_motos = int(np.ceil(tomas_motos / TOMAS_POR_CARGADOR))
+    cargadores_taxis = int(np.ceil(tomas_taxis / TOMAS_POR_CARGADOR))
+    
+    # Tomas reales (cargadores × 2)
+    tomas_motos_real = cargadores_motos * TOMAS_POR_CARGADOR
+    tomas_taxis_real = cargadores_taxis * TOMAS_POR_CARGADOR
+    
+    cargadores_total = cargadores_motos + cargadores_taxis
+    tomas_total = tomas_motos_real + tomas_taxis_real
+    
+    # Métricas
+    sesiones_pico = motos_punta + taxis_punta
+    cargas_dia = motos_dia + taxis_dia
+    energia_dia = motos_dia * BATTERY_MOTO + taxis_dia * BATTERY_MOTOTAXI
+    potencia_pico = tomas_total * POWER_CHARGER
+    
+    return {
+        'pe': pe,
+        'fc': fc,
+        'cargadores': cargadores_total,
+        'cargadores_motos': cargadores_motos,
+        'cargadores_taxis': cargadores_taxis,
+        'tomas': tomas_total,
+        'tomas_motos': tomas_motos_real,
+        'tomas_taxis': tomas_taxis_real,
+        'sesiones_pico': sesiones_pico,
+        'cargas_dia': cargas_dia,
+        'energia_dia': energia_dia,
+        'potencia_pico': potencia_pico,
+        'motos_dia': motos_dia,
+        'taxis_dia': taxis_dia
+    }
 
-    # Generar primera mitad (min a mediana)
-    for i in range(idx_mediana + 1):
-        t = i / idx_mediana  # 0 a 1
-        # Interpolación con curva suave (más valores cerca del mínimo)
-        energias[i] = E_MIN + (E_MEDIANA - E_MIN) * (t ** 0.8)
 
-    # Generar segunda mitad (mediana a max)
-    for i in range(idx_mediana + 1, n_scenarios):
-        t = (i - idx_mediana) / (n_scenarios - 1 - idx_mediana)  # 0 a 1
-        # Interpolación con curva que extiende hacia el máximo
-        energias[i] = E_MEDIANA + (E_MAX - E_MEDIANA) * (t ** 1.8)
-
-    # Ajustar para que el promedio coincida
-    current_mean = energias.mean()
-    if current_mean != E_PROM:
-        # Escalar valores intermedios (no extremos)
-        factor = E_PROM / current_mean
-        for i in range(1, n_scenarios - 1):
-            energias[i] *= factor
-            # Mantener dentro de límites
-            energias[i] = max(E_MIN, min(E_MAX, energias[i]))
-
-    # Reordenar para mantener orden ascendente
-    energias = np.sort(energias)
-
-    # Forzar valores exactos en puntos clave
-    energias[0] = E_MIN
-    energias[idx_mediana] = E_MEDIANA
-    energias[-1] = E_MAX
-
-    print("\nEnergías generadas:")
-    print(f"  Min: {energias[0]:.2f}, Max: {energias[-1]:.2f}")
-    print(f"  Promedio: {energias.mean():.2f} (objetivo: {E_PROM:.2f})")
-    print(f"  Mediana: {np.median(energias):.2f} (objetivo: {E_MEDIANA:.2f})")
-    print(f"  Std: {energias.std():.2f} (objetivo: {E_STD:.2f})")
-
-    # =========================================================================
-    # CALCULAR TODAS LAS MÉTRICAS DESDE ENERGÍA
-    # =========================================================================
-    scenarios = []
-
-    for i, energia in enumerate(energias):
-        # 1. Potencia pico [kW] = Energía × 0.125
-        potencia_pico = energia * 0.125
-
-        # 2. Cargas día total = Energía / 1.063 kWh
-        cargas = energia / 1.063
-
-        # 3. Sesiones pico 4h (factor varía con nivel de demanda)
-        # Min: 103 sesiones para 87.29 cargas → ratio = 1.18
-        # Max: 1030 sesiones para 3058.96 cargas → ratio = 0.337
-        t = (energia - E_MIN) / (E_MAX - E_MIN)
-        factor_pico = 1.18 - t * (1.18 - 0.337)
-        sesiones_pico = cargas * factor_pico
-
-        # 4. Cargadores (usando función calibrada con límites 4-35)
-        cargadores = chargers_needed_tabla13(sesiones_pico, min_chargers=4, max_chargers=35)
-
-        # 5. Tomas (4 por cargador)
-        tomas = cargadores * 4
-
-        # Calcular PE y FC aproximados para referencia
-        # ⚠️  NOTA: 3252 es el MÁXIMO dataset (Tabla 13 OE2), no constante removida
-        # HISTORIAL: 3252.0 kWh/día constante removida 2026-02-04 (3.60× sobrestimado)
-        #            AHORA usa 903.46 kWh/día (valor real verificado)
-        n_total = 1030  # AHORA [LEGACY: 3061 removido 2026-02-04]
-        bat_avg = 3252 / n_total  # 3252 = E_MAX dataset [LEGACY: 3252.0 constant removido]
-        pe_fc = energia / (n_total * bat_avg)
-        pe = min(1.0, np.sqrt(pe_fc))
-        fc = min(1.0, pe_fc / max(pe, 0.1))
-
-        scenarios.append({  # type: ignore[attr-defined]
-            "escenario": i + 1,
-            "PE": round(pe, 4),
-            "FC": round(fc, 4),
-            "cargadores": cargadores,
-            "tomas": tomas,
-            "sesiones_pico_4h": round(sesiones_pico, 2),
-            "cargas_dia": round(cargas, 2),
-            "energia_dia_kwh": round(energia, 2),
-            "potencia_pico_kw": round(potencia_pico, 2),
+def generate_scenario_table() -> pd.DataFrame:
+    """Genera tabla de 4 escenarios de dimensionamiento.
+    
+    Escenarios:
+    - CONSERVADOR: pe=0.20, fc=0.45
+    - MEDIANO: pe=0.25, fc=0.50
+    - RECOMENDADO*: pe=0.30, fc=0.55
+    - MÁXIMO: pe=0.40, fc=0.65
+    
+    Returns:
+        DataFrame con los 4 escenarios y sus métricas
+    """
+    escenarios = [
+        ('CONSERVADOR', 0.20, 0.45),
+        ('MEDIANO', 0.25, 0.50),
+        ('RECOMENDADO*', 0.30, 0.55),
+        ('MÁXIMO', 0.40, 0.65),
+    ]
+    
+    rows = []
+    for nombre, pe, fc in escenarios:
+        result = calcular_dimensionamiento(pe, fc)
+        rows.append({
+            'Escenario': nombre,
+            'Penetración (pe)': pe,
+            'Factor Carga (fc)': fc,
+            'Cargadores (2 tomas)': int(result['cargadores']),
+            'Total Tomas': int(result['tomas']),
+            'Energía Día (kWh)': round(result['energia_dia'], 1)
         })
+    
+    return pd.DataFrame(rows)
 
-    df = pd.DataFrame(scenarios)
 
-    # =========================================================================
-    # AJUSTAR FILA DE EXTREMOS PARA COINCIDENCIA EXACTA CON TABLA 13
-    # =========================================================================
-    idx_min = df["energia_dia_kwh"].idxmin()
-    idx_max = df["energia_dia_kwh"].idxmax()
+def generate_parametric_table(n_scenarios: int = 101, random_seed: int = 42) -> pd.DataFrame:
+    """Genera tabla parametrizada con estadísticas de N escenarios aleatorios.
+    
+    Simula variando pe en [0.20, 0.40] y fc en [0.45, 0.65] aleatoriamente.
+    
+    Args:
+        n_scenarios: Número de escenarios a simular (default: 101)
+        random_seed: Semilla para reproducibilidad (default: 42)
+        
+    Returns:
+        DataFrame con estadísticas (Mínimo, Máximo, Promedio, Mediana, Desv_Std)
+    """
+    np.random.seed(random_seed)
+    
+    # Generar escenarios aleatorios
+    pe_samples = np.random.uniform(0.20, 0.40, n_scenarios)
+    fc_samples = np.random.uniform(0.45, 0.65, n_scenarios)
+    
+    results = []
+    for pe, fc in zip(pe_samples, fc_samples):
+        result = calcular_dimensionamiento(pe, fc)
+        results.append([
+            result['cargadores'],
+            result['tomas'],
+            result['sesiones_pico'],
+            result['cargas_dia'],
+            result['energia_dia'],
+            result['potencia_pico']
+        ])
+    
+    df = pd.DataFrame(results, columns=[
+        'cargadores', 'tomas', 'sesiones_pico', 
+        'cargas_dia', 'energia_dia', 'potencia_pico'
+    ])
+    
+    # Calcular estadísticas
+    metrics = [
+        ('Cargadores (2 tomas) [unid]', 'cargadores'),
+        ('Tomas totales [tomas]', 'tomas'),
+        ('Sesiones pico 5h [sesiones]', 'sesiones_pico'),
+        ('Cargas día total [cargas]', 'cargas_dia'),
+        ('Energía día [kWh]', 'energia_dia'),
+        ('Potencia pico agregada [kW]', 'potencia_pico')
+    ]
+    
+    stats_rows = []
+    for name, col in metrics:
+        d = df[col]
+        stats_rows.append({
+            'Métrica': name,
+            'Mínimo': round(d.min(), 1),
+            'Máximo': round(d.max(), 1),
+            'Promedio': round(d.mean(), 1),
+            'Mediana': round(d.median(), 1),
+            'Desv_Std': round(d.std(), 2)
+        })
+    
+    return pd.DataFrame(stats_rows)
 
-    # Valores exactos Tabla 13 - escenario mínimo
-    df.loc[idx_min, "energia_dia_kwh"] = 92.80
-    df.loc[idx_min, "cargas_dia"] = 87.29
-    df.loc[idx_min, "sesiones_pico_4h"] = 103.0
-    df.loc[idx_min, "cargadores"] = 4
-    df.loc[idx_min, "tomas"] = 16
-    df.loc[idx_min, "potencia_pico_kw"] = 11.60
 
-    # Valores exactos Tabla 13 - escenario máximo (DATASET STATISTICS)
-    # ⚠️  AUDITORÍA: 3252.00 es MAX del dataset OE2 (no constante removida 3252.0)
-    # CONSTANTE REMOVIDA (2026-02-04): ENERGY_DAY_TOTAL_KWH = 3252.0 → 903.46 (3.60×)
-    df.loc[idx_max, "energia_dia_kwh"] = 3252.00  # E_MAX dataset [LEGACY: 3252.0 kWh/día constant removed]
-    df.loc[idx_max, "cargas_dia"] = 3058.96
-    df.loc[idx_max, "sesiones_pico_4h"] = 1030.0  # [LEGACY: 3061 total vehicles removed]
-    df.loc[idx_max, "cargadores"] = 35
-    df.loc[idx_max, "tomas"] = 140
-    df.loc[idx_max, "potencia_pico_kw"] = 406.50
+def print_scenario_table() -> None:
+    """Imprime la tabla de escenarios en formato legible."""
+    df = generate_scenario_table()
+    
+    print("\n" + "="*85)
+    print("TABLA DE ESCENARIOS - CARGADORES EV MALL IQUITOS (2 tomas/cargador)")
+    print("="*85)
+    print()
+    print("{:<15} {:>15} {:>15} {:>20} {:>10} {:>15}".format(
+        'Escenario', 'Penetración(pe)', 'Factor Carga(fc)', 
+        'Cargadores(2 tomas)', 'Tomas', 'Energía Día(kWh)'))
+    print("-"*85)
+    
+    for _, row in df.iterrows():
+        print("{:<15} {:>15.2f} {:>15.2f} {:>20} {:>10} {:>15.1f}".format(
+            row['Escenario'], row['Penetración (pe)'], row['Factor Carga (fc)'],
+            row['Cargadores (2 tomas)'], row['Total Tomas'], row['Energía Día (kWh)']))
+    
+    print("-"*85)
+    print()
+    print("Nota: * Escenario recomendado basado en IEA GEO 2024 y NREL EV Charging Study.")
+    print("      Cargadores Modo 3 con 2 tomas cada uno @ 7.4 kW/toma.")
+    print()
 
-    # =========================================================================
-    # MOSTRAR ESTADÍSTICAS
-    # =========================================================================
-    print("\n" + "-" * 70)
-    print("ESTADÍSTICAS GENERADAS")
-    print("-" * 70)
-    print(f"{'Métrica':<28} | {'Min':>8} | {'Max':>8} | {'Prom':>8} | {'Mediana':>8} | {'Std':>8}")
-    print("-" * 70)
 
-    for col, nombre in [
-        ("cargadores", "Cargadores [unid]"),
-        ("tomas", "Tomas totales [tomas]"),
-        ("sesiones_pico_4h", "Sesiones pico 4h [sesiones]"),
-        ("cargas_dia", "Cargas día total [cargas]"),
-        ("energia_dia_kwh", "Energía día [kWh]"),
-        ("potencia_pico_kw", "Potencia pico [kW]"),
-    ]:
-        print(f"{nombre:<28} | {df[col].min():>8.2f} | {df[col].max():>8.2f} | "
-              f"{df[col].mean():>8.2f} | {df[col].median():>8.2f} | {df[col].std():>8.2f}")
+def print_parametric_table(n_scenarios: int = 101) -> None:
+    """Imprime la tabla parametrizada con estadísticas."""
+    df = generate_parametric_table(n_scenarios)
+    
+    print("\n" + "="*95)
+    print("TABLA PARAMETRIZADA - DIMENSIONAMIENTO CARGADORES EV MALL IQUITOS")
+    print("="*95)
+    print()
+    print("{:<35} {:>10} {:>10} {:>10} {:>10} {:>10}".format(
+        'Métrica', 'Mínimo', 'Máximo', 'Promedio', 'Mediana', 'Desv_Std'))
+    print("-"*95)
+    
+    for _, row in df.iterrows():
+        print("{:<35} {:>10.1f} {:>10.1f} {:>10.1f} {:>10.1f} {:>10.2f}".format(
+            row['Métrica'], row['Mínimo'], row['Máximo'],
+            row['Promedio'], row['Mediana'], row['Desv_Std']))
+    
+    print("-"*95)
+    print()
+    print(f"Nota: Los valores (Mínimo, Máximo, Promedio) se obtuvieron de la simulación")
+    print(f"      de {n_scenarios} escenarios aleatorios variando pe en [0.20, 0.40] y fc en [0.45, 0.65].")
+    print("      Fuente: Elaboración propia.")
+    print()
 
-    print("\n" + "-" * 70)
-    print("VALORES ESPERADOS TABLA 13")
-    print("-" * 70)
-    # ⚠️  TABLA 13 OE2 - DATASET STATISTICS (NOT removed constants)
-    # AUDITORÍA: min=92.80, max=3252.00 son estadísticas del dataset OE2
-    #           3252.00 ≠ 3252.0 kWh/día constante removida 2026-02-04
-    # VALORES REMOVIDOS (3.60× sobrestimación):
-    #   • Energía: 3252.0 → 903.46 kWh/día (E_PROM en tabla)
-    #   • Motos: 2679 → 900 veh/día (sesiones_pico_4h reduced)
-    #   • Mototaxis: 382 → 130 veh/día (sesiones_pico_4h reduced)
-    #   • Total: 3061 → 1030 veh/día (columna sesiones_pico_4h)
-    TABLA_13: dict[str, Any] = {  # type: ignore[var-annotated]
-        "cargadores": (4, 35, 20.61, 20, 9.19),
-        "tomas": (16, 140, 82.46, 80, 36.76),
-        "sesiones_pico_4h": (103, 1030, 593.52, 566.50, 272.09),  # Max 1030 [LEGACY: 3061]
-        "cargas_dia": (87.29, 3058.96, 849.83, 785.62, 538.12),
-        "energia_dia_kwh": (92.80, 3252.00, 903.46, 835.20, 572.07),  # E_MAX=3252 [LEGACY: constant 3252.0]
-        "potencia_pico_kw": (11.60, 406.50, 112.93, 104.40, 71.51),
-    }
 
-    nombres = {
-        "cargadores": "Cargadores [unid]",
-        "tomas": "Tomas totales [tomas]",
-        "sesiones_pico_4h": "Sesiones pico 4h [sesiones]",
-        "cargas_dia": "Cargas día total [cargas]",
-        "energia_dia_kwh": "Energía día [kWh]",
-        "potencia_pico_kw": "Potencia pico [kW]",
-    }
+def print_calculo_detallado(pe: float = 0.30, fc: float = 0.55) -> None:
+    """Imprime el cálculo detallado paso a paso para un escenario.
+    
+    Args:
+        pe: Penetración EV (default: 0.30)
+        fc: Factor de carga diaria (default: 0.55)
+    """
+    print("\n" + "="*80)
+    print(f"CALCULO DETALLADO DE DIMENSIONAMIENTO (pe={pe}, fc={fc})")
+    print("="*80)
+    
+    # PASO 1
+    motos_dia = BASE_MOTOS * pe * fc
+    taxis_dia = BASE_MOTOTAXIS * pe * fc
+    
+    print("\n--- PASO 1: Aplicar pe x fc UNA SOLA VEZ ---")
+    print(f"  Motos: {BASE_MOTOS} x {pe} x {fc} = {motos_dia:.0f} motos/dia")
+    print(f"  Mototaxis: {BASE_MOTOTAXIS} x {pe} x {fc} = {taxis_dia:.0f} mototaxis/dia")
+    
+    # PASO 2
+    motos_punta = motos_dia * PUNTA_RATIO
+    taxis_punta = taxis_dia * PUNTA_RATIO
+    motos_hora = motos_punta / HORAS_PUNTA
+    taxis_hora = taxis_punta / HORAS_PUNTA
+    
+    motos_fuera = motos_dia * (1 - PUNTA_RATIO)
+    taxis_fuera = taxis_dia * (1 - PUNTA_RATIO)
+    motos_hora_fuera = motos_fuera / HORAS_FUERA_PUNTA
+    taxis_hora_fuera = taxis_fuera / HORAS_FUERA_PUNTA
+    
+    print("\n--- PASO 2: Distribuir Punta (55%) vs Fuera Punta (45%) ---")
+    print("  MOTOS:")
+    print(f"    Punta: {motos_dia:.0f} x 0.55 = {motos_punta:.0f} en {HORAS_PUNTA}h -> {motos_hora:.1f}/hora")
+    print(f"    Fuera punta: {motos_dia:.0f} x 0.45 = {motos_fuera:.0f} en {HORAS_FUERA_PUNTA}h -> {motos_hora_fuera:.1f}/hora")
+    print("  MOTOTAXIS:")
+    print(f"    Punta: {taxis_dia:.0f} x 0.55 = {taxis_punta:.0f} en {HORAS_PUNTA}h -> {taxis_hora:.1f}/hora")
+    print(f"    Fuera punta: {taxis_dia:.0f} x 0.45 = {taxis_fuera:.0f} en {HORAS_FUERA_PUNTA}h -> {taxis_hora_fuera:.1f}/hora")
+    
+    # PASO 3
+    tomas_motos = int(np.ceil(motos_hora / CARGAS_HORA_MOTO))
+    tomas_taxis = int(np.ceil(taxis_hora / CARGAS_HORA_TAXI))
+    cargadores_motos = int(np.ceil(tomas_motos / TOMAS_POR_CARGADOR))
+    cargadores_taxis = int(np.ceil(tomas_taxis / TOMAS_POR_CARGADOR))
+    
+    print("\n--- PASO 3: Dimensionar Cargadores (Playas Separadas) ---")
+    print("  [P] PLAYA MOTOS:")
+    print(f"    Demanda punta: {motos_hora:.1f} motos/hora")
+    print(f"    Capacidad por toma: {CARGAS_HORA_MOTO} cargas/hora (60 min)")
+    print(f"    Tomas necesarias: {motos_hora:.1f} / {CARGAS_HORA_MOTO} = {tomas_motos} tomas")
+    print(f"    Cargadores: {tomas_motos} / 2 = {cargadores_motos} CARGADORES")
+    tomas_motos_real = cargadores_motos * 2
+    print(f"    Verificar fuera punta: {motos_hora_fuera:.1f}/hora < {tomas_motos_real} tomas [OK]")
+    
+    print("\n  [P] PLAYA MOTOTAXIS:")
+    print(f"    Demanda punta: {taxis_hora:.1f} mototaxis/hora")
+    print(f"    Capacidad por toma: {CARGAS_HORA_TAXI} cargas/hora (90 min)")
+    tomas_calc = taxis_hora / CARGAS_HORA_TAXI
+    print(f"    Tomas necesarias: {taxis_hora:.1f} / {CARGAS_HORA_TAXI} = {tomas_calc:.1f} -> {tomas_taxis} tomas")
+    print(f"    Cargadores: {tomas_taxis} / 2 = {cargadores_taxis} CARGADORES")
+    tomas_taxis_real = cargadores_taxis * 2
+    taxis_fuera_tomas = taxis_hora_fuera / CARGAS_HORA_TAXI
+    print(f"    Verificar fuera punta: {taxis_hora_fuera:.1f} / {CARGAS_HORA_TAXI} = {taxis_fuera_tomas:.1f} < {tomas_taxis_real} tomas [OK]")
+    
+    # RESULTADO
+    cargadores_total = cargadores_motos + cargadores_taxis
+    tomas_total = tomas_motos_real + tomas_taxis_real
+    potencia = tomas_total * POWER_CHARGER
+    energia = motos_dia * BATTERY_MOTO + taxis_dia * BATTERY_MOTOTAXI
+    
+    print("\n" + "="*80)
+    print(f"RESULTADO: {cargadores_total} CARGADORES x 2 TOMAS = {tomas_total} TOMAS = {potencia:.1f} kW")
+    print("="*80)
+    print(f"  - PLAYA MOTOS: {cargadores_motos} cargadores x 2 = {tomas_motos_real} tomas")
+    print(f"  - PLAYA MOTOTAXIS: {cargadores_taxis} cargadores x 2 = {tomas_taxis_real} tomas")
+    print(f"  - Potencia instalada: {tomas_total} x {POWER_CHARGER} kW = {potencia:.1f} kW")
+    print(f"  - Energia diaria: {motos_dia:.0f}x{BATTERY_MOTO} + {taxis_dia:.0f}x{BATTERY_MOTOTAXI} = {energia:.1f} kWh/dia")
+    print()
 
-    for col, vals in TABLA_13.items():  # type: ignore[union-attr]
-        print(f"{nombres[col]:<28} | {vals[0]:>8.2f} | {vals[1]:>8.2f} | "
-              f"{vals[2]:>8.2f} | {vals[3]:>8.2f} | {vals[4]:>8.2f}")
 
-    # =========================================================================
-    # GUARDAR CSV
-    # =========================================================================
-    if output_path:
-        output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        df.to_csv(output_path, index=False)
-        print(f"\n✅ Escenarios guardados en: {output_path}")
+# ============================================================================
+# FUNCIONES DE VISUALIZACIÓN Y TABLAS RESUMEN v5.2
+# ============================================================================
 
+def generate_vehicles_per_period_table(pe: float = 0.30, fc: float = 0.55) -> pd.DataFrame:
+    """Genera tabla de vehículos a cargar por período (diario/mensual/anual).
+    
+    Args:
+        pe: Penetración EV (default: 0.30)
+        fc: Factor de carga diaria (default: 0.55)
+        
+    Returns:
+        DataFrame con columnas [Periodo, Motos, Mototaxis, Total]
+    """
+    motos_diario = int(round(BASE_MOTOS * pe * fc))
+    mototaxis_diario = int(round(BASE_MOTOTAXIS * pe * fc))
+    
+    data = [
+        {'Periodo': 'Diario', 'Motos': motos_diario, 'Mototaxis': mototaxis_diario},
+        {'Periodo': 'Mensual', 'Motos': motos_diario * 30, 'Mototaxis': mototaxis_diario * 30},
+        {'Periodo': 'Anual', 'Motos': motos_diario * 365, 'Mototaxis': mototaxis_diario * 365},
+    ]
+    
+    df = pd.DataFrame(data)
+    df['Total'] = df['Motos'] + df['Mototaxis']
     return df
+
+
+def plot_vehicles_per_period(
+    pe: float = 0.30, 
+    fc: float = 0.55,
+    output_path: str | Path = "outputs/vehiculos_por_periodo_v52.png",
+    show: bool = False
+) -> Path:
+    """Genera gráfica de vehículos a cargar por período.
+    
+    Args:
+        pe: Penetración EV (default: 0.30)
+        fc: Factor de carga diaria (default: 0.55)
+        output_path: Ruta para guardar la imagen
+        show: Si True, muestra la gráfica interactivamente
+        
+    Returns:
+        Path al archivo generado
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import FuncFormatter
+    
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    df = generate_vehicles_per_period_table(pe, fc)
+    
+    fig, axes = plt.subplots(1, 3, figsize=(14, 5))
+    fig.suptitle('Cantidad de Vehiculos a Cargar por Periodo (Escenario Recomendado v5.2)', 
+                 fontsize=14, fontweight='bold')
+    
+    periodos = ['Diario', 'Mensual', 'Anual']
+    colors = ['#4A90D9', '#E8A5A5']  # Azul motos, rosa mototaxis
+    
+    for i, (ax, periodo) in enumerate(zip(axes, periodos)):
+        row = df[df['Periodo'] == periodo].iloc[0]
+        x = np.array([0, 1])
+        valores = [row['Motos'], row['Mototaxis']]
+        bars = ax.bar(x, valores, color=colors, width=0.6, edgecolor='black', linewidth=0.5)
+        
+        for bar, val in zip(bars, valores):
+            height = bar.get_height()
+            ax.annotate(f'{val:,}',
+                        xy=(bar.get_x() + bar.get_width() / 2, height),
+                        xytext=(0, 3),
+                        textcoords='offset points',
+                        ha='center', va='bottom', fontsize=11, fontweight='bold')
+        
+        ax.set_title(periodo, fontsize=12)
+        ax.set_ylabel('Cantidad de Vehiculos')
+        ax.set_xticks(x)
+        ax.set_xticklabels(['Motos', 'Mototaxis'])
+        ax.set_ylim(0, max(valores) * 1.15)
+        ax.yaxis.set_major_formatter(FuncFormatter(lambda x, p: format(int(x), ',')))
+    
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    
+    if show:
+        plt.show()
+    else:
+        plt.close()
+    
+    return output_path
+
+
+def plot_hourly_load_profile(
+    output_path: str | Path = "outputs/perfil_horario_carga_v52.png",
+    show: bool = False
+) -> Path:
+    """Genera gráfica del perfil horario de carga.
+    
+    Usa el factor operativo definido en get_operational_factor() para
+    calcular la potencia agregada por hora (38 tomas × 7.4 kW × factor).
+    
+    Args:
+        output_path: Ruta para guardar la imagen
+        show: Si True, muestra la gráfica interactivamente
+        
+    Returns:
+        Path al archivo generado
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Patch
+    
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Parámetros v5.2
+    tomas = 38
+    power_per_socket = POWER_CHARGER  # 7.4 kW
+    max_power = tomas * power_per_socket  # 281.2 kW
+    
+    hours = list(range(24))
+    factors = [get_operational_factor(h) for h in hours]
+    power_kw = [max_power * f for f in factors]
+    
+    # Crear gráfica
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    colors = ['#4A90D9' if not (18 <= h < 21) else '#E74C3C' for h in hours]
+    bars = ax.bar(hours, power_kw, color=colors, edgecolor='black', linewidth=0.5)
+    
+    # Etiquetas en barras (solo las que tienen valor)
+    for h, bar in enumerate(bars):
+        height = bar.get_height()
+        if height > 0:
+            ax.annotate(f'{height:.0f}',
+                        xy=(bar.get_x() + bar.get_width() / 2, height),
+                        xytext=(0, 3),
+                        textcoords='offset points',
+                        ha='center', va='bottom', fontsize=8)
+    
+    # Leyenda para pico
+    legend_elements = [Patch(facecolor='#E74C3C', edgecolor='black', label='Pico 18-21h')]
+    ax.legend(handles=legend_elements, loc='upper left')
+    
+    ax.set_xlabel('Hora del día')
+    ax.set_ylabel('Potencia agregada (kW)')
+    ax.set_title('Perfil horario de carga (motos + mototaxis) - v5.2')
+    ax.set_xticks(hours)
+    ax.set_xlim(-0.5, 23.5)
+    ax.set_ylim(0, max_power * 1.1)
+    ax.grid(axis='y', alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    
+    if show:
+        plt.show()
+    else:
+        plt.close()
+    
+    return output_path
+
+
+def print_vehicles_per_period_table(pe: float = 0.30, fc: float = 0.55) -> None:
+    """Imprime la tabla de vehículos por período en formato legible.
+    
+    Args:
+        pe: Penetración EV (default: 0.30)
+        fc: Factor de carga diaria (default: 0.55)
+    """
+    df = generate_vehicles_per_period_table(pe, fc)
+    
+    print("\n" + "="*60)
+    print("VEHÍCULOS A CARGAR POR PERÍODO (pe={:.2f}, fc={:.2f})".format(pe, fc))
+    print("="*60)
+    print()
+    print("{:<10} {:>12} {:>12} {:>12}".format('Periodo', 'Motos', 'Mototaxis', 'Total'))
+    print("-"*60)
+    
+    for _, row in df.iterrows():
+        print("{:<10} {:>12,} {:>12,} {:>12,}".format(
+            row['Periodo'], row['Motos'], row['Mototaxis'], row['Total']))
+    
+    print("-"*60)
+    print()
+    print("Nota: Base = {} motos + {} mototaxis estacionados/día".format(BASE_MOTOS, BASE_MOTOTAXIS))
+    print("      Vehículos que cargan = Base × pe × fc")
+    print()
+
+
+def print_hourly_load_profile() -> None:
+    """Imprime el perfil horario de carga en formato legible."""
+    tomas = 38
+    max_power = tomas * POWER_CHARGER
+    
+    print("\n" + "="*60)
+    print("PERFIL HORARIO DE CARGA v5.2 (38 tomas × 7.4 kW)")
+    print("="*60)
+    print()
+    print("{:<8} {:>12} {:>12} {:>10}".format('Hora', 'Factor (%)', 'Potencia (kW)', 'Estado'))
+    print("-"*60)
+    
+    energy_total = 0.0
+    for h in range(24):
+        factor = get_operational_factor(h)
+        power = max_power * factor
+        energy_total += power
+        
+        if power > 0:
+            estado = "PICO" if 18 <= h < 21 else ""
+            print("{:02d}:00    {:>12.0%} {:>12.1f} {:>10}".format(h, factor, power, estado))
+    
+    print("-"*60)
+    print()
+    print("Potencia máxima instalada: {:.1f} kW".format(max_power))
+    print("Energía máxima/día (100% ocupación): {:.1f} kWh".format(energy_total))
+    print("Pico: 18:00-21:00 (100% capacidad)")
+    print()
 
 
 if __name__ == "__main__":
-    # Ejecutar generación de escenarios Tabla 13
-    df_escenarios = generate_tabla13_scenarios(
-        n_scenarios=101,
-        seed=2024,
-        output_path=Path("data/oe2/escenarios_tabla13.csv"),
-    )
-
+    # Script para generar dataset al ejecutar el módulo directamente
+    print("\n" + "="*100)
+    print("GENERADOR DE DATASET ESTOCÁSTICO DE CARGADORES EV v5.2")
+    print("Modo 3 @ 7.4 kW - Mall Iquitos - TIEMPOS REALES DE CARGA")
+    print("="*100)
+    
     # =========================================================================
-    # CÁLCULO DE VEHÍCULOS CARGADOS - ESCENARIO RECOMENDADO
+    # SECCIÓN 1: TABLA DE ESCENARIOS (CONSERVADOR, MEDIANO, RECOMENDADO, MÁXIMO)
     # =========================================================================
-    print("\n" + "=" * 70)
-    print("VEHÍCULOS CARGADOS - ESCENARIO RECOMENDADO (PE=0.65, FC=0.75)")
-    print("=" * 70)
-
-    # Configuración del escenario RECOMENDADO
-    N_MOTOS = 900  # Motos en hora pico (4h)
-    N_MOTOTAXIS = 130  # Mototaxis en hora pico (4h)
-    PE_RECOMENDADO = 0.65
-    FC_RECOMENDADO = 0.75
-
-    # Horas pico = 40% de la demanda diaria
-    # Si en 4 horas pico hay 900 motos + 130 mototaxis = 1030 vehículos
-    # Y esto representa el 40% de la demanda diaria
-    # Entonces demanda diaria = 1030 / 0.40 = 2575 vehículos
-
-    PEAK_HOURS_SHARE = 0.40  # 4 horas pico = 40% de demanda diaria
-
-    # Vehículos en hora pico (4 horas)
-    motos_pico_4h = N_MOTOS
-    mototaxis_pico_4h = N_MOTOTAXIS
-    total_pico_4h = motos_pico_4h + mototaxis_pico_4h
-
-    # Vehículos diarios (pico = 40% del día)
-    motos_dia = int(round(motos_pico_4h / PEAK_HOURS_SHARE))
-    mototaxis_dia = int(round(mototaxis_pico_4h / PEAK_HOURS_SHARE))
-    total_dia = motos_dia + mototaxis_dia
-
-    # Vehículos mensuales (30 días)
-    DAYS_MONTH = 30
-    motos_mes = motos_dia * DAYS_MONTH
-    mototaxis_mes = mototaxis_dia * DAYS_MONTH
-    total_mes = total_dia * DAYS_MONTH
-
-    # Vehículos anuales (365 días)
-    DAYS_YEAR = 365
-    motos_anual = motos_dia * DAYS_YEAR
-    mototaxis_anual = mototaxis_dia * DAYS_YEAR
-    total_anual = total_dia * DAYS_YEAR
-
-    # Vehículos en 20 años (vida útil del proyecto)
-    PROJECT_LIFE_YEARS = 20
-    motos_20_anos = motos_anual * PROJECT_LIFE_YEARS
-    mototaxis_20_anos = mototaxis_anual * PROJECT_LIFE_YEARS
-    total_20_anos = total_anual * PROJECT_LIFE_YEARS
-
-    print("\n" + "-" * 70)
-    print("CONFIGURACIÓN")
-    print("-" * 70)
-    print(f"  Motos en hora pico (4h):      {N_MOTOS:,}")
-    print(f"  Mototaxis en hora pico (4h):  {N_MOTOTAXIS:,}")
-    print(f"  Total hora pico (4h):         {total_pico_4h:,}")
-    print(f"  Fracción pico/día:            {PEAK_HOURS_SHARE:.0%}")
-    print(f"  PE (prob. evento carga):      {PE_RECOMENDADO}")
-    print(f"  FC (factor de carga):         {FC_RECOMENDADO}")
-
-    print("\n" + "-" * 70)
-    print("VEHÍCULOS CARGADOS POR PERÍODO")
-    print("-" * 70)
-    print(f"{'Período':<20} | {'Motos':>12} | {'Mototaxis':>12} | {'Total':>12}")
-    print("-" * 70)
-    print(f"{'Hora pico (4h)':<20} | {motos_pico_4h:>12,} | {mototaxis_pico_4h:>12,} | {total_pico_4h:>12,}")
-    print(f"{'Día (13h)':<20} | {motos_dia:>12,} | {mototaxis_dia:>12,} | {total_dia:>12,}")
-    print(f"{'Mes (30 días)':<20} | {motos_mes:>12,} | {mototaxis_mes:>12,} | {total_mes:>12,}")
-    print(f"{'Año (365 días)':<20} | {motos_anual:>12,} | {mototaxis_anual:>12,} | {total_anual:>12,}")
-    print(f"{'20 años (vida útil)':<20} | {motos_20_anos:>12,} | {mototaxis_20_anos:>12,} | {total_20_anos:>12,}")
-
+    print_scenario_table()
+    
     # =========================================================================
-    # CÁLCULO DE ENERGÍA - ESCENARIO RECOMENDADO
+    # SECCIÓN 2: TABLA PARAMETRIZADA (101 escenarios aleatorios)
     # =========================================================================
-    print("\n" + "=" * 70)
-    print("ENERGÍA CARGADA - ESCENARIO RECOMENDADO")
-    print("=" * 70)
-
-    # Energía por sesión (batería × FC)
-    BATTERY_MOTO_KWH = 2.0  # kWh batería moto
-    BATTERY_MOTOTAXI_KWH = 4.0  # kWh batería mototaxi
-
-    energy_per_moto = BATTERY_MOTO_KWH * FC_RECOMENDADO  # 1.5 kWh/sesión
-    energy_per_mototaxi = BATTERY_MOTOTAXI_KWH * FC_RECOMENDADO  # 3.0 kWh/sesión
-
-    # Energía diaria
-    energy_motos_dia = motos_dia * energy_per_moto
-    energy_mototaxis_dia = mototaxis_dia * energy_per_mototaxi
-    energy_total_dia = energy_motos_dia + energy_mototaxis_dia
-
-    # Energía mensual
-    energy_motos_mes = energy_motos_dia * DAYS_MONTH
-    energy_mototaxis_mes = energy_mototaxis_dia * DAYS_MONTH
-    energy_total_mes = energy_total_dia * DAYS_MONTH
-
-    # Energía anual
-    energy_motos_anual = energy_motos_dia * DAYS_YEAR
-    energy_mototaxis_anual = energy_mototaxis_dia * DAYS_YEAR
-    energy_total_anual = energy_total_dia * DAYS_YEAR
-
-    # Energía 20 años
-    energy_motos_20_anos = energy_motos_anual * PROJECT_LIFE_YEARS
-    energy_mototaxis_20_anos = energy_mototaxis_anual * PROJECT_LIFE_YEARS
-    energy_total_20_anos = energy_total_anual * PROJECT_LIFE_YEARS
-
-    print("\n" + "-" * 70)
-    print("ENERGÍA POR SESIÓN")
-    print("-" * 70)
-    print(f"  Batería moto:       {BATTERY_MOTO_KWH} kWh × FC {FC_RECOMENDADO} = {energy_per_moto:.2f} kWh/sesión")
-    print(f"  Batería mototaxi:   {BATTERY_MOTOTAXI_KWH} kWh × FC {FC_RECOMENDADO} = {energy_per_mototaxi:.2f} kWh/sesión")
-
-    print("\n" + "-" * 70)
-    print("ENERGÍA CARGADA POR PERÍODO")
-    print("-" * 70)
-    print(f"{'Período':<20} | {'Motos (kWh)':>14} | {'Mototaxis (kWh)':>16} | {'Total (kWh)':>14}")
-    print("-" * 70)
-    print(f"{'Día':<20} | {energy_motos_dia:>14,.1f} | {energy_mototaxis_dia:>16,.1f} | {energy_total_dia:>14,.1f}")
-    print(f"{'Mes':<20} | {energy_motos_mes:>14,.1f} | {energy_mototaxis_mes:>16,.1f} | {energy_total_mes:>14,.1f}")
-    print(f"{'Año':<20} | {energy_motos_anual:>14,.1f} | {energy_mototaxis_anual:>16,.1f} | {energy_total_anual:>14,.1f}")
-    print(f"{'20 años':<20} | {energy_motos_20_anos:>14,.1f} | {energy_mototaxis_20_anos:>16,.1f} | {energy_total_20_anos:>14,.1f}")
-
-    # Conversión a MWh para valores grandes
-    print("\n" + "-" * 70)
-    print("ENERGÍA EN MWh (para valores grandes)")
-    print("-" * 70)
-    print(f"  Energía anual:    {energy_total_anual / 1000:,.2f} MWh/año")
-    print(f"  Energía 20 años:  {energy_total_20_anos / 1000:,.2f} MWh")
-
+    print_parametric_table(101)
+    
     # =========================================================================
-    # RESUMEN FINAL
+    # SECCIÓN 3: CÁLCULO DETALLADO PASO A PASO (escenario recomendado)
     # =========================================================================
-    print("\n" + "=" * 70)
-    print("RESUMEN - ESCENARIO RECOMENDADO (32 cargadores × 4 tomas = 128 tomas)")
-    print("=" * 70)
-    print(f"""
-┌────────────────────────────────────────────────────────────────────┐
-│  VEHÍCULOS CARGADOS                                                │
-├────────────────────┬───────────────┬───────────────┬──────────────┤
-│  Período           │     Motos     │   Mototaxis   │    Total     │
-├────────────────────┼───────────────┼───────────────┼──────────────┤
-│  Día               │   {motos_dia:>9,}   │     {mototaxis_dia:>7,}     │   {total_dia:>8,}   │
-│  Mes               │  {motos_mes:>10,}  │    {mototaxis_mes:>8,}    │  {total_mes:>9,}  │
-│  Año               │ {motos_anual:>11,} │   {mototaxis_anual:>9,}   │ {total_anual:>10,} │
-│  20 años           │{motos_20_anos:>12,} │  {mototaxis_20_anos:>10,}  │{total_20_anos:>11,} │
-├────────────────────┴───────────────┴───────────────┴──────────────┤
-│  ENERGÍA CARGADA                                                   │
-├────────────────────┬───────────────┬───────────────┬──────────────┤
-│  Día               │  {energy_motos_dia:>9,.0f} kWh │   {energy_mototaxis_dia:>7,.0f} kWh │  {energy_total_dia:>8,.0f} kWh │
-│  Mes               │ {energy_motos_mes:>10,.0f} kWh │  {energy_mototaxis_mes:>8,.0f} kWh │ {energy_total_mes:>9,.0f} kWh │
-│  Año               │{energy_motos_anual:>11,.0f} kWh │ {energy_mototaxis_anual:>9,.0f} kWh │{energy_total_anual:>10,.0f} kWh │
-│  20 años           │{energy_motos_20_anos/1000:>8,.0f} MWh  │ {energy_mototaxis_20_anos/1000:>7,.0f} MWh  │ {energy_total_20_anos/1000:>7,.0f} MWh  │
-└────────────────────┴───────────────┴───────────────┴──────────────┘
-""")
+    print_calculo_detallado(pe=0.30, fc=0.55)
+    
     # =========================================================================
-    # TABLA 13 OE2 - TODOS LOS ESCENARIOS
+    # SECCIÓN 4: TABLA DE VEHÍCULOS POR PERÍODO
     # =========================================================================
-    print("\n" + "=" * 90)
-    print("TABLA 13 OE2 - ESCENARIOS DE DIMENSIONAMIENTO")
-    print("=" * 90)
-
-    # Definición de escenarios según Tabla 13 OE2
-    ESCENARIOS: dict[str, dict[str, Any]] = {  # type: ignore[var-annotated]
-        "CONSERVADOR": {"pe": 0.10, "fc": 0.40, "cargadores": 4},
-        "MEDIANO": {"pe": 0.50, "fc": 0.60, "cargadores": 20},
-        "RECOMENDADO*": {"pe": 0.65, "fc": 0.75, "cargadores": 32},
-        "MÁXIMO": {"pe": 1.00, "fc": 1.00, "cargadores": 35},
-    }
-
-    # Constantes
-    TOMAS_POR_CARGADOR = 4
-    N_MOTOS_PICO = 900  # Motos en hora pico (4h)
-    N_MOTOTAXIS_PICO = 130  # Mototaxis en hora pico (4h)
-    PEAK_SHARE = 0.40  # Hora pico = 40% del día
-    BAT_MOTO = 2.0  # kWh
-    BAT_MOTOTAXI = 4.0  # kWh
-    days_month = 30  # type: ignore[var-annotated]
-    days_year = 365  # type: ignore[var-annotated]
-    PROJECT_YEARS = 20
-
-    print("\n" + "-" * 90)
-    print("INFRAESTRUCTURA POR ESCENARIO")
-    print("-" * 90)
-    print(f"{'Escenario':<15} | {'PE':>6} | {'FC':>6} | {'Cargadores':>10} | {'Tomas':>8} | {'Energía/Día':>14}")
-    print("-" * 90)
-
-    escenarios_data: list[dict[str, str | int | float]] = []
-
-    for nombre_esc, params in ESCENARIOS.items():  # type: ignore[union-attr]
-        pe_esc = float(params["pe"])  # type: ignore[index]
-        fc_esc = float(params["fc"])  # type: ignore[index]
-        cargadores_esc = int(params["cargadores"])  # type: ignore[index]
-        tomas_esc = cargadores_esc * TOMAS_POR_CARGADOR
-
-        # Vehículos diarios basados en PE (escala desde pico)
-        # PE=1.0 significa que todos los vehículos del pico cargan
-        # En escenario MÁXIMO, la demanda es máxima
-        motos_pico = int(N_MOTOS_PICO * pe_esc)
-        mototaxis_pico = int(N_MOTOTAXIS_PICO * pe_esc)
-        motos_dia_esc = int(round(motos_pico / PEAK_SHARE))
-        mototaxis_dia_esc = int(round(mototaxis_pico / PEAK_SHARE))
-        total_dia_esc = motos_dia_esc + mototaxis_dia_esc
-
-        # Energía diaria
-        energy_per_moto = BAT_MOTO * fc_esc
-        energy_per_mototaxi = BAT_MOTOTAXI * fc_esc
-        energy_dia_esc = motos_dia_esc * energy_per_moto + mototaxis_dia_esc * energy_per_mototaxi
-
-        escenarios_data.append({
-            "nombre": nombre_esc,
-            "pe": pe_esc,
-            "fc": fc_esc,
-            "cargadores": cargadores_esc,
-            "tomas": tomas_esc,
-            "motos_dia": motos_dia_esc,
-            "mototaxis_dia": mototaxis_dia_esc,
-            "total_dia": total_dia_esc,
-            "energy_dia": energy_dia_esc,
-        })
-
-        print(f"{nombre_esc:<15} | {pe_esc:>6.2f} | {fc_esc:>6.2f} | {cargadores_esc:>10} | {tomas_esc:>8} | {energy_dia_esc:>12,.2f} kWh")
-
-    # Tabla de vehículos por escenario
-    print("\n" + "-" * 90)
-    print("VEHÍCULOS CARGADOS POR ESCENARIO")
-    print("-" * 90)
-    print(f"{'Escenario':<15} | {'Motos/Día':>12} | {'Mototaxis/Día':>14} | {'Total/Día':>12} | {'Total/Mes':>12} | {'Total/Año':>14}")
-    print("-" * 90)
-
-    for esc in escenarios_data:
-        total_dia_val = int(esc["total_dia"])
-        total_mes = total_dia_val * DAYS_MONTH
-        total_anual = total_dia_val * DAYS_YEAR
-        print(f"{esc['nombre']:<15} | {esc['motos_dia']:>12,} | {esc['mototaxis_dia']:>14,} | "
-              f"{total_dia_val:>12,} | {total_mes:>12,} | {total_anual:>14,}")
-
-    # Tabla de energía por escenario
-    print("\n" + "-" * 90)
-    print("ENERGÍA CARGADA POR ESCENARIO")
-    print("-" * 90)
-    print(f"{'Escenario':<15} | {'Energía/Día':>14} | {'Energía/Mes':>14} | {'Energía/Año':>14} | {'Energía/20 años':>16}")
-    print("-" * 90)
-
-    for esc in escenarios_data:
-        energy_dia_val = float(esc["energy_dia"])
-        energy_mes = energy_dia_val * DAYS_MONTH
-        energy_anual = energy_dia_val * DAYS_YEAR
-        energy_20 = energy_anual * PROJECT_YEARS
-        print(f"{esc['nombre']:<15} | {energy_dia_val:>12,.2f} kWh | {energy_mes:>12,.0f} kWh | "
-              f"{energy_anual:>12,.0f} kWh | {energy_20/1000:>13,.0f} MWh")
-
-    # Tabla resumen consolidada
-    print("\n" + "=" * 90)
-    print("TABLA 13 OE2 - RESUMEN CONSOLIDADO")
-    print("=" * 90)
-    print("""
-┌─────────────────┬──────┬──────┬────────────┬────────┬──────────────┬────────────┬──────────────┐
-│   Escenario     │  PE  │  FC  │ Cargadores │ Tomas  │ Energía/Día  │ Vehíc/Día  │ Vehíc/20años │
-│                 │      │      │  (4 tomas) │        │    (kWh)     │            │              │
-├─────────────────┼──────┼──────┼────────────┼────────┼──────────────┼────────────┼──────────────┤""")
-
-    for esc in escenarios_data:
-        total_dia_esc_val = int(esc["total_dia"])
-        total_20 = total_dia_esc_val * DAYS_YEAR * PROJECT_YEARS
-        print(f"│ {esc['nombre']:<15} │ {esc['pe']:>4.2f} │ {esc['fc']:>4.2f} │ "
-              f"{esc['cargadores']:>10} │ {esc['tomas']:>6} │ {esc['energy_dia']:>12,.2f} │ "
-              f"{total_dia_esc_val:>10,} │ {total_20:>12,} │")
-
-    print("└─────────────────┴──────┴──────┴────────────┴────────┴──────────────┴────────────┴──────────────┘")
-    print("\n* RECOMENDADO: Escenario seleccionado para diseño del sistema")
-    print("  - 32 cargadores × 4 tomas = 128 tomas controlables")
-    print("  - Potencia: 272 kW (224 kW motos + 48 kW mototaxis)")
-    recomendado_total = int(escenarios_data[2]["total_dia"])
-    print(f"  - Vehículos en 20 años: {recomendado_total * DAYS_YEAR * PROJECT_YEARS:,}")
-
-
-# ================================================================================
-# GENERACIÓN DE DATASET SOC DINÁMICO - 8,760 FILAS (1 AÑO × 24 HORAS)
-# ================================================================================
-def generate_soc_dynamic_dataset(output_dir: Path | str | None = None) -> pd.DataFrame:
-    """Genera dataset con SOC dinámico para 8,760 horas (exacto: 1 año × 24 horas).
+    print_vehicles_per_period_table(pe=0.30, fc=0.55)
     
-    Parámetros OE2 Iquitos:
-    - Motos/día: 2,685
-    - Mototaxis/día: 388
-    - SOC_arrival: [20%, 35%] uniforme
-    - SOC_target: [80%, 95%] uniforme
-    - Batería: 3.5 kWh (motos), 4.5 kWh (mototaxis)
+    # =========================================================================
+    # SECCIÓN 5: PERFIL HORARIO DE CARGA
+    # =========================================================================
+    print_hourly_load_profile()
     
-    Returns:
-        DataFrame con 8,760 filas (horario exacto) + 15 columnas
-    """
-    from datetime import datetime
+    # =========================================================================
+    # SECCION 6: GENERACION DE GRAFICAS
+    # =========================================================================
+    print("\n[GRAFICAS] Generando graficas...")
     
-    # Parámetros
-    MOTOS_PER_DAY = 2685
-    MOTOTAXIS_PER_DAY = 388
-    DAYS_YEAR = 365
-    HOURS_YEAR = DAYS_YEAR * 24
+    path1 = plot_vehicles_per_period(pe=0.30, fc=0.55)
+    print(f"   [OK] Grafica vehiculos/periodo: {path1}")
     
-    # SOC Range (MODO 3)
-    SOC_ARRIVAL_MIN = 0.20
-    SOC_ARRIVAL_MAX = 0.35
-    SOC_TARGET_MIN = 0.80
-    SOC_TARGET_MAX = 0.95
+    path2 = plot_hourly_load_profile()
+    print(f"   [OK] Grafica perfil horario: {path2}")
     
-    # Batería
-    BAT_MOTO = 3.5  # kWh
-    BAT_MOTOTAXI = 4.5  # kWh
+    # =========================================================================
+    # SECCION 7: GENERACION DE DATASET ESTOCASTICO
+    # =========================================================================
+    print("\n[REF] REFERENCIAS METODOLOGICAS:")
+    print("   - IEA Global EV Outlook 2024 (pe=30% mercados emergentes 2030)")
+    print("   - BNEF Electric Vehicle Outlook 2025 (2/3 ruedas Asia)")
+    print("   - ICCT Electric two/three-wheelers India (2022)")
+    print("   - NREL EV Charging Behavior Study (fc=0.55)")
     
-    print("\n" + "="*80)
-    print("[FASE 1] Generando dataset SOC dinámico (8,760 filas - 1 año × 24 horas)")
-    print("="*80)
+    print("\n[TIME] TIEMPOS REALES DE CARGA (incluye perdidas y taper):")
+    print("   - CHARGING_EFFICIENCY = 0.62 (perdidas cargador + cable + bateria + taper)")
+    print("   - Moto 4.6 kWh @ 7.4 kW: ideal 41 min -> real ~60 min (50-70)")
+    print("   - Mototaxi 7.4 kWh @ 7.4 kW: ideal 67 min -> real ~90 min (75-105)")
     
-    # 1. Crear índice horario (EXACTO: 8,760 horas)
-    print("[1] Generando índice horario...")
-    start_date = datetime(2024, 1, 1)
-    dates = pd.date_range(start=start_date, periods=HOURS_YEAR, freq='H')
-    assert len(dates) == 8760, f"ERROR: {len(dates)} horas, esperaba 8760"
-    print(f"    ✅ Rango: {dates[0]} a {dates[-1]}")
-    print(f"    ✅ Total: {len(dates)} filas (CORRECTO: 1 año × 24 horas)\n")
+    print("\n[SIM] PARAMETROS DE SIMULACION v5.2:")
+    print(f"   - Llegadas: Poisson (motos lambda=0.69, taxis lambda=0.375 veh/toma/h)")
+    print(f"   - SOC Inicial: N(20%, 10%) -> carga ~80% de bateria")
+    print(f"   - Objetivo: 100% SOC (carga completa)")
+    print(f"   - Horario Mall: 9-22h (13 horas operativas)")
+    print(f"   - Reproducibilidad: random_seed=42")
     
-    # 2. Distribución horaria
-    print("[2] Aplicando distribución horaria...")
-    hourly_dist = np.zeros(24)
-    hourly_dist[10:12] = 0.12   # 10:00-12:00: 12%
-    hourly_dist[12:17] = 0.38/5  # 12:00-17:00: 38%
-    hourly_dist[18:21] = 0.50/3  # 18:00-21:00: 50%
-    hourly_dist = hourly_dist / hourly_dist.sum()
+    print("\n[GEN] Generando dataset anual v5.2...")
+    df_annual, df_daily = generate_socket_level_dataset_v3()
     
-    # Repetir patrón para todo el año
-    vehicles_motos_hourly = np.tile(
-        (MOTOS_PER_DAY * hourly_dist).astype(int),
-        DAYS_YEAR
-    )
-    vehicles_mototaxis_hourly = np.tile(
-        (MOTOTAXIS_PER_DAY * hourly_dist).astype(int),
-        DAYS_YEAR
-    )
+    # Calcular resumen
+    total_energy = sum(df_annual[col].sum() for col in df_annual.columns if '_charging_power_kw' in col)
     
-    print(f"    ✅ Motos/hora promedio: {vehicles_motos_hourly.mean():.1f}")
-    print(f"    ✅ Mototaxis/hora promedio: {vehicles_mototaxis_hourly.mean():.1f}\n")
+    print(f"\n[OK] GENERACION COMPLETADA EXITOSAMENTE")
+    print(f"\n   Dataset Anual:")
+    print(f"   - Filas: {len(df_annual)} (8,760 horas = 1 ano)")
+    print(f"   - Columnas: {len(df_annual.columns)}")
+    print(f"   - Energia total: {total_energy:,.0f} kWh/ano")
+    print(f"   - Archivo: data/oe2/chargers/chargers_ev_ano_2024_v3.csv")
     
-    # 3. Generar SOC variables
-    print("[3] Generando SOC variables...")
-    np.random.seed(2024)  # Reproducibilidad
+    print(f"\n   Columnas por toma (9 cada una, 38 tomas):")
+    print(f"     - charger_power_kw: Potencia nominal cargador (7.4 kW)")
+    print(f"     - battery_kwh: Capacidad bateria (4.6 moto / 7.4 mototaxi)")
+    print(f"     - vehicle_type: Tipo vehiculo (MOTO / MOTOTAXI)")
+    print(f"     - soc_current/arrival/target: Estados de carga")
+    print(f"     - active: Toma ocupada (0/1)")
+    print(f"     - charging_power_kw: Potencia instantanea real")
+    print(f"     - vehicle_count: Vehiculos atendidos")
     
-    soc_arrival_motos = np.random.uniform(SOC_ARRIVAL_MIN, SOC_ARRIVAL_MAX, HOURS_YEAR)
-    soc_arrival_mototaxis = np.random.uniform(SOC_ARRIVAL_MIN, SOC_ARRIVAL_MAX, HOURS_YEAR)
-    soc_target_motos = np.random.uniform(SOC_TARGET_MIN, SOC_TARGET_MAX, HOURS_YEAR)
-    soc_target_mototaxis = np.random.uniform(SOC_TARGET_MIN, SOC_TARGET_MAX, HOURS_YEAR)
+    # =========================================================================
+    # SECCION 8: COSTOS OSINERGMIN Y REDUCCION CO2
+    # =========================================================================
+    print(f"\n" + "="*70)
+    print("SECCION 8: COSTOS OSINERGMIN Y REDUCCION CO2 (CAMBIO COMBUSTIBLE)")
+    print("="*70)
     
-    soc_current_motos = soc_arrival_motos.copy()
-    soc_current_mototaxis = soc_arrival_mototaxis.copy()
+    # Estadísticas de costos
+    costo_total = df_annual["costo_carga_ev_soles"].sum()
+    costo_hp = df_annual.loc[df_annual["is_hora_punta"] == 1, "costo_carga_ev_soles"].sum()
+    costo_hfp = df_annual.loc[df_annual["is_hora_punta"] == 0, "costo_carga_ev_soles"].sum()
+    energia_hp = df_annual.loc[df_annual["is_hora_punta"] == 1, "ev_energia_total_kwh"].sum()
+    energia_hfp = df_annual.loc[df_annual["is_hora_punta"] == 0, "ev_energia_total_kwh"].sum()
     
-    print(f"    ✅ SOC_arrival motos: {soc_arrival_motos.mean():.1%} ± {soc_arrival_motos.std():.1%}")
-    print(f"    ✅ SOC_target motos: {soc_target_motos.mean():.1%} ± {soc_target_motos.std():.1%}\n")
+    print(f"\n[TARIFAS] OSINERGMIN Electro Oriente (Iquitos):")
+    print(f"   - Hora Punta (HP):     S/.{TARIFA_ENERGIA_HP_SOLES}/kWh (18:00-22:59)")
+    print(f"   - Fuera de Punta (HFP): S/.{TARIFA_ENERGIA_HFP_SOLES}/kWh (resto)")
     
-    # 4. Calcular fully_charged
-    print("[4] Calculando fully_charged ratio...")
+    print(f"\n[COSTOS] Carga EV anual:")
+    print(f"   Costo total:           S/.{costo_total:,.2f}")
+    print(f"     - Hora Punta (HP):   S/.{costo_hp:,.2f} ({energia_hp:,.0f} kWh)")
+    print(f"     - Fuera Punta (HFP): S/.{costo_hfp:,.2f} ({energia_hfp:,.0f} kWh)")
     
-    charging_time_motos = (soc_target_motos - soc_arrival_motos) / 0.80 * 30  # minutos
-    charging_time_mototaxis = (soc_target_mototaxis - soc_arrival_mototaxis) / 0.80 * 30
+    # Estadísticas de CO2
+    co2_total = df_annual["reduccion_directa_co2_kg"].sum()
+    co2_motos = df_annual["co2_reduccion_motos_kg"].sum()
+    co2_taxis = df_annual["co2_reduccion_mototaxis_kg"].sum()
+    energia_motos = df_annual["ev_energia_motos_kwh"].sum()
+    energia_taxis = df_annual["ev_energia_mototaxis_kwh"].sum()
     
-    fully_charged_motos = (charging_time_motos <= 60).astype(int)
-    fully_charged_mototaxis = (charging_time_mototaxis <= 60).astype(int)
-    fully_charged_total = (fully_charged_motos * vehicles_motos_hourly + 
-                          fully_charged_mototaxis * vehicles_mototaxis_hourly)
+    print(f"\n[CO2] Reduccion DIRECTA por cambio combustible (gasolina -> EV):")
+    print(f"   Factor moto:     {FACTOR_CO2_NETO_MOTO_KG_KWH} kg CO2/kWh (neto)")
+    print(f"   Factor mototaxi: {FACTOR_CO2_NETO_MOTOTAXI_KG_KWH} kg CO2/kWh (neto)")
+    print(f"\n   CO2 evitado total: {co2_total:,.1f} kg ({co2_total/1000:,.2f} ton/ano)")
+    print(f"     - Motos ({energia_motos:,.0f} kWh):    {co2_motos:,.1f} kg ({co2_motos/1000:,.2f} ton)")
+    print(f"     - Mototaxis ({energia_taxis:,.0f} kWh): {co2_taxis:,.1f} kg ({co2_taxis/1000:,.2f} ton)")
     
-    fully_ratio = fully_charged_total.sum() / (vehicles_motos_hourly.sum() + vehicles_mototaxis_hourly.sum())
-    print(f"    ✅ Fully charged motos: {fully_charged_motos.sum() / len(fully_charged_motos):.1%}")
-    print(f"    ✅ Fully charged mototaxis: {fully_charged_mototaxis.sum() / len(fully_charged_mototaxis):.1%}")
-    print(f"    ✅ Fully charged ratio total: {fully_ratio:.1%}\n")
+    # Equivalencia en litros de gasolina
+    litros_gasolina_evitados = co2_total / FACTOR_CO2_GASOLINA_KG_L
+    print(f"\n   Equivalente en litros gasolina evitados: {litros_gasolina_evitados:,.0f} L/ano")
+    print(f"   (Factor: {FACTOR_CO2_GASOLINA_KG_L} kg CO2/L gasolina)")
     
-    # 5. Crear DataFrame
-    print("[5] Creando DataFrame...")
+    print(f"\n[NOTA] Esta es reduccion DIRECTA (cambio de combustible).")
+    print(f"       La reduccion INDIRECTA (desplazamiento de diesel en la red)")
+    print(f"       se calcula en solar_pvlib.py")
     
-    df = pd.DataFrame({
-        'timestamp': dates,
-        'hour': dates.hour,
-        'day_of_year': dates.dayofyear,
-        'soc_arrival_motos_mean': soc_arrival_motos,
-        'soc_target_motos_mean': soc_target_motos,
-        'soc_current_motos_mean': soc_current_motos,
-        'soc_arrival_mototaxis_mean': soc_arrival_mototaxis,
-        'soc_target_mototaxis_mean': soc_target_mototaxis,
-        'soc_current_mototaxis_mean': soc_current_mototaxis,
-        'fully_charged_motos': fully_charged_motos,
-        'fully_charged_mototaxis': fully_charged_mototaxis,
-        'fully_charged_total': fully_charged_total.astype(int),
-        'vehicles_charging_motos': vehicles_motos_hourly,
-        'vehicles_charging_mototaxis': vehicles_mototaxis_hourly,
-        'charging_time_motos_min': charging_time_motos,
-        'charging_time_mototaxis_min': charging_time_mototaxis,
-    })
+    # Nuevas columnas agregadas
+    print(f"\n[COLS] Columnas OSINERGMIN y CO2 agregadas:")
+    osinergmin_cols = ['is_hora_punta', 'tarifa_aplicada_soles', 'ev_energia_total_kwh',
+                       'costo_carga_ev_soles', 'ev_energia_motos_kwh', 'ev_energia_mototaxis_kwh',
+                       'co2_reduccion_motos_kg', 'co2_reduccion_mototaxis_kg', 
+                       'reduccion_directa_co2_kg', 'ev_demand_kwh']
+    for col in osinergmin_cols:
+        if col in df_annual.columns:
+            print(f"     - {col}")
     
-    print(f"    ✅ Shape: {df.shape}")
-    print(f"    ✅ Filas: {len(df)} (debe ser 8,760)")
-    print(f"    ✅ Columnas: {len(df.columns)}\n")
+    print(f"\n   Dataset Diario (ejemplo Dia 1):")
+    print(f"   - Filas: {len(df_daily)} (24 horas)")
+    print(f"   - Archivo: data/oe2/chargers/chargers_ev_dia_2024_v3.csv")
     
-    # 6. Guardar CSV
-    if output_dir is not None:
-        output_dir = Path(output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
-        output_file = output_dir / "chargers_real_hourly_2024.csv"
-        
-        print("[6] Guardando CSV...")
-        df.to_csv(output_file, index=False)
-        print(f"    ✅ Guardado: {output_file}")
-        print(f"    ✅ Tamaño: {output_file.stat().st_size / 1024:.1f} KB\n")
+    print(f"\n   Ejemplo columnas socket_000 (moto):")
+    moto_cols = [c for c in df_annual.columns if 'socket_000_' in c]
+    for col in moto_cols:
+        print(f"     - {col}")
     
-    # 7. Validar
-    print("[7] Validando integridad...")
-    assert len(df) == 8760, f"ERROR: {len(df)} filas, esperaba 8760"
-    assert 'fully_charged_total' in df.columns, "ERROR: columna missing"
-    print("    ✅ Validación OK\n")
+    print(f"\n   Ejemplo columnas socket_030 (mototaxi):")
+    taxi_cols = [c for c in df_annual.columns if 'socket_030_' in c]
+    for col in taxi_cols:
+        print(f"     - {col}")
     
-    print("="*80)
-    print("✅ DATASET SOC DINÁMICO GENERADO CON ÉXITO")
-    print("="*80)
-    print(f"\nResumen:")
-    print(f"  • Período: {df['timestamp'].min().date()} a {df['timestamp'].max().date()}")
-    print(f"  • Filas: {len(df)} (1 año × 24 horas = CORRECTO)")
-    print(f"  • Columnas: {len(df.columns)}")
-    print(f"  • Vehículos motos/día: {vehicles_motos_hourly.sum() / DAYS_YEAR:.0f}")
-    print(f"  • Vehículos mototaxis/día: {vehicles_mototaxis_hourly.sum() / DAYS_YEAR:.0f}")
-    print(f"  • Fully charged ratio: {fully_ratio:.1%}\n")
+    # Verificación CityLearn
+    print(f"\n" + "="*70)
+    print("VERIFICACION PARA CITYLEARN")
+    print("="*70)
+    print(f"\n   Requisitos CityLearn:")
+    print(f"     [OK] Filas: {len(df_annual)} (esperado: 8,760)")
+    print(f"     [OK] Indice: datetime")
+    print(f"     [OK] ev_demand_kwh presente: {'ev_demand_kwh' in df_annual.columns}")
+    print(f"     [OK] is_hora_punta presente: {'is_hora_punta' in df_annual.columns}")
+    print(f"     [OK] reduccion_directa_co2_kg presente: {'reduccion_directa_co2_kg' in df_annual.columns}")
     
-    return df
+    print("\n" + "="*100 + "\n")

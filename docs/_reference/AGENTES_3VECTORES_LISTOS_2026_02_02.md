@@ -43,7 +43,7 @@ Los **tres agentes RL (SAC, PPO, A2C)** están ahora entrenados para optimizar *
 
 ## 🧠 CÓMO LOS AGENTES "VEN" LOS 3 VECTORES
 
-### Espacio de Observación (394-dim):
+### Espacio de Observación (124-dim):
 
 Cada paso de tiempo, los agentes reciben información sobre las **3 fuentes**:
 
@@ -68,7 +68,7 @@ observation = [
     charger_1_state,            # ← EV conectado sí/no
     charger_1_soc,              # ← SOC del EV
     charger_1_power_out,        # ← Potencia entregando
-    # ... (128 chargers total - 112 motos + 16 mototaxis)
+    # ... (38 sockets total - 30 motos + 8 mototaxis)
     
     # Time features (cuándo optimizar)
     hour,                       # ← Hora del día
@@ -77,7 +77,7 @@ observation = [
 ]
 ```
 
-### Espacio de Acción (129-dim):
+### Espacio de Acción (39-dim):
 
 Los agentes **CONTROLAN DIRECTAMENTE** los 3 vectores mediante acciones:
 
