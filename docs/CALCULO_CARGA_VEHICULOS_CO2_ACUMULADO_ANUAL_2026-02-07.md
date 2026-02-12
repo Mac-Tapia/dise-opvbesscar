@@ -74,15 +74,15 @@ vehicles_year_mototaxis: int = 94900  # Proyección old; puede ser 139,430 con F
 #### **MOTOS ELÉCTRICAS**
 
 Configuración:
-- Battery capacity: **2.0 kWh**
-- Charger power: **2.0 kW** (Mode 3, 1-fase)
+- Battery capacity: **7.4 kWh**
+- Charger power: **7.4 kW** (Mode 3, 1-fase)
 - Target SOC arrival: **20%** (llegan cansadas)
-- Target SOC departure: **90%** (necesitan cargar 70% de 2.0 kWh = 1.4 kWh)
+- Target SOC departure: **90%** (necesitan cargar 70% de 7.4 kWh = 1.4 kWh)
 - Sesión típica: **45 minutos** (0.75 × 60 = 45 min, con pérdidas 95% eficiencia)
 
 **Energía por sesión:**
 ```
-E_moto_sesión = 2.0 kWh × (90% - 20%) / 0.95 eficiencia
+E_moto_sesión = 7.4 kWh × (90% - 20%) / 0.95 eficiencia
               = 2.0 × 0.70 / 0.95
               = 1.47 kWh/sesión
 ```
@@ -109,7 +109,7 @@ E_motos_día = 112 sockets × 0.8 × 26 sesiones × 1.47 kWh
 
 Configuración:
 - Battery capacity: **4.0 kWh**
-- Charger power: **3.0 kW** (Mode 3, 3-fase)
+- Charger power: **7.4 kW** (Mode 3, 3-fase)
 - Target SOC arrival: **20%**
 - Target SOC departure: **90%** (necesitan cargar 70% de 4.0 kWh = 2.8 kWh)
 - Sesión típica: **60 minutos** (1.0 × 60 = 60 min, con pérdidas 95% eficiencia)
@@ -649,7 +649,7 @@ episode_cumulative = {
 ### Validaciones Completadas
 
 - ✅ **Datos OE2 reales cargados**: 2,679 motos/día, 382 mototaxis/día
-- ✅ **Infraestructura validada**: 32 cargadores × 4 sockets = 128 tomas
+- ✅ **Infraestructura validada**: 19 cargadores x 2 sockets = 38 tomas
 - ✅ **Energía diaria confirmada**: 763.76 kWh motos + 139.70 kWh mototaxis
 - ✅ **CO₂ factor grid validado**: 0.4521 kg/kWh (OSINFOR 2023) ✓
 - ✅ **CO₂ combustión EPA**: 8.9 kg CO₂/galón (GREET v2.0) ✓

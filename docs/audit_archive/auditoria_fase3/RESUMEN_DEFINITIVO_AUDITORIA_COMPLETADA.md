@@ -167,7 +167,7 @@ Grid (5):                  Voltaje, frecuencia, importación, etc.
 Building (2):              Carga no desplazable
 PV (2):                    Generación actual, predicción
 BESS (5):                  SOC, potencia, eficiencia, etc.
-Chargers (364):            128 chargers × 4 variables cada uno
+Chargers (364):            38 sockets × 4 variables cada uno
 Time (6):                  Hora, mes, día_semana, etc.
 ─────────────────────────────────────────────────────────
 TOTAL: 394 dimensiones normalizadas ✅
@@ -224,8 +224,8 @@ TOTAL: 8,760 timesteps exactos ✅
 ║                    GARANTÍAS CERTIFICADAS                     ║
 ╠════════════════════════════════════════════════════════════════╣
 ║                                                                ║
-║  ✅ Obs 394-dim conectadas a TODOS los agentes               ║
-║  ✅ Actions 129-dim conectadas a TODOS los agentes           ║
+║  ✅ Obs 124-dim conectadas a TODOS los agentes               ║
+║  ✅ Actions 39-dim conectadas a TODOS los agentes           ║
 ║  ✅ Normalización de observaciones ACTIVA                    ║
 ║  ✅ Clipping [-5.0, 5.0] APLICADO                            ║
 ║  ✅ Decodificación de acciones CORRECTA                      ║

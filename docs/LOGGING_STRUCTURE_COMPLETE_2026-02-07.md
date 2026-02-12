@@ -410,7 +410,7 @@ a2c_agent.learn(
 - [x] Fórmulas de cálculo documentadas
 
 ### ✅ 4. MOTOS (112) VS MOTOTAXIS (16)
-- [x] Índices de sockets separados (1-112 motos, 113-128 mototaxis)
+- [x] Índices de sockets separados (1-30 motos, 113-128 mototaxis)
 - [x] Conteo motos cargadas máximo por episodio
 - [x] Conteo mototaxis cargadas máximo por episodio
 - [x] Demanda separada motos vs mototaxis
@@ -485,15 +485,15 @@ $ python train_a2c_multiobjetivo.py
 - Cargando configs/agents/a2c_config.yaml: ✓
 
 [2] VALIDAR DATOS OE2
-- chargers_real_hourly_2024.csv (128 sockets): ✓
+- chargers_real_hourly_2024.csv (38 sockets): ✓
 - pv_generation_citylearn_v2.csv (8,760 horas): ✓
 - demandamallhorakwh.csv: ✓
 - electrical_storage_simulation.csv (4.52 MWh): ✓
 
 [3] PREPARAR ENVIRONMENT
 - CityLearn v2 environment: ✓
-- Observation: (394,)
-- Action: (129,)
+- Observation: (124,)
+- Action: (39,)
 
 [4] CREAR CONTEXT Y REWARDS
 - IquitosContext (0.4521 kg CO₂/kWh): ✓
@@ -561,7 +561,7 @@ RESULTADOS FINALES - VALIDACION 10 EPISODIOS:
   ➤ VEHÍCULOS CARGADOS (máximo por episodio):
     Motos (de 112)                        93 unidades
     Mototaxis (de 16)                     16 unidades
-    Total vehículos                      109 / 128 sockets
+    Total vehículos                      109 / 38 sockets
 
   ➤ ESTABILIDAD DE RED:
     Estabilidad promedio              82.3 %
@@ -581,7 +581,7 @@ RESULTADOS FINALES - VALIDACION 10 EPISODIOS:
     Utilización sockets               47.3 %
 
   ➤ SOLAR:
-    Solar aprovechada por ep          7344.5 kWh
+    Solar aprovechada por ep          7347.4 kWh
 
   ARCHIVOS GENERADOS:
     ✓ outputs/result_a2c.json

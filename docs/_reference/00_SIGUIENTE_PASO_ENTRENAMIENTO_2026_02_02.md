@@ -53,7 +53,7 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 [OK] Solar timeseries validation PASSED: 8760 rows (hourly, 1 year)
 [OK] Building load: 36,500,000 kWh total
 [OK] Solar generation: 7,834,261 kWh total
-[OK] EV Chargers: 128 chargers configured
+[OK] EV Chargers: 38 sockets configured
 ✅ All OE2 artifacts properly integrated
 ```
 

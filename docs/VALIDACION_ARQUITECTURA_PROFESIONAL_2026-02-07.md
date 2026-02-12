@@ -237,15 +237,15 @@ diseñopvbesscar/
 ```
 OE2 Real Data (Iquitos)
 ├─ Solar: 4,050 kWp × 18.4% CF
-├─ Chargers: 32 units (128 sockets)
+├─ Chargers: 19 units (38 sockets)
 ├─ BESS: 4,520 kWh
 └─ Fleet: 2,679 motos/día + 382 mototaxis/día
 
     ↓ [Carga en training scripts]
 
 CityLearn v2 Environment
-├─ Obs: 394-dim (building + EV + time)
-├─ Action: 129-dim ([0,1] normalized)
+├─ Obs: 124-dim (building + EV + time)
+├─ Action: 39-dim ([0,1] normalized)
 └─ Episode: 8,760 timesteps (365 days)
 
     ↓ [Reward calculation via MultiObjectiveReward]
@@ -368,7 +368,7 @@ reward_weights:
 | **CO₂ Factor** | 0.4521 kg/kWh | 0.4521 kg/kWh | ✓ Idéntico | ✓ |
 | **Solar Capacity** | 4,050 kWp | 4,050 kWp | ✓ Idéntico | ✓ |
 | **BESS Capacity** | 4,520 kWh | 4,520 kWh | ✓ Idéntico | ✓ |
-| **Chargers** | 32 units | 32 units (128 sockets) | ✓ Idéntico | ✓ |
+| **Chargers** | 19 units | 19 units (38 sockets) | ✓ Idéntico | ✓ |
 | **Fleet Motos/día** | 2,679 | 2,679 | ✓ Idéntico | ✓ |
 | **Fleet Taxis/día** | 382 | 382 | ✓ Idéntico | ✓ |
 | **Episode Length** | 8,760 h | 8,760 h | ✓ Idéntico | ✓ |

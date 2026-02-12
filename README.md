@@ -10,11 +10,16 @@
 
 ## 🎯 Descripción del Proyecto
 
-**pvbesscar** optimiza la carga de 128 cargadores eléctricos (2,912 motos + 416 mototaxis) utilizando:
+**pvbesscar** optimiza la carga de 38 tomas eléctricas (270 motos + 39 mototaxis/día) utilizando:
 
 - **Solar PV**: 4,050 kWp de generación fotovoltaica
-- **BESS**: 4,520 kWh de almacenamiento en baterías
+- **BESS**: 940 kWh / 342 kW de almacenamiento (exclusivo EV)
 - **RL Agents**: SAC, PPO, A2C para minimizar emisiones CO₂
+
+**Infraestructura v5.2**:
+- 19 cargadores (15 motos + 4 mototaxis) × 2 tomas = 38 tomas
+- Modo 3 @ 7.4 kW/toma (281.2 kW instalados)
+- Escenario RECOMENDADO: pe=0.30, fc=0.55
 
 **Ubicación**: Iquitos, Perú (red aislada, 0.4521 kg CO₂/kWh de generación térmica)
 
@@ -108,8 +113,8 @@ python scripts/verify_5_datasets.py
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    CityLearn v2 Environment                         │
 │  ┌──────────────┐  ┌──────────────┐  ┌─────────────────────────┐   │
-│  │  Solar PV    │  │    BESS      │  │   128 EV Chargers       │   │
-│  │  4,050 kWp   │  │  4,520 kWh   │  │   (32 units × 4 sockets)│   │
+│  │  Solar PV    │  │    BESS      │  │   38 EV Sockets       │   │
+│  │  4,050 kWp   │  │  940 kWh     │  │   (19 units x 2)      │   │
 │  └──────────────┘  └──────────────┘  └─────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────┘
                               │
@@ -127,8 +132,8 @@ python scripts/verify_5_datasets.py
 
 | Componente       | Dimensiones | Descripción                                       |
 | ---------------- | ----------- | ------------------------------------------------- |
-| **Observación**  | 394-dim     | Solar W/m², BESS SOC %, 128 chargers × 3, tiempo  |
-| **Acción**       | 129-dim     | 1 BESS + 128 chargers, valores continuos [0,1]    |
+| **Observación**  | 124-dim     | Solar W/m², BESS SOC %, 38 sockets × 3, tiempo  |
+| **Acción**       | 39-dim     | 1 BESS + 38 sockets, valores continuos [0,1]    |
 
 ---
 
@@ -208,9 +213,9 @@ Observación: 1,049-dim
   ├─ Escenario (one-hot): 4 dimensiones
   └─ Timestep: 1 dimensión
 
-Acción: 129-dim
+Acción: 39-dim
   ├─ BESS dispatch: 1 variable
-  └─ Charger control: 128 sockets
+  └─ Charger control: 38 sockets
 
 Timesteps por episodio: 8,760 (1 año completo)
 Duración timestep: 1 hora (3,600 segundos simulados)
@@ -281,14 +286,14 @@ clip_range: 0.2
    - Fuente: CityLearn v2 validado
 
 ✅ Chargers Real:
-   - Total sockets: 128 (32 units × 4)
+   - Total sockets: 128 (19 units × 4)
    - Motos: 112 sockets @ 2 kW
    - Mototaxis: 16 sockets @ 3 kW
    - Consumo: 1,024,818 kWh/año
    - Archivo: chargers_real_hourly_2024.csv
 
 ✅ BESS Config:
-   - Capacidad: 4,520 kWh
+   - Capacidad: 940 kWh / 342 kW (exclusivo EV, 100% cobertura)
    - SOC Medio: 90.5%
    - Eficiencia: 95% (round-trip)
    - Archivo: bess_hourly_dataset_2024.csv
@@ -308,7 +313,7 @@ clip_range: 0.2
 ### Impacto Esperado en Producción
 
 ```
-DEPLOYMENT A2C (Iquitos, 128 chargers)
+DEPLOYMENT A2C (Iquitos, 38 sockets)
 ═════════════════════════════════════════════════════════
 
 ANUAL METRICS:
@@ -441,24 +446,24 @@ Máximo:    1,982.7 kWh/hora
 Ubicación: data/interim/oe2/demandamallkwh/
 Columnas:  FECHAHORA, kWh
 Total:     12,368,653 kWh/año (12.37 GWh)
-Máximo:    2,763.0 kWh/hora
+Máximo:    2,767.4 kWh/hora
 ```
 
-#### 3. Chargers EV (128 sockets controlables)
+#### 3. Chargers EV (38 sockets controlables)
 
 ```text
 Ubicación: data/interim/oe2/chargers/
-Formato:   32 chargers × 4 sockets = 128 puntos de carga
+Formato:   19 chargers x 2 sockets = 128 puntos de carga
 Total:     232,341 kWh/año demanda EV
-Tipos:     112 motos (2 kWh) + 16 mototaxis (4.5 kWh)
+Tipos:     30 motos (2 kWh) + 8 mototaxis (7.4 kWh)
 ```
 
-#### 4. BESS - Battery Energy Storage System (4,520 kWh)
+#### 4. BESS - Battery Energy Storage System (940 kWh / 342 kW)
 
 ```text
 Ubicación: data/interim/oe2/bess/
 Columnas:  timestamp, power_kw, energy_kwh, soc_percent
-Capacidad: 4,520 kWh | Potencia máx: 500 kW
+Capacidad: 940 kWh | Potencia máx: 342 kW (exclusivo EV)
 SOC prom:  15.6% | SOC máx: 75.4%
 ```
 
@@ -520,8 +525,8 @@ oe3:
 | Código       | ✅ 0 errores Pylance            |
 | Dataset Solar | ✅ 8,760 horas - 4.78 GWh/año  |
 | Dataset Mall  | ✅ 8,760 horas - 12.37 GWh/año |
-| Dataset Chargers | ✅ 8,760 × 128 sockets       |
-| Dataset BESS | ✅ 8,760 horas - 4,520 kWh     |
+| Dataset Chargers | ✅ 8,760 × 38 sockets       |
+| Dataset BESS | ✅ 8,760 horas - 940 kWh     |
 | Agentes      | ✅ SAC, PPO, A2C operacionales  |
 | GPU          | ✅ CUDA RTX 4060 habilitado     |
 | Output Files | ✅ result_*.json, timeseries_*.csv, trace_*.csv |

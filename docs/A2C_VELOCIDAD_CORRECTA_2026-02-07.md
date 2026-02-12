@@ -11,7 +11,7 @@
 ```bash
 ✅ TODOS LOS DATOS = 8,760 TIMESTEPS REALES:
   ✅ Solar:    8,760 horas
-  ✅ Chargers: 8,760 horas × 128 sockets (datos reales)
+  ✅ Chargers: 8,760 horas × 38 sockets (datos reales)
   ✅ Mall:     8,760 horas
   ✅ BESS:     8,760 horas
 ```
@@ -138,8 +138,8 @@ VALIDACIÓN: ✅ Coincide con predicción matemática
 **Verificación hecha:**
 
 ```python
-# Chargers - 128 SOCKETS REALES
-chargers_hourly.shape = (8760, 128)
+# Chargers - 38 SOCKETS REALES
+chargers_hourly.shape = (8760, 38)
 chargers_hourly.sum() = 1,024,818 kWh/año  ← Demanda real de 1 año
 
 # Solar - PVGIS REAL
@@ -174,9 +174,9 @@ bess_soc.mean() = 0.905  ← 90.5% SOC medio
 
 Es la **velocidad correcta y esperada** para A2C on-policy entrenando con:
 - Red pequeña [256, 256]
-- Environment simple but completo (394-dim obs, 129-dim actions)
+- Environment simple but completo (124-dim obs, 39-dim actions)
 - GPU RTX 4060
-- Datos reales 8,760 × 128 sockets
+- Datos reales 8,760 × 38 sockets
 
 El entrenamiento A2C de 87,600 timesteps reales en 2.3 minutos es **VÁLIDO y CORRECTO**.
 
@@ -191,7 +191,7 @@ python train_a2c_multiobjetivo.py 2>&1 | tee entrenamiento_a2c_completo.log
 
 # Busca estas líneas en el output:
 # [SOLAR] REAL (CityLearn v2): ... 8292514 kWh/año
-# [CHARGERS] DATASET REAL: 128 sockets | Demanda: 1024818 kWh/año
+# [CHARGERS] DATASET REAL: 38 sockets | Demanda: 1024818 kWh/año
 # [MALL] DATASET: 12368653 kWh/año
 # [BESS] DATASET: SOC media 90.5%
 ```

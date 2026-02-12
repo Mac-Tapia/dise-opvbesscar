@@ -127,7 +127,7 @@ Cada timestep, el agente reporta:
 
 | Métrica | Valor Esperado | Descripción |
 |---------|----------------|-------------|
-| **Sockets Activos** | 50% | % de 128 sockets en uso |
+| **Sockets Activos** | 50% | % de 38 sockets en uso |
 | **BESS Control Intensity** | 51.7% | Qué tan activo está el control |
 | **BESS SOC Promedio** | 90.5% | Nivel de carga de batería |
 | **EV SOC Promedio** | 100% | Nivel de carga de vehículos |

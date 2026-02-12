@@ -140,10 +140,10 @@ class EnergyDispatcher:
         Inicializar despachador.
 
         Args:
-            bess_config: {"capacity_kwh": 4520, "power_kw": 2712, "min_soc": 0.10, ...}
+            bess_config: {"capacity_kwh": 940, "power_kw": 342, "min_soc": 0.20, ...}  # v5.2
         """
-        self.bess_capacity = bess_config.get("capacity_kwh", 4520)
-        self.bess_power_max = bess_config.get("power_kw", 2712)
+        self.bess_capacity = bess_config.get("capacity_kwh", 940)   # v5.2: 940 kWh
+        self.bess_power_max = bess_config.get("power_kw", 342)      # v5.2: 342 kW
         self.bess_min_soc = bess_config.get("min_soc", 0.10)
         self.bess_max_soc = bess_config.get("max_soc", 0.95)
         self.bess_efficiency = bess_config.get("efficiency", 0.92)

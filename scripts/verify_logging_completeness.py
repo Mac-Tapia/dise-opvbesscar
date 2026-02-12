@@ -7,7 +7,7 @@ Este script verifica que el archivo de entrenamiento A2C tenga:
 1. ✅ Timing y duración (~2.3 minutos)
 2. ✅ Logging de parámetros de entrenamiento
 3. ✅ Cálculos de CO2 reducción DIRECTA e INDIRECTA
-4. ✅ Carga de MOTOS (112) vs MOTOTAXIS (16) - playas separadas
+4. ✅ Carga de MOTOS (30) vs MOTOTAXIS (8) - playas separadas
 5. ✅ Ganancias y aprendizaje del algoritmo (R_avg por episodio)
 6. ✅ Archivos de salida: result_a2c.json, timeseries_a2c.csv, trace_a2c.csv
 """
@@ -100,8 +100,8 @@ for pattern, desc in co2_checks:
 
 print()
 
-# Verificación 4: MOTOS (112) vs MOTOTAXIS (16)
-print("[5] MOTOS (112) vs MOTOTAXIS (16) - PLAYAS SEPARADAS")
+# Verificación 4: MOTOS (30) vs MOTOTAXIS (8)
+print("[5] MOTOS (30) vs MOTOTAXIS (8) - PLAYAS SEPARADAS")
 print("-" * 80)
 
 vehicle_checks = [
@@ -109,11 +109,11 @@ vehicle_checks = [
     ("mototaxis_charging", "Tracking mototaxis cargadas"),
     ("episode_motos_charged", "Métrica episodio: motos"),
     ("episode_mototaxis_charged", "Métrica episodio: mototaxis"),
-    ("Separar motos y mototaxis", "Código: motos_demand = float(np.sum(charger_demand[:112]"),
-    ("motos_demand = float(np.sum(charger_demand[:112]", "Motos: sockets 0-111 (112)"),
-    ("mototaxis_demand = float(np.sum(charger_demand[112:]", "Mototaxis: sockets 112-127 (16)"),
-    ("motos_charging = int(np.sum(charger_setpoints[:112]", "Contar motos cargadas"),
-    ("mototaxis_charging = int(np.sum(charger_setpoints[112:]", "Contar mototaxis cargadas"),
+    ("Separar motos y mototaxis", "Código: motos_demand = float(np.sum(charger_demand[:30]"),
+    ("motos_demand = float(np.sum(charger_demand[:30]", "Motos: sockets 0-29 (30)"),
+    ("mototaxis_demand = float(np.sum(charger_demand[30:]", "Mototaxis: sockets 30-37 (8)"),
+    ("motos_charging = int(np.sum(charger_setpoints[:30]", "Contar motos cargadas"),
+    ("mototaxis_charging = int(np.sum(charger_setpoints[30:]", "Contar mototaxis cargadas"),
     ("Motos (de 112)", "Impresión: Motos máximas"),
     ("Mototaxis (de 16)", "Impresión: Mototaxis máximas"),
 ]
@@ -220,8 +220,8 @@ print("     - Directa: EV charging con CO2 factor")
 print("     - Tracking por episodio y total")
 print()
 print("  4. ✅ Vehículos separados (playas):")
-print("     - MOTOS: sockets 0-111 (112 total)")
-print("     - MOTOTAXIS: sockets 112-127 (16 total)")
+print("     - MOTOS: sockets 0-29 (30 total)")
+print("     - MOTOTAXIS: sockets 30-37 (8 total)")
 print("     - Conteo de máximo por episodio")
 print()
 print("  5. ✅ Ganancias y aprendizaje:")

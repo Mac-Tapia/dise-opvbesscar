@@ -5,8 +5,8 @@ Evita el bug de dimensiones en la función generate_annual_charger_profiles()
 usando interpolación correcta de perfiles horarios a 15 minutos.
 
 Especificaciones:
-- 32 cargadores totales (28 motos + 4 mototaxis)
-- 128 sockets (4 por cargador)
+- 19 cargadores totales (30 motos + 8 mototaxis)
+- 38 sockets (4 por cargador)
 - Control individual por agentes RL en CityLearnv2
 - 8,760 horas anuales (compatible con CityLearnv2)
 """
@@ -110,12 +110,12 @@ def main():
     out_dir = Path("data/oe2/chargers")
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"\n[1] Parámetros de Entrada:")
-    print(f"    Cargadores Motos: 28 × 2 kW = 56 kW")
-    print(f"    Cargadores Mototaxis: 4 × 3 kW = 12 kW")
-    print(f"    Sockets totales: 128 (4 por cargador)")
-    print(f"    Potencia máxima: 68 kW")
-    print(f"    Vehículos/día: 900 motos + 130 mototaxis = 1,030")
+    print(f"\n[1] Parámetros de Entrada (v5.2):")
+    print(f"    Cargadores Motos: 15 × 2 sockets @ 7.4 kW = 222 kW")
+    print(f"    Cargadores Mototaxis: 4 × 2 sockets @ 7.4 kW = 59.2 kW")
+    print(f"    Sockets totales: 38 (2 por cargador) [v5.2]")
+    print(f"    Potencia máxima: 281.2 kW")
+    print(f"    Vehículos/día: 270 motos + 39 mototaxis = 309")
 
     # Crear perfiles energéticos base
     print(f"\n[2] Generando perfiles de cargadores individuales...")
@@ -134,7 +134,7 @@ def main():
 
     mototaxis_daily = motos_daily * 1.2  # 20% más que motos
 
-    # Crear cargadores motos (28 chargers × 4 sockets = 112)
+    # Crear cargadores motos (28 chargers x 2 sockets = 112)
     chargers_motos = []
     for i in range(28):
         for socket in range(4):
@@ -152,7 +152,7 @@ def main():
             )
             chargers_motos.append(charger)
 
-    # Crear cargadores mototaxis (4 chargers × 4 sockets = 16)
+    # Crear cargadores mototaxis (4 chargers x 2 sockets = 16)
     chargers_mototaxis = []
     for i in range(4):
         for socket in range(4):
@@ -171,7 +171,7 @@ def main():
             chargers_mototaxis.append(charger)
 
     all_chargers = chargers_motos + chargers_mototaxis
-    print(f"    ✅ {len(all_chargers)} cargadores creados (112 motos + 16 mototaxis)")
+    print(f"    ✅ {len(all_chargers)} cargadores creados (30 motos + 8 mototaxis)")
 
     # Generar perfiles anuales
     print(f"\n[3] Generando perfiles anuales (8,760 horas)...")
@@ -199,8 +199,8 @@ def main():
     print(f"\n[4] Resumen del Dataset Real:")
     total_energy = profiles_df.sum().sum()
     daily_avg = total_energy / 365
-    print(f"    Total motos: 112 sockets")
-    print(f"    Total mototaxis: 16 sockets")
+    print(f"    Total motos: 30 sockets [v5.2]")
+    print(f"    Total mototaxis: 8 sockets [v5.2]")
     print(f"    Energía anual: {total_energy:.0f} kWh")
     print(f"    Energía diaria (promedio): {daily_avg:.1f} kWh")
     print(f"    Potencia máxima: {profiles_df.max().max():.2f} kW")
@@ -213,12 +213,12 @@ def main():
         print(f"    ✅ {f.name} ({size_kb:.1f} KB)")
 
     print(f"\n" + "=" * 80)
-    print(f"✅ DATASET REAL GENERADO EXITOSAMENTE")
+    print(f"✅ DATASET REAL GENERADO EXITOSAMENTE [v5.2]")
     print(f"=" * 80)
     print(f"\n✓ Resolución: Horaria (8,760 filas = 1 año)")
-    print(f"✓ Sockets: 128 individuales (112 motos + 16 mototaxis)")
+    print(f"✓ Sockets: 38 individuales (30 motos + 8 mototaxis) [v5.2]")
     print(f"✓ Compatible: CityLearnv2 + Agentes RL (SAC/PPO/A2C)")
-    print(f"✓ Tabla 13 OE2: RECOMENDADO scenario")
+    print(f"✓ Tabla 13 OE2 v5.2: RECOMENDADO scenario")
     print(f"\nUbicación: {out_dir.absolute()}")
 
 

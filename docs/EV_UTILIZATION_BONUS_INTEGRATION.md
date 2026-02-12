@@ -2,7 +2,7 @@
 
 **Date**: 2026-02-04  
 **Status**: ✅ COMPLETED for SAC, PPO, A2C  
-**User Request**: Reward maximum simultaneous charging of motos and mototaxis (128 sockets) without affecting charger capacity or EV arrival flexibility
+**User Request**: Reward maximum simultaneous charging of motos and mototaxis (38 sockets) without affecting charger capacity or EV arrival flexibility
 
 ---
 
@@ -171,7 +171,7 @@ All three agents use the **same weights** defined in `rewards.py`:
 
 All agents respect OE2 architecture constraints:
 
-- **Total Sockets**: 128 (32 chargers × 4 sockets per charger)
+- **Total Sockets**: 128 (19 chargers × 2 sockets per charger)
 - **Motos**: 112 sockets @ 2 kW each (28 chargers)
 - **Mototaxis**: 16 sockets @ 3 kW each (4 chargers)
 - **Peak Demand**: ~100 kW during 18-21h window

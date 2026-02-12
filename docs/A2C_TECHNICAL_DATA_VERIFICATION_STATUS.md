@@ -101,13 +101,13 @@ simulate(agent_name="a2c", ...)  [Universal function - same for SAC/PPO/A2C]
 
 **Columns** (Real Data):
 - `step` (int): Timestep index
-- `obs_0...obs_393` (float): Observation space (394-dim CityLearn)
+- `obs_0...obs_393` (float): Observation space (124-dim CityLearn)
   - Building energy metrics
-  - EV charger states (128 chargers)
+  - EV charger states (38 sockets)
   - Time features (hour, month, day_of_week)
-- `action_0...action_128` (float): Action space (129-dim)
+- `action_0...action_128` (float): Action space (39-dim)
   - 1 BESS setpoint
-  - 128 charger setpoints
+  - 38 socket setpoints
 - `reward_env` (float): Episode reward
 - `grid_import_kwh`, `grid_export_kwh`, `ev_charging_kwh`, `building_load_kwh`, `pv_generation_kwh`
 

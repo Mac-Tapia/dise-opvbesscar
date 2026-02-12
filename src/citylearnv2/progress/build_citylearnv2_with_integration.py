@@ -116,7 +116,7 @@ def build_dataset():
             logger.info("      - schema.json (CityLearn v2 schema)")
             logger.info("      - electrical_storage_simulation.csv (BESS hourly SOC)")
             logger.info("      - energy_simulation.csv (Mall demand)")
-            logger.info("      - charger_simulation_X.csv (128 chargers)")
+            logger.info("      - charger_simulation_X.csv (38 sockets)")
 
             logger.info("\n[5/5] Validating outputs...")
             output_dir = Path("processed/citylearn/oe3_iquitos")

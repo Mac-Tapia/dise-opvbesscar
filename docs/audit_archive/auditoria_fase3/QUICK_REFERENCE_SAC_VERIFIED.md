@@ -9,8 +9,8 @@
 | Rewards Multiobjetivo | ✅ | CO2(0.50) + Solar(0.20) + Cost(0.15) + EV(0.10) + Grid(0.05) |
 | CO2 Indirecto | ✅ | grid_import_kwh × 0.4521 kg CO2/kWh |
 | CO2 Directo | ✅ | ev_charging_kwh × 2.146 kg CO2/kWh |
-| Observations | ✅ | 394-dim (no truncation) |
-| Actions | ✅ | 129-dim (1 BESS + 128 chargers) |
+| Observations | ✅ | 124-dim (no truncation) |
+| Actions | ✅ | 39-dim (1 BESS + 38 sockets) |
 | Training Loop | ✅ | Config OK, Schema auto-generated, Checkpoints ready |
 
 ## 📋 VERIFICATION SCRIPT

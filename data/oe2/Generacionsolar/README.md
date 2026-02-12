@@ -78,7 +78,7 @@ Promedio/día:  ~13,085 kWh
 **Interpretación:**
 - ~1.18 MWh/kWp/año (típico para ubicación tropical con nubosidad)
 - Factor de capacidad anual: 13.5%
-- Suficiente para alimentar 128 chargers con demanda de ~50 kW
+- Suficiente para alimentar 38 sockets con demanda de ~50 kW
 
 ### Temperatura Ambiente (°C)
 ```

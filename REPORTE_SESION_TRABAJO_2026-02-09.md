@@ -34,7 +34,7 @@ Aplicación de 4 correcciones críticas
 Verificación exhaustiva de correctitud
 ├─ Reward bidimensional: 0.40 + 0.40 + 0.20 ✓
 ├─ SOC tracking: 14 niveles × 2 tipos ✓
-├─ Simultaneidad: 0-128 sockets covered ✓
+├─ Simultaneidad: 0-38 sockets covered ✓
 ├─ Datasets OE2: 5 × 8,760 horas sincronizados ✓
 ├─ Callbacks: 32 atributos inicializados ✓
 └─ Documentación: GARANTIA_TECNICA_SAC_v2_2026-02-09.md
@@ -221,7 +221,7 @@ Antes de ejecutar `python train_sac_multiobjetivo.py`:
 2. **Cobertura de Escenarios:**
    - El agente verá 4 escenarios (off-peak, peak afternoon, peak evening, extreme)
    - 14 niveles de SOC por vehículo (2 tipos × 7 niveles)
-   - Rango 0-128 sockets simultáneos
+   - Rango 0-38 sockets simultáneos
 
 3. **Métricas de Éxito:**
    - Ep.1: 44 motos cargadas (39%)

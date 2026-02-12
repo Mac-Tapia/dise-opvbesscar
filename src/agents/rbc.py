@@ -39,13 +39,13 @@ class RBCConfig:
     ev_max_rate: float = 1.0  # Tasa máxima de carga EV
     ev_min_rate: float = 0.2  # Tasa mínima de carga EV
 
-    # ✅ Configuración de chargers (OE3 ACTUAL - 2026-02-04: 32 chargers = 128 sockets)
+    # ✅ Configuración de chargers (OE3 ACTUAL - 2026-02-04: 19 chargers = 38 sockets)
     # Detalle: 28 chargers @ 2kW (motos) + 4 chargers @ 3kW (mototaxis)
     # ⚠️  LEGACY (OE2): Solo 20 motos + 3 mototaxis totales → DEPRECATED
-    # ACTUAL (OE3): 112 motos + 16 mototaxis = 128 simultáneos en 32 chargers × 4 sockets
-    n_chargers: int = 32                        # 32 chargers físicos
+    # ACTUAL (OE3): 30 motos + 8 mototaxis = 38 simultáneos en 19 chargers x 2 sockets
+    n_chargers: int = 19                        # 19 chargers físicos
     sockets_per_charger: int = 4                # 4 sockets por charger = 128 total
-    charger_power_kw: float = 2.125  # Promedio ponderado: (28×2 + 4×3)/32 = 68/32 = 2.125 kW
+    charger_power_kw: float = 7.4  # Mode 3: 32A @ 230V = 7.4 kW por toma
 
     # Hora pico (para Iquitos: 18-22h)
     peak_hours: tuple = (18, 19, 20, 21)
@@ -67,8 +67,8 @@ class RBCConfig:
 class BasicRBCAgent:
     """Controlador RBC robusto para gestión de carga EV + BESS en Iquitos.
 
-    Controla 32 cargadores (28 motos @ 2kW + 4 mototaxis @ 3kW = 68 kW simultánea).
-    Observable: 128 sockets (4 por cargador) con control individual de potencia [0, max_kw].
+    Controla 19 cargadores v5.2 (15 motos + 4 mototaxis) @ 7.4 kW = 281.2 kW instalado.
+    Observable: 38 sockets (2 por cargador) con control individual de potencia [0, max_kw].
 
     Reglas implementadas:
     1. PV→EV: Cargar al máximo cuando hay exceso solar (máxima prioridad)
@@ -164,7 +164,7 @@ class BasicRBCAgent:
         return rates
 
     def predict(self, observations: Any, deterministic: bool = True) -> list[list[float]]:
-        """Genera acciones basadas en reglas multicriterio para 128 cargadores.
+        """Genera acciones basadas en reglas multicriterio para 38 tomas v5.2.
 
         Criterios de decisión (ponderados):
         1. CO₂: Reducir carga cuando factor de emisión alto

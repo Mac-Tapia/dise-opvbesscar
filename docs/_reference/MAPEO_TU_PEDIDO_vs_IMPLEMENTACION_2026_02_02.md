@@ -31,7 +31,7 @@
 **A. Observación: Los agentes VEN las 3 fuentes**
 
 ```python
-# En el espacio de observación (394-dim), cada agente ve:
+# En el espacio de observación (124-dim), cada agente ve:
 
 Observación incluye:
 ├─ Solar generation (la cantidad disponible)      [Fuente 1]
@@ -40,7 +40,7 @@ Observación incluye:
 └─ Hora del día (necesario para optimizar picos)
 
 Agentes usan esto para tomar acciones:
-├─ Action 1-128: Controlar carga individual de 128 chargers
+├─ Action 1-128: Controlar carga individual de 38 sockets
 └─ Action 129: Controlar descarga del BESS
 ```
 
@@ -224,9 +224,9 @@ Optimización: Descargar en horas pico (18-21h) donde grid es más sucio
 co2_conversion_factor_kg_per_kwh = 2.146  # kg CO₂/kWh gasolina equivalente
 
 # Paso 1: Calcular energía total cargada a EVs
-# Esto es la suma de TODAS las acciones de los 128 chargers
-# Charger 1-112: Motos (2.5 kWh battery, 2 kW power)
-# Charger 113-128: Mototaxis (4.5 kWh battery, 3 kW power)
+# Esto es la suma de TODAS las acciones de los 38 sockets
+# Charger 1-112: Motos (4.6 kWh battery, 2 kW power)
+# Charger 113-128: Mototaxis (7.4 kWh battery, 3 kW power)
 
 # Paso 2: Convertir a CO₂ evitado
 # Cada kWh de EV cargado = vehículo que NO usará gasolina
@@ -238,8 +238,8 @@ co2_saved_ev_kg = float(np.sum(np.clip(ev, 0.0, None)) * co2_conversion_factor_k
 # ev_charged kWh × 2.146 = CO₂ evitado por EV charging
 #
 # Ejemplo:
-# 1 moto: 2.5 kWh battery × 2.146 = 5.4 kg CO₂ evitado (vs gasolina)
-# 1 mototaxi: 4.5 kWh × 2.146 = 9.7 kg CO₂ evitado (vs gasolina)
+# 1 moto: 4.6 kWh battery × 2.146 = 5.4 kg CO₂ evitado (vs gasolina)
+# 1 mototaxi: 7.4 kWh × 2.146 = 9.7 kg CO₂ evitado (vs gasolina)
 ```
 
 **Fórmula:**
@@ -262,7 +262,7 @@ Razón del factor 2.146:
 | RL (PPO) | 480,000 | 2.146 | 1,030,080 | 25% | ~215 motos |
 
 **En el código:**
-- 128 chargers individuales controlados por agentes
+- 38 sockets individuales controlados por agentes
 - Cada charger es independiente (action 1-128)
 - Baseline: Poco energía de chargers
 - RL: Agentes cargan más motos (especialmente con solar/BESS disponible)
@@ -276,7 +276,7 @@ Razón del factor 2.146:
 **En los logs que verás:**
 ```
 🟢 EV CARGA (Directa):
-   EV Charged: 420,000 kWh (128 chargers optimizados)
+   EV Charged: 420,000 kWh (38 sockets optimizados)
    Factor: 2.146 kg CO₂/kWh (vs gasolina)
    CO₂ Saved: 901,320 kg (+131%)
 ```
@@ -359,7 +359,7 @@ MEJORA: SAC +131%, PPO +147%
 | **"Al máximo"** | RL optimizes 129 actions | agents/ | ✅ +131% total |
 | **"Mayor que sin control"** | RL = 3.93M vs BL = 1.70M | simulate.py | ✅ +131% |
 | **"Inteligente"** | Multiobjetivo reward | rewards.py | ✅ 5 componentes |
-| **"Controlada por agentes"** | Chargers 1-128 + BESS | simulate.py | ✅ 129 acciones |
+| **"Controlada por agentes"** | Chargers 1-128 + BESS | simulate.py | ✅ 39 acciones |
 
 ---
 
@@ -368,7 +368,7 @@ MEJORA: SAC +131%, PPO +147%
 ### Cómo los Agentes Ven las 3 Fuentes
 
 ```
-Observación (394-dim)
+Observación (124-dim)
 ├─ Solar generation: ← Agente ve Fuente 1
 ├─ BESS SOC: ← Agente ve Fuente 2
 ├─ Chargers SOC (128): ← Agente ve Fuente 3
@@ -376,7 +376,7 @@ Observación (394-dim)
 ├─ Hour/Month: ← Agente ve contexto (picos)
 └─ ... más estados
 
-Acción (129-dim)
+Acción (39-dim)
 ├─ Charger 1-128: [0-1] poder de carga ← Controla Fuente 3
 └─ BESS (129): [0-1] descarga ← Controla Fuente 2
 

@@ -5,7 +5,7 @@
 **✅ Estado: 100% DATOS REALES, SIN SIMPLIFICACIONES**
 
 El entrenamiento A2C está configurado para usar:
-- **Datos**: 100% reales OE2 compilados (chargers_real_hourly_2024.csv con 128 sockets)
+- **Datos**: 100% reales OE2 compilados (chargers_real_hourly_2024.csv con 38 sockets)
 - **Duración**: 10 episodios × 8,760 horas = 87,600 timesteps (1 año completo × 10)
 - **Velocidad**: ~650-700 sps (steps per second) en GPU RTX 4060
 - **Duración real**: ~2.2-2.3 minutos (NOT simplificado/rápido)
@@ -32,11 +32,11 @@ Validación: ✅ EXACTAMENTE 8,760 horas
 ### 2. Chargers (Controladores de Carga EV) - DONDE ERA EL PROBLEMA
 ```
 Archivo: data/processed/citylearn/iquitos_ev_mall/chargers/chargers_real_hourly_2024.csv
-Formato: 128 columnas (MOTO_00_SOCKET_0 hasta MOTO_31_SOCKET_3)
+Formato: 38 columnas (MOTO_00_SOCKET_0 hasta MOTO_31_SOCKET_3)
 Longitud: 8,760 horas
 Demanda total: ~1.025 MWh/año (1,024,818 kWh)
-Promedio: ~0.91 kW/socket × 128 sockets = ~116 kW media (128 sockets)
-Validación: ✅ EXACTAMENTE 128 sockets, 8,760 horas
+Promedio: ~0.91 kW/socket × 38 sockets = ~116 kW media (38 sockets)
+Validación: ✅ EXACTAMENTE 38 sockets, 8,760 horas
 
 **ANTES (INCORRECTO)**:
   - Intentaba cargar charger_simulation_*.csv (Binary state 0/1, simplificado)
@@ -119,7 +119,7 @@ Grid stability: 0.05            # Suavidad de potencia
 |--------|---------|
 | **A2C es on-policy** | Calcula advantage function en cada pequeño batch (n_steps=8) |
 | **Cálculo de gradientes** | A2C recomputa más a menudo que SAC (off-policy) |
-| **Complejidad ambiente** | 394-dim observation space, 129-dim action space |
+| **Complejidad ambiente** | 124-dim observation space, 39-dim action space |
 | **Red 256x256** | Óptima para GPU, pero requiere cómputo en cada 8 pasos |
 | **RTX 4060 = laptop** | ~6,000 tokens VRAM, menos ancho de banda que RTX 4090 |
 
@@ -229,13 +229,13 @@ VERIFICACIÓN:
 python train_a2c_multiobjetivo.py 2>&1 | grep REAL
 # Output esperado:
 # [CHARGERS] Cargando datos REALES desde: chargers_real_hourly_2024.csv
-# [CHARGERS] DATASET REAL: 128 sockets | Demanda: 1024818 kWh/año
+# [CHARGERS] DATASET REAL: 38 sockets | Demanda: 1024818 kWh/año
 ```
 
 ### 2. Verificar archivos en dataset
 ```bash
 ls -lh data/processed/citylearn/iquitos_ev_mall/chargers/
-# chargers_real_hourly_2024.csv  (debe existir y tener 128 columnas × 8760 filas)
+# chargers_real_hourly_2024.csv  (debe existir y tener 38 columnas × 8760 filas)
 
 ls -lh data/processed/citylearn/iquitos_ev_mall/Generacionsolar/
 # pv_generation_hourly_citylearn_v2.csv  (8760 filas)
@@ -251,7 +251,7 @@ import numpy as np
 
 # Chargers real
 df = pd.read_csv('data/processed/citylearn/iquitos_ev_mall/chargers/chargers_real_hourly_2024.csv')
-print(f"Shape: {df.shape}")  # (8760, 128) or (8760, 129 with timestamp)
+print(f"Shape: {df.shape}")  # (8760, 38) or (8760, 129 with timestamp)
 print(f"Demanda total: {df.drop('timestamp', axis=1, errors='ignore').sum().sum():.0f} kWh")
 # Esperado: ~1,024,818 kWh
 
@@ -268,7 +268,7 @@ print(f"Solar total: {df_solar.sum().sum():.0f} kWh")
 
 ✅ **CONFIGURACIÓN VERIFICADA: 100% DATOS REALES, SIN SIMPLIFICACIONES**
 
-- **Chargers**: Demanda real horaria de 128 sockets
+- **Chargers**: Demanda real horaria de 38 sockets
 - **Solar**: Generación PV real PVGIS 8,760 horas
 - **Mall**: Demanda comercial real 8,760 horas
 - **BESS**: SOC real 8,760 horas

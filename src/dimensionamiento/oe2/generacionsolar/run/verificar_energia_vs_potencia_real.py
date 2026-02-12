@@ -17,7 +17,7 @@ if not pv_file.exists():
     print(f"ERROR: Archivo no encontrado: {pv_file}")
     exit(1)
 
-df = pd.read_csv(pv_file, index_col='timestamp', parse_dates=True)
+df = pd.read_csv(pv_file, index_col='datetime', parse_dates=True)
 df.index = pd.to_datetime(df.index, utc=True).tz_convert('America/Lima')
 
 print("\n" + "="*80)

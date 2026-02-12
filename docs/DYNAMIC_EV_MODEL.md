@@ -32,8 +32,8 @@ estimated_soc_arrival = 0.3 o 0.2           # Siempre 30% o 20%
 
 ```python
 # Parámetros CALCULADOS según física real
-moto_battery_capacity = 2.5 kWh
-mototaxi_battery_capacity = 4.5 kWh
+moto_battery_capacity = 4.6 kWh
+mototaxi_battery_capacity = 7.4 kWh
 
 # SOC = State of Charge (fracción 0-1)
 moto_soc_arrival = 0.20           # Llegan al 20% (cansados)
@@ -48,7 +48,7 @@ charging_time = energy_required / charger_power_kw
 
 # Ejemplo moto:
 # energy = (0.90 - 0.20) × 2.5 = 1.75 kWh
-# time = 1.75 kWh / 2.0 kW = 0.875 horas
+# time = 1.75 kWh / 7.4 kW = 0.875 horas
 ```
 
 **Ventajas:**
@@ -65,23 +65,23 @@ charging_time = energy_required / charger_power_kw
 
 | Parámetro | Valor | Justificación |
 |-----------|-------|---------------|
-| **Potencia del charger** | 2.0 kW | Chargers estándar para motos |
-| **Capacidad de batería** | 2.5 kWh | Batería típica moto eléctrica |
+| **Potencia del charger** | 7.4 kW | Chargers estándar para motos |
+| **Capacidad de batería** | 4.6 kWh | Batería típica moto eléctrica |
 | **SOC al llegar** | 20% | Después de 13h de operación |
 | **SOC al partir** | 90% | Carga suficiente para nuevo día |
-| **Energía por carga** | 1.75 kWh | (90%-20%) × 2.5 kWh |
-| **Tiempo de carga** | ~0.88 h | 1.75 kWh ÷ 2.0 kW |
+| **Energía por carga** | 1.75 kWh | (90%-20%) × 4.6 kWh |
+| **Tiempo de carga** | ~0.88 h | 1.75 kWh ÷ 7.4 kW |
 
 ### Configuración de Mototaxis (16 chargers)
 
 | Parámetro | Valor | Justificación |
 |-----------|-------|---------------|
-| **Potencia del charger** | 3.0 kW | Chargers más potentes |
-| **Capacidad de batería** | 4.5 kWh | Batería más grande para más km |
+| **Potencia del charger** | 7.4 kW | Chargers más potentes |
+| **Capacidad de batería** | 7.4 kWh | Batería más grande para más km |
 | **SOC al llegar** | 25% | Después de más uso que motos |
 | **SOC al partir** | 85% | Carga suficiente para nuevo día |
-| **Energía por carga** | 2.70 kWh | (85%-25%) × 4.5 kWh |
-| **Tiempo de carga** | ~0.90 h | 2.70 kWh ÷ 3.0 kW |
+| **Energía por carga** | 2.70 kWh | (85%-25%) × 7.4 kWh |
+| **Tiempo de carga** | ~0.90 h | 2.70 kWh ÷ 7.4 kW |
 
 ---
 
@@ -92,8 +92,8 @@ charging_time = energy_required / charger_power_kw
 **Razón:** Mayoría de EVs llegan al final del día operativo, creando picos de demanda
 
 ```
-Demanda base (off-peak): 2.0 kW
-Demanda pico (18-21h):   2.0 kW × 1.30 = 2.6 kW (+30%)
+Demanda base (off-peak): 7.4 kW
+Demanda pico (18-21h):   7.4 kW × 1.30 = 2.6 kW (+30%)
 ```
 
 **Impacto:** ±0.6 kW de variación horaria para un charger
@@ -103,8 +103,8 @@ Demanda pico (18-21h):   2.0 kW × 1.30 = 2.6 kW (+30%)
 **Razón:** Menor volumen de viajes, menos presión de carga
 
 ```
-Demanda base (lunes-viernes): 2.0 kW
-Demanda fin de semana:        2.0 kW × 0.90 = 1.8 kW (-10%)
+Demanda base (lunes-viernes): 7.4 kW
+Demanda fin de semana:        7.4 kW × 0.90 = 1.8 kW (-10%)
 ```
 
 **Impacto:** -0.2 kW de reducción los fines de semana
@@ -125,9 +125,9 @@ Demanda = 0 cuando cerrado (sin EVs conectados)
 ### Demanda Máxima Teórica
 
 ```
-Si TODOS los 128 chargers cargaran simultáneamente:
-  112 motos × 2.0 kW = 224 kW
-  16 mototaxis × 3.0 kW = 48 kW
+Si TODOS los 38 sockets cargaran simultáneamente:
+  30 motos × 7.4 kW = 224 kW
+  8 mototaxis × 7.4 kW = 48 kW
   ─────────────────────────────
   TOTAL = 272 kW
 ```
@@ -138,7 +138,7 @@ Basado en perfil de ocupancia OE2 (13h/día × 365 días):
 
 ```
 Demanda anual total: ~237,000 kWh/año
-  ÷ 128 chargers
+  ÷ 38 sockets
   ÷ 8760 horas
   = Promedio ~2.1 kW por charger (conectado)
   = Promedio ~1.15 kW por charger (anual, incluye desocupado)
@@ -166,7 +166,7 @@ t = E / P
 t = Energy_required / Charger_power
 
 Ejemplo (moto):
-t = 1.75 kWh / 2.0 kW = 0.875 horas ≈ 53 minutos
+t = 1.75 kWh / 7.4 kW = 0.875 horas ≈ 53 minutos
 ```
 
 ### 3. Demanda Horaria con Variabilidad
@@ -186,7 +186,7 @@ D = 2.0 × 1.30 × 0.90 = 2.34 kW
 ### 4. Demanda Agregada de Flota
 
 ```
-D_total(t) = Σ(D_i(t)) para i=1 a 128 chargers
+D_total(t) = Σ(D_i(t)) para i=1 a 38 sockets
 
 En hora pico (todos conectados):
 D_total = 272 kW × 1.30 × 1.0 = 353.6 kW (lunes-viernes)
@@ -200,7 +200,7 @@ D_total = 272 kW × 1.30 × 0.90 = 318.2 kW (fin de semana)
 Se ejecutó `validate_dynamic_ev_model.py` con 6 tests:
 
 ### ✅ TEST 1: Configuraciones
-- 112 motos + 16 mototaxis = 128 total
+- 30 motos + 8 mototaxis = 128 total
 - Parámetros corrrectos para cada tipo
 
 ### ✅ TEST 2: Cálculos de Energía
@@ -270,8 +270,8 @@ python -m scripts.run_oe3_build_dataset --config configs/default.yaml
 
 # El output mostrará:
 # [EV DYNAMIC] Cargando calculadora de demanda dinámica de EVs...
-# [EV DYNAMIC] Configuradas 112 motos (2.5 kWh, 2.0 kW)
-# [EV DYNAMIC] Configuradas 16 mototaxis (4.5 kWh, 3.0 kW)
+# [EV DYNAMIC] Configuradas 30 motos (4.6 kWh, 7.4 kW)
+# [EV DYNAMIC] Configuradas 8 mototaxis (7.4 kWh, 7.4 kW)
 # [EV DYNAMIC] Demanda dinámica total: 237,250 kWh/año
 ```
 
@@ -292,7 +292,7 @@ calc = EVDemandCalculator(moto_configs[0])
 # Calcular parámetros
 energy = calc.calculate_energy_required()      # 1.75 kWh
 time = calc.calculate_charging_time()          # 0.875 horas
-demand_hour12 = calc.calculate_hourly_demand(12, 0, True)  # 2.0 kW
+demand_hour12 = calc.calculate_hourly_demand(12, 0, True)  # 7.4 kW
 
 # Crear perfil anual
 occupancy = np.ones(8760)  # Siempre conectado

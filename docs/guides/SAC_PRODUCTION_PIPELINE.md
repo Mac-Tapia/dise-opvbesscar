@@ -70,7 +70,7 @@ Si CO₂ NETO < 0 → Sistema **CARBONO-NEGATIVO** ✅
 
 ### Dataset Dinámico EV (2026-02-03)
 
-- **128 chargers** (112 motos + 16 mototaxis)
+- **38 sockets** (30 motos + 8 mototaxis)
 - **1,338,724 kWh/año** demanda EV total
 - **~4,640 horas/charger** conectado (52.9% uptime)
 - Modelo físico: SOC arrival/departure, capacidad batería, potencia charger

@@ -11,8 +11,8 @@
 ### ✅ VERIFICACIÓN COMPLETADA
 
 **SAC/PPO/A2C están correctamente conectados a:**
-- ✅ **394-dim Observaciones** (completas, normalizadas, clipeadas)
-- ✅ **129-dim Acciones** (BESS + 128 chargers)
+- ✅ **124-dim Observaciones** (completas, normalizadas, clipeadas)
+- ✅ **39-dim Acciones** (BESS + 38 sockets)
 - ✅ **8,760 Timesteps Anuales** (dataset OE2 completo)
 - ✅ **CityLearn v2** (env.reset/step integrado)
 
@@ -131,14 +131,14 @@ Estado: LISTO
 ## 🎯 GARANTÍAS
 
 ### ✅ Conectividad
-- [x] 394-dim observaciones leídas completamente
-- [x] 129-dim acciones escritas completamente
+- [x] 124-dim observaciones leídas completamente
+- [x] 39-dim acciones escritas completamente
 - [x] env.reset() ↔ env.step() ciclo completo
 - [x] Sin simplificaciones de entrada/salida
 
 ### ✅ Datos OE2
 - [x] BESS: 4,520 kWh / 2,712 kW (real)
-- [x] Chargers: 128 completos (112 motos + 16 mototaxis)
+- [x] Chargers: 128 completos (30 motos + 8 mototaxis)
 - [x] Solar: PVGIS real horario (8,760 ts)
 - [x] Demanda: Real mall + EVs horaria
 
@@ -229,8 +229,8 @@ python -m scripts.run_training_sequence --config configs/default.yaml
 ### La Auditoría Verificó:
 
 ✅ **SAC/PPO/A2C están correctamente conectados a CityLearn v2**
-✅ **394-dim observaciones leídas completamente**  
-✅ **129-dim acciones procesadas correctamente**  
+✅ **124-dim observaciones leídas completamente**  
+✅ **39-dim acciones procesadas correctamente**  
 ✅ **Dataset OE2 anual (8,760 timesteps) integrado**  
 ✅ **Simplificaciones identificadas y corregidas**  
 

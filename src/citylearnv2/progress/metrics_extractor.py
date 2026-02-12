@@ -14,7 +14,7 @@ PROBLEMA RESUELTO:
 
 SOLUCIÓN:
 - Extracción centralizada desde CityLearn energy_simulation (datos CSV)
-- Fallback a valores de la observación (394-dim) si no hay energy_simulation
+- Fallback a valores de la observación (124-dim) si no hay energy_simulation
 - Funciones de utilidad para normalizar y validar datos
 
 USO EN CALLBACKS:
@@ -80,13 +80,13 @@ def extract_step_metrics(
     MÉTODO ROBUSTO: Intenta múltiples fuentes de datos:
     1. energy_simulation (datos del CSV - PREFERIDO)
     2. Propiedades del building (solar_generation, net_electricity_consumption)
-    3. Observación (394-dim vector)
+    3. Observación (124-dim vector)
     4. Fallback a valores por defecto
 
     Args:
         training_env: Environment de training (puede estar wrapped)
         time_step: Paso actual de la simulación (0-8759)
-        obs: Observación actual (opcional, 394-dim)
+        obs: Observación actual (opcional, 124-dim)
 
     Returns:
         Dict con métricas:
@@ -192,18 +192,18 @@ def extract_step_metrics(
             logger.debug("[METRICS] building extraction error: %s", e)
 
     # ========================================================================
-    # MÉTODO 3: Observación (394-dim vector)
+    # MÉTODO 3: Observación (124-dim vector)
     # ========================================================================
     if obs is not None and metrics['source'] == 'fallback':
         try:
             obs_arr = np.asarray(obs, dtype=float).ravel()
 
             if len(obs_arr) >= 394:
-                # Estructura CityLearn 394-dim:
+                # Estructura CityLearn 124-dim:
                 # obs[0] = solar_generation
                 # obs[2] = BESS SOC (0-1)
                 # obs[3] = mall_demand
-                # obs[4:132] = 128 charger demands
+                # obs[4:132] = 38 socket demands
                 metrics['solar_generation_kwh'] = abs(float(obs_arr[0]))
                 metrics['bess_soc'] = float(obs_arr[2])
                 metrics['mall_demand_kwh'] = float(obs_arr[3])
@@ -366,9 +366,9 @@ class EpisodeMetricsAccumulator:
 
         # Calcular CO₂ - FIXED: Now includes BESS discharge
         # Estimate BESS discharge from hour-based pattern
-        # BESS capacity: 4,520 kWh; discharge pattern: 271 kWh/h peak, 50 kWh/h off-peak
+        # BESS v5.2: 940 kWh; discharge pattern: 70 kWh/h peak (9h-22h EV), 0 kWh/h off-peak
         hour = self.step_count % 24
-        bess_discharge_kwh = 271.0 if hour in [18, 19, 20, 21] else 50.0
+        bess_discharge_kwh = 70.0 if 9 <= hour <= 22 else 0.0  # v5.2: EV only 9h-22h
 
         co2 = calculate_co2_metrics(
             metrics.get('grid_import_kwh', 0.0),
@@ -390,7 +390,7 @@ class EpisodeMetricsAccumulator:
         # 🟢 Contar vehículos por potencia (OE3 ACTUAL: 80% motos 2kW, 20% mototaxis 3kW)
         # ⚠️  NOTA: 0.80/2.0 y 0.20/3.0 son ratios dinámicos BASADOS EN POTENCIA, NO hardcoded 20 y 3
         # LEGACY (OE2): Eran 20 motos y 3 mototaxis totales → DEPRECATED
-        # ACTUAL (OE3): Son 112 motos y 16 mototaxis simultáneos en 128 sockets
+        # ACTUAL (OE3): Son 30 motos y 8 mototaxis simultáneos en 38 sockets
         ev_demand = metrics.get('ev_demand_kwh', EV_DEMAND_CONSTANT_KW)
         self.motos_cargadas += int((ev_demand * 0.80) / 2.0)        # 80% de demanda / 2kW por moto
         self.mototaxis_cargadas += int((ev_demand * 0.20) / 3.0)    # 20% de demanda / 3kW por mototaxi

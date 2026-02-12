@@ -2039,15 +2039,15 @@
         "type": "citylearn.energy_model.Battery",
         "autosize": false,
         "attributes": {
-          "capacity": 4520.0,
-          "efficiency": 0.9,
+          "capacity": 940.0,
+          "efficiency": 0.95,
           "capacity_loss_coefficient": 1e-05,
           "loss_coefficient": 0.0,
-          "nominal_power": 2712.0,
-          "initial_soc": 0.011061946902654867
+          "nominal_power": 342.0,
+          "initial_soc": 0.20
         },
-        "capacity": 4520.0,
-        "nominal_power": 2712.0,
+        "capacity": 940.0,
+        "nominal_power": 342.0,
         "efficiency": 0.95,
         "energy_simulation": "electrical_storage_simulation.csv"
       },

@@ -69,7 +69,7 @@ def main():
         with open('data/interim/oe2/chargers/individual_chargers.json', 'r', encoding='utf-8') as f:
             chargers = json.load(f)
         total_sockets = sum(c.get('n_sockets', 4) for c in chargers)
-        ok = "PASS" if len(chargers) == 32 and total_sockets == 128 else "FAIL"
+        ok = "PASS" if len(chargers) == 19 and total_sockets == 38 else "FAIL"
         print(f"\n5. CHARGERS JSON: {len(chargers)} chargers, {total_sockets} sockets [{ok}]")
         print(f"   Path: data/interim/oe2/chargers/individual_chargers.json")
     except Exception as e:

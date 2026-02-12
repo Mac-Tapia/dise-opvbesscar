@@ -42,10 +42,10 @@ from vehicle_charging_scenarios import (
     SCENARIO_EXTREME_PEAK,
 )
 
-# ===== CONSTANTES IQUITOS =====
+# ===== CONSTANTES IQUITOS v5.2 (2026-02-12) =====
 CO2_FACTOR_IQUITOS: float = 0.4521  # kg CO2/kWh (grid térmico aislado)
-BESS_CAPACITY_KWH: float = 4520.0   # 4.52 MWh capacidad total
-BESS_MAX_POWER_KW: float = 500.0    # Potencia máxima BESS
+BESS_CAPACITY_KWH: float = 940.0    # 940 kWh (exclusivo EV, 100% cobertura)
+BESS_MAX_POWER_KW: float = 342.0    # 342 kW potencia máxima BESS
 HOURS_PER_YEAR: int = 8760
 
 # ===== A2C CONFIG (IGUAL ESTRUCTURA QUE PPO) =====
@@ -173,7 +173,7 @@ def load_real_charger_dataset(charger_data_path: Path) -> Optional[pd.DataFrame]
     Load real charger dataset from data/oe2/chargers/chargers_real_hourly_2024.csv
     
     CRITICAL: This is the NEW REAL DATASET with:
-    - 128 individual socket columns (112 motos + 16 mototaxis)
+    - 38 individual socket columns (30 motos + 8 mototaxis) [v5.2]
     - 8,760 hourly timesteps (full year 2024)
     - Individual socket control capability for RL agents
     """
@@ -186,8 +186,8 @@ def load_real_charger_dataset(charger_data_path: Path) -> Optional[pd.DataFrame]
         if df.shape[0] != 8760:
             raise ValueError(f"Charger dataset MUST have 8,760 rows (hourly), got {df.shape[0]}")
         
-        if df.shape[1] != 128:
-            raise ValueError(f"Charger dataset MUST have 128 columns (sockets), got {df.shape[1]}")
+        if df.shape[1] != 38:
+            raise ValueError(f"Charger dataset MUST have 38 columns (sockets), got {df.shape[1]}")
         
         if len(df.index) > 1:
             dt = (df.index[1] - df.index[0]).total_seconds() / 3600
@@ -196,7 +196,7 @@ def load_real_charger_dataset(charger_data_path: Path) -> Optional[pd.DataFrame]
         
         min_val = df.min().min()
         max_val = df.max().max()
-        print(f"[CHARGERS REAL] ✅ Loaded: {df.shape} (8760 hours × 128 sockets)")
+        print(f"[CHARGERS REAL] ✅ Loaded: {df.shape} (8760 hours × 38 sockets)")
         print(f"[CHARGERS REAL]   Value range: [{min_val:.2f}, {max_val:.2f}] kW")
         print(f"[CHARGERS REAL]   Annual energy: {df.sum().sum():,.0f} kWh")
         
@@ -312,7 +312,7 @@ class DetailedLoggingCallback(BaseCallback):
         self.episode_bess_charge_kwh: list[float] = []     # Carga BESS por episodio
         
         # ✅ NUEVAS: Progreso de control por socket y BESS
-        self.episode_avg_socket_setpoint: list[float] = []  # Setpoint promedio 128 sockets
+        self.episode_avg_socket_setpoint: list[float] = []  # Setpoint promedio 38 sockets
         self.episode_socket_utilization: list[float] = []   # % sockets activos (>0.1)
         self.episode_bess_action_avg: list[float] = []      # Acción BESS promedio [0-1]
         
@@ -435,9 +435,9 @@ class DetailedLoggingCallback(BaseCallback):
             actions = self.locals.get('actions', None)
             if actions is not None and len(actions) > 0:
                 action = actions[0] if len(actions[0].shape) > 0 else actions
-                if len(action) >= 129:
+                if len(action) >= 39:  # v5.2: 1 BESS + 38 sockets
                     bess_action = float(action[0])
-                    socket_setpoints = action[1:129]
+                    socket_setpoints = action[1:39]  # v5.2: 38 sockets
                     self._current_bess_action_sum += bess_action
                     self._current_socket_setpoint_sum += float(np.mean(socket_setpoints))
                     self._current_socket_active_count += int(np.sum(socket_setpoints > 0.1))
@@ -521,7 +521,7 @@ class DetailedLoggingCallback(BaseCallback):
                 # Promedios de control por episodio
                 steps_in_ep = max(1, self.step_in_episode)
                 self.episode_avg_socket_setpoint.append(self._current_socket_setpoint_sum / steps_in_ep)
-                self.episode_socket_utilization.append(self._current_socket_active_count / (128.0 * steps_in_ep))
+                self.episode_socket_utilization.append(self._current_socket_active_count / (38.0 * steps_in_ep))
                 self.episode_bess_action_avg.append(self._current_bess_action_sum / steps_in_ep)
                 
                 # ✅ NUEVAS: Promedios de reward components por episodio
@@ -665,10 +665,10 @@ try:
     print('  [SOLAR] REAL (CityLearn v2): columna=%s | %.0f kWh/año (8760h)' % (col, float(np.sum(solar_hourly))))
 
     # ====================================================================
-    # CHARGERS (128 sockets) - DEL DATASET CITYLEARN V2 CONSTRUIDO
+    # CHARGERS (38 sockets) - DEL DATASET CITYLEARN V2 CONSTRUIDO
     # ====================================================================
     # ✅ OBLIGATORIO: chargers_real_hourly_2024.csv con demanda REAL
-    # Contiene 128 columnas de demanda horaria real (MOTO_XX_SOCKET_Y)
+    # Contiene 38 columnas de demanda horaria real (MOTO_XX_SOCKET_Y)
     charger_real_path = dataset_dir / 'chargers' / 'chargers_real_hourly_2024.csv'
     
     if not charger_real_path.exists():
@@ -686,16 +686,16 @@ try:
     print(f'  [CHARGERS] Cargando datos REALES desde: {charger_real_path.name}')
     df_chargers = pd.read_csv(charger_real_path)
     
-    # Excluir columna timestamp, tomar solo las columnas de demanda (128 sockets)
+    # Excluir columna timestamp, tomar solo las columnas de demanda (38 sockets v5.2)
     data_cols = [c for c in df_chargers.columns if 'timestamp' not in c.lower() and 'time' not in c.lower()]
     chargers_hourly = df_chargers[data_cols].values[:HOURS_PER_YEAR].astype(np.float32)
     
     n_sockets = chargers_hourly.shape[1]
     total_demand = float(np.sum(chargers_hourly))
     
-    # Validar que tenemos 128 sockets
-    if n_sockets != 128:
-        print(f"  ⚠ ADVERTENCIA: Se encontraron {n_sockets} sockets en lugar de 128")
+    # Validar que tenemos 38 sockets (v5.2)
+    if n_sockets != 38:  # v5.2: 19 cargadores × 2 = 38 sockets
+        print(f"  ⚠ ADVERTENCIA: Se encontraron {n_sockets} sockets en lugar de 38 (v5.2)")
     
     if len(chargers_hourly) != HOURS_PER_YEAR:
         raise ValueError(f"Chargers: {len(chargers_hourly)} horas != {HOURS_PER_YEAR}")
@@ -752,10 +752,10 @@ try:
     df_bess = pd.read_csv(str(bess_path), encoding='utf-8')
     # El archivo del dataset tiene soc_stored_kwh (kWh absolutos, no %)
     if 'soc_stored_kwh' in df_bess.columns:
-        # Convertir kWh a SOC normalizado [0,1] usando capacidad 4520 kWh
+        # Convertir kWh a SOC normalizado [0,1] usando capacidad v5.2: 940 kWh
         bess_soc_kwh = np.asarray(df_bess['soc_stored_kwh'].values[:HOURS_PER_YEAR], dtype=np.float32)
         bess_soc = bess_soc_kwh / BESS_CAPACITY_KWH
-        print("  [BESS] DATASET: SOC media %.1f%% (%.0f kWh capacidad)" % (float(np.mean(bess_soc)) * 100.0, BESS_CAPACITY_KWH))
+        print("  [BESS] DATASET: SOC media %.1f%% (%.0f kWh capacidad v5.2)" % (float(np.mean(bess_soc)) * 100.0, BESS_CAPACITY_KWH))
     else:
         # Fallback a columna soc tradicional
         soc_cols = [c for c in df_bess.columns if 'soc' in c.lower()]
@@ -774,15 +774,15 @@ try:
     
     if charger_stats_path.exists():
         df_stats = pd.read_csv(charger_stats_path)
-        if len(df_stats) >= 128:
-            charger_max_power = np.array(df_stats['max_power_kw'].values[:128], dtype=np.float32)
-            charger_mean_power = np.array(df_stats['mean_power_kw'].values[:128], dtype=np.float32)
+        if len(df_stats) >= 38:
+            charger_max_power = np.array(df_stats['max_power_kw'].values[:38], dtype=np.float32)
+            charger_mean_power = np.array(df_stats['mean_power_kw'].values[:38], dtype=np.float32)
             min_pwr = float(np.min(charger_max_power))
             max_pwr = float(np.max(charger_max_power))
             mean_pwr = float(np.mean(charger_mean_power))
             print(f'  [CHARGER STATS] (5to OE2): max_power={min_pwr:.2f}-{max_pwr:.2f} kW, mean={mean_pwr:.2f} kW')
         else:
-            print(f'  [CHARGER STATS] WARN: {len(df_stats)} filas < 128, usando valores por defecto')
+            print(f'  [CHARGER STATS] WARN: {len(df_stats)} filas < 38, usando valores por defecto')
     else:
         print('  [CHARGER STATS] WARN: archivo no encontrado, usando valores por defecto')
 
@@ -799,25 +799,25 @@ try:
         
         MISMA ESTRUCTURA QUE PPO - recibe datos como parámetros.
         
-        Observation Space (394-dim):
+        Observation Space (124-dim v5.2):
         - [0]: Solar generation (kW)
         - [1]: Total demand (kW)
         - [2]: BESS SOC normalized [0,1]
         - [3]: Mall demand (kW)
-        - [4:132]: 128 charger demands (kW)
-        - [132:260]: 128 charger powers (kW)
-        - [260:388]: 128 occupancy (binary)
-        - [388:394]: Time features (hour, dow, month, peak, co2, tariff)
+        - [4:42]: 38 socket demands (kW)
+        - [42:80]: 38 socket powers (kW)
+        - [80:118]: 38 occupancy (binary)
+        - [118:124]: Time features (hour, dow, month, peak, co2, tariff)
         
-        Action Space (129-dim):
+        Action Space (39-dim v5.2):
         - [0]: BESS control [0,1]
-        - [1:129]: 128 charger setpoints [0,1]
+        - [1:39]: 38 socket setpoints [0,1]
         """
         
         HOURS_PER_YEAR: int = 8760
-        NUM_CHARGERS: int = 128
-        OBS_DIM: int = 394
-        ACTION_DIM: int = 129
+        NUM_CHARGERS: int = 38      # v5.2: 19 cargadores × 2 tomas = 38 sockets
+        OBS_DIM: int = 124          # v5.2: 4 + 38*3 + 6 = 124
+        ACTION_DIM: int = 39        # v5.2: 1 BESS + 38 sockets
 
         def __init__(
             self,
@@ -848,11 +848,13 @@ try:
             if charger_max_power_kw is not None:
                 self.charger_max_power = np.asarray(charger_max_power_kw, dtype=np.float32)
             else:
-                self.charger_max_power = np.full(self.NUM_CHARGERS, 2.5, dtype=np.float32)
+                # Fallback v5.2: 7.4 kW por socket (Modo 3 monofásico 32A @ 230V)
+                self.charger_max_power = np.full(self.NUM_CHARGERS, 7.4, dtype=np.float32)
             if charger_mean_power_kw is not None:
                 self.charger_mean_power = np.asarray(charger_mean_power_kw, dtype=np.float32)
             else:
-                self.charger_mean_power = np.full(self.NUM_CHARGERS, 0.89, dtype=np.float32)
+                # Fallback v5.2: potencia efectiva = 7.4 × 0.62 = 4.6 kW
+                self.charger_mean_power = np.full(self.NUM_CHARGERS, 4.6, dtype=np.float32)
             
             # Validación
             if len(self.solar_hourly) != self.HOURS_PER_YEAR:
@@ -934,7 +936,7 @@ try:
             return scenarios
             
         def _make_observation(self, hour_idx: int) -> np.ndarray:
-            """Crea observación CityLearn v2 (394-dim) - IGUAL QUE PPO."""
+            """Crea observación CityLearn v2 (124-dim v5.2) - IGUAL QUE PPO."""
             obs = np.zeros(self.OBS_DIM, dtype=np.float32)
             h = hour_idx % self.HOURS_PER_YEAR
             
@@ -944,27 +946,27 @@ try:
             obs[2] = np.clip(float(self.bess_soc_hourly[h]), 0.0, 1.0)
             obs[3] = float(self.mall_hourly[h])
             
-            # CHARGER DEMANDS Y POWERS (indices 4-259)
+            # SOCKET DEMANDS Y POWERS v5.2 (indices 4-79)
             if self.chargers_hourly.shape[1] >= self.NUM_CHARGERS:
-                obs[4:132] = np.clip(self.chargers_hourly[h, :self.NUM_CHARGERS], 0.0, 100.0)
+                obs[4:42] = np.clip(self.chargers_hourly[h, :self.NUM_CHARGERS], 0.0, 100.0)
             else:
                 obs[4:4+self.chargers_hourly.shape[1]] = np.clip(self.chargers_hourly[h], 0.0, 100.0)
             
-            obs[132:260] = obs[4:132] * 0.5  # Simplified power from demand
+            obs[42:80] = obs[4:42] * 0.5  # Simplified power from demand
             
-            # OCCUPANCY (indices 260-387)
+            # OCCUPANCY v5.2 (indices 80-117)
             hour_24 = h % 24
             base_occupancy = 0.3 if 6 <= hour_24 <= 22 else 0.1
-            obs[260:388] = np.random.binomial(1, base_occupancy, self.NUM_CHARGERS).astype(np.float32)
+            obs[80:118] = np.random.binomial(1, base_occupancy, self.NUM_CHARGERS).astype(np.float32)
             
-            # TIME FEATURES (indices 388-393)
-            obs[388] = float(hour_24) / 24.0
+            # TIME FEATURES v5.2 (indices 118-123)
+            obs[118] = float(hour_24) / 24.0
             day_of_year = (h // 24) % 365
-            obs[389] = float(day_of_year % 7) / 7.0
-            obs[390] = float((day_of_year // 30) % 12) / 12.0
-            obs[391] = 1.0 if 6 <= hour_24 <= 22 else 0.0
-            obs[392] = float(self.context.co2_factor_kg_per_kwh)
-            obs[393] = 0.15
+            obs[119] = float(day_of_year % 7) / 7.0
+            obs[120] = float((day_of_year // 30) % 12) / 12.0
+            obs[121] = 1.0 if 6 <= hour_24 <= 22 else 0.0
+            obs[122] = float(self.context.co2_factor_kg_per_kwh)
+            obs[123] = 0.15
             
             return obs
 
@@ -1022,7 +1024,7 @@ try:
             charger_demand = self.chargers_hourly[h].astype(np.float32)
             bess_soc = np.clip(float(self.bess_soc_hourly[h]), 0.0, 1.0)
 
-            # PROCESAR ACCION (129-dim: 1 BESS + 128 chargers)
+            # PROCESAR ACCION (39-dim: 1 BESS + 38 sockets)
             bess_action = np.clip(action[0], 0.0, 1.0)
             charger_setpoints = np.clip(action[1:self.ACTION_DIM], 0.0, 1.0)
 
@@ -1034,7 +1036,7 @@ try:
             # BESS power (positivo = descarga, negativo = carga)
             bess_power_kw = (bess_action - 0.5) * 2.0 * BESS_MAX_POWER_KW
             
-            # Separar motos y mototaxis (112 motos + 16 mototaxis = 128 sockets)
+            # Separar motos y mototaxis (30 motos + 8 mototaxis = 38 sockets)
             motos_demand = float(np.sum(charger_demand[:112] * charger_setpoints[:112]))
             mototaxis_demand = float(np.sum(charger_demand[112:] * charger_setpoints[112:]))
             motos_charging = int(np.sum(charger_setpoints[:112] > 0.5))
@@ -1404,7 +1406,7 @@ try:
         },
         'datasets_oe2': {
             'chargers_path': 'data/interim/oe2/chargers/chargers_real_hourly_2024.csv',
-            'chargers_sockets': 128,
+            'chargers_sockets': 38,
             'chargers_total_kwh': float(env.chargers_total_kwh),
             'bess_path': 'data/interim/oe2/bess/bess_hourly_dataset_2024.csv',
             'bess_capacity_kwh': BESS_CAPACITY_KWH,
@@ -1515,7 +1517,7 @@ try:
     max_mototaxis = max(detailed_callback.episode_mototaxis_charged) if detailed_callback.episode_mototaxis_charged else 0
     print(f'    Motos (de 112)                {max_motos:>12d} unidades')
     print(f'    Mototaxis (de 16)             {max_mototaxis:>12d} unidades')
-    print(f'    Total vehículos               {max_motos + max_mototaxis:>12d} / 128')
+    print(f'    Total vehículos               {max_motos + max_mototaxis:>12d} / 38')
     print()
     print('  ➤ ESTABILIDAD DE RED:')
     avg_stability = np.mean(detailed_callback.episode_grid_stability) if detailed_callback.episode_grid_stability else 0.0

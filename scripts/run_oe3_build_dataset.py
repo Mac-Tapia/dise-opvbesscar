@@ -86,8 +86,8 @@ def build_schema(output_dir: Path, config: Dict[str, Any]) -> Dict[str, Any]:
                     "non_shiftable_load": str((output_dir / "mall_demand_hourly.csv").resolve()),
                 },
                 "electrical_storage": {
-                    "capacity": 4520,  # kWh
-                    "power_rating": 600,  # kW
+                    "capacity": 940,  # kWh (exclusivo EV v5.2)
+                    "power_rating": 342,  # kW
                 },
                 "controllable_charging": [
                     {
@@ -126,7 +126,7 @@ def build_schema(output_dir: Path, config: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def build_charger_files(output_dir: Path, schema: Dict[str, Any]) -> None:
-    """Generate charger CSV files (128 total: 32 chargers × 4 sockets)."""
+    """Generate charger CSV files (38 total: 19 chargers x 2 sockets) [v5.2]."""
 
     logger.info("Building charger CSV files...")
 
@@ -141,15 +141,15 @@ def build_charger_files(output_dir: Path, schema: Dict[str, Any]) -> None:
         with open(oe2_chargers, 'r') as f:
             chargers_list = json.load(f)
 
-    # Generate charger files (128 total: 32 chargers × 4 sockets per charger)
-    # OE2 specifies 32 charger units, each with 4 sockets = 128 controllable charging points
-    num_chargers = 32
-    sockets_per_charger = 4
-    total_sockets = num_chargers * sockets_per_charger  # 128
+    # Generate charger files (38 total: 19 chargers × 2 sockets per charger) [v5.2]
+    # OE2 specifies 19 charger units, each with 2 sockets = 38 controllable charging points
+    num_chargers = 19
+    sockets_per_charger = 2
+    total_sockets = num_chargers * sockets_per_charger  # 38
 
     timesteps = schema["episode_time_steps"]
 
-    # Create 128 socket CSV files (one per controllable charger socket)
+    # Create 38 socket CSV files (one per controllable charger socket)
     for socket_id in range(total_sockets):
         charger_unit = socket_id // sockets_per_charger
         socket_num = socket_id % sockets_per_charger
@@ -171,7 +171,7 @@ def build_charger_files(output_dir: Path, schema: Dict[str, Any]) -> None:
         charger_path = chargers_dir / f"charger_{socket_id:03d}.csv"  # charger_000 to charger_127
         df.to_csv(charger_path, index=False)
 
-    logger.info(f"✅ Created {total_sockets} charger socket CSV files (32 units × 4 sockets)")
+    logger.info(f"✅ Created {total_sockets} charger socket CSV files (19 units x 2 sockets)")
     logger.info(f"   Location: {chargers_dir}")
 
 def main():
@@ -197,7 +197,7 @@ def main():
     # Training uses data/interim/oe2/chargers/ files directly:
     #   - chargers_real_hourly_2024.csv
     #   - chargers_real_statistics.csv
-    # The 128 charger sockets are control actions, not separate CSV files.
+    # The 38 socket sockets are control actions, not separate CSV files.
 
     logger.info(f"\n✅ Dataset generation COMPLETE!")
     logger.info(f"   Schema: {output_dir / 'schema.json'}")

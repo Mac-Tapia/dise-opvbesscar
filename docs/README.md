@@ -63,8 +63,8 @@ All detailed documentation organized by topic:
 
 ### System Architecture
 - **Agents:** 3 RL agents (SAC, PPO, A2C) from Stable-Baselines3
-- **Observation Space:** 394-dim (complete energy + charger state)
-- **Action Space:** 129-dim (1 BESS + 128 chargers)
+- **Observation Space:** 124-dim (complete energy + charger state)
+- **Action Space:** 39-dim (1 BESS + 38 sockets)
 - **Episode Length:** 8,760 timesteps (exactly 1 year, hourly resolution)
 - **Multi-Objective Reward:** CO2 (0.35), Solar (0.20), EV (0.30), Cost (0.10), Grid (0.05)
 

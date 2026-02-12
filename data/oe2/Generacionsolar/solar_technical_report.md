@@ -47,10 +47,10 @@
 | Rank | Nombre | Paco [kW] | Eficiencia | N inversores | Score |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Power_Electronics__FS3000CU15__690V_ | 3201.2 | 0.980 | 1 | 0.980 |
-| 2 | INGETEAM_POWER_TECHNOLOGY_S_A___Ingecon_Sun_1600TL_U_B615_Indoor__450V_ | 1600.0 | 0.975 | 2 | 0.956 |
-| 3 | INGETEAM_POWER_TECHNOLOGY_S_A___Ingecon_Sun_1600TL_U_B615_Outdoor__450V_ | 1600.0 | 0.975 | 2 | 0.956 |
-| 4 | Power_Electronics__FS1475CU15__600V_ | 1610.4 | 0.976 | 2 | 0.951 |
-| 5 | Power_Electronics__FS1440CU__400V_ | 1600.0 | 0.966 | 2 | 0.947 |
+| 2 | Power_Electronics__FS1475CU15__600V_ | 1610.4 | 0.976 | 2 | 0.951 |
+| 3 | Power_Electronics__FS1590CU__440V_ | 1617.5 | 0.967 | 2 | 0.939 |
+| 4 | INGETEAM_POWER_TECHNOLOGY_S_A___Ingecon_Sun_1640TL_U_B630_Indoor__450V_ | 1640.0 | 0.975 | 2 | 0.933 |
+| 5 | INGETEAM_POWER_TECHNOLOGY_S_A___Ingecon_Sun_1640TL_U_B630_Outdoor__450V_ | 1640.0 | 0.975 | 2 | 0.933 |
 
 
 **Top combinaciones (simulacion local):**
@@ -74,8 +74,8 @@
 
 | Parametro | Valor |
 |-----------|-------|
-| Capacidad DC nominal | 4,050.00 kWp |
-| Capacidad AC nominal | 3,200.00 kW |
+| Capacidad DC nominal | 4,162.00 kWp |
+| Capacidad AC nominal | 3,201.00 kW |
 | Area total disponible | 20,637 m2 |
 | Area utilizada | 14,446 m2 |
 
@@ -141,4 +141,4 @@ Este analisis utiliza **pvlib-python** con los siguientes modelos:
 - Holmgren, W.F., Hansen, C.W., Mikofski, M.A. (2018). *pvlib python: a python package for modeling solar energy systems*. Journal of Open Source Software.
 
 ---
-*Generado automaticamente - 2026-02-04 20:25:34*
+*Generado automaticamente - 2026-02-12 11:35:59*

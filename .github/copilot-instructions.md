@@ -2,11 +2,16 @@
 
 ## 🎯 Project Purpose in 30 Seconds
 
-**pvbesscar** optimizes EV charging for 128 electric chargers (2,912 motos + 416 mototaxis) using solar PV (4,050 kWp) + battery storage (4,520 kWh BESS) via reinforcement learning agents (SAC/PPO/A2C) to minimize CO₂ emissions in an isolated grid (Iquitos, Perú, 0.4521 kg CO₂/kWh from thermal generation).
+**pvbesscar** optimizes EV charging for 38 electric sockets (270 motos + 39 mototaxis/day) using solar PV (4,050 kWp) + battery storage (4,520 kWh BESS) via reinforcement learning agents (SAC/PPO/A2C) to minimize CO₂ emissions in an isolated grid (Iquitos, Perú, 0.4521 kg CO₂/kWh from thermal generation).
+
+**Infrastructure (v5.2):**
+- 19 chargers (15 motos + 4 mototaxis) × 2 sockets = 38 total sockets
+- Mode 3 charging @ 7.4 kW per socket (monofásico 32A @ 230V)
+- 281.2 kW installed power
 
 **Two Phases:**
 - **OE2 (Dimensioning)**: Infrastructure specs (solar, BESS, chargers, demand profiles) in `src/dimensionamiento/oe2/`
-- **OE3 (Control)**: CityLearn v2 RL simulation with 394-dim observations, 129-dim actions, CO₂ minimization reward in `src/agents/`
+- **OE3 (Control)**: CityLearn v2 RL simulation with observations, actions, CO₂ minimization reward in `src/agents/`
 
 ---
 
@@ -39,7 +44,7 @@ See [BASELINE_QUICK_START.md](../BASELINE_QUICK_START.md) for details.
 ### OE2 (Dimensioning Phase)
 **Location:** `src/dimensionamiento/oe2/`
 - [data_loader.py](../src/dimensionamiento/oe2/data_loader.py): Loads solar, chargers, BESS with validation
-- [chargers.py](../src/dimensionamiento/oe2/chargers.py): Charger models (32 base units × 4 sockets = 128 total). **Key pattern:** Extensive use of `@dataclass(frozen=True)` for immutable specs
+- [chargers.py](../src/dimensionamiento/oe2/disenocargadoresev/chargers.py): Charger models v5.2 (19 chargers × 2 sockets = 38 total). **Key pattern:** Extensive use of `@dataclass(frozen=True)` for immutable specs
 - [solar_pvlib.py](../src/dimensionamiento/oe2/generacionsolar/disenopvlib/solar_pvlib.py): PVGIS solar generation timeseries validation
 - **Critical constraint:** All solar data must be 8,760 hourly rows (NOT 15-minute)
 
@@ -75,22 +80,22 @@ Results: CO₂ reduction %, solar self-consumption %, training metrics CSV
 
 ### Key Files by Responsibility (ACTUAL CODEBASE)
 - [data_loader.py](../src/dimensionamiento/oe2/data_loader.py): **Load & validate** OE2 artifacts; raises `OE2ValidationError` early if solar not 8,760 rows
-- [chargers.py](../src/dimensionamiento/oe2/chargers.py): **Charger specs** with immutable `@dataclass(frozen=True)` - 32 units × 4 sockets = 128 controllable chargers
-- [agent_utils.py](../src/utils/agent_utils.py): **Environment validation** with `validate_env_spaces()` - checks obs/action dimensions (394, 129)
+- [chargers.py](../src/dimensionamiento/oe2/disenocargadoresev/chargers.py): **Charger specs v5.2** with immutable `@dataclass(frozen=True)` - 19 units × 2 sockets = 38 controllable sockets
+- [agent_utils.py](../src/utils/agent_utils.py): **Environment validation** with `validate_env_spaces()` - checks obs/action dimensions
 - [sac.py](../src/agents/sac.py), [ppo_sb3.py](../src/agents/ppo_sb3.py), [a2c_sb3.py](../src/agents/a2c_sb3.py): **Agent implementations** - stable-baselines3 wrappers with GPU/CPU config
 
-### Charger Scaling (32 → 128)
+### Charger Scaling (v5.2: 19 → 38)
 ```python
-# Pattern from chargers.py:
-chargers = generate_individual_chargers(n=32)  # 32 base chargers
-total_sockets = 32 * 4  # = 128 controllable charging actions
-# Each charger has 4 sockets; Tabla13Stats validates configurations
+# Pattern from chargers.py v5.2:
+chargers = create_iquitos_chargers()  # 19 chargers (15 motos + 4 mototaxis)
+total_sockets = 19 * 2  # = 38 controllable charging actions
+# Each charger has 2 sockets @ 7.4 kW (Mode 3, 32A @ 230V)
 ```
-**See:** [chargers.py](../src/dimensionamiento/oe2/chargers.py) for charger specifications with `ChargerSpec` and `ChargerSet` dataclasses.
+**See:** [chargers.py](../src/dimensionamiento/oe2/disenocargadoresev/chargers.py) for charger specifications with `ChargerSpec` and `ChargerSet` dataclasses.
 
-### Observation & Action Spaces (VERIFIED)
-- **Observation (394-dim):** Solar W/m², grid Hz, BESS % SOC, 128 chargers × 3 values each, time features (hour/month/day_of_week)
-- **Action (129-dim):** Continuous [0,1] normalized power setpoints → 1 BESS + 128 chargers (actual kW via `action_bounds`)
+### Observation & Action Spaces (v5.2)
+- **Observation:** Solar W/m², grid Hz, BESS % SOC, 38 sockets × 3 values each, time features (hour/month/day_of_week)
+- **Action:** Continuous [0,1] normalized power setpoints → 1 BESS + 38 sockets (actual kW via `action_bounds`)
 
 ---
 
@@ -184,15 +189,15 @@ agent.learn(total_timesteps=10000, reset_num_timesteps=False)
 - **Metadata file:** `TRAINING_CHECKPOINTS_SUMMARY_*.json` tracks agent, episode, total_steps, best_reward
 
 ### CityLearn Environment Setup
-- **Observation:** Flattened 394-dim array (building energy + 128 charger states + time features)
-- **Action:** 129 continuous [0,1] values (1 BESS + 128 chargers)
+- **Observation:** Flattened array (building energy + 38 socket states + time features)
+- **Action:** Continuous [0,1] values (1 BESS + 38 sockets)
 - **Episode length:** 8,760 timesteps (1 year = 365 days × 24 hours, hourly resolution)
 - **Time step:** 1 hour (3,600 seconds per timestep)
 - **Wrapper pattern:** Some agents use `ListToArrayWrapper` to convert CityLearn list obs → numpy arrays
 
 ### OE2 ↔ OE3 Connection Points
 - **Solar:** `data/interim/oe2/solar/pv_generation_timeseries.csv` (must be 8,760 hourly rows, not 15-minute)
-- **Chargers:** `data/interim/oe2/chargers/individual_chargers.json` (32 units × 4 sockets = 128 controllable) + demand profiles
+- **Chargers:** `data/oe2/chargers/chargers_ev_ano_2024_v3.csv` (19 chargers × 2 sockets = 38 controllable) + demand profiles
 - **BESS:** Config immutable in OE3; dispatch rules manage charging/discharging (agents control priority/timing)
 
 ---
@@ -201,7 +206,7 @@ agent.learn(total_timesteps=10000, reset_num_timesteps=False)
 
 | Issue | Solution |
 |-------|----------|
-| "128 chargers not found" in dataset_builder | Check `data/interim/oe2/chargers/individual_chargers.json` exists; validate all 32 chargers have 4 sockets (128 total) |
+| "38 sockets not found" in dataset_builder | Check `data/oe2/chargers/chargers_ev_ano_2024_v3.csv` exists; validate 19 chargers × 2 sockets = 38 total |
 | GPU out of memory during PPO training | Reduce `n_steps` from 2048 to 1024; reduce `batch_size` from 128 to 64 |
 | Reward explosion (NaN values) | Verify MultiObjectiveWeights normalized in `__post_init__`; ensure solar timeseries not all zeros |
 | Agent training stuck at negative rewards | Ensure OE2 artifacts loaded (solar CSV 8,760 rows); validate dispatch rules enabled in `configs/default.yaml` |

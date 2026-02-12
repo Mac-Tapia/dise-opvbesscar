@@ -33,7 +33,7 @@ def generate_charger_dataset():
     if not profile_path.exists():
         print(f"    ❌ Perfil no encontrado. Generando perfil sintético...")
 
-        # Crear perfil sintético para 128 cargadores
+        # Crear perfil sintético para 38 tomaes
         # Patrón: bajo (9-18), alto (18-22), bajo (22-9)
         hours = np.arange(24)
 
@@ -49,18 +49,18 @@ def generate_charger_dataset():
             0.1, 0.05, 0.0, 0.0                             # 23-2: muy bajo (cierre)
         ])
 
-        # Crear matriz de 24h × 128 cargadores
+        # Crear matriz de 24h × 38 tomaes
         # Cada cargador varía ligeramente del patrón base
         df_profile = pd.DataFrame(index=hours)
         df_profile['hour'] = hours
 
-        for i in range(128):
+        for i in range(38):
             # Variación aleatoria por cargador (±10%)
             charger_id = f"charger_{i:03d}"
             variation = np.random.uniform(0.9, 1.1, size=24)
             df_profile[charger_id] = pattern * variation
 
-        print(f"    ✅ Perfil sintético generado (128 cargadores)")
+        print(f"    ✅ Perfil sintético generado (38 tomaes)")
     else:
         # Cargar perfil existente
         df_profile = pd.read_csv(profile_path)

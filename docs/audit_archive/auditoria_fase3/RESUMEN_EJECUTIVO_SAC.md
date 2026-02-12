@@ -26,7 +26,7 @@ python -m scripts.run_oe3_simulate \
 ### 1. **Config YAML ↔ SACConfig Sincronización** ✅
 - CO₂ factor: 0.4521 kg/kWh (Iquitos thermal grid)
 - EV demand: 50 kW constante
-- Chargers: 32 (128 sockets)
+- Chargers: 32 (38 sockets)
 - BESS: 4520 kWh, 2712 kW
 - **Status:** Todos los valores sincronizados
 
@@ -45,7 +45,7 @@ python -m scripts.run_oe3_simulate \
 - **Directo:** ev_charging_kwh × 2.146 ✅
 - **Baseline:** 197,920 kg CO₂/año (tolerancia verified) ✅
 
-### 4. **Observaciones (394-dim)** ✅
+### 4. **Observaciones (124-dim)** ✅
 - Building energy metrics
 - Weather + Grid state
 - BESS + PV
@@ -53,9 +53,9 @@ python -m scripts.run_oe3_simulate \
 - Time features
 - **Sin truncar:** ✅ COMPLETO
 
-### 5. **Acciones (129-dim)** ✅
+### 5. **Acciones (39-dim)** ✅
 - 1 BESS power setpoint
-- 128 charger setpoints
+- 38 socket setpoints
 - **Sin límites artificiales:** ✅ COMPLETO
 
 ### 6. **Training Loop** ✅
@@ -104,7 +104,7 @@ Para diferentes necesidades:
 configs/default.yaml (L26-210)
     ↓
     Parámetros CO2: 0.4521 / 2.146
-    Configuración EV: 50kW, 32 chargers, 128 sockets
+    Configuración EV: 50kW, 19 chargers, 38 sockets
     ↓
 src/iquitos_citylearn/oe3/agents/sac.py (L85-99)
     ↓
@@ -133,7 +133,7 @@ Training Loop
 | 2 | SACConfig Sync | ✅ PASS | Weights=1.0, LR=5e-5, CO2=0.4521/2.146 |
 | 3 | Rewards Multiobjetivo | ✅ PASS | 5 componentes, sum=1.0, CO2 tracking |
 | 4 | CO2 Calculation | ✅ PASS | Baseline=198020kg/año (tolerance ±1000) |
-| 5 | Observations/Actions | ✅ PASS | 394-dim + 129-dim, sin truncar |
+| 5 | Observations/Actions | ✅ PASS | 124-dim + 39-dim, sin truncar |
 | 6 | Training Loop | ✅ PASS | Config OK, Schema ready, Checkpoints OK |
 | 7 | Checkpoint Config | ✅ PASS | freq=1000, save_final=True |
 
@@ -163,7 +163,7 @@ Training Loop
 ### Action Space ✅
 - 129 dimensions (no artificial limits)
 - [0, 1] normalized for all components
-- 1 BESS + 128 chargers
+- 1 BESS + 38 sockets
 
 ---
 
@@ -242,7 +242,7 @@ Range: [-1, 1] (normalized & clipped)
 ## 🔒 GARANTÍAS VERIFICADAS
 
 ✅ **100% Sincronización** - Todos los parámetros YAML en SACConfig  
-✅ **100% Conectividad** - 394-dim obs + 129-dim actions sin truncar  
+✅ **100% Conectividad** - 124-dim obs + 39-dim actions sin truncar  
 ✅ **100% Fórmulas** - CO₂ directo + indirecto implementados  
 ✅ **100% Pesos** - Multiobjetivo suma exacto a 1.0  
 ✅ **100% Tests** - 7/7 automated tests PASS  

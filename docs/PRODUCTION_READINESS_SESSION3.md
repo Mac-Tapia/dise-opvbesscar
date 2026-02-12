@@ -14,7 +14,7 @@ All three RL agents (A2C, SAC, PPO) have been synchronized, validated, and are r
 ✅ **20/20 validation checks passed** (100% success rate)
 - All imports working (PyTorch 2.7.1, stable-baselines3, CityLearn)
 - Configuration synchronized (CO2 weight: 0.50)
-- Dataset validated (128 chargers, 129-dim action space)
+- Dataset validated (38 sockets, 39-dim action space)
 - Production scripts verified (451, 443, 405 lines respectively)
 - Checkpoint directories created and writable
 - GPU auto-detection working (NVIDIA RTX 4060 Laptop - 8GB)
@@ -55,13 +55,13 @@ oe3.rewards:
 
 ### Phase 3: Dataset ✅ (3/3 PASS)
 ```
-✓ Dataset validated: 128 chargers
+✓ Dataset validated: 38 sockets
 ✓ BESS storage found: 1
-✓ Action space: 129-dim (1 BESS + 128 chargers)
+✓ Action space: 39-dim (1 BESS + 38 sockets)
 ```
 
 **Impact**: 
-- 128 chargers controllable via RL (112 motos + 16 mototaxis)
+- 38 sockets controllable via RL (30 motos + 8 mototaxis)
 - 1 BESS device (4,520 kWh / 2,712 kW)
 - 1 PV array (4,162 kWp nominal)
 - Action space ready for all 3 agents
@@ -141,7 +141,7 @@ hidden_sizes: [128, 128]   # Network architecture
 
 **Key Features**:
 - ✅ GPU acceleration via CUDA
-- ✅ Dataset validation (128 chargers)
+- ✅ Dataset validation (38 sockets)
 - ✅ Checkpoint save every 1,000 steps
 - ✅ Resume from latest checkpoint
 - ✅ JSON summary with energy + CO2 metrics
@@ -169,7 +169,7 @@ hidden_sizes: [256, 256]   # Network architecture
 **Key Features**:
 - ✅ Off-policy (sample efficient)
 - ✅ GPU acceleration via CUDA
-- ✅ Dataset validation (128 chargers)
+- ✅ Dataset validation (38 sockets)
 - ✅ Checkpoint save every 1,000 steps
 - ✅ Resume from latest checkpoint
 - ✅ JSON summary with energy + CO2 metrics
@@ -202,7 +202,7 @@ hidden_sizes: [256, 256]   # Network architecture
 
 **Key Features**:
 - ✅ GPU acceleration via CUDA
-- ✅ Dataset validation (128 chargers)
+- ✅ Dataset validation (38 sockets)
 - ✅ Checkpoint save every 1,000 steps
 - ✅ Resume from latest checkpoint
 - ✅ JSON summary with energy + CO2 metrics
@@ -335,7 +335,7 @@ scripts/
 configs/
 └── default.yaml  ← Multi-objective weights (co2: 0.50)
                     Grid factor (0.4521 kg/kWh)
-                    Dataset (128 chargers)
+                    Dataset (38 sockets)
 ```
 
 ### Checkpoints
@@ -429,7 +429,7 @@ oe3.rewards:
 ### Pre-Training
 - [x] Validation: 20/20 checks passed
 - [x] GPU: CUDA available (RTX 4060 - 8GB)
-- [x] Dataset: 128 chargers verified
+- [x] Dataset: 38 sockets verified
 - [x] Configuration: Multi-objective weights locked
 - [x] Checkpoints: All directories writable
 - [x] Scripts: All syntax verified
@@ -518,7 +518,7 @@ All three RL agents (A2C, SAC, PPO) are fully synchronized and validated:
 - **20/20 validation checks passed** (100% success rate)
 - **Multi-objective rewards locked** (CO₂ priority 0.50)
 - **GPU acceleration ready** (NVIDIA RTX 4060 - 8GB)
-- **Dataset verified** (128 chargers, 129-dim action space)
+- **Dataset verified** (38 sockets, 39-dim action space)
 - **Production scripts ready** (520, 443, 405 lines)
 
 **Expected Outcomes**:

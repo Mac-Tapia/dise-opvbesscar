@@ -19,14 +19,15 @@ oe1:
     vehicles_peak_mototaxis: 130
 oe2:
   bess:
+    # BESS v5.2 (2026-02-12) - Exclusivo EV, 100% cobertura
     autonomy_hours: 4.0
-    c_rate: 0.6
+    c_rate: 0.36  # 342 kW / 940 kWh = 0.36
     discharge_only_ev_hours: true
     discharge_only_no_solar: true
     dod: 0.8
-    efficiency_roundtrip: 0.9
-    fixed_capacity_kwh: 4520.0
-    fixed_power_kw: 2712.0
+    efficiency_roundtrip: 0.95
+    fixed_capacity_kwh: 940.0  # v5.2: 940 kWh (100% EV cobertura)
+    fixed_power_kw: 342.0      # v5.2: 342 kW
     load_scope: ev_only
     min_soc_percent: 25.86
     pv_night_threshold_kwh: 0.1
@@ -44,13 +45,13 @@ oe2:
       ev_power_limit_kw: 150.0
       pv_threshold_kwh: 0.5
     priority_2_pv_to_bess:
-      bess_power_max_kw: 2712.0
+      bess_power_max_kw: 342.0  # v5.2: 342 kW
       bess_soc_max_percent: 95.0
       bess_soc_target_percent: 85.0
       description: FV excedente a BESS (cargar reserva para pico)
       enabled: true
     priority_3_bess_to_ev:
-      bess_power_max_kw: 2712.0
+      bess_power_max_kw: 342.0  # v5.2: 342 kW
       bess_soc_min_percent: 20.0
       description: BESS a EVs cuando cae el sol (noche)
       enabled: true
@@ -71,11 +72,12 @@ oe2:
       direct_solar_bonus_weight: 0.01
       grid_import_penalty_weight: 0.0001
   ev_fleet:
-    # Configuración de cargadores (DATOS REALES OE2 2026-01-30)
-    charger_power_kw_moto: 2.0          # 28 cargadores motos @ 2kW
-    charger_power_kw_mototaxi: 3.0      # 4 cargadores mototaxis @ 3kW
-    total_chargers: 32                  # 28 + 4 = 32 físicos
-    total_sockets: 128                  # 32 × 4 = 128 (112 motos + 16 mototaxis)
+    # Configuración de cargadores (DATOS REALES OE2 v5.2 - 2026-02-12)
+    charger_power_kw: 7.4               # Modo 3 monofásico 32A @ 230V
+    charger_power_kw_moto: 7.4          # 15 cargadores motos @ 7.4kW/toma
+    charger_power_kw_mototaxi: 7.4      # 4 cargadores mototaxis @ 7.4kW/toma
+    total_chargers: 19                  # 15 + 4 = 19 físicos
+    total_sockets: 38                   # 19 × 2 = 38 (30 motos + 8 mototaxis)
     ev_demand_constant_kw: 50.0         # Workaround: demanda constante para CO₂ tracking
     closing_hour: 22
     daily_sessions_factor: 1.0
@@ -93,7 +95,7 @@ oe2:
     - 21
     peak_share_day: 0.5
     session_minutes: 30
-    sockets_per_charger: 4
+    sockets_per_charger: 2             # 2 tomas por cargador (Modo 3)
     utilization: 0.92
   location:
     alt: 104.0

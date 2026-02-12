@@ -148,14 +148,14 @@ status: ✅ 100% VALIDADO - LISTO PARA PRODUCCIÓN
 OE2 REAL DATA (Iquitos)
   ├─ Solar: 4,050 kWp
   ├─ BESS: 4,520 kWh
-  ├─ Chargers: 32 units (128 sockets)
+  ├─ Chargers: 19 units (38 sockets)
   └─ Fleet: 2,679 motos/día + 382 taxis/día
        ↓
    [Cargado vía training scripts]
        ↓
 CITYLEARN V2 ENVIRONMENT
-  ├─ Observations: 394-dim
-  ├─ Actions: 129-dim
+  ├─ Observations: 124-dim
+  ├─ Actions: 39-dim
   ├─ Episode: 8,760 timesteps (365 días)
   └─ Timestep: 1 hora
        ↓

@@ -105,12 +105,12 @@
   },
   "infrastructure": {
     "solar_capacity_kwp": 4050,
-    "bess_capacity_kwh": 4520,
-    "bess_power_kw": 2712,
+    "bess_capacity_kwh": 940,
+    "bess_power_kw": 342,
     "mall_avg_kw": 1411.95,
     "chargers_avg_kw": 116.99,
-    "total_sockets": 128,
-    "n_chargers_physical": 32
+    "total_sockets": 38,
+    "n_chargers_physical": 19
   },
   "gpu": {
     "device_name": "NVIDIA GeForce RTX 4060 Laptop",
