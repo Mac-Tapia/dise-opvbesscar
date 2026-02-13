@@ -2,12 +2,13 @@
 
 ## 🎯 Project Purpose in 30 Seconds
 
-**pvbesscar** optimizes EV charging for 38 electric sockets (270 motos + 39 mototaxis/day) using solar PV (4,050 kWp) + battery storage (4,520 kWh BESS) via reinforcement learning agents (SAC/PPO/A2C) to minimize CO₂ emissions in an isolated grid (Iquitos, Perú, 0.4521 kg CO₂/kWh from thermal generation).
+**pvbesscar** optimizes EV charging for 38 electric sockets (270 motos + 39 mototaxis/day) using solar PV (4,050 kWp) + battery storage (1,700 kWh maximum SOC) via reinforcement learning agents (SAC/PPO/A2C) to minimize CO₂ emissions in an isolated grid (Iquitos, Perú, 0.4521 kg CO₂/kWh from thermal generation).
 
 **Infrastructure (v5.2):**
 - 19 chargers (15 motos + 4 mototaxis) × 2 sockets = 38 total sockets
 - Mode 3 charging @ 7.4 kW per socket (monofásico 32A @ 230V)
 - 281.2 kW installed power
+- **BESS Storage: 1,700 kWh max SOC** (verified from `data/oe2/bess/bess_simulation_hourly.csv`, NOT 4,520 kWh as previously documented)
 
 **Two Phases:**
 - **OE2 (Dimensioning)**: Infrastructure specs (solar, BESS, chargers, demand profiles) in `src/dimensionamiento/oe2/`

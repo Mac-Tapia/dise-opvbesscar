@@ -257,13 +257,13 @@ def _discover_csv_paths(schema: Dict[str, Any], dataset_dir: Path) -> Dict[str, 
 def _load_real_charger_dataset(charger_data_path: Path) -> Optional[pd.DataFrame]:
     """Load real charger dataset from data/oe2/chargers/chargers_ev_ano_2024_v3.csv
 
-    CRITICAL: This is the NEW REAL DATASET v5.2 with:
-    - 38 individual sockets (30 motos + 8 mototaxis)
-    - 19 cargadores x 2 tomas = 38 tomas totales
+    CRITICAL: This is the REAL DATASET v5.3 with:
+    - 38 individual sockets (indexed socket_000 to socket_037)
+    - 19 cargadores x 2 tomas = 38 tomas totales (OE2 v3.0 specification)
     - 7.4 kW por toma (Modo 3 monofasico 32A @ 230V)
     - 281.2 kW potencia instalada total
     - 8,760 hourly timesteps (full year 2024)
-    - Individual socket control capability for RL agents
+    - Individual socket control capability for RL agents (38-dim action space)
 
     Args:
         charger_data_path: Path to chargers_ev_ano_2024_v3.csv
@@ -286,12 +286,18 @@ def _load_real_charger_dataset(charger_data_path: Path) -> Optional[pd.DataFrame
         if df.shape[0] != 8760:
             raise ValueError(f"Charger dataset MUST have 8,760 rows (hourly), got {df.shape[0]}")
 
-        # v5.2: Dataset tiene 345 columnas (3 base + 38 sockets x 9 features)
-        # Validar que tenga columnas de socket
-        socket_cols = [c for c in df.columns if 'socket_' in c]
-        n_sockets = len(set(c.split('_')[1] for c in socket_cols if c.split('_')[1].isdigit()))
+        # v5.3: Dataset tiene 353 columnas (1 datetime + 38 sockets x 9 features)
+        # Validar que tenga columnas de socket (formato: socket_XXX_*)
+        socket_cols = [c for c in df.columns if 'socket_' in c.lower()]
+        # Extraer IDs unicos de socket
+        socket_ids = set()
+        for col in socket_cols:
+            parts = col.split('_')
+            if len(parts) > 1 and parts[1].isdigit():
+                socket_ids.add(int(parts[1]))
+        n_sockets = len(socket_ids)
         if n_sockets != 38:
-            raise ValueError(f"Charger dataset MUST have 38 sockets (v5.2), got {n_sockets}")
+            raise ValueError(f"Charger dataset MUST have 38 sockets (v5.3 OE2), got {n_sockets}")
 
         # VALIDATION: Hourly frequency
         if len(df.index) > 1:
@@ -303,24 +309,26 @@ def _load_real_charger_dataset(charger_data_path: Path) -> Optional[pd.DataFrame
         if df.index[0].date() != pd.Timestamp("2024-01-01").date():
             logger.warning(f"[CHARGERS REAL] Dataset starts {df.index[0].date()}, expected 2024-01-01")
 
-        # VALIDATION: Value ranges (power in kW)
-        min_val = df.min().min()
-        max_val = df.max().max()
-        if min_val < 0 or max_val > 5.0:
-            logger.warning(f"[CHARGERS REAL] Unexpected value range: [{min_val:.2f}, {max_val:.2f}] kW")
+        # VALIDATION: Value ranges (power in kW) - only numeric columns
+        numeric_cols = df.select_dtypes(include=['number']).columns
+        if len(numeric_cols) > 0:
+            min_val = df[numeric_cols].min().min()
+            max_val = df[numeric_cols].max().max()
+            if min_val < 0 or max_val > 10.0:  # Allow up to 10 kW for safety margin
+                logger.warning(f"[CHARGERS REAL] Unexpected value range: [{min_val:.2f}, {max_val:.2f}] kW")
 
-        # VALIDATION: Socket distribution v5.2 (30 motos + 8 mototaxis = 38 sockets)
-        # Sockets 000-029: motos, sockets 030-037: mototaxis
-        socket_ids = [int(c.split('_')[1]) for c in df.columns if 'socket_' in c and c.split('_')[1].isdigit()]
-        unique_sockets = len(set(socket_ids))
-        n_motos = len([s for s in set(socket_ids) if s < 30])
-        n_mototaxis = len([s for s in set(socket_ids) if s >= 30])
+        # VALIDATION: Socket distribution v5.3 OE2 (38 sockets indexed 0-37)
+        # socket_000_* to socket_037_* (19 cargadores x 2 tomas = 38 tomas)
+        min_socket = min(socket_ids) if socket_ids else -1
+        max_socket = max(socket_ids) if socket_ids else -1
 
-        if unique_sockets != 38:
-            logger.warning(f"[CHARGERS REAL] Socket count: {unique_sockets} (expected 38 v5.2)")
+        if min_socket != 0 or max_socket != 37:
+            logger.warning(f"[CHARGERS REAL] Socket IDs range: {min_socket}-{max_socket} (expected 0-37)")
 
         logger.info(f"[CHARGERS REAL] v5.3 Loaded: {df.shape} (8760 hours)")
-        logger.info(f"[CHARGERS REAL]   Sockets v5.2: {n_motos} motos + {n_mototaxis} mototaxis = {unique_sockets} total")
+        logger.info(f"[CHARGERS REAL]   Sockets: {n_sockets} total socket_XXX entries")
+        features_per_socket = len([c for c in socket_cols if 'socket_000_' in c])
+        logger.info(f"[CHARGERS REAL]   Features per socket: {features_per_socket} columns (charger_power, battery_kwh, vehicle_type, soc_current, etc.)")
         logger.info(f"[CHARGERS REAL]   Period: {df.index[0].date()} to {df.index[-1].date()}")
 
         # =====================================================================
@@ -521,7 +529,7 @@ def _load_oe2_artifacts(interim_dir: Path) -> Dict[str, Any]:
         if chargers_real_df is None or chargers_real_df.shape[0] != 8760:
             raise ValueError(f"Shape invalido: {chargers_real_df.shape if chargers_real_df is not None else 'None'} (requiere 8760 filas)")
         artifacts["chargers_real_hourly_2024"] = chargers_real_df
-        logger.info("[OK CARGAR] Cargadores reales horarios 2024 v5.2 - 8,760 horas x 38 sockets")
+        logger.info("[OK CARGAR] Cargadores reales horarios 2024 v5.3 OE2 - 8,760 horas x 38 sockets (socket_000 to socket_037)")
     except Exception as e:
         raise RuntimeError(f"[ERROR CRITICO] No se puede cargar chargers_ev_ano_2024_v3.csv: {e}")
 
@@ -1819,9 +1827,39 @@ def build_citylearn_dataset(
             else:
                 soc_kwh = soc_values_float if soc_col == "soc_kwh" else (soc_values_float * float(bess_cap))
 
-            # Crear CSV con columna soc_stored_kwh para CityLearn
+            # ═══════════════════════════════════════════════════════════════════════════
+            # NUEVAS MÉTRICAS v5.4: Extraer ahorros por picos y CO2 indirecto normalizados
+            # ═══════════════════════════════════════════════════════════════════════════
+            peak_reduction_savings_norm = np.zeros(len(soc_kwh))
+            co2_avoided_indirect_norm = np.zeros(len(soc_kwh))
+            
+            # Intentar extraer las nuevas columnas normalizadas si existen
+            if "peak_reduction_savings_normalized" in bess_oe2_df.columns:
+                peak_reduction_savings_norm = np.asarray(
+                    bess_oe2_df["peak_reduction_savings_normalized"].values, 
+                    dtype=np.float64
+                )
+                logger.info(f"[BESS]    ✓ Ahorros por reducción de picos: {np.sum(peak_reduction_savings_norm):.2f} unidades acumuladas")
+            else:
+                logger.warning(f"[BESS]    ⚠ Columna 'peak_reduction_savings_normalized' no encontrada (v5.3?)")
+                
+            if "co2_avoided_indirect_normalized" in bess_oe2_df.columns:
+                co2_avoided_indirect_norm = np.asarray(
+                    bess_oe2_df["co2_avoided_indirect_normalized"].values, 
+                    dtype=np.float64
+                )
+                logger.info(f"[BESS]    ✓ CO2 evitado indirectamente (normalizado): {np.sum(co2_avoided_indirect_norm):.2f} unidades acumuladas")
+            else:
+                logger.warning(f"[BESS]    ⚠ Columna 'co2_avoided_indirect_normalized' no encontrada (v5.3?)")
+
+            # Crear CSV con columna soc_stored_kwh + nuevas métricas para CityLearn
             bess_df = pd.DataFrame({
-                "soc_stored_kwh": soc_kwh
+                "soc_stored_kwh": soc_kwh,
+                # ═══════════════════════════════════════════════════════════════════
+                # Nuevas columnas v5.4 (normalizadas [0,1] para observaciones RL)
+                # ═══════════════════════════════════════════════════════════════════
+                "peak_reduction_savings_normalized": peak_reduction_savings_norm,
+                "co2_avoided_indirect_normalized": co2_avoided_indirect_norm,
             })
 
             bess_df.to_csv(bess_simulation_path, index=False)
