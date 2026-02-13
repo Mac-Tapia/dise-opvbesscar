@@ -140,6 +140,10 @@ ALL_OBSERVABLE_COLS = [
 # INTEGRACIÓN: Reward Functions (from src/rewards/rewards.py)
 # Importar clases de recompensa multiobjetivo para validación en OE3
 # =============================================================================
+# =============================================================================
+# INTEGRACIÓN: Reward Functions (from src/rewards/rewards.py)
+# Importar clases de recompensa multiobjetivo para validación en OE3
+# =============================================================================
 try:
     from src.rewards.rewards import (
         MultiObjectiveWeights,
@@ -152,6 +156,19 @@ try:
 except (ImportError, ModuleNotFoundError) as e:
     logger.warning("[REWARDS] Could not import rewards.py: %s", e)
     REWARDS_AVAILABLE = False
+
+# =============================================================================
+# INTEGRACIÓN: Baseline Modules v5.4 (from src/baseline/)
+# Calculador de baselines CON_SOLAR y SIN_SOLAR para comparación con agentes RL
+# =============================================================================
+try:
+    from src.baseline.baseline_calculator_v2 import BaselineCalculator
+    from src.baseline.citylearn_baseline_integration import BaselineCityLearnIntegration
+    BASELINE_AVAILABLE = True
+    logger.info("[BASELINE] Successfully imported baseline modules")
+except (ImportError, ModuleNotFoundError) as e:
+    logger.warning("[BASELINE] Baseline modules not available: %s", e)
+    BASELINE_AVAILABLE = False
 
 @dataclass(frozen=True)
 class BuiltDataset:
@@ -379,9 +396,10 @@ def _load_real_charger_dataset(charger_data_path: Path) -> Optional[pd.DataFrame
 def _extract_observable_variables(
     chargers_df: Optional[pd.DataFrame],
     solar_df: Optional[pd.DataFrame],
+    bess_df: Optional[pd.DataFrame] = None,
     n_timesteps: int = 8760
 ) -> pd.DataFrame:
-    """Extrae y combina variables observables de chargers y solar para agentes.
+    """Extrae y combina variables observables de chargers, solar y BESS para agentes.
     
     Esta función crea un DataFrame unificado con todas las variables de tracking
     que los agentes RL pueden usar como observaciones adicionales.
@@ -389,10 +407,11 @@ def _extract_observable_variables(
     Args:
         chargers_df: DataFrame de chargers_ev_ano_2024_v3.csv (o None)
         solar_df: DataFrame de pv_generation_hourly_citylearn_v2.csv (o None)
+        bess_df: DataFrame de bess_simulation_hourly.csv (o None) - v5.4
         n_timesteps: Número de timesteps (default: 8760 = 1 año)
     
     Returns:
-        DataFrame con columnas observables combinadas (8760 x N columnas)
+        DataFrame con columnas observables combinadas (8760 x N columnas) incluyendo BESS v5.4
     """
     # Crear DataFrame base con índice horario
     time_index = pd.date_range(start="2024-01-01", periods=n_timesteps, freq="h")
@@ -466,6 +485,45 @@ def _extract_observable_variables(
         for col in ['solar_is_hora_punta', 'solar_tarifa_aplicada_soles', 'solar_ahorro_soles',
                     'solar_reduccion_indirecta_co2_kg', 'solar_co2_mall_kg', 'solar_co2_ev_kg']:
             obs_df[col] = 0.0
+    
+    # =========================================================================
+    # EXTRAER VARIABLES DE BESS v5.4 (prefijo "bess_")
+    # =========================================================================
+    if bess_df is not None:
+        logger.info("[OBSERVABLES] Extrayendo variables de BESS v5.4...")
+        
+        # Mapeo de columnas BESS -> observables
+        bess_col_map = {
+            'bess_soc_percent': 'bess_soc_percent',
+            'bess_charge_kwh': 'bess_charge_kwh',
+            'bess_discharge_kwh': 'bess_discharge_kwh',
+        }
+        
+        for src_col, dst_col in bess_col_map.items():
+            if src_col in bess_df.columns:
+                values = bess_df[src_col].values[:n_timesteps]
+                if len(values) < n_timesteps:
+                    values = np.pad(values, (0, n_timesteps - len(values)), mode='constant')
+                obs_df[dst_col] = values
+            else:
+                # Valores por defecto si columna no existe
+                if dst_col == 'bess_soc_percent':
+                    obs_df[dst_col] = 50.0  # 50% SOC inicial
+                else:
+                    obs_df[dst_col] = 0.0
+                logger.warning(f"   - {src_col} no encontrado en BESS, usando valor por defecto")
+        
+        # Capacidad disponible (kWh) = capacidad total - (SOC% × capacidad)
+        bess_capacity_kwh = 1700.0  # v5.4
+        obs_df['bess_available_capacity_kwh'] = bess_capacity_kwh * (1.0 - obs_df['bess_soc_percent'] / 100.0)
+        
+        logger.info(f"   ✓ BESS v5.4: 1,700 kWh capacity, {(obs_df['bess_available_capacity_kwh'].sum()):,.0f} kWh disp/año")
+    else:
+        logger.warning("[OBSERVABLES] bess_df es None, usando valores por defecto BESS v5.4")
+        obs_df['bess_soc_percent'] = 50.0  # 50% inicial
+        obs_df['bess_charge_kwh'] = 0.0
+        obs_df['bess_discharge_kwh'] = 0.0
+        obs_df['bess_available_capacity_kwh'] = 850.0  # 50% of 1,700 kWh
     
     # =========================================================================
     # CALCULAR TOTALES COMBINADOS
@@ -1190,13 +1248,13 @@ def build_citylearn_dataset(
         bess_pow = float(artifacts["bess"].get("nominal_power_kw", 0.0)) or float(artifacts["bess"].get("power_rating_kw", 0.0))
         logger.info("Usando resultados BESS de OE2: %s kWh, %s kW", bess_cap, bess_pow)
 
-        # ✅ CORRECCIÓN AUTOMÁTICA EMBEDDED (L443-456): Si los valores son 0/None, usar valores OE2 reales v5.2
+        # ✅ CORRECCIÓN AUTOMÁTICA EMBEDDED (L443-456): Si los valores son 0/None, usar valores OE2 v5.4
         if bess_cap is None or bess_cap == 0.0:
-            bess_cap = 940.0  # OE2 v5.2: 940 kWh (exclusivo EV, 100% cobertura) [EMBEDDED-FIX-L1]
-            logger.warning("[EMBEDDED-FIX] BESS capacity corregido a OE2 v5.2: 940.0 kWh")
+            bess_cap = 1700.0  # ✅ OE2 v5.4: 1,700 kWh (total system capacity) [EMBEDDED-FIX-L1]
+            logger.warning("[EMBEDDED-FIX] BESS capacity corregido a OE2 v5.4: 1700.0 kWh")
         if bess_pow is None or bess_pow == 0.0:
-            bess_pow = 342.0  # OE2 v5.2: 342 kW [EMBEDDED-FIX-L1]
-            logger.warning("[EMBEDDED-FIX] BESS power corregido a OE2 v5.2: 342.0 kW")
+            bess_pow = 400.0  # ✅ OE2 v5.4: 400 kW [EMBEDDED-FIX-L1]
+            logger.warning("[EMBEDDED-FIX] BESS power corregido a OE2 v5.4: 400.0 kW")
 
     elif "bess_params" in artifacts:
         bess_params = artifacts["bess_params"]
@@ -1204,10 +1262,10 @@ def build_citylearn_dataset(
         bess_pow = float(bess_params.get("electrical_storage", {}).get("nominal_power", 0.0))
         logger.info("Usando parametros BESS de OE2 (schema): %s kWh, %s kW", bess_cap, bess_pow)
     else:
-        # ✅ CORRECCIÓN AUTOMÁTICA EMBEDDED (L456-463): Si no hay artifacts, usar OE2 v5.2
-        bess_cap = 940.0   # v5.2: 940 kWh (exclusivo EV, 100% cobertura)
-        bess_pow = 342.0   # v5.2: 342 kW
-        logger.warning("[EMBEDDED-FIX] BESS config no encontrado, usando OE2 v5.2: 940.0 kWh / 342.0 kW [FALLBACK]")
+        # ✅ CORRECCIÓN AUTOMÁTICA EMBEDDED (L456-463): Si no hay artifacts, usar OE2 v5.4
+        bess_cap = 1700.0   # ✅ v5.4: 1,700 kWh (total system capacity)
+        bess_pow = 400.0    # ✅ v5.4: 400 kW (power rating)
+        logger.warning("[EMBEDDED-FIX] BESS config no encontrado, usando OE2 v5.4: 1700.0 kWh / 400.0 kW [FALLBACK]")
 
     # === ACTUALIZAR PV Y BESS EN EL BUILDING UNIFICADO ===
     # pylint: disable=all
@@ -2164,15 +2222,17 @@ def build_citylearn_dataset(
     logger.info("[OBSERVABLES v5.3] Generando archivo de variables observables...")
     logger.info("=" * 80)
     
-    # Obtener DataFrames de chargers y solar con columnas observables
+    # Obtener DataFrames de chargers, solar y BESS con columnas observables
     chargers_obs_df = artifacts.get("chargers_real_hourly_2024")
     solar_obs_df = artifacts.get("solar_ts") if "solar_ts" in artifacts else artifacts.get("pv_generation_hourly")
+    bess_obs_df = artifacts.get("bess_simulation_hourly")  # ✅ Incluir BESS para observables
     
-    # Extraer y combinar variables observables
+    # Extraer y combinar variables observables (incluyendo BESS)
     observables_df = _extract_observable_variables(
         chargers_df=chargers_obs_df,
         solar_df=solar_obs_df,
-        n_timesteps=n
+        bess_df=bess_obs_df,  # ✅ Nuevo parámetro
+        n_timesteps=8760
     )
     
     # Guardar archivo de observables
@@ -2262,5 +2322,45 @@ def build_citylearn_dataset(
 
     (out_dir / "schema_grid_only.json").write_text(json.dumps(schema_grid, indent=2), encoding="utf-8")
     logger.info("Schema grid-only creado con PV=0 y BESS=0 en todos los buildings")
+
+    # ==========================================================================
+    # INTEGRACIÓN: Calcular y guardar baselines CON_SOLAR y SIN_SOLAR v5.4
+    # ==========================================================================
+    if BASELINE_AVAILABLE:
+        logger.info("")
+        logger.info("=" * 80)
+        logger.info("[BASELINE INTEGRATION v5.4] Calculando baselines CON_SOLAR y SIN_SOLAR...")
+        logger.info("=" * 80)
+        
+        try:
+            baseline_integration = BaselineCityLearnIntegration(output_dir=out_dir)
+            baselines = baseline_integration.compute_baselines()
+            baseline_integration.save_baselines(baselines)
+            baseline_integration.print_summary()
+            
+            # Agregar referencias baseline al schema para que agentes accedan
+            schema["baselines"] = {
+                "con_solar": baselines.get("con_solar", {}),
+                "sin_solar": baselines.get("sin_solar", {}),
+            }
+            
+            logger.info("[BASELINE INTEGRATION v5.4] ✅ Baselines integrados al schema:")
+            logger.info(f"   - CON_SOLAR (ref): {baselines.get('con_solar', {}).get('co2_t_year', 'N/A')} t CO₂/año")
+            logger.info(f"   - SIN_SOLAR (worst): {baselines.get('sin_solar', {}).get('co2_t_year', 'N/A')} t CO₂/año")
+            logger.info(f"   - Solar Impact: {baselines.get('con_solar', {}).get('co2_t_year', 0) - baselines.get('sin_solar', {}).get('co2_t_year', 0):.1f} t CO₂ evitadas")
+        except Exception as e:
+            logger.error("[BASELINE INTEGRATION v5.4] ❌ Error calculando baselines: %s", e)
+            logger.info("[BASELINE INTEGRATION v5.4] ℹ️  Continuando sin baselines (no crítico)")
+    else:
+        logger.warning("[BASELINE INTEGRATION v5.4] Módulos de baseline no disponibles")
+        logger.info("[BASELINE INTEGRATION v5.4] ℹ️  Para instalar: src/baseline/baseline_calculator_v2.py")
+
+    # Guardar versión actualizada del schema con baselines
+    schema_path = out_dir / "schema.json"
+    with open(schema_path, "w", encoding="utf-8") as f:
+        json.dump(schema, f, indent=2, ensure_ascii=False)
+    logger.info(f"[OK] Schema actualizado (con baselines) guardado en {schema_path}")
+    logger.info("=" * 80)
+    logger.info("")
 
     return BuiltDataset(dataset_dir=out_dir, schema_path=schema_path, building_name=bname)
