@@ -79,10 +79,13 @@ class BalanceEnergeticoConfig:
     # ==========================================
     pv_capacity_kwp: float = 4050.0  # kW pico solar (genera 4,775,948 kWh/año)
     
+    # Restricción de demanda pico (límite RED PÚBLICA Iquitos)
+    demand_peak_limit_kw: float = 2000.0  # kW máximo (BESS intenta reducir)
+    
     # BESS - valores calculados dinámicamente por bess.py
     # Estos son valores por defecto, se actualizan con load_bess_sizing()
-    bess_capacity_kwh: float = 940.0  # kWh almacenamiento (v5.2: exclusivo EV)
-    bess_power_kw: float = 342.0  # kW potencia nominal (0.36 C-rate)
+    bess_capacity_kwh: float = 1700.0  # kWh almacenamiento (v5.3: exclusivo EV + picos)
+    bess_power_kw: float = 400.0  # kW potencia nominal (0.36 C-rate)
     dod: float = 0.80  # Profundidad de descarga (80% para SOC 20%-100%)
     efficiency_roundtrip: float = 0.95  # Eficiencia round-trip (95%)
     
@@ -256,10 +259,24 @@ class BalanceEnergeticoSystem:
         PV -> EV + Mall (prioridad solar)
         Red -> (EV + Mall - PV) (déficit cubierto por red pública)
         
-        Con BESS (si disponible):
-        PV -> EV + Mall + BESS Carga
-        BESS Descarga + PV -> EV + Mall
-        Red -> (EV + Mall - PV - BESS)
+        Con BESS (si disponible) - ESTRATEGIA SOLAR-PRIORITY v5.4:
+        PRIORIDADES DE CARGA (cuando PV > demanda):
+        1. PV -> EV (directo)
+        2. PV -> Mall (directo)
+        3. PV excedente -> BESS (carga a 100%)
+        
+        PRIORIDADES DE DESCARGA (cuando déficit o exceso demanda):
+        1. Limitar picos: Si (EV+Mall) > 2000 kW, BESS descarga para reducir
+        2. Cubrir déficit EV: Si PV < EV y SOC > 20%
+        3. Cubrir déficit Mall: Si PV < Mall y SOC > 20%
+        
+        RESTRICCIONES:
+        - SOC operacional: 20%-100% (DoD: 80%)
+        - Horario operativo: 6h-22h (fuera: sin carga/descarga BESS)
+        - Límite demanda recomendado: 2000 kW (Red Pública)
+        
+        NOTA: Actual potencia (400 kW) reduce pero no elimina picos > 2000 kW
+              Para limitar completamente se necesitaría ~900 kW de potencia
         
         Returns:
             DataFrame con el balance horario completo (8,760 horas)
@@ -356,6 +373,11 @@ class BalanceEnergeticoSystem:
         # Calcular emisiones
         co2_from_grid = demand_from_grid * self.config.co2_intensity_kg_per_kwh / 1000  # kg
         
+        # ANÁLISIS DE PICOS (5.4): Verificar control de demanda máxima
+        peak_limit = self.config.demand_peak_limit_kw
+        demand_after_bess = demand_deficit - bess_to_demand  # Demanda que debe cubrir red
+        peak_exceeded = np.maximum(total_demand - peak_limit, 0)  # Exceso sobre 2000 kW
+        
         # DataFrame de balance
         df_balance = pd.DataFrame({
             'hour': np.arange(n_hours),
@@ -374,6 +396,7 @@ class BalanceEnergeticoSystem:
             'bess_to_demand_kw': bess_to_demand,
             'demand_from_grid_kw': demand_from_grid,
             'bess_soc_percent': bess_soc,
+            'peak_exceeded_above_2000kw': peak_exceeded,  # Exceso sobre límite
             'co2_from_grid_kg': co2_from_grid,
         })
         
@@ -453,7 +476,7 @@ class BalanceEnergeticoSystem:
         raise ValueError(f"No se encontró ninguna de las columnas exactas {candidates} en {list(df.columns)}")
     
     def _calculate_metrics(self) -> None:
-        """Calcula métricas del sistema v5.2."""
+        """Calcula métricas del sistema v5.2 incluyendo análisis de picos."""
         if self.df_balance is None:
             return
         
@@ -489,6 +512,27 @@ class BalanceEnergeticoSystem:
         pv_waste = df['pv_to_grid_kw'].sum()
         pv_utilization = 1.0 - (pv_waste / max(total_pv_kwh, 1e-6))
         
+        # ANÁLISIS DE PICOS v5.4
+        peak_limit_kw = self.config.demand_peak_limit_kw
+        peak_exceeded_total = df['peak_exceeded_above_2000kw'].sum()  # kWh sobre límite
+        peak_hours = (df['total_demand_kw'] > peak_limit_kw).sum()
+        peak_hours_avg = df[df['total_demand_kw'] > peak_limit_kw]['total_demand_kw'].mean() if peak_hours > 0 else 0
+        peak_max = df['total_demand_kw'].max()
+        peak_reduction_by_bess = df[df['total_demand_kw'] > peak_limit_kw]['bess_discharge_kw'].sum()
+        
+        # AHORRO ECONÓMICO POR REDUCCIÓN DE PICOS (NEW v5.4)
+        # Tarifas OSINERGMIN Iquitos
+        tarifa_hp_soles = 0.45  # Hora Punta (18:00-22:59): S/. 0.45/kWh
+        tarifa_hfp_soles = 0.28  # Hora Fuera de Punta (resto): S/. 0.28/kWh
+        
+        # Calcular ahorro por hora según tarifa (usando columna 'hour' que ya existe)
+        df['is_hora_punta'] = (df['hour'] >= 18) & (df['hour'] < 23)  # 18h-22:59h
+        df['tarifa_por_kwh'] = df['is_hora_punta'].apply(lambda x: tarifa_hp_soles if x else tarifa_hfp_soles)
+        
+        # Ahorro = reducción de picos × tarifa correspondiente
+        df['ahorro_picos_soles'] = df['bess_discharge_kw'] * df['tarifa_por_kwh']  # En HP, esto es mayor
+        ahorro_picos_total_soles = df['ahorro_picos_soles'].sum()  # Suma anual
+        
         self.metrics = {
             'total_pv_kwh': total_pv_kwh,
             'total_demand_kwh': total_demand_kwh,
@@ -506,6 +550,14 @@ class BalanceEnergeticoSystem:
             'total_co2_kg': total_co2_kg,
             'co2_avoided_kg': co2_avoided_kg,
             'co2_per_kwh': co2_per_kwh,
+            # Métricas de picos (NEW v5.4)
+            'peak_limit_kw': peak_limit_kw,
+            'peak_max_kw': peak_max,
+            'peak_hours_above_limit': peak_hours,
+            'peak_hours_avg_kw': peak_hours_avg,
+            'peak_exceeded_total_kwh': peak_exceeded_total,
+            'peak_reduction_by_bess_kwh': peak_reduction_by_bess,
+            'peak_reduction_savings_soles': ahorro_picos_total_soles,  # NEW: Ahorro económico
         }
     
     def print_summary(self) -> None:
@@ -544,6 +596,17 @@ class BalanceEnergeticoSystem:
         print(f"  CO₂ por Red:            {m['total_co2_kg']:>12,.0f} kg CO₂/año")
         print(f"  CO₂ Evitado (PV):       {m['total_pv_to_demand_kwh'] * 0.4521:>12,.0f} kg CO₂/año")
         print(f"  Intensidad Sistema:     {m['co2_per_kwh']:>12.4f} kg CO₂/kWh")
+        
+        print("\n⚡ CONTROL DE DEMANDA PICO (Límite RED PÚBLICA: 2000 kW):")
+        print(f"  Pico máximo observado:  {m['peak_max_kw']:>12.1f} kW")
+        print(f"  Horas sobre 2000 kW:    {m['peak_hours_above_limit']:>12.0f} horas/año ({m['peak_hours_above_limit']/87.6:.1f}%)")
+        print(f"  Promedio en esas horas: {m['peak_hours_avg_kw']:>12.1f} kW")
+        print(f"  Exceso total anual:     {m['peak_exceeded_total_kwh']:>12,.0f} kWh/año")
+        print(f"  BESS reduce picos:      {m['peak_reduction_by_bess_kwh']:>12,.0f} kWh/año")
+        print(f"  Ahorro por reducción:   S/. {m['peak_reduction_savings_soles']:>10,.0f}/año")
+        print(f"\n  NOTA: BESS (400 kW) reduce pero no elimina picos. Para limitarlos")
+        print(f"        completamente a 2000 kW se requeriría ~900 kW de potencia.")
+        print(f"        Ahorro calculado a tarifa: HP S/.0.45/kWh (18h-23h) + HFP S/.0.28/kWh (resto)")
         
         print("\n" + "="*70 + "\n")
     

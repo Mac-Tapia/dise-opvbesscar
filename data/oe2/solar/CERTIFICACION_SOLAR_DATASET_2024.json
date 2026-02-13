@@ -1,0 +1,39 @@
+{
+  "timestamp": "2026-02-13T07:13:10.121039",
+  "archivo": "data\\oe2\\solar\\pv_generation_timeseries.csv",
+  "dimensiones": {
+    "filas": 8760,
+    "columnas": 12,
+    "rango": "2024-01-01 00:00:00-05:00 → 2024-12-30 23:00:00-05:00",
+    "año": 2024,
+    "cobertura": "100% anual (365 × 24 = 8,760 horas)"
+  },
+  "columnas": [
+    "irradiancia_ghi",
+    "temperatura_c",
+    "velocidad_viento_ms",
+    "potencia_kw",
+    "energia_kwh",
+    "is_hora_punta",
+    "hora_tipo",
+    "tarifa_aplicada_soles",
+    "ahorro_solar_soles",
+    "reduccion_indirecta_co2_kg",
+    "co2_evitado_mall_kg",
+    "co2_evitado_ev_kg"
+  ],
+  "energia_kwh": 8292514.1699215975,
+  "co2_reduccion_tons": 3749.045656221554,
+  "ahorro_soles": 2321903.9675780474,
+  "validaciones": {
+    "1_temporal": true,
+    "2_columnas": true,
+    "3_integridad": true,
+    "4_rangos": true,
+    "5_limpieza": true,
+    "6_citylearn": true,
+    "7_agentes_rl": true
+  },
+  "todas_ok": true,
+  "status": "✅ PRODUCTION READY"
+}

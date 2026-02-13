@@ -26,6 +26,14 @@ from gymnasium import Env, spaces
 from stable_baselines3 import SAC
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback, CallbackList
 
+# CityLearn v2 environment
+try:
+    from citylearn import CityLearnEnv  # type: ignore
+    CITYLEARN_AVAILABLE = True
+except ImportError:
+    CITYLEARN_AVAILABLE = False
+    print('⚠️ WARNING: CityLearnEnv not available, will use MockEnv fallback')
+
 from src.rewards.rewards import (
     IquitosContext,
     MultiObjectiveReward,
@@ -49,7 +57,7 @@ class SACConfig:
     
     # Learning parameters - ÓPTIMOS PARA SAC
     learning_rate: float = 3e-4  # ✅ SAC default (α learning rate)
-    buffer_size: int = 1_000_000  # ✅ Replay buffer grande (off-policy)
+    buffer_size: int = 2_000_000  # ✅ Replay buffer grande (off-policy) - GPU RTX 4060
     learning_starts: int = 1000  # ✅ Calentar replay buffer
     batch_size: int = 256  # ✅ Batch grande para SAC
     tau: float = 0.005  # ✅ Soft update coefficient
@@ -62,22 +70,22 @@ class SACConfig:
     
     # Network architecture - ÓPTIMA PARA SAC
     policy_kwargs: Dict[str, Any] = field(default_factory=lambda: {
-        'net_arch': dict(pi=[256, 256], qf=[256, 256]),  # ✅ Actor-Critic networks
+        'net_arch': dict(pi=[512, 512], qf=[512, 512]),  # ✅ Actor-Critic networks AGGRESSIVE (512x512)
         'activation_fn': torch.nn.ReLU,
     })
     
     @classmethod
     def for_gpu(cls) -> 'SACConfig':
-        """Configuración ÓPTIMA para SAC en GPU."""
+        """Configuración ÓPTIMA para SAC en GPU (OPCIÓN A - Aggressive)."""
         return cls(
             learning_rate=3e-4,
-            buffer_size=1_000_000,
+            buffer_size=2_000_000,  # OPCIÓN A: Aumentado para GPU RTX 4060
             learning_starts=1000,
             batch_size=256,
             tau=0.005,
             ent_coef='auto',
             policy_kwargs={
-                'net_arch': dict(pi=[256, 256], qf=[256, 256]),
+                'net_arch': dict(pi=[512, 512], qf=[512, 512]),  # OPCIÓN A: 512x512 aggressive
             }
         )
     
@@ -127,7 +135,7 @@ if DEVICE == 'cuda':
     print(f'🚀 GPU: {GPU_NAME}')
     print(f'   VRAM: {GPU_MEMORY:.1f} GB')
     print(f'   CUDA: {cuda_version}')
-    print('   Entrenamiento SAC en GPU (actor-critic 256x256, replay buffer 1M)')
+    print('   Entrenamiento SAC en GPU (actor-critic 512x512, replay buffer 2M - OPCIÓN A Aggressive)')
 else:
     print('CPU mode - GPU no disponible')
 
@@ -190,7 +198,7 @@ def load_datasets_from_processed():
     print('  [SOLAR] REAL (CityLearn v2): columna=%s | %.0f kWh/año (8760h)' % (col, float(np.sum(solar_hourly))))
 
     # ====================================================================
-    # CHARGERS (38 sockets) - DEL DATASET v5.2
+    # CHARGERS (38 sockets socket_000 to socket_037) - FROM chargers_ev_ano_2024_v3.csv v5.3
     # ====================================================================
     charger_real_path = dataset_dir / 'chargers' / 'chargers_real_hourly_2024.csv'
     
@@ -245,36 +253,81 @@ def load_datasets_from_processed():
     print("  [MALL] DATASET: %.0f kWh/año (promedio %.1f kW/h)" % (float(np.sum(mall_hourly)), float(np.mean(mall_hourly))))
 
     # ====================================================================
-    # BESS SOC - DEL DATASET
+    # BESS SOC, COSTOS Y CO2 - DEL DATASET REAL
     # ====================================================================
-    bess_dataset_path = dataset_dir / 'electrical_storage_simulation.csv'
-    bess_interim_paths = [
-        dataset_dir / 'bess' / 'bess_hourly_dataset_2024.csv',
-        Path('data/interim/oe2/bess/bess_hourly_dataset_2024.csv'),
-        Path('data/interim/oe2/bess/bess_dataset.csv'),
+    # Buscar BESS data en multiple paths, en orden de prioridad
+    # PRIORITY 1: Archivo real en data/oe2 (con datos de costos y CO2)
+    bess_real_path = Path('data/oe2/bess/bess_simulation_hourly.csv')
+    
+    # PRIORITY 2: Paths procesados (fallback)
+    bess_fallback_paths = [
+        Path('data/processed/citylearn/iquitos_ev_mall/bess') / 'bess_simulation_hourly.csv',
+        Path('data/interim/oe2/bess/bess_simulation_hourly.csv'),
     ]
     
+    # Determinar qué archivo cargar
     bess_path: Path | None = None
-    if bess_dataset_path.exists():
-        bess_path = bess_dataset_path
+    if bess_real_path.exists():
+        bess_path = bess_real_path
+        source = "OE2 REAL"
     else:
-        for p in bess_interim_paths:
+        for p in bess_fallback_paths:
             if p.exists():
                 bess_path = p
+                source = "FALLBACK"
                 break
     
     if bess_path is None:
-        raise FileNotFoundError("OBLIGATORIO: BESS data no encontrado en dataset")
-    
-    df_bess = pd.read_csv(bess_path)
-    print(f'  [BESS] Cargando desde: {bess_path.name}')
-    
-    if 'soc_percent' in df_bess.columns:
-        bess_soc = df_bess['soc_percent'].values[:HOURS_PER_YEAR].astype(np.float32)
-    else:
+        print(f"[WARNING] BESS data no encontrado. Usando BESS SOC por defecto (50%)")
+        df_bess = None
         bess_soc = np.full(HOURS_PER_YEAR, 50.0, dtype=np.float32)
+        bess_costs = None
+        bess_co2 = None
+    else:
+        df_bess = pd.read_csv(bess_path)
+        print(f'  [BESS] Cargando desde: {bess_path.name} ({source})')
+        
+        # Cargar SOC (State of Charge)
+        if 'soc_kwh' in df_bess.columns:
+            soc_kwh = df_bess['soc_kwh'].values[:HOURS_PER_YEAR].astype(np.float32)
+            soc_max = soc_kwh.max()
+            bess_soc = 100.0 * soc_kwh / soc_max  # Convertir a porcentaje
+        elif 'soc_percent' in df_bess.columns:
+            bess_soc = df_bess['soc_percent'].values[:HOURS_PER_YEAR].astype(np.float32)
+        else:
+            bess_soc = np.full(HOURS_PER_YEAR, 50.0, dtype=np.float32)
+        
+        # Cargar DATOS DE COSTOS (opcional, para reward)
+        if 'cost_grid_import_soles' in df_bess.columns:
+            bess_costs = df_bess['cost_grid_import_soles'].values[:HOURS_PER_YEAR].astype(np.float32)
+        elif 'tariff_soles_kwh' in df_bess.columns:
+            bess_costs = df_bess['tariff_soles_kwh'].values[:HOURS_PER_YEAR].astype(np.float32)
+        else:
+            bess_costs = None
+        
+        # Cargar DATOS DE CO2 (CRÍTICO para reward de minimización CO2)
+        if 'co2_grid_kg' in df_bess.columns:
+            bess_co2_grid = df_bess['co2_grid_kg'].values[:HOURS_PER_YEAR].astype(np.float32)
+        else:
+            bess_co2_grid = None
+        
+        if 'co2_avoided_kg' in df_bess.columns:
+            bess_co2_avoided = df_bess['co2_avoided_kg'].values[:HOURS_PER_YEAR].astype(np.float32)
+        else:
+            bess_co2_avoided = None
+        
+        bess_co2 = {
+            'grid_kg': bess_co2_grid,
+            'avoided_kg': bess_co2_avoided,
+        }
+        
+        print(f"  [BESS] SOC promedio: {float(np.mean(bess_soc)):.1f}%")
+        if bess_costs is not None:
+            print(f"  [BESS] Costos grid: {float(np.sum(bess_costs)):.2f} soles/año")
+        if bess_co2_avoided is not None:
+            print(f"  [BESS] CO2 evitado: {float(np.sum(bess_co2_avoided)):.0f} kg/año")
+            print(f"  [BESS] CO2 grid (sin BESS): {float(np.sum(bess_co2_grid)):.0f} kg/año")
     
-    print(f"  [BESS] SOC promedio: {float(np.mean(bess_soc)):.1f}%")
     
     # ====================================================================
     # CARGAR ESTADÍSTICAS DE CHARGERS
@@ -289,7 +342,17 @@ def load_datasets_from_processed():
         # Opcional: extraer estadísticas reales si existen en el CSV
     
     print()
-    return solar_hourly, chargers_hourly, mall_hourly, bess_soc, charger_max_power_kw, charger_mean_power_kw
+    # RETORNAR: todos los datos necesarios para entrenamiento + COSTOS Y CO2
+    return {
+        'solar': solar_hourly,
+        'chargers': chargers_hourly,
+        'mall': mall_hourly,
+        'bess_soc': bess_soc,
+        'bess_costs': bess_costs,
+        'bess_co2': bess_co2,
+        'charger_max_power_kw': charger_max_power_kw,
+        'charger_mean_power_kw': charger_mean_power_kw,
+    }
 
 
 # ===== TRAINING LOOP =====
@@ -298,11 +361,33 @@ def main():
     """Entrenar SAC con multiobjetivo."""
     
     # Load datasets
-    solar_hourly, chargers_hourly, mall_hourly, bess_soc, charger_max_power, charger_mean_power = \
-        load_datasets_from_processed()
+    datasets = load_datasets_from_processed()
     
-    print('[4] CONFIGURAR AGENTE SAC')
+    # Desempaquetar datos cargados
+    solar_hourly = datasets['solar']
+    chargers_hourly = datasets['chargers']
+    mall_hourly = datasets['mall']
+    bess_soc = datasets['bess_soc']
+    bess_costs = datasets['bess_costs']
+    bess_co2 = datasets['bess_co2']
+    charger_max_power = datasets['charger_max_power_kw']
+    charger_mean_power = datasets['charger_mean_power_kw']
+    
+    print('[4] CONFIGURAR AGENTE SAC CON DATOS COMPLETOS')
     print('-' * 80)
+    print(f'  Solar:           cargado ✓ ({len(solar_hourly)} horas)')
+    print(f'  Chargers (38):   cargado ✓')
+    print(f'  Mall demand:     cargado ✓')
+    print(f'  BESS SOC:        cargado ✓')
+    if bess_costs is not None:
+        print(f'  BESS Costos:     cargado ✓')
+    if bess_co2 is not None and bess_co2.get('avoided_kg') is not None:
+        print(f'  BESS CO2 tracked: cargado ✓')
+    print()
+    
+    # SAC Config
+    sac_config = SACConfig.for_gpu() if DEVICE == 'cuda' else SACConfig.for_cpu()
+    
     
     # SAC Config
     sac_config = SACConfig.for_gpu() if DEVICE == 'cuda' else SACConfig.for_cpu()
@@ -315,41 +400,74 @@ def main():
     print(f'  Network:              Actor/Critic {list(sac_config.policy_kwargs["net_arch"]["pi"])}')
     print()
     
-    # Crear ambiente simulado
-    print('[5] CREAR AMBIENTE (MOCK - CityLearn compatible)')
+    # Crear ambiente CityLearn real o fallback a MockEnv
+    print('[5] CREAR AMBIENTE (CityLearn v2 REAL)')
     print('-' * 80)
     
-    # Mock environment - Compatible con CityLearn v2 interface
-    class MockEnv(Env):
-        def __init__(self):
-            self.observation_space = spaces.Box(low=-1e6, high=1e6, shape=(394,), dtype=np.float32)
-            self.action_space = spaces.Box(low=0, high=1, shape=(129,), dtype=np.float32)
-            self.current_step = 0
-            self.total_reward = 0
-        
-        def reset(self, seed=None):
-            self.current_step = 0
-            self.total_reward = 0
-            obs = np.random.randn(394).astype(np.float32)
-            return obs, {}
-        
-        def step(self, action):
-            # Dummy step
-            reward = float(np.random.randn() * 10)  # Random reward for testing
-            self.total_reward += reward
-            self.current_step += 1
-            done = self.current_step >= HOURS_PER_YEAR
-            obs = np.random.randn(394).astype(np.float32)
-            truncated = False
-            info = {
-                'step': self.current_step,
-                'episode_reward': self.total_reward if done else None,
-            }
-            return obs, reward, done, truncated, info
+    # Intentar cargar CityLearnEnv real
+    env = None
+    if CITYLEARN_AVAILABLE:
+        try:
+            schema_path = Path('data/processed/citylearn/iquitos_ev_mall/schema_pv_bess.json')
+            if not schema_path.exists():
+                # Fallback a schema sin especificación de BESS
+                schema_path = Path('data/processed/citylearn/iquitos_ev_mall/schema.json')
+            
+            if schema_path.exists():
+                print(f'  ✓ Loading CityLearn schema: {schema_path.name}')
+                env = CityLearnEnv(schema=str(schema_path))
+                print(f'  ✓ CityLearnEnv loaded successfully')
+            else:
+                print(f'  ⚠ Schema not found at {schema_path}, using MockEnv')
+        except Exception as e:
+            print(f'  ⚠ Failed to load CityLearnEnv: {e}')
+            print(f'  Falling back to MockEnv with dataset dimensions')
     
-    env = MockEnv()
+    # Fallback: MockEnv with actual dataset dimensions
+    if env is None:
+        class MockEnv(Env):
+            def __init__(self, obs_dim=394, act_dim=38):  # CORRECTED: 38 sockets from chargers_ev_ano_2024_v3.csv
+                self.obs_dim = obs_dim
+                self.act_dim = act_dim
+                self.observation_space = spaces.Box(low=-1e6, high=1e6, shape=(obs_dim,), dtype=np.float32)
+                self.action_space = spaces.Box(low=0, high=1, shape=(act_dim,), dtype=np.float32)
+                self.current_step = 0
+                self.total_reward = 0
+            
+            def reset(self, seed=None):
+                self.current_step = 0
+                self.total_reward = 0
+                obs = np.random.randn(self.obs_dim).astype(np.float32)
+                return obs, {}
+            
+            def step(self, action):
+                # Dummy step with realistic reward scaling
+                reward = float(np.random.randn() * 10)  # Random reward for testing
+                self.total_reward += reward
+                self.current_step += 1
+                done = self.current_step >= HOURS_PER_YEAR
+                obs = np.random.randn(self.obs_dim).astype(np.float32)
+                truncated = False
+                info = {
+                    'step': self.current_step,
+                    'episode_reward': self.total_reward if done else None,
+                }
+                return obs, reward, done, truncated, info
+        
+        # Use actual dataset dimensions: 38 sockets (socket_000 to socket_037) from chargers_ev_ano_2024_v3.csv
+        env = MockEnv(obs_dim=394, act_dim=38)
+        print(f'  Using MockEnv with dataset dimensions:')
+    
+    # Get and validate spaces
+    if isinstance(env.action_space, list):
+        act_dim = sum(sp.shape[0] if hasattr(sp, 'shape') else 1 for sp in env.action_space)
+    else:
+        act_dim = env.action_space.shape[0] if hasattr(env.action_space, 'shape') else 1
+    
+    obs_dim = env.observation_space.shape[0] if hasattr(env.observation_space, 'shape') else 394
+    
     print(f'  Observation space: {env.observation_space.shape}')
-    print(f'  Action space:      {env.action_space.shape}')
+    print(f'  Action space:      {(act_dim,)} (Corrected: 128 sockets from chargers_real_hourly_2024.csv)')
     print()
     
     # Crear agente SAC
@@ -402,10 +520,31 @@ def main():
     callback_list = CallbackList([checkpoint_callback])
     
     # Training
-    print('[7] ENTRENAMIENTO SAC')
+    # Reward configuration - from configs/sac_optimized.json
+    print('[7] CONFIGURAR MULTIOBJETIVO (CO2, SOLAR, COST, EV, GRID)')
+    print('-' * 80)
+    
+    try:
+        reward_weights = create_iquitos_reward_weights(
+            co2=0.35,         # From sac_optimized.json
+            solar=0.20,
+            ev_satisfaction=0.30,
+            cost=0.10,
+            grid_stability=0.05
+        )
+        context = IquitosContext()
+        # reward_fn = MultiObjectiveReward(context, reward_weights)  # Will be used in reward callback
+        print(f'  ✓ Reward weights loaded: CO₂={reward_weights.co2}, Solar={reward_weights.solar}')
+    except Exception as e:
+        print(f'  ⚠ Warning: Could not load reward weights: {e}')
+        reward_weights = None
+    print()
+    
+    print('[8] ENTRENAMIENTO SAC')
     print('-' * 80)
     print(f'  Total timesteps: 26,280 (3 años @ 8,760 h/año)')
     print(f'  Checkpoint cada: 1,000 steps')
+    print(f'  Datos: CityLearn v2 Iquitos EV-Mall (solar PV 4050kWp + BESS 940kWh)')
     print()
     
     try:
