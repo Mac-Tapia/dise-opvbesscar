@@ -1,0 +1,12 @@
+{
+  "baseline_con_solar_co2_kg": 3058998.34185,
+  "baseline_sin_solar_co2_kg": 5778240.369,
+  "baseline_con_solar_co2_t": 3058.99834185,
+  "baseline_sin_solar_co2_t": 5778.240369,
+  "solar_impact_kg": 2719242.02715,
+  "solar_impact_t": 2719.24202715,
+  "solar_impact_pct": 47.060036507629746,
+  "solar_generation_kwh": 8292513.5,
+  "grid_import_reduction_pct": 47.060036507629746,
+  "data_source": "OE2 v5.4 (BESS simulation with real solar/EV/mall hourly data)"
+}
