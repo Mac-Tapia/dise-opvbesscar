@@ -71,8 +71,12 @@ oe2:
       direct_solar_bonus_weight: 0.01
       grid_import_penalty_weight: 0.0001
   ev_fleet:
-    charger_power_kw_moto: 2.0
-    charger_power_kw_mototaxi: 3.0
+    # Configuración de cargadores (DATOS REALES OE2 2026-01-30)
+    charger_power_kw_moto: 2.0          # 28 cargadores motos @ 2kW
+    charger_power_kw_mototaxi: 3.0      # 4 cargadores mototaxis @ 3kW
+    total_chargers: 32                  # 28 + 4 = 32 físicos
+    total_sockets: 128                  # 32 × 4 = 128 (112 motos + 16 mototaxis)
+    ev_demand_constant_kw: 50.0         # Workaround: demanda constante para CO₂ tracking
     closing_hour: 22
     daily_sessions_factor: 1.0
     fc_motos: 0.9
@@ -176,9 +180,10 @@ oe3:
     name: iquitos_ev_mall
     template_name: citylearn_challenge_2022_phase_all_plus_evs
   emissions:
-    kgco2_per_gallon: 8.9
-    km_per_gallon: 120.0
-    km_per_kwh: 35.0
+    # CO₂ evitado por vehículos eléctricos vs combustión
+    kgco2_per_gallon: 8.9      # kg CO₂ por galón de gasolina (combustión)
+    km_per_gallon: 120.0        # Eficiencia motos/mototaxis a combustión (km/galón)
+    km_per_kwh: 35.0            # Eficiencia motos/mototaxis eléctricos (km/kWh)
     project_life_years: 20
   evaluation:
     a2c:
@@ -214,7 +219,7 @@ oe3:
     - PPO
     - A2C
     co2_tracking: true
-    multi_objective_priority: co2_focus
+    multi_objective_priority: ev_focus
     ppo:
       batch_size: 512
       checkpoint_freq_steps: 200

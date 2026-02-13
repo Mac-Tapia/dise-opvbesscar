@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-01-31",
+  "total_tests": 30,
+  "passed": 29,
+  "failed": 1,
+  "warnings": 0,
+  "metrics_found": {
+    "CO2_GRID": "0.4521",
+    "EV_DEMAND": "50.0",
+    "SOCKETS": "128",
+    "CHARGERS": "32",
+    "CONFIG_EV_DEMAND": 50.0,
+    "CONFIG_SOCKETS": 128
+  },
+  "issues": [
+    {
+      "category": "METRIC",
+      "message": "dataset_builder: CO₂ grid factor configurado"
+    }
+  ],
+  "status": "FAIL"
+}

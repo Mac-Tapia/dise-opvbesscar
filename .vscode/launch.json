@@ -1,0 +1,86 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: PPO Training (Debug with Tracing)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "scripts.ppo_training_pipeline",
+      "args": [
+        "--config", "configs/default.yaml",
+        "--verbose"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "PYTHONUNBUFFERED": "1",
+        "LOG_LEVEL": "TRACE"
+      },
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Python: SAC Training (Debug with Tracing)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "scripts.sac_training_pipeline",
+      "args": [
+        "--config", "configs/default.yaml",
+        "--verbose"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "PYTHONUNBUFFERED": "1",
+        "LOG_LEVEL": "TRACE"
+      },
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Python: Run Baseline (with Tracing)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "scripts.run_baselines",
+      "args": [
+        "--config", "configs/default.yaml"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "PYTHONUNBUFFERED": "1",
+        "LOG_LEVEL": "DEBUG"
+      },
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Python: Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "PYTHONUNBUFFERED": "1"
+      },
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Python: Attach to Running Process",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "."
+        }
+      ]
+    }
+  ]
+}

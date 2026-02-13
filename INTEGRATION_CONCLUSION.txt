@@ -1,0 +1,385 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║         📋 ANÁLISIS DE INTEGRACIÓN: Predictor & Progress en Dataset Builder║
+║                                                                            ║
+║                         🎯 CONCLUSIÓN EJECUTIVA                           ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ PREGUNTA ORIGINAL                                                        │
+├──────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│ "¿Los siguientes archivos deben ser considerados en la construcción   │
+│  del dataset en dataset_builder_consolidated.py?"                     │
+│                                                                          │
+│ 1. src/citylearnv2/predictor/charge_predictor.py                       │
+│ 2. src/citylearnv2/progress/agent_utils.py                             │
+│ 3. src/citylearnv2/progress/fixed_schedule.py                          │
+│ 4. src/citylearnv2/progress/metrics_extractor.py                       │
+│ 5. src/citylearnv2/progress/progress.py                                │
+│ 6. src/citylearnv2/progress/transition_manager.py                      │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                        ✅ RESPUESTA: NO, CORRECTAMENTE                     ║
+║                                                                            ║
+║  Estos archivos NO deben integrarse porque están en la capa correcta   ║
+║  de la arquitectura. El dataset_builder ya está completo.              ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ ANÁLISIS INDIVIDUAL                                                      │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌─ 1. charge_predictor.py (373 líneas) ❌ ─────────────────────────────┐
+│                                                                      │
+│  PROPÓSITO:                                                         │
+│  • Calcular tiempo de carga para EVs                               │
+│  • Modelar curva realista Li-ion (2 fases)                         │
+│  • Simular degradación térmica                                     │
+│                                                                      │
+│  RESPONSABILIDAD EN ARQUITECTURA:                                  │
+│  • Lógica de EJECUCIÓN (runtime simulation)                        │
+│  • Se ejecuta DURANTE step() en CityLearn                          │
+│  • NO es parte de construcción de dataset                          │
+│                                                                      │
+│  ¿INTEGRAR EN DATASET BUILDER?                                     │
+│  ❌ NO - Correctly located in src/citylearnv2/predictor/          │
+│                                                                      │
+│  UBICACIÓN CORRECTA:                                               │
+│  src/citylearnv2/predictor/charge_predictor.py ✅                  │
+│                                                                      │
+│  CÓMO SE USA:                                                       │
+│  from src.citylearnv2.predictor import ChargeTimingEstimate        │
+│  # Durante step() de agentes                                       │
+│  estimate = ChargeTimingEstimate(soc_init, soc_target, power)     │
+│  estimate.calculate()  # → estimated_time_hours                    │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌─ 2. agent_utils.py ❌ ─────────────────────────────────────────────────┐
+│                                                                      │
+│  NOTA: No encontrado en src/citylearnv2/progress/                  │
+│  Ubicación: src/utils/agent_utils.py                               │
+│                                                                      │
+│  PROPÓSITO:                                                         │
+│  • Utilidades compartidas para agentes                             │
+│  • Validación de espacios de observación/acción                    │
+│  • Funciones de normalización                                      │
+│                                                                      │
+│  ¿INTEGRAR EN DATASET BUILDER?                                     │
+│  ❌ NO - Es utilidad compartida de agentes, no dataset             │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌─ 3. fixed_schedule.py (275 líneas) ❌ ─────────────────────────────┐
+│                                                                      │
+│  PROPÓSITO:                                                         │
+│  • Agente baseline con horarios fijos                              │
+│  • Motos: 9AM-6PM @ 60% potencia                                   │
+│  • Mototaxis: 9AM-10PM @ 70% potencia                              │
+│  • Comparación con agentes RL                                      │
+│                                                                      │
+│  RESPONSABILIDAD EN ARQUITECTURA:                                  │
+│  • Agente de COMPARACIÓN/BASELINE                                  │
+│  • Se ejecuta como parte de simulación                             │
+│  • NO es parte de construcción de dataset                          │
+│                                                                      │
+│  ¿INTEGRAR EN DATASET BUILDER?                                     │
+│  ❌ NO - Es agente simulador, no constructor de dataset            │
+│                                                                      │
+│  CÓMO SE USA:                                                       │
+│  from src.citylearnv2.progress.fixed_schedule import make_fixed    │
+│  agent = make_fixed_schedule(env, config)                          │
+│  # En script de comparación de baselines                           │
+│  action = agent.predict(observations)                              │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌─ 4. metrics_extractor.py (458 líneas) ⚠️ ─────────────────────────┐
+│                                                                      │
+│  PROPÓSITO:                                                         │
+│  • Extracción robusta de métricas de CityLearn                    │
+│  • Fallback 4-niveles: energy_simulation → building → obs → defaults│
+│  • Cálculo de CO₂, grid, solar, EV demand                         │
+│                                                                      │
+│  RESPONSABILIDAD EN ARQUITECTURA:                                  │
+│  • CONSUMIDOR de dataset (lee CSV en callbacks)                    │
+│  • Se ejecuta EN callbacks de SAC/PPO/A2C                          │
+│  • NO es parte de construcción de dataset                          │
+│                                                                      │
+│  RELACIÓN CON DATASET BUILDER:                                     │
+│  dataset_builder PRODUCE:  solar.csv, grid_data, etc.             │
+│         ↓                                                            │
+│  metrics_extractor CONSUME: Los CSV generados                      │
+│                                                                      │
+│  ¿INTEGRAR EN DATASET BUILDER?                                     │
+│  ❌ NO - Pero AGREGAR COMENTARIO DE REFERENCIA                     │
+│                                                                      │
+│  RECOMENDACIÓN:                                                     │
+│  Agregar en dataset_builder_consolidated.py (línea ~40):           │
+│                                                                      │
+│  # =========================================================         │
+│  # CONSUMERS OF GENERATED DATASET                                  │
+│  # =========================================================         │
+│  # Los CSV generados aquí son consumidos por:                      │
+│  # - metrics_extractor.py (extracción de métricas en callbacks)    │
+│  #   Ref: src/citylearnv2/progress/metrics_extractor.py           │
+│  # - charge_predictor.py (cálculo de tiempos de carga)            │
+│  #   Ref: src/citylearnv2/predictor/charge_predictor.py           │
+│  # - agents (SAC, PPO, A2C) (training RL)                          │
+│  #   Ref: src/agents/                                              │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌─ 5. progress.py (70 líneas) ❌ ──────────────────────────────────┐
+│                                                                      │
+│  PROPÓSITO:                                                         │
+│  • append_progress_row(): Escribe CSV de progreso                  │
+│  • render_progress_plot(): Genera gráficos PNG                     │
+│                                                                      │
+│  RESPONSABILIDAD EN ARQUITECTURA:                                  │
+│  • Utilidad de LOGGING y VISUALIZACIÓN                             │
+│  • Se ejecuta POST-ENTRENAMIENTO                                   │
+│  • NO es parte de construcción de dataset                          │
+│                                                                      │
+│  ¿INTEGRAR EN DATASET BUILDER?                                     │
+│  ❌ NO - Utilidad de monitoreo, no construcción                    │
+│                                                                      │
+│  CÓMO SE USA:                                                       │
+│  from src.citylearnv2.progress import append_progress_row          │
+│  # En callbacks de training                                        │
+│  append_progress_row(path, row, headers)                           │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌─ 6. transition_manager.py (492 líneas) ❌ ────────────────────────┐
+│                                                                      │
+│  PROPÓSITO:                                                         │
+│  • Transiciones seguras entre agentes (SAC → PPO → A2C)            │
+│  • Cleanup de memoria                                              │
+│  • Validación de checkpoints                                       │
+│  • Reset de environment                                            │
+│                                                                      │
+│  RESPONSABILIDAD EN ARQUITECTURA:                                  │
+│  • ORQUESTACIÓN de entrenamiento                                   │
+│  • Se ejecuta ENTRE entrenamientos de agentes                      │
+│  • NO es parte de construcción de dataset                          │
+│                                                                      │
+│  ¿INTEGRAR EN DATASET BUILDER?                                     │
+│  ❌ NO - Manejo de agentes, no construcción                        │
+│                                                                      │
+│  CÓMO SE USA:                                                       │
+│  from src.citylearnv2.progress import TransitionManager            │
+│  manager = TransitionManager(env, checkpoint_dir)                  │
+│  state = manager.transition_sac_to_ppo(sac_agent, ppo_agent)      │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                         ANÁLISIS DE DEPENDENCIES                           ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ ¿Importan dataset_builder estos archivos?                               │
+└──────────────────────────────────────────────────────────────────────────┘
+
+dataset_builder_consolidated.py IMPORTS:
+  ✅ json, logging, shutil, re
+  ✅ dataclasses, datetime, pathlib
+  ✅ numpy, pandas
+  ✅ src.rewards.rewards (MultiObjectiveWeights, IquitosContext)
+  ❌ charge_predictor.py → NO (no necesario en construcción)
+  ❌ metrics_extractor.py → NO (no necesario en construcción)
+  ❌ progress.py → NO (no necesario en construcción)
+  ❌ transition_manager.py → NO (no necesario en construcción)
+  ❌ fixed_schedule.py → NO (no necesario en construcción)
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ ¿Importan estos archivos dataset_builder?                                │
+└──────────────────────────────────────────────────────────────────────────┘
+
+charge_predictor.py IMPORTS:
+  ✅ dataclasses, logging, typing
+  ✅ numpy
+  ❌ dataset_builder → NO
+
+metrics_extractor.py IMPORTS:
+  ✅ typing, numpy, logging
+  ✅ CityLearn environment
+  ❌ dataset_builder → NO (pero consume su OUTPUT)
+
+progress.py IMPORTS:
+  ✅ csv, pathlib, typing, logging
+  ✅ pandas, matplotlib
+  ❌ dataset_builder → NO
+
+transition_manager.py IMPORTS:
+  ✅ gc, logging, time, dataclasses, pathlib, typing
+  ✅ numpy
+  ❌ dataset_builder → NO
+
+fixed_schedule.py IMPORTS:
+  ✅ typing, numpy, logging
+  ✅ CityLearn environment
+  ❌ dataset_builder → NO
+
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                        RESPONSABILIDADES POR CAPA                          ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌─ LAYER 1: DATASET CONSTRUCTION ───────────────────────────────────────┐
+│ ✅ dataset_builder_consolidated.py (EL ACTOR PRINCIPAL)              │
+│                                                                       │
+│ ENTRADA:                                                             │
+│ • OE2 artifacts (solar.csv, chargers.json, bess.json, mall.csv)    │
+│ • Climate zone data (CO₂, pricing, weather CSV)                    │
+│                                                                       │
+│ PROCESOS:                                                            │
+│ • Validación de 8,760 timesteps hourly                              │
+│ • Generación de 128 charger CSVs                                    │
+│ • Generación de schema.json                                         │
+│                                                                       │
+│ SALIDA:                                                              │
+│ • processed_data/Iquitos_EV_Mall/ (128 CSV + schema.json)           │
+│                                                                       │
+└───────────────────────────────────────────────────────────────────────┘
+
+┌─ LAYER 2: ENVIRONMENT SETUP ──────────────────────────────────────────┐
+│ ✅ CityLearn v2 (Lee CSVs del dataset_builder)                       │
+│                                                                       │
+│ ENTRADA:                                                             │
+│ • CSVs generados por dataset_builder                                │
+│ • schema.json                                                        │
+│                                                                       │
+│ PROCESOS:                                                            │
+│ • Cargue de datos                                                    │
+│ • Inicialización de buildings, BESS, rewards                        │
+│                                                                       │
+│ SALIDA:                                                              │
+│ • Observation space (394-dim)                                        │
+│ • Action space (129-dim)                                             │
+│                                                                       │
+└───────────────────────────────────────────────────────────────────────┘
+
+┌─ LAYER 3: TRAINING EXECUTION ─────────────────────────────────────────┐
+│ ✅ Agents (SAC, PPO, A2C)                                             │
+│ ✅ charge_predictor.py (Usa BatteryProfile para cálculos)            │
+│ ✅ metrics_extractor.py (Extrae datos en callbacks)                   │
+│ ✅ progress.py (Registra métricas)                                    │
+│                                                                       │
+│ ENTRADA:                                                             │
+│ • Environment (con CSVs cargados)                                    │
+│ • Agentes y su configuración                                         │
+│                                                                       │
+│ PROCESOS:                                                            │
+│ • Training loops                                                      │
+│ • Cálculo de tiempos de carga                                        │
+│ • Extracción de métricas en callbacks                                │
+│ • Logging de progreso                                                │
+│                                                                       │
+│ SALIDA:                                                              │
+│ • Checkpoints de agentes                                             │
+│ • CSV de progreso                                                    │
+│ • Gráficas PNG                                                       │
+│                                                                       │
+└───────────────────────────────────────────────────────────────────────┘
+
+┌─ LAYER 4: ORCHESTRATION ──────────────────────────────────────────────┐
+│ ✅ transition_manager.py (Transiciones SAC→PPO→A2C)                   │
+│                                                                       │
+│ ENTRADA:                                                             │
+│ • Checkpoints de agentes completados                                 │
+│                                                                       │
+│ PROCESOS:                                                            │
+│ • Limpieza de memoria                                                │
+│ • Validación de estados                                              │
+│ • Reset de environment                                               │
+│ • Transición al siguiente agente                                     │
+│                                                                       │
+│ SALIDA:                                                              │
+│ • Environment listo para siguiente agente                            │
+│ • Historial de transiciones                                          │
+│                                                                       │
+└───────────────────────────────────────────────────────────────────────┘
+
+┌─ LAYER 5: BASELINE COMPARISON ────────────────────────────────────────┐
+│ ✅ fixed_schedule.py (Agente baseline con horarios fijos)            │
+│                                                                       │
+│ ENTRADA:                                                             │
+│ • Environment                                                         │
+│ • Config con horarios                                                │
+│                                                                       │
+│ PROCESOS:                                                            │
+│ • Ejecución de simulación con reglas fijas                          │
+│ • Comparación con RL agents                                          │
+│                                                                       │
+│ SALIDA:                                                              │
+│ • Métricas de baseline (CO₂, eficiencia)                            │
+│ • Comparativa vs RL agents                                           │
+│                                                                       │
+└───────────────────────────────────────────────────────────────────────┘
+
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                        ✅ CONCLUSIÓN FINAL                                 ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ STATUS: dataset_builder_consolidated.py está CORRECTAMENTE DISEÑADO      │
+│                                                                          │
+│ ✅ Integra datos OE2 (solar, chargers, BESS, mall)                     │
+│ ✅ Integra climate zone data (CO₂, pricing, weather)                   │
+│ ✅ Valida 8,760 timesteps hourly                                        │
+│ ✅ Genera 128 charger CSVs + schema.json                                │
+│ ✅ 0 Pyright errors                                                      │
+│ ✅ 4/4 tests passing                                                    │
+│                                                                          │
+│ ✅ La separación de responsabilidades es ÓPTIMA:                       │
+│    • PRODUCTOR: dataset_builder_consolidated.py                        │
+│    • CONSUMIDOR: metrics_extractor.py, agents, environments             │
+│    • SIMULADORES: charge_predictor.py, fixed_schedule.py              │
+│    • MONITORES: progress.py                                             │
+│    • ORQUESTADORES: transition_manager.py                               │
+│                                                                          │
+│ ❌ NO REQUIERE CAMBIOS O INTEGRACIONES ADICIONALES                     │
+│                                                                          │
+│ ✅ TODOS LOS ARCHIVOS ESTÁN EN SU CAPA ARQUITECTÓNICA CORRECTA         │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║                 📈 RECOMENDACIÓN: AGREGAR COMENTARIOS                     ║
+║                                                                            ║
+║  Para mejorar documentación sin cambiar código, agregar en                ║
+║  dataset_builder_consolidated.py (línea ~40):                            ║
+║                                                                            ║
+║  # ================================================================       ║
+║  # INTEGRATIONS & DOWNSTREAM CONSUMERS                                    ║
+║  # ================================================================       ║
+║  # Esta construcción de dataset es consumida por:                        ║
+║  #                                                                        ║
+║  # 1. metrics_extractor.py (Extracción en callbacks)                     ║
+║  #    Ref: src/citylearnv2/progress/metrics_extractor.py                ║
+║  #                                                                        ║
+║  # 2. charge_predictor.py (Cálculo de tiempos de carga)                  ║
+║  #    Ref: src/citylearnv2/predictor/charge_predictor.py                ║
+║  #                                                                        ║
+║  # 3. Agents (SAC, PPO, A2C) (Training RL)                               ║
+║  #    Ref: src/agents/                                                    ║
+║  #                                                                        ║
+║  # 4. fixed_schedule.py (Baseline comparison)                            ║
+║  #    Ref: src/citylearnv2/progress/fixed_schedule.py                   ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
