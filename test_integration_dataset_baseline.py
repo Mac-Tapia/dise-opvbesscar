@@ -75,20 +75,29 @@ def test_baseline_calculation():
         calc = BaselineCalculator(co2_intensity=0.4521)
         con_solar, sin_solar = calc.calculate_all_baselines()
         
+        # Claves correctas del calculator: 'co2_t' (no 'co2_t_year'), 'grid_import_kwh' (no 'grid_kwh_year')
+        co2_con_solar = con_solar.get('co2_t')
+        grid_con_solar = con_solar.get('grid_import_kwh')
+        
         print(f"✅ CON_SOLAR (4,050 kWp):")
-        print(f"   CO2: {con_solar.get('co2_t_year', 'N/A')} t/año")
-        print(f"   Grid: {con_solar.get('grid_kwh_year', 'N/A'):.0f} kWh/año")
+        print(f"   CO2: {co2_con_solar:,.1f} t/año" if co2_con_solar else f"   CO2: N/A")
+        print(f"   Grid: {grid_con_solar:,.0f} kWh/año" if grid_con_solar else f"   Grid: N/A")
+        
+        co2_sin_solar = sin_solar.get('co2_t')
+        grid_sin_solar = sin_solar.get('grid_import_kwh')
         
         print(f"✅ SIN_SOLAR (0 kWp):")
-        print(f"   CO2: {sin_solar.get('co2_t_year', 'N/A')} t/año")
-        print(f"   Grid: {sin_solar.get('grid_kwh_year', 'N/A'):.0f} kWh/año")
+        print(f"   CO2: {co2_sin_solar:,.1f} t/año" if co2_sin_solar else f"   CO2: N/A")
+        print(f"   Grid: {grid_sin_solar:,.0f} kWh/año" if grid_sin_solar else f"   Grid: N/A")
         
-        solar_impact = sin_solar.get('co2_t_year', 0) - con_solar.get('co2_t_year', 0)
-        print(f"✅ Impacto Solar: {solar_impact:.1f} t CO₂/año (reducción)")
+        solar_impact = (sin_solar.get('co2_t', 0) or 0) - (con_solar.get('co2_t', 0) or 0)
+        print(f"✅ Impacto Solar: {solar_impact:,.1f} t CO₂/año (reducción)")
         
         return True
     except Exception as e:
         print(f"❌ Error calculando baselines: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def test_bess_version():
