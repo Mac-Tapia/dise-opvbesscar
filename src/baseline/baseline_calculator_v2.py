@@ -1,126 +1,123 @@
-"""Baseline calculator for OE3 dataset.
+"""Baseline calculator for OE3 dataset (v5.4 UPDATED).
 
 Computes CO2 emissions and energy metrics for:
-- BASELINE 1: CON SOLAR (4,050 kWp) - Reference scenario
+- BASELINE 1: CON SOLAR (4,050 kWp) - Reference scenario with real OE2 v5.4 data
 - BASELINE 2: SIN SOLAR (0 kWp) - Without solar
+
+Uses cleaned datasets from BESS v5.4 simulation:
+- Solar: pv_generation_kwh from bess_simulation_hourly.csv
+- Mall: mall_demand_kwh from bess_simulation_hourly.csv  
+- EV: ev_demand_kwh from bess_simulation_hourly.csv
 """
 
 from __future__ import annotations
 
 import json
 import logging
+import numpy as np
+import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, Tuple
-import pandas as pd
-import numpy as np
-
-from .baseline_definitions import BASELINE_CON_SOLAR, BASELINE_SIN_SOLAR, ALL_BASELINES
 
 logger = logging.getLogger(__name__)
 
 
 class BaselineCalculator:
-    """Calculate CO2 and energy metrics for baseline scenarios."""
+    """Calculate CO2 and energy metrics for baseline scenarios using real OE2 v5.4 data."""
 
-    def __init__(self, schema_path: str, co2_intensity: float = 0.4521):
+    def __init__(self, co2_intensity: float = 0.4521):
         """Initialize baseline calculator.
 
         Args:
-            schema_path: Path to OE3 schema.json
-            co2_intensity: Grid CO2 intensity (kg CO2/kWh)
+            co2_intensity: Grid CO2 intensity (kg CO2/kWh) - Iquitos diesel B5 (OSINERGMIN)
         """
-        self.schema_path = Path(schema_path)
         self.co2_intensity = co2_intensity
+        self.timesteps = 8760  # 1 year of hourly data
+        
+        logger.info(f"BaselineCalculator initialized (OE2 v5.4):")
+        logger.info(f"  - CO2 intensity: {self.co2_intensity} kg CO2/kWh (Iquitos thermal grid)")
+        logger.info(f"  - Time horizon: {self.timesteps} hours (1 year)")
 
-        # Load schema
-        with open(self.schema_path, 'r') as f:
-            self.schema = json.load(f)
-
-        self.timesteps = self.schema.get('episode_time_steps', 8760)
-        logger.info(f"Loaded schema with {self.timesteps} timesteps")
+    def _load_bess_data(self) -> pd.DataFrame:
+        """Load BESS simulation data with fallback to backward compatibility alias.
+        
+        Returns:
+            DataFrame with columns: pv_generation_kwh, ev_demand_kwh, mall_demand_kwh, etc.
+        
+        Raises:
+            FileNotFoundError: If neither primary nor alias path exists
+        """
+        # Try primary path first, then backward compatibility alias
+        bess_data_path = Path('data/oe2/bess/bess_simulation_hourly.csv')
+        bess_alt_path = Path('data/oe2/bess/bess_hourly_dataset_2024.csv')
+        
+        if bess_data_path.exists():
+            actual_path = bess_data_path
+        elif bess_alt_path.exists():
+            actual_path = bess_alt_path
+            logger.info("  (using bess_hourly_dataset_2024.csv backward compatibility alias)")
+        else:
+            raise FileNotFoundError(
+                f"ERROR: BESS simulation data not found:\n"
+                f"  - {bess_data_path}\n"
+                f"  - {bess_alt_path}\n"
+                f"  Please run: python src/dimensionamiento/oe2/disenobess/bess.py"
+            )
+        
+        # Load and validate
+        bess_df = pd.read_csv(actual_path, index_col=0)
+        
+        if len(bess_df) != self.timesteps:
+            raise ValueError(f"ERROR: BESS data has {len(bess_df)} rows, expected exactly {self.timesteps}")
+        
+        return bess_df
 
     def calculate_baseline_con_solar(self) -> Dict[str, Any]:
         """Calculate baseline WITH solar (4,050 kWp).
 
         This is the reference baseline for comparing RL agents.
-        Uses REAL PVGIS solar data (not cosine approximation).
+        Uses REAL data from BESS simulation (OE2 v5.4 cleaned datasets).
         
-        References:
-        [1] PVGIS (2024) - Photovoltaic Geographical Information System (EU)
-        [2] Heymans et al. (2014) - Reducing the grid: baseline estimation for solar PV integration
+        Data sources (all validated 8,760 hours):
+        - Solar: data/oe2/bess/bess_simulation_hourly.csv column 'pv_generation_kwh'
+        - Mall load: Real data from bess_simulation_hourly.csv
+        - EV load: Real data from bess_simulation_hourly.csv (chargers v3)
         """
-        logger.info("Calculating BASELINE 1: CON SOLAR (4,050 kWp) - Using PVGIS Real Data")
+        logger.info("Calculating BASELINE 1: CON SOLAR (4,050 kWp) - Using Real OE2 v5.4 Data")
 
-        # Simulate 365-day yearly average load patterns
-        # Mall base load: 100 kW (constant)
-        # EV charging: 50 kW average during peak hours
-        mall_load_kw = 100.0  # Constant baseline
-        ev_load_kw = 50.0  # Average EV charging when uncontrolled
-
-        # ✅ CORRECCIÓN 2026-02-08: USE REAL PVGIS DATA INSTEAD OF COSINE MODEL
-        # References:
-        # [1] Liu et al. (2022) "Accurate solar irradiance modeling for PV systems"
-        # [2] PVGIS documentation: https://pvgis.ec.europa.eu/
+        try:
+            # Load BESS simulation data (includes all hourly flows)
+            bess_df = self._load_bess_data()
+            
+            # Extract hourly profiles from BESS simulation
+            solar_generation_kw = bess_df['pv_generation_kwh'].values.astype(np.float32)
+            ev_demand_kw = bess_df['ev_demand_kwh'].values.astype(np.float32)
+            mall_demand_kw = bess_df['mall_demand_kwh'].values.astype(np.float32)
+            
+            # Validate data integrity
+            if solar_generation_kw.sum() == 0:
+                raise ValueError("ERROR: Solar generation is zero - data not loaded correctly")
+            if ev_demand_kw.sum() == 0:
+                raise ValueError("ERROR: EV demand is zero - data not loaded correctly")
+            if mall_demand_kw.sum() == 0:
+                raise ValueError("ERROR: Mall demand is zero - data not loaded correctly")
+            
+            logger.info(f"  ✓ Solar generation: {solar_generation_kw.sum():,.0f} kWh/año")
+            logger.info(f"  ✓ EV demand: {ev_demand_kw.sum():,.0f} kWh/año")
+            logger.info(f"  ✓ Mall demand: {mall_demand_kw.sum():,.0f} kWh/año")
+            
+        except Exception as e:
+            logger.error(f"ERROR loading BESS data: {e}")
+            raise
         
-        from pathlib import Path
-        import pandas as pd
+        # Total demand (EVs + Mall)
+        total_load_kw = mall_demand_kw + ev_demand_kw
         
-        # Try to load real PVGIS data
-        pvgis_path = Path('data/interim/oe2/solar/pv_generation_citylearn_v2.csv')
-        
-        if pvgis_path.exists():
-            try:
-                # Load real PVGIS hourly data
-                solar_df = pd.read_csv(pvgis_path)
-                
-                # Extract solar generation column (handle different naming conventions)
-                solar_col = None
-                for col in ['pv_generation_kw', 'solar_generation_kw', 'solar', 'value']:
-                    if col in solar_df.columns:
-                        solar_col = col
-                        break
-                
-                if solar_col is None:
-                    # Use 2nd column if no recognized name (common in PVGIS exports)
-                    solar_col = solar_df.columns[1] if len(solar_df.columns) > 1 else solar_df.columns[0]
-                
-                solar_generation_kw = np.asarray(solar_df[solar_col].values, dtype=np.float32)
-                
-                # Validate data integrity
-                if len(solar_generation_kw) != self.timesteps:
-                    logger.warning(
-                        f"PVGIS data has {len(solar_generation_kw)} timesteps, expected {self.timesteps}. "
-                        f"Falling back to cosine model."
-                    )
-                    # Fallback to cosine model
-                    hour_of_year = np.arange(self.timesteps) % 24
-                    solar_generation_kw = 4050.0 * 0.65 * np.maximum(
-                        0, np.cos((hour_of_year - 12) * np.pi / 12)
-                    )
-                    logger.info("⚠️  Using cosine model (PVGIS data incomplete)")
-                else:
-                    logger.info(f"✅ Loaded PVGIS real data: {len(solar_generation_kw)} hourly values")
-                    
-            except Exception as e:
-                logger.warning(f"Failed to load PVGIS data: {e}. Falling back to cosine model.")
-                hour_of_year = np.arange(self.timesteps) % 24
-                solar_generation_kw = 4050.0 * 0.65 * np.maximum(
-                    0, np.cos((hour_of_year - 12) * np.pi / 12)
-                )
-        else:
-            # Fallback: cosine model approximation
-            logger.warning(f"PVGIS file not found: {pvgis_path}. Using cosine model approximation.")
-            hour_of_year = np.arange(self.timesteps) % 24
-            solar_generation_kw = 4050.0 * 0.65 * np.maximum(
-                0, np.cos((hour_of_year - 12) * np.pi / 12)
-            )
-
         # Grid import = max(0, total_load - solar_generation)
         # This represents uncontrolled scenario without BESS or RL optimization
-        total_load_kw = mall_demand_kw + ev_demand_kw
         grid_import_kw = np.maximum(0, total_load_kw - solar_generation_kw)
 
-        # Metrics
+        # Metrics (annual)
         grid_import_kwh = float(grid_import_kw.sum())
         solar_generation_kwh = float(solar_generation_kw.sum())
         co2_grid_kg = grid_import_kwh * self.co2_intensity
@@ -130,15 +127,17 @@ class BaselineCalculator:
 
         return {
             'baseline': 'CON_SOLAR',
-            'description': 'Uncontrolled with 4,050 kWp solar (reference)',
+            'description': 'Uncontrolled with 4,050 kWp solar (reference) - OE2 v5.4 real data',
             'timesteps': self.timesteps,
             'co2_intensity_grid': self.co2_intensity,
             'solar_capacity_kwp': 4050.0,
+            'bess_capacity_kwh': 1700.0,  # v5.4 specification
             'grid_import_kwh': grid_import_kwh,
             'solar_generation_kwh': solar_generation_kwh,
             'co2_grid_kg': co2_grid_kg,
             'co2_avoided_by_solar_kg': avoided_by_solar_kg,
-            'co2_net_kg': co2_grid_kg - avoided_by_solar_kg,  # Negative = carbon negative
+            'co2_net_kg': co2_grid_kg - avoided_by_solar_kg,
+            'co2_t': co2_grid_kg / 1000,  # Converted to metric tons
         }
 
     def calculate_baseline_sin_solar(self) -> Dict[str, Any]:
@@ -147,23 +146,16 @@ class BaselineCalculator:
         Shows impact of solar installation by comparing against
         scenario without any solar generation (same loads, no PV).
         """
-        logger.info("Calculating BASELINE 2: SIN SOLAR (0 kWp) - Using Real Load Data")
+        logger.info("Calculating BASELINE 2: SIN SOLAR (0 kWp) - Using Real Load Data from OE2 v5.4")
 
-        from pathlib import Path
-        
-        # Load actual load data from BESS simulation
-        bess_data_path = Path('data/oe2/bess/bess_simulation_hourly.csv')
-        
-        if not bess_data_path.exists():
-            raise FileNotFoundError(f"ERROR: BESS data not found: {bess_data_path}")
-        
         try:
-            bess_df = pd.read_csv(bess_data_path, index_col=0)
-            ev_demand_kw = bess_df['ev_demand_kwh'].values
-            mall_demand_kw = bess_df['mall_demand_kwh'].values
+            # Load actual load data from BESS simulation
+            bess_df = self._load_bess_data()
+            ev_demand_kw = bess_df['ev_demand_kwh'].values.astype(np.float32)
+            mall_demand_kw = bess_df['mall_demand_kwh'].values.astype(np.float32)
             
-            logger.info(f"   ✓ EV demand: {ev_demand_kw.sum():,.0f} kWh/año")
-            logger.info(f"   ✓ Mall demand: {mall_demand_kw.sum():,.0f} kWh/año")
+            logger.info(f"  ✓ EV demand: {ev_demand_kw.sum():,.0f} kWh/año")
+            logger.info(f"  ✓ Mall demand: {mall_demand_kw.sum():,.0f} kWh/año")
             
         except Exception as e:
             logger.error(f"ERROR loading BESS data: {e}")
@@ -181,10 +173,11 @@ class BaselineCalculator:
 
         return {
             'baseline': 'SIN_SOLAR',
-            'description': 'Uncontrolled without solar (0 kWp) - baseline reference',
+            'description': 'Uncontrolled without solar (0 kWp) - OE2 v5.4 real data',
             'timesteps': self.timesteps,
             'co2_intensity_grid': self.co2_intensity,
             'solar_capacity_kwp': 0.0,
+            'bess_capacity_kwh': 1700.0,  # v5.4 specification
             'grid_import_kwh': grid_import_kwh,
             'solar_generation_kwh': 0.0,
             'co2_grid_kg': co2_grid_kg,
@@ -239,7 +232,10 @@ class BaselineCalculator:
         summary = {
             'baseline_con_solar_co2_kg': con_solar['co2_grid_kg'],
             'baseline_sin_solar_co2_kg': sin_solar['co2_grid_kg'],
+            'baseline_con_solar_co2_t': con_solar['co2_t'],
+            'baseline_sin_solar_co2_t': sin_solar['co2_t'],
             'solar_impact_kg': sin_solar['co2_grid_kg'] - con_solar['co2_grid_kg'],
+            'solar_impact_t': (sin_solar['co2_grid_kg'] - con_solar['co2_grid_kg']) / 1000,
             'solar_impact_pct': (
                 (sin_solar['co2_grid_kg'] - con_solar['co2_grid_kg']) /
                 sin_solar['co2_grid_kg'] * 100
@@ -249,6 +245,7 @@ class BaselineCalculator:
                 (sin_solar['grid_import_kwh'] - con_solar['grid_import_kwh']) /
                 sin_solar['grid_import_kwh'] * 100
             ),
+            'data_source': 'OE2 v5.4 (BESS simulation with real solar/EV/mall hourly data)',
         }
 
         summary_path = output_path / 'baseline_summary.json'
@@ -263,11 +260,7 @@ def main():
     """Run baseline calculations."""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Calculate baseline scenarios")
-    parser.add_argument(
-        '--schema', type=str, default='data/interim/oe3/schema.json',
-        help='Path to OE3 schema.json'
-    )
+    parser = argparse.ArgumentParser(description="Calculate baseline scenarios (OE2 v5.4)")
     parser.add_argument(
         '--output-dir', type=str, default='outputs/baselines',
         help='Output directory for results'
@@ -276,36 +269,46 @@ def main():
     args = parser.parse_args()
 
     # Calculate baselines
-    calculator = BaselineCalculator(args.schema)
+    calculator = BaselineCalculator(co2_intensity=0.4521)  # Iquitos thermal grid
     con_solar, sin_solar = calculator.calculate_all_baselines()
 
     # Print results
     print("\n" + "="*80)
-    print("BASELINE SCENARIOS - OE3 COMPARISON")
+    print("BASELINE SCENARIOS - OE2 v5.4 COMPARISON (CITYLEARN v2 REFERENCE)")
     print("="*80)
+    
     print(f"\n📊 BASELINE 1: CON SOLAR (4,050 kWp)")
+    print(f"   Description: Uncontrolled + Real Solar")
     print(f"   Grid import: {con_solar['grid_import_kwh']:,.0f} kWh/año")
     print(f"   Solar generation: {con_solar['solar_generation_kwh']:,.0f} kWh/año")
-    print(f"   CO₂ emissions (grid): {con_solar['co2_grid_kg']:,.0f} kg/año")
+    print(f"   CO₂ emissions (grid): {con_solar['co2_grid_kg']:,.0f} kg/año ({con_solar['co2_t']:,.1f} t/año)")
     print(f"   CO₂ avoided (solar): {con_solar['co2_avoided_by_solar_kg']:,.0f} kg/año")
     print(f"   CO₂ NET: {con_solar['co2_net_kg']:,.0f} kg/año ← REFERENCE FOR RL AGENTS")
 
     print(f"\n📊 BASELINE 2: SIN SOLAR (0 kWp)")
+    print(f"   Description: Uncontrolled + No Solar (shows solar impact)")
     print(f"   Grid import: {sin_solar['grid_import_kwh']:,.0f} kWh/año")
     print(f"   Solar generation: {sin_solar['solar_generation_kwh']:,.0f} kWh/año")
-    print(f"   CO₂ emissions (grid): {sin_solar['co2_grid_kg']:,.0f} kg/año")
+    print(f"   CO₂ emissions (grid): {sin_solar['co2_grid_kg']:,.0f} kg/año ({sin_solar['co2_t']:,.1f} t/año)")
     print(f"   CO₂ NET: {sin_solar['co2_net_kg']:,.0f} kg/año")
 
-    print(f"\n🔍 COMPARISON")
+    print(f"\n🔍 SOLAR IMPACT ANALYSIS")
     diff_kg = sin_solar['co2_grid_kg'] - con_solar['co2_grid_kg']
+    diff_t = diff_kg / 1000
     diff_pct = diff_kg / sin_solar['co2_grid_kg'] * 100
-    print(f"   Solar impact: {diff_kg:,.0f} kg CO₂/año ({diff_pct:.1f}% reduction)")
+    print(f"   CO₂ reduction (solar): {diff_kg:,.0f} kg/año ({diff_t:,.1f} t/año)")
+    print(f"   Percentage: {diff_pct:.1f}% CO₂ reduction with 4,050 kWp")
     print(f"   Grid import reduction: {sin_solar['grid_import_kwh'] - con_solar['grid_import_kwh']:,.0f} kWh/año")
 
     # Save results
     summary = calculator.save_baseline_results(con_solar, sin_solar, args.output_dir)
 
-    print(f"\n✅ Results saved to {args.output_dir}/")
+    print(f"\n✅ Baseline calculations completed")
+    print(f"   Results saved to: {args.output_dir}/")
+    print(f"   - baseline_con_solar.json")
+    print(f"   - baseline_sin_solar.json")
+    print(f"   - baseline_comparison.csv")
+    print(f"   - baseline_summary.json")
     print("="*80 + "\n")
 
 

@@ -1,0 +1,14 @@
+{
+  "baseline": "SIN_SOLAR",
+  "description": "Uncontrolled without solar (0 kWp) - OE2 v5.4 real data",
+  "timesteps": 8760,
+  "co2_intensity_grid": 0.4521,
+  "solar_capacity_kwp": 0.0,
+  "bess_capacity_kwh": 1700.0,
+  "grid_import_kwh": 12780890.0,
+  "solar_generation_kwh": 0.0,
+  "co2_grid_kg": 5778240.369,
+  "co2_avoided_by_solar_kg": 0.0,
+  "co2_net_kg": 5778240.369,
+  "co2_t": 5778.240369
+}
