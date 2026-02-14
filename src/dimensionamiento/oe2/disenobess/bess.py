@@ -1333,6 +1333,26 @@ def simulate_bess_solar_priority(
         soc[h] = current_soc
     
     # ═══════════════════════════════════════════════════════════════════════════
+    # VALIDACIÓN DEFENSIVA: CERO EN MADRUGADA (00:00-05:59)
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Regla: BESS NO se carga ni descarga en madrugada
+    # - EV está cerrado (cierra 22h)
+    # - No hay generación solar (noche)
+    # - Fuerza cero incluso si hay bug en lógica anterior
+    # ═══════════════════════════════════════════════════════════════════════════
+    for h in range(n_hours):
+        hour_of_day = h % 24
+        if hour_of_day < 6:  # 00:00-05:59 es madrugada
+            # Forzar inactividad total
+            bess_charge[h] = 0.0
+            bess_discharge[h] = 0.0
+            pv_to_bess[h] = 0.0
+            bess_to_ev[h] = 0.0
+            bess_to_mall[h] = 0.0
+            grid_to_bess[h] = 0.0
+            bess_mode[h] = 'midnight_off'  # Indicador de fuera de operación
+    
+    # ═══════════════════════════════════════════════════════════════════════════
     # CREAR DATAFRAME DE RESULTADOS
     # ═══════════════════════════════════════════════════════════════════════════
     
@@ -1706,6 +1726,28 @@ def simulate_bess_arbitrage_hp_hfp(
         else:
             bess_action_kwh[h] = 0.0
             bess_mode[h] = 'idle'
+    
+    # ═══════════════════════════════════════════════════════════════════════════
+    # VALIDACIÓN DEFENSIVA: CERO EN MADRUGADA (00:00-05:59)
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Regla: BESS NO se carga ni descarga en madrugada
+    # - EV está cerrado (cierra 22h)
+    # - No hay generación solar (noche)
+    # - Aplicar incluso en arbitraje HP/HFP (HFP cubre 0-5h pero sin EV activo)
+    # - Fuerza cero incluso si hay bug en lógica anterior
+    # ═══════════════════════════════════════════════════════════════════════════
+    for h in range(n_hours):
+        hour_of_day = h % 24
+        if hour_of_day < 6:  # 00:00-05:59 es madrugada
+            # Forzar inactividad total en madrugada
+            bess_charge[h] = 0.0
+            bess_discharge[h] = 0.0
+            pv_to_bess[h] = 0.0
+            bess_to_ev[h] = 0.0
+            bess_to_mall[h] = 0.0
+            grid_to_bess[h] = 0.0
+            bess_action_kwh[h] = 0.0
+            bess_mode[h] = 'midnight_off'  # Indicador de fuera de operación
     
     # =====================================================
     # CREAR DATETIME INDEX
