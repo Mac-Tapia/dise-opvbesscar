@@ -46,7 +46,7 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
 # Importaciones del módulo de rewards (OE3)
-from citylearnv2.dataset_builder.rewards import (
+from src.dataset_builder_citylearn.rewards import (
     IquitosContext,
     MultiObjectiveReward,
     create_iquitos_reward_weights,

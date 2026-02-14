@@ -26,7 +26,7 @@ from gymnasium import Env, spaces
 from stable_baselines3 import A2C
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback, CallbackList
 
-from src.citylearnv2.dataset_builder.rewards import (
+from src.dataset_builder_citylearn.rewards import (
     IquitosContext,
     MultiObjectiveReward,
     create_iquitos_reward_weights,
