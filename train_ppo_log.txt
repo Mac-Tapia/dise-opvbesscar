@@ -1,0 +1,26 @@
+2026-02-13 14:16:07,322 | __main__ | INFO | Device: cuda | Batch: 256 | Epochs: 20
+2026-02-13 14:16:07,344 | __main__ | INFO | Config validado: default.yaml OK
+2026-02-13 14:16:07,353 | __main__ | INFO | Solar REAL (CityLearn v2): columna='potencia_kw' | 8292514 kWh/ano (8760h)
+2026-02-13 14:16:07,498 | __main__ | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463311 kWh
+2026-02-13 14:16:07,498 | __main__ | INFO | Charger STATS (5to OE2): max_power=2.47-2.59 kW, mean_power=0.89 kW
+2026-02-13 14:16:07,507 | __main__ | INFO | Mall REAL: 12368653 kWh/año (promedio 1411.9 kW/h)
+2026-02-13 14:16:07,514 | __main__ | INFO | BESS REAL: SOC media 601.9% (archivo: bess_ano_2024.csv)
+2026-02-13 14:16:07,516 | __main__ | INFO | Environment creado:
+2026-02-13 14:16:07,516 | __main__ | INFO |   Observation: (124,)
+2026-02-13 14:16:07,516 | __main__ | INFO |   Action: (39,)
+2026-02-13 14:16:07,516 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-13 14:16:08,678 | __main__ | INFO | PPO creado: LR=0.0003, n_steps=2048, device=cuda
+2026-02-13 14:16:39,591 | __main__ | ERROR | ERROR en entrenamiento: [Errno 22] Invalid argument
+2026-02-13 14:22:26,044 | __main__ | INFO | Device: cuda | Batch: 256 | Epochs: 20
+2026-02-13 14:22:26,057 | __main__ | INFO | Config validado: default.yaml OK
+2026-02-13 14:22:26,064 | __main__ | INFO | Solar REAL (CityLearn v2): columna='potencia_kw' | 8292514 kWh/ano (8760h)
+2026-02-13 14:22:26,208 | __main__ | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463311 kWh
+2026-02-13 14:22:26,211 | __main__ | INFO | Charger STATS (5to OE2): max_power=2.47-2.59 kW, mean_power=0.89 kW
+2026-02-13 14:22:26,211 | __main__ | INFO | Mall REAL: 12368653 kWh/año (promedio 1411.9 kW/h)
+2026-02-13 14:22:26,221 | __main__ | INFO | BESS REAL: SOC media 601.9% (archivo: bess_ano_2024.csv)
+2026-02-13 14:22:26,222 | __main__ | INFO | Environment creado:
+2026-02-13 14:22:26,224 | __main__ | INFO |   Observation: (124,)
+2026-02-13 14:22:26,224 | __main__ | INFO |   Action: (39,)
+2026-02-13 14:22:26,224 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-13 14:22:27,333 | __main__ | INFO | PPO creado: LR=0.0003, n_steps=2048, device=cuda
+2026-02-13 14:23:12,607 | __main__ | ERROR | ERROR en entrenamiento: [Errno 22] Invalid argument

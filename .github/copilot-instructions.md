@@ -250,6 +250,7 @@ python -c "import json; c=json.load(open('data/interim/oe2/chargers/individual_c
 
 ## Key References
 
+- **Data Sources Map** ([docs/DATA_SOURCES_REAL_VS_SIMULATED.md](../docs/DATA_SOURCES_REAL_VS_SIMULATED.md)): ✅ REAL vs ⚠️ SIMULATED data architecture
 - **Project Overview** (Line 3): project scope, OE2 dimensioning specs
 - **Reward Function** (Line 100): detailed reward component breakdown
 - **Training workflows** (Line 70): latest training commands and KPIs

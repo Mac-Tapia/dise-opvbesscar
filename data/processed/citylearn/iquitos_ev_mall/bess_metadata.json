@@ -1,0 +1,21 @@
+{
+  "description": "BESS Dataset (OE2 v5.2) - RECONSTRUIDO CON LOGICA CORRECTA",
+  "capacity_kwh": 1700.0,
+  "max_soc_kwh": 1615.0,
+  "min_soc_kwh": 170.0,
+  "power_kw": 342.0,
+  "efficiency": 0.95,
+  "initial_soc_pct": 50.0,
+  "total_hours": 8760,
+  "year": 2024,
+  "energy_charged_kwh": 516774.17896001914,
+  "energy_discharged_kwh": 468935.99124968017,
+  "soc_initial_kwh": 490.0,
+  "soc_final_kwh": 170.0,
+  "soc_change_kwh": -320.0,
+  "soc_min_pct": 10.0,
+  "soc_max_pct": 94.9999998663603,
+  "soc_avg_pct": 32.546136273921306,
+  "balance_error_kwh": 2361.362882382062,
+  "generation_date": "2026-02-13T14:32:22.482185"
+}

@@ -1,5 +1,5 @@
-﻿Escenario,Penetración (pe),Factor Carga (fc),Cargadores (4 tomas),Total Tomas,Energía Día (kWh)
-CONSERVADOR,0.10,0.28,1,4,8
-MEDIANO,0.40,0.60,2,8,69
-RECOMENDADO*,0.90,0.90,3,12,903
-MÁXIMO,1.00,0.60,4,16,173
+Escenario,Penetración (pe),Factor Carga (fc),Cargadores (2 tomas c/u),Total Tomas,Energía Día (kWh)
+CONSERVADOR,0.2,0.45,11,22,834.5
+MEDIANO,0.25,0.5,15,30,1159.0
+RECOMENDADO*,0.3,0.55,19,38,1529.9
+MÁXIMO,0.4,0.65,30,60,2410.7

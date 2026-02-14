@@ -7,10 +7,10 @@ import logging
 
 # Importar pesos multiobjetivo desde fuente única
 try:
-    from ..rewards.rewards import create_iquitos_reward_weights
+    from ..citylearnv2.dataset_builder.rewards import create_iquitos_reward_weights
 except ImportError:
     # Fallback para ejecución directa
-    from src.rewards.rewards import create_iquitos_reward_weights  # type: ignore[assignment]
+    from src.citylearnv2.dataset_builder.rewards import create_iquitos_reward_weights  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 

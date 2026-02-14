@@ -1,7 +1,7 @@
-﻿Métrica,Mínimo,Máximo,Promedio,Mediana,Desv_Std
-Cargadores (4 tomas) [unid],1,4,2.1,2.0,1.01
-Tomas totales [tomas],4,16,8.3,8.0,4.03
-Sesiones pico 4h [sesiones],3.2,32.0,16.3,16.0,9.55
-Cargas día total [cargas],13,128,65.2,64.0,38.23
-Energía día [kWh],8,259,86.4,67.4,62.91
-Potencia pico agregada [kW],7,68,34.6,34.0,20.29
+Métrica,Mínimo,Máximo,Promedio,Mediana,Desv_Std
+Cargadores (2 tomas) [unid],11.0,28.0,18.7,19.0,4.09
+Tomas totales [tomas],22.0,56.0,37.4,38.0,8.19
+Sesiones pico 5h [sesiones],99.2,258.0,166.1,163.4,38.6
+Cargas día total [cargas],180.3,469.0,301.9,297.1,70.19
+Energía día [kWh],892.9,2323.1,1495.5,1471.5,347.64
+Potencia pico agregada [kW],162.8,414.4,276.5,281.2,60.59

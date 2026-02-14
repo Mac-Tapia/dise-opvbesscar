@@ -1,0 +1,147 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "D:\dise±opvbesscar\src\dimensionamiento\oe2\disenobess\bess.py", line 3256, in <module>
+    result = run_bess_sizing(
+             ^^^^^^^^^^^^^^^^
+  File "D:\dise±opvbesscar\src\dimensionamiento\oe2\disenobess\bess.py", line 2914, in run_bess_sizing
+    print(f"   \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500")
+  File "C:\Users\Lenovo Legion\AppData\Local\Programs\Python\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 3-55: character maps to <undefined>
+
+
++==============================================================================+
+|                    SISTEMA BESS v5.4 - IQUITOS EV MALL                      |
+|               Dimensionamiento Solar-Priority v5.4                          |
++==============================================================================+
+
+Fecha ejecucion: 2026-02-13 16:03:43
+
+[1] ESPECIFICACIONES TECNICAS BESS v5.4
+------------------------------------------------------------
+  Capacidad nominal:      1,700 kWh
+  Potencia nominal:       400 kW
+  Profundidad descarga:   80%
+  Eficiencia round-trip:  95%
+  SOC operacional:        20% - 100%
+
+[2] TARIFAS OSINERGMIN MT3 - ELECTRO ORIENTE (IQUITOS)
+------------------------------------------------------------
+  HP (18:00-23:00, 5h):   S/.0.45/kWh
+  HFP (resto, 19h):       S/.0.28/kWh
+  Diferencial:            S/.0.17/kWh (60.7%)
+  Factor CO2 grid:        0.4521 kg CO2/kWh
+
+[3] VERIFICACION DE ARCHIVOS DE ENTRADA
+------------------------------------------------------------
+  OK PV Solar:    pv_generation_citylearn2024.csv (837.3 KB)
+  OK EV Chargers: chargers_ev_ano_2024_v3.csv (15892.9 KB)
+  OK Mall Demand: demandamallhorakwh.csv (193.1 KB)
+
+  Output dir: D:\dise±opvbesscar\data\oe2\bess
+
+[4] EJECUTANDO DIMENSIONAMIENTO BESS...
+------------------------------------------------------------
+
+============================================================
+  DIMENSIONAMIENTO DE SISTEMA BESS
+============================================================
+
+Cargando datos de entrada...
+   Generacion PV: 8760 registros (columna: energia_kwh)
+   Demanda Mall (real, horaria): 33887 kWh/dia (basado en 8,760 horas)
+      [OK] Detectado formato v5.2 con 38 sockets
+      [OK] Total EV (9h-22h): 412,236 kWh/a±o
+   Demanda EV (horaria, 8760 horas): 1129 kWh/dia
+      - 19 cargadores, 38 tomas totales (Modo 3 @ 7.4 kW)
+      - Playa Motos: 15 cargadores Î 2 = 30 tomas
+      - Playa Mototaxis: 4 cargadores Î 2 = 8 tomas
+   Alineados a 8,760 horas (formato horario)
+
+[REGLAS BESS - PRIORIDAD SOLAR - EXCLUSIVO EV]
+   1. Solar -> PRIMERO motos/mototaxis (EV)
+   2. Excedente solar -> SEGUNDO carga BESS (hasta SOC 100%)
+   3. Excedente final -> TERCERO Mall
+   4. BESS descarga: Desde punto crÝtico (PV<EV) hasta cierre 22h
+   5. SOC al cierre (22h): 20%
+
+[AN┴LISIS CRUCE CURVAS PV vs EV]
+   Hora fin carga BESS (PV >= EV): ~6h (SOC se mantiene 100%)
+   Hora inicio descarga (PV < EV): ~17h (punto critico)
+   Hora cierre: 22h (SOC debe ser 20%)
+   Deficit EV promedio: 559.3 kWh/dia
+   Deficit EV MAXIMO: 708.0 kWh/dia [USADO PARA 100% COBERTURA]
+   Pico deficit EV: 156.0 kW
+
+[FLUJOS ENERG╔TICOS DIARIOS]
+   Generacion PV: 22719 kWh/dia
+   Demanda EV: 1129 kWh/dia
+   PV->EV directo: 570 kWh/dia
+   Excedente PV (para BESS): 22149 kWh/dÝa
+   Deficit EV promedio: 559 kWh/dia
+   Deficit EV MAXIMO: 708 kWh/dia
+
+============================================================
+  DIMENSIONAMIENTO BESS - 100% COBERTURA DEFICIT EV
+============================================================
+
+[PAR┴METROS DE DISEÐO]
+   SOC operacional: 20% - 100%
+   DoD efectivo: 80%
+   Eficiencia round-trip: 95%
+
+[CRITERIO CAPACIDAD - DINAMICO]
+   Criterio: Cubrir DEFICIT EV desde punto critico (EV>PV) hasta cierre (22h)
+   SOC final al cierre: 20% (regla operacional)
+   Deficit EV en descarga: 708 kWh/dia
+   Horas de descarga: 5 horas (17h-22h)
+   Pico deficit EV: 156.0 kW
+
+DIMENSIONAMIENTO OPTIMO (segun analisis perfil 15 min):
+   Capacidad base:   940 kWh
+   Factor de dise±o: 1.20 (margen 20%)
+   Capacidad final:  940 kWh
+   Potencia:         342 kW
+   DoD:              80%
+   Eficiencia:       95%
+   Ratio Cap/Pot:    2.75
+   Ciclos/dia:       0.75
+   Deficit cubierto: 708 kWh/dia (18h-22h)
+
+Simulando operacion BESS con SOLAR-PRIORITY (basado en disponibilidad solar)...
+
+[ESTRATEGIA SOLAR-PRIORITY v5.4 - INDEPENDIENTE DE TARIFA]
+   BESS Capacidad:           1,700 kWh
+   BESS Potencia:            400 kW
+
+   [CARGA] Manana-tarde (6h-22h) cuando PV > demanda
+           -> Llenar BESS a 100% desde PV excedente
+           -> Solo PV, NO grid
+   [DESCARGA] Tarde-noche cuando (PV < Mall) OR (deficit EV AND SOC > min)
+              -> BESS->EV (prioridad 1)
+              -> BESS->Mall (prioridad 2, si PV < demanda_mall)
+   [SOC] 20%-100% con eficiencia 95%
+
+   Ventajas: Independiente de tarifa futura, mas seguro, logica intuitiva
+
+   Cobertura EV por BESS: 81.1%
+   EV desde PV directo: 183 MWh/a±o
+   EV desde BESS: 151 MWh/a±o
+   EV desde red: 78 MWh/a±o
+   Ciclos/dia:      1.15
+   SOC min/max:     20.0% / 100.0%
+   Import red EV:   213 kWh/dia
+
+[M╔TRICAS ECONËMICAS OSINERGMIN - ARBITRAJE HP/HFP]
+   Costo baseline (sin BESS): S/.3,578,649/a±o
+   Costo con BESS arbitraje:  S/.2,318,008/a±o
+   Ahorro BESS (arbitraje):   S/.1,260,642/a±o
+   Ahorro total:              S/.1,260,642/a±o
+   ROI arbitraje:             35.2%
+
+[M╔TRICAS CO2]
+   Emisiones grid (baseline):     2948.0 ton CO2/a±o
+
+   REDUCCIËN INDIRECTA DE CO2 (RED T╔RMICA IQUITOS):

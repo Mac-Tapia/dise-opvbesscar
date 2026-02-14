@@ -26,7 +26,7 @@ from gymnasium import Env, spaces
 from stable_baselines3 import A2C
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback, CallbackList
 
-from src.rewards.rewards import (
+from src.citylearnv2.dataset_builder.rewards import (
     IquitosContext,
     MultiObjectiveReward,
     create_iquitos_reward_weights,
@@ -211,8 +211,55 @@ def build_oe2_dataset(interim_oe2_dir: Path) -> dict[str, Any]:
     """
     Build complete OE2 dataset from 5 required files.
     
-    SECCIÓN CRÍTICA: Carga obligatoriamente 5 archivos REALES desde data/interim/oe2/
-    Estas rutas son FIJAS y NO se pueden mover. Son los datos reales.
+    SINCRONIZACIÓN DATASET_BUILDER v5.5:
+    ================================================================================
+    Esta función carga TODOS los datasets considerados en dataset_builder.py
+    asegurando que se usen TODAS LAS COLUMNAS OBSERVABLES definidas:
+    
+    CHARGERS (10 columnas observables):
+      - Prefijo "ev_": is_hora_punta, tarifa_aplicada_soles, energia_total_kwh,
+        costo_carga_soles, energia_motos_kwh, energia_mototaxis_kwh,
+        co2_reduccion_motos_kg (factor neto 0.87), co2_reduccion_mototaxis_kg (0.47),
+        reduccion_directa_co2_kg, demand_kwh
+      - Archivo: chargers_real_hourly_2024.csv
+      - 38 sockets (30 motos + 8 mototaxis)
+    
+    SOLAR (6 columnas observables):
+      - Prefijo "solar_": is_hora_punta, tarifa_aplicada_soles, ahorro_soles,
+        reduccion_indirecta_co2_kg (factor 0.4521), co2_mall_kg, co2_ev_kg
+      - Archivo: pv_generation_timeseries.csv
+      - Capacidad: 4,050 kWp
+    
+    BESS (5 columnas observables) v5.5 NEW:
+      - Prefijo "bess_": soc_percent (20-100%), charge_kwh, discharge_kwh,
+        to_mall_kwh, to_ev_kwh
+      - Archivo: bess_hourly_dataset_2024.csv
+      - Especificaciones: 1,700 kWh, 400 kW
+    
+    MALL (3 columnas observables) v5.5 NEW:
+      - Prefijo "mall_": demand_kwh, demand_reduction_kwh, cost_soles
+      - Archivo: demandamallhorakwh.csv
+    
+    CONTEXTO IQUITOS:
+      - CO2 factor grid: 0.4521 kg CO2/kWh (red térmica aislada)
+      - Tarifa HP: 0.45 S/. (18:00-22:59)
+      - Tarifa HFP: 0.28 S/.
+    
+    BASELINE COMPARISON (opcional):
+      - CON_SOLAR: Sistema con 4,050 kWp + BESS + agente
+      - SIN_SOLAR: Sistema sin solar (solo grid)
+    
+    METADATA DE ESCENARIOS (data/oe2/chargers/) v5.5:
+      - selection_pe_fc_completo.csv: 54 escenarios (pe, fc, chargers_required, etc.)
+      - tabla_escenarios_detallados.csv: CONSERVADOR, MEDIANO, RECOMENDADO*, MÁXIMO
+      - tabla_estadisticas_escenarios.csv: Estadísticas agregadas
+      - escenarios_tabla13.csv: 101 escenarios PE/FC
+      → Cargar con: data_loader.load_scenarios_metadata()
+      → ESCENARIO RECOMENDADO v5.5: PE=1.00, FC=1.00, 19 cargadores, 38 tomas, 1129 kWh/día
+    
+    El agente A2C recibe TODAS ESTAS COLUMNAS (27 observables)
+    para entrenar con multiobjetivo (CO2, solar, costo, EV, grid).
+    ================================================================================
     """
     print("\n" + "="*80)
     print("[DATASET BUILD] Cargando 5 archivos OE2 REALES OBLIGATORIOS")

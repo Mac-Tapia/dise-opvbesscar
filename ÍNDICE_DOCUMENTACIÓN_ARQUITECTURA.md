@@ -39,6 +39,25 @@
 
 ---
 
+### 🔍 Necesito entender cuales datos son REALES vs SIMULADOS (15 min)
+→ **[docs/DATA_SOURCES_REAL_VS_SIMULATED.md](docs/DATA_SOURCES_REAL_VS_SIMULATED.md)**
+- ✅ REAL: Solar PV, Chargers (38 sockets), Mall demand (medidas)
+- ⚠️ SIMULATED: BESS dispatch (báseline de optimización OE2)
+- Dependency graph: OE2 → OE3
+- Validación de integridad de datos
+- Cómo cada fuente se usa en RL training
+
+---
+
+### 📋 Necesito TARJETA RÁPIDA de datos (1 página, imprimible) 
+→ **[docs/DATA_SOURCES_QUICK_CARD.md](docs/DATA_SOURCES_QUICK_CARD.md)**
+- Tabla de las 4 pilares de datos (status / ubicación / tamaño)
+- Control de calidad (validación rápida)
+- Checklist antes de entrenar
+- Comandos de diagnóstico
+
+---
+
 ### 🧹 Necesito ESTADO DE LIMPIEZA reciente
 → **[LIMPIEZA_COMPLETADA_2026-02-13.md](LIMPIEZA_COMPLETADA_2026-02-13.md)**
 - 5 archivos eliminados (v1 baseline, test antiguo, etc)
@@ -81,13 +100,16 @@
 | Documento | Líneas | Propósito | Lectura | Nivel |
 |-----------|--------|-----------|---------|-------|
 | **ARQUITECTURA_GUÍA_RÁPIDA.md** | 300 | Cheat sheet | 5 min | Básico |
+| **DATA_SOURCES_QUICK_CARD.md** | 200 | Tarjeta rápida datos | 1 min | Básico |
+| **DATA_SOURCES_REAL_VS_SIMULATED.md** | 700 | Referencia completa datos | 30 min | Intermedio |
+| **DATA_SOURCES_PRACTICAL_EXAMPLES.md** | 400 | Ejemplos prácticos e interpretación | 20 min | Intermedio |
 | **AUDITORÍA_ARQUITECTURA_PROYECTO_2026-02-13.md** | 500 | Análisis archivos | 20 min | Intermedio |
 | **FLOW_ARCHITECTURE.md** | 650 | Transformaciones datos | 30 min | Intermedio |
 | **LIMPIEZA_COMPLETADA_2026-02-13.md** | 400 | Cambios recientes | 15 min | Técnico |
 | **CONFLICTOS_ARCHIVOS_v54.md** | 350 | Problemas identificados | 15 min | Técnico |
 | **INTEGRACION_COMPLETADA_v54.md** | 400 | Status técnico | 15 min | Técnico |
 
-**Total**: ~2,600 líneas de documentación arquitectura/estructura
+**Total**: ~3,900 líneas de documentación arquitectura/estructura
 
 ---
 

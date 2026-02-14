@@ -1,4 +1,4 @@
-﻿Periodo,Motos,Mototaxis,Total
-Diario,"2,679",382,"3,061"
-Mensual,"80,370","11,460","91,830"
-Anual,"977,835","139,430","1,117,265"
+Periodo,Motos_kWh,Mototaxis_kWh,Total_kWh
+Diario,1224.0,306.0,1529.9
+Mensual,36720.0,9180.0,45900.0
+Anual,446760.0,111690.0,558450.0

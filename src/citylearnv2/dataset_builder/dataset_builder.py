@@ -69,6 +69,259 @@ import pandas as pd  # type: ignore
 logger = logging.getLogger(__name__)
 
 # =============================================================================
+# OE2 DATA LOADER v5.5 - Rutas y Funciones de Carga (unificado de data_loader.py)
+# =============================================================================
+# Datasets principales v5.5 (source of truth en data/oe2/):
+# - Solar: data/oe2/Generacionsolar/pv_generation_citylearn2024.csv
+# - BESS: data/oe2/bess/bess_ano_2024.csv (1700 kWh, 400 kW, SOC@22h=20%)
+# - Chargers: data/oe2/chargers/chargers_ev_ano_2024_v3.csv (38 sockets)
+# - Mall: data/oe2/demandamallkwh/demandamallhorakwh.csv
+# =============================================================================
+
+DEFAULT_SOLAR_PATH = Path("data/oe2/Generacionsolar/pv_generation_citylearn2024.csv")
+DEFAULT_BESS_PATH = Path("data/oe2/bess/bess_ano_2024.csv")
+DEFAULT_CHARGERS_PATH = Path("data/oe2/chargers/chargers_ev_ano_2024_v3.csv")
+DEFAULT_MALL_DEMAND_PATH = Path("data/oe2/demandamallkwh/demandamallhorakwh.csv")
+
+# Rutas de escenarios v5.5
+DEFAULT_SCENARIOS_DIR = Path("data/oe2/chargers")
+SCENARIOS_SELECTION_PE_FC_PATH = DEFAULT_SCENARIOS_DIR / "selection_pe_fc_completo.csv"
+SCENARIOS_TABLA_DETALLADOS_PATH = DEFAULT_SCENARIOS_DIR / "tabla_escenarios_detallados.csv"
+SCENARIOS_TABLA_ESTADISTICAS_PATH = DEFAULT_SCENARIOS_DIR / "tabla_estadisticas_escenarios.csv"
+SCENARIOS_TABLA_RECOMENDADO_PATH = DEFAULT_SCENARIOS_DIR / "tabla_escenario_recomendado.csv"
+SCENARIOS_TABLA13_PATH = DEFAULT_SCENARIOS_DIR / "escenarios_tabla13.csv"
+
+# Rutas intermedias (fallback si principales no existen)
+INTERIM_SOLAR_PATHS = [
+    Path("data/interim/oe2/solar/pv_generation_hourly_citylearn_v2.csv"),
+    Path("data/interim/oe2/solar/pv_generation_timeseries.csv"),
+]
+INTERIM_BESS_PATH = Path("data/interim/oe2/bess/bess_hourly_dataset_2024.csv")
+INTERIM_CHARGERS_PATHS = [Path("data/interim/oe2/chargers/chargers_real_hourly_2024.csv")]
+INTERIM_DEMAND_PATH = Path("data/interim/oe2/demandamallkwh/demandamallhorakwh.csv")
+
+
+class OE2ValidationError(Exception):
+    """Excepción para errores de validación OE2."""
+    pass
+
+
+@dataclass(frozen=True)
+class SolarData:
+    """Datos inmutables de generación solar."""
+    timeseries: np.ndarray  # 8760 valores horarios (kW)
+    capacity_kwp: float     # Capacidad instalada (kWp)
+    location: str           # Ubicación
+
+    def __post_init__(self) -> None:
+        if len(self.timeseries) != 8760:
+            raise OE2ValidationError(
+                f"Solar timeseries must have 8760 hourly values, got {len(self.timeseries)}"
+            )
+
+
+@dataclass(frozen=True)
+class BESSData:
+    """Datos inmutables de BESS."""
+    capacity_kwh: float    # 1700 kWh nominal (v5.5)
+    power_kw: float        # 400 kW (v5.5)
+    efficiency: float      # 0.95 round-trip
+
+
+@dataclass(frozen=True)
+class ChargerData:
+    """Datos inmutables de cargador individual."""
+    charger_id: int
+    max_power_kw: float
+    vehicle_type: str      # "moto" o "mototaxi"
+    sockets: int           # 2 sockets por cargador (v5.5)
+
+
+def resolve_data_path(primary_path: Path, fallback_paths: Optional[List[Path]] = None) -> Path:
+    """Resuelve ruta preferiendo principal, luego fallbacks."""
+    if primary_path.exists():
+        return primary_path
+    if fallback_paths:
+        for fb in fallback_paths:
+            if fb.exists():
+                logger.warning(f"⚠ Using fallback: {fb}")
+                return fb
+    raise OE2ValidationError(f"Data path not found: {primary_path}")
+
+
+def load_solar_data(csv_path: Optional[Path] = None) -> Tuple[SolarData, pd.DataFrame]:
+    """Carga datos de generación solar desde pv_generation_citylearn2024.csv."""
+    if csv_path is None:
+        csv_path = resolve_data_path(DEFAULT_SOLAR_PATH, INTERIM_SOLAR_PATHS)
+    else:
+        csv_path = Path(csv_path)
+        if not csv_path.exists():
+            raise OE2ValidationError(f"Solar CSV not found: {csv_path}")
+
+    df = pd.read_csv(csv_path, parse_dates=['datetime'])
+    logger.info(f"✓ Solar: {csv_path.name} ({len(df)} rows)")
+
+    if 'potencia_kw' not in df.columns:
+        raise OE2ValidationError("Solar CSV missing 'potencia_kw' column")
+
+    values = df['potencia_kw'].astype(float).values
+    if len(values) not in [8760, 8761]:
+        raise OE2ValidationError(f"Solar must have 8760 rows, got {len(values)}")
+    if len(values) == 8761:
+        values = values[:8760]
+        df = df.iloc[:8760].copy()
+
+    solar_data = SolarData(timeseries=values, capacity_kwp=4050.0, location="Iquitos, Peru")
+    logger.info(f"  → {solar_data.capacity_kwp} kWp, mean={values.mean():.1f} kW")
+    return solar_data, df
+
+
+def load_bess_data(csv_path: Optional[Path] = None) -> Tuple[BESSData, pd.DataFrame]:
+    """Carga datos de BESS desde bess_ano_2024.csv v5.5."""
+    if csv_path is None:
+        csv_path = resolve_data_path(DEFAULT_BESS_PATH, [INTERIM_BESS_PATH])
+    else:
+        csv_path = Path(csv_path)
+        if not csv_path.exists():
+            raise OE2ValidationError(f"BESS CSV not found: {csv_path}")
+
+    df = pd.read_csv(csv_path)
+    logger.info(f"✓ BESS: {csv_path.name} ({len(df)} rows)")
+
+    required = ['bess_soc_percent', 'bess_charge_kwh', 'bess_discharge_kwh']
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        raise OE2ValidationError(f"BESS missing columns: {missing}")
+    if len(df) != 8760:
+        raise OE2ValidationError(f"BESS must have 8760 rows, got {len(df)}")
+
+    bess_data = BESSData(capacity_kwh=1700.0, power_kw=400.0, efficiency=0.95)
+    logger.info(f"  → {bess_data.capacity_kwh} kWh, {bess_data.power_kw} kW")
+    return bess_data, df
+
+
+def load_chargers_data(csv_path: Optional[Path] = None) -> Tuple[List[ChargerData], pd.DataFrame]:
+    """Carga datos de cargadores desde chargers_ev_ano_2024_v3.csv."""
+    if csv_path is None:
+        csv_path = resolve_data_path(DEFAULT_CHARGERS_PATH, INTERIM_CHARGERS_PATHS)
+    else:
+        csv_path = Path(csv_path)
+        if not csv_path.exists():
+            raise OE2ValidationError(f"Chargers CSV not found: {csv_path}")
+
+    df = pd.read_csv(csv_path, parse_dates=['datetime'])
+    logger.info(f"✓ Chargers: {csv_path.name} ({len(df)} rows)")
+
+    socket_cols = [c for c in df.columns if c.startswith('socket_')]
+    socket_ids = set()
+    for col in socket_cols:
+        try:
+            socket_ids.add(int(col.split('_')[1]))
+        except (ValueError, IndexError):
+            pass
+    if not socket_ids:
+        raise OE2ValidationError("No socket columns found")
+
+    n_chargers = len(socket_ids) // 2
+    chargers = []
+    for i in range(n_chargers):
+        vtype = "moto" if i < 15 else "mototaxi"
+        chargers.append(ChargerData(
+            charger_id=i, max_power_kw=7.4, vehicle_type=vtype, sockets=2
+        ))
+    logger.info(f"  → {len(chargers)} chargers, {len(socket_ids)} sockets")
+    return chargers, df
+
+
+def load_mall_demand_data(csv_path: Optional[Path] = None) -> pd.DataFrame:
+    """Carga demanda del mall desde demandamallhorakwh.csv."""
+    if csv_path is None:
+        csv_path = resolve_data_path(DEFAULT_MALL_DEMAND_PATH, [INTERIM_DEMAND_PATH])
+    else:
+        csv_path = Path(csv_path)
+        if not csv_path.exists():
+            raise OE2ValidationError(f"Mall CSV not found: {csv_path}")
+
+    df = pd.read_csv(csv_path, sep=';')
+    logger.info(f"✓ Mall demand: {csv_path.name} ({len(df)} rows)")
+
+    if 'kWh' not in df.columns or 'FECHAHORA' not in df.columns:
+        raise OE2ValidationError("Mall CSV missing required columns")
+
+    df['datetime'] = pd.to_datetime(df['FECHAHORA'], format='%d/%m/%Y %H:%M')
+    df = df.rename(columns={'kWh': 'mall_demand_kwh'})
+    df['mall_demand_kwh'] = pd.to_numeric(df['mall_demand_kwh'], errors='coerce')
+    df_hourly = df[['datetime', 'mall_demand_kwh']].iloc[:8760].copy()
+    logger.info(f"  → mean={df_hourly['mall_demand_kwh'].mean():.1f} kW")
+    return df_hourly
+
+
+def load_scenarios_metadata() -> Dict[str, pd.DataFrame]:
+    """Carga tablas de escenarios desde data/oe2/chargers/."""
+    results: Dict[str, pd.DataFrame] = {}
+    paths = {
+        'selection_pe_fc': SCENARIOS_SELECTION_PE_FC_PATH,
+        'escenarios_detallados': SCENARIOS_TABLA_DETALLADOS_PATH,
+        'estadisticas_escenarios': SCENARIOS_TABLA_ESTADISTICAS_PATH,
+        'escenario_recomendado': SCENARIOS_TABLA_RECOMENDADO_PATH,
+        'escenarios_tabla13': SCENARIOS_TABLA13_PATH,
+    }
+    for name, path in paths.items():
+        if path.exists():
+            results[name] = pd.read_csv(path)
+            logger.info(f"✓ {name}: {len(results[name])} rows")
+    if not results:
+        raise OE2ValidationError("No scenario tables found")
+    return results
+
+
+def validate_oe2_complete(cleanup_interim: bool = False) -> Dict[str, Any]:
+    """Validación completa de todos los datos OE2."""
+    results: Dict[str, Any] = {"is_valid": False, "errors": [], "dataframes": {}}
+    
+    try:
+        solar, solar_df = load_solar_data()
+        results["solar"] = {"capacity_kwp": solar.capacity_kwp, "timesteps": len(solar.timeseries)}
+        results["dataframes"]["solar"] = solar_df
+    except OE2ValidationError as e:
+        results["errors"].append(str(e))
+
+    try:
+        bess, bess_df = load_bess_data()
+        results["bess"] = {"capacity_kwh": bess.capacity_kwh, "power_kw": bess.power_kw}
+        results["dataframes"]["bess"] = bess_df
+    except OE2ValidationError as e:
+        results["errors"].append(str(e))
+
+    try:
+        chargers, chargers_df = load_chargers_data()
+        results["chargers"] = {"total_units": len(chargers), "total_sockets": sum(c.sockets for c in chargers)}
+        results["dataframes"]["chargers"] = chargers_df
+    except OE2ValidationError as e:
+        results["errors"].append(str(e))
+
+    try:
+        mall_df = load_mall_demand_data()
+        results["mall_demand"] = {"timesteps": len(mall_df)}
+        results["dataframes"]["mall_demand"] = mall_df
+    except OE2ValidationError as e:
+        results["errors"].append(str(e))
+
+    results["is_valid"] = len(results["errors"]) == 0
+    if results["is_valid"]:
+        logger.info("✓✓✓ OE2 VALIDATION PASSED ✓✓✓")
+    else:
+        logger.error(f"✗ OE2 validation failed: {results['errors']}")
+    return results
+
+
+def rebuild_oe2_datasets_complete(cleanup_interim: bool = True) -> Dict[str, Any]:
+    """Reconstrucción y validación completa de datasets OE2."""
+    logger.info("🔄 INICIANDO VALIDACIÓN OE2 v5.5...")
+    return validate_oe2_complete(cleanup_interim=cleanup_interim)
+
+
+# =============================================================================
 # CONSTANTES OSINERGMIN v5.3 - Sistema Aislado Iquitos
 # Tarifas MT3 para aplicar en rewards según hora del día
 # =============================================================================
@@ -84,6 +337,24 @@ FACTOR_CO2_RED_KG_KWH = 0.4521       # kg CO2/kWh - red diésel Iquitos (aislada
 FACTOR_CO2_GASOLINA_KG_L = 2.31      # kg CO2/L gasolina (IPCC AR5)
 FACTOR_CO2_NETO_MOTO_KG_KWH = 0.87   # kg CO2/kWh evitado neto (moto)
 FACTOR_CO2_NETO_MOTOTAXI_KG_KWH = 0.47  # kg CO2/kWh evitado neto (mototaxi)
+
+# =============================================================================
+# TABLAS DE ESCENARIOS v5.5 - Metadata de Configuración
+# (NO son observables por hora, son parámetros de simulación)
+# =============================================================================
+# Estas tablas se cargan desde data_loader.load_scenarios_metadata()
+# y se usan para configurar el escenario operativo del entrenamiento.
+#
+# ARCHIVOS EN data/oe2/chargers/:
+#   - selection_pe_fc_completo.csv (56 escenarios): pe, fc, chargers_required,
+#     sockets_total, energy_day_kwh, peak_sessions_per_hour, vehicles_day_motos, etc.
+#   - tabla_escenarios_detallados.csv (4-5 escenarios): CONSERVADOR, MEDIANO, RECOMENDADO*, MÁXIMO
+#   - tabla_estadisticas_escenarios.csv: Min, Max, Promedio, Mediana, Desv_Std
+#   - tabla_escenario_recomendado.csv: Motos, Mototaxis, Total por periodo (diario/mensual/anual)
+#   - escenarios_tabla13.csv (103 escenarios): PE, FC, cargadores, tomas, sesiones, energia_dia_kwh
+#
+# ESCENARIO RECOMENDADO v5.5: PE=1.00, FC=1.00, 19 cargadores, 38 tomas, 1129 kWh/día
+# =============================================================================
 
 # =============================================================================
 # COLUMNAS OBSERVABLES v5.3 - Variables para tracking en agentes
@@ -110,7 +381,23 @@ SOLAR_OBSERVABLE_COLS = [
     'co2_evitado_ev_kg',
 ]
 
+# NUEVAS DEFINICIONES v5.5: BESS y Mall Observable Columns
+BESS_OBSERVABLE_COLS = [
+    'bess_soc_percent',           # State of Charge %, rango 20-100%
+    'bess_charge_kwh',            # Energía cargada en la hora (kWh)
+    'bess_discharge_kwh',         # Energía descargada en la hora (kWh)
+    'bess_to_mall_kwh',           # Energía del BESS al Mall (kWh)
+    'bess_to_ev_kwh',             # Energía del BESS a EVs (kWh)
+]
+
+MALL_OBSERVABLE_COLS = [
+    'mall_demand_kwh',            # Demanda horaria del mall (kWh)
+    'mall_demand_reduction_kwh',  # Reducción de demanda por BESS/Solar (kWh)
+    'mall_cost_soles',            # Costo horario del mall (S/.)
+]
+
 # Todas las columnas observables combinadas (para el archivo observables_oe2.csv)
+# v5.5: INCLUYE Chargers (10) + Solar (6) + BESS (5) + Mall (3) + Totales (3) = 27 columnas
 ALL_OBSERVABLE_COLS = [
     # Chargers (prefijo "ev_" para evitar colisiones)
     'ev_is_hora_punta',
@@ -130,6 +417,16 @@ ALL_OBSERVABLE_COLS = [
     'solar_reduccion_indirecta_co2_kg',
     'solar_co2_mall_kg',
     'solar_co2_ev_kg',
+    # BESS (prefijo "bess_") v5.5 NEW
+    'bess_soc_percent',
+    'bess_charge_kwh',
+    'bess_discharge_kwh',
+    'bess_to_mall_kwh',
+    'bess_to_ev_kwh',
+    # Mall (prefijo "mall_") v5.5 NEW
+    'mall_demand_kwh',
+    'mall_demand_reduction_kwh',
+    'mall_cost_soles',
     # Totales combinados
     'total_reduccion_co2_kg',
     'total_costo_soles',
@@ -141,18 +438,18 @@ ALL_OBSERVABLE_COLS = [
 # Importar clases de recompensa multiobjetivo para validación en OE3
 # =============================================================================
 # =============================================================================
-# INTEGRACIÓN: Reward Functions (from src/rewards/rewards.py)
+# INTEGRACIÓN: Reward Functions (from .rewards - same directory)
 # Importar clases de recompensa multiobjetivo para validación en OE3
 # =============================================================================
 try:
-    from src.rewards.rewards import (
+    from .rewards import (
         MultiObjectiveWeights,
         IquitosContext,
         MultiObjectiveReward,
         create_iquitos_reward_weights,
     )
     REWARDS_AVAILABLE = True
-    logger.info("[REWARDS] Successfully imported reward classes from src/rewards/rewards.py")
+    logger.info("[REWARDS] Successfully imported reward classes from .rewards")
 except (ImportError, ModuleNotFoundError) as e:
     logger.warning("[REWARDS] Could not import rewards.py: %s", e)
     REWARDS_AVAILABLE = False
@@ -397,21 +694,33 @@ def _extract_observable_variables(
     chargers_df: Optional[pd.DataFrame],
     solar_df: Optional[pd.DataFrame],
     bess_df: Optional[pd.DataFrame] = None,
+    mall_df: Optional[pd.DataFrame] = None,
     n_timesteps: int = 8760
 ) -> pd.DataFrame:
-    """Extrae y combina variables observables de chargers, solar y BESS para agentes.
+    """Extrae y combina variables observables de chargers, solar, BESS y Mall para agentes.
     
-    Esta función crea un DataFrame unificado con todas las variables de tracking
-    que los agentes RL pueden usar como observaciones adicionales.
+    VINCULACIÓN DATASET_BUILDER v5.5:
+    - Chargers observables: CHARGERS_OBSERVABLE_COLS (10 cols con prefijo "ev_")
+    - Solar observables: SOLAR_OBSERVABLE_COLS (6 cols con prefijo "solar_")
+    - BESS observables: BESS_OBSERVABLE_COLS (5 cols con prefijo "bess_") [v5.5]
+    - Mall observables: MALL_OBSERVABLE_COLS (3 cols con prefijo "mall_") [v5.5]
+    - Totales: 3 cols combinadas = 27 columnas totales en ALL_OBSERVABLE_COLS
+    
+    FUENTES DE DATOS (data_loader.py):
+    - Chargers: load_chargers_data() → chargers_ev_ano_2024_v3.csv (38 sockets)
+    - Solar: load_solar_data() → pv_generation_citylearn2024.csv (4050 kWp)
+    - BESS: load_bess_data() → bess_ano_2024.csv (1700 kWh)
+    - Mall: load_mall_demand_data() → demandamallhorakwh.csv
     
     Args:
         chargers_df: DataFrame de chargers_ev_ano_2024_v3.csv (o None)
         solar_df: DataFrame de pv_generation_hourly_citylearn_v2.csv (o None)
-        bess_df: DataFrame de bess_simulation_hourly.csv (o None) - v5.4
+        bess_df: DataFrame de bess_simulation_hourly.csv (o None) - v5.5
+        mall_df: DataFrame de mall_demand_hourly.csv (o None) - v5.5 NEW
         n_timesteps: Número de timesteps (default: 8760 = 1 año)
     
     Returns:
-        DataFrame con columnas observables combinadas (8760 x N columnas) incluyendo BESS v5.4
+        DataFrame con columnas observables combinadas (8760 x 27 columnas)
     """
     # Crear DataFrame base con índice horario
     time_index = pd.date_range(start="2024-01-01", periods=n_timesteps, freq="h")
@@ -423,7 +732,7 @@ def _extract_observable_variables(
     if chargers_df is not None:
         logger.info("[OBSERVABLES] Extrayendo variables de chargers...")
         
-        # Mapeo de columnas chargers -> observables
+        # Mapeo de columnas chargers -> observables (CHARGERS_OBSERVABLE_COLS)
         charger_col_map = {
             'is_hora_punta': 'ev_is_hora_punta',
             'tarifa_aplicada_soles': 'ev_tarifa_aplicada_soles',
@@ -461,7 +770,7 @@ def _extract_observable_variables(
     if solar_df is not None:
         logger.info("[OBSERVABLES] Extrayendo variables de solar...")
         
-        # Mapeo de columnas solar -> observables
+        # Mapeo de columnas solar -> observables (SOLAR_OBSERVABLE_COLS)
         solar_col_map = {
             'is_hora_punta': 'solar_is_hora_punta',
             'tarifa_aplicada_soles': 'solar_tarifa_aplicada_soles',
@@ -487,16 +796,18 @@ def _extract_observable_variables(
             obs_df[col] = 0.0
     
     # =========================================================================
-    # EXTRAER VARIABLES DE BESS v5.4 (prefijo "bess_")
+    # EXTRAER VARIABLES DE BESS v5.5 (prefijo "bess_")
     # =========================================================================
     if bess_df is not None:
-        logger.info("[OBSERVABLES] Extrayendo variables de BESS v5.4...")
+        logger.info("[OBSERVABLES] Extrayendo variables de BESS v5.5...")
         
-        # Mapeo de columnas BESS -> observables
+        # Mapeo de columnas BESS -> observables (BESS_OBSERVABLE_COLS)
         bess_col_map = {
             'bess_soc_percent': 'bess_soc_percent',
             'bess_charge_kwh': 'bess_charge_kwh',
             'bess_discharge_kwh': 'bess_discharge_kwh',
+            'bess_to_mall_kwh': 'bess_to_mall_kwh',
+            'bess_to_ev_kwh': 'bess_to_ev_kwh',
         }
         
         for src_col, dst_col in bess_col_map.items():
@@ -513,17 +824,44 @@ def _extract_observable_variables(
                     obs_df[dst_col] = 0.0
                 logger.warning(f"   - {src_col} no encontrado en BESS, usando valor por defecto")
         
-        # Capacidad disponible (kWh) = capacidad total - (SOC% × capacidad)
-        bess_capacity_kwh = 1700.0  # v5.4
-        obs_df['bess_available_capacity_kwh'] = bess_capacity_kwh * (1.0 - obs_df['bess_soc_percent'] / 100.0)
-        
-        logger.info(f"   ✓ BESS v5.4: 1,700 kWh capacity, {(obs_df['bess_available_capacity_kwh'].sum()):,.0f} kWh disp/año")
+        logger.info(f"   ✓ BESS v5.5: 1,700 kWh capacity, SOC medio={obs_df['bess_soc_percent'].mean():.1f}%")
     else:
-        logger.warning("[OBSERVABLES] bess_df es None, usando valores por defecto BESS v5.4")
+        logger.warning("[OBSERVABLES] bess_df es None, usando valores por defecto BESS v5.5")
         obs_df['bess_soc_percent'] = 50.0  # 50% inicial
         obs_df['bess_charge_kwh'] = 0.0
         obs_df['bess_discharge_kwh'] = 0.0
-        obs_df['bess_available_capacity_kwh'] = 850.0  # 50% of 1,700 kWh
+        obs_df['bess_to_mall_kwh'] = 0.0
+        obs_df['bess_to_ev_kwh'] = 0.0
+    
+    # =========================================================================
+    # EXTRAER VARIABLES DE MALL DEMAND v5.5 (prefijo "mall_")
+    # =========================================================================
+    if mall_df is not None:
+        logger.info("[OBSERVABLES] Extrayendo variables de Mall demand v5.5...")
+        
+        # Mapeo de columnas Mall -> observables (MALL_OBSERVABLE_COLS)
+        mall_col_map = {
+            'mall_demand_kwh': 'mall_demand_kwh',
+            'mall_demand_reduction_kwh': 'mall_demand_reduction_kwh',
+            'mall_cost_soles': 'mall_cost_soles',
+        }
+        
+        for src_col, dst_col in mall_col_map.items():
+            if src_col in mall_df.columns:
+                values = mall_df[src_col].values[:n_timesteps]
+                if len(values) < n_timesteps:
+                    values = np.pad(values, (0, n_timesteps - len(values)), mode='constant')
+                obs_df[dst_col] = values
+            else:
+                obs_df[dst_col] = 0.0
+                logger.warning(f"   - {src_col} no encontrado en Mall, usando 0.0")
+        
+        logger.info(f"   ✓ Mall demand: {obs_df['mall_demand_kwh'].sum():,.0f} kWh/año, "
+                   f"reducción={obs_df['mall_demand_reduction_kwh'].sum():,.0f} kWh/año")
+    else:
+        logger.warning("[OBSERVABLES] mall_df es None, usando valores por defecto")
+        for col in ['mall_demand_kwh', 'mall_demand_reduction_kwh', 'mall_cost_soles']:
+            obs_df[col] = 0.0
     
     # =========================================================================
     # CALCULAR TOTALES COMBINADOS
@@ -540,20 +878,16 @@ def _extract_observable_variables(
     # Total ahorro = ahorro solar
     obs_df['total_ahorro_soles'] = obs_df['solar_ahorro_soles']
     
-    # Hora del día (0-23) para observación temporal
-    obs_df['hour_of_day'] = obs_df.index.hour
-    
-    # Mes del año (1-12) para observación de estacionalidad
-    obs_df['month_of_year'] = obs_df.index.month
-    
-    # Día de la semana (0=lunes, 6=domingo)
-    obs_df['day_of_week'] = obs_df.index.dayofweek
-    
-    logger.info(f"[OBSERVABLES] ✅ DataFrame creado: {obs_df.shape}")
-    logger.info(f"   Columnas: {list(obs_df.columns)}")
-    logger.info(f"   Total CO2 evitado: {obs_df['total_reduccion_co2_kg'].sum()/1000:,.1f} ton/año")
-    logger.info(f"   Total costo EVs: S/.{obs_df['total_costo_soles'].sum():,.0f}/año")
-    logger.info(f"   Total ahorro solar: S/.{obs_df['total_ahorro_soles'].sum():,.0f}/año")
+    logger.info(f"[OBSERVABLES] ✅ DataFrame creado: {obs_df.shape} "
+               f"(27 columnas observables según ALL_OBSERVABLE_COLS)")
+    logger.info(f"   CHARGERS (10): {[c for c in obs_df.columns if c.startswith('ev_')]}")
+    logger.info(f"   SOLAR (6): {[c for c in obs_df.columns if c.startswith('solar_')]}")
+    logger.info(f"   BESS (5): {[c for c in obs_df.columns if c.startswith('bess_')]}")
+    logger.info(f"   MALL (3): {[c for c in obs_df.columns if c.startswith('mall_')]}")
+    logger.info(f"   TOTALES (3): {[c for c in obs_df.columns if c.startswith('total_')]}")
+    logger.info(f"   → Total CO2 evitado: {obs_df['total_reduccion_co2_kg'].sum()/1000:,.1f} ton/año")
+    logger.info(f"   → Total costo EVs: S/.{obs_df['total_costo_soles'].sum():,.0f}/año")
+    logger.info(f"   → Total ahorro solar: S/.{obs_df['total_ahorro_soles'].sum():,.0f}/año")
     
     return obs_df
 
