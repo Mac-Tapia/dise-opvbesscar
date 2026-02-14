@@ -1,8 +1,8 @@
-"""Re-export metrics utilities from citylearnv2.progress for backward compatibility."""
+"""Re-export metrics utilities from citylearnv2.dataset_builder for backward compatibility."""
 
 from __future__ import annotations
 
-from ..citylearnv2.progress.metrics_extractor import (
+from ..citylearnv2.dataset_builder.metrics_extractor import (
     extract_step_metrics,
     calculate_co2_metrics,
     EpisodeMetricsAccumulator,

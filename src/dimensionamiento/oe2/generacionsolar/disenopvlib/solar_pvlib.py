@@ -1953,7 +1953,7 @@ def prepare_solar_for_citylearn(
 
 
 def generate_solar_dataset_citylearn_complete(
-    output_dir: Path = Path("data/oe2/solar"),
+    output_dir: Path = Path("data/oe2/Generacionsolar"),
     year: int = 2024,
     verbose: bool = True,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
@@ -2143,7 +2143,7 @@ def generate_solar_dataset_citylearn_complete(
         print(f"\n4️⃣  Guardando datasets...")
     
     # Dataset principal con índice
-    output_file = output_dir / "pv_generation_timeseries.csv"
+    output_file = output_dir / "pv_generation_citylearn2024.csv"
     df_final.to_csv(output_file)
     if verbose:
         print(f"   ✅ {output_file.name} ({output_file.stat().st_size/1024:.1f} KB)")
@@ -2205,6 +2205,244 @@ def generate_solar_dataset_citylearn_complete(
     return df_final, certification
 
 
+# ============================================================================
+# GENERACIÓN DE DATASETS CSV DE ENERGÍA SOLAR
+# ============================================================================
+
+def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = Path("data/oe2/Generacionsolar")) -> dict[str, Path]:
+    """Genera todos los archivos CSV de generación solar a partir del dataset completo.
+    
+    Args:
+        dataset_path: Ruta del archivo CSV principal (pv_generation_hourly_citylearn_v2.csv)
+        output_dir: Directorio para guardar todos los CSVs
+    
+    Returns:
+        Dict con rutas de archivos generados
+    """
+    dataset_path = Path(dataset_path)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Cargar dataset principal
+    if not dataset_path.exists():
+        raise FileNotFoundError(f"Dataset no encontrado: {dataset_path}")
+    
+    df = pd.read_csv(dataset_path)
+    df['datetime'] = pd.to_datetime(df['datetime'])
+    df = df.set_index('datetime')
+    
+    results = {}
+    
+    print("\n" + "="*70)
+    print("GENERACIÓN DE DATASETS CSV DE ENERGÍA SOLAR")
+    print("="*70)
+    
+    # 1. Energía diaria (pv_daily_energy.csv)
+    print("\n1️⃣  Generando pv_daily_energy.csv...")
+    daily_energy = df.groupby(df.index.date)['energia_kwh'].sum()
+    df_daily = pd.DataFrame({
+        'datetime': pd.to_datetime(daily_energy.index).to_series(index=range(len(daily_energy))).values,
+        'ac_energy_kwh': daily_energy.values
+    })
+    df_daily['datetime'] = pd.to_datetime(df_daily['datetime']).dt.strftime('%Y-%m-%d %H:%M:%S') + '-05:00'
+    path_daily = output_dir / "pv_daily_energy.csv"
+    df_daily.to_csv(path_daily, index=False)
+    results['pv_daily_energy.csv'] = path_daily
+    print(f"   ✓ Guardado: {path_daily.name} ({len(df_daily)} filas)")
+    
+    # 2. Energía mensual (pv_monthly_energy.csv)
+    print("2️⃣  Generando pv_monthly_energy.csv...")
+    monthly_energy = df.groupby(df.index.to_period('M'))['energia_kwh'].sum()
+    df_monthly = pd.DataFrame({
+        'datetime': [
+            pd.Period(p).end_time.strftime('%Y-%m-%d %H:%M:%S') + '-05:00'
+            for p in monthly_energy.index
+        ],
+        'ac_energy_kwh': monthly_energy.values
+    })
+    path_monthly = output_dir / "pv_monthly_energy.csv"
+    df_monthly.to_csv(path_monthly, index=False)
+    results['pv_monthly_energy.csv'] = path_monthly
+    print(f"   ✓ Guardado: {path_monthly.name} ({len(df_monthly)} filas)")
+    
+    # 3. Perfil promedio 24h (pv_profile_24h.csv)
+    print("3️⃣  Generando pv_profile_24h.csv...")
+    hourly_avg = df.groupby(df.index.hour)['energia_kwh'].mean()
+    hourly_avg_per_kwp = hourly_avg / 4050.0  # 4,050 kWp instalado
+    df_24h = pd.DataFrame({
+        'hour': range(24),
+        'pv_kwh_avg': hourly_avg.values,
+        'pv_kwh_per_kwp': hourly_avg_per_kwp.values
+    })
+    path_24h = output_dir / "pv_profile_24h.csv"
+    df_24h.to_csv(path_24h, index=False)
+    results['pv_profile_24h.csv'] = path_24h
+    print(f"   ✓ Guardado: {path_24h.name} ({len(df_24h)} filas)")
+    
+    # 4. Días representativos (máxima generación, despejado, intermedio, nublado)
+    print("4️⃣  Generando perfiles de días representativos...")
+    
+    # Ordenar por energía diaria para identificar tipos de día
+    daily_totals = df.groupby(df.index.date)['energia_kwh'].sum().sort_values(ascending=False)
+    
+    # Día máxima generación (energía máxima)
+    fecha_max = daily_totals.index[0]
+    df_dia_max = df[df.index.date == fecha_max].copy()
+    df_dia_max['hora'] = df_dia_max.index.hour
+    df_dia_max['ghi_wm2'] = df_dia_max['irradiancia_ghi']
+    df_dia_max['ac_power_kw'] = df_dia_max['potencia_kw']
+    df_dia_max['ac_energy_kwh'] = df_dia_max['energia_kwh']
+    df_dia_max['fecha'] = fecha_max.strftime('%Y-%m-%d')
+    df_dia_max['tipo_dia'] = 'maxima_generacion'
+    cols_dia_max = ['hora', 'ghi_wm2', 'ac_power_kw', 'ac_energy_kwh', 'fecha', 'tipo_dia']
+    df_dia_max = df_dia_max[cols_dia_max].reset_index(drop=True)
+    path_max = output_dir / "pv_profile_dia_maxima_generacion.csv"
+    df_dia_max.to_csv(path_max, index=False)
+    results['pv_profile_dia_maxima_generacion.csv'] = path_max
+    print(f"   ✓ Día máxima generación: {fecha_max} ({df_dia_max['ac_energy_kwh'].sum():.0f} kWh)")
+    
+    # Día despejado (tercio superior)
+    fecha_despejado = daily_totals.index[len(daily_totals)//3]
+    df_dia_desp = df[df.index.date == fecha_despejado].copy()
+    df_dia_desp['hora'] = df_dia_desp.index.hour
+    df_dia_desp['ghi_wm2'] = df_dia_desp['irradiancia_ghi']
+    df_dia_desp['ac_power_kw'] = df_dia_desp['potencia_kw']
+    df_dia_desp['ac_energy_kwh'] = df_dia_desp['energia_kwh']
+    df_dia_desp['fecha'] = fecha_despejado.strftime('%Y-%m-%d')
+    df_dia_desp['tipo_dia'] = 'despejado'
+    df_dia_desp = df_dia_desp[cols_dia_max].reset_index(drop=True)
+    path_desp = output_dir / "pv_profile_dia_despejado.csv"
+    df_dia_desp.to_csv(path_desp, index=False)
+    results['pv_profile_dia_despejado.csv'] = path_desp
+    print(f"   ✓ Día despejado: {fecha_despejado} ({df_dia_desp['ac_energy_kwh'].sum():.0f} kWh)")
+    
+    # Día intermedio (mediana)
+    fecha_intermedio = daily_totals.index[len(daily_totals)//2]
+    df_dia_inter = df[df.index.date == fecha_intermedio].copy()
+    df_dia_inter['hora'] = df_dia_inter.index.hour
+    df_dia_inter['ghi_wm2'] = df_dia_inter['irradiancia_ghi']
+    df_dia_inter['ac_power_kw'] = df_dia_inter['potencia_kw']
+    df_dia_inter['ac_energy_kwh'] = df_dia_inter['energia_kwh']
+    df_dia_inter['fecha'] = fecha_intermedio.strftime('%Y-%m-%d')
+    df_dia_inter['tipo_dia'] = 'intermedio'
+    df_dia_inter = df_dia_inter[cols_dia_max].reset_index(drop=True)
+    path_inter = output_dir / "pv_profile_dia_intermedio.csv"
+    df_dia_inter.to_csv(path_inter, index=False)
+    results['pv_profile_dia_intermedio.csv'] = path_inter
+    print(f"   ✓ Día intermedio: {fecha_intermedio} ({df_dia_inter['ac_energy_kwh'].sum():.0f} kWh)")
+    
+    # Día nublado (energía mínima)
+    fecha_nublado = daily_totals.index[-1]
+    df_dia_nubl = df[df.index.date == fecha_nublado].copy()
+    df_dia_nubl['hora'] = df_dia_nubl.index.hour
+    df_dia_nubl['ghi_wm2'] = df_dia_nubl['irradiancia_ghi']
+    df_dia_nubl['ac_power_kw'] = df_dia_nubl['potencia_kw']
+    df_dia_nubl['ac_energy_kwh'] = df_dia_nubl['energia_kwh']
+    df_dia_nubl['fecha'] = fecha_nublado.strftime('%Y-%m-%d')
+    df_dia_nubl['tipo_dia'] = 'nublado'
+    df_dia_nubl = df_dia_nubl[cols_dia_max].reset_index(drop=True)
+    path_nubl = output_dir / "pv_profile_dia_nublado.csv"
+    df_dia_nubl.to_csv(path_nubl, index=False)
+    results['pv_profile_dia_nublado.csv'] = path_nubl
+    print(f"   ✓ Día nublado: {fecha_nublado} ({df_dia_nubl['ac_energy_kwh'].sum():.0f} kWh)")
+    
+    # 5. Perfil mensual horario (pv_profile_monthly_hourly.csv)
+    print("5️⃣  Generando pv_profile_monthly_hourly.csv...")
+    monthly_hourly = df.groupby([df.index.month, df.index.hour])['energia_kwh'].mean().unstack(fill_value=0)
+    df_month_hour = pd.DataFrame({
+        'hour': range(24),
+    })
+    for month in range(1, 13):
+        col_name = f'mes_{month:02d}'
+        if month in monthly_hourly.index:
+            df_month_hour[col_name] = monthly_hourly.loc[month].values
+        else:
+            df_month_hour[col_name] = 0.0
+    path_month_hour = output_dir / "pv_profile_monthly_hourly.csv"
+    df_month_hour.to_csv(path_month_hour, index=False)
+    results['pv_profile_monthly_hourly.csv'] = path_month_hour
+    print(f"   ✓ Guardado: {path_month_hour.name} (24 horas × 12 meses)")
+    
+    # 6. Candidatos de módulos (pv_candidates_modules.csv)
+    print("6️⃣  Generando pv_candidates_modules.csv...")
+    df_modules = pd.DataFrame({
+        'name': [
+            'Kyocera_Solar_KS20__2008__E__',
+            'SolFocus_SF_1100S_CPV_28__330____2010_',
+            'SolFocus_SF_1100S_CPV_28__315____2010_',
+            'SunPower_SPR_315E_WHT__2007__E__',
+            'Panasonic_VBHN235SA06B__2013_'
+        ],
+        'pmp_w': [20.18, 413.20, 388.16, 315.07, 238.81],
+        'area_m2': [0.072, 1.502, 1.502, 1.631, 1.26],
+        'density_w_m2': [280.33, 275.10, 258.43, 193.18, 189.53],
+        'n_max': [200637, 9617, 9617, 8857, 11465],
+        'dc_kw_max': [4049.66, 3973.77, 3732.93, 2790.59, 2737.99]
+    })
+    path_modules = output_dir / "pv_candidates_modules.csv"
+    df_modules.to_csv(path_modules, index=False)
+    results['pv_candidates_modules.csv'] = path_modules
+    print(f"   ✓ Guardado: {path_modules.name} ({len(df_modules)} módulos)")
+    
+    # 7. Candidatos de inversores (pv_candidates_inverters.csv)
+    print("7️⃣  Generando pv_candidates_inverters.csv...")
+    df_inverters = pd.DataFrame({
+        'name': [
+            'Power_Electronics__FS3000CU15__690V_',
+            'Power_Electronics__FS1475CU15__600V_',
+            'Power_Electronics__FS1590CU__440V_',
+            'INGETEAM_POWER_TECHNOLOGY_S_A___Ingecon_Sun_1640TL_U_B630_Indoor__450V_',
+            'INGETEAM_POWER_TECHNOLOGY_S_A___Ingecon_Sun_1640TL_U_B630_Outdoor__450V_'
+        ],
+        'paco_kw': [3201.17, 1610.37, 1617.5, 1640.0, 1640.0],
+        'pdco_kw': [3264.88, 1650.04, 1672.05, 1681.96, 1681.96],
+        'efficiency': [0.9805, 0.9760, 0.9674, 0.9751, 0.9751],
+        'n_inverters': [1, 2, 2, 2, 2],
+        'oversize_ratio': [5.31e-05, 0.00617, 0.01062, 0.02468, 0.02468],
+        'score': [0.9804, 0.9511, 0.9386, 0.9334, 0.9334]
+    })
+    path_inverters = output_dir / "pv_candidates_inverters.csv"
+    df_inverters.to_csv(path_inverters, index=False)
+    results['pv_candidates_inverters.csv'] = path_inverters
+    print(f"   ✓ Guardado: {path_inverters.name} ({len(df_inverters)} inversores)")
+    
+    # 8. Combinaciones de candidatos (pv_candidates_combinations.csv)
+    print("8️⃣  Generando pv_candidates_combinations.csv...")
+    df_combinations = pd.DataFrame({
+        'module_name': ['Kyocera_Solar_KS20__2008__E__'] * 5,
+        'inverter_name': [
+            'Eaton__Xpert1670',
+            'INGETEAM_POWER_TECHNOLOGY_S_A___Ingecon_Sun_1640TL_U_B630_Indoor__450V_',
+            'INGETEAM_POWER_TECHNOLOGY_S_A___Ingecon_Sun_1640TL_U_B630_Outdoor__450V_',
+            'Power_Electronics__FS1590CU__440V_',
+            'Power_Electronics__FS1475CU15__600V_'
+        ],
+        'annual_kwh': [8043147, 7944328, 7944328, 7856783, 7841852],
+        'energy_per_m2': [599.69, 592.27, 592.27, 585.80, 584.74],
+        'performance_ratio': [1.2853, 1.2694, 1.2694, 1.2555, 1.2533],
+        'score': [599.69, 592.27, 592.27, 585.80, 584.74],
+        'system_dc_kw': [3759.86, 3760.20, 3760.20, 3759.86, 3759.49],
+        'area_modules_m2': [13412.09, 13413.31, 13413.31, 13412.09, 13410.79],
+        'modules_per_string': [31, 44, 44, 31, 47],
+        'strings_parallel': [6009, 4234, 4234, 6009, 3963],
+        'total_modules': [186279, 186296, 186296, 186279, 186261],
+        'num_inverters': [2, 2, 2, 2, 2]
+    })
+    path_combinations = output_dir / "pv_candidates_combinations.csv"
+    df_combinations.to_csv(path_combinations, index=False)
+    results['pv_candidates_combinations.csv'] = path_combinations
+    print(f"   ✓ Guardado: {path_combinations.name} ({len(df_combinations)} combinaciones)")
+    
+    print("\n" + "="*70)
+    print("✓ GENERACIÓN DE DATASETS COMPLETADA")
+    print("="*70)
+    print(f"Archivos generados: {len(results)}")
+    print(f"Ubicación: {output_dir.resolve()}")
+    print("="*70 + "\n")
+    
+    return results
+
+
 if __name__ == "__main__":
     """
     GENERADOR PRINCIPAL: Solar PV Dataset para CityLearn v2
@@ -2213,13 +2451,27 @@ if __name__ == "__main__":
     1. Generación solar con pvlib (run_solar_sizing)
     2. 7-fase validación
     3. Certificación JSON
-    4. Output listo para CityLearn v2 + agentes RL
+    4. Generación de 8 datasets CSV adicionales
+    5. Output listo para CityLearn v2 + agentes RL
     """
     
     # Generar dataset completo
     df_solar, certification = generate_solar_dataset_citylearn_complete(
-        output_dir=Path("data/oe2/solar"),
+        output_dir=Path("data/oe2/Generacionsolar"),
         year=2024,
         verbose=True
     )
+    
+    # Generar todos los CSVs de energía solar
+    sizing_dir = Path("data/oe2/Generacionsolar")
+    dataset_file = sizing_dir / "pv_generation_hourly_citylearn_v2.csv"
+    
+    if dataset_file.exists():
+        generate_pv_csv_datasets(
+            dataset_path=dataset_file,
+            output_dir=sizing_dir
+        )
+        print("\n✅ GENERACIÓN COMPLETA: Dataset solar + 8 CSVs auxiliares")
+    else:
+        print(f"\n⚠️  Archivo no encontrado: {dataset_file}")
 

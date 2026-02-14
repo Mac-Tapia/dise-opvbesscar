@@ -1,0 +1,647 @@
+
+
++==============================================================================+
+|                    SISTEMA BESS v5.4 - IQUITOS EV MALL                      |
+|               Dimensionamiento Solar-Priority v5.4                          |
++==============================================================================+
+
+Fecha ejecucion: 2026-02-13 16:06:59
+
+[1] ESPECIFICACIONES TECNICAS BESS v5.4
+------------------------------------------------------------
+  Capacidad nominal:      1,700 kWh
+  Potencia nominal:       400 kW
+  Profundidad descarga:   80%
+  Eficiencia round-trip:  95%
+  SOC operacional:        20% - 100%
+
+[2] TARIFAS OSINERGMIN MT3 - ELECTRO ORIENTE (IQUITOS)
+------------------------------------------------------------
+  HP (18:00-23:00, 5h):   S/.0.45/kWh
+  HFP (resto, 19h):       S/.0.28/kWh
+  Diferencial:            S/.0.17/kWh (60.7%)
+  Factor CO2 grid:        0.4521 kg CO2/kWh
+
+[3] VERIFICACION DE ARCHIVOS DE ENTRADA
+------------------------------------------------------------
+  OK PV Solar:    pv_generation_citylearn2024.csv (837.3 KB)
+  OK EV Chargers: chargers_ev_ano_2024_v3.csv (15892.9 KB)
+  OK Mall Demand: demandamallhorakwh.csv (193.1 KB)
+
+  Output dir: D:\dise├▒opvbesscar\data\oe2\bess
+
+[4] EJECUTANDO DIMENSIONAMIENTO BESS...
+------------------------------------------------------------
+
+============================================================
+  DIMENSIONAMIENTO DE SISTEMA BESS
+============================================================
+
+Cargando datos de entrada...
+   Generacion PV: 8760 registros (columna: energia_kwh)
+   Demanda Mall (real, horaria): 33887 kWh/dia (basado en 8,760 horas)
+      [OK] Detectado formato v5.2 con 38 sockets
+      [OK] Total EV (9h-22h): 412,236 kWh/a├▒o
+   Demanda EV (horaria, 8760 horas): 1129 kWh/dia
+      - 19 cargadores, 38 tomas totales (Modo 3 @ 7.4 kW)
+      - Playa Motos: 15 cargadores ├ù 2 = 30 tomas
+      - Playa Mototaxis: 4 cargadores ├ù 2 = 8 tomas
+   Alineados a 8,760 horas (formato horario)
+
+[REGLAS BESS - PRIORIDAD SOLAR - EXCLUSIVO EV]
+   1. Solar -> PRIMERO motos/mototaxis (EV)
+   2. Excedente solar -> SEGUNDO carga BESS (hasta SOC 100%)
+   3. Excedente final -> TERCERO Mall
+   4. BESS descarga: Desde punto cr├¡tico (PV<EV) hasta cierre 22h
+   5. SOC al cierre (22h): 20%
+
+[AN├üLISIS CRUCE CURVAS PV vs EV]
+   Hora fin carga BESS (PV >= EV): ~6h (SOC se mantiene 100%)
+   Hora inicio descarga (PV < EV): ~17h (punto critico)
+   Hora cierre: 22h (SOC debe ser 20%)
+   Deficit EV promedio: 559.3 kWh/dia
+   Deficit EV MAXIMO: 708.0 kWh/dia [USADO PARA 100% COBERTURA]
+   Pico deficit EV: 156.0 kW
+
+[FLUJOS ENERG├ëTICOS DIARIOS]
+   Generacion PV: 22719 kWh/dia
+   Demanda EV: 1129 kWh/dia
+   PV->EV directo: 570 kWh/dia
+   Excedente PV (para BESS): 22149 kWh/d├¡a
+   Deficit EV promedio: 559 kWh/dia
+   Deficit EV MAXIMO: 708 kWh/dia
+
+============================================================
+  DIMENSIONAMIENTO BESS - 100% COBERTURA DEFICIT EV
+============================================================
+
+[PAR├üMETROS DE DISE├æO]
+   SOC operacional: 20% - 100%
+   DoD efectivo: 80%
+   Eficiencia round-trip: 95%
+
+[CRITERIO CAPACIDAD - DINAMICO]
+   Criterio: Cubrir DEFICIT EV desde punto critico (EV>PV) hasta cierre (22h)
+   SOC final al cierre: 20% (regla operacional)
+   Deficit EV en descarga: 708 kWh/dia
+   Horas de descarga: 5 horas (17h-22h)
+   Pico deficit EV: 156.0 kW
+
+DIMENSIONAMIENTO OPTIMO (segun analisis perfil 15 min):
+   Capacidad base:   940 kWh
+   Factor de dise├▒o: 1.20 (margen 20%)
+   Capacidad final:  940 kWh
+   Potencia:         342 kW
+   DoD:              80%
+   Eficiencia:       95%
+   Ratio Cap/Pot:    2.75
+   Ciclos/dia:       0.75
+   Deficit cubierto: 708 kWh/dia (18h-22h)
+
+Simulando operacion BESS con SOLAR-PRIORITY (basado en disponibilidad solar)...
+
+[ESTRATEGIA SOLAR-PRIORITY v5.4 - INDEPENDIENTE DE TARIFA]
+   BESS Capacidad:           1,700 kWh
+   BESS Potencia:            400 kW
+
+   [CARGA] Manana-tarde (6h-22h) cuando PV > demanda
+           -> Llenar BESS a 100% desde PV excedente
+           -> Solo PV, NO grid
+   [DESCARGA] Tarde-noche cuando (PV < Mall) OR (deficit EV AND SOC > min)
+              -> BESS->EV (prioridad 1)
+              -> BESS->Mall (prioridad 2, si PV < demanda_mall)
+   [SOC] 20%-100% con eficiencia 95%
+
+   Ventajas: Independiente de tarifa futura, mas seguro, logica intuitiva
+
+   Cobertura EV por BESS: 81.1%
+   EV desde PV directo: 183 MWh/a├▒o
+   EV desde BESS: 151 MWh/a├▒o
+   EV desde red: 78 MWh/a├▒o
+   Ciclos/dia:      1.15
+   SOC min/max:     20.0% / 100.0%
+   Import red EV:   213 kWh/dia
+
+[M├ëTRICAS ECON├ôMICAS OSINERGMIN - ARBITRAJE HP/HFP]
+   Costo baseline (sin BESS): S/.3,578,649/a├▒o
+   Costo con BESS arbitraje:  S/.2,318,008/a├▒o
+   Ahorro BESS (arbitraje):   S/.1,260,642/a├▒o
+   Ahorro total:              S/.1,260,642/a├▒o
+   ROI arbitraje:             35.2%
+
+[M├ëTRICAS CO2]
+   Emisiones grid (baseline):     2948.0 ton CO2/a├▒o
+
+   REDUCCI├ôN INDIRECTA DE CO2 (RED T├ëRMICA IQUITOS):
+   ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+   Evitado por PV directo:        2585.9 ton CO2/a├▒o
+   Evitado por BESS discharge:    251.0 ton CO2/a├▒o
+   ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+   TOTAL CO2 EVITADO:             2836.9 ton CO2/a├▒o Ô£à
+   Reducci├│n CO2:                 49.0%
+
+   Factor CO2 generaci├│n t├®rmica Iquitos: 0.4521 kg CO2/kWh (diesel B5)
+   Energ├¡a sustituida red: 6274.8 MWh/a├▒o
+   Ô£à Guardado: bess_simulation_hourly.csv (8760 filas)
+   Ô£à Guardado: bess_ano_2024.csv (8760 filas, a├▒o completo 2024)
+
+Datos CityLearn guardados en: D:\dise├▒opvbesscar\data\oe2\citylearn
+
+Analizando caracter├¡sticas detalladas del BESS...
+
+====================================================================================================
+AN├üLISIS DETALLADO: CARACTER├ìSTICAS DE CARGA/DESCARGA DEL BESS v5.4
+====================================================================================================
+
+[1] ESPECIFICACIONES T├ëCNICAS DEL BESS
+----------------------------------------------------------------------------------------------------
+  ÔÇó Capacidad nominal:          1,700 kWh
+  ÔÇó Potencia nominal:           400 kW (CARGA y DESCARGA)
+  ÔÇó Velocidad de carga (C-rate): 0.235 C
+    ÔåÆ Carga completa en 4.25 horas
+  ÔÇó Eficiencia round-trip:      95.0%
+  ÔÇó Eficiencia carga/descarga:  97.47% cada una
+  ÔÇó SOC rango operativo:        20% - 100% (80% DoD)
+
+[2] DISTRIBUCI├ôN DE HORAS DE OPERACI├ôN (8,760 horas/a├▒o)
+----------------------------------------------------------------------------------------------------
+  - Horas CARGANDO:             2053h ( 23.4%)
+  - Horas DESCARGANDO:          1887h ( 21.5%)
+  - Horas LLENO (sin actividad):     0h (  0.0%)
+  - Horas INACTIVO:             4820h ( 55.0%)
+
+[3] VELOCIDAD DE CARGA vs DESCARGA
+----------------------------------------------------------------------------------------------------
+
+  CARGA (cuando est├í activa):
+    - Total anual:              711,323.2 kWh
+    - Velocidad promedio:           346.5 kWh/h
+    - Como % del m├íximo:             86.6% de 400 kW
+
+  DESCARGA (cuando est├í activa):
+    - Total anual:              556,120.4 kWh
+    - Velocidad promedio:           294.7 kWh/h
+    - Como % del m├íximo:             73.7% de 400 kW
+
+[4] CICLOS ANUALES Y DESGASTE
+----------------------------------------------------------------------------------------------------
+  Ciclos por a├▒o:                     418.4 ciclos
+  Ciclos por d├¡a (promedio):           1.15 ciclos/d├¡a
+  Desgaste esperado (Li-ion):          13.9% de vida/a├▒o
+                               (asumiendo 3,000 ciclos de vida t├¡pica)
+
+[5] BALANCE ENERG├ëTICO (A├æO 2024)
+----------------------------------------------------------------------------------------------------
+  - Energ├¡a entrante (carga):      711,323.2 kWh
+  - Energ├¡a saliente (descarga):    556,120.4 kWh
+  - Diferencia:                    155,202.8 kWh
+  - Eficiencia round-trip:              78.2%
+
+[6] ENERG├ìA DEL BESS QUE ATIENDE AL MALL
+----------------------------------------------------------------------------------------------------
+
+  DESGLOSE ANUAL DE DESCARGA:
+    - BESS ÔåÆ EV:       150,974.2 kWh ( 36.6% de demanda EV)
+    - BESS ÔåÆ MALL:     404,199.4 kWh (  3.3% de demanda MALL)
+
+  HORARIOS CUANDO BESS ATIENDE AL MALL:
+    - Horas activas: 1698 horas
+    - Energ├¡a promedio/hora: 238.0 kWh/h
+    - Horas principales del d├¡a: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+
+[7] CICLO T├ìPICO DE UN D├ìA
+----------------------------------------------------------------------------------------------------
+  - SOC inicial:      50.0%
+  - SOC final:        74.2%
+  - SOC m├íximo:      100.0%
+  - SOC m├¡nimo:       50.0%
+  - Carga total:     967.2 kWh
+  - Descarga total:  426.7 kWh
+
+====================================================================================================
+  Ô£ô Reporte guardado: D:\dise├▒opvbesscar\data\oe2\bess\bess_characteristics_summary.txt
+  Ô£ô An├ílisis JSON guardado: D:\dise├▒opvbesscar\data\oe2\bess\bess_characteristics_analysis.json
+
+Generando graficas...
+  OK Grafica: Sistema FV + BESS Completo
+  Advertencia: No se pudieron generar graficas: 'ev_kwh'
+  Continuando sin graficas...
+
+============================================================
+Resultados guardados en: D:\dise├▒opvbesscar\data\oe2\bess
+============================================================
+
+[5] RESULTADOS FINALES DIMENSIONAMIENTO BESS v5.4
+============================================================
+
+CAPACIDAD:
+  Capacidad:        1,700 kWh
+  Potencia:         400 kW
+  DoD:              80%
+  Eficiencia:       95%
+
+ENERGETICO (ANUAL):
+  Generacion PV:    8,292.5 MWh/a├▒o
+  Demanda Mall:     12,368.7 MWh/a├▒o
+  Demanda EV:       412.2 MWh/a├▒o
+  Demanda Total:    12,780.9 MWh/a├▒o
+
+FINANCIERO:
+  Costo baseline:   S/.3,578,649/a├▒o
+  Ahorro total:     S/.1,260,642/a├▒o
+  Reduccion costo:  35.2%
+
+CO2 (INDIRECTO):
+  Reduccion CO2:    2,836.9 ton/a├▒o
+  Reduccion %:      49.0%
+
+============================================================
+DIMENSIONAMIENTO COMPLETADO EXITOSAMENTE
+Resultados en: D:\dise├▒opvbesscar\data\oe2\bess
+============================================================
+
+
+    ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+    Ôöé  ESPECIFICACIONES T├ëCNICAS BESS                                    Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  Capacidad nominal:         1,700 kWh                          Ôöé
+    Ôöé  Potencia nominal:            400 kW                           Ôöé
+    Ôöé  Profundidad descarga:         80 % (DoD)                       Ôöé
+    Ôöé  Eficiencia round-trip:        95 %                           Ôöé
+    Ôöé  SOC m├¡nimo:                   20 %                           Ôöé
+    Ôöé  SOC m├íximo:                  100 %                           Ôöé
+    Ôöé  Capacidad ├║til:            1,360 kWh (80% DoD)                   Ôöé
+    Ôöé  C-rate nominal:             0.24 C                            Ôöé
+    ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+    
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé  2´©ÅÔâú  TARIFAS OSINERGMIN MT3 - ELECTRO ORIENTE S.A. (IQUITOS)                 Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+
+    ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+    Ôöé  TARIFAS MT3 - Resoluci├│n OSINERGMIN N┬░ 047-2024-OS/CD             Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé                                                                     Ôöé
+    Ôöé  ÔÅ░ HORA PUNTA (HP): 18:00 - 23:00 (5 horas)                        Ôöé
+    Ôöé     ÔÇó Energ├¡a:    S/.0.45/kWh  (~USD 0.120/kWh)              Ôöé
+    Ôöé     ÔÇó Potencia:   S/.48.50/kW-mes                                 Ôöé
+    Ôöé                                                                     Ôöé
+    Ôöé  ÔÅ░ HORA FUERA DE PUNTA (HFP): 00:00-17:59, 23:00-23:59 (19 horas)  Ôöé
+    Ôöé     ÔÇó Energ├¡a:    S/.0.28/kWh  (~USD 0.075/kWh)              Ôöé
+    Ôöé     ÔÇó Potencia:   S/.22.80/kW-mes                                 Ôöé
+    Ôöé                                                                     Ôöé
+    Ôöé  ­ƒÆ░ DIFERENCIAL ARBITRAJE: S/.0.17/kWh (60.7% ahorro)          Ôöé
+    Ôöé                                                                     Ôöé
+    Ôöé  ­ƒîí´©Å FACTOR CO2 (Sistema t├®rmico aislado): 0.4521 kg/kWh         Ôöé
+    ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+    
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé  3´©ÅÔâú  DATOS DE ENTRADA - VERIFICACI├ôN DE ARCHIVOS                             Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+
+    ­ƒôé ARCHIVOS DE ENTRADA:
+    Ô£à PV Solar:    pv_generation_citylearn2024.csv (837.3 KB)
+    Ô£à EV Chargers: chargers_ev_ano_2024_v3.csv (15892.9 KB)
+    Ô£à Mall Demand: demandamallhorakwh.csv (193.1 KB)
+
+    ­ƒôü Directorio salida: D:\dise├▒opvbesscar\data\oe2\bess
+
+
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé  4´©ÅÔâú  EJECUTANDO DIMENSIONAMIENTO BESS...                                     Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+
+============================================================
+  DIMENSIONAMIENTO DE SISTEMA BESS
+============================================================
+
+Cargando datos de entrada...
+   Generacion PV: 8760 registros (columna: energia_kwh)
+   Demanda Mall (real, horaria): 33887 kWh/dia (basado en 8,760 horas)
+      [OK] Detectado formato v5.2 con 38 sockets
+      [OK] Total EV (9h-22h): 412,236 kWh/a├▒o
+   Demanda EV (horaria, 8760 horas): 1129 kWh/dia
+      - 19 cargadores, 38 tomas totales (Modo 3 @ 7.4 kW)
+      - Playa Motos: 15 cargadores ├ù 2 = 30 tomas
+      - Playa Mototaxis: 4 cargadores ├ù 2 = 8 tomas
+   Alineados a 8,760 horas (formato horario)
+
+[REGLAS BESS - PRIORIDAD SOLAR - EXCLUSIVO EV]
+   1. Solar -> PRIMERO motos/mototaxis (EV)
+   2. Excedente solar -> SEGUNDO carga BESS (hasta SOC 100%)
+   3. Excedente final -> TERCERO Mall
+   4. BESS descarga: Desde punto cr├¡tico (PV<EV) hasta cierre 22h
+   5. SOC al cierre (22h): 20%
+
+[AN├üLISIS CRUCE CURVAS PV vs EV]
+   Hora fin carga BESS (PV >= EV): ~6h (SOC se mantiene 100%)
+   Hora inicio descarga (PV < EV): ~17h (punto critico)
+   Hora cierre: 22h (SOC debe ser 20%)
+   Deficit EV promedio: 559.3 kWh/dia
+   Deficit EV MAXIMO: 708.0 kWh/dia [USADO PARA 100% COBERTURA]
+   Pico deficit EV: 156.0 kW
+
+[FLUJOS ENERG├ëTICOS DIARIOS]
+   Generacion PV: 22719 kWh/dia
+   Demanda EV: 1129 kWh/dia
+   PV->EV directo: 570 kWh/dia
+   Excedente PV (para BESS): 22149 kWh/d├¡a
+   Deficit EV promedio: 559 kWh/dia
+   Deficit EV MAXIMO: 708 kWh/dia
+
+============================================================
+  DIMENSIONAMIENTO BESS - 100% COBERTURA DEFICIT EV
+============================================================
+
+[PAR├üMETROS DE DISE├æO]
+   SOC operacional: 20% - 100%
+   DoD efectivo: 80%
+   Eficiencia round-trip: 95%
+
+[CRITERIO CAPACIDAD - DINAMICO]
+   Criterio: Cubrir DEFICIT EV desde punto critico (EV>PV) hasta cierre (22h)
+   SOC final al cierre: 20% (regla operacional)
+   Deficit EV en descarga: 708 kWh/dia
+   Horas de descarga: 5 horas (17h-22h)
+   Pico deficit EV: 156.0 kW
+
+DIMENSIONAMIENTO OPTIMO (segun analisis perfil 15 min):
+   Capacidad base:   940 kWh
+   Factor de dise├▒o: 1.20 (margen 20%)
+   Capacidad final:  940 kWh
+   Potencia:         342 kW
+   DoD:              80%
+   Eficiencia:       95%
+   Ratio Cap/Pot:    2.75
+   Ciclos/dia:       0.75
+   Deficit cubierto: 708 kWh/dia (18h-22h)
+
+Simulando operacion BESS con SOLAR-PRIORITY (basado en disponibilidad solar)...
+
+[ESTRATEGIA SOLAR-PRIORITY v5.4 - INDEPENDIENTE DE TARIFA]
+   BESS Capacidad:           1,700 kWh
+   BESS Potencia:            400 kW
+
+   [CARGA] Manana-tarde (6h-22h) cuando PV > demanda
+           -> Llenar BESS a 100% desde PV excedente
+           -> Solo PV, NO grid
+   [DESCARGA] Tarde-noche cuando (PV < Mall) OR (deficit EV AND SOC > min)
+              -> BESS->EV (prioridad 1)
+              -> BESS->Mall (prioridad 2, si PV < demanda_mall)
+   [SOC] 20%-100% con eficiencia 95%
+
+   Ventajas: Independiente de tarifa futura, mas seguro, logica intuitiva
+
+   Cobertura EV por BESS: 81.1%
+   EV desde PV directo: 183 MWh/a├▒o
+   EV desde BESS: 151 MWh/a├▒o
+   EV desde red: 78 MWh/a├▒o
+   Ciclos/dia:      1.15
+   SOC min/max:     20.0% / 100.0%
+   Import red EV:   213 kWh/dia
+
+[M├ëTRICAS ECON├ôMICAS OSINERGMIN - ARBITRAJE HP/HFP]
+   Costo baseline (sin BESS): S/.3,578,649/a├▒o
+   Costo con BESS arbitraje:  S/.2,318,008/a├▒o
+   Ahorro BESS (arbitraje):   S/.1,260,642/a├▒o
+   Ahorro total:              S/.1,260,642/a├▒o
+   ROI arbitraje:             35.2%
+
+[M├ëTRICAS CO2]
+   Emisiones grid (baseline):     2948.0 ton CO2/a├▒o
+
+   REDUCCI├ôN INDIRECTA DE CO2 (RED T├ëRMICA IQUITOS):
+   ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+   Evitado por PV directo:        2585.9 ton CO2/a├▒o
+   Evitado por BESS discharge:    251.0 ton CO2/a├▒o
+   ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+   TOTAL CO2 EVITADO:             2836.9 ton CO2/a├▒o Ô£à
+   Reducci├│n CO2:                 49.0%
+
+   Factor CO2 generaci├│n t├®rmica Iquitos: 0.4521 kg CO2/kWh (diesel B5)
+   Energ├¡a sustituida red: 6274.8 MWh/a├▒o
+   Ô£à Guardado: bess_simulation_hourly.csv (8760 filas)
+   Ô£à Guardado: bess_ano_2024.csv (8760 filas, a├▒o completo 2024)
+
+Datos CityLearn guardados en: D:\dise├▒opvbesscar\data\oe2\citylearn
+
+Analizando caracter├¡sticas detalladas del BESS...
+
+====================================================================================================
+AN├üLISIS DETALLADO: CARACTER├ìSTICAS DE CARGA/DESCARGA DEL BESS v5.4
+====================================================================================================
+
+[1] ESPECIFICACIONES T├ëCNICAS DEL BESS
+----------------------------------------------------------------------------------------------------
+  ÔÇó Capacidad nominal:          1,700 kWh
+  ÔÇó Potencia nominal:           400 kW (CARGA y DESCARGA)
+  ÔÇó Velocidad de carga (C-rate): 0.235 C
+    ÔåÆ Carga completa en 4.25 horas
+  ÔÇó Eficiencia round-trip:      95.0%
+  ÔÇó Eficiencia carga/descarga:  97.47% cada una
+  ÔÇó SOC rango operativo:        20% - 100% (80% DoD)
+
+[2] DISTRIBUCI├ôN DE HORAS DE OPERACI├ôN (8,760 horas/a├▒o)
+----------------------------------------------------------------------------------------------------
+  - Horas CARGANDO:             2053h ( 23.4%)
+  - Horas DESCARGANDO:          1887h ( 21.5%)
+  - Horas LLENO (sin actividad):     0h (  0.0%)
+  - Horas INACTIVO:             4820h ( 55.0%)
+
+[3] VELOCIDAD DE CARGA vs DESCARGA
+----------------------------------------------------------------------------------------------------
+
+  CARGA (cuando est├í activa):
+    - Total anual:              711,323.2 kWh
+    - Velocidad promedio:           346.5 kWh/h
+    - Como % del m├íximo:             86.6% de 400 kW
+
+  DESCARGA (cuando est├í activa):
+    - Total anual:              556,120.4 kWh
+    - Velocidad promedio:           294.7 kWh/h
+    - Como % del m├íximo:             73.7% de 400 kW
+
+[4] CICLOS ANUALES Y DESGASTE
+----------------------------------------------------------------------------------------------------
+  Ciclos por a├▒o:                     418.4 ciclos
+  Ciclos por d├¡a (promedio):           1.15 ciclos/d├¡a
+  Desgaste esperado (Li-ion):          13.9% de vida/a├▒o
+                               (asumiendo 3,000 ciclos de vida t├¡pica)
+
+[5] BALANCE ENERG├ëTICO (A├æO 2024)
+----------------------------------------------------------------------------------------------------
+  - Energ├¡a entrante (carga):      711,323.2 kWh
+  - Energ├¡a saliente (descarga):    556,120.4 kWh
+  - Diferencia:                    155,202.8 kWh
+  - Eficiencia round-trip:              78.2%
+
+[6] ENERG├ìA DEL BESS QUE ATIENDE AL MALL
+----------------------------------------------------------------------------------------------------
+
+  DESGLOSE ANUAL DE DESCARGA:
+    - BESS ÔåÆ EV:       150,974.2 kWh ( 36.6% de demanda EV)
+    - BESS ÔåÆ MALL:     404,199.4 kWh (  3.3% de demanda MALL)
+
+  HORARIOS CUANDO BESS ATIENDE AL MALL:
+    - Horas activas: 1698 horas
+    - Energ├¡a promedio/hora: 238.0 kWh/h
+    - Horas principales del d├¡a: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+
+[7] CICLO T├ìPICO DE UN D├ìA
+----------------------------------------------------------------------------------------------------
+  - SOC inicial:      50.0%
+  - SOC final:        74.2%
+  - SOC m├íximo:      100.0%
+  - SOC m├¡nimo:       50.0%
+  - Carga total:     967.2 kWh
+  - Descarga total:  426.7 kWh
+
+====================================================================================================
+  Ô£ô Reporte guardado: D:\dise├▒opvbesscar\data\oe2\bess\bess_characteristics_summary.txt
+  Ô£ô An├ílisis JSON guardado: D:\dise├▒opvbesscar\data\oe2\bess\bess_characteristics_analysis.json
+
+Generando graficas...
+  OK Grafica: Sistema FV + BESS Completo
+  Advertencia: No se pudieron generar graficas: 'ev_kwh'
+  Continuando sin graficas...
+
+============================================================
+Resultados guardados en: D:\dise├▒opvbesscar\data\oe2\bess
+============================================================
+
+
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé  5´©ÅÔâú  RESULTADOS DIMENSIONAMIENTO BESS v5.3                                   Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+
+    ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+    Ôöé  DIMENSIONAMIENTO FINAL                                            Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  Capacidad nominal:           1,700 kWh                        Ôöé
+    Ôöé  Capacidad ├║til (DoD):        1,360 kWh (80% DoD)                Ôöé
+    Ôöé  Potencia nominal:              400 kW                         Ôöé
+    Ôöé  C-rate efectivo:              0.36                             Ôöé
+    Ôöé  Ratio Potencia/Cap:           0.24                             Ôöé
+    Ôöé  Modo dimensionamiento:  ev_open_hours                             Ôöé
+    ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+    
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé  6´©ÅÔâú  BALANCE ENERG├ëTICO - FLUJOS DIARIOS Y ANUALES                           Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+
+    ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+    Ôöé  GENERACI├ôN                                                        Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  ÔÿÇ´©Å  PV Solar:             22,719 kWh/d├¡a  Ôöé   8,292.5 MWh/a├▒o     Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  DEMANDA                                                           Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  ­ƒÅó Mall:                  33,887 kWh/d├¡a  Ôöé  12,368.7 MWh/a├▒o     Ôöé
+    Ôöé  ­ƒöî EV Chargers:            1,129 kWh/d├¡a  Ôöé     412.2 MWh/a├▒o     Ôöé
+    Ôöé  ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ  Ôöé
+    Ôöé  ­ƒôè TOTAL DEMANDA:         35,016 kWh/d├¡a  Ôöé  12,780.9 MWh/a├▒o     Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  BALANCE                                                           Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  Ô¼å´©Å  Excedente PV:          22,149 kWh/d├¡a  (PV - Demanda)        Ôöé
+    Ôöé  Ô¼ç´©Å  D├®ficit EV:               708 kWh/d├¡a  (EV sin PV)           Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  INTERCAMBIO RED                                                   Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  ­ƒôÑ Import red:            17,865 kWh/d├¡a  Ôöé   6,520.6 MWh/a├▒o     Ôöé
+    Ôöé  ­ƒôñ Export red:             5,100 kWh/d├¡a  Ôöé   1,861.5 MWh/a├▒o     Ôöé
+    ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+    
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé  7´©ÅÔâú  OPERACI├ôN BESS - SIMULACI├ôN ARBITRAJE HP/HFP                            Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+
+    ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+    Ôöé  ESTRATEGIA OPERACI├ôN ARBITRAJE                                    Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  ­ƒöï CARGA (HFP 06:00-17:00):                                        Ôöé
+    Ôöé     ÔÇó Fuente: Excedente PV + Grid si SOC < 80%                     Ôöé
+    Ôöé     ÔÇó Tarifa aplicada: S/.0.28/kWh                               Ôöé
+    Ôöé                                                                     Ôöé
+    Ôöé  ­ƒöï DESCARGA (HP 18:00-22:00):                                      Ôöé
+    Ôöé     ÔÇó Destino: EV Chargers + Mall                                  Ôöé
+    Ôöé     ÔÇó Tarifa evitada: S/.0.45/kWh                                Ôöé
+    Ôöé     ÔÇó SOC objetivo cierre (22h): 20%                               Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  M├ëTRICAS OPERACI├ôN                                                Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  ÔÜí Autosuficiencia:           49.0 %                           Ôöé
+    Ôöé  ­ƒöä Ciclos/d├¡a:                1.15                             Ôöé
+    Ôöé  ­ƒôë SOC m├¡nimo:                  20 %                           Ôöé
+    Ôöé  ­ƒôê SOC m├íximo:                 100 %                           Ôöé
+    Ôöé  Ôåö´©Å  Rango SOC:           20% - 100%                            Ôöé
+    ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+    
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé  8´©ÅÔâú  M├ëTRICAS ECON├ôMICAS - AHORRO ARBITRAJE OSINERGMIN                       Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+
+    ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+    Ôöé  COSTOS ANUALES                                                    Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  ­ƒÆ© Costo BASELINE (sin BESS, sin PV):                             Ôöé
+    Ôöé     S/.      3,578,649/a├▒o                                        Ôöé
+    Ôöé                                                                     Ôöé
+    Ôöé  ­ƒÆ░ Costo CON SISTEMA (PV + BESS + Arbitraje):                     Ôöé
+    Ôöé     S/.      2,318,008/a├▒o                                        Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  AHORROS                                                           Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  ­ƒÄ» Ahorro por arbitraje BESS:  S/.   1,260,642/a├▒o                Ôöé
+    Ôöé  ­ƒÄ» Ahorro TOTAL sistema:       S/.   1,260,642/a├▒o                Ôöé
+    Ôöé  ­ƒôë Reducci├│n costo:                    35.2 %                     Ôöé
+    Ôöé  ­ƒôê ROI estimado:                       35.2 %                     Ôöé
+    ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+    
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé  9´©ÅÔâú  M├ëTRICAS CO2 - IMPACTO AMBIENTAL                                        Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+
+    ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+    Ôöé  Factor de emisi├│n: 0.4521 kg CO2/kWh (Sistema t├®rmico aislado)   Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  EMISIONES CO2                                                     Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  ­ƒÅ¡ BASELINE (sin PV, sin BESS):       5,784.8 ton CO2/a├▒o      Ôöé
+    Ôöé  ­ƒî▒ CON SISTEMA (PV + BESS):           2,948.0 ton CO2/a├▒o      Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  REDUCCI├ôN INDIRECTA (BESS reemplaza energ├¡a t├®rmica de red)       Ôöé
+    Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+    Ôöé  ­ƒî┐ REDUCCI├ôN INDIRECTA CO2:           2,836.9 ton CO2/a├▒o      Ôöé
+    Ôöé  ­ƒôë Reducci├│n emisiones:                  49.0 %               Ôöé
+    ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+    
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé  ­ƒöƒ ARCHIVOS GENERADOS                                                       Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+
+    ­ƒôü ARCHIVOS DE DATOS:
+    Ô£à bess_results.json
+       ÔööÔöÇ Configuraci├│n y m├®tricas BESS (2.5 KB)
+    Ô£à bess_simulation_hourly.csv
+       ÔööÔöÇ Simulaci├│n 8,760 horas (29 cols) (1641.1 KB)
+    Ô£à bess_daily_balance_24h.csv
+       ÔööÔöÇ Perfil d├¡a t├¡pico (24 horas) (7.6 KB)
+
+    ­ƒôè GR├üFICAS:
+    ÔÜá´©Å  bess_sistema_completo.png (no generado)
+
+
+ÔòöÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòù
+Ôòæ                         ­ƒôè RESUMEN EJECUTIVO                                 Ôòæ
+ÔòáÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòú
+Ôòæ  ­ƒöï BESS:     1,700 kWh / 400 kW                                          Ôòæ
+Ôòæ  ÔÿÇ´©Å  PV:       8,292.5 MWh/a├▒o generaci├│n                                           Ôòæ
+Ôòæ  ÔÜí Demanda:  12,780.9 MWh/a├▒o (Mall + EV)                                         Ôòæ
+Ôòæ  ­ƒÆ░ Ahorro:   S/.1,260,642/a├▒o (35.2% reducci├│n)                                 Ôòæ
+Ôòæ  ­ƒî┐ CO2:      2,836.9 ton reducci├│n indirecta/a├▒o                                          Ôòæ
+ÔòáÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòú
+Ôòæ  Ô£à DIMENSIONAMIENTO BESS v5.3 COMPLETADO EXITOSAMENTE                        Ôòæ
+ÔòÜÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòØ
+
+

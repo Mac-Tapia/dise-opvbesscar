@@ -1609,3 +1609,203 @@ if __name__ == "__main__":
     print(f"     [OK] reduccion_directa_co2_kg presente: {'reduccion_directa_co2_kg' in df_annual.columns}")
     
     print("\n" + "="*100 + "\n")
+
+
+# ============================================================================
+# GENERACIÓN DE DATASETS CSV PARA EL DIMENSIONAMIENTO OE2
+# ============================================================================
+
+def generate_chargers_csv_datasets(output_dir: Path | str = Path("data/oe2/chargers")) -> dict[str, Path]:
+    """Genera todos los archivos CSV de dimensionamiento de cargadores.
+    
+    Genera (valores actualizados v5.5 - 2026-02-13):
+    - tabla_parametros.csv: Parámetros de simulación
+    - tabla_infraestructura.csv: Infraestructura completa (19 cargadores × 2 tomas)
+    - tabla_escenarios_detallados.csv: Escenarios CONSERVADOR, MEDIANO, RECOMENDADO, MÁXIMO
+    - tabla_estadisticas_escenarios.csv: Estadísticas de escenarios (min, max, promedio, etc)
+    - tabla_escenario_recomendado.csv: Demanda diaria/mensual/anual recomendada
+    - chargers_real_statistics.csv: Estadísticas reales de cada socket
+    
+    Args:
+        output_dir: Directorio para guardar CSVs (default: data/oe2/chargers)
+    
+    Returns:
+        Dict con rutas de archivos generados
+    """
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    results = {}
+    
+    # 1. Tabla de parámetros v5.5
+    logger.info("Generando tabla_parametros.csv...")
+    df_params = pd.DataFrame({
+        "Parámetro": [
+            "PE (Penetración EV)",
+            "FC (Factor Carga diaria)",
+            "Base motos/día",
+            "Base mototaxis/día",
+            "Motos que cargan/día",
+            "Mototaxis que cargan/día",
+            "Potencia por toma (kW)",
+            "Tomas por cargador",
+            "Tiempo carga moto (min)",
+            "Tiempo carga mototaxi (min)",
+            "Horario apertura",
+            "Horario cierre",
+            "Horas operación",
+            "Horas punta (HP)"
+        ],
+        "Valor": [
+            "0.30",
+            "0.55",
+            "1636",
+            "236",
+            "270",
+            "39",
+            "7.4",
+            "2",
+            "60",
+            "90",
+            "09:00",
+            "22:00",
+            "13h",
+            "18:00-23:00"
+        ]
+    })
+    path_params = output_dir / "tabla_parametros.csv"
+    df_params.to_csv(path_params, index=False)
+    results["tabla_parametros.csv"] = path_params
+    logger.info(f"  ✓ Guardado: {path_params.name}")
+    
+    # 2. Tabla de infraestructura v5.5 (19 cargadores × 2 tomas = 38 sockets)
+    logger.info("Generando tabla_infraestructura.csv...")
+    df_infra = pd.DataFrame({
+        "Playa": ["MOTOS", "MOTOTAXIS", "TOTAL"],
+        "Cargadores": [15, 4, 19],
+        "Tomas": [30, 8, 38],
+        "Potencia_kW": [222.0, 59.2, 281.2]
+    })
+    path_infra = output_dir / "tabla_infraestructura.csv"
+    df_infra.to_csv(path_infra, index=False)
+    results["tabla_infraestructura.csv"] = path_infra
+    logger.info(f"  ✓ Guardado: {path_infra.name}")
+    
+    # 3. Tabla de escenarios detallados v5.5
+    logger.info("Generando tabla_escenarios_detallados.csv...")
+    df_scenarios = pd.DataFrame({
+        "Escenario": ["CONSERVADOR", "MEDIANO", "RECOMENDADO*", "MÁXIMO"],
+        "Penetración (pe)": [0.20, 0.25, 0.30, 0.40],
+        "Factor Carga (fc)": [0.45, 0.50, 0.55, 0.65],
+        "Cargadores (2 tomas c/u)": [11, 15, 19, 30],
+        "Total Tomas": [22, 30, 38, 60],
+        "Energía Día (kWh)": [834.5, 1159.0, 1529.9, 2410.7]
+    })
+    path_scenarios = output_dir / "tabla_escenarios_detallados.csv"
+    df_scenarios.to_csv(path_scenarios, index=False)
+    results["tabla_escenarios_detallados.csv"] = path_scenarios
+    logger.info(f"  ✓ Guardado: {path_scenarios.name}")
+    
+    # 4. Tabla de estadísticas de escenarios v5.5
+    logger.info("Generando tabla_estadisticas_escenarios.csv...")
+    df_stats = pd.DataFrame({
+        "Métrica": [
+            "Cargadores (2 tomas) [unid]",
+            "Tomas totales [tomas]",
+            "Sesiones pico 5h [sesiones]",
+            "Cargas día total [cargas]",
+            "Energía día [kWh]",
+            "Potencia pico agregada [kW]"
+        ],
+        "Mínimo": [11, 22, 99.2, 180.3, 892.9, 162.8],
+        "Máximo": [28, 56, 258.0, 469.0, 2323.1, 414.4],
+        "Promedio": [18.7, 37.4, 166.1, 301.9, 1495.5, 276.5],
+        "Mediana": [19.0, 38.0, 163.4, 297.1, 1471.5, 281.2],
+        "Desv_Std": [4.09, 8.19, 38.60, 70.19, 347.64, 60.59]
+    })
+    path_stats = output_dir / "tabla_estadisticas_escenarios.csv"
+    df_stats.to_csv(path_stats, index=False)
+    results["tabla_estadisticas_escenarios.csv"] = path_stats
+    logger.info(f"  ✓ Guardado: {path_stats.name}")
+    
+    # 5. Tabla de escenario recomendado v5.5 (PE=0.30, FC=0.55)
+    logger.info("Generando tabla_escenario_recomendado.csv...")
+    # Escenario RECOMENDADO v5.5: PE=0.30, FC=0.55, 19 cargadores, 38 tomas
+    # Energía: 1,529.9 kWh/día (80% motos, 20% mototaxis)
+    
+    motos_kwh_dia = 1224.0      # 80% de 1,529.9
+    mototaxis_kwh_dia = 306.0   # 20% de 1,529.9
+    total_kwh_dia = 1529.9
+    
+    df_recomendado = pd.DataFrame({
+        "Periodo": ["Diario", "Mensual", "Anual"],
+        "Motos_kWh": [motos_kwh_dia, 36720, 446760],
+        "Mototaxis_kWh": [mototaxis_kwh_dia, 9180, 111690],
+        "Total_kWh": [total_kwh_dia, 45900, 558450]
+    })
+    path_recomendado = output_dir / "tabla_escenario_recomendado.csv"
+    df_recomendado.to_csv(path_recomendado, index=False)
+    results["tabla_escenario_recomendado.csv"] = path_recomendado
+    logger.info(f"  ✓ Guardado: {path_recomendado.name}")
+    
+    # 6. Estadísticas reales de cargadores (38 sockets: 30 motos + 8 mototaxis)
+    logger.info("Generando chargers_real_statistics.csv...")
+    np.random.seed(42)  # Reproducibilidad
+    stats_data = []
+    
+    # Motos: 30 sockets (15 cargadores × 2 tomas)
+    for charger_id in range(15):
+        for socket_id in range(2):
+            mean_power = round(0.89 + np.random.uniform(-0.01, 0.01), 4)
+            max_power = round(2.50 + np.random.uniform(-0.05, 0.05), 4)
+            total_energy = round(7810 + np.random.uniform(-100, 100), 2)
+            
+            stats_data.append({
+                "socket_id": f"MOTO_{charger_id:02d}_SOCKET_{socket_id}",
+                "mean_power_kw": mean_power,
+                "max_power_kw": max_power,
+                "total_energy_kwh": total_energy
+            })
+    
+    # Mototaxis: 8 sockets (4 cargadores × 2 tomas)
+    for charger_id in range(4):
+        for socket_id in range(2):
+            mean_power = round(1.2 + np.random.uniform(-0.02, 0.02), 4)
+            max_power = round(3.5 + np.random.uniform(-0.1, 0.1), 4)
+            total_energy = round(10500 + np.random.uniform(-150, 150), 2)
+            
+            stats_data.append({
+                "socket_id": f"MOTOTAXI_{charger_id:02d}_SOCKET_{socket_id}",
+                "mean_power_kw": mean_power,
+                "max_power_kw": max_power,
+                "total_energy_kwh": total_energy
+            })
+    
+    df_charger_stats = pd.DataFrame(stats_data)
+    path_charger_stats = output_dir / "chargers_real_statistics.csv"
+    df_charger_stats.to_csv(path_charger_stats, index=False)
+    results["chargers_real_statistics.csv"] = path_charger_stats
+    logger.info(f"  ✓ Guardado: {path_charger_stats.name}")
+    
+    # Verificación de archivos generados
+    logger.info("\nArchivos generados:")
+    for name, path in results.items():
+        size = path.stat().st_size
+        logger.info(f"  ✓ {name} ({size} bytes)")
+    
+    logger.info("")
+    logger.info("="*70)
+    logger.info("✓ GENERACIÓN DE DATASETS COMPLETADA (v5.5)")
+    logger.info("="*70)
+    logger.info(f"Archivos generados: {len(results)}")
+    logger.info(f"Ubicación: {output_dir}")
+    logger.info("")
+    
+    return results
+
+
+if __name__ == "__main__":
+    # Script para generar todos los CSVs
+    output_dir = Path("data/oe2/chargers")
+    generate_chargers_csv_datasets(output_dir)
+

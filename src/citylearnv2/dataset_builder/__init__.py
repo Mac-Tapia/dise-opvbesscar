@@ -51,6 +51,18 @@ from .dataset_builder import (
     SOLAR_OBSERVABLE_COLS,
     ALL_OBSERVABLE_COLS,
     REWARDS_AVAILABLE,
+    # OE2 Data Loader (unificado v5.5)
+    OE2ValidationError,
+    SolarData,
+    BESSData,
+    ChargerData,
+    load_solar_data,
+    load_bess_data,
+    load_chargers_data,
+    load_mall_demand_data,
+    load_scenarios_metadata,
+    validate_oe2_complete,
+    rebuild_oe2_datasets_complete,
 )
 
 __all__ = [
@@ -81,4 +93,16 @@ __all__ = [
     "_discover_csv_paths",
     "_generate_individual_charger_csvs",
     "REWARDS_AVAILABLE",
+    # OE2 Data Loader (unificado v5.5)
+    "OE2ValidationError",
+    "SolarData",
+    "BESSData",
+    "ChargerData",
+    "load_solar_data",
+    "load_bess_data",
+    "load_chargers_data",
+    "load_mall_demand_data",
+    "load_scenarios_metadata",
+    "validate_oe2_complete",
+    "rebuild_oe2_datasets_complete",
 ]

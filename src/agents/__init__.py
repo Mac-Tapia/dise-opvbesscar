@@ -22,7 +22,8 @@ from .metrics_extractor import (
     CO2_GRID_FACTOR_KG_PER_KWH,
     CO2_EV_FACTOR_KG_PER_KWH,
 )
-from ..rewards import (
+# Rewards desde citylearnv2.dataset_builder (unificado)
+from ..citylearnv2.dataset_builder.rewards import (
     MultiObjectiveReward,
     MultiObjectiveWeights,
     IquitosContext,
