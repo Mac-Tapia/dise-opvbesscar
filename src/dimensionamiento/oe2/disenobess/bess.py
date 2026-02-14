@@ -1,4 +1,4 @@
-"""
+Opción B: Unificar data_loader con catálogo (RECOMENDADO)"""
 Módulo de dimensionamiento de sistema de almacenamiento BESS.
 
 PROPÓSITO: Calcular capacidad y potencia óptima del BESS para el sistema
