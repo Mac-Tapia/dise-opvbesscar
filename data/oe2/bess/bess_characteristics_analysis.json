@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-02-13T17:44:07.031993",
+  "timestamp": "2026-02-14T10:28:43.157503",
   "bess_specs": {
     "capacity_kwh": 1700.0,
     "power_kw": 400.0,
@@ -21,12 +21,12 @@
     "lifetime_wear_percent_per_year": 15.504226870076648,
     "color_headroom_carga_descarga": 112879.83883695886,
     "eficiencia_realizada_roundtrip": 85.7243434850308,
-    "bess_to_mall_kwh": 474882.2985243132,
-    "bess_to_mall_pct_demanda": 3.839401901923461,
+    "bess_to_mall_kwh": 474882.29852431314,
+    "bess_to_mall_pct_demanda": 3.83940190192346,
     "bess_to_ev_kwh": 143739.82056696466,
     "bess_to_ev_pct_demanda": 34.868300021822606,
     "horas_bess_atiende_mall": 1672,
-    "energia_prom_mall_por_hora_kwh": 284.0205134714792,
+    "energia_prom_mall_por_hora_kwh": 284.02051347147915,
     "horas_activas_mall_del_dia": [
       11,
       12,

@@ -41,22 +41,21 @@ print(f"Annual generation: {df_solar['ac_power_kw'].sum():.0f} kWh")
 import pandas as pd
 import numpy as np
 
-# Load the 38-socket charger demand
-df_chargers = pd.read_csv('data/interim/oe2/chargers/chargers_real_hourly_2024.csv')
+# Load the 38-socket charger demand (v5.2 specification)
+df_chargers = pd.read_csv('data/interim/oe2/chargers/chargers_ev_ano_2024_v3.csv')
 
-print(f"Shape: {df_chargers.shape}")  # (8760, 38)
-print(f"Sockets: {[c for c in df_chargers.columns if 'socket' in c]}")
+print(f"Shape: {df_chargers.shape}")  # (365, 353) - 365 days, 353 columns (includes metadata)
+print(f"Socket columns: {[c for c in df_chargers.columns if 'socket' in c]}")
 # Output: ['socket_000', 'socket_001', ..., 'socket_037']
 
 # Check demand pattern for one socket
 socket_0_demand = df_chargers['socket_000'].values
-print(f"Socket 0 annual demand: {socket_0_demand.sum():.0f} kWh")  # ~500 kWh
+print(f"Socket 0 annual demand: {socket_0_demand.sum():.0f} kWh")
 print(f"Peak hourly demand: {socket_0_demand.max():.1f} kW")  # ~7.4 kW (typical)
 
 # ✅ REAL interpretation:
 # These are MEASURED charging profiles from the 38 physical sockets
 # NOT synthetic/simulated profiles
-# Each row = 1 hour, timestep 0-8759
 # Daily pattern: Peaks in evening (17-21h), lower during day
 ```
 

@@ -47,16 +47,16 @@ This document maps every data source in pvbesscar to its **REAL** (measured/obse
 
 #### **✅ CHARGERS (EV Demand)**
 - **Status:** REAL - Measured hourly charging demand profiles
-- **Location:** `data/interim/oe2/chargers/chargers_real_hourly_2024.csv`  
-  or `data/processed/citylearn/iquitos_ev_mall/chargers/chargers_real_hourly_2024.csv`
+- **Location:** `data/interim/oe2/chargers/chargers_ev_ano_2024_v3.csv`  
+  or `data/processed/citylearn/iquitos_ev_mall/chargers/chargers_ev_ano_2024_v3.csv`
 - **Specification:** 19 chargers × 2 sockets = **38 total sockets** (v5.2)
   - 15 chargers for motos
   - 4 chargers for mototaxis
   - Each socket: 7.4 kW (Mode 3, 32A @ 230V monofásico)
-- **Time Series:** 8,760 hours (1 full year 2024)
-- **Columns:** `socket_000` to `socket_037` (38 cols)
+- **Time Series:** 365 days × 353 columns (contains metadata)
+- **Columns:** `socket_000` to `socket_037` (38 socket columns)
 - **Annual Demand:** 18,500–21,000 kWh total
-- **Validation:** Must have exactly 38 columns matching socket names
+- **Validation:** Must have socket_000..socket_037 columns
 - **Used By:**
   - [train_sac_multiobjetivo.py](../scripts/train/train_sac_multiobjetivo.py#L223-L252)
   - [chargers.py](../src/dimensionamiento/oe2/disenocargadoresev/chargers.py) - Defines `ChargerSpec`, `ChargerSet` (immutable)
@@ -273,8 +273,8 @@ Before running training:
   - Non-negative values
   - Annual sum: 7,000–10,000 MWh (sanity check)
 
-- [ ] **Chargers** (`chargers_real_hourly_2024.csv`):
-  - Size: 8,760 rows × 38 columns
+- [ ] **Chargers** (`chargers_ev_ano_2024_v3.csv`):
+  - Size: 365 rows × 353columns (includes metadata)
   - Column names: `socket_000` to `socket_037`
   - Non-negative values
   - Annual sum per socket: 300–600 kWh (typical EV usage)

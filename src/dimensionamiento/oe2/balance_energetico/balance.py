@@ -187,8 +187,8 @@ class BalanceEnergeticoSystem:
                 print(f"  ✗ Demanda Mall no encontrada: {self.mall_path}")
                 return False
             
-            # 4. BESS simulación desde OE2 (bess_simulation_hourly.csv)
-            bess_sim_path = Path("data/oe2/bess/bess_simulation_hourly.csv")
+            # 4. BESS simulación desde OE2 (bess_ano_2024.csv)
+            bess_sim_path = Path("data/oe2/bess/bess_ano_2024.csv")
             if bess_sim_path.exists():
                 self.df_bess = self._load_csv_flexible(bess_sim_path)
                 # Verificar columnas de carga/descarga
@@ -305,7 +305,7 @@ class BalanceEnergeticoSystem:
         n_hours = len(solar_gen)
         
         if has_bess and self.df_bess is not None:
-            # Usar columnas del dataset OE2: bess_simulation_hourly.csv
+            # Usar columnas del dataset OE2: bess_ano_2024.csv
             df_bess = self.df_bess  # Type narrowing para Pylance
             bess_cols = list(df_bess.columns)
             

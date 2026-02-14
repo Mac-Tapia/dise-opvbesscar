@@ -316,7 +316,7 @@ def check_integrity():
         Path("data/interim/oe2/solar/pv_generation_hourly_citylearn_v2.csv"),
         Path("data/interim/oe2/solar/pv_generation_timeseries.csv"),
         Path("data/interim/oe2/bess/bess_hourly_dataset_2024.csv"),
-        Path("data/interim/oe2/chargers/chargers_real_hourly_2024.csv"),
+        Path("data/interim/oe2/chargers/chargers_ev_ano_2024_v3.csv"),
         Path("data/interim/oe2/demandamallkwh/demandamallhorakwh.csv"),
     ]
     

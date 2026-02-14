@@ -30,7 +30,7 @@ data/
 ├── interim/oe2/             ← CONFLICTIVO (5 duplicados encontrados)
 │   ├── solar/               (2 archivos: pv_generation_hourly_citylearn_v2.csv + pv_generation_timeseries.csv)
 │   ├── bess/                (1 archivo: bess_hourly_dataset_2024.csv)
-│   ├── chargers/            (1 archivo: chargers_real_hourly_2024.csv)
+│   ├── chargers/            (1 archivo: chargers_ev_ano_2024_v3.csv)
 │   └── demandamallkwh/      (1 archivo: demandamallhorakwh.csv)
 ```
 
@@ -91,7 +91,7 @@ python scripts/validate_and_rebuild_oe2.py --cleanup
    - `data/interim/oe2/solar/pv_generation_hourly_citylearn_v2.csv` ❌
    - `data/interim/oe2/solar/pv_generation_timeseries.csv` ❌
    - `data/interim/oe2/bess/bess_hourly_dataset_2024.csv` ❌
-   - `data/interim/oe2/chargers/chargers_real_hourly_2024.csv` ❌
+   - `data/interim/oe2/chargers/chargers_ev_ano_2024_v3.csv` ❌
    - `data/interim/oe2/demandamallkwh/demandamallhorakwh.csv` ❌
 
 ### Opción 3: Uso Programático (Python)

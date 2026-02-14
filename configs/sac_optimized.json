@@ -15,7 +15,7 @@
     "entropy_coeff": "auto"
   },
   "data": {
-    "solar_file": "data/oe2/Generacionsolar/pv_generation_citylearn2024.csv",
+    "solar_file": "data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv",
     "chargers_file": "data/oe2/chargers/chargers_ev_ano_2024_v3.csv",
     "bess_file": "data/oe2/bess/bess_ano_2024.csv",
     "mall_file": "data/oe2/demandamallkwh/demandamallhorakwh.csv",

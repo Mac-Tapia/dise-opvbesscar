@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-02-13T12:55:48.562672",
+  "timestamp": "2026-02-14T10:10:19.482877",
   "archivo": "data\\oe2\\Generacionsolar\\pv_generation_citylearn2024.csv",
   "dimensiones": {
     "filas": 8760,
@@ -20,9 +20,9 @@
     "ahorro_solar_soles",
     "reduccion_indirecta_co2_kg"
   ],
-  "energia_kwh": 8292514.1699215975,
-  "co2_reduccion_tons": 3749.045656221554,
-  "ahorro_soles": 2321903.9675780474,
+  "energia_kwh": 8292514.169921597,
+  "co2_reduccion_tons": 3749.0456562215536,
+  "ahorro_soles": 2321903.967578047,
   "validaciones": {
     "1_temporal": true,
     "2_columnas": false,
