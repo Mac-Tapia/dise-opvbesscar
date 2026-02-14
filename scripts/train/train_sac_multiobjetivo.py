@@ -42,7 +42,7 @@ except (ImportError, AttributeError, ModuleNotFoundError):
     CITYLEARN_AVAILABLE = False
     # No warning - Gymnasium Env fallback es el diseño robusto por defecto
 
-from src.citylearnv2.dataset_builder.rewards import (
+from src.dataset_builder_citylearn.rewards import (
     IquitosContext,
     MultiObjectiveReward,
     create_iquitos_reward_weights,
@@ -517,7 +517,7 @@ def load_observable_variables():
     - MALL (3): mall_* prefix
     - TOTALES (3): total_* prefix
     """
-    from src.citylearnv2.dataset_builder.dataset_builder import (
+    from src.dataset_builder_citylearn.data_loader import (
         load_solar_data, load_chargers_data, load_bess_data, load_mall_demand_data,
         _extract_observable_variables
     )

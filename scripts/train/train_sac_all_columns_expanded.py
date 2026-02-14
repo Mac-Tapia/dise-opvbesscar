@@ -79,7 +79,7 @@ from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback,
 workspace_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(workspace_root))
 
-from src.citylearnv2.dataset_builder.rewards import (
+from src.dataset_builder_citylearn.rewards import (
     IquitosContext,
     MultiObjectiveReward,
     create_iquitos_reward_weights,
@@ -155,7 +155,7 @@ def load_observable_variables_expanded() -> Dict[str, np.ndarray]:
     
     # Intentar cargar desde dataset_builder.py
     try:
-        from src.citylearnv2.dataset_builder.dataset_builder import (
+        from src.dataset_builder_citylearn.data_loader import (
             load_solar_data,
             load_chargers_data,
             load_bess_data,

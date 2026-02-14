@@ -16,7 +16,7 @@ else:
     except ImportError:
         torch = None  # type: ignore
 
-from ..citylearnv2.dataset_builder.progress import append_progress_row
+from .utils_progress import append_progress_row
 
 logger = logging.getLogger(__name__)
 
@@ -900,7 +900,7 @@ class SACAgent:
                 self.log_interval_steps = int(agent.config.log_interval or 500)  # Default 500
 
                 # ✅ FIX: Usar EpisodeMetricsAccumulator centralizado
-                from ..citylearnv2.dataset_builder.metrics_extractor import EpisodeMetricsAccumulator, extract_step_metrics
+                from .utils_metrics import EpisodeMetricsAccumulator, extract_step_metrics
                 self.metrics_accumulator = EpisodeMetricsAccumulator()
                 self._extract_step_metrics = extract_step_metrics
 
