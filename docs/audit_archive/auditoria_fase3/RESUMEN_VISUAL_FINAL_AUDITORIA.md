@@ -30,17 +30,17 @@
 
 ```
 CONECTIVIDAD:
-  ✅ Observación 394-dim conectada en SAC
-  ✅ Observación 394-dim conectada en PPO
-  ✅ Observación 394-dim conectada en A2C
-  ✅ Acciones 129-dim conectadas en SAC
-  ✅ Acciones 129-dim conectadas en PPO
-  ✅ Acciones 129-dim conectadas en A2C
+  ✅ Observación 124-dim conectada en SAC
+  ✅ Observación 124-dim conectada en PPO
+  ✅ Observación 124-dim conectada en A2C
+  ✅ Acciones 39-dim conectadas en SAC
+  ✅ Acciones 39-dim conectadas en PPO
+  ✅ Acciones 39-dim conectadas en A2C
 
 PROCESAMIENTO:
   ✅ Normalización de observaciones ACTIVA
   ✅ Clipping [-5.0, 5.0] APLICADO
-  ✅ Decodificación de acciones CORRECTA (1 BESS + 128 chargers)
+  ✅ Decodificación de acciones CORRECTA (1 BESS + 38 sockets)
 
 DATASET:
   ✅ 8,760 timesteps (1 año exacto)

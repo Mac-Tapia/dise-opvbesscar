@@ -1,0 +1,713 @@
+{
+  "timestamp": "2026-02-13",
+  "catalog_version": "v5.5-COMPLETE",
+  "agents": {
+    "A2C": {
+      "variables": {
+        "constants": {
+          "CO2_FACTOR_IQUITOS": {
+            "value": "0.4521",
+            "type": "float",
+            "description": "kg CO2/kWh - factor de emisión grid Iquitos"
+          },
+          "BESS_CAPACITY_KWH": {
+            "value": "940.0",
+            "type": "float",
+            "description": "Capacidad BESS en kWh"
+          },
+          "BESS_MAX_POWER_KW": {
+            "value": "342.0",
+            "type": "float",
+            "description": "Potencia máxima BESS en kW"
+          },
+          "HOURS_PER_YEAR": {
+            "value": "8760",
+            "type": "int",
+            "description": "Horas por año (8760)"
+          },
+          "NUM_CHARGERS": {
+            "value": "38",
+            "type": "int",
+            "description": "Número de chargers (38 sockets v5.2)"
+          },
+          "OBS_DIM": {
+            "value": "124",
+            "type": "int",
+            "description": "Dimensión observation space"
+          },
+          "ACTION_DIM": {
+            "value": "39",
+            "type": "int",
+            "description": "Dimensión action space"
+          }
+        },
+        "hyperparameters": {
+          "learning_rate": {
+            "value": "7e-4",
+            "agent": "A2C",
+            "description": "learning rate para A2C"
+          },
+          "n_steps": {
+            "value": "8",
+            "agent": "A2C",
+            "description": "horizonte temporal antes de update"
+          },
+          "ent_coef": {
+            "value": "0.015",
+            "agent": "A2C",
+            "description": "entropy coefficient"
+          }
+        },
+        "data_variables": {
+          "solar_hourly": {
+            "type": "np.ndarray[np.float32]",
+            "shape": "(8760,)",
+            "description": "Generación solar horaria (kW)"
+          },
+          "chargers_hourly": {
+            "type": "np.ndarray[np.float32]",
+            "shape": "(8760, 38)",
+            "description": "Demanda chargers (38 sockets, kWh)"
+          },
+          "mall_hourly": {
+            "type": "np.ndarray[np.float32]",
+            "shape": "(8760,)",
+            "description": "Demanda mall horaria (kWh)"
+          },
+          "bess_soc": {
+            "type": "np.ndarray[np.float32]",
+            "shape": "(8760,)",
+            "description": "BESS State of Charge (%)"
+          },
+          "bess_costs": {
+            "type": "Dict | None",
+            "shape": "variable",
+            "description": "Costos acumulados BESS por parámetro"
+          },
+          "bess_co2": {
+            "type": "Dict | None",
+            "shape": "variable",
+            "description": "CO2 evitado por BESS"
+          }
+        },
+        "environment_specs": {
+          "observation_space": {
+            "value": "124",
+            "description": "Solar + Mall + BESS SOC + 38 demands + 38 powers + 38 occupancy + 6 time features"
+          },
+          "action_space": {
+            "value": "39",
+            "description": "1 BESS + 38 chargers (continuous [0,1])"
+          },
+          "timesteps_per_episode": {
+            "value": "8760",
+            "description": "Horas por año (1 episodio = 1 año)"
+          },
+          "episode_length_days": {
+            "value": "365",
+            "description": "365 días por episodio"
+          }
+        }
+      },
+      "metrics": {
+        "episode_metrics": {
+          "episode_reward_sum": {
+            "calculation": "Sum of step rewards",
+            "frequency": "Episode",
+            "description": "Recompensa total del episodio"
+          },
+          "episode_co2_avoided": {
+            "calculation": "CO2 emissions avoided",
+            "frequency": "Episode",
+            "description": "CO2 evitado durante el episodio"
+          },
+          "ev_satisfaction": {
+            "calculation": "% Vehicles reaching SOC target",
+            "frequency": "Episode",
+            "description": "Vehículos que alcanzaron SOC objetivo"
+          },
+          "validation_episode_reward": {
+            "calculation": "Reward with πμ (mean action)",
+            "frequency": "Episode",
+            "description": "Recompensa en validación determinística"
+          },
+          "validation_success_rate": {
+            "calculation": "Success rate vs objectives",
+            "frequency": "Episode",
+            "description": "Tasa de éxito en validación"
+          }
+        },
+        "step_metrics": {
+          "step_reward": {
+            "calculation": "Instant reward",
+            "description": "Recompensa instantánea por paso"
+          },
+          "step_action": {
+            "calculation": "Agent action vector",
+            "description": "Vector de acción del agente"
+          },
+          "step_observation": {
+            "calculation": "Environment observation",
+            "description": "Observación del ambiente"
+          }
+        },
+        "timeseries_metrics": {},
+        "validation_metrics": {}
+      },
+      "rewards": {
+        "reward_components": {
+          "CO2 emissions (grid)": {
+            "formula": "Weighted sum",
+            "range": "[-1, +1]",
+            "agent": "A2C"
+          },
+          "Solar self-consumption": {
+            "formula": "Weighted sum",
+            "range": "[-1, +1]",
+            "agent": "A2C"
+          },
+          "EV satisfaction (SOC)": {
+            "formula": "Weighted sum",
+            "range": "[-1, +1]",
+            "agent": "A2C"
+          },
+          "Cost minimization": {
+            "formula": "Weighted sum",
+            "range": "[-1, +1]",
+            "agent": "A2C"
+          },
+          "Grid stability": {
+            "formula": "Weighted sum",
+            "range": "[-1, +1]",
+            "agent": "A2C"
+          }
+        },
+        "reward_weights": {},
+        "penalties": {},
+        "gains": {
+          "Solar self-consumption bonus": {
+            "trigger": "Solar > solar_min",
+            "magnitude": "+0.5-1.0 per unit",
+            "agent": "A2C"
+          },
+          "EV charging success": {
+            "trigger": "Vehicle SOC >= target",
+            "magnitude": "+0.3-0.5 per vehicle",
+            "agent": "A2C"
+          },
+          "CO2 avoided": {
+            "trigger": "Grid import reduced",
+            "magnitude": "+weight * co2_avoided",
+            "agent": "A2C"
+          }
+        },
+        "multiobjetive_configuration": {
+          "is_multiobjetive": true,
+          "components": [
+            "CO2 emissions (grid)",
+            "Solar self-consumption",
+            "EV satisfaction (SOC)",
+            "Cost minimization",
+            "Grid stability"
+          ],
+          "weights": {},
+          "context": {
+            "location": "Iquitos, Peru",
+            "grid_type": "Isolated grid (thermal generation)",
+            "co2_factor": "0.4521 kg CO2/kWh"
+          }
+        }
+      },
+      "filepath": "scripts\\train\\train_a2c_multiobjetivo.py"
+    },
+    "SAC": {
+      "variables": {
+        "constants": {
+          "CO2_FACTOR_IQUITOS": {
+            "value": "0.4521",
+            "type": "float",
+            "description": "kg CO2/kWh - factor de emisión grid Iquitos"
+          },
+          "BESS_CAPACITY_KWH": {
+            "value": "940.0",
+            "type": "float",
+            "description": "Capacidad BESS en kWh"
+          },
+          "BESS_MAX_POWER_KW": {
+            "value": "342.0",
+            "type": "float",
+            "description": "Potencia máxima BESS en kW"
+          },
+          "HOURS_PER_YEAR": {
+            "value": "8760",
+            "type": "int",
+            "description": "Horas por año (8760)"
+          },
+          "NUM_CHARGERS": {
+            "value": "38",
+            "type": "int",
+            "description": "Número de chargers (38 sockets v5.2)"
+          },
+          "OBS_DIM": {
+            "value": "124",
+            "type": "int",
+            "description": "Dimensión observation space"
+          },
+          "ACTION_DIM": {
+            "value": "39",
+            "type": "int",
+            "description": "Dimensión action space"
+          }
+        },
+        "hyperparameters": {
+          "learning_rate": {
+            "value": "3e-4",
+            "agent": "SAC",
+            "description": "learning rate para SAC"
+          },
+          "buffer_size": {
+            "value": "2",
+            "agent": "SAC",
+            "description": "replay buffer size"
+          },
+          "batch_size": {
+            "value": "256",
+            "agent": "SAC",
+            "description": "batch size para training"
+          },
+          "tau": {
+            "value": "0.005",
+            "agent": "SAC",
+            "description": "soft update parameter"
+          },
+          "ent_coef": {
+            "value": "'auto'",
+            "agent": "SAC",
+            "description": "entropy coefficient (exploration)"
+          }
+        },
+        "data_variables": {
+          "solar_hourly": {
+            "type": "np.ndarray[np.float32]",
+            "shape": "(8760,)",
+            "description": "Generación solar horaria (kW)"
+          },
+          "chargers_hourly": {
+            "type": "np.ndarray[np.float32]",
+            "shape": "(8760, 38)",
+            "description": "Demanda chargers (38 sockets, kWh)"
+          },
+          "mall_hourly": {
+            "type": "np.ndarray[np.float32]",
+            "shape": "(8760,)",
+            "description": "Demanda mall horaria (kWh)"
+          },
+          "bess_soc": {
+            "type": "np.ndarray[np.float32]",
+            "shape": "(8760,)",
+            "description": "BESS State of Charge (%)"
+          },
+          "bess_costs": {
+            "type": "Dict | None",
+            "shape": "variable",
+            "description": "Costos acumulados BESS por parámetro"
+          },
+          "bess_co2": {
+            "type": "Dict | None",
+            "shape": "variable",
+            "description": "CO2 evitado por BESS"
+          }
+        },
+        "environment_specs": {
+          "observation_space": {
+            "value": "124",
+            "description": "Solar + Mall + BESS SOC + 38 demands + 38 powers + 38 occupancy + 6 time features"
+          },
+          "action_space": {
+            "value": "39",
+            "description": "1 BESS + 38 chargers (continuous [0,1])"
+          },
+          "timesteps_per_episode": {
+            "value": "8760",
+            "description": "Horas por año (1 episodio = 1 año)"
+          },
+          "episode_length_days": {
+            "value": "365",
+            "description": "365 días por episodio"
+          }
+        }
+      },
+      "metrics": {
+        "episode_metrics": {
+          "episode_reward_sum": {
+            "calculation": "Sum of step rewards",
+            "frequency": "Episode",
+            "description": "Recompensa total del episodio"
+          },
+          "episode_co2_avoided": {
+            "calculation": "CO2 emissions avoided",
+            "frequency": "Episode",
+            "description": "CO2 evitado durante el episodio"
+          },
+          "solar_self_consumption": {
+            "calculation": "% PV direct usage",
+            "frequency": "Episode",
+            "description": "Autoconsumo PV del episodio"
+          },
+          "ev_satisfaction": {
+            "calculation": "% Vehicles reaching SOC target",
+            "frequency": "Episode",
+            "description": "Vehículos que alcanzaron SOC objetivo"
+          }
+        },
+        "step_metrics": {
+          "step_reward": {
+            "calculation": "Instant reward",
+            "description": "Recompensa instantánea por paso"
+          },
+          "step_action": {
+            "calculation": "Agent action vector",
+            "description": "Vector de acción del agente"
+          },
+          "step_observation": {
+            "calculation": "Environment observation",
+            "description": "Observación del ambiente"
+          }
+        },
+        "timeseries_metrics": {},
+        "validation_metrics": {}
+      },
+      "rewards": {
+        "reward_components": {
+          "CO2 emissions (grid)": {
+            "formula": "Weighted sum",
+            "range": "[-1, +1]",
+            "agent": "SAC"
+          },
+          "Solar self-consumption": {
+            "formula": "Weighted sum",
+            "range": "[-1, +1]",
+            "agent": "SAC"
+          },
+          "EV satisfaction (SOC)": {
+            "formula": "Weighted sum",
+            "range": "[-1, +1]",
+            "agent": "SAC"
+          },
+          "Cost minimization": {
+            "formula": "Weighted sum",
+            "range": "[-1, +1]",
+            "agent": "SAC"
+          },
+          "Grid stability": {
+            "formula": "Weighted sum",
+            "range": "[-1, +1]",
+            "agent": "SAC"
+          }
+        },
+        "reward_weights": {},
+        "penalties": {
+          "Low SOC penalty": {
+            "trigger": "BESS SOC < 20%",
+            "magnitude": "-0.5 per hour",
+            "agent": "SAC"
+          }
+        },
+        "gains": {
+          "Solar self-consumption bonus": {
+            "trigger": "Solar > solar_min",
+            "magnitude": "+0.5-1.0 per unit",
+            "agent": "SAC"
+          },
+          "EV charging success": {
+            "trigger": "Vehicle SOC >= target",
+            "magnitude": "+0.3-0.5 per vehicle",
+            "agent": "SAC"
+          },
+          "CO2 avoided": {
+            "trigger": "Grid import reduced",
+            "magnitude": "+weight * co2_avoided",
+            "agent": "SAC"
+          }
+        },
+        "multiobjetive_configuration": {
+          "is_multiobjetive": true,
+          "components": [
+            "CO2 emissions (grid)",
+            "Solar self-consumption",
+            "EV satisfaction (SOC)",
+            "Cost minimization",
+            "Grid stability"
+          ],
+          "weights": {},
+          "context": {
+            "location": "Iquitos, Peru",
+            "grid_type": "Isolated grid (thermal generation)",
+            "co2_factor": "0.4521 kg CO2/kWh"
+          }
+        }
+      },
+      "filepath": "scripts\\train\\train_sac_multiobjetivo.py"
+    },
+    "PPO": {
+      "variables": {
+        "constants": {
+          "HOURS_PER_YEAR": {
+            "value": "8760",
+            "type": "int",
+            "description": "Horas por año (8760)"
+          },
+          "NUM_CHARGERS": {
+            "value": "38",
+            "type": "int",
+            "description": "Número de chargers (38 sockets v5.2)"
+          },
+          "OBS_DIM": {
+            "value": "124",
+            "type": "int",
+            "description": "Dimensión observation space"
+          },
+          "ACTION_DIM": {
+            "value": "39",
+            "type": "int",
+            "description": "Dimensión action space"
+          },
+          "NUM_EPISODES": {
+            "value": "10",
+            "type": "int",
+            "description": "Número de episodios entrenamiento"
+          }
+        },
+        "hyperparameters": {
+          "learning_rate": {
+            "value": "3e-4",
+            "agent": "PPO",
+            "description": "learning rate para PPO"
+          },
+          "n_steps": {
+            "value": "2048",
+            "agent": "PPO",
+            "description": "horizonte temporal antes de update"
+          },
+          "batch_size": {
+            "value": "256",
+            "agent": "PPO",
+            "description": "batch size para training"
+          },
+          "n_epochs": {
+            "value": "20",
+            "agent": "PPO",
+            "description": "epochs por batch"
+          },
+          "gamma": {
+            "value": "0.99",
+            "agent": "PPO",
+            "description": "discount factor"
+          },
+          "gae_lambda": {
+            "value": "0.95",
+            "agent": "PPO",
+            "description": "GAE lambda parameter"
+          },
+          "clip_range": {
+            "value": "0.2",
+            "agent": "PPO",
+            "description": "PPO clipping range"
+          },
+          "ent_coef": {
+            "value": "0.01",
+            "agent": "PPO",
+            "description": "entropy coefficient"
+          },
+          "vf_coef": {
+            "value": "0.5",
+            "agent": "PPO",
+            "description": "value function coefficient"
+          },
+          "max_grad_norm": {
+            "value": "1.0",
+            "agent": "PPO",
+            "description": "gradient clipping"
+          },
+          "net_arch": {
+            "value": "256, 256",
+            "agent": "PPO",
+            "description": "network architecture"
+          }
+        },
+        "data_variables": {
+          "solar_hourly": {
+            "type": "np.ndarray[np.float32]",
+            "shape": "(8760,)",
+            "description": "Generación solar horaria (kW)"
+          },
+          "chargers_hourly": {
+            "type": "np.ndarray[np.float32]",
+            "shape": "(8760, 38)",
+            "description": "Demanda chargers (38 sockets, kWh)"
+          },
+          "mall_hourly": {
+            "type": "np.ndarray[np.float32]",
+            "shape": "(8760,)",
+            "description": "Demanda mall horaria (kWh)"
+          },
+          "bess_soc": {
+            "type": "np.ndarray[np.float32]",
+            "shape": "(8760,)",
+            "description": "BESS State of Charge (%)"
+          },
+          "bess_costs": {
+            "type": "Dict | None",
+            "shape": "variable",
+            "description": "Costos acumulados BESS por parámetro"
+          },
+          "bess_co2": {
+            "type": "Dict | None",
+            "shape": "variable",
+            "description": "CO2 evitado por BESS"
+          }
+        },
+        "environment_specs": {
+          "observation_space": {
+            "value": "124",
+            "description": "Solar + Mall + BESS SOC + 38 demands + 38 powers + 38 occupancy + 6 time features"
+          },
+          "action_space": {
+            "value": "39",
+            "description": "1 BESS + 38 chargers (continuous [0,1])"
+          },
+          "timesteps_per_episode": {
+            "value": "8760",
+            "description": "Horas por año (1 episodio = 1 año)"
+          },
+          "episode_length_days": {
+            "value": "365",
+            "description": "365 días por episodio"
+          }
+        }
+      },
+      "metrics": {
+        "episode_metrics": {
+          "episode_reward_sum": {
+            "calculation": "Sum of step rewards",
+            "frequency": "Episode",
+            "description": "Recompensa total del episodio"
+          },
+          "episode_co2_avoided": {
+            "calculation": "CO2 emissions avoided",
+            "frequency": "Episode",
+            "description": "CO2 evitado durante el episodio"
+          },
+          "ev_satisfaction": {
+            "calculation": "% Vehicles reaching SOC target",
+            "frequency": "Episode",
+            "description": "Vehículos que alcanzaron SOC objetivo"
+          },
+          "validation_episode_reward": {
+            "calculation": "Reward with πμ (mean action)",
+            "frequency": "Episode",
+            "description": "Recompensa en validación determinística"
+          },
+          "validation_success_rate": {
+            "calculation": "Success rate vs objectives",
+            "frequency": "Episode",
+            "description": "Tasa de éxito en validación"
+          }
+        },
+        "step_metrics": {
+          "step_reward": {
+            "calculation": "Instant reward",
+            "description": "Recompensa instantánea por paso"
+          },
+          "step_action": {
+            "calculation": "Agent action vector",
+            "description": "Vector de acción del agente"
+          },
+          "step_observation": {
+            "calculation": "Environment observation",
+            "description": "Observación del ambiente"
+          }
+        },
+        "timeseries_metrics": {},
+        "validation_metrics": {}
+      },
+      "rewards": {
+        "reward_components": {
+          "CO2 emissions (grid)": {
+            "formula": "Weighted sum",
+            "range": "[-1, +1]",
+            "agent": "PPO"
+          },
+          "Solar self-consumption": {
+            "formula": "Weighted sum",
+            "range": "[-1, +1]",
+            "agent": "PPO"
+          },
+          "EV satisfaction (SOC)": {
+            "formula": "Weighted sum",
+            "range": "[-1, +1]",
+            "agent": "PPO"
+          },
+          "Cost minimization": {
+            "formula": "Weighted sum",
+            "range": "[-1, +1]",
+            "agent": "PPO"
+          },
+          "Grid stability": {
+            "formula": "Weighted sum",
+            "range": "[-1, +1]",
+            "agent": "PPO"
+          }
+        },
+        "reward_weights": {},
+        "penalties": {},
+        "gains": {
+          "Solar self-consumption bonus": {
+            "trigger": "Solar > solar_min",
+            "magnitude": "+0.5-1.0 per unit",
+            "agent": "PPO"
+          },
+          "EV charging success": {
+            "trigger": "Vehicle SOC >= target",
+            "magnitude": "+0.3-0.5 per vehicle",
+            "agent": "PPO"
+          },
+          "CO2 avoided": {
+            "trigger": "Grid import reduced",
+            "magnitude": "+weight * co2_avoided",
+            "agent": "PPO"
+          }
+        },
+        "multiobjetive_configuration": {
+          "is_multiobjetive": true,
+          "components": [
+            "CO2 emissions (grid)",
+            "Solar self-consumption",
+            "EV satisfaction (SOC)",
+            "Cost minimization",
+            "Grid stability"
+          ],
+          "weights": {},
+          "context": {
+            "location": "Iquitos, Peru",
+            "grid_type": "Isolated grid (thermal generation)",
+            "co2_factor": "0.4521 kg CO2/kWh"
+          }
+        }
+      },
+      "filepath": "scripts\\train\\train_ppo_multiobjetivo.py"
+    }
+  },
+  "validation": {
+    "all_multiobjetive": true,
+    "observation_space_synchronized": true,
+    "action_space_synchronized": true,
+    "unique_reward_components": [
+      "CO2 emissions (grid)",
+      "Cost minimization",
+      "EV satisfaction (SOC)",
+      "Grid stability",
+      "Solar self-consumption"
+    ]
+  }
+}

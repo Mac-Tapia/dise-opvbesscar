@@ -4,7 +4,7 @@ Script para ejecutar BESS y generar dataset horario 2024 con DatetimeIndex.
 
 Integra:
 - PV: pv_generation_timeseries.csv (8,760 horas)
-- EV: chargers_real_hourly_2024.csv (8,760 horas, 128 sockets)
+- EV: chargers_real_hourly_2024.csv (8,760 horas, 38 sockets)
 - Mall: demandamallhorakwh.csv (horario)
 
 Salida: data/oe2/bess/bess_hourly_dataset_2024.csv
@@ -64,9 +64,9 @@ def load_ev_2024() -> pd.DataFrame:
     logger.info(f"\n📂 Cargando EV: {ev_path.name}")
     df = pd.read_csv(ev_path, index_col=0)
 
-    # Debe tener 8,760 filas y 128 columnas
-    if df.shape != (8760, 128):
-        logger.error(f"❌ EV tiene shape {df.shape}, se esperan (8760, 128)")
+    # Debe tener 8,760 filas y 38 columnas
+    if df.shape != (8760, 38):
+        logger.error(f"❌ EV tiene shape {df.shape}, se esperan (8760, 38)")
         raise ValueError(f"EV dataset incorrecto: shape {df.shape}")
 
     # Sumar todas las columnas para obtener demanda EV total por hora
@@ -74,7 +74,7 @@ def load_ev_2024() -> pd.DataFrame:
 
     logger.info(f"   ✅ Shape: {df.shape} → Sumadas: ({len(ev_total)},)")
     logger.info(f"   ✅ EV anual: {ev_total.sum():,.0f} kWh")
-    logger.info(f"   ✅ Sockets: {df.shape[1]} (112 motos + 16 mototaxis)")
+    logger.info(f"   ✅ Sockets: {df.shape[1]} (30 motos + 8 mototaxis)")
 
     return pd.DataFrame({'ev_kwh': ev_total})
 
@@ -118,8 +118,8 @@ def simulate_bess_simple(
     pv_kwh: np.ndarray,
     ev_kwh: np.ndarray,
     mall_kwh: np.ndarray,
-    capacity_kwh: float = 4520.0,
-    power_kw: float = 1644.0,
+    capacity_kwh: float = 940.0,   # v5.2: 940 kWh
+    power_kw: float = 342.0,       # v5.2: 342 kW
     dod: float = 0.80,
     efficiency: float = 0.95,
     initial_soc: float = 0.50,
@@ -257,8 +257,8 @@ def main():
             pv_kwh=df_pv['pv_kwh'].values,
             ev_kwh=df_ev['ev_kwh'].values,
             mall_kwh=df_mall['mall_kwh'].values,
-            capacity_kwh=4520.0,  # 4,520 kWh (OE2 spec)
-            power_kw=1644.0,      # 1,644 kW (OE2 spec)
+            capacity_kwh=940.0,   # v5.2: 940 kWh (100% cobertura EV)
+            power_kw=342.0,       # v5.2: 342 kW
             dod=0.80,             # 80% DoD
             efficiency=0.95,      # 95% eficiencia
             initial_soc=0.50,     # 50% SOC inicial

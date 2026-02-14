@@ -46,11 +46,11 @@ def load_solar_data(solar_data_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame, D
     """Carga todos los datos solares necesarios."""
     # Serie temporal
     ts_path: Path = solar_data_dir / "pv_generation_timeseries.csv"
-    df: pd.DataFrame = pd.read_csv(ts_path, parse_dates=['timestamp'], index_col='timestamp')  # type: ignore[assignment]
+    df: pd.DataFrame = pd.read_csv(ts_path, index_col=0, parse_dates=True)  # type: ignore[assignment]
 
     # Energía mensual
     monthly_path: Path = solar_data_dir / "pv_monthly_energy.csv"
-    monthly: pd.DataFrame = pd.read_csv(monthly_path, parse_dates=['timestamp'], index_col='timestamp')  # type: ignore[assignment]
+    monthly: pd.DataFrame = pd.read_csv(monthly_path, index_col=0, parse_dates=True)  # type: ignore[assignment]
 
     # Resultados JSON
     json_path: Path = solar_data_dir / "solar_results.json"

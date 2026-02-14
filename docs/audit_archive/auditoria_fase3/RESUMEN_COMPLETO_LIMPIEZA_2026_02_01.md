@@ -86,7 +86,7 @@ diseñopvbesscar/
 │   └── processed/                [GENERADO POR OE3]
 │       └── citylearn/
 │           └── oe3/
-│               └── schema.json + 128 charger_*.csv
+│               └── schema.json + 38 socket_*.csv
 │
 ├── 📂 outputs/
 │   └── oe3_simulations/          [RESULTADOS ENTRENAMIENTO]

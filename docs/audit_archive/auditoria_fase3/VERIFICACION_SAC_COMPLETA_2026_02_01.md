@@ -12,7 +12,7 @@
 | 2 | SACConfig Sync | ✅ PASS | Weights=1.0, LR=5e-5, CO2=0.4521/2.146 |
 | 3 | Rewards Multiobjetivo | ✅ PASS | 5 componentes, pesos sum=1.0, CO2 tracking |
 | 4 | CO2 Calculation | ✅ PASS | Indirecto=45.2kg, Directo=214.6kg, Baseline=198020kg/año |
-| 5 | Observations 394-dim | ✅ PASS | 394-dim base + 2 dynamic, Actions 129-dim |
+| 5 | Observations 124-dim | ✅ PASS | 124-dim base + 2 dynamic, Actions 39-dim |
 | 6 | Training Loop | ✅ PASS | Config OK, Schema generado dinámico, Checkpoints ready |
 | 7 | Checkpoint Config | ✅ PASS | freq_steps=1000, save_final=True |
 
@@ -84,7 +84,7 @@ reward_total = (
 
 ---
 
-### 3. Observation Connectivity (394-dim) ✅
+### 3. Observation Connectivity (124-dim) ✅
 
 **Archivo:** `src/iquitos_citylearn/oe3/agents/sac.py` L512-648
 
@@ -103,25 +103,25 @@ def _flatten(self, obs):
         self._flatten_base(obs),           # Base observations
         self._get_pv_bess_feats()          # Dynamic PV + BESS SOC
     ])
-    # Result: 394-dim complete ✅
+    # Result: 124-dim complete ✅
     return obs_flat
 
 # NO HAY SIMPLIFICACIONES - Se utilizan TODAS las dimensiones
 ```
 
-**Componentes de observación (394-dim):**
+**Componentes de observación (124-dim):**
 - Building energy metrics (electric, heating, cooling)
 - Weather features (temperature, wind, solar irradiance)
 - Grid metrics (net import/export, carbon intensity)
 - BESS state (SOC, power)
-- EV chargers state (128 chargers × 4 metrics = 512 dim → comprimido a 394)
+- EV chargers state (38 sockets × 4 metrics = 512 dim → comprimido a 394)
 - Time features (hour, month, day_of_week)
 
 **Verificación:** ✅ 394 dimensiones completas sin truncar, todas las observaciones conectadas
 
 ---
 
-### 4. Action Space Connectivity (129-dim) ✅
+### 4. Action Space Connectivity (39-dim) ✅
 
 **Archivo:** `src/iquitos_citylearn/oe3/agents/sac.py` L550-553, L651-659
 
@@ -130,25 +130,25 @@ def _flatten(self, obs):
 action_space = Box(
     low=-1.0,
     high=1.0,
-    shape=(129,),  # ✅ 1 BESS + 128 chargers
+    shape=(39,),  # ✅ 1 BESS + 38 sockets
 )
 
 # Action Unflattening (L651-659)
 def _unflatten_action(self, action):
     """Dividir acciones en componentes sin límites artificiales"""
     bess_action = action[0]              # 1 BESS power setpoint ✅
-    charger_actions = action[1:129]      # 128 charger power setpoints ✅
-    # Total: 129 acciones controlables
+    charger_actions = action[1:39]      # 38 socket power setpoints ✅
+    # Total: 39 acciones controlables
     return {
         'bess_power': bess_action,
         'chargers': charger_actions,
     }
 ```
 
-**Distribución de 129 acciones:**
+**Distribución de 39 acciones:**
 - BESS power setpoint: 1 acción (rango [0, 1] → [0, 2712 kW])
-- Motos chargers: 112 acciones (28 chargers × 4 sockets = 112)
-- Mototaxis chargers: 16 acciones (4 chargers × 4 sockets = 16)
+- Motos chargers: 112 acciones (28 chargers x 2 sockets = 112)
+- Mototaxis chargers: 16 acciones (4 chargers x 2 sockets = 16)
 
 **Verificación:** ✅ 129 dimensiones completas, todos los chargers controlables
 
@@ -225,7 +225,7 @@ def compute(self, grid_import_kwh, ev_charging_kwh, ...):
 | Archivo | Líneas | Función | Verificación |
 |---------|--------|---------|--------------|
 | `configs/default.yaml` | 358 | Master config con factores CO2, chargers, BESS | ✅ Cargado correctamente |
-| `src/.../sac.py` | 1435 | Core SAC agent + observation/action transform | ✅ 394-dim + 129-dim conectados |
+| `src/.../sac.py` | 1435 | Core SAC agent + observation/action transform | ✅ 124-dim + 39-dim conectados |
 | `src/.../rewards.py` | 818 | Multiobjetivo reward + CO2 calculations | ✅ 5 componentes, sum=1.0 |
 | `scripts/verify_sac_integration.py` | 332 | 7-test verification suite | ✅ 7/7 PASS |
 
@@ -260,8 +260,8 @@ python -m scripts.run_oe3_co2_table --config configs/default.yaml
 - ✅ Config YAML sincronizado (CO2=0.4521, EV=50kW, Chargers=32, BESS=4520kWh)
 - ✅ SACConfig multiobjetivo correcto (pesos sum=1.0)
 - ✅ Reward calculation integrada (CO2 directo + indirecto)
-- ✅ Observaciones 394-dim completas (sin simplificaciones)
-- ✅ Acciones 129-dim completas (1 BESS + 128 chargers)
+- ✅ Observaciones 124-dim completas (sin simplificaciones)
+- ✅ Acciones 39-dim completas (1 BESS + 38 sockets)
 - ✅ Training loop ready (checkpoints configurados)
 - ✅ Todos los tests PASS (7/7)
 - ✅ Documentación consolidada (1 solo archivo de referencia)

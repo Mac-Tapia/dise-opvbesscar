@@ -64,13 +64,13 @@ Esta auditoría ha producido 4 documentos de referencia exhaustivos:
 
 ## ✅ CERTIFICACIÓN FINAL: HALLAZGOS CLAVE
 
-### 1. OBSERVACIONES: 394-dimensional ✅
+### 1. OBSERVACIONES: 124-dimensional ✅
 
 **PPO:** ppo_sb3.py línea 265-270
 ```python
 self.observation_space = gym.spaces.Box(
     low=-np.inf, high=np.inf,
-    shape=(self.obs_dim,),  # ← 394-dim verificado
+    shape=(self.obs_dim,),  # ← 124-dim verificado
     dtype=np.float32
 )
 ```
@@ -80,7 +80,7 @@ self.observation_space = gym.spaces.Box(
 **Composición:**
 - Base (~390): Energy loads, solar generation, charger states, prices, time features
 - Features derivados (+2): PV_kW (real-time PVGIS), BESS_SOC% (real-time)
-- Total: **394-dim** (todas las variables de CityLearn v2)
+- Total: **124-dim** (todas las variables de CityLearn v2)
 
 **Normalización:** Welford's algorithm + prescaling + clipping (NO dummy)
 
@@ -88,13 +88,13 @@ self.observation_space = gym.spaces.Box(
 
 ---
 
-### 2. ACCIONES: 129-dimensional ✅
+### 2. ACCIONES: 39-dimensional ✅
 
 **PPO:** ppo_sb3.py línea 269
 ```python
 self.action_space = gym.spaces.Box(
     low=-1.0, high=1.0,
-    shape=(129,),  # ← 129-dim verificado
+    shape=(39,),  # ← 39-dim verificado
     dtype=np.float32
 )
 ```
@@ -103,9 +103,9 @@ self.action_space = gym.spaces.Box(
 
 **Composición:**
 - [0]: BESS setpoint [0,1] × 2712 kW
-- [1:113]: 112 motos [0,1] × 2 kW c/u
-- [113:129]: 16 mototaxis [0,1] × 3 kW c/u
-- Total: **129-dim** (1 BESS + 128 chargers individuales)
+- [1:113]: 30 motos [0,1] × 2 kW c/u
+- [113:129]: 8 mototaxis [0,1] × 3 kW c/u
+- Total: **39-dim** (1 BESS + 38 sockets individuales)
 
 **Mapeo:** Unflatten automático a lista CityLearn (línea 347-357 PPO, 233-243 A2C)
 
@@ -123,10 +123,10 @@ self.action_space = gym.spaces.Box(
 
 **Chargers 128:**
 - Ubicación: `data/interim/oe2/chargers/chargers_hourly_profiles_annual.csv`
-- Tamaño: 8760 filas × 128 columnas
+- Tamaño: 8760 filas × 38 columnas
 - Generación: 128 CSVs individuales (charger_simulation_001.csv ... 128.csv)
 - Línea: 1025-1080 dataset_builder.py
-- **Status:** ✅ Validado (8760, 128)
+- **Status:** ✅ Validado (8760, 38)
 
 **BESS:**
 - Capacidad: 4520 kWh (OE2 real)
@@ -210,8 +210,8 @@ r_total = 0.50 * r_co2 +
 
 | Aspecto | Sospecha | Realidad | Status |
 |---|---|---|---|
-| Observación reducida | ¿< 394-dim? | Usa 394 COMPLETO | ✅ NO |
-| Acciones reducidas | ¿< 129-dim? | Usa 129 COMPLETO | ✅ NO |
+| Observación reducida | ¿< 124-dim? | Usa 394 COMPLETO | ✅ NO |
+| Acciones reducidas | ¿< 39-dim? | Usa 129 COMPLETO | ✅ NO |
 | Chargers < 128 | ¿Cap a 32? | Todos 128 individuales | ✅ NO |
 | Datos 15-minuto | ¿Sub-horario? | Validado 8760 hourly | ✅ NO |
 | n_steps truncado | ¿< 8760 PPO? | 8760 FULL | ✅ NO |
@@ -228,8 +228,8 @@ r_total = 0.50 * r_co2 +
 ### Arquitectura Base
 ```
 TODOS comparten:
-- Observaciones: 394-dim (idénticas)
-- Acciones: 129-dim (idénticas)
+- Observaciones: 124-dim (idénticas)
+- Acciones: 39-dim (idénticas)
 - Datos: OE2 real (idénticos)
 - Multiobjetivo: 5 comp (idéntico)
 - Normalización: Welford's (idéntica)
@@ -287,10 +287,10 @@ A2C (Sync, n_steps=32):
 | Componente | Status | Línea | Evidencia |
 |---|---|---|---|
 | PPO Config | ✅ | 34-125 | dataclass con n_steps=8760 |
-| PPO Spaces | ✅ | 265-270 | (394,) × (129,) Box spaces |
+| PPO Spaces | ✅ | 265-270 | (124,) × (39,) Box spaces |
 | PPO Training | ✅ | 454-490 | model.learn(500000) + callbacks |
 | A2C Config | ✅ | 39-89 | dataclass con n_steps=32 |
-| A2C Spaces | ✅ | 165-170 | (394,) × (129,) Box spaces |
+| A2C Spaces | ✅ | 165-170 | (124,) × (39,) Box spaces |
 | A2C Training | ✅ | 321-358 | model.learn(500000) + callbacks |
 | Dataset OE2 | ✅ | 28-50, 1025-1080 | Validación + generación 128 CSVs |
 | Multiobjetivo | ✅ | 111-115, 70-74 | 5 componentes = 1.0 |
@@ -307,8 +307,8 @@ A2C (Sync, n_steps=32):
 │  ✅ PPO  : On-policy n_steps=8760, robusto              │
 │  ✅ A2C  : Sincrónico n_steps=32, rápido               │
 │                                                          │
-│  Observaciones: 394-dim (TODAS)                         │
-│  Acciones: 129-dim (1 + 128 dispositivos)               │
+│  Observaciones: 124-dim (TODAS)                         │
+│  Acciones: 39-dim (1 + 128 dispositivos)               │
 │  Datos OE2: Real, 8760h, sin simplificaciones           │
 │  Multiobjetivo: 5 componentes, CO₂ prioritario          │
 │  Training: 500k pasos = 57 años simulados               │

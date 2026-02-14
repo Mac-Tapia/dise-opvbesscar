@@ -1,13 +1,15 @@
-﻿Parámetro,Valor
-Motos hora pico,112
-Mototaxis hora pico,16
-Total hora pico,128
-PE (Probabilidad Evento),90%
-Potencia cargador motos (kW),2.0
-Potencia cargador mototaxis (kW),3.0
-Sockets por cargador,4
-Duración sesión (min),20.0
-Horario apertura,9:00
+Parámetro,Valor
+PE (Penetración EV),0.30
+FC (Factor Carga diaria),0.55
+Base motos/día,1636
+Base mototaxis/día,236
+Motos que cargan/día,270
+Mototaxis que cargan/día,39
+Potencia por toma (kW),7.4
+Tomas por cargador,2
+Tiempo carga moto (min),60
+Tiempo carga mototaxi (min),90
+Horario apertura,09:00
 Horario cierre,22:00
 Horas operación,13h
-Horas pico,"[18, 19, 20, 21]"
+Horas punta (HP),18:00-23:00

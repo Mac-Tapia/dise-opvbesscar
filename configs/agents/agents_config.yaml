@@ -33,13 +33,15 @@ reward_weights:
   grid: 0.05             # Tertiary: Grid stability
   # NOTE: Total = 1.00 (sum verified: 0.35+0.20+0.30+0.10+0.05)
 
-# Infrastructure
+# Infrastructure (v5.5 - 2026-02-13 - Dual EV + MALL discharge)
 infrastructure:
   solar_capacity_kwp: 4050
-  bess_capacity_kwh: 4520
-  bess_power_kw: 600
-  num_chargers: 128
-  charger_power_kw_per_socket: 10.0
+  bess_capacity_kwh: 1700   # v5.5: 1700 kWh nominal (1360 kWh usable @ 20-100% SOC)
+  bess_power_kw: 400        # v5.5: 0.235 C-rate (ACTUALIZADO de 342 kW)
+  bess_min_soc_percent: 20.0  # v5.5: Hard constraint @ 22h closing
+  num_chargers: 19                    # 19 cargadores (motos, DATOS REALES 2024)
+  num_sockets: 38                     # 19 × 2 = 38 tomas (38 motos, 0 mototaxis)
+  charger_power_kw_per_socket: 7.4    # Modo 3 monofásico 32A @ 230V
 
 # CO2 context
 co2_context:
@@ -47,11 +49,12 @@ co2_context:
   country: "Peru"
   grid_co2_intensity: 0.4521  # kg CO2/kWh
 
-# Data paths
+# Data paths (v5.5 - Source of truth en data/oe2/)
 data:
-  solar: "data/interim/oe2/solar/pv_generation_timeseries.csv"
-  chargers: "data/interim/oe2/chargers/individual_chargers.json"
-  schema: "data/interim/oe3/schema.json"
+  solar: "data/oe2/Generacionsolar/pv_generation_citylearn2024.csv"
+  bess: "data/oe2/bess/bess_ano_2024.csv"  # v5.5: SOC @ 22h = 20%, MALL discharge +78.8%
+  chargers: "data/oe2/chargers/chargers_ev_ano_2024_v3.csv"
+  mall_demand: "data/oe2/demandamallkwh/demandamallhorakwh.csv"
 
 outputs:
   checkpoints_dir: "outputs/checkpoints"

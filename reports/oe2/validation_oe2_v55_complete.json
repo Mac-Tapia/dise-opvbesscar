@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-02-13",
+  "oe2_version": "v5.5",
+  "is_valid": true,
+  "solar": {
+    "capacity_kwp": 4050.0,
+    "timesteps": 8760,
+    "location": "Iquitos, Peru",
+    "mean_kw": 946.6340376622828,
+    "max_kw": 2886.689477778584,
+    "min_kw": 0.0
+  },
+  "bess": {
+    "capacity_kwh": 1700.0,
+    "power_kw": 400.0,
+    "efficiency": 0.95,
+    "timesteps": 8760
+  },
+  "chargers": {
+    "total_units": 19,
+    "total_sockets": 38,
+    "motos": 19,
+    "mototaxis": 0,
+    "timesteps": 8760
+  },
+  "mall_demand": {
+    "timesteps": 8760,
+    "mean_kw": 1411.946689497717,
+    "max_kw": 2763.0,
+    "min_kw": 0.0
+  },
+  "errors": [],
+  "notes": []
+}

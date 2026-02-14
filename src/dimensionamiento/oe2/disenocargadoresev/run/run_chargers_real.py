@@ -4,8 +4,8 @@ Ejecuta el módulo de dimensionamiento de cargadores (chargers.py)
 para generar dataset REAL basado en Tabla 13 OE2.
 
 Especificaciones:
-- 32 cargadores totales (28 motos + 4 mototaxis)
-- 128 sockets (4 por cargador)
+- 19 cargadores totales (30 motos + 8 mototaxis)
+- 38 sockets (4 por cargador)
 - Control individual por agentes RL en CityLearnv2
 """
 from __future__ import annotations
@@ -28,12 +28,12 @@ def main():
     out_dir = Path("data/oe2/chargers")
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"\n[1] Parámetros de entrada (Tabla 13 OE2 - RECOMENDADO):")
-    print(f"    Cargadores Motos: 28 × 2 kW = 56 kW")
-    print(f"    Cargadores Mototaxis: 4 × 3 kW = 12 kW")
-    print(f"    Sockets totales: 128 (4 por cargador)")
-    print(f"    Potencia máxima: 68 kW")
-    print(f"    Vehículos/día: 900 motos + 130 mototaxis = 1,030")
+    print(f"\n[1] Parámetros de entrada (Tabla 13 OE2 - v5.2):")
+    print(f"    Cargadores Motos: 15 × 2 sockets @ 7.4 kW = 222 kW")
+    print(f"    Cargadores Mototaxis: 4 × 2 sockets @ 7.4 kW = 59.2 kW")
+    print(f"    Sockets totales: 38 (2 por cargador) [v5.2]")
+    print(f"    Potencia máxima: 281.2 kW")
+    print(f"    Vehículos/día: 270 motos + 39 mototaxis = 309")
     print(f"    Horario: 09:00-22:00 (13 horas)")
     print(f"    Pico: 18:00-22:00 (4 horas)")
 
@@ -43,9 +43,9 @@ def main():
         result = run_charger_sizing(
             out_dir=out_dir,
             seed=2024,
-            # Parámetros Tabla 13 OE2 RECOMENDADO
-            n_motos=112,                # 28 cargadores × 4 sockets
-            n_mototaxis=16,             # 4 cargadores × 4 sockets
+            # Parámetros v5.2 - 19 cargadores x 2 sockets @ 7.4 kW
+            n_motos=30,                 # 15 cargadores x 2 sockets
+            n_mototaxis=8,              # 4 cargadores x 2 sockets
             pe_motos=0.90,              # 90% penetración
             pe_mototaxis=0.90,          # 90% penetración
             fc_motos=0.90,              # 90% factor carga
@@ -53,9 +53,9 @@ def main():
             peak_share_day=0.60,        # 60% energía en pico
             session_minutes=20.0,       # 20 min/sesión
             utilization=0.85,           # 85% utilización
-            charger_power_kw_moto=2.0,       # 2 kW motos
-            charger_power_kw_mototaxi=3.0,  # 3 kW mototaxis
-            sockets_per_charger=4,      # 4 sockets/cargador
+            charger_power_kw_moto=7.4,       # 7.4 kW Modo 3 (32A@230V)
+            charger_power_kw_mototaxi=7.4,   # 7.4 kW Modo 3 (32A@230V)
+            sockets_per_charger=2,      # 2 sockets/cargador
             opening_hour=9,             # 9am
             closing_hour=22,            # 10pm
             km_per_kwh=40.0,
@@ -91,7 +91,7 @@ def main():
         print(f"\n" + "=" * 80)
         print(f"✅ GENERACIÓN COMPLETADA EXITOSAMENTE")
         print(f"=" * 80)
-        print(f"\n✓ Dataset listo para CityLearnv2 (control individual de 128 sockets)")
+        print(f"\n✓ Dataset listo para CityLearnv2 (control individual de 38 sockets)")
         print(f"✓ Compatible con agentes RL (SAC/PPO/A2C)")
         print(f"✓ Escenarios calibrados contra Tabla 13 OE2")
 

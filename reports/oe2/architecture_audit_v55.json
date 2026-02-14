@@ -1,0 +1,90 @@
+{
+  "timestamp": "2026-02-13",
+  "architecture_version": "v5.5 INTEGRATED",
+  "project_status": "READY_FOR_TRAINING",
+  "data_layer": {
+    "source_of_truth": "data/oe2/",
+    "datasets": {
+      "solar": {
+        "path": "data/oe2/Generacionsolar/pv_generation_citylearn2024.csv",
+        "exists": true,
+        "specs": {
+          "capacity_kwp": 4050,
+          "timesteps": 8760,
+          "location": "Iquitos, Peru"
+        }
+      },
+      "bess": {
+        "path": "data/oe2/bess/bess_ano_2024.csv",
+        "exists": true,
+        "specs": {
+          "capacity_kwh": 1700,
+          "power_kw": 400,
+          "soc_min_percent": 20.0,
+          "efficiency": 0.95
+        }
+      },
+      "chargers": {
+        "path": "data/oe2/chargers/chargers_ev_ano_2024_v3.csv",
+        "exists": true,
+        "specs": {
+          "units": 19,
+          "sockets": 38,
+          "power_per_socket_kw": 7.4
+        }
+      },
+      "mall_demand": {
+        "path": "data/oe2/demandamallkwh/demandamallhorakwh.csv",
+        "exists": true,
+        "specs": {
+          "avg_kw": 1412,
+          "timesteps": 8760
+        }
+      }
+    }
+  },
+  "loader_layer": {
+    "module": "src/dimensionamiento/oe2/disenocargadoresev/data_loader.py",
+    "version": "v5.5",
+    "functions": {
+      "load_solar_data": true,
+      "load_bess_data": true,
+      "load_chargers_data": true,
+      "load_mall_demand_data": true,
+      "validate_oe2_complete": true
+    }
+  },
+  "environment_layer": {
+    "framework": "CityLearn v2",
+    "observations": 394,
+    "actions": 39,
+    "episode_length": 8760,
+    "timestep_minutes": 60
+  },
+  "agents": {
+    "SAC": {
+      "path": "src/agents/sac.py",
+      "exists": true,
+      "type": "off-policy"
+    },
+    "PPO": {
+      "path": "src/agents/ppo_sb3.py",
+      "exists": true,
+      "type": "on-policy"
+    },
+    "A2C": {
+      "path": "src/agents/a2c_sb3.py",
+      "exists": true,
+      "type": "on-policy"
+    }
+  },
+  "configurations": {
+    "configs/default.yaml": true,
+    "configs/agents/agents_config.yaml": true,
+    "configs/sac_optimized.json": true
+  },
+  "integration_status": true,
+  "data_real_vs_interim": "USING REAL DATA (data/oe2/)",
+  "synchronization": "SYNCHRONIZED (v5.5 unified)",
+  "ready_for_training": true
+}

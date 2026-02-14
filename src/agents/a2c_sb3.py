@@ -11,7 +11,7 @@ import logging
 # Suppress stable_baselines3 render_mode warning
 warnings.filterwarnings("ignore", message=".*render_mode.*")
 
-from ..citylearnv2.progress import append_progress_row, render_progress_plot
+from .utils_progress import append_progress_row, render_progress_plot
 
 logger = logging.getLogger(__name__)
 
@@ -857,7 +857,7 @@ class A2CAgent:
                 self.log_interval_steps = int(agent.config.log_interval or 500)  # Default 500
 
                 # ✅ FIX: Usar EpisodeMetricsAccumulator centralizado
-                from ..citylearnv2.metrics_extractor import EpisodeMetricsAccumulator, extract_step_metrics
+                from .utils_metrics import EpisodeMetricsAccumulator, extract_step_metrics
                 self.metrics_accumulator = EpisodeMetricsAccumulator()
                 self._extract_step_metrics = extract_step_metrics
 

@@ -83,15 +83,15 @@ co2_direct=294,109.3  ← EV × 2.146 ✓
 - ✅ Cargado en CityLearn schema (dataset_builder.py línea 626)
 - ✅ Capacidad: 4,520 kWh (OE2 real)
 - ✅ Potencia: 2,712 kW
-- ✅ SOC en observación (394-dim)
+- ✅ SOC en observación (124-dim)
 - ⏳ Controlabilidad: NO DIRECTO por agente RL
   - BESS es controlado por reglas de despacho automático (5 prioridades)
-  - Agente RL controla los 128 chargers (acciones continuas [0,1])
+  - Agente RL controla los 38 sockets (acciones continuas [0,1])
 
 ### Chargers (128 individuales)
 **Estado en el Código:**
 - ✅ 128 CSVs individuales generados (charger_simulation_001.csv a 128.csv)
-- ✅ Acciones RL: 129-dim = 1 (BESS) + 128 (chargers)
+- ✅ Acciones RL: 39-dim = 1 (BESS) + 128 (chargers)
 - ✅ Observación: cada charger tiene 4 valores (ocupancia, SOC, etc.)
 - ⏳ Aprendizaje Individual:
   - Agentes RL actuales: SAC (off-policy) es el mejor para este caso

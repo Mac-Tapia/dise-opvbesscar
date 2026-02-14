@@ -141,7 +141,7 @@ Write-Section "PASO 4: VALIDAR DATASETS OE2 (CRÍTICO)" 'Yellow'
 
 $oe2_files = @{
     'Solar PVGIS' = 'data\interim\oe2\solar\pv_generation_citylearn_v2.csv'
-    'Chargers' = 'data\interim\oe2\chargers\chargers_real_hourly_2024.csv'
+    'Chargers' = 'data\interim\oe2\chargers\chargers_ev_ano_2024_v3.csv'
     'BESS' = 'data\interim\oe2\bess\bess_hourly_dataset_2024.csv'
     'Mall Demand' = 'data\interim\oe2\demandamallkwh\demandamallhorakwh.csv'
 }

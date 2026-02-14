@@ -187,7 +187,7 @@ def main():
         sys.exit(1)
 
     print(f"\nCargando datos desde: {data_file}")
-    df = pd.read_csv(data_file, index_col="timestamp", parse_dates=True)
+    df = pd.read_csv(data_file, index_col="datetime", parse_dates=True)
 
     # Verificar que tiene zona horaria
     if df.index.tz is None:

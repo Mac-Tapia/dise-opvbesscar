@@ -41,19 +41,19 @@
 │  │ │ 128 CHARGERS (Individual Controllable)  │             │  │
 │  │ │                                         │             │  │
 │  │ │ Group A: 112 Motos ✅                  │             │  │
-│  │ │ ├─ 2.0 kW per charger                 │             │  │
-│  │ │ ├─ 8 sockets (32 chargers × 4)        │             │  │
-│  │ │ └─ Battery: 2.5 kWh nominal           │             │  │
+│  │ │ ├─ 7.4 kW per charger                 │             │  │
+│  │ │ ├─ 8 sockets (19 chargers × 4)        │             │  │
+│  │ │ └─ Battery: 4.6 kWh nominal           │             │  │
 │  │ │                                         │             │  │
 │  │ │ Group B: 16 Mototaxis ✅               │             │  │
-│  │ │ ├─ 3.0 kW per charger                 │             │  │
+│  │ │ ├─ 7.4 kW per charger                 │             │  │
 │  │ │ ├─ 4 chargers × 4 = 16 sockets        │             │  │
-│  │ │ └─ Battery: 4.5 kWh nominal           │             │  │
+│  │ │ └─ Battery: 7.4 kWh nominal           │             │  │
 │  │ │                                         │             │  │
 │  │ │ Total: 128 CSV files generated ✅     │             │  │
 │  │ │ ├─ charger_simulation_001.csv          │             │  │
 │  │ │ ├─ ...                                │             │  │
-│  │ │ └─ charger_simulation_128.csv          │             │  │
+│  │ │ └─ charger_simulation_038.csv          │             │  │
 │  │ └─────────────────────────────────────────┘             │  │
 │  │                           │                             │  │
 │  │  ┌────────────────────────┘                             │  │
@@ -138,7 +138,7 @@
 │                                                              │
 │ INPUT 2: EV Charging Demand [kWh]                          │
 │ ├─ Constant: 50 kW (13 hours/day, 9AM-10PM) ✅            │
-│ ├─ 128 chargers share this demand                         │
+│ ├─ 38 sockets share this demand                         │
 │ └─ Pattern: 0 at night, ~4 kWh per charger avg ✅         │
 │                                                              │
 │ INPUT 3: Mall Load [kWh]                                   │
@@ -224,7 +224,7 @@
 - ✅ Entrada: OE2 datasets (solar, chargers, BESS, mall)
 - ✅ Procesamiento: CityLearn environment + auto-dispatch + RL
 - ✅ Salida: Timeseries + CO₂ desglose + rewards
-- ✅ Control: 128 chargers individuales + BESS auto
+- ✅ Control: 38 sockets individuales + BESS auto
 
 **BESS Role:**
 - ✅ Loaded en environment
@@ -233,7 +233,7 @@
 - ✅ Charged during low-demand hours
 
 **RL Agent Role:**
-- ✅ Controls 128 charger setpoints
+- ✅ Controls 38 socket setpoints
 - ✅ Optimizes timing/power distribution
 - ✅ Maximizes CO₂ reduction
 - ✅ Respects BESS output constraints

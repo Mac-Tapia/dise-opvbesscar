@@ -4,8 +4,8 @@
 
 | Métrica | PPO | A2C | SAC | Requisito | ✅ |
 |---|---|---|---|---|---|
-| **Observaciones** | 394-dim | 394-dim | 394-dim | TODAS las variables | ✅ |
-| **Acciones** | 129-dim | 129-dim | 129-dim | 1 BESS + 128 chargers | ✅ |
+| **Observaciones** | 124-dim | 124-dim | 124-dim | TODAS las variables | ✅ |
+| **Acciones** | 39-dim | 39-dim | 39-dim | 1 BESS + 38 sockets | ✅ |
 | **Datos OE2** | Real 8760h | Real 8760h | Real 8760h | Sin simplificar | ✅ |
 | **Año Completo** | n_steps=8760 | n_steps=32* | buffer | No caps | ✅ |
 | **Multiobjetivo** | 5 comp (1.0) | 5 comp (1.0) | 5 comp (1.0) | CO₂ 0.50 primary | ✅ |
@@ -21,8 +21,8 @@
 ### PPO: ppo_sb3.py
 ```
 Línea 34-125   → PPOConfig (weights, n_steps=8760)
-Línea 265-270  → observation_space.shape=(394,)
-Línea 269      → action_space.shape=(129,)
+Línea 265-270  → observation_space.shape=(124,)
+Línea 269      → action_space.shape=(39,)
 Línea 272-284  → _normalize_observation (Welford's)
 Línea 328-345  → _flatten (base + PV + BESS)
 Línea 347-357  → _unflatten_action (129→lista)
@@ -33,8 +33,8 @@ Línea 454-490  → model.learn (500k pasos, checkpoints)
 ### A2C: a2c_sb3.py
 ```
 Línea 39-89    → A2CConfig (weights, n_steps=32 sync)
-Línea 165-170  → observation_space.shape=(394,)
-Línea 159      → action_space.shape=(129,)
+Línea 165-170  → observation_space.shape=(124,)
+Línea 159      → action_space.shape=(39,)
 Línea 181-193  → _normalize_observation (Welford's)
 Línea 219-230  → _flatten (base + PV + BESS)
 Línea 233-243  → _unflatten_action (129→lista)
@@ -56,7 +56,7 @@ Línea 543-650  → Schema integration (PV 4050kWp, BESS 4520kWh)
 ```
 OE2 artifacts (8760h cada uno)
 ├─ pv_generation_timeseries.csv (PVGIS)
-├─ chargers_hourly_profiles_annual.csv (128 columnas)
+├─ chargers_hourly_profiles_annual.csv (38 columnas)
 ├─ electrical_storage SOC (4520 kWh)
 └─ building_load / mall demand
 
@@ -65,7 +65,7 @@ OE2 artifacts (8760h cada uno)
 Schema CityLearn v2
 ├─ 4050 kWp PV (nominal_power)
 ├─ 4520 kWh BESS (capacity)
-├─ 128 charger_simulation_*.csv (individual)
+├─ 38 socket_simulation_*.csv (individual)
 └─ energy_simulation.csv (8760h load + solar)
 
     ↓ _make_env(schema.json)
@@ -78,13 +78,13 @@ CityLearn Environment
 
     ↓ CityLearnWrapper
 
-Observación 394-dim
+Observación 124-dim
 ├─ base (~390): load, solar, charger states, prices, time
 └─ features (2): [PV_kW, BESS_SOC_pct]
 
     ↓ PPO/A2C predict
 
-Acción 129-dim
+Acción 39-dim
 ├─ [0] BESS setpoint [0,1] × 2712 kW
 └─ [1:129] Charger setpoints [0,1] × individual power
 
@@ -144,8 +144,8 @@ TOTAL = 1.0 (normalizado)
 ```bash
 # Abrir ppo_sb3.py
 1. Línea 57: ✅ n_steps: int = 8760
-2. Línea 265-270: ✅ observation_space.shape=(394,)
-3. Línea 269: ✅ action_space.shape=(129,)
+2. Línea 265-270: ✅ observation_space.shape=(124,)
+3. Línea 269: ✅ action_space.shape=(39,)
 4. Línea 111-115: ✅ weights sum to 1.0
 5. Línea 454: ✅ model.learn(total_timesteps=500000)
 ```
@@ -154,8 +154,8 @@ TOTAL = 1.0 (normalizado)
 ```bash
 # Abrir a2c_sb3.py
 1. Línea 44: ✅ n_steps: int = 32 (sync OK)
-2. Línea 165-170: ✅ observation_space.shape=(394,)
-3. Línea 159: ✅ action_space.shape=(129,)
+2. Línea 165-170: ✅ observation_space.shape=(124,)
+3. Línea 159: ✅ action_space.shape=(39,)
 4. Línea 70-74: ✅ weights sum to 1.0
 5. Línea 335: ✅ model.learn(total_timesteps=500000)
 ```
@@ -165,7 +165,7 @@ TOTAL = 1.0 (normalizado)
 # Abrir dataset_builder.py
 1. Línea 28-50: ✅ Solar validation "8760 rows" or raise
 2. Línea 1025-1080: ✅ Generates 128 CSVs
-3. Línea 1043: ✅ Shape validation (8760, 128)
+3. Línea 1043: ✅ Shape validation (8760, 38)
 ```
 
 ---
@@ -290,16 +290,16 @@ checkpoints/
 
 ```
 TRIPLE AGENT SYSTEM (SAC + PPO + A2C)
-├─ Input: 394-dim observation (TODAS las variables)
-├─ Output: 129-dim action (1 BESS + 128 chargers)
+├─ Input: 124-dim observation (TODAS las variables)
+├─ Output: 39-dim action (1 BESS + 38 sockets)
 ├─ Data: OE2 real (8760h hourly)
 ├─ Training: 500k pasos (57 full years)
 ├─ Reward: Multiobjetivo (CO₂ 0.50 primary)
 └─ Status: ✅ PRODUCTION READY
 
 VERIFICACIÓN: ZERO SIMPLIFICACIONES
-├─ ✅ Observaciones completas 394-dim
-├─ ✅ Acciones completas 129-dim
+├─ ✅ Observaciones completas 124-dim
+├─ ✅ Acciones completas 39-dim
 ├─ ✅ Datos OE2 no reducidos
 ├─ ✅ Año completo 8760h por episodio
 ├─ ✅ Multiobjetivo 5 componentes ponderados
