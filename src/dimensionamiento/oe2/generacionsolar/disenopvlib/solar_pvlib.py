@@ -2229,7 +2229,6 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     
     df = pd.read_csv(dataset_path)
     df['datetime'] = pd.to_datetime(df['datetime'])
-    df = df.set_index('datetime')
     
     results = {}
     
@@ -2239,7 +2238,7 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     
     # 1. Energía diaria (pv_daily_energy.csv)
     print("\n1️⃣  Generando pv_daily_energy.csv...")
-    daily_energy = df.groupby(df.index.date)['energia_kwh'].sum()
+    daily_energy = df.groupby(df['datetime'].dt.date)['ac_energy_kwh'].sum()
     df_daily = pd.DataFrame({
         'datetime': pd.to_datetime(daily_energy.index).to_series(index=range(len(daily_energy))).values,
         'ac_energy_kwh': daily_energy.values
@@ -2252,7 +2251,7 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     
     # 2. Energía mensual (pv_monthly_energy.csv)
     print("2️⃣  Generando pv_monthly_energy.csv...")
-    monthly_energy = df.groupby(df.index.to_period('M'))['energia_kwh'].sum()
+    monthly_energy = df.groupby(df['datetime'].dt.to_period('M'))['ac_energy_kwh'].sum()
     df_monthly = pd.DataFrame({
         'datetime': [
             pd.Period(p).end_time.strftime('%Y-%m-%d %H:%M:%S') + '-05:00'
@@ -2267,7 +2266,7 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     
     # 3. Perfil promedio 24h (pv_profile_24h.csv)
     print("3️⃣  Generando pv_profile_24h.csv...")
-    hourly_avg = df.groupby(df.index.hour)['energia_kwh'].mean()
+    hourly_avg = df.groupby(df['datetime'].dt.hour)['ac_energy_kwh'].mean()
     hourly_avg_per_kwp = hourly_avg / 4050.0  # 4,050 kWp instalado
     df_24h = pd.DataFrame({
         'hour': range(24),
@@ -2283,15 +2282,15 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     print("4️⃣  Generando perfiles de días representativos...")
     
     # Ordenar por energía diaria para identificar tipos de día
-    daily_totals = df.groupby(df.index.date)['energia_kwh'].sum().sort_values(ascending=False)
+    daily_totals = df.groupby(df['datetime'].dt.date)['ac_energy_kwh'].sum().sort_values(ascending=False)
     
     # Día máxima generación (energía máxima)
     fecha_max = daily_totals.index[0]
-    df_dia_max = df[df.index.date == fecha_max].copy()
-    df_dia_max['hora'] = df_dia_max.index.hour
-    df_dia_max['ghi_wm2'] = df_dia_max['irradiancia_ghi']
-    df_dia_max['ac_power_kw'] = df_dia_max['potencia_kw']
-    df_dia_max['ac_energy_kwh'] = df_dia_max['energia_kwh']
+    df_dia_max = df[df['datetime'].dt.date == fecha_max].copy()
+    df_dia_max['hora'] = df_dia_max['datetime'].dt.hour
+    df_dia_max['ghi_wm2'] = df_dia_max['ghi_wm2']
+    df_dia_max['ac_power_kw'] = df_dia_max['ac_power_kw']
+    df_dia_max['ac_energy_kwh'] = df_dia_max['ac_energy_kwh']
     df_dia_max['fecha'] = fecha_max.strftime('%Y-%m-%d')
     df_dia_max['tipo_dia'] = 'maxima_generacion'
     cols_dia_max = ['hora', 'ghi_wm2', 'ac_power_kw', 'ac_energy_kwh', 'fecha', 'tipo_dia']
@@ -2303,11 +2302,11 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     
     # Día despejado (tercio superior)
     fecha_despejado = daily_totals.index[len(daily_totals)//3]
-    df_dia_desp = df[df.index.date == fecha_despejado].copy()
-    df_dia_desp['hora'] = df_dia_desp.index.hour
-    df_dia_desp['ghi_wm2'] = df_dia_desp['irradiancia_ghi']
-    df_dia_desp['ac_power_kw'] = df_dia_desp['potencia_kw']
-    df_dia_desp['ac_energy_kwh'] = df_dia_desp['energia_kwh']
+    df_dia_desp = df[df['datetime'].dt.date == fecha_despejado].copy()
+    df_dia_desp['hora'] = df_dia_desp['datetime'].dt.hour
+    df_dia_desp['ghi_wm2'] = df_dia_desp['ghi_wm2']
+    df_dia_desp['ac_power_kw'] = df_dia_desp['ac_power_kw']
+    df_dia_desp['ac_energy_kwh'] = df_dia_desp['ac_energy_kwh']
     df_dia_desp['fecha'] = fecha_despejado.strftime('%Y-%m-%d')
     df_dia_desp['tipo_dia'] = 'despejado'
     df_dia_desp = df_dia_desp[cols_dia_max].reset_index(drop=True)
@@ -2318,11 +2317,11 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     
     # Día intermedio (mediana)
     fecha_intermedio = daily_totals.index[len(daily_totals)//2]
-    df_dia_inter = df[df.index.date == fecha_intermedio].copy()
-    df_dia_inter['hora'] = df_dia_inter.index.hour
-    df_dia_inter['ghi_wm2'] = df_dia_inter['irradiancia_ghi']
-    df_dia_inter['ac_power_kw'] = df_dia_inter['potencia_kw']
-    df_dia_inter['ac_energy_kwh'] = df_dia_inter['energia_kwh']
+    df_dia_inter = df[df['datetime'].dt.date == fecha_intermedio].copy()
+    df_dia_inter['hora'] = df_dia_inter['datetime'].dt.hour
+    df_dia_inter['ghi_wm2'] = df_dia_inter['ghi_wm2']
+    df_dia_inter['ac_power_kw'] = df_dia_inter['ac_power_kw']
+    df_dia_inter['ac_energy_kwh'] = df_dia_inter['ac_energy_kwh']
     df_dia_inter['fecha'] = fecha_intermedio.strftime('%Y-%m-%d')
     df_dia_inter['tipo_dia'] = 'intermedio'
     df_dia_inter = df_dia_inter[cols_dia_max].reset_index(drop=True)
@@ -2333,11 +2332,11 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     
     # Día nublado (energía mínima)
     fecha_nublado = daily_totals.index[-1]
-    df_dia_nubl = df[df.index.date == fecha_nublado].copy()
-    df_dia_nubl['hora'] = df_dia_nubl.index.hour
-    df_dia_nubl['ghi_wm2'] = df_dia_nubl['irradiancia_ghi']
-    df_dia_nubl['ac_power_kw'] = df_dia_nubl['potencia_kw']
-    df_dia_nubl['ac_energy_kwh'] = df_dia_nubl['energia_kwh']
+    df_dia_nubl = df[df['datetime'].dt.date == fecha_nublado].copy()
+    df_dia_nubl['hora'] = df_dia_nubl['datetime'].dt.hour
+    df_dia_nubl['ghi_wm2'] = df_dia_nubl['ghi_wm2']
+    df_dia_nubl['ac_power_kw'] = df_dia_nubl['ac_power_kw']
+    df_dia_nubl['ac_energy_kwh'] = df_dia_nubl['ac_energy_kwh']
     df_dia_nubl['fecha'] = fecha_nublado.strftime('%Y-%m-%d')
     df_dia_nubl['tipo_dia'] = 'nublado'
     df_dia_nubl = df_dia_nubl[cols_dia_max].reset_index(drop=True)
@@ -2348,7 +2347,7 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     
     # 5. Perfil mensual horario (pv_profile_monthly_hourly.csv)
     print("5️⃣  Generando pv_profile_monthly_hourly.csv...")
-    monthly_hourly = df.groupby([df.index.month, df.index.hour])['energia_kwh'].mean().unstack(fill_value=0)
+    monthly_hourly = df.groupby([df['datetime'].dt.month, df['datetime'].dt.hour])['ac_energy_kwh'].mean().unstack(fill_value=0)
     df_month_hour = pd.DataFrame({
         'hour': range(24),
     })

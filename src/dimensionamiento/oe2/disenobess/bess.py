@@ -3095,12 +3095,7 @@ def run_bess_sizing(
             f"Verificar simulación y alineación de series temporales."
         )
     
-    # Guardar simulación completa
-    df_sim.to_csv(out_dir / "bess_simulation_hourly.csv", index=True)
-    assert (out_dir / "bess_simulation_hourly.csv").stat().st_size > 0, "ERROR: bess_simulation_hourly.csv vacío"
-    print(f"   ✅ Guardado: bess_simulation_hourly.csv ({len(df_sim)} filas)")
-    
-    # Dataset principal para el año completo 2024
+    # Guardar simulación completa (nombre principal: bess_ano_2024.csv)
     df_sim.to_csv(out_dir / "bess_ano_2024.csv", index=True)
     assert (out_dir / "bess_ano_2024.csv").stat().st_size > 0, "ERROR: bess_ano_2024.csv vacío"
     print(f"   ✅ Guardado: bess_ano_2024.csv ({len(df_sim)} filas, año completo 2024)")
@@ -3796,7 +3791,7 @@ if __name__ == "__main__":
     
     files_generated = [
         (out_dir / "bess_results.json", "Configuración y métricas BESS"),
-        (out_dir / "bess_simulation_hourly.csv", "Simulación 8,760 horas (29 cols)"),
+        (out_dir / "bess_ano_2024.csv", "Simulación 8,760 horas (29 cols)"),
         (out_dir / "bess_daily_balance_24h.csv", "Perfil día típico (24 horas)"),
         (reports_dir / "bess" / "bess_sistema_completo.png", "Gráfica sistema completo"),
     ]

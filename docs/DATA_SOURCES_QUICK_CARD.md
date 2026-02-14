@@ -9,7 +9,7 @@
 | Data | Status | Where | Size | Key Column | Annual Qty | RL Use |
 |------|--------|-------|------|-----------|-----------|--------|
 | **Solar PV** | ✅ REAL | `Generacionsolar/pv_generation_hourly_*.csv` | 8,760h × 1 | `ac_power_kw` | ~8,000 MWh | Maximize PV self-use |
-| **Chargers (38)** | ✅ REAL | `chargers/chargers_real_hourly_2024.csv` | 8,760h × 38 | `socket_000..socket_037` | ~19,500 kWh | Hard constraint: satisfy demand |
+| **Chargers (38)** | ✅ REAL | `chargers/chargers_ev_ano_2024_v3.csv` | 365d × 353 cols (38 sockets) | `socket_000..socket_037` | ~19,500 kWh | Hard constraint: satisfy demand |
 | **Mall Load** | ✅ REAL | `demandamallkwh/demandamallhorakwh.csv` | 8,760h × 1 | `demand_kwh` | ~875 MWh | Non-controllable baseline |
 | **BESS Dispatch** | ⚠️ SIMULATED | `bess/bess_simulation_hourly.csv` | 8,760h × 8 | `bess_soc_percent` | SOC 0-100% | Reference trajectory |
 
@@ -73,7 +73,7 @@ data/
 │   ├── solar/
 │   │   └── pv_generation_citylearn_v2.csv        ✅
 │   ├── chargers/
-│   │   └── chargers_real_hourly_2024.csv        ✅
+│   │   └── chargers_ev_ano_2024_v3.csv           ✅
 │   ├── demandamallkwh/
 │   │   └── demandamallhorakwh.csv                 ✅
 │   └── bess/
@@ -137,7 +137,7 @@ reward = (
 wc -l data/interim/oe2/solar/pv_generation_citylearn_v2.csv  # Should be 8761 (8760 + header)
 
 # Step 2: Verify chargers
-python -c "import pandas as pd; df=pd.read_csv('data/interim/oe2/chargers/chargers_real_hourly_2024.csv'); print(f'{df.shape[0]} rows, {df.shape[1]} cols'); assert df.shape==(8760,38)"
+python -c "import pandas as pd; df=pd.read_csv('data/interim/oe2/chargers/chargers_ev_ano_2024_v3.csv'); print(f'{df.shape[0]} rows, {df.shape[1]} cols'); assert 'socket_000' in df.columns"
 
 # Step 3: Verify mall
 python -c "import pandas as pd; df=pd.read_csv('data/interim/oe2/demandamallkwh/demandamallhorakwh.csv'); print(f'Mall: {len(df)} rows'); assert len(df)>=8760"

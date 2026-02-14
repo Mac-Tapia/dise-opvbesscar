@@ -50,17 +50,50 @@ SCENARIO_EXTREME_PEAK = VehicleChargingScenario(
 class VehicleChargingSimulator:
     """Simula carga por SOC de vehículos en cada timestep."""
     
+    # CONSTANTES v5.5: Configuración de sockets por tipo de vehículo
+    SOCKETS_MOTOS = 30          # 30 tomas para motos (15 cargadores x 2 tomas)
+    SOCKETS_MOTOTAXIS = 8       # 8 tomas para mototaxis (4 cargadores x 2 tomas)
+    TOTAL_SOCKETS = 38          # Total: 19 cargadores x 2 tomas = 38
+    
     def __init__(self):
-        """Inicializar simulador con distribuciones de SOC realistas."""
-        # Distribución de SOC de llegada (uniforme 10-80%)
-        self.soc_distribution = {
-            10: 0.15,   # 15% llegan al 10%
-            20: 0.15,   # 15% llegan al 20%
-            30: 0.20,   # 20% llegan al 30%
-            50: 0.25,   # 25% llegan al 50%
-            70: 0.15,   # 15% llegan al 70%
-            80: 0.10,   # 10% llegan al 80%
+        """Inicializar simulador con distribuciones de SOC realistas.
+        
+        DISTRIBUCIÓN BASADA EN DATASET REAL (chargers_ev_ano_2024_v3.csv):
+        - SOC de llegada: ~0% (todos llegan vacíos)
+        - SOC alcanzado: distribución según capacidad de carga real
+        
+        MOTOS (soc_current real):
+          0-10%: 12.6%, 10-20%: 32.9%, 20-30%: 32.9%, 30-50%: 15.2%
+          50-70%: 0.1%, 80-100%: 6.3%
+        
+        MOTOTAXIS (soc_current real):
+          0-10%: 6.7%, 10-20%: 17.6%, 20-30%: 17.7%, 30-50%: 8.2%
+          50-70%: 6.1%, 70-80%: 15.6%, 80-100%: 28.1%
+        """
+        # Distribución de SOC ALCANZADO para MOTOS (basado en dataset real)
+        self.soc_distribution_motos = {
+            10: 0.126,   # 12.6% alcanzan 0-10%
+            20: 0.329,   # 32.9% alcanzan 10-20%
+            30: 0.329,   # 32.9% alcanzan 20-30%
+            50: 0.152,   # 15.2% alcanzan 30-50%
+            70: 0.001,   # 0.1% alcanzan 50-70%
+            80: 0.000,   # 0% alcanzan 70-80%
+            100: 0.063,  # 6.3% alcanzan 80-100%
         }
+        
+        # Distribución de SOC ALCANZADO para MOTOTAXIS (basado en dataset real)
+        self.soc_distribution_mototaxis = {
+            10: 0.067,   # 6.7% alcanzan 0-10%
+            20: 0.176,   # 17.6% alcanzan 10-20%
+            30: 0.177,   # 17.7% alcanzan 20-30%
+            50: 0.082,   # 8.2% alcanzan 30-50%
+            70: 0.061,   # 6.1% alcanzan 50-70%
+            80: 0.156,   # 15.6% alcanzan 70-80%
+            100: 0.281,  # 28.1% alcanzan 80-100%
+        }
+        
+        # Alias para compatibilidad (deprecated)
+        self.soc_distribution = self.soc_distribution_motos
     
     def simulate_hourly_charge(
         self, 
@@ -75,7 +108,7 @@ class VehicleChargingSimulator:
             available_power_kw: Potencia disponible para carga (kW)
         
         Returns:
-            Diccionario con conteos de vehículos por nivel de carga
+            Diccionario con conteos de vehículos por nivel de carga (SOC de llegada)
         """
         
         result = {
@@ -103,71 +136,100 @@ class VehicleChargingSimulator:
         mototaxi_power = 10.0  # kW
         
         # Calcular cuántos vehículos se pueden cargar con potencia disponible
+        # LIMITADO POR: demanda, potencia disponible, Y sockets disponibles
+        motos_by_power = int(available_power_kw / moto_power) if moto_power > 0 else 0
         motos_can_charge = min(
-            scenario.motos_demanding_charge,
-            int(available_power_kw / moto_power)
+            scenario.motos_demanding_charge,  # Demanda
+            motos_by_power,                   # Potencia
+            self.SOCKETS_MOTOS                # Sockets disponibles (30)
         )
         power_left = available_power_kw - (motos_can_charge * moto_power)
         
+        mototaxis_by_power = int(power_left / mototaxi_power) if mototaxi_power > 0 else 0
         mototaxis_can_charge = min(
-            scenario.mototaxis_demanding_charge,
-            int(power_left / mototaxi_power)
+            scenario.mototaxis_demanding_charge,  # Demanda
+            mototaxis_by_power,                   # Potencia
+            self.SOCKETS_MOTOTAXIS                # Sockets disponibles (8)
         )
         
-        # Simular progreso de carga para motos
-        # Usar distribución de SOC para determinar cuánto puede cargar cada vehículo
-        for i in range(motos_can_charge):
-            # Seleccionar SOC de llegada aleatorio
-            soc_arrival = np.random.choice(
-                list(self.soc_distribution.keys()),
-                p=list(self.soc_distribution.values())
-            )
-            
-            # Simular 1 hora de carga desde ese SOC inicial
-            # Batería típica moto: 5-10 kWh, cargador: 7.4 kW = ~0.5 horas a 100%
-            charge_gained_pct = min(100 - soc_arrival, 40)  # 40% por hora (simple)
-            final_soc = soc_arrival + charge_gained_pct
-            
-            # Contar por nivel alcanzado
-            if final_soc >= 100:
-                result['motos_100_percent_charged'] += 1
-            elif final_soc >= 80:
-                result['motos_80_percent_charged'] += 1
-            elif final_soc >= 70:
-                result['motos_70_percent_charged'] += 1
-            elif final_soc >= 50:
-                result['motos_50_percent_charged'] += 1
-            elif final_soc >= 30:
-                result['motos_30_percent_charged'] += 1
-            elif final_soc >= 20:
-                result['motos_20_percent_charged'] += 1
-            else:
-                result['motos_10_percent_charged'] += 1
+        # [v5.6 DEBUG] Verificar que hay vehículos para cargar
+        print(f"[VCHARGE-DEBUG] motos_can_charge={motos_can_charge}, mototaxis_can_charge={mototaxis_can_charge}, power={available_power_kw:.1f}, demand_m={scenario.motos_demanding_charge}, demand_t={scenario.mototaxis_demanding_charge}")
         
-        # Simular progreso de carga para mototaxis (similar pero más rápido)
-        for i in range(mototaxis_can_charge):
-            soc_arrival = np.random.choice(
-                list(self.soc_distribution.keys()),
-                p=list(self.soc_distribution.values())
+        # Simular progreso de carga para motos
+        # v5.6: Contar por SOC ALCANZADO (distribución real del dataset)
+        for i in range(motos_can_charge):
+            # Seleccionar SOC ALCANZADO según distribución real de MOTOS
+            soc_achieved = np.random.choice(
+                list(self.soc_distribution_motos.keys()),
+                p=list(self.soc_distribution_motos.values())
             )
             
-            # Mototaxis cargan más rápido (batería mayor, mismo cargador)
-            charge_gained_pct = min(100 - soc_arrival, 50)  # 50% por hora
-            final_soc = soc_arrival + charge_gained_pct
-            
-            if final_soc >= 100:
-                result['mototaxis_100_percent_charged'] += 1
-            elif final_soc >= 80:
-                result['mototaxis_80_percent_charged'] += 1
-            elif final_soc >= 70:
-                result['mototaxis_70_percent_charged'] += 1
-            elif final_soc >= 50:
-                result['mototaxis_50_percent_charged'] += 1
-            elif final_soc >= 30:
-                result['mototaxis_30_percent_charged'] += 1
-            elif final_soc >= 20:
-                result['mototaxis_20_percent_charged'] += 1
+            # CONTAR POR SOC ALCANZADO (nivel de carga logrado)
+            if soc_achieved <= 10:
+                result['motos_10_percent_charged'] += 1
+            elif soc_achieved <= 20:
+                result['motos_20_percent_charged'] += 1
+            elif soc_achieved <= 30:
+                result['motos_30_percent_charged'] += 1
+            elif soc_achieved <= 50:
+                result['motos_50_percent_charged'] += 1
+            elif soc_achieved <= 70:
+                result['motos_70_percent_charged'] += 1
+            elif soc_achieved <= 80:
+                result['motos_80_percent_charged'] += 1
             else:
+                result['motos_100_percent_charged'] += 1
+        
+        # Simular progreso de carga para mototaxis
+        # v5.6: Contar por SOC ALCANZADO (distribución real del dataset)
+        for i in range(mototaxis_can_charge):
+            # Seleccionar SOC ALCANZADO según distribución real de MOTOTAXIS
+            soc_achieved = np.random.choice(
+                list(self.soc_distribution_mototaxis.keys()),
+                p=list(self.soc_distribution_mototaxis.values())
+            )
+            
+            # CONTAR POR SOC ALCANZADO (nivel de carga logrado)
+            if soc_achieved <= 10:
                 result['mototaxis_10_percent_charged'] += 1
+            elif soc_achieved <= 20:
+                result['mototaxis_20_percent_charged'] += 1
+            elif soc_achieved <= 30:
+                result['mototaxis_30_percent_charged'] += 1
+            elif soc_achieved <= 50:
+                result['mototaxis_50_percent_charged'] += 1
+            elif soc_achieved <= 70:
+                result['mototaxis_70_percent_charged'] += 1
+            elif soc_achieved <= 80:
+                result['mototaxis_80_percent_charged'] += 1
+            else:
+                result['mototaxis_100_percent_charged'] += 1
+        
+        # [v5.6 RESULTADO] Retornar conteos TOTALES de vehículos cargados por SOC
+        # Total de cada rango = numero de vehículos que alcanzaron ese SOC en esta hora
+        total_motos = sum([
+            result['motos_10_percent_charged'],
+            result['motos_20_percent_charged'],
+            result['motos_30_percent_charged'],
+            result['motos_50_percent_charged'],
+            result['motos_70_percent_charged'],
+            result['motos_80_percent_charged'],
+            result['motos_100_percent_charged'],
+        ])
+        total_taxis = sum([
+            result['mototaxis_10_percent_charged'],
+            result['mototaxis_20_percent_charged'],
+            result['mototaxis_30_percent_charged'],
+            result['mototaxis_50_percent_charged'],
+            result['mototaxis_70_percent_charged'],
+            result['mototaxis_80_percent_charged'],
+            result['mototaxis_100_percent_charged'],
+        ])
+        
+        # [v5.6 DEBUG] Validar: total_motos debe ser igual a motos_can_charge
+        if total_motos != motos_can_charge:
+            print(f"[WARN] Motos mismatch: cargados={motos_can_charge} vs distribuidos={total_motos}")
+        if total_taxis != mototaxis_can_charge:
+            print(f"[WARN] Taxis mismatch: cargados={mototaxis_can_charge} vs distribuidos={total_taxis}")
         
         return result

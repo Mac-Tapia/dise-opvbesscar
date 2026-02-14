@@ -13,7 +13,7 @@ Exports principales:
 Datasets OE2 requeridos (8760 filas horarias):
 1. Solar: data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv
 2. Chargers: data/oe2/chargers/chargers_ev_ano_2024_v3.csv
-3. BESS: data/oe2/bess/bess_simulation_hourly.csv
+3. BESS: data/oe2/bess/bess_ano_2024.csv
 4. Mall: data/oe2/demandamallkwh/demandamallhorakwh.csv
 
 Variables Observables v5.3:
