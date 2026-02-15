@@ -1,7 +1,7 @@
 """
-Simulación de baseline sin control inteligente.
+Simulacion de baseline sin control inteligente.
 
-Calcula CO2, cost, y otros KPIs para comparación con RL agents.
+Calcula CO2, cost, y otros KPIs para comparacion con RL agents.
 """
 from __future__ import annotations
 
@@ -19,14 +19,14 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class BaselineResults:
-    """Resultados de simulación baseline."""
-    # Energía (kWh/año)
+    """Resultados de simulacion baseline."""
+    # Energia (kWh/ano)
     solar_generation_kwh: float
     charger_demand_kwh: float
     mall_demand_kwh: float
     total_demand_kwh: float
 
-    # Flujo de energía
+    # Flujo de energia
     solar_to_chargers_kwh: float
     solar_to_mall_kwh: float
     solar_to_bess_kwh: float
@@ -43,7 +43,7 @@ class BaselineResults:
     co2_total_kg: float
     co2_total_t: float
 
-    # Costos (USD/año)
+    # Costos (USD/ano)
     cost_chargers_usd: float
     cost_mall_usd: float
     cost_total_usd: float
@@ -85,7 +85,7 @@ class BaselineResults:
 
 
 class BaselineSimulator:
-    """Simulación de baseline: sin control inteligente."""
+    """Simulacion de baseline: sin control inteligente."""
 
     def __init__(
         self,
@@ -118,11 +118,11 @@ class BaselineSimulator:
         Simular baseline sin control inteligente.
 
         Estrategia:
-        1. Chargers se alimentan de: Solar → Grid (demanda directa)
+        1. Chargers se alimentan de: Solar -> Grid (demanda directa)
         2. Excedente solar se guarda en BESS (si hay espacio)
         3. Cuando solar insuficiente, usar BESS luego Grid
         """
-        logger.info("=== Simulación Baseline ===")
+        logger.info("=== Simulacion Baseline ===")
 
         n_timesteps = len(solar_generation)
 
@@ -143,7 +143,7 @@ class BaselineSimulator:
         grid_import_mall = np.zeros(n_timesteps)
         grid_export = np.zeros(n_timesteps)
 
-        # Simulación horaria
+        # Simulacion horaria
         for t in range(n_timesteps):
             # Disponibilidad BESS
             bess_min_kwh = self.bess_capacity * self.bess_min_soc
@@ -164,7 +164,7 @@ class BaselineSimulator:
             # 2. Luego mall
             # 3. Excedente a BESS
 
-            # Chargers: Solar → BESS → Grid
+            # Chargers: Solar -> BESS -> Grid
             if solar_avail >= charger_dem:
                 solar_to_chargers[t] = charger_dem
                 solar_remaining = solar_avail - charger_dem
@@ -180,7 +180,7 @@ class BaselineSimulator:
                 # Complemento Grid
                 grid_import_chargers[t] = charger_dem - solar_avail - bess_discharge_charger
 
-            # Mall: Solar → BESS → Grid
+            # Mall: Solar -> BESS -> Grid
             if solar_remaining >= mall_dem:
                 solar_to_mall[t] = mall_dem
                 solar_remaining -= mall_dem
@@ -217,7 +217,7 @@ class BaselineSimulator:
                     1.0
                 )
 
-        # Cálculos anuales
+        # Calculos anuales
         total_solar = solar_generation.sum()
         total_charger_dem = charger_demand.sum()
         total_mall_dem = mall_demand.sum()
@@ -288,18 +288,18 @@ class BaselineSimulator:
 
         # Log resultados
         logger.info(f"\n=== BASELINE RESULTS ===")
-        logger.info(f"Solar generation: {results.solar_generation_kwh:,.0f} kWh/año")
-        logger.info(f"Charger demand: {results.charger_demand_kwh:,.0f} kWh/año")
-        logger.info(f"Mall demand: {results.mall_demand_kwh:,.0f} kWh/año")
-        logger.info(f"\nGrid import (chargers): {results.grid_import_chargers_kwh:,.0f} kWh/año")
-        logger.info(f"Grid import (mall): {results.grid_import_mall_kwh:,.0f} kWh/año")
-        logger.info(f"Grid import total: {results.grid_import_chargers_kwh + results.grid_import_mall_kwh:,.0f} kWh/año")
-        logger.info(f"\nCO₂ emissions: {results.co2_total_t:,.1f} t/año")
-        logger.info(f"  - From chargers: {results.co2_from_chargers_kg/1000:,.1f} t/año")
-        logger.info(f"  - From mall: {results.co2_from_mall_kg/1000:,.1f} t/año")
-        logger.info(f"\nCosts: ${results.cost_total_usd:,.0f}/año")
-        logger.info(f"  - Chargers: ${results.cost_chargers_usd:,.0f}/año")
-        logger.info(f"  - Mall: ${results.cost_mall_usd:,.0f}/año")
+        logger.info(f"Solar generation: {results.solar_generation_kwh:,.0f} kWh/ano")
+        logger.info(f"Charger demand: {results.charger_demand_kwh:,.0f} kWh/ano")
+        logger.info(f"Mall demand: {results.mall_demand_kwh:,.0f} kWh/ano")
+        logger.info(f"\nGrid import (chargers): {results.grid_import_chargers_kwh:,.0f} kWh/ano")
+        logger.info(f"Grid import (mall): {results.grid_import_mall_kwh:,.0f} kWh/ano")
+        logger.info(f"Grid import total: {results.grid_import_chargers_kwh + results.grid_import_mall_kwh:,.0f} kWh/ano")
+        logger.info(f"\nCO₂ emissions: {results.co2_total_t:,.1f} t/ano")
+        logger.info(f"  - From chargers: {results.co2_from_chargers_kg/1000:,.1f} t/ano")
+        logger.info(f"  - From mall: {results.co2_from_mall_kg/1000:,.1f} t/ano")
+        logger.info(f"\nCosts: ${results.cost_total_usd:,.0f}/ano")
+        logger.info(f"  - Chargers: ${results.cost_chargers_usd:,.0f}/ano")
+        logger.info(f"  - Mall: ${results.cost_mall_usd:,.0f}/ano")
         logger.info(f"\nKPIs:")
         logger.info(f"  - Solar utilization: {results.solar_utilization_pct:.1f}%")
         logger.info(f"  - Self-consumption: {results.self_consumption_pct:.1f}%")
@@ -325,4 +325,4 @@ class BaselineSimulator:
         # CSV details
         details_df.to_csv(output_dir / "baseline_hourly_details.csv", index=False)
 
-        logger.info(f"✓ Baseline results saved to {output_dir}")
+        logger.info(f"[OK] Baseline results saved to {output_dir}")

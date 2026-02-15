@@ -1,13 +1,13 @@
 """CityLearn Baseline Integration (v5.4).
 
-Integra cálculos de baseline con CityLearnv2 para:
+Integra calculos de baseline con CityLearnv2 para:
 1. Comparar agentes RL contra baselines
 2. Validar performance relativo
 3. Generar reportes de mejora
 
 Conecta con:
 - BaselineCalculator: Calcula baselines CON_SOLAR y SIN_SOLAR
-- AgentTrainer: Registra resultados para comparación
+- AgentTrainer: Registra resultados para comparacion
 - dataset_builder.py: Usa mismo conjunto de datos OE2 v5.4
 """
 
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaselineCityLearnIntegration:
-    """Integra baselines con CityLearn v2 para entrenamiento de agentes y comparación."""
+    """Integra baselines con CityLearn v2 para entrenamiento de agentes y comparacion."""
 
     def __init__(self, output_dir: str = 'outputs/baselines'):
         """Initialize integration.
@@ -208,7 +208,7 @@ class BaselineCityLearnIntegration:
         # Save if output file specified
         if output_file:
             df.to_csv(output_file, index=False)
-            logger.info(f"✅ Comparison report saved to {output_file}")
+            logger.info(f"[OK] Comparison report saved to {output_file}")
         
         return df
 
@@ -222,24 +222,24 @@ class BaselineCityLearnIntegration:
         print("CityLearn v2 Baseline Summary (OE2 v5.4)")
         print("="*80)
         
-        print("\n📊 BASELINE 1: CON SOLAR (4,050 kWp)")
-        print(f"   CO₂: {con_solar['co2_grid_kg']:,.0f} kg/año ({con_solar['co2_t']:,.1f} t/año)")
-        print(f"   Grid import: {con_solar['grid_import_kwh']:,.0f} kWh/año")
-        print(f"   Solar generation: {con_solar['solar_generation_kwh']:,.0f} kWh/año")
+        print("\n[GRAPH] BASELINE 1: CON SOLAR (4,050 kWp)")
+        print(f"   CO₂: {con_solar['co2_grid_kg']:,.0f} kg/ano ({con_solar['co2_t']:,.1f} t/ano)")
+        print(f"   Grid import: {con_solar['grid_import_kwh']:,.0f} kWh/ano")
+        print(f"   Solar generation: {con_solar['solar_generation_kwh']:,.0f} kWh/ano")
         
-        print("\n📊 BASELINE 2: SIN SOLAR (0 kWp)")
-        print(f"   CO₂: {sin_solar['co2_grid_kg']:,.0f} kg/año ({sin_solar['co2_t']:,.1f} t/año)")
-        print(f"   Grid import: {sin_solar['grid_import_kwh']:,.0f} kWh/año")
+        print("\n[GRAPH] BASELINE 2: SIN SOLAR (0 kWp)")
+        print(f"   CO₂: {sin_solar['co2_grid_kg']:,.0f} kg/ano ({sin_solar['co2_t']:,.1f} t/ano)")
+        print(f"   Grid import: {sin_solar['grid_import_kwh']:,.0f} kWh/ano")
         
         print("\n🎯 SOLAR IMPACT")
         diff_kg = sin_solar['co2_grid_kg'] - con_solar['co2_grid_kg']
         diff_pct = diff_kg / sin_solar['co2_grid_kg'] * 100
-        print(f"   CO₂ reduction: {diff_kg:,.0f} kg/año ({diff_pct:.1f}%)")
+        print(f"   CO₂ reduction: {diff_kg:,.0f} kg/ano ({diff_pct:.1f}%)")
         
-        print("\n💡 RL AGENT TARGET")
-        print(f"   Agents should beat CON_SOLAR ({con_solar['co2_t']:,.1f} t/año)")
-        print(f"   Maximum theoretical: Approach SIN_SOLAR ({sin_solar['co2_t']:,.1f} t/año)")
-        print(f"   Feasible range: {con_solar['co2_t']:,.1f} - {con_solar['co2_t']*0.7:,.1f} t/año")
+        print("\n[TIP] RL AGENT TARGET")
+        print(f"   Agents should beat CON_SOLAR ({con_solar['co2_t']:,.1f} t/ano)")
+        print(f"   Maximum theoretical: Approach SIN_SOLAR ({sin_solar['co2_t']:,.1f} t/ano)")
+        print(f"   Feasible range: {con_solar['co2_t']:,.1f} - {con_solar['co2_t']*0.7:,.1f} t/ano")
         print("="*80 + "\n")
 
 

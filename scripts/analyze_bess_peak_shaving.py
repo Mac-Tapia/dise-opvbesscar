@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Análisis de Peak Shaving del BESS - PPO v5.3
+Analisis de Peak Shaving del BESS - PPO v5.3
 =============================================
-Analiza cuánta demanda pico del mall (>2000 kW) corta el BESS.
+Analiza cuanta demanda pico del mall (>2000 kW) corta el BESS.
 
-Métricas:
+Metricas:
 - Por hora: Picos cortados en hora punta (18:00-22:00)
-- Por día: Energía total de picos cortados
-- Por mes: Agregación mensual
-- Por año: Total anual
+- Por dia: Energia total de picos cortados
+- Por mes: Agregacion mensual
+- Por ano: Total anual
 """
 from __future__ import annotations
 import pandas as pd
@@ -17,34 +17,34 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 # ==============================================================================
-# CONFIGURACIÓN
+# CONFIGURACION
 # ==============================================================================
 PEAK_THRESHOLD_KW = 2000  # Umbral de pico (kW)
 PEAK_HOURS = list(range(18, 23))  # Horas punta: 18:00-22:00
-BESS_MAX_DISCHARGE_KW = 342  # Máxima descarga BESS (kW)
+BESS_MAX_DISCHARGE_KW = 342  # Maxima descarga BESS (kW)
 
 # ==============================================================================
 # CARGAR DATOS
 # ==============================================================================
 print("=" * 70)
-print("ANÁLISIS DE PEAK SHAVING DEL BESS - PPO v5.3")
+print("ANALISIS DE PEAK SHAVING DEL BESS - PPO v5.3")
 print("=" * 70)
 
 # 1. Cargar demanda del mall
 mall_path = Path("data/oe2/demandamallkwh/demandamallhorakwh.csv")
 mall_df = pd.read_csv(mall_path, sep=';', names=['datetime', 'demand_kwh'], skiprows=1)
 mall_df['datetime'] = pd.to_datetime(mall_df['datetime'], format='%d/%m/%Y %H:%M')
-mall_df['demand_kw'] = mall_df['demand_kwh']  # Ya está en kW (potencia promedio hora)
+mall_df['demand_kw'] = mall_df['demand_kwh']  # Ya esta en kW (potencia promedio hora)
 
 print(f"\n[1] DEMANDA MALL:")
 print(f"    Registros: {len(mall_df):,}")
 print(f"    Rango: {mall_df['datetime'].min()} a {mall_df['datetime'].max()}")
 print(f"    Demanda: min={mall_df['demand_kw'].min():.0f} kW, max={mall_df['demand_kw'].max():.0f} kW, mean={mall_df['demand_kw'].mean():.0f} kW")
 
-# 2. Cargar timeseries PPO (último episodio COMPLETO)
+# 2. Cargar timeseries PPO (ultimo episodio COMPLETO)
 ts_path = Path("outputs/ppo_training/timeseries_ppo.csv")
 ts_df = pd.read_csv(ts_path)
-# Filtrar último episodio COMPLETO (8760 horas)
+# Filtrar ultimo episodio COMPLETO (8760 horas)
 episode_sizes = ts_df.groupby('episode').size()
 complete_episodes = episode_sizes[episode_sizes >= 8760].index.tolist()
 last_complete = max(complete_episodes) if complete_episodes else ts_df['episode'].max()
@@ -58,7 +58,7 @@ print(f"    BESS power: min={ts_df['bess_power_kw'].min():.1f} kW, max={ts_df['b
 # ==============================================================================
 # MERGE Y CALCULAR PICOS
 # ==============================================================================
-# Crear índice temporal para merge
+# Crear indice temporal para merge
 ts_df['hour_index'] = ts_df['hour_of_year']
 mall_df['hour_index'] = range(len(mall_df))
 
@@ -76,7 +76,7 @@ df['date'] = df['datetime'].dt.date
 df['is_peak'] = df['demand_kw'] > PEAK_THRESHOLD_KW
 df['peak_excess_kw'] = np.maximum(0, df['demand_kw'] - PEAK_THRESHOLD_KW)
 
-# Calcular energía cortada por BESS (solo cuando descarga = bess_power_kw > 0)
+# Calcular energia cortada por BESS (solo cuando descarga = bess_power_kw > 0)
 # El BESS solo puede cortar lo que excede el umbral
 df['bess_discharge_kw'] = np.maximum(0, df['bess_power_kw'].fillna(0))
 df['peak_shaved_kw'] = np.minimum(df['peak_excess_kw'], df['bess_discharge_kw'])
@@ -86,7 +86,7 @@ df['peak_shaved_kwh'] = df['peak_shaved_kw']  # 1 hora = kW = kWh
 df['is_peak_hour'] = df['hour'].isin(PEAK_HOURS)
 
 # ==============================================================================
-# ANÁLISIS DE HORAS CON PICOS
+# ANALISIS DE HORAS CON PICOS
 # ==============================================================================
 print("\n" + "=" * 70)
 print("PICOS DE DEMANDA (> 2000 kW)")
@@ -95,12 +95,12 @@ print("=" * 70)
 peak_hours_df = df[df['is_peak']].copy()
 print(f"\n[3] HORAS CON PICOS:")
 print(f"    Total horas con demanda > {PEAK_THRESHOLD_KW} kW: {len(peak_hours_df):,} de {len(df):,} ({100*len(peak_hours_df)/len(df):.1f}%)")
-print(f"    Energía total en exceso: {df['peak_excess_kw'].sum():,.0f} kWh")
-print(f"    Energía cortada por BESS: {df['peak_shaved_kwh'].sum():,.0f} kWh")
+print(f"    Energia total en exceso: {df['peak_excess_kw'].sum():,.0f} kWh")
+print(f"    Energia cortada por BESS: {df['peak_shaved_kwh'].sum():,.0f} kWh")
 print(f"    % Picos cortados: {100*df['peak_shaved_kwh'].sum()/max(1, df['peak_excess_kw'].sum()):.1f}%")
 
 # ==============================================================================
-# ANÁLISIS POR HORA PUNTA (18:00-22:00)
+# ANALISIS POR HORA PUNTA (18:00-22:00)
 # ==============================================================================
 print("\n" + "-" * 70)
 print(f"HORA PUNTA ({PEAK_HOURS[0]}:00 - {PEAK_HOURS[-1]+1}:00)")
@@ -109,11 +109,11 @@ print("-" * 70)
 peak_hour_df = df[df['is_peak_hour']].copy()
 print(f"\n    Horas en hora punta: {len(peak_hour_df):,}")
 print(f"    Horas con pico en hora punta: {len(peak_hour_df[peak_hour_df['is_peak']]):,}")
-print(f"    Energía exceso en hora punta: {peak_hour_df['peak_excess_kw'].sum():,.0f} kWh")
-print(f"    Energía cortada en hora punta: {peak_hour_df['peak_shaved_kwh'].sum():,.0f} kWh")
+print(f"    Energia exceso en hora punta: {peak_hour_df['peak_excess_kw'].sum():,.0f} kWh")
+print(f"    Energia cortada en hora punta: {peak_hour_df['peak_shaved_kwh'].sum():,.0f} kWh")
 
-# Distribución por hora
-print(f"\n    Por hora del día:")
+# Distribucion por hora
+print(f"\n    Por hora del dia:")
 hourly_stats = df.groupby('hour').agg({
     'demand_kw': 'mean',
     'peak_excess_kw': 'sum',
@@ -129,10 +129,10 @@ for h in PEAK_HOURS:
           f"BESS desc.: {row['bess_discharge_kw']:.1f} kW")
 
 # ==============================================================================
-# ANÁLISIS POR DÍA
+# ANALISIS POR DIA
 # ==============================================================================
 print("\n" + "=" * 70)
-print("PEAK SHAVING POR DÍA")
+print("PEAK SHAVING POR DIA")
 print("=" * 70)
 
 daily_stats = df.groupby('date').agg({
@@ -144,9 +144,9 @@ daily_stats = df.groupby('date').agg({
 }).round(1)
 daily_stats.columns = ['demand_max', 'demand_mean', 'excess_kwh', 'shaved_kwh', 'bess_discharge', 'peak_hours']
 
-# Top 10 días con más picos
+# Top 10 dias con mas picos
 top_peak_days = daily_stats.nlargest(10, 'excess_kwh')
-print(f"\nTop 10 días con mayores picos:")
+print(f"\nTop 10 dias con mayores picos:")
 print(f"{'Fecha':<12} {'Dem.Max':<10} {'Exceso':<12} {'Cortado':<12} {'%Cortado':<10} {'Horas Pico':<10}")
 print("-" * 70)
 for date, row in top_peak_days.iterrows():
@@ -156,12 +156,12 @@ for date, row in top_peak_days.iterrows():
 # Resumen diario
 days_with_peaks = (daily_stats['peak_hours'] > 0).sum()
 print(f"\nResumen diario:")
-print(f"    Días con picos (>2000 kW): {days_with_peaks} de 365 ({100*days_with_peaks/365:.1f}%)")
-print(f"    Promedio exceso/día (con pico): {daily_stats[daily_stats['peak_hours']>0]['excess_kwh'].mean():,.0f} kWh")
-print(f"    Promedio cortado/día (con pico): {daily_stats[daily_stats['peak_hours']>0]['shaved_kwh'].mean():,.0f} kWh")
+print(f"    Dias con picos (>2000 kW): {days_with_peaks} de 365 ({100*days_with_peaks/365:.1f}%)")
+print(f"    Promedio exceso/dia (con pico): {daily_stats[daily_stats['peak_hours']>0]['excess_kwh'].mean():,.0f} kWh")
+print(f"    Promedio cortado/dia (con pico): {daily_stats[daily_stats['peak_hours']>0]['shaved_kwh'].mean():,.0f} kWh")
 
 # ==============================================================================
-# ANÁLISIS POR MES
+# ANALISIS POR MES
 # ==============================================================================
 print("\n" + "=" * 70)
 print("PEAK SHAVING POR MES")
@@ -198,23 +198,23 @@ annual_pct = 100 * annual_shaved / max(1, annual_excess)
 
 print(f"""
     DEMANDA MALL:
-    ├─ Máxima:                    {df['demand_kw'].max():>12,.0f} kW
-    ├─ Media:                     {df['demand_kw'].mean():>12,.0f} kW
-    └─ Total anual:               {df['demand_kw'].sum():>12,.0f} kWh
+    +- Maxima:                    {df['demand_kw'].max():>12,.0f} kW
+    +- Media:                     {df['demand_kw'].mean():>12,.0f} kW
+    +- Total anual:               {df['demand_kw'].sum():>12,.0f} kWh
 
     PICOS (>{PEAK_THRESHOLD_KW} kW):
-    ├─ Horas con pico:            {len(peak_hours_df):>12,} horas ({100*len(peak_hours_df)/8760:.1f}%)
-    ├─ Energía exceso anual:      {annual_excess:>12,.0f} kWh
-    └─ Pico máximo sobre umbral:  {df['peak_excess_kw'].max():>12,.0f} kW
+    +- Horas con pico:            {len(peak_hours_df):>12,} horas ({100*len(peak_hours_df)/8760:.1f}%)
+    +- Energia exceso anual:      {annual_excess:>12,.0f} kWh
+    +- Pico maximo sobre umbral:  {df['peak_excess_kw'].max():>12,.0f} kW
 
     BESS PEAK SHAVING:
-    ├─ Energía cortada anual:     {annual_shaved:>12,.0f} kWh
-    ├─ % de picos cortados:       {annual_pct:>12.1f}%
-    └─ Ahorro estimado CO2:       {annual_shaved * 0.4521:>12,.0f} kg
+    +- Energia cortada anual:     {annual_shaved:>12,.0f} kWh
+    +- % de picos cortados:       {annual_pct:>12.1f}%
+    +- Ahorro estimado CO2:       {annual_shaved * 0.4521:>12,.0f} kg
 
     HORA PUNTA ({PEAK_HOURS[0]}:00-{PEAK_HOURS[-1]+1}:00):
-    ├─ Energía exceso:            {peak_hour_df['peak_excess_kw'].sum():>12,.0f} kWh
-    └─ Energía cortada:           {peak_hour_df['peak_shaved_kwh'].sum():>12,.0f} kWh
+    +- Energia exceso:            {peak_hour_df['peak_excess_kw'].sum():>12,.0f} kWh
+    +- Energia cortada:           {peak_hour_df['peak_shaved_kwh'].sum():>12,.0f} kWh
 """)
 
 # ==============================================================================
@@ -240,5 +240,5 @@ hourly_output.to_csv(output_dir / "peak_shaving_hourly.csv", index=False)
 print(f"[OK] Guardado: {output_dir / 'peak_shaving_hourly.csv'}")
 
 print("\n" + "=" * 70)
-print("ANÁLISIS COMPLETADO")
+print("ANALISIS COMPLETADO")
 print("=" * 70)

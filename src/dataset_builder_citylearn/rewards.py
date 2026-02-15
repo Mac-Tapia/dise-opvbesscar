@@ -5,48 +5,48 @@ Funciones de recompensa multiobjetivo y multicriterio para agentes RL.
 TRACKING REDUCCIONES DIRECTAS E INDIRECTAS DE CO₂ (2026-01-31)
 ================================================================================
 
-DEFINICIONES CRÍTICAS:
+DEFINICIONES CRITICAS:
 
 1. CO₂ DIRECTO (Emisiones de demanda EV):
-   - Demanda constante: 50 kW (13 horas/día = 9AM-10PM)
-   - Factor de conversión: 2.146 kg CO₂/kWh
-   - Representa: Combustión equivalente si fueran vehículos a gasolina
+   - Demanda constante: 50 kW (13 horas/dia = 9AM-10PM)
+   - Factor de conversion: 2.146 kg CO₂/kWh
+   - Representa: Combustion equivalente si fueran vehiculos a gasolina
    - CO₂ directo acumulado/hora: 50 × 2.146 = 107.3 kg CO₂/h
-   - CO₂ directo anual SIN control: 50 × 2.146 × 8760 = 938,460 kg CO₂/año
+   - CO₂ directo anual SIN control: 50 × 2.146 × 8760 = 938,460 kg CO₂/ano
    - Tracking: Se accumula pero NO se reduce (es la baseline de demanda)
-   - Propósito: Referencia para calcular reducciones indirectas
+   - Proposito: Referencia para calcular reducciones indirectas
 
 2. CO₂ INDIRECTO (Emisiones evitadas por solar directo):
-   - Factor grid Iquitos: 0.4521 kg CO₂/kWh (central térmica aislada)
-   - Reducción indirecta = Solar PV directo a EVs × 0.4521
-   - Ejemplo: 100 kWh solar directo → 100 × 0.4521 = 45.21 kg CO₂ evitado
-   - Propósito: Objetivo principal de optimización
+   - Factor grid Iquitos: 0.4521 kg CO₂/kWh (central termica aislada)
+   - Reduccion indirecta = Solar PV directo a EVs × 0.4521
+   - Ejemplo: 100 kWh solar directo -> 100 × 0.4521 = 45.21 kg CO₂ evitado
+   - Proposito: Objetivo principal de optimizacion
    - Target: Maximizar PV directo para maximizar reducciones indirectas
 
 3. ARQUITECTURA DE REDUCCIONES:
 
    Baseline (sin control):
-   - CO₂ grid total: 50 kW × 8760 h × 0.4521 kg/kWh = 197,262 kg CO₂/año (indirecto)
-   - CO₂ directo: 107.3 kg/h × 8760 h = 938,460 kg CO₂/año (tracking)
-   - Total: ~1,135,722 kg CO₂/año
+   - CO₂ grid total: 50 kW × 8760 h × 0.4521 kg/kWh = 197,262 kg CO₂/ano (indirecto)
+   - CO₂ directo: 107.3 kg/h × 8760 h = 938,460 kg CO₂/ano (tracking)
+   - Total: ~1,135,722 kg CO₂/ano
 
    Con RL (con control solar directo):
-   - Solar PV directo: ~X kWh/año (optimizado por agente)
-   - Reducción indirecta: X × 0.4521 kg CO₂/año evitado
+   - Solar PV directo: ~X kWh/ano (optimizado por agente)
+   - Reduccion indirecta: X × 0.4521 kg CO₂/ano evitado
    - Grid import reducido: (potencial - solar) × 0.4521
    - CO₂ directo: Sigue siendo 938,460 (demanda fija, tracking)
-   - Beneficio neto: Mayor reducción indirecta por más PV directo
+   - Beneficio neto: Mayor reduccion indirecta por mas PV directo
 
 4. REWARD FUNCTION DESIGN:
 
    Componentes de recompensa (multiobjetivo) - ACTUALIZADO 2026-02-08 (CONSERVADOR BALANCEADO):
-   - r_co2 (0.30 peso): Minimizar importación grid = maximizar PV directo
+   - r_co2 (0.30 peso): Minimizar importacion grid = maximizar PV directo
    - r_solar (0.20 peso): Bonus por autoconsumo solar
-   - r_ev (0.35 peso): Satisfacción de carga EV (PRIORIDAD MODERADA, reforzada por dispatch hierarchy)
+   - r_ev (0.35 peso): Satisfaccion de carga EV (PRIORIDAD MODERADA, reforzada por dispatch hierarchy)
    - r_cost (0.10 peso): Minimizar costo (secundario, tarifa baja)
    - r_grid (0.05 peso): Estabilidad de red
 
-   Cálculo simplificado (multiobjetivo base):
+   Calculo simplificado (multiobjetivo base):
    r_total = 0.30 × r_co2 + 0.35 × r_ev + 0.20 × r_solar + 0.10 × r_cost + 0.05 × r_grid
    
    Luego blended con energy-based r_ev metric (Liu et al. 2022):
@@ -64,22 +64,22 @@ DEFINICIONES CRÍTICAS:
 
 Objetivos optimizados:
 1. Minimizar emisiones de CO₂ (indirectas por grid import)
-2. Minimizar costo eléctrico
+2. Minimizar costo electrico
 3. Maximizar autoconsumo solar (PV directo)
-4. Maximizar satisfacción de carga de EVs
+4. Maximizar satisfaccion de carga de EVs
 5. Minimizar picos de demanda (estabilidad de red)
 
 Contexto Iquitos (OE2/OE3 - DATOS REALES v5.2 2026-02-12):
-- Factor emisión: 0.4521 kg CO₂/kWh (central térmica aislada)
-- Factor conversión: 2.146 kg CO₂/kWh (para cálculos directos con 50kW constante)
+- Factor emision: 0.4521 kg CO₂/kWh (central termica aislada)
+- Factor conversion: 2.146 kg CO₂/kWh (para calculos directos con 50kW constante)
 - Tariff: 0.20 USD/kWh (bajo, no es constraint)
-- Chargers: 19 cargadores físicos (15 motos + 4 mototaxis) @ 7.4 kW/toma
+- Chargers: 19 cargadores fisicos (15 motos + 4 mototaxis) @ 7.4 kW/toma
 - Tomas: 38 totales (19 × 2 tomas = 30 motos + 8 mototaxis)
-- Potencia instalada: 281.2 kW simultánea (38 × 7.4 kW Modo 3)
+- Potencia instalada: 281.2 kW simultanea (38 × 7.4 kW Modo 3)
 - Demanda EV: 50 kW constante (54% uptime × 100kW = workaround CityLearn 2.5.0)
 - Capacidad diaria: 270 motos + 39 mototaxis (pe=0.30, fc=0.55)
 - BESS: 940 kWh / 342 kW (exclusivo EV, 100% cobertura)
-- Resultado OE3: Agente A2C -25.1% CO₂ (4,280,119 kg/año vs 5,710,257 kg/año baseline)
+- Resultado OE3: Agente A2C -25.1% CO₂ (4,280,119 kg/ano vs 5,710,257 kg/ano baseline)
 
 VINCULACIONES EN SISTEMA:
 - config.yaml (SOURCE OF TRUTH): co2_grid_factor_kg_per_kwh, ev_co2_conversion_kg_per_kwh
@@ -102,18 +102,18 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class MultiObjectiveWeights:
-    """Pesos para función de recompensa multiobjetivo - REBALANCED PARA MÁXIMA PRIORIDAD EVCS.
+    """Pesos para funcion de recompensa multiobjetivo - REBALANCED PARA MAXIMA PRIORIDAD EVCS.
 
-    ✅ CAMBIO 2026-02-05: Realinear prioridades según arquitectura documentada
+    [OK] CAMBIO 2026-02-05: Realinear prioridades segun arquitectura documentada
     Prioridad de despacho real (OE2):
-    1. SOLAR → EVs (MÁXIMA PRIORIDAD)
-    2. SOLAR EXCESO → BESS
-    3. SOLAR EXCESO → MALL
-    4. BESS → EVs (noche)
-    5. GRID → Deficit
+    1. SOLAR -> EVs (MAXIMA PRIORIDAD)
+    2. SOLAR EXCESO -> BESS
+    3. SOLAR EXCESO -> MALL
+    4. BESS -> EVs (noche)
+    5. GRID -> Deficit
 
     Pesos FINALES 2026-02-08 (VALIDATED BY USER):
-    - CO₂ grid 0.35: PRIMARY (minimizar importación grid)
+    - CO₂ grid 0.35: PRIMARY (minimizar importacion grid)
     - EV satisfaction 0.30: SECONDARY (carga EVs balanceada)
     - Solar 0.20: TERTIARY (autoconsumo PV directo)
     - Costo 0.10: TERTIARY (minimizar tarifa)
@@ -122,10 +122,10 @@ class MultiObjectiveWeights:
     co2: float = 0.35              # PRIMARY: Minimizar CO₂ grid
     cost: float = 0.10             # TERTIARY: Minimizar tarifa
     solar: float = 0.20            # TERTIARY: Autoconsumo PV
-    ev_satisfaction: float = 0.30  # SECONDARY: Satisfacción de carga EVs
+    ev_satisfaction: float = 0.30  # SECONDARY: Satisfaccion de carga EVs
     ev_utilization: float = 0.00   # Incluido en ev_satisfaction (2026-02-07)
     grid_stability: float = 0.05   # QUATERNARY: Estabilidad rampa
-    peak_import_penalty: float = 0.00  # Dinámico en compute(), no como peso fijo
+    peak_import_penalty: float = 0.00  # Dinamico en compute(), no como peso fijo
     operational_penalties: float = 0.0  # Penalizaciones operacionales (BESS, EV fairness)
 
     def __post_init__(self):
@@ -157,30 +157,30 @@ class MultiObjectiveWeights:
 
 @dataclass
 class IquitosContext:
-    """Contexto específico de Iquitos para cálculos multiobjetivo - OE2 REAL 2026-01-31."""
-    # Factor de emisión (central térmica aislada)
+    """Contexto especifico de Iquitos para calculos multiobjetivo - OE2 REAL 2026-01-31."""
+    # Factor de emision (central termica aislada)
     co2_factor_kg_per_kwh: float = 0.4521  # Grid import CO₂ factor
-    co2_conversion_factor: float = 2.146   # Para cálculo directo: 50kW × 2.146 = 107.3 kg/h
+    co2_conversion_factor: float = 2.146   # Para calculo directo: 50kW × 2.146 = 107.3 kg/h
 
-    # NUEVO: Configuración de EVs para bonus de utilización (v5.2 2026-02-12)
-    # Flota OE3 REAL: 270 motos/día + 39 mototaxis/día = 309 vehículos/día
-    max_motos_simultaneous: int = 30      # Max motos que pueden cargarse simultáneamente (30 tomas)
-    max_mototaxis_simultaneous: int = 8   # Max mototaxis que pueden cargarse simultáneamente (8 tomas)
+    # NUEVO: Configuracion de EVs para bonus de utilizacion (v5.2 2026-02-12)
+    # Flota OE3 REAL: 270 motos/dia + 39 mototaxis/dia = 309 vehiculos/dia
+    max_motos_simultaneous: int = 30      # Max motos que pueden cargarse simultaneamente (30 tomas)
+    max_mototaxis_simultaneous: int = 8   # Max mototaxis que pueden cargarse simultaneamente (8 tomas)
     max_evs_total: int = 38               # Total tomas (19 chargers × 2 tomas)
-    motos_daily_capacity: int = 270       # REAL v5.2: 270 motos/día
-    mototaxis_daily_capacity: int = 39    # REAL v5.2: 39 mototaxis/día
+    motos_daily_capacity: int = 270       # REAL v5.2: 270 motos/dia
+    mototaxis_daily_capacity: int = 39    # REAL v5.2: 39 mototaxis/dia
 
     # ========== TARIFAS OSINERGMIN IQUITOS 2025 (REFERENCIAL) ==========
     # Tarifa integrada (promedio): 0.28 USD/kWh
     # Desglose por componente:
-    tariff_generation_solar_usd_per_kwh: float = 0.10   # Generación solar (CAPEX + O&M bajo)
-    tariff_bess_storage_usd_per_kwh: float = 0.06      # Almacenamiento BESS (CAPEX batería + O&M)
-    tariff_ev_charge_distribution_usd_per_kwh: float = 0.12  # Distribución EV (red + pérdidas)
-    # Tarifa eléctrica promedio (grid import)
+    tariff_generation_solar_usd_per_kwh: float = 0.10   # Generacion solar (CAPEX + O&M bajo)
+    tariff_bess_storage_usd_per_kwh: float = 0.06      # Almacenamiento BESS (CAPEX bateria + O&M)
+    tariff_ev_charge_distribution_usd_per_kwh: float = 0.12  # Distribucion EV (red + perdidas)
+    # Tarifa electrica promedio (grid import)
     tariff_usd_per_kwh: float = 0.28    # Tarifa integral OSINERGMIN Iquitos (solar + BESS + dist)
 
-    # Configuración de chargers (OE2 - DATOS REALES v5.2)
-    n_chargers: int = 19                   # 19 chargers físicos (15 motos + 4 mototaxis)
+    # Configuracion de chargers (OE2 - DATOS REALES v5.2)
+    n_chargers: int = 19                   # 19 chargers fisicos (15 motos + 4 mototaxis)
     total_sockets: int = 38                # 19 × 2 = 38 tomas (30 motos + 8 mototaxis)
     sockets_per_charger: int = 2
     charger_power_kw_moto: float = 7.4     # Potencia motos (Modo 3)
@@ -189,41 +189,41 @@ class IquitosContext:
 
     # Flota EV (OE3 REAL v5.2 - 2026-02-12)
     # VALORES DIARIOS (para control):
-    vehicles_day_motos: int = 270          # Motos cargadas por día (pe=0.30, fc=0.55)
-    vehicles_day_mototaxis: int = 39       # Mototaxis cargadas por día
+    vehicles_day_motos: int = 270          # Motos cargadas por dia (pe=0.30, fc=0.55)
+    vehicles_day_mototaxis: int = 39       # Mototaxis cargadas por dia
 
     # VALORES ANUALES (para impacto y referencia v5.2):
-    vehicles_year_motos: int = 98550       # Proyección anual: 270 × 365
-    vehicles_year_mototaxis: int = 14235   # Proyección anual: 39 × 365
+    vehicles_year_motos: int = 98550       # Proyeccion anual: 270 × 365
+    vehicles_year_mototaxis: int = 14235   # Proyeccion anual: 39 × 365
 
-    # Límites operacionales
+    # Limites operacionales
     peak_demand_limit_kw: float = 200.0
     ev_soc_target: float = 0.90
     bess_soc_min: float = 0.10
     bess_soc_max: float = 0.90
 
-    # Horario de operación - OE3 IQUITOS
-    operation_start_hour: int = 9      # 9 AM - Inicio de operación
-    operation_end_hour: int = 22        # 10 PM (22:00) - Cierre de operación
-    operation_duration_hours: int = 13  # 13 horas de operación (9 AM a 10 PM)
+    # Horario de operacion - OE3 IQUITOS
+    operation_start_hour: int = 9      # 9 AM - Inicio de operacion
+    operation_end_hour: int = 22        # 10 PM (22:00) - Cierre de operacion
+    operation_duration_hours: int = 13  # 13 horas de operacion (9 AM a 10 PM)
 
     # Horas pico Iquitos: 6 PM a 9 PM (18:00 a 21:00)
     peak_hours: Tuple[int, ...] = (18, 19, 20, 21)
 
-    # Factores de emisiones evitadas (vehículos eléctricos vs combustión)
-    km_per_kwh: float = 35.0           # Motos/mototaxis eléctricas: ~35 km/kWh
-    km_per_gallon: float = 120.0        # Motos/mototaxis combustión: ~120 km/galón
-    kgco2_per_gallon: float = 8.9       # Emisiones combustión: ~8.9 kg CO₂/galón
+    # Factores de emisiones evitadas (vehiculos electricos vs combustion)
+    km_per_kwh: float = 35.0           # Motos/mototaxis electricas: ~35 km/kWh
+    km_per_gallon: float = 120.0        # Motos/mototaxis combustion: ~120 km/galon
+    kgco2_per_gallon: float = 8.9       # Emisiones combustion: ~8.9 kg CO₂/galon
 
 
 class MultiObjectiveReward:
     """Calcula recompensa multiobjetivo para control de carga EV + BESS.
 
-    Función de recompensa compuesta:
+    Funcion de recompensa compuesta:
     R = w_co2 * R_co2 + w_cost * R_cost + w_solar * R_solar +
         w_ev * R_ev + w_grid * R_grid
 
-    Donde cada R_i está normalizado a [-1, 1] o [0, 1].
+    Donde cada R_i esta normalizado a [-1, 1] o [0, 1].
     """
 
     def __init__(
@@ -231,15 +231,15 @@ class MultiObjectiveReward:
         weights: Optional[MultiObjectiveWeights] = None,
         context: Optional[IquitosContext] = None,
     ):
-        # Usar presets centralizados como fallback (NO duplicar pesos aquí)
-        # Ver create_iquitos_reward_weights() línea 634+ para definición única
+        # Usar presets centralizados como fallback (NO duplicar pesos aqui)
+        # Ver create_iquitos_reward_weights() linea 634+ para definicion unica
         if weights is None:
             # Default: co2_focus (prioridad para Iquitos)
             weights = MultiObjectiveWeights()  # Usa defaults del dataclass
         self.weights = weights
         self.context = context or IquitosContext()
 
-        # Historial para normalización adaptativa
+        # Historial para normalizacion adaptativa
         self._reward_history: list[dict[str, float]] = []
         self._max_history = 1000
 
@@ -258,29 +258,29 @@ class MultiObjectiveReward:
 
         MODELO IQUITOS REALISTA:
         ========================
-        CO₂ Reducción DIRECTA (Principal): Motos/Mototaxis que evitan combustible
+        CO₂ Reduccion DIRECTA (Principal): Motos/Mototaxis que evitan combustible
           - Cada kWh de EV cargado = 35 km sin gasolina = 5.2-11.7 kg CO₂ evitado
-          - Meta: 3,073 vehículos/día (2,685 motos + 388 mototaxis)
-          - Energía: 2,912,500 kWh/año (750k kWh EVs) × factores combustión
+          - Meta: 3,073 vehiculos/dia (2,685 motos + 388 mototaxis)
+          - Energia: 2,912,500 kWh/ano (750k kWh EVs) × factores combustion
           
-        CO₂ Reducción INDIRECTA (Secundaria): Solar + BESS generan energía limpia
-          - Solar: 8,292,514 kWh/año × 0 kg CO₂/kWh (renewable)
-          - BESS: Almacena energía limpia, reduce grid import picos (0.4521 kg CO₂/kWh)
-          - Efecto acumulado: Grid import baja → CO₂ grid baja
+        CO₂ Reduccion INDIRECTA (Secundaria): Solar + BESS generan energia limpia
+          - Solar: 8,292,514 kWh/ano × 0 kg CO₂/kWh (renewable)
+          - BESS: Almacena energia limpia, reduce grid import picos (0.4521 kg CO₂/kWh)
+          - Efecto acumulado: Grid import baja -> CO₂ grid baja
 
-        Penalizaciones por Despacho Jerárquico (2026-02-08):
-          - Día (6-18h): EVs deben recibir 90%+ solar (-0.80 por déficit)
-          - Noche (18-6h): BESS→EVs exclusivo (-0.90 si Grid>BESS)
+        Penalizaciones por Despacho Jerarquico (2026-02-08):
+          - Dia (6-18h): EVs deben recibir 90%+ solar (-0.80 por deficit)
+          - Noche (18-6h): BESS->EVs exclusivo (-0.90 si Grid>BESS)
           - Cierre (23h): BESS ≥20% SOC (-0.95 exponencial si violado)
 
         Args:
-            grid_import_kwh: Energía importada de red (kWh)
-            grid_export_kwh: Energía exportada a red (kWh)
-            solar_generation_kwh: Generación solar (kWh) [8,292,514 kWh/año ÷ 8,760h]
-            ev_charging_kwh: Energía entregada a EVs (kWh) [750k kWh/año ÷ 8,760h]
+            grid_import_kwh: Energia importada de red (kWh)
+            grid_export_kwh: Energia exportada a red (kWh)
+            solar_generation_kwh: Generacion solar (kWh) [8,292,514 kWh/ano ÷ 8,760h]
+            ev_charging_kwh: Energia entregada a EVs (kWh) [750k kWh/ano ÷ 8,760h]
             ev_soc_avg: SOC promedio de EVs conectados [0-1]
             bess_soc: SOC del BESS [0-1]
-            hour: Hora del día [0-23]
+            hour: Hora del dia [0-23]
             ev_demand_kwh: Demanda de carga EV solicitada (kWh)
 
         Returns:
@@ -300,54 +300,54 @@ class MultiObjectiveReward:
         # 
         # MODELO REALISTA IQUITOS v5.2:
         # ==============================
-        # CO₂ REDUCCIÓN DIRECTA (Principal): Motos/Mototaxis que evitan combustible
+        # CO₂ REDUCCION DIRECTA (Principal): Motos/Mototaxis que evitan combustible
         #   - Motos cargadas: ev_charging_kwh / 4.6 kWh = cantidad motos (v5.2)
         #   - Mototaxis cargadas: ev_charging_kwh / 7.4 kWh = cantidad mototaxis (v5.2)
-        #   - CO₂ evitado: (km_viajes × 35 km/kWh) / 120 km/galón × 8.9 kg CO₂/galón
+        #   - CO₂ evitado: (km_viajes × 35 km/kWh) / 120 km/galon × 8.9 kg CO₂/galon
         #
-        # CO₂ REDUCCIÓN INDIRECTA (Secundaria): Solar + BESS generan energía limpia
+        # CO₂ REDUCCION INDIRECTA (Secundaria): Solar + BESS generan energia limpia
         #   - Solar: solar_generation_kwh × 0 kg CO₂/kWh (renewable)
         #   - BESS: almacenamiento evita picos de grid import
-        #   - Efecto: Reduce grid_import_kwh (más solar = menos grid térmico)
+        #   - Efecto: Reduce grid_import_kwh (mas solar = menos grid termico)
 
-        # CO₂ IMPORTACIÓN GRID (baseline)
-        co2_grid_kg = grid_import_kwh * self.context.co2_factor_kg_per_kwh  # [kg CO₂] grid térmico Iquitos
+        # CO₂ IMPORTACION GRID (baseline)
+        co2_grid_kg = grid_import_kwh * self.context.co2_factor_kg_per_kwh  # [kg CO₂] grid termico Iquitos
 
-        # ========== CO₂ EVITADO - CONTABILIZACIÓN ROBUSTA (2026-02-08 MEJORADO) ==========
-        # REFERENCIAS CIENTÍFICAS ACTUALES:
+        # ========== CO₂ EVITADO - CONTABILIZACION ROBUSTA (2026-02-08 MEJORADO) ==========
+        # REFERENCIAS CIENTIFICAS ACTUALES:
         # [1] Liu et al. (2022) "Multi-objective EV charging optimization" IEEE Trans on Smart Grid
-        #     - Metodología: Energía cargada × factor de conversión (transparent)
+        #     - Metodologia: Energia cargada × factor de conversion (transparent)
         # [2] Messagie et al. (2014) "Environmental impact of electric vehicles in Europe"
-        #     - Baseline combustión: 2.146 kg CO₂/kWh (diesel EURO5)
+        #     - Baseline combustion: 2.146 kg CO₂/kWh (diesel EURO5)
         # [3] IVL Swedish Battery Report (2023) - Battery manufacturing: 61-106 g CO₂/Wh
         # [4] NREL (2023) - Grid CO₂ factor increases with fossil fraction
         # [5] Aryan et al. (2025) - LCA for EVs in developing countries
         #
-        # CORRECCIÓN CRÍTICA 2026-02-08:
-        # NO doble-contar energía solar. Usar segregación de energía basada en destino:
-        #   - Energía solar → EVs: Contribuye a "Evitado Directo" (combustible)
-        #   - Energía solar → Grid: Contribuye a "Evitado Indirecto" (coal/gas grid)
-        #   - BESS discharge → EVs: Mismo como solar (renovable storage)
-        #   - BESS discharge → Grid: Indirecto
+        # CORRECCION CRITICA 2026-02-08:
+        # NO doble-contar energia solar. Usar segregacion de energia basada en destino:
+        #   - Energia solar -> EVs: Contribuye a "Evitado Directo" (combustible)
+        #   - Energia solar -> Grid: Contribuye a "Evitado Indirecto" (coal/gas grid)
+        #   - BESS discharge -> EVs: Mismo como solar (renovable storage)
+        #   - BESS discharge -> Grid: Indirecto
         
-        # Flota Iquitos v5.2: 270 motos/día + 39 mototaxis/día = 309 vehículos/día
+        # Flota Iquitos v5.2: 270 motos/dia + 39 mototaxis/dia = 309 vehiculos/dia
         #   Motos: 4.6 kWh capacidad @ 35 km/kWh = 161 km/carga
         #   Mototaxis: 7.4 kWh @ 35 km/kWh = 259 km/carga
         avg_battery_capacity_kwh = 0.87 * 4.6 + 0.13 * 7.4  # = ~5.0 kWh promedio (270/309 motos)
         vehicles_charged_equivalent = ev_charging_kwh / max(avg_battery_capacity_kwh, 1e-6)
         
-        # ===== SEGREGACIÓN DE ENERGÍA POR DESTINO (SIN DOUBLE-COUNT) =====
+        # ===== SEGREGACION DE ENERGIA POR DESTINO (SIN DOUBLE-COUNT) =====
         # Total solar disponible
         total_solar_kwh = solar_generation_kwh
         
         # BESS descarga estimada (diferencia respecto grid import)
-        # Si bess_soc está bajando → BESS está descargando
-        # Estimación conservadora: ~30% de solar en promedio viene de BESS
+        # Si bess_soc esta bajando -> BESS esta descargando
+        # Estimacion conservadora: ~30% de solar en promedio viene de BESS
         # Para simplificar: usar solar como proxy del renovable total
         bess_discharge_kwh = max(0, solar_generation_kwh * 0.3)  # ~30% de solar estimado como BESS
         total_renewable_available = total_solar_kwh + bess_discharge_kwh
         
-        # Fracción de renewable que va a EVs vs grid
+        # Fraccion de renewable que va a EVs vs grid
         # Basado en dispatch: ~70% a EVs (prioritario), ~30% al grid/almacenamiento
         renewable_to_evs_fraction = 0.70
         renewable_to_grid_fraction = 0.30
@@ -355,15 +355,15 @@ class MultiObjectiveReward:
         renewable_kwh_to_evs = total_renewable_available * renewable_to_evs_fraction
         renewable_kwh_to_grid = total_renewable_available * renewable_to_grid_fraction
         
-        # ===== CO₂ EVITADO DIRECTO (Renewable → EVs, evita combustión) =====
-        # Energía cargada a vehículos desde fuentes renovables
+        # ===== CO₂ EVITADO DIRECTO (Renewable -> EVs, evita combustion) =====
+        # Energia cargada a vehiculos desde fuentes renovables
         # Factor: 2.146 kg CO₂/kWh (Messagie 2014, still valid for gasoline equiv)
-        # Bajo escenario: solo energía que efectivamente va a EVs
+        # Bajo escenario: solo energia que efectivamente va a EVs
         ev_kwh_from_renewable = min(renewable_kwh_to_evs, ev_charging_kwh)  # No puede exceder charging real
         co2_avoided_direct_kg = ev_kwh_from_renewable * self.context.co2_conversion_factor  # [kg CO₂/kWh]
         
-        # ===== CO₂ EVITADO INDIRECTO (Renewable → Grid, evita coal/gas central) =====
-        # Solar + BESS que van directamente a reducir importación de grid térmico
+        # ===== CO₂ EVITADO INDIRECTO (Renewable -> Grid, evita coal/gas central) =====
+        # Solar + BESS que van directamente a reducir importacion de grid termico
         # Factor: 0.4521 kg CO₂/kWh (grid Iquitos, 100% diesel)
         # NOTA: NO incluir solar que va a EVs (ya en directo)
         co2_avoided_indirect_kg = renewable_kwh_to_grid * self.context.co2_factor_kg_per_kwh
@@ -372,21 +372,21 @@ class MultiObjectiveReward:
         co2_avoided_total_kg = co2_avoided_direct_kg + co2_avoided_indirect_kg
         
         # CO₂ NETO = grid imports - avoided emissions
-        # NOTA: Este valor es MORE REALISTIC (nunca será >> grid_import)
+        # NOTA: Este valor es MORE REALISTIC (nunca sera >> grid_import)
         co2_net_kg = max(0, co2_grid_kg - co2_avoided_total_kg)
 
-        # Baselines basados en operación real Iquitos:
-        # Off-peak: mall ~100 kW avg + chargers ~30 kW = 130 kWh/hora típico
+        # Baselines basados en operacion real Iquitos:
+        # Off-peak: mall ~100 kW avg + chargers ~30 kW = 130 kWh/hora tipico
         # Peak (18-21h): mall ~150 kW + chargers ~100 kW = 250 kWh/hora target
-        co2_baseline_offpeak = 130.0  # kWh/hora típico off-peak
+        co2_baseline_offpeak = 130.0  # kWh/hora tipico off-peak
         co2_baseline_peak = 250.0     # kWh/hora target with BESS support en pico
 
         if is_peak:
             # En pico: penalizar fuertemente si superas target (usando CO₂ neto)
-            # Bonus si CO₂ neto < 0 (evitamos más de lo que importamos)
+            # Bonus si CO₂ neto < 0 (evitamos mas de lo que importamos)
             r_co2 = 1.0 - 2.0 * min(1.0, max(0, co2_net_kg) / (co2_baseline_peak * self.context.co2_factor_kg_per_kwh))
         else:
-            # Off-peak: más tolerante pero aún penaliza exceso
+            # Off-peak: mas tolerante pero aun penaliza exceso
             r_co2 = 1.0 - 1.0 * min(1.0, max(0, co2_net_kg) / (co2_baseline_offpeak * self.context.co2_factor_kg_per_kwh))
 
         r_co2 = np.clip(r_co2, -1.0, 1.0)
@@ -420,8 +420,8 @@ class MultiObjectiveReward:
         components["r_solar"] = r_solar
         components["solar_kwh"] = solar_generation_kwh
 
-        # 4. Recompensa Satisfacción EV (maximizar) - ENHANCED para priorizar carga a 90% SOC
-        # ✅ OBJETIVO: Maximizar carga de EVs a 90% SOC durante 9AM-10PM (Modo 3)
+        # 4. Recompensa Satisfaccion EV (maximizar) - ENHANCED para priorizar carga a 90% SOC
+        # [OK] OBJETIVO: Maximizar carga de EVs a 90% SOC durante 9AM-10PM (Modo 3)
         # Estructura: Base (ev_satisfaction) + Hitos (80%, 88%) + Urgencia Temporal (20-21h)
 
         # 4.1 Base: Normalized SOC satisfaction
@@ -446,12 +446,12 @@ class MultiObjectiveReward:
         else:
             components["r_ev_completion_bonus"] = 0.0
 
-        # 4.4 Urgencia Temporal: PENALIZACIÓN FUERTE en última ventana de carga (8-10 PM)
+        # 4.4 Urgencia Temporal: PENALIZACION FUERTE en ultima ventana de carga (8-10 PM)
         # Contexto: Mall cierra a las 10 PM. EVs deben estar listos antes de salir.
         if hour in [20, 21]:  # 8-10 PM critical window (horas 20, 21 = 8PM, 9PM)
-            # En picos finales, MÁXIMA urgencia de completar carga
+            # En picos finales, MAXIMA urgencia de completar carga
             if ev_soc_avg < 0.90:
-                # PENALIZACIÓN FUERTE: evita que agents dejen EVs sin cargar al cierre
+                # PENALIZACION FUERTE: evita que agents dejen EVs sin cargar al cierre
                 final_window_penalty = -0.8 * min(1.0, (0.90 - ev_soc_avg) / 0.30)  # [-0.8, 0]
                 r_ev += final_window_penalty
                 components["r_ev_final_window_penalty"] = final_window_penalty
@@ -466,7 +466,7 @@ class MultiObjectiveReward:
         # 4.5 Bonus por Solar directo a EVs: Maximizar PV autoconsumo en EV
         if solar_generation_kwh > 0 and ev_charging_kwh > 0:
             solar_ev_ratio = min(1.0, ev_charging_kwh / solar_generation_kwh)
-            r_ev += 0.1 * solar_ev_ratio  # Bonus pequeño pero consistente
+            r_ev += 0.1 * solar_ev_ratio  # Bonus pequeno pero consistente
 
         # Normalizacion final
         r_ev = np.clip(r_ev, -1.0, 1.0)
@@ -475,31 +475,31 @@ class MultiObjectiveReward:
         components["ev_soc_avg"] = ev_soc_avg
         components["hour"] = float(hour)
 
-        # 🟢 5. NUEVO: Recompensa por Utilización de EVs (maximizar motos+mototaxis cargadas)
-        # ✅ OBJETIVO: Premiar cuando SAC carga máxima cantidad de motos y mototaxis
+        # 🟢 5. NUEVO: Recompensa por Utilizacion de EVs (maximizar motos+mototaxis cargadas)
+        # [OK] OBJETIVO: Premiar cuando SAC carga maxima cantidad de motos y mototaxis
         # SIN afectar capacidad de cargadores (38 sockets disponibles v5.2)
         #
-        # LÓGICA:
+        # LOGICA:
         # - EVs llegan con diferentes SOC (20-25%)
-        # - Calcular ratio de utilización = ev_soc_avg / max_ev_capacity
-        # - Bonus proporcional al ratio (hasta máximo 1.0)
+        # - Calcular ratio de utilizacion = ev_soc_avg / max_ev_capacity
+        # - Bonus proporcional al ratio (hasta maximo 1.0)
         # - Bonus adicional si mantiene balance (no sobrecargar)
 
-        # Heurística: Si ev_soc_avg > 0.75 y se están cargando EVs,
-        # significa que el agente está manteniendo múltiples EVs en buen estado
+        # Heuristica: Si ev_soc_avg > 0.75 y se estan cargando EVs,
+        # significa que el agente esta manteniendo multiples EVs en buen estado
         r_ev_utilization = 0.0
         if ev_soc_avg > 0.70:
-            # Bonus por buen manejo de utilización
-            # Máximo bonus cuando ev_soc_avg ≈ 0.85-0.90 (evita pasar 0.90)
+            # Bonus por buen manejo de utilizacion
+            # Maximo bonus cuando ev_soc_avg ≈ 0.85-0.90 (evita pasar 0.90)
             utilization_score = min(1.0, (ev_soc_avg - 0.70) / (0.90 - 0.70))  # [0, 1]
             r_ev_utilization = 2.0 * utilization_score - 1.0  # [-1, 1]
 
-            # Penalización si supera 0.95 (indica que concentra carga en pocos EVs)
+            # Penalizacion si supera 0.95 (indica que concentra carga en pocos EVs)
             if ev_soc_avg > 0.95:
                 overcharge_penalty = -0.3 * min(1.0, (ev_soc_avg - 0.95) / 0.05)
                 r_ev_utilization += overcharge_penalty
         else:
-            # Penalización por utilización baja (EVs no están siendo cargados)
+            # Penalizacion por utilizacion baja (EVs no estan siendo cargados)
             underutilization_penalty = -0.2 * min(1.0, (0.70 - ev_soc_avg) / 0.30)
             r_ev_utilization = underutilization_penalty
 
@@ -515,7 +515,7 @@ class MultiObjectiveReward:
             # Si demand_ratio > 1.0 (exceso de limite), penalizacion es -2.0+
             r_grid = 1.0 - 4.0 * min(1.0, demand_ratio)
         else:
-            # Fuera de pico: más tolerante
+            # Fuera de pico: mas tolerante
             r_grid = 1.0 - 2.0 * min(1.0, demand_ratio)
         r_grid = np.clip(r_grid, -1.0, 1.0)
         components["r_grid"] = r_grid
@@ -535,7 +535,7 @@ class MultiObjectiveReward:
                 r_soc_reserve = 1.0
                 components["r_soc_reserve"] = r_soc_reserve
         else:
-            # Off pre-peak: sin penalización especial
+            # Off pre-peak: sin penalizacion especial
             components["r_soc_reserve"] = 1.0
 
         soc_penalty = (components["r_soc_reserve"] - 1.0) * 0.5  # Escala [-0.5, 0]
@@ -551,7 +551,7 @@ class MultiObjectiveReward:
             0.10 * soc_penalty  # SOC penalty ponderada (0.10 weight)
         )
 
-        # ✅ SAFETY FIX: Clipear y validar NaN/Inf
+        # [OK] SAFETY FIX: Clipear y validar NaN/Inf
         reward = float(reward)  # Asegurar que es float
         if not np.isfinite(reward):
             logger.warning("[REWARD] NaN/Inf detected in reward: %.6e, clamping to -1.0", reward)
@@ -582,11 +582,11 @@ class MultiObjectiveReward:
     ) -> tuple[float, dict[str, float]]:
         """Computa recompensa multiobjetivo CON penalizaciones operacionales.
 
-        Similar a compute() pero añade penalizaciones por:
+        Similar a compute() pero anade penalizaciones por:
         - Incumplimiento de reserva SOC pre-pico
         - Exceso de potencia en pico
         - Desequilibrio de fairness entre playas
-        - Importación alta en hora pico
+        - Importacion alta en hora pico
 
         Args:
             operational_state: Dict con claves opcionales:
@@ -594,7 +594,7 @@ class MultiObjectiveReward:
                 - is_peak_hour: bool
                 - ev_power_motos_kw: potencia motos
                 - ev_power_mototaxis_kw: potencia mototaxis
-                - power_limit_total_kw: límite agregado
+                - power_limit_total_kw: limite agregado
         """
         # Primero computar recompensa base
         reward_base, components = self.compute(
@@ -648,7 +648,7 @@ class MultiObjectiveReward:
         else:
             penalties["r_fairness"] = 0.0
 
-        # 4. Penalidad por importación en pico
+        # 4. Penalidad por importacion en pico
         if is_peak and grid_import_kwh > 50.0:
             import_excess = min(1.0, (grid_import_kwh - 50.0) / 100.0)
             penalties["r_import_peak"] = -import_excess * 0.8  # [-0.8, 0]
@@ -673,7 +673,7 @@ class MultiObjectiveReward:
         return reward_total, components
 
     def get_pareto_metrics(self) -> dict[str, float]:
-        """Retorna métricas para análisis de Pareto."""
+        """Retorna metricas para analisis de Pareto."""
         if not self._reward_history:
             return {}
 
@@ -685,7 +685,7 @@ class MultiObjectiveReward:
             metrics[f"{key}_min"] = float(np.min(values))
             metrics[f"{key}_max"] = float(np.max(values))
 
-        # Métricas agregadas
+        # Metricas agregadas
         co2_total: float = float(sum(h.get("co2_kg", 0) for h in self._reward_history))
         cost_total: float = float(sum(h.get("cost_usd", 0) for h in self._reward_history))
         metrics["co2_total_kg"] = co2_total
@@ -701,8 +701,8 @@ class MultiObjectiveReward:
 class CityLearnMultiObjectiveWrapper(gym.Env):
     """Wrapper para integrar recompensa multiobjetivo con CityLearn.
 
-    Reemplaza la función de recompensa default de CityLearn con
-    nuestra función multiobjetivo. Hereda de gymnasium.Env para
+    Reemplaza la funcion de recompensa default de CityLearn con
+    nuestra funcion multiobjetivo. Hereda de gymnasium.Env para
     compatibilidad con stable-baselines3.
     """
 
@@ -734,7 +734,7 @@ class CityLearnMultiObjectiveWrapper(gym.Env):
         try:
             obs, original_reward, terminated, truncated, info = self.env.step(action)
         except (KeyboardInterrupt, AttributeError, TypeError, Exception) as e:
-            # Si falla el step del environment, retornar observación segura
+            # Si falla el step del environment, retornar observacion segura
             obs = np.zeros(394)  # 394-dim observation space (129 actions)
             original_reward = 0.0
             terminated = True
@@ -742,16 +742,16 @@ class CityLearnMultiObjectiveWrapper(gym.Env):
             info = {}
             return obs, 0.0, terminated, truncated, info
 
-        # Extraer métricas del ambiente (con manejo seguro de excepciones)
+        # Extraer metricas del ambiente (con manejo seguro de excepciones)
         buildings = []
         try:
             if hasattr(self.env, "buildings"):
                 buildings = list(self.env.buildings) if self.env.buildings else []
         except (AttributeError, KeyboardInterrupt, Exception) as e:
-            # Si falla el acceso a buildings, usar lista vacía
+            # Si falla el acceso a buildings, usar lista vacia
             buildings = []
 
-        # Inicializar acumuladores para extraer métricas
+        # Inicializar acumuladores para extraer metricas
         grid_import = 0.0
         grid_export = 0.0
         solar_gen = 0.0
@@ -845,7 +845,7 @@ def create_iquitos_reward_weights(
     Returns:
         MultiObjectiveWeights configurado
     """
-    # Versión estándar (todos los casos ahora usan esto)
+    # Version estandar (todos los casos ahora usan esto)
     # ACTUALIZADO 2026-02-07: Pesos sincronizados con resultados validados
     presets = {
         "balanced": MultiObjectiveWeights(co2=0.30, cost=0.25, solar=0.20, ev_satisfaction=0.10, ev_utilization=0.05, grid_stability=0.10),
@@ -858,17 +858,17 @@ def create_iquitos_reward_weights(
 
 
 def calculate_co2_reduction_indirect(solar_consumed_kw: float) -> float:
-    """Calcula la reducción INDIRECTA de CO₂ por usar energía solar.
+    """Calcula la reduccion INDIRECTA de CO₂ por usar energia solar.
 
-    CO₂ evitado = solar consumido × factor de emisión grid (térmica)
+    CO₂ evitado = solar consumido × factor de emision grid (termica)
 
     Args:
-        solar_consumed_kw: Energía solar consumida en este timestep (kW)
+        solar_consumed_kw: Energia solar consumida en este timestep (kW)
 
     Returns:
         CO₂ evitado en kg
     """
-    co2_factor_grid = 0.4521  # kg CO₂/kWh (central térmica Iquitos)
+    co2_factor_grid = 0.4521  # kg CO₂/kWh (central termica Iquitos)
     return solar_consumed_kw * co2_factor_grid
 
 
@@ -876,24 +876,24 @@ def calculate_co2_reduction_bess_discharge(
     bess_discharge_kw: float,
     is_nighttime: bool = False,
 ) -> float:
-    """Calcula la reducción INDIRECTA de CO₂ por descargar BESS.
+    """Calcula la reduccion INDIRECTA de CO₂ por descargar BESS.
 
-    Cuando el BESS descarga energía (almacenada del solar durante el día),
-    evita importar de la red térmica. Esto es especialmente importante
-    durante la noche cuando no hay generación solar.
+    Cuando el BESS descarga energia (almacenada del solar durante el dia),
+    evita importar de la red termica. Esto es especialmente importante
+    durante la noche cuando no hay generacion solar.
 
-    CO₂ evitado = energía descargada × factor de emisión grid
+    CO₂ evitado = energia descargada × factor de emision grid
 
     Args:
-        bess_discharge_kw: Energía descargada del BESS en este timestep (kW)
+        bess_discharge_kw: Energia descargada del BESS en este timestep (kW)
         is_nighttime: Si es horario nocturno (opcional, para ajustes futuros)
 
     Returns:
         CO₂ evitado en kg
     """
-    co2_factor_grid = 0.4521  # kg CO₂/kWh (central térmica Iquitos)
+    co2_factor_grid = 0.4521  # kg CO₂/kWh (central termica Iquitos)
     # Durante la noche, la descarga de BESS directamente reemplaza grid import
-    # Durante el día, puede estar ayudando a cubrir picos
+    # Durante el dia, puede estar ayudando a cubrir picos
     return bess_discharge_kw * co2_factor_grid
 
 
@@ -904,16 +904,16 @@ def calculate_co2_reduction_direct(
     co2_factor_mototaxi: float = 3.5,
     soc_threshold_full: float = 0.90,
 ) -> dict[str, float]:
-    """Calcula la reducción DIRECTA de CO₂ por cargar vehículos eléctricos.
+    """Calcula la reduccion DIRECTA de CO₂ por cargar vehiculos electricos.
 
-    CO₂ evitado = kWh cargado × km/kWh × (galones evitados/km) × kg CO₂/galón
+    CO₂ evitado = kWh cargado × km/kWh × (galones evitados/km) × kg CO₂/galon
 
     Args:
         charger_soc_list: Lista de SOC de cada charger [0-1]
         charger_types_list: Lista de tipos ("moto" o "mototaxi")
         co2_factor_moto: kg CO₂ evitado por moto completamente cargada
         co2_factor_mototaxi: kg CO₂ evitado por mototaxi completamente cargada
-        soc_threshold_full: SOC mínimo para considerar "cargado" (0.90 = 90%)
+        soc_threshold_full: SOC minimo para considerar "cargado" (0.90 = 90%)
 
     Returns:
         Dict con claves:
@@ -949,22 +949,22 @@ def calculate_solar_dispatch(
     bess_max_power_kw: float,
     bess_capacity_kwh: float,
 ) -> dict:
-    """Desglosar disponibilidad solar según 5 prioridades de despacho.
+    """Desglosar disponibilidad solar segun 5 prioridades de despacho.
 
-    PRIORIDADES DE DESPACHO (automáticas, NO agente RL):
+    PRIORIDADES DE DESPACHO (automaticas, NO agente RL):
     1. EV charging (demand constante 50 kW, 9AM-10PM)
-    2. Mall loads (demanda no-desplazable, típicamente 100 kW)
-    3. BESS charging (cargar batería si SOC < 80% y solar disponible)
+    2. Mall loads (demanda no-desplazable, tipicamente 100 kW)
+    3. BESS charging (cargar bateria si SOC < 80% y solar disponible)
     4. Grid export (vender solar excedente al grid)
     5. Grid import (comprar si falta)
 
     Args:
-        solar_available_kw: Generación solar disponible (kW)
-        ev_demand_kw: Demanda EV (típicamente 50 kW constante 9AM-10PM)
+        solar_available_kw: Generacion solar disponible (kW)
+        ev_demand_kw: Demanda EV (tipicamente 50 kW constante 9AM-10PM)
         mall_demand_kw: Demanda mall/no-desplazable (kW)
-        bess_soc_pct: SOC de batería (0-100%)
-        bess_max_power_kw: Máxima potencia carga/descarga (342 kW v5.2)
-        bess_capacity_kwh: Capacidad de batería (940 kWh v5.2)
+        bess_soc_pct: SOC de bateria (0-100%)
+        bess_max_power_kw: Maxima potencia carga/descarga (342 kW v5.2)
+        bess_capacity_kwh: Capacidad de bateria (940 kWh v5.2)
 
     Returns:
         dict: Desglose de despacho {
@@ -990,7 +990,7 @@ def calculate_solar_dispatch(
         "bess_to_mall": 0.0,
     }
 
-    # PRIORIDAD 1: EV Charging (crítico)
+    # PRIORIDAD 1: EV Charging (critico)
     solar_to_ev = min(ev_demand_kw, solar_remaining)
     dispatch["solar_to_ev"] = solar_to_ev
     solar_remaining -= solar_to_ev

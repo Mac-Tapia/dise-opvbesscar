@@ -67,7 +67,7 @@ for agent_name, agent_info in agents.items():
     try:
         if agent_info['timeseries_file'].exists():
             df = pd.read_csv(agent_info['timeseries_file'])
-            print(f"   ✓ {agent_name}: {len(df)} hourly records loaded")
+            print(f"   [OK] {agent_name}: {len(df)} hourly records loaded")
             
             # Detect grid import column (varies by agent)
             grid_col = None
@@ -82,7 +82,7 @@ for agent_name, agent_info in agents.items():
                 grid_col = 'consumption_kWh' if 'consumption_kWh' in df.columns else None
             
             if grid_col is None:
-                print(f"   ⚠️  {agent_name}: Could not find grid_import column")
+                print(f"   [!]  {agent_name}: Could not find grid_import column")
                 continue
             
             # Aggregate to daily metrics
@@ -122,19 +122,19 @@ for agent_name, agent_info in agents.items():
             }
             
         else:
-            print(f"   ⚠️  {agent_name}: timeseries file not found, skipping")
+            print(f"   [!]  {agent_name}: timeseries file not found, skipping")
             
     except Exception as e:
-        print(f"   ❌ {agent_name}: {e}")
+        print(f"   [X] {agent_name}: {e}")
 
 # Filter out agents without data
 agents_with_data = {k: v for k, v in agents.items() if v['data']}
 
 if len(agents_with_data) < 2:
-    print("\n❌ Not enough agents with data for comparison!")
+    print("\n[X] Not enough agents with data for comparison!")
     exit(1)
 
-print(f"\n   ✓ {len(agents_with_data)} agents have data for comparison")
+print(f"\n   [OK] {len(agents_with_data)} agents have data for comparison")
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -178,7 +178,7 @@ def plot_comparison(metric_name, metric_key, ylabel, title, filename):
     output_path = COMPARISON_DIR / filename
     plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
     plt.close(fig)
-    print(f"   ✅ {filename}")
+    print(f"   [OK] {filename}")
     
     return output_path
 
@@ -186,7 +186,7 @@ def plot_comparison(metric_name, metric_key, ylabel, title, filename):
 # GENERATE COMPARISON GRAPHS
 # ============================================================================
 
-print("\n📈 Generating comparison graphs...")
+print("\n[CHART] Generating comparison graphs...")
 
 # 1. Consumption Comparison
 plot_comparison(
@@ -237,7 +237,7 @@ plot_comparison(
 # GENERATE COMPREHENSIVE DASHBOARD COMPARISON
 # ============================================================================
 
-print("\n📊 Generating comprehensive dashboard...")
+print("\n[GRAPH] Generating comprehensive dashboard...")
 
 fig, axes = plt.subplots(2, 3, figsize=(18, 12))
 fig.patch.set_facecolor('white')
@@ -322,7 +322,7 @@ plt.tight_layout(rect=[0, 0, 1, 0.97])
 output_path = COMPARISON_DIR / 'real_real_metrics_dashboard_comparison.png'
 plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
 plt.close(fig)
-print(f"   ✅ real_real_metrics_dashboard_comparison.png")
+print(f"   [OK] real_real_metrics_dashboard_comparison.png")
 
 # ============================================================================
 # GENERATE SUMMARY CSV
@@ -351,13 +351,13 @@ for agent_name, agent_info in agents_with_data.items():
 summary_df = pd.DataFrame(summary_rows)
 summary_path = COMPARISON_DIR / 'comparison_summary.csv'
 summary_df.to_csv(summary_path, index=False)
-print(f"   ✅ comparison_summary.csv")
+print(f"   [OK] comparison_summary.csv")
 
 # Print summary table
-print("\n📊 Summary Statistics:")
+print("\n[GRAPH] Summary Statistics:")
 print(summary_df.to_string(index=False))
 
 print("\n" + "=" * 80)
-print("✅ COMPARISON GRAPHS GENERATION COMPLETE")
+print("[OK] COMPARISON GRAPHS GENERATION COMPLETE")
 print(f"📁 Saved to: {COMPARISON_DIR}")
 print("=" * 80)

@@ -35,72 +35,72 @@ def detect_device() -> str:
 
 @dataclass
 class PPOConfig:
-    """Configuración avanzada para PPO con soporte CUDA/GPU y multiobjetivo.
+    """Configuracion avanzada para PPO con soporte CUDA/GPU y multiobjetivo.
 
-    Nota: train_steps=500000 es el mínimo recomendado para problemas de alta
+    Nota: train_steps=500000 es el minimo recomendado para problemas de alta
     dimensionalidad como CityLearn con ~394 obs dims × 129 action dims.
-    Para convergencia óptima, usar 1M+ pasos.
+    Para convergencia optima, usar 1M+ pasos.
     """
-    # Hiperparámetros de entrenamiento - PPO OPTIMIZADO PARA RTX 4060
-    train_steps: int = 500000  # ↓ REDUCIDO: 1M→500k (RTX 4060 limitación)
-    n_steps: int = 2048         # ✅ CORREGIDO: 8760→2048 (GPU-friendly, aún captura 85 días variación)
-    batch_size: int = 256       # ↑ OPTIMIZADO: 8→256 (4x mayor, mejor gradient estimation)
-    n_epochs: int = 10          # ✅ AUMENTADO: 3→10 (compensa reducción n_steps)
+    # Hiperparametros de entrenamiento - PPO OPTIMIZADO PARA RTX 4060
+    train_steps: int = 500000  # v REDUCIDO: 1M->500k (RTX 4060 limitacion)
+    n_steps: int = 2048         # [OK] CORREGIDO: 8760->2048 (GPU-friendly, aun captura 85 dias variacion)
+    batch_size: int = 256       # ^ OPTIMIZADO: 8->256 (4x mayor, mejor gradient estimation)
+    n_epochs: int = 10          # [OK] AUMENTADO: 3->10 (compensa reduccion n_steps)
 
-    # Optimización - PPO ADAPTADO A GPU LIMITADA
-    learning_rate: float = 1e-4     # ↑ OPTIMIZADO: 5e-5→1e-4 (mejor balancse con nuevo clip)
-    lr_schedule: str = "linear"     # ✅ Decay automático
+    # Optimizacion - PPO ADAPTADO A GPU LIMITADA
+    learning_rate: float = 1e-4     # ^ OPTIMIZADO: 5e-5->1e-4 (mejor balancse con nuevo clip)
+    lr_schedule: str = "linear"     # [OK] Decay automatico
     lr_final_ratio: float = 0.5     # 🔴 DIFERENCIADO: 0.5 (NO 0.1 como SAC)
                                     #   PPO on-policy: decay suave (50% final LR)
-    gamma: float = 0.99             # ↓ REDUCIDO: 0.999→0.99 (simplifica)
-    gae_lambda: float = 0.98        # ↑ OPTIMIZADO: 0.90→0.98 (mejor long-term advantages)
+    gamma: float = 0.99             # v REDUCIDO: 0.999->0.99 (simplifica)
+    gae_lambda: float = 0.98        # ^ OPTIMIZADO: 0.90->0.98 (mejor long-term advantages)
 
-    # Clipping y regularización - PPO ESTABLE
-    clip_range: float = 0.2         # ✅ OPTIMIZADO: 0.5→0.2 (estándar PPO)
-    clip_range_vf: float = 0.5      # ↑ OPTIMIZADO: 0.15→0.5 (value function clipping)
-    ent_coef: float = 0.01          # ↑ OPTIMIZADO: 0.001→0.01 (exploration incentive)
-    vf_coef: float = 0.5            # ✅ OPTIMIZADO: 0.3→0.5 (value function más importante)
+    # Clipping y regularizacion - PPO ESTABLE
+    clip_range: float = 0.2         # [OK] OPTIMIZADO: 0.5->0.2 (estandar PPO)
+    clip_range_vf: float = 0.5      # ^ OPTIMIZADO: 0.15->0.5 (value function clipping)
+    ent_coef: float = 0.01          # ^ OPTIMIZADO: 0.001->0.01 (exploration incentive)
+    vf_coef: float = 0.5            # [OK] OPTIMIZADO: 0.3->0.5 (value function mas importante)
     max_grad_norm: float = 1.0      # 🔴 DIFERENCIADO PPO: 1.0 (vs SAC 10.0)
-                                    # Justificación: PPO on-policy, gradientes más estables que SAC off-policy
+                                    # Justificacion: PPO on-policy, gradientes mas estables que SAC off-policy
 
     # Red neuronal - REDUCIDA PARA RTX 4060
-    hidden_sizes: tuple = (256, 256)   # ↓↓ CRITICAMENTE REDUCIDA: 512→256
+    hidden_sizes: tuple = (256, 256)   # vv CRITICAMENTE REDUCIDA: 512->256
     activation: str = "relu"
     ortho_init: bool = True
 
-    # Normalización
-    normalize_advantage: bool = True    # ↑ OPTIMIZADO: agregado para consistency
+    # Normalizacion
+    normalize_advantage: bool = True    # ^ OPTIMIZADO: agregado para consistency
     normalize_observations: bool = True
     normalize_rewards: bool = True
-    reward_scale: float = 0.1          # ✅ AGREGADO: Escalar rewards (previene Q-explosion)
-    clip_obs: float = 5.0              # ✅ AGREGADO: Clipear observaciones (less aggressively than SAC)
-    clip_reward: float = 1.0           # ✅ AGREGADO (PPO INDIVIDUALIZED): Clipear rewards (1.0 = suave para on-policy)
+    reward_scale: float = 0.1          # [OK] AGREGADO: Escalar rewards (previene Q-explosion)
+    clip_obs: float = 5.0              # [OK] AGREGADO: Clipear observaciones (less aggressively than SAC)
+    clip_reward: float = 1.0           # [OK] AGREGADO (PPO INDIVIDUALIZED): Clipear rewards (1.0 = suave para on-policy)
                                        # 🔴 DIFERENCIADO vs SAC (10.0): PPO es on-policy, requiere clipping menos agresivo
 
-    # === EXPLORACIÓN MEJORADA ===
-    use_sde: bool = True               # ↑ OPTIMIZADO: TRUE (state-dependent exploration)
+    # === EXPLORACION MEJORADA ===
+    use_sde: bool = True               # ^ OPTIMIZADO: TRUE (state-dependent exploration)
     sde_sample_freq: int = -1          # Resample every step
 
     # === KL DIVERGENCE SAFETY ===
-    target_kl: float = 0.02            # ↑ NUEVO: stop training if KL > 0.02
+    target_kl: float = 0.02            # ^ NUEVO: stop training if KL > 0.02
 
     # === ENTROPY DECAY SCHEDULE (NEW COMPONENT #1) ===
-    # Exploración decrece durante entrenamiento: high early → low late
+    # Exploracion decrece durante entrenamiento: high early -> low late
     ent_coef_schedule: str = "exponential"  # "constant", "linear", o "exponential"
     ent_coef_final: float = 0.001           # Target entropy coef at end of training
-    ent_decay_rate: float = 0.999           # 🔴 DIFERENCIADO: 0.999 (3× más lento que SAC 0.9995)
-                                            #   PPO on-policy: decay agresivo sería contraproducente
-    # Rationale: Early exploration (0.01) → Late exploitation (0.001)
+    ent_decay_rate: float = 0.999           # 🔴 DIFERENCIADO: 0.999 (3× mas lento que SAC 0.9995)
+                                            #   PPO on-policy: decay agresivo seria contraproducente
+    # Rationale: Early exploration (0.01) -> Late exploitation (0.001)
     # Formula: ent_coef *= 0.9995 per 1000 steps (ALIGNED WITH SAC)
 
     # === 🟢 NUEVO: EV UTILIZATION BONUS (PPO ADAPTATION) ===
-    # PPO on-policy: Reward el máximo simultáneo de motos y mototaxis cargadas
+    # PPO on-policy: Reward el maximo simultaneo de motos y mototaxis cargadas
     # Diferencia vs SAC: PPO integra bonus en advantage function, no en reward raw
     use_ev_utilization_bonus: bool = True   # Enable/disable bonus
     ev_utilization_weight: float = 0.05     # PPO: weight del bonus (same as SAC)
-    ev_soc_optimal_min: float = 0.70        # SOC mínimo para considerar "utilizado"
-    ev_soc_optimal_max: float = 0.90        # SOC máximo para considerar "utilizado"
-    ev_soc_overcharge_threshold: float = 0.95  # Penalizar si >95% (concentración)
+    ev_soc_optimal_min: float = 0.70        # SOC minimo para considerar "utilizado"
+    ev_soc_optimal_max: float = 0.90        # SOC maximo para considerar "utilizado"
+    ev_soc_overcharge_threshold: float = 0.95  # Penalizar si >95% (concentracion)
 
     # === VF COEFFICIENT SCHEDULE (NEW COMPONENT #2) ===
     # Value function importance puede decrecer cuando policy converge
@@ -109,21 +109,21 @@ class PPOConfig:
     vf_coef_final: float = 0.1          # Final VF coefficient (si schedule="decay")
 
     # === ROBUST VALUE FUNCTION LOSS (NEW COMPONENT #3) ===
-    # Huber loss en lugar de MSE previene explosión con rewards grandes
-    use_huber_loss: bool = True         # ✅ RECOMENDADO para estabilidad
-    huber_delta: float = 1.0            # Threshold para switch MSE→MAE
+    # Huber loss en lugar de MSE previene explosion con rewards grandes
+    use_huber_loss: bool = True         # [OK] RECOMENDADO para estabilidad
+    huber_delta: float = 1.0            # Threshold para switch MSE->MAE
 
-    # === CONFIGURACIÓN GPU/CUDA ===
+    # === CONFIGURACION GPU/CUDA ===
     device: str = "auto"  # "auto", "cuda", "cuda:0", "cuda:1", "mps", "cpu"
     use_amp: bool = True  # Mixed precision training
     pin_memory: bool = True  # Acelera CPU->GPU
-    deterministic_cuda: bool = False  # True = reproducible pero más lento
+    deterministic_cuda: bool = False  # True = reproducible pero mas lento
 
     # === MULTIOBJETIVO / MULTICRITERIO ===
-    # NOTA: Los pesos multiobjetivo se configuran en rewards.py vía:
+    # NOTA: Los pesos multiobjetivo se configuran en rewards.py via:
     #   create_iquitos_reward_weights(priority) donde priority = "balanced", "co2_focus", etc.
-    # Ver: src/iquitos_citylearn/oe3/rewards.py línea 634+
-    # NO duplicar pesos aquí - usar rewards.py como fuente única de verdad
+    # Ver: src/iquitos_citylearn/oe3/rewards.py linea 634+
+    # NO duplicar pesos aqui - usar rewards.py como fuente unica de verdad
 
     # Reproducibilidad
     seed: int = 42
@@ -131,7 +131,7 @@ class PPOConfig:
     # Logging
     verbose: int = 1
     tensorboard_log: Optional[str] = None
-    log_interval: int = 500  # ✅ FIX: Métricas cada 500 pasos (era 2000)
+    log_interval: int = 500  # [OK] FIX: Metricas cada 500 pasos (era 2000)
     kl_adaptive: bool = True
     kl_adaptive_down: float = 0.5
     kl_adaptive_up: float = 1.05
@@ -147,8 +147,8 @@ class PPOConfig:
     reward_smooth_lambda: float = 0.0
 
     def __post_init__(self):
-        """Validación y normalización de configuración post-inicialización."""
-        # Validar que ent_coef_final <= ent_coef (decay válido)
+        """Validacion y normalizacion de configuracion post-inicializacion."""
+        # Validar que ent_coef_final <= ent_coef (decay valido)
         if self.ent_coef_final > self.ent_coef:
             logger.warning(
                 "[PPOConfig] ent_coef_final (%.4f) > ent_coef (%.4f). "
@@ -157,10 +157,10 @@ class PPOConfig:
             )
             self.ent_coef_final = self.ent_coef * 0.1
 
-        # Validar schedule válido
+        # Validar schedule valido
         if self.ent_coef_schedule not in ["constant", "linear", "exponential"]:
             logger.warning(
-                "[PPOConfig] ent_coef_schedule='%s' inválido. Usando 'constant'.",
+                "[PPOConfig] ent_coef_schedule='%s' invalido. Usando 'constant'.",
                 self.ent_coef_schedule
             )
             self.ent_coef_schedule = "constant"
@@ -168,14 +168,14 @@ class PPOConfig:
         # Validar VF coefficient schedule
         if self.vf_coef_schedule not in ["constant", "decay"]:
             logger.warning(
-                "[PPOConfig] vf_coef_schedule='%s' inválido. Usando 'constant'.",
+                "[PPOConfig] vf_coef_schedule='%s' invalido. Usando 'constant'.",
                 self.vf_coef_schedule
             )
             self.vf_coef_schedule = "constant"
 
         logger.info(
             "[PPOConfig] Inicializado con schedules: "
-            "ent_coef=%s(%.4f→%.4f), vf_coef=%s(%.2f→%.2f), huber_loss=%s, "
+            "ent_coef=%s(%.4f->%.4f), vf_coef=%s(%.2f->%.2f), huber_loss=%s, "
             "ev_utilization_bonus=%s(weight=%.2f)",
             self.ent_coef_schedule, self.ent_coef, self.ent_coef_final,
             self.vf_coef_schedule, self.vf_coef_init, self.vf_coef_final,
@@ -186,21 +186,21 @@ class PPOConfig:
 class PPOAgent:
     """Agente PPO robusto y escalable con optimizadores avanzados.
 
-    Características:
+    Caracteristicas:
     - Proximal Policy Optimization con clipping
     - GAE (Generalized Advantage Estimation)
     - Scheduler de learning rate
-    - Normalización de ventajas
-    - 🟢 NUEVO: EV Utilization Bonus - Rewards máximo simultáneo de motos y mototaxis
+    - Normalizacion de ventajas
+    - 🟢 NUEVO: EV Utilization Bonus - Rewards maximo simultaneo de motos y mototaxis
     - Compatible con CityLearn
     - Compatible con rewards multiobjetivo (rewards.py)
 
     **EV Utilization Bonus (PPO Adaptation)**:
     - Integrado en advantage function de PPO
-    - Penaliza SOC < 0.70 (baja utilización)
-    - Bonus SOC ∈ [0.70, 0.90] (utilización óptima)
-    - Penaliza SOC > 0.95 (concentración en pocos EVs)
-    - Weight: ev_utilization_weight = 0.05 (5% de la pérdida total)
+    - Penaliza SOC < 0.70 (baja utilizacion)
+    - Bonus SOC ∈ [0.70, 0.90] (utilizacion optima)
+    - Penaliza SOC > 0.95 (concentracion en pocos EVs)
+    - Weight: ev_utilization_weight = 0.05 (5% de la perdida total)
     """
 
     def __init__(self, env: Any, config: Optional[PPOConfig] = None):
@@ -210,7 +210,7 @@ class PPOAgent:
         self.wrapped_env: Optional[Any] = None
         self._trained = False
 
-        # Métricas
+        # Metricas
         self.training_history: list[dict[str, float]] = []
 
         # === Configurar dispositivo GPU/CUDA ===
@@ -228,7 +228,7 @@ class PPOAgent:
         return self.config.device
 
     def _setup_torch_backend(self):
-        """Configura PyTorch para máximo rendimiento en GPU."""
+        """Configura PyTorch para maximo rendimiento en GPU."""
         try:
             import torch
 
@@ -257,7 +257,7 @@ class PPOAgent:
             logger.warning("PyTorch no instalado")
 
     def get_device_info(self) -> dict[str, Any]:
-        """Retorna información del dispositivo."""
+        """Retorna informacion del dispositivo."""
         info: dict[str, Any] = {"device": self.device}
         try:
             import torch  # type: ignore
@@ -274,10 +274,10 @@ class PPOAgent:
         return info
 
     def _validate_dataset_completeness(self) -> None:
-        """Validar que el dataset CityLearn tiene exactamente 8,760 timesteps (año completo).
+        """Validar que el dataset CityLearn tiene exactamente 8,760 timesteps (ano completo).
 
-        CRÍTICO: Esta validación es OBLIGATORIA - Sin datos reales, el entrenamiento
-        ejecuta rápido pero NO APRENDE NADA.
+        CRITICO: Esta validacion es OBLIGATORIA - Sin datos reales, el entrenamiento
+        ejecuta rapido pero NO APRENDE NADA.
 
         NOTA: Usamos energy_simulation (datos del CSV) en lugar de propiedades
         de runtime (solar_generation, net_electricity_consumption) que solo se
@@ -289,8 +289,8 @@ class PPOAgent:
         buildings = getattr(self.env, 'buildings', [])
         if not buildings:
             raise RuntimeError(
-                "[PPO VALIDACIÓN FALLIDA] No buildings found in CityLearn environment.\n"
-                "El dataset NO se cargó correctamente. Ejecuta:\n"
+                "[PPO VALIDACION FALLIDA] No buildings found in CityLearn environment.\n"
+                "El dataset NO se cargo correctamente. Ejecuta:\n"
                 "  python -m scripts.run_oe3_build_dataset --config configs/default.yaml"
             )
 
@@ -313,20 +313,20 @@ class PPOAgent:
 
         if timesteps == 0:
             raise RuntimeError(
-                "[PPO VALIDACIÓN FALLIDA] No se pudo extraer series de tiempo de CityLearn.\n"
-                "El dataset está vacío o corrupto. Reconstruye con:\n"
+                "[PPO VALIDACION FALLIDA] No se pudo extraer series de tiempo de CityLearn.\n"
+                "El dataset esta vacio o corrupto. Reconstruye con:\n"
                 "  python -m scripts.run_oe3_build_dataset --config configs/default.yaml"
             )
 
         if timesteps != 8760:
             raise RuntimeError(
-                f"[PPO VALIDACIÓN FALLIDA] Dataset INCOMPLETO: {timesteps} timesteps vs. 8,760 esperado.\n"
-                f"Sin datos completos de 1 año, el entrenamiento NO aprenderá patrones estacionales.\n"
+                f"[PPO VALIDACION FALLIDA] Dataset INCOMPLETO: {timesteps} timesteps vs. 8,760 esperado.\n"
+                f"Sin datos completos de 1 ano, el entrenamiento NO aprendera patrones estacionales.\n"
                 f"Reconstruye el dataset con:\n"
                 f"  python -m scripts.run_oe3_build_dataset --config configs/default.yaml"
             )
 
-        logger.info("[PPO VALIDACIÓN] ✓ Dataset CityLearn COMPLETO: 8,760 timesteps (1 año)")
+        logger.info("[PPO VALIDACION] [OK] Dataset CityLearn COMPLETO: 8,760 timesteps (1 ano)")
 
     def learn(self, total_timesteps: Optional[int] = None, **kwargs: Any) -> None:
         """Entrena el agente PPO con optimizadores avanzados.
@@ -338,7 +338,7 @@ class PPOAgent:
         _ = kwargs  # Silenciar warning de argumento no usado
         # Nota: usa config.train_steps como default
 
-        # VALIDACIÓN CRÍTICA: Verificar dataset completo antes de entrenar (CRITICAL FIX)
+        # VALIDACION CRITICA: Verificar dataset completo antes de entrenar (CRITICAL FIX)
         self._validate_dataset_completeness()
 
         try:
@@ -403,7 +403,7 @@ class PPOAgent:
 
             return HuberLossActorCriticPolicy
 
-        # Crear clase de política personalizada si Huber loss está habilitado
+        # Crear clase de politica personalizada si Huber loss esta habilitado
         custom_policy_class = None
         if self.config.use_huber_loss:
             custom_policy_class = create_huber_loss_policy()
@@ -423,7 +423,7 @@ class PPOAgent:
                 self._smooth_lambda = smooth_lambda
                 self._prev_action = None
 
-                # Normalización
+                # Normalizacion
                 self._normalize_obs = normalize_obs
                 self._normalize_rewards = normalize_rewards
                 self._reward_scale = reward_scale  # 0.01
@@ -433,18 +433,18 @@ class PPOAgent:
                 self._reward_var = 1.0
 
                 # CRITICAL FIX: Selective prescaling (NOT generic 0.001 for all obs)
-                # Power/Energy values (kW, kWh): scale by 0.001 → [0, 5] range
+                # Power/Energy values (kW, kWh): scale by 0.001 -> [0, 5] range
                 # SOC/Percentage values (0-1 or 0-100): scale by 1.0 (keep as is)
-                # The last obs element is typically BESS SOC [0, 1] → must use 1.0 scale
+                # The last obs element is typically BESS SOC [0, 1] -> must use 1.0 scale
                 self._obs_prescale = np.ones(self.obs_dim, dtype=np.float32) * 0.001
                 # NOTE: Future improvement: detect obs type and set prescale selectively
 
-                # ✅ Acumuladores para métricas de energía (captura robusta)
+                # [OK] Acumuladores para metricas de energia (captura robusta)
                 self._grid_accumulator = 0.0
                 self._solar_accumulator = 0.0
 
 
-                # Running stats para normalización
+                # Running stats para normalizacion
                 self._obs_mean = np.zeros(self.obs_dim, dtype=np.float64)
                 self._obs_var = np.ones(self.obs_dim, dtype=np.float64)
                 self._obs_count = 1e-4
@@ -459,7 +459,7 @@ class PPOAgent:
                 )
 
             def _update_obs_stats(self, obs: np.ndarray):
-                """Actualiza estadísticas de observación con Welford's algorithm."""
+                """Actualiza estadisticas de observacion con Welford's algorithm."""
                 delta = obs - self._obs_mean
                 self._obs_count += 1
                 self._obs_mean = self._obs_mean + delta / self._obs_count
@@ -546,7 +546,7 @@ class PPOAgent:
             def reset(self, **kwargs):
                 obs, info = self.env.reset(**kwargs)
                 self._prev_action = None
-                # ✅ Resetear acumuladores al inicio de episodio
+                # [OK] Resetear acumuladores al inicio de episodio
                 self._grid_accumulator = 0.0
                 self._solar_accumulator = 0.0
                 return self._flatten(obs), info
@@ -555,7 +555,7 @@ class PPOAgent:
                 citylearn_action = self._unflatten_action(action)
                 obs, reward, terminated, truncated, info = self.env.step(citylearn_action)
 
-                # ✅ ACUMULAR MÉTRICAS DE ENERGÍA EN CADA STEP (NO depender solo de callback)
+                # [OK] ACUMULAR METRICAS DE ENERGIA EN CADA STEP (NO depender solo de callback)
                 try:
                     env_unwrapped = self.env
                     while hasattr(env_unwrapped, 'env'):
@@ -622,7 +622,7 @@ class PPOAgent:
         # Learning rate scheduler
         lr_schedule = self._get_lr_schedule()
 
-        # Configurar política con arquitectura optimizada
+        # Configurar politica con arquitectura optimizada
         policy_kwargs = {
             "net_arch": dict(
                 pi=list(self.config.hidden_sizes),
@@ -638,7 +638,7 @@ class PPOAgent:
         if self.config.use_huber_loss and custom_policy_class is not None:
             policy_kwargs["huber_delta"] = self.config.huber_delta
 
-        # Crear o reanudar modelo PPO con configuración avanzada y GPU
+        # Crear o reanudar modelo PPO con configuracion avanzada y GPU
         resume_path = Path(self.config.resume_path) if self.config.resume_path else None
         resuming = resume_path is not None and resume_path.exists()
         logger.info("Creando modelo PPO en dispositivo: %s%s", self.device, " (resume)" if resuming else "")
@@ -738,7 +738,7 @@ class PPOAgent:
         expected_episodes = int(steps // 8760) if steps > 0 else 0
 
         class TrainingCallback(BaseCallback):
-            """Callback de entrenamiento PPO con extracción ROBUSTA de métricas.
+            """Callback de entrenamiento PPO con extraccion ROBUSTA de metricas.
 
             FIX 2026-02-02: Usa EpisodeMetricsAccumulator centralizado.
             """
@@ -752,7 +752,7 @@ class PPOAgent:
                 self.log_interval_steps = int(agent.config.log_interval or 500)  # Default 500
                 self._last_kl_update = 0
 
-                # ✅ FIX: Usar EpisodeMetricsAccumulator centralizado
+                # [OK] FIX: Usar EpisodeMetricsAccumulator centralizado
                 from .utils_metrics import EpisodeMetricsAccumulator, extract_step_metrics
                 self.metrics_accumulator = EpisodeMetricsAccumulator()
                 self._extract_step_metrics = extract_step_metrics
@@ -807,14 +807,14 @@ class PPOAgent:
                 self.n_calls += 1
 
                 # ========================================================================
-                # ✅ FIX: EXTRACCIÓN ROBUSTA DE MÉTRICAS usando metrics_extractor.py
-                # Reemplaza el código hardcodeado (grid_energy_sum += 150.0, etc.)
+                # [OK] FIX: EXTRACCION ROBUSTA DE METRICAS usando metrics_extractor.py
+                # Reemplaza el codigo hardcodeado (grid_energy_sum += 150.0, etc.)
                 # ========================================================================
                 obs = self.locals.get("obs_tensor", self.locals.get("new_obs"))
                 if obs is not None and hasattr(obs, 'cpu'):
                     obs = obs.cpu().numpy()
 
-                # Extraer métricas usando función centralizada (4-level fallback)
+                # Extraer metricas usando funcion centralizada (4-level fallback)
                 step_metrics = self._extract_step_metrics(self.training_env, self.n_calls, obs)
 
                 # Acumular reward
@@ -827,7 +827,7 @@ class PPOAgent:
                     else:
                         reward_val = float(rewards)
 
-                # ✅ Acumular métricas usando EpisodeMetricsAccumulator
+                # [OK] Acumular metricas usando EpisodeMetricsAccumulator
                 self.metrics_accumulator.accumulate(step_metrics, reward_val)
 
                 # Actualizar alias para compatibilidad (logs, etc.)
@@ -865,7 +865,7 @@ class PPOAgent:
                             pass
 
                 # ========================================================================
-                # LOGGING PERIÓDICO con métricas REALES
+                # LOGGING PERIODICO con metricas REALES
                 # ========================================================================
                 if self.log_interval_steps > 0 and self.n_calls % self.log_interval_steps == 0:
                     approx_episode = max(1, int(self.model.num_timesteps // 8760) + 1)
@@ -878,7 +878,7 @@ class PPOAgent:
                     if self.agent.config.use_huber_loss:
                         huber_status = f" | huber_delta={self.agent.config.huber_delta:.1f}"
 
-                    # ✅ FIX: Usar num_timesteps como pasos (no n_calls que no es comparable)
+                    # [OK] FIX: Usar num_timesteps como pasos (no n_calls que no es comparable)
                     logger.info(
                         "[PPO] paso %d | ep~%d | pasos_global=%d | grid_kWh=%.1f | co2_grid_kg=%.1f | "
                         "solar_kWh=%.1f | co2_indirect_kg=%.1f | co2_direct_kg=%.1f | motos=%d | mototaxis=%d | co2_total_avoided_kg=%.1f%s",
@@ -923,10 +923,10 @@ class PPOAgent:
                         continue
                     self.episode_count += 1
 
-                    # VERIFICAR LÍMITE DE EPISODIOS
+                    # VERIFICAR LIMITE DE EPISODIOS
                     if self.expected_episodes > 0 and self.episode_count >= self.expected_episodes:
                         logger.warning(
-                            "[PPO EPISODE LIMIT] Alcanzado límite de %d episodios - DETENIENDO entrenamiento",
+                            "[PPO EPISODE LIMIT] Alcanzado limite de %d episodios - DETENIENDO entrenamiento",
                             self.expected_episodes
                         )
                         return False
@@ -934,14 +934,14 @@ class PPOAgent:
                     reward = float(episode.get("r", 0.0))
                     length = int(episode.get("l", 0))
 
-                    # Obtener métricas finales del episodio
+                    # Obtener metricas finales del episodio
                     final_metrics = self.metrics_accumulator.get_episode_metrics()
 
                     # Validar que hay datos reales
                     if final_metrics["grid_import_kwh"] <= 0.0:
-                        logger.warning("[PPO] Grid counter was 0 - CityLearn no reportó datos")
+                        logger.warning("[PPO] Grid counter was 0 - CityLearn no reporto datos")
                     if final_metrics["solar_generation_kwh"] <= 0.0:
-                        logger.warning("[PPO] Solar counter was 0 - CityLearn no reportó datos")
+                        logger.warning("[PPO] Solar counter was 0 - CityLearn no reporto datos")
 
                     self.agent.training_history.append({
                         "step": int(self.model.num_timesteps),
@@ -992,7 +992,7 @@ class PPOAgent:
                                 final_metrics["solar_generation_kwh"],
                             )
 
-                    # ✅ REINICIAR métricas para el siguiente episodio
+                    # [OK] REINICIAR metricas para el siguiente episodio
                     self.metrics_accumulator.reset()
                     self.reward_sum = 0.0
                     self.reward_count = 0
@@ -1058,7 +1058,7 @@ class PPOAgent:
                 self.model.save(final_path)
                 logger.info("[PPO FINAL OK] Modelo guardado en %s", final_path)
             except (OSError, IOError, TypeError, ValueError) as exc:
-                logger.error("✗ [PPO FINAL ERROR] %s", exc, exc_info=True)
+                logger.error("[X] [PPO FINAL ERROR] %s", exc, exc_info=True)
 
         # MANDATORY: Verify checkpoints were created
         if checkpoint_dir:
@@ -1098,7 +1098,7 @@ class PPOAgent:
         return self.config.learning_rate
 
     def _get_activation(self):
-        """Obtiene función de activación."""
+        """Obtiene funcion de activacion."""
         import torch.nn as nn
         activations = {
             "relu": nn.ReLU,
@@ -1111,13 +1111,13 @@ class PPOAgent:
         return activations.get(self.config.activation, nn.Tanh)
 
     def predict(self, observations: Any, deterministic: bool = True):
-        """Predice acción dado el estado."""
+        """Predice accion dado el estado."""
         if self.model is None:
             return self._zero_action()
         assert self.model is not None
 
         obs = self._flatten_obs(observations)
-        # Ajustar a la dimensión esperada por el modelo
+        # Ajustar a la dimension esperada por el modelo
         space = getattr(self.model, "observation_space", None)
         if space is not None and getattr(space, "shape", None):
             try:
@@ -1177,7 +1177,7 @@ class PPOAgent:
         return [action]
 
     def _zero_action(self):
-        """Devuelve acción cero."""
+        """Devuelve accion cero."""
         action_space = getattr(self.env, "action_space", None)
         if action_space is None:
             return [[0.0]]
@@ -1204,7 +1204,7 @@ class PPOAgent:
 
 def make_ppo(env: Any, config: Optional[PPOConfig] = None, **kwargs) -> PPOAgent:
     """Factory function para crear agente PPO robusto."""
-    # FIX CRÍTICO: Evaluación explícita para evitar bug con kwargs={}
+    # FIX CRITICO: Evaluacion explicita para evitar bug con kwargs={}
     if config is not None:
         cfg = config
         logger.info("[make_ppo] Using provided config: checkpoint_dir=%s, checkpoint_freq_steps=%s", cfg.checkpoint_dir, cfg.checkpoint_freq_steps)

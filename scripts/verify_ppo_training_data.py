@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Verificación DURANTE ENTRENAMIENTO: PPO usa correctamente
-todos los datos OE2 con años completos
+Verificacion DURANTE ENTRENAMIENTO: PPO usa correctamente
+todos los datos OE2 con anos completos
 """
 
 from pathlib import Path
@@ -10,14 +10,14 @@ import numpy as np
 
 def verify_training_data_usage():
     """
-    Verifica que train_ppo_multiobjetivo.py esté usando:
+    Verifica que train_ppo_multiobjetivo.py este usando:
     1. Todas las columnas de cada dataset
-    2. 8,760 horas (año completo)
+    2. 8,760 horas (ano completo)
     3. Con los valores correctos
     """
     
     print('\n' + '='*90)
-    print('🔍 VERIFICACIÓN: PPO usa TODOS los datos OE2 correctamente')
+    print('🔍 VERIFICACION: PPO usa TODOS los datos OE2 correctamente')
     print('='*90)
     
     # Los datasets esperados
@@ -27,7 +27,7 @@ def verify_training_data_usage():
             'expected_energy': 1_668_084,
             'expected_hours': 8760,
             'type': 'hourly',
-            'description': 'Generación FV (PVGIS Iquitos)'
+            'description': 'Generacion FV (PVGIS Iquitos)'
         },
         'Chargers': {
             'path': 'data/oe2/chargers/chargers_ev_ano_2024_v3.csv',
@@ -43,7 +43,7 @@ def verify_training_data_usage():
             'expected_hours': 8760,
             'expected_soc_avg': 0.6,
             'type': 'hourly_multicol',
-            'description': 'Estado de batería (SOC)'
+            'description': 'Estado de bateria (SOC)'
         },
         'Mall': {
             'path': 'data/oe2/demandamallkwh/demandamallhorakwh.csv',
@@ -55,14 +55,14 @@ def verify_training_data_usage():
         }
     }
     
-    print('\n📋 VERIFICACIÓN DE INTEGRIDAD DE DATOS\n')
+    print('\n📋 VERIFICACION DE INTEGRIDAD DE DATOS\n')
     
     all_ok = True
     
     # ========================================================================
     # 1. SOLAR
     # ========================================================================
-    print('1️⃣  SOLAR - Generación FV')
+    print('1️⃣  SOLAR - Generacion FV')
     print('-'*90)
     
     solar_path = Path(datasets['Solar']['path'])
@@ -71,26 +71,26 @@ def verify_training_data_usage():
         solar_col = 'irradiancia_ghi' if 'irradiancia_ghi' in solar_df.columns else solar_df.columns[1]
         solar_data = solar_df[solar_col].values[:8760]
         
-        print(f"  ✅ Archivo existe: {solar_path}")
-        print(f"  📊 Columna usada: '{solar_col}'")
+        print(f"  [OK] Archivo existe: {solar_path}")
+        print(f"  [GRAPH] Columna usada: '{solar_col}'")
         print(f"  📏 Filas cargadas: {len(solar_data)}")
-        print(f"  ⚡ Energía anual: {np.sum(solar_data):,.0f} kWh")
+        print(f"  ⚡ Energia anual: {np.sum(solar_data):,.0f} kWh")
         print(f"     Esperado:     1,668,084 kWh")
         
         energy_match = abs(np.sum(solar_data) - 1_668_084) < 10000  # 10 MWh tolerancia
         if energy_match:
-            print(f"  ✅ ENERGÍA CORRECTA")
+            print(f"  [OK] ENERGIA CORRECTA")
         else:
-            print(f"  ❌ ENERGÍA INCORRECTA (diferencia: {np.sum(solar_data) - 1_668_084:,.0f} kWh)")
+            print(f"  [X] ENERGIA INCORRECTA (diferencia: {np.sum(solar_data) - 1_668_084:,.0f} kWh)")
             all_ok = False
         
         if len(solar_data) == 8760:
-            print(f"  ✅ AÑO COMPLETO (8,760 horas)")
+            print(f"  [OK] ANO COMPLETO (8,760 horas)")
         else:
-            print(f"  ❌ AÑO INCOMPLETO ({len(solar_data)} horas)")
+            print(f"  [X] ANO INCOMPLETO ({len(solar_data)} horas)")
             all_ok = False
     else:
-        print(f"  ❌ Archivo no encontrado: {solar_path}")
+        print(f"  [X] Archivo no encontrado: {solar_path}")
         all_ok = False
     
     # ========================================================================
@@ -110,33 +110,33 @@ def verify_training_data_usage():
         
         total_energy = float(chargers_data.sum().sum())
         
-        print(f"  ✅ Archivo existe: {chargers_path}")
+        print(f"  [OK] Archivo existe: {chargers_path}")
         print(f"  🔌 Sockets cargados: {chargers_data.shape[1]}")
         print(f"     Esperado:         38")
         print(f"  📏 Filas cargadas: {len(chargers_data)}")
-        print(f"  ⚡ Energía anual: {total_energy:,.0f} kWh")
+        print(f"  ⚡ Energia anual: {total_energy:,.0f} kWh")
         print(f"     Esperado:     43,283,051 kWh")
         
         energy_match = abs(total_energy - 43_283_051) < 100000  # 100 MWh tolerancia
         if energy_match:
-            print(f"  ✅ ENERGÍA CORRECTA")
+            print(f"  [OK] ENERGIA CORRECTA")
         else:
-            print(f"  ⚠️  ENERGÍA DIFERENTE (diferencia: {total_energy - 43_283_051:,.0f} kWh)")
-            print(f"     (NOTA: Puede variar por qué columnas se usen)")
+            print(f"  [!]  ENERGIA DIFERENTE (diferencia: {total_energy - 43_283_051:,.0f} kWh)")
+            print(f"     (NOTA: Puede variar por que columnas se usen)")
         
         if chargers_data.shape[1] == 38:
-            print(f"  ✅ 38 SOCKETS COMPLETOS")
+            print(f"  [OK] 38 SOCKETS COMPLETOS")
         else:
-            print(f"  ❌ SOCKETS INCOMPLETOS ({chargers_data.shape[1]})")
+            print(f"  [X] SOCKETS INCOMPLETOS ({chargers_data.shape[1]})")
             all_ok = False
         
         if len(chargers_data) == 8760:
-            print(f"  ✅ AÑO COMPLETO (8,760 horas)")
+            print(f"  [OK] ANO COMPLETO (8,760 horas)")
         else:
-            print(f"  ❌ AÑO INCOMPLETO ({len(chargers_data)} horas)")
+            print(f"  [X] ANO INCOMPLETO ({len(chargers_data)} horas)")
             all_ok = False
     else:
-        print(f"  ❌ Archivo no encontrado: {chargers_path}")
+        print(f"  [X] Archivo no encontrado: {chargers_path}")
         all_ok = False
     
     # ========================================================================
@@ -152,34 +152,34 @@ def verify_training_data_usage():
         
         if soc_cols:
             bess_soc = bess_df[soc_cols[0]].values[:8760]
-            # Normalizar si está en [0,100]
+            # Normalizar si esta en [0,100]
             if np.max(bess_soc) > 1.0:
                 bess_soc = bess_soc / 100.0
             
-            print(f"  ✅ Archivo existe: {bess_path}")
-            print(f"  📊 Columna SOC usada: '{soc_cols[0]}'")
+            print(f"  [OK] Archivo existe: {bess_path}")
+            print(f"  [GRAPH] Columna SOC usada: '{soc_cols[0]}'")
             print(f"  📏 Filas cargadas: {len(bess_soc)}")
-            print(f"  🔋 Capacidad: 1,700 kWh máx")
-            print(f"  📈 SOC promedio: {np.mean(bess_soc):.1%}")
+            print(f"  🔋 Capacidad: 1,700 kWh max")
+            print(f"  [CHART] SOC promedio: {np.mean(bess_soc):.1%}")
             print(f"     Esperado:    60%")
-            print(f"  📊 SOC rango: {np.min(bess_soc):.1%} - {np.max(bess_soc):.1%}")
+            print(f"  [GRAPH] SOC rango: {np.min(bess_soc):.1%} - {np.max(bess_soc):.1%}")
             
             soc_match = abs(np.mean(bess_soc) - 0.60) < 0.05  # 5% tolerancia
             if soc_match:
-                print(f"  ✅ SOC PROMEDIO CORRECTO")
+                print(f"  [OK] SOC PROMEDIO CORRECTO")
             else:
-                print(f"  ⚠️  SOC promedio distinto (actual: {np.mean(bess_soc):.1%})")
+                print(f"  [!]  SOC promedio distinto (actual: {np.mean(bess_soc):.1%})")
             
             if len(bess_soc) == 8760:
-                print(f"  ✅ AÑO COMPLETO (8,760 horas)")
+                print(f"  [OK] ANO COMPLETO (8,760 horas)")
             else:
-                print(f"  ❌ AÑO INCOMPLETO ({len(bess_soc)} horas)")
+                print(f"  [X] ANO INCOMPLETO ({len(bess_soc)} horas)")
                 all_ok = False
         else:
-            print(f"  ❌ No se encontró columna SOC en {bess_path}")
+            print(f"  [X] No se encontro columna SOC en {bess_path}")
             all_ok = False
     else:
-        print(f"  ❌ Archivo no encontrado: {bess_path}")
+        print(f"  [X] Archivo no encontrado: {bess_path}")
         all_ok = False
     
     # ========================================================================
@@ -194,35 +194,35 @@ def verify_training_data_usage():
         mall_col = mall_df.columns[-1]
         mall_data = mall_df[mall_col].values[:8760]
         
-        print(f"  ✅ Archivo existe: {mall_path}")
-        print(f"  📊 Columna usada: '{mall_col}'")
+        print(f"  [OK] Archivo existe: {mall_path}")
+        print(f"  [GRAPH] Columna usada: '{mall_col}'")
         print(f"  📏 Filas cargadas: {len(mall_data)}")
-        print(f"  ⚡ Energía anual: {np.sum(mall_data):,.0f} kWh")
+        print(f"  ⚡ Energia anual: {np.sum(mall_data):,.0f} kWh")
         print(f"     Esperado:     12,368,653 kWh")
-        print(f"  📈 Demanda promedio: {np.mean(mall_data):.1f} kW")
-        print(f"  📊 Pico de demanda: {np.max(mall_data):.0f} kW")
+        print(f"  [CHART] Demanda promedio: {np.mean(mall_data):.1f} kW")
+        print(f"  [GRAPH] Pico de demanda: {np.max(mall_data):.0f} kW")
         print(f"     Esperado:      ~2,763 kW")
         
         energy_match = abs(np.sum(mall_data) - 12_368_653) < 100000  # 100 MWh
         if energy_match:
-            print(f"  ✅ ENERGÍA CORRECTA")
+            print(f"  [OK] ENERGIA CORRECTA")
         else:
-            print(f"  ❌ ENERGÍA INCORRECTA (diferencia: {np.sum(mall_data) - 12_368_653:,.0f} kWh)")
+            print(f"  [X] ENERGIA INCORRECTA (diferencia: {np.sum(mall_data) - 12_368_653:,.0f} kWh)")
             all_ok = False
         
         peak_match = abs(np.max(mall_data) - 2763) < 100  # 100 kW
         if peak_match:
-            print(f"  ✅ PICO CORRECTO")
+            print(f"  [OK] PICO CORRECTO")
         else:
-            print(f"  ⚠️  Pico distinto (actual: {np.max(mall_data):.0f} kW)")
+            print(f"  [!]  Pico distinto (actual: {np.max(mall_data):.0f} kW)")
         
         if len(mall_data) == 8760:
-            print(f"  ✅ AÑO COMPLETO (8,760 horas)")
+            print(f"  [OK] ANO COMPLETO (8,760 horas)")
         else:
-            print(f"  ❌ AÑO INCOMPLETO ({len(mall_data)} horas)")
+            print(f"  [X] ANO INCOMPLETO ({len(mall_data)} horas)")
             all_ok = False
     else:
-        print(f"  ❌ Archivo no encontrado: {mall_path}")
+        print(f"  [X] Archivo no encontrado: {mall_path}")
         all_ok = False
     
     # ========================================================================
@@ -230,24 +230,24 @@ def verify_training_data_usage():
     # ========================================================================
     
     print('\n' + '='*90)
-    print('📊 RESUMEN DE VERIFICACIÓN')
+    print('[GRAPH] RESUMEN DE VERIFICACION')
     print('='*90)
     
     if all_ok:
-        print('\n✅ ENTRENAMIENTO PPO TIENE ACCESO A TODOS LOS DATOS CORRECTOS\n')
+        print('\n[OK] ENTRENAMIENTO PPO TIENE ACCESO A TODOS LOS DATOS CORRECTOS\n')
         print('📋 Datasets verificados:')
-        print(f'   ✅ Solar:     1,668,084 kWh/año (8,760 horas)')
-        print(f'   ✅ Chargers:  43,283,051 kWh/año (8,760 × 38 sockets)')
-        print(f'   ✅ BESS:      1,700 kWh máx (SOC 60% promedio)')
-        print(f'   ✅ Mall:      12,368,653 kWh/año (2,763 kW pico)')
+        print(f'   [OK] Solar:     1,668,084 kWh/ano (8,760 horas)')
+        print(f'   [OK] Chargers:  43,283,051 kWh/ano (8,760 × 38 sockets)')
+        print(f'   [OK] BESS:      1,700 kWh max (SOC 60% promedio)')
+        print(f'   [OK] Mall:      12,368,653 kWh/ano (2,763 kW pico)')
         print(f'\n🎯 PPO puede entrenar correctamente con TODOS los datos OE2')
         print('='*90 + '\n')
         return 0
     else:
-        print('\n❌ ALGUNOS DATOS FALTA O SON INCORRECTOS\n')
-        print('⚠️  Verificar que:')
+        print('\n[X] ALGUNOS DATOS FALTA O SON INCORRECTOS\n')
+        print('[!]  Verificar que:')
         print('   1. Todos los archivos existan en data/oe2/')
-        print('   2. Tengan 8,760 filas (1 año)')
+        print('   2. Tengan 8,760 filas (1 ano)')
         print('   3. Usen las columnas correctas')
         print('='*90 + '\n')
         return 1

@@ -47,24 +47,24 @@ class SACKPIDashboardGenerator:
         try:
             # Load timeseries
             if not self.timeseries_file.exists():
-                print(f"❌ Timeseries file not found: {self.timeseries_file}")
+                print(f"[X] Timeseries file not found: {self.timeseries_file}")
                 return False
             
             print(f"📥 Loading timeseries: {self.timeseries_file.name}")
             self.df_timeseries = pd.read_csv(self.timeseries_file)
-            print(f"   ✓ Loaded {len(self.df_timeseries)} hourly records")
+            print(f"   [OK] Loaded {len(self.df_timeseries)} hourly records")
             
             # Load result JSON
             if self.result_file.exists():
                 print(f"📥 Loading results: {self.result_file.name}")
                 with open(self.result_file, 'r') as f:
                     self.result_json = json.load(f)
-                print(f"   ✓ Loaded {self.result_json.get('episodes_completed', 0)} episodes")
+                print(f"   [OK] Loaded {self.result_json.get('episodes_completed', 0)} episodes")
             
             return True
             
         except Exception as e:
-            print(f"❌ Error loading data: {e}")
+            print(f"[X] Error loading data: {e}")
             return False
     
     def aggregate_by_day(self) -> Dict[str, List[float]]:
@@ -80,7 +80,7 @@ class SACKPIDashboardGenerator:
         - ramping_kw
         """
         
-        print("\n📊 Aggregating hourly data to daily metrics...")
+        print("\n[GRAPH] Aggregating hourly data to daily metrics...")
         
         daily_metrics = {
             'net_consumption_kwh': [],
@@ -163,11 +163,11 @@ class SACKPIDashboardGenerator:
             
             daily_metrics['days'].append(day_idx + 1)
         
-        print(f"   ✓ Aggregated to {len(daily_metrics['days'])} days")
+        print(f"   [OK] Aggregated to {len(daily_metrics['days'])} days")
         
         # Check if we have enough data
         if len(daily_metrics['days']) == 0:
-            print("   ⚠️  No daily data could be aggregated!")
+            print("   [!]  No daily data could be aggregated!")
             return None
         
         return daily_metrics
@@ -182,10 +182,10 @@ class SACKPIDashboardGenerator:
     def generate_dashboard(self, daily_metrics: Dict) -> bool:
         """Generate 6-panel KPI dashboard."""
         
-        print("\n📈 Generating KPI Dashboard (2×3 layout)...")
+        print("\n[CHART] Generating KPI Dashboard (2×3 layout)...")
         
         if not daily_metrics or len(daily_metrics['days']) == 0:
-            print("❌ No daily metrics available for dashboard")
+            print("[X] No daily metrics available for dashboard")
             return False
         
         try:
@@ -223,7 +223,7 @@ class SACKPIDashboardGenerator:
             if len(consumption) > 1:
                 improvement = (consumption[0] - consumption[-1]) / max(abs(consumption[0]), 0.001) * 100
                 color = 'green' if improvement > 0 else 'red'
-                ax.annotate(f'{"↓" if improvement > 0 else "↑"} {abs(improvement):.1f}%',
+                ax.annotate(f'{"v" if improvement > 0 else "^"} {abs(improvement):.1f}%',
                            xy=(0.98, 0.05), xycoords='axes fraction',
                            fontsize=10, color=color, ha='right', fontweight='bold')
             
@@ -242,7 +242,7 @@ class SACKPIDashboardGenerator:
             if len(cost) > 1:
                 improvement = (cost[0] - cost[-1]) / max(abs(cost[0]), 0.001) * 100
                 color = 'green' if improvement > 0 else 'red'
-                ax.annotate(f'{"↓" if improvement > 0 else "↑"} {abs(improvement):.1f}%',
+                ax.annotate(f'{"v" if improvement > 0 else "^"} {abs(improvement):.1f}%',
                            xy=(0.98, 0.05), xycoords='axes fraction',
                            fontsize=10, color=color, ha='right', fontweight='bold')
             
@@ -261,7 +261,7 @@ class SACKPIDashboardGenerator:
             if len(emissions) > 1:
                 improvement = (emissions[0] - emissions[-1]) / max(emissions[0], 0.001) * 100
                 color = 'green' if improvement > 0 else 'red'
-                ax.annotate(f'{"↓" if improvement > 0 else "↑"} {abs(improvement):.1f}%',
+                ax.annotate(f'{"v" if improvement > 0 else "^"} {abs(improvement):.1f}%',
                            xy=(0.98, 0.05), xycoords='axes fraction',
                            fontsize=10, color=color, ha='right', fontweight='bold')
             
@@ -282,7 +282,7 @@ class SACKPIDashboardGenerator:
             if len(ramping) > 1:
                 improvement = (ramping[0] - ramping[-1]) / max(ramping[0], 0.001) * 100
                 color = 'green' if improvement > 0 else 'red'
-                ax.annotate(f'{"↓" if improvement > 0 else "↑"} {abs(improvement):.1f}%',
+                ax.annotate(f'{"v" if improvement > 0 else "^"} {abs(improvement):.1f}%',
                            xy=(0.98, 0.05), xycoords='axes fraction',
                            fontsize=10, color=color, ha='right', fontweight='bold')
             
@@ -303,7 +303,7 @@ class SACKPIDashboardGenerator:
             if len(peak) > 1:
                 improvement = (peak[0] - peak[-1]) / max(peak[0], 0.001) * 100
                 color = 'green' if improvement > 0 else 'red'
-                ax.annotate(f'{"↓" if improvement > 0 else "↑"} {abs(improvement):.1f}%',
+                ax.annotate(f'{"v" if improvement > 0 else "^"} {abs(improvement):.1f}%',
                            xy=(0.98, 0.05), xycoords='axes fraction',
                            fontsize=10, color=color, ha='right', fontweight='bold')
             
@@ -332,7 +332,7 @@ class SACKPIDashboardGenerator:
             if len(one_minus_lf) > 1:
                 improvement = (one_minus_lf[0] - one_minus_lf[-1]) / max(one_minus_lf[0], 0.001) * 100
                 color = 'green' if improvement > 0 else 'red'
-                ax.annotate(f'{"↓" if improvement > 0 else "↑"} {abs(improvement):.1f}%',
+                ax.annotate(f'{"v" if improvement > 0 else "^"} {abs(improvement):.1f}%',
                            xy=(0.98, 0.05), xycoords='axes fraction',
                            fontsize=10, color=color, ha='right', fontweight='bold')
             
@@ -343,21 +343,21 @@ class SACKPIDashboardGenerator:
             if len(consumption) > 1:
                 imp = (consumption[0] - consumption[-1]) / max(abs(consumption[0]), 0.001) * 100
                 if imp > 0:
-                    improvements.append(f'Consumption: {imp:.1f}%↓')
+                    improvements.append(f'Consumption: {imp:.1f}%v')
             
             if len(emissions) > 1:
                 imp = (emissions[0] - emissions[-1]) / max(emissions[0], 0.001) * 100
                 if imp > 0:
-                    improvements.append(f'CO₂: {imp:.1f}%↓')
+                    improvements.append(f'CO₂: {imp:.1f}%v')
             
             if len(peak) > 1:
                 imp = (peak[0] - peak[-1]) / max(peak[0], 0.001) * 100
                 if imp > 0:
-                    improvements.append(f'Peak: {imp:.1f}%↓')
+                    improvements.append(f'Peak: {imp:.1f}%v')
             
             title = 'CityLearn v2 - SAC Agent KPI Dashboard (Real Metrics)'
             if improvements:
-                title += f'\n✅ Daily Improvements: {" | ".join(improvements)}'
+                title += f'\n[OK] Daily Improvements: {" | ".join(improvements)}'
             
             fig.suptitle(title, fontsize=14, fontweight='bold', y=0.995)
             plt.tight_layout(rect=[0, 0, 1, 0.97])
@@ -365,23 +365,23 @@ class SACKPIDashboardGenerator:
             # Save
             output_path = self.sac_dir / 'kpi_dashboard.png'
             plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
-            print(f"   ✅ Saved: {output_path.name}")
+            print(f"   [OK] Saved: {output_path.name}")
             
             plt.close(fig)
             
             # Print summary statistics
-            print("\n📊 KPI Summary Statistics:")
-            print(f"   Consumption:   {consumption[0]:.1f} → {consumption[-1]:.1f} kWh/day")
-            print(f"   Cost:          {cost[0]:.1f} → {cost[-1]:.1f} USD/day")
-            print(f"   CO₂ Emissions: {emissions[0]:.1f} → {emissions[-1]:.1f} kg/day")
-            print(f"   Peak Load:     {peak[0]:.1f} → {peak[-1]:.1f} kW")
-            print(f"   Ramping:       {ramping[0]:.2f} → {ramping[-1]:.2f} kW/step")
-            print(f"   Load Factor:   {one_minus_lf[0]:.3f} → {one_minus_lf[-1]:.3f}")
+            print("\n[GRAPH] KPI Summary Statistics:")
+            print(f"   Consumption:   {consumption[0]:.1f} -> {consumption[-1]:.1f} kWh/day")
+            print(f"   Cost:          {cost[0]:.1f} -> {cost[-1]:.1f} USD/day")
+            print(f"   CO₂ Emissions: {emissions[0]:.1f} -> {emissions[-1]:.1f} kg/day")
+            print(f"   Peak Load:     {peak[0]:.1f} -> {peak[-1]:.1f} kW")
+            print(f"   Ramping:       {ramping[0]:.2f} -> {ramping[-1]:.2f} kW/step")
+            print(f"   Load Factor:   {one_minus_lf[0]:.3f} -> {one_minus_lf[-1]:.3f}")
             
             return True
             
         except Exception as e:
-            print(f"❌ Error generating dashboard: {e}")
+            print(f"[X] Error generating dashboard: {e}")
             import traceback
             traceback.print_exc()
             return False
@@ -406,7 +406,7 @@ class SACKPIDashboardGenerator:
             return False
         
         print("\n" + "=" * 70)
-        print("✅ KPI DASHBOARD GENERATION COMPLETE")
+        print("[OK] KPI DASHBOARD GENERATION COMPLETE")
         print("=" * 70)
         return True
 

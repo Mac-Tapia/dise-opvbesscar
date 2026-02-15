@@ -1,0 +1,69 @@
+{
+  "timestamp": "2026-02-14T11:38:52.196285",
+  "status": "✅ CONSTRUCCIÓN COMPLETADA",
+  "datasets_reconstructed": {
+    "solar": {
+      "hours": 8760,
+      "mean_kw": 190.42,
+      "min_kw": 0.0,
+      "max_kw": 999.8,
+      "path": "D:\\diseñopvbesscar\\data\\oe2\\Generacionsolar\\pv_generation_citylearn2024.csv",
+      "status": "✅ Válido (8,760 horas)"
+    },
+    "bess": {
+      "capacity_kwh": 1700.0,
+      "max_power_kw": 400.0,
+      "hours": 8760,
+      "path": "D:\\diseñopvbesscar\\data\\oe2\\bess\\bess_ano_2024.csv",
+      "status": "✅ Válido (1,700 kWh confirmed)"
+    },
+    "chargers": {
+      "n_chargers": 19,
+      "total_sockets": 38,
+      "hours": 8760,
+      "path": "D:\\diseñopvbesscar\\data\\oe2\\chargers\\chargers_ev_ano_2024_v3.csv",
+      "status": "✅ Válido (38 sockets = 19 × 2)"
+    },
+    "demand": {
+      "hours": 8760,
+      "mall_mean_kw": 100.0,
+      "path": "D:\\diseñopvbesscar\\data\\oe2\\demandamallkwh\\demandamallhorakwh.csv",
+      "status": "✅ Cargado"
+    }
+  },
+  "scenarios": {
+    "count": 5,
+    "tables": [
+      "selection_pe_fc",
+      "detallados",
+      "estadisticas",
+      "recomendado",
+      "tabla13"
+    ],
+    "status": "✅ Cargadas"
+  },
+  "builder": {
+    "canonical_location": "src/dataset_builder_citylearn/",
+    "modules": [
+      "data_loader.py (unificado)",
+      "rewards.py (multiobjetivo)",
+      "catalog_datasets.py",
+      "main_build_citylearn.py"
+    ],
+    "status": "✅ Consolidado v6.0"
+  },
+  "validations": {
+    "solar_hourly": "✅ OK (8,760 rows)",
+    "bess_capacity": "✅ OK (1,700 kWh)",
+    "chargers_sockets": "✅ OK (38 total)",
+    "backward_compatibility": "✅ 100%",
+    "zero_legacy_imports": "✅ OK"
+  },
+  "summary": {
+    "total_hours_analyzed": 8760,
+    "years_of_data": 1,
+    "datasets_validated": 4,
+    "scenarios_loaded": 5,
+    "status_overall": "🟢 LISTO PARA PROYECCIÓN"
+  }
+}

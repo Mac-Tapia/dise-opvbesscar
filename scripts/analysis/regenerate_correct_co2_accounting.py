@@ -33,16 +33,16 @@ CO2_PER_KWH = 0.4521  # kg CO₂/kWh (Iquitos diesel grid)
 COST_PER_KWH = 0.15   # €/kWh
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 🎯 CORRECT CO₂ ACCOUNTING SYSTEM
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 
 Definition:
   CO₂ DIRECT:   EV charging only (motos/mototaxis electric replacement)
   CO₂ INDIRECT: Solar generation + BESS discharge (reduces diesel demand)
   Grid CO₂:     Mall + public network (external diesel generation)
 
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 """)
 
 # ============================================================================
@@ -59,14 +59,14 @@ for agent_name, agent_config in AGENTS.items():
     
     try:
         df = pd.read_csv(ts_file)
-        print(f"   ✓ {agent_name}: {len(df)} hourly records")
+        print(f"   [OK] {agent_name}: {len(df)} hourly records")
         
         # Verify columns
         required_cols = ['solar_kw', 'ev_charging_kw', 'grid_import_kw', 'bess_power_kw', 'mall_demand_kw']
         missing_cols = [col for col in required_cols if col not in df.columns]
         
         if missing_cols:
-            print(f"      ⚠️  Missing columns: {missing_cols}")
+            print(f"      [!]  Missing columns: {missing_cols}")
             print(f"      Available: {list(df.columns)}")
             continue
         
@@ -143,7 +143,7 @@ for agent_name, agent_config in AGENTS.items():
         print()
         
     except Exception as e:
-        print(f"   ❌ {agent_name}: {e}\n")
+        print(f"   [X] {agent_name}: {e}\n")
         continue
 
 # ============================================================================
@@ -196,7 +196,7 @@ if 'SAC' in agents_data:
     ax.plot(daily_df['day'], trend, color='darkgreen', linewidth=2, linestyle='--', alpha=0.8)
     co2d_red = ((initial_days['co2_direct'].mean() - final_days['co2_direct'].mean()) / (initial_days['co2_direct'].mean() + 0.001) * 100) if initial_days['co2_direct'].mean() > 0 else 0
     ax.set_ylabel('kg CO₂/day', fontsize=11, fontweight='bold')
-    ax.set_title(f'✅ CO₂ DIRECT (EV)\nReduction: {co2d_red:+.1f}%', fontsize=12, fontweight='bold',
+    ax.set_title(f'[OK] CO₂ DIRECT (EV)\nReduction: {co2d_red:+.1f}%', fontsize=12, fontweight='bold',
                  color='darkgreen', bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.7))
     ax.grid(True, alpha=0.3)
     
@@ -209,7 +209,7 @@ if 'SAC' in agents_data:
     baseline_indirect = initial_days['co2_indirect'].mean()
     co2i_red = ((initial_days['co2_indirect'].mean() - final_days['co2_indirect'].mean()) / (baseline_indirect + 0.001) * 100)
     ax.set_ylabel('kg CO₂/day', fontsize=11, fontweight='bold')
-    ax.set_title(f'✅ CO₂ INDIRECT (Solar+BESS)\nReduction: {co2i_red:+.1f}%', fontsize=12, fontweight='bold',
+    ax.set_title(f'[OK] CO₂ INDIRECT (Solar+BESS)\nReduction: {co2i_red:+.1f}%', fontsize=12, fontweight='bold',
                  color='darkblue', bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.7))
     ax.grid(True, alpha=0.3)
     ax.set_xlabel('Training Day', fontsize=11, fontweight='bold')
@@ -243,14 +243,14 @@ if 'SAC' in agents_data:
                  fontsize=14, fontweight='bold', y=0.995)
     
     plt.savefig(OUTPUT_DIR / 'sac_5metrics_evolution_corrected.png', dpi=300, bbox_inches='tight', facecolor='white')
-    print(f"   ✅ Saved: sac_5metrics_evolution_corrected.png\n")
+    print(f"   [OK] Saved: sac_5metrics_evolution_corrected.png\n")
     plt.close()
 
 # ============================================================================
 # CREATE 3-AGENT COMPARATIVE DASHBOARD (5 METRICS)
 # ============================================================================
 
-print("📊 Creating 3-agent comparative dashboard...")
+print("[GRAPH] Creating 3-agent comparative dashboard...")
 
 fig = plt.figure(figsize=(18, 12))
 gs = fig.add_gridspec(2, 3, hspace=0.35, wspace=0.28)
@@ -311,7 +311,7 @@ vals = [agent_metrics[a]['co2_direct_red'] for a in agents_list]
 bars = ax.bar(agents_list, vals, color=colors, alpha=0.85, edgecolor='darkgreen', linewidth=3)
 ax.axhline(0, color='red', linestyle='--', linewidth=1.5, alpha=0.6)
 ax.set_ylabel('Reduction %', fontweight='bold', fontsize=11)
-ax.set_title('✅ CO₂ DIRECT (EV)\nPRIMARY OBJECTIVE', fontweight='bold', fontsize=12,
+ax.set_title('[OK] CO₂ DIRECT (EV)\nPRIMARY OBJECTIVE', fontweight='bold', fontsize=12,
              color='darkgreen', bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.7))
 ax.grid(axis='y', alpha=0.3)
 for bar, v in zip(bars, vals):
@@ -323,7 +323,7 @@ vals = [agent_metrics[a]['co2_indirect_red'] for a in agents_list]
 bars = ax.bar(agents_list, vals, color=colors, alpha=0.85, edgecolor='darkblue', linewidth=3)
 ax.axhline(0, color='red', linestyle='--', linewidth=1.5, alpha=0.6)
 ax.set_ylabel('Reduction %', fontweight='bold', fontsize=11)
-ax.set_title('✅ CO₂ INDIRECT (Solar+BESS)\nGRID STABILITY', fontweight='bold', fontsize=12,
+ax.set_title('[OK] CO₂ INDIRECT (Solar+BESS)\nGRID STABILITY', fontweight='bold', fontsize=12,
              color='darkblue', bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.7))
 ax.grid(axis='y', alpha=0.3)
 for bar, v in zip(bars, vals):
@@ -356,7 +356,7 @@ fig.suptitle('🎯 3-AGENT COMPARATIVE ANALYSIS: 5 METRICS (CORRECT CO₂ ACCOUN
              fontsize=14, fontweight='bold', y=0.995)
 
 plt.savefig(COMPARISON_DIR / 'comparison_3agents_5metrics_corrected.png', dpi=300, bbox_inches='tight', facecolor='white')
-print(f"   ✅ Saved: comparison_3agents_5metrics_corrected.png\n")
+print(f"   [OK] Saved: comparison_3agents_5metrics_corrected.png\n")
 plt.close()
 
 # ============================================================================
@@ -364,18 +364,18 @@ plt.close()
 # ============================================================================
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
-✅ CORRECTED CO₂ ACCOUNTING ANALYSIS COMPLETE
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
+[OK] CORRECTED CO₂ ACCOUNTING ANALYSIS COMPLETE
+================================================================================
 
 Definition Validation:
-  ✓ CO₂ DIRECT:   EV charging only (ev_charging_kw * CO2_factor)
-  ✓ CO₂ INDIRECT: Solar + BESS discharge (solar_kw + max(0,-bess_power_kw))
-  ✓ GRID CO₂:     Mall + public network (grid_import_kw - ev_charging_kw)
+  [OK] CO₂ DIRECT:   EV charging only (ev_charging_kw * CO2_factor)
+  [OK] CO₂ INDIRECT: Solar + BESS discharge (solar_kw + max(0,-bess_power_kw))
+  [OK] GRID CO₂:     Mall + public network (grid_import_kw - ev_charging_kw)
 
 Generated Files:
-  📊 sac_5metrics_evolution_corrected.png
-  📊 comparison_3agents_5metrics_corrected.png
+  [GRAPH] sac_5metrics_evolution_corrected.png
+  [GRAPH] comparison_3agents_5metrics_corrected.png
 
 Agent Comparison (Direct CO₂ Reduction):
 """)
@@ -385,5 +385,5 @@ for agent in agents_list:
     print(f"  {agent:4s}: {co2_direct_red:+.1f}% CO₂ Direct reduction")
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 """)

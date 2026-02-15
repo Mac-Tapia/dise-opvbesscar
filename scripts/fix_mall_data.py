@@ -32,4 +32,4 @@ print(f'Total kWh/year: {df["demand_kwh"].sum():.0f}')
 
 # Save
 df.to_csv('data/interim/oe2/demandamallkwh/demandamallhorakwh.csv', index=False)
-print('✅ File saved')
+print('[OK] File saved')

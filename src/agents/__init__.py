@@ -19,7 +19,7 @@ from .metrics_extractor import (
     CO2_EV_FACTOR_KG_PER_KWH,
 )
 # Rewards from canonical builder (unified)
-from src.dataset_builder_citylearn.rewards import (
+from dataset_builder_citylearn.rewards import (
     MultiObjectiveReward,
     MultiObjectiveWeights,
     IquitosContext,
@@ -31,7 +31,7 @@ from src.dataset_builder_citylearn.rewards import (
 def detect_device() -> str:
     """Unified device detection across all agents.
 
-    Fallback priority: SAC → PPO → A2C → CPU
+    Fallback priority: SAC -> PPO -> A2C -> CPU
     """
     try:
         return _detect_sac()

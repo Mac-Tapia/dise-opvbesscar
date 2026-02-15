@@ -29,13 +29,13 @@ print("\n📥 Loading A2C training results...")
 try:
     with open(RESULT_FILE, 'r') as f:
         result = json.load(f)
-    print(f"   ✓ Loaded A2C results")
+    print(f"   [OK] Loaded A2C results")
 except Exception as e:
-    print(f"❌ Error loading results: {e}")
+    print(f"[X] Error loading results: {e}")
     exit(1)
 
 # Extract data from different possible formats
-print("\n📊 Extracting training metrics...")
+print("\n[GRAPH] Extracting training metrics...")
 
 # Check for training_evolution structure (A2C format)
 if 'training_evolution' in result:
@@ -54,17 +54,17 @@ if 'training_evolution' in result:
         episode_co2_avoided_direct = np.array(training_data.get('episode_co2_avoided_direct', []))
         episode_co2_avoided_indirect = np.array(training_data.get('episode_co2_avoided_indirect', []))
         
-        print(f"   ✓ Extracted {episodes} episodes from training_evolution")
+        print(f"   [OK] Extracted {episodes} episodes from training_evolution")
         
     else:
-        print("   ⚠️  No episodes found in training_evolution")
+        print("   [!]  No episodes found in training_evolution")
         episodes = 0
 else:
-    print("   ⚠️  No training_evolution structure found")
+    print("   [!]  No training_evolution structure found")
     episodes = 0
 
 if episodes == 0:
-    print("❌ No training data available!")
+    print("[X] No training data available!")
     exit(1)
 
 # Smoothing function
@@ -75,7 +75,7 @@ def smooth(data, window=3):
     return s.rolling(window=window, center=True, min_periods=1).mean().values
 
 # Generate dashboard
-print("\n📈 Generating 3x3 Training Dashboard for A2C...")
+print("\n[CHART] Generating 3x3 Training Dashboard for A2C...")
 
 fig, axes = plt.subplots(3, 3, figsize=(18, 12))
 fig.patch.set_facecolor('white')
@@ -105,7 +105,7 @@ if len(episode_rewards) > 0:
     if len(episode_rewards) > 1:
         improve = (episode_rewards[-1] - episode_rewards[0]) / (abs(episode_rewards[0]) + 1e-6) * 100
         color = 'green' if improve > 0 else 'red'
-        ax.annotate(f'{"↑" if improve > 0 else "↓"} {abs(improve):.1f}%',
+        ax.annotate(f'{"^" if improve > 0 else "v"} {abs(improve):.1f}%',
                    xy=(0.98, 0.05), xycoords='axes fraction',
                    fontsize=10, color=color, ha='right', fontweight='bold')
 else:
@@ -126,7 +126,7 @@ if len(episode_policy_loss) > 0:
     if len(episode_policy_loss) > 1:
         improve = (episode_policy_loss[0] - episode_policy_loss[-1]) / (episode_policy_loss[0] + 1e-6) * 100
         color = 'green' if improve > 0 else 'red'
-        ax.annotate(f'{"↓" if improve > 0 else "↑"} {abs(improve):.1f}%',
+        ax.annotate(f'{"v" if improve > 0 else "^"} {abs(improve):.1f}%',
                    xy=(0.98, 0.05), xycoords='axes fraction',
                    fontsize=10, color=color, ha='right', fontweight='bold')
 else:
@@ -147,7 +147,7 @@ if len(episode_value_loss) > 0:
     if len(episode_value_loss) > 1:
         improve = (episode_value_loss[0] - episode_value_loss[-1]) / (episode_value_loss[0] + 1e-6) * 100
         color = 'green' if improve > 0 else 'red'
-        ax.annotate(f'{"↓" if improve > 0 else "↑"} {abs(improve):.1f}%',
+        ax.annotate(f'{"v" if improve > 0 else "^"} {abs(improve):.1f}%',
                    xy=(0.98, 0.05), xycoords='axes fraction',
                    fontsize=10, color=color, ha='right', fontweight='bold')
 else:
@@ -169,7 +169,7 @@ if len(episode_entropy) > 0:
     if len(episode_entropy) > 1:
         improve = (episode_entropy[0] - episode_entropy[-1]) / (episode_entropy[0] + 1e-6) * 100
         color = 'green' if improve > 0 else 'red'
-        ax.annotate(f'{"↓" if improve > 0 else "↑"} {abs(improve):.1f}%',
+        ax.annotate(f'{"v" if improve > 0 else "^"} {abs(improve):.1f}%',
                    xy=(0.98, 0.05), xycoords='axes fraction',
                    fontsize=10, color=color, ha='right', fontweight='bold')
 else:
@@ -190,7 +190,7 @@ if len(episode_co2_grid) > 0:
     if len(episode_co2_grid) > 1:
         improve = (episode_co2_grid[0] - episode_co2_grid[-1]) / (episode_co2_grid[0] + 1e-6) * 100
         color = 'green' if improve > 0 else 'red'
-        ax.annotate(f'{"↓" if improve > 0 else "↑"} {abs(improve):.1f}%',
+        ax.annotate(f'{"v" if improve > 0 else "^"} {abs(improve):.1f}%',
                    xy=(0.98, 0.05), xycoords='axes fraction',
                    fontsize=10, color=color, ha='right', fontweight='bold')
 else:
@@ -218,7 +218,7 @@ if len(episode_co2_avoided_direct) > 0:
     if len(episode_co2_avoided_direct) > 1:
         improve = (episode_co2_avoided_direct[-1] - episode_co2_avoided_direct[0]) / (episode_co2_avoided_direct[0] + 1e-6) * 100
         color = 'green' if improve > 0 else 'red'
-        ax.annotate(f'{"↑" if improve > 0 else "↓"} {abs(improve):.1f}%',
+        ax.annotate(f'{"^" if improve > 0 else "v"} {abs(improve):.1f}%',
                    xy=(0.98, 0.05), xycoords='axes fraction',
                    fontsize=10, color=color, ha='right', fontweight='bold')
 else:
@@ -239,7 +239,7 @@ if len(episode_co2_avoided_indirect) > 0:
     if len(episode_co2_avoided_indirect) > 1:
         improve = (episode_co2_avoided_indirect[-1] - episode_co2_avoided_indirect[0]) / (episode_co2_avoided_indirect[0] + 1e-6) * 100
         color = 'green' if improve > 0 else 'red'
-        ax.annotate(f'{"↑" if improve > 0 else "↓"} {abs(improve):.1f}%',
+        ax.annotate(f'{"^" if improve > 0 else "v"} {abs(improve):.1f}%',
                    xy=(0.98, 0.05), xycoords='axes fraction',
                    fontsize=10, color=color, ha='right', fontweight='bold')
 else:
@@ -277,17 +277,17 @@ plt.tight_layout(rect=[0, 0, 1, 0.97])
 
 # Save
 plt.savefig(OUTPUT_FILE, dpi=300, bbox_inches='tight', facecolor='white')
-print(f"   ✅ Saved: {OUTPUT_FILE}")
+print(f"   [OK] Saved: {OUTPUT_FILE}")
 
 plt.close(fig)
 
 # Print summary
-print("\n📊 A2C Training Summary:")
+print("\n[GRAPH] A2C Training Summary:")
 print(f"   Episodes:        {episodes}")
 print(f"   Total Timesteps: {result.get('total_timesteps', 'N/A')}")
 
 if len(episode_rewards) > 0:
-    print(f"   Reward Range:    {episode_rewards.min():.2f} → {episode_rewards.max():.2f}")
+    print(f"   Reward Range:    {episode_rewards.min():.2f} -> {episode_rewards.max():.2f}")
 
 if len(episode_policy_loss) > 0:
     print(f"   Policy Loss:     {episode_policy_loss[-1]:.4f} (final)")
@@ -300,5 +300,5 @@ if len(episode_co2_grid) > 0:
     print(f"   CO2 Grid Reduction: {improvement:.1f}%")
 
 print("\n" + "=" * 70)
-print("✅ A2C TRAINING DASHBOARD GENERATION COMPLETE")
+print("[OK] A2C TRAINING DASHBOARD GENERATION COMPLETE")
 print("=" * 70)

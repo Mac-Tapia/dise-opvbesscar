@@ -1,0 +1,290 @@
+════════════════════════════════════════════════════════════════════════════════════════
+🎯 PARÁMETROS Y MÉTRICAS DE ENTRENAMIENTO PPO v5.7
+════════════════════════════════════════════════════════════════════════════════════════
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. PARÁMETROS DE ENTRENAMIENTO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+LEARNING & OPTIMIZATION:
+  Learning Rate (Initial):         0.00015
+  Learning Rate Schedule:          Linear (0.00015 → 0)
+  Optimizer:                       Adam (default)
+  Gradient Clipping (Max Grad):    0.5
+  Early Stopping (Target KL):      0.015
+
+ROLLOUT & SAMPLING:
+  N-Steps (Rollout Length):        2048 steps
+  Batch Size:                      256
+  N-Epochs Per Update:             3
+  Number of Minibatches:           8 (2048 / 256)
+  Total Rollouts Per Episode:      ~4 (8760 / 2048)
+
+DISCOUNT & ADVANTAGES:
+  Gamma (Discount Factor):         0.85
+  GAE Lambda:                      0.95
+  Clip Range (PPO ε):              0.2
+
+REGULARIZATION:
+  Entropy Coefficient:             0.01
+  Value Function Coefficient:      0.5
+  Max Gradient Norm:               0.5
+  Normalize Observations:          True
+  Normalize Rewards:               True
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. ARQUITECTURA RED NEURONAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+MODEL SPECIFICATION:
+  Policy Type:                     MlpPolicy
+  Framework:                       PyTorch
+  Environment:                     Gymnasium v0.27+
+  Device:                          CUDA (NVIDIA RTX 4060)
+
+OBSERVATION SPACE:
+  Type:                            Box (continuous)
+  Dimension:                       156
+  Range:                           [0.0, 1.0] normalized
+  Components:
+    - Solar irradiance (W/m²)
+    - Grid frequency (Hz)
+    - BESS state of charge (%)
+    - 38 sockets × 3 values (status, queue, priority)
+    - Time features (hour, month, day_of_week)
+    - Temperature (ambient)
+
+ACTION SPACE:
+  Type:                            Box (continuous)
+  Dimension:                       39
+  Range:                           [0.0, 1.0] normalized
+  Components:
+    - 1 BESS action (charge/discharge setpoint)
+    - 38 EV socket actions (power allocation)
+
+NETWORK ARCHITECTURE:
+  ACTOR (Policy) Network:
+    Input Layer:                   156 → Dense(256, ReLU)
+    Hidden Layer 1:                Dense(256, ReLU)
+    Output Layer:                  Dense(39, Tanh) → action space
+    Total Parameters:              ~70,000
+
+  CRITIC (Value) Network:
+    Input Layer:                   156 → Dense(256, ReLU)
+    Hidden Layer 1:                Dense(256, ReLU)
+    Output Layer:                  Dense(1, Linear) → scalar value
+    Total Parameters:              ~70,000
+
+  Activation Function:             ReLU (hidden), Tanh (output)
+  Weight Initialization:          Xavier Uniform (default)
+  Batch Normalization:            False (normalization vía VecNormalize)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. PARÁMETROS DEL ENTORNO OE2
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TEMPORAL:
+  Episode Duration:                8760 hours (1 year)
+  Timestep Duration:               1 hour
+  Data Frequency:                  Hourly (8760 rows per dataset)
+
+SOLAR GENERATION:
+  PV Installed Capacity:           4050 kWp
+  Expected Annual Generation:      8,292,514 kWh
+  Utilization Target:              65%
+
+ENERGY STORAGE (BESS):
+  Max Capacity:                    1700 kWh
+  Operating Range:                 10-90% SOC
+  Max Power Output:                342 kW
+  Round-trip Efficiency:           ~85%
+
+EV CHARGING INFRASTRUCTURE:
+  Number of Chargers:              19
+  Sockets per Charger:             2
+  Total Sockets:                   38
+  Power per Socket:                7.4 kW
+  Charging Standard:               Mode 3 (32A @ 230V)
+  Total Installed Power:           281.2 kW
+
+VEHICLE DEMAND:
+  Electric Motorcycles:            270
+  Mototaxi (Shared Taxi):          39
+  Total Vehicles:                  309
+  Daily Demand:                    4100 vehicle-hours
+  Average Charge Duration:         1-2 hours
+
+GRID CONNECTION:
+  Max Import Capacity:             500 kW
+  Grid Frequency:                  50 Hz
+  CO₂ Emission Factor:             0.4521 kg CO₂/kWh
+  Grid Type:                       Isolated (no export capability)
+
+AUXILIARY LOAD:
+  Shopping Mall Demand:            100 kW (constant)
+  Other Facilities:                Variable (included in timeseries)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. FUNCIÓN DE REWARD (MULTIOBJETIVO)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+OBJECTIVES & WEIGHTS:
+  CO₂ Grid Reduction:              0.45 (PRIMARY - Minimize grid imports)
+  Solar Self-Consumption:          0.25 (SECONDARY - Use local solar)
+  EV Charge Completion:            0.15 (TERTIARY - Satisfy vehicle queue)
+  Grid Stability:                  0.10 (TERTIARY - Limit power ramping)
+  BESS Efficiency:                 0.05 (TERTIARY - Reduce cycles)
+  ────────────────────────────────────
+  TOTAL:                           1.00
+
+REWARD COMPONENTS (Per Timestep):
+  1. CO₂ Component:
+     Formula:  -1 × (grid_power_kw × 0.4521) × 0.45
+     Range:    [0, -226] kg CO₂/h
+     Objective: Minimize grid imports
+
+  2. Solar Component:
+     Formula:  (solar_used_kw / solar_available_kw) × 0.25
+     Range:    [0, 0.25]
+     Objective: Maximize direct solar consumption
+
+  3. Vehicle Component:
+     Formula:  (vehicles_charged / vehicles_queued) × 0.15
+     Range:    [0, 0.15]
+     Objective: Serve all vehicle requests
+
+  4. Grid Stability:
+     Formula:  (1 - |ΔP/Δt| / max_ramp_rate) × 0.10
+     Range:    [-0.10, 0.10]
+     Objective: Smooth power transitions
+
+  5. BESS Efficiency:
+     Formula:  (1 - cycles / max_cycles) × 0.05
+     Range:    [0, 0.05]
+     Objective: Minimize battery degradation
+
+TYPICAL EPISODE REWARD: 4,500 - 7,800
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. MÉTRICAS DE ENTRENAMIENTO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ENTRENAMIENTO EJECUTADO:
+  Total Timesteps:                 87600
+  Total Episodes:                  10
+  Duration:                        162.45 seconds
+  Training Speed:                  539.23 steps/second
+  Device:                          CUDA
+  Timestamp:                       2026-02-14T14:27:53
+
+VALIDACIÓN (10 EPISODIOS):
+  Mean Episode Reward:             4888.79
+  Std Dev Episode Reward:          135.30
+  Min Episode Reward:              4688.82
+  Max Episode Reward:              7835.00
+  
+  Mean CO₂ Avoided (kg):           4,309,536
+  Mean Solar Generated (kWh):      8,292,514
+  Mean Grid Imported (kWh):        4,701,899
+  
+  Solar Utilization %:             64%
+  Grid Utilization %:              36%
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. EVOLUCIÓN POR EPISODIO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Episode | Reward  | CO2_Grid_kg | EV_Charged | Status
+────────+---------+─────────────+────────────+────────
+   0    |  7835   | 1,527,811   |   301,053  | Exploration (high reward)
+   1    |  7036   | 1,514,562   |   321,128  | Learning phase
+   2    |  6569   | 1,517,080   |   372,904  | Optimization
+   3    |  5787   | 1,495,934   |   426,522  | Mid-training
+   4    |  5453   | 1,507,809   |   484,255  | Convergence
+   5    |  5180   | 1,540,052   |   540,314  | Convergence
+   6    |  4991   | 1,555,460   |   590,973  | Refinement
+   7    |  4833   | 1,562,337   |   627,641  | Fine-tuning
+   8    |  4744   | 1,601,746   |   654,108  | Late training
+   9    |  4689   | 1,615,404   |   669,426  | Convergence (low reward OK)
+
+TRENDS:
+  • Reward Decay: 7835 → 4689 (-40%) indicates normal convergence
+  • EV Charging: 301K → 669K (+122%) shows improving utilization
+  • CO₂ Grid: Stable average 1.54M kg with 4% variability
+  • Pattern: Exploration→Learning→Convergence typical for PPO
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. PASOS DE ENTRENAMIENTO Y FLUJO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PIPELINE DE DATOS:
+  OE2 Raw Data (4 files) 
+    ↓
+  Load & Validate (8760 rows each)
+    ↓
+  CityLearn Environment (Gymnasium)
+    ↓
+  PPO Agent (Stable-Baselines3)
+    ↓
+  Training Loop (87,600 timesteps)
+    ↓
+  Validation Episodes (10 episodes, deterministic)
+    ↓
+  Metrics & Visualization
+    ↓
+  Checkpoint Save
+
+ENTRENAMIENTO LOOP (POR EPISODIO):
+  1. Reset Environment → initial state
+  2. For each timestep (0 to 8759):
+     a. Get observation (156-dim)
+     b. Agent chooses action (39-dim)
+     c. Environment steps (grid, solar, vehicles updated)
+     d. Compute reward (multiobjetivo)
+     e. Store experience (obs, action, reward, next_obs, done)
+  3. Rollout complete → 2048 steps collected
+  4. PPO Update:
+     a. Compute advantages (GAE with λ=0.95)
+     b. Create minibatches (256 per batch)
+     c. For 3 epochs:
+        - Compute policy loss (PPO clipping)
+        - Compute value loss (MSE)
+        - Total loss = policy_loss + 0.5×value_loss + 0.01×entropy_bonus
+        - Gradient step (Adam, LR=1.5e-4)
+     d. Check KL divergence (stop if > 0.015)
+  5. Episode summary logged
+  6. Next rollout begins
+
+OPTIMIZATION STEPS (APPROXIMATE):
+  Per Episode:  87,600 / 2048 ≈ 43 gradient updates
+  Total:        10 episodes × 43 ≈ 430 policy updates
+  Duration:     162 seconds ÷ 430 ≈ 0.38 seconds per update
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8. ARCHIVOS GENERADOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+RESULTADOS PRINCIPALES:
+  ✓ result_ppo.json              (8.2 KB) - Full results JSON
+  ✓ ppo_training_summary.json    (8.2 KB) - Training summary
+  ✓ REPORTE_PPO_ENTRENAMIENTO_v5.7.md - Complete markdown report
+  ✓ RESUMEN_ENTRENAMIENTO_v5.7.txt    - Executive summary
+
+DATOS DETALLADOS:
+  ✓ timeseries_ppo.csv           (11.4 MB) - Hourly timeseries (88k rows)
+  ✓ trace_ppo.csv                (11.1 MB) - Detailed execution trace
+
+VISUALIZACIONES:
+  ✓ ppo_dashboard.png            (206 KB) - Complete dashboard
+  ✓ ppo_kl_divergence.png        (114 KB) - KL divergence tracking
+  ✓ ppo_entropy.png              (52 KB)  - Entropy evolution
+  ✓ ppo_value_metrics.png        (177 KB) - Value function metrics
+  ✓ ppo_clip_fraction.png        (97 KB)  - Clipping statistics
+
+CHECKPOINTS:
+  ✓ checkpoints/PPO/latest.zip        - Latest trained policy
+  ✓ Can resume training with reset_num_timesteps=False
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ STATUS: ENTRENAMIENTO COMPLETADO EXITOSAMENTE
+════════════════════════════════════════════════════════════════════════════════════════

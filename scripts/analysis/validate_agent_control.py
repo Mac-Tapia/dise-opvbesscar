@@ -27,35 +27,35 @@ CO2_PER_KWH = 0.4521  # kg CO2/kWh
 COST_PER_KWH = 0.15
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
-⚠️  DATA QUALITY ASSESSMENT: AGENT CONTROL VALIDATION
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
+[!]  DATA QUALITY ASSESSMENT: AGENT CONTROL VALIDATION
+================================================================================
 
 CRITICAL FINDINGS:
 
-  SAC:  ev_charging=0 kW (ALL records)    ❌ NOT CONTROLLING EVs
-        bess_power=0 kW (ALL records)     ❌ NOT CONTROLLING BESS
-        → This agent is NOT optimizing the system!
+  SAC:  ev_charging=0 kW (ALL records)    [X] NOT CONTROLLING EVs
+        bess_power=0 kW (ALL records)     [X] NOT CONTROLLING BESS
+        -> This agent is NOT optimizing the system!
 
-  A2C:  ev_charging=10-80 kW (active)    ✅ CONTROLLING EVs
-        bess_power=-342 to 342 kW        ✅ CONTROLLING BESS
-        → This agent IS optimizing the system!
+  A2C:  ev_charging=10-80 kW (active)    [OK] CONTROLLING EVs
+        bess_power=-342 to 342 kW        [OK] CONTROLLING BESS
+        -> This agent IS optimizing the system!
 
-  PPO:  Different data structure          ⚠️  Aggregated, not timeseries
+  PPO:  Different data structure          [!]  Aggregated, not timeseries
 
 IMPLICATION:
   - SAC generates NO REAL CONTROL - purely passive system response
   - A2C generates REAL CONTROL - active EV + BESS optimization  
   - Comparison should focus on A2C as the only validated controller
 
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 """)
 
 # ============================================================================
 # GENERATE A2C ANALYSIS (WITH REAL EV + BESS CONTROL)
 # ============================================================================
 
-print("📊 Analyzing A2C (only agent with real EV + BESS control)...\n")
+print("[GRAPH] Analyzing A2C (only agent with real EV + BESS control)...\n")
 
 df_a2c = pd.read_csv('outputs/a2c_training/timeseries_a2c.csv')
 
@@ -210,7 +210,7 @@ fig.suptitle('A2C Agent: 5-Metric Evolution with REAL EV + BESS Control\nDirect 
              fontsize=14, fontweight='bold', y=0.995)
 
 plt.savefig(OUTPUT_DIR / 'a2c_5metrics_evolution_controlled.png', dpi=300, bbox_inches='tight', facecolor='white')
-print(f"   ✅ Saved: a2c_5metrics_evolution_controlled.png\n")
+print(f"   [OK] Saved: a2c_5metrics_evolution_controlled.png\n")
 plt.close()
 
 # ============================================================================
@@ -218,26 +218,26 @@ plt.close()
 # ============================================================================
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 📋 VALIDATION REPORT: AGENT CONTROL DATA
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 
 AGENT DATA STATUS:
 
   SAC (131,400 records):
-    ❌ ev_charging_kw: 0 kW (no EV charging control)
-    ❌ bess_power_kw: 0 kW (no BESS control)
-    ⚠️  NOT A VALID AGENT - Passive system only
+    [X] ev_charging_kw: 0 kW (no EV charging control)
+    [X] bess_power_kw: 0 kW (no BESS control)
+    [!]  NOT A VALID AGENT - Passive system only
     ➜ EXCLUDE FROM OPTIMIZATION COMPARISON
 
   A2C (87,600 records):  
-    ✅ ev_charging_kw: 10-80 kW (active EV control)
-    ✅ bess_power_kw: -342 to 342 kW (active BESS control)
-    ✅ VALID AGENT - Real optimization
+    [OK] ev_charging_kw: 10-80 kW (active EV control)
+    [OK] bess_power_kw: -342 to 342 kW (active BESS control)
+    [OK] VALID AGENT - Real optimization
     ➜ USE FOR CO2 REDUCTION ANALYSIS
 
   PPO (8,760 records):
-    ⚠️  Different data structure (aggregated)
+    [!]  Different data structure (aggregated)
     ➜ SEPARATE ANALYSIS REQUIRED
 
 CRITICAL INSIGHT:
@@ -252,5 +252,5 @@ A2C PERFORMANCE:
   - CO2 Indirect (Solar+BESS): {co2i_red:+.1f}%
   - Total CO2: {co2t_red:+.1f}%
 
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 """)

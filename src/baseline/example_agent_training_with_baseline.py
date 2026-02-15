@@ -1,4 +1,4 @@
-"""Ejemplo de integración de baselines en entrenamientos de agentes (OE2 v5.4).
+"""Ejemplo de integracion de baselines en entrenamientos de agentes (OE2 v5.4).
 
 Este archivo muestra how to integrate baseline calculations and comparisons
 en los entrenamientos de SAC, PPO y A2C usando datos OE2 v5.4 validados.
@@ -6,7 +6,7 @@ en los entrenamientos de SAC, PPO y A2C usando datos OE2 v5.4 validados.
 Pasos:
 1. setup_agent_training_with_baselines() inicia tracking de baselines
 2. Agent trains normally with CityLearn environment
-3. register_training_results() registra métricas finales
+3. register_training_results() registra metricas finales
 4. compare_and_report() compara contra baselines y genera reporte
 """
 
@@ -157,7 +157,12 @@ class AgentTrainerWithBaseline:
 def example_sac_training_with_baseline():
     \"\"\"Example: Train SAC with baseline integration.\"\"\"
     from stable_baselines3 import SAC  # type: ignore
-    from src.citylearnv2.dataset_builder import build_citylearn_env_from_oe2
+    try:
+        # NOTE: build_citylearn_env_from_oe2 moved to new builder structure
+        # For now, this requires manual environment construction
+        from src.dataset_builder_citylearn import rebuild_oe2_datasets_complete
+        # TODO: Implement environment building from OE2 data
+        raise NotImplementedError("Environment building needs refactoring with new builder")
     
     logger.info(\"\\nExampling SAC training with baseline integration...\")
     
@@ -195,7 +200,12 @@ def example_sac_training_with_baseline():
 def example_ppo_training_with_baseline():
     \"\"\"Example: Train PPO with baseline integration.\"\"\"
     from stable_baselines3 import PPO  # type: ignore
-    from src.citylearnv2.dataset_builder import build_citylearn_env_from_oe2
+    try:
+        # NOTE: build_citylearn_env_from_oe2 moved to new builder structure
+        # For now, this requires manual environment construction
+        from src.dataset_builder_citylearn import rebuild_oe2_datasets_complete
+        # TODO: Implement environment building from OE2 data
+        raise NotImplementedError("Environment building needs refactoring with new builder")
     
     logger.info(\"\\nExample: PPO training with baseline integration...\")
     
@@ -239,7 +249,7 @@ def compute_all_baselines():
     integration.compute_baselines()
     integration.print_summary()
     
-    logger.info(\"✅ Baselines computed and saved\")
+    logger.info(\"[OK] Baselines computed and saved\")
 
 
 if __name__ == '__main__':
@@ -257,4 +267,4 @@ if __name__ == '__main__':
     # Example: Train PPO
     # agent, comparison = example_ppo_training_with_baseline()
     
-    print(\"\\n✅ Integration examples ready. Uncomment example_*_training_with_baseline() to run.\")
+    print(\"\\n[OK] Integration examples ready. Uncomment example_*_training_with_baseline() to run.\")

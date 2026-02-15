@@ -2,15 +2,15 @@
 """
 Calculate CO₂ metrics CORRECTLY:
 
-CO₂ DIRECTO: Cantidad de EVs cargados (cambio modal combustión → eléctrico)
+CO₂ DIRECTO: Cantidad de EVs cargados (cambio modal combustion -> electrico)
   Source: reduccion_directa_co2_kg from chargers data
 
-CO₂ INDIRECTO: Energía que viene de SOLAR + BESS (no del grid diesel)
+CO₂ INDIRECTO: Energia que viene de SOLAR + BESS (no del grid diesel)
   Calculation: (Solar_generation + BESS_discharge) * 0.4521 kg CO₂/kWh
   This represents energy that AVOIDS thermal generation
 
-Grid NO reduce porque está en diagonal a diesel (igual que mall).
-El único beneficio indirecto es la energía limpia usada para cargar EVs.
+Grid NO reduce porque esta en diagonal a diesel (igual que mall).
+El unico beneficio indirecto es la energia limpia usada para cargar EVs.
 """
 
 import pandas as pd
@@ -24,29 +24,29 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 CO2_THERMAL_FACTOR = 0.4521  # kg CO₂/kWh from diesel grid
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
-✅ CORRECT CO₂ CALCULATION METHODOLOGY
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
+[OK] CORRECT CO₂ CALCULATION METHODOLOGY
+================================================================================
 
 CO₂ DIRECTO (Direct Emissions Reduction):
-  ├─ Source: reduccion_directa_co2_kg (from chargers_ev_ano_2024_v3.csv)
-  ├─ Definition: CO₂ avoided by EVs instead of combustion motos/mototaxis
-  ├─ Unit: kg CO₂/day
-  └─ Note: Based on NUMBER of vehicles charged, not energy
+  +- Source: reduccion_directa_co2_kg (from chargers_ev_ano_2024_v3.csv)
+  +- Definition: CO₂ avoided by EVs instead of combustion motos/mototaxis
+  +- Unit: kg CO₂/day
+  +- Note: Based on NUMBER of vehicles charged, not energy
 
 CO₂ INDIRECTO (Indirect Emissions Reduction):
-  ├─ Source: (Solar generation + BESS discharge) from training timeseries
-  ├─ Definition: Energy from clean sources used to charge EVs
-  ├─ Calculation: (solar_kw + bess_discharge_kw) × 0.4521 kg CO₂/kWh
-  ├─ Unit: kg CO₂/day
-  └─ Note: This energy avoids thermal generation from diesel grid
+  +- Source: (Solar generation + BESS discharge) from training timeseries
+  +- Definition: Energy from clean sources used to charge EVs
+  +- Calculation: (solar_kw + bess_discharge_kw) × 0.4521 kg CO₂/kWh
+  +- Unit: kg CO₂/day
+  +- Note: This energy avoids thermal generation from diesel grid
 
 Grid & Mall:
-  ├─ Both connected to diesel thermal generation
-  ├─ Grid import does NOT reduce CO₂ (just shifts burden)
-  └─ Only SOLAR + BESS reduce CO₂ by avoiding thermal
+  +- Both connected to diesel thermal generation
+  +- Grid import does NOT reduce CO₂ (just shifts burden)
+  +- Only SOLAR + BESS reduce CO₂ by avoiding thermal
 
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 """)
 
 # ============================================================================
@@ -63,7 +63,7 @@ chargers_df = pd.read_csv(chargers_file)
 chargers_df['datetime'] = pd.to_datetime(chargers_df['datetime'])
 chargers_df = chargers_df.sort_values('datetime')
 
-print(f"   ✓ Chargers data: {len(chargers_df)} hourly records")
+print(f"   [OK] Chargers data: {len(chargers_df)} hourly records")
 print(f"     - Direct CO₂ reduction column: 'reduccion_directa_co2_kg'")
 
 # Daily aggregation
@@ -79,7 +79,7 @@ chargers_daily.columns = ['date', 'ev_energy_total', 'ev_energy_motos',
                           'ev_energy_mototaxis', 'co2_direct', 'ev_demand']
 chargers_daily['date'] = pd.to_datetime(chargers_daily['date'])
 
-print(f"   ✓ Aggregated to {len(chargers_daily)} daily records")
+print(f"   [OK] Aggregated to {len(chargers_daily)} daily records")
 print(f"     - CO₂ Direct sample: {chargers_daily['co2_direct'].iloc[:5].values} kg/day\n")
 
 # ============================================================================
@@ -94,7 +94,7 @@ agents_data = {}
 sac_file = Path('outputs/sac_training/timeseries_sac.csv')
 if sac_file.exists():
     sac_ts = pd.read_csv(sac_file)
-    print(f"   ✓ SAC: {len(sac_ts)} hourly records")
+    print(f"   [OK] SAC: {len(sac_ts)} hourly records")
     
     # Check for solar and BESS columns
     has_solar = 'solar_kw' in sac_ts.columns
@@ -112,7 +112,7 @@ if sac_file.exists():
 a2c_file = Path('outputs/a2c_training/timeseries_a2c.csv')
 if a2c_file.exists():
     a2c_ts = pd.read_csv(a2c_file)
-    print(f"   ✓ A2C: {len(a2c_ts)} hourly records")
+    print(f"   [OK] A2C: {len(a2c_ts)} hourly records")
     
     has_solar = 'solar_kw' in a2c_ts.columns
     has_bess = 'bess_power_kw' in a2c_ts.columns
@@ -129,7 +129,7 @@ if a2c_file.exists():
 ppo_file = Path('outputs/ppo_training/timeseries_ppo.csv')
 if ppo_file.exists():
     ppo_ts = pd.read_csv(ppo_file)
-    print(f"   ✓ PPO: {len(ppo_ts)} hourly records")
+    print(f"   [OK] PPO: {len(ppo_ts)} hourly records")
     
     has_solar = 'solar_kw' in ppo_ts.columns
     has_bess = 'bess_power_kw' in ppo_ts.columns
@@ -240,7 +240,7 @@ for agent_name, agent_info in agents_data.items():
         'days': len(daily_df)
     }
     
-    print(f"   ✓ {agent_name}: {len(daily_df)} days processed")
+    print(f"   [OK] {agent_name}: {len(daily_df)} days processed")
     if len(daily_df) > 0:
         print(f"     - CO₂ Direct avg: {daily_df['co2_direct'].mean():.2f} kg/day")
         print(f"     - CO₂ Indirect avg: {daily_df['co2_indirect'].mean():.2f} kg/day")
@@ -258,7 +258,7 @@ for agent_name, agent_data in agent_metrics.items():
     color = agent_data['color']
     
     if len(daily_df) < 10:
-        print(f"   ⚠ {agent_name}: Insufficient data ({len(daily_df)} days)")
+        print(f"   [!] {agent_name}: Insufficient data ({len(daily_df)} days)")
         continue
     
     # Calculate trends (first 10% vs last 10%)
@@ -291,7 +291,7 @@ for agent_name, agent_data in agent_metrics.items():
     ax.set_title(f'Operating Cost\n({cost_change:+.1f}%)', fontsize=12, fontweight='bold')
     ax.grid(True, alpha=0.3)
     
-    # 3. CO₂ DIRECT (from modal shift: motos/mototaxis fuel → electric)
+    # 3. CO₂ DIRECT (from modal shift: motos/mototaxis fuel -> electric)
     ax = fig.add_subplot(gs[0, 2])
     ax.plot(daily_df['day'], daily_df['co2_direct'], color='darkred', linewidth=2.5, alpha=0.85)
     ax.fill_between(daily_df['day'], daily_df['co2_direct'], alpha=0.2, color='red')
@@ -341,19 +341,19 @@ for agent_name, agent_data in agent_metrics.items():
 Days: {agent_data['days']}
 
 CONSUMPTION:
-  {initial['consumption'].mean():.0f} → {final['consumption'].mean():.0f} kWh/day
+  {initial['consumption'].mean():.0f} -> {final['consumption'].mean():.0f} kWh/day
   {cons_change:+.1f}%
 
 COST:
-  ${initial['cost'].mean():.0f} → ${final['cost'].mean():.0f}/day
+  ${initial['cost'].mean():.0f} -> ${final['cost'].mean():.0f}/day
   {cost_change:+.1f}%
 
 CO₂ DIRECT (Modal Shift):
-  {initial['co2_direct'].mean():.1f} → {final['co2_direct'].mean():.1f} kg/day
+  {initial['co2_direct'].mean():.1f} -> {final['co2_direct'].mean():.1f} kg/day
   {direct_change:+.1f}%
 
 CO₂ INDIRECT (SOLAR+BESS):
-  {initial['co2_indirect'].mean():.1f} → {final['co2_indirect'].mean():.1f} kg/day
+  {initial['co2_indirect'].mean():.1f} -> {final['co2_indirect'].mean():.1f} kg/day
   {indirect_change:+.1f}%
 
 CLEAN ENERGY USED:
@@ -372,7 +372,7 @@ TOTAL CO₂ AVOIDED:
     
     output_file = OUTPUT_DIR / f'{agent_name.lower()}_5metrics_CO2correct.png'
     plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='white')
-    print(f"   ✅ Saved: {agent_name.lower()}_5metrics_CO2correct.png")
+    print(f"   [OK] Saved: {agent_name.lower()}_5metrics_CO2correct.png")
     plt.close()
 
 print()
@@ -381,7 +381,7 @@ print()
 # GENERATE 3-AGENT COMPARISON
 # ============================================================================
 
-print("📊 Generating 3-agent comparison dashboard...\n")
+print("[GRAPH] Generating 3-agent comparison dashboard...\n")
 
 fig = plt.figure(figsize=(20, 12))
 gs = fig.add_gridspec(2, 3, hspace=0.35, wspace=0.28)
@@ -512,14 +512,14 @@ fig.suptitle('3-AGENT COMPARISON: 5-METRIC ANALYSIS with CORRECT CO₂\nDirect (
 
 output_file = OUTPUT_DIR / 'COMPARISON_3agents_CO2correct.png'
 plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='white')
-print(f"   ✅ Saved: COMPARISON_3agents_CO2correct.png\n")
+print(f"   [OK] Saved: COMPARISON_3agents_CO2correct.png\n")
 plt.close()
 
 # ============================================================================
 # SUMMARY TABLE
 # ============================================================================
 
-print("📊 COMPARATIVE METRICS SUMMARY:\n")
+print("[GRAPH] COMPARATIVE METRICS SUMMARY:\n")
 
 summary_rows = []
 for agent in agents_list:
@@ -539,35 +539,35 @@ summary_df = pd.DataFrame(summary_rows)
 print(summary_df.to_string(index=False))
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
-✅ ANALYSIS COMPLETE with CORRECT CO₂ METHODOLOGY
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
+[OK] ANALYSIS COMPLETE with CORRECT CO₂ METHODOLOGY
+================================================================================
 
 Generated Files (outputs/comparison_training/):
-  ✓ sac_5metrics_CO2correct.png (if SAC data available)
-  ✓ a2c_5metrics_CO2correct.png (if A2C data available)
-  ✓ ppo_5metrics_CO2correct.png (if PPO data available)
-  ✓ COMPARISON_3agents_CO2correct.png
+  [OK] sac_5metrics_CO2correct.png (if SAC data available)
+  [OK] a2c_5metrics_CO2correct.png (if A2C data available)
+  [OK] ppo_5metrics_CO2correct.png (if PPO data available)
+  [OK] COMPARISON_3agents_CO2correct.png
 
 KEY DEFINITIONS USED:
 
 CO₂ DIRECTO (Direct Reduction):
-  ├─ Definition: Emission avoidance from modal shift (fuel motos → Electric EVs)
-  ├─ Source: reduccion_directa_co2_kg from chargers infrastructure data
-  ├─ Unit: kg CO₂/day
-  └─ Note: Depends on NUMBER of vehicles charged, not energy consumed
+  +- Definition: Emission avoidance from modal shift (fuel motos -> Electric EVs)
+  +- Source: reduccion_directa_co2_kg from chargers infrastructure data
+  +- Unit: kg CO₂/day
+  +- Note: Depends on NUMBER of vehicles charged, not energy consumed
 
 CO₂ INDIRECTO (Indirect Reduction):
-  ├─ Definition: Emission avoidance from clean energy (SOLAR + BESS → EVs)
-  ├─ Calculation: (Solar_generation + BESS_discharge) × 0.4521 kg CO₂/kWh
-  ├─ Unit: kg CO₂/day
-  ├─ Why: This energy AVOIDS thermal diesel generation from grid
-  └─ Note: Grid itself is diesel, so clean energy = only way to reduce grid CO₂
+  +- Definition: Emission avoidance from clean energy (SOLAR + BESS -> EVs)
+  +- Calculation: (Solar_generation + BESS_discharge) × 0.4521 kg CO₂/kWh
+  +- Unit: kg CO₂/day
+  +- Why: This energy AVOIDS thermal diesel generation from grid
+  +- Note: Grid itself is diesel, so clean energy = only way to reduce grid CO₂
 
 Grid & Mall Impact:
-  ├─ Grid + Mall = both connected to thermal (diesel) generation
-  ├─ Grid import ≠ reduce CO₂ (just shifts/delays thermal burn)
-  └─ ONLY SOLAR + BESS reduce actual CO₂ by avoiding thermal entirely
+  +- Grid + Mall = both connected to thermal (diesel) generation
+  +- Grid import ≠ reduce CO₂ (just shifts/delays thermal burn)
+  +- ONLY SOLAR + BESS reduce actual CO₂ by avoiding thermal entirely
 
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 """)

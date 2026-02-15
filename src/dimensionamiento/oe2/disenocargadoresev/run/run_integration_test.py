@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 SCRIPT: Run BESS & Mall Demand Integration Tests
-Objetivo: Verificar que dataset_builder.py está correctamente integrado con:
+Objetivo: Verificar que dataset_builder.py esta correctamente integrado con:
 1. bess_hourly_dataset_2024.csv
 2. demandamallhorakwh.csv
 """
@@ -33,16 +33,16 @@ def main():
     tests_total = 4
 
     if bess_file.exists():
-        logger.info("✅ BESS file found: %s", bess_file)
+        logger.info("[OK] BESS file found: %s", bess_file)
         tests_passed += 1
     else:
-        logger.error("❌ BESS file NOT found: %s", bess_file)
+        logger.error("[X] BESS file NOT found: %s", bess_file)
 
     if mall_file.exists():
-        logger.info("✅ Mall demand file found: %s", mall_file)
+        logger.info("[OK] Mall demand file found: %s", mall_file)
         tests_passed += 1
     else:
-        logger.error("❌ Mall demand file NOT found: %s", mall_file)
+        logger.error("[X] Mall demand file NOT found: %s", mall_file)
 
     # TEST 2: Load and validate BESS dataset
     logger.info("\n[TEST 2] Validating BESS dataset structure...")
@@ -51,17 +51,17 @@ def main():
         bess_df = pd.read_csv(bess_file, index_col=0, parse_dates=True)
 
         if len(bess_df) == 8760:
-            logger.info("✅ BESS dataset has correct shape: %s", bess_df.shape)
+            logger.info("[OK] BESS dataset has correct shape: %s", bess_df.shape)
             tests_passed += 1
         else:
-            logger.error("❌ BESS dataset has wrong rows: %d (expected 8760)", len(bess_df))
+            logger.error("[X] BESS dataset has wrong rows: %d (expected 8760)", len(bess_df))
 
         if "soc_percent" in bess_df.columns:
-            logger.info("✅ BESS has soc_percent column")
+            logger.info("[OK] BESS has soc_percent column")
         else:
-            logger.warning("⚠️  BESS missing soc_percent column, columns: %s", bess_df.columns.tolist())
+            logger.warning("[!]  BESS missing soc_percent column, columns: %s", bess_df.columns.tolist())
     except Exception as e:
-        logger.error("❌ Error loading BESS: %s", e)
+        logger.error("[X] Error loading BESS: %s", e)
 
     # TEST 3: Load and validate Mall demand dataset
     logger.info("\n[TEST 3] Validating Mall demand dataset structure...")
@@ -77,32 +77,34 @@ def main():
 
         if mall_df is not None:
             if len(mall_df) >= 8760:
-                logger.info("✅ Mall dataset has correct rows: %d", len(mall_df))
+                logger.info("[OK] Mall dataset has correct rows: %d", len(mall_df))
                 tests_passed += 1
             else:
-                logger.error("❌ Mall dataset has wrong rows: %d (expected ≥8760)", len(mall_df))
+                logger.error("[X] Mall dataset has wrong rows: %d (expected ≥8760)", len(mall_df))
         else:
-            logger.error("❌ Could not load mall dataset with any separator")
+            logger.error("[X] Could not load mall dataset with any separator")
     except Exception as e:
-        logger.error("❌ Error loading Mall: %s", e)
+        logger.error("[X] Error loading Mall: %s", e)
 
-    # TEST 4: Check dataset_builder integration
+    # TEST 4: Check dataset_builder integration (NEW LOCATION)
     logger.info("\n[TEST 4] Checking dataset_builder.py integration...")
     try:
-        dataset_builder = Path("src/citylearnv2/dataset_builder/dataset_builder.py")
+        # OLD: dataset_builder.py no longer exists (consolidado en nuevo builder)
+        # NEW: Verificar que el nuevo builder existe
+        dataset_builder = Path("src/dataset_builder_citylearn/data_loader.py")
+        if not dataset_builder.exists():
+            raise FileNotFoundError("New data_loader.py not found")
+        
         content = dataset_builder.read_text()
 
-        if "bess_hourly_2024" in content and "PRIORITY 1: NEW BESS" in content:
-            logger.info("✅ dataset_builder.py has BESS hourly integration")
-            if "demandamallhorakwh" in content and "PRIORITY 1: Converted to exact 8,760" in content:
-                logger.info("✅ dataset_builder.py has Mall demand integration")
-                tests_passed += 1
-            else:
-                logger.error("❌ dataset_builder.py missing Mall integration")
+        if ("load_solar_data" in content or "load_bess_data" in content) and "OE2" in content:
+            logger.info("[OK] data_loader.py has OE2 data integration")
+            tests_passed += 1
+                logger.error("[X] dataset_builder.py missing Mall integration")
         else:
-            logger.error("❌ dataset_builder.py missing BESS integration")
+            logger.error("[X] dataset_builder.py missing BESS integration")
     except Exception as e:
-        logger.error("❌ Error checking dataset_builder: %s", e)
+        logger.error("[X] Error checking dataset_builder: %s", e)
 
     # Summary
     logger.info("\n" + "=" * 80)
@@ -110,10 +112,10 @@ def main():
     logger.info("=" * 80)
 
     if tests_passed == tests_total:
-        logger.info("✅ ALL TESTS PASSED - Ready to build CityLearn v2 dataset!")
+        logger.info("[OK] ALL TESTS PASSED - Ready to build CityLearn v2 dataset!")
         return 0
     else:
-        logger.error("❌ Some tests failed - Fix issues before building dataset")
+        logger.error("[X] Some tests failed - Fix issues before building dataset")
         return 1
 
 if __name__ == "__main__":

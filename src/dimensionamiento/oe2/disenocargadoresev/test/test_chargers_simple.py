@@ -15,76 +15,76 @@ def validate_chargers_file():
     content = chargers_file.read_text(encoding='utf-8')
 
     print("\n" + "="*70)
-    print("VALIDACIÓN DE chargers.py - VALORES REALES")
+    print("VALIDACION DE chargers.py - VALORES REALES")
     print("="*70)
 
     # Test 1: Buscar ENERGY_DAY_TOTAL_KWH = 903.46
     pattern_total = r"ENERGY_DAY_TOTAL_KWH\s*=\s*903\.46"
     if re.search(pattern_total, content):
-        print("\n✅ TEST 1: ENERGY_DAY_TOTAL_KWH = 903.46 (CORRECTO)")
+        print("\n[OK] TEST 1: ENERGY_DAY_TOTAL_KWH = 903.46 (CORRECTO)")
     else:
-        print("\n❌ TEST 1: ENERGY_DAY_TOTAL_KWH no encontrado o valor incorrecto")
+        print("\n[X] TEST 1: ENERGY_DAY_TOTAL_KWH no encontrado o valor incorrecto")
         return False
 
     # Test 2: Buscar ENERGY_DAY_MOTOS_KWH = 763.76
     pattern_motos = r"ENERGY_DAY_MOTOS_KWH\s*=\s*763\.76"
     if re.search(pattern_motos, content):
-        print("✅ TEST 2: ENERGY_DAY_MOTOS_KWH = 763.76 (CORRECTO)")
+        print("[OK] TEST 2: ENERGY_DAY_MOTOS_KWH = 763.76 (CORRECTO)")
     else:
-        print("❌ TEST 2: ENERGY_DAY_MOTOS_KWH no encontrado o valor incorrecto")
+        print("[X] TEST 2: ENERGY_DAY_MOTOS_KWH no encontrado o valor incorrecto")
         return False
 
     # Test 3: Buscar ENERGY_DAY_MOTOTAXIS_KWH = 139.70
     pattern_mototaxis = r"ENERGY_DAY_MOTOTAXIS_KWH\s*=\s*139\.70"
     if re.search(pattern_mototaxis, content):
-        print("✅ TEST 3: ENERGY_DAY_MOTOTAXIS_KWH = 139.70 (CORRECTO)")
+        print("[OK] TEST 3: ENERGY_DAY_MOTOTAXIS_KWH = 139.70 (CORRECTO)")
     else:
-        print("❌ TEST 3: ENERGY_DAY_MOTOTAXIS_KWH no encontrado o valor incorrecto")
+        print("[X] TEST 3: ENERGY_DAY_MOTOTAXIS_KWH no encontrado o valor incorrecto")
         return False
 
-    # Test 4: Verificar que NO está el valor antiguo 3252.0 COMO CONSTANTE
-    # NOTA: 3252.0 PUEDE aparecer en comentarios de auditoría (es correcto)
+    # Test 4: Verificar que NO esta el valor antiguo 3252.0 COMO CONSTANTE
+    # NOTA: 3252.0 PUEDE aparecer en comentarios de auditoria (es correcto)
     # PERO NO debe estar como: ENERGY_DAY_TOTAL_KWH = 3252.0 (SIN ser comentario)
     has_old_constant = re.search(r"^(\s*)ENERGY_DAY_TOTAL_KWH\s*=\s*3252\.0", content, re.MULTILINE)
     if has_old_constant:
-        print("❌ TEST 4: Aún contiene CONSTANTE antiguo ENERGY_DAY_TOTAL_KWH = 3252.0")
+        print("[X] TEST 4: Aun contiene CONSTANTE antiguo ENERGY_DAY_TOTAL_KWH = 3252.0")
         return False
     else:
-        # Verificar que la documentación histórica ESTÁ presente
+        # Verificar que la documentacion historica ESTA presente
         if "3252.0" in content and "LEGACY:" in content:
-            print("✅ TEST 4: Constante 3252.0 eliminada + Auditoría histórica PRESERVADA (CORRECTO)")
+            print("[OK] TEST 4: Constante 3252.0 eliminada + Auditoria historica PRESERVADA (CORRECTO)")
         elif "3252.0" in content and "[REMOVED" in content:
-            print("✅ TEST 4: Constante eliminada + Documentación histórica preservada (CORRECTO)")
+            print("[OK] TEST 4: Constante eliminada + Documentacion historica preservada (CORRECTO)")
         else:
-            print("✅ TEST 4: Constante antigua eliminada (CORRECTO)")
+            print("[OK] TEST 4: Constante antigua eliminada (CORRECTO)")
 
     # Test 5: Verificar docstring
     if "903.46" in content and "verified dataset" in content:
-        print("✅ TEST 5: Docstring contiene referencias correctas (CORRECTO)")
+        print("[OK] TEST 5: Docstring contiene referencias correctas (CORRECTO)")
     else:
-        print("❌ TEST 5: Docstring no contiene referencias correctas")
+        print("[X] TEST 5: Docstring no contiene referencias correctas")
         return False
 
     # Test 6: Verificar comentarios actualizados
     if "REAL dataset" in content and "763.76 kWh" in content:
-        print("✅ TEST 6: Comentarios actualizados con valores REALES (CORRECTO)")
+        print("[OK] TEST 6: Comentarios actualizados con valores REALES (CORRECTO)")
     else:
-        print("⚠️  TEST 6: Algunos comentarios podrían no estar actualizados")
+        print("[!]  TEST 6: Algunos comentarios podrian no estar actualizados")
 
-    # Test 7: Matemática
+    # Test 7: Matematica
     motos_val = 763.76
     mototaxis_val = 139.70
     total_val = motos_val + mototaxis_val
     annual = total_val * 365
 
-    print(f"\n📊 VALIDACIÓN MATEMÁTICA:")
-    print(f"   {motos_val} + {mototaxis_val} = {total_val} ✓")
-    print(f"   {total_val} × 365 = {annual:.0f} kWh/año")
+    print(f"\n[GRAPH] VALIDACION MATEMATICA:")
+    print(f"   {motos_val} + {mototaxis_val} = {total_val} [OK]")
+    print(f"   {total_val} × 365 = {annual:.0f} kWh/ano")
 
     if abs(total_val - 903.46) < 0.01:
-        print(f"✅ TEST 7: Matemática correcta (CORRECTO)")
+        print(f"[OK] TEST 7: Matematica correcta (CORRECTO)")
     else:
-        print(f"❌ TEST 7: Matemática incorrecta")
+        print(f"[X] TEST 7: Matematica incorrecta")
         return False
 
     return True
@@ -98,17 +98,17 @@ if __name__ == "__main__":
     try:
         if validate_chargers_file():
             print("\n" + "="*70)
-            print("✅ TODOS LOS TESTS PASARON")
+            print("[OK] TODOS LOS TESTS PASARON")
             print("="*70)
-            print("\n🎉 chargers.py está correctamente configurado con valores REALES")
-            print("   Energía: 903.46 kWh/día (no 3,252 kWh)")
+            print("\n🎉 chargers.py esta correctamente configurado con valores REALES")
+            print("   Energia: 903.46 kWh/dia (no 3,252 kWh)")
             print("   Sistema listo para OE3 RL agent training")
             exit(0)
         else:
             print("\n" + "="*70)
-            print("❌ ALGUNOS TESTS FALLARON")
+            print("[X] ALGUNOS TESTS FALLARON")
             print("="*70)
             exit(1)
     except Exception as e:
-        print(f"\n❌ ERROR: {type(e).__name__}: {e}")
+        print(f"\n[X] ERROR: {type(e).__name__}: {e}")
         exit(1)

@@ -15,9 +15,9 @@ OUTPUT_DIR = Path('outputs/sac_training')
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 print("""
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 🔵 SAC ALPHA ENTROPY GRAPH - REAL DATA REGENERATION
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 """)
 
 # ============================================================================
@@ -29,13 +29,13 @@ print("📥 Loading SAC training data...")
 # Load result JSON
 result_file = OUTPUT_DIR / 'result_sac.json'
 if not result_file.exists():
-    print(f"❌ {result_file} not found")
+    print(f"[X] {result_file} not found")
     exit(1)
 
 with open(result_file, 'r') as f:
     result_data = json.load(f)
 
-print(f"   ✓ Loaded result_sac.json")
+print(f"   [OK] Loaded result_sac.json")
 print(f"   Episodes: {result_data.get('episodes_completed', 0)}")
 print(f"   Total timesteps: {result_data.get('total_timesteps', 0)}")
 print(f"   Final alpha: {result_data.get('metrics_summary', {}).get('final_alpha', 0)}")
@@ -44,16 +44,16 @@ print(f"   Final alpha: {result_data.get('metrics_summary', {}).get('final_alpha
 trace_file = OUTPUT_DIR / 'trace_sac.csv'
 if trace_file.exists():
     trace_df = pd.read_csv(trace_file)
-    print(f"   ✓ Loaded trace_sac.csv ({len(trace_df)} records)")
+    print(f"   [OK] Loaded trace_sac.csv ({len(trace_df)} records)")
 else:
-    print(f"   ⚠️  trace_sac.csv not found")
+    print(f"   [!]  trace_sac.csv not found")
     trace_df = None
 
 # ============================================================================
 # EXTRACT & RECONSTRUCT ALPHA ENTROPY EVOLUTION
 # ============================================================================
 
-print("\n📊 Reconstructing alpha entropy evolution...")
+print("\n[GRAPH] Reconstructing alpha entropy evolution...")
 
 episodes = result_data.get('episodes_completed', 15)
 total_timesteps = result_data.get('total_timesteps', 147919)
@@ -101,14 +101,14 @@ alpha_df = pd.DataFrame({
     'episode': [int(t / timesteps_per_episode) for t in timestep_values]
 })
 
-print(f"   ✓ Generated {len(alpha_df)} alpha samples")
-print(f"   Alpha range: {alpha_df['alpha'].min():.4f} → {alpha_df['alpha'].max():.4f}")
+print(f"   [OK] Generated {len(alpha_df)} alpha samples")
+print(f"   Alpha range: {alpha_df['alpha'].min():.4f} -> {alpha_df['alpha'].max():.4f}")
 
 # ============================================================================
 # CALCULATE ENTROPY APPROXIMATION
 # ============================================================================
 
-print("\n📈 Calculating entropy approximation...")
+print("\n[CHART] Calculating entropy approximation...")
 
 # Entropy approximation: higher alpha = higher entropy (more exploration)
 # Typical relationship: entropy ≈ alpha * 0.5 (scaled)
@@ -116,7 +116,7 @@ entropy_values = alpha_df['alpha'].values * 0.5
 
 alpha_df['entropy'] = entropy_values
 
-print(f"   ✓ Entropy range: {entropy_values.min():.4f} → {entropy_values.max():.4f}")
+print(f"   [OK] Entropy range: {entropy_values.min():.4f} -> {entropy_values.max():.4f}")
 
 # ============================================================================
 # GENERATE VISUALIZATION
@@ -196,7 +196,7 @@ plt.tight_layout()
 # Save figure
 output_path = OUTPUT_DIR / 'sac_alpha_entropy.png'
 plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
-print(f"   ✅ Saved: {output_path.name}")
+print(f"   [OK] Saved: {output_path.name}")
 
 plt.close()
 
@@ -208,16 +208,16 @@ print("\n💾 Saving alpha data...")
 
 alpha_csv = OUTPUT_DIR / 'alpha_entropy_data.csv'
 alpha_df.to_csv(alpha_csv, index=False)
-print(f"   ✅ Saved: {alpha_csv.name} ({len(alpha_df)} records)")
+print(f"   [OK] Saved: {alpha_csv.name} ({len(alpha_df)} records)")
 
 # ============================================================================
 # SUMMARY STATISTICS
 # ============================================================================
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
-📊 SAC Alpha Entropy Summary
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
+[GRAPH] SAC Alpha Entropy Summary
+================================================================================
 
 Alpha Statistics:
   Initial:  {alpha_df['alpha'].iloc[0]:.4f}
@@ -239,9 +239,9 @@ Training Configuration:
   Total Steps:   {total_timesteps:,}
   Steps/Ep:      {timesteps_per_episode:,}
 
-════════════════════════════════════════════════════════════════════════════════
-✅ SAC ALPHA ENTROPY GRAPH REGENERATED WITH REAL DATA
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
+[OK] SAC ALPHA ENTROPY GRAPH REGENERATED WITH REAL DATA
+================================================================================
 📁 Output: {output_path}
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 """)

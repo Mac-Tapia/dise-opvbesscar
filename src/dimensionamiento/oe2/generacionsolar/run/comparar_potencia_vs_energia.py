@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
-Comparación detallada: POTENCIA (kW) vs ENERGÍA (kWh)
+Comparacion detallada: POTENCIA (kW) vs ENERGIA (kWh)
 Sistema solar de Iquitos - 4,050 kWp
-Fórmula correcta: E [kWh] = P [kW] × Δt [h]
+Formula correcta: E [kWh] = P [kW] × Δt [h]
 """
 
 import pandas as pd
@@ -15,46 +15,46 @@ df = pd.read_csv(data_path, index_col='datetime', parse_dates=True)
 df = df.reset_index()  # Convert index back to column for compatibility
 
 print("=" * 80)
-print("  COMPARACIÓN: POTENCIA (kW) vs ENERGÍA (kWh) - SISTEMA SOLAR IQUITOS")
+print("  COMPARACION: POTENCIA (kW) vs ENERGIA (kWh) - SISTEMA SOLAR IQUITOS")
 print("=" * 80)
 
-# Mostrar estadísticas por columna
-print("\n📊 COMPARACIÓN DE UNIDADES Y VALORES")
+# Mostrar estadisticas por columna
+print("\n[GRAPH] COMPARACION DE UNIDADES Y VALORES")
 print("-" * 80)
 
-# Máximo y promedio de potencia
+# Maximo y promedio de potencia
 max_power = df['ac_power_kw'].max()
 mean_power = df['ac_power_kw'].mean()
 min_power = df['ac_power_kw'].min()
 
-# Máximo y promedio de energía
+# Maximo y promedio de energia
 max_energy = df['ac_energy_kwh'].max()
 mean_energy = df['ac_energy_kwh'].mean()
 min_energy = df['ac_energy_kwh'].min()
 
-print(f"\n🔴 POTENCIA (kW) - Instantánea [W/1000]:")
-print(f"   Máxima:  {max_power:,.1f} kW")
+print(f"\n🔴 POTENCIA (kW) - Instantanea [W/1000]:")
+print(f"   Maxima:  {max_power:,.1f} kW")
 print(f"   Media:   {mean_power:,.1f} kW")
-print(f"   Mínima:  {min_power:,.1f} kW")
+print(f"   Minima:  {min_power:,.1f} kW")
 
-print(f"\n🟢 ENERGÍA (kWh) - Acumulada en Δt [W × h / 1000]:")
-print(f"   Máxima:  {max_energy:,.3f} kWh")
+print(f"\n🟢 ENERGIA (kWh) - Acumulada en Δt [W × h / 1000]:")
+print(f"   Maxima:  {max_energy:,.3f} kWh")
 print(f"   Media:   {mean_energy:,.3f} kWh")
-print(f"   Mínima:  {min_energy:,.3f} kWh")
+print(f"   Minima:  {min_energy:,.3f} kWh")
 
-# Validación de fórmula E = P × Δt
+# Validacion de formula E = P × Δt
 print("\n" + "=" * 80)
-print("  VALIDACIÓN DE FÓRMULA: E [kWh] = P [kW] × Δt [h]")
+print("  VALIDACION DE FORMULA: E [kWh] = P [kW] × Δt [h]")
 print("=" * 80)
 
-# Encontrar la hora con máxima potencia
+# Encontrar la hora con maxima potencia
 max_power_idx = df['ac_power_kw'].idxmax()
 max_row = df.iloc[max_power_idx]
 
-print(f"\n📍 Momento de máxima potencia:")
+print(f"\n📍 Momento de maxima potencia:")
 print(f"   Datetime: {max_row['datetime']}")
 print(f"   Potencia AC: {max_row['ac_power_kw']:.1f} kW")
-print(f"   Energía AC: {max_row['ac_energy_kwh']:.6f} kWh")
+print(f"   Energia AC: {max_row['ac_energy_kwh']:.6f} kWh")
 
 # Calcular el intervalo de tiempo
 if len(df) > 1:
@@ -62,61 +62,61 @@ if len(df) > 1:
 else:
     dt_hours = 1.0
 
-print(f"\n⏱️ Intervalo temporal (Δt): {dt_hours:.4f} horas")
+print(f"\n[TIME]️ Intervalo temporal (Δt): {dt_hours:.4f} horas")
 
-# Verificar la fórmula
+# Verificar la formula
 calculated_energy = max_row['ac_power_kw'] * dt_hours
 actual_energy = max_row['ac_energy_kwh']
 error_pct = abs(calculated_energy - actual_energy) / actual_energy * 100 if actual_energy != 0 else 0
 
-print(f"\n🔍 Verificación matemática:")
-print(f"   Fórmula: E = P × Δt")
+print(f"\n🔍 Verificacion matematica:")
+print(f"   Formula: E = P × Δt")
 print(f"   E calculada = {max_row['ac_power_kw']:.4f} [kW] × {dt_hours:.4f} [h]")
 print(f"   E calculada = {calculated_energy:.6f} kWh")
 print(f"   E en CSV = {actual_energy:.6f} kWh")
 print(f"   Error = {error_pct:.10f} %")
-print(f"   ✅ VERIFICACIÓN: {'CORRECTA' if error_pct < 0.01 else 'DIFERENCIA DETECTADA'}")
+print(f"   [OK] VERIFICACION: {'CORRECTA' if error_pct < 0.01 else 'DIFERENCIA DETECTADA'}")
 
-# Resumen de energía total
+# Resumen de energia total
 total_energy_kwh = df['ac_energy_kwh'].sum()
-print(f"\n📈 RESUMEN ANUAL:")
-print(f"   Energía total anual: {total_energy_kwh:,.0f} kWh")
-print(f"   Energía total anual: {total_energy_kwh/1e6:.2f} GWh")
+print(f"\n[CHART] RESUMEN ANUAL:")
+print(f"   Energia total anual: {total_energy_kwh:,.0f} kWh")
+print(f"   Energia total anual: {total_energy_kwh/1e6:.2f} GWh")
 
 # Mostrar ejemplos de diferentes horas
 print("\n" + "=" * 80)
-print("  EJEMPLOS DE DIFERENTES HORAS DEL DÍA")
+print("  EJEMPLOS DE DIFERENTES HORAS DEL DIA")
 print("=" * 80)
 
-sample_hours = [0, 6, 12, 18, 23]  # Noches y días
+sample_hours = [0, 6, 12, 18, 23]  # Noches y dias
 for hour in sample_hours:
     sample = df[df['datetime'].dt.hour == hour].iloc[0]
     print(f"\n🕐 {sample['datetime'].strftime('%H:%M')} - {sample['datetime'].strftime('%A')}")
     print(f"   Irradiancia GHI: {sample['ghi_wm2']:.1f} W/m²")
-    print(f"   Potencia AC: {sample['ac_power_kw']:.3f} kW (instantánea)")
-    print(f"   Energía AC: {sample['ac_energy_kwh']:.6f} kWh (en {dt_hours*60:.0f} minutos)")
+    print(f"   Potencia AC: {sample['ac_power_kw']:.3f} kW (instantanea)")
+    print(f"   Energia AC: {sample['ac_energy_kwh']:.6f} kWh (en {dt_hours*60:.0f} minutos)")
 
 print("\n" + "=" * 80)
-print("  CONCLUSIÓN")
+print("  CONCLUSION")
 print("=" * 80)
 print(f"""
-✅ POTENCIA y ENERGÍA son MAGNITUDES DIFERENTES:
-   • POTENCIA [kW]: Flujo instantáneo de energía en un momento
-   • ENERGÍA [kWh]: Energía acumulada durante un período de tiempo
+[OK] POTENCIA y ENERGIA son MAGNITUDES DIFERENTES:
+   - POTENCIA [kW]: Flujo instantaneo de energia en un momento
+   - ENERGIA [kWh]: Energia acumulada durante un periodo de tiempo
 
-✅ FÓRMULA CORRECTA: E [kWh] = P [kW] × Δt [h]
-   • Se verificó correctamente: {error_pct:.6f}% error (prácticamente nulo)
+[OK] FORMULA CORRECTA: E [kWh] = P [kW] × Δt [h]
+   - Se verifico correctamente: {error_pct:.6f}% error (practicamente nulo)
 
-✅ DATOS REALISTAS DESCARGADOS DE PVGIS:
-   • Generación SOLO durante el día (6:00-18:00 aprox)
-   • Máxima potencia al mediodía: {max_power:.1f} kW
-   • Energía anual: {total_energy_kwh/1e6:.2f} GWh
-   • Horas de producción: {(df['ac_power_kw'] > 0).sum()} horas de {len(df)} totales
-   • Intervalo de datos: 15 minutos (0.25 horas)
+[OK] DATOS REALISTAS DESCARGADOS DE PVGIS:
+   - Generacion SOLO durante el dia (6:00-18:00 aprox)
+   - Maxima potencia al mediodia: {max_power:.1f} kW
+   - Energia anual: {total_energy_kwh/1e6:.2f} GWh
+   - Horas de produccion: {(df['ac_power_kw'] > 0).sum()} horas de {len(df)} totales
+   - Intervalo de datos: 15 minutos (0.25 horas)
 """)
 
 print("\n" + "=" * 80)
-print("  TABLA RESUMEN ENERGÍA MENSUAL")
+print("  TABLA RESUMEN ENERGIA MENSUAL")
 print("=" * 80)
 monthly = df.groupby(df['datetime'].dt.strftime('%Y-%m'))['ac_energy_kwh'].sum()
 for month, energy in monthly.items():

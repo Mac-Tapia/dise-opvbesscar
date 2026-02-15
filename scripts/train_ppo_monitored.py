@@ -30,14 +30,14 @@ def monitor_training():
     logger.info(f"\n{'='*70}")
     logger.info(f"ENTRENAMIENTO PPO - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     logger.info(f"Limpieza completa: checkpoints y outputs limpios")
-    logger.info(f"Dataset OE3: 8,760 timesteps (1 año horario)")
+    logger.info(f"Dataset OE3: 8,760 timesteps (1 ano horario)")
     logger.info(f"{'='*70}\n")
     
     # Script a ejecutar
     training_script = Path("scripts/train/train_ppo_multiobjetivo.py")
     
     if not training_script.exists():
-        logger.error(f"❌ Script de entrenamiento no encontrado: {training_script}")
+        logger.error(f"[X] Script de entrenamiento no encontrado: {training_script}")
         return False
     
     logger.info(f"🚀 Lanzando: {training_script}")
@@ -63,10 +63,10 @@ def monitor_training():
                 logger.info(line)
                 line_count += 1
                 
-                # Mostrar resumen cada 100 líneas
+                # Mostrar resumen cada 100 lineas
                 if line_count % 100 == 0:
                     elapsed = time.time() - start_time
-                    logger.info(f"\n   [Tiempo: {elapsed:.0f}s | {line_count} líneas]\n")
+                    logger.info(f"\n   [Tiempo: {elapsed:.0f}s | {line_count} lineas]\n")
         
         # Esperar a que termine
         return_code = process.wait()
@@ -74,24 +74,24 @@ def monitor_training():
         
         logger.info(f"\n{'='*70}")
         if return_code == 0:
-            logger.info(f"✅ ENTRENAMIENTO COMPLETADO EXITOSAMENTE")
+            logger.info(f"[OK] ENTRENAMIENTO COMPLETADO EXITOSAMENTE")
             logger.info(f"   Tiempo total: {elapsed:.1f}s ({elapsed/60:.1f} minutos)")
-            logger.info(f"   Total líneas procesadas: {line_count}")
+            logger.info(f"   Total lineas procesadas: {line_count}")
         else:
-            logger.error(f"❌ Entrenamiento falló (código: {return_code})")
+            logger.error(f"[X] Entrenamiento fallo (codigo: {return_code})")
         logger.info(f"{'='*70}\n")
         
         return return_code == 0
             
     except KeyboardInterrupt:
-        logger.warning("\n⚠️ Entrenamiento interrumpido por usuario")
+        logger.warning("\n[!] Entrenamiento interrumpido por usuario")
         try:
             process.terminate()
         except:
             pass
         return False
     except Exception as e:
-        logger.error(f"❌ Error: {str(e)}")
+        logger.error(f"[X] Error: {str(e)}")
         import traceback
         traceback.print_exc()
         return False

@@ -28,13 +28,13 @@ print("=" * 70)
 print("\n📥 Loading timeseries data...")
 try:
     df = pd.read_csv(TIMESERIES_FILE)
-    print(f"   ✓ Loaded {len(df)} hourly records")
+    print(f"   [OK] Loaded {len(df)} hourly records")
 except Exception as e:
-    print(f"❌ Error loading timeseries: {e}")
+    print(f"[X] Error loading timeseries: {e}")
     exit(1)
 
 # Aggregate by day (365 days worth of data = 8760 hours)
-print("\n📊 Aggregating hourly data to daily metrics...")
+print("\n[GRAPH] Aggregating hourly data to daily metrics...")
 
 num_days = len(df) // 24
 days_list = []
@@ -93,10 +93,10 @@ for day_idx in range(num_days):
     
     days_list.append(day_idx + 1)
 
-print(f"   ✓ Aggregated to {len(days_list)} days")
+print(f"   [OK] Aggregated to {len(days_list)} days")
 
 if len(days_list) == 0:
-    print("❌ No data aggregated!")
+    print("[X] No data aggregated!")
     exit(1)
 
 # Convert to numpy arrays
@@ -120,7 +120,7 @@ def smooth(data, window=5):
     return s.rolling(window=window, center=True, min_periods=1).mean().values
 
 # Generate dashboard
-print("\n📈 Generating 6-panel KPI Dashboard for A2C...")
+print("\n[CHART] Generating 6-panel KPI Dashboard for A2C...")
 
 fig, axes = plt.subplots(2, 3, figsize=(16, 10))
 fig.patch.set_facecolor('white')
@@ -148,7 +148,7 @@ ax.set_ylim(bottom=0)
 if len(consumption) > 1 and consumption[0] > 0:
     improvement = (consumption[0] - consumption[-1]) / consumption[0] * 100
     color = 'green' if improvement > 0 else 'red'
-    ax.annotate(f'{"↓" if improvement > 0 else "↑"} {abs(improvement):.1f}%',
+    ax.annotate(f'{"v" if improvement > 0 else "^"} {abs(improvement):.1f}%',
                xy=(0.98, 0.05), xycoords='axes fraction',
                fontsize=10, color=color, ha='right', fontweight='bold')
 
@@ -166,7 +166,7 @@ ax.set_ylim(bottom=0)
 if len(cost) > 1 and cost[0] > 0:
     improvement = (cost[0] - cost[-1]) / cost[0] * 100
     color = 'green' if improvement > 0 else 'red'
-    ax.annotate(f'{"↓" if improvement > 0 else "↑"} {abs(improvement):.1f}%',
+    ax.annotate(f'{"v" if improvement > 0 else "^"} {abs(improvement):.1f}%',
                xy=(0.98, 0.05), xycoords='axes fraction',
                fontsize=10, color=color, ha='right', fontweight='bold')
 
@@ -184,7 +184,7 @@ ax.set_ylim(bottom=0)
 if len(emissions) > 1 and emissions[0] > 0:
     improvement = (emissions[0] - emissions[-1]) / emissions[0] * 100
     color = 'green' if improvement > 0 else 'red'
-    ax.annotate(f'{"↓" if improvement > 0 else "↑"} {abs(improvement):.1f}%',
+    ax.annotate(f'{"v" if improvement > 0 else "^"} {abs(improvement):.1f}%',
                xy=(0.98, 0.05), xycoords='axes fraction',
                fontsize=10, color=color, ha='right', fontweight='bold')
 
@@ -202,7 +202,7 @@ ax.set_ylim(bottom=0)
 if len(ramping) > 1 and ramping[0] > 0:
     improvement = (ramping[0] - ramping[-1]) / ramping[0] * 100
     color = 'green' if improvement > 0 else 'red'
-    ax.annotate(f'{"↓" if improvement > 0 else "↑"} {abs(improvement):.1f}%',
+    ax.annotate(f'{"v" if improvement > 0 else "^"} {abs(improvement):.1f}%',
                xy=(0.98, 0.05), xycoords='axes fraction',
                fontsize=10, color=color, ha='right', fontweight='bold')
 
@@ -222,7 +222,7 @@ ax.legend(loc='upper right', fontsize=9)
 if len(peak) > 1 and peak[0] > 0:
     improvement = (peak[0] - peak[-1]) / peak[0] * 100
     color = 'green' if improvement > 0 else 'red'
-    ax.annotate(f'{"↓" if improvement > 0 else "↑"} {abs(improvement):.1f}%',
+    ax.annotate(f'{"v" if improvement > 0 else "^"} {abs(improvement):.1f}%',
                xy=(0.98, 0.05), xycoords='axes fraction',
                fontsize=10, color=color, ha='right', fontweight='bold')
 
@@ -243,7 +243,7 @@ ax.legend(loc='upper right', fontsize=9)
 if len(one_minus_lf) > 1 and one_minus_lf[0] > 0:
     improvement = (one_minus_lf[0] - one_minus_lf[-1]) / one_minus_lf[0] * 100
     color = 'green' if improvement > 0 else 'red'
-    ax.annotate(f'{"↓" if improvement > 0 else "↑"} {abs(improvement):.1f}%',
+    ax.annotate(f'{"v" if improvement > 0 else "^"} {abs(improvement):.1f}%',
                xy=(0.98, 0.05), xycoords='axes fraction',
                fontsize=10, color=color, ha='right', fontweight='bold')
 
@@ -252,17 +252,17 @@ improvements = []
 if len(consumption) > 1 and consumption[0] > 0:
     imp = (consumption[0] - consumption[-1]) / consumption[0] * 100
     if imp > 0:
-        improvements.append(f'Consumption: {imp:.1f}%↓')
+        improvements.append(f'Consumption: {imp:.1f}%v')
 
 if len(emissions) > 1 and emissions[0] > 0:
     imp = (emissions[0] - emissions[-1]) / emissions[0] * 100
     if imp > 0:
-        improvements.append(f'CO2: {imp:.1f}%↓')
+        improvements.append(f'CO2: {imp:.1f}%v')
 
 if len(peak) > 1 and peak[0] > 0:
     imp = (peak[0] - peak[-1]) / peak[0] * 100
     if imp > 0:
-        improvements.append(f'Peak: {imp:.1f}%↓')
+        improvements.append(f'Peak: {imp:.1f}%v')
 
 title = 'CityLearn v2 - A2C Agent KPI Dashboard (Real Metrics from Timeseries)'
 if improvements:
@@ -273,21 +273,21 @@ plt.tight_layout(rect=[0, 0, 1, 0.97])
 
 # Save
 plt.savefig(OUTPUT_FILE, dpi=300, bbox_inches='tight', facecolor='white')
-print(f"   ✅ Saved: {OUTPUT_FILE}")
+print(f"   [OK] Saved: {OUTPUT_FILE}")
 
 plt.close(fig)
 
 # Print summary
-print("\n📊 KPI Summary Statistics (A2C - 10 Episodes):")
-print(f"   Consumption:   {consumption[0]:>10.1f} → {consumption[-1]:>10.1f} kWh/day")
-print(f"   Cost:          {cost[0]:>10.1f} → {cost[-1]:>10.1f} USD/day")
-print(f"   CO2 Emissions: {emissions[0]:>10.1f} → {emissions[-1]:>10.1f} kg/day")
-print(f"   Peak Load:     {peak[0]:>10.1f} → {peak[-1]:>10.1f} kW")
-print(f"   Ramping:       {ramping[0]:>10.2f} → {ramping[-1]:>10.2f} kW/step")
-print(f"   Load Factor:   {one_minus_lf[0]:>10.3f} → {one_minus_lf[-1]:>10.3f}")
+print("\n[GRAPH] KPI Summary Statistics (A2C - 10 Episodes):")
+print(f"   Consumption:   {consumption[0]:>10.1f} -> {consumption[-1]:>10.1f} kWh/day")
+print(f"   Cost:          {cost[0]:>10.1f} -> {cost[-1]:>10.1f} USD/day")
+print(f"   CO2 Emissions: {emissions[0]:>10.1f} -> {emissions[-1]:>10.1f} kg/day")
+print(f"   Peak Load:     {peak[0]:>10.1f} -> {peak[-1]:>10.1f} kW")
+print(f"   Ramping:       {ramping[0]:>10.2f} -> {ramping[-1]:>10.2f} kW/step")
+print(f"   Load Factor:   {one_minus_lf[0]:>10.3f} -> {one_minus_lf[-1]:>10.3f}")
 print(f"\n   Motos Charging (avg):     {motos.mean():>8.1f} vehicles/day")
 print(f"   Mototaxis Charging (avg): {mototaxis.mean():>8.1f} vehicles/day")
 
 print("\n" + "=" * 70)
-print("✅ A2C KPI DASHBOARD GENERATION COMPLETE")
+print("[OK] A2C KPI DASHBOARD GENERATION COMPLETE")
 print("=" * 70)

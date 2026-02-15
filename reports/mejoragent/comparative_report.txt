@@ -1,0 +1,58 @@
+================================================================================
+REPORTE COMPARATIVO DE AGENTES RL - PVBESSCAR
+================================================================================
+Fecha: 2026-02-15 09:08:10
+
+OBJETIVO PRINCIPAL: Maximizar reducción de CO2
+
+----------------------------------------
+🏆 MEJOR AGENTE: PPO
+----------------------------------------
+   CO2 Total Evitado: 43.10 millones kg
+
+RANKING COMPLETO:
+  🥇 #1 PPO:
+       CO2 Total:    43.10M kg
+       CO2 Directo:  3.57M kg
+       CO2 Indirecto:39.53M kg
+       Episodios:    10
+       Steps:        87,600
+
+  🥈 #2 A2C:
+       CO2 Total:    42.65M kg
+       CO2 Directo:  2.37M kg
+       CO2 Indirecto:40.29M kg
+       Episodios:    10
+       Steps:        87,600
+
+  🥉 #3 SAC:
+       CO2 Total:    39.28M kg
+       CO2 Directo:  2.19M kg
+       CO2 Indirecto:37.09M kg
+       Episodios:    10
+       Steps:        87,600
+
+MÉTRICAS DETALLADAS POR AGENTE:
+----------------------------------------
+
+PPO:
+  Timesteps:     87,600
+  Episodios:     10
+  Reward Final:  3060.59
+  Reward Medio:  2514.13
+
+A2C:
+  Timesteps:     87,600
+  Episodios:     10
+  Reward Final:  3170.36
+  Reward Medio:  2859.65
+
+SAC:
+  Timesteps:     87,600
+  Episodios:     10
+  Reward Final:  -2.91
+  Reward Medio:  -3.18
+
+================================================================================
+FIN DEL REPORTE
+================================================================================

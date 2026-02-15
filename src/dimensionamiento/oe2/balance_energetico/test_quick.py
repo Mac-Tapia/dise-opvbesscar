@@ -1,17 +1,17 @@
 """
-Script de prueba rápida del módulo Balance Energético.
+Script de prueba rapida del modulo Balance Energetico.
 
-Valida que todos los datasets estén disponibles y ejecuta un análisis
-básico del balance energético con generación de las 7 gráficas principales.
+Valida que todos los datasets esten disponibles y ejecuta un analisis
+basico del balance energetico con generacion de las 7 graficas principales.
 """
 from pathlib import Path
 from balance import main
 
 
 def run_quick_test():
-    """Ejecuta una prueba rápida del sistema."""
+    """Ejecuta una prueba rapida del sistema."""
     print("\n" + "="*70)
-    print("PRUEBA RÁPIDA: Balance Energético del Sistema Eléctrico")
+    print("PRUEBA RAPIDA: Balance Energetico del Sistema Electrico")
     print("="*70)
     
     # Directorios
@@ -29,19 +29,19 @@ def run_quick_test():
     print("\nValidando archivos de entrada...")
     all_exist = True
     for f in required_files:
-        exists = "✓" if f.exists() else "✗"
+        exists = "[OK]" if f.exists() else "[X]"
         status = "Encontrado" if f.exists() else "FALTA"
         print(f"  {exists} {f.relative_to(Path('.').parent)}: {status}")
         if not f.exists():
             all_exist = False
     
     if not all_exist:
-        print("\n✗ Algunos archivos están faltando. Verifique la ruta data/processed/citylearn/iquitos_ev_mall/")
+        print("\n[X] Algunos archivos estan faltando. Verifique la ruta data/processed/citylearn/iquitos_ev_mall/")
         return False
     
-    # Ejecutar análisis
+    # Ejecutar analisis
     try:
-        print("\nEjecutando análisis completo...")
+        print("\nEjecutando analisis completo...")
         system = main(
             data_dir=data_dir,
             output_dir=output_dir,
@@ -49,13 +49,13 @@ def run_quick_test():
             generate_plots=True
         )
         
-        print(f"\n✓ Análisis completado exitosamente")
+        print(f"\n[OK] Analisis completado exitosamente")
         print(f"  Resultados guardados en: {output_dir}")
         
         return True
     
     except Exception as e:
-        print(f"\n✗ Error durante el análisis: {e}")
+        print(f"\n[X] Error durante el analisis: {e}")
         import traceback
         traceback.print_exc()
         return False

@@ -585,3 +585,580 @@
 2026-02-14 09:32:26,282 | __main__ | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
 2026-02-14 09:32:27,016 | __main__ | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
 2026-02-14 09:32:27,436 | __main__ | ERROR | ERROR en entrenamiento: [Errno 22] Invalid argument
+2026-02-14 13:54:33,414 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 13:54:33,427 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 13:54:33,438 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 13:54:33,574 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 13:54:33,574 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 13:54:33,574 | scripts.train.train_ppo_multiobjetivo | ERROR | ERROR cargando datos OE2: could not convert string to float: '2024-01-01 00:00:00,487,220.1727,0,0.3,146.1'
+2026-02-14 13:55:41,533 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 13:55:41,549 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 13:55:41,561 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 13:55:41,705 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 13:55:41,705 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 13:55:41,710 | scripts.train.train_ppo_multiobjetivo | ERROR | ERROR cargando datos OE2: could not convert string to float: '2024-01-01 00:00:00,487,220.1727,0,0.3,146.1'
+2026-02-14 13:56:33,672 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 13:56:33,687 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 13:56:33,697 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 13:56:33,836 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 13:56:33,837 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 13:56:33,843 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 13:56:33,859 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 13:57:37,712 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 13:57:37,729 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 13:57:37,738 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 13:57:37,864 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 13:57:37,864 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 13:57:37,882 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 13:57:37,899 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 13:57:37,899 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 13:57:37,899 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 13:57:37,899 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 13:57:37,899 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 13:57:37,899 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 13:57:37,899 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 13:57:38,972 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 13:57:39,094 | scripts.train.train_ppo_multiobjetivo | ERROR | ERROR en entrenamiento: 'CityLearnEnvironment' object has no attribute 'scenarios_by_hour'
+2026-02-14 13:58:24,317 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 13:58:24,331 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 13:58:24,342 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 13:58:24,477 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 13:58:24,478 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 13:58:24,484 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 13:58:24,499 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 13:58:24,499 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 13:58:24,499 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 13:58:24,501 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 13:58:24,501 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 13:58:24,501 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 13:58:24,501 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 13:58:25,193 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 13:58:25,307 | scripts.train.train_ppo_multiobjetivo | ERROR | ERROR en entrenamiento: 'CityLearnEnvironment' object has no attribute 'vehicle_simulator'
+2026-02-14 13:58:58,855 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 13:58:58,873 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 13:58:58,885 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 13:58:59,023 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 13:58:59,025 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 13:58:59,029 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 13:58:59,048 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 13:58:59,048 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 13:58:59,048 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 13:58:59,048 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 13:58:59,048 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 13:58:59,050 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 13:58:59,051 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 13:59:00,012 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 13:59:41,369 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 13:59:41,382 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 13:59:41,393 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 13:59:41,525 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 13:59:41,526 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 13:59:41,531 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 13:59:41,546 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 13:59:41,549 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 13:59:41,549 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 13:59:41,549 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 13:59:41,549 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 13:59:41,549 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 13:59:41,549 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 13:59:42,258 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 14:02:21,888 | __main__ | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 14:02:21,902 | __main__ | INFO | Config validado: default.yaml OK
+2026-02-14 14:02:21,913 | __main__ | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 14:02:22,048 | __main__ | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 14:02:22,048 | __main__ | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 14:02:22,056 | __main__ | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 14:02:22,072 | __main__ | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 14:02:22,074 | __main__ | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 14:02:22,074 | __main__ | INFO | Environment creado:
+2026-02-14 14:02:22,074 | __main__ | INFO |   Observation: (156,)
+2026-02-14 14:02:22,074 | __main__ | INFO |   Action: (39,)
+2026-02-14 14:02:22,074 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 14:02:22,074 | __main__ | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 14:02:23,144 | __main__ | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 14:04:59,861 | __main__ | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 14:04:59,874 | __main__ | INFO | Config validado: default.yaml OK
+2026-02-14 14:04:59,884 | __main__ | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 14:05:00,024 | __main__ | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 14:05:00,026 | __main__ | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 14:05:00,026 | __main__ | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 14:05:00,040 | __main__ | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 14:05:00,048 | __main__ | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 14:05:00,048 | __main__ | INFO | Environment creado:
+2026-02-14 14:05:00,049 | __main__ | INFO |   Observation: (156,)
+2026-02-14 14:05:00,049 | __main__ | INFO |   Action: (39,)
+2026-02-14 14:05:00,049 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 14:05:00,050 | __main__ | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 14:05:01,217 | __main__ | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 14:07:14,862 | __main__ | INFO | Entrenamiento exitoso: 2.2 min (speed: 656 steps/s)
+2026-02-14 14:07:14,862 | __main__ | INFO | Modelo guardado: checkpoints\PPO\ppo_final.zip
+2026-02-14 14:07:22,685 | __main__ | INFO |   Episodio 1/10: 8760 steps | R=  4792.5 | CO2=   3079354 kg | Solar=   8292514 kWh
+2026-02-14 14:07:30,267 | __main__ | INFO |   Episodio 2/10: 8760 steps | R=  4707.7 | CO2=   3078931 kg | Solar=   8292514 kWh
+2026-02-14 14:07:37,541 | __main__ | INFO |   Episodio 3/10: 8760 steps | R=  4679.8 | CO2=   3078570 kg | Solar=   8292514 kWh
+2026-02-14 14:07:44,760 | __main__ | INFO |   Episodio 4/10: 8760 steps | R=  4685.1 | CO2=   3078256 kg | Solar=   8292514 kWh
+2026-02-14 14:07:52,156 | __main__ | INFO |   Episodio 5/10: 8760 steps | R=  4711.5 | CO2=   3077982 kg | Solar=   8292514 kWh
+2026-02-14 14:07:59,976 | __main__ | INFO |   Episodio 6/10: 8760 steps | R=  4751.6 | CO2=   3077740 kg | Solar=   8292514 kWh
+2026-02-14 14:15:17,142 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 14:15:17,155 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 14:15:17,161 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 14:15:17,297 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 14:15:17,298 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 14:15:17,304 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 14:15:17,319 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 14:15:17,482 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 14:15:17,484 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 14:15:17,484 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 14:15:17,484 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 14:15:17,484 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 14:15:17,484 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 14:15:18,611 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 14:15:58,217 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 14:15:58,231 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 14:15:58,241 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 14:15:58,378 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 14:15:58,379 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 14:15:58,385 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 14:15:58,399 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 14:15:58,546 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 14:15:58,556 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 14:15:58,556 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 14:15:58,556 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 14:15:58,556 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 14:15:58,556 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 14:15:59,629 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 14:16:34,135 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 14:16:34,154 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 14:16:34,164 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 14:16:34,294 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 14:16:34,297 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 14:16:34,303 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 14:16:34,317 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 14:16:34,477 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 14:16:34,477 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 14:16:34,477 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 14:16:34,477 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 14:16:34,477 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 14:16:34,477 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 14:16:35,572 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 14:19:08,536 | scripts.train.train_ppo_multiobjetivo | INFO | Entrenamiento exitoso: 2.5 min (speed: 573 steps/s)
+2026-02-14 14:19:08,536 | scripts.train.train_ppo_multiobjetivo | INFO | Modelo guardado: checkpoints\PPO\ppo_final.zip
+2026-02-14 14:19:17,941 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 1/10: 8760 steps | R=  4756.9 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:19:27,612 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 2/10: 8760 steps | R=  4692.0 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:19:37,285 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 3/10: 8760 steps | R=  4677.0 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:19:47,403 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 4/10: 8760 steps | R=  4691.6 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:19:57,657 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 5/10: 8760 steps | R=  4725.0 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:20:07,802 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 6/10: 8760 steps | R=  4770.6 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:20:18,017 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 7/10: 8760 steps | R=  4824.6 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:20:27,913 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 8/10: 8760 steps | R=  4884.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:20:43,553 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 14:20:43,571 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 14:20:43,583 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 14:20:43,723 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 14:20:43,726 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 14:20:43,731 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 14:20:43,746 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 14:20:43,926 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 14:20:43,929 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 14:20:43,929 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 14:20:43,929 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 14:20:43,929 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 14:20:43,929 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 14:20:45,332 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 14:23:15,643 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 14:23:15,656 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 14:23:15,667 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 14:23:15,802 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 14:23:15,804 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 14:23:15,810 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 14:23:15,823 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 14:23:15,992 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 14:23:15,992 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 14:23:15,992 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 14:23:15,992 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 14:23:15,992 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 14:23:15,992 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 14:23:17,168 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 14:24:30,421 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 14:24:30,444 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 14:24:30,454 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 14:24:30,612 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 14:24:30,614 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 14:24:30,621 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 14:24:30,636 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 14:24:30,816 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 14:24:30,818 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 14:24:30,818 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 14:24:30,818 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 14:24:30,818 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 14:24:30,818 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 14:24:31,689 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 14:25:07,960 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 14:25:07,976 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 14:25:07,992 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 14:25:08,158 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 14:25:08,158 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 14:25:08,164 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 14:25:08,182 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 14:25:08,395 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 14:25:08,395 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 14:25:08,395 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 14:25:08,395 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 14:25:08,395 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 14:25:08,395 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 14:25:09,231 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 14:25:11,443 | scripts.train.train_ppo_multiobjetivo | ERROR | ERROR en entrenamiento: [Errno 22] Invalid argument
+2026-02-14 14:25:59,667 | scripts.train.train_ppo_multiobjetivo | INFO | Entrenamiento exitoso: 2.7 min (speed: 539 steps/s)
+2026-02-14 14:25:59,667 | scripts.train.train_ppo_multiobjetivo | INFO | Modelo guardado: checkpoints\PPO\ppo_final.zip
+2026-02-14 14:26:10,443 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 1/10: 8760 steps | R=  4781.9 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:26:21,288 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 2/10: 8760 steps | R=  4743.5 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:26:32,416 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 3/10: 8760 steps | R=  4746.6 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:26:43,530 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 4/10: 8760 steps | R=  4774.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:26:55,355 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 5/10: 8760 steps | R=  4818.8 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:27:07,135 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 6/10: 8760 steps | R=  4873.2 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:27:18,643 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 7/10: 8760 steps | R=  4934.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:27:23,722 | scripts.train.train_ppo_multiobjetivo | INFO | Entrenamiento exitoso: 2.9 min (speed: 509 steps/s)
+2026-02-14 14:27:23,722 | scripts.train.train_ppo_multiobjetivo | INFO | Modelo guardado: checkpoints\PPO\ppo_final.zip
+2026-02-14 14:27:30,338 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 8/10: 8760 steps | R=  5001.1 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:27:35,440 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 1/10: 8760 steps | R=  4761.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:27:41,931 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 9/10: 8760 steps | R=  5070.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:27:47,063 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 2/10: 8760 steps | R=  4715.8 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:27:53,928 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 10/10: 8760 steps | R=  5142.5 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:27:55,104 | scripts.train.train_ppo_multiobjetivo | INFO | Archivos generados en: outputs\ppo_training
+2026-02-14 14:27:58,201 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 3/10: 8760 steps | R=  4713.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:28:08,082 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 4/10: 8760 steps | R=  4737.9 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:35:43,882 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 14:35:43,897 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 14:35:43,908 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 14:35:44,047 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 14:35:44,048 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 14:35:44,054 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 14:35:44,071 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 14:35:44,238 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 14:35:44,239 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 14:35:44,239 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 14:35:44,239 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 14:35:44,239 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 14:35:44,239 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 14:35:45,363 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 14:38:23,511 | scripts.train.train_ppo_multiobjetivo | INFO | Entrenamiento exitoso: 2.6 min (speed: 554 steps/s)
+2026-02-14 14:38:23,511 | scripts.train.train_ppo_multiobjetivo | INFO | Modelo guardado: checkpoints\PPO\ppo_final.zip
+2026-02-14 14:38:32,829 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 1/10: 8760 steps | R=  4833.0 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:38:42,020 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 2/10: 8760 steps | R=  4778.5 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:38:51,348 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 3/10: 8760 steps | R=  4771.0 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:39:00,746 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 4/10: 8760 steps | R=  4791.6 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:39:09,963 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 5/10: 8760 steps | R=  4829.9 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:39:19,128 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 6/10: 8760 steps | R=  4880.0 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:39:28,089 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 7/10: 8760 steps | R=  4938.0 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:39:37,029 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 8/10: 8760 steps | R=  5001.5 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:39:46,085 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 9/10: 8760 steps | R=  5068.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:39:55,259 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 10/10: 8760 steps | R=  5138.5 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 14:39:56,324 | scripts.train.train_ppo_multiobjetivo | INFO | Archivos generados en: outputs\ppo_training
+2026-02-14 15:53:37,042 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 15:53:37,061 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 15:53:37,078 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 15:53:37,224 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 15:53:37,224 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 15:53:37,232 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 15:53:37,266 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 15:53:37,440 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 15:53:37,440 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 15:53:37,440 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 15:53:37,442 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 15:53:37,442 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 15:53:37,442 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 15:53:38,880 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 16:01:39,756 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 16:01:39,768 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 16:01:39,780 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 16:01:39,920 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 16:01:39,920 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 16:01:39,925 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 16:01:39,944 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 16:01:40,102 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 16:01:40,102 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 16:01:40,102 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 16:01:40,102 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 16:01:40,102 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 16:01:40,102 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 16:01:41,232 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 16:04:20,233 | scripts.train.train_ppo_multiobjetivo | INFO | Entrenamiento exitoso: 2.6 min (speed: 551 steps/s)
+2026-02-14 16:04:20,233 | scripts.train.train_ppo_multiobjetivo | INFO | Modelo guardado: checkpoints\PPO\ppo_final.zip
+2026-02-14 16:04:29,425 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 1/10: 8760 steps | R=  4751.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:04:38,711 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 2/10: 8760 steps | R=  4701.8 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:04:47,907 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 3/10: 8760 steps | R=  4696.8 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:04:57,574 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 4/10: 8760 steps | R=  4718.9 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:05:06,786 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 5/10: 8760 steps | R=  4758.0 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:05:15,894 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 6/10: 8760 steps | R=  4808.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:05:25,342 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 7/10: 8760 steps | R=  4866.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:05:34,760 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 8/10: 8760 steps | R=  4929.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:05:43,962 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 9/10: 8760 steps | R=  4996.5 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:05:53,109 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 10/10: 8760 steps | R=  5065.9 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:05:54,114 | scripts.train.train_ppo_multiobjetivo | INFO | Archivos generados en: outputs\ppo_training
+2026-02-14 16:27:00,036 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 16:27:00,049 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 16:27:00,059 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 16:27:00,208 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 16:27:00,210 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 16:27:00,216 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 16:27:00,231 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 16:27:00,426 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 16:27:00,426 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 16:27:00,426 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 16:27:00,426 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 16:27:00,426 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 16:27:00,426 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 16:27:01,170 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 16:32:07,856 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 16:32:07,868 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 16:32:07,874 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 16:32:08,025 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 16:32:08,025 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 16:32:08,031 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 16:32:08,053 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 16:32:08,213 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 16:32:08,213 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 16:32:08,213 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 16:32:08,213 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 16:32:08,229 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 16:32:08,229 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 16:32:09,455 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 16:34:57,801 | scripts.train.train_ppo_multiobjetivo | INFO | Entrenamiento exitoso: 2.8 min (speed: 520 steps/s)
+2026-02-14 16:34:57,801 | scripts.train.train_ppo_multiobjetivo | INFO | Modelo guardado: checkpoints\PPO\ppo_final.zip
+2026-02-14 16:35:08,085 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 1/10: 8760 steps | R=  4769.6 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:35:17,763 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 2/10: 8760 steps | R=  4728.8 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:35:27,445 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 3/10: 8760 steps | R=  4730.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:35:36,680 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 4/10: 8760 steps | R=  4757.5 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:35:46,269 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 5/10: 8760 steps | R=  4800.8 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:35:55,541 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 6/10: 8760 steps | R=  4854.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:36:04,629 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 7/10: 8760 steps | R=  4915.8 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:36:13,815 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 8/10: 8760 steps | R=  4981.9 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:36:23,062 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 9/10: 8760 steps | R=  5051.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:36:32,418 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 10/10: 8760 steps | R=  5123.1 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 16:36:33,399 | scripts.train.train_ppo_multiobjetivo | INFO | Archivos generados en: outputs\ppo_training
+2026-02-14 18:19:08,672 | scripts.train.train_ppo_multiobjetivo | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 18:19:08,682 | scripts.train.train_ppo_multiobjetivo | INFO | Config validado: default.yaml OK
+2026-02-14 18:19:08,711 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/año (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 18:19:08,887 | scripts.train.train_ppo_multiobjetivo | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 18:19:08,890 | scripts.train.train_ppo_multiobjetivo | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 18:19:08,895 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] Mall: 4424186 kWh/año (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 18:19:08,940 | scripts.train.train_ppo_multiobjetivo | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 18:19:09,207 | scripts.train.train_ppo_multiobjetivo | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 18:19:09,207 | scripts.train.train_ppo_multiobjetivo | INFO | Environment creado:
+2026-02-14 18:19:09,207 | scripts.train.train_ppo_multiobjetivo | INFO |   Observation: (156,)
+2026-02-14 18:19:09,207 | scripts.train.train_ppo_multiobjetivo | INFO |   Action: (39,)
+2026-02-14 18:19:09,207 | scripts.train.train_ppo_multiobjetivo | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 18:19:09,207 | scripts.train.train_ppo_multiobjetivo | INFO | LR Schedule habilitado: 1.50e-04 → 0 (lineal sobre 87600 timesteps)
+2026-02-14 18:19:10,898 | scripts.train.train_ppo_multiobjetivo | INFO | PPO creado: LR=schedule(1.50e-04→0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 18:21:46,425 | scripts.train.train_ppo_multiobjetivo | INFO | Entrenamiento exitoso: 2.6 min (speed: 563 steps/s)
+2026-02-14 18:21:46,425 | scripts.train.train_ppo_multiobjetivo | INFO | Modelo guardado: checkpoints\PPO\ppo_final.zip
+2026-02-14 18:21:56,014 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 1/10: 8760 steps | R=  4773.1 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 18:22:29,127 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 2/10: 8760 steps | R=  4730.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 18:22:58,691 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 3/10: 8760 steps | R=  4730.6 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 18:23:24,328 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 4/10: 8760 steps | R=  4756.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 18:23:33,706 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 5/10: 8760 steps | R=  4799.1 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 18:23:43,054 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 6/10: 8760 steps | R=  4852.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 18:23:52,380 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 7/10: 8760 steps | R=  4912.9 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 18:24:02,620 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 8/10: 8760 steps | R=  4978.5 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 18:24:13,158 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 9/10: 8760 steps | R=  5047.5 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 18:24:23,551 | scripts.train.train_ppo_multiobjetivo | INFO |   Episodio 10/10: 8760 steps | R=  5118.8 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 18:24:24,635 | scripts.train.train_ppo_multiobjetivo | INFO | Archivos generados en: outputs\ppo_training
+2026-02-14 22:14:53,079 | __main__ | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 22:14:53,089 | __main__ | INFO | Config validado: default.yaml OK
+2026-02-14 22:14:53,104 | __main__ | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/ano (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 22:14:53,246 | __main__ | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 22:14:53,248 | __main__ | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 22:14:53,255 | __main__ | INFO | [SYNC A2C] Mall: 4424186 kWh/ano (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 22:14:53,269 | __main__ | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 22:14:53,441 | __main__ | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 22:14:53,441 | __main__ | INFO | Environment creado:
+2026-02-14 22:14:53,441 | __main__ | INFO |   Observation: (156,)
+2026-02-14 22:14:53,441 | __main__ | INFO |   Action: (39,)
+2026-02-14 22:14:53,441 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 22:14:53,441 | __main__ | INFO | LR Schedule habilitado: 1.50e-04 -> 0 (lineal sobre 87600 timesteps)
+2026-02-14 22:14:54,732 | __main__ | INFO | PPO creado: LR=schedule(1.50e-04->0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 22:19:34,592 | __main__ | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 22:19:34,605 | __main__ | INFO | Config validado: default.yaml OK
+2026-02-14 22:19:34,616 | __main__ | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/ano (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 22:19:34,751 | __main__ | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 22:19:34,752 | __main__ | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 22:19:34,759 | __main__ | INFO | [SYNC A2C] Mall: 4424186 kWh/ano (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 22:19:34,773 | __main__ | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 22:19:34,943 | __main__ | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.85)
+2026-02-14 22:19:34,943 | __main__ | INFO | Environment creado:
+2026-02-14 22:19:34,943 | __main__ | INFO |   Observation: (156,)
+2026-02-14 22:19:34,943 | __main__ | INFO |   Action: (39,)
+2026-02-14 22:19:34,943 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 22:19:34,943 | __main__ | INFO | LR Schedule habilitado: 1.50e-04 -> 0 (lineal sobre 87600 timesteps)
+2026-02-14 22:19:36,091 | __main__ | INFO | PPO creado: LR=schedule(1.50e-04->0), n_steps=2048, target_kl=0.05, device=cuda
+2026-02-14 22:22:21,796 | __main__ | INFO | Entrenamiento exitoso: 2.8 min (speed: 529 steps/s)
+2026-02-14 22:22:21,796 | __main__ | INFO | Modelo guardado: checkpoints\PPO\ppo_final.zip
+2026-02-14 22:22:32,171 | __main__ | INFO |   Episodio 1/10: 8760 steps | R=  4786.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:22:42,452 | __main__ | INFO |   Episodio 2/10: 8760 steps | R=  4739.1 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:22:52,737 | __main__ | INFO |   Episodio 3/10: 8760 steps | R=  4736.1 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:23:02,596 | __main__ | INFO |   Episodio 4/10: 8760 steps | R=  4759.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:23:11,890 | __main__ | INFO |   Episodio 5/10: 8760 steps | R=  4800.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:23:21,062 | __main__ | INFO |   Episodio 6/10: 8760 steps | R=  4852.2 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:23:30,310 | __main__ | INFO |   Episodio 7/10: 8760 steps | R=  4911.5 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:23:39,522 | __main__ | INFO |   Episodio 8/10: 8760 steps | R=  4976.0 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:23:49,145 | __main__ | INFO |   Episodio 9/10: 8760 steps | R=  5044.1 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:23:58,455 | __main__ | INFO |   Episodio 10/10: 8760 steps | R=  5114.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:23:59,497 | __main__ | INFO | Archivos generados en: outputs\ppo_training
+2026-02-14 22:34:10,131 | __main__ | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 22:34:10,145 | __main__ | INFO | Config validado: default.yaml OK
+2026-02-14 22:34:10,156 | __main__ | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/ano (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 22:34:10,297 | __main__ | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 22:34:10,298 | __main__ | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 22:34:10,304 | __main__ | INFO | [SYNC A2C] Mall: 4424186 kWh/ano (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 22:34:10,320 | __main__ | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 22:34:10,485 | __main__ | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.88)
+2026-02-14 22:34:10,486 | __main__ | INFO | Environment creado:
+2026-02-14 22:34:10,486 | __main__ | INFO |   Observation: (156,)
+2026-02-14 22:34:10,486 | __main__ | INFO |   Action: (39,)
+2026-02-14 22:34:10,486 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 22:34:10,486 | __main__ | INFO | LR Schedule habilitado: 1.00e-04 -> 0 (lineal sobre 87600 timesteps)
+2026-02-14 22:34:11,660 | __main__ | INFO | PPO creado: LR=schedule(1.00e-04->0), n_steps=2048, target_kl=0.06, device=cuda
+2026-02-14 22:34:11,795 | __main__ | ERROR | ERROR en entrenamiento: 'DetailedLoggingCallback' object has no attribute 'ep_r_cost_sum'
+2026-02-14 22:36:27,205 | __main__ | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 22:36:27,227 | __main__ | INFO | Config validado: default.yaml OK
+2026-02-14 22:36:27,237 | __main__ | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/ano (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 22:36:27,379 | __main__ | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 22:36:27,379 | __main__ | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 22:36:27,385 | __main__ | INFO | [SYNC A2C] Mall: 4424186 kWh/ano (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 22:36:27,400 | __main__ | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 22:36:27,570 | __main__ | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.88)
+2026-02-14 22:36:27,570 | __main__ | INFO | Environment creado:
+2026-02-14 22:36:27,570 | __main__ | INFO |   Observation: (156,)
+2026-02-14 22:36:27,570 | __main__ | INFO |   Action: (39,)
+2026-02-14 22:36:27,570 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 22:36:27,570 | __main__ | INFO | LR Schedule habilitado: 1.00e-04 -> 0 (lineal sobre 87600 timesteps)
+2026-02-14 22:36:28,382 | __main__ | INFO | PPO creado: LR=schedule(1.00e-04->0), n_steps=2048, target_kl=0.06, device=cuda
+2026-02-14 22:39:14,639 | __main__ | INFO | Entrenamiento exitoso: 2.8 min (speed: 527 steps/s)
+2026-02-14 22:39:14,639 | __main__ | INFO | Modelo guardado: checkpoints\PPO\ppo_final.zip
+2026-02-14 22:39:25,246 | __main__ | INFO |   Episodio 1/10: 8760 steps | R=  2072.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:39:35,919 | __main__ | INFO |   Episodio 2/10: 8760 steps | R=  2085.1 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:39:46,460 | __main__ | INFO |   Episodio 3/10: 8760 steps | R=  2100.3 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:39:56,950 | __main__ | INFO |   Episodio 4/10: 8760 steps | R=  2117.0 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:40:07,637 | __main__ | INFO |   Episodio 5/10: 8760 steps | R=  2134.3 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:40:18,183 | __main__ | INFO |   Episodio 6/10: 8760 steps | R=  2151.8 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:40:28,782 | __main__ | INFO |   Episodio 7/10: 8760 steps | R=  2169.1 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:40:39,484 | __main__ | INFO |   Episodio 8/10: 8760 steps | R=  2186.0 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:40:49,979 | __main__ | INFO |   Episodio 9/10: 8760 steps | R=  2202.5 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:41:00,417 | __main__ | INFO |   Episodio 10/10: 8760 steps | R=  2218.5 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:41:00,418 | __main__ | ERROR | ERROR en validacion: 'DetailedLoggingCallback' object has no attribute 'episode_r_cost'
+2026-02-14 22:42:43,412 | __main__ | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-14 22:42:43,424 | __main__ | INFO | Config validado: default.yaml OK
+2026-02-14 22:42:43,434 | __main__ | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/ano (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-14 22:42:43,570 | __main__ | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-14 22:42:43,571 | __main__ | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-14 22:42:43,578 | __main__ | INFO | [SYNC A2C] Mall: 4424186 kWh/ano (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-14 22:42:43,593 | __main__ | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-14 22:42:43,765 | __main__ | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.88)
+2026-02-14 22:42:43,766 | __main__ | INFO | Environment creado:
+2026-02-14 22:42:43,766 | __main__ | INFO |   Observation: (156,)
+2026-02-14 22:42:43,766 | __main__ | INFO |   Action: (39,)
+2026-02-14 22:42:43,766 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-14 22:42:43,766 | __main__ | INFO | LR Schedule habilitado: 1.00e-04 -> 0 (lineal sobre 87600 timesteps)
+2026-02-14 22:42:44,943 | __main__ | INFO | PPO creado: LR=schedule(1.00e-04->0), n_steps=2048, target_kl=0.06, device=cuda
+2026-02-14 22:45:34,823 | __main__ | INFO | Entrenamiento exitoso: 2.8 min (speed: 516 steps/s)
+2026-02-14 22:45:34,823 | __main__ | INFO | Modelo guardado: checkpoints\PPO\ppo_final.zip
+2026-02-14 22:45:45,412 | __main__ | INFO |   Episodio 1/10: 8760 steps | R=  2023.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:45:56,099 | __main__ | INFO |   Episodio 2/10: 8760 steps | R=  2027.8 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:46:06,904 | __main__ | INFO |   Episodio 3/10: 8760 steps | R=  2036.9 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:46:17,669 | __main__ | INFO |   Episodio 4/10: 8760 steps | R=  2048.6 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:46:28,355 | __main__ | INFO |   Episodio 5/10: 8760 steps | R=  2061.9 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:46:39,285 | __main__ | INFO |   Episodio 6/10: 8760 steps | R=  2076.0 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:46:49,946 | __main__ | INFO |   Episodio 7/10: 8760 steps | R=  2090.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:47:00,596 | __main__ | INFO |   Episodio 8/10: 8760 steps | R=  2104.8 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:47:11,095 | __main__ | INFO |   Episodio 9/10: 8760 steps | R=  2119.1 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:47:21,148 | __main__ | INFO |   Episodio 10/10: 8760 steps | R=  2133.1 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-14 22:47:22,706 | __main__ | INFO | Archivos generados en: outputs\ppo_training
+2026-02-15 00:17:56,661 | __main__ | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-15 00:17:56,674 | __main__ | INFO | Config validado: default.yaml OK
+2026-02-15 00:17:56,685 | __main__ | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/ano (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-15 00:17:56,823 | __main__ | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-15 00:17:56,825 | __main__ | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-15 00:17:56,830 | __main__ | INFO | [SYNC A2C] Mall: 4424186 kWh/ano (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-15 00:17:56,842 | __main__ | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-15 00:17:57,008 | __main__ | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.88)
+2026-02-15 00:17:57,012 | __main__ | INFO | Environment creado:
+2026-02-15 00:17:57,012 | __main__ | INFO |   Observation: (156,)
+2026-02-15 00:17:57,012 | __main__ | INFO |   Action: (39,)
+2026-02-15 00:17:57,012 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-15 00:17:57,012 | __main__ | INFO | LR Schedule habilitado: 1.00e-04 -> 0 (lineal sobre 87600 timesteps)
+2026-02-15 00:17:57,714 | __main__ | INFO | PPO creado: LR=schedule(1.00e-04->0), n_steps=2048, target_kl=0.06, device=cuda
+2026-02-15 00:20:26,566 | __main__ | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-15 00:20:26,591 | __main__ | INFO | Config validado: default.yaml OK
+2026-02-15 00:20:26,615 | __main__ | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/ano (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-15 00:20:26,785 | __main__ | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-15 00:20:26,787 | __main__ | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-15 00:20:26,793 | __main__ | INFO | [SYNC A2C] Mall: 4424186 kWh/ano (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-15 00:20:26,812 | __main__ | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-15 00:20:27,021 | __main__ | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.88)
+2026-02-15 00:20:27,021 | __main__ | INFO | Environment creado:
+2026-02-15 00:20:27,021 | __main__ | INFO |   Observation: (156,)
+2026-02-15 00:20:27,021 | __main__ | INFO |   Action: (39,)
+2026-02-15 00:20:27,021 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-15 00:20:27,021 | __main__ | INFO | LR Schedule habilitado: 1.00e-04 -> 0 (lineal sobre 87600 timesteps)
+2026-02-15 00:20:27,924 | __main__ | INFO | PPO creado: LR=schedule(1.00e-04->0), n_steps=2048, target_kl=0.06, device=cuda
+2026-02-15 00:20:30,202 | __main__ | ERROR | ERROR en entrenamiento: [Errno 22] Invalid argument
+2026-02-15 00:20:49,728 | __main__ | INFO | Entrenamiento exitoso: 2.9 min (speed: 509 steps/s)
+2026-02-15 00:20:49,728 | __main__ | INFO | Modelo guardado: checkpoints\PPO\ppo_final.zip
+2026-02-15 00:21:00,538 | __main__ | INFO |   Episodio 1/10: 8760 steps | R=  2229.3 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:21:10,911 | __main__ | INFO |   Episodio 2/10: 8760 steps | R=  2250.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:21:20,929 | __main__ | INFO |   Episodio 3/10: 8760 steps | R=  2272.2 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:21:30,823 | __main__ | INFO |   Episodio 4/10: 8760 steps | R=  2294.0 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:21:41,078 | __main__ | INFO |   Episodio 5/10: 8760 steps | R=  2315.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:22:08,174 | __main__ | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-15 00:22:08,189 | __main__ | INFO | Config validado: default.yaml OK
+2026-02-15 00:22:08,198 | __main__ | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/ano (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-15 00:22:08,344 | __main__ | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-15 00:22:08,344 | __main__ | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-15 00:22:08,344 | __main__ | INFO | [SYNC A2C] Mall: 4424186 kWh/ano (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-15 00:22:08,364 | __main__ | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-15 00:22:08,535 | __main__ | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.88)
+2026-02-15 00:22:08,540 | __main__ | INFO | Environment creado:
+2026-02-15 00:22:08,540 | __main__ | INFO |   Observation: (156,)
+2026-02-15 00:22:08,540 | __main__ | INFO |   Action: (39,)
+2026-02-15 00:22:08,540 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-15 00:22:08,540 | __main__ | INFO | LR Schedule habilitado: 1.00e-04 -> 0 (lineal sobre 87600 timesteps)
+2026-02-15 00:22:09,746 | __main__ | INFO | PPO creado: LR=schedule(1.00e-04->0), n_steps=2048, target_kl=0.06, device=cuda
+2026-02-15 00:24:51,867 | __main__ | INFO | Entrenamiento exitoso: 2.7 min (speed: 540 steps/s)
+2026-02-15 00:24:51,868 | __main__ | INFO | Modelo guardado: checkpoints\PPO\ppo_final.zip
+2026-02-15 00:25:01,776 | __main__ | INFO |   Episodio 1/10: 8760 steps | R=  2077.1 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:25:11,527 | __main__ | INFO |   Episodio 2/10: 8760 steps | R=  2088.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:25:21,531 | __main__ | INFO |   Episodio 3/10: 8760 steps | R=  2102.8 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:25:31,214 | __main__ | INFO |   Episodio 4/10: 8760 steps | R=  2118.1 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:25:40,851 | __main__ | INFO |   Episodio 5/10: 8760 steps | R=  2133.9 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:25:50,701 | __main__ | INFO |   Episodio 6/10: 8760 steps | R=  2149.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:26:00,531 | __main__ | INFO |   Episodio 7/10: 8760 steps | R=  2165.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:26:10,358 | __main__ | INFO |   Episodio 8/10: 8760 steps | R=  2180.6 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:26:20,175 | __main__ | INFO |   Episodio 9/10: 8760 steps | R=  2195.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:26:30,217 | __main__ | INFO |   Episodio 10/10: 8760 steps | R=  2209.7 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:26:31,710 | __main__ | INFO | Archivos generados en: outputs\ppo_training
+2026-02-15 00:26:34,836 | __main__ | INFO | Device: cuda | Batch: 256 | Epochs: 3
+2026-02-15 00:26:34,849 | __main__ | INFO | Config validado: default.yaml OK
+2026-02-15 00:26:34,860 | __main__ | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/ano (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-15 00:26:34,988 | __main__ | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-15 00:26:34,988 | __main__ | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-15 00:26:34,988 | __main__ | INFO | [SYNC A2C] Mall: 4424186 kWh/ano (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-15 00:26:35,011 | __main__ | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+2026-02-15 00:26:35,173 | __main__ | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.88)
+2026-02-15 00:26:35,174 | __main__ | INFO | Environment creado:
+2026-02-15 00:26:35,174 | __main__ | INFO |   Observation: (156,)
+2026-02-15 00:26:35,174 | __main__ | INFO |   Action: (39,)
+2026-02-15 00:26:35,174 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+2026-02-15 00:26:35,174 | __main__ | INFO | LR Schedule habilitado: 1.00e-04 -> 0 (lineal sobre 87600 timesteps)
+2026-02-15 00:26:36,135 | __main__ | INFO | PPO creado: LR=schedule(1.00e-04->0), n_steps=2048, target_kl=0.06, device=cuda
+2026-02-15 00:29:15,571 | __main__ | INFO | Entrenamiento exitoso: 2.7 min (speed: 550 steps/s)
+2026-02-15 00:29:15,571 | __main__ | INFO | Modelo guardado: checkpoints\PPO\ppo_final.zip
+2026-02-15 00:29:25,593 | __main__ | INFO |   Episodio 1/10: 8760 steps | R=  2085.1 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:29:35,325 | __main__ | INFO |   Episodio 2/10: 8760 steps | R=  2101.9 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:29:45,167 | __main__ | INFO |   Episodio 3/10: 8760 steps | R=  2119.6 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:29:54,743 | __main__ | INFO |   Episodio 4/10: 8760 steps | R=  2137.6 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:30:04,938 | __main__ | INFO |   Episodio 5/10: 8760 steps | R=  2155.2 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:30:14,870 | __main__ | INFO |   Episodio 6/10: 8760 steps | R=  2172.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:30:24,708 | __main__ | INFO |   Episodio 7/10: 8760 steps | R=  2188.9 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:30:34,585 | __main__ | INFO |   Episodio 8/10: 8760 steps | R=  2204.8 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:30:44,271 | __main__ | INFO |   Episodio 9/10: 8760 steps | R=  2220.0 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:30:54,143 | __main__ | INFO |   Episodio 10/10: 8760 steps | R=  2234.5 | CO2=   4309536 kg | Solar=   8292514 kWh
+2026-02-15 00:30:55,613 | __main__ | INFO | Archivos generados en: outputs\ppo_training

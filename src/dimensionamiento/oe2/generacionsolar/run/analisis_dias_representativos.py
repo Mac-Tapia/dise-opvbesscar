@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Análisis detallado de días representativos en Iquitos.
+Analisis detallado de dias representativos en Iquitos.
 
 Calcula para:
-- Día despejado: 2024-11-21
-- Día templado/intermedio: 2024-06-19
-- Día nublado: 2024-12-24
+- Dia despejado: 2024-11-21
+- Dia templado/intermedio: 2024-06-19
+- Dia nublado: 2024-12-24
 
-Con cálculos REALES de:
-- Posición del sol (elevación, azimut)
+Con calculos REALES de:
+- Posicion del sol (elevacion, azimut)
 - Zona horaria local (America/Lima, UTC-5)
 - Irradiancia global horizontal (GHI)
-- Potencia instantánea (kW)
-- Energía acumulada (kWh)
-- Condiciones meteorológicas reales (temperatura, viento)
+- Potencia instantanea (kW)
+- Energia acumulada (kWh)
+- Condiciones meteorologicas reales (temperatura, viento)
 """
 
 from __future__ import annotations
@@ -47,16 +47,16 @@ def analyze_representative_day(
     tz: str = "America/Lima",
 ) -> None:
     """
-    Analiza un día representativo con cálculos reales de posición solar.
+    Analiza un dia representativo con calculos reales de posicion solar.
 
     Args:
-        df_main: DataFrame principal con datos de todo el año
+        df_main: DataFrame principal con datos de todo el ano
         date_str: Fecha en formato "2024-MM-DD"
-        day_type: Tipo de día ("Despejado", "Templado", "Nublado")
-        lat, lon, alt: Ubicación de Iquitos
+        day_type: Tipo de dia ("Despejado", "Templado", "Nublado")
+        lat, lon, alt: Ubicacion de Iquitos
         tz: Zona horaria local
     """
-    # Filtrar datos del día
+    # Filtrar datos del dia
     date_filter = pd.Timestamp(date_str, tz=tz)
     day_data = df_main[df_main.index.date == date_filter.date()].copy()
 
@@ -64,19 +64,19 @@ def analyze_representative_day(
         print(f"  ADVERTENCIA: No hay datos para {date_str}")
         return
 
-    # Crear ubicación
+    # Crear ubicacion
     location = Location(latitude=lat, longitude=lon, tz=tz, altitude=alt, name="Iquitos")
 
     print("\n" + "=" * 80)
-    print(f"  ANÁLISIS: DÍA {day_type.upper()} - {date_str}")
+    print(f"  ANALISIS: DIA {day_type.upper()} - {date_str}")
     print("=" * 80)
 
-    print(f"\n📍 UBICACIÓN: Iquitos, Perú")
+    print(f"\n📍 UBICACION: Iquitos, Peru")
     print(f"   Latitud: {lat}°, Longitud: {lon}°, Altitud: {alt}m")
     print(f"   Zona horaria: {tz} (UTC-5)")
 
-    # ========== DATOS METEOROLÓGICOS ==========
-    print(f"\n☀️  CONDICIONES METEOROLÓGICAS:")
+    # ========== DATOS METEOROLOGICOS ==========
+    print(f"\n☀️  CONDICIONES METEOROLOGICAS:")
     ghi_total = day_data["ghi_wm2"].sum()
     temp_mean = day_data["temp_air_c"].mean()
     temp_min = day_data["temp_air_c"].min()
@@ -87,43 +87,43 @@ def analyze_representative_day(
     print(f"   Temperatura: {temp_mean:.1f}°C (min: {temp_min:.1f}°C, max: {temp_max:.1f}°C)")
     print(f"   Viento promedio: {wind_mean:.2f} m/s")
 
-    # ========== POSICIÓN SOLAR ==========
-    print(f"\n🌞 POSICIÓN SOLAR (CÁLCULOS REALES):")
+    # ========== POSICION SOLAR ==========
+    print(f"\n🌞 POSICION SOLAR (CALCULOS REALES):")
     solar_position = location.get_solarposition(day_data.index)
 
-    # Encontrar hora con máxima elevación (solar noon)
+    # Encontrar hora con maxima elevacion (solar noon)
     max_elevation_idx = solar_position["elevation"].idxmax()
     max_elevation = solar_position.loc[max_elevation_idx, "elevation"]
     max_azimuth = solar_position.loc[max_elevation_idx, "azimuth"]
 
-    print(f"   Salida del sol: ~06:00 (elevación > 0°)")
-    print(f"   Mediodía solar: {max_elevation_idx.strftime('%H:%M')} (hora local)")
-    print(f"     - Elevación máxima: {max_elevation:.1f}°")
+    print(f"   Salida del sol: ~06:00 (elevacion > 0°)")
+    print(f"   Mediodia solar: {max_elevation_idx.strftime('%H:%M')} (hora local)")
+    print(f"     - Elevacion maxima: {max_elevation:.1f}°")
     print(f"     - Azimut: {max_azimuth:.1f}° (0°=Norte)")
-    print(f"   Puesta del sol: ~18:00 (elevación < 0°)")
+    print(f"   Puesta del sol: ~18:00 (elevacion < 0°)")
 
-    # ========== PRODUCCIÓN DE ENERGÍA ==========
-    print(f"\n⚡ PRODUCCIÓN FOTOVOLTAICA:")
+    # ========== PRODUCCION DE ENERGIA ==========
+    print(f"\n⚡ PRODUCCION FOTOVOLTAICA:")
 
     ac_energy_daily = day_data["ac_energy_kwh"].sum()
     ac_power_max = day_data["ac_power_kw"].max()
     ac_power_mean = day_data["ac_power_kw"].mean()
     ac_power_median = day_data["ac_power_kw"].median()
 
-    print(f"   Energía AC total: {ac_energy_daily:.1f} kWh")
-    print(f"   Potencia máxima: {ac_power_max:.1f} kW")
+    print(f"   Energia AC total: {ac_energy_daily:.1f} kWh")
+    print(f"   Potencia maxima: {ac_power_max:.1f} kW")
     print(f"   Potencia media: {ac_power_mean:.1f} kW")
     print(f"   Potencia mediana: {ac_power_median:.1f} kW")
 
-    # Horas con producción
+    # Horas con produccion
     hours_with_prod = (day_data["ac_power_kw"] > 0).sum() * (
         (day_data.index[1] - day_data.index[0]).total_seconds() / 3600
     )
-    print(f"   Horas con producción: {hours_with_prod:.1f} h")
+    print(f"   Horas con produccion: {hours_with_prod:.1f} h")
 
     # ========== PERFIL HORARIO DETALLADO ==========
-    print(f"\n📊 PERFIL HORARIO (HORA LOCAL - America/Lima):")
-    print(f"   Formato: HH:MM | GHI | Elev. | Temp | Potencia AC | Energía")
+    print(f"\n[GRAPH] PERFIL HORARIO (HORA LOCAL - America/Lima):")
+    print(f"   Formato: HH:MM | GHI | Elev. | Temp | Potencia AC | Energia")
     print(f"   " + "-" * 75)
 
     for idx, row in day_data.iterrows():
@@ -133,7 +133,7 @@ def analyze_representative_day(
         potencia = row["ac_power_kw"]
         energia = row["ac_energy_kwh"]
 
-        # Elevación solar en esa hora
+        # Elevacion solar en esa hora
         try:
             elev = solar_position.loc[idx, "elevation"]
             if elev < 0:
@@ -143,7 +143,7 @@ def analyze_representative_day(
         except KeyError:
             elev_str = "  N/A"
 
-        # Barra de visualización de potencia
+        # Barra de visualizacion de potencia
         bar_width = int(potencia / ac_power_max * 40) if ac_power_max > 0 else 0
         bar = "#" * bar_width
 
@@ -151,10 +151,10 @@ def analyze_representative_day(
             f"   {hora} | {ghi:6.0f} | {elev_str} | {temp:5.1f}°C | {potencia:7.1f} kW | {energia:7.2f} kWh"
         )
 
-    # ========== FÓRMULA E = P × Δt ==========
-    print(f"\n🔬 VALIDACIÓN: FÓRMULA E = P × Δt")
+    # ========== FORMULA E = P × Δt ==========
+    print(f"\n🔬 VALIDACION: FORMULA E = P × Δt")
 
-    # Buscar momento de máxima potencia del día
+    # Buscar momento de maxima potencia del dia
     max_power_idx = day_data["ac_power_kw"].idxmax()
     max_power_kw = day_data.loc[max_power_idx, "ac_power_kw"]
     max_energy_kwh = day_data.loc[max_power_idx, "ac_energy_kwh"]
@@ -162,21 +162,21 @@ def analyze_representative_day(
     # Intervalo temporal (15 minutos = 0.25 horas)
     dt = 15 / 60  # minutos a horas
 
-    print(f"   Momento de máxima potencia: {max_power_idx.strftime('%H:%M')}")
+    print(f"   Momento de maxima potencia: {max_power_idx.strftime('%H:%M')}")
     print(f"   Potencia: {max_power_kw:.2f} kW")
-    print(f"   Energía en intervalo: {max_energy_kwh:.6f} kWh")
+    print(f"   Energia en intervalo: {max_energy_kwh:.6f} kWh")
     print(f"   Intervalo (Δt): {dt:.4f} horas (15 minutos)")
-    print(f"   Cálculo: E = P × Δt = {max_power_kw:.2f} × {dt:.4f} = {max_power_kw * dt:.6f} kWh")
-    print(f"   Verificación: {abs(max_energy_kwh - max_power_kw * dt) < 1e-5}")
-    print(f"   Error: {abs(max_energy_kwh - max_power_kw * dt):.2e} kWh (prácticamente nulo)")
+    print(f"   Calculo: E = P × Δt = {max_power_kw:.2f} × {dt:.4f} = {max_power_kw * dt:.6f} kWh")
+    print(f"   Verificacion: {abs(max_energy_kwh - max_power_kw * dt) < 1e-5}")
+    print(f"   Error: {abs(max_energy_kwh - max_power_kw * dt):.2e} kWh (practicamente nulo)")
 
     print()
 
 
 def main():
-    """Función principal."""
+    """Funcion principal."""
     print("\n" + "=" * 80)
-    print("  ANÁLISIS DETALLADO DE DÍAS REPRESENTATIVOS EN IQUITOS")
+    print("  ANALISIS DETALLADO DE DIAS REPRESENTATIVOS EN IQUITOS")
     print("=" * 80)
 
     # Cargar datos principales
@@ -194,15 +194,15 @@ def main():
         df.index = df.index.tz_localize("America/Lima")
 
     print(f"Registros cargados: {len(df)}")
-    print(f"Período: {df.index[0]} a {df.index[-1]}")
+    print(f"Periodo: {df.index[0]} a {df.index[-1]}")
 
-    # Analizar cada día representativo
+    # Analizar cada dia representativo
     analyze_representative_day(df, "2024-11-21", "DESPEJADO")
     analyze_representative_day(df, "2024-06-19", "TEMPLADO/INTERMEDIO")
     analyze_representative_day(df, "2024-12-24", "NUBLADO")
 
     print("\n" + "=" * 80)
-    print("  RESUMEN COMPARATIVO DE DÍAS")
+    print("  RESUMEN COMPARATIVO DE DIAS")
     print("=" * 80)
 
     # Crear tabla comparativa
@@ -221,7 +221,7 @@ def main():
                     "Tipo": day_type,
                     "Fecha": date_str,
                     "GHI [Wh/m²]": f"{day_data['ghi_wm2'].sum():.0f}",
-                    "Energía AC [kWh]": f"{day_data['ac_energy_kwh'].sum():.1f}",
+                    "Energia AC [kWh]": f"{day_data['ac_energy_kwh'].sum():.1f}",
                     "P_max [kW]": f"{day_data['ac_power_kw'].max():.1f}",
                     "P_media [kW]": f"{day_data['ac_power_kw'].mean():.1f}",
                     "Temp media [°C]": f"{day_data['temp_air_c'].mean():.1f}",
@@ -235,16 +235,16 @@ def main():
     print("  CONCLUSIONES")
     print("=" * 80)
     print("""
-✓ Sistema fotovoltaico 4,050 kWp modelado con DATOS REALES de PVGIS
-✓ Posición solar calculada para Iquitos (-3.75°, -73.25°, zona America/Lima)
-✓ Fórmula E = P × Δt validada con error < 0.0001%
-✓ Generación realista:
-   - Día despejado: ~25,500 kWh
-   - Día templado: ~24,900 kWh
-   - Día nublado: ~5,000 kWh
-✓ Producción diaria promedio anual: 22,760 kWh
-✓ Producción anual: 8.31 GWh (realista para Iquitos tropical)
-✓ Factor de capacidad: 29.6%
+[OK] Sistema fotovoltaico 4,050 kWp modelado con DATOS REALES de PVGIS
+[OK] Posicion solar calculada para Iquitos (-3.75°, -73.25°, zona America/Lima)
+[OK] Formula E = P × Δt validada con error < 0.0001%
+[OK] Generacion realista:
+   - Dia despejado: ~25,500 kWh
+   - Dia templado: ~24,900 kWh
+   - Dia nublado: ~5,000 kWh
+[OK] Produccion diaria promedio anual: 22,760 kWh
+[OK] Produccion anual: 8.31 GWh (realista para Iquitos tropical)
+[OK] Factor de capacidad: 29.6%
 """)
     print("=" * 80 + "\n")
 

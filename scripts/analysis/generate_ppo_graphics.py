@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Generar gráficas faltantes para PPO Training
+Generar graficas faltantes para PPO Training
 ============================================
-Este script regenera las gráficas de entrenamiento PPO basándose en 
+Este script regenera las graficas de entrenamiento PPO basandose en 
 los checkpoints y datos disponibles.
 """
 from __future__ import annotations
@@ -21,7 +21,7 @@ matplotlib.use('Agg')
 warnings.filterwarnings('ignore')
 
 # ============================================================================
-# CONFIGURACIÓN
+# CONFIGURACION
 # ============================================================================
 
 OUTPUT_DIR = Path('outputs/ppo_training')
@@ -33,7 +33,7 @@ TENSORBOARD_DIR = Path('outputs/ppo_training')
 # ============================================================================
 
 def smooth(data, window=10):
-    """Suavizar datos con media móvil."""
+    """Suavizar datos con media movil."""
     if len(data) < window:
         return np.array(data)
     return pd.Series(data).rolling(window=window, center=True, min_periods=1).mean().values
@@ -41,19 +41,19 @@ def smooth(data, window=10):
 
 def generate_synthetic_ppo_metrics():
     """
-    Generar métricas sintéticas realistas basadas en entrenamiento PPO típico.
+    Generar metricas sinteticas realistas basadas en entrenamiento PPO tipico.
     Se usan como base los checkpoints existentes de PPO.
     """
-    print('📊 Generando métricas sintéticas PPO basadas en checkpoints...')
+    print('[GRAPH] Generando metricas sinteticas PPO basadas en checkpoints...')
     
     np.random.seed(42)
     
-    # Obtener steps de los checkpoints para alineación realista
+    # Obtener steps de los checkpoints para alineacion realista
     checkpoint_files = sorted(CHECKPOINT_DIR.glob('ppo_model_*_steps.zip'))
     steps_from_checkpoints = []
     for cf in checkpoint_files:
         try:
-            # Extraer número de steps del nombre: ppo_model_XXXXX_steps.zip
+            # Extraer numero de steps del nombre: ppo_model_XXXXX_steps.zip
             steps_str = cf.stem.replace('ppo_model_', '').replace('_steps', '')
             if steps_str.isdigit():
                 steps_from_checkpoints.append(int(steps_str))
@@ -69,8 +69,8 @@ def generate_synthetic_ppo_metrics():
         n_points = 100
         steps = np.linspace(0, 87600, n_points).astype(int)
     
-    # Métricas PPO realistas
-    # PPO típicamente tiene convergencia estable pero más lenta que SAC
+    # Metricas PPO realistas
+    # PPO tipicamente tiene convergencia estable pero mas lenta que SAC
     base_return = -600 + 500 * (1 - np.exp(-steps / 40000))
     returns = base_return + np.random.normal(0, 40, n_points)
     
@@ -100,7 +100,7 @@ def generate_synthetic_ppo_metrics():
 
 
 def plot_ppo_kpi_dashboard(metrics):
-    """Gráfica 1: KPI Dashboard similar a SAC/A2C."""
+    """Grafica 1: KPI Dashboard similar a SAC/A2C."""
     fig, axes = plt.subplots(2, 3, figsize=(16, 10))
     
     steps_k = np.array(metrics['steps']) / 1000
@@ -168,11 +168,11 @@ def plot_ppo_kpi_dashboard(metrics):
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / 'kpi_dashboard.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print('  ✓ kpi_dashboard.png')
+    print('  [OK] kpi_dashboard.png')
 
 
 def plot_ppo_entropy(metrics):
-    """Gráfica 2: Entropy vs Steps."""
+    """Grafica 2: Entropy vs Steps."""
     fig, ax = plt.subplots(figsize=(12, 6))
     
     steps_k = np.array(metrics['steps']) / 1000
@@ -183,18 +183,18 @@ def plot_ppo_entropy(metrics):
     
     ax.set_xlabel('Steps (K)', fontsize=12)
     ax.set_ylabel('Entropy', fontsize=12)
-    ax.set_title('PPO: Entropy vs Training Steps\n(Medida de exploración)', fontsize=14, fontweight='bold')
+    ax.set_title('PPO: Entropy vs Training Steps\n(Medida de exploracion)', fontsize=14, fontweight='bold')
     ax.grid(True, alpha=0.3)
     ax.legend(loc='upper right', fontsize=11)
     
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / 'ppo_entropy.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print('  ✓ ppo_entropy.png')
+    print('  [OK] ppo_entropy.png')
 
 
 def plot_ppo_losses_and_metrics(metrics):
-    """Gráfica 3-6: PPO-specific metrics."""
+    """Grafica 3-6: PPO-specific metrics."""
     
     steps_k = np.array(metrics['steps']) / 1000
     
@@ -210,7 +210,7 @@ def plot_ppo_losses_and_metrics(metrics):
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / 'ppo_kl_divergence.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print('  ✓ ppo_kl_divergence.png')
+    print('  [OK] ppo_kl_divergence.png')
     
     # Clip Fraction
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -224,7 +224,7 @@ def plot_ppo_losses_and_metrics(metrics):
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / 'ppo_clip_fraction.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print('  ✓ ppo_clip_fraction.png')
+    print('  [OK] ppo_clip_fraction.png')
     
     # Value Loss
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -237,7 +237,7 @@ def plot_ppo_losses_and_metrics(metrics):
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / 'ppo_value_loss.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print('  ✓ ppo_value_loss.png')
+    print('  [OK] ppo_value_loss.png')
     
     # Explained Variance
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -253,7 +253,7 @@ def plot_ppo_losses_and_metrics(metrics):
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / 'ppo_explained_variance.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print('  ✓ ppo_explained_variance.png')
+    print('  [OK] ppo_explained_variance.png')
     
     # Policy Loss
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -270,11 +270,11 @@ def plot_ppo_losses_and_metrics(metrics):
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / 'ppo_policy_loss.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print('  ✓ ppo_policy_loss.png')
+    print('  [OK] ppo_policy_loss.png')
 
 
 def plot_ppo_dashboard(metrics):
-    """Gráfica final: Dashboard resumen PPO."""
+    """Grafica final: Dashboard resumen PPO."""
     fig = plt.figure(figsize=(16, 12))
     gs = fig.add_gridspec(3, 3, hspace=0.35, wspace=0.3)
     
@@ -344,16 +344,16 @@ def plot_ppo_dashboard(metrics):
     ax.set_title('Policy Loss', fontsize=11)
     ax.grid(True, alpha=0.3)
     
-    fig.suptitle('PPO Training Dashboard - EV Charging Optimization (Iquitos, Perú)', 
+    fig.suptitle('PPO Training Dashboard - EV Charging Optimization (Iquitos, Peru)', 
                 fontsize=16, fontweight='bold', y=0.995)
     
     plt.savefig(OUTPUT_DIR / 'ppo_dashboard.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print('  ✓ ppo_dashboard.png')
+    print('  [OK] ppo_dashboard.png')
 
 
 def generate_kpi_plots(metrics):
-    """Generar gráficas KPI adicionales (CO2, Cost, etc.)."""
+    """Generar graficas KPI adicionales (CO2, Cost, etc.)."""
     steps_k = np.array(metrics['steps']) / 1000
     
     kpi_configs = [
@@ -385,7 +385,7 @@ def generate_kpi_plots(metrics):
         plt.tight_layout()
         plt.savefig(OUTPUT_DIR / filename, dpi=150, bbox_inches='tight')
         plt.close(fig)
-        print(f'  ✓ {filename}')
+        print(f'  [OK] {filename}')
 
 
 # ============================================================================
@@ -394,7 +394,7 @@ def generate_kpi_plots(metrics):
 
 def main():
     print('=' * 80)
-    print('GENERAR GRÁFICAS FALTANTES PARA PPO TRAINING')
+    print('GENERAR GRAFICAS FALTANTES PARA PPO TRAINING')
     print('=' * 80)
     print(f'Fecha: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
     print(f'Output: {OUTPUT_DIR}')
@@ -403,15 +403,15 @@ def main():
     # Crear output dir si no existe
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     
-    # Generar métricas
-    print('[1] GENERAR MÉTRICAS SINTÉTICAS')
+    # Generar metricas
+    print('[1] GENERAR METRICAS SINTETICAS')
     print('-' * 80)
     metrics = generate_synthetic_ppo_metrics()
-    print(f'  ✓ Generadas métricas para {len(metrics["steps"])} timesteps')
+    print(f'  [OK] Generadas metricas para {len(metrics["steps"])} timesteps')
     print()
     
-    # Generar gráficas
-    print('[2] GENERAR GRÁFICAS DE ENTRENAMIENTO')
+    # Generar graficas
+    print('[2] GENERAR GRAFICAS DE ENTRENAMIENTO')
     print('-' * 80)
     
     plot_ppo_kpi_dashboard(metrics)
@@ -422,24 +422,24 @@ def main():
     
     print()
     print('=' * 80)
-    print('✅ GRÁFICAS PPO GENERADAS EXITOSAMENTE')
+    print('[OK] GRAFICAS PPO GENERADAS EXITOSAMENTE')
     print('=' * 80)
     print()
-    print('Gráficas generadas:')
-    print('  • kpi_dashboard.png')
-    print('  • kpi_carbon_emissions.png')
-    print('  • kpi_daily_peak.png')
-    print('  • kpi_electricity_consumption.png')
-    print('  • kpi_electricity_cost.png')
-    print('  • kpi_load_factor.png')
-    print('  • kpi_ramping.png')
-    print('  • ppo_dashboard.png')
-    print('  • ppo_entropy.png')
-    print('  • ppo_kl_divergence.png')
-    print('  • ppo_clip_fraction.png')
-    print('  • ppo_value_loss.png')
-    print('  • ppo_explained_variance.png')
-    print('  • ppo_policy_loss.png')
+    print('Graficas generadas:')
+    print('  - kpi_dashboard.png')
+    print('  - kpi_carbon_emissions.png')
+    print('  - kpi_daily_peak.png')
+    print('  - kpi_electricity_consumption.png')
+    print('  - kpi_electricity_cost.png')
+    print('  - kpi_load_factor.png')
+    print('  - kpi_ramping.png')
+    print('  - ppo_dashboard.png')
+    print('  - ppo_entropy.png')
+    print('  - ppo_kl_divergence.png')
+    print('  - ppo_clip_fraction.png')
+    print('  - ppo_value_loss.png')
+    print('  - ppo_explained_variance.png')
+    print('  - ppo_policy_loss.png')
     print()
 
 

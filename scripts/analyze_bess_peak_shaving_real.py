@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Análisis de Peak Shaving - BESS REAL vs PPO
+Analisis de Peak Shaving - BESS REAL vs PPO
 ============================================
 Compara el baseline de BESS (dataset OE2) con el control PPO.
-Analiza cuánta demanda pico del mall (>2000 kW) corta el BESS.
+Analiza cuanta demanda pico del mall (>2000 kW) corta el BESS.
 """
 from __future__ import annotations
 import pandas as pd
@@ -11,7 +11,7 @@ import numpy as np
 from pathlib import Path
 
 # ==============================================================================
-# CONFIGURACIÓN
+# CONFIGURACION
 # ==============================================================================
 PEAK_THRESHOLD_KW = 2000  # Umbral de pico (kW)
 PEAK_HOURS = list(range(18, 23))  # Horas punta: 18:00-22:00
@@ -21,7 +21,7 @@ MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', '
 # CARGAR DATOS REALES DE BESS (BASELINE OE2)
 # ==============================================================================
 print("=" * 70)
-print("ANÁLISIS DE PEAK SHAVING - DATOS REALES BESS (OE2)")
+print("ANALISIS DE PEAK SHAVING - DATOS REALES BESS (OE2)")
 print("=" * 70)
 
 bess_path = Path("data/oe2/bess/bess_ano_2024.csv")
@@ -36,7 +36,7 @@ print(f"    Rango: {df['datetime'].min()} a {df['datetime'].max()}")
 # FLUJOS REALES DE BESS
 # ==============================================================================
 print("\n" + "=" * 70)
-print("FLUJOS REALES DE BESS (Simulación OE2)")
+print("FLUJOS REALES DE BESS (Simulacion OE2)")
 print("=" * 70)
 
 total_charge = df['bess_charge_kwh'].sum()
@@ -48,28 +48,28 @@ bess_to_mall = df['bess_to_mall_kwh'].sum()
 
 print(f"""
     CARGA BESS:
-    ├─ Desde Solar (PV):          {pv_to_bess:>12,.0f} kWh
-    ├─ Desde Grid:                {grid_to_bess:>12,.0f} kWh
-    └─ TOTAL CARGA:               {total_charge:>12,.0f} kWh
+    +- Desde Solar (PV):          {pv_to_bess:>12,.0f} kWh
+    +- Desde Grid:                {grid_to_bess:>12,.0f} kWh
+    +- TOTAL CARGA:               {total_charge:>12,.0f} kWh
 
     DESCARGA BESS:
-    ├─ Hacia EVs:                 {bess_to_ev:>12,.0f} kWh
-    ├─ Hacia Mall:                {bess_to_mall:>12,.0f} kWh
-    └─ TOTAL DESCARGA:            {total_discharge:>12,.0f} kWh
+    +- Hacia EVs:                 {bess_to_ev:>12,.0f} kWh
+    +- Hacia Mall:                {bess_to_mall:>12,.0f} kWh
+    +- TOTAL DESCARGA:            {total_discharge:>12,.0f} kWh
 
     BALANCE:
-    ├─ Ratio (Descarga/Carga):    {100*total_discharge/total_charge:>12.1f}%
-    ├─ Pérdidas (eficiencia):     {total_charge - total_discharge:>12,.0f} kWh
-    └─ Eficiencia round-trip:     {100*total_discharge/total_charge:>12.1f}%
+    +- Ratio (Descarga/Carga):    {100*total_discharge/total_charge:>12.1f}%
+    +- Perdidas (eficiencia):     {total_charge - total_discharge:>12,.0f} kWh
+    +- Eficiencia round-trip:     {100*total_discharge/total_charge:>12.1f}%
     
     SOC BESS:
-    ├─ SOC medio:                 {df['bess_soc_percent'].mean():>12.1f}%
-    ├─ SOC mínimo:                {df['bess_soc_percent'].min():>12.1f}%
-    └─ SOC máximo:                {df['bess_soc_percent'].max():>12.1f}%
+    +- SOC medio:                 {df['bess_soc_percent'].mean():>12.1f}%
+    +- SOC minimo:                {df['bess_soc_percent'].min():>12.1f}%
+    +- SOC maximo:                {df['bess_soc_percent'].max():>12.1f}%
 """)
 
 # ==============================================================================
-# ANÁLISIS DE PEAK SHAVING DEL MALL
+# ANALISIS DE PEAK SHAVING DEL MALL
 # ==============================================================================
 print("\n" + "=" * 70)
 print("PEAK SHAVING DEL MALL - DATOS REALES")
@@ -85,7 +85,7 @@ df['date'] = df['datetime'].dt.date
 df['is_peak'] = df['mall_demand_kwh'] > PEAK_THRESHOLD_KW
 df['peak_excess_kw'] = np.maximum(0, df['mall_demand_kwh'] - PEAK_THRESHOLD_KW)
 
-# Energía cortada = descarga BESS hacia mall durante picos
+# Energia cortada = descarga BESS hacia mall durante picos
 df['peak_shaved_kwh'] = np.where(
     df['is_peak'], 
     np.minimum(df['peak_excess_kw'], df['bess_to_mall_kwh']),
@@ -102,31 +102,31 @@ total_shaved = df['peak_shaved_kwh'].sum()
 
 print(f"""
     DEMANDA MALL:
-    ├─ Máxima:                    {df['mall_demand_kwh'].max():>12,.0f} kW
-    ├─ Media:                     {df['mall_demand_kwh'].mean():>12,.0f} kW
-    └─ Total anual:               {df['mall_demand_kwh'].sum():>12,.0f} kWh
+    +- Maxima:                    {df['mall_demand_kwh'].max():>12,.0f} kW
+    +- Media:                     {df['mall_demand_kwh'].mean():>12,.0f} kW
+    +- Total anual:               {df['mall_demand_kwh'].sum():>12,.0f} kWh
 
     PICOS (>{PEAK_THRESHOLD_KW} kW):
-    ├─ Horas con pico:            {len(peak_hours_df):>12,} horas ({100*len(peak_hours_df)/8760:.1f}%)
-    ├─ Energía exceso anual:      {total_excess:>12,.0f} kWh
-    └─ Pico máximo sobre umbral:  {df['peak_excess_kw'].max():>12,.0f} kW
+    +- Horas con pico:            {len(peak_hours_df):>12,} horas ({100*len(peak_hours_df)/8760:.1f}%)
+    +- Energia exceso anual:      {total_excess:>12,.0f} kWh
+    +- Pico maximo sobre umbral:  {df['peak_excess_kw'].max():>12,.0f} kW
 
     BESS PEAK SHAVING:
-    ├─ BESS → Mall total:         {bess_to_mall:>12,.0f} kWh
-    ├─ BESS → Mall en picos:      {total_shaved:>12,.0f} kWh
-    ├─ % de picos cortados:       {100*total_shaved/max(1,total_excess):>12.1f}%
-    └─ Ahorro CO₂:                {total_shaved * 0.4521:>12,.0f} kg
+    +- BESS -> Mall total:         {bess_to_mall:>12,.0f} kWh
+    +- BESS -> Mall en picos:      {total_shaved:>12,.0f} kWh
+    +- % de picos cortados:       {100*total_shaved/max(1,total_excess):>12.1f}%
+    +- Ahorro CO₂:                {total_shaved * 0.4521:>12,.0f} kg
 """)
 
 # ==============================================================================
-# ANÁLISIS POR HORA PUNTA
+# ANALISIS POR HORA PUNTA
 # ==============================================================================
 print("\n" + "-" * 70)
 print(f"HORA PUNTA ({PEAK_HOURS[0]}:00 - {PEAK_HOURS[-1]+1}:00)")
 print("-" * 70)
 
 peak_hour_df = df[df['is_peak_hour']].copy()
-print(f"\n    Por hora del día:")
+print(f"\n    Por hora del dia:")
 hourly_stats = df.groupby('hour').agg({
     'mall_demand_kwh': 'mean',
     'peak_excess_kw': 'sum',
@@ -136,7 +136,7 @@ hourly_stats = df.groupby('hour').agg({
 })
 hourly_stats.columns = ['demand_mean', 'excess_total', 'shaved_total', 'bess_mall_total', 'bess_mall_mean', 'bess_discharge_mean']
 
-print(f"\n    {'Hora':<6} {'Demanda':<10} {'Exceso':<14} {'Cortado':<14} {'BESS→Mall':<12} {'%Cortado':<10}")
+print(f"\n    {'Hora':<6} {'Demanda':<10} {'Exceso':<14} {'Cortado':<14} {'BESS->Mall':<12} {'%Cortado':<10}")
 print("    " + "-" * 70)
 for h in range(6, 24):  # 6am - 11pm
     row = hourly_stats.loc[h]
@@ -145,7 +145,7 @@ for h in range(6, 24):  # 6am - 11pm
     print(f"    {h:02d}:00  {row['demand_mean']:>8,.0f} kW  {row['excess_total']:>12,.0f} kWh  {row['shaved_total']:>12,.0f} kWh  {row['bess_mall_total']:>10,.0f} kWh  {pct:>8.1f}% {marker}")
 
 # ==============================================================================
-# ANÁLISIS POR MES
+# ANALISIS POR MES
 # ==============================================================================
 print("\n" + "=" * 70)
 print("PEAK SHAVING POR MES")
@@ -161,7 +161,7 @@ monthly_stats = df.groupby('month').agg({
 })
 monthly_stats.columns = ['demand_max', 'demand_mean', 'excess_kwh', 'shaved_kwh', 'bess_mall', 'bess_discharge', 'peak_hours']
 
-print(f"\n{'Mes':<6} {'Dem.Max':<10} {'Exceso':<14} {'BESS→Mall':<14} {'Cortado':<12} {'%Cortado':<10}")
+print(f"\n{'Mes':<6} {'Dem.Max':<10} {'Exceso':<14} {'BESS->Mall':<14} {'Cortado':<12} {'%Cortado':<10}")
 print("-" * 70)
 
 for month in range(1, 13):
@@ -170,10 +170,10 @@ for month in range(1, 13):
     print(f"{MESES[month-1]:<6} {row['demand_max']:>8,.0f} kW {row['excess_kwh']:>12,.0f} kWh {row['bess_mall']:>12,.0f} kWh {row['shaved_kwh']:>10,.0f} kWh {pct:>8.1f}%")
 
 # ==============================================================================
-# ANÁLISIS POR DÍA (Top 10)
+# ANALISIS POR DIA (Top 10)
 # ==============================================================================
 print("\n" + "=" * 70)
-print("TOP 10 DÍAS CON MAYORES PICOS")
+print("TOP 10 DIAS CON MAYORES PICOS")
 print("=" * 70)
 
 daily_stats = df.groupby('date').agg({
@@ -186,7 +186,7 @@ daily_stats = df.groupby('date').agg({
 daily_stats.columns = ['demand_max', 'excess_kwh', 'shaved_kwh', 'bess_mall', 'peak_hours']
 
 top_peak_days = daily_stats.nlargest(10, 'excess_kwh')
-print(f"\n{'Fecha':<12} {'Dem.Max':<10} {'Exceso':<12} {'BESS→Mall':<12} {'Cortado':<12} {'%Cortado':<10}")
+print(f"\n{'Fecha':<12} {'Dem.Max':<10} {'Exceso':<12} {'BESS->Mall':<12} {'Cortado':<12} {'%Cortado':<10}")
 print("-" * 70)
 for date, row in top_peak_days.iterrows():
     pct = 100 * row['shaved_kwh'] / max(1, row['excess_kwh'])
@@ -203,28 +203,28 @@ peak_hour_excess = peak_hour_df['peak_excess_kw'].sum()
 peak_hour_shaved = peak_hour_df['peak_shaved_kwh'].sum()
 
 print(f"""
-    ════════════════════════════════════════════════════════════════
+    ================================================================
     BESS - FLUJOS REALES (SIN RL)
-    ════════════════════════════════════════════════════════════════
+    ================================================================
     Carga total:                  {total_charge:>12,.0f} kWh
     Descarga total:               {total_discharge:>12,.0f} kWh
     Eficiencia:                   {100*total_discharge/total_charge:>12.1f}%
     
-    ════════════════════════════════════════════════════════════════
+    ================================================================
     PEAK SHAVING MALL (>2000 kW)
-    ════════════════════════════════════════════════════════════════
-    Energía exceso anual:         {total_excess:>12,.0f} kWh
-    Energía cortada (BESS):       {total_shaved:>12,.0f} kWh
+    ================================================================
+    Energia exceso anual:         {total_excess:>12,.0f} kWh
+    Energia cortada (BESS):       {total_shaved:>12,.0f} kWh
     % Picos cortados:             {100*total_shaved/max(1,total_excess):>12.1f}%
     
     En HORA PUNTA (18-22h):
-    ├─ Exceso:                    {peak_hour_excess:>12,.0f} kWh
-    ├─ Cortado:                   {peak_hour_shaved:>12,.0f} kWh
-    └─ % Cortado:                 {100*peak_hour_shaved/max(1,peak_hour_excess):>12.1f}%
+    +- Exceso:                    {peak_hour_excess:>12,.0f} kWh
+    +- Cortado:                   {peak_hour_shaved:>12,.0f} kWh
+    +- % Cortado:                 {100*peak_hour_shaved/max(1,peak_hour_excess):>12.1f}%
     
-    ════════════════════════════════════════════════════════════════
+    ================================================================
     CO₂ AHORRADO POR PEAK SHAVING
-    ════════════════════════════════════════════════════════════════
+    ================================================================
     Por picos cortados:           {total_shaved * 0.4521:>12,.0f} kg
     Por toda descarga BESS:       {total_discharge * 0.4521:>12,.0f} kg
 """)
@@ -253,5 +253,5 @@ hourly_output.to_csv(output_dir / "peak_shaving_hourly_real.csv", index=False)
 print(f"[OK] Guardado: {output_dir / 'peak_shaving_hourly_real.csv'}")
 
 print("\n" + "=" * 70)
-print("ANÁLISIS COMPLETADO - DATOS REALES BESS OE2")
+print("ANALISIS COMPLETADO - DATOS REALES BESS OE2")
 print("=" * 70)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test rápido: Verifica si PPO está realmente aprendiendo o si learn() es un no-op
+Test rapido: Verifica si PPO esta realmente aprendiendo o si learn() es un no-op
 """
 
 import time
@@ -38,13 +38,13 @@ class SimpleEnv(Env):
         return obs, reward, terminated, truncated, info
 
 def benchmark_ppo(num_steps=1000):
-    """Benchmarkea cuánto tarda PPO en procesar N steps"""
+    """Benchmarkea cuanto tarda PPO en procesar N steps"""
     
     print('\n' + '='*100)
-    print('⏱️  BENCHMARK: Medir tiempo real de model.learn()')
+    print('[TIME]️  BENCHMARK: Medir tiempo real de model.learn()')
     print('='*100)
     
-    print(f'\n📊 Configuración:')
+    print(f'\n[GRAPH] Configuracion:')
     print(f'   Environment: SimpleEnv (10-dim obs, 2-dim action)')
     print(f'   Total timesteps: {num_steps:,}')
     print(f'   Hardware: RTX 4060 CUDA')
@@ -70,32 +70,32 @@ def benchmark_ppo(num_steps=1000):
     
     actual_speed = num_steps / elapsed
     
-    print(f'\n✅ Entrenamiento completado')
+    print(f'\n[OK] Entrenamiento completado')
     print(f'   Tiempo total: {elapsed:.2f} segundos')
     print(f'   Timesteps procesados: {num_steps:,}')
     print(f'   Velocidad: {actual_speed:.1f} steps/sec')
     
-    print(f'\n🔍 Análisis:')
+    print(f'\n🔍 Analisis:')
     
     # En una GPU normal (RTX 4060), el overhead es ~1-5ms por step
     # Policy forward: ~0.1-0.5ms
     # Value forward: ~0.1-0.5ms
     # Gradient computation: ~1-2ms
-    # Total: ~2-4ms = 250-500 steps/sec teórico máximo
+    # Total: ~2-4ms = 250-500 steps/sec teorico maximo
     
     if actual_speed < 100:
-        print(f'   ⚠️  MUY LENTO: {actual_speed:.0f} steps/sec')
+        print(f'   [!]  MUY LENTO: {actual_speed:.0f} steps/sec')
         print(f'      Probable: GPU no se usa, o hay overhead mayor')
     elif actual_speed < 300:
-        print(f'   ✅ Normal: {actual_speed:.0f} steps/sec')
+        print(f'   [OK] Normal: {actual_speed:.0f} steps/sec')
         print(f'      GPU siendo utilizada correctamente')
     elif actual_speed < 1000:
-        print(f'   ⚠️  Rápido: {actual_speed:.0f} steps/sec')
+        print(f'   [!]  Rapido: {actual_speed:.0f} steps/sec')
         print(f'      Posible: Entorno muy simple, overhead bajo')
     else:
-        print(f'   ❌ ANORMALMENTE RÁPIDO: {actual_speed:.0f} steps/sec')
-        print(f'      Problema: learn() no está haciendo forward/backward real')
-        print(f'      O el contador de timesteps está mal')
+        print(f'   [X] ANORMALMENTE RAPIDO: {actual_speed:.0f} steps/sec')
+        print(f'      Problema: learn() no esta haciendo forward/backward real')
+        print(f'      O el contador de timesteps esta mal')
     
     print('\n' + '='*100 + '\n')
     
@@ -106,7 +106,7 @@ if __name__ == '__main__':
     speed = benchmark_ppo(num_steps=5000)
     
     # Proyectar a 87,600 timesteps (lo que hace PPO training)
-    print(f'📈 Proyección a 87,600 timesteps:')
+    print(f'[CHART] Proyeccion a 87,600 timesteps:')
     projected_time_sec = 87600 / speed
     projected_time_min = projected_time_sec / 60
     projected_time_hour = projected_time_min / 60
@@ -114,8 +114,8 @@ if __name__ == '__main__':
     print(f'   Tiempo estimado: {projected_time_sec:.0f} sec = {projected_time_min:.1f} min = {projected_time_hour:.2f} horas')
     
     if projected_time_hour > 5:
-        print(f'   ⚠️  Demasiado lento para entrenamiento productivo')
+        print(f'   [!]  Demasiado lento para entrenamiento productivo')
     elif projected_time_hour > 1:
-        print(f'   ✅ Normal para entrenamiento con GPU')
+        print(f'   [OK] Normal para entrenamiento con GPU')
     else:
-        print(f'   ❌ Sospechosamente rápido - verificar si learn() está funcionando')
+        print(f'   [X] Sospechosamente rapido - verificar si learn() esta funcionando')

@@ -2,33 +2,29 @@
 Dataset Builder for CityLearn v2 - Unified OE2 Integration Module (v6.0)
 
 NUEVO BUILDER MODULAR (14 Feb 2026):
-Este módulo centraliza la construcción de datasets
+Este modulo centraliza la construccion de datasets
 para CityLearn v2 desde OE2 (Solar, Chargers, BESS).
 
 Estructura (NEW):
-├── data_loader.py              - Cargador unificado de OE2 (CANONICAL)
-├── rewards.py                  - Función multiobjetivo (CANONICAL)
-├── catalog_datasets.py         - Catálogo centralizado de datasets
-├── main_build_citylearn.py     - Orquestador principal
-├── enrich_chargers.py          - Enriquecimiento de chargers
-├── integrate_datasets.py       - Integración de 3 datasets
-└── analyze_datasets.py         - Análisis estadístico
++-- data_loader.py              - Cargador unificado de OE2 (CANONICAL)
++-- rewards.py                  - Funcion multiobjetivo (CANONICAL)
++-- catalog_datasets.py         - Catalogo centralizado de datasets
++-- main_build_citylearn.py     - Orquestador principal
++-- enrich_chargers.py          - Enriquecimiento de chargers
++-- integrate_datasets.py       - Integracion de 3 datasets
++-- analyze_datasets.py         - Analisis estadistico
 
 CAMBIOS EN v6.0:
-✅ Eliminado dataset_builder.py monolítico (2,701 LOC)
-✅ Separado data_loader (validación OE2)
-✅ Separado rewards (multiobjetivo)
-✅ Modularizado en 7 módulos enfocados
-✅ Consolidación: viejo builder → wrapper re-export
+[OK] Eliminado dataset_builder.py monolitico (2,701 LOC)
+[OK] Separado data_loader (validacion OE2)
+[OK] Separado rewards (multiobjetivo)
+[OK] Modularizado en 7 modulos enfocados
+[OK] Consolidacion: viejo builder -> wrapper re-export
 
 USO RECOMENDADO:
     from src.dataset_builder_citylearn import load_solar_data
     from src.dataset_builder_citylearn import MultiObjectiveReward
     from src.dataset_builder_citylearn import get_dataset
-
-BACKWARD COMPATIBILITY:
-    from src.citylearnv2.dataset_builder import load_solar_data
-    (still works, pero apunta al nuevo builder)
 """
 
 from __future__ import annotations
@@ -76,6 +72,27 @@ from .catalog_datasets import (
     list_datasets,
     validate_datasets,
     display_catalog,
+)
+
+# Observations (NEW - v6.0 SSOT)
+from .observations import (
+    ObservationBuilder,
+    validate_observation,
+    get_observation_stats,
+    SOLAR_MAX_KW,
+    MALL_MAX_KW,
+    BESS_MAX_KWH,
+    BESS_MAX_POWER_KW,
+    CHARGER_MAX_KW,
+    NUM_CHARGERS,
+    HOURS_PER_YEAR,
+    CO2_FACTOR_IQUITOS,
+)
+
+# Complete Dataset Builder (v7.0 - Load ALL columns before training)
+from .complete_dataset_builder import (
+    CompleteDatasetBuilder,
+    build_complete_datasets_for_training,
 )
 
 __version__ = "6.0"
@@ -127,4 +144,21 @@ __all__ = [
     "list_datasets",
     "validate_datasets",
     "display_catalog",
+    
+    # ===== OBSERVATIONS (NEW v6.0 - SSOT) =====
+    "ObservationBuilder",
+    "validate_observation",
+    "get_observation_stats",
+    "SOLAR_MAX_KW",
+    "MALL_MAX_KW",
+    "BESS_MAX_KWH",
+    "BESS_MAX_POWER_KW",
+    "CHARGER_MAX_KW",
+    "NUM_CHARGERS",
+    "HOURS_PER_YEAR",
+    "CO2_FACTOR_IQUITOS",
+    
+    # ===== COMPLETE DATASET BUILDER (v7.0 - Load ALL columns) =====
+    "CompleteDatasetBuilder",
+    "build_complete_datasets_for_training",
 ]

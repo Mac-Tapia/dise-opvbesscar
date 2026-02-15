@@ -102,9 +102,9 @@ class BaselineCalculator:
             if mall_demand_kw.sum() == 0:
                 raise ValueError("ERROR: Mall demand is zero - data not loaded correctly")
             
-            logger.info(f"  ✓ Solar generation: {solar_generation_kw.sum():,.0f} kWh/año")
-            logger.info(f"  ✓ EV demand: {ev_demand_kw.sum():,.0f} kWh/año")
-            logger.info(f"  ✓ Mall demand: {mall_demand_kw.sum():,.0f} kWh/año")
+            logger.info(f"  [OK] Solar generation: {solar_generation_kw.sum():,.0f} kWh/ano")
+            logger.info(f"  [OK] EV demand: {ev_demand_kw.sum():,.0f} kWh/ano")
+            logger.info(f"  [OK] Mall demand: {mall_demand_kw.sum():,.0f} kWh/ano")
             
         except Exception as e:
             logger.error(f"ERROR loading BESS data: {e}")
@@ -154,8 +154,8 @@ class BaselineCalculator:
             ev_demand_kw = bess_df['ev_demand_kwh'].values.astype(np.float32)
             mall_demand_kw = bess_df['mall_demand_kwh'].values.astype(np.float32)
             
-            logger.info(f"  ✓ EV demand: {ev_demand_kw.sum():,.0f} kWh/año")
-            logger.info(f"  ✓ Mall demand: {mall_demand_kw.sum():,.0f} kWh/año")
+            logger.info(f"  [OK] EV demand: {ev_demand_kw.sum():,.0f} kWh/ano")
+            logger.info(f"  [OK] Mall demand: {mall_demand_kw.sum():,.0f} kWh/ano")
             
         except Exception as e:
             logger.error(f"ERROR loading BESS data: {e}")
@@ -216,17 +216,17 @@ class BaselineCalculator:
 
         with open(con_solar_path, 'w') as f:
             json.dump(con_solar, f, indent=2)
-        logger.info(f"✅ Saved CON_SOLAR results to {con_solar_path}")
+        logger.info(f"[OK] Saved CON_SOLAR results to {con_solar_path}")
 
         with open(sin_solar_path, 'w') as f:
             json.dump(sin_solar, f, indent=2)
-        logger.info(f"✅ Saved SIN_SOLAR results to {sin_solar_path}")
+        logger.info(f"[OK] Saved SIN_SOLAR results to {sin_solar_path}")
 
         # Save comparison as CSV
         comparison_df = pd.DataFrame([con_solar, sin_solar])
         comparison_path = output_path / 'baseline_comparison.csv'
         comparison_df.to_csv(comparison_path, index=False)
-        logger.info(f"✅ Saved comparison to {comparison_path}")
+        logger.info(f"[OK] Saved comparison to {comparison_path}")
 
         # Save summary statistics
         summary = {
@@ -251,7 +251,7 @@ class BaselineCalculator:
         summary_path = output_path / 'baseline_summary.json'
         with open(summary_path, 'w') as f:
             json.dump(summary, f, indent=2)
-        logger.info(f"✅ Saved summary to {summary_path}")
+        logger.info(f"[OK] Saved summary to {summary_path}")
 
         return summary
 
@@ -277,33 +277,33 @@ def main():
     print("BASELINE SCENARIOS - OE2 v5.4 COMPARISON (CITYLEARN v2 REFERENCE)")
     print("="*80)
     
-    print(f"\n📊 BASELINE 1: CON SOLAR (4,050 kWp)")
+    print(f"\n[GRAPH] BASELINE 1: CON SOLAR (4,050 kWp)")
     print(f"   Description: Uncontrolled + Real Solar")
-    print(f"   Grid import: {con_solar['grid_import_kwh']:,.0f} kWh/año")
-    print(f"   Solar generation: {con_solar['solar_generation_kwh']:,.0f} kWh/año")
-    print(f"   CO₂ emissions (grid): {con_solar['co2_grid_kg']:,.0f} kg/año ({con_solar['co2_t']:,.1f} t/año)")
-    print(f"   CO₂ avoided (solar): {con_solar['co2_avoided_by_solar_kg']:,.0f} kg/año")
-    print(f"   CO₂ NET: {con_solar['co2_net_kg']:,.0f} kg/año ← REFERENCE FOR RL AGENTS")
+    print(f"   Grid import: {con_solar['grid_import_kwh']:,.0f} kWh/ano")
+    print(f"   Solar generation: {con_solar['solar_generation_kwh']:,.0f} kWh/ano")
+    print(f"   CO₂ emissions (grid): {con_solar['co2_grid_kg']:,.0f} kg/ano ({con_solar['co2_t']:,.1f} t/ano)")
+    print(f"   CO₂ avoided (solar): {con_solar['co2_avoided_by_solar_kg']:,.0f} kg/ano")
+    print(f"   CO₂ NET: {con_solar['co2_net_kg']:,.0f} kg/ano <- REFERENCE FOR RL AGENTS")
 
-    print(f"\n📊 BASELINE 2: SIN SOLAR (0 kWp)")
+    print(f"\n[GRAPH] BASELINE 2: SIN SOLAR (0 kWp)")
     print(f"   Description: Uncontrolled + No Solar (shows solar impact)")
-    print(f"   Grid import: {sin_solar['grid_import_kwh']:,.0f} kWh/año")
-    print(f"   Solar generation: {sin_solar['solar_generation_kwh']:,.0f} kWh/año")
-    print(f"   CO₂ emissions (grid): {sin_solar['co2_grid_kg']:,.0f} kg/año ({sin_solar['co2_t']:,.1f} t/año)")
-    print(f"   CO₂ NET: {sin_solar['co2_net_kg']:,.0f} kg/año")
+    print(f"   Grid import: {sin_solar['grid_import_kwh']:,.0f} kWh/ano")
+    print(f"   Solar generation: {sin_solar['solar_generation_kwh']:,.0f} kWh/ano")
+    print(f"   CO₂ emissions (grid): {sin_solar['co2_grid_kg']:,.0f} kg/ano ({sin_solar['co2_t']:,.1f} t/ano)")
+    print(f"   CO₂ NET: {sin_solar['co2_net_kg']:,.0f} kg/ano")
 
     print(f"\n🔍 SOLAR IMPACT ANALYSIS")
     diff_kg = sin_solar['co2_grid_kg'] - con_solar['co2_grid_kg']
     diff_t = diff_kg / 1000
     diff_pct = diff_kg / sin_solar['co2_grid_kg'] * 100
-    print(f"   CO₂ reduction (solar): {diff_kg:,.0f} kg/año ({diff_t:,.1f} t/año)")
+    print(f"   CO₂ reduction (solar): {diff_kg:,.0f} kg/ano ({diff_t:,.1f} t/ano)")
     print(f"   Percentage: {diff_pct:.1f}% CO₂ reduction with 4,050 kWp")
-    print(f"   Grid import reduction: {sin_solar['grid_import_kwh'] - con_solar['grid_import_kwh']:,.0f} kWh/año")
+    print(f"   Grid import reduction: {sin_solar['grid_import_kwh'] - con_solar['grid_import_kwh']:,.0f} kWh/ano")
 
     # Save results
     summary = calculator.save_baseline_results(con_solar, sin_solar, args.output_dir)
 
-    print(f"\n✅ Baseline calculations completed")
+    print(f"\n[OK] Baseline calculations completed")
     print(f"   Results saved to: {args.output_dir}/")
     print(f"   - baseline_con_solar.json")
     print(f"   - baseline_sin_solar.json")

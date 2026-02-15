@@ -10,19 +10,19 @@ logger = logging.getLogger(__name__)
 class NoControlAgent:
     """Agente baseline sin control inteligente.
 
-    Todas las acciones son cero (no intervención).
-    Útil como baseline para comparar con agentes inteligentes.
+    Todas las acciones son cero (no intervencion).
+    Util como baseline para comparar con agentes inteligentes.
 
     Soporta dos modos:
     1. Acciones zero en todos los actuadores (modo neutro puro)
-    2. EVs siempre al máximo, otros actuadores zero (modo uncontrolled EV charging)
+    2. EVs siempre al maximo, otros actuadores zero (modo uncontrolled EV charging)
     """
 
     def __init__(self, env: Any, ev_charge_max: bool = False):
         """
         Args:
             env: CityLearn environment
-            ev_charge_max: Si True, EV chargers = máximo, otros = zero (UncontrolledCharging mode)
+            ev_charge_max: Si True, EV chargers = maximo, otros = zero (UncontrolledCharging mode)
                           Si False, todos = zero (NoControl mode)
         """
         self.env = env
@@ -30,7 +30,7 @@ class NoControlAgent:
         self._setup_action_space()
 
     def _setup_action_space(self):
-        """Configura espacios de acción."""
+        """Configura espacios de accion."""
         self.action_space = getattr(self.env, "action_space", None)
         self.action_names = getattr(self.env, "action_names", None)
 
@@ -49,7 +49,7 @@ class NoControlAgent:
             else:
                 self.action_dimension = [self.action_space.shape]
 
-        # Identificar índices de acciones relacionadas con EV si es modo uncontrolled
+        # Identificar indices de acciones relacionadas con EV si es modo uncontrolled
         self._ev_indices: List[List[int]] = []
         if self.ev_charge_max and self.action_names is not None:
             action_names_list = list(self.action_names) if isinstance(self.action_names, (list, tuple)) else [self.action_names]
@@ -72,7 +72,7 @@ class NoControlAgent:
             for i, sp in enumerate(self.action_space):
                 action = np.zeros(sp.shape[0], dtype=np.float32)
 
-                # Si modo ev_charge_max, setear EVs al máximo
+                # Si modo ev_charge_max, setear EVs al maximo
                 if self.ev_charge_max and i < len(self._ev_indices):
                     high = getattr(sp, "high", np.ones(sp.shape[0]))
                     for ev_idx in self._ev_indices[i]:
@@ -130,5 +130,5 @@ def make_no_control(env: Any, ev_charge_max: bool = False) -> NoControlAgent:
 
 
 def make_uncontrolled(env: Any) -> NoControlAgent:
-    """Factory function para crear agente UncontrolledCharging (EV siempre al máximo)."""
+    """Factory function para crear agente UncontrolledCharging (EV siempre al maximo)."""
     return NoControlAgent(env, ev_charge_max=True)

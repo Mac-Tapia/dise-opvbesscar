@@ -1,9 +1,9 @@
 """
-Script de inicialización y utilidades para análisis de generación solar.
+Script de inicializacion y utilidades para analisis de generacion solar.
 
 Proporciona funciones helper para:
-- Cargar datos de generación solar
-- Consultas rápidas
+- Cargar datos de generacion solar
+- Consultas rapidas
 - Exportar resultados
 - Generar reportes
 """
@@ -17,7 +17,7 @@ import json
 
 
 def cargar_generacion_solar(csv_path: Optional[str] = None) -> pd.DataFrame:
-    """Cargar datos de generación solar desde CSV.
+    """Cargar datos de generacion solar desde CSV.
     
     Args:
         csv_path: Ruta al archivo CSV (default: data/oe2/Generacionsolar/...)
@@ -38,17 +38,17 @@ def cargar_generacion_solar(csv_path: Optional[str] = None) -> pd.DataFrame:
 
 
 def energia_total_anual(df: pd.DataFrame) -> float:
-    """Obtener energía total anual en kWh."""
+    """Obtener energia total anual en kWh."""
     return df['ac_energy_kwh'].sum()
 
 
 def energia_por_mes(df: pd.DataFrame) -> pd.Series:
-    """Obtener energía mensual."""
+    """Obtener energia mensual."""
     return df['ac_energy_kwh'].resample('ME').sum()
 
 
 def energia_por_dia(df: pd.DataFrame) -> pd.Series:
-    """Obtener energía diaria."""
+    """Obtener energia diaria."""
     return df['ac_energy_kwh'].resample('D').sum()
 
 
@@ -58,7 +58,7 @@ def potencia_promedio(df: pd.DataFrame) -> float:
 
 
 def potencia_maxima(df: pd.DataFrame) -> float:
-    """Obtener potencia máxima en kW."""
+    """Obtener potencia maxima en kW."""
     return df['ac_power_kw'].max()
 
 
@@ -73,21 +73,21 @@ def irradiancia_promedio(df: pd.DataFrame) -> float:
 
 
 def dia_mas_despejado(df: pd.DataFrame) -> tuple:
-    """Encontrar el día con más generación."""
+    """Encontrar el dia con mas generacion."""
     daily = df['ac_energy_kwh'].resample('D').sum()
     idx = daily.idxmax()
     return idx.date(), daily.max()
 
 
 def dia_mas_nublado(df: pd.DataFrame) -> tuple:
-    """Encontrar el día con menos generación."""
+    """Encontrar el dia con menos generacion."""
     daily = df['ac_energy_kwh'].resample('D').sum()
     idx = daily.idxmin()
     return idx.date(), daily.min()
 
 
 def dia_templado(df: pd.DataFrame) -> tuple:
-    """Encontrar el día con energía mediana."""
+    """Encontrar el dia con energia mediana."""
     daily = df['ac_energy_kwh'].resample('D').sum()
     median = daily.median()
     idx = (daily - median).abs().idxmin()
@@ -95,7 +95,7 @@ def dia_templado(df: pd.DataFrame) -> tuple:
 
 
 def perfil_horario(df: pd.DataFrame, fecha: pd.Timestamp) -> pd.DataFrame:
-    """Obtener perfil horario para una fecha específica."""
+    """Obtener perfil horario para una fecha especifica."""
     day_data = df[df.index.date == fecha.date()]
     return day_data[['ac_energy_kwh', 'ac_power_kw', 'temp_air_c', 'ghi_wm2']]
 
@@ -137,19 +137,19 @@ def exportar_resumen_json(df: pd.DataFrame, output_path: Optional[str] = None) -
 
 
 def mostrar_estadisticas_rapidas(df: pd.DataFrame) -> None:
-    """Mostrar estadísticas rápidas en consola."""
+    """Mostrar estadisticas rapidas en consola."""
     print("""
-    ╔════════════════════════════════════════════════════════════╗
-    ║     ESTADÍSTICAS RÁPIDAS - GENERACIÓN SOLAR 2024          ║
-    ╚════════════════════════════════════════════════════════════╝
+    ╔============================================================╗
+    ║     ESTADISTICAS RAPIDAS - GENERACION SOLAR 2024          ║
+    ╚============================================================╝
     
-    📊 ENERGÍA:
+    [GRAPH] ENERGIA:
        Total anual:         {:.0f} kWh ({:.2f} GWh)
-       Promedio diario:     {:.0f} kWh/día
+       Promedio diario:     {:.0f} kWh/dia
        
     ⚡ POTENCIA:
        Promedio:            {:.1f} kW
-       Máxima:              {:.1f} kW
+       Maxima:              {:.1f} kW
        
     🌡️  TEMPERATURA:
        Promedio:            {:.1f} °C
@@ -157,7 +157,7 @@ def mostrar_estadisticas_rapidas(df: pd.DataFrame) -> None:
     ☀️  IRRADIANCIA:
        Promedio:            {:.1f} W/m²
     
-    ╠════════════════════════════════════════════════════════════╣
+    ╠============================================================╣
     """.format(
         energia_total_anual(df),
         energia_total_anual(df) / 1e6,
@@ -173,25 +173,25 @@ def mostrar_estadisticas_rapidas(df: pd.DataFrame) -> None:
     fecha_templado, energia_templado = dia_templado(df)
     
     print(f"""
-    🔆 DÍAS REPRESENTATIVOS:
+    🔆 DIAS REPRESENTATIVOS:
     
-       Más despejado:       {fecha_despejado} ({energia_despejado:.0f} kWh)
-       Más nublado:         {fecha_nublado} ({energia_nublado:.0f} kWh)
-       Día templado:        {fecha_templado} ({energia_templado:.0f} kWh)
+       Mas despejado:       {fecha_despejado} ({energia_despejado:.0f} kWh)
+       Mas nublado:         {fecha_nublado} ({energia_nublado:.0f} kWh)
+       Dia templado:        {fecha_templado} ({energia_templado:.0f} kWh)
     
-    ╚════════════════════════════════════════════════════════════╝
+    ╚============================================================╝
     """)
 
 
 if __name__ == "__main__":
     # Ejemplo de uso
-    print("Módulo de utilidades para análisis de generación solar")
-    print("Importa esta módulo en tu código para usar las funciones")
+    print("Modulo de utilidades para analisis de generacion solar")
+    print("Importa esta modulo en tu codigo para usar las funciones")
     
     try:
         df = cargar_generacion_solar()
         mostrar_estadisticas_rapidas(df)
         exportar_resumen_json(df)
-        print("\n✓ Resumen exportado a: data/oe2/Generacionsolar/resumen_generacion.json")
+        print("\n[OK] Resumen exportado a: data/oe2/Generacionsolar/resumen_generacion.json")
     except FileNotFoundError as e:
-        print(f"\n⚠️  {e}")
+        print(f"\n[!]  {e}")
