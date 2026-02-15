@@ -44,6 +44,23 @@ pip install -r requirements.txt
 pip install -r requirements-training.txt  # Para GPU
 ```
 
+### Ejecución Rápida
+
+```bash
+# 1️⃣ Validar sistema antes de entrenar
+python ejecutar.py --validate
+
+# 2️⃣ Entrenar agente A2C (RECOMENDADO - 64.3% reducción CO₂)
+python ejecutar.py --agent a2c
+
+# 3️⃣ Entrenar otros agentes (opcional)
+python ejecutar.py --agent ppo  # PPO - 47.5% reducción CO₂
+python ejecutar.py --agent sac  # SAC - 43.3% reducción CO₂
+
+# 4️⃣ Ver ayuda completa
+python ejecutar.py --help
+```
+
 ### Entrenamiento de Agentes RL - Resultados 2026-02-09
 
 #### 🏆 Comparativa Final
