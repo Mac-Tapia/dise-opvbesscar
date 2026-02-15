@@ -15,15 +15,19 @@
     "entropy_coeff": "auto"
   },
   "data": {
-    "solar_file": "data/interim/oe2/solar/pv_generation_timeseries.csv",
-    "chargers_file": "data/interim/oe2/chargers/chargers_real_hourly_2024.csv",
-    "bess_file": "data/interim/oe2/bess/bess_hourly_dataset_2024.csv",
-    "mall_file": "data/interim/oe2/demandamallkwh/demandamallhorakwh.csv",
+    "solar_file": "data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv",
+    "chargers_file": "data/oe2/chargers/chargers_ev_ano_2024_v3.csv",
+    "bess_file": "data/oe2/bess/bess_ano_2024.csv",
+    "mall_file": "data/oe2/demandamallkwh/demandamallhorakwh.csv",
     "year": 2024,
     "total_hours": 8760,
-    "chargers_total": 128,
-    "chargers_motos": 100,
-    "chargers_mototaxis": 28
+    "chargers_total": 19,
+    "chargers_motos": 19,
+    "chargers_mototaxis": 0,
+    "sockets_total": 38,
+    "bess_capacity_kwh": 1700,
+    "bess_power_kw": 400,
+    "description": "v5.5: Real data from OE2 (BESS 1700 kWh @ 400 kW, SOC min 20%)"
   },
   "rewards": {
     "co2_weight": 0.35,
@@ -105,12 +109,12 @@
   },
   "infrastructure": {
     "solar_capacity_kwp": 4050,
-    "bess_capacity_kwh": 4520,
-    "bess_power_kw": 2712,
+    "bess_capacity_kwh": 940,
+    "bess_power_kw": 342,
     "mall_avg_kw": 1411.95,
     "chargers_avg_kw": 116.99,
-    "total_sockets": 128,
-    "n_chargers_physical": 32
+    "total_sockets": 38,
+    "n_chargers_physical": 19
   },
   "gpu": {
     "device_name": "NVIDIA GeForce RTX 4060 Laptop",

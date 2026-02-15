@@ -72,7 +72,7 @@ total = 23
 # De rewards.py IquitosContext
 n_chargers_motos = 28          # 28 × 4 = 112 sockets
 n_chargers_mototaxis = 4       # 4 × 4 = 16 sockets
-total_sockets = 128
+total_sockets = 38
 ```
 
 **Confirmación en código**:
@@ -134,7 +134,7 @@ co2_net_kg = co2_grid_kg - co2_indirect_avoided_kg - co2_direct_avoided_kg
 | Factor grid | 0.4521 kg/kWh | Iquitos térmica | ✅ |
 | Factor EV | 2.146 kg/kWh | vs combustión | ✅ |
 | Solar anual | 8,030,119 kWh | 4,050 kWp × 1,930 | ✅ |
-| Chargers | 32 físicos | 28 motos + 4 moto-taxi | ✅ |
+| Chargers | 19 físicos | 28 motos + 4 moto-taxi | ✅ |
 | Sockets | 128 total | 32 × 4 | ✅ |
 | CO₂ directo/h | 107.3 kg | **VALIDADO** | ✅ |
 | CO₂ directo/año | 938,460 kg | Si 24/7 | ✅ |
@@ -146,7 +146,7 @@ co2_net_kg = co2_grid_kg - co2_indirect_avoided_kg - co2_direct_avoided_kg
 ### ✅ El código OE3 es CORRECTO:
 1. Usa valores reales de OE2
 2. Factores CO₂ son correctos (0.4521, 2.146)
-3. Configuración es OE3 (128 sockets, no 23)
+3. Configuración es OE3 (38 sockets, v5.2 actualizado)
 4. Cálculos son dinámicos (no hardcodeados)
 5. No depende de valores legacy como 437.8 o 20/3
 

@@ -18,17 +18,24 @@ oe1:
     vehicles_peak_motos: 900
     vehicles_peak_mototaxis: 130
 oe2:
+  data:
+    solar_file: data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv
+    chargers_file: data/oe2/chargers/chargers_ev_ano_2024_v3.csv
+    bess_file: data/oe2/bess/bess_ano_2024.csv
+    mall_file: data/interim/oe2/demandamallkwh/demandamallhorakwh.csv
+    charger_stats_file: data/oe2/chargers/chargers_real_statistics.csv
   bess:
+    # BESS v5.5 (2026-02-13) - Dual-purpose: EV + MALL discharge to peak
     autonomy_hours: 4.0
-    c_rate: 0.6
-    discharge_only_ev_hours: true
-    discharge_only_no_solar: true
-    dod: 0.8
-    efficiency_roundtrip: 0.9
-    fixed_capacity_kwh: 4520.0
-    fixed_power_kw: 2712.0
-    load_scope: ev_only
-    min_soc_percent: 25.86
+    c_rate: 0.235  # 400 kW / 1700 kWh = 0.235
+    discharge_only_ev_hours: false  # v5.5: MALL discharge enabled
+    discharge_only_no_solar: false  # v5.5: MALL discharge during day if excess
+    dod: 0.80      # 80% Depth of Discharge (min SOC = 20%)
+    efficiency_roundtrip: 0.95
+    fixed_capacity_kwh: 1700.0  # v5.5: 1700 kWh nominal (1360 usable @ 20-100% SOC)
+    fixed_power_kw: 400.0       # v5.5: 400 kW carga/descarga (actualizado de 342 kW)
+    load_scope: dual_ev_and_mall  # v5.5: EV + MALL priority
+    min_soc_percent: 20.0       # v5.5: Hard constraint @ 22h closing
     pv_night_threshold_kwh: 0.1
     round_kwh: 100
     sizing_mode: open_hours
@@ -45,23 +52,21 @@ oe2:
       ev_power_limit_kw: 150.0
       pv_threshold_kwh: 0.5
     priority_2_pv_to_bess:
-      bess_power_max_kw: 2712.0
-      bess_soc_max_percent: 95.0
+      bess_power_max_kw: 400.0  # v5.5: 400 kW (actualizado de 342 kW)
+      bess_soc_max_percent: 100.0  # v5.5: Allow 100% (hard constraint via simulation)
       bess_soc_target_percent: 85.0
       description: FV excedente a BESS (cargar reserva para pico)
       enabled: true
     priority_3_bess_to_ev:
-      bess_power_max_kw: 2712.0
-      bess_soc_min_percent: 20.0
+      bess_power_max_kw: 400.0  # v5.5: 400 kW
+      bess_soc_min_percent: 20.0  # v5.5: Hard minimum @ 22h
       description: BESS a EVs cuando cae el sol (noche)
       enabled: true
       pv_night_threshold_kwh: 0.1
     priority_4_bess_to_mall:
       bess_saturation_percent: 95.0
-      description:
-        "BESS saturada + FV excedente \xE2\u2020\u2019 Mall (descargar\
-        \ exceso)"
-      enabled: true
+      description: "BESS saturada + MALL discharge (v5.5: +78.8% vs v5.2)"
+      enabled: true  # v5.5: MALL discharge HABILITADO
       mall_power_max_kw: 500.0
     priority_5_grid_import:
       allowed: true
@@ -73,12 +78,13 @@ oe2:
       direct_solar_bonus_weight: 0.01
       grid_import_penalty_weight: 0.0001
   ev_fleet:
-    # Configuración de cargadores (DATOS REALES OE2 2026-01-30)
-    charger_power_kw_moto: 2.0          # 28 cargadores motos @ 2kW cada uno
-    charger_power_kw_mototaxi: 3.0      # 4 cargadores mototaxis @ 3kW cada uno
-    n_chargers: 32                      # Alias para total_chargers (sincronizado con código)
-    total_chargers: 32                  # Total físico: 28 + 4 = 32 cargadores
-    total_sockets: 128                  # Total sockets: 32 × 4 = 128 (112 motos + 16 mototaxis)
+    # Configuración de cargadores (DATOS REALES OE2 v5.2 - 2026-02-12)
+    charger_power_kw: 7.4               # Modo 3 monofásico 32A @ 230V por toma
+    charger_power_kw_moto: 7.4          # 15 cargadores motos @ 7.4kW/toma
+    charger_power_kw_mototaxi: 7.4      # 4 cargadores mototaxis @ 7.4kW/toma
+    n_chargers: 19                      # Alias para total_chargers (sincronizado con código)
+    total_chargers: 19                  # Total físico: 15 + 4 = 19 cargadores
+    total_sockets: 38                   # Total sockets: 19 × 2 = 38 (30 motos + 8 mototaxis)
     # Demanda EV constante para tracking CO₂ (workaround CityLearn 2.5.0 bug)
     ev_demand_constant_kw: 50.0         # Estimación conservadora (54% uptime × 100kW = ~50kW)
     closing_hour: 22
@@ -97,7 +103,7 @@ oe2:
       - 21
     peak_share_day: 0.5
     session_minutes: 30
-    sockets_per_charger: 4
+    sockets_per_charger: 2              # 2 tomas por cargador (Modo 3)
     utilization: 0.92
   location:
     alt: 104.0
@@ -172,17 +178,17 @@ oe3:
       net_kg: -1341467                # CO2 neto (negativo = reducción)
       reduction_pct: 58.9             # Porcentaje reducción vs baseline
     
-    # Vehículos Cargados (datos reales del dataset)
+    # Vehículos Cargados (datos reales del dataset v5.2)
     vehicles_charged:
-      motos_vehicle_hours: 437635     # Vehículo-horas motos/año
-      motos_per_day_avg: 1199         # Promedio motos/día (112 sockets)
-      mototaxis_vehicle_hours: 122630 # Vehículo-horas mototaxis/año
-      mototaxis_per_day_avg: 336      # Promedio mototaxis/día (16 sockets)
-      total_sockets: 128              # 112 motos + 16 mototaxis
+      motos_vehicle_hours: 98550      # Vehículo-horas motos/año (270/día × 365)
+      motos_per_day_avg: 270          # Promedio motos/día (30 tomas)
+      mototaxis_vehicle_hours: 14235  # Vehículo-horas mototaxis/año (39/día × 365)
+      mototaxis_per_day_avg: 39       # Promedio mototaxis/día (8 tomas)
+      total_sockets: 38               # 30 motos + 8 mototaxis
     
     # Control y Operación - MÉTRICAS VALIDADAS
     control_operation:
-      sockets_active_pct: 50.0        # % sockets activos (de 128)
+      sockets_active_pct: 50.0        # % sockets activos (de 38)
       bess_control_intensity: 0.517   # 51.7% intensidad de control BESS
       bess_soc_avg: 0.905             # 90.5% SOC promedio BESS
       ev_soc_avg: 1.000               # 100% SOC promedio EVs

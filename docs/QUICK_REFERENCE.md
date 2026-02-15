@@ -8,7 +8,7 @@
 
 > "Al agente SAC se debería premiar si supera en cargar la cantidad máxima motos y mototaxis (sin afectar capacidad de cargadores y tomas, ya que los vehículos eléctricos se conectarán en diferentes estados de carga)"
 
-**Translation**: Reward SAC (and extend to PPO, A2C) for maximizing simultaneous motos and mototaxis charging without affecting charger capacity (128 sockets fixed, but EVs arrive at variable SOC 20-25%).
+**Translation**: Reward SAC (and extend to PPO, A2C) for maximizing simultaneous motos and mototaxis charging without affecting charger capacity (38 sockets fixed, but EVs arrive at variable SOC 20-25%).
 
 ---
 
@@ -129,7 +129,7 @@ All 3 agents use same weights from `create_iquitos_reward_weights()`:
 ### Logic Tree
 
 ```
-EV SOC (Average across 128 chargers)
+EV SOC (Average across 38 sockets)
 │
 ├─ If SOC < 0.70
 │  └─ PENALTY: -0.2 (not enough EVs charging)

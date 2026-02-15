@@ -88,7 +88,7 @@ def main():
             ev_profile_path=ev_profile_path,
             mall_demand_path=mall_demand_path if mall_demand_path.exists() else None,
             dod=0.80,
-            c_rate=0.60,
+            c_rate=0.36,  # v5.2: 0.36 C-rate
             round_kwh=10.0,
             efficiency_roundtrip=0.95,
             autonomy_hours=4.0,

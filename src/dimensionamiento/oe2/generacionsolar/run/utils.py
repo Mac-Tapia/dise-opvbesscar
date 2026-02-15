@@ -32,9 +32,7 @@ def cargar_generacion_solar(csv_path: Optional[str] = None) -> pd.DataFrame:
     if not path.exists():
         raise FileNotFoundError(f"Archivo no encontrado: {csv_path}")
     
-    df = pd.read_csv(csv_path)
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
-    df.set_index('timestamp', inplace=True)
+    df = pd.read_csv(csv_path, index_col='datetime', parse_dates=True)
     
     return df
 

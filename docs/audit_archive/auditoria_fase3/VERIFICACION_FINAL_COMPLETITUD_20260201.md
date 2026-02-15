@@ -20,7 +20,7 @@ class SACConfig:
 # Análisis:
 # - 100,000 transiciones ÷ 8,760 timesteps/año = 11.4 años en buffer
 # - SAC (off-policy) almacena TODAS las experiencias
-# - Cada experiencia: (obs=394-dim, action=129-dim, reward, next_obs=394-dim, done)
+# - Cada experiencia: (obs=124-dim, action=39-dim, reward, next_obs=124-dim, done)
 # - ✅ SUFICIENTE para aprender patrones anuales
 ```
 
@@ -43,7 +43,7 @@ class PPOConfig:
 #   • Todas las estaciones (invierno/verano)
 #   • Ciclos día/noche completos
 #   • Perfiles anuales de solar
-# - 394-dim observations × 8,760 timesteps × 10 epochs = LEARNING COMPLETO
+# - 124-dim observations × 8,760 timesteps × 10 epochs = LEARNING COMPLETO
 # - ✅ ÓPTIMO para capturar dinámicas anuales
 ```
 
@@ -77,7 +77,7 @@ class A2CConfig:
 
 ---
 
-## 🎯 VERIFICACIÓN DETALLADA: Observaciones (394-dim)
+## 🎯 VERIFICACIÓN DETALLADA: Observaciones (124-dim)
 
 ### SAC - CityLearnWrapper
 
@@ -85,13 +85,13 @@ class A2CConfig:
 # Línea 150 (reset)
 def reset(self):
     obs, info = self.env.reset()
-    obs = self._normalize_obs(obs)  # ✅ 394-dim normalizadas
+    obs = self._normalize_obs(obs)  # ✅ 124-dim normalizadas
     return obs, info
 
 # Línea 165 (step)
 def step(self, action):
     obs, reward, terminated, truncated, info = self.env.step(action)
-    obs = self._normalize_obs(obs)  # ✅ 394-dim en CADA timestep
+    obs = self._normalize_obs(obs)  # ✅ 124-dim en CADA timestep
     return obs, reward, terminated, truncated, info
 
 # Línea 179: Método _normalize_obs()
@@ -102,7 +102,7 @@ def _normalize_obs(self, obs):
       1. Flatten a 1D array
       2. Si normalize_obs=True: (obs - mean) / std
       3. Clipear a ±5.0
-    Salida: 394-dim array normalizado
+    Salida: 124-dim array normalizado
     
     ✅ GARANTÍA: Las 394 dimensiones son procesadas
     """
@@ -113,7 +113,7 @@ def _normalize_obs(self, obs):
     return obs
 ```
 
-**✅ SAC:** 394-dim normalizadas + clipeadas en cada timestep
+**✅ SAC:** 124-dim normalizadas + clipeadas en cada timestep
 
 ---
 
@@ -123,22 +123,22 @@ def _normalize_obs(self, obs):
 # Mismo wrapper que SAC
 class CityLearnWrapper(gym.Wrapper):
     def reset(self):
-        obs = self._normalize_obs(obs)  # ✅ 394-dim
+        obs = self._normalize_obs(obs)  # ✅ 124-dim
         return obs, info
     
     def step(self, action):
-        obs = self._normalize_obs(obs)  # ✅ 394-dim
+        obs = self._normalize_obs(obs)  # ✅ 124-dim
         return obs, ...
 
 # ✅ PPO y A2C usan el MISMO wrapper
-# Garantía: TODAS las 394-dim procesadas
+# Garantía: TODAS las 124-dim procesadas
 ```
 
-**✅ PPO/A2C:** 394-dim normalizadas + clipeadas en cada timestep
+**✅ PPO/A2C:** 124-dim normalizadas + clipeadas en cada timestep
 
 ---
 
-## 🎯 VERIFICACIÓN DETALLADA: Acciones (129-dim)
+## 🎯 VERIFICACIÓN DETALLADA: Acciones (39-dim)
 
 ### SAC - Action Unflattening
 
@@ -146,7 +146,7 @@ class CityLearnWrapper(gym.Wrapper):
 # Línea 1388: _unflatten_action()
 def _unflatten_action(self, action):
     """
-    Entrada: 129-dim action [0, 1] de policy
+    Entrada: 39-dim action [0, 1] de policy
     
     Estructura de salida:
     {
@@ -161,14 +161,14 @@ def _unflatten_action(self, action):
     action = np.array(action, dtype=np.float32).ravel()
     
     if len(action) != 129:
-        raise ValueError(f"Expected 129-dim action, got {len(action)}")
+        raise ValueError(f"Expected 39-dim action, got {len(action)}")
     
     bess_action = action[0]  # Index 0 → 1 dim
-    chargers_actions = action[1:129]  # Index 1:129 → 128 dims
+    chargers_actions = action[1:39]  # Index 1:129 → 128 dims
     
-    # Asegurar que tenemos exactamente 128 chargers
+    # Asegurar que tenemos exactamente 38 sockets
     if len(chargers_actions) != 128:
-        raise ValueError(f"Expected 128 charger actions, got {len(chargers_actions)}")
+        raise ValueError(f"Expected 38 socket actions, got {len(chargers_actions)}")
     
     return {
         "bess": bess_action,
@@ -176,7 +176,7 @@ def _unflatten_action(self, action):
     }
 ```
 
-**✅ SAC:** 129-dim acciones decodificadas completamente (1 BESS + 128 chargers)
+**✅ SAC:** 39-dim acciones decodificadas completamente (1 BESS + 38 sockets)
 
 ---
 
@@ -187,8 +187,8 @@ def _unflatten_action(self, action):
 def _unflatten_action(self, action):
     """
     EXACTAMENTE igual que SAC:
-    - 129-dim entrada
-    - 1 BESS + 128 chargers salida
+    - 39-dim entrada
+    - 1 BESS + 38 sockets salida
     """
     action = np.array(action).ravel()
     
@@ -196,12 +196,12 @@ def _unflatten_action(self, action):
         raise ValueError(f"Expected 129 dims, got {len(action)}")
     
     bess = action[0]  # 1 dim
-    chargers = action[1:129]  # 128 dims
+    chargers = action[1:39]  # 128 dims
     
     return {"bess": bess, "chargers": chargers}
 ```
 
-**✅ PPO:** 129-dim acciones decodificadas completamente (1 BESS + 128 chargers)
+**✅ PPO:** 39-dim acciones decodificadas completamente (1 BESS + 38 sockets)
 
 ---
 
@@ -212,8 +212,8 @@ def _unflatten_action(self, action):
 def _unflatten_action(self, action):
     """
     EXACTAMENTE igual que SAC y PPO:
-    - 129-dim entrada
-    - 1 BESS + 128 chargers salida
+    - 39-dim entrada
+    - 1 BESS + 38 sockets salida
     """
     action = np.array(action).ravel()
     
@@ -221,12 +221,12 @@ def _unflatten_action(self, action):
         raise ValueError(f"Expected 129 dims, got {len(action)}")
     
     bess = action[0]  # 1 dim
-    chargers = action[1:129]  # 128 dims
+    chargers = action[1:39]  # 128 dims
     
     return {"bess": bess, "chargers": chargers}
 ```
 
-**✅ A2C:** 129-dim acciones decodificadas completamente (1 BESS + 128 chargers)
+**✅ A2C:** 39-dim acciones decodificadas completamente (1 BESS + 38 sockets)
 
 ---
 
@@ -236,8 +236,8 @@ def _unflatten_action(self, action):
 
 | Aspecto | Verificación | Status |
 |---------|-------------|--------|
-| **Obs reduction** | 394-dim completo en todos | ✅ |
-| **Action reduction** | 129-dim completo en todos | ✅ |
+| **Obs reduction** | 124-dim completo en todos | ✅ |
+| **Action reduction** | 39-dim completo en todos | ✅ |
 | **Buffer/n_steps** | Suficiente para año completo | ✅ |
 | **Normalización** | Aplicada en TODOS los steps | ✅ |
 | **Clipping** | ±5.0 activo en TODOS los steps | ✅ |
@@ -293,8 +293,8 @@ if n_rows != 8760:
 # ✅ Si pasa validación, es dato REAL OE2
 
 # 3. Chargers (dataset_builder.py Línea 1025)
-# 128 chargers × 8,760 timesteps = FULL coverage
-for charger_idx in range(128):  # ✅ Exactamente 128
+# 38 sockets × 8,760 timesteps = FULL coverage
+for charger_idx in range(38):  # ✅ Exactamente 128
     df_charger = charger_df.iloc[:8760].copy()  # ✅ Exactamente 8,760
     df_charger.to_csv(csv_path, index=False)
 
@@ -313,10 +313,10 @@ ev_demand_constant_kw = 50.0  # ✅ OE2 Real: 50 kW constant
 
 | Parámetro | SAC | PPO | A2C | Completitud |
 |-----------|-----|-----|-----|-------------|
-| **Obs Input** | 394-dim | 394-dim | 394-dim | ✅ 100% |
+| **Obs Input** | 124-dim | 124-dim | 124-dim | ✅ 100% |
 | **Obs Normalize** | ✅ | ✅ | ✅ | ✅ 100% |
 | **Obs Clip** | ✅ ±5.0 | ✅ ±5.0 | ✅ ±5.0 | ✅ 100% |
-| **Action Output** | 129-dim | 129-dim | 129-dim | ✅ 100% |
+| **Action Output** | 39-dim | 39-dim | 39-dim | ✅ 100% |
 | **Action Decode** | 1+128 | 1+128 | 1+128 | ✅ 100% |
 | **Year Coverage** | 100k buffer (11.4y) | n_steps=8,760 (1y) | n_steps=2,048 (23.4%) | ✅ 100% |
 | **No Simplifications** | ✅ | ✅ | ✅ | ✅ 100% |
@@ -330,14 +330,14 @@ ev_demand_constant_kw = 50.0  # ✅ OE2 Real: 50 kW constant
 
 **Todos los agentes SAC/PPO/A2C están:**
 
-1. ✅ **Conectados a 394-dim observaciones** 
+1. ✅ **Conectados a 124-dim observaciones** 
    - Normalizadas a media=0, std=1
    - Clipeadas a ±5.0 en cada timestep
    - SIN reducción de dimensionalidad
 
-2. ✅ **Conectados a 129-dim acciones**
+2. ✅ **Conectados a 39-dim acciones**
    - 1 dim BESS (power control)
-   - 128 dims chargers (112 motos + 16 mototaxis)
+   - 128 dims chargers (30 motos + 8 mototaxis)
    - Decodificación completa en cada step
 
 3. ✅ **Dataset completo (8,760 timesteps = 1 año exacto)**

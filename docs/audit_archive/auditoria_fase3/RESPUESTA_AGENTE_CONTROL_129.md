@@ -8,7 +8,7 @@
 
 ## 📊 Resumen Ejecutivo
 
-El agente RL **ESTÁ controlando correctamente 129 acciones:**
+El agente RL **ESTÁ controlando correctamente 39 acciones:**
 
 | Componente | Cantidad | Tipo | Configuración | Status |
 |-----------|----------|------|----------------|--------|
@@ -27,8 +27,8 @@ El agente RL **ESTÁ controlando correctamente 129 acciones:**
 ╚════════════════════════════════════════════════════════════════════════╝
 
 ✅ TEST 1: Charger Generation
-   Found 2 loops with range(128)
-   Code generates 128 charger_simulation_*.csv files
+   Found 2 loops with range(38)
+   Code generates 38 socket_simulation_*.csv files
 
 ✅ TEST 2: Chargers in Schema
    Code creates all_chargers dict
@@ -36,8 +36,8 @@ El agente RL **ESTÁ controlando correctamente 129 acciones:**
    Loop iterates over total_devices (128)
 
 ✅ TEST 3: Motos vs Mototaxis Split
-   ✓ 112 motos (chargers 1-112)
-   ✓ 16 mototaxis (chargers 113-128)
+   ✓ 30 motos (chargers 1-112)
+   ✓ 8 mototaxis (chargers 113-128)
    ✓ Conditional: if idx < 112 → moto
    ✓ Else: mototaxis
 
@@ -51,7 +51,7 @@ El agente RL **ESTÁ controlando correctamente 129 acciones:**
 ✅ TEST 5: Action Dimension Constant
    ✓ action_dim = 129 in dataset_constructor.py
    ✓ "~394 obs dims × 129 action dims" in ppo_sb3.py
-   ✓ 129 = 1 BESS + 128 chargers confirmed
+   ✓ 129 = 1 BESS + 38 sockets confirmed
 ```
 
 ---
@@ -94,7 +94,7 @@ charger_simulation_002.csv  (MOTO #2, 2 kW)
 charger_simulation_112.csv  (MOTO #112, último moto)
 charger_simulation_113.csv  (MOTOTAXI #1, 3 kW)
 ...
-charger_simulation_128.csv  (MOTOTAXI #16, último)
+charger_simulation_038.csv  (MOTOTAXI #16, último)
 
 Cada archivo:
 ├─ 8,760 filas (1 año completo, por hora)
@@ -122,7 +122,7 @@ electrical_storage_simulation.csv
         "charger_mall_1": {..., "charger_simulation": "charger_simulation_001.csv"},
         "charger_mall_2": {..., "charger_simulation": "charger_simulation_002.csv"},
         ...
-        "charger_mall_128": {..., "charger_simulation": "charger_simulation_128.csv"}
+        "charger_mall_38": {..., "charger_simulation": "charger_simulation_038.csv"}
       },
       "electrical_storage": {
         "capacity": 4520,
@@ -179,15 +179,15 @@ for episode in num_episodes:
 **Archivo:** [dataset_builder.py](../src/iquitos_citylearn/oe3/dataset_builder.py#L315-L410)
 
 ```python
-# Línea ~350: Loop que genera 128 chargers
-for charger_idx in range(128):  # ← 128 chargers
+# Línea ~350: Loop que genera 38 sockets
+for charger_idx in range(38):  # ← 38 sockets
     charger_name = f"charger_mall_{charger_idx + 1}"
     
     # Determinar tipo
-    if charger_idx < 112:  # ← 112 motos
+    if charger_idx < 112:  # ← 30 motos
         power_kw = 2.0
         charger_type = "moto"
-    else:  # ← 16 mototaxis
+    else:  # ← 8 mototaxis
         power_kw = 3.0
         charger_type = "moto_taxi"
     
@@ -196,7 +196,7 @@ for charger_idx in range(128):  # ← 128 chargers
     all_chargers[charger_name] = new_charger
 
 # Línea ~790: Asignar al building
-b_mall["electric_vehicle_chargers"] = all_chargers  # 128 chargers
+b_mall["electric_vehicle_chargers"] = all_chargers  # 38 sockets
 ```
 
 ### 2. Dataset Constructor - Definición de action_dim
@@ -204,17 +204,17 @@ b_mall["electric_vehicle_chargers"] = all_chargers  # 128 chargers
 **Archivo:** [dataset_constructor.py](../src/iquitos_citylearn/oe3/dataset_constructor.py#L32)
 
 ```python
-action_dim: int = 129  # 1 BESS + 128 chargers individuales (112 motos 2kW + 16 mototaxis 3kW)
+action_dim: int = 129  # 1 BESS + 38 sockets individuales (30 motos 2kW + 8 mototaxis 3kW)
 ```
 
-### 3. Agent Config - 129 acciones
+### 3. Agent Config - 39 acciones
 
 **Archivo:** [ppo_sb3.py](../src/iquitos_citylearn/oe3/agents/ppo_sb3.py#L41)
 
 ```python
 # Docstring de PPOConfig:
 # "~394 obs dims × 129 action dims"
-#  129 = 1 BESS + 128 chargers
+#  129 = 1 BESS + 38 sockets
 ```
 
 ### 4. Action Handling - SAC Agent
@@ -246,7 +246,7 @@ def _unflatten_action(self, action):
 
 | Item | Verificación | Status |
 |------|---|---|
-| **128 Chargers generados** | Code: range(128) | ✅ |
+| **128 Chargers generados** | Code: range(38) | ✅ |
 | **112 Motos** | Code: if idx < 112 | ✅ |
 | **16 Mototaxis** | Code: else idx ≥ 112 | ✅ |
 | **128 en Schema** | Code: electric_vehicle_chargers = all_chargers | ✅ |
@@ -261,7 +261,7 @@ def _unflatten_action(self, action):
 
 ## 🎯 CONCLUSIÓN FINAL
 
-**✅ SÍ, el agente RL ESTÁ controlando correctamente 129 acciones:**
+**✅ SÍ, el agente RL ESTÁ controlando correctamente 39 acciones:**
 
 1. **128 Chargers Individuales:**
    - ✅ 112 Motos @ 2 kW cada uno
