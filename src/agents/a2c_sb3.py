@@ -44,28 +44,28 @@ def detect_device() -> str:
 
 @dataclass
 class A2CConfig:
-    """Configuración para A2C (SB3) con soporte CUDA/GPU.
+    """Configuracion para A2C (SB3) con soporte CUDA/GPU.
 
-    Nota: train_steps=500000 es el mínimo recomendado para problemas de alta
+    Nota: train_steps=500000 es el minimo recomendado para problemas de alta
     dimensionalidad como CityLearn con ~900 obs dims × 126 action dims.
     """
-    # Hiperparámetros de entrenamiento - A2C OPTIMIZADO PARA RTX 4060
-    train_steps: int = 500000  # ↓ REDUCIDO: 1M→500k (GPU limitada)
-    n_steps: int = 8            # ✅ ÓPTIMO A2C: Updates frecuentes cada 8 pasos (fortaleza A2C)
-    learning_rate: float = 7e-4 # ✅ ÓPTIMO A2C: Tasa estándar alta (converge rápido)
-    lr_schedule: str = "linear"    # ✅ Decay automático
-    gamma: float = 0.99            # ↓ REDUCIDO: 0.999→0.99 (simplifica)
-    gae_lambda: float = 0.95       # ✅ OPTIMIZADO: 0.85→0.95 (captura deps a largo plazo)
-    ent_coef: float = 0.015        # ✅ ÓPTIMO A2C: Ligeramente más exploración
-    vf_coef: float = 0.5           # ✅ OPTIMIZADO: 0.3→0.5 (value function más importante)
+    # Hiperparametros de entrenamiento - A2C OPTIMIZADO PARA RTX 4060
+    train_steps: int = 500000  # v REDUCIDO: 1M->500k (GPU limitada)
+    n_steps: int = 8            # [OK] OPTIMO A2C: Updates frecuentes cada 8 pasos (fortaleza A2C)
+    learning_rate: float = 7e-4 # [OK] OPTIMO A2C: Tasa estandar alta (converge rapido)
+    lr_schedule: str = "linear"    # [OK] Decay automatico
+    gamma: float = 0.99            # v REDUCIDO: 0.999->0.99 (simplifica)
+    gae_lambda: float = 0.95       # [OK] OPTIMIZADO: 0.85->0.95 (captura deps a largo plazo)
+    ent_coef: float = 0.015        # [OK] OPTIMO A2C: Ligeramente mas exploracion
+    vf_coef: float = 0.5           # [OK] OPTIMIZADO: 0.3->0.5 (value function mas importante)
     max_grad_norm: float = 0.75    # 🔴 DIFERENCIADO A2C: 0.75 (vs SAC 10.0, PPO 1.0)
                                    #   A2C on-policy simple: ultra-prudente, prone a exploding gradients
-    hidden_sizes: tuple = (256, 256)   # ↓↓ CRITICAMENTE REDUCIDA: 512→256
+    hidden_sizes: tuple = (256, 256)   # vv CRITICAMENTE REDUCIDA: 512->256
     activation: str = "relu"
     device: str = "auto"
     seed: int = 42
     verbose: int = 1
-    log_interval: int = 500  # ✅ FIX: Métricas cada 500 pasos (era 2000)
+    log_interval: int = 500  # [OK] FIX: Metricas cada 500 pasos (era 2000)
     checkpoint_dir: Optional[str] = None
     checkpoint_freq_steps: int = 1000  # MANDATORY: Default to 1000 for checkpoint generation
     save_final: bool = True
@@ -74,18 +74,18 @@ class A2CConfig:
     resume_path: Optional[str] = None  # Ruta a checkpoint SB3 para reanudar
 
     # === MULTIOBJETIVO / MULTICRITERIO ===
-    # NOTA: Los pesos multiobjetivo se configuran en rewards.py vía:
+    # NOTA: Los pesos multiobjetivo se configuran en rewards.py via:
     #   create_iquitos_reward_weights(priority) donde priority = "balanced", "co2_focus", etc.
-    # Ver: src/iquitos_citylearn/oe3/rewards.py línea 634+
-    # NO duplicar pesos aquí - usar rewards.py como fuente única de verdad
+    # Ver: src/iquitos_citylearn/oe3/rewards.py linea 634+
+    # NO duplicar pesos aqui - usar rewards.py como fuente unica de verdad
 
     # Suavizado de acciones (penaliza cambios bruscos)
     reward_smooth_lambda: float = 0.0
 
     # === SEPARATE ACTOR-CRITIC LEARNING RATES (NEW COMPONENT #1) ===
     # A2C paper original usa RMSprop con igual LR, pero best practice es tuning independiente
-    actor_learning_rate: float = 7e-4      # Actor network learning rate (✅ ÓPTIMO A2C)
-    critic_learning_rate: float = 7e-4     # Critic network learning rate (típicamente igual)
+    actor_learning_rate: float = 7e-4      # Actor network learning rate ([OK] OPTIMO A2C)
+    critic_learning_rate: float = 7e-4     # Critic network learning rate (tipicamente igual)
     actor_lr_schedule: str = "linear"      # "constant" o "linear" decay
     critic_lr_schedule: str = "linear"     # "constant" o "linear" decay
     actor_lr_final_ratio: float = 0.7      # 🔴 DIFERENCIADO: 0.7 (NO 0.1 SAC, 7× menos agresivo)
@@ -93,46 +93,46 @@ class A2CConfig:
     critic_lr_final_ratio: float = 0.7     # 🔴 DIFERENCIADO: 0.7 (NO 0.1 SAC, 7× menos agresivo)
 
     # === ENTROPY DECAY SCHEDULE (NEW COMPONENT #2) ===
-    # Exploración decrece: 0.01 (early) → 0.001 (late) - HARMONIZED WITH SAC/PPO (CRITICAL FIX)
+    # Exploracion decrece: 0.01 (early) -> 0.001 (late) - HARMONIZED WITH SAC/PPO (CRITICAL FIX)
     ent_coef_schedule: str = "exponential"  # "constant", "linear", o "exponential" (CHANGED FROM LINEAR)
     ent_coef_final: float = 0.001           # Target entropy at end of training (on-policy stable)
-    ent_decay_rate: float = 0.998           # 🔴 DIFERENCIADO: 0.998 (2× más lento que SAC 0.9995)
-                                            #   A2C on-policy simple: decay mucho más suave
+    ent_decay_rate: float = 0.998           # 🔴 DIFERENCIADO: 0.998 (2× mas lento que SAC 0.9995)
+                                            #   A2C on-policy simple: decay mucho mas suave
 
     # === 🟢 NUEVO: EV UTILIZATION BONUS (A2C ADAPTATION) ===
-    # A2C on-policy simple: Reward máximo de EVs simultáneos via advantage modulation
+    # A2C on-policy simple: Reward maximo de EVs simultaneos via advantage modulation
     # Diferencia vs SAC/PPO: A2C integra bonus directamente en advantage function
     use_ev_utilization_bonus: bool = True   # Enable/disable bonus
     ev_utilization_weight: float = 0.05     # A2C: weight del bonus (same as SAC/PPO)
-    ev_soc_optimal_min: float = 0.70        # SOC mínimo para considerar "utilizado"
-    ev_soc_optimal_max: float = 0.90        # SOC máximo para considerar "utilizado"
-    ev_soc_overcharge_threshold: float = 0.95  # Penalizar si >95% (concentración)
+    ev_soc_optimal_min: float = 0.70        # SOC minimo para considerar "utilizado"
+    ev_soc_optimal_max: float = 0.90        # SOC maximo para considerar "utilizado"
+    ev_soc_overcharge_threshold: float = 0.95  # Penalizar si >95% (concentracion)
     ev_utilization_decay: float = 0.98      # 🔴 DIFERENCIADO: 0.98 (decay muy suave para A2C)
-                                            #   A2C simple: bonus se mantiene estable más tiempo
+                                            #   A2C simple: bonus se mantiene estable mas tiempo
 
     # === ADVANTAGE & VALUE FUNCTION ROBUSTNESS (NEW COMPONENTS #3-4) ===
     normalize_advantages: bool = True      # Normalizar ventajas a cada batch
     advantage_std_eps: float = 1e-8        # Epsilon para avoid division by zero
     vf_scale: float = 1.0                  # Scale rewards antes de calcular VF target
     use_huber_loss: bool = True            # Huber loss para robustez
-    huber_delta: float = 1.0               # Threshold para switch MSE→MAE
+    huber_delta: float = 1.0               # Threshold para switch MSE->MAE
 
     # === OPTIMIZER CONTROL (NEW COMPONENT #5) ===
     # A2C paper usa RMSprop, pero Adam es common en SB3
     optimizer_type: str = "adam"           # "adam" o "rmsprop"
     optimizer_kwargs: Optional[dict[str, Any]] = None  # Config personalizada
-    use_amp: bool = True                   # ✅ AGREGADO: Mixed Precision (AMP) para GPU
+    use_amp: bool = True                   # [OK] AGREGADO: Mixed Precision (AMP) para GPU
 
-    # === NORMALIZACIÓN (crítico para estabilidad) ===
+    # === NORMALIZACION (critico para estabilidad) ===
     normalize_observations: bool = True
     normalize_rewards: bool = True
-    reward_scale: float = 0.1  # ↓ REDUCIDO: 1.0→0.1 (evita Q-explosion en critic)
-    clip_obs: float = 5.0      # ↓ REDUCIDO: 10→5 (clipping más agresivo)
-    clip_reward: float = 1.0   # ✅ AGREGADO (A2C INDIVIDUALIZED): Clipear rewards normalizados
+    reward_scale: float = 0.1  # v REDUCIDO: 1.0->0.1 (evita Q-explosion en critic)
+    clip_obs: float = 5.0      # v REDUCIDO: 10->5 (clipping mas agresivo)
+    clip_reward: float = 1.0   # [OK] AGREGADO (A2C INDIVIDUALIZED): Clipear rewards normalizados
                                # 🔴 DIFERENCIADO vs SAC (10.0): A2C es simple on-policy, clipping suave
 
     def __post_init__(self):
-        """Validación y normalización de configuración post-inicialización."""
+        """Validacion y normalizacion de configuracion post-inicializacion."""
         # Validar que learning rates sean positivos
         if self.actor_learning_rate <= 0 or self.critic_learning_rate <= 0:
             logger.warning(
@@ -159,7 +159,7 @@ class A2CConfig:
         ]:
             if schedule_val not in ["constant", "linear", "exponential"]:
                 logger.warning(
-                    "[A2CConfig] %s='%s' inválido. Usando 'constant'.",
+                    "[A2CConfig] %s='%s' invalido. Usando 'constant'.",
                     schedule_name, schedule_val
                 )
                 if schedule_name == "actor_lr_schedule":
@@ -172,14 +172,14 @@ class A2CConfig:
         # Validar optimizer
         if self.optimizer_type not in ["adam", "rmsprop"]:
             logger.warning(
-                "[A2CConfig] optimizer_type='%s' inválido. Usando 'adam'.",
+                "[A2CConfig] optimizer_type='%s' invalido. Usando 'adam'.",
                 self.optimizer_type
             )
             self.optimizer_type = "adam"
 
         logger.info(
             "[A2CConfig] Inicializado con componentes completos: "
-            "actor_lr=%s(%.6f), critic_lr=%s(%.6f), ent_coef=%s(%.6f→%.6f), "
+            "actor_lr=%s(%.6f), critic_lr=%s(%.6f), ent_coef=%s(%.6f->%.6f), "
             "optimizer=%s, huber=%s, norm_adv=%s, ev_utilization_bonus=%s(weight=%.2f, decay=%.4f)",
             self.actor_lr_schedule, self.actor_learning_rate,
             self.critic_lr_schedule, self.critic_learning_rate,
@@ -192,19 +192,19 @@ class A2CConfig:
 class A2CAgent:
     """Agente A2C robusto usando Stable-Baselines3.
 
-    Características:
+    Caracteristicas:
     - Actor-Critic con synchronous updates
     - Advantage Actor-Critic (A2C) simple pero poderoso
-    - 🟢 NUEVO: EV Utilization Bonus - Rewards máximo simultáneo de motos y mototaxis
+    - 🟢 NUEVO: EV Utilization Bonus - Rewards maximo simultaneo de motos y mototaxis
     - Soporte CUDA/GPU
     - Compatible con rewards multiobjetivo (rewards.py)
 
     **EV Utilization Bonus (A2C Adaptation)**:
     - Integrado directamente en advantage function
     - Decay suave (0.98) para estabilidad on-policy simple
-    - Penaliza SOC < 0.70 (baja utilización de chargers)
-    - Bonus SOC ∈ [0.70, 0.90] (máxima utilización simultánea)
-    - Penaliza SOC > 0.95 (indica concentración, no máxima utilización)
+    - Penaliza SOC < 0.70 (baja utilizacion de chargers)
+    - Bonus SOC ∈ [0.70, 0.90] (maxima utilizacion simultanea)
+    - Penaliza SOC > 0.95 (indica concentracion, no maxima utilizacion)
     - Weight: ev_utilization_weight = 0.05 (balanceado con otras componentes)
     - Decay: ev_utilization_decay = 0.98 (muy suave para on-policy)
     """
@@ -225,7 +225,7 @@ class A2CAgent:
         return self.config.device
 
     def _setup_torch_backend(self):
-        """Configura PyTorch para máximo rendimiento en A2C (CRITICAL FIX - agregado a A2C)."""
+        """Configura PyTorch para maximo rendimiento en A2C (CRITICAL FIX - agregado a A2C)."""
         try:
             import torch
 
@@ -247,10 +247,10 @@ class A2CAgent:
                 logger.info("[A2C GPU] Mixed Precision (AMP) habilitado para entrenamiento acelerado")
 
         except ImportError:
-            logger.warning("[A2C] PyTorch no instalado, usando configuración por defecto")
+            logger.warning("[A2C] PyTorch no instalado, usando configuracion por defecto")
 
     def get_device_info(self) -> dict[str, Any]:
-        """Retorna información detallada del dispositivo para A2C (CRITICAL FIX - agregado a A2C)."""
+        """Retorna informacion detallada del dispositivo para A2C (CRITICAL FIX - agregado a A2C)."""
         info: dict[str, Any] = {"device": self.device, "backend": "unknown"}
         try:
             import torch  # type: ignore[import]
@@ -268,10 +268,10 @@ class A2CAgent:
         return info
 
     def _validate_dataset_completeness(self) -> None:
-        """Validar que el dataset CityLearn tiene exactamente 8,760 timesteps (año completo).
+        """Validar que el dataset CityLearn tiene exactamente 8,760 timesteps (ano completo).
 
-        CRÍTICO: Esta validación es OBLIGATORIA - Sin datos reales, el entrenamiento
-        ejecuta rápido pero NO APRENDE NADA.
+        CRITICO: Esta validacion es OBLIGATORIA - Sin datos reales, el entrenamiento
+        ejecuta rapido pero NO APRENDE NADA.
 
         NOTA: Usamos energy_simulation (datos del CSV) en lugar de propiedades
         de runtime (solar_generation, net_electricity_consumption) que solo se
@@ -283,8 +283,8 @@ class A2CAgent:
         buildings = getattr(self.env, 'buildings', [])
         if not buildings:
             raise RuntimeError(
-                "[A2C VALIDACIÓN FALLIDA] No buildings found in CityLearn environment.\n"
-                "El dataset NO se cargó correctamente. Ejecuta:\n"
+                "[A2C VALIDACION FALLIDA] No buildings found in CityLearn environment.\n"
+                "El dataset NO se cargo correctamente. Ejecuta:\n"
                 "  python -m scripts.run_oe3_build_dataset --config configs/default.yaml"
             )
 
@@ -307,20 +307,20 @@ class A2CAgent:
 
         if timesteps == 0:
             raise RuntimeError(
-                "[A2C VALIDACIÓN FALLIDA] No se pudo extraer series de tiempo de CityLearn.\n"
-                "El dataset está vacío o corrupto. Reconstruye con:\n"
+                "[A2C VALIDACION FALLIDA] No se pudo extraer series de tiempo de CityLearn.\n"
+                "El dataset esta vacio o corrupto. Reconstruye con:\n"
                 "  python -m scripts.run_oe3_build_dataset --config configs/default.yaml"
             )
 
         if timesteps != 8760:
             raise RuntimeError(
-                f"[A2C VALIDACIÓN FALLIDA] Dataset INCOMPLETO: {timesteps} timesteps vs. 8,760 esperado.\n"
-                f"Sin datos completos de 1 año, el entrenamiento NO aprenderá patrones estacionales.\n"
+                f"[A2C VALIDACION FALLIDA] Dataset INCOMPLETO: {timesteps} timesteps vs. 8,760 esperado.\n"
+                f"Sin datos completos de 1 ano, el entrenamiento NO aprendera patrones estacionales.\n"
                 f"Reconstruye el dataset con:\n"
                 f"  python -m scripts.run_oe3_build_dataset --config configs/default.yaml"
             )
 
-        logger.info("[A2C VALIDACIÓN] ✓ Dataset CityLearn COMPLETO: 8,760 timesteps (1 año)")
+        logger.info("[A2C VALIDACION] [OK] Dataset CityLearn COMPLETO: 8,760 timesteps (1 ano)")
 
     def learn(self, total_timesteps: Optional[int] = None, **kwargs: Any) -> None:
         """Entrena el agente A2C."""
@@ -335,7 +335,7 @@ class A2CAgent:
             logger.warning("stable_baselines3 no disponible: %s", e)
             return
 
-        # VALIDACIÓN CRÍTICA: Verificar dataset completo antes de entrenar
+        # VALIDACION CRITICA: Verificar dataset completo antes de entrenar
         self._validate_dataset_completeness()
 
         steps = total_timesteps or self.config.train_steps
@@ -353,7 +353,7 @@ class A2CAgent:
                 self._smooth_lambda = smooth_lambda
                 self._prev_action = None
 
-                # Normalización
+                # Normalizacion
                 self._normalize_obs = normalize_obs
                 self._normalize_rewards = normalize_rewards
                 self._reward_scale = reward_scale  # 0.01
@@ -363,9 +363,9 @@ class A2CAgent:
                 self._reward_var = 1.0
 
                 # CRITICAL FIX: Selective prescaling (NOT generic 0.001 for all obs)
-                # Power/Energy values (kW, kWh): scale by 0.001 → [0, 5] range
+                # Power/Energy values (kW, kWh): scale by 0.001 -> [0, 5] range
                 # SOC/Percentage values (0-1 or 0-100): scale by 1.0 (keep as is)
-                # The last obs elements are typically BESS SOC [0, 1] → must use 1.0 scale
+                # The last obs elements are typically BESS SOC [0, 1] -> must use 1.0 scale
                 self._obs_prescale = np.ones(self.obs_dim, dtype=np.float32) * 0.001
                 # NOTE: Future improvement: detect obs type and set prescale selectively
 
@@ -517,7 +517,7 @@ class A2CAgent:
             Compute decayed entropy coefficient for A2C.
 
             A2C typically uses lower entropy than PPO (0.001 initial).
-            Decay: 0.001 → 0.0001 (1000x reduction) over training.
+            Decay: 0.001 -> 0.0001 (1000x reduction) over training.
 
             Args:
                 progress: Training progress [0, 1] (num_timesteps / total_timesteps)
@@ -533,12 +533,12 @@ class A2CAgent:
             if schedule_type == 'constant':
                 return self.config.ent_coef
 
-            # Default: 0.01 → 0.001 linear decay (CORRECTED: was 0.0001, now matches SAC/PPO)
+            # Default: 0.01 -> 0.001 linear decay (CORRECTED: was 0.0001, now matches SAC/PPO)
             ent_coef_init = self.config.ent_coef if hasattr(self.config, 'ent_coef') else 0.01
             ent_coef_final = getattr(self.config, 'ent_coef_final', 0.001)  # CORRECTED: was 0.0001
 
             if schedule_type == 'linear':
-                # Linear interpolation: init → final
+                # Linear interpolation: init -> final
                 return float(ent_coef_init + (ent_coef_final - ent_coef_init) * progress)
 
             elif schedule_type == 'exponential':
@@ -551,7 +551,7 @@ class A2CAgent:
         # ========================================================================
         # ADVANTAGE NORMALIZATION - PHASE 2 INTEGRATION (TASK 6)
         # SB3 A2C tiene normalize_advantage=True/False incorporado
-        # Lo pasamos directamente al constructor en lugar de función custom
+        # Lo pasamos directamente al constructor en lugar de funcion custom
         # ========================================================================
         use_advantage_normalization = getattr(self.config, 'normalize_advantages', True)
         logger.info(
@@ -568,8 +568,8 @@ class A2CAgent:
             Factory function to create A2C policy with Huber loss.
 
             Huber loss is more robust than MSE for high-dimensional observations:
-            - MSE: squared error → explodes with outliers
-            - Huber: smooth L1 loss → clips large errors → stable gradients
+            - MSE: squared error -> explodes with outliers
+            - Huber: smooth L1 loss -> clips large errors -> stable gradients
 
             A2C with 394-dim observations benefits significantly from this.
 
@@ -705,7 +705,7 @@ class A2CAgent:
                 self.config.critic_learning_rate
             )
 
-        lr_schedule = self._get_lr_schedule()  # No requiere parámetros
+        lr_schedule = self._get_lr_schedule()  # No requiere parametros
         policy_kwargs = {
             "net_arch": list(self.config.hidden_sizes),
             "activation_fn": self._get_activation(),
@@ -843,7 +843,7 @@ class A2CAgent:
         expected_episodes = int(steps // 8760) if steps > 0 else 0
 
         class TrainingCallback(BaseCallback):
-            """Callback de entrenamiento A2C con extracción ROBUSTA de métricas.
+            """Callback de entrenamiento A2C con extraccion ROBUSTA de metricas.
 
             FIX 2026-02-02: Usa EpisodeMetricsAccumulator centralizado.
             """
@@ -856,7 +856,7 @@ class A2CAgent:
                 self.episode_count = 0
                 self.log_interval_steps = int(agent.config.log_interval or 500)  # Default 500
 
-                # ✅ FIX: Usar EpisodeMetricsAccumulator centralizado
+                # [OK] FIX: Usar EpisodeMetricsAccumulator centralizado
                 from .utils_metrics import EpisodeMetricsAccumulator, extract_step_metrics
                 self.metrics_accumulator = EpisodeMetricsAccumulator()
                 self._extract_step_metrics = extract_step_metrics
@@ -883,14 +883,14 @@ class A2CAgent:
                 self.n_calls += 1
 
                 # ========================================================================
-                # ✅ FIX: EXTRACCIÓN ROBUSTA DE MÉTRICAS usando metrics_extractor.py
-                # Reemplaza el código hardcodeado y propenso a errores
+                # [OK] FIX: EXTRACCION ROBUSTA DE METRICAS usando metrics_extractor.py
+                # Reemplaza el codigo hardcodeado y propenso a errores
                 # ========================================================================
                 obs = self.locals.get("obs_tensor", self.locals.get("new_obs"))
                 if obs is not None and hasattr(obs, 'cpu'):
                     obs = obs.cpu().numpy()
 
-                # Extraer métricas usando función centralizada (4-level fallback)
+                # Extraer metricas usando funcion centralizada (4-level fallback)
                 step_metrics = self._extract_step_metrics(self.training_env, self.n_calls, obs)
 
                 # Acumular reward
@@ -903,7 +903,7 @@ class A2CAgent:
                     else:
                         reward_val = float(rewards)
 
-                # ✅ Acumular métricas usando EpisodeMetricsAccumulator
+                # [OK] Acumular metricas usando EpisodeMetricsAccumulator
                 self.metrics_accumulator.accumulate(step_metrics, reward_val)
 
                 # Actualizar alias para compatibilidad (logs, etc.)
@@ -945,7 +945,7 @@ class A2CAgent:
                         logger.debug("[A2C Advantage Stats] Not available: %s", err)
 
                 # ========================================================================
-                # LOGGING PERIÓDICO con métricas REALES
+                # LOGGING PERIODICO con metricas REALES
                 # ========================================================================
                 infos = self.locals.get("infos", [])
                 if isinstance(infos, dict):
@@ -963,7 +963,7 @@ class A2CAgent:
                     parts = []
                     parts.append(f"reward_avg={avg_reward:.4f}")
 
-                    # Obtener métricas de entrenamiento del logger de SB3
+                    # Obtener metricas de entrenamiento del logger de SB3
                     try:
                         if hasattr(self.model, 'logger') and self.model.logger is not None:
                             name_to_value = getattr(self.model.logger, 'name_to_value', {})
@@ -984,7 +984,7 @@ class A2CAgent:
                     except (AttributeError, TypeError, KeyError, ValueError) as err:
                         logger.debug("Error extracting training metrics: %s", err)
 
-                    # Agregar métricas de energía y CO2
+                    # Agregar metricas de energia y CO2
                     parts.append(f"grid_kWh={episode_metrics['grid_import_kwh']:.1f}")
                     parts.append(f"co2_grid_kg={co2_kg:.1f}")
                     parts.append(f"solar_kWh={episode_metrics['solar_generation_kwh']:.1f}")
@@ -996,7 +996,7 @@ class A2CAgent:
 
                     metrics_str = " | ".join(parts)
 
-                    # ✅ FIX: Usar num_timesteps como pasos (no n_calls que no es comparable)
+                    # [OK] FIX: Usar num_timesteps como pasos (no n_calls que no es comparable)
                     logger.info(
                         "[A2C] paso %d | ep~%d | pasos_global=%d | %s",
                         int(self.model.num_timesteps),
@@ -1026,14 +1026,14 @@ class A2CAgent:
                     reward = float(episode.get("r", 0.0))
                     length = int(episode.get("l", 0))
 
-                    # Obtener métricas finales del episodio
+                    # Obtener metricas finales del episodio
                     final_metrics = self.metrics_accumulator.get_episode_metrics()
 
                     # Validar que hay datos reales
                     if final_metrics["grid_import_kwh"] <= 0.0:
-                        logger.warning("[A2C] Grid counter was 0 - CityLearn no reportó datos")
+                        logger.warning("[A2C] Grid counter was 0 - CityLearn no reporto datos")
                     if final_metrics["solar_generation_kwh"] <= 0.0:
-                        logger.warning("[A2C] Solar counter was 0 - CityLearn no reportó datos")
+                        logger.warning("[A2C] Solar counter was 0 - CityLearn no reporto datos")
 
                     self.agent.training_history.append({
                         "step": int(self.model.num_timesteps),
@@ -1084,7 +1084,7 @@ class A2CAgent:
                                 final_metrics["solar_generation_kwh"],
                             )
 
-                    # ✅ REINICIAR métricas para el siguiente episodio
+                    # [OK] REINICIAR metricas para el siguiente episodio
                     self.metrics_accumulator.reset()
                     self.reward_sum = 0.0
                     self.reward_count = 0
@@ -1217,7 +1217,7 @@ class A2CAgent:
             return self._zero_action()
 
         obs = self._flatten_obs(observations)
-        # Ajustar a la dimensión esperada por el modelo
+        # Ajustar a la dimension esperada por el modelo
         try:
             target_dim = int(self.model.observation_space.shape[0])
             if obs.size < target_dim:
@@ -1295,7 +1295,7 @@ class A2CAgent:
 
 def make_a2c(env: Any, config: Optional[A2CConfig] = None, **kwargs) -> A2CAgent:
     """Factory function para crear agente A2C robusto."""
-    # FIX CRÍTICO: Evaluación explícita para evitar bug con kwargs={}
+    # FIX CRITICO: Evaluacion explicita para evitar bug con kwargs={}
     if config is not None:
         cfg = config
         logger.info("[make_a2c] Using provided config: checkpoint_dir=%s, checkpoint_freq_steps=%s", cfg.checkpoint_dir, cfg.checkpoint_freq_steps)

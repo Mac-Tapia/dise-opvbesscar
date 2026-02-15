@@ -49,13 +49,13 @@ BASELINE_COST_USD = BASELINE_CONSUMPTION_KWH * COST_PER_KWH
 BASELINE_CO2_KG = BASELINE_CONSUMPTION_KWH * CO2_PER_KWH
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 🎯 COMPREHENSIVE 5-METRIC AGENT COMPARISON & SELECTION ANALYSIS
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 
 Objective: Validate CO₂ reduction (direct & indirect) and select best agent
 Metrics:   1. Consumption | 2. Cost | 3. CO₂ Direct | 4. CO₂ Indirect | 5. Ramping
-Baseline:  {BASELINE_CONSUMPTION_KWH:.1f} kWh/day → {BASELINE_CO2_KG:.1f} kg CO₂/day
+Baseline:  {BASELINE_CONSUMPTION_KWH:.1f} kWh/day -> {BASELINE_CO2_KG:.1f} kg CO₂/day
 
 """)
 
@@ -88,10 +88,10 @@ for agent_name, agent_config in AGENTS.items():
             grid_col = 'consumption_kWh'
         
         if grid_col is None:
-            print(f"   ❌ {agent_name}: Could not find grid column")
+            print(f"   [X] {agent_name}: Could not find grid column")
             continue
         
-        print(f"   ✓ {agent_name}: {len(df_ts)} hourly records loaded")
+        print(f"   [OK] {agent_name}: {len(df_ts)} hourly records loaded")
         
         # Aggregate to daily metrics
         num_days = len(df_ts) // 24
@@ -141,16 +141,16 @@ for agent_name, agent_config in AGENTS.items():
         agents_data[agent_name] = {'daily': pd.DataFrame(daily_metrics), 'config': agent_config}
         
     except Exception as e:
-        print(f"   ❌ {agent_name}: Error loading data - {e}")
+        print(f"   [X] {agent_name}: Error loading data - {e}")
         continue
 
-print(f"\n   ✓ {len(agents_data)} agents loaded successfully\n")
+print(f"\n   [OK] {len(agents_data)} agents loaded successfully\n")
 
 # ============================================================================
 # CALCULATE AGGREGATE METRICS
 # ============================================================================
 
-print("📊 Calculating aggregate metrics...")
+print("[GRAPH] Calculating aggregate metrics...")
 
 aggregate_metrics = {}
 
@@ -221,20 +221,20 @@ for agent_name, agent_info in agents_data.items():
 # COMPARISON TABLE
 # ============================================================================
 
-print("\n📈 Agent Performance Summary (First vs Last 50 Days):\n")
+print("\n[CHART] Agent Performance Summary (First vs Last 50 Days):\n")
 
 comparison_df = pd.DataFrame([
     [
         m['agent'],
-        f"{m['consumption_initial']:.0f} → {m['consumption_final']:.0f}",
+        f"{m['consumption_initial']:.0f} -> {m['consumption_final']:.0f}",
         f"{m['consumption_reduction_pct']:+.1f}%",
-        f"{m['cost_initial']:.0f} → {m['cost_final']:.0f}",
+        f"{m['cost_initial']:.0f} -> {m['cost_final']:.0f}",
         f"{m['cost_reduction_pct']:+.1f}%",
-        f"{m['co2_direct_initial']:.0f} → {m['co2_direct_final']:.0f}",
+        f"{m['co2_direct_initial']:.0f} -> {m['co2_direct_final']:.0f}",
         f"{m['co2_direct_reduction_pct']:+.1f}%",
-        f"{m['co2_indirect_initial']:.1f} → {m['co2_indirect_final']:.1f}",
+        f"{m['co2_indirect_initial']:.1f} -> {m['co2_indirect_final']:.1f}",
         f"{m['co2_indirect_reduction_pct']:+.1f}%",
-        f"{m['ramping_initial']:.0f} → {m['ramping_final']:.0f}",
+        f"{m['ramping_initial']:.0f} -> {m['ramping_final']:.0f}",
         f"{m['ramping_reduction_pct']:+.1f}%",
     ]
     for m in aggregate_metrics.values()
@@ -287,7 +287,7 @@ co2_direct_reductions = [aggregate_metrics[a]['co2_direct_reduction_pct'] for a 
 bars3 = ax3.bar(agents_list, co2_direct_reductions, color=[colors_map[a] for a in agents_list], alpha=0.8, edgecolor='black', linewidth=2)
 ax3.axhline(0, color='red', linestyle='--', linewidth=1, alpha=0.5)
 ax3.set_ylabel('Reduction %', fontsize=11, fontweight='bold')
-ax3.set_title('✅ CO₂ DIRECT Reduction (Grid)\n(First vs Last 50 Days)', fontsize=12, fontweight='bold', color='darkgreen', bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.6))
+ax3.set_title('[OK] CO₂ DIRECT Reduction (Grid)\n(First vs Last 50 Days)', fontsize=12, fontweight='bold', color='darkgreen', bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.6))
 ax3.grid(axis='y', alpha=0.3)
 for bar, val in zip(bars3, co2_direct_reductions):
     height = bar.get_height()
@@ -300,7 +300,7 @@ co2_indirect_reductions = [aggregate_metrics[a]['co2_indirect_reduction_pct'] fo
 bars4 = ax4.bar(agents_list, co2_indirect_reductions, color=[colors_map[a] for a in agents_list], alpha=0.8, edgecolor='black', linewidth=2)
 ax4.axhline(0, color='red', linestyle='--', linewidth=1, alpha=0.5)
 ax4.set_ylabel('Reduction %', fontsize=11, fontweight='bold')
-ax4.set_title('✅ CO₂ INDIRECT Reduction (Peak)\n(First vs Last 50 Days)', fontsize=12, fontweight='bold', color='darkblue', bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.6))
+ax4.set_title('[OK] CO₂ INDIRECT Reduction (Peak)\n(First vs Last 50 Days)', fontsize=12, fontweight='bold', color='darkblue', bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.6))
 ax4.grid(axis='y', alpha=0.3)
 for bar, val in zip(bars4, co2_indirect_reductions):
     height = bar.get_height()
@@ -338,7 +338,7 @@ fig.suptitle('🎯 AGENT COMPARISON: 5 KEY METRICS - Validation of Project Objec
 
 output_path = OUTPUT_DIR / 'agent_comparison_5metrics.png'
 plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
-print(f"   ✅ Saved: agent_comparison_5metrics.png")
+print(f"   [OK] Saved: agent_comparison_5metrics.png")
 plt.close()
 
 # ============================================================================
@@ -384,7 +384,7 @@ for agent_name, agent_info in agents_data.items():
     ax.fill_between(daily_df['day'], daily_df['co2_direct_kg'], alpha=0.2, color='green')
     ax.axhline(BASELINE_CO2_KG, color='red', linestyle='--', linewidth=1.5, label='Baseline', alpha=0.7)
     ax.set_ylabel('kg CO₂/day', fontsize=11, fontweight='bold')
-    ax.set_title('✅ CO₂ Direct (Grid Emissions)', fontsize=12, fontweight='bold', color='darkgreen')
+    ax.set_title('[OK] CO₂ Direct (Grid Emissions)', fontsize=12, fontweight='bold', color='darkgreen')
     ax.legend(fontsize=9)
     ax.grid(True, alpha=0.3)
     
@@ -393,7 +393,7 @@ for agent_name, agent_info in agents_data.items():
     ax.plot(daily_df['day'], daily_df['co2_indirect_kg'], color='darkblue', linewidth=2.5, label='CO₂ Indirect')
     ax.fill_between(daily_df['day'], daily_df['co2_indirect_kg'], alpha=0.2, color='blue')
     ax.set_ylabel('kg CO₂/day', fontsize=11, fontweight='bold')
-    ax.set_title('✅ CO₂ Indirect (Peak Reduction)', fontsize=12, fontweight='bold', color='darkblue')
+    ax.set_title('[OK] CO₂ Indirect (Peak Reduction)', fontsize=12, fontweight='bold', color='darkblue')
     ax.legend(fontsize=9)
     ax.grid(True, alpha=0.3)
     ax.set_xlabel('Training Day', fontsize=11, fontweight='bold')
@@ -453,7 +453,7 @@ RAMPING
     
     output_path = OUTPUT_DIR / f'{agent_name.lower()}_5metrics_evolution.png'
     plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
-    print(f"   ✅ Saved: {agent_name.lower()}_5metrics_evolution.png")
+    print(f"   [OK] Saved: {agent_name.lower()}_5metrics_evolution.png")
     plt.close()
 
 # ============================================================================
@@ -489,9 +489,9 @@ print("\n\n📄 Generating comprehensive selection report...")
 report_path = OUTPUT_DIR / 'AGENT_SELECTION_REPORT.txt'
 with open(report_path, 'w', encoding='utf-8') as f:
     f.write(f"""
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 🎯 AGENT SELECTION & VALIDATION REPORT
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 
 Project Objective: Minimize CO₂ emissions (direct & indirect) for EV charging 
 in isolated grid (Iquitos) with solar PV + battery storage.
@@ -501,9 +501,9 @@ Baseline (Uncontrolled):
   Cost: ${BASELINE_COST_USD:.1f}/day
   CO₂: {BASELINE_CO2_KG:.1f} kg/day
 
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 PERFORMANCE COMPARISON (First 50 vs Last 50 Days of Training)
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 
 """)
     
@@ -529,20 +529,20 @@ COST REDUCTION:
   Reduction:         {m['cost_reduction_pct']:+.1f}%
   Total Training:    ${m['cost_total']:.0f}
 
-✅ CO₂ DIRECT REDUCTION (Grid Emissions):
+[OK] CO₂ DIRECT REDUCTION (Grid Emissions):
   Initial (1st 50d):  {m['co2_direct_initial']:.1f} kg/day
   Final (last 50d):   {m['co2_direct_final']:.1f} kg/day
-  Reduction:         {m['co2_direct_reduction_pct']:+.1f}% ★★★
+  Reduction:         {m['co2_direct_reduction_pct']:+.1f}% ***
   Total Training:    {m['co2_direct_total']:.0f} kg
 
-✅ CO₂ INDIRECT REDUCTION (Peak Load Reduction):
+[OK] CO₂ INDIRECT REDUCTION (Peak Load Reduction):
   Initial (1st 50d):  {m['co2_indirect_initial']:.1f} kg/day
   Final (last 50d):   {m['co2_indirect_final']:.1f} kg/day
-  Reduction:         {m['co2_indirect_reduction_pct']:+.1f}% ★★★
+  Reduction:         {m['co2_indirect_reduction_pct']:+.1f}% ***
   Total Training:    {m['co2_indirect_total']:.0f} kg
 
 COMBINED CO₂ REDUCTION:
-  Direct + Indirect:  {(m['co2_direct_reduction_pct'] + m['co2_indirect_reduction_pct']) / 2:+.1f}% ★★★★
+  Direct + Indirect:  {(m['co2_direct_reduction_pct'] + m['co2_indirect_reduction_pct']) / 2:+.1f}% ****
 
 POWER RAMPING REDUCTION:
   Initial (1st 50d):  {m['ramping_initial']:.2f} kW/step
@@ -554,9 +554,9 @@ POWER RAMPING REDUCTION:
 """)
     
     f.write(f"""
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 🏆 WINNER SELECTION
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 
 Ranking by COMBINED CO₂ REDUCTION (Direct + Indirect Average):
 
@@ -583,46 +583,46 @@ Ranking by COMBINED CO₂ REDUCTION (Direct + Indirect Average):
     Indirect CO₂ Reduction: {winner_metrics['co2_indirect_reduction_pct']:+.1f}%
     Training Episodes: {winner_metrics['episodes']}
 
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 VALIDATION OF PROJECT OBJECTIVES
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 
-✅ Primary Objective: Minimize CO₂ emissions
+[OK] Primary Objective: Minimize CO₂ emissions
    Status: ACHIEVED - All agents show positive CO₂ reduction
    Best Result: {winner} with {combined_winner:+.1f}% combined reduction
 
-✅ Secondary Objective: Minimize electricity cost
+[OK] Secondary Objective: Minimize electricity cost
    Status: ACHIEVED - Cost reduction tracks with consumption reduction
    
-✅ Tertiary Objective: Improve grid stability (ramping)
+[OK] Tertiary Objective: Improve grid stability (ramping)
    Status: IN PROGRESS - Mixed results depending on agent
 
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 FINAL RECOMMENDATION
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 
 Deploy {winner} agent in production for optimized EV charging control.
 This agent achieves the best CO₂ emission reduction while maintaining stable
 operational costs and acceptable power ramping rates.
 
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 """)
 
-print(f"   ✅ Saved: AGENT_SELECTION_REPORT.txt")
+print(f"   [OK] Saved: AGENT_SELECTION_REPORT.txt")
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
-✅ COMPREHENSIVE AGENT COMPARISON COMPLETE
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
+[OK] COMPREHENSIVE AGENT COMPARISON COMPLETE
+================================================================================
 
 Generated files:
-📊 agent_comparison_5metrics.png          - Comparative 5-metric dashboard
-📈 sac_5metrics_evolution.png             - SAC individual metrics
-📈 ppo_5metrics_evolution.png             - PPO individual metrics
-📈 a2c_5metrics_evolution.png             - A2C individual metrics
+[GRAPH] agent_comparison_5metrics.png          - Comparative 5-metric dashboard
+[CHART] sac_5metrics_evolution.png             - SAC individual metrics
+[CHART] ppo_5metrics_evolution.png             - PPO individual metrics
+[CHART] a2c_5metrics_evolution.png             - A2C individual metrics
 📄 AGENT_SELECTION_REPORT.txt             - Detailed selection analysis
 
 🏆 RECOMMENDED AGENT for deployment: See report for details
 
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 """)

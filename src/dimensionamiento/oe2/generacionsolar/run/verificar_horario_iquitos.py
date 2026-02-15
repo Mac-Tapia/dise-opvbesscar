@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Verificar alineación con horario local de Iquitos, Perú"""
+"""Verificar alineacion con horario local de Iquitos, Peru"""
 
 import pandas as pd
 import numpy as np
@@ -9,32 +9,32 @@ from datetime import datetime
 df = pd.read_csv('data/oe2/Generacionsolar/solar_generation_profile_2024.csv')
 
 print("\n" + "="*80)
-print("🌍 VERIFICACIÓN DE ALINEACIÓN HORARIA - IQUITOS, PERÚ")
+print("🌍 VERIFICACION DE ALINEACION HORARIA - IQUITOS, PERU")
 print("="*80)
 print()
 
-# Información de ubicación
-print("📍 UBICACIÓN:")
-print("  Iquitos, Perú")
-print("  • Latitud: 3.74°S")
-print("  • Longitud: 73.27°W")
-print("  • Zona horaria: PET (Peru Eastern Time)")
-print("  • Offset: UTC-5 (no tiene horario de verano)")
+# Informacion de ubicacion
+print("📍 UBICACION:")
+print("  Iquitos, Peru")
+print("  - Latitud: 3.74°S")
+print("  - Longitud: 73.27°W")
+print("  - Zona horaria: PET (Peru Eastern Time)")
+print("  - Offset: UTC-5 (no tiene horario de verano)")
 print()
 
-# Verificar patrón horario
-print("📊 ANÁLISIS DEL PATRÓN HORARIO (Selección de días):")
+# Verificar patron horario
+print("[GRAPH] ANALISIS DEL PATRON HORARIO (Seleccion de dias):")
 print()
 
-# Día despejado: 15 septiembre 2024 (sin nubes significativas)
-print("📄 1 enero 2024 - Patrón de generación horaria:")
+# Dia despejado: 15 septiembre 2024 (sin nubes significativas)
+print("📄 1 enero 2024 - Patron de generacion horaria:")
 print()
 day_data = df[df['fecha'] == '2024-01-01'][['hora', 'potencia_kw', 'temperatura_c']].copy()
 day_data['hora_formato'] = day_data['hora'].apply(lambda h: f"{int(h):02d}:00")
 
 # Mostrar horas relevantes
 relevant_hours = [0, 6, 9, 12, 15, 18, 23]
-print("Hora Local | Potencia (kW) | Temperatura (°C) | Observación")
+print("Hora Local | Potencia (kW) | Temperatura (°C) | Observacion")
 print("-" * 65)
 for h in relevant_hours:
     row = day_data[day_data['hora'] == h].iloc[0]
@@ -45,11 +45,11 @@ for h in relevant_hours:
     if h in [0, 23]:
         obs = "Noche"
     elif h in [6, 7, 8]:
-        obs = "Amanecer ↑"
+        obs = "Amanecer ^"
     elif h in [11, 12, 13]:
-        obs = "PICO MÁXIMO ☀️"
+        obs = "PICO MAXIMO ☀️"
     elif h in [17, 18, 19]:
-        obs = "Atardecer ↓"
+        obs = "Atardecer v"
     else:
         obs = "-"
 
@@ -57,13 +57,13 @@ for h in relevant_hours:
 
 print()
 
-# Verificar dónde está el máximo diario
-print("📈 MÁXIMO DIARIO DE GENERACIÓN:")
+# Verificar donde esta el maximo diario
+print("[CHART] MAXIMO DIARIO DE GENERACION:")
 print()
 
-# Calcular máximo por día para varios días
+# Calcular maximo por dia para varios dias
 test_dates = ['2024-01-01', '2024-04-01', '2024-07-15', '2024-10-01', '2024-12-30']
-print("Fecha      | Hora máxima | Potencia máx (kW) | Observación")
+print("Fecha      | Hora maxima | Potencia max (kW) | Observacion")
 print("-" * 70)
 
 for date in test_dates:
@@ -74,15 +74,15 @@ for date in test_dates:
         hora = int(max_row['hora'])
         potencia = max_row['potencia_kw']
 
-        # Mes para observación
+        # Mes para observacion
         fecha_obj = pd.to_datetime(date)
         mes = fecha_obj.month
         if mes in [12, 1, 2]:
-            season = "Verano austral (máxima radiación)"
+            season = "Verano austral (maxima radiacion)"
         elif mes in [3, 4, 5]:
-            season = "Otoño austral"
+            season = "Otono austral"
         elif mes in [6, 7, 8]:
-            season = "Invierno austral (menor radiación)"
+            season = "Invierno austral (menor radiacion)"
         else:
             season = "Primavera austral"
 
@@ -90,11 +90,11 @@ for date in test_dates:
 
 print()
 
-# Validación de horario local
-print("✅ VALIDACIÓN DE HORARIO LOCAL IQUITOS:")
+# Validacion de horario local
+print("[OK] VALIDACION DE HORARIO LOCAL IQUITOS:")
 print()
 
-# El máximo solar en Iquitos debe ser cerca de las 12:00 hora local
+# El maximo solar en Iquitos debe ser cerca de las 12:00 hora local
 all_maxima = []
 for date in df['fecha'].unique():
     day = df[df['fecha'] == date]
@@ -106,33 +106,33 @@ max_horas_array = np.array(all_maxima)
 mean_max = max_horas_array.mean()
 std_max = max_horas_array.std()
 
-print(f"  • Hora promedio del máximo diario: {mean_max:.1f}:00")
-print(f"  • Desviación estándar: {std_max:.2f} horas")
-print(f"  • Rango: {max_horas_array.min():.0f}:00 a {max_horas_array.max():.0f}:00")
+print(f"  - Hora promedio del maximo diario: {mean_max:.1f}:00")
+print(f"  - Desviacion estandar: {std_max:.2f} horas")
+print(f"  - Rango: {max_horas_array.min():.0f}:00 a {max_horas_array.max():.0f}:00")
 print()
 
 if 11.5 <= mean_max <= 12.5:
-    print("  ✅ CORRECTO: Máximo cerca de 12:00 (mediodía local)")
+    print("  [OK] CORRECTO: Maximo cerca de 12:00 (mediodia local)")
     print("     Esto es consistente con Iquitos en zona horaria PET (UTC-5)")
 else:
-    print(f"  ⚠️  ALERTA: Máximo a las {mean_max:.1f}:00")
-    print("     Debería estar entre 11:00-13:00 para horario local correcto")
+    print(f"  [!]  ALERTA: Maximo a las {mean_max:.1f}:00")
+    print("     Deberia estar entre 11:00-13:00 para horario local correcto")
 
 print()
 
-# Análisis de radiación solar esperada
-print("📊 ANÁLISIS DE PATRÓN DE RADIACIÓN:")
+# Analisis de radiacion solar esperada
+print("[GRAPH] ANALISIS DE PATRON DE RADIACION:")
 print()
 
-# Iquitos está cerca del ecuador, sol pasa directamente 2 veces/año
-print("  Iquitos está a 3.74°S del ecuador:")
-print("  • El sol alcanza su punto más alto al mediodía solar")
-print("  • Mediodía solar ≈ 12:00 hora local (PET = UTC-5)")
-print("  • Máximo esperado: 11:30 a 12:30 hora local")
+# Iquitos esta cerca del ecuador, sol pasa directamente 2 veces/ano
+print("  Iquitos esta a 3.74°S del ecuador:")
+print("  - El sol alcanza su punto mas alto al mediodia solar")
+print("  - Mediodia solar ≈ 12:00 hora local (PET = UTC-5)")
+print("  - Maximo esperado: 11:30 a 12:30 hora local")
 print()
 
-# Verificar energía por hora del día
-print("📈 ENERGÍA PROMEDIO POR HORA DEL DÍA (todos los días 2024):")
+# Verificar energia por hora del dia
+print("[CHART] ENERGIA PROMEDIO POR HORA DEL DIA (todos los dias 2024):")
 print()
 hourly_avg = df.groupby('hora')['potencia_kw'].mean().sort_values(ascending=False)
 print("Hora Local | Potencia promedio (kW)")
@@ -141,21 +141,21 @@ for hour in range(24):
     avg_power = df[df['hora'] == hour]['potencia_kw'].mean()
     print(f"{hour:02d}:00     | {avg_power:15,.1f} kW", end="")
     if hour in [11, 12, 13]:
-        print(" ← PICO", end="")
+        print(" <- PICO", end="")
     elif hour in [0, 1, 2, 3, 4, 5]:
-        print(" ← NOCHE", end="")
+        print(" <- NOCHE", end="")
     print()
 
 print()
 
-# Conclusión
+# Conclusion
 print("="*80)
-print("✅ CONCLUSIÓN:")
+print("[OK] CONCLUSION:")
 print("="*80)
 print()
-print(f"  ✓ Datos ALINEADOS con horario local de Iquitos (PET = UTC-5)")
-print(f"  ✓ Máximo diario promedio: {mean_max:.1f}:00 hora local")
-print(f"  ✓ Patrón de radiación consistente con ubicación geográfica")
-print(f"  ✓ Generación nocturna (0-6h, 18-23h): cercana a 0 kW ✓")
-print(f"  ✓ Generación diurna máxima (11-13h): {df[df['hora'].isin([11,12,13])]['potencia_kw'].mean():.0f} kW ✓")
+print(f"  [OK] Datos ALINEADOS con horario local de Iquitos (PET = UTC-5)")
+print(f"  [OK] Maximo diario promedio: {mean_max:.1f}:00 hora local")
+print(f"  [OK] Patron de radiacion consistente con ubicacion geografica")
+print(f"  [OK] Generacion nocturna (0-6h, 18-23h): cercana a 0 kW [OK]")
+print(f"  [OK] Generacion diurna maxima (11-13h): {df[df['hora'].isin([11,12,13])]['potencia_kw'].mean():.0f} kW [OK]")
 print()

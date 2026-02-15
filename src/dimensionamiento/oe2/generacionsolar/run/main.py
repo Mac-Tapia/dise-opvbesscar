@@ -1,12 +1,12 @@
 """
-Análisis y Consultas de Generación Solar - Iquitos 2024
+Analisis y Consultas de Generacion Solar - Iquitos 2024
 
 Script principal para:
-- Cargar datos de generación solar horaria
-- Análisis diario, mensual y anual
-- Identificar días representativos (despejado, nublado, templado)
-- Generar gráficas relevantes
-- Mostrar estadísticas detalladas
+- Cargar datos de generacion solar horaria
+- Analisis diario, mensual y anual
+- Identificar dias representativos (despejado, nublado, templado)
+- Generar graficas relevantes
+- Mostrar estadisticas detalladas
 
 Uso:
     python main.py [--show-plots] [--output-dir <dir>]
@@ -23,7 +23,7 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 
-# Intentar importar matplotlib para gráficas
+# Intentar importar matplotlib para graficas
 try:
     import matplotlib.pyplot as plt
     import matplotlib.dates as mdates
@@ -34,13 +34,13 @@ except ImportError:
 
 
 class SolarGenerationAnalyzer:
-    """Analizador de generación solar para Iquitos 2024."""
+    """Analizador de generacion solar para Iquitos 2024."""
 
     def __init__(self, csv_path: Path):
-        """Inicializar con ruta al archivo CSV de generación solar.
+        """Inicializar con ruta al archivo CSV de generacion solar.
 
         Args:
-            csv_path: Ruta al archivo CSV con datos de generación solar
+            csv_path: Ruta al archivo CSV con datos de generacion solar
         """
         self.csv_path = csv_path
         self.df: Optional[pd.DataFrame] = None
@@ -59,7 +59,7 @@ class SolarGenerationAnalyzer:
         print(f"📂 Cargando datos desde: {self.csv_path}")
         self.df = pd.read_csv(self.csv_path)
 
-        # Convertir datetime/timestamp a índice si es necesario
+        # Convertir datetime/timestamp a indice si es necesario
         if 'datetime' in self.df.columns:
             self.df['datetime'] = pd.to_datetime(self.df['datetime'])
             self.df.set_index('datetime', inplace=True)
@@ -67,11 +67,11 @@ class SolarGenerationAnalyzer:
             self.df['timestamp'] = pd.to_datetime(self.df['timestamp'])
             self.df.set_index('timestamp', inplace=True)
 
-        # Calcular energía por hora a partir de potencia (kW × 1 hora = kWh)
+        # Calcular energia por hora a partir de potencia (kW × 1 hora = kWh)
         # Si existe 'ac_energy_kwh', usarla; si no, calcularla desde 'ac_power_kw'
         if 'ac_energy_kwh' not in self.df.columns:
             if 'ac_power_kw' in self.df.columns:
-                self.df['ac_energy_kwh'] = self.df['ac_power_kw'] * 1.0  # 1 hora de operación
+                self.df['ac_energy_kwh'] = self.df['ac_power_kw'] * 1.0  # 1 hora de operacion
             else:
                 raise ValueError("El CSV debe contener 'ac_power_kw' o 'ac_energy_kwh'")
 
@@ -139,23 +139,23 @@ class SolarGenerationAnalyzer:
         return daily_stats.reset_index().rename(columns={'timestamp': 'Fecha'})
 
     # =========================================================================
-    # DÍAS REPRESENTATIVOS
+    # DIAS REPRESENTATIVOS
     # =========================================================================
 
     def find_representative_days(self) -> dict[str, dict[str, Any]]:
-        """Encontrar días representativos: despejado, nublado, templado."""
+        """Encontrar dias representativos: despejado, nublado, templado."""
         if self.daily_energy is None:
-            raise ValueError("No hay datos de energía diaria calculados")
+            raise ValueError("No hay datos de energia diaria calculados")
 
-        # Día más despejado: máxima energía
+        # Dia mas despejado: maxima energia
         idx_max = self.daily_energy.idxmax()
         max_energy = self.daily_energy.max()
 
-        # Día más nublado: mínima energía
+        # Dia mas nublado: minima energia
         idx_min = self.daily_energy.idxmin()
         min_energy = self.daily_energy.min()
 
-        # Día templado: energía más cercana a la mediana
+        # Dia templado: energia mas cercana a la mediana
         median_energy = self.daily_energy.median()
         idx_median = (self.daily_energy - median_energy).abs().idxmin()
         median_value = self.daily_energy[idx_median]
@@ -164,22 +164,22 @@ class SolarGenerationAnalyzer:
             'despejado': {
                 'fecha': idx_max,
                 'energia_kwh': float(max_energy),
-                'tipo': 'Día más despejado (máxima generación)',
+                'tipo': 'Dia mas despejado (maxima generacion)',
             },
             'nublado': {
                 'fecha': idx_min,
                 'energia_kwh': float(min_energy),
-                'tipo': 'Día más nublado (mínima generación)',
+                'tipo': 'Dia mas nublado (minima generacion)',
             },
             'templado': {
                 'fecha': idx_median,
                 'energia_kwh': float(median_value),
-                'tipo': 'Día templado (energía mediana)',
+                'tipo': 'Dia templado (energia mediana)',
             },
         }
 
     def get_day_profile(self, date: pd.Timestamp) -> pd.DataFrame:
-        """Obtener perfil horario de un día específico."""
+        """Obtener perfil horario de un dia especifico."""
         if self.df is None:
             raise ValueError("No hay datos cargados")
 
@@ -191,11 +191,11 @@ class SolarGenerationAnalyzer:
         return day_data[['ac_energy_kwh', 'ac_power_kw', 'temp_air_c', 'ghi_wm2']].reset_index()
 
     # =========================================================================
-    # ESTADÍSTICAS DETALLADAS
+    # ESTADISTICAS DETALLADAS
     # =========================================================================
 
     def get_temperature_analysis(self) -> dict[str, float]:
-        """Análisis detallado de temperatura."""
+        """Analisis detallado de temperatura."""
         if self.df is None:
             raise ValueError("No hay datos cargados")
 
@@ -212,7 +212,7 @@ class SolarGenerationAnalyzer:
         }
 
     def get_irradiance_analysis(self) -> dict[str, float]:
-        """Análisis detallado de irradiancia."""
+        """Analisis detallado de irradiancia."""
         if self.df is None:
             raise ValueError("No hay datos cargados")
 
@@ -229,7 +229,7 @@ class SolarGenerationAnalyzer:
         }
 
     def get_power_analysis(self) -> dict[str, float]:
-        """Análisis detallado de potencia."""
+        """Analisis detallado de potencia."""
         if self.df is None:
             raise ValueError("No hay datos cargados")
 
@@ -246,13 +246,13 @@ class SolarGenerationAnalyzer:
         }
 
     # =========================================================================
-    # GRÁFICAS
+    # GRAFICAS
     # =========================================================================
 
     def plot_all(self, output_dir: Optional[Path] = None) -> None:
-        """Generar todas las gráficas relevantes."""
+        """Generar todas las graficas relevantes."""
         if not MATPLOTLIB_AVAILABLE:
-            print("⚠️  Matplotlib no disponible, saltando gráficas")
+            print("[!]  Matplotlib no disponible, saltando graficas")
             return
 
         if output_dir is None:
@@ -260,12 +260,12 @@ class SolarGenerationAnalyzer:
 
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        print(f"\n📊 Generando gráficas en: {output_dir}")
+        print(f"\n[GRAPH] Generando graficas en: {output_dir}")
 
-        # 1. Energía mensual
+        # 1. Energia mensual
         self._plot_monthly_energy(output_dir)
 
-        # 2. Energía diaria
+        # 2. Energia diaria
         self._plot_daily_energy(output_dir)
 
         # 3. Perfil horario promedio
@@ -277,19 +277,19 @@ class SolarGenerationAnalyzer:
         # 5. Irradiancia mensual
         self._plot_monthly_irradiance(output_dir)
 
-        # 6. Distribución de potencia
+        # 6. Distribucion de potencia
         self._plot_power_distribution(output_dir)
 
         # 7. Series temporales mensual
         self._plot_monthly_timeseries(output_dir)
 
-        # 8. Correlación temperatura vs potencia
+        # 8. Correlacion temperatura vs potencia
         self._plot_temp_power_correlation(output_dir)
 
-        print("✓ Todas las gráficas generadas exitosamente")
+        print("[OK] Todas las graficas generadas exitosamente")
 
     def _plot_monthly_energy(self, output_dir: Path) -> None:
-        """Gráfica de energía mensual."""
+        """Grafica de energia mensual."""
         fig, ax = plt.subplots(figsize=(12, 6))
 
         months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
@@ -298,7 +298,7 @@ class SolarGenerationAnalyzer:
 
         bars = ax.bar(months, energies, color='forestgreen', edgecolor='darkgreen', alpha=0.8)
 
-        # Añadir valores en barras
+        # Anadir valores en barras
         for bar, energy in zip(bars, energies):
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2., height,
@@ -306,18 +306,18 @@ class SolarGenerationAnalyzer:
                    ha='center', va='bottom', fontsize=9, fontweight='bold')
 
         ax.set_xlabel('Mes', fontsize=11, fontweight='bold')
-        ax.set_ylabel('Energía (kWh)', fontsize=11, fontweight='bold')
-        ax.set_title('Energía Generada por Mes - 2024', fontsize=13, fontweight='bold')
+        ax.set_ylabel('Energia (kWh)', fontsize=11, fontweight='bold')
+        ax.set_title('Energia Generada por Mes - 2024', fontsize=13, fontweight='bold')
         ax.grid(axis='y', alpha=0.3)
         ax.set_ylim(0, max(energies) * 1.15 if max(energies) > 0 else 100)
 
         plt.tight_layout()
         plt.savefig(output_dir / 'energia_mensual.png', dpi=150, bbox_inches='tight')
         plt.close()
-        print("  ✓ energia_mensual.png")
+        print("  [OK] energia_mensual.png")
 
     def _plot_daily_energy(self, output_dir: Path) -> None:
-        """Gráfica de energía diaria."""
+        """Grafica de energia diaria."""
         fig, ax = plt.subplots(figsize=(14, 5))
 
         ax.plot(self.daily_energy.index, self.daily_energy.values,
@@ -329,18 +329,18 @@ class SolarGenerationAnalyzer:
                   linewidth=2, label=f'Promedio: {self.daily_energy.mean():.0f} kWh')
 
         ax.set_xlabel('Fecha', fontsize=11, fontweight='bold')
-        ax.set_ylabel('Energía (kWh)', fontsize=11, fontweight='bold')
-        ax.set_title('Energía Generada Diaria - 2024', fontsize=13, fontweight='bold')
+        ax.set_ylabel('Energia (kWh)', fontsize=11, fontweight='bold')
+        ax.set_title('Energia Generada Diaria - 2024', fontsize=13, fontweight='bold')
         ax.legend(loc='upper right', fontsize=10)
         ax.grid(True, alpha=0.3)
 
         plt.tight_layout()
         plt.savefig(output_dir / 'energia_diaria.png', dpi=150, bbox_inches='tight')
         plt.close()
-        print("  ✓ energia_diaria.png")
+        print("  [OK] energia_diaria.png")
 
     def _plot_hourly_profile(self, output_dir: Path) -> None:
-        """Gráfica de perfil horario promedio."""
+        """Grafica de perfil horario promedio."""
         if self.df is None:
             return
 
@@ -351,7 +351,7 @@ class SolarGenerationAnalyzer:
         hours = hourly_avg.index
         ax.bar(hours, hourly_avg.values, color='coral', edgecolor='darkorange', alpha=0.8)
 
-        ax.set_xlabel('Hora del Día', fontsize=11, fontweight='bold')
+        ax.set_xlabel('Hora del Dia', fontsize=11, fontweight='bold')
         ax.set_ylabel('Potencia Promedio (kW)', fontsize=11, fontweight='bold')
         ax.set_title('Perfil Horario Promedio de Potencia - 2024', fontsize=13, fontweight='bold')
         ax.set_xticks(range(0, 24, 2))
@@ -360,10 +360,10 @@ class SolarGenerationAnalyzer:
         plt.tight_layout()
         plt.savefig(output_dir / 'perfil_horario.png', dpi=150, bbox_inches='tight')
         plt.close()
-        print("  ✓ perfil_horario.png")
+        print("  [OK] perfil_horario.png")
 
     def _plot_monthly_temperature(self, output_dir: Path) -> None:
-        """Gráfica de temperatura mensual."""
+        """Grafica de temperatura mensual."""
         if self.df is None:
             return
 
@@ -386,10 +386,10 @@ class SolarGenerationAnalyzer:
         plt.tight_layout()
         plt.savefig(output_dir / 'temperatura_mensual.png', dpi=150, bbox_inches='tight')
         plt.close()
-        print("  ✓ temperatura_mensual.png")
+        print("  [OK] temperatura_mensual.png")
 
     def _plot_monthly_irradiance(self, output_dir: Path) -> None:
-        """Gráfica de irradiancia mensual."""
+        """Grafica de irradiancia mensual."""
         if self.df is None:
             return
 
@@ -415,10 +415,10 @@ class SolarGenerationAnalyzer:
         plt.tight_layout()
         plt.savefig(output_dir / 'irradiancia_mensual.png', dpi=150, bbox_inches='tight')
         plt.close()
-        print("  ✓ irradiancia_mensual.png")
+        print("  [OK] irradiancia_mensual.png")
 
     def _plot_power_distribution(self, output_dir: Path) -> None:
-        """Gráfica de distribución de potencia."""
+        """Grafica de distribucion de potencia."""
         if self.df is None:
             return
 
@@ -434,17 +434,17 @@ class SolarGenerationAnalyzer:
 
         ax.set_xlabel('Potencia (kW)', fontsize=11, fontweight='bold')
         ax.set_ylabel('Frecuencia (horas)', fontsize=11, fontweight='bold')
-        ax.set_title('Distribución de Potencia AC - 2024', fontsize=13, fontweight='bold')
+        ax.set_title('Distribucion de Potencia AC - 2024', fontsize=13, fontweight='bold')
         ax.legend(loc='upper right', fontsize=10)
         ax.grid(axis='y', alpha=0.3)
 
         plt.tight_layout()
         plt.savefig(output_dir / 'distribucion_potencia.png', dpi=150, bbox_inches='tight')
         plt.close()
-        print("  ✓ distribucion_potencia.png")
+        print("  [OK] distribucion_potencia.png")
 
     def _plot_monthly_timeseries(self, output_dir: Path) -> None:
-        """Gráfica de series temporales por mes."""
+        """Grafica de series temporales por mes."""
         if self.df is None:
             return
 
@@ -476,10 +476,10 @@ class SolarGenerationAnalyzer:
         plt.tight_layout()
         plt.savefig(output_dir / 'series_temporales_mensual.png', dpi=150, bbox_inches='tight')
         plt.close()
-        print("  ✓ series_temporales_mensual.png")
+        print("  [OK] series_temporales_mensual.png")
 
     def _plot_temp_power_correlation(self, output_dir: Path) -> None:
-        """Gráfica de correlación temperatura vs potencia."""
+        """Grafica de correlacion temperatura vs potencia."""
         if self.df is None:
             return
 
@@ -488,7 +488,7 @@ class SolarGenerationAnalyzer:
         scatter = ax.scatter(self.df['temp_air_c'], self.df['ac_power_kw'],
                            c=self.df.index.month, cmap='viridis', alpha=0.5, s=10)
 
-        # Línea de tendencia
+        # Linea de tendencia
         z = np.polyfit(self.df['temp_air_c'].dropna(),
                       self.df['ac_power_kw'][self.df['temp_air_c'].notna()], 2)
         p = np.poly1d(z)
@@ -497,7 +497,7 @@ class SolarGenerationAnalyzer:
 
         ax.set_xlabel('Temperatura (°C)', fontsize=11, fontweight='bold')
         ax.set_ylabel('Potencia AC (kW)', fontsize=11, fontweight='bold')
-        ax.set_title('Correlación Temperatura vs Potencia - 2024', fontsize=13, fontweight='bold')
+        ax.set_title('Correlacion Temperatura vs Potencia - 2024', fontsize=13, fontweight='bold')
         ax.legend(loc='upper right', fontsize=10)
         ax.grid(True, alpha=0.3)
 
@@ -507,22 +507,22 @@ class SolarGenerationAnalyzer:
         plt.tight_layout()
         plt.savefig(output_dir / 'correlacion_temperatura_potencia.png', dpi=150, bbox_inches='tight')
         plt.close()
-        print("  ✓ correlacion_temperatura_potencia.png")
+        print("  [OK] correlacion_temperatura_potencia.png")
 
 
 # ============================================================================
-# FUNCIÓN PRINCIPAL
+# FUNCION PRINCIPAL
 # ============================================================================
 
 def main():
-    """Función principal."""
-    parser = argparse.ArgumentParser(description='Análisis de Generación Solar - Iquitos 2024')
-    parser.add_argument('--show-plots', action='store_true', help='Mostrar gráficas interactivas')
+    """Funcion principal."""
+    parser = argparse.ArgumentParser(description='Analisis de Generacion Solar - Iquitos 2024')
+    parser.add_argument('--show-plots', action='store_true', help='Mostrar graficas interactivas')
     parser.add_argument('--output-dir', type=str, default='data/oe2/Generacionsolar/graficas',
-                       help='Directorio para guardar gráficas')
+                       help='Directorio para guardar graficas')
     parser.add_argument('--csv-path', type=str,
                        default='data/oe2/Generacionsolar/pv_generation_timeseries.csv',
-                       help='Ruta al archivo CSV de generación solar')
+                       help='Ruta al archivo CSV de generacion solar')
 
     args = parser.parse_args()
 
@@ -531,7 +531,7 @@ def main():
     output_dir = Path(args.output_dir)
 
     print("\n" + "=" * 80)
-    print("  ANÁLISIS DE GENERACIÓN SOLAR - IQUITOS 2024")
+    print("  ANALISIS DE GENERACION SOLAR - IQUITOS 2024")
     print("=" * 80)
 
     try:
@@ -547,25 +547,25 @@ def main():
 
         annual = analyzer.get_annual_summary()
         print(f"""
-    📊 ENERGÍA GENERADA:
-       • Total anual:        {annual['energia_anual_kwh']:>15,.0f} kWh
-       •                     {annual['energia_anual_mwh']:>15,.1f} MWh
-       •                     {annual['energia_anual_gwh']:>15,.3f} GWh
-       • Promedio diario:    {annual['energia_anual_kwh']/365:>15,.0f} kWh/día
+    [GRAPH] ENERGIA GENERADA:
+       - Total anual:        {annual['energia_anual_kwh']:>15,.0f} kWh
+       -                     {annual['energia_anual_mwh']:>15,.1f} MWh
+       -                     {annual['energia_anual_gwh']:>15,.3f} GWh
+       - Promedio diario:    {annual['energia_anual_kwh']/365:>15,.0f} kWh/dia
 
     ⚡ POTENCIA:
-       • Promedio:           {annual['potencia_promedio_kw']:>15,.1f} kW
-       • Máxima:             {annual['potencia_maxima_kw']:>15,.1f} kW
-       • Mínima:             {annual['potencia_minima_kw']:>15,.1f} kW
+       - Promedio:           {annual['potencia_promedio_kw']:>15,.1f} kW
+       - Maxima:             {annual['potencia_maxima_kw']:>15,.1f} kW
+       - Minima:             {annual['potencia_minima_kw']:>15,.1f} kW
 
     🌡️  TEMPERATURA:
-       • Promedio:           {annual['temperatura_promedio_c']:>15,.1f} °C
-       • Máxima:             {annual['temperatura_maxima_c']:>15,.1f} °C
-       • Mínima:             {annual['temperatura_minima_c']:>15,.1f} °C
+       - Promedio:           {annual['temperatura_promedio_c']:>15,.1f} °C
+       - Maxima:             {annual['temperatura_maxima_c']:>15,.1f} °C
+       - Minima:             {annual['temperatura_minima_c']:>15,.1f} °C
 
     ☀️  IRRADIANCIA:
-       • Promedio:           {annual['irradiancia_promedio_wm2']:>15,.1f} W/m²
-       • Máxima:             {annual['irradiancia_maxima_wm2']:>15,.1f} W/m²
+       - Promedio:           {annual['irradiancia_promedio_wm2']:>15,.1f} W/m²
+       - Maxima:             {annual['irradiancia_maxima_wm2']:>15,.1f} W/m²
         """)
 
         # =====================================================================
@@ -579,10 +579,10 @@ def main():
         print("\n" + monthly.to_string(index=False))
 
         # =====================================================================
-        # DÍAS REPRESENTATIVOS
+        # DIAS REPRESENTATIVOS
         # =====================================================================
         print("\n" + "█" * 80)
-        print("  DÍAS REPRESENTATIVOS")
+        print("  DIAS REPRESENTATIVOS")
         print("█" * 80)
 
         rep_days = analyzer.find_representative_days()
@@ -590,9 +590,9 @@ def main():
         for key, data in rep_days.items():
             print(f"\n🔆 {data['tipo']}:")
             print(f"   Fecha:         {data['fecha'].strftime('%d/%m/%Y (%A)')}")
-            print(f"   Energía:       {data['energia_kwh']:>8,.1f} kWh")
+            print(f"   Energia:       {data['energia_kwh']:>8,.1f} kWh")
 
-            # Obtener perfil del día
+            # Obtener perfil del dia
             day_profile = analyzer.get_day_profile(data['fecha'])
             if len(day_profile) > 0:
                 print(f"   Potencia Max:  {day_profile['ac_power_kw'].max():>8,.1f} kW")
@@ -600,80 +600,80 @@ def main():
                 print(f"   Irradiancia Max:{day_profile['ghi_wm2'].max():>8,.1f} W/m²")
 
         # =====================================================================
-        # ANÁLISIS DE TEMPERATURA
+        # ANALISIS DE TEMPERATURA
         # =====================================================================
         print("\n" + "█" * 80)
-        print("  ANÁLISIS DETALLADO DE TEMPERATURA")
+        print("  ANALISIS DETALLADO DE TEMPERATURA")
         print("█" * 80)
 
         temp_analysis = analyzer.get_temperature_analysis()
         print(f"""
     Promedio:             {temp_analysis['promedio']:>8,.2f} °C
     Mediana:              {temp_analysis['mediana']:>8,.2f} °C
-    Máxima:               {temp_analysis['max']:>8,.2f} °C
-    Mínima:               {temp_analysis['min']:>8,.2f} °C
-    Desv. Estándar:       {temp_analysis['std']:>8,.2f} °C
+    Maxima:               {temp_analysis['max']:>8,.2f} °C
+    Minima:               {temp_analysis['min']:>8,.2f} °C
+    Desv. Estandar:       {temp_analysis['std']:>8,.2f} °C
     Percentil 25%:        {temp_analysis['q25']:>8,.2f} °C
     Percentil 75%:        {temp_analysis['q75']:>8,.2f} °C
         """)
 
         # =====================================================================
-        # ANÁLISIS DE IRRADIANCIA
+        # ANALISIS DE IRRADIANCIA
         # =====================================================================
         print("█" * 80)
-        print("  ANÁLISIS DETALLADO DE IRRADIANCIA")
+        print("  ANALISIS DETALLADO DE IRRADIANCIA")
         print("█" * 80)
 
         irr_analysis = analyzer.get_irradiance_analysis()
         print(f"""
     Promedio:             {irr_analysis['promedio']:>8,.1f} W/m²
     Mediana:              {irr_analysis['mediana']:>8,.1f} W/m²
-    Máxima:               {irr_analysis['max']:>8,.1f} W/m²
-    Mínima:               {irr_analysis['min']:>8,.1f} W/m²
-    Desv. Estándar:       {irr_analysis['std']:>8,.1f} W/m²
+    Maxima:               {irr_analysis['max']:>8,.1f} W/m²
+    Minima:               {irr_analysis['min']:>8,.1f} W/m²
+    Desv. Estandar:       {irr_analysis['std']:>8,.1f} W/m²
     Percentil 25%:        {irr_analysis['q25']:>8,.1f} W/m²
     Percentil 75%:        {irr_analysis['q75']:>8,.1f} W/m²
         """)
 
         # =====================================================================
-        # ANÁLISIS DE POTENCIA
+        # ANALISIS DE POTENCIA
         # =====================================================================
         print("█" * 80)
-        print("  ANÁLISIS DETALLADO DE POTENCIA")
+        print("  ANALISIS DETALLADO DE POTENCIA")
         print("█" * 80)
 
         power_analysis = analyzer.get_power_analysis()
         print(f"""
     Promedio:             {power_analysis['promedio']:>8,.1f} kW
     Mediana:              {power_analysis['mediana']:>8,.1f} kW
-    Máxima:               {power_analysis['max']:>8,.1f} kW
-    Mínima:               {power_analysis['min']:>8,.1f} kW
-    Desv. Estándar:       {power_analysis['std']:>8,.1f} kW
+    Maxima:               {power_analysis['max']:>8,.1f} kW
+    Minima:               {power_analysis['min']:>8,.1f} kW
+    Desv. Estandar:       {power_analysis['std']:>8,.1f} kW
     Percentil 25%:        {power_analysis['q25']:>8,.1f} kW
     Percentil 75%:        {power_analysis['q75']:>8,.1f} kW
         """)
 
         # =====================================================================
-        # GENERAR GRÁFICAS
+        # GENERAR GRAFICAS
         # =====================================================================
         print("█" * 80)
-        print("  GENERANDO GRÁFICAS")
+        print("  GENERANDO GRAFICAS")
         print("█" * 80)
 
         analyzer.plot_all(output_dir)
 
         print("\n" + "=" * 80)
-        print("  ✅ ANÁLISIS COMPLETADO EXITOSAMENTE")
+        print("  [OK] ANALISIS COMPLETADO EXITOSAMENTE")
         print("=" * 80)
         print(f"\n📂 Archivos guardados en: {output_dir.absolute()}")
 
     except FileNotFoundError as e:
-        print(f"\n❌ ERROR: {e}")
-        print(f"   Asegúrate de haber ejecutado primero el script de generación solar:")
+        print(f"\n[X] ERROR: {e}")
+        print(f"   Asegurate de haber ejecutado primero el script de generacion solar:")
         print(f"   python run_solar_generation_hourly.py")
         sys.exit(1)
     except Exception as e:
-        print(f"\n❌ ERROR: {e}")
+        print(f"\n[X] ERROR: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

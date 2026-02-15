@@ -1,10 +1,10 @@
 """Utilidades compartidas para agentes RL.
 
 Proporciona:
-- Validación de entornos y espacios
+- Validacion de entornos y espacios
 - Wrapping de observaciones/acciones
 - Utilitarios de checkpoint
-- Normalización y escalado
+- Normalizacion y escalado
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def validate_env_spaces(env: Any) -> dict[str, Any]:
-    """Valida que el entorno tenga espacios de observación y acción válidos.
+    """Valida que el entorno tenga espacios de observacion y accion validos.
 
     Args:
         env: CityLearnEnv o similar
@@ -27,7 +27,7 @@ def validate_env_spaces(env: Any) -> dict[str, Any]:
         Dict con dimensiones y tipos de espacios
 
     Raises:
-        ValueError: Si espacios no están configurados correctamente
+        ValueError: Si espacios no estan configurados correctamente
     """
     obs_space = getattr(env, "observation_space", None)
     action_space = getattr(env, "action_space", None)
@@ -94,17 +94,17 @@ class ListToArrayWrapper:
         self.action_space = getattr(env, "action_space", None)
 
     def reset(self, **kwargs) -> Tuple[np.ndarray, Dict[str, Any]]:
-        """Reset con conversión de lista a array."""
+        """Reset con conversion de lista a array."""
         obs, info = self.env.reset(**kwargs)
         return self._convert_obs(obs), info
 
     def step(self, action: Any) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
-        """Step con conversión de lista a array."""
+        """Step con conversion de lista a array."""
         obs, reward, terminated, truncated, info = self.env.step(action)
         return self._convert_obs(obs), reward, terminated, truncated, info
 
     def _convert_obs(self, obs: Any) -> np.ndarray:
-        """Convierte observación a array."""
+        """Convierte observacion a array."""
         if isinstance(obs, list):
             try:
                 return np.array(obs, dtype=np.float32).flatten()
@@ -121,7 +121,7 @@ class ListToArrayWrapper:
 
 
 def flatten_action(action: Any) -> np.ndarray:
-    """Aplana acción (si es lista de arrays)."""
+    """Aplana accion (si es lista de arrays)."""
     if isinstance(action, list):
         try:
             return np.concatenate([np.array(a, dtype=np.float32).flatten() for a in action])
@@ -131,7 +131,7 @@ def flatten_action(action: Any) -> np.ndarray:
 
 
 def unflatten_action(flat_action: np.ndarray, action_dims: list) -> list:
-    """Desaplana acción según dimensiones esperadas."""
+    """Desaplana accion segun dimensiones esperadas."""
     actions = []
     idx = 0
     for dim in action_dims:
@@ -147,7 +147,7 @@ def validate_checkpoint(checkpoint_path: str) -> bool:
         checkpoint_path: Ruta al checkpoint
 
     Returns:
-        bool: True si válido
+        bool: True si valido
     """
     path = Path(checkpoint_path)
     if not path.exists():

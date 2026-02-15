@@ -43,7 +43,7 @@ class RealMetricsExtractor:
             # Try alternative structure for A2C
             if agent == 'A2C':
                 return self._extract_a2c_metrics(json_file)
-            print(f"⚠️  JSON file not found: {json_file}")
+            print(f"[!]  JSON file not found: {json_file}")
             return {}
         
         try:
@@ -66,18 +66,18 @@ class RealMetricsExtractor:
                     'episode_bess_charge_kwh': np.array(data.get('episode_bess_charge_kwh', [])),
                     'kpi_summary': kpi
                 }
-                print(f"✓ Extracted {agent} metrics (SAC format): {len(metrics['episode_rewards'])} episodes")
+                print(f"[OK] Extracted {agent} metrics (SAC format): {len(metrics['episode_rewards'])} episodes")
                 return metrics
             
             # A2C format: has summary_metrics
             elif 'summary_metrics' in data:
                 return self._extract_a2c_metrics_from_dict(data)
             else:
-                print(f"⚠️  Unknown JSON format for {agent}")
+                print(f"[!]  Unknown JSON format for {agent}")
                 return {}
             
         except Exception as e:
-            print(f"❌ Error reading {json_file}: {e}")
+            print(f"[X] Error reading {json_file}: {e}")
             return {}
     
     def _extract_a2c_metrics_from_dict(self, data: Dict) -> Dict:
@@ -124,10 +124,10 @@ class RealMetricsExtractor:
                 'episode_bess_charge_kwh': np.zeros(episodes_completed),
                 'kpi_summary': validation
             }
-            print(f"✓ Extracted A2C metrics (real format): {episodes_completed} episodes")
+            print(f"[OK] Extracted A2C metrics (real format): {episodes_completed} episodes")
             return metrics
         except Exception as e:
-            print(f"❌ Error extracting A2C metrics: {e}")
+            print(f"[X] Error extracting A2C metrics: {e}")
             import traceback
             traceback.print_exc()
             return {}
@@ -146,15 +146,15 @@ class RealMetricsExtractor:
         csv_file = self.output_dir / f"{agent.lower()}_training" / f"timeseries_{agent.lower()}.csv"
         
         if not csv_file.exists():
-            print(f"⚠️  CSV file not found: {csv_file}")
+            print(f"[!]  CSV file not found: {csv_file}")
             return pd.DataFrame()
         
         try:
             df = pd.read_csv(csv_file)
-            print(f"✓ Extracted {agent} timeseries: {len(df)} rows")
+            print(f"[OK] Extracted {agent} timeseries: {len(df)} rows")
             return df
         except Exception as e:
-            print(f"❌ Error reading {csv_file}: {e}")
+            print(f"[X] Error reading {csv_file}: {e}")
             return pd.DataFrame()
     
     def aggregate_timeseries_by_episodes(self, df: pd.DataFrame, rows_per_episode: int = 8760) -> Dict[str, np.ndarray]:
@@ -203,15 +203,15 @@ class RealMetricsExtractor:
         csv_file = self.output_dir / f"{agent.lower()}_training" / f"trace_{agent.lower()}.csv"
         
         if not csv_file.exists():
-            print(f"⚠️  Trace file not found: {csv_file}")
+            print(f"[!]  Trace file not found: {csv_file}")
             return pd.DataFrame()
         
         try:
             df = pd.read_csv(csv_file)
-            print(f"✓ Extracted {agent} trace: {len(df)} steps")
+            print(f"[OK] Extracted {agent} trace: {len(df)} steps")
             return df
         except Exception as e:
-            print(f"❌ Error reading {csv_file}: {e}")
+            print(f"[X] Error reading {csv_file}: {e}")
             return pd.DataFrame()
 
 
@@ -307,7 +307,7 @@ class GraphGenerator:
         filepath = agent_dir / f"real_{metric_name}_{agent.lower()}.png"
         fig.savefig(filepath, dpi=300, bbox_inches='tight')
         plt.close(fig)
-        print(f"✓ Saved: {filepath.name}")
+        print(f"[OK] Saved: {filepath.name}")
     
     def plot_episode_cost(self, costs_dict: Dict[str, np.ndarray], title: str = "Cost per Episode (Real Data)"):
         """Plot cost per episode for all agents."""
@@ -452,7 +452,7 @@ def main():
     print("🔴 REAL METRICS EXTRACTOR & GRAPH GENERATOR (v2.1)")
     print("="*70)
     
-    output_dir = Path("d:/diseñopvbesscar/outputs")
+    output_dir = Path("d:/disenopvbesscar/outputs")
     agents = ['SAC', 'PPO', 'A2C']
     
     # Extract data
@@ -462,7 +462,7 @@ def main():
     
     all_metrics = {}
     
-    print("\n📊 EXTRACTING METRICS...")
+    print("\n[GRAPH] EXTRACTING METRICS...")
     print("-" * 70)
     
     for agent in agents:
@@ -488,11 +488,11 @@ def main():
                 costs = calculator.calculate_episode_costs(metrics.get('episode_grid_import_kwh', np.zeros(num_episodes)))
                 peaks = np.zeros(num_episodes)  # No peak data in A2C JSON
                 
-                print(f"  ✓ Using A2C pre-calculated CO2 metrics")
+                print(f"  [OK] Using A2C pre-calculated CO2 metrics")
             else:
                 # For SAC: calculate from base metrics
                 if len(grid_import) == 0 or len(solar) == 0 or len(ev_charging) == 0:
-                    print(f"⚠️  Missing episode data for {agent}")
+                    print(f"[!]  Missing episode data for {agent}")
                     continue
                 
                 costs = calculator.calculate_episode_costs(grid_import)
@@ -506,7 +506,7 @@ def main():
             # Case 2: Only timeseries exists (PPO) - aggregate by episodes
             ts_agg = extractor.aggregate_timeseries_by_episodes(timeseries)
             if not ts_agg:
-                print(f"⚠️  Could not aggregate timeseries for {agent}")
+                print(f"[!]  Could not aggregate timeseries for {agent}")
                 continue
             
             grid_import = ts_agg.get('grid_import_kw', np.array([]))
@@ -530,13 +530,13 @@ def main():
             co2_direct = calculator.calculate_direct_co2_reduction(solar, ev_solar)
             co2_indirect = calculator.calculate_indirect_co2_reduction(ev_solar)
             
-            print(f"✓ Aggregated {agent} timeseries: {num_episodes} episodes")
+            print(f"[OK] Aggregated {agent} timeseries: {num_episodes} episodes")
         else:
-            print(f"❌ No data found for {agent}")
+            print(f"[X] No data found for {agent}")
             continue
         
         if len(costs) == 0:
-            print(f"⚠️  No cost data for {agent}")
+            print(f"[!]  No cost data for {agent}")
             continue
         
         all_metrics[agent] = {
@@ -547,19 +547,19 @@ def main():
             'metrics': metrics
         }
         
-        print(f"  ✓ Episodes: {len(costs)}")
-        print(f"  ✓ Avg Cost: €{costs.mean():.2f}")
+        print(f"  [OK] Episodes: {len(costs)}")
+        print(f"  [OK] Avg Cost: €{costs.mean():.2f}")
         if len(peaks) > 0 and peaks.sum() > 0:
-            print(f"  ✓ Avg Peak: {peaks.mean():.1f} kW")
-        print(f"  ✓ Direct CO₂: {co2_direct.sum():,.0f} kg")
-        print(f"  ✓ Indirect CO₂: {co2_indirect.sum():,.0f} kg")
+            print(f"  [OK] Avg Peak: {peaks.mean():.1f} kW")
+        print(f"  [OK] Direct CO₂: {co2_direct.sum():,.0f} kg")
+        print(f"  [OK] Indirect CO₂: {co2_indirect.sum():,.0f} kg")
     
     if not all_metrics:
-        print("\n❌ No metrics extracted for any agent!")
+        print("\n[X] No metrics extracted for any agent!")
         return
     
     # Generate individual agent graphs
-    print("\n\n📈 GENERATING GRAPHS...")
+    print("\n\n[CHART] GENERATING GRAPHS...")
     print("-" * 70)
     
     costs_dict = {agent: all_metrics[agent]['costs'] for agent in all_metrics}
@@ -636,18 +636,18 @@ def main():
         
         graph_gen.save_figure(fig, agent, f'real_metrics_dashboard')
     
-    print("\n\n✅ COMPLETE!")
+    print("\n\n[OK] COMPLETE!")
     print("="*70)
     print("Generated graphs:")
-    print("  • real_cost_all_agents.png (comparison)")
+    print("  - real_cost_all_agents.png (comparison)")
     if peaks_dict:
-        print("  • real_daily_peak_all_agents.png (comparison)")
-    print("  • real_co2_direct_all_agents.png (comparison)")
-    print("  • real_co2_indirect_all_agents.png (comparison)")
-    print("  • real_metrics_dashboard.png (comparison + all agents)")
+        print("  - real_daily_peak_all_agents.png (comparison)")
+    print("  - real_co2_direct_all_agents.png (comparison)")
+    print("  - real_co2_indirect_all_agents.png (comparison)")
+    print("  - real_metrics_dashboard.png (comparison + all agents)")
     print("\nPer-agent dashboards in respective folders:")
     for agent in all_metrics:
-        print(f"  • {agent.lower()}_training/real_real_metrics_dashboard_{agent.lower()}.png")
+        print(f"  - {agent.lower()}_training/real_real_metrics_dashboard_{agent.lower()}.png")
     print("="*70 + "\n")
 
 

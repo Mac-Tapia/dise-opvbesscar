@@ -8,8 +8,8 @@ Integra:
 - Mall: demandamallhorakwh.csv (horario)
 
 Salida: data/oe2/bess/bess_hourly_dataset_2024.csv
-- Índice: DatetimeIndex 2024 (horario, UTC-5)
-- 8,760 filas × N columnas (simulación BESS)
+- Indice: DatetimeIndex 2024 (horario, UTC-5)
+- 8,760 filas × N columnas (simulacion BESS)
 """
 
 from __future__ import annotations
@@ -35,24 +35,24 @@ sys.path.insert(0, str(workspace_root))
 
 
 def load_pv_2024() -> pd.DataFrame:
-    """Carga generación PV 2024 desde pv_generation_timeseries.csv"""
+    """Carga generacion PV 2024 desde pv_generation_timeseries.csv"""
     pv_path = workspace_root / "data/oe2/Generacionsolar/pv_generation_timeseries.csv"
 
     logger.info(f"\n📂 Cargando PV: {pv_path.name}")
     df = pd.read_csv(pv_path)
 
-    # Debe tener 8,760 filas (1 año)
+    # Debe tener 8,760 filas (1 ano)
     if len(df) != 8760:
-        logger.error(f"❌ PV tiene {len(df)} filas, se esperan 8,760")
+        logger.error(f"[X] PV tiene {len(df)} filas, se esperan 8,760")
         raise ValueError(f"PV dataset incompleto: {len(df)} filas")
 
     # Asegurar que 'pv_kwh' existe
     if 'pv_kwh' not in df.columns:
-        logger.error(f"❌ Columna 'pv_kwh' no encontrada. Columnas: {df.columns.tolist()}")
+        logger.error(f"[X] Columna 'pv_kwh' no encontrada. Columnas: {df.columns.tolist()}")
         raise ValueError("Columna 'pv_kwh' no encontrada en PV dataset")
 
-    logger.info(f"   ✅ Shape: {df.shape}")
-    logger.info(f"   ✅ PV anual: {df['pv_kwh'].sum():,.0f} kWh")
+    logger.info(f"   [OK] Shape: {df.shape}")
+    logger.info(f"   [OK] PV anual: {df['pv_kwh'].sum():,.0f} kWh")
 
     return df[['pv_kwh']].copy()
 
@@ -66,15 +66,15 @@ def load_ev_2024() -> pd.DataFrame:
 
     # Debe tener 8,760 filas y 38 columnas
     if df.shape != (8760, 38):
-        logger.error(f"❌ EV tiene shape {df.shape}, se esperan (8760, 38)")
+        logger.error(f"[X] EV tiene shape {df.shape}, se esperan (8760, 38)")
         raise ValueError(f"EV dataset incorrecto: shape {df.shape}")
 
     # Sumar todas las columnas para obtener demanda EV total por hora
     ev_total = df.sum(axis=1).reset_index(drop=True)
 
-    logger.info(f"   ✅ Shape: {df.shape} → Sumadas: ({len(ev_total)},)")
-    logger.info(f"   ✅ EV anual: {ev_total.sum():,.0f} kWh")
-    logger.info(f"   ✅ Sockets: {df.shape[1]} (30 motos + 8 mototaxis)")
+    logger.info(f"   [OK] Shape: {df.shape} -> Sumadas: ({len(ev_total)},)")
+    logger.info(f"   [OK] EV anual: {ev_total.sum():,.0f} kWh")
+    logger.info(f"   [OK] Sockets: {df.shape[1]} (30 motos + 8 mototaxis)")
 
     return pd.DataFrame({'ev_kwh': ev_total})
 
@@ -99,17 +99,17 @@ def load_mall_2024() -> pd.DataFrame:
     # Asegurar exactamente 8,760 filas
     if len(df_2024) > 8760:
         df_2024 = df_2024.iloc[:8760]  # Tomar primeras 8,760
-        logger.warning(f"   ⚠️  Truncado a 8,760 horas (tenía {len(df_2024)})")
+        logger.warning(f"   [!]  Truncado a 8,760 horas (tenia {len(df_2024)})")
     elif len(df_2024) < 8760:
-        logger.error(f"❌ Mall tiene {len(df_2024)} horas, se esperan 8,760")
+        logger.error(f"[X] Mall tiene {len(df_2024)} horas, se esperan 8,760")
         raise ValueError(f"Mall dataset incompleto: {len(df_2024)} horas")
 
     # Crear output
     mall_kwh = df_2024['kwh'].values
 
-    logger.info(f"   ✅ Shape: {mall_kwh.shape}")
-    logger.info(f"   ✅ Mall anual: {mall_kwh.sum():,.0f} kWh")
-    logger.info(f"   ✅ Período: {df_2024['fechahora'].min()} a {df_2024['fechahora'].max()}")
+    logger.info(f"   [OK] Shape: {mall_kwh.shape}")
+    logger.info(f"   [OK] Mall anual: {mall_kwh.sum():,.0f} kWh")
+    logger.info(f"   [OK] Periodo: {df_2024['fechahora'].min()} a {df_2024['fechahora'].max()}")
 
     return pd.DataFrame({'mall_kwh': mall_kwh})
 
@@ -125,17 +125,17 @@ def simulate_bess_simple(
     initial_soc: float = 0.50,
 ) -> pd.DataFrame:
     """
-    Simula operación del BESS hora a hora (simple pero realista).
+    Simula operacion del BESS hora a hora (simple pero realista).
 
     Prioridad:
-    1. Solar → EV (primero)
-    2. Excedente solar → Carga BESS
-    3. Excedente final → Mall y red
+    1. Solar -> EV (primero)
+    2. Excedente solar -> Carga BESS
+    3. Excedente final -> Mall y red
     4. BESS descarga cuando solar no cubre EV (18h-22h)
 
     Returns:
         DataFrame con:
-        - pv_kwh: Generación solar
+        - pv_kwh: Generacion solar
         - ev_kwh: Demanda EV
         - mall_kwh: Demanda mall
         - pv_to_ev: Solar usado por EV
@@ -150,7 +150,7 @@ def simulate_bess_simple(
     n = len(pv_kwh)
     hours = np.arange(n) % 24
 
-    # Parámetros SOC
+    # Parametros SOC
     soc_min = 1.0 - dod
     soc_max = 1.0
     current_soc = initial_soc
@@ -169,7 +169,7 @@ def simulate_bess_simple(
     for i in range(n):
         h = hours[i]
 
-        # PASO 1: Solar → EV (prioridad máxima)
+        # PASO 1: Solar -> EV (prioridad maxima)
         pv_to_ev[i] = min(pv_kwh[i], ev_kwh[i])
 
         # PASO 2: Excedente solar
@@ -204,7 +204,7 @@ def simulate_bess_simple(
             # Sin descarga BESS, EV va directamente a red
             grid_to_ev[i] = ev_deficit
 
-        # PASO 6: Mall deficit (después de PV y BESS)
+        # PASO 6: Mall deficit (despues de PV y BESS)
         mall_deficit = mall_kwh[i] - pv_to_mall[i]
         grid_to_mall[i] = max(0, mall_deficit)
 
@@ -228,10 +228,10 @@ def simulate_bess_simple(
 
 
 def main():
-    """Ejecutar simulación BESS y generar dataset 2024."""
+    """Ejecutar simulacion BESS y generar dataset 2024."""
 
     logger.info("\n" + "="*80)
-    logger.info("GENERACIÓN DE DATASET BESS HORARIO 2024")
+    logger.info("GENERACION DE DATASET BESS HORARIO 2024")
     logger.info("="*80)
 
     # ========================================================================
@@ -243,7 +243,7 @@ def main():
         df_ev = load_ev_2024()
         df_mall = load_mall_2024()
     except Exception as e:
-        logger.error(f"❌ Error cargando datos: {e}")
+        logger.error(f"[X] Error cargando datos: {e}")
         return 1
 
     # ========================================================================
@@ -264,20 +264,20 @@ def main():
             initial_soc=0.50,     # 50% SOC inicial
         )
 
-        logger.info(f"   ✅ BESS simulado exitosamente")
+        logger.info(f"   [OK] BESS simulado exitosamente")
         logger.info(f"   Columnas: {', '.join(df_bess.columns.tolist())}")
 
     except Exception as e:
-        logger.error(f"❌ Error simulando BESS: {e}")
+        logger.error(f"[X] Error simulando BESS: {e}")
         import traceback
         traceback.print_exc()
         return 1
 
     # ========================================================================
-    # CREAR ÍNDICE DATETIME 2024
+    # CREAR INDICE DATETIME 2024
     # ========================================================================
 
-    logger.info(f"\n📅 Creando índice temporal 2024...")
+    logger.info(f"\n📅 Creando indice temporal 2024...")
 
     date_index = pd.date_range(
         start="2024-01-01 00:00:00",
@@ -286,12 +286,12 @@ def main():
         tz="America/Lima"  # UTC-5
     )
 
-    logger.info(f"   ✅ Inicio: {date_index[0]}")
-    logger.info(f"   ✅ Fin: {date_index[-1]}")
-    logger.info(f"   ✅ Períodos: {len(date_index)}")
-    logger.info(f"   ✅ Frecuencia: {date_index.freq}")
+    logger.info(f"   [OK] Inicio: {date_index[0]}")
+    logger.info(f"   [OK] Fin: {date_index[-1]}")
+    logger.info(f"   [OK] Periodos: {len(date_index)}")
+    logger.info(f"   [OK] Frecuencia: {date_index.freq}")
 
-    # Asignar índice
+    # Asignar indice
     df_bess.index = date_index
     df_bess.index.name = "datetime"
 
@@ -308,39 +308,39 @@ def main():
     df_bess.to_csv(output_csv)
 
     file_size_mb = output_csv.stat().st_size / (1024 * 1024)
-    logger.info(f"   ✅ Guardado: {output_csv}")
-    logger.info(f"   📦 Tamaño: {file_size_mb:.1f} MB")
+    logger.info(f"   [OK] Guardado: {output_csv}")
+    logger.info(f"   📦 Tamano: {file_size_mb:.1f} MB")
 
     # ========================================================================
-    # VALIDACIÓN Y RESUMEN
+    # VALIDACION Y RESUMEN
     # ========================================================================
 
-    logger.info(f"\n✅ DATASET GENERADO EXITOSAMENTE")
+    logger.info(f"\n[OK] DATASET GENERADO EXITOSAMENTE")
     logger.info(f"\n📋 RESUMEN:")
     logger.info(f"   Archivo: bess_hourly_dataset_2024.csv")
-    logger.info(f"   Ubicación: {bess_dir}")
+    logger.info(f"   Ubicacion: {bess_dir}")
     logger.info(f"   Dimensiones: {df_bess.shape[0]} filas × {df_bess.shape[1]} columnas")
-    logger.info(f"   Índice: DatetimeIndex (2024-01-01 a 2024-12-31, horario, UTC-5)")
+    logger.info(f"   Indice: DatetimeIndex (2024-01-01 a 2024-12-31, horario, UTC-5)")
 
-    logger.info(f"\n📊 ESTADÍSTICAS ANUALES:")
+    logger.info(f"\n[GRAPH] ESTADISTICAS ANUALES:")
     logger.info(f"   PV generado: {df_bess['pv_kwh'].sum():>12,.0f} kWh")
     logger.info(f"   EV demanda: {df_bess['ev_kwh'].sum():>12,.0f} kWh")
     logger.info(f"   Mall demanda: {df_bess['mall_kwh'].sum():>12,.0f} kWh")
     logger.info(f"   Total demanda: {(df_bess['ev_kwh'].sum() + df_bess['mall_kwh'].sum()):>12,.0f} kWh")
 
-    logger.info(f"\n⚡ BALANCE ENERGÉTICO:")
-    logger.info(f"   PV → EV: {df_bess['pv_to_ev_kwh'].sum():>12,.0f} kWh")
-    logger.info(f"   PV → BESS: {df_bess['pv_to_bess_kwh'].sum():>12,.0f} kWh")
-    logger.info(f"   PV → Mall: {df_bess['pv_to_mall_kwh'].sum():>12,.0f} kWh")
-    logger.info(f"   Red → EV: {df_bess['grid_to_ev_kwh'].sum():>12,.0f} kWh")
-    logger.info(f"   Red → Mall: {df_bess['grid_to_mall_kwh'].sum():>12,.0f} kWh")
+    logger.info(f"\n⚡ BALANCE ENERGETICO:")
+    logger.info(f"   PV -> EV: {df_bess['pv_to_ev_kwh'].sum():>12,.0f} kWh")
+    logger.info(f"   PV -> BESS: {df_bess['pv_to_bess_kwh'].sum():>12,.0f} kWh")
+    logger.info(f"   PV -> Mall: {df_bess['pv_to_mall_kwh'].sum():>12,.0f} kWh")
+    logger.info(f"   Red -> EV: {df_bess['grid_to_ev_kwh'].sum():>12,.0f} kWh")
+    logger.info(f"   Red -> Mall: {df_bess['grid_to_mall_kwh'].sum():>12,.0f} kWh")
     logger.info(f"   Total red: {(df_bess['grid_to_ev_kwh'].sum() + df_bess['grid_to_mall_kwh'].sum()):>12,.0f} kWh")
 
-    logger.info(f"\n🔋 BESS OPERACIÓN:")
+    logger.info(f"\n🔋 BESS OPERACION:")
     logger.info(f"   Carga anual: {df_bess['bess_charge_kwh'].sum():>12,.0f} kWh")
     logger.info(f"   Descarga anual: {df_bess['bess_discharge_kwh'].sum():>12,.0f} kWh")
-    logger.info(f"   SOC mínimo: {df_bess['soc_percent'].min():>12.1f}%")
-    logger.info(f"   SOC máximo: {df_bess['soc_percent'].max():>12.1f}%")
+    logger.info(f"   SOC minimo: {df_bess['soc_percent'].min():>12.1f}%")
+    logger.info(f"   SOC maximo: {df_bess['soc_percent'].max():>12.1f}%")
     logger.info(f"   SOC promedio: {df_bess['soc_percent'].mean():>12.1f}%")
 
     logger.info(f"\n🎯 AUTOSUFICIENCIA:")
@@ -355,38 +355,38 @@ def main():
     logger.info(f"   Red requerida: {100-self_sufficiency:>12.1f}%")
 
     # ========================================================================
-    # VERIFICACIÓN
+    # VERIFICACION
     # ========================================================================
 
-    logger.info(f"\n✅ VERIFICACIÓN DE INTEGRIDAD:")
+    logger.info(f"\n[OK] VERIFICACION DE INTEGRIDAD:")
 
     # 8,760 filas
     assert len(df_bess) == 8760, f"Error: {len(df_bess)} filas vs 8,760 esperado"
-    logger.info(f"   ✅ 8,760 filas (1 año completo)")
+    logger.info(f"   [OK] 8,760 filas (1 ano completo)")
 
-    # Índice único
-    assert df_bess.index.is_unique, "Error: Índice duplicado"
-    logger.info(f"   ✅ Índice único")
+    # Indice unico
+    assert df_bess.index.is_unique, "Error: Indice duplicado"
+    logger.info(f"   [OK] Indice unico")
 
     # Sin NaN
     assert not df_bess.isna().any().any(), "Error: Valores NaN encontrados"
-    logger.info(f"   ✅ Sin valores NaN")
+    logger.info(f"   [OK] Sin valores NaN")
 
-    # Año 2024
-    assert df_bess.index[0].year == 2024, "Error: Año incorrecto"
-    logger.info(f"   ✅ Año 2024 validado")
+    # Ano 2024
+    assert df_bess.index[0].year == 2024, "Error: Ano incorrecto"
+    logger.info(f"   [OK] Ano 2024 validado")
 
-    # Primeras y últimas filas
+    # Primeras y ultimas filas
     logger.info(f"\n📖 PRIMERAS 5 FILAS:")
     for idx, row in df_bess.head(5).iterrows():
         logger.info(f"   {idx.strftime('%Y-%m-%d %H:%M')}: PV={row['pv_kwh']:>6.1f} | EV={row['ev_kwh']:>6.1f} | SOC={row['soc_percent']:>5.1f}%")
 
-    logger.info(f"\n📖 ÚLTIMAS 5 FILAS:")
+    logger.info(f"\n📖 ULTIMAS 5 FILAS:")
     for idx, row in df_bess.tail(5).iterrows():
         logger.info(f"   {idx.strftime('%Y-%m-%d %H:%M')}: PV={row['pv_kwh']:>6.1f} | EV={row['ev_kwh']:>6.1f} | SOC={row['soc_percent']:>5.1f}%")
 
     logger.info(f"\n" + "="*80)
-    logger.info(f"✅ PROCESO COMPLETADO EXITOSAMENTE")
+    logger.info(f"[OK] PROCESO COMPLETADO EXITOSAMENTE")
     logger.info(f"="*80 + "\n")
 
     return 0

@@ -30,9 +30,9 @@ AGENTS = {
 CO2_PER_KWH_THERMAL = 0.4521  # kg CO₂/kWh from thermal grid
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 🎯 ADVANCED METRICS ANALYSIS: DIRECT & INDIRECT CO₂ REDUCTION
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 
 Methodology:
   CO₂ DIRECT = Grid import * Thermal CO₂ factor
@@ -42,7 +42,7 @@ This represents the actual environmental benefit:
   - Direct CO₂: Reduced thermal generation needed
   - Indirect CO₂: Clean energy used instead of grid
 
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 """)
 
 # ============================================================================
@@ -59,7 +59,7 @@ for agent_name, agent_config in AGENTS.items():
     
     try:
         df = pd.read_csv(ts_file)
-        print(f"   ✓ {agent_name}: {len(df)} hourly records")
+        print(f"   [OK] {agent_name}: {len(df)} hourly records")
         
         # Check for required columns
         has_solar = 'solar_kw' in df.columns
@@ -77,7 +77,7 @@ for agent_name, agent_config in AGENTS.items():
         print(f"     - Grid data: {has_grid} ({grid_col})")
         
         if not has_grid:
-            print(f"   ❌ {agent_name}: Missing grid column")
+            print(f"   [X] {agent_name}: Missing grid column")
             continue
         
         # ================================================================
@@ -154,10 +154,10 @@ for agent_name, agent_config in AGENTS.items():
             'days': len(daily_df)
         }
         
-        print(f"     ✓ Aggregated to {len(daily_df)} daily records\n")
+        print(f"     [OK] Aggregated to {len(daily_df)} daily records\n")
         
     except Exception as e:
-        print(f"   ❌ {agent_name}: {e}\n")
+        print(f"   [X] {agent_name}: {e}\n")
 
 # ============================================================================
 # GENERATE INDIVIDUAL AGENT 5-METRIC GRAPHS (WITH INDIRECT CO2)
@@ -209,7 +209,7 @@ for agent_name, agent_data in agents_metrics.items():
     ax.plot(daily_df['day'], trend, color='darkred', linewidth=2.5, linestyle='--', alpha=0.8)
     co2d_reduction = ((initial['co2_direct'].mean() - final['co2_direct'].mean()) / initial['co2_direct'].mean() * 100)
     ax.set_ylabel('kg CO₂/day', fontsize=11, fontweight='bold')
-    ax.set_title(f'✅ CO₂ DIRECT (Grid)\n({co2d_reduction:+.1f}%)', fontsize=12, fontweight='bold', 
+    ax.set_title(f'[OK] CO₂ DIRECT (Grid)\n({co2d_reduction:+.1f}%)', fontsize=12, fontweight='bold', 
                 color='darkred', bbox=dict(boxstyle='round', facecolor='#FFE6E6', alpha=0.8))
     ax.grid(True, alpha=0.3)
     
@@ -221,7 +221,7 @@ for agent_name, agent_data in agents_metrics.items():
     ax.plot(daily_df['day'], trend, color='darkgreen', linewidth=2.5, linestyle='--', alpha=0.8)
     co2i_reduction = ((initial['co2_indirect'].mean() - final['co2_indirect'].mean()) / (initial['co2_indirect'].mean() + 0.001) * 100)
     ax.set_ylabel('kg CO₂/day', fontsize=11, fontweight='bold')
-    ax.set_title(f'✅ CO₂ INDIRECT (Solar+BESS)\n({co2i_reduction:+.1f}%)', fontsize=12, fontweight='bold',
+    ax.set_title(f'[OK] CO₂ INDIRECT (Solar+BESS)\n({co2i_reduction:+.1f}%)', fontsize=12, fontweight='bold',
                 color='darkgreen', bbox=dict(boxstyle='round', facecolor='#E6FFE6', alpha=0.8))
     ax.set_xlabel('Training Day', fontsize=11, fontweight='bold')
     ax.grid(True, alpha=0.3)
@@ -249,19 +249,19 @@ for agent_name, agent_data in agents_metrics.items():
 Days: {agent_data['days']}
 
 CONSUMPTION:
-  {initial['consumption'].mean():.0f} → {final['consumption'].mean():.0f} kWh/day
+  {initial['consumption'].mean():.0f} -> {final['consumption'].mean():.0f} kWh/day
   {cons_reduction:+.1f}%
 
 COST:
-  ${initial['cost'].mean():.0f} → ${final['cost'].mean():.0f}/day
+  ${initial['cost'].mean():.0f} -> ${final['cost'].mean():.0f}/day
   {cost_reduction:+.1f}%
 
 CO₂ DIRECT: 🔴
-  {initial['co2_direct'].mean():.0f} → {final['co2_direct'].mean():.0f} kg/day
+  {initial['co2_direct'].mean():.0f} -> {final['co2_direct'].mean():.0f} kg/day
   {co2d_reduction:+.1f}%
 
 CO₂ INDIRECT: 🟢
-  {initial['co2_indirect'].mean():.1f} → {final['co2_indirect'].mean():.1f} kg/day
+  {initial['co2_indirect'].mean():.1f} -> {final['co2_indirect'].mean():.1f} kg/day
   {co2i_reduction:+.1f}%
 
 TOTAL CO₂ AVOIDED: ⭐
@@ -279,14 +279,14 @@ RAMPING STABILITY:
     
     output_file = OUTPUT_DIR / f'{agent_name.lower()}_5metrics_evolution_realco2.png'
     plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='white')
-    print(f"      ✅ Saved: {output_file.name}\n")
+    print(f"      [OK] Saved: {output_file.name}\n")
     plt.close()
 
 # ============================================================================
 # GENERATE COMPARATIVE DASHBOARD (3 AGENTS, 5 METRICS)
 # ============================================================================
 
-print("📊 Generating 3-agent comparative 5-metrics dashboard...\n")
+print("[GRAPH] Generating 3-agent comparative 5-metrics dashboard...\n")
 
 fig = plt.figure(figsize=(20, 12))
 gs = fig.add_gridspec(2, 3, hspace=0.35, wspace=0.25)
@@ -391,14 +391,14 @@ fig.suptitle('3-AGENT COMPARISON: 5-METRICS ANALYSIS\nDirect CO₂ (Grid) + Indi
 
 output_file = OUTPUT_DIR / 'COMPARISON_3agents_5metrics_realco2.png'
 plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='white')
-print(f"   ✅ Saved: COMPARISON_3agents_5metrics_realco2.png\n")
+print(f"   [OK] Saved: COMPARISON_3agents_5metrics_realco2.png\n")
 plt.close()
 
 # ============================================================================
 # SUMMARY TABLE
 # ============================================================================
 
-print("📊 COMPARATIVE METRICS SUMMARY (First 10% vs Last 10% of Training):\n")
+print("[GRAPH] COMPARATIVE METRICS SUMMARY (First 10% vs Last 10% of Training):\n")
 
 summary_rows = []
 for agent in agents_list:
@@ -417,15 +417,15 @@ summary_df = pd.DataFrame(summary_rows)
 print(summary_df.to_string(index=False))
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
-✅ ANALYSIS COMPLETE
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
+[OK] ANALYSIS COMPLETE
+================================================================================
 
 Generated Files (outputs/comparison_training/):
-  ✓ sac_5metrics_evolution_realco2.png
-  ✓ ppo_5metrics_evolution_realco2.png
-  ✓ a2c_5metrics_evolution_realco2.png
-  ✓ COMPARISON_3agents_5metrics_realco2.png
+  [OK] sac_5metrics_evolution_realco2.png
+  [OK] ppo_5metrics_evolution_realco2.png
+  [OK] a2c_5metrics_evolution_realco2.png
+  [OK] COMPARISON_3agents_5metrics_realco2.png
 
 KEY INSIGHTS:
   CO₂ DIRECT = Grid import * Thermal factor (0.4521 kg/kWh)
@@ -437,5 +437,5 @@ These values represent REAL environmental impact from training data:
   - Grid imports calculated from consumption
 
 Both direct and indirect CO₂ have been VERIFIED in actual agent training.
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 """)

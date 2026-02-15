@@ -1,20 +1,20 @@
 """
-Ejemplo de uso del módulo Balance Energético.
+Ejemplo de uso del modulo Balance Energetico.
 
-Este script demuestra cómo utilizar el sistema de balance energético
-para analizar el sistema eléctrico de Iquitos.
+Este script demuestra como utilizar el sistema de balance energetico
+para analizar el sistema electrico de Iquitos.
 """
 from pathlib import Path
 from balance import BalanceEnergeticoSystem, BalanceEnergeticoConfig, main
 
 
 def example_full_analysis():
-    """Ejemplo 1: Análisis completo con todas las gráficas."""
+    """Ejemplo 1: Analisis completo con todas las graficas."""
     print("\n" + "="*70)
-    print("EJEMPLO 1: Análisis Completo del Balance Energético")
+    print("EJEMPLO 1: Analisis Completo del Balance Energetico")
     print("="*70)
     
-    # Opción 1: Usar la función main (más simple)
+    # Opcion 1: Usar la funcion main (mas simple)
     system = main(
         data_dir=Path("data/processed/citylearn/iquitos_ev_mall"),
         output_dir=Path("reports/balance_energetico"),
@@ -26,12 +26,12 @@ def example_full_analysis():
 
 
 def example_custom_config():
-    """Ejemplo 2: Análisis con configuración personalizada."""
+    """Ejemplo 2: Analisis con configuracion personalizada."""
     print("\n" + "="*70)
-    print("EJEMPLO 2: Análisis con Configuración Personalizada")
+    print("EJEMPLO 2: Analisis con Configuracion Personalizada")
     print("="*70)
     
-    # Crear configuración personalizada
+    # Crear configuracion personalizada
     config = BalanceEnergeticoConfig(
         data_dir=Path("data/processed/citylearn/iquitos_ev_mall"),
         pv_capacity_kwp=4050.0,
@@ -40,7 +40,7 @@ def example_custom_config():
         dod=0.80,  # Profundidad de descarga 80%
         efficiency_roundtrip=0.95,  # Eficiencia 95%
         year=2024,
-        co2_intensity_kg_per_kwh=0.4521,  # kg CO2/kWh (generación térmica Iquitos)
+        co2_intensity_kg_per_kwh=0.4521,  # kg CO2/kWh (generacion termica Iquitos)
     )
     
     # Crear sistema
@@ -48,13 +48,13 @@ def example_custom_config():
     
     # Cargar todos los datasets
     if system.load_all_datasets():
-        # Calcular balance energético
+        # Calcular balance energetico
         df_balance = system.calculate_balance()
         
         # Imprimir resumen
         system.print_summary()
         
-        # Generar gráficas
+        # Generar graficas
         system.plot_energy_balance(Path("reports/balance_energetico"))
         system.export_balance_csv(Path("reports/balance_energetico"))
     else:
@@ -64,9 +64,9 @@ def example_custom_config():
 
 
 def example_metrics_only():
-    """Ejemplo 3: Solo calcular métricas sin gráficas."""
+    """Ejemplo 3: Solo calcular metricas sin graficas."""
     print("\n" + "="*70)
-    print("EJEMPLO 3: Cálculo de Métricas (sin Gráficas)")
+    print("EJEMPLO 3: Calculo de Metricas (sin Graficas)")
     print("="*70)
     
     config = BalanceEnergeticoConfig(
@@ -81,8 +81,8 @@ def example_metrics_only():
         # Mostrar solo resumen
         system.print_summary()
         
-        # Acceder a métricas individuales
-        print("\nMétricas individuales:")
+        # Acceder a metricas individuales
+        print("\nMetricas individuales:")
         for metric, value in system.metrics.items():
             print(f"  {metric}: {value}")
     
@@ -90,9 +90,9 @@ def example_metrics_only():
 
 
 def example_incremental_analysis():
-    """Ejemplo 4: Análisis incremental - generar cada gráfica por separado."""
+    """Ejemplo 4: Analisis incremental - generar cada grafica por separado."""
     print("\n" + "="*70)
-    print("EJEMPLO 4: Generación Incremental de Gráficas")
+    print("EJEMPLO 4: Generacion Incremental de Graficas")
     print("="*70)
     
     config = BalanceEnergeticoConfig(
@@ -109,17 +109,17 @@ def example_incremental_analysis():
     print("2. Calculando balance...")
     system.calculate_balance()
     
-    print("3. Imprimiendo métricas...")
+    print("3. Imprimiendo metricas...")
     system.print_summary()
     
-    print("4. Generando gráficas (puede tomar un momento)...")
+    print("4. Generando graficas (puede tomar un momento)...")
     output_dir = Path("reports/balance_energetico")
     try:
         system.plot_energy_balance(output_dir)
         system.export_balance_csv(output_dir)
-        print(f"\n✓ Análisis completado. Ver resultados en {output_dir}")
+        print(f"\n[OK] Analisis completado. Ver resultados en {output_dir}")
     except Exception as e:
-        print(f"Error al generar gráficas: {e}")
+        print(f"Error al generar graficas: {e}")
     
     return system
 
@@ -128,10 +128,10 @@ if __name__ == "__main__":
     import sys
     
     print("\n" + "#"*70)
-    print("# BALANCE ENERGÉTICO - SISTEMA ELÉCTRICO IQUITOS")
+    print("# BALANCE ENERGETICO - SISTEMA ELECTRICO IQUITOS")
     print("#"*70)
     
-    # Ejecutar ejemplo según argumento (default: ejemplo completo)
+    # Ejecutar ejemplo segun argumento (default: ejemplo completo)
     if len(sys.argv) > 1:
         ejemplo = sys.argv[1]
         if ejemplo == "1":
@@ -148,13 +148,13 @@ if __name__ == "__main__":
             sys.exit(1)
     else:
         # Ejecutar ejemplo completo por defecto
-        print("\nEjecutando análisis completo (defecto)...")
+        print("\nEjecutando analisis completo (defecto)...")
         print("Uso: python example_usage.py [1|2|3|4]")
-        print("  1 = Análisis completo (recomendado)")
-        print("  2 = Configuración personalizada")
-        print("  3 = Solo métricas")
-        print("  4 = Generación incremental")
+        print("  1 = Analisis completo (recomendado)")
+        print("  2 = Configuracion personalizada")
+        print("  3 = Solo metricas")
+        print("  4 = Generacion incremental")
         
         system = example_full_analysis()
     
-    print("\n✓ Script finalizado")
+    print("\n[OK] Script finalizado")

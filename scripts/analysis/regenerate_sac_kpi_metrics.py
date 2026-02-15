@@ -19,9 +19,9 @@ COST_PER_KWH = 0.15  # €/kWh
 CO2_PER_KWH = 0.4521  # kg CO₂/kWh
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 🔵 SAC KPI METRICS REGENERATION (Real Training Data)
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 """)
 
 # ============================================================================
@@ -32,11 +32,11 @@ print("📥 Loading SAC timeseries data...")
 
 ts_file = OUTPUT_DIR / 'timeseries_sac.csv'
 if not ts_file.exists():
-    print(f"❌ {ts_file} not found")
+    print(f"[X] {ts_file} not found")
     exit(1)
 
 df = pd.read_csv(ts_file)
-print(f"   ✓ Loaded {len(df)} hourly records")
+print(f"   [OK] Loaded {len(df)} hourly records")
 
 # Detect grid import column
 grid_col = None
@@ -46,14 +46,14 @@ for col in ['grid_import_kw', 'grid_import_kWh', 'grid_import_kwh']:
         break
 
 if grid_col is None:
-    print(f"❌ Could not find grid_import column")
+    print(f"[X] Could not find grid_import column")
     exit(1)
 
 # ============================================================================
 # AGGREGATE HOURLY DATA TO DAILY METRICS
 # ============================================================================
 
-print("📊 Aggregating to daily metrics...")
+print("[GRAPH] Aggregating to daily metrics...")
 
 grid_import = pd.to_numeric(df[grid_col], errors='coerce').fillna(0).values
 num_days = len(grid_import) // 24
@@ -89,7 +89,7 @@ for day_idx in range(num_days):
     daily_data['avg_ramping'].append(ramping)
 
 daily_df = pd.DataFrame(daily_data)
-print(f"   ✓ Aggregated to {len(daily_df)} daily records")
+print(f"   [OK] Aggregated to {len(daily_df)} daily records")
 
 # ============================================================================
 # CALCULATE REFERENCE VALUES
@@ -152,7 +152,7 @@ ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, fontsize=9,
 
 plt.tight_layout()
 plt.savefig(OUTPUT_DIR / 'kpi_electricity_consumption.png', dpi=300, bbox_inches='tight', facecolor='white')
-print(f"   ✅ Saved: kpi_electricity_consumption.png")
+print(f"   [OK] Saved: kpi_electricity_consumption.png")
 plt.close()
 
 # ============================================================================
@@ -205,7 +205,7 @@ ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, fontsize=9,
 
 plt.tight_layout()
 plt.savefig(OUTPUT_DIR / 'kpi_electricity_cost.png', dpi=300, bbox_inches='tight', facecolor='white')
-print(f"   ✅ Saved: kpi_electricity_cost.png")
+print(f"   [OK] Saved: kpi_electricity_cost.png")
 plt.close()
 
 # ============================================================================
@@ -258,7 +258,7 @@ ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, fontsize=9,
 
 plt.tight_layout()
 plt.savefig(OUTPUT_DIR / 'kpi_ramping.png', dpi=300, bbox_inches='tight', facecolor='white')
-print(f"   ✅ Saved: kpi_ramping.png")
+print(f"   [OK] Saved: kpi_ramping.png")
 plt.close()
 
 # ============================================================================
@@ -266,23 +266,23 @@ plt.close()
 # ============================================================================
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
-📊 SAC KPI METRICS REGENERATED
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
+[GRAPH] SAC KPI METRICS REGENERATED
+================================================================================
 
 Generated Files:
-  ✓ kpi_electricity_consumption.png  (Consumption reduction: {reduction_pct:+.1f}%)
-  ✓ kpi_electricity_cost.png         (Cost reduction: {cost_reduction_pct:+.1f}%)
-  ✓ kpi_ramping.png                  (Ramping reduction: {ramping_reduction_pct:+.1f}%)
+  [OK] kpi_electricity_consumption.png  (Consumption reduction: {reduction_pct:+.1f}%)
+  [OK] kpi_electricity_cost.png         (Cost reduction: {cost_reduction_pct:+.1f}%)
+  [OK] kpi_ramping.png                  (Ramping reduction: {ramping_reduction_pct:+.1f}%)
 
 Training Period: {len(daily_df)} days
 
 Key Metrics:
-  Consumption: {initial_consumption:.0f} → {final_consumption:.0f} kWh/day
-  Cost:        ${initial_cost:.0f} → ${final_cost:.0f}/day
-  Ramping:     {initial_ramping:.0f} → {final_ramping:.0f} kW/step
+  Consumption: {initial_consumption:.0f} -> {final_consumption:.0f} kWh/day
+  Cost:        ${initial_cost:.0f} -> ${final_cost:.0f}/day
+  Ramping:     {initial_ramping:.0f} -> {final_ramping:.0f} kW/step
 
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 All graphs generated with REAL data from SAC training
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 """)

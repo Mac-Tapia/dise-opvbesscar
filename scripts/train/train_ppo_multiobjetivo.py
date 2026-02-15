@@ -4,7 +4,7 @@
 ENTRENAR PPO CON MULTIOBJETIVO REAL - OPTIMIZADO
 ================================================================================
 Entrenamiento de agente PPO con datos reales OE2 (Iquitos, Peru)
-- 10 episodios completos (87,600 timesteps = 1 año)
+- 10 episodios completos (87,600 timesteps = 1 ano)
 - Datos: 38 sockets (19 chargers × 2), mall demand, BESS SOC, solar generation
 - Reward: Multiobjetivo (CO2 focus, solar self-consumption, EV satisfaction)
 - Optimizacion: GPU CUDA, batch normalization, gradient clipping
@@ -27,9 +27,9 @@ import traceback
 import warnings
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-# CRÍTICO: Agregar src/ directory a Python path para la estructura package_dir={"": "src"}
+# CRITICO: Agregar src/ directory a Python path para la estructura package_dir={"": "src"}
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 import numpy as np
@@ -42,25 +42,16 @@ import matplotlib.pyplot as plt
 from gymnasium import Env, spaces
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback
-# VecNormalize: CRÍTICO para normalizar returns y resolver EV negativo (Engstrom 2020)
+# VecNormalize: CRITICO para normalizar returns y resolver EV negativo (Engstrom 2020)
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
-# Importaciones del módulo de rewards (OE3)
-from src.dataset_builder_citylearn.rewards import (
+# Importaciones del modulo de rewards (OE3)
+from dataset_builder_citylearn.rewards import (
     IquitosContext,
     MultiObjectiveReward,
     create_iquitos_reward_weights,
 )
-
-# Importar escenarios de carga de VEHICULOS
-from vehicle_charging_scenarios import (
-    VehicleChargingSimulator,
-    VehicleChargingScenario,
-    SCENARIO_OFF_PEAK,
-    SCENARIO_PEAK_AFTERNOON,
-    SCENARIO_PEAK_EVENING,
-    SCENARIO_EXTREME_PEAK,
-)
+from agents.training_validation import validate_agent_config
 
 # ============================================================================
 # CONFIGURACION BASICA - UTF-8 Encoding
@@ -94,22 +85,22 @@ class PPOConfig:
     Configuracion optimada para PPO entrenamiento.
     Basada en aplicaciones de RL en energia y control de sistemas.
     
-    Hiperparámetros clave [Schulman et al. 2017]:
+    Hiperparametros clave [Schulman et al. 2017]:
     ===============================================
-    - n_steps (rollout length): 128-2048, común 256/512/2048 según memoria y entorno
+    - n_steps (rollout length): 128-2048, comun 256/512/2048 segun memoria y entorno
     - batch_size: 64-256, minibatches dentro del rollout total
-    - n_epochs: 3-10 epochs por update (más = más sample efficiency, riesgo overfitting)
-    - clip_range (ε): 0.1-0.3, típico 0.2 (controla cuánto puede cambiar la política)
-    - gae_lambda: 0.9-0.97, típico 0.95 (balance bias-variance en advantage estimation)
-    - ent_coef: 0.0-0.02 (promueve exploración, muy dependiente del entorno)
-    - vf_coef: 0.5 típico (peso del value loss en el loss total)
-    - max_grad_norm: 0.5-1.0 típico (gradient clipping para estabilidad)
-    - target_kl: 0.01-0.05 típico (early stop si KL > target, IMPORTANTE para estabilidad)
+    - n_epochs: 3-10 epochs por update (mas = mas sample efficiency, riesgo overfitting)
+    - clip_range (ε): 0.1-0.3, tipico 0.2 (controla cuanto puede cambiar la politica)
+    - gae_lambda: 0.9-0.97, tipico 0.95 (balance bias-variance en advantage estimation)
+    - ent_coef: 0.0-0.02 (promueve exploracion, muy dependiente del entorno)
+    - vf_coef: 0.5 tipico (peso del value loss en el loss total)
+    - max_grad_norm: 0.5-1.0 tipico (gradient clipping para estabilidad)
+    - target_kl: 0.01-0.05 tipico (early stop si KL > target, IMPORTANTE para estabilidad)
     
-    Señales de problemas típicos:
-    - KL muy alto + clip_fraction alta → LR alto, demasiadas epochs, batch pequeño
-    - Entropy colapsa temprano → ent_coef muy bajo o reward shaping agresivo
-    - Explained variance negativa → crítico está fallando, revisar arquitectura
+    Senales de problemas tipicos:
+    - KL muy alto + clip_fraction alta -> LR alto, demasiadas epochs, batch pequeno
+    - Entropy colapsa temprano -> ent_coef muy bajo o reward shaping agresivo
+    - Explained variance negativa -> critico esta fallando, revisar arquitectura
     """
     def __init__(self, device: str = 'cuda'):
         self.device = device
@@ -117,7 +108,7 @@ class PPOConfig:
         # Hiperparametros PPO [Schulman et al. 2017 + Engstrom 2020 "Implementation Matters"]
         # ================================================================================
         # CORRECCIONES v3.0 (2026-02-13): Problema detectado - KL=16, EV=-25
-        # Causa raíz: Updates demasiado agresivos, value function no converge
+        # Causa raiz: Updates demasiado agresivos, value function no converge
         # 
         # Referencias aplicadas:
         #   [1] Engstrom et al. (2020) "Implementation Matters in Deep RL"
@@ -125,57 +116,66 @@ class PPOConfig:
         #   [3] Henderson et al. (2018) "Deep RL That Matters"
         # ================================================================================
         
-        # LEARNING RATE: Usar función de schedule (Engstrom 2020)
-        # "LR annealing es CRÍTICO para PPO - alto KL indica LR muy agresivo"
-        # v5.5: Reducido a 1.5e-4 after KL warnings
+        # LEARNING RATE: Usar funcion de schedule (Engstrom 2020)
+        # "LR annealing es CRITICO para PPO - alto KL indica LR muy agresivo"
+        # v6.0: Reducido a 1e-4 despues de KL=0.05+ y Clip=31%
         # 
         # Ref: Engstrom et al (2020) "Implementation Matters in Deep RL"
         #      "Learning rate is the most important factor for PPO stability"
-        # KL divergence alto (>0.03) es señal de que LR es muy agresivo
-        self.learning_rate = 1.5e-4  # v5.5: MÁS BAJO para evitar KL alto
-        self.use_lr_schedule = True  # Schedule lineal: 1.5e-4 → 0
+        # KL divergence alto (>0.03) es senal de que LR es muy agresivo
+        # v6.0: 1e-4 es conservador pero ESTABLE - evita KL drift
+        self.learning_rate = 1e-4  # v6.0: REDUCIDO para evitar KL alto + Clip alto
+        self.use_lr_schedule = True  # Schedule lineal: 1e-4 -> 0
         
-        # N_STEPS: 2048 (más contexto temporal para episodios largos)
+        # N_STEPS: 2048 (mas contexto temporal para episodios largos)
         # Con 8760 timesteps/episodio, n_steps=2048 captura ~23% del episodio
         # vs n_steps=1024 que solo captura ~12%
-        self.n_steps = 2048  # AUMENTADO - más contexto mejora value function
+        self.n_steps = 2048  # AUMENTADO - mas contexto mejora value function
         
-        # BATCH_SIZE: v5.1 → 256 (menos varianza por minibatch, más estabilidad)
-        # Con rollout de 2048 → 8 minibatches de 256 cada uno
+        # BATCH_SIZE: v5.1 -> 256 (menos varianza por minibatch, mas estabilidad)
+        # Con rollout de 2048 -> 8 minibatches de 256 cada uno
         self.batch_size = 256 if device == 'cuda' else 128  # AUMENTADO para estabilidad
         
-        # N_EPOCHS: 3 epochs por update (REDUCIDO v5.5 para evitar KL drift)
+        # N_EPOCHS: 2 epochs por update (REDUCIDO v6.0 para evitar KL drift)
         # Engstrom 2020: "Fewer epochs = better KL control"
-        # Por cada rollout, hacer solo 3 passes de gradient (no 5, no 10)
-        # Menos updates = menos cambio en política = lower KL
-        self.n_epochs = 3  # v5.5: REDUCIDO ahora a 3 (fue 5, fue 10)
+        # Por cada rollout, hacer solo 2 passes de gradient (no 3, no 5)
+        # v7.0 MULTI-OBJETIVO: Mantener n_epochs=3 para mejor aprendizaje
+        # Con 6 objetivos, el agente necesita mas pasos para aprender correlaciones
+        self.n_epochs = 3  # v7.0: 3 epochs para multi-objetivo complejo
         
-        # GAMMA: 0.99 → 0.85 (MUY REDUCIDO para episodios ultra-largos)
+        # GAMMA: 0.99 -> 0.85 (MUY REDUCIDO para episodios ultra-largos)
         # Con 8,760 timesteps/episodio:
         #   gamma=0.99: return ≈ r/(1-γ) = r/0.01 = 100×r (IMPOSIBLE)
-        #   gamma=0.95: return ≈ r/(1-γ) = r/0.05 = 20×r (difícil)
+        #   gamma=0.95: return ≈ r/(1-γ) = r/0.05 = 20×r (dificil)
         #   gamma=0.90: return ≈ r/(1-γ) = r/0.10 = 10×r (inestable)
         #   gamma=0.85: return ≈ r/(1-γ) = r/0.15 = 6.7×r (mejor)
-        # Andrychowicz 2021 + resultados empíricos v5.0
-        self.gamma = 0.85  # v5.1: Reducido de 0.90 para estabilidad inter-episodio
+        # v7.0: Subir a 0.88 para capturar dependencias horarias dia-noche
+        # Andrychowicz 2021 + resultados empiricos v5.0
+        self.gamma = 0.88  # v7.0: Subido para mejor credit assignment diario
         
-        self.gae_lambda = 0.95  # GAE lambda (estándar)
+        # GAE_LAMBDA: v7.0 -> 0.97 para mejor long-term credit assignment
+        # Con episodios de 8760 steps, necesitamos mejor propagacion de ventaja
+        # Schulman et al 2017: lambda=0.95-0.99 para horizontes largos
+        self.gae_lambda = 0.97  # v7.0: AUMENTADO para episodios de 8760 steps
         
-        # CLIP_RANGE: 0.2 (estándar según Schulman et al 2017)
+        # CLIP_RANGE: 0.2 (estandar segun Schulman et al 2017)
         # Schulman et al 2017: "ε is a hyperparameter, usually 0.1 or 0.2"
         # clip_range=0.3 es DEMASIADO ALTO, causa clip_fraction>30%
         self.clip_range = 0.2  # CORRECTO: Schulman et al 2017 recomendation
         
-        # ENT_COEF: 0.01 (promover más exploración, evitar convergencia prematura)
-        self.ent_coef = 0.01  # v5.3: Aumentado para mejor exploración
+        # ENT_COEF: 0.02 (v7.0 aumentado para mejor exploracion multi-objetivo)
+        # Con 6 objetivos diferentes, el agente necesita explorar mas opciones
+        # antes de converger. ent_coef mas alto previene colapso prematuro.
+        self.ent_coef = 0.02  # v7.0: AUMENTADO para exploracion multi-objetivo
         
-        # VF_COEF: 0.5 (Stable-Baselines3 default, estándar comunidad)
-        # vf_coef=0.1 es TOO CONSERVATIVE, value network no se entrena → advantage ruidoso
+        # VF_COEF: 0.7 (v7.0 aumentado para reward landscape complejo)
+        # Con 6 componentes de reward, el value function necesita aprender
+        # correlaciones mas complejas. Aumentar vf_coef mejora el critico.
         # Ref: Stable-Baselines3 defaults, Schulman et al 2017 - policy y value deben aprender al mismo ritmo
-        self.vf_coef = 0.5  # ESTÁNDAR: SB3 default, permite value network aprender correctamente
+        self.vf_coef = 0.7  # v7.0: AUMENTADO para multi-objetivo complejo
         
         # MAX_GRAD_NORM: gradient clipping para estabilidad
-        self.max_grad_norm = 0.5  # ESTÁNDAR - previene gradient explosion sin ser excesivo
+        self.max_grad_norm = 0.5  # ESTANDAR - previene gradient explosion sin ser excesivo
         
         self.normalize_advantage = True  # MANTENER - necesario para estabilidad
         
@@ -188,51 +188,102 @@ class PPOConfig:
         # target_kl=0.10: demasiado laxo, policy puede diverger
         # 
         # Reference: Schulman et al 2017 "Proximal Policy Optimization Algorithms"
-        # Sección 5: "target_kl = 0.01 is a reasonable default"
-        # BUT Engstrom 2020 encontró que en práctica 0.03-0.05 es mejor
-        self.target_kl: Optional[float] = 0.05  # v5.5: Menos agresivo
+        # Seccion 5: "target_kl = 0.01 is a reasonable default"
+        # BUT Engstrom 2020 encontro que en practica 0.03-0.05 es mejor
+        # v6.0: Aumentado a 0.06 para reducir early stops innecesarios
+        # Con LR=1e-4 y n_epochs=2, el KL real sera ~0.03 (bajo el threshold)
+        self.target_kl: Optional[float] = 0.06  # v6.0: Relajado, LR bajo compensa
         
         # CLIP_RANGE_VF: DESHABILITADO (Andrychowicz 2021)
         # "Value function loss clipping can HURT performance"
-        # Engstrom 2020 también encontró que NO mejora y puede dañar
+        # Engstrom 2020 tambien encontro que NO mejora y puede danar
         # Mantener None para permitir que value function aprenda libremente
-        self.clip_range_vf: Optional[float] = None  # DESHABILITADO - daña EV
+        self.clip_range_vf: Optional[float] = None  # DESHABILITADO - dana EV
         
         self.policy_kwargs = {
-            # RED MÁS GRANDE para 124-dim obs (Andrychowicz 2021)
-            # Actor y Critic SEPARADOS para mejor aprendizaje del value function
+            # RED MAS GRANDE para multi-objetivo 6 componentes (v7.0)
+            # Actor y Critic SEPARADOS y mas grandes para capturar correlaciones
+            # entre CO2, solar, vehiculos, grid, BESS y priorizacion
             'net_arch': dict(
-                pi=[256, 256],  # Actor: 2 capas de 256
-                vf=[512, 512]   # Critic: 2 capas de 512 (MÁS GRANDE para EV positivo)
+                pi=[256, 256, 128],  # Actor: 3 capas (256->256->128) para policy compleja
+                vf=[512, 512, 256]   # Critic: 3 capas (512->512->256) para value landscape complejo
             ),
             'activation_fn': torch.nn.Tanh,  # Tanh mejor que ReLU para PPO (bounded)
-            # Inicialización ortogonal (Engstrom 2020: mejora convergencia value function)
+            # Inicializacion ortogonal (Engstrom 2020: mejora convergencia value function)
             'ortho_init': True,
         }
 
 # ============================================================================
-# CONSTANTES OE2 v5.2 (Iquitos, Perú) - 2026-02-12
+# CONSTANTES OE2 v5.2 (Iquitos, Peru) - 2026-02-12
 # ============================================================================
-CO2_FACTOR_IQUITOS = 0.4521  # kg CO2/kWh - factor de emisión grid Iquitos
+CO2_FACTOR_IQUITOS = 0.4521  # kg CO2/kWh - factor de emision grid Iquitos
 BESS_CAPACITY_KWH = 940.0    # 940 kWh (exclusivo EV, 100% cobertura)
-BESS_MAX_KWH = BESS_CAPACITY_KWH  # Alias para compatibilidad v5.3
-BESS_MAX_POWER_KW = 342.0    # 342 kW potencia máxima BESS
+BESS_MAX_KWH_CONST = 1700.0  # 1,700 kWh total (para normalizacion observaciones)
+BESS_MAX_KWH = BESS_MAX_KWH_CONST  # Usar 1700 para normalizacion, NO 940
+BESS_MAX_POWER_KW = 342.0    # 342 kW potencia maxima BESS
 
 # ============================================================================
-# CONSTANTES DE NORMALIZACIÓN (CRÍTICO para PPO - Engstrom 2020)
+# CONSTANTES DE NORMALIZACION (CRITICO para PPO - Engstrom 2020)
 # ============================================================================
 # Las observaciones DEBEN estar normalizadas a ~[0,1] para que el value function
-# pueda aprender. Sin normalización, PPO sufre de:
+# pueda aprender. Sin normalizacion, PPO sufre de:
 # - Explained Variance negativo (value function no predice nada)
-# - KL divergence explosiva (política cambia erráticamente)
+# - KL divergence explosiva (politica cambia erraticamente)
 # - Value Loss muy alto (gradientes inestables)
 # 
-# Valores de normalización basados en datos OE2 Iquitos:
+# Valores de normalizacion basados en datos OE2 Iquitos:
 SOLAR_MAX_KW = 4100.0        # 4,050 kWp instalado + margen
-MALL_MAX_KW = 150.0          # Demanda máxima mall ~100 kW + margen
+MALL_MAX_KW = 150.0          # Demanda maxima mall ~100 kW + margen
 CHARGER_MAX_KW = 10.0        # Por socket: 7.4 kW nominal + margen
 CHARGER_MEAN_KW = 4.6        # Consumo promedio por socket (kW)
-DEMAND_MAX_KW = 300.0        # Demanda total máxima esperada
+DEMAND_MAX_KW = 300.0        # Demanda total maxima esperada
+
+# ===== 27 COLUMNAS OBSERVABLES REALES (INTEGRACION CON SAC v6.0) =====
+# Definidas en dataset_builder v5.5 para observacion completa del sistema
+CHARGERS_OBSERVABLE_COLS: List[str] = [
+    'is_hora_punta', 'tarifa_aplicada_soles', 'ev_energia_total_kwh',
+    'ev_costo_carga_soles', 'ev_energia_motos_kwh', 'ev_energia_mototaxis_kwh',
+    'ev_co2_reduccion_motos_kg', 'ev_co2_reduccion_mototaxis_kg',
+    'ev_reduccion_directa_co2_kg', 'ev_demand_kwh'
+]
+
+SOLAR_OBSERVABLE_COLS: List[str] = [
+    'is_hora_punta', 'tarifa_aplicada_soles', 'ahorro_solar_soles',
+    'reduccion_indirecta_co2_kg', 'co2_evitado_mall_kg', 'co2_evitado_ev_kg'
+]
+
+BESS_OBSERVABLE_COLS: List[str] = [
+    'bess_soc_percent', 'bess_charge_kwh', 'bess_discharge_kwh',
+    'bess_to_mall_kwh', 'bess_to_ev_kwh'
+]
+
+MALL_OBSERVABLE_COLS: List[str] = [
+    'mall_demand_kwh', 'mall_demand_reduction_kwh', 'mall_cost_soles'
+]
+
+TOTALES_OBSERVABLE_COLS: List[str] = [
+    'total_reduccion_co2_kg', 'total_costo_soles', 'total_ahorro_soles'
+]
+
+# Total: 10 + 6 + 5 + 3 + 3 = 27 columnas observables
+ALL_OBSERVABLE_COLS: list[str] = (
+    CHARGERS_OBSERVABLE_COLS +
+    SOLAR_OBSERVABLE_COLS +
+    BESS_OBSERVABLE_COLS +
+    MALL_OBSERVABLE_COLS +
+    TOTALES_OBSERVABLE_COLS
+)
+
+# ===== PESOS RECOMPENSA v6.0 (INTEGRACION MULTIOBJETIVO SAC) =====
+# Multiobjetivo expandido: CO2 + Solar + Vehiculos + Grid + BESS + Priorizacion
+REWARD_WEIGHTS_V6: Dict[str, float] = {
+    'co2': 0.45,           # v emitir CO2 (grid termico Iquitos)
+    'solar': 0.15,         # ^ usar solar directo (cascada)
+    'vehicles_charged': 0.25,  # ⭐ ^ motos/mototaxis cargadas 100%
+    'grid_stable': 0.05,   # v picos grid (ramping smooth)
+    'bess_efficiency': 0.05,   # v ciclos BESS, ^ utilidad
+    'prioritization': 0.05  # ^ priorizar bien en escasez
+}
 
 # DIRECTORIOS DE SALIDA
 OUTPUT_DIR = Path('outputs/ppo_training')
@@ -240,17 +291,17 @@ CHECKPOINT_DIR = Path('checkpoints/PPO')
 OE3_OUTPUT_DIR = Path('data/interim/oe3')
 
 # ============================================================================
-# FUNCIONES DE PREPARACIÓN - DATASET Y CHECKPOINTS
+# FUNCIONES DE PREPARACION - DATASET Y CHECKPOINTS
 # ============================================================================
 
 def validate_oe2_datasets() -> Dict[str, Any]:
     """
     Validar y cargar los 5 datasets OE2 obligatorios.
     
-    SINCRONIZACIÓN DATASET_BUILDER v5.5:
+    SINCRONIZACION DATASET_BUILDER v5.5:
     ================================================================================
-    Esta función valida que TODOS los datasets considerados en dataset_builder.py
-    estén disponibles y con las columnas observables correctas:
+    Esta funcion valida que TODOS los datasets considerados en dataset_builder.py
+    esten disponibles y con las columnas observables correctas:
     
     CHARGERS (10 cols): Sockets 000-037 (38 total)
       - Columnas "ev_*": is_hora_punta, tarifa_aplicada_soles, energia_total_kwh,
@@ -276,15 +327,15 @@ def validate_oe2_datasets() -> Dict[str, Any]:
     TARIFFS Y CONSTANTS:
       - HP (hora punta 18-23h): 0.45 S/./kWh
       - HFP (fuera punta): 0.28 S/./kWh
-      - CO2 carbon intensity: 0.4521 kg CO2/kWh (red térmica Iquitos)
+      - CO2 carbon intensity: 0.4521 kg CO2/kWh (red termica Iquitos)
     
     METADATA DE ESCENARIOS (data/oe2/chargers/) v5.5:
       - selection_pe_fc_completo.csv: 54 escenarios (pe, fc, chargers_required, etc.)
-      - tabla_escenarios_detallados.csv: CONSERVADOR, MEDIANO, RECOMENDADO*, MÁXIMO
-      - tabla_estadisticas_escenarios.csv: Estadísticas agregadas
+      - tabla_escenarios_detallados.csv: CONSERVADOR, MEDIANO, RECOMENDADO*, MAXIMO
+      - tabla_estadisticas_escenarios.csv: Estadisticas agregadas
       - escenarios_tabla13.csv: 101 escenarios PE/FC
-      → Cargar con: data_loader.load_scenarios_metadata()
-      → ESCENARIO RECOMENDADO v5.5: PE=1.00, FC=1.00, 19 cargadores, 38 tomas, 1129 kWh/día
+      -> Cargar con: data_loader.load_scenarios_metadata()
+      -> ESCENARIO RECOMENDADO v5.5: PE=1.00, FC=1.00, 19 cargadores, 38 tomas, 1129 kWh/dia
     
     El agente PPO recibe observaciones de TODAS ESTAS COLUMNAS para entrenar.
     ================================================================================
@@ -356,22 +407,22 @@ class CityLearnEnvironment(Env):
     """Environment compatible con Gymnasium para CityLearn v2.
 
     Basado en el benchmark CityLearn v2 para control multi-agente en sistemas
-    de energía. Implementa la API de Gymnasium para compatible con SB3.
+    de energia. Implementa la API de Gymnasium para compatible con SB3.
 
     Referencias:
       - CityLearn v2 Documentation: https://github.com/intelligent-environments-lab/CityLearn
       - Gymnasium API: https://gymnasium.farama.org/
 
-    Observation Space (156-dim v5.3 - COMUNICACIÓN COMPLETA):
+    Observation Space (156-dim v5.3 - COMUNICACION COMPLETA):
     ================================================================
-    ENERGÍA DEL SISTEMA [0-7]:
+    ENERGIA DEL SISTEMA [0-7]:
     - [0]: Solar generation normalizado [0,1]
     - [1]: Mall demand normalizado [0,1]
     - [2]: BESS SOC normalizado [0,1]
-    - [3]: BESS energía disponible para descarga (kWh norm)
+    - [3]: BESS energia disponible para descarga (kWh norm)
     - [4]: Solar excedente disponible para carga (kWh norm)
     - [5]: Grid import actual normalizado [0,1]
-    - [6]: Balance energético (solar - demanda) normalizado
+    - [6]: Balance energetico (solar - demanda) normalizado
     - [7]: Capacidad total de carga disponible normalizada
     
     ESTADO DE CARGADORES POR SOCKET [8-45] (38 sockets):
@@ -380,10 +431,10 @@ class CityLearnEnvironment(Env):
     POTENCIA ACTUAL POR SOCKET [46-83] (38 sockets):
     - Potencia entregada a cada socket normalizada [0,1]
     
-    OCUPACIÓN POR SOCKET [84-121] (38 sockets):
-    - 1.0 si hay vehículo conectado, 0.0 si libre
+    OCUPACION POR SOCKET [84-121] (38 sockets):
+    - 1.0 si hay vehiculo conectado, 0.0 si libre
     
-    ESTADO DE VEHÍCULOS [122-137] (16 features):
+    ESTADO DE VEHICULOS [122-137] (16 features):
     - [122]: Motos cargando actualmente (count/30)
     - [123]: Mototaxis cargando actualmente (count/8)  
     - [124]: Motos en cola esperando (count/100)
@@ -399,32 +450,32 @@ class CityLearnEnvironment(Env):
     - [134]: Eficiencia carga actual [0,1]
     - [135]: Ratio solar usado para carga [0,1]
     - [136]: CO2 evitado acumulado (norm)
-    - [137]: CO2 evitado potencial si carga más (norm)
+    - [137]: CO2 evitado potencial si carga mas (norm)
     
     TIME FEATURES [138-143] (6 features):
-    - [138]: Hora del día normalizada [0,1]
-    - [139]: Día de semana normalizado [0,1]
+    - [138]: Hora del dia normalizada [0,1]
+    - [139]: Dia de semana normalizado [0,1]
     - [140]: Mes normalizado [0,1]
     - [141]: Indicador hora pico [0,1]
     - [142]: Factor CO2 Iquitos
-    - [143]: Tarifa eléctrica (USD/kWh)
+    - [143]: Tarifa electrica (USD/kWh)
     
-    COMUNICACIÓN INTER-SISTEMA [144-155] (12 features):
+    COMUNICACION INTER-SISTEMA [144-155] (12 features):
     - [144]: BESS puede suministrar a EVs [0,1]
     - [145]: Solar suficiente para demanda EV [0,1]
     - [146]: Grid necesario para completar carga [0,1]
     - [147]: Prioridad carga motos vs mototaxis [0,1]
-    - [148]: Urgencia de carga (vehículos pendientes/capacidad)
+    - [148]: Urgencia de carga (vehiculos pendientes/capacidad)
     - [149]: Oportunidad solar (excedente/demanda EV)
-    - [150]: BESS debería cargar (solar alto, demanda baja)
-    - [151]: BESS debería descargar (solar bajo, demanda alta)
-    - [152]: Potencial reducción CO2 con más carga
-    - [153]: Saturación del sistema [0,1]
+    - [150]: BESS deberia cargar (solar alto, demanda baja)
+    - [151]: BESS deberia descargar (solar bajo, demanda alta)
+    - [152]: Potencial reduccion CO2 con mas carga
+    - [153]: Saturacion del sistema [0,1]
     - [154]: Eficiencia sistema completo [0,1]
-    - [155]: Meta diaria de vehículos (progreso [0,1])
+    - [155]: Meta diaria de vehiculos (progreso [0,1])
 
     Action Space (129-dim REAL v5.2):
-    - [0]: BESS control [0,1] (0=carga máx, 0.5=idle, 1=descarga máx)
+    - [0]: BESS control [0,1] (0=carga max, 0.5=idle, 1=descarga max)
     - [1:39]: 38 socket setpoints [0,1] (potencia asignada a cada socket)
     """
 
@@ -451,33 +502,33 @@ class CityLearnEnvironment(Env):
         Inicializa environment con datos OE2 reales.
 
         Args:
-            reward_calc: Función de recompensa multiobjetivo
+            reward_calc: Funcion de recompensa multiobjetivo
             context: Contexto OE2 (CO2, tariffs, etc)
             solar_kw: Array solar generation (8760,)
             chargers_kw: Array charger demands (8760, n_chargers)
             mall_kw: Array mall demand (8760,)
             bess_soc: Array BESS SOC (8760,)
-            charger_max_power_kw: (38,) potencia máxima por socket desde chargers_real_statistics.csv
+            charger_max_power_kw: (38,) potencia maxima por socket desde chargers_real_statistics.csv
             charger_mean_power_kw: (38,) potencia media por socket desde chargers_real_statistics.csv
-            max_steps: Duración episodio en timesteps
+            max_steps: Duracion episodio en timesteps
         """
         super().__init__()
 
         self.reward_calc = reward_calc
         self.context = context
 
-        # DATOS REALES (8760 horas = 1 año)
+        # DATOS REALES (8760 horas = 1 ano)
         self.solar_hourly = np.asarray(solar_kw, dtype=np.float32)
         self.chargers_hourly = np.asarray(chargers_kw, dtype=np.float32)
         self.mall_hourly = np.asarray(mall_kw, dtype=np.float32)
         self.bess_soc_hourly = np.asarray(bess_soc, dtype=np.float32)
         
         # ESTADISTICAS REALES DE CARGADORES (5to dataset OE2)
-        # Usadas para escalar acciones según capacidad real de cada socket
+        # Usadas para escalar acciones segun capacidad real de cada socket
         if charger_max_power_kw is not None:
             self.charger_max_power = np.asarray(charger_max_power_kw, dtype=np.float32)
         else:
-            # Fallback v5.2: 7.4 kW por socket (Modo 3 monofásico 32A @ 230V)
+            # Fallback v5.2: 7.4 kW por socket (Modo 3 monofasico 32A @ 230V)
             self.charger_max_power = np.full(self.NUM_CHARGERS, 7.4, dtype=np.float32)
             
         if charger_mean_power_kw is not None:
@@ -486,7 +537,7 @@ class CityLearnEnvironment(Env):
             # Fallback v5.2: potencia efectiva = 7.4 × 0.62 = 4.6 kW 
             self.charger_mean_power = np.full(self.NUM_CHARGERS, 4.6, dtype=np.float32)
 
-        # Validación de datos
+        # Validacion de datos
         if len(self.solar_hourly) != self.HOURS_PER_YEAR:
             raise ValueError(f"Solar data must be {self.HOURS_PER_YEAR} hours, got {len(self.solar_hourly)}")
         if len(self.mall_hourly) != self.HOURS_PER_YEAR:
@@ -496,7 +547,26 @@ class CityLearnEnvironment(Env):
         if self.chargers_hourly.shape[0] != self.HOURS_PER_YEAR:
             raise ValueError(f"Chargers data must be {self.HOURS_PER_YEAR} hours, got {self.chargers_hourly.shape[0]}")
 
-        self.max_steps = self.HOURS_PER_YEAR  # [OK] FORZAR 8760 timesteps (episodios completos de 1 año)
+        # ====================================================================
+        # CARGAR CO2 DATASETS UNA SOLA VEZ (evitar lectura en cada step)
+        # ====================================================================
+        # ESTRUCTURA CO2 v7.1:
+        # =====================
+        # CO2 DIRECTO (solo EV): Reducción por cambio de combustible fósil a eléctrico
+        #   - co2_reduccion_motos_kg (factor 0.87 kg CO2/kWh vs gasolina)
+        #   - co2_reduccion_mototaxis_kg (factor 0.47 kg CO2/kWh vs gasolina)
+        #
+        # CO2 INDIRECTO (SOLAR + BESS): Reducción por evitar importar de red térmica
+        #   - Solar: reduccion_indirecta_co2_kg (cuando suministra a EV, BESS, Mall, red)
+        #   - BESS: co2_avoided_indirect_kg (cuando alimenta EV y Mall en peak shaving >2000kW)
+        #
+        # MALL: EMITE CO2 (no reduce) - consume de red térmica, NO se suma a reducción
+        # ====================================================================
+        self.chargers_co2_df = pd.read_csv('data/oe2/chargers/chargers_ev_ano_2024_v3.csv')
+        self.solar_co2_df = pd.read_csv('data/oe2/Generacionsolar/pv_generation_citylearn2024.csv')
+        self.bess_co2_df = pd.read_csv('data/processed/citylearn/iquitos_ev_mall/bess_ano_2024.csv')
+
+        self.max_steps = self.HOURS_PER_YEAR  # [OK] FORZAR 8760 timesteps (episodios completos de 1 ano)
         self.n_chargers = self.chargers_hourly.shape[1]
 
         # Espacios (Gymnasium API)
@@ -516,7 +586,7 @@ class CityLearnEnvironment(Env):
         self.episode_grid_import = 0.0
         self.episode_ev_satisfied = 0.0
         
-        # [v5.3] TRACKING DE VEHÍCULOS CARGANDO EN TIEMPO REAL
+        # [v5.3] TRACKING DE VEHICULOS CARGANDO EN TIEMPO REAL
         self.motos_charging_now: int = 0        # Motos actualmente cargando
         self.mototaxis_charging_now: int = 0    # Mototaxis actualmente cargando
         self.motos_waiting: int = 0             # Motos en cola
@@ -528,75 +598,43 @@ class CityLearnEnvironment(Env):
         self.motos_charged_today: int = 0       # Motos cargadas 100% hoy
         self.mototaxis_charged_today: int = 0   # Mototaxis cargados 100% hoy
         self.daily_co2_avoided: float = 0.0     # CO2 evitado hoy (kg)
-        self.episode_ev_energy_charged_kwh: float = 0.0  # v5.5: Total energía EV
+        self.episode_ev_energy_charged_kwh: float = 0.0  # v5.5: Total energia EV
         self.episode_bess_discharged_kwh: float = 0.0    # v5.5: Total BESS descarga
         self.episode_bess_charged_kwh: float = 0.0       # v5.5: Total BESS carga
         
-        # [v5.3] COMUNICACIÓN INTER-SISTEMA
-        self.bess_available_kwh: float = 0.0    # Energía BESS disponible
+        # [v5.3] COMUNICACION INTER-SISTEMA
+        self.bess_available_kwh: float = 0.0    # Energia BESS disponible
         self.solar_surplus_kwh: float = 0.0     # Excedente solar
         self.current_grid_import: float = 0.0   # Import grid actual
         self.system_efficiency: float = 0.0    # Eficiencia del sistema
         
-        # [v5.5] TRACKING DE VEHICULOS POR SOC - cambiar a SUM acumulado (no MAX)
-        self.episode_motos_10_max: int = 0
-        self.episode_motos_20_max: int = 0
-        self.episode_motos_30_max: int = 0
-        self.episode_motos_50_max: int = 0
-        self.episode_motos_70_max: int = 0
-        self.episode_motos_80_max: int = 0
-        self.episode_motos_100_max: int = 0
+        # [v5.7] TRACKING DE VEHICULOS - SIMPLIFICADO para usar e motos_charging/mototaxis_charging del info dict
+        self.ep_motos_charging_max: int = 0
+        self.ep_taxis_charging_max: int = 0
         
-        self.episode_taxis_10_max: int = 0
-        self.episode_taxis_20_max: int = 0
-        self.episode_taxis_30_max: int = 0
-        self.episode_taxis_50_max: int = 0
-        self.episode_taxis_70_max: int = 0
-        self.episode_taxis_80_max: int = 0
-        self.episode_taxis_100_max: int = 0
-        
-        # Simulador de escenarios de carga
-        self.vehicle_simulator = VehicleChargingSimulator()
-        # Seleccionar escenario basado en hora (hora del año -> mapear a escenario)
-        self.scenarios_by_hour = self._create_hour_scenarios()
+        # Simulador de escenarios de carga - DESHABILITADO v5.6
+        # self.vehicle_simulator = VehicleChargingSimulator()
+        # Seleccionar escenario basado en hora (hora del ano -> mapear a escenario)
+        # self.scenarios_by_hour = self._create_hour_scenarios()
     
-    def _create_hour_scenarios(self) -> Dict[int, VehicleChargingScenario]:
-        """Mapea cada hora del año a un escenario de carga realista de Iquitos."""
-        scenarios = {}
-        for h in range(self.HOURS_PER_YEAR):
-            hour_of_day = h % 24
-            
-            # Off-peak: 2-6 AM
-            if 2 <= hour_of_day < 6:
-                scenarios[h] = SCENARIO_OFF_PEAK
-            # Morning: 6-14 (bajo a moderado)
-            elif 6 <= hour_of_day < 14:
-                scenarios[h] = SCENARIO_PEAK_AFTERNOON
-            # Afternoon: 14-18 (carga rápida, moderada)
-            elif 14 <= hour_of_day < 18:
-                scenarios[h] = SCENARIO_PEAK_AFTERNOON
-            # Evening: 18-23 (pico máximo)
-            elif 18 <= hour_of_day <= 22:
-                scenarios[h] = SCENARIO_EXTREME_PEAK if (19 <= hour_of_day <= 20) else SCENARIO_PEAK_EVENING
-            # Noche: 23-2 (bajo)
-            else:
-                scenarios[h] = SCENARIO_OFF_PEAK
-        
-        return scenarios
+    def _create_hour_scenarios(self) -> Dict[int, int]:
+        """Mapea cada hora del ano a un scenario code (DESHABILITADO v5.6)."""
+        # Simplificacion: retornar dict vacio
+        return {}
 
     def _make_observation(self, hour_idx: int) -> np.ndarray:
         """
-        Crea observación v5.3 (156-dim) con COMUNICACIÓN COMPLETA del sistema.
+        Crea observacion v5.3 (156-dim) con COMUNICACION COMPLETA del sistema.
 
-        NORMALIZACIÓN CRÍTICA [Engstrom 2020 "Implementation Matters"]:
+        NORMALIZACION CRITICA [Engstrom 2020 "Implementation Matters"]:
         ================================================================
-        Todas las features están en rango ~[0,1] para estabilidad del training.
+        Todas las features estan en rango ~[0,1] para estabilidad del training.
         
-        COMUNICACIÓN DEL SISTEMA:
+        COMUNICACION DEL SISTEMA:
         - El agente ve el estado completo de BESS, Solar, EVs, Cargadores
         - Puede coordinar carga de motos/mototaxis con disponibilidad solar
-        - Sabe cuántos vehículos están cargando y cuántos faltan
-        - Recibe señales de urgencia y oportunidad
+        - Sabe cuantos vehiculos estan cargando y cuantos faltan
+        - Recibe senales de urgencia y oportunidad
         """
         obs = np.zeros(self.OBS_DIM, dtype=np.float32)
         h = hour_idx % self.HOURS_PER_YEAR
@@ -604,19 +642,19 @@ class CityLearnEnvironment(Env):
         day_of_year = (h // 24) % 365
 
         # ================================================================
-        # [0-7] ENERGÍA DEL SISTEMA (8 features)
+        # [0-7] ENERGIA DEL SISTEMA (8 features)
         # ================================================================
         solar_kw = float(self.solar_hourly[h])
         mall_kw = float(self.mall_hourly[h])
         bess_soc = float(self.bess_soc_hourly[h])
         
-        # Calcular balance energético
+        # Calcular balance energetico
         ev_demand_estimate = float(np.sum(self.chargers_hourly[h]))
         total_demand = mall_kw + ev_demand_estimate
         solar_surplus = max(0.0, solar_kw - total_demand)
         grid_import_needed = max(0.0, total_demand - solar_kw)
         
-        # BESS energía disponible (SOC × capacidad máx × eficiencia)
+        # BESS energia disponible (SOC × capacidad max × eficiencia)
         bess_energy_available = bess_soc * BESS_MAX_KWH * 0.90  # 90% eficiencia
         
         obs[0] = np.clip(solar_kw / SOLAR_MAX_KW, 0.0, 1.0)                    # Solar norm
@@ -642,28 +680,28 @@ class CityLearnEnvironment(Env):
         # ================================================================
         # [46-83] POTENCIA ACTUAL POR SOCKET (38 features)
         # ================================================================
-        # Potencia = 50-80% de demanda según hora (eficiencia variable)
+        # Potencia = 50-80% de demanda segun hora (eficiencia variable)
         efficiency_factor = 0.7 if 6 <= hour_24 <= 22 else 0.5
         obs[46:84] = obs[8:46] * efficiency_factor
 
         # ================================================================
-        # [84-121] OCUPACIÓN POR SOCKET (38 features)
+        # [84-121] OCUPACION POR SOCKET (38 features)
         # ================================================================
-        # Basado en demanda: si hay demanda > 0.1, está ocupado
+        # Basado en demanda: si hay demanda > 0.1, esta ocupado
         occupancy = (raw_demands > 0.1).astype(np.float32)
         obs[84:122] = occupancy
 
         # ================================================================
-        # [122-137] ESTADO DE VEHÍCULOS (16 features) - CRÍTICO PARA APRENDIZAJE
+        # [122-137] ESTADO DE VEHICULOS (16 features) - CRITICO PARA APRENDIZAJE
         # ================================================================
-        # Contar vehículos cargando (sockets ocupados)
+        # Contar vehiculos cargando (sockets ocupados)
         motos_sockets = occupancy[:30]  # Primeros 30 sockets = motos
-        taxis_sockets = occupancy[30:]  # Últimos 8 sockets = mototaxis
+        taxis_sockets = occupancy[30:]  # Ultimos 8 sockets = mototaxis
         
         self.motos_charging_now = int(np.sum(motos_sockets))
         self.mototaxis_charging_now = int(np.sum(taxis_sockets))
         
-        # Estimar vehículos en cola según hora pico
+        # Estimar vehiculos en cola segun hora pico
         if 6 <= hour_24 <= 22:
             self.motos_waiting = max(0, int(270 / 24 - self.motos_charging_now))  # ~11 motos/hora
             self.mototaxis_waiting = max(0, int(39 / 24 - self.mototaxis_charging_now))  # ~2 mototaxis/hora
@@ -678,8 +716,8 @@ class CityLearnEnvironment(Env):
         self.mototaxis_soc_avg = float(np.mean(taxis_power)) if self.mototaxis_charging_now > 0 else 0.0
         
         # Tiempo restante de carga (horas estimadas)
-        # Moto: 3.5 kWh batería / 4.6 kW promedio = 0.76 horas
-        # Mototaxi: 5.5 kWh batería / 4.6 kW promedio = 1.2 horas
+        # Moto: 3.5 kWh bateria / 4.6 kW promedio = 0.76 horas
+        # Mototaxi: 5.5 kWh bateria / 4.6 kW promedio = 1.2 horas
         self.motos_time_remaining = (1.0 - self.motos_soc_avg) * 0.76
         self.mototaxis_time_remaining = (1.0 - self.mototaxis_soc_avg) * 1.2
         
@@ -694,7 +732,7 @@ class CityLearnEnvironment(Env):
             self.mototaxis_charged_today = 0
             self.daily_co2_avoided = 0.0
         
-        # Estimar vehículos completados (acumulativo aproximado)
+        # Estimar vehiculos completados (acumulativo aproximado)
         vehicles_per_hour = max(1, self.motos_charging_now // 2)  # ~50% completan por hora
         taxis_per_hour = max(0, self.mototaxis_charging_now // 3)
         self.motos_charged_today += vehicles_per_hour
@@ -721,7 +759,7 @@ class CityLearnEnvironment(Env):
         obs[132] = np.clip(self.motos_charged_today / 270.0, 0.0, 1.0)           # Motos cargadas hoy
         obs[133] = np.clip(self.mototaxis_charged_today / 39.0, 0.0, 1.0)        # Taxis cargados hoy
         obs[134] = np.clip(charge_efficiency, 0.0, 1.0)                          # Eficiencia carga
-        obs[135] = solar_for_ev_ratio                                            # Ratio solar→EV
+        obs[135] = solar_for_ev_ratio                                            # Ratio solar->EV
         obs[136] = np.clip(self.daily_co2_avoided / 500.0, 0.0, 1.0)             # CO2 evitado hoy
         obs[137] = np.clip(co2_potential / 100.0, 0.0, 1.0)                      # CO2 potencial
 
@@ -729,14 +767,14 @@ class CityLearnEnvironment(Env):
         # [138-143] TIME FEATURES (6 features)
         # ================================================================
         obs[138] = float(hour_24) / 24.0                                         # Hora
-        obs[139] = float(day_of_year % 7) / 7.0                                  # Día semana
+        obs[139] = float(day_of_year % 7) / 7.0                                  # Dia semana
         obs[140] = float((day_of_year // 30) % 12) / 12.0                        # Mes
         obs[141] = 1.0 if 6 <= hour_24 <= 22 else 0.0                            # Hora pico
         obs[142] = float(self.context.co2_factor_kg_per_kwh)                     # Factor CO2
         obs[143] = 0.15                                                          # Tarifa
 
         # ================================================================
-        # [144-155] COMUNICACIÓN INTER-SISTEMA (12 features) - SEÑALES DE COORDINACIÓN
+        # [144-155] COMUNICACION INTER-SISTEMA (12 features) - SENALES DE COORDINACION
         # ================================================================
         # BESS puede suministrar a EVs?
         bess_can_supply = 1.0 if bess_energy_available > total_ev_power else bess_energy_available / max(1.0, total_ev_power)
@@ -747,7 +785,7 @@ class CityLearnEnvironment(Env):
         # Grid necesario?
         grid_needed_ratio = grid_import_needed / max(1.0, total_ev_power) if total_ev_power > 0 else 0.0
         
-        # Prioridad motos vs mototaxis (motos tienen prioridad si hay más esperando)
+        # Prioridad motos vs mototaxis (motos tienen prioridad si hay mas esperando)
         priority_motos = self.motos_waiting / max(1, self.motos_waiting + self.mototaxis_waiting) if (self.motos_waiting + self.mototaxis_waiting) > 0 else 0.5
         
         # Urgencia de carga
@@ -758,29 +796,29 @@ class CityLearnEnvironment(Env):
         # Oportunidad solar
         solar_opportunity = solar_surplus / max(1.0, total_ev_power) if total_ev_power > 0 else 1.0
         
-        # BESS debería cargar? (solar alto, demanda baja)
+        # BESS deberia cargar? (solar alto, demanda baja)
         should_charge_bess = 1.0 if (solar_surplus > 100 and bess_soc < 0.8) else 0.0
         
-        # BESS debería descargar? (solar bajo, demanda alta, SOC alto)
+        # BESS deberia descargar? (solar bajo, demanda alta, SOC alto)
         should_discharge_bess = 1.0 if (solar_kw < total_demand * 0.5 and bess_soc > 0.3) else 0.0
         
-        # Potencial reducción CO2 si cargamos más
+        # Potencial reduccion CO2 si cargamos mas
         co2_reduction_potential = (motos_available + taxis_available) * CHARGER_MEAN_KW * CO2_FACTOR_IQUITOS / 100.0
         
-        # Saturación del sistema
+        # Saturacion del sistema
         saturation = (self.motos_charging_now + self.mototaxis_charging_now) / self.NUM_CHARGERS
         
         # Eficiencia sistema completo
-        total_input = solar_kw + bess_energy_available / 10.0  # Energía disponible
-        total_output = total_ev_power  # Energía usada
+        total_input = solar_kw + bess_energy_available / 10.0  # Energia disponible
+        total_output = total_ev_power  # Energia usada
         system_eff = min(1.0, total_output / max(1.0, total_input))
         
-        # Meta diaria (270 motos + 39 mototaxis = 309 vehículos/día)
+        # Meta diaria (270 motos + 39 mototaxis = 309 vehiculos/dia)
         daily_target = 309
         daily_progress = (self.motos_charged_today + self.mototaxis_charged_today) / daily_target
         
-        obs[144] = np.clip(bess_can_supply, 0.0, 1.0)                            # BESS→EV
-        obs[145] = np.clip(solar_sufficient, 0.0, 1.0)                           # Solar→EV
+        obs[144] = np.clip(bess_can_supply, 0.0, 1.0)                            # BESS->EV
+        obs[145] = np.clip(solar_sufficient, 0.0, 1.0)                           # Solar->EV
         obs[146] = np.clip(grid_needed_ratio, 0.0, 1.0)                          # Grid necesario
         obs[147] = priority_motos                                                 # Prioridad motos
         obs[148] = np.clip(urgency, 0.0, 1.0)                                    # Urgencia
@@ -788,7 +826,7 @@ class CityLearnEnvironment(Env):
         obs[150] = should_charge_bess                                            # BESS cargar
         obs[151] = should_discharge_bess                                         # BESS descargar
         obs[152] = np.clip(co2_reduction_potential, 0.0, 1.0)                    # CO2 potencial
-        obs[153] = saturation                                                     # Saturación
+        obs[153] = saturation                                                     # Saturacion
         obs[154] = system_eff                                                     # Eficiencia
         obs[155] = np.clip(daily_progress, 0.0, 1.0)                             # Progreso meta
 
@@ -796,7 +834,7 @@ class CityLearnEnvironment(Env):
 
     def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[np.ndarray, Dict]:
         """Reset para nuevo episodio."""
-        # seed y options son parte de la API Gymnasium pero no se usan aquí
+        # seed y options son parte de la API Gymnasium pero no se usan aqui
         del seed, options  # Marcar como usados para evitar warnings
         self.step_count = 0
         self.episode_num += 1
@@ -806,7 +844,7 @@ class CityLearnEnvironment(Env):
         self.episode_grid_import = 0.0
         self.episode_ev_satisfied = 0.0
         
-        # [v5.3] RESET ESTADO DE VEHÍCULOS
+        # [v5.3] RESET ESTADO DE VEHICULOS
         self.motos_charging_now = 0
         self.mototaxis_charging_now = 0
         self.motos_waiting = 0
@@ -818,33 +856,18 @@ class CityLearnEnvironment(Env):
         self.motos_charged_today = 0
         self.mototaxis_charged_today = 0
         self.daily_co2_avoided = 0.0
-        self.episode_ev_energy_charged_kwh = 0.0  # NUEVO: Total energía cargada en el episodio
+        self.episode_ev_energy_charged_kwh = 0.0  # NUEVO: Total energia cargada en el episodio
         self.episode_bess_discharged_kwh = 0.0   # NUEVO: Total descargado BESS
         self.episode_bess_charged_kwh = 0.0      # NUEVO: Total cargado en BESS
         
-        # [v5.3] RESET COMUNICACIÓN INTER-SISTEMA
+        # [v5.3] RESET COMUNICACION INTER-SISTEMA
         self.bess_available_kwh = 0.0
         self.solar_surplus_kwh = 0.0
         self.current_grid_import = 0.0
         self.system_efficiency = 0.0
         
-        # [v5.5] RESET SOC TRACKERS - cambiar a SUM en lugar de MAX
-        self.episode_motos_10_sum = 0.0  # Total acumulado, no max de una hora
-        self.episode_motos_20_sum = 0.0
-        self.episode_motos_30_sum = 0.0
-        self.episode_motos_50_sum = 0.0
-        self.episode_motos_70_sum = 0.0
-        self.episode_motos_80_sum = 0.0
-        self.episode_motos_100_sum = 0.0
+        # [v5.7] REMOVIDO - variables _sum ya no se usan (usar motos_charging/mototaxis_charging del info dict)
         
-        self.episode_taxis_10_sum = 0.0  # Total acumulado, no max de una hora
-        self.episode_taxis_20_sum = 0.0
-        self.episode_taxis_30_sum = 0.0
-        self.episode_taxis_50_sum = 0.0
-        self.episode_taxis_70_sum = 0.0
-        self.episode_taxis_80_sum = 0.0
-        self.episode_taxis_100_sum = 0.0
-
         obs = self._make_observation(0)
         return obs, {}
 
@@ -856,8 +879,8 @@ class CityLearnEnvironment(Env):
         """
         Ejecuta un paso de SIMULACION (1 hora).
 
-        Implementa el protocolo de paso de Gymnasium. El agente envía setpoints
-        de potencia normalizados que son procesados a través del sistema de energía.
+        Implementa el protocolo de paso de Gymnasium. El agente envia setpoints
+        de potencia normalizados que son procesados a traves del sistema de energia.
 
         Referencias:
           - Gymnasium Protocol: https://gymnasium.farama.org/api/core/
@@ -908,7 +931,7 @@ class CityLearnEnvironment(Env):
         MOTO_KM_PER_KWH_PPO = 50.0
         MOTOTAXI_KM_PER_KWH_PPO = 30.0
         
-        # Usar proporción real de sockets motos/mototaxis (30 motos + 8 mototaxis = 38)
+        # Usar proporcion real de sockets motos/mototaxis (30 motos + 8 mototaxis = 38)
         moto_ratio_ppo = 30.0 / 38.0
         mototaxi_ratio_ppo = 8.0 / 38.0
         
@@ -922,32 +945,49 @@ class CityLearnEnvironment(Env):
         litros_evitados_motos_ppo = km_motos_ppo * MOTO_LITROS_PER_100KM_PPO / 100.0
         litros_evitados_mototaxis_ppo = km_mototaxis_ppo * MOTOTAXI_LITROS_PER_100KM_PPO / 100.0
         
-        co2_avoided_direct_kg = (litros_evitados_motos_ppo + litros_evitados_mototaxis_ppo) * GASOLINA_KG_CO2_PER_LITRO_PPO
+        # ====================================================================
+        # CO2 REDUCCION DIRECTA v7.1 - SOLO EV (cambio combustible a eléctrico)
+        # ====================================================================
+        # CO2 DIRECTO: Reducción por usar vehículos eléctricos en lugar de gasolina
+        # - Motos: 0.87 kg CO2 evitado por kWh cargado (vs consumo gasolina)
+        # - Mototaxis: 0.47 kg CO2 evitado por kWh cargado (vs consumo gasolina)
+        # FUENTE: chargers_ev_ano_2024_v3.csv (calculado en OE2)
+        h = (self.step_count - 1) % self.HOURS_PER_YEAR
+        co2_motos_direct = float(self.chargers_co2_df.iloc[h]['co2_reduccion_motos_kg']) if 'co2_reduccion_motos_kg' in self.chargers_co2_df.columns else 0.0
+        co2_taxis_direct = float(self.chargers_co2_df.iloc[h]['co2_reduccion_mototaxis_kg']) if 'co2_reduccion_mototaxis_kg' in self.chargers_co2_df.columns else 0.0
+        co2_avoided_direct_kg = co2_motos_direct + co2_taxis_direct
         
-        # CO2 INDIRECTO: SOLAR + BESS CON PEAK SHAVING (MISMO QUE SAC/A2C)
+        # ====================================================================
+        # CO2 REDUCCION INDIRECTA v7.1 - SOLAR + BESS (evita importar de red térmica)
+        # ====================================================================
+        # CO2 INDIRECTO SOLAR: Reducción cuando solar suministra a:
+        #   - EV (carga directa), BESS (almacenamiento), Mall, Red pública
+        #   - Factor: 0.4521 kg CO2/kWh evitado de red térmica Iquitos
+        # FUENTE: pv_generation_citylearn2024.csv (reduccion_indirecta_co2_kg)
+        co2_solar_indirect = float(self.solar_co2_df.iloc[h]['reduccion_indirecta_co2_kg']) if 'reduccion_indirecta_co2_kg' in self.solar_co2_df.columns else 0.0
+        
+        # CO2 INDIRECTO BESS: Reducción cuando BESS alimenta EV y Mall durante:
+        #   - Peak shaving: demanda Mall > 2000 kW (corte de demanda pico)
+        #   - Pico de demanda Mall que evita importar de red térmica
+        # FUENTE: bess_ano_2024.csv (co2_avoided_indirect_kg)
+        co2_bess_indirect = float(self.bess_co2_df.iloc[h]['co2_avoided_indirect_kg']) if 'co2_avoided_indirect_kg' in self.bess_co2_df.columns else 0.0
+        
+        # NOTA: MALL EMITE CO2, NO REDUCE - no se incluye en co2_avoided
+        # Mall consume de red térmica y genera emisiones (5.6M kg CO2/año)
+        
+        # TOTAL CO2 INDIRECTO = SOLAR + BESS
+        co2_avoided_indirect_kg = co2_solar_indirect + co2_bess_indirect
+        
+        # CO2 TOTAL EVITADO = DIRECTO (EV) + INDIRECTO (SOLAR + BESS)
+        co2_avoided_total_kg = co2_avoided_direct_kg + co2_avoided_indirect_kg
+        
+        # CO2 GRID (emisiones base sin control)
         co2_grid_kg = grid_import_kwh * CO2_FACTOR_IQUITOS
-        
-        solar_avoided = min(solar_kw, total_demand_kwh)
-        
-        # BESS descargando con peak shaving (solo descarga positiva)
-        bess_discharge_benefit = max(0.0, bess_power_kw)
-        
-        if mall_kw > 2000.0:
-            # En pico: BESS reemplaza 100% + bonus por reducción de pico diesel
-            peak_shaving_factor = 1.0 + (mall_kw - 2000.0) / max(1.0, mall_kw) * 0.5
-        else:
-            # Baseline: BESS aún ayuda con factor reducido
-            peak_shaving_factor = 0.5 + (mall_kw / 2000.0) * 0.5
-        
-        bess_co2_benefit = bess_discharge_benefit * peak_shaving_factor
-        
-        co2_avoided_indirect_kg = (solar_avoided + bess_co2_benefit) * CO2_FACTOR_IQUITOS
-        co2_avoided_total_kg = co2_avoided_indirect_kg + co2_avoided_direct_kg
 
-        # EV SATISFACTION - MÉTODO REALISTA (similar a SAC)
-        # Basado en cuánta carga se está entregando vs la demanda
+        # EV SATISFACTION - METODO REALISTA (similar a SAC)
+        # Basado en cuanta carga se esta entregando vs la demanda
         if float(np.sum(charger_demand)) > 0.1:
-            # Ratio de carga efectiva: cuánto se está cargando vs demanda total
+            # Ratio de carga efectiva: cuanto se esta cargando vs demanda total
             charge_ratio = ev_charging_kwh / max(1.0, float(np.sum(charger_demand)))
             # EV SOC aumenta con la carga efectiva (baseline 80% + bonus por carga)
             ev_soc_avg = np.clip(0.80 + 0.20 * charge_ratio, 0.0, 1.0)
@@ -957,76 +997,100 @@ class CityLearnEnvironment(Env):
         
         # [OK] SIMULAR CARGA DE VEHICULOS POR SOC (10%, 20%, 30%, 50%, 70%, 80%, 100%)
         h = (self.step_count - 1) % self.HOURS_PER_YEAR
-        scenario = self.scenarios_by_hour[h]
+        # scenario = self.scenarios_by_hour[h]  # DESHABILITADO v5.6
         
         # v5.6 CORREGIDO: USAR POTENCIA TOTAL DISPONIBLE DEL SISTEMA
         # No solo la potencia controlada por el agente, sino:
-        # Solar + BESS + Red (potencia total para cargar vehículos)
-        # Esto es más realista: el simulador ve potencia total disponible
-        actual_controlled_power_kw = float(np.sum(charger_power_effective[:38]))  # Potencia controlada
-        solar_available_kw = max(0.0, solar_kw - mall_kw)  # Solar disponible después de mall
+        # Solar + BESS + Red (potencia total para cargar vehiculos)
+        # Esto es mas realista: el simulador ve potencia total disponible
+        actual_controlled_power_kw = float(np.sum(charger_power_effective[:38]))  # Potencia controlada (para debug)
+        solar_available_kw = max(0.0, solar_kw - mall_kw)  # Solar disponible despues de mall
         bess_available_kw = max(0.0, bess_power_kw) if bess_power_kw > 0 else 0.0  # BESS descargando
-        grid_available_kw = 500.0  # Capacidad máxima de grid para importar (conservador)
         
-        # Potencia TOTAL disponible para carga de vehículos
-        total_available_power_kw = actual_controlled_power_kw + solar_available_kw + bess_available_kw + grid_available_kw
+        # GRID DINAMICO: Calcular cuanto importa basandose en demanda real
+        # Las fuentes disponibles son: Solar + BESS + Grid
+        # El grid importa lo que falta para satisfacer la demanda
+        ev_demand_total_kw = float(np.sum(charger_demand))
+        mall_demand_kw = float(mall_kw)
+        total_demand_kw = ev_demand_total_kw + mall_demand_kw
         
-        # Asegurar un mínimo realista (al menos 50 kW para cargar algo)
+        # Grid importa = Demanda - (Solar + BESS disponibles)
+        deficit_kw = total_demand_kw - solar_available_kw - bess_available_kw
+        grid_max_capacity_kw = 500.0  # Capacidad maxima de importacion del grid
+        grid_available_kw = max(0.0, min(deficit_kw, grid_max_capacity_kw))  # Dinamica, entre 0 y 500 kW
+        
+        # Potencia TOTAL disponible para carga de vehiculos
+        # Las fuentes reales son: Solar + BESS + Grid (no incluir actual_controlled_power_kw)
+        total_available_power_kw = solar_available_kw + bess_available_kw + grid_available_kw
+        
+        # Asegurar un minimo realista (al menos 50 kW para cargar algo)
         available_power_kw = max(50.0, total_available_power_kw)
         
         # [DEBUG] Imprimir potencias cada 100 steps
         if self.step_count % 100 == 0:
-            print(f"[PPO-POWER-DEBUG] Step {self.step_count}: ctrl={actual_controlled_power_kw:.1f}, solar={solar_available_kw:.1f}, bess={bess_available_kw:.1f}, grid={grid_available_kw:.1f}, total={available_power_kw:.1f} kW")
-        charging_result = self.vehicle_simulator.simulate_hourly_charge(scenario, available_power_kw)
+            print(f"[PPO-POWER-DEBUG] Step {self.step_count}: solar={solar_available_kw:.1f}, bess={bess_available_kw:.1f}, grid={grid_available_kw:.1f}, total={available_power_kw:.1f} kW")
         
-        # Extraer conteos por SOC (valores puede ser int o float según vehicle_simulator)
-        motos_10 = charging_result.get('motos_10_percent_charged', 0)  # type: ignore
-        motos_20 = charging_result.get('motos_20_percent_charged', 0)  # type: ignore
-        motos_30 = charging_result.get('motos_30_percent_charged', 0)  # type: ignore
-        motos_50 = charging_result.get('motos_50_percent_charged', 0)  # type: ignore
-        motos_70 = charging_result.get('motos_70_percent_charged', 0)  # type: ignore
-        motos_80 = charging_result.get('motos_80_percent_charged', 0)  # type: ignore
-        motos_100 = charging_result.get('motos_100_percent_charged', 0)  # type: ignore
+        # ====================================================================
+        # CALCULAR CANTIDAD DE VEHICULOS CARGANDO (desde potencia disponible)
+        # NOTA: Los detalles (motos_10, motos_100, etc.) se manejan en callback
+        # ====================================================================
+        h = (self.step_count - 1) % self.HOURS_PER_YEAR
+        hour_24 = h % 24
         
-        taxis_10 = charging_result.get('mototaxis_10_percent_charged', 0)  # type: ignore
-        taxis_20 = charging_result.get('mototaxis_20_percent_charged', 0)  # type: ignore
-        taxis_30 = charging_result.get('mototaxis_30_percent_charged', 0)  # type: ignore
-        taxis_50 = charging_result.get('mototaxis_50_percent_charged', 0)  # type: ignore
-        taxis_70 = charging_result.get('mototaxis_70_percent_charged', 0)  # type: ignore
-        taxis_80 = charging_result.get('mototaxis_80_percent_charged', 0)  # type: ignore
-        taxis_100 = charging_result.get('mototaxis_100_percent_charged', 0)  # type: ignore
+        # Sockets que pueden cargarse (potencia disponible / potencia por socket)
+        power_per_socket_kw = 7.4  # Mode 3 standard
+        sockets_available = int(min(38.0, available_power_kw / power_per_socket_kw))
         
-        # [DEBUG] Mostrar conteos cada 500 steps
-        if self.step_count % 500 == 0 and (motos_10 + motos_20 + motos_30 + motos_50 + motos_70 + motos_80 + motos_100) > 0:
-            print(f"[SOC-COUNT] Step {self.step_count}: motos=[{int(motos_10)},{int(motos_20)},{int(motos_30)},{int(motos_50)},{int(motos_70)},{int(motos_80)},{int(motos_100)}], taxis=[{int(taxis_10)},{int(taxis_20)},{int(taxis_30)},{int(taxis_50)},{int(taxis_70)},{int(taxis_80)},{int(taxis_100)}]")
+        # Demanda horaria segun patron
+        if 6 <= hour_24 < 9:
+            hourly_demand_ratio = 0.20
+        elif 9 <= hour_24 < 12:
+            hourly_demand_ratio = 0.35
+        elif 12 <= hour_24 < 14:
+            hourly_demand_ratio = 0.30
+        elif 14 <= hour_24 < 17:
+            hourly_demand_ratio = 0.40
+        elif 17 <= hour_24 < 19:
+            hourly_demand_ratio = 0.50
+        elif 19 <= hour_24 < 23:
+            hourly_demand_ratio = 0.70  # PICO
+        else:  # 23-6
+            hourly_demand_ratio = 0.15
         
-        # v5.5 CORREGIDO: REGISTRAR MÁXIMO SIMULTÁNEO (no acumular)
-        # Estos son conteos de vehículos por SOC, no energía
-        self.episode_motos_10_max = max(self.episode_motos_10_max, int(motos_10))
-        self.episode_motos_20_max = max(self.episode_motos_20_max, int(motos_20))
-        self.episode_motos_30_max = max(self.episode_motos_30_max, int(motos_30))
-        self.episode_motos_50_max = max(self.episode_motos_50_max, int(motos_50))
-        self.episode_motos_70_max = max(self.episode_motos_70_max, int(motos_70))
-        self.episode_motos_80_max = max(self.episode_motos_80_max, int(motos_80))
-        self.episode_motos_100_max = max(self.episode_motos_100_max, int(motos_100))
+        # Vehiculos/hora en pico (realista desde demanda 301k kWh/ano)
+        hourly_motos = max(1, int(40 * hourly_demand_ratio))
+        hourly_taxis = max(1, int(10 * hourly_demand_ratio))
         
-        self.episode_taxis_10_max = max(self.episode_taxis_10_max, int(taxis_10))
-        self.episode_taxis_20_max = max(self.episode_taxis_20_max, int(taxis_20))
-        self.episode_taxis_30_max = max(self.episode_taxis_30_max, int(taxis_30))
-        self.episode_taxis_50_max = max(self.episode_taxis_50_max, int(taxis_50))
-        self.episode_taxis_70_max = max(self.episode_taxis_70_max, int(taxis_70))
-        self.episode_taxis_80_max = max(self.episode_taxis_80_max, int(taxis_80))
-        self.episode_taxis_100_max = max(self.episode_taxis_100_max, int(taxis_100))
+        # Limitar a sockets disponibles
+        motos_charging = min(int(0.87 * sockets_available), hourly_motos)
+        taxis_charging = min(int(0.13 * sockets_available), hourly_taxis)
         
-        # Acumular energía EV y BESS
+        # Info dict para callback (reemplaza el calculo duplicado de motos/taxis por SOC)
+        charging_result = {}  # Se mantiene vacio, los conteos van al info dict
+        
+        # Extraer conteos por SOC (REMOVIDO v5.7 - dato duplicado, usar info['motos_charging'] en callback)
+        # El callback ya recolecta motos_charging y mototaxis_charging directamente
+        
+        # [DEBUG] Mostrar sin detallar por SOC
+        # if self.step_count % 500 == 0:
+        #     print(f"[SOC-COUNT] Step {self.step_count}: motos_cargando={motos_charging}, taxis_cargando={taxis_charging}")
+        
+        # v5.7: SIMPLIFICADO - no registrar por SOC en step(), dejar al callback
+        # El callback usa info['motos_charging'] e info['mototaxis_charging'] que ya vienen del environment
+        
+        # Acumular energia EV y BESS
         self.episode_ev_energy_charged_kwh += ev_charging_kwh
         if bess_power_kw > 0:
             self.episode_bess_discharged_kwh += bess_power_kw
         
-        # [v5.5] BONUS REWARD BASADO EN ENERGÍA CARGADA vs META DIARIA
+        # [v5.5] BONUS REWARD BASADO EN ENERGIA CARGADA vs META DIARIA
         # Penalidad si hay demanda pero no se carga al 100%
-        total_100_percent = motos_100 + taxis_100
-        total_all_chargers = scenario.total_vehicles
+        # Usar las variables locales de vehiculos que acabamos de calcular
+        total_motos_charged = motos_charging  # Motos cargando ahora (calculado linea 1032)
+        total_taxis_charged = taxis_charging  # Taxis cargando ahora (calculado linea 1033)
+        total_100_percent = total_motos_charged + total_taxis_charged
+        # total_all_chargers = scenario.total_vehicles  # DESHABILITADO v5.6
+        total_all_chargers = 309  # 270 motos + 39 mototaxis (constante fija)
         
         # Si no hay demanda, no penalizar; si hay demanda, premiar carga completa
         if total_all_chargers > 0:
@@ -1040,11 +1104,11 @@ class CityLearnEnvironment(Env):
         # REWARD GRANULAR POR CONTROL INDIVIDUAL DE SOCKETS Y BESS
         # ====================================================================
         # v5.4: SIMPLIFICADO - socket/BESS control es secundario
-        # El agente aprenderá las estrategias individuales implícitamente
-        # desde el bonus de "vehículos 100% cargados"
+        # El agente aprendera las estrategias individuales implicitamente
+        # desde el bonus de "vehiculos 100% cargados"
         
         # Socket efficiency y BESS control rewards deshabilitados (v5.4)
-        # para reducir ruido en la señal de reward
+        # para reducir ruido en la senal de reward
         socket_efficiency_reward = 0.0  # v5.4: Disabled for clarity
         bess_control_reward = 0.0       # v5.4: Disabled for clarity
 
@@ -1062,74 +1126,104 @@ class CityLearnEnvironment(Env):
             )
             
             # AGREGAR BONUS POR EV SATISFACTION (igual que SAC)
-            # ev_soc_avg está en [0,1], convertir a [-1,1] y ponderar
+            # ev_soc_avg esta en [0,1], convertir a [-1,1] y ponderar
             ev_bonus = (2.0 * ev_soc_avg - 1.0)  # Escala [-1, 1]
             
             # ================================================================
-            # REWARD COMPOSITION v5.5: BASADO EN ENERGÍA CARGADA (más científico)
+            # REWARD COMPOSITION v7.0 MULTI-OBJETIVO COMPLETO
             # ================================================================
-            # OBJETIVO ÚNICO: Maximizar energía entregada a vehículos
-            # 
-            # Meta diaria: 270 motos × 3.5 kWh + 39 mototaxis × 5.5 kWh = 1,160 kWh/día
-            # Promedio por hora: 1,160 / 24 ≈ 48 kWh/hora
-            # Bonus: (ev_energy / 48) normalizado, máx +1.0 si cargamos 48+ kWh/hora
+            # IMPLEMENTACION DE LOS 6 OBJETIVOS DEFINIDOS EN REWARD_WEIGHTS_V6:
+            #   co2: 0.45           - Reducir emisiones CO2 (grid termico Iquitos)
+            #   solar: 0.15         - Maximizar uso solar directo
+            #   vehicles_charged: 0.25  - Maximizar motos/mototaxis cargadas
+            #   grid_stable: 0.05   - Estabilizar picos de grid (ramping smooth)
+            #   bess_efficiency: 0.05   - Minimizar ciclos BESS, maximizar utilidad
+            #   prioritization: 0.05    - Priorizar correctamente en escasez
             # ================================================================
             
-            # BONUS POR ENERGÍA CARGADA (PRIMARIO - v5.5)
-            # Este es el indicador más directo del éxito de la misión
-            EV_ENERGY_GOAL_KWH_PER_HOUR = 48.0  # Meta base: 1,160 kWh/día ÷ 24 horas
-            energy_charging_ratio = np.clip(ev_charging_kwh / EV_ENERGY_GOAL_KWH_PER_HOUR, 0.0, 1.5)
-            energy_charging_bonus = (energy_charging_ratio - 0.5) * 1.2  # [-0.6, +0.9] rango
+            # ---- OBJETIVO 1: CO2 REDUCTION (45%) ----
+            # Maximizar CO2 evitado (directo + indirecto) vs emitido
+            # Meta: 1,500 kg CO2 evitado/hora seria excelente (maxima capacidad)
+            co2_efficiency = (co2_avoided_total_kg / max(co2_grid_kg + 1.0, 1.0))  # Ratio evitado/emitido
+            r_co2 = np.clip(co2_efficiency, 0.0, 2.0) - 0.5  # [-0.5, +1.5] -> normalizar
+            r_co2 = np.clip(r_co2, -0.5, 0.5)  # Rango final [-0.5, +0.5]
             
-            # Secundario: Ocupación de sockets (indica potencial de carga)
+            # ---- OBJETIVO 2: SOLAR SELF-CONSUMPTION (15%) ----
+            # Maximizar uso directo de solar para EVs y mall (no exportar al grid)
+            solar_used_for_ev = min(solar_kw, ev_charging_kwh)  # kWh solar->EV
+            solar_used_for_mall = min(max(0, solar_kw - ev_charging_kwh), mall_kw)  # Resto->mall
+            solar_self_consumption = (solar_used_for_ev + solar_used_for_mall) / max(solar_kw, 1.0)
+            r_solar = solar_self_consumption * 0.8 - 0.2  # [-0.2, +0.6] si consume todo
+            
+            # ---- OBJETIVO 3: VEHICLES CHARGED (25%) ----
+            # Maximizar energia entregada a vehiculos (meta: 48 kWh/hora = 1,160 kWh/dia)
+            EV_ENERGY_GOAL_KWH_PER_HOUR = 48.0
             vehicles_charging_now = motos_charging + mototaxis_charging
-            vehicles_charging_ratio = vehicles_charging_now / self.NUM_CHARGERS  # [0, 1]
-            vehicles_charging_bonus = vehicles_charging_ratio * 0.40  # Secundaria: +0 a +0.4
+            vehicles_charging_ratio = vehicles_charging_now / self.NUM_CHARGERS
+            energy_delivered_ratio = np.clip(ev_charging_kwh / EV_ENERGY_GOAL_KWH_PER_HOUR, 0.0, 1.5)
+            r_vehicles = (energy_delivered_ratio * 0.6 + vehicles_charging_ratio * 0.4) - 0.3  # [-0.3, +0.7]
             
-            # Terciario: Carga completa (calidad de carga)
-            if total_all_chargers > 0:
-                completion_100_ratio = total_100_percent / max(1, total_all_chargers)
-                # v5.4: AUMENTADO - bonus escalonado: +0.42 si 100%, -0.126 si 0%
-                vehicles_100_bonus = (completion_100_ratio - 0.3) * 0.6  # [-0.18, +0.42]
+            # ---- OBJETIVO 4: GRID STABILITY (5%) ----
+            # Minimizar cambios bruscos de importacion (ramping)
+            prev_grid_import = getattr(self, '_prev_grid_import', grid_import_kwh)
+            ramping = abs(grid_import_kwh - prev_grid_import)
+            self._prev_grid_import = grid_import_kwh
+            ramping_penalty = np.clip(ramping / 100.0, 0.0, 1.0)  # Normalizado a 100kW max cambio
+            r_grid_stable = 0.3 - ramping_penalty * 0.5  # [+0.3 estable, -0.2 inestable]
+            
+            # ---- OBJETIVO 5: BESS EFFICIENCY (5%) ----
+            # Minimizar ciclos innecesarios, maximizar uso util del BESS
+            bess_throughput = abs(bess_power_kw)  # kW movido
+            bess_useful = 0.0
+            if bess_power_kw > 0:  # Descargando (util si solar bajo y demanda alta)
+                bess_useful = min(bess_power_kw, max(0, total_demand_kwh - solar_kw))
+            elif bess_power_kw < 0:  # Cargando (util si solar excedente)
+                bess_useful = min(abs(bess_power_kw), max(0, solar_kw - total_demand_kwh))
+            bess_efficiency_metric = bess_useful / max(bess_throughput, 1.0) if bess_throughput > 5 else 1.0
+            r_bess = bess_efficiency_metric * 0.5 - 0.1  # [-0.1, +0.4]
+            
+            # ---- OBJETIVO 6: PRIORITIZATION (5%) ----
+            # En escasez de solar, priorizar vehiculos con mayor urgencia
+            # Mototaxis tienen mayor urgencia (servicio publico) vs motos personales
+            if solar_kw < total_demand_kwh * 0.5:  # Escasez de solar
+                # Verificar que mototaxis tienen setpoints mas altos que motos
+                moto_setpoint_avg = float(np.mean(charger_setpoints[:30])) if len(charger_setpoints) >= 30 else 0.0
+                taxi_setpoint_avg = float(np.mean(charger_setpoints[30:])) if len(charger_setpoints) >= 38 else 0.0
+                priority_correct = taxi_setpoint_avg >= moto_setpoint_avg * 0.9  # Tolerancia 10%
+                r_priority = 0.3 if priority_correct else -0.1
             else:
-                vehicles_100_bonus = 0.0
-                
-            # 3. BONUS POR CO2 EVITADO (directo + indirecto)
-            # Normalizado: 500 kg CO2/hora sería excelente (toda la capacidad con solar)
-            co2_bonus = np.clip(co2_avoided_total_kg / 100.0, -0.1, 0.2)  # [-0.1, +0.2]
-            
-            # 4. PENALIDAD POR GRID IMPORT ALTO
-            # Si importamos mucho del grid, no estamos usando solar para EVs
-            grid_penalty = -np.clip(grid_import_kwh / 500.0, 0.0, 0.15)  # [0, -0.15]
-            
-            # 5. BONUS POR USAR SOLAR PARA CARGAR EVs
-            # Si el solar va directo a EVs, maximizamos reducción CO2 indirecto
-            solar_used_for_ev = min(solar_kw, ev_charging_kwh)  # kWh solar→EV
-            solar_ev_ratio = solar_used_for_ev / max(1.0, solar_kw) if solar_kw > 10 else 0.0
-            solar_ev_bonus = solar_ev_ratio * 0.1  # Hasta +0.1
+                r_priority = 0.1  # No hay escasez, cualquier prioridad OK
             
             # ================================================================
-            # COMPOSICIÓN FINAL DEL REWARD v5.5 - ENERGÍA CARGADA ES PRIMARIA
+            # COMPOSICION MULTI-OBJETIVO v7.0 - PESOS REWARD_WEIGHTS_V6
             # ================================================================
-            # OBJETIVO ÚNICO: Maximizar energía entregada a vehículos (1,160 kWh/día target)
-            # 
-            # Pesos:
-            # - 60% Energía cargada (PRIMARY - indicator directo de éxito)
-            # - 25% Ocupación sockets (indica potencial disponible)
-            # - 12% CO2 evitado (beneficio ambiental)
-            # - 3% Solar→EV (preferencia por solar vs grid)
-            # 
-            # Esto es más científico y menos ruidoso que contar
-            # vehículos individuales.
+            # Pesos: co2=0.45, solar=0.15, vehicles=0.25, grid=0.05, bess=0.05, priority=0.05
+            # TOTAL = 1.00 (verificado)
             # ================================================================
             reward_val = (
-                energy_charging_bonus * 0.60 +         # PRIMARY: energía cargada
-                vehicles_charging_bonus * 0.25 +       # SECONDARY: ocupación sockets
-                co2_bonus * 0.12 +                     # TERTIARY: CO2 beneficio
-                solar_ev_bonus * 0.03 +                # QUATERNARY: solar preference
-                reward_val * 0.0                       # Baseline multiobjetivo (zero)
-                # Eliminada: grid_penalty para simplificar
+                r_co2 * 0.45 +           # OBJETIVO PRINCIPAL: CO2 reduction
+                r_solar * 0.15 +         # SECUNDARIO: Solar self-consumption
+                r_vehicles * 0.25 +      # SECUNDARIO: Vehiculos cargados
+                r_grid_stable * 0.05 +   # TERCIARIO: Estabilidad grid
+                r_bess * 0.05 +          # TERCIARIO: Eficiencia BESS
+                r_priority * 0.05        # TERCIARIO: Priorizacion en escasez
             )
+            
+            # Guardar componentes para tracking detallado
+            components['r_co2'] = float(r_co2)
+            components['r_solar'] = float(r_solar)
+            components['r_vehicles'] = float(r_vehicles)
+            components['r_grid_stable'] = float(r_grid_stable)
+            components['r_bess'] = float(r_bess)
+            components['r_priority'] = float(r_priority)
+            
+            # Variables auxiliares para info dict
+            energy_charging_bonus = energy_delivered_ratio - 0.5  # Para compatibilidad
+            vehicles_charging_bonus = vehicles_charging_ratio
+            co2_bonus = r_co2
+            grid_penalty = -ramping_penalty * 0.1
+            solar_ev_bonus = r_solar
+            vehicles_100_bonus = r_vehicles
             
             # Mantener en rango estable para PPO [-1, 1]
             reward_val = float(np.clip(reward_val, -1.0, 1.0))
@@ -1139,14 +1233,14 @@ class CityLearnEnvironment(Env):
             reward_val = -10.0
             components = {'co2_avoided_total_kg': co2_avoided_total_kg}
 
-        # TRACKING (acumulador de métricas del episodio)
+        # TRACKING (acumulador de metricas del episodio)
         self.episode_reward += float(reward_val)
         self.episode_co2_avoided += co2_avoided_total_kg
         self.episode_solar_kwh += solar_kw
         self.episode_grid_import += grid_import_kwh
         self.episode_ev_satisfied += ev_soc_avg
         
-        # [v5.3] TRACKING DIARIO (para observaciones de comunicación)
+        # [v5.3] TRACKING DIARIO (para observaciones de comunicacion)
         self.daily_co2_avoided += co2_avoided_total_kg
         self.motos_charging_now = motos_charging
         self.mototaxis_charging_now = mototaxis_charging
@@ -1157,21 +1251,21 @@ class CityLearnEnvironment(Env):
         # SIGUIENTE OBSERVACION
         obs = self._make_observation(self.step_count)
 
-        # TERMINACION (episodio completo = 1 año)
+        # TERMINACION (episodio completo = 1 ano)
         terminated = self.step_count >= self.max_steps
         truncated = False  # No truncate (let episode complete)
 
-        # INFO DICT COMPLETO (para DetailedLoggingCallback) - COLUMNAS ESTÁNDAR SAC/A2C/PPO
+        # INFO DICT COMPLETO (para DetailedLoggingCallback) - COLUMNAS ESTANDAR SAC/A2C/PPO
         info: Dict[str, Any] = {
             'step': self.step_count,
             'hour': h % 24,
             'hour_of_year': h,
-            # Energía - NOMBRES ESTÁNDAR COMPATIBLES
-            'solar_kw': solar_kw,  # CORRECCIÓN: cambiar de solar_generation_kwh
-            'ev_charging_kw': ev_charging_kwh,  # CORRECCIÓN: cambiar de ev_charging_kwh
-            'grid_import_kw': grid_import_kwh,  # CORRECCIÓN: cambiar de grid_import_kwh
+            # Energia - NOMBRES ESTANDAR COMPATIBLES
+            'solar_kw': solar_kw,  # CORRECCION: cambiar de solar_generation_kwh
+            'ev_charging_kw': ev_charging_kwh,  # CORRECCION: cambiar de ev_charging_kwh
+            'grid_import_kw': grid_import_kwh,  # CORRECCION: cambiar de grid_import_kwh
             'grid_export_kwh': grid_export_kwh,
-            'mall_demand_kw': mall_kw,  # CORRECCIÓN: cambiar de mall_demand_kwh
+            'mall_demand_kw': mall_kw,  # CORRECCION: cambiar de mall_demand_kwh
             'total_demand_kwh': total_demand_kwh,
             # BESS
             'bess_soc': bess_soc,
@@ -1189,38 +1283,46 @@ class CityLearnEnvironment(Env):
             'motos_charging': motos_charging,
             'mototaxis_charging': mototaxis_charging,
             'ev_soc_avg': ev_soc_avg,
-            # v5.3: MÉTRICAS DE CARGA DE VEHÍCULOS (CRÍTICAS)
-            'vehicles_charging_now': vehicles_charging_now,     # Total vehículos cargando
-            'vehicles_charging_ratio': vehicles_charging_ratio, # Ocupación sockets [0,1]
+            # v5.3: METRICAS DE CARGA DE VEHICULOS (CRITICAS)
+            'vehicles_charging_now': vehicles_charging_now,     # Total vehiculos cargando
+            'vehicles_charging_ratio': vehicles_charging_ratio, # Ocupacion sockets [0,1]
             'vehicles_100_percent': total_100_percent,          # Cargados al 100%
             'vehicles_total_scenario': total_all_chargers,      # Total en escenario
-            'vehicles_charging_bonus': vehicles_charging_bonus, # Reward por ocupación
+            'vehicles_charging_bonus': vehicles_charging_bonus, # Reward por ocupacion
             'vehicles_100_bonus': vehicles_100_bonus,           # Reward por completados
             'co2_bonus': float(co2_bonus),                      # Reward por CO2
             'grid_penalty': float(grid_penalty),                # Penalidad grid
-            'solar_ev_bonus': solar_ev_bonus,                   # Reward solar→EV
-            'solar_used_for_ev_kwh': solar_used_for_ev,         # kWh solar→EV
+            'solar_ev_bonus': solar_ev_bonus,                   # Reward solar->EV
+            'solar_used_for_ev_kwh': solar_used_for_ev,         # kWh solar->EV
             # v5.3: CONTROL GRANULAR POR SOCKET
             'socket_efficiency_reward': socket_efficiency_reward,
-            # [v5.5] VEHICULOS CARGADOS POR SOC - usar SUM acumulado
-            'motos_10_percent': self.episode_motos_10_sum,
-            'motos_20_percent': self.episode_motos_20_sum,
-            'motos_30_percent': self.episode_motos_30_sum,
-            'motos_50_percent': self.episode_motos_50_sum,
-            'motos_70_percent': self.episode_motos_70_sum,
-            'motos_80_percent': self.episode_motos_80_sum,
-            'motos_100_percent': self.episode_motos_100_sum,
-            'taxis_10_percent': self.episode_taxis_10_sum,
-            'taxis_20_percent': self.episode_taxis_20_sum,
-            'taxis_30_percent': self.episode_taxis_30_sum,
-            'taxis_50_percent': self.episode_taxis_50_sum,
-            'taxis_70_percent': self.episode_taxis_70_sum,
-            'taxis_80_percent': self.episode_taxis_80_sum,
-            'taxis_100_percent': self.episode_taxis_100_sum,
-            # v5.3: ESTADO DEL SISTEMA (comunicación)
+            # v5.7: REMOVIDO - datos duplicados de SOC, usar 'motos_charging' e 'mototaxis_charging' arriba
+            # v5.3: ESTADO DEL SISTEMA (comunicacion)
             'motos_charged_today': self.motos_charged_today,
             'mototaxis_charged_today': self.mototaxis_charged_today,
             'daily_co2_avoided_kg': self.daily_co2_avoided,
+            # ================================================================
+            # v7.0 REWARD COMPONENTS - 6 OBJETIVOS MULTI-OBJETIVO
+            # ================================================================
+            'r_co2': float(r_co2),                    # Objetivo 1: Reduccion CO2 (45%)
+            'r_solar': float(r_solar),                # Objetivo 2: Autoconsumo solar (15%)
+            'r_vehicles': float(r_vehicles),          # Objetivo 3: Vehiculos cargados (25%)
+            'r_grid_stable': float(r_grid_stable),    # Objetivo 4: Estabilidad grid (5%)
+            'r_bess': float(r_bess),                  # Objetivo 5: Eficiencia BESS (5%)
+            'r_priority': float(r_priority),          # Objetivo 6: Priorizacion (5%)
+            'reward_total': float(reward_val),        # Reward total ponderado
+            # ================================================================
+            # v7.0 AHORROS DE COSTOS (soles/USD)
+            # ================================================================
+            # Tarifa Iquitos: HP (18-23h) = 0.45 S/./kWh, HFP = 0.28 S/./kWh
+            # Tipo cambio: 3.7 S/. = 1 USD
+            'tarifa_actual_soles': 0.45 if 18 <= (h % 24) <= 22 else 0.28,
+            'ahorro_solar_soles': float(solar_used_for_ev + solar_used_for_mall) * (0.45 if 18 <= (h % 24) <= 22 else 0.28),
+            'ahorro_bess_soles': float(max(0, bess_power_kw)) * (0.45 if 18 <= (h % 24) <= 22 else 0.28),  # Descarga BESS evita grid HP
+            'costo_grid_soles': float(grid_import_kwh) * (0.45 if 18 <= (h % 24) <= 22 else 0.28),
+            'ahorro_combustible_usd': float(ev_charging_kwh * 0.15),  # ~0.15 USD/kWh vs gasolina
+            'ahorro_total_soles': float((solar_used_for_ev + solar_used_for_mall + max(0, bess_power_kw)) * (0.45 if 18 <= (h % 24) <= 22 else 0.28)),
+            'ahorro_total_usd': float((solar_used_for_ev + solar_used_for_mall + max(0, bess_power_kw)) * (0.45 if 18 <= (h % 24) <= 22 else 0.28) / 3.7 + ev_charging_kwh * 0.15),
             # Acumulados episodio
             'episode_reward_cumulative': float(self.episode_reward),
             'episode_co2_avoided_cumulative': float(self.episode_co2_avoided),
@@ -1236,7 +1338,7 @@ class CityLearnEnvironment(Env):
 
 
 # ============================================================================
-# DETAILED LOGGING CALLBACK - Para tracking paso a paso y generación de archivos
+# DETAILED LOGGING CALLBACK - Para tracking paso a paso y generacion de archivos
 # ============================================================================
 from stable_baselines3.common.callbacks import BaseCallback
 
@@ -1246,7 +1348,7 @@ class DetailedLoggingCallback(BaseCallback):
     Callback para tracking detallado del entrenamiento PPO.
     
     Genera:
-    - trace_records: registro paso a paso de todas las métricas
+    - trace_records: registro paso a paso de todas las metricas
     - timeseries_records: series temporales por hora/episodio
     - episode metrics: acumuladores por episodio para training_evolution
     """
@@ -1257,17 +1359,12 @@ class DetailedLoggingCallback(BaseCallback):
         self.output_dir = output_dir
         self.step_log_freq = 1000  # Cada 1000 pasos
         
-        # CARGAR DATOS REALES DE BESS (dataset OE2 v5.4 - VINCULADO A BASELINES)
-        # IMPORTANTE: Usar bess_simulation_hourly.csv (mismo que baselines)
-        bess_real_path = Path('data/oe2/bess/bess_simulation_hourly.csv')
-        bess_alt_path = Path('data/oe2/bess/bess_ano_2024.csv')  # Fallback
+        # CARGAR DATOS REALES DE BESS (dataset OE2 v5.4)
+        bess_real_path = Path('data/oe2/bess/bess_ano_2024.csv')
         
         if bess_real_path.exists():
             self.bess_real_df = pd.read_csv(bess_real_path)
-            print(f'  [BESS REAL] Cargado (BASELINE): {len(self.bess_real_df)} horas de {bess_real_path.name}')
-        elif bess_alt_path.exists():
-            self.bess_real_df = pd.read_csv(bess_alt_path)
-            print(f'  [BESS REAL] Cargado (FALLBACK): {len(self.bess_real_df)} horas de {bess_alt_path.name}')
+            print(f'  [BESS REAL] Cargado: {len(self.bess_real_df)} horas de {bess_real_path.name}')
         else:
             self.bess_real_df = None
             print(f'  [BESS REAL] ADVERTENCIA: No encontrado en {bess_real_path} ni {bess_alt_path}')
@@ -1291,12 +1388,21 @@ class DetailedLoggingCallback(BaseCallback):
         self.episode_avg_socket_setpoint: list[float] = []
         self.episode_socket_utilization: list[float] = []
         self.episode_bess_action_avg: list[float] = []
-        # [OK] NUEVAS: Componentes de reward
-        self.episode_r_solar: list[float] = []
-        self.episode_r_cost: list[float] = []
-        self.episode_r_ev: list[float] = []
-        self.episode_r_grid: list[float] = []
-        self.episode_r_co2: list[float] = []
+        # [OK] NUEVAS: Componentes de reward - 6 OBJETIVOS v7.0
+        self.episode_r_co2: list[float] = []           # Objetivo 1
+        self.episode_r_solar: list[float] = []         # Objetivo 2
+        self.episode_r_vehicles: list[float] = []      # Objetivo 3
+        self.episode_r_grid_stable: list[float] = []   # Objetivo 4
+        self.episode_r_bess: list[float] = []          # Objetivo 5
+        self.episode_r_priority: list[float] = []      # Objetivo 6
+        
+        # [OK] v7.0: AHORROS DE COSTOS POR EPISODIO
+        self.episode_ahorro_solar: list[float] = []        # S/. ahorrados por solar
+        self.episode_ahorro_bess: list[float] = []         # S/. ahorrados por BESS HP
+        self.episode_costo_grid: list[float] = []          # S/. gastados en grid
+        self.episode_ahorro_combustible: list[float] = []  # USD ahorrados vs gasolina
+        self.episode_ahorro_total_soles: list[float] = []  # S/. total ahorrado
+        self.episode_ahorro_total_usd: list[float] = []    # USD total ahorrado
 
         # TRACE: registro paso a paso
         self.trace_records: list[dict[str, Any]] = []
@@ -1320,22 +1426,9 @@ class DetailedLoggingCallback(BaseCallback):
         self.ep_stability_count = 0
         self.ep_cost_usd = 0.0
         
-        # [OK] TRACKING DE VEHICULOS POR SOC (10%, 20%, 30%, 50%, 70%, 80%, 100%)
-        self.episode_motos_10_max: float = 0
-        self.episode_motos_20_max: float = 0
-        self.episode_motos_30_max: float = 0
-        self.episode_motos_50_max: float = 0
-        self.episode_motos_70_max: float = 0
-        self.episode_motos_80_max: float = 0
-        self.episode_motos_100_max: int = 0
-        
-        self.episode_taxis_10_max: int = 0
-        self.episode_taxis_20_max: int = 0
-        self.episode_taxis_30_max: int = 0
-        self.episode_taxis_50_max: int = 0
-        self.episode_taxis_70_max: int = 0
-        self.episode_taxis_80_max: int = 0
-        self.episode_taxis_100_max: int = 0
+        # [OK] TRACKING DE VEHICULOS CARGANDO - DESDE INFO DICT
+        self.ep_motos_charging_max: int = 0
+        self.ep_taxis_charging_max: int = 0
         
         self.ep_motos_charged_max = 0
         self.ep_mototaxis_charged_max = 0
@@ -1345,12 +1438,21 @@ class DetailedLoggingCallback(BaseCallback):
         self.ep_socket_setpoint_sum = 0.0
         self.ep_socket_active_count = 0
         self.ep_bess_action_sum = 0.0
-        # [OK] NUEVOS acumuladores reward components
-        self.ep_r_solar_sum = 0.0
-        self.ep_r_cost_sum = 0.0
-        self.ep_r_ev_sum = 0.0
-        self.ep_r_grid_sum = 0.0
-        self.ep_r_co2_sum = 0.0
+        # [OK] NUEVOS acumuladores reward components - 6 OBJETIVOS v7.0
+        self.ep_r_co2_sum = 0.0           # Objetivo 1: CO2 reduction
+        self.ep_r_solar_sum = 0.0         # Objetivo 2: Solar self-consumption
+        self.ep_r_vehicles_sum = 0.0      # Objetivo 3: Vehicles charged
+        self.ep_r_grid_stable_sum = 0.0   # Objetivo 4: Grid stability
+        self.ep_r_bess_sum = 0.0          # Objetivo 5: BESS efficiency
+        self.ep_r_priority_sum = 0.0      # Objetivo 6: Prioritization
+        
+        # [OK] AHORROS DE COSTOS - TRACKING v7.0
+        self.ep_ahorro_solar_soles = 0.0      # Ahorro por autoconsumo solar
+        self.ep_ahorro_bess_soles = 0.0       # Ahorro por descarga BESS en HP
+        self.ep_costo_grid_soles = 0.0        # Costo de importar del grid
+        self.ep_ahorro_combustible_usd = 0.0  # Ahorro vs gasolina (EVs)
+        self.ep_ahorro_total_soles = 0.0      # Ahorro total operacional
+        self.ep_ahorro_total_usd = 0.0        # Ahorro total en USD
 
     def _on_init(self) -> None:
         """Initialize callback after model is set. Called by BaseCallback."""
@@ -1360,11 +1462,11 @@ class DetailedLoggingCallback(BaseCallback):
             self.ep_reward = 0.0
 
     def _on_step(self) -> bool:
-        # Obtener info del último step
+        # Obtener info del ultimo step
         infos = self.locals.get('infos', [{}])
         info = infos[0] if infos else {}
 
-        # Acumular métricas básicas - NOMBRES ESTÁNDAR COMPATIBLES
+        # Acumular metricas basicas - NOMBRES ESTANDAR COMPATIBLES
         self.ep_co2_grid += info.get('co2_grid_kg', 0)
         self.ep_co2_avoided_indirect += info.get('co2_avoided_indirect_kg', 0)
         self.ep_co2_avoided_direct += info.get('co2_avoided_direct_kg', 0)
@@ -1373,13 +1475,29 @@ class DetailedLoggingCallback(BaseCallback):
         self.ep_grid += info.get('grid_import_kw', info.get('grid_import_kwh', 0))  # Fallback para compatibilidad
         self.ep_steps += 1
         
-        # [OK] NUEVAS MÉTRICAS: Estabilidad, costos, motos/mototaxis
-        # Estabilidad: calcular ratio de variación
+        # [OK] NUEVAS METRICAS: Estabilidad, costos, motos/mototaxis
+        # Estabilidad: calcular ratio de variacion
         grid_import = info.get('grid_import_kw', info.get('grid_import_kwh', 0.0))  # Compatibilidad
         grid_export = info.get('grid_export_kwh', 0.0) if 'grid_export_kwh' in info else 0.0
-        peak_demand_limit = 450.0  # kW límite típico
+        peak_demand_limit = 450.0  # kW limite tipico
         stability = 1.0 - min(1.0, abs(grid_import - grid_export) / peak_demand_limit)
         self.ep_stability_sum += stability
+        
+        # [OK] v7.0: TRACKING DE 6 COMPONENTES REWARD Y AHORROS
+        self.ep_r_co2_sum += info.get('r_co2', 0.0)
+        self.ep_r_solar_sum += info.get('r_solar', 0.0)
+        self.ep_r_vehicles_sum += info.get('r_vehicles', 0.0)
+        self.ep_r_grid_stable_sum += info.get('r_grid_stable', 0.0)
+        self.ep_r_bess_sum += info.get('r_bess', 0.0)
+        self.ep_r_priority_sum += info.get('r_priority', 0.0)
+        
+        # [OK] v7.0: AHORROS DE COSTOS
+        self.ep_ahorro_solar_soles += info.get('ahorro_solar_soles', 0.0)
+        self.ep_ahorro_bess_soles += info.get('ahorro_bess_soles', 0.0)
+        self.ep_costo_grid_soles += info.get('costo_grid_soles', 0.0)
+        self.ep_ahorro_combustible_usd += info.get('ahorro_combustible_usd', 0.0)
+        self.ep_ahorro_total_soles += info.get('ahorro_total_soles', 0.0)
+        self.ep_ahorro_total_usd += info.get('ahorro_total_usd', 0.0)
         self.ep_stability_count += 1
         
         # Costo: tarifa × (import - export)
@@ -1387,11 +1505,14 @@ class DetailedLoggingCallback(BaseCallback):
         cost_step = (grid_import - grid_export * 0.5) * tariff_usd
         self.ep_cost_usd += max(0.0, cost_step)
         
-        # Motos y mototaxis (máximo por episodio)
+        # Motos y mototaxis (maximo por episodio)
         motos = info.get('motos_charging', 0)
         mototaxis = info.get('mototaxis_charging', 0)
         self.ep_motos_charged_max = max(self.ep_motos_charged_max, motos)
         self.ep_mototaxis_charged_max = max(self.ep_mototaxis_charged_max, mototaxis)
+        # [v5.7] NUEVO: Track tambien el maximo de motos/taxis CARGANDO ahora
+        self.ep_motos_charging_max = max(self.ep_motos_charging_max, motos)
+        self.ep_taxis_charging_max = max(self.ep_taxis_charging_max, mototaxis)
         
         # BESS (descarga/carga) - DATOS REALES del dataset OE2
         # Usa flujos reales de bess_ano_2024.csv en lugar de calcular
@@ -1404,7 +1525,7 @@ class DetailedLoggingCallback(BaseCallback):
             bess_discharge_real = float(bess_row.get('bess_discharge_kwh', 0.0))
             self.ep_bess_charge += bess_charge_real
             self.ep_bess_discharge += bess_discharge_real
-            # También trackear destino de descarga
+            # Tambien trackear destino de descarga
             self.ep_bess_to_mall = getattr(self, 'ep_bess_to_mall', 0.0) + float(bess_row.get('bess_to_mall_kwh', 0.0))
             self.ep_bess_to_ev = getattr(self, 'ep_bess_to_ev', 0.0) + float(bess_row.get('bess_to_ev_kwh', 0.0))
         else:
@@ -1426,15 +1547,12 @@ class DetailedLoggingCallback(BaseCallback):
                 self.ep_socket_setpoint_sum += float(np.mean(socket_setpoints))
                 self.ep_socket_active_count += int(np.sum(socket_setpoints > 0.1))
         
-        # [OK] NUEVAS: Acumular componentes de reward desde info
-        self.ep_r_solar_sum += info.get('r_solar', 0.0)
-        self.ep_r_cost_sum += info.get('r_cost', 0.0)
-        self.ep_r_ev_sum += info.get('r_ev', 0.0)
-        self.ep_r_grid_sum += info.get('r_grid', 0.0)
-        self.ep_r_co2_sum += info.get('r_co2', 0.0)
+        # v7.0 NOTA: Los 6 componentes de reward se acumulan arriba en la seccion
+        # "v7.0: TRACKING DE 6 COMPONENTES REWARD Y AHORROS" (lineas ~1470-1490)
+        # NO duplicar la acumulacion aqui.
         
         # [OK] ACTUALIZAR MAXIMOS DE VEHICULOS POR SOC (desde environment)
-        # v5.5 CORREGIDO: Ya se está calculando el máximo en step(), no en callback
+        # v5.5 CORREGIDO: Ya se esta calculando el maximo en step(), no en callback
         # self.episode_motos_10_max = max(self.episode_motos_10_max, info.get('motos_10_percent', 0))
         # self.episode_motos_20_max = max(self.episode_motos_20_max, info.get('motos_20_percent', 0))
         # self.episode_motos_30_max = max(self.episode_motos_30_max, info.get('motos_30_percent', 0))
@@ -1479,21 +1597,34 @@ class DetailedLoggingCallback(BaseCallback):
         }
         self.trace_records.append(trace_record)
 
-        # TIMESERIES: guardar por hora (cada 1 hora = 1 step) - COLUMNAS ESTÁNDAR SAC/A2C/PPO
+        # TIMESERIES: guardar por hora (cada 1 hora = 1 step) - COLUMNAS ESTANDAR SAC/A2C/PPO
         ts_record = {
             'timestep': self.num_timesteps,
             'episode': self.current_episode,
             'hour': self.ep_steps - 1,
-            'solar_kw': info.get('solar_kw', 0),  # Nombre estándar compartido
-            'ev_charging_kw': info.get('ev_charging_kw', 0),  # Nombre estándar compartido
-            'grid_import_kw': info.get('grid_import_kw', 0),  # Nombre estándar compartido
-            'bess_power_kw': info.get('bess_power_kw', 0),  # Ya estándar
+            'solar_kw': info.get('solar_kw', 0),  # Nombre estandar compartido
+            'ev_charging_kw': info.get('ev_charging_kw', 0),  # Nombre estandar compartido
+            'grid_import_kw': info.get('grid_import_kw', 0),  # Nombre estandar compartido
+            'bess_power_kw': info.get('bess_power_kw', 0),  # Ya estandar
             'bess_soc': info.get('bess_soc', 0.0),
-            'mall_demand_kw': info.get('mall_demand_kw', 0),  # Nombre estándar
+            'mall_demand_kw': info.get('mall_demand_kw', 0),  # Nombre estandar
             'co2_avoided_total_kg': info.get('co2_avoided_total_kg', 0),
             'motos_charging': info.get('motos_charging', 0),
             'mototaxis_charging': info.get('mototaxis_charging', 0),
             'reward': reward_val,
+            # v7.0: 6 COMPONENTES REWARD
+            'r_co2': info.get('r_co2', 0.0),
+            'r_solar': info.get('r_solar', 0.0),
+            'r_vehicles': info.get('r_vehicles', 0.0),
+            'r_grid_stable': info.get('r_grid_stable', 0.0),
+            'r_bess': info.get('r_bess', 0.0),
+            'r_priority': info.get('r_priority', 0.0),
+            # v7.0: AHORROS DE COSTOS
+            'ahorro_solar_soles': info.get('ahorro_solar_soles', 0.0),
+            'ahorro_bess_soles': info.get('ahorro_bess_soles', 0.0),
+            'costo_grid_soles': info.get('costo_grid_soles', 0.0),
+            'ahorro_combustible_usd': info.get('ahorro_combustible_usd', 0.0),
+            'ahorro_total_usd': info.get('ahorro_total_usd', 0.0),
         }
         self.timeseries_records.append(ts_record)
 
@@ -1523,26 +1654,26 @@ class DetailedLoggingCallback(BaseCallback):
               f'CO2_evitado: {(self.ep_co2_avoided_indirect + self.ep_co2_avoided_direct):>8,.0f} kg', flush=True)
 
     def _log_episode_summary(self) -> None:
-        """Resumen completo al finalizar episodio con TODAS las métricas A2C.
+        """Resumen completo al finalizar episodio con TODAS las metricas A2C.
         
-        TERMINOLOGÍA ACLARADA (2026-02-08 MEJORADO - SIN DOUBLE-COUNTING):
+        TERMINOLOGIA ACLARADA (2026-02-08 MEJORADO - SIN DOUBLE-COUNTING):
         =======================================================================
-        CO2_GRID: Emisiones generadas por importar del grid térmico Iquitos
+        CO2_GRID: Emisiones generadas por importar del grid termico Iquitos
                   (factor 0.4521 kg CO₂/kWh)
         
         CO2_EVITADO_INDIRECTO: Solar + BESS que van al grid (30% de renewable)
-                  Reducen importación del grid térmico
+                  Reducen importacion del grid termico
                   (renewable_to_grid_kwh × 0.4521)
         
-        CO2_EVITADO_DIRECTO: EVs cargados con energía renovable (70% de renewable)
-                  Evitan combustión de VEHICULOS (gasolina)
+        CO2_EVITADO_DIRECTO: EVs cargados con energia renovable (70% de renewable)
+                  Evitan combustion de VEHICULOS (gasolina)
                   (renewable_to_evs_kwh × 2.146 kg CO₂/kWh equivalente)
         
-        REDUCCIÓN_TOTAL: CO2_EVITADO_INDIRECTO + CO2_EVITADO_DIRECTO
+        REDUCCION_TOTAL: CO2_EVITADO_INDIRECTO + CO2_EVITADO_DIRECTO
                   (Lo que el RL logra vs baseline SIN CONTROL)
         
-        CO2_NETO: Grid import - Reducción total (NUNCA negativo)
-                  Métrica de desempeño: menor = mejor control del agente
+        CO2_NETO: Grid import - Reduccion total (NUNCA negativo)
+                  Metrica de desempeno: menor = mejor control del agente
         
         PAPERS REFERENCIAS:
         [1] Liu et al. (2022) - Multi-objective EV charging optimization
@@ -1562,7 +1693,7 @@ class DetailedLoggingCallback(BaseCallback):
         self.episode_solar_kwh.append(self.ep_solar)
         self.episode_ev_charging.append(self.ep_ev)
         self.episode_grid_import.append(self.ep_grid)
-        # [OK] NUEVAS métricas por episodio
+        # [OK] NUEVAS metricas por episodio
         avg_stability = self.ep_stability_sum / max(1, self.ep_stability_count)
         self.episode_grid_stability.append(avg_stability)
         self.episode_cost_usd.append(self.ep_cost_usd)
@@ -1575,12 +1706,21 @@ class DetailedLoggingCallback(BaseCallback):
         self.episode_avg_socket_setpoint.append(self.ep_socket_setpoint_sum / steps_in_ep)
         self.episode_socket_utilization.append(self.ep_socket_active_count / (38.0 * steps_in_ep))
         self.episode_bess_action_avg.append(self.ep_bess_action_sum / steps_in_ep)
-        # Reward components promedios
-        self.episode_r_solar.append(self.ep_r_solar_sum / steps_in_ep)
-        self.episode_r_cost.append(self.ep_r_cost_sum / steps_in_ep)
-        self.episode_r_ev.append(self.ep_r_ev_sum / steps_in_ep)
-        self.episode_r_grid.append(self.ep_r_grid_sum / steps_in_ep)
+        # Reward components promedios - 6 OBJETIVOS v7.0
         self.episode_r_co2.append(self.ep_r_co2_sum / steps_in_ep)
+        self.episode_r_solar.append(self.ep_r_solar_sum / steps_in_ep)
+        self.episode_r_vehicles.append(self.ep_r_vehicles_sum / steps_in_ep)
+        self.episode_r_grid_stable.append(self.ep_r_grid_stable_sum / steps_in_ep)
+        self.episode_r_bess.append(self.ep_r_bess_sum / steps_in_ep)
+        self.episode_r_priority.append(self.ep_r_priority_sum / steps_in_ep)
+        
+        # AHORROS DE COSTOS v7.0 (acumulados del episodio)
+        self.episode_ahorro_solar.append(self.ep_ahorro_solar_soles)
+        self.episode_ahorro_bess.append(self.ep_ahorro_bess_soles)
+        self.episode_costo_grid.append(self.ep_costo_grid_soles)
+        self.episode_ahorro_combustible.append(self.ep_ahorro_combustible_usd)
+        self.episode_ahorro_total_soles.append(self.ep_ahorro_total_soles)
+        self.episode_ahorro_total_usd.append(self.ep_ahorro_total_usd)
 
         print()
         print(f'  ================================================================')
@@ -1592,7 +1732,7 @@ class DetailedLoggingCallback(BaseCallback):
         print(f'    Grid Import CO2:           {self.ep_co2_grid:>12,.0f} kg')
         print(f'    - Reducido Indirecto:      {self.ep_co2_avoided_indirect:>12,.0f} kg (solar/BESS -> grid avoidance)')
         print(f'    - Reducido Directo:        {self.ep_co2_avoided_direct:>12,.0f} kg (EV renewable -> avoid combustion)')
-        print(f'    = Reducción Total:         {co2_avoided_total:>12,.0f} kg')
+        print(f'    = Reduccion Total:         {co2_avoided_total:>12,.0f} kg')
         print(f'    CO2 Neto (Grid - Reducido):{co2_net:>12,.0f} kg')
         print()
         print(f'  ENERGIA:')
@@ -1603,14 +1743,31 @@ class DetailedLoggingCallback(BaseCallback):
         print(f'  FLOTA MOVILIDAD:')
         print(f'    Motos cargadas (max):      {self.ep_motos_charged_max:>12,} / 112 (2,685 diarias)')
         print(f'    Mototaxis cargados (max):  {self.ep_mototaxis_charged_max:>12,} / 16 (388 diarias)')
-        print()
-        print(f'  [OK] MÁXIMO SIMULTÁNEO DE VEHÍCULOS POR NIVEL DE CARGA (SOC):')
-        print(f'    Motos:    10%-{self.episode_motos_10_max:>2} veh | 20%-{self.episode_motos_20_max:>2} veh | 30%-{self.episode_motos_30_max:>2} veh | 50%-{self.episode_motos_50_max:>2} veh | 70%-{self.episode_motos_70_max:>2} veh | 80%-{self.episode_motos_80_max:>2} veh | 100%-{self.episode_motos_100_max:>2} veh')
-        print(f'    Taxis:    10%-{self.episode_taxis_10_max:>2} veh | 20%-{self.episode_taxis_20_max:>2} veh | 30%-{self.episode_taxis_30_max:>2} veh | 50%-{self.episode_taxis_50_max:>2} veh | 70%-{self.episode_taxis_70_max:>2} veh | 80%-{self.episode_taxis_80_max:>2} veh | 100%-{self.episode_taxis_100_max:>2} veh')
+        print(f'    Motos cargando (pico):     {self.ep_motos_charging_max:>12} veh')
+        print(f'    Taxis cargando (pico):     {self.ep_taxis_charging_max:>12} veh')
         print()
         print(f'  BESS ALMACENAMIENTO:')
         print(f'    Descarga:                  {self.ep_bess_discharge:>12,.0f} kWh')
         print(f'    Carga:                     {self.ep_bess_charge:>12,.0f} kWh')
+        print()
+        print(f'  AHORROS DE COSTOS v7.0:')
+        print(f'    Ahorro Solar (grid evitado): S/. {self.ep_ahorro_solar_soles:>10,.2f}')
+        print(f'    Ahorro BESS (HP evitado):    S/. {self.ep_ahorro_bess_soles:>10,.2f}')
+        print(f'    Costo Grid Import:           S/. {self.ep_costo_grid_soles:>10,.2f}')
+        print(f'    Ahorro Combustible (EVs):    USD {self.ep_ahorro_combustible_usd:>10,.2f}')
+        print(f'    AHORRO TOTAL OPERACIONAL:    S/. {self.ep_ahorro_total_soles:>10,.2f}')
+        print(f'    AHORRO TOTAL (USD):          USD {self.ep_ahorro_total_usd:>10,.2f}')
+        print()
+        print(f'  6 COMPONENTES REWARD (promedios):')
+        avg_r_co2 = self.ep_r_co2_sum / steps_in_ep
+        avg_r_solar = self.ep_r_solar_sum / steps_in_ep
+        avg_r_vehicles = self.ep_r_vehicles_sum / steps_in_ep
+        avg_r_grid = self.ep_r_grid_stable_sum / steps_in_ep
+        avg_r_bess = self.ep_r_bess_sum / steps_in_ep
+        avg_r_priority = self.ep_r_priority_sum / steps_in_ep
+        print(f'    r_co2 (45%):     {avg_r_co2:>8.4f}  | r_solar (15%):   {avg_r_solar:>8.4f}')
+        print(f'    r_vehicles (25%):{avg_r_vehicles:>8.4f}  | r_grid (5%):     {avg_r_grid:>8.4f}')
+        print(f'    r_bess (5%):     {avg_r_bess:>8.4f}  | r_priority (5%): {avg_r_priority:>8.4f}')
         print(f'  ================================================================')
         print()
 
@@ -1630,22 +1787,9 @@ class DetailedLoggingCallback(BaseCallback):
         self.ep_stability_count = 0
         self.ep_cost_usd = 0.0
         
-        # [v5.5 CORREGIDO] RESET TRACKING DE VEHICULOS POR SOC - máximo por episodio
-        self.episode_motos_10_max = 0
-        self.episode_motos_20_max = 0
-        self.episode_motos_30_max = 0
-        self.episode_motos_50_max = 0
-        self.episode_motos_70_max = 0
-        self.episode_motos_80_max = 0
-        self.episode_motos_100_max = 0
-        
-        self.episode_taxis_10_max = 0
-        self.episode_taxis_20_max = 0
-        self.episode_taxis_30_max = 0
-        self.episode_taxis_50_max = 0
-        self.episode_taxis_70_max = 0
-        self.episode_taxis_80_max = 0
-        self.episode_taxis_100_max = 0
+        # [v5.7] RESET TRACKING DE VEHICULOS CARGANDO
+        self.ep_motos_charging_max = 0
+        self.ep_taxis_charging_max = 0
         
         self.ep_motos_charged_max = 0
         self.ep_mototaxis_charged_max = 0
@@ -1655,14 +1799,23 @@ class DetailedLoggingCallback(BaseCallback):
         self.ep_socket_setpoint_sum = 0.0
         self.ep_socket_active_count = 0
         self.ep_bess_action_sum = 0.0
-        # [OK] Reset componentes de reward
-        self.ep_r_solar_sum = 0.0
-        self.ep_r_cost_sum = 0.0
-        self.ep_r_ev_sum = 0.0
-        self.ep_r_grid_sum = 0.0
+        # [OK] Reset componentes de reward - 6 OBJETIVOS v7.0
         self.ep_r_co2_sum = 0.0
+        self.ep_r_solar_sum = 0.0
+        self.ep_r_vehicles_sum = 0.0
+        self.ep_r_grid_stable_sum = 0.0
+        self.ep_r_bess_sum = 0.0
+        self.ep_r_priority_sum = 0.0
         
-        # [v5.5 CORREGIDO] RESET CALLBACK TRACKING VARIABLES (máximo simultáneo de vehículos)
+        # [OK] Reset ahorros de costos v7.0
+        self.ep_ahorro_solar_soles = 0.0
+        self.ep_ahorro_bess_soles = 0.0
+        self.ep_costo_grid_soles = 0.0
+        self.ep_ahorro_combustible_usd = 0.0
+        self.ep_ahorro_total_soles = 0.0
+        self.ep_ahorro_total_usd = 0.0
+        
+        # [v5.5 CORREGIDO] RESET CALLBACK TRACKING VARIABLES (maximo simultaneo de vehiculos)
         self.episode_motos_10_max = 0
         self.episode_motos_20_max = 0
         self.episode_motos_30_max = 0
@@ -1681,48 +1834,48 @@ class DetailedLoggingCallback(BaseCallback):
 
 
 # ============================================================================
-# PPO METRICS CALLBACK - Métricas específicas de PPO para diagnóstico
+# PPO METRICS CALLBACK - Metricas especificas de PPO para diagnostico
 # ============================================================================
 
 class PPOMetricsCallback(BaseCallback):
     """
-    Callback para loguear métricas específicas de PPO durante el entrenamiento.
+    Callback para loguear metricas especificas de PPO durante el entrenamiento.
     
-    MÉTRICAS CLAVE [Schulman et al. 2017]:
+    METRICAS CLAVE [Schulman et al. 2017]:
     ======================================
-    1. approx_kl: KL divergence aproximada entre política nueva y vieja
-       - Si KL > 0.02 frecuentemente → LR muy alto o demasiadas epochs
-       - Si KL → 0 → política no está aprendiendo
+    1. approx_kl: KL divergence aproximada entre politica nueva y vieja
+       - Si KL > 0.02 frecuentemente -> LR muy alto o demasiadas epochs
+       - Si KL -> 0 -> politica no esta aprendiendo
        
-    2. clip_fraction: % de samples donde se aplicó el clipping
-       - Si > 0.3 frecuentemente → updates muy agresivos
-       - Si → 0 → clip_range muy grande (no está limitando)
+    2. clip_fraction: % de samples donde se aplico el clipping
+       - Si > 0.3 frecuentemente -> updates muy agresivos
+       - Si -> 0 -> clip_range muy grande (no esta limitando)
        
-    3. entropy: Entropía de la política (exploración)
-       - Si cae muy rápido → ent_coef muy bajo o reward shaping agresivo
-       - Típico: decrece gradualmente durante entrenamiento
+    3. entropy: Entropia de la politica (exploracion)
+       - Si cae muy rapido -> ent_coef muy bajo o reward shaping agresivo
+       - Tipico: decrece gradualmente durante entrenamiento
        
-    4. policy_loss, value_loss: Losses del actor y crítico
+    4. policy_loss, value_loss: Losses del actor y critico
        
-    5. explained_variance: Qué tan bien el value function predice returns
+    5. explained_variance: Que tan bien el value function predice returns
        - ~1.0 = perfecto, 0 = no mejor que random, <0 = peor que random
-       - Si ~0 o negativo → crítico está fallando, revisar arquitectura
+       - Si ~0 o negativo -> critico esta fallando, revisar arquitectura
        
-    6. advantage_mean, advantage_std: Estadísticas del advantage (post-normalización)
+    6. advantage_mean, advantage_std: Estadisticas del advantage (post-normalizacion)
        - Si normalize_advantage=True, mean ≈ 0 y std ≈ 1
        
-    Señales de problema típicas:
+    Senales de problema tipicas:
     ----------------------------
-    - KL muy alto + clip_fraction alta → LR alto, demasiadas epochs, batch pequeño
-    - Entropy colapsa temprano → ent_coef muy bajo o determinismo prematuro
-    - Explained variance negativa → crítico fallando
+    - KL muy alto + clip_fraction alta -> LR alto, demasiadas epochs, batch pequeno
+    - Entropy colapsa temprano -> ent_coef muy bajo o determinismo prematuro
+    - Explained variance negativa -> critico fallando
     """
     
     def __init__(
         self,
-        log_freq: int = 2048,  # Cada N steps (típico = n_steps)
+        log_freq: int = 2048,  # Cada N steps (tipico = n_steps)
         eval_freq: int = 8760,  # Cada episodio para eval deterministic
-        output_dir: Optional[Path] = None,  # Directorio para guardar gráficas
+        output_dir: Optional[Path] = None,  # Directorio para guardar graficas
         verbose: int = 1
     ):
         super().__init__(verbose)
@@ -1730,7 +1883,7 @@ class PPOMetricsCallback(BaseCallback):
         self.eval_freq = eval_freq
         self.output_dir = output_dir or Path('outputs/ppo_training')
         
-        # Historial de métricas (con steps para eje X)
+        # Historial de metricas (con steps para eje X)
         self.steps_history: list[int] = []  # NUEVO: timesteps para eje X
         self.kl_history: list[float] = []
         self.clip_fraction_history: list[float] = []
@@ -1747,13 +1900,13 @@ class PPOMetricsCallback(BaseCallback):
         self.bad_critic_count: int = 0
         
         # ========================================================================
-        # DETECCIÓN ROBUSTA DE PROBLEMAS v2.0
+        # DETECCION ROBUSTA DE PROBLEMAS v2.0
         # ========================================================================
         
-        # Señal combinada: KL alto + clip_fraction alta simultáneamente
+        # Senal combinada: KL alto + clip_fraction alta simultaneamente
         self.combined_kl_clip_count: int = 0
         
-        # Detección de colapso temprano de entropy
+        # Deteccion de colapso temprano de entropy
         self._initial_entropy: Optional[float] = None  # Entropy en primeros steps
         self._entropy_baseline_samples: int = 0  # Samples para calcular baseline
         self._entropy_baseline_sum: float = 0.0
@@ -1764,14 +1917,15 @@ class PPOMetricsCallback(BaseCallback):
         self.total_negative_ev_count: int = 0
         
         # Umbrales adaptativos (se ajustan durante entrenamiento)
-        self._kl_warning_threshold: float = 0.03
+        # v5.6: Alineado con target_kl=0.05 para evitar warnings innecesarios
+        self._kl_warning_threshold: float = 0.05
         self._clip_warning_threshold: float = 0.30
         self._entropy_collapse_threshold: float = 0.5  # 50% del valor inicial
         
-        # Correcciones automáticas aplicadas
+        # Correcciones automaticas aplicadas
         self.auto_corrections_applied: list[str] = []
         self._lr_reduction_count: int = 0
-        self._max_lr_reductions: int = 3  # Máximo 3 reducciones de LR
+        self._max_lr_reductions: int = 3  # Maximo 3 reducciones de LR
         
         # Resumen de problemas para reporte final
         self._problem_summary: Dict[str, int] = {
@@ -1788,7 +1942,7 @@ class PPOMetricsCallback(BaseCallback):
         self._first_log_done: bool = False
         
         # ========================================================================
-        # KPIs CityLearn (estándar para evaluación de control en microgrids)
+        # KPIs CityLearn (estandar para evaluacion de control en microgrids)
         # ========================================================================
         
         # Steps para KPIs (puede diferir de steps_history)
@@ -1812,8 +1966,8 @@ class PPOMetricsCallback(BaseCallback):
         # 6. (1 - Load Factor) - Medida de eficiencia de uso
         self.one_minus_load_factor_history: list[float] = []
         
-        # Acumuladores para calcular KPIs por ventana de evaluación
-        self._kpi_window_size = 24  # Calcular KPIs cada 24 horas (1 día)
+        # Acumuladores para calcular KPIs por ventana de evaluacion
+        self._kpi_window_size = 24  # Calcular KPIs cada 24 horas (1 dia)
         self._kpi_grid_imports: list[float] = []
         self._kpi_grid_exports: list[float] = []
         self._kpi_costs: list[float] = []
@@ -1824,20 +1978,20 @@ class PPOMetricsCallback(BaseCallback):
         self._kpi_ramping_count: int = 0
     
     def _on_step(self) -> bool:
-        """Ejecutado en cada step. Loguea métricas periódicamente."""
+        """Ejecutado en cada step. Loguea metricas periodicamente."""
         
         # Solo loguear cada log_freq steps
         if self.num_timesteps % self.log_freq != 0:
             return True
         
-        # Obtener métricas de PPO desde el logger de SB3
+        # Obtener metricas de PPO desde el logger de SB3
         ppo_metrics = self._get_ppo_metrics()
         
         if ppo_metrics:
             self._log_ppo_metrics(ppo_metrics)
             self._check_warning_signals(ppo_metrics)
         
-        # KPIs CityLearn - Recolectar datos para evaluación
+        # KPIs CityLearn - Recolectar datos para evaluacion
         self._collect_kpi_data()
         
         # Eval deterministic cada eval_freq
@@ -1851,16 +2005,16 @@ class PPOMetricsCallback(BaseCallback):
         return True
     
     def _get_ppo_metrics(self) -> Dict[str, float]:
-        """Extrae métricas específicas de PPO desde el modelo/logger."""
+        """Extrae metricas especificas de PPO desde el modelo/logger."""
         metrics: Dict[str, float] = {}
         
         try:
-            # SB3 guarda métricas en el logger durante el update
+            # SB3 guarda metricas en el logger durante el update
             # Acceder via model.logger o locals
             if hasattr(self.model, 'logger') and self.model.logger is not None:
                 log = self.model.logger.name_to_value
                 
-                # Métricas estándar de PPO en SB3
+                # Metricas estandar de PPO en SB3
                 metrics['approx_kl'] = log.get('train/approx_kl', 0.0)
                 metrics['clip_fraction'] = log.get('train/clip_fraction', 0.0)
                 metrics['entropy_loss'] = log.get('train/entropy_loss', 0.0)
@@ -1881,7 +2035,7 @@ class PPOMetricsCallback(BaseCallback):
         return metrics
     
     def _log_ppo_metrics(self, metrics: Dict[str, float]) -> None:
-        """Loguea métricas de PPO al historial y a consola. Salta primer reporte incompleto."""
+        """Loguea metricas de PPO al historial y a consola. Salta primer reporte incompleto."""
         
         approx_kl = metrics.get('approx_kl', 0.0)
         clip_fraction = metrics.get('clip_fraction', 0.0)
@@ -1890,13 +2044,13 @@ class PPOMetricsCallback(BaseCallback):
         value_loss = metrics.get('value_loss', 0.0)
         explained_var = metrics.get('explained_variance', 0.0)
         
-        # CRÍTICO: Skip primer reporte (step 2,048) porque métricas no están calculadas aún
-        # El primer update completo ocurre DESPUÉS de n_steps=2,048, entonces en step 4,096+
-        # Detectar si todas las métricas son cero (incompletas)
+        # CRITICO: Skip primer reporte (step 2,048) porque metricas no estan calculadas aun
+        # El primer update completo ocurre DESPUES de n_steps=2,048, entonces en step 4,096+
+        # Detectar si todas las metricas son cero (incompletas)
         all_metrics_zero = (approx_kl == 0.0 and clip_fraction == 0.0 and entropy == 0.0 and 
                            policy_loss == 0.0 and value_loss == 0.0 and explained_var == 0.0)
         
-        # Solo guardar/reportar si las métricas son VÁLIDAS (no están todas en cero)
+        # Solo guardar/reportar si las metricas son VALIDAS (no estan todas en cero)
         if not all_metrics_zero:
             # Guardar en historial
             self.steps_history.append(self.num_timesteps)  # NUEVO: guardar step actual
@@ -1907,30 +2061,30 @@ class PPOMetricsCallback(BaseCallback):
             self.value_loss_history.append(value_loss)
             self.explained_var_history.append(explained_var)
             
-            # Imprimir métricas (verbose)
+            # Imprimir metricas (verbose)
             if self.verbose > 0 and (not self._first_log_done or self.num_timesteps % (self.log_freq * 4) == 0):
                 print(f'    [PPO] Step {self.num_timesteps:>7,}:')
                 print(f'           KL: {approx_kl:.4f} | Clip%: {clip_fraction*100:.1f}% | Entropy: {entropy:.3f}')
                 print(f'           Policy L: {policy_loss:.4f} | Value L: {value_loss:.4f} | Expl.Var: {explained_var:.3f}')
                 self._first_log_done = True
         else:
-            # Métrica incompleta (primer batch), omitir reporte
+            # Metrica incompleta (primer batch), omitir reporte
             pass
     
     def _check_warning_signals(self, metrics: Dict[str, float]) -> None:
         """
-        Detecta señales típicas de problemas en PPO con correcciones robustas.
+        Detecta senales tipicas de problemas en PPO con correcciones robustas.
         
-        DETECCIÓN ROBUSTA v2.0:
+        DETECCION ROBUSTA v2.0:
         =======================
-        1. Señal combinada KL + clip_fraction (más severa que individual)
+        1. Senal combinada KL + clip_fraction (mas severa que individual)
         2. Colapso TEMPRANO de entropy (comparado con baseline)
         3. Explained variance negativa PERSISTENTE (consecutiva)
-        4. Correcciones automáticas opcionales (reducción de LR)
+        4. Correcciones automaticas opcionales (reduccion de LR)
         
         Referencias:
         - [Schulman et al. 2017] PPO paper original
-        - [Henderson et al. 2018] Deep RL That Matters - diagnóstico de problemas
+        - [Henderson et al. 2018] Deep RL That Matters - diagnostico de problemas
         """
         
         approx_kl = metrics.get('approx_kl', 0.0)
@@ -1949,7 +2103,7 @@ class PPOMetricsCallback(BaseCallback):
                 print(f'    [PPO INFO] Entropy baseline establecido: {self._initial_entropy:.4f}')
         
         # ====================================================================
-        # 1. SEÑAL COMBINADA: KL alto + clip_fraction alta (MÁS SEVERA)
+        # 1. SENAL COMBINADA: KL alto + clip_fraction alta (MAS SEVERA)
         # ====================================================================
         kl_high = approx_kl > self._kl_warning_threshold
         clip_high = clip_fraction > self._clip_warning_threshold
@@ -1959,12 +2113,12 @@ class PPOMetricsCallback(BaseCallback):
             self._problem_summary['combined_kl_clip'] += 1
             
             if self.combined_kl_clip_count <= 5 or self.combined_kl_clip_count % 10 == 0:
-                print(f'    ⚠️  [PPO CRITICAL] KL alto ({approx_kl:.4f}) + Clip alto ({clip_fraction*100:.1f}%) '
+                print(f'    [!]  [PPO CRITICAL] KL alto ({approx_kl:.4f}) + Clip alto ({clip_fraction*100:.1f}%) '
                       f'(count: {self.combined_kl_clip_count})')
-                print(f'        → PROBLEMA SEVERO: Updates demasiado agresivos')
-                print(f'        → Acción: Reducir LR, reducir n_epochs, o aumentar batch_size')
+                print(f'        -> PROBLEMA SEVERO: Updates demasiado agresivos')
+                print(f'        -> Accion: Reducir LR, reducir n_epochs, o aumentar batch_size')
             
-            # Corrección automática: reducir LR si ocurre >5 veces
+            # Correccion automatica: reducir LR si ocurre >5 veces
             if self.combined_kl_clip_count >= 5 and self._lr_reduction_count < self._max_lr_reductions:
                 self._apply_lr_reduction('combined_kl_clip')
         
@@ -1973,14 +2127,14 @@ class PPOMetricsCallback(BaseCallback):
             self.high_kl_count += 1
             self._problem_summary['kl_warnings'] += 1
             if self.high_kl_count <= 3 or self.high_kl_count % 10 == 0:
-                print(f'    ⚠️  [PPO WARNING] KL alto: {approx_kl:.4f} > {self._kl_warning_threshold} '
+                print(f'    [!]  [PPO WARNING] KL alto: {approx_kl:.4f} > {self._kl_warning_threshold} '
                       f'(count: {self.high_kl_count})')
         
         elif clip_high:
             self.high_clip_count += 1
             self._problem_summary['clip_warnings'] += 1
             if self.high_clip_count <= 3 or self.high_clip_count % 10 == 0:
-                print(f'    ⚠️  [PPO WARNING] Clip fraction alto: {clip_fraction*100:.1f}% > {self._clip_warning_threshold*100:.0f}% '
+                print(f'    [!]  [PPO WARNING] Clip fraction alto: {clip_fraction*100:.1f}% > {self._clip_warning_threshold*100:.0f}% '
                       f'(count: {self.high_clip_count})')
         
         # ====================================================================
@@ -1990,23 +2144,23 @@ class PPOMetricsCallback(BaseCallback):
             entropy_ratio = entropy / self._initial_entropy
             training_progress = self.num_timesteps / 87600  # Normalizado a 10 episodios
             
-            # Colapso temprano = entropy cae >50% cuando aún estamos en <30% del entrenamiento
+            # Colapso temprano = entropy cae >50% cuando aun estamos en <30% del entrenamiento
             if entropy_ratio < self._entropy_collapse_threshold and training_progress < 0.3:
                 self.early_entropy_collapse_count += 1
                 self._problem_summary['early_entropy_collapse'] += 1
                 
                 if self.early_entropy_collapse_count <= 3 or self.early_entropy_collapse_count % 10 == 0:
-                    print(f'    ⚠️  [PPO CRITICAL] Entropy colapsó TEMPRANO: {entropy:.4f} '
+                    print(f'    [!]  [PPO CRITICAL] Entropy colapso TEMPRANO: {entropy:.4f} '
                           f'({entropy_ratio*100:.0f}% del baseline {self._initial_entropy:.4f})')
-                    print(f'        → Progreso: {training_progress*100:.0f}% | Colapso en <30% del entrenamiento')
-                    print(f'        → Acción: AUMENTAR ent_coef (actual muy bajo) o revisar reward shaping')
+                    print(f'        -> Progreso: {training_progress*100:.0f}% | Colapso en <30% del entrenamiento')
+                    print(f'        -> Accion: AUMENTAR ent_coef (actual muy bajo) o revisar reward shaping')
             
             # Colapso general (cualquier momento)
             elif entropy < 0.1:
                 self.entropy_collapse_count += 1
                 self._problem_summary['entropy_collapse'] += 1
                 if self.entropy_collapse_count <= 3 or self.entropy_collapse_count % 10 == 0:
-                    print(f'    ⚠️  [PPO WARNING] Entropy muy baja: {entropy:.4f} < 0.1 '
+                    print(f'    [!]  [PPO WARNING] Entropy muy baja: {entropy:.4f} < 0.1 '
                           f'(count: {self.entropy_collapse_count})')
         
         # ====================================================================
@@ -2017,16 +2171,16 @@ class PPOMetricsCallback(BaseCallback):
             self.total_negative_ev_count += 1
             self._problem_summary['negative_explained_var'] += 1
             
-            # Alerta escalada según severidad
+            # Alerta escalada segun severidad
             if self.consecutive_negative_ev_count >= 5:
                 self._problem_summary['consecutive_negative_ev'] += 1
                 if self.consecutive_negative_ev_count == 5 or self.consecutive_negative_ev_count % 10 == 0:
-                    print(f'    ⚠️  [PPO CRITICAL] Explained variance NEGATIVA PERSISTENTE: {explained_var:.3f}')
-                    print(f'        → {self.consecutive_negative_ev_count} updates CONSECUTIVOS con EV < 0')
-                    print(f'        → Crítico prediciendo PEOR que random de forma CONSISTENTE')
-                    print(f'        → Acción URGENTE: Revisar arquitectura del crítico, reducir vf_coef, verificar returns')
+                    print(f'    [!]  [PPO CRITICAL] Explained variance NEGATIVA PERSISTENTE: {explained_var:.3f}')
+                    print(f'        -> {self.consecutive_negative_ev_count} updates CONSECUTIVOS con EV < 0')
+                    print(f'        -> Critico prediciendo PEOR que random de forma CONSISTENTE')
+                    print(f'        -> Accion URGENTE: Revisar arquitectura del critico, reducir vf_coef, verificar returns')
             elif self.total_negative_ev_count <= 3 or self.total_negative_ev_count % 10 == 0:
-                print(f'    ⚠️  [PPO WARNING] Explained variance negativa: {explained_var:.3f} '
+                print(f'    [!]  [PPO WARNING] Explained variance negativa: {explained_var:.3f} '
                       f'(total: {self.total_negative_ev_count})')
         else:
             # Reset contador consecutivo si EV es positiva
@@ -2035,10 +2189,10 @@ class PPOMetricsCallback(BaseCallback):
     
     def _apply_lr_reduction(self, reason: str) -> None:
         """
-        Aplica reducción automática de learning rate como corrección.
+        Aplica reduccion automatica de learning rate como correccion.
         
-        NOTA: Esta es una corrección conservadora. El LR se reduce a 50%
-        del valor actual, máximo 3 veces durante el entrenamiento.
+        NOTA: Esta es una correccion conservadora. El LR se reduce a 50%
+        del valor actual, maximo 3 veces durante el entrenamiento.
         """
         if self._lr_reduction_count >= self._max_lr_reductions:
             return
@@ -2046,17 +2200,17 @@ class PPOMetricsCallback(BaseCallback):
         try:
             if hasattr(self.model, 'lr_schedule') and callable(self.model.lr_schedule):
                 # Para SB3, el LR se maneja via schedule, no podemos modificarlo directamente
-                # pero sí podemos registrar que se necesita ajuste
+                # pero si podemos registrar que se necesita ajuste
                 self._lr_reduction_count += 1
                 correction_msg = f'LR reduction #{self._lr_reduction_count} suggested (reason: {reason})'
                 self.auto_corrections_applied.append(correction_msg)
                 print(f'    🔧 [AUTO-CORRECTION] {correction_msg}')
-                print(f'        → Recomendación: Reiniciar con LR reducido (actual × 0.5)')
+                print(f'        -> Recomendacion: Reiniciar con LR reducido (actual × 0.5)')
             else:
                 self._lr_reduction_count += 1
                 self.auto_corrections_applied.append(f'LR reduction suggested #{self._lr_reduction_count}')
         except Exception as e:
-            print(f'    [WARNING] No se pudo aplicar corrección automática: {e}')
+            print(f'    [WARNING] No se pudo aplicar correccion automatica: {e}')
     
     def _print_problem_summary(self) -> None:
         """
@@ -2070,36 +2224,36 @@ class PPOMetricsCallback(BaseCallback):
         total_problems = sum(self._problem_summary.values())
         
         if total_problems == 0:
-            print('  ✅ No se detectaron problemas significativos durante el entrenamiento')
+            print('  [OK] No se detectaron problemas significativos durante el entrenamiento')
         else:
-            print(f'  Total de eventos problemáticos: {total_problems}')
+            print(f'  Total de eventos problematicos: {total_problems}')
             print()
             
-            # Problemas críticos (combinados)
+            # Problemas criticos (combinados)
             if self._problem_summary['combined_kl_clip'] > 0:
-                print(f'  ❌ CRÍTICO - KL + Clip altos simultáneamente: {self._problem_summary["combined_kl_clip"]} veces')
-                print(f'      → Solución: Reducir learning_rate a 1e-4, reducir n_epochs a 5')
+                print(f'  [X] CRITICO - KL + Clip altos simultaneamente: {self._problem_summary["combined_kl_clip"]} veces')
+                print(f'      -> Solucion: Reducir learning_rate a 1e-4, reducir n_epochs a 5')
             
             if self._problem_summary['early_entropy_collapse'] > 0:
-                print(f'  ❌ CRÍTICO - Entropy colapsó TEMPRANO: {self._problem_summary["early_entropy_collapse"]} veces')
-                print(f'      → Solución: Aumentar ent_coef a 0.02-0.05')
+                print(f'  [X] CRITICO - Entropy colapso TEMPRANO: {self._problem_summary["early_entropy_collapse"]} veces')
+                print(f'      -> Solucion: Aumentar ent_coef a 0.02-0.05')
             
             if self._problem_summary['consecutive_negative_ev'] > 0:
-                print(f'  ❌ CRÍTICO - Explained variance negativa PERSISTENTE: {self._problem_summary["consecutive_negative_ev"]} bloques')
-                print(f'      → Solución: Revisar arquitectura net_arch, reducir vf_coef a 0.25')
+                print(f'  [X] CRITICO - Explained variance negativa PERSISTENTE: {self._problem_summary["consecutive_negative_ev"]} bloques')
+                print(f'      -> Solucion: Revisar arquitectura net_arch, reducir vf_coef a 0.25')
             
             # Problemas moderados
             if self._problem_summary['kl_warnings'] > 0:
-                print(f'  ⚠️  KL divergence alto: {self._problem_summary["kl_warnings"]} veces')
+                print(f'  [!]  KL divergence alto: {self._problem_summary["kl_warnings"]} veces')
             
             if self._problem_summary['clip_warnings'] > 0:
-                print(f'  ⚠️  Clip fraction alto: {self._problem_summary["clip_warnings"]} veces')
+                print(f'  [!]  Clip fraction alto: {self._problem_summary["clip_warnings"]} veces')
             
             if self._problem_summary['entropy_collapse'] > 0:
-                print(f'  ⚠️  Entropy bajo (<0.1): {self._problem_summary["entropy_collapse"]} veces')
+                print(f'  [!]  Entropy bajo (<0.1): {self._problem_summary["entropy_collapse"]} veces')
             
             if self._problem_summary['negative_explained_var'] > 0:
-                print(f'  ⚠️  Explained variance negativa: {self._problem_summary["negative_explained_var"]} veces')
+                print(f'  [!]  Explained variance negativa: {self._problem_summary["negative_explained_var"]} veces')
         
         # Correcciones aplicadas
         if self.auto_corrections_applied:
@@ -2112,19 +2266,19 @@ class PPOMetricsCallback(BaseCallback):
         print()
         print('  RECOMENDACIONES PARA SIGUIENTE ENTRENAMIENTO:')
         if self._problem_summary['combined_kl_clip'] > 5:
-            print('    1. learning_rate: 3e-4 → 1e-4 (reducir agresividad)')
+            print('    1. learning_rate: 3e-4 -> 1e-4 (reducir agresividad)')
         if self._problem_summary['early_entropy_collapse'] > 3:
-            print('    2. ent_coef: 0.01 → 0.03 (aumentar exploración)')
+            print('    2. ent_coef: 0.01 -> 0.03 (aumentar exploracion)')
         if self._problem_summary['consecutive_negative_ev'] > 2:
-            print('    3. net_arch: [256,256] → [128,128] (simplificar crítico)')
-            print('    4. vf_coef: 0.5 → 0.25 (reducir peso del value loss)')
+            print('    3. net_arch: [256,256] -> [128,128] (simplificar critico)')
+            print('    4. vf_coef: 0.5 -> 0.25 (reducir peso del value loss)')
         if total_problems == 0:
-            print('    ✓ Hiperparámetros actuales funcionan bien')
+            print('    [OK] Hiperparametros actuales funcionan bien')
         
         print('=' * 80 + '\n')
     
     def _eval_deterministic(self) -> Optional[float]:
-        """Ejecuta evaluación determinística (sin exploración)."""
+        """Ejecuta evaluacion deterministica (sin exploracion)."""
         try:
             env = self.training_env.envs[0] if hasattr(self.training_env, 'envs') else self.training_env
             
@@ -2132,7 +2286,7 @@ class PPOMetricsCallback(BaseCallback):
             total_reward = 0.0
             done = False
             steps = 0
-            max_steps = 1000  # Limit para eval rápido
+            max_steps = 1000  # Limit para eval rapido
             
             while not done and steps < max_steps:
                 action, _ = self.model.predict(obs, deterministic=True)
@@ -2148,9 +2302,9 @@ class PPOMetricsCallback(BaseCallback):
     
     def _collect_kpi_data(self) -> None:
         """
-        Recolectar datos para KPIs CityLearn de evaluación.
+        Recolectar datos para KPIs CityLearn de evaluacion.
         
-        KPIs estándar CityLearn calculados sobre carga neta agregada:
+        KPIs estandar CityLearn calculados sobre carga neta agregada:
         1. Electricity consumption (net) - kWh
         2. Electricity cost - USD
         3. Carbon emissions - kg CO2
@@ -2165,7 +2319,7 @@ class PPOMetricsCallback(BaseCallback):
         
         info = infos[0] if isinstance(infos, list) else infos
         
-        # Extraer métricas del step actual
+        # Extraer metricas del step actual
         grid_import = info.get('grid_import_kwh', 0.0)
         grid_export = info.get('grid_export_kwh', 0.0)
         cost = info.get('cost_usd', info.get('cost_soles', 0.0) * 0.27)  # Convertir soles a USD aprox
@@ -2191,7 +2345,7 @@ class PPOMetricsCallback(BaseCallback):
             self._kpi_ramping_count += 1
         self._prev_load = net_load
         
-        # Calcular KPIs cada _kpi_window_size steps (24 horas = 1 día)
+        # Calcular KPIs cada _kpi_window_size steps (24 horas = 1 dia)
         if len(self._kpi_loads) >= self._kpi_window_size:
             self._calculate_and_store_kpis()
     
@@ -2199,7 +2353,7 @@ class PPOMetricsCallback(BaseCallback):
         """
         Calcular y almacenar KPIs para la ventana actual.
         
-        Fórmulas estándar CityLearn:
+        Formulas estandar CityLearn:
         - Net consumption = sum(imports) - sum(exports)
         - Ramping = mean(|load[t] - load[t-1]|)
         - Load Factor = mean(load) / max(load)
@@ -2249,9 +2403,9 @@ class PPOMetricsCallback(BaseCallback):
     
     def _generate_kpi_graphs(self) -> None:
         """
-        Generar gráficos de KPIs CityLearn vs Training Steps para PPO.
+        Generar graficos de KPIs CityLearn vs Training Steps para PPO.
         
-        GRÁFICOS GENERADOS:
+        GRAFICOS GENERADOS:
         1. Electricity Consumption (net) vs Steps
         2. Electricity Cost vs Steps
         3. Carbon Emissions vs Steps
@@ -2262,12 +2416,12 @@ class PPOMetricsCallback(BaseCallback):
         """
         
         if len(self.kpi_steps_history) < 2:
-            print('     ⚠️ Insuficientes datos para gráficos KPIs (< 2 puntos)')
+            print('     [!] Insuficientes datos para graficos KPIs (< 2 puntos)')
             return
         
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
-        # Función helper para suavizado
+        # Funcion helper para suavizado
         def smooth(data: list[float], window: int = 5) -> np.ndarray:
             """Rolling mean para suavizar curvas."""
             if len(data) < window:
@@ -2278,7 +2432,7 @@ class PPOMetricsCallback(BaseCallback):
         steps_k = steps / 1000.0  # En miles
         
         # ====================================================================
-        # GRÁFICO 1: ELECTRICITY CONSUMPTION vs STEPS
+        # GRAFICO 1: ELECTRICITY CONSUMPTION vs STEPS
         # ====================================================================
         try:
             fig, ax = plt.subplots(figsize=(10, 6))
@@ -2287,7 +2441,7 @@ class PPOMetricsCallback(BaseCallback):
             ax.plot(steps_k, consumption, 'b-', alpha=0.3, linewidth=0.5, label='Raw (24h window)')
             ax.plot(steps_k, smooth(list(consumption)), 'b-', linewidth=2, label='Smoothed')
             
-            # Línea de tendencia
+            # Linea de tendencia
             if len(steps) > 2:
                 z = np.polyfit(steps, consumption, 1)
                 p = np.poly1d(z)
@@ -2303,19 +2457,19 @@ class PPOMetricsCallback(BaseCallback):
             if len(consumption) > 1:
                 improvement = (consumption[0] - consumption[-1]) / max(abs(consumption[0]), 0.001) * 100
                 color = 'green' if improvement > 0 else 'red'
-                ax.annotate(f'{"↓" if improvement > 0 else "↑"} {abs(improvement):.1f}% vs inicio', 
+                ax.annotate(f'{"v" if improvement > 0 else "^"} {abs(improvement):.1f}% vs inicio', 
                            xy=(0.98, 0.02), xycoords='axes fraction',
                            fontsize=10, color=color, ha='right')
             
             plt.tight_layout()
             plt.savefig(self.output_dir / 'kpi_electricity_consumption.png', dpi=150)
             plt.close(fig)
-            print('     ✅ kpi_electricity_consumption.png')
+            print('     [OK] kpi_electricity_consumption.png')
         except Exception as e:
-            print(f'     ❌ Error en consumption graph: {e}')
+            print(f'     [X] Error en consumption graph: {e}')
         
         # ====================================================================
-        # GRÁFICO 2: ELECTRICITY COST vs STEPS
+        # GRAFICO 2: ELECTRICITY COST vs STEPS
         # ====================================================================
         try:
             fig, ax = plt.subplots(figsize=(10, 6))
@@ -2335,19 +2489,19 @@ class PPOMetricsCallback(BaseCallback):
             if len(cost) > 1:
                 improvement = (cost[0] - cost[-1]) / max(cost[0], 0.001) * 100
                 color = 'green' if improvement > 0 else 'red'
-                ax.annotate(f'{"↓" if improvement > 0 else "↑"} {abs(improvement):.1f}% vs inicio', 
+                ax.annotate(f'{"v" if improvement > 0 else "^"} {abs(improvement):.1f}% vs inicio', 
                            xy=(0.98, 0.02), xycoords='axes fraction',
                            fontsize=10, color=color, ha='right')
             
             plt.tight_layout()
             plt.savefig(self.output_dir / 'kpi_electricity_cost.png', dpi=150)
             plt.close(fig)
-            print('     ✅ kpi_electricity_cost.png')
+            print('     [OK] kpi_electricity_cost.png')
         except Exception as e:
-            print(f'     ❌ Error en cost graph: {e}')
+            print(f'     [X] Error en cost graph: {e}')
         
         # ====================================================================
-        # GRÁFICO 3: CARBON EMISSIONS vs STEPS
+        # GRAFICO 3: CARBON EMISSIONS vs STEPS
         # ====================================================================
         try:
             fig, ax = plt.subplots(figsize=(10, 6))
@@ -2368,23 +2522,23 @@ class PPOMetricsCallback(BaseCallback):
             ax.grid(True, alpha=0.3)
             ax.set_ylim(bottom=0)
             
-            # Anotar reducción CO2
+            # Anotar reduccion CO2
             if len(emissions) > 1:
                 reduction = (emissions[0] - emissions[-1]) / max(emissions[0], 0.001) * 100
                 color = 'green' if reduction > 0 else 'red'
-                ax.annotate(f'{"↓" if reduction > 0 else "↑"} {abs(reduction):.1f}% CO₂', 
+                ax.annotate(f'{"v" if reduction > 0 else "^"} {abs(reduction):.1f}% CO₂', 
                            xy=(0.98, 0.02), xycoords='axes fraction',
                            fontsize=10, color=color, ha='right')
             
             plt.tight_layout()
             plt.savefig(self.output_dir / 'kpi_carbon_emissions.png', dpi=150)
             plt.close(fig)
-            print('     ✅ kpi_carbon_emissions.png')
+            print('     [OK] kpi_carbon_emissions.png')
         except Exception as e:
-            print(f'     ❌ Error en emissions graph: {e}')
+            print(f'     [X] Error en emissions graph: {e}')
         
         # ====================================================================
-        # GRÁFICO 4: RAMPING vs STEPS
+        # GRAFICO 4: RAMPING vs STEPS
         # ====================================================================
         try:
             fig, ax = plt.subplots(figsize=(10, 6))
@@ -2404,19 +2558,19 @@ class PPOMetricsCallback(BaseCallback):
             if len(ramping) > 1:
                 improvement = (ramping[0] - ramping[-1]) / max(ramping[0], 0.001) * 100
                 color = 'green' if improvement > 0 else 'red'
-                ax.annotate(f'{"↓" if improvement > 0 else "↑"} {abs(improvement):.1f}% ramping', 
+                ax.annotate(f'{"v" if improvement > 0 else "^"} {abs(improvement):.1f}% ramping', 
                            xy=(0.98, 0.02), xycoords='axes fraction',
                            fontsize=10, color=color, ha='right')
             
             plt.tight_layout()
             plt.savefig(self.output_dir / 'kpi_ramping.png', dpi=150)
             plt.close(fig)
-            print('     ✅ kpi_ramping.png')
+            print('     [OK] kpi_ramping.png')
         except Exception as e:
-            print(f'     ❌ Error en ramping graph: {e}')
+            print(f'     [X] Error en ramping graph: {e}')
         
         # ====================================================================
-        # GRÁFICO 5: AVERAGE DAILY PEAK vs STEPS
+        # GRAFICO 5: AVERAGE DAILY PEAK vs STEPS
         # ====================================================================
         try:
             fig, ax = plt.subplots(figsize=(10, 6))
@@ -2432,23 +2586,23 @@ class PPOMetricsCallback(BaseCallback):
             ax.grid(True, alpha=0.3)
             ax.set_ylim(bottom=0)
             
-            # Anotar reducción de pico
+            # Anotar reduccion de pico
             if len(peak) > 1:
                 reduction = (peak[0] - peak[-1]) / max(peak[0], 0.001) * 100
                 color = 'green' if reduction > 0 else 'red'
-                ax.annotate(f'{"↓" if reduction > 0 else "↑"} {abs(reduction):.1f}% peak', 
+                ax.annotate(f'{"v" if reduction > 0 else "^"} {abs(reduction):.1f}% peak', 
                            xy=(0.98, 0.02), xycoords='axes fraction',
                            fontsize=10, color=color, ha='right')
             
             plt.tight_layout()
             plt.savefig(self.output_dir / 'kpi_daily_peak.png', dpi=150)
             plt.close(fig)
-            print('     ✅ kpi_daily_peak.png')
+            print('     [OK] kpi_daily_peak.png')
         except Exception as e:
-            print(f'     ❌ Error en peak graph: {e}')
+            print(f'     [X] Error en peak graph: {e}')
         
         # ====================================================================
-        # GRÁFICO 6: (1 - LOAD FACTOR) vs STEPS
+        # GRAFICO 6: (1 - LOAD FACTOR) vs STEPS
         # ====================================================================
         try:
             fig, ax = plt.subplots(figsize=(10, 6))
@@ -2472,19 +2626,19 @@ class PPOMetricsCallback(BaseCallback):
             if len(one_minus_lf) > 1:
                 improvement = (one_minus_lf[0] - one_minus_lf[-1]) / max(one_minus_lf[0], 0.001) * 100
                 color = 'green' if improvement > 0 else 'red'
-                ax.annotate(f'{"↓" if improvement > 0 else "↑"} {abs(improvement):.1f}%', 
+                ax.annotate(f'{"v" if improvement > 0 else "^"} {abs(improvement):.1f}%', 
                            xy=(0.98, 0.02), xycoords='axes fraction',
                            fontsize=10, color=color, ha='right')
             
             plt.tight_layout()
             plt.savefig(self.output_dir / 'kpi_load_factor.png', dpi=150)
             plt.close(fig)
-            print('     ✅ kpi_load_factor.png')
+            print('     [OK] kpi_load_factor.png')
         except Exception as e:
-            print(f'     ❌ Error en load factor graph: {e}')
+            print(f'     [X] Error en load factor graph: {e}')
         
         # ====================================================================
-        # GRÁFICO 7: DASHBOARD KPIs COMBINADO 2×3
+        # GRAFICO 7: DASHBOARD KPIs COMBINADO 2×3
         # ====================================================================
         try:
             fig, axes = plt.subplots(2, 3, figsize=(16, 10))
@@ -2544,42 +2698,42 @@ class PPOMetricsCallback(BaseCallback):
             ax.grid(True, alpha=0.3)
             ax.set_ylim(0, 1)
             
-            # Calcular mejoras para título
+            # Calcular mejoras para titulo
             improvements = []
             if len(consumption) > 1:
                 imp = (consumption[0] - consumption[-1]) / max(abs(consumption[0]), 0.001) * 100
                 if imp > 0:
-                    improvements.append(f'Cons: {imp:.1f}%↓')
+                    improvements.append(f'Cons: {imp:.1f}%v')
             if len(emissions) > 1:
                 imp = (emissions[0] - emissions[-1]) / max(emissions[0], 0.001) * 100
                 if imp > 0:
-                    improvements.append(f'CO₂: {imp:.1f}%↓')
+                    improvements.append(f'CO₂: {imp:.1f}%v')
             if len(peak) > 1:
                 imp = (peak[0] - peak[-1]) / max(peak[0], 0.001) * 100
                 if imp > 0:
-                    improvements.append(f'Peak: {imp:.1f}%↓')
+                    improvements.append(f'Peak: {imp:.1f}%v')
             
             title = 'CityLearn KPIs Dashboard - PPO Training'
             if improvements:
-                title += f'\n✅ Improvements: {", ".join(improvements)}'
+                title += f'\n[OK] Improvements: {", ".join(improvements)}'
             
             fig.suptitle(title, fontsize=14, fontweight='bold')
             plt.tight_layout(rect=[0, 0, 1, 0.96])
             plt.savefig(self.output_dir / 'kpi_dashboard.png', dpi=150)
             plt.close(fig)
-            print('     ✅ kpi_dashboard.png')
+            print('     [OK] kpi_dashboard.png')
             
         except Exception as e:
-            print(f'     ❌ Error en KPI dashboard: {e}')
+            print(f'     [X] Error en KPI dashboard: {e}')
         
-        print(f'     📁 Gráficos KPIs guardados en: {self.output_dir}')
+        print(f'     📁 Graficos KPIs guardados en: {self.output_dir}')
     
     def on_training_end(self) -> None:
-        """Resumen final de métricas PPO y generación de gráficas."""
+        """Resumen final de metricas PPO y generacion de graficas."""
         if self.verbose > 0 and len(self.kl_history) > 0:
             print()
             print('  ================================================================')
-            print('  RESUMEN MÉTRICAS PPO')
+            print('  RESUMEN METRICAS PPO')
             print('  ================================================================')
             print(f'    KL divergence:        mean={np.mean(self.kl_history):.4f}, '
                   f'max={np.max(self.kl_history):.4f}')
@@ -2594,37 +2748,36 @@ class PPOMetricsCallback(BaseCallback):
         # NUEVO v2.0: Imprimir resumen de problemas detectados con recomendaciones
         self._print_problem_summary()
         
-        # Generar gráficas de diagnóstico PPO
+        # Generar graficas de diagnostico PPO
         if len(self.kl_history) > 1:
             self._generate_ppo_graphs()
         
-        # Generar gráficas de KPIs CityLearn
+        # Generar graficas de KPIs CityLearn
         if len(self.kpi_steps_history) > 1:
-            print('\n  📊 Generando gráficos KPIs CityLearn...')
+            print('\n  [GRAPH] Generando graficos KPIs CityLearn...')
             self._generate_kpi_graphs()
     
     def _generate_ppo_graphs(self) -> None:
         """
-        Genera gráficas de diagnóstico para PPO.
+        Genera graficas de diagnostico para PPO.
         
-        GRÁFICAS GENERADAS:
+        GRAFICAS GENERADAS:
         ===================
         1. KL Divergence vs Steps
-           - Si sube mucho → updates agresivos / inestabilidad
-           - Línea roja en 0.02 (target_kl típico)
-           - Línea naranja en 0.03 (warning threshold)
+           - Si sube mucho -> updates agresivos / inestabilidad
+           - Linea roja en 0.05 (warning threshold alineado con target_kl)
         
         2. Clip Fraction vs Steps
-           - Alto sostenido (>30%) → LR alto, muchas epochs, batch pequeño
-           - El "clip" está recortando demasiado
+           - Alto sostenido (>30%) -> LR alto, muchas epochs, batch pequeno
+           - El "clip" esta recortando demasiado
         
         3. Entropy vs Steps
-           - Si cae a 0 muy temprano → política colapsa (poca exploración)
-           - Debería decrecer gradualmente, NO colapsar
+           - Si cae a 0 muy temprano -> politica colapsa (poca exploracion)
+           - Deberia decrecer gradualmente, NO colapsar
         
         4. Value Loss y Explained Variance vs Steps
            - Explained variance cerca de 1 es bueno
-           - ~0 o negativa indica crítico malo
+           - ~0 o negativa indica critico malo
         
         Referencias:
           [1] Schulman et al. (2017) PPO paper
@@ -2653,20 +2806,20 @@ class PPOMetricsCallback(BaseCallback):
             fig1, ax1 = plt.subplots(figsize=(10, 6))
             ax1.plot(steps_k, kl, 'b-', linewidth=1.5, label='Approx KL', alpha=0.8)
             
-            # Smoothing con media móvil si hay suficientes puntos
+            # Smoothing con media movil si hay suficientes puntos
             if len(kl) >= 10:
                 window = min(10, len(kl) // 3)
                 kl_smooth = pd.Series(kl).rolling(window=window, center=True).mean()
                 ax1.plot(steps_k, kl_smooth, 'b-', linewidth=2.5, label='KL (smooth)', alpha=1.0)
             
-            # Líneas de referencia
+            # Lineas de referencia
             ax1.axhline(y=0.02, color='orange', linestyle='--', linewidth=2, label='Target KL (0.02)')
-            ax1.axhline(y=0.03, color='red', linestyle='--', linewidth=2, label='Warning (0.03)')
+            ax1.axhline(y=0.05, color='red', linestyle='--', linewidth=2, label='Warning (0.05)')
             
             ax1.set_xlabel('Steps (K)', fontsize=12)
             ax1.set_ylabel('KL Divergence', fontsize=12)
             ax1.set_title('PPO: KL Divergence vs Training Steps\n'
-                         '(Si sube mucho → updates agresivos / inestabilidad)', fontsize=14)
+                         '(Si sube mucho -> updates agresivos / inestabilidad)', fontsize=14)
             ax1.legend(loc='upper right')
             ax1.grid(True, alpha=0.3)
             ax1.set_ylim(bottom=0)
@@ -2690,14 +2843,14 @@ class PPOMetricsCallback(BaseCallback):
                 clip_smooth = pd.Series(clip_frac).rolling(window=window, center=True).mean()
                 ax2.plot(steps_k, clip_smooth, 'g-', linewidth=2.5, label='Clip (smooth)', alpha=1.0)
             
-            # Líneas de referencia
+            # Lineas de referencia
             ax2.axhline(y=30, color='red', linestyle='--', linewidth=2, label='Warning (30%)')
             ax2.axhline(y=20, color='orange', linestyle='--', linewidth=2, label='Typical max (20%)')
             
             ax2.set_xlabel('Steps (K)', fontsize=12)
             ax2.set_ylabel('Clip Fraction (%)', fontsize=12)
             ax2.set_title('PPO: Clip Fraction vs Training Steps\n'
-                         '(Alto sostenido >30% → LR alto, muchas epochs, batch pequeño)', fontsize=14)
+                         '(Alto sostenido >30% -> LR alto, muchas epochs, batch pequeno)', fontsize=14)
             ax2.legend(loc='upper right')
             ax2.grid(True, alpha=0.3)
             ax2.set_ylim(0, 100)
@@ -2720,7 +2873,7 @@ class PPOMetricsCallback(BaseCallback):
                 entropy_smooth = pd.Series(entropy).rolling(window=window, center=True).mean()
                 ax3.plot(steps_k, entropy_smooth, 'm-', linewidth=2.5, label='Entropy (smooth)', alpha=1.0)
             
-            # Línea de referencia
+            # Linea de referencia
             ax3.axhline(y=0.1, color='red', linestyle='--', linewidth=2, label='Collapse warning (0.1)')
             
             # Indicar zona peligrosa
@@ -2729,7 +2882,7 @@ class PPOMetricsCallback(BaseCallback):
             ax3.set_xlabel('Steps (K)', fontsize=12)
             ax3.set_ylabel('Entropy', fontsize=12)
             ax3.set_title('PPO: Entropy vs Training Steps\n'
-                         '(Si cae a ~0 temprano → política colapsa, poca exploración)', fontsize=14)
+                         '(Si cae a ~0 temprano -> politica colapsa, poca exploracion)', fontsize=14)
             ax3.legend(loc='upper right')
             ax3.grid(True, alpha=0.3)
             ax3.set_ylim(bottom=0)
@@ -2764,17 +2917,17 @@ class PPOMetricsCallback(BaseCallback):
                 ev_smooth = pd.Series(explained_var).rolling(window=window, center=True).mean()
                 ax4b.plot(steps_k, ev_smooth, 'c-', linewidth=2.5, label='Expl.Var (smooth)', alpha=1.0)
             
-            # Líneas de referencia
+            # Lineas de referencia
             ax4b.axhline(y=1.0, color='green', linestyle='--', linewidth=2, label='Perfecto (1.0)')
             ax4b.axhline(y=0.0, color='orange', linestyle='--', linewidth=2, label='Random (0.0)')
             
-            # Zona de crítico malo
-            ax4b.axhspan(-1, 0, alpha=0.2, color='red', label='Crítico malo (<0)')
+            # Zona de critico malo
+            ax4b.axhspan(-1, 0, alpha=0.2, color='red', label='Critico malo (<0)')
             
             ax4b.set_xlabel('Steps (K)', fontsize=12)
             ax4b.set_ylabel('Explained Variance', fontsize=12)
             ax4b.set_title('PPO: Explained Variance vs Training Steps\n'
-                          '(Cerca de 1 = bueno, ~0 o negativo = crítico fallando)', fontsize=14)
+                          '(Cerca de 1 = bueno, ~0 o negativo = critico fallando)', fontsize=14)
             ax4b.legend(loc='lower right')
             ax4b.grid(True, alpha=0.3)
             ax4b.set_ylim(-0.5, 1.1)
@@ -2793,7 +2946,7 @@ class PPOMetricsCallback(BaseCallback):
             # KL (top-left)
             axes[0, 0].plot(steps_k, kl, 'b-', linewidth=1.5, alpha=0.7)
             axes[0, 0].axhline(y=0.02, color='orange', linestyle='--')
-            axes[0, 0].axhline(y=0.03, color='red', linestyle='--')
+            axes[0, 0].axhline(y=0.05, color='red', linestyle='--')
             axes[0, 0].set_ylabel('KL Divergence')
             axes[0, 0].set_title('KL Divergence')
             axes[0, 0].grid(True, alpha=0.3)
@@ -2834,12 +2987,40 @@ class PPOMetricsCallback(BaseCallback):
             plt.close(fig5)
             print(f'    [GRAPH] Dashboard: {dashboard_path}')
             
-            print(f'  [OK] 5 gráficas PPO generadas en: {self.output_dir}')
+            print(f'  [OK] 5 graficas PPO generadas en: {self.output_dir}')
             
         except Exception as e:
-            print(f'  [WARNING] Error generando gráficas PPO: {e}')
+            print(f'  [WARNING] Error generando graficas PPO: {e}')
             import traceback
             traceback.print_exc()
+
+
+def validate_ppo_sync() -> bool:
+    """Validacion de sincronizacion PPO contra SAC y A2C."""
+    print('\n' + '='*80)
+    print('[VALIDACION] Sincronizacion PPO - Constantes contra SAC/A2C')
+    print('='*80)
+    
+    checks = {
+        '1. BESS Capacity (940 kWh)': BESS_CAPACITY_KWH == 940.0,
+        '2. BESS Max normalizacion (1700 kWh)': BESS_MAX_KWH == 1700.0,
+        '3. Solar Max (4100 kW)': SOLAR_MAX_KW == 4100.0,
+        '4. Mall Max (150 kW)': MALL_MAX_KW == 150.0,
+        '5. Columnas observables (27)': len(ALL_OBSERVABLE_COLS) == 27,
+        '6. Chargers (10 cols)': len(CHARGERS_OBSERVABLE_COLS) == 10,
+        '7. Solar (6 cols)': len(SOLAR_OBSERVABLE_COLS) == 6,
+        '8. BESS (5 cols)': len(BESS_OBSERVABLE_COLS) == 5,
+        '9. Mall (3 cols)': len(MALL_OBSERVABLE_COLS) == 3,
+    }
+    
+    all_ok = True
+    for check_name, result in checks.items():
+        status = '[OK]' if result else '[X]'
+        print(f'  {status} {check_name}')
+        if not result:
+            all_ok = False
+    print()
+    return all_ok
 
 
 def main():
@@ -2852,7 +3033,7 @@ def main():
     3. Cargar datos OE2 (timeseries reales)
     4. Crear environment Gymnasium
     5. Entrenar PPO con stable-baselines3
-    6. Validar con episodios determinísticos
+    6. Validar con episodios deterministicos
 
     Referencias:
       [1] Schulman et al. (2017) "Proximal Policy Optimization Algorithms"
@@ -2865,9 +3046,29 @@ def main():
     TOTAL_TIMESTEPS: int = NUM_EPISODES * HOURS_PER_YEAR
 
     # ========================================================================
-    # PRE-PASO: VALIDAR DATASETS OE2 Y LIMPIAR CHECKPOINTS
+    # PRE-PASO: VALIDAR DATASETS OE2, SINCRONIZACION Y LIMPIAR CHECKPOINTS
     # ========================================================================
     oe2_summary = validate_oe2_datasets()  # Valida los 5 archivos OE2 obligatorios
+    if not validate_ppo_sync():  # Valida sincronizacion contra SAC/A2C
+        print('[ERROR] PPO no sincronizado. Revisar constantes vs SAC/A2C')
+        sys.exit(1)
+    
+    # PRE-VALIDACION CENTRALIZADA: Garantizar entrenamiento COMPLETO y ROBUSTO
+    print('')
+    print('[PRE-VALIDACION] Verificando especificacion de entrenamiento completo...')
+    if not validate_agent_config(
+        agent_name='PPO',
+        num_episodes=10,
+        total_timesteps=87_600,
+        obs_dim=156,
+        action_dim=39
+    ):
+        print('[FATAL] Agente PPO no cumple especificacion de entrenamiento completo.')
+        print('        Revisar datos, constantes, y configuracion.')
+        sys.exit(1)
+    print('[OK] Entrenamiento COMPLETO garantizado: 10 episodios × 87,600 steps × 27 observables × multiobjetivo.')
+    print('')
+    
     clean_checkpoints_ppo()
 
     print('='*80)
@@ -2967,7 +3168,7 @@ def main():
         solar_hourly = np.asarray(df_solar[col].values, dtype=np.float32)
         if len(solar_hourly) != HOURS_PER_YEAR:
             raise ValueError(f"Solar: {len(solar_hourly)} horas != {HOURS_PER_YEAR}")
-        logger.info("[SYNC A2C] Solar: columna='%s' | %.0f kWh/año (8760h) | Path: %s", col, float(np.sum(solar_hourly)), solar_path.name)
+        logger.info("[SYNC A2C] Solar: columna='%s' | %.0f kWh/ano (8760h) | Path: %s", col, float(np.sum(solar_hourly)), solar_path.name)
 
         # ====================================================================
         # CHARGERS (38 sockets) - DATOS REALES DIRECTOS
@@ -2982,9 +3183,9 @@ def main():
             # Extraer SOLO las columnas de potencia de los sockets (socket_*_charger_power_kw)
             power_cols = [c for c in df_chargers.columns if 'charger_power_kw' in c.lower()]
             if len(power_cols) == 0:
-                # Si no hay columnas charger_power_kw, intentar con todas las numéricas excepto tiempo
+                # Si no hay columnas charger_power_kw, intentar con todas las numericas excepto tiempo
                 data_cols = [c for c in df_chargers.columns if 'timestamp' not in c.lower() and 'time' not in c.lower() and 'type' not in c.lower() and 'vehicle' not in c.lower() and '_soc_' not in c.lower() and '_battery_' not in c.lower()]
-                # Filtrar solo columnas numéricas
+                # Filtrar solo columnas numericas
                 power_cols = []
                 for col in data_cols:
                     try:
@@ -3024,16 +3225,16 @@ def main():
             logger.info("Chargers REALES: %d chargers x 4 = %d sockets | Demanda anual: %.0f kWh", 
                         n_charger_units, n_sockets, total_demand)
         else:
-            # NO hay fallback sintético - archivos OE2 son obligatorios
+            # NO hay fallback sintetico - archivos OE2 son obligatorios
             raise FileNotFoundError(
-                f"OBLIGATORIO: Ningún archivo de chargers encontrado.\n"
+                f"OBLIGATORIO: Ningun archivo de chargers encontrado.\n"
                 f"  Esperado (prioridad 1): {charger_real_path}\n"
                 f"  Esperado (prioridad 2): {charger_csv_path}\n"
-                "Ejecutar generación OE2 primero."
+                "Ejecutar generacion OE2 primero."
             )
 
         # ====================================================================
-        # CHARGER STATISTICS (potencia máxima/media por socket) - 5to dataset OE2
+        # CHARGER STATISTICS (potencia maxima/media por socket) - 5to dataset OE2
         # ====================================================================
         charger_stats_path = Path('data/oe2/chargers/chargers_real_statistics.csv')
         charger_max_power: Optional[np.ndarray] = None
@@ -3065,10 +3266,17 @@ def main():
                 raise FileNotFoundError(f"OBLIGATORIO: Mall CSV no encontrado (esperado: data/interim/oe2/demandamallkwh/demandamallhorakwh.csv)")
         
         # Intentar cargar con diferentes separadores (compatibilidad A2C)
+        # Intenta primero con coma (default), luego con punto y coma para compatibilidad
         try:
-            df_mall = pd.read_csv(mall_path, sep=';', encoding='utf-8')
+            df_mall = pd.read_csv(mall_path, sep=',', encoding='utf-8')
+            # Verificar que tiene las columnas esperadas
+            if len(df_mall.columns) < 2:
+                df_mall = pd.read_csv(mall_path, sep=';', encoding='utf-8')
         except Exception:
-            df_mall = pd.read_csv(mall_path, encoding='utf-8')
+            try:
+                df_mall = pd.read_csv(mall_path, sep=';', encoding='utf-8')
+            except Exception:
+                df_mall = pd.read_csv(mall_path, encoding='utf-8')
         
         col = df_mall.columns[-1]
         mall_data = np.asarray(df_mall[col].values[:HOURS_PER_YEAR], dtype=np.float32)
@@ -3077,10 +3285,10 @@ def main():
             mall_hourly = np.pad(mall_data, pad_width, mode='wrap')
         else:
             mall_hourly = mall_data
-        logger.info("[SYNC A2C] Mall: %.0f kWh/año (promedio %.1f kW/h) | Path: %s", float(np.sum(mall_hourly)), float(np.mean(mall_hourly)), mall_path.name)
+        logger.info("[SYNC A2C] Mall: %.0f kWh/ano (promedio %.1f kW/h) | Path: %s", float(np.sum(mall_hourly)), float(np.mean(mall_hourly)), mall_path.name)
 
         # ====================================================================
-        # BESS SOC - EXACTAMENTE IGUAL A A2C (con fallbacks idénticos)
+        # BESS SOC - EXACTAMENTE IGUAL A A2C (con fallbacks identicos)
         # ====================================================================
         bess_paths = [
             Path('data/oe2/bess/bess_ano_2024.csv'),
@@ -3091,9 +3299,9 @@ def main():
         
         if bess_path is None:
             raise FileNotFoundError(
-                f"OBLIGATORIO: Ningún archivo BESS encontrado.\n"
+                f"OBLIGATORIO: Ningun archivo BESS encontrado.\n"
                 f"  Esperados: {[str(p) for p in bess_paths]}\n"
-                "Ejecutar generación OE2 primero."
+                "Ejecutar generacion OE2 primero."
             )
 
         df_bess = pd.read_csv(bess_path, encoding='utf-8')
@@ -3102,7 +3310,7 @@ def main():
             raise KeyError(f"BESS CSV debe tener columna 'soc'. Columnas: {list(df_bess.columns)}")
         
         bess_soc_raw = np.asarray(df_bess[soc_cols[0]].values[:HOURS_PER_YEAR], dtype=np.float32)
-        # Normalizar si está en [0,100] en lugar de [0,1]
+        # Normalizar si esta en [0,100] en lugar de [0,1]
         bess_soc = (bess_soc_raw / 100.0 if float(np.max(bess_soc_raw)) > 1.0 else bess_soc_raw)
         logger.info("[SYNC A2C] BESS: SOC media %.1f%% | Path: %s", float(np.mean(bess_soc)) * 100.0, bess_path.name)
 
@@ -3133,24 +3341,24 @@ def main():
         )
         
         # ====================================================================
-        # VECNORMALIZE WRAPPER (CRÍTICO para resolver Explained Variance negativo)
+        # VECNORMALIZE WRAPPER (CRITICO para resolver Explained Variance negativo)
         # ====================================================================
         # Engstrom 2020 "Implementation Matters": "VecNormalize es ESENCIAL
-        # para PPO. Sin él, el value function no puede aprender returns de
+        # para PPO. Sin el, el value function no puede aprender returns de
         # diferentes magnitudes."
         #
         # Normaliza:
-        # - Observaciones: running mean/std → todas las features en ~N(0,1)
-        # - Returns: running mean/std → value targets en rango aprendible
+        # - Observaciones: running mean/std -> todas las features en ~N(0,1)
+        # - Returns: running mean/std -> value targets en rango aprendible
         # ====================================================================
         env_base = env  # Guardar referencia al env base para logging
         vec_env = DummyVecEnv([lambda: env])  # Envolver en VecEnv
         env = VecNormalize(
             vec_env,
             norm_obs=True,      # Normalizar observaciones (running mean/std)
-            norm_reward=True,   # Normalizar rewards/returns (CRÍTICO para EV)
+            norm_reward=True,   # Normalizar rewards/returns (CRITICO para EV)
             clip_obs=10.0,      # Clip observaciones a [-10, 10]
-            clip_reward=5.0,    # REDUCIDO v5.3: 10.0 es muy agresivo, 5.0 permite más margen
+            clip_reward=5.0,    # REDUCIDO v5.3: 10.0 es muy agresivo, 5.0 permite mas margen
             gamma=ppo_config.gamma,  # Mismo gamma para return normalization
         )
         logger.info("VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=%.2f)", ppo_config.gamma)
@@ -3170,21 +3378,21 @@ def main():
     # PASO 5: CREAR Y ENTRENAR PPO CON STABLE-BASELINES3
     # ========================================================================
     # Referencia: [Schulman et al. 2017] PPO es un algoritmo on-policy que ACTUALiza
-    # la política usando experiencia recolectada en el episodio ACTUAL, realizando
-    # múltiples pasos de gradiente con clipping para estabilidad.
+    # la politica usando experiencia recolectada en el episodio ACTUAL, realizando
+    # multiples pasos de gradiente con clipping para estabilidad.
 
     try:
         print('[PASO 4] Crear agente PPO')
         print('-'*80)
 
         # ====================================================================
-        # LEARNING RATE SCHEDULE (Engstrom 2020: "CRÍTICO para PPO")
+        # LEARNING RATE SCHEDULE (Engstrom 2020: "CRITICO para PPO")
         # ====================================================================
-        # LR annealing lineal: decrece de LR_initial → 0 durante el entrenamiento
+        # LR annealing lineal: decrece de LR_initial -> 0 durante el entrenamiento
         # Esto previene "desaprendizaje" al final del entrenamiento y estabiliza
         # la convergencia del value function.
         #
-        # Fórmula: lr(t) = lr_initial * (1 - t/total_timesteps)
+        # Formula: lr(t) = lr_initial * (1 - t/total_timesteps)
         # ====================================================================
         total_timesteps_planned = NUM_EPISODES * HOURS_PER_YEAR
         initial_lr = ppo_config.learning_rate
@@ -3201,7 +3409,7 @@ def main():
             """
             return initial_lr * progress_remaining
         
-        logger.info("LR Schedule habilitado: %.2e → 0 (lineal sobre %d timesteps)", 
+        logger.info("LR Schedule habilitado: %.2e -> 0 (lineal sobre %d timesteps)", 
                     initial_lr, total_timesteps_planned)
 
         model: PPO = PPO(
@@ -3225,11 +3433,11 @@ def main():
             verbose=0
         )
 
-        logger.info("PPO creado: LR=schedule(%.2e→0), n_steps=%d, target_kl=%s, device=%s", 
+        logger.info("PPO creado: LR=schedule(%.2e->0), n_steps=%d, target_kl=%s, device=%s", 
                     initial_lr, ppo_config.n_steps, ppo_config.target_kl, device)
         print('  Hiperparametros PPO v5.0 [Papers: Schulman 2017, Engstrom 2020, Andrychowicz 2021]:')
-        print('    Learning Rate:     {:.6f} → 0 (schedule lineal, CRÍTICO)'.format(initial_lr))
-        print('    N Steps (rollout): {}  (más contexto = mejor value function)'.format(ppo_config.n_steps))
+        print('    Learning Rate:     {:.6f} -> 0 (schedule lineal, CRITICO)'.format(initial_lr))
+        print('    N Steps (rollout): {}  (mas contexto = mejor value function)'.format(ppo_config.n_steps))
         print('    Batch Size:        {}  (minibatch dentro del rollout)'.format(ppo_config.batch_size))
         print('    Epochs per update: {}  (3-10, mas = sample efficiency pero overfitting)'.format(ppo_config.n_epochs))
         print('    Gamma:             {}  (REDUCIDO para episodios de 8760 pasos)'.format(ppo_config.gamma))
@@ -3239,13 +3447,13 @@ def main():
         print('    Value Coef:        {}  (peso del value loss)'.format(ppo_config.vf_coef))
         print('    Max Grad Norm:     {}  (gradient clipping)'.format(ppo_config.max_grad_norm))
         print('    Target KL:         {}  (early stop si KL >, ESTABILIDAD)'.format(ppo_config.target_kl))
-        print('    Clip Range VF:     {}  (DESHABILITADO - daña EV según Andrychowicz 2021)'.format(ppo_config.clip_range_vf))
+        print('    Clip Range VF:     {}  (DESHABILITADO - dana EV segun Andrychowicz 2021)'.format(ppo_config.clip_range_vf))
         print('    Normalize Adv:     {}  (normalizar advantages)'.format(ppo_config.normalize_advantage))
         # Arquitectura separada Actor/Critic
         pi_arch = ppo_config.policy_kwargs['net_arch']['pi']
         vf_arch = ppo_config.policy_kwargs['net_arch']['vf']
         print('    Actor Network:     {} (policy)'.format(pi_arch))
-        print('    Critic Network:    {} (value function, MÁS GRANDE)'.format(vf_arch))
+        print('    Critic Network:    {} (value function, MAS GRANDE)'.format(vf_arch))
         print('    VecNormalize:      norm_obs=True, norm_reward=True (CLAVE para EV)')
         print()
 
@@ -3283,7 +3491,7 @@ def main():
         )
         
         # DetailedLoggingCallback para tracking de dominio (CO2, solar, EVs)
-        # NOTA: Usar env_base (raw) para acceder a métricas, env es VecNormalize
+        # NOTA: Usar env_base (raw) para acceder a metricas, env es VecNormalize
         logging_callback = DetailedLoggingCallback(
             env_ref=env_base,  # Raw environment (no VecNormalize)
             output_dir=output_dir,
@@ -3330,11 +3538,11 @@ def main():
         sys.exit(1)
 
     # ========================================================================
-    # PASO 6: VALIDACION - EPISODIOS DETERMINÍSTICOS
+    # PASO 6: VALIDACION - EPISODIOS DETERMINISTICOS
     # ========================================================================
-    # Evaluación con acciones determinísticas (sin aleatoriedad) para medir
+    # Evaluacion con acciones deterministicas (sin aleatoriedad) para medir
     # performance real del agente entrenado. Referencias:
-    # [Schulman et al. 2017] recomienda validación en ambiente sin exploración.
+    # [Schulman et al. 2017] recomienda validacion en ambiente sin exploracion.
 
     NUM_VALIDATION_EPISODES: int = 10
 
@@ -3362,7 +3570,7 @@ def main():
             episode_grid_acc: float = 0.0
 
             while not done:
-                # Deterministic=True: usar la acción con máxima probabilidad
+                # Deterministic=True: usar la accion con maxima probabilidad
                 action, _ = model.predict(obs, deterministic=True)
                 # VecNormalize usa API vieja: 4 valores (obs, reward, done, info)
                 obs, reward, done, info = env.step(action)
@@ -3371,10 +3579,10 @@ def main():
                 step_reward = float(reward[0]) if hasattr(reward, '__len__') else float(reward)
                 episode_reward_acc += step_reward
                 
-                # Extraer métricas del info dict (VecEnv devuelve lista de info dicts)
+                # Extraer metricas del info dict (VecEnv devuelve lista de info dicts)
                 step_info = info[0] if isinstance(info, (list, tuple)) else info
                 
-                # Acumular métricas del step
+                # Acumular metricas del step
                 if isinstance(step_info, dict):
                     # CO2 evitado total (kg)
                     if 'co2_avoided_total_kg' in step_info:
@@ -3382,7 +3590,7 @@ def main():
                     elif 'co2_avoided' in step_info:
                         episode_co2_acc += float(step_info['co2_avoided'])
                     
-                    # Solar generado (kWh) - NOMBRES ESTÁNDAR COMPATIBLES
+                    # Solar generado (kWh) - NOMBRES ESTANDAR COMPATIBLES
                     if 'solar_kw' in step_info:
                         episode_solar_acc += float(step_info['solar_kw'])
                     elif 'solar_generation_kwh' in step_info:
@@ -3390,7 +3598,7 @@ def main():
                     elif 'solar_kwh' in step_info:
                         episode_solar_acc += float(step_info['solar_kwh'])
                     
-                    # Grid import (kWh) - NOMBRES ESTÁNDAR COMPATIBLES
+                    # Grid import (kWh) - NOMBRES ESTANDAR COMPATIBLES
                     if 'grid_import_kw' in step_info:
                         episode_grid_acc += float(step_info['grid_import_kw'])
                     elif 'grid_import_kwh' in step_info:
@@ -3401,7 +3609,7 @@ def main():
                     done = done[0]
                 episode_steps += 1
 
-            # Guardar métricas del episodio completo
+            # Guardar metricas del episodio completo
             val_metrics['reward'].append(episode_reward_acc)
             val_metrics['co2_avoided'].append(episode_co2_acc)
             val_metrics['solar_kwh'].append(episode_solar_acc)
@@ -3418,7 +3626,7 @@ def main():
         print('RESULTADOS FINALES - ENTRENAMIENTO Y VALIDACION')
         print('='*80)
 
-        # Calcular estadísticas
+        # Calcular estadisticas
         reward_mean: float = float(np.mean(val_metrics['reward'])) if val_metrics['reward'] else 0.0
         reward_std: float = float(np.std(val_metrics['reward'])) if len(val_metrics['reward']) > 1 else 0.0
         co2_mean: float = float(np.mean(val_metrics['co2_avoided'])) if val_metrics['co2_avoided'] else 0.0
@@ -3432,7 +3640,7 @@ def main():
         print('  Device: {}'.format(device.upper()))
         print()
         print('VALIDACION ({} episodios):'.format(NUM_VALIDATION_EPISODES))
-        print('  Reward promedio:        {:12.2f} ± {:.2f}'.format(reward_mean, reward_std))
+        print('  Reward promedio:        {:12.2f} +/- {:.2f}'.format(reward_mean, reward_std))
         print('  CO2 evitado (kg):       {:12.0f}'.format(co2_mean))
         print('  Solar aprovechado (kWh):  {:12.0f}'.format(solar_mean))
         print('  Grid import (kWh):      {:12.0f}'.format(grid_mean))
@@ -3481,7 +3689,7 @@ def main():
                 'episode_solar_kwh': logging_callback.episode_solar_kwh,
                 'episode_ev_charging': logging_callback.episode_ev_charging,
                 'episode_grid_import': logging_callback.episode_grid_import,
-                # [OK] NUEVAS métricas de evolución
+                # [OK] NUEVAS metricas de evolucion
                 'episode_grid_stability': logging_callback.episode_grid_stability,
                 'episode_cost_usd': logging_callback.episode_cost_usd,
                 'episode_motos_charged': logging_callback.episode_motos_charged,
@@ -3492,7 +3700,7 @@ def main():
                 'episode_socket_utilization': logging_callback.episode_socket_utilization,
                 'episode_bess_action_avg': logging_callback.episode_bess_action_avg,
             },
-            # [OK] NUEVAS secciones de métricas detalladas (como A2C)
+            # [OK] NUEVAS secciones de metricas detalladas (como A2C)
             'summary_metrics': {
                 'total_co2_avoided_indirect_kg': float(sum(logging_callback.episode_co2_avoided_indirect)),
                 'total_co2_avoided_direct_kg': float(sum(logging_callback.episode_co2_avoided_direct)),
@@ -3508,20 +3716,24 @@ def main():
                 'avg_socket_setpoint_evolution': logging_callback.episode_avg_socket_setpoint,
                 'socket_utilization_evolution': logging_callback.episode_socket_utilization,
                 'bess_action_evolution': logging_callback.episode_bess_action_avg,
-                'description': 'Evolución del aprendizaje de control por episodio',
+                'description': 'Evolucion del aprendizaje de control por episodio',
             },
             'reward_components_avg': {
-                'r_solar': float(np.mean(logging_callback.episode_r_solar)) if logging_callback.episode_r_solar else 0.0,
-                'r_cost': float(np.mean(logging_callback.episode_r_cost)) if logging_callback.episode_r_cost else 0.0,
-                'r_ev': float(np.mean(logging_callback.episode_r_ev)) if logging_callback.episode_r_ev else 0.0,
-                'r_grid': float(np.mean(logging_callback.episode_r_grid)) if logging_callback.episode_r_grid else 0.0,
+                # v7.0: 6 COMPONENTES REWARD MULTI-OBJETIVO
                 'r_co2': float(np.mean(logging_callback.episode_r_co2)) if logging_callback.episode_r_co2 else 0.0,
-                'episode_r_solar': logging_callback.episode_r_solar,
-                'episode_r_cost': logging_callback.episode_r_cost,
-                'episode_r_ev': logging_callback.episode_r_ev,
-                'episode_r_grid': logging_callback.episode_r_grid,
+                'r_solar': float(np.mean(logging_callback.episode_r_solar)) if logging_callback.episode_r_solar else 0.0,
+                'r_vehicles': float(np.mean(logging_callback.episode_r_vehicles)) if logging_callback.episode_r_vehicles else 0.0,
+                'r_grid_stable': float(np.mean(logging_callback.episode_r_grid_stable)) if logging_callback.episode_r_grid_stable else 0.0,
+                'r_bess': float(np.mean(logging_callback.episode_r_bess)) if logging_callback.episode_r_bess else 0.0,
+                'r_priority': float(np.mean(logging_callback.episode_r_priority)) if logging_callback.episode_r_priority else 0.0,
+                # Evolucion por episodio
                 'episode_r_co2': logging_callback.episode_r_co2,
-                'description': 'Componentes de reward promedio por episodio',
+                'episode_r_solar': logging_callback.episode_r_solar,
+                'episode_r_vehicles': logging_callback.episode_r_vehicles,
+                'episode_r_grid_stable': logging_callback.episode_r_grid_stable,
+                'episode_r_bess': logging_callback.episode_r_bess,
+                'episode_r_priority': logging_callback.episode_r_priority,
+                'description': 'v7.0 - 6 componentes reward multi-objetivo por episodio',
             },
             'vehicle_charging': {
                 'motos_total': 112,
@@ -3533,7 +3745,7 @@ def main():
             'model_path': str(final_path),
         }
 
-        # Función para convertir numpy types a Python types (JSON serializable)
+        # Funcion para convertir numpy types a Python types (JSON serializable)
         def convert_to_native_types(obj):
             """Convertir numpy/pandas types a tipos nativos de Python."""
             if isinstance(obj, np.ndarray):

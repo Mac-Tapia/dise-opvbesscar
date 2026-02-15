@@ -64,7 +64,7 @@ def render_progress_plot(
     try:
         import pandas as pd
         df = pd.read_csv(progress_csv)
-        logger.info(f"✅ Progress CSV loaded: {len(df)} rows, columns: {list(df.columns)[:5]}")
+        logger.info(f"[OK] Progress CSV loaded: {len(df)} rows, columns: {list(df.columns)[:5]}")
         return None  # Real implementation would plot and save
     except Exception as e:
         logger.warning(f"Could not load progress CSV: {e}")

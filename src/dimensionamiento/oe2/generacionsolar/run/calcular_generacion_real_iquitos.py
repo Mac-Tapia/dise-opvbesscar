@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """
-Calcula GENERACIÓN SOLAR REAL para Iquitos usando:
+Calcula GENERACION SOLAR REAL para Iquitos usando:
 - Datos TMY reales de PVGIS (descarga online)
-- Módulos Sandia (base de datos)
+- Modulos Sandia (base de datos)
 - Inversores CEC (base de datos)
-- ModelChain pvlib para simulación rigurosa
+- ModelChain pvlib para simulacion rigurosa
 - Horario local Iquitos (PET = UTC-5)
 
 Genera energia_kwh correctamente: E[kWh] = P[kW] × Δt[h]
@@ -24,7 +24,7 @@ import requests
 # Suprimir warnings
 warnings.filterwarnings("ignore")
 
-# Parámetros IQUITOS
+# Parametros IQUITOS
 IQUITOS_LAT = -3.75
 IQUITOS_LON = -73.25
 IQUITOS_TZ = "America/Lima"  # UTC-5
@@ -67,7 +67,7 @@ def download_pvgis_tmy(
 
     if verbose:
         print(f"\n📡 Descargando datos TMY de PVGIS para Iquitos ({latitude}, {longitude})...")
-        print(f"   Período: {startyear}-{endyear}")
+        print(f"   Periodo: {startyear}-{endyear}")
 
     try:
         response = requests.get(url, params=params, timeout=30)
@@ -77,7 +77,7 @@ def download_pvgis_tmy(
         lines = response.text.strip().split('\n')
 
         # PVGIS devuelve encabezado con metadata
-        # Líneas de datos comienzan después de línea en blanco o directamente
+        # Lineas de datos comienzan despues de linea en blanco o directamente
         data_start = 0
         for i, line in enumerate(lines):
             if line.startswith('time'):
@@ -90,7 +90,7 @@ def download_pvgis_tmy(
 
         df = pd.read_csv(StringIO(csv_data))
 
-        # Renombrar columnas según PVGIS
+        # Renombrar columnas segun PVGIS
         df.columns = [c.strip() for c in df.columns]
 
         # Convertir fecha/hora a datetime
@@ -106,30 +106,30 @@ def download_pvgis_tmy(
         df.set_index('time', inplace=True)
 
         if verbose:
-            print(f"   ✓ Descargados {len(df)} registros")
-            print(f"   Período: {df.index[0]} a {df.index[-1]}")
+            print(f"   [OK] Descargados {len(df)} registros")
+            print(f"   Periodo: {df.index[0]} a {df.index[-1]}")
             print(f"   Columnas: {list(df.columns)}")
 
         return df
 
     except requests.RequestException as e:
-        print(f"   ✗ Error descargando PVGIS: {e}")
+        print(f"   [X] Error descargando PVGIS: {e}")
         return None
     except Exception as e:
-        print(f"   ✗ Error procesando datos PVGIS: {e}")
+        print(f"   [X] Error procesando datos PVGIS: {e}")
         return None
 
 
 def get_sandia_module_spec() -> dict[str, float]:
     """
-    Obtiene especificaciones de módulo Sandia.
-    Usa módulo común de alta eficiencia.
+    Obtiene especificaciones de modulo Sandia.
+    Usa modulo comun de alta eficiencia.
     """
 
     # Kyocera KS20 (20W, aprox 0.072 m², 280 W/m²)
     # o CMS-350P-SB (350W, aprox 1.96 m², 178 W/m²)
 
-    # Para 4,050 kWp usamos módulos de ~370W (eficiencia ~18-19%)
+    # Para 4,050 kWp usamos modulos de ~370W (eficiencia ~18-19%)
 
     return {
         "module_name": "Hyundai_HiS_M385XJ",  # ~385W, 1.96 m²
@@ -142,8 +142,8 @@ def get_sandia_module_spec() -> dict[str, float]:
         "efficiency_pct": 19.6,
         "temp_coeff_voc": -0.123,  # V/°C
         "temp_coeff_pmax": -0.38,  # %/°C
-        "bvoco": -0.123,  # V/°C para cálculos Sandia
-        "akpm": -0.47,    # %/°C para cálculos Sandia
+        "bvoco": -0.123,  # V/°C para calculos Sandia
+        "akpm": -0.47,    # %/°C para calculos Sandia
     }
 
 
@@ -158,8 +158,8 @@ def get_inverter_spec() -> dict[str, float]:
         "inverter_name": "Eaton_Xpert_1670",  # ~1,670 kW
         "paco_w": 1670000.0,  # Potencia nominal AC
         "pdco_w": 1800000.0,  # Potencia DC @ STC
-        "vdco_v": 1030.0,     # Voltaje óptimo DC
-        "pso_w": 2.0,         # Pérdida de consumo
+        "vdco_v": 1030.0,     # Voltaje optimo DC
+        "pso_w": 2.0,         # Perdida de consumo
         "pnt": 0.075,         # Consumo nocturno
         "c0": -0.0039,        # Coeficientes de eficiencia
         "c1": -0.0043,
@@ -180,14 +180,14 @@ def estimate_poa_irradiance(
     """
     Estima irradiancia en plano de array (POA) usando modelo Perez.
 
-    Aproximación simplificada (sin pvlib):
+    Aproximacion simplificada (sin pvlib):
     POA ≈ Directa_inclinada + Difusa_difusa + Reflejada
     """
 
-    # Ángulo de incidencia (aproximación para latitud tropical)
+    # Angulo de incidencia (aproximacion para latitud tropical)
     # Para simplificar: usar GHI como proxy
 
-    # Fracción directa
+    # Fraccion directa
     kt = np.divide(ghi, 1367, where=ghi>0, out=np.zeros_like(ghi, dtype=float))  # clearness index
     kd = np.divide(dhi, ghi, where=ghi>0, out=np.full_like(ghi, 0.2, dtype=float))  # diffuse fraction
 
@@ -196,7 +196,7 @@ def estimate_poa_irradiance(
 
     # Inclined surface (simplified):
     # kτ ≈ GHI * (cos(incidence_angle) / cos(zenith_angle))
-    # Para inclinación baja (10°) en tropics: aumento ~5-10%
+    # Para inclinacion baja (10°) en tropics: aumento ~5-10%
     poa = ghi * 1.08 + dhi * 0.5
 
     return np.maximum(poa, 0)
@@ -211,22 +211,22 @@ def calculate_pv_output(
     verbose: bool = True,
 ) -> pd.DataFrame:
     """
-    Calcula salida PV usando simulación simplificada.
+    Calcula salida PV usando simulacion simplificada.
 
-    Fórmula:
-    Pdc = GHI × (area_total / área_modulo) × eficiencia × factor_temp
+    Formula:
+    Pdc = GHI × (area_total / area_modulo) × eficiencia × factor_temp
     Pac = Pdc × eficiencia_inversor
 
     Energy [kWh] = Power [kW] × tiempo_intervalo [h]
     """
 
     if verbose:
-        print(f"\n🔧 Configuración del sistema:")
-        print(f"   • Módulos: {num_modules} × {module_spec['pmax_w']:.0f}W = {num_modules * module_spec['pmax_w'] / 1000:.0f} kWp DC")
-        print(f"   • Inversores: {num_inverters} × {inverter_spec['paco_w']/1000:.0f} kW AC")
-        print(f"   • Área total: {num_modules * module_spec['area_m2']:.0f} m²")
+        print(f"\n🔧 Configuracion del sistema:")
+        print(f"   - Modulos: {num_modules} × {module_spec['pmax_w']:.0f}W = {num_modules * module_spec['pmax_w'] / 1000:.0f} kWp DC")
+        print(f"   - Inversores: {num_inverters} × {inverter_spec['paco_w']/1000:.0f} kW AC")
+        print(f"   - Area total: {num_modules * module_spec['area_m2']:.0f} m²")
 
-    # Área total
+    # Area total
     area_total = num_modules * module_spec['area_m2']
     area_per_module = module_spec['area_m2']
 
@@ -239,20 +239,20 @@ def calculate_pv_output(
     temperature = tmy_data.get('T2m', tmy_data.get('temp_air', 25.0))
 
     if ghi is None:
-        print("ERROR: No se encontró columna GHI en datos TMY")
+        print("ERROR: No se encontro columna GHI en datos TMY")
         return None
 
     if verbose:
-        print(f"\n📊 Datos meteorológicos:")
-        print(f"   • GHI: {ghi.min():.0f}-{ghi.max():.0f} W/m² (media: {ghi.mean():.0f})")
-        print(f"   • T2m: {temperature.min():.1f}-{temperature.max():.1f} °C (media: {temperature.mean():.1f})")
+        print(f"\n[GRAPH] Datos meteorologicos:")
+        print(f"   - GHI: {ghi.min():.0f}-{ghi.max():.0f} W/m² (media: {ghi.mean():.0f})")
+        print(f"   - T2m: {temperature.min():.1f}-{temperature.max():.1f} °C (media: {temperature.mean():.1f})")
 
     # Potencia DC en STC (25°C)
     # P_dc = GHI × (A_total/1000) × eficiencia_modulo
     pdc_stc = ghi.values * (area_total / 1000.0) * (module_spec['efficiency_pct'] / 100.0)
 
     # Factor de temperatura
-    # ΔT = T_cell - 25°C, coef = -0.38%/°C típico
+    # ΔT = T_cell - 25°C, coef = -0.38%/°C tipico
     temp_delta = temperature.values - 25.0
     temp_factor = 1.0 + (module_spec['temp_coeff_pmax'] / 100.0) * temp_delta
     temp_factor = np.maximum(temp_factor, 0.0)  # No negativo
@@ -264,7 +264,7 @@ def calculate_pv_output(
     # Limitar a potencia nominal DC
     pdc = np.minimum(pdc, p_dc_nominal)
 
-    # Pérdidas DC (cables, transformador, etc): ~3%
+    # Perdidas DC (cables, transformador, etc): ~3%
     dc_losses = 0.97
     pdc = pdc * dc_losses
 
@@ -278,22 +278,22 @@ def calculate_pv_output(
     pdc_kw = pdc / 1000.0
     pac_kw = pac / 1000.0
 
-    # Energía por intervalo de tiempo
+    # Energia por intervalo de tiempo
     # Detectar intervalo temporal
     if len(tmy_data) > 1:
         dt = (tmy_data.index[1] - tmy_data.index[0]).total_seconds() / 3600.0  # horas
     else:
         dt = 1.0  # asumir 1 hora si solo hay 1 registro
 
-    # CÁLCULO CORRECTO DE ENERGÍA
+    # CALCULO CORRECTO DE ENERGIA
     # E[kWh] = P[kW] × Δt[h]
     edc_kwh = pdc_kw * dt
     eac_kwh = pac_kw * dt
 
     if verbose:
-        print(f"\n⏱️  Intervalo de tiempo: {dt:.4f} horas ({dt*60:.1f} minutos)")
-        print(f"   • Energía DC: E = P × {dt:.4f}")
-        print(f"   • Energía AC: E = P × {dt:.4f}")
+        print(f"\n[TIME]️  Intervalo de tiempo: {dt:.4f} horas ({dt*60:.1f} minutos)")
+        print(f"   - Energia DC: E = P × {dt:.4f}")
+        print(f"   - Energia AC: E = P × {dt:.4f}")
 
     # Crear DataFrame de resultados
     results = pd.DataFrame({
@@ -311,14 +311,14 @@ def calculate_pv_output(
 
 
 def print_statistics(results: pd.DataFrame, verbose: bool = True):
-    """Imprime estadísticas del sistema."""
+    """Imprime estadisticas del sistema."""
 
     if verbose:
         print(f"\n" + "="*70)
-        print(f"📈 ESTADÍSTICAS DE GENERACIÓN SOLAR IQUITOS")
+        print(f"[CHART] ESTADISTICAS DE GENERACION SOLAR IQUITOS")
         print(f"="*70)
 
-        # Energía anual
+        # Energia anual
         annual_eac = results['eac_kwh'].sum()
         annual_pdc_max = results['pdc_kw'].sum()
 
@@ -326,43 +326,43 @@ def print_statistics(results: pd.DataFrame, verbose: bool = True):
         pmax_kw = results['pac_kw'].max()
         pmean_kw = results['pac_kw'].mean()
 
-        # Horas con producción
+        # Horas con produccion
         hours_prod = (results['pac_kw'] > 10).sum()  # > 10 kW
 
-        # Energía diaria
+        # Energia diaria
         daily = results['eac_kwh'].resample('D').sum()
 
-        print(f"\n✅ ENERGÍA GENERADA (AC - SALIDA DEL INVERSOR):")
-        print(f"   • Energía anual: {annual_eac:,.0f} kWh ({annual_eac/1e6:.2f} GWh)")
-        print(f"   • Energía diaria media: {daily.mean():,.0f} kWh")
-        print(f"   • Máxima diaria: {daily.max():,.0f} kWh (fecha: {daily.idxmax().date()})")
-        print(f"   • Mínima diaria: {daily.min():,.0f} kWh (fecha: {daily.idxmin().date()})")
+        print(f"\n[OK] ENERGIA GENERADA (AC - SALIDA DEL INVERSOR):")
+        print(f"   - Energia anual: {annual_eac:,.0f} kWh ({annual_eac/1e6:.2f} GWh)")
+        print(f"   - Energia diaria media: {daily.mean():,.0f} kWh")
+        print(f"   - Maxima diaria: {daily.max():,.0f} kWh (fecha: {daily.idxmax().date()})")
+        print(f"   - Minima diaria: {daily.min():,.0f} kWh (fecha: {daily.idxmin().date()})")
 
         print(f"\n⚡ POTENCIA (AC - SALIDA DEL INVERSOR):")
-        print(f"   • Potencia máxima: {pmax_kw:,.0f} kW")
-        print(f"   • Potencia media: {pmean_kw:,.0f} kW")
-        print(f"   • Horas con producción (>10 kW): {hours_prod}")
+        print(f"   - Potencia maxima: {pmax_kw:,.0f} kW")
+        print(f"   - Potencia media: {pmean_kw:,.0f} kW")
+        print(f"   - Horas con produccion (>10 kW): {hours_prod}")
 
-        print(f"\n📊 RELACIÓN ENERGÍA-POTENCIA:")
-        print(f"   • Intervalo temporal: {(results.index[1] - results.index[0]).total_seconds()/3600:.4f} h")
+        print(f"\n[GRAPH] RELACION ENERGIA-POTENCIA:")
+        print(f"   - Intervalo temporal: {(results.index[1] - results.index[0]).total_seconds()/3600:.4f} h")
         max_idx = results['pac_kw'].idxmax()
         max_power = results.loc[max_idx, 'pac_kw']
         max_energy = results.loc[max_idx, 'eac_kwh']
-        print(f"   • Máxima potencia: {max_power:,.1f} kW")
-        print(f"   • Energía en ese intervalo: {max_energy:.3f} kWh")
-        print(f"   • Relación: {max_energy:.3f} kWh ≠ {max_power:,.1f} kW ✓")
+        print(f"   - Maxima potencia: {max_power:,.1f} kW")
+        print(f"   - Energia en ese intervalo: {max_energy:.3f} kWh")
+        print(f"   - Relacion: {max_energy:.3f} kWh ≠ {max_power:,.1f} kW [OK]")
 
-        print(f"\n✅ VERIFICACIÓN DE CÁLCULO CORRECTO:")
+        print(f"\n[OK] VERIFICACION DE CALCULO CORRECTO:")
         sample_idx = results['pac_kw'].idxmax()
         sample_power = results.loc[sample_idx, 'pac_kw']
         sample_energy = results.loc[sample_idx, 'eac_kwh']
         dt = (results.index[1] - results.index[0]).total_seconds() / 3600.0
         expected_energy = sample_power * dt
-        print(f"   • Hora: {sample_idx}")
-        print(f"   • Potencia: {sample_power:,.1f} kW")
-        print(f"   • Energía observada: {sample_energy:.6f} kWh")
-        print(f"   • Energía esperada (P×Δt): {expected_energy:.6f} kWh")
-        print(f"   • Coincidencia: {abs(sample_energy - expected_energy) < 1e-6}")
+        print(f"   - Hora: {sample_idx}")
+        print(f"   - Potencia: {sample_power:,.1f} kW")
+        print(f"   - Energia observada: {sample_energy:.6f} kWh")
+        print(f"   - Energia esperada (P×Δt): {expected_energy:.6f} kWh")
+        print(f"   - Coincidencia: {abs(sample_energy - expected_energy) < 1e-6}")
 
         print(f"\n" + "="*70)
 
@@ -371,29 +371,29 @@ def main():
     """Script principal."""
 
     print("\n" + "="*70)
-    print("🌍 GENERACIÓN SOLAR REAL PARA IQUITOS, PERÚ")
+    print("🌍 GENERACION SOLAR REAL PARA IQUITOS, PERU")
     print("="*70)
 
     # 1. Descargar datos reales de PVGIS
     tmy_data = download_pvgis_tmy(IQUITOS_LAT, IQUITOS_LON)
 
     if tmy_data is None:
-        print("\n⚠️  No se pudieron descargar datos de PVGIS")
-        print("   Usando datos sintéticos como fallback...")
-        # TODO: generar datos sintéticos
+        print("\n[!]  No se pudieron descargar datos de PVGIS")
+        print("   Usando datos sinteticos como fallback...")
+        # TODO: generar datos sinteticos
         return
 
-    # 2. Obtener especificaciones de módulos e inversores
+    # 2. Obtener especificaciones de modulos e inversores
     module_spec = get_sandia_module_spec()
     inverter_spec = get_inverter_spec()
 
-    # 3. Calcular número de módulos
+    # 3. Calcular numero de modulos
     num_modules = int(np.ceil(SYSTEM_DC_KWP * 1000 / module_spec['pmax_w']))
     num_inverters = int(np.ceil(num_modules * module_spec['pmax_w'] / inverter_spec['paco_w']))
 
     print(f"\n📦 COMPONENTES SELECCIONADOS:")
-    print(f"   • Módulo: {module_spec['module_name']}")
-    print(f"   • Inversor: {inverter_spec['inverter_name']} × {num_inverters}")
+    print(f"   - Modulo: {module_spec['module_name']}")
+    print(f"   - Inversor: {inverter_spec['inverter_name']} × {num_inverters}")
 
     # 4. Calcular salida PV
     results = calculate_pv_output(
@@ -408,7 +408,7 @@ def main():
     if results is None:
         return
 
-    # 5. Imprimir estadísticas
+    # 5. Imprimir estadisticas
     print_statistics(results, verbose=True)
 
     # 6. Guardar resultados

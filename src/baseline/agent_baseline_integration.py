@@ -1,7 +1,7 @@
 """Agent Baseline Integration Module.
 
 Conecta entrenamientos de agentes RL (SAC, PPO, A2C) con baselines para:
-1. Registrar métricas de baseline al iniciar entrenamiento
+1. Registrar metricas de baseline al iniciar entrenamiento
 2. Comparar resultados de agentes contra baselines
 3. Generar reportes de mejora
 
@@ -15,7 +15,7 @@ baseline_integration = setup_agent_training_with_baselines(
     output_dir='outputs/agent_training/sac_v54'
 )
 
-# Después del entrenamiento
+# Despues del entrenamiento
 baseline_integration.compare_and_report(
     agent_co2_kg=7500.0,
     agent_grid_kwh=3000000.0
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 
 class AgentBaselineIntegration:
-    """Integra un agente RL con baselines para tracking y comparación."""
+    """Integra un agente RL con baselines para tracking y comparacion."""
 
     def __init__(
         self,
@@ -100,8 +100,8 @@ class AgentBaselineIntegration:
         
         logger.info(
             f"[{self.agent_name}] Baselines loaded:\n"
-            f"  - CON_SOLAR: {self.con_solar_co2_t:,.1f} t CO₂/año\n"
-            f"  - SIN_SOLAR: {self.sin_solar_co2_t:,.1f} t CO₂/año"
+            f"  - CON_SOLAR: {self.con_solar_co2_t:,.1f} t CO₂/ano\n"
+            f"  - SIN_SOLAR: {self.sin_solar_co2_t:,.1f} t CO₂/ano"
         )
     
     def log_training_config(self, config: Dict[str, Any]) -> None:
@@ -141,8 +141,8 @@ class AgentBaselineIntegration:
         
         logger.info(
             f"[{self.agent_name}] Training results registered:\n"
-            f"  - CO₂: {co2_kg/1000:,.1f} t/año\n"
-            f"  - Grid import: {grid_import_kwh:,.0f} kWh/año"
+            f"  - CO₂: {co2_kg/1000:,.1f} t/ano\n"
+            f"  - Grid import: {grid_import_kwh:,.0f} kWh/ano"
         )
     
     def compare_and_report(self) -> Dict[str, float]:
@@ -203,28 +203,28 @@ class AgentBaselineIntegration:
         print(f"AGENT BASELINE COMPARISON: {self.agent_name} (OE2 v5.4)")
         print(f"{'='*80}")
         
-        print(f"\n📈 {self.agent_name} RESULTS")
-        print(f"   CO₂ emissions: {comparison['co2_t_anual']:,.1f} t/año")
-        print(f"   Grid import: {comparison.get('grid_import_kwh', 'N/A'):,.0f} kWh/año")
+        print(f"\n[CHART] {self.agent_name} RESULTS")
+        print(f"   CO₂ emissions: {comparison['co2_t_anual']:,.1f} t/ano")
+        print(f"   Grid import: {comparison.get('grid_import_kwh', 'N/A'):,.0f} kWh/ano")
         
-        print(f"\n📊 BASELINE 1: CON SOLAR (Reference)")
-        print(f"   CO₂: {self.con_solar_co2_t:,.1f} t/año")
+        print(f"\n[GRAPH] BASELINE 1: CON SOLAR (Reference)")
+        print(f"   CO₂: {self.con_solar_co2_t:,.1f} t/ano")
         print(f"   Improvement: {comparison['co2_improvement_pct']:.1f}% CO₂ reduction")
-        print(f"   Absolute reduction: {comparison['co2_reduction_t']:,.1f} t/año")
+        print(f"   Absolute reduction: {comparison['co2_reduction_t']:,.1f} t/ano")
         
-        print(f"\n📊 BASELINE 2: SIN SOLAR (Worst case)")
-        print(f"   CO₂: {self.sin_solar_co2_t:,.1f} t/año")  
+        print(f"\n[GRAPH] BASELINE 2: SIN SOLAR (Worst case)")
+        print(f"   CO₂: {self.sin_solar_co2_t:,.1f} t/ano")  
         gap_to_sin = self.sin_solar_co2_kg - comparison['co2_kg_anual']
         gap_pct = gap_to_sin / self.sin_solar_co2_kg * 100 if self.sin_solar_co2_kg > 0 else 0
         print(f"   Gap: {gap_pct:.1f}% improvement over baseline without solar")
         
         print(f"\n🎯 PERFORMANCE ASSESSMENT")
         if comparison['co2_improvement_pct'] > 0:
-            print(f"   ✅ {self.agent_name} IMPROVED baseline by {comparison['co2_improvement_pct']:.1f}%")
+            print(f"   [OK] {self.agent_name} IMPROVED baseline by {comparison['co2_improvement_pct']:.1f}%")
         elif comparison['co2_improvement_pct'] == 0:
             print(f"   ⚖️  {self.agent_name} MATCHED baseline (no improvement)")
         else:
-            print(f"   ⚠️  {self.agent_name} UNDERPERFORMED baseline")
+            print(f"   [!]  {self.agent_name} UNDERPERFORMED baseline")
         
         print(f"{'='*80}\n")
     

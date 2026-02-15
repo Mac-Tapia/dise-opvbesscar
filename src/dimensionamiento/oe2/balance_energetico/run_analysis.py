@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Script de ejecución simple para Balance Energético.
+Script de ejecucion simple para Balance Energetico.
 
 Uso:
-    python run_balance_analysis.py                    # Análisis completo
-    python run_balance_analysis.py --metrics-only     # Solo métricas
+    python run_balance_analysis.py                    # Analisis completo
+    python run_balance_analysis.py --metrics-only     # Solo metricas
     python run_balance_analysis.py --help             # Ver opciones
 """
 
@@ -25,49 +25,49 @@ from src.dimensionamiento.oe2.balance_energetico import (
 def show_help():
     """Muestra ayuda."""
     print("""
-╔════════════════════════════════════════════════════════════════╗
-║         Balance Energético - Sistema Eléctrico Iquitos         ║
-╚════════════════════════════════════════════════════════════════╝
+╔================================================================╗
+║         Balance Energetico - Sistema Electrico Iquitos         ║
+╚================================================================╝
 
-DESCRIPCIÓN:
-  Analiza el balance energético integral considerando:
-  - Generación solar PV (4,050 kWp)
+DESCRIPCION:
+  Analiza el balance energetico integral considerando:
+  - Generacion solar PV (4,050 kWp)
   - Almacenamiento BESS (940 kWh / 342 kW - exclusivo EV)
   - Demanda Mall (~100 kW)
-  - Demanda Vehículos Eléctricos (38 sockets, 1,129 kWh/día 9h-22h)
-  - Importación de red eléctrica
+  - Demanda Vehiculos Electricos (38 sockets, 1,129 kWh/dia 9h-22h)
+  - Importacion de red electrica
 
 USO:
-  python run_balance_analysis.py [OPCIÓN]
+  python run_balance_analysis.py [OPCION]
 
 OPCIONES:
-  (sin argumentos)      Análisis completo (7 gráficas + métricas + CSV)
-  --metrics-only        Solo calcular métricas (sin gráficas)
-  --quick               Prueba rápida (valida datos + resumen)
-  --custom              Configuración personalizada
+  (sin argumentos)      Analisis completo (7 graficas + metricas + CSV)
+  --metrics-only        Solo calcular metricas (sin graficas)
+  --quick               Prueba rapida (valida datos + resumen)
+  --custom              Configuracion personalizada
   --help, -h            Mostrar esta ayuda
 
 EJEMPLOS:
-  # Análisis completo (recomendado)
+  # Analisis completo (recomendado)
   python run_balance_analysis.py
 
-  # Solo ver las métricas (más rápido)
+  # Solo ver las metricas (mas rapido)
   python run_balance_analysis.py --metrics-only
 
-  # Prueba rápida de validación
+  # Prueba rapida de validacion
   python run_balance_analysis.py --quick
 
 SALIDA:
   Los resultados se guardan en: reports/balance_energetico/
   
-  Gráficas:
+  Graficas:
     - 01_balance_5dias.png           (variabilidad solar)
-    - 02_balance_diario.png          (365 días)
+    - 02_balance_diario.png          (365 dias)
     - 03_distribucion_fuentes.png    (pie chart fuentes)
-    - 04_cascada_energetica.png      (flujos energéticos)
+    - 04_cascada_energetica.png      (flujos energeticos)
     - 05_bess_soc.png                (estado carga)
     - 06_emisiones_co2.png           (impacto ambiental)
-    - 07_utilizacion_pv.png          (análisis mensual)
+    - 07_utilizacion_pv.png          (analisis mensual)
   
   Datos:
     - balance_energetico_horario.csv (8,760 horas)
@@ -78,27 +78,27 @@ REQUISITOS:
   - data/processed/citylearn/iquitos_ev_mall/ (datasets CityLearn)
 
 TIEMPO ESTIMADO:
-  - Con gráficas:  3-5 minutos
-  - Sin gráficas:  10-20 segundos
+  - Con graficas:  3-5 minutos
+  - Sin graficas:  10-20 segundos
 
 PROBLEMAS COMUNES:
   Q: "FileNotFoundError: data/processed/citylearn/..."
   A: Verificar que el directorio de datos existe en la ruta correcta
   
-  Q: "Las gráficas no se generan"
+  Q: "Las graficas no se generan"
   A: Instalar matplotlib: pip install matplotlib
   
   Q: "KeyError: columna no encontrada"
   A: Archivos CSV tienen columnas no esperadas. Ver README.md
 
-════════════════════════════════════════════════════════════════
+================================================================
     """)
 
 
 def run_full_analysis():
-    """Ejecuta análisis completo."""
+    """Ejecuta analisis completo."""
     print("\n" + "="*70)
-    print("  BALANCE ENERGÉTICO - ANÁLISIS COMPLETO")
+    print("  BALANCE ENERGETICO - ANALISIS COMPLETO")
     print("="*70)
     
     try:
@@ -109,32 +109,32 @@ def run_full_analysis():
         )
         
         print("\n" + "="*70)
-        print("  ✓ ANÁLISIS COMPLETADO EXITOSAMENTE")
+        print("  [OK] ANALISIS COMPLETADO EXITOSAMENTE")
         print("="*70)
         print("\nResultados guardados en: reports/balance_energetico/")
-        print("\n7 Gráficas generadas:")
+        print("\n7 Graficas generadas:")
         print("  1. balance_5dias.png          - Variabilidad solar")
-        print("  2. balance_diario.png         - Evolución anual")
+        print("  2. balance_diario.png         - Evolucion anual")
         print("  3. distribucion_fuentes.png   - Cobertura por fuente")
         print("  4. cascada_energetica.png     - Flujos integrados")
         print("  5. bess_soc.png               - Estado de carga")
         print("  6. emisiones_co2.png          - Impacto ambiental")
-        print("  7. utilizacion_pv.png         - Análisis mensual")
+        print("  7. utilizacion_pv.png         - Analisis mensual")
         print("\nCSV: balance_energetico_horario.csv (8,760 filas)")
         
         return True
         
     except Exception as e:
-        print(f"\n✗ Error: {e}")
+        print(f"\n[X] Error: {e}")
         import traceback
         traceback.print_exc()
         return False
 
 
 def run_metrics_only():
-    """Ejecuta solo cálculo de métricas (sin gráficas)."""
+    """Ejecuta solo calculo de metricas (sin graficas)."""
     print("\n" + "="*70)
-    print("  BALANCE ENERGÉTICO - SOLO MÉTRICAS")
+    print("  BALANCE ENERGETICO - SOLO METRICAS")
     print("="*70)
     
     try:
@@ -151,23 +151,23 @@ def run_metrics_only():
         print("Calculando balance...")
         system.calculate_balance()
         
-        print("\nImprimiendo métricas...")
+        print("\nImprimiendo metricas...")
         system.print_summary()
         
-        print("\n✓ Análisis de métricas completado")
+        print("\n[OK] Analisis de metricas completado")
         return True
         
     except Exception as e:
-        print(f"\n✗ Error: {e}")
+        print(f"\n[X] Error: {e}")
         import traceback
         traceback.print_exc()
         return False
 
 
 def run_quick_test():
-    """Ejecuta prueba rápida de validación."""
+    """Ejecuta prueba rapida de validacion."""
     print("\n" + "="*70)
-    print("  BALANCE ENERGÉTICO - PRUEBA RÁPIDA")
+    print("  BALANCE ENERGETICO - PRUEBA RAPIDA")
     print("="*70)
     
     data_dir = Path("data/processed/citylearn/iquitos_ev_mall")
@@ -185,30 +185,30 @@ def run_quick_test():
     for name, path in required.items():
         if path.exists():
             size_mb = path.stat().st_size / (1024 * 1024)
-            print(f"  ✓ {name:20} ({size_mb:.1f} MB)")
+            print(f"  [OK] {name:20} ({size_mb:.1f} MB)")
         else:
-            print(f"  ✗ {name:20} NO ENCONTRADO")
+            print(f"  [X] {name:20} NO ENCONTRADO")
             all_ok = False
     
     if not all_ok:
-        print("\n✗ Algunos archivos falta. Verifique la ruta data/processed/citylearn/iquitos_ev_mall/")
+        print("\n[X] Algunos archivos falta. Verifique la ruta data/processed/citylearn/iquitos_ev_mall/")
         return False
     
-    print("\n✓ Todos los archivos validados")
-    print("\nPara análisis completo, ejecute: python run_balance_analysis.py")
+    print("\n[OK] Todos los archivos validados")
+    print("\nPara analisis completo, ejecute: python run_balance_analysis.py")
     
     return True
 
 
 def run_custom_config():
-    """Ejecuta análisis con configuración personalizada."""
+    """Ejecuta analisis con configuracion personalizada."""
     print("\n" + "="*70)
-    print("  BALANCE ENERGÉTICO - CONFIGURACIÓN PERSONALIZADA")
+    print("  BALANCE ENERGETICO - CONFIGURACION PERSONALIZADA")
     print("="*70)
     
     try:
         # Ejemplo: Escenario con diferente DoD
-        print("\nConfigurando sistema con parámetros personalizados...")
+        print("\nConfigurando sistema con parametros personalizados...")
         
         config = BalanceEnergeticoConfig(
             data_dir=Path("data/processed/citylearn/iquitos_ev_mall"),
@@ -235,14 +235,14 @@ def run_custom_config():
         return True
         
     except Exception as e:
-        print(f"\n✗ Error: {e}")
+        print(f"\n[X] Error: {e}")
         import traceback
         traceback.print_exc()
         return False
 
 
 def main_cli():
-    """Punto de entrada principal - interfaz línea de comandos."""
+    """Punto de entrada principal - interfaz linea de comandos."""
     
     if len(sys.argv) > 1:
         arg = sys.argv[1].lower()
@@ -264,12 +264,12 @@ def main_cli():
             return 0 if success else 1
         
         else:
-            print(f"✗ Opción no reconocida: {arg}")
+            print(f"[X] Opcion no reconocida: {arg}")
             print("Use: python run_balance_analysis.py --help")
             return 1
     
     else:
-        # Análisis completo (default)
+        # Analisis completo (default)
         success = run_full_analysis()
         return 0 if success else 1
 

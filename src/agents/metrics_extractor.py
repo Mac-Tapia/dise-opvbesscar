@@ -6,7 +6,7 @@ This module provides backward compatibility and metric extraction utilities for 
 from __future__ import annotations
 
 from .utils_metrics import EpisodeMetricsAccumulator, extract_step_metrics
-from src.dataset_builder_citylearn import CO2_FACTOR_GRID_KG_PER_KWH, CO2_FACTOR_EV_KG_PER_KWH
+from dataset_builder_citylearn import CO2_FACTOR_GRID_KG_PER_KWH, CO2_FACTOR_EV_KG_PER_KWH
 
 # Re-export for backward compatibility
 __all__ = [

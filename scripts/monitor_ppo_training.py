@@ -53,7 +53,7 @@ def monitor_ppo_training():
         if checkpoints:
             latest = sorted(checkpoints, key=lambda p: p.stat().st_mtime)[-1]
             size_mb = latest.stat().st_size / (1024**2)
-            print(f"✓ Checkpoint mas reciente: {latest.name} ({size_mb:.1f} MB)")
+            print(f"[OK] Checkpoint mas reciente: {latest.name} ({size_mb:.1f} MB)")
         else:
             print("⏳ Esperando primer checkpoint...")
         
@@ -63,30 +63,30 @@ def monitor_ppo_training():
                 with open(result_json) as f:
                     data = json.load(f)
                     if 'summary' in data:
-                        print(f"✓ result_PPO.json: {len(data['summary'])} episodios completados")
+                        print(f"[OK] result_PPO.json: {len(data['summary'])} episodios completados")
             except:
-                print("⚠ result_PPO.json (formato invalido)")
+                print("[!] result_PPO.json (formato invalido)")
         else:
             print("⏳ Esperando result_PPO.json...")
         
         # Timeseries CSV
         if timeseries_csv.exists():
             lines = len(timeseries_csv.read_text().splitlines())
-            print(f"✓ timeseries_PPO.csv: {lines} lineas")
+            print(f"[OK] timeseries_PPO.csv: {lines} lineas")
         else:
             print("⏳ Esperando timeseries_PPO.csv...")
         
         # Trace CSV
         if trace_csv.exists():
             lines = len(trace_csv.read_text().splitlines())
-            print(f"✓ trace_PPO.csv: {lines} lineas")
+            print(f"[OK] trace_PPO.csv: {lines} lineas")
         else:
             print("⏳ Esperando trace_PPO.csv...")
         
         # Verificar si el entrenamiento termino
         if result_json.exists() and timeseries_csv.exists() and trace_csv.exists():
             print("\n" + "=" * 80)
-            print("✅ ENTRENAMIENTO PPO COMPLETADO")
+            print("[OK] ENTRENAMIENTO PPO COMPLETADO")
             print("=" * 80)
             print("\nArchivos generados:")
             print(f"  - {result_json}")

@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-VALIDACIÓN COMPLETA DE PRODUCCIÓN - PPO Training
+VALIDACION COMPLETA DE PRODUCCION - PPO Training
 =================================================
 Verifica TODAS las conexiones, datos, y configura el entrenamiento correctamente
 
 Valida:
-✓ Datasets OE2 sincronizados (5 ficheros)
-✓ Ambiente Gymnasium funcional
-✓ Modelo PPO disponible
-✓ GPU/CUDA disponible
-✓ Callbacks configurados
-✓ Estructura de directorios
-✓ Archivos de checkpoint
+[OK] Datasets OE2 sincronizados (5 ficheros)
+[OK] Ambiente Gymnasium funcional
+[OK] Modelo PPO disponible
+[OK] GPU/CUDA disponible
+[OK] Callbacks configurados
+[OK] Estructura de directorios
+[OK] Archivos de checkpoint
 """
 
 import sys
@@ -29,7 +29,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class ProductionValidator:
-    """Validador completo para entrenamiento PPO en producción"""
+    """Validador completo para entrenamiento PPO en produccion"""
     
     def __init__(self):
         self.errors = []
@@ -37,9 +37,9 @@ class ProductionValidator:
         self.root = Path(__file__).parent.parent
         
     def validate_all(self):
-        """Ejecutar validación completa"""
+        """Ejecutar validacion completa"""
         print('\n' + '='*100)
-        print('✅ VALIDACIÓN DE PRODUCCIÓN - ENTRENAMIENTO PPO')
+        print('[OK] VALIDACION DE PRODUCCION - ENTRENAMIENTO PPO')
         print('='*100 + '\n')
         
         checks = [
@@ -49,7 +49,7 @@ class ProductionValidator:
             ('Dependencias', self.check_dependencies),
             ('GPU/CUDA', self.check_gpu),
             ('Ambiente Gymnasium', self.check_gymnasium_env),
-            ('Configuración', self.check_configuration),
+            ('Configuracion', self.check_configuration),
             ('Archivos Log', self.check_logs),
         ]
         
@@ -58,38 +58,38 @@ class ProductionValidator:
             try:
                 status = check_fn()
                 results.append((name, status))
-                print(f'✅ {name}: OK\n')
+                print(f'[OK] {name}: OK\n')
             except Exception as e:
                 results.append((name, False))
-                print(f'❌ {name}: ERROR - {str(e)}\n')
+                print(f'[X] {name}: ERROR - {str(e)}\n')
                 self.errors.append(f'{name}: {str(e)}')
         
         print('\n' + '='*100)
-        print('📊 RESUMEN DE VALIDACIÓN')
+        print('[GRAPH] RESUMEN DE VALIDACION')
         print('='*100 + '\n')
         
         for name, status in results:
-            symbol = '✅' if status else '❌'
+            symbol = '[OK]' if status else '[X]'
             print(f'{symbol} {name}')
         
         if self.errors:
-            print(f'\n❌ {len(self.errors)} ERRORES ENCONTRADOS:')
+            print(f'\n[X] {len(self.errors)} ERRORES ENCONTRADOS:')
             for err in self.errors:
-                print(f'   • {err}')
+                print(f'   - {err}')
         
         if self.warnings:
-            print(f'\n⚠️  {len(self.warnings)} ADVERTENCIAS:')
+            print(f'\n[!]  {len(self.warnings)} ADVERTENCIAS:')
             for warn in self.warnings:
-                print(f'   • {warn}')
+                print(f'   - {warn}')
         
         if not self.errors:
-            print(f'\n✅ SISTEMA LISTO PARA PRODUCCIÓN')
+            print(f'\n[OK] SISTEMA LISTO PARA PRODUCCION')
         
         print('\n' + '='*100 + '\n')
         return len(self.errors) == 0
     
     def check_python_version(self) -> bool:
-        """Verificar versión de Python >= 3.9"""
+        """Verificar version de Python >= 3.9"""
         version = sys.version_info
         if version.major < 3 or (version.major == 3 and version.minor < 9):
             raise ValueError(f'Python {version.major}.{version.minor} < 3.9 requerido')
@@ -118,7 +118,7 @@ class ProductionValidator:
         return True
     
     def check_oe2_data(self) -> bool:
-        """Verificar sincronización OE2 - 5 datasets obligatorios"""
+        """Verificar sincronizacion OE2 - 5 datasets obligatorios"""
         datasets = {
             'Solar': 'data/oe2/Generacionsolar/pv_generation_citylearn2024.csv',
             'Chargers': 'data/oe2/chargers/chargers_ev_ano_2024_v3.csv',
@@ -140,7 +140,7 @@ class ProductionValidator:
                     # Verificar que hay al menos 38 columnas de power
                     power_cols = [c for c in df.columns if 'charger_power' in c.lower()]
                     assert len(power_cols) >= 38, f'{name} debe tener >= 38 columnas socket_*_charger_power_kw'
-                    logger.info(f'{name}: {len(df)} h × {len(df.columns)} cols → {len(power_cols)} sockets')
+                    logger.info(f'{name}: {len(df)} h × {len(df.columns)} cols -> {len(power_cols)} sockets')
                 elif 'chargers_real_statistics' in path_str:
                     # ChargerStats tiene 38 filas (una por socket), no 8760 horas
                     df = pd.read_csv(path)
@@ -148,13 +148,13 @@ class ProductionValidator:
                     required_cols = ['max_power_kw', 'mean_power_kw']
                     for col in required_cols:
                         assert col in df.columns, f'{name} debe tener columna {col}'
-                    logger.info(f'{name}: {len(df)} sockets × {len(df.columns)} cols ✓')
+                    logger.info(f'{name}: {len(df)} sockets × {len(df.columns)} cols [OK]')
                 else:
                     df = pd.read_csv(path) if 'csv' in path_str else pd.read_csv(path, sep=';')
                     assert len(df) == 8760, f'{name} debe tener 8,760 horas'
-                    logger.info(f'{name}: {len(df)} horas ✓')
+                    logger.info(f'{name}: {len(df)} horas [OK]')
             except Exception as e:
-                raise ValueError(f'{name} estructura inválida: {str(e)}')
+                raise ValueError(f'{name} estructura invalida: {str(e)}')
         
         return True
     
@@ -171,7 +171,7 @@ class ProductionValidator:
         for module, name in packages:
             try:
                 __import__(module)
-                logger.info(f'{name} ✓')
+                logger.info(f'{name} [OK]')
             except ImportError:
                 raise ImportError(f'{name} no instalado: pip install {module}')
         
@@ -187,7 +187,7 @@ class ProductionValidator:
                 logger.info(f'CUDA Version: {torch.version.cuda}')
             else:
                 self.warnings.append('CUDA no disponible - usar CPU (lento)')
-                logger.warning('Entrenamiento en CPU será lento')
+                logger.warning('Entrenamiento en CPU sera lento')
         except Exception as e:
             self.warnings.append(f'Error checking CUDA: {str(e)}')
         
@@ -197,24 +197,24 @@ class ProductionValidator:
         """Verificar que CityLearnEnvironment se pueda importar"""
         try:
             sys.path.insert(0, str(self.root))
-            # Importar módulos clave
+            # Importar modulos clave
             from scripts.train.vehicle_charging_scenarios import (
                 VehicleChargingSimulator,
                 SCENARIO_OFF_PEAK,
             )
-            logger.info('CityLearnEnvironment componentes ✓')
+            logger.info('CityLearnEnvironment componentes [OK]')
         except ImportError as e:
             raise ImportError(f'No se puede importar ambiente: {str(e)}')
         
         return True
     
     def check_configuration(self) -> bool:
-        """Verificar archivo de configuración"""
+        """Verificar archivo de configuracion"""
         config_file = self.root / 'configs/default.yaml'
         if config_file.exists():
-            logger.info(f'Configuración encontrada: {config_file}')
+            logger.info(f'Configuracion encontrada: {config_file}')
         else:
-            self.warnings.append('configs/default.yaml no encontrado (se usarán defaults)')
+            self.warnings.append('configs/default.yaml no encontrado (se usaran defaults)')
         
         return True
     
@@ -224,14 +224,14 @@ class ProductionValidator:
         if log_file.exists():
             size = log_file.stat().st_size / 1024
             lines = len(open(log_file).readlines())
-            logger.info(f'Log: {lines:,} líneas ({size:.1f} KB)')
+            logger.info(f'Log: {lines:,} lineas ({size:.1f} KB)')
         else:
-            logger.info('Log anterior no encontrado (se creará en entrenamiento)')
+            logger.info('Log anterior no encontrado (se creara en entrenamiento)')
         
         return True
 
 def main():
-    """Ejecutar validación y luego entrenar si todo está OK"""
+    """Ejecutar validacion y luego entrenar si todo esta OK"""
     validator = ProductionValidator()
     
     if validator.validate_all():
@@ -239,7 +239,7 @@ def main():
         print('Ejecutar: python scripts/train/train_ppo_multiobjetivo.py\n')
         return 0
     else:
-        print('❌ ERRORES ENCONTRADOS - CORREGIR ANTES DE ENTRENAR\n')
+        print('[X] ERRORES ENCONTRADOS - CORREGIR ANTES DE ENTRENAR\n')
         return 1
 
 if __name__ == '__main__':

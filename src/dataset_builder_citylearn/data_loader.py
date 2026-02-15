@@ -1,29 +1,29 @@
 """OE2 Data Loader v5.6 - Unified with Dataset Catalog.
 
-Carga datos OE2 desde fuentes diversas usando el catálogo centralizado como
-fuente única de verdad (Single Source of Truth).
+Carga datos OE2 desde fuentes diversas usando el catalogo centralizado como
+fuente unica de verdad (Single Source of Truth).
 
 Changes in v5.6 (14 feb 2026):
-- Unificado con catalog_datasets.py para evitar duplicación
-- Imports de dataset_builder.py movidos aquí
+- Unificado con catalog_datasets.py para evitar duplicacion
+- Imports de dataset_builder.py movidos aqui
 - Compatible con stable-baselines3 y agents RL
 - Soporta fallback a rutas intermedias si no existen datos primarios
 
 Structure:
-  OE2 (Primary, source of truth)
-    ├── Solar: data/oe2/Generacionsolar/pv_generation_citylearn2024.csv (8,760 rows, hourly)
-    ├── BESS: data/oe2/bess/bess_ano_2024.csv (1,700 kWh, 400 kW)
-    ├── Chargers: data/oe2/chargers/chargers_ev_ano_2024_v3.csv (38 sockets, 19 chargers)
-    └── Mall: data/oe2/demandamallkwh/demandamallhorakwh.csv (100 kW avg)
+  OE2 (Primary, source of truth - FIXED PATHS)
+    +-- Solar: data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv (8,760 rows, hourly)
+    +-- BESS: data/oe2/bess/bess_ano_2024.csv (1,700 kWh, 400 kW)
+    +-- Chargers: data/oe2/chargers/chargers_ev_ano_2024_v3.csv (38 sockets, 19 chargers)
+    +-- Mall: data/oe2/demandamallkwh/demandamallhorakwh.csv (100 kW avg)
 
   Interim (Fallback if OE2 missing)
-    ├── Solar: data/interim/oe2/solar/pv_generation_hourly_citylearn_v2.csv
-    ├── BESS: data/interim/oe2/bess/bess_hourly_dataset_2024.csv
-    ├── Chargers: data/interim/oe2/chargers/chargers_real_hourly_2024.csv
-    └── Demand: data/interim/oe2/demand/ev_mall_demand_hourly.csv
+    +-- Solar: data/interim/oe2/solar/pv_generation_hourly_citylearn_v2.csv
+    +-- BESS: data/interim/oe2/bess/bess_hourly_dataset_2024.csv
+    +-- Chargers: data/interim/oe2/chargers/chargers_real_hourly_2024.csv
+    +-- Demand: data/oe2/demandamallkwh/demandamallhorakwh.csv (primary demand)
 
   CityLearn (Processed, for agent training)
-    └── data/processed/citylearn/iquitos_ev_mall/
+    +-- data/processed/citylearn/iquitos_ev_mall/
 
 Critical Constraints:
   - Solar MUST be hourly (8,760 rows), NOT 15-minute data
@@ -55,8 +55,8 @@ logger = logging.getLogger(__name__)
 # PATHS & CONSTANTS (Unified from dataset_builder.py)
 # ============================================================================
 
-# Primary data sources (OE2 - source of truth)
-DEFAULT_SOLAR_PATH = Path("data/oe2/Generacionsolar/pv_generation_citylearn2024.csv")
+# Primary data sources (OE2 - source of truth - FIXED PATHS v5.7)
+DEFAULT_SOLAR_PATH = Path("data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv")
 DEFAULT_BESS_PATH = Path("data/oe2/bess/bess_ano_2024.csv")
 DEFAULT_CHARGERS_PATH = Path("data/oe2/chargers/chargers_ev_ano_2024_v3.csv")
 DEFAULT_MALL_DEMAND_PATH = Path("data/oe2/demandamallkwh/demandamallhorakwh.csv")
@@ -69,16 +69,16 @@ SCENARIOS_TABLA_ESTADISTICAS_PATH = DEFAULT_SCENARIOS_DIR / "tabla_estadisticas_
 SCENARIOS_TABLA_RECOMENDADO_PATH = DEFAULT_SCENARIOS_DIR / "tabla_escenario_recomendado.csv"
 SCENARIOS_TABLA13_PATH = DEFAULT_SCENARIOS_DIR / "escenarios_tabla13.csv"
 
-# Interim fallback paths
+# Interim fallback paths (ONLY valid paths that exist)
 INTERIM_SOLAR_PATHS = [
     Path("data/interim/oe2/solar/pv_generation_hourly_citylearn_v2.csv"),
-    Path("data/interim/oe2/solar/pv_generation_timeseries.csv"),
+    Path("data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv"),
 ]
 INTERIM_BESS_PATH = Path("data/interim/oe2/bess/bess_hourly_dataset_2024.csv")
 INTERIM_CHARGERS_PATHS = [
     Path("data/interim/oe2/chargers/chargers_real_hourly_2024.csv"),
 ]
-INTERIM_DEMAND_PATH = Path("data/interim/oe2/demand/ev_mall_demand_hourly.csv")
+INTERIM_DEMAND_PATH = Path("data/oe2/demandamallkwh/demandamallhorakwh.csv")  # Always exists
 
 # Processed (for CityLearn environment)
 PROCESSED_CITYLEARN_DIR = Path("data/processed/citylearn/iquitos_ev_mall")
@@ -92,7 +92,7 @@ TOTAL_SOCKETS = 38           # 19 × 2 sockets
 MALL_DEMAND_KW = 100.0       # Mall baseline
 SOLAR_PV_KWP = 4050.0        # 4,050 kWp installed
 
-CO2_FACTOR_GRID_KG_PER_KWH = 0.4521  # Central térmica Iquitos
+CO2_FACTOR_GRID_KG_PER_KWH = 0.4521  # Central termica Iquitos
 CO2_FACTOR_EV_KG_PER_KWH = 2.146     # Equivalent fuel combustion
 
 
@@ -187,7 +187,7 @@ def resolve_data_path(
     for path in paths_to_try:
         full_path = cwd / path if not path.is_absolute() else path
         if full_path.exists():
-            logger.info(f"✅ Found data at: {full_path}")
+            logger.info(f"[OK] Found data at: {full_path}")
             return full_path
     
     paths_str = " | ".join(str(p) for p in paths_to_try)
@@ -421,9 +421,9 @@ def load_scenarios_metadata(
     ]:
         try:
             scenarios[name] = pd.read_csv(path)
-            logger.info(f"✅ Loaded scenarios: {name}")
+            logger.info(f"[OK] Loaded scenarios: {name}")
         except Exception as e:
-            logger.warning(f"⚠️ Could not load {name}: {e}")
+            logger.warning(f"[!] Could not load {name}: {e}")
 
     return scenarios
 
@@ -471,11 +471,11 @@ def validate_oe2_complete(
         )
 
     logger.info(
-        f"✅ OE2 validation passed:"
-        f"\n  • Solar: {solar.n_hours} rows, {solar.mean_kw:.1f} kW avg"
-        f"\n  • BESS: {bess.capacity_kwh:.0f} kWh, {bess.max_power_kw:.0f} kW"
-        f"\n  • Chargers: {chargers.n_chargers} units, {chargers.total_sockets} sockets"
-        f"\n  • Demand: {demand.n_hours} rows, {demand.mall_mean_kw:.1f} kW mall"
+        f"[OK] OE2 validation passed:"
+        f"\n  - Solar: {solar.n_hours} rows, {solar.mean_kw:.1f} kW avg"
+        f"\n  - BESS: {bess.capacity_kwh:.0f} kWh, {bess.max_power_kw:.0f} kW"
+        f"\n  - Chargers: {chargers.n_chargers} units, {chargers.total_sockets} sockets"
+        f"\n  - Demand: {demand.n_hours} rows, {demand.mall_mean_kw:.1f} kW mall"
     )
 
     return True

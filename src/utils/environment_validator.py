@@ -1,5 +1,5 @@
 # ============================================================================
-# VALIDADOR DE AMBIENTE - ASEGURA QUE SIEMPRE ESTÁS EN .venv
+# VALIDADOR DE AMBIENTE - ASEGURA QUE SIEMPRE ESTAS EN .venv
 # ============================================================================
 # Uso: from src.utils.environment_validator import validate_venv_active
 #      validate_venv_active()
@@ -9,8 +9,8 @@ from pathlib import Path
 
 def validate_venv_active() -> bool:
     """
-    Valida que Python se está ejecutando desde .venv
-    Lanza excepción si no está en el ambiente correcto
+    Valida que Python se esta ejecutando desde .venv
+    Lanza excepcion si no esta en el ambiente correcto
     """
     python_exe = Path(sys.executable)
     project_root = Path(__file__).parent.parent.parent  # src/utils/environment_validator.py -> proyecto
@@ -19,27 +19,27 @@ def validate_venv_active() -> bool:
     # Verificar que .venv existe
     if not venv_path.exists():
         raise RuntimeError(
-            f"❌ AMBIENTE NO ENCONTRADO: {venv_path}\n"
+            f"[X] AMBIENTE NO ENCONTRADO: {venv_path}\n"
             f"   Por favor crea el ambiente con: python -m venv .venv"
         )
 
-    # Verificar que Python está en .venv
+    # Verificar que Python esta en .venv
     venv_scripts = venv_path / "Scripts"
     if not str(python_exe).lower().startswith(str(venv_scripts).lower()):
         raise RuntimeError(
-            f"❌ ERROR: No estás ejecutando desde .venv\n"
+            f"[X] ERROR: No estas ejecutando desde .venv\n"
             f"   Python actual: {python_exe}\n"
             f"   Expected: {venv_scripts}\n"
             f"\n"
-            f"   SOLUCIÓN: Activa .venv primero:\n"
+            f"   SOLUCION: Activa .venv primero:\n"
             f"   .venv\\Scripts\\Activate.ps1  (PowerShell)\n"
-            f"   O usa scripts/run_training.ps1 que lo hace automáticamente"
+            f"   O usa scripts/run_training.ps1 que lo hace automaticamente"
         )
 
     return True
 
 def get_venv_info() -> dict:
-    """Retorna información del ambiente actual"""
+    """Retorna informacion del ambiente actual"""
     python_exe = Path(sys.executable)
     return {
         "python_exe": str(python_exe),
@@ -48,10 +48,10 @@ def get_venv_info() -> dict:
         "venv_path": str(Path(sys.executable).parent.parent),
     }
 
-# Auto-validar al importar (solo si está en main o entrenamiento)
+# Auto-validar al importar (solo si esta en main o entrenamiento)
 if __name__ == "__main__":
     validate_venv_active()
     info = get_venv_info()
-    print("✅ AMBIENTE VALIDADO:")
+    print("[OK] AMBIENTE VALIDADO:")
     for k, v in info.items():
         print(f"   {k}: {v}")

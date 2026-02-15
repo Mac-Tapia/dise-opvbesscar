@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-CORRECCIÓN DE CÁLCULO CO₂ DIRECTO E INDIRECTO
+CORRECCION DE CALCULO CO₂ DIRECTO E INDIRECTO
 
-CO₂ DIRECTO = Reducción modal: EVs cargados × Emisión diesel de moto/mototaxi
-  - Energía NO importa, sino CANTIDAD de vehículos que dejan de usar combustible
-  - Mientras más EVs se cargan, mayor CO₂ directo evitado
+CO₂ DIRECTO = Reduccion modal: EVs cargados × Emision diesel de moto/mototaxi
+  - Energia NO importa, sino CANTIDAD de vehiculos que dejan de usar combustible
+  - Mientras mas EVs se cargan, mayor CO₂ directo evitado
 
-CO₂ INDIRECTO = Fuente de energía para cargar ESE EV:
+CO₂ INDIRECTO = Fuente de energia para cargar ESE EV:
   - Solar generada × 0.4521 (evita diesel en grid)
   - BESS descargada × 0.4521 (evita diesel en grid)
 """
@@ -16,25 +16,25 @@ import numpy as np
 from pathlib import Path
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
-🔍 ANÁLISIS CORRECTO: CO₂ DIRECTO (MODAL) + CO₂ INDIRECTO (FUENTE ENERGÍA)
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
+🔍 ANALISIS CORRECTO: CO₂ DIRECTO (MODAL) + CO₂ INDIRECTO (FUENTE ENERGIA)
+================================================================================
 """)
 
-# Factores de emisión
-FACTOR_CO2_MOTO_DIESEL_ANUAL = 1.2  # kg CO₂/año por moto que circularía con diesel
-FACTOR_CO2_MOTOTAXI_DIESEL_ANUAL = 2.1  # kg CO₂/año por mototaxi que circularía con diesel
-FACTOR_CO2_THERMAL_GRID = 0.4521  # kg CO₂/kWh de generación térmica
+# Factores de emision
+FACTOR_CO2_MOTO_DIESEL_ANUAL = 1.2  # kg CO₂/ano por moto que circularia con diesel
+FACTOR_CO2_MOTOTAXI_DIESEL_ANUAL = 2.1  # kg CO₂/ano por mototaxi que circularia con diesel
+FACTOR_CO2_THERMAL_GRID = 0.4521  # kg CO₂/kWh de generacion termica
 
 # Datos de flota
-MOTOS_CIRCULATING = 270  # motos por día
-MOTOTAXIS_CIRCULATING = 39  # mototaxis por día
+MOTOS_CIRCULATING = 270  # motos por dia
+MOTOTAXIS_CIRCULATING = 39  # mototaxis por dia
 
 MOTOS_PER_CHARGER = 15  # 15 chargers para motos
 MOTOTAXIS_PER_CHARGER = 4  # 4 chargers para mototaxis
 
 # ============================================================================
-# FUNCIONES DE CÁLCULO
+# FUNCIONES DE CALCULO
 # ============================================================================
 
 def get_agent_timeseries_path(agent_name):
@@ -47,10 +47,10 @@ def calculate_co2_metrics(agent_name, timeseries_df):
     Calcula CO₂ directo e indirecto correctamente
     
     CO₂ DIRECTO: Basado en cantidad de EVs cargados (cambio modal)
-    CO₂ INDIRECTO: Basado en fuente de energía (solar + BESS)
+    CO₂ INDIRECTO: Basado en fuente de energia (solar + BESS)
     """
     
-    print(f"\n📊 ANALIZANDO {agent_name}:")
+    print(f"\n[GRAPH] ANALIZANDO {agent_name}:")
     print(f"   Records: {len(timeseries_df)}")
     
     # Verificar columnas disponibles
@@ -80,11 +80,11 @@ def calculate_co2_metrics(agent_name, timeseries_df):
         # ================================================================
         
         if has_ev_charging:
-            # Total energía cargada ese día (kWh)
+            # Total energia cargada ese dia (kWh)
             ev_energy_kwh = pd.to_numeric(day_data['ev_charging_kw'], errors='coerce').fillna(0).sum()
             
             # Estimar cantidad de EVs cargados
-            # Asumiendo que cada carga completa es ~30 kWh (batería típica eléctrica)
+            # Asumiendo que cada carga completa es ~30 kWh (bateria tipica electrica)
             charge_per_ev = 30  # kWh
             num_evs_charged = max(0, ev_energy_kwh / charge_per_ev)
             
@@ -100,7 +100,7 @@ def calculate_co2_metrics(agent_name, timeseries_df):
             co2_direct_daily = 0
         
         # ================================================================
-        # CO₂ INDIRECTO: Fuente de energía
+        # CO₂ INDIRECTO: Fuente de energia
         # ================================================================
         
         # Solar generada
@@ -116,12 +116,12 @@ def calculate_co2_metrics(agent_name, timeseries_df):
         else:
             bess_discharged = 0
         
-        # CO₂ indirecto = energía renovable/almacenada × factor de evitar diesel
+        # CO₂ indirecto = energia renovable/almacenada × factor de evitar diesel
         renewable_energy = solar_energy + bess_discharged
         co2_indirect_daily = renewable_energy * FACTOR_CO2_THERMAL_GRID
         
         # ================================================================
-        # ALMACENAR MÉTRICAS DIARIAS
+        # ALMACENAR METRICAS DIARIAS
         # ================================================================
         
         daily_metrics.append({
@@ -139,15 +139,15 @@ def calculate_co2_metrics(agent_name, timeseries_df):
     daily_df = pd.DataFrame(daily_metrics)
     
     # ================================================================
-    # ESTADÍSTICAS FINALES
+    # ESTADISTICAS FINALES
     # ================================================================
     
-    print(f"\n   📈 ESTADÍSTICAS {agent_name}:")
-    print(f"   - Días analizados: {len(daily_df)}")
-    print(f"   - EVs cargados promedio/día: {daily_df['num_evs_charged'].mean():.2f}")
-    print(f"   - Energía EV promedio/día: {daily_df['ev_energy_kwh'].mean():.1f} kWh")
-    print(f"   - Solar promedio/día: {daily_df['solar_kwh'].mean():.1f} kWh")
-    print(f"   - BESS descargado promedio/día: {daily_df['bess_discharged_kwh'].mean():.1f} kWh")
+    print(f"\n   [CHART] ESTADISTICAS {agent_name}:")
+    print(f"   - Dias analizados: {len(daily_df)}")
+    print(f"   - EVs cargados promedio/dia: {daily_df['num_evs_charged'].mean():.2f}")
+    print(f"   - Energia EV promedio/dia: {daily_df['ev_energy_kwh'].mean():.1f} kWh")
+    print(f"   - Solar promedio/dia: {daily_df['solar_kwh'].mean():.1f} kWh")
+    print(f"   - BESS descargado promedio/dia: {daily_df['bess_discharged_kwh'].mean():.1f} kWh")
     print(f"   - CO₂ directo total: {daily_df['co2_direct_kg'].sum():.1f} kg")
     print(f"   - CO₂ indirecto total: {daily_df['co2_indirect_kg'].sum():.1f} kg")
     print(f"   - CO₂ total evitado: {daily_df['co2_total_kg'].sum():.1f} kg")
@@ -157,13 +157,13 @@ def calculate_co2_metrics(agent_name, timeseries_df):
     initial = daily_df.iloc[:n_period]
     final = daily_df.iloc[-n_period:]
     
-    print(f"\n   📊 COMPARACIÓN INICIO vs FINAL (primera/última 10%):")
-    print(f"   EVs cargados/día:")
-    print(f"      Inicio: {initial['num_evs_charged'].mean():.2f} → Final: {final['num_evs_charged'].mean():.2f}")
-    print(f"   CO₂ directo kgs/día:")
-    print(f"      Inicio: {initial['co2_direct_kg'].mean():.2f} → Final: {final['co2_direct_kg'].mean():.2f}")
-    print(f"   CO₂ indirecto kg/día:")
-    print(f"      Inicio: {initial['co2_indirect_kg'].mean():.2f} → Final: {final['co2_indirect_kg'].mean():.2f}")
+    print(f"\n   [GRAPH] COMPARACION INICIO vs FINAL (primera/ultima 10%):")
+    print(f"   EVs cargados/dia:")
+    print(f"      Inicio: {initial['num_evs_charged'].mean():.2f} -> Final: {final['num_evs_charged'].mean():.2f}")
+    print(f"   CO₂ directo kgs/dia:")
+    print(f"      Inicio: {initial['co2_direct_kg'].mean():.2f} -> Final: {final['co2_direct_kg'].mean():.2f}")
+    print(f"   CO₂ indirecto kg/dia:")
+    print(f"      Inicio: {initial['co2_indirect_kg'].mean():.2f} -> Final: {final['co2_indirect_kg'].mean():.2f}")
     
     return daily_df
 
@@ -178,7 +178,7 @@ for agent_name in agents:
     ts_path = get_agent_timeseries_path(agent_name)
     
     if not ts_path.exists():
-        print(f"\n❌ {agent_name}: No encontrado en {ts_path}")
+        print(f"\n[X] {agent_name}: No encontrado en {ts_path}")
         continue
     
     try:
@@ -186,16 +186,16 @@ for agent_name in agents:
         metrics_df = calculate_co2_metrics(agent_name, df)
         all_results[agent_name] = metrics_df
     except Exception as e:
-        print(f"\n❌ Error procesando {agent_name}: {e}")
+        print(f"\n[X] Error procesando {agent_name}: {e}")
 
 # ============================================================================
-# COMPARACIÓN CONSOLIDADA
+# COMPARACION CONSOLIDADA
 # ============================================================================
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
-📋 RESUMEN COMPARATIVO: CO₂ DIRECTO (MODAL) vs CO₂ INDIRECTO (ENERGÍA)
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
+📋 RESUMEN COMPARATIVO: CO₂ DIRECTO (MODAL) vs CO₂ INDIRECTO (ENERGIA)
+================================================================================
 """)
 
 comparison_rows = []
@@ -236,20 +236,20 @@ print("\n")
 print(comparison_df.to_string(index=False))
 
 print(f"""
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 
-INTERPRETACIÓN:
+INTERPRETACION:
   CO₂ DIRECTO (🔴): Cantidad de motos/mototaxis que pasaron de diesel a EV
-    - Factor: {FACTOR_CO2_MOTO_DIESEL_ANUAL} kg CO₂/año moto diesel
-    - Factor: {FACTOR_CO2_MOTOTAXI_DIESEL_ANUAL} kg CO₂/año mototaxi diesel
+    - Factor: {FACTOR_CO2_MOTO_DIESEL_ANUAL} kg CO₂/ano moto diesel
+    - Factor: {FACTOR_CO2_MOTOTAXI_DIESEL_ANUAL} kg CO₂/ano mototaxi diesel
     
-  CO₂ INDIRECTO (🟢): Energía renovable usada para cargar esos EVs
+  CO₂ INDIRECTO (🟢): Energia renovable usada para cargar esos EVs
     - Solar generada × {FACTOR_CO2_THERMAL_GRID} kg CO₂/kWh evitado
     - BESS descargada × {FACTOR_CO2_THERMAL_GRID} kg CO₂/kWh evitado
     
   TOTAL = Impacto ambiental real del agente
 
-════════════════════════════════════════════════════════════════════════════════
+================================================================================
 """)
 
 # Guardar resultados detallados
@@ -259,6 +259,6 @@ output_dir.mkdir(parents=True, exist_ok=True)
 for agent_name, df in all_results.items():
     output_file = output_dir / f'{agent_name.lower()}_co2_analysis.csv'
     df.to_csv(output_file, index=False)
-    print(f"✓ Guardado: {output_file}")
+    print(f"[OK] Guardado: {output_file}")
 
-print("\n✅ ANÁLISIS COMPLETADO\n")
+print("\n[OK] ANALISIS COMPLETADO\n")

@@ -45,8 +45,8 @@ def diagnose_bess():
     total_charge = df['power_charge_kw'].sum()
     total_discharge = df['power_discharge_kw'].sum()
     
-    print(f"    Total energía cargada (suma directa): {total_charge:,.0f} kWh")
-    print(f"    Total energía descargada (suma directa): {total_discharge:,.0f} kWh")
+    print(f"    Total energia cargada (suma directa): {total_charge:,.0f} kWh")
+    print(f"    Total energia descargada (suma directa): {total_discharge:,.0f} kWh")
     print(f"    Ratio Descarga/Carga: {total_discharge/total_charge if total_charge > 0 else 'N/A':.1f}x")
     
     # Verificar logica fisica
@@ -67,10 +67,10 @@ def diagnose_bess():
     print(f"    Balance esperado (SOC final - SOC inicial): {soc_change:.0f} kWh")
     
     if abs(net_balance - soc_change) > 1:
-        print(f"    ⚠ ERROR: Balance energetico NO CUADRA")
+        print(f"    [!] ERROR: Balance energetico NO CUADRA")
         print(f"    Diferencia: {abs(net_balance - soc_change):.0f} kWh")
     else:
-        print(f"    ✓ Balance energetico correcto")
+        print(f"    [OK] Balance energetico correcto")
     
     # Detectar horas problematicas
     print("\n[7] DETECCION DE ANOMALIAS:")
@@ -78,7 +78,7 @@ def diagnose_bess():
     # Horas donde carga Y descarga simultaneamente
     both = (df['power_charge_kw'] > 0) & (df['power_discharge_kw'] > 0)
     if both.sum() > 0:
-        print(f"    ⚠ {both.sum()} horas con carga Y descarga simultaneamente (INCORRECTO)")
+        print(f"    [!] {both.sum()} horas con carga Y descarga simultaneamente (INCORRECTO)")
         print(f"    Primeras 5 anomalias:")
         for idx in df[both].head(5).index:
             row = df.iloc[idx]
@@ -92,7 +92,7 @@ def diagnose_bess():
     print(f"    SOC cambio min por hora: {min_change:.2f} kWh")
     
     if max_change > 342 or min_change < -342:
-        print(f"    ⚠ Cambios excesivos en SOC (potencia max es 342 kW)")
+        print(f"    [!] Cambios excesivos en SOC (potencia max es 342 kW)")
     
     # Metadata
     if metadata_file.exists():
@@ -107,8 +107,8 @@ def diagnose_bess():
     print("="*80)
     
     if total_discharge > total_charge:
-        print("⚠ PROBLEMA CRITICO: Se descarga más energia de la que se carga")
-        print("   Causa probable: El script original está acumulando incorrectamente")
+        print("[!] PROBLEMA CRITICO: Se descarga mas energia de la que se carga")
+        print("   Causa probable: El script original esta acumulando incorrectamente")
         print("   Solucion: Reconstruir el dataset desde cero con logica revisada")
     
     return {

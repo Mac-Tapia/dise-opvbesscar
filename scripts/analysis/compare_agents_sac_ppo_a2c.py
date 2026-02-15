@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-COMPARAR AGENTES SAC vs PPO vs A2C - Análisis Completo
+COMPARAR AGENTES SAC vs PPO vs A2C - Analisis Completo
 ================================================================================
-Script para comparar el desempeño, eficiencia y salud de los tres agentes RL
-entrenados para optimización de carga EV en Iquitos, Perú.
+Script para comparar el desempeno, eficiencia y salud de los tres agentes RL
+entrenados para optimizacion de carga EV en Iquitos, Peru.
 
-MÉTRICAS COMPARADAS:
+METRICAS COMPARADAS:
 ====================
-1. DESEMPEÑO:
+1. DESEMPENO:
    - Eval episodic return vs environment steps (sample efficiency)
    - Success rate (% episodios con reward > threshold)
    - Episodic length
@@ -17,15 +17,15 @@ MÉTRICAS COMPARADAS:
    - Wall-clock time (tiempo real de entrenamiento)
    - Sample efficiency (return por timestep)
 
-3. SALUD INTERNA (específica por algoritmo):
+3. SALUD INTERNA (especifica por algoritmo):
    - SAC: actor_loss, critic_loss, alpha, entropy, mean_Q
    - PPO: KL, clip_fraction, entropy, value_loss, explained_variance
    - A2C: entropy, value_loss, explained_variance, grad_norm
 
-4. COMPARACIÓN CARA A CARA:
+4. COMPARACION CARA A CARA:
    - Sample efficiency: Return vs Steps (3 curvas)
    - Estabilidad: Variance/IC sombreado
-   - Distribución final: Boxplot del return final
+   - Distribucion final: Boxplot del return final
 
 Referencias:
   [1] Henderson et al. (2018) "Deep Reinforcement Learning That Matters"
@@ -60,37 +60,37 @@ warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=UserWarning)
 
 # ============================================================================
-# CONFIGURACIÓN
+# CONFIGURACION
 # ============================================================================
 
 @dataclass
 class AgentMetrics:
-    """Contenedor de métricas para un agente."""
+    """Contenedor de metricas para un agente."""
     name: str
     color: str
     marker: str
     
-    # Métricas de desempeño
+    # Metricas de desempeno
     steps: List[int] = field(default_factory=list)
     returns: List[float] = field(default_factory=list)
     episode_lengths: List[int] = field(default_factory=list)
     
-    # Métricas de salud (genéricas)
+    # Metricas de salud (genericas)
     entropy: List[float] = field(default_factory=list)
     value_loss: List[float] = field(default_factory=list)
     
-    # Métricas específicas SAC
+    # Metricas especificas SAC
     actor_loss: List[float] = field(default_factory=list)
     critic_loss: List[float] = field(default_factory=list)
     alpha: List[float] = field(default_factory=list)
     mean_q: List[float] = field(default_factory=list)
     
-    # Métricas específicas PPO
+    # Metricas especificas PPO
     kl_divergence: List[float] = field(default_factory=list)
     clip_fraction: List[float] = field(default_factory=list)
     explained_variance: List[float] = field(default_factory=list)
     
-    # Métricas específicas A2C
+    # Metricas especificas A2C
     policy_loss: List[float] = field(default_factory=list)
     grad_norm: List[float] = field(default_factory=list)
     
@@ -119,7 +119,7 @@ AGENT_STYLES = {
 
 def load_agent_metrics(agent_name: str, output_dir: Path) -> Optional[AgentMetrics]:
     """
-    Carga métricas de un agente desde archivos de salida.
+    Carga metricas de un agente desde archivos de salida.
     
     Busca en:
     - outputs/{agent}_training/metrics.csv
@@ -145,7 +145,7 @@ def load_agent_metrics(agent_name: str, output_dir: Path) -> Optional[AgentMetri
         if not agent_dir.exists():
             continue
         
-        # Buscar CSV de métricas
+        # Buscar CSV de metricas
         metrics_csv = agent_dir / 'metrics.csv'
         if metrics_csv.exists():
             df = pd.read_csv(metrics_csv)
@@ -166,7 +166,7 @@ def load_agent_metrics(agent_name: str, output_dir: Path) -> Optional[AgentMetri
             if 'value_loss' in df.columns:
                 metrics.value_loss = df['value_loss'].tolist()
             
-            # SAC específico
+            # SAC especifico
             if 'actor_loss' in df.columns:
                 metrics.actor_loss = df['actor_loss'].tolist()
             if 'critic_loss' in df.columns:
@@ -176,7 +176,7 @@ def load_agent_metrics(agent_name: str, output_dir: Path) -> Optional[AgentMetri
             if 'mean_q' in df.columns:
                 metrics.mean_q = df['mean_q'].tolist()
             
-            # PPO específico
+            # PPO especifico
             if 'kl_divergence' in df.columns or 'approx_kl' in df.columns:
                 col = 'kl_divergence' if 'kl_divergence' in df.columns else 'approx_kl'
                 metrics.kl_divergence = df[col].tolist()
@@ -185,7 +185,7 @@ def load_agent_metrics(agent_name: str, output_dir: Path) -> Optional[AgentMetri
             if 'explained_variance' in df.columns:
                 metrics.explained_variance = df['explained_variance'].tolist()
             
-            # A2C específico
+            # A2C especifico
             if 'policy_loss' in df.columns:
                 metrics.policy_loss = df['policy_loss'].tolist()
             if 'grad_norm' in df.columns:
@@ -217,25 +217,25 @@ def load_agent_metrics(agent_name: str, output_dir: Path) -> Optional[AgentMetri
             break
     
     if not data_found:
-        print(f'  ⚠️  No se encontraron datos para {agent_name}')
+        print(f'  [!]  No se encontraron datos para {agent_name}')
         return None
     
-    # Calcular métricas derivadas
+    # Calcular metricas derivadas
     if metrics.returns:
         metrics.final_return = np.mean(metrics.returns[-10:]) if len(metrics.returns) >= 10 else metrics.returns[-1]
     if metrics.steps:
         metrics.total_timesteps = max(metrics.steps)
     
-    print(f'  ✓ {agent_name}: {len(metrics.returns)} episodios, {metrics.total_timesteps:,} steps')
+    print(f'  [OK] {agent_name}: {len(metrics.returns)} episodios, {metrics.total_timesteps:,} steps')
     return metrics
 
 
 def generate_synthetic_data_for_demo() -> Dict[str, AgentMetrics]:
     """
-    Genera datos sintéticos para demostración si no hay datos reales.
-    Basado en comportamiento típico de SAC/PPO/A2C en problemas de control.
+    Genera datos sinteticos para demostracion si no hay datos reales.
+    Basado en comportamiento tipico de SAC/PPO/A2C en problemas de control.
     """
-    print('  ℹ️  Generando datos sintéticos para demostración...')
+    print('  ℹ️  Generando datos sinteticos para demostracion...')
     
     np.random.seed(42)
     n_points = 100
@@ -243,7 +243,7 @@ def generate_synthetic_data_for_demo() -> Dict[str, AgentMetrics]:
     
     agents = {}
     
-    # SAC: Típicamente mejor sample efficiency, curva más suave
+    # SAC: Tipicamente mejor sample efficiency, curva mas suave
     sac = AgentMetrics(name='SAC', color=AGENT_STYLES['SAC']['color'], marker='o')
     sac.steps = steps.tolist()
     base_return = -500 + 400 * (1 - np.exp(-steps / 30000))  # Curva de aprendizaje
@@ -261,7 +261,7 @@ def generate_synthetic_data_for_demo() -> Dict[str, AgentMetrics]:
     # PPO: On-policy, menos sample efficient pero estable
     ppo = AgentMetrics(name='PPO', color=AGENT_STYLES['PPO']['color'], marker='s')
     ppo.steps = steps.tolist()
-    base_return = -550 + 380 * (1 - np.exp(-steps / 35000))  # Más lento que SAC
+    base_return = -550 + 380 * (1 - np.exp(-steps / 35000))  # Mas lento que SAC
     ppo.returns = (base_return + np.random.normal(0, 40, n_points)).tolist()
     ppo.entropy = (3.0 * np.exp(-steps / 60000) + 0.3 + np.random.normal(0, 0.15, n_points)).tolist()
     ppo.kl_divergence = (0.02 + np.random.exponential(0.01, n_points)).tolist()
@@ -273,17 +273,17 @@ def generate_synthetic_data_for_demo() -> Dict[str, AgentMetrics]:
     ppo.final_return = float(np.mean(ppo.returns[-10:]))
     agents['PPO'] = ppo
     
-    # A2C: Más rápido pero con más varianza
+    # A2C: Mas rapido pero con mas varianza
     a2c = AgentMetrics(name='A2C', color=AGENT_STYLES['A2C']['color'], marker='^')
     a2c.steps = steps.tolist()
-    base_return = -600 + 350 * (1 - np.exp(-steps / 40000))  # Más lento y con más varianza
+    base_return = -600 + 350 * (1 - np.exp(-steps / 40000))  # Mas lento y con mas varianza
     a2c.returns = (base_return + np.random.normal(0, 60, n_points)).tolist()
     a2c.entropy = (2.5 * np.exp(-steps / 45000) + 0.4 + np.random.normal(0, 0.2, n_points)).tolist()
     a2c.value_loss = (8.0 * np.exp(-steps / 20000) + 0.8 + np.random.normal(0, 0.4, n_points)).tolist()
     a2c.explained_variance = (0.2 + 0.5 * (1 - np.exp(-steps / 35000)) + np.random.normal(0, 0.08, n_points)).tolist()
     a2c.policy_loss = (-1.0 + np.random.normal(0, 0.3, n_points)).tolist()
     a2c.grad_norm = (2.0 + np.random.exponential(0.5, n_points)).tolist()
-    a2c.wall_clock_time_s = 3600 * 3  # 3 horas (más rápido)
+    a2c.wall_clock_time_s = 3600 * 3  # 3 horas (mas rapido)
     a2c.total_timesteps = 87600
     a2c.final_return = float(np.mean(a2c.returns[-10:]))
     agents['A2C'] = a2c
@@ -292,11 +292,11 @@ def generate_synthetic_data_for_demo() -> Dict[str, AgentMetrics]:
 
 
 # ============================================================================
-# FUNCIONES DE GRÁFICAS
+# FUNCIONES DE GRAFICAS
 # ============================================================================
 
 def smooth(data: List[float], window: int = 10) -> np.ndarray:
-    """Suavizado con media móvil."""
+    """Suavizado con media movil."""
     if len(data) < window:
         return np.array(data)
     return pd.Series(data).rolling(window=window, center=True, min_periods=1).mean().values
@@ -304,8 +304,8 @@ def smooth(data: List[float], window: int = 10) -> np.ndarray:
 
 def plot_sample_efficiency(agents: Dict[str, AgentMetrics], output_dir: Path) -> None:
     """
-    Gráfica 1: Sample Efficiency - Return vs Steps
-    Curva principal de comparación entre los tres agentes.
+    Grafica 1: Sample Efficiency - Return vs Steps
+    Curva principal de comparacion entre los tres agentes.
     """
     fig, ax = plt.subplots(figsize=(12, 7))
     
@@ -316,7 +316,7 @@ def plot_sample_efficiency(agents: Dict[str, AgentMetrics], output_dir: Path) ->
         steps_k = np.array(metrics.steps) / 1000
         returns = np.array(metrics.returns)
         
-        # Línea principal (suavizada)
+        # Linea principal (suavizada)
         smoothed = smooth(returns.tolist(), window=5)
         ax.plot(steps_k, smoothed, 
                 color=metrics.color,
@@ -324,7 +324,7 @@ def plot_sample_efficiency(agents: Dict[str, AgentMetrics], output_dir: Path) ->
                 linewidth=2.5,
                 label=f'{name} (final: {metrics.final_return:.1f})')
         
-        # Banda de confianza (std móvil)
+        # Banda de confianza (std movil)
         if len(returns) > 10:
             std = pd.Series(returns).rolling(window=10, center=True, min_periods=1).std().values
             ax.fill_between(steps_k, smoothed - std, smoothed + std, 
@@ -348,13 +348,13 @@ def plot_sample_efficiency(agents: Dict[str, AgentMetrics], output_dir: Path) ->
     plt.tight_layout()
     plt.savefig(output_dir / '01_sample_efficiency.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print(f'  ✓ 01_sample_efficiency.png')
+    print(f'  [OK] 01_sample_efficiency.png')
 
 
 def plot_entropy_comparison(agents: Dict[str, AgentMetrics], output_dir: Path) -> None:
     """
-    Gráfica 2: Entropy vs Steps (común a los tres)
-    Medida de exploración durante el entrenamiento.
+    Grafica 2: Entropy vs Steps (comun a los tres)
+    Medida de exploracion durante el entrenamiento.
     """
     fig, ax = plt.subplots(figsize=(12, 6))
     
@@ -374,22 +374,22 @@ def plot_entropy_comparison(agents: Dict[str, AgentMetrics], output_dir: Path) -
     
     ax.set_xlabel('Environment Steps (K)', fontsize=12)
     ax.set_ylabel('Entropy', fontsize=12)
-    ax.set_title('Entropy vs Training Steps\n(Medida de exploración - menor = más determinístico)', fontsize=14)
+    ax.set_title('Entropy vs Training Steps\n(Medida de exploracion - menor = mas deterministico)', fontsize=14)
     ax.legend(loc='upper right', fontsize=11)
     ax.grid(True, alpha=0.3)
     
-    # Línea de warning (entropy muy baja)
+    # Linea de warning (entropy muy baja)
     ax.axhline(y=0.1, color='red', linestyle=':', alpha=0.5, label='Warning: Entropy < 0.1')
     
     plt.tight_layout()
     plt.savefig(output_dir / '02_entropy_comparison.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print(f'  ✓ 02_entropy_comparison.png')
+    print(f'  [OK] 02_entropy_comparison.png')
 
 
 def plot_value_loss_comparison(agents: Dict[str, AgentMetrics], output_dir: Path) -> None:
     """
-    Gráfica 3: Value Loss vs Steps (PPO y A2C principalmente)
+    Grafica 3: Value Loss vs Steps (PPO y A2C principalmente)
     """
     fig, ax = plt.subplots(figsize=(12, 6))
     
@@ -416,20 +416,20 @@ def plot_value_loss_comparison(agents: Dict[str, AgentMetrics], output_dir: Path
     
     ax.set_xlabel('Environment Steps (K)', fontsize=12)
     ax.set_ylabel('Value/Critic Loss', fontsize=12)
-    ax.set_title('Value/Critic Loss vs Training Steps\n(Qué tan bien el crítico predice returns)', fontsize=14)
+    ax.set_title('Value/Critic Loss vs Training Steps\n(Que tan bien el critico predice returns)', fontsize=14)
     ax.legend(loc='upper right', fontsize=11)
     ax.grid(True, alpha=0.3)
-    ax.set_yscale('log')  # Log scale para mejor visualización
+    ax.set_yscale('log')  # Log scale para mejor visualizacion
     
     plt.tight_layout()
     plt.savefig(output_dir / '03_value_loss_comparison.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print(f'  ✓ 03_value_loss_comparison.png')
+    print(f'  [OK] 03_value_loss_comparison.png')
 
 
 def plot_final_return_boxplot(agents: Dict[str, AgentMetrics], output_dir: Path) -> None:
     """
-    Gráfica 4: Boxplot/Violin del return final (último 10% del entrenamiento)
+    Grafica 4: Boxplot/Violin del return final (ultimo 10% del entrenamiento)
     """
     fig, ax = plt.subplots(figsize=(10, 7))
     
@@ -441,7 +441,7 @@ def plot_final_return_boxplot(agents: Dict[str, AgentMetrics], output_dir: Path)
         if not metrics.returns:
             continue
         
-        # Último 10% de los returns
+        # Ultimo 10% de los returns
         n_final = max(1, len(metrics.returns) // 10)
         final_returns = metrics.returns[-n_final:]
         
@@ -461,7 +461,7 @@ def plot_final_return_boxplot(agents: Dict[str, AgentMetrics], output_dir: Path)
         pc.set_facecolor(colors[i])
         pc.set_alpha(0.6)
     
-    # Añadir boxplot superpuesto
+    # Anadir boxplot superpuesto
     bp = ax.boxplot(data_for_plot, positions=range(len(labels)), widths=0.15, 
                     patch_artist=True, showfliers=False)
     for i, patch in enumerate(bp['boxes']):
@@ -471,7 +471,7 @@ def plot_final_return_boxplot(agents: Dict[str, AgentMetrics], output_dir: Path)
     ax.set_xticks(range(len(labels)))
     ax.set_xticklabels(labels, fontsize=12)
     ax.set_ylabel('Episode Return', fontsize=12)
-    ax.set_title('Distribución de Returns Finales\n(Último 10% del entrenamiento)', fontsize=14)
+    ax.set_title('Distribucion de Returns Finales\n(Ultimo 10% del entrenamiento)', fontsize=14)
     ax.grid(True, alpha=0.3, axis='y')
     
     # Anotar medias
@@ -485,12 +485,12 @@ def plot_final_return_boxplot(agents: Dict[str, AgentMetrics], output_dir: Path)
     plt.tight_layout()
     plt.savefig(output_dir / '04_final_return_distribution.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print(f'  ✓ 04_final_return_distribution.png')
+    print(f'  [OK] 04_final_return_distribution.png')
 
 
 def plot_wall_clock_comparison(agents: Dict[str, AgentMetrics], output_dir: Path) -> None:
     """
-    Gráfica 5: Wall-clock time comparison (eficiencia computacional)
+    Grafica 5: Wall-clock time comparison (eficiencia computacional)
     """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
     
@@ -539,12 +539,12 @@ def plot_wall_clock_comparison(agents: Dict[str, AgentMetrics], output_dir: Path
     plt.tight_layout()
     plt.savefig(output_dir / '05_wall_clock_comparison.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print(f'  ✓ 05_wall_clock_comparison.png')
+    print(f'  [OK] 05_wall_clock_comparison.png')
 
 
 def plot_sac_specific(metrics: AgentMetrics, output_dir: Path) -> None:
     """
-    Gráfica 6: Métricas específicas de SAC
+    Grafica 6: Metricas especificas de SAC
     - Alpha (temperatura)
     - Mean Q-value
     - Actor/Critic loss
@@ -560,10 +560,10 @@ def plot_sac_specific(metrics: AgentMetrics, output_dir: Path) -> None:
     if metrics.alpha:
         alpha = np.array(metrics.alpha[:len(steps_k)])
         ax.plot(steps_k[:len(alpha)], smooth(alpha.tolist()), color='#9b59b6', linewidth=2)
-        ax.axhline(y=0.01, color='red', linestyle=':', alpha=0.7, label='Warning: α < 0.01')
+        ax.axhline(y=0.01, color='red', linestyle=':', alpha=0.7, label='Warning: alpha < 0.01')
     ax.set_xlabel('Steps (K)')
-    ax.set_ylabel('Alpha (α)')
-    ax.set_title('SAC: Entropy Temperature (α)')
+    ax.set_ylabel('Alpha (alpha)')
+    ax.set_title('SAC: Entropy Temperature (alpha)')
     ax.grid(True, alpha=0.3)
     ax.legend()
     
@@ -603,12 +603,12 @@ def plot_sac_specific(metrics: AgentMetrics, output_dir: Path) -> None:
     plt.tight_layout()
     plt.savefig(output_dir / '06_sac_specific_metrics.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print(f'  ✓ 06_sac_specific_metrics.png')
+    print(f'  [OK] 06_sac_specific_metrics.png')
 
 
 def plot_ppo_specific(metrics: AgentMetrics, output_dir: Path) -> None:
     """
-    Gráfica 7: Métricas específicas de PPO
+    Grafica 7: Metricas especificas de PPO
     - KL divergence
     - Clip fraction
     - Explained variance
@@ -672,12 +672,12 @@ def plot_ppo_specific(metrics: AgentMetrics, output_dir: Path) -> None:
     plt.tight_layout()
     plt.savefig(output_dir / '07_ppo_specific_metrics.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print(f'  ✓ 07_ppo_specific_metrics.png')
+    print(f'  [OK] 07_ppo_specific_metrics.png')
 
 
 def plot_a2c_specific(metrics: AgentMetrics, output_dir: Path) -> None:
     """
-    Gráfica 8: Métricas específicas de A2C
+    Grafica 8: Metricas especificas de A2C
     - Policy loss
     - Grad norm
     - Explained variance
@@ -737,12 +737,12 @@ def plot_a2c_specific(metrics: AgentMetrics, output_dir: Path) -> None:
     plt.tight_layout()
     plt.savefig(output_dir / '08_a2c_specific_metrics.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print(f'  ✓ 08_a2c_specific_metrics.png')
+    print(f'  [OK] 08_a2c_specific_metrics.png')
 
 
 def plot_dashboard_comparison(agents: Dict[str, AgentMetrics], output_dir: Path) -> None:
     """
-    Gráfica 9: Dashboard resumen de comparación
+    Grafica 9: Dashboard resumen de comparacion
     """
     fig = plt.figure(figsize=(16, 12))
     
@@ -806,7 +806,7 @@ def plot_dashboard_comparison(agents: Dict[str, AgentMetrics], output_dir: Path)
         ax4.annotate(f'{ret:.0f}', xy=(bar.get_x() + bar.get_width()/2, ret),
                     xytext=(0, 3), textcoords='offset points', ha='center', fontsize=9)
     
-    # 5-7. Métricas específicas resumidas
+    # 5-7. Metricas especificas resumidas
     # SAC: Alpha
     ax5 = fig.add_subplot(gs[2, 0])
     if 'SAC' in agents and agents['SAC'].alpha:
@@ -815,7 +815,7 @@ def plot_dashboard_comparison(agents: Dict[str, AgentMetrics], output_dir: Path)
         ax5.plot(steps_k, smooth(m.alpha), color=m.color, linewidth=1.5)
     ax5.set_xlabel('Steps (K)')
     ax5.set_ylabel('Alpha')
-    ax5.set_title('SAC: Alpha (α)')
+    ax5.set_title('SAC: Alpha (alpha)')
     ax5.grid(True, alpha=0.3)
     
     # PPO: KL + Clip
@@ -848,12 +848,12 @@ def plot_dashboard_comparison(agents: Dict[str, AgentMetrics], output_dir: Path)
     ax7.set_title('A2C: Gradient Norm')
     ax7.grid(True, alpha=0.3)
     
-    fig.suptitle('Comparison Dashboard: SAC vs PPO vs A2C\nEV Charging Optimization - Iquitos, Perú', 
+    fig.suptitle('Comparison Dashboard: SAC vs PPO vs A2C\nEV Charging Optimization - Iquitos, Peru', 
                 fontsize=16, y=1.02)
     
     plt.savefig(output_dir / '09_comparison_dashboard.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print(f'  ✓ 09_comparison_dashboard.png')
+    print(f'  [OK] 09_comparison_dashboard.png')
 
 
 def generate_summary_table(agents: Dict[str, AgentMetrics], output_dir: Path) -> None:
@@ -871,7 +871,7 @@ def generate_summary_table(agents: Dict[str, AgentMetrics], output_dir: Path) ->
             'Final Entropy': f'{m.entropy[-1]:.3f}' if m.entropy else 'N/A',
         }
         
-        # Métricas específicas
+        # Metricas especificas
         if name == 'SAC':
             row['Final Alpha'] = f'{m.alpha[-1]:.4f}' if m.alpha else 'N/A'
             row['Final Q'] = f'{m.mean_q[-1]:.1f}' if m.mean_q else 'N/A'
@@ -889,7 +889,7 @@ def generate_summary_table(agents: Dict[str, AgentMetrics], output_dir: Path) ->
     df = pd.DataFrame(rows)
     csv_path = output_dir / 'comparison_summary.csv'
     df.to_csv(csv_path, index=False)
-    print(f'  ✓ comparison_summary.csv')
+    print(f'  [OK] comparison_summary.csv')
     
     # Imprimir tabla
     print('\n' + '=' * 80)
@@ -904,13 +904,13 @@ def generate_summary_table(agents: Dict[str, AgentMetrics], output_dir: Path) ->
         best = max(returns, key=returns.get)
         print(f'\n🏆 MEJOR AGENTE POR RETURN: {best} ({returns[best]:.1f})')
     
-    # Más eficiente
+    # Mas eficiente
     efficiency = {n: m.final_return / (m.wall_clock_time_s / 3600) 
                  for n, m in agents.items() 
                  if m.wall_clock_time_s > 0 and m.final_return != 0}
     if efficiency:
         most_efficient = max(efficiency, key=efficiency.get)
-        print(f'⚡ MÁS EFICIENTE (return/hora): {most_efficient} ({efficiency[most_efficient]:.1f})')
+        print(f'⚡ MAS EFICIENTE (return/hora): {most_efficient} ({efficiency[most_efficient]:.1f})')
 
 
 # ============================================================================
@@ -920,24 +920,24 @@ def generate_summary_table(agents: Dict[str, AgentMetrics], output_dir: Path) ->
 def main():
     parser = argparse.ArgumentParser(description='Comparar SAC vs PPO vs A2C')
     parser.add_argument('--output-dir', type=str, default='outputs/comparison',
-                       help='Directorio de salida para gráficas')
+                       help='Directorio de salida para graficas')
     parser.add_argument('--use-synthetic', action='store_true',
-                       help='Usar datos sintéticos para demo')
+                       help='Usar datos sinteticos para demo')
     args = parser.parse_args()
     
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
     print('=' * 80)
-    print('COMPARACIÓN DE AGENTES: SAC vs PPO vs A2C')
-    print('EV Charging Optimization - Iquitos, Perú')
+    print('COMPARACION DE AGENTES: SAC vs PPO vs A2C')
+    print('EV Charging Optimization - Iquitos, Peru')
     print('=' * 80)
     print(f'Fecha: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
     print(f'Output: {output_dir}')
     print()
     
-    # Cargar métricas
-    print('[1] CARGANDO MÉTRICAS DE AGENTES')
+    # Cargar metricas
+    print('[1] CARGANDO METRICAS DE AGENTES')
     print('-' * 80)
     
     agents: Dict[str, AgentMetrics] = {}
@@ -950,26 +950,26 @@ def main():
             if metrics:
                 agents[agent_name] = metrics
         
-        # Si no hay datos, generar sintéticos
+        # Si no hay datos, generar sinteticos
         if not agents:
-            print('  ⚠️  No se encontraron datos de entrenamiento.')
-            print('  ℹ️  Generando datos sintéticos para demostración...')
+            print('  [!]  No se encontraron datos de entrenamiento.')
+            print('  ℹ️  Generando datos sinteticos para demostracion...')
             agents = generate_synthetic_data_for_demo()
     
     print()
     
-    # Generar gráficas
-    print('[2] GENERANDO GRÁFICAS DE COMPARACIÓN')
+    # Generar graficas
+    print('[2] GENERANDO GRAFICAS DE COMPARACION')
     print('-' * 80)
     
-    # Gráficas comparativas
+    # Graficas comparativas
     plot_sample_efficiency(agents, output_dir)
     plot_entropy_comparison(agents, output_dir)
     plot_value_loss_comparison(agents, output_dir)
     plot_final_return_boxplot(agents, output_dir)
     plot_wall_clock_comparison(agents, output_dir)
     
-    # Gráficas específicas por algoritmo
+    # Graficas especificas por algoritmo
     if 'SAC' in agents:
         plot_sac_specific(agents['SAC'], output_dir)
     if 'PPO' in agents:
@@ -988,9 +988,9 @@ def main():
     generate_summary_table(agents, output_dir)
     
     print()
-    print(f'✅ Comparación completa. Gráficas guardadas en: {output_dir}')
+    print(f'[OK] Comparacion completa. Graficas guardadas en: {output_dir}')
     print()
-    print('Gráficas generadas:')
+    print('Graficas generadas:')
     print('  01_sample_efficiency.png       - Return vs Steps (curva principal)')
     print('  02_entropy_comparison.png      - Entropy vs Steps')
     print('  03_value_loss_comparison.png   - Value/Critic Loss')
@@ -1000,7 +1000,7 @@ def main():
     print('  07_ppo_specific_metrics.png    - KL, Clip fraction, Explained var')
     print('  08_a2c_specific_metrics.png    - Policy loss, Grad norm, Explained var')
     print('  09_comparison_dashboard.png    - Dashboard resumen completo')
-    print('  comparison_summary.csv         - Tabla numérica')
+    print('  comparison_summary.csv         - Tabla numerica')
 
 
 if __name__ == '__main__':

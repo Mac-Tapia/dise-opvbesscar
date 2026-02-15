@@ -5,21 +5,21 @@ from typing import Any, Optional
 import numpy as np
 import logging
 
-# Importar pesos multiobjetivo desde fuente única (canonical)
-from src.dataset_builder_citylearn.rewards import create_iquitos_reward_weights
+# Importar pesos multiobjetivo desde fuente unica (canonical)
+from dataset_builder_citylearn.rewards import create_iquitos_reward_weights
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class RBCConfig:
-    """Configuración para controlador basado en reglas.
+    """Configuracion para controlador basado en reglas.
 
-    Parámetros multicriterio para optimización de:
+    Parametros multicriterio para optimizacion de:
     - Emisiones CO₂
-    - Costo eléctrico
+    - Costo electrico
     - Autoconsumo solar
-    - Satisfacción de carga EV
+    - Satisfaccion de carga EV
     - Estabilidad de red
     """
     # Umbrales de SOC para BESS
@@ -32,55 +32,55 @@ class RBCConfig:
 
     # Prioridades de carga EV
     ev_priority_solar: bool = True  # Priorizar carga con solar
-    ev_max_rate: float = 1.0  # Tasa máxima de carga EV
-    ev_min_rate: float = 0.2  # Tasa mínima de carga EV
+    ev_max_rate: float = 1.0  # Tasa maxima de carga EV
+    ev_min_rate: float = 0.2  # Tasa minima de carga EV
 
-    # ✅ Configuración de chargers (OE3 ACTUAL - 2026-02-04: 19 chargers = 38 sockets)
+    # [OK] Configuracion de chargers (OE3 ACTUAL - 2026-02-04: 19 chargers = 38 sockets)
     # Detalle: 28 chargers @ 2kW (motos) + 4 chargers @ 3kW (mototaxis)
-    # ⚠️  LEGACY (OE2): Solo 20 motos + 3 mototaxis totales → DEPRECATED
-    # ACTUAL (OE3): 30 motos + 8 mototaxis = 38 simultáneos en 19 chargers x 2 sockets
-    n_chargers: int = 19                        # 19 chargers físicos
+    # [!]  LEGACY (OE2): Solo 20 motos + 3 mototaxis totales -> DEPRECATED
+    # ACTUAL (OE3): 30 motos + 8 mototaxis = 38 simultaneos en 19 chargers x 2 sockets
+    n_chargers: int = 19                        # 19 chargers fisicos
     sockets_per_charger: int = 4                # 4 sockets por charger = 128 total
     charger_power_kw: float = 7.4  # Mode 3: 32A @ 230V = 7.4 kW por toma
 
     # Hora pico (para Iquitos: 18-22h)
     peak_hours: tuple = (18, 19, 20, 21)
 
-    # Estrategia de distribución de carga
+    # Estrategia de distribucion de carga
     load_balancing: str = "round_robin"  # "round_robin", "solar_priority", "sequential"
 
     # === MULTIOBJETIVO / MULTICRITERIO ===
-    # NOTA: Los pesos multiobjetivo se configuran en rewards.py vía:
+    # NOTA: Los pesos multiobjetivo se configuran en rewards.py via:
     #   create_iquitos_reward_weights(priority) donde priority = "balanced", "co2_focus", etc.
-    # Ver: src/iquitos_citylearn/oe3/rewards.py línea 634+
-    # NO duplicar pesos aquí - usar rewards.py como fuente única de verdad
+    # Ver: src/iquitos_citylearn/oe3/rewards.py linea 634+
+    # NO duplicar pesos aqui - usar rewards.py como fuente unica de verdad
 
     # Umbrales operacionales (NO son pesos multiobjetivo)
     ev_soc_target: float = 0.90        # SOC objetivo para EVs
-    grid_peak_limit_kw: float = 200.0  # Límite de demanda pico
+    grid_peak_limit_kw: float = 200.0  # Limite de demanda pico
 
 
 class BasicRBCAgent:
-    """Controlador RBC robusto para gestión de carga EV + BESS en Iquitos.
+    """Controlador RBC robusto para gestion de carga EV + BESS en Iquitos.
 
     Controla 19 cargadores v5.2 (15 motos + 4 mototaxis) @ 7.4 kW = 281.2 kW instalado.
     Observable: 38 sockets (2 por cargador) con control individual de potencia [0, max_kw].
 
     Reglas implementadas:
-    1. PV→EV: Cargar al máximo cuando hay exceso solar (máxima prioridad)
-    2. PV→BESS: Acumular exceso solar si SOC < 95% (segunda prioridad)
-    3. BESS→EV: Descargar batería en hora pico (18-22h) si SOC > min_soc (tercera prioridad)
-    4. BESS→Grid: Vender exceso cuando SOC > 95% (cuarta prioridad)
-    5. Grid→EV: Importar solo si deficit después de BESS descarga (última prioridad)
+    1. PV->EV: Cargar al maximo cuando hay exceso solar (maxima prioridad)
+    2. PV->BESS: Acumular exceso solar si SOC < 95% (segunda prioridad)
+    3. BESS->EV: Descargar bateria en hora pico (18-22h) si SOC > min_soc (tercera prioridad)
+    4. BESS->Grid: Vender exceso cuando SOC > 95% (cuarta prioridad)
+    5. Grid->EV: Importar solo si deficit despues de BESS descarga (ultima prioridad)
 
-    Objetivo: Minimizar importación grid y emisiones CO₂ (0.4521 kg CO₂/kWh en Iquitos)
+    Objetivo: Minimizar importacion grid y emisiones CO₂ (0.4521 kg CO₂/kWh en Iquitos)
     """
 
     def __init__(self, env: Any, config: Optional[RBCConfig] = None):
         self.env = env
         self.config = config or RBCConfig()
 
-        # Cargar pesos multiobjetivo desde fuente única (rewards.py)
+        # Cargar pesos multiobjetivo desde fuente unica (rewards.py)
         self._weights = create_iquitos_reward_weights("co2_focus")
 
         self._setup_action_space()
@@ -88,7 +88,7 @@ class BasicRBCAgent:
         self._step_count = 0
 
     def _setup_action_space(self):
-        """Configura espacios de acción."""
+        """Configura espacios de accion."""
         self.action_space = getattr(self.env, "action_space", None)
         self.action_names = getattr(self.env, "action_names", None)
 
@@ -98,10 +98,10 @@ class BasicRBCAgent:
         self._subspaces: list[Any] = list(self.action_space) if isinstance(self.action_space, list) else [self.action_space]  # type: ignore[assignment]
         self._subnames: list[Any] = list(self.action_names) if self.action_names else [[]]  # type: ignore[assignment]
 
-        # Identificar índices de acciones EV y BESS
+        # Identificar indices de acciones EV y BESS
         self._ev_indices: list[list[int]] = []  # type: ignore[assignment]
         self._bess_indices: list[list[int]] = []
-        self._charger_indices: list[list[int]] = []  # Índices específicos por charger
+        self._charger_indices: list[list[int]] = []  # Indices especificos por charger
 
         for names in self._subnames:
             ev_idx = [i for i, n in enumerate(names) if "electric_vehicle" in str(n).lower()]
@@ -118,11 +118,11 @@ class BasicRBCAgent:
         logger.info(f"RBC configurado: {n_ev_actions} acciones EV, {n_charger_actions} acciones charger")
 
     def _distribute_charging_load(self, available_power: float, n_active_chargers: int) -> np.ndarray:
-        """Distribuye la carga entre chargers según estrategia.
+        """Distribuye la carga entre chargers segun estrategia.
 
         Args:
             available_power: Potencia disponible (kW)
-            n_active_chargers: Número de chargers a activar
+            n_active_chargers: Numero de chargers a activar
 
         Returns:
             Array de tasas de carga [0-1] para cada charger
@@ -143,7 +143,7 @@ class BasicRBCAgent:
                 rates[idx] = min(1.0, available_power / (max_chargers * power_per_charger))
 
         elif self.config.load_balancing == "solar_priority":
-            # Priorizar chargers más cercanos al inversor solar (índices bajos)
+            # Priorizar chargers mas cercanos al inversor solar (indices bajos)
             for i in range(min(max_chargers, self.config.n_chargers)):
                 rates[i] = min(1.0, available_power / (max_chargers * power_per_charger))
 
@@ -162,8 +162,8 @@ class BasicRBCAgent:
     def predict(self, observations: Any, deterministic: bool = True) -> list[list[float]]:
         """Genera acciones basadas en reglas multicriterio para 38 tomas v5.2.
 
-        Criterios de decisión (ponderados):
-        1. CO₂: Reducir carga cuando factor de emisión alto
+        Criterios de decision (ponderados):
+        1. CO₂: Reducir carga cuando factor de emision alto
         2. Costo: Reducir carga de red cuando tarifa alta
         3. Solar: Maximizar carga durante exceso solar
         4. EV: Asegurar SOC objetivo antes de salida
@@ -182,12 +182,12 @@ class BasicRBCAgent:
         solar_excess = max(0, solar_gen - load)
         is_peak = hour in self.config.peak_hours
 
-        # Calcular cuántos chargers activar según condiciones
+        # Calcular cuantos chargers activar segun condiciones
         power_per_charger = self.config.charger_power_kw * self.config.sockets_per_charger
 
-        # === LÓGICA MULTICRITERIO ===
-        # Puntaje de carga: valor alto = cargar más, bajo = reducir carga
-        # Pesos cargados desde rewards.py (fuente única)
+        # === LOGICA MULTICRITERIO ===
+        # Puntaje de carga: valor alto = cargar mas, bajo = reducir carga
+        # Pesos cargados desde rewards.py (fuente unica)
         charge_score = 0.0
 
         # Criterio 1: Solar (maximizar autoconsumo)
@@ -195,7 +195,7 @@ class BasicRBCAgent:
             solar_score = min(1.0, solar_excess / (power_per_charger * self.config.n_chargers))
             charge_score += self._weights.solar * solar_score
         else:
-            charge_score -= self._weights.solar * 0.3  # Penalización sin solar
+            charge_score -= self._weights.solar * 0.3  # Penalizacion sin solar
 
         # Criterio 2: CO₂ (minimizar emisiones)
         co2_threshold_high = 0.6  # Umbral operacional (no es peso)
@@ -222,8 +222,8 @@ class BasicRBCAgent:
         else:
             charge_score -= self._weights.cost * 0.3
 
-        # Convertir puntaje a número de chargers y tasa
-        # charge_score está en rango ~[-1, 1], mapear a [0.2, 1.0] de chargers
+        # Convertir puntaje a numero de chargers y tasa
+        # charge_score esta en rango ~[-1, 1], mapear a [0.2, 1.0] de chargers
         normalized_score = (charge_score + 1.0) / 2.0  # [0, 1]
         charger_fraction = 0.2 + 0.8 * normalized_score  # [0.2, 1.0]
 
@@ -249,11 +249,11 @@ class BasicRBCAgent:
         )):
             action = np.zeros(sp.shape[0], dtype=float)
 
-            # Acciones EV genéricas
+            # Acciones EV genericas
             for i in ev_idx:
                 action[i] = base_rate
 
-            # Acciones específicas por charger
+            # Acciones especificas por charger
             for i in ch_idx:
                 if charger_idx_global < len(charger_rates):
                     action[i] = charger_rates[charger_idx_global]
@@ -276,7 +276,7 @@ class BasicRBCAgent:
                 else:
                     action[i] = 0.0
 
-            # Clip a límites
+            # Clip a limites
             low = np.array(getattr(sp, "low", -1.0), dtype=float)
             high = np.array(getattr(sp, "high", 1.0), dtype=float)
             action = np.clip(action, low, high)
@@ -296,7 +296,7 @@ class BasicRBCAgent:
                 elif isinstance(v, (list, np.ndarray)) and len(v) > 0:
                     obs_dict[k] = float(v[0]) if len(v) == 1 else float(np.mean(v))
         elif isinstance(observations, (list, tuple)) and len(observations) > 0:
-            # Asumir orden estándar CityLearn
+            # Asumir orden estandar CityLearn
             obs_names = ["month", "day_type", "hour", "outdoor_dry_bulb_temperature",
                         "outdoor_relative_humidity", "diffuse_solar_irradiance",
                         "direct_solar_irradiance", "carbon_intensity",
@@ -316,7 +316,7 @@ class BasicRBCAgent:
 def make_basic_ev_rbc(env: Any, config: Optional[RBCConfig] = None) -> BasicRBCAgent:
     """Crea agente RBC robusto.
 
-    Intenta usar CityLearn's RBC primero, fallback a implementación propia.
+    Intenta usar CityLearn's RBC primero, fallback a implementacion propia.
     """
     # Intentar CityLearn RBC
     try:
@@ -326,7 +326,7 @@ def make_basic_ev_rbc(env: Any, config: Optional[RBCConfig] = None) -> BasicRBCA
         except TypeError:
             return BasicElectricVehicleRBC_ReferenceController(env=env)  # type: ignore
     except Exception as e:
-        logger.info("CityLearn RBC no disponible (%s), usando implementación propia", e)
+        logger.info("CityLearn RBC no disponible (%s), usando implementacion propia", e)
 
-    # Fallback a implementación propia
+    # Fallback a implementacion propia
     return BasicRBCAgent(env, config)  # type: ignore
