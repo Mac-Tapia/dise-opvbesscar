@@ -1,0 +1,292 @@
+{
+  "timestamp": "2026-02-15T23:16:56.617613",
+  "hyperparams": {
+    "common": {
+      "gamma": 0.99,
+      "learning_rate": 0.0002,
+      "batch_size": 128,
+      "network_arch": [
+        512,
+        512
+      ],
+      "activation": "relu",
+      "max_grad_norm": 0.5,
+      "normalize_observations": true,
+      "normalize_rewards": true,
+      "reward_scaling": 1.0,
+      "seed": 42
+    },
+    "specific": {
+      "SAC": {
+        "buffer_size": 2000000,
+        "entropy_coef": 0.15,
+        "target_entropy": "auto",
+        "tau": 0.02,
+        "train_freq": 1,
+        "gradient_steps": 1
+      },
+      "PPO": {
+        "n_steps": 2048,
+        "n_epochs": 10,
+        "clip_range": 0.2,
+        "ent_coef": 0.01,
+        "vf_coef": 0.5,
+        "gae_lambda": 0.95
+      },
+      "A2C": {
+        "n_steps": 8,
+        "ent_coef": 0.01,
+        "vf_coef": 0.5,
+        "gae_lambda": 0.95,
+        "use_rms_prop": true
+      }
+    }
+  },
+  "metrics": {
+    "BASELINE_CON_SOLAR": {
+      "total_steps": 0,
+      "episodes": 1,
+      "co2_total": 37.469,
+      "co2_direct": 26.2283,
+      "co2_indirect": 11.2407,
+      "episode_rewards": [],
+      "solar_cumsum": [
+        82930000.0
+      ],
+      "grid_cumsum": [
+        18740000.0
+      ],
+      "motos_cumsum": [],
+      "taxis_cumsum": [],
+      "kpi_consumption": [
+        37950000.0
+      ],
+      "kpi_cost": [
+        1890000.0
+      ],
+      "kpi_carbon": [
+        8.470608
+      ],
+      "kpi_ramping": [
+        0
+      ],
+      "kpi_peak": [
+        0
+      ],
+      "kpi_load_factor": [
+        0.45
+      ]
+    },
+    "BASELINE_SIN_SOLAR": {
+      "total_steps": 0,
+      "episodes": 1,
+      "co2_total": 0.0,
+      "co2_direct": 0.0,
+      "co2_indirect": 0.0,
+      "episode_rewards": [],
+      "solar_cumsum": [
+        0.0
+      ],
+      "grid_cumsum": [
+        101670000.0
+      ],
+      "motos_cumsum": [],
+      "taxis_cumsum": [],
+      "kpi_consumption": [
+        37950000.0
+      ],
+      "kpi_cost": [
+        10230000.0
+      ],
+      "kpi_carbon": [
+        45.939537
+      ],
+      "kpi_ramping": [
+        0
+      ],
+      "kpi_peak": [
+        0
+      ],
+      "kpi_load_factor": [
+        0.0
+      ]
+    },
+    "SAC": {
+      "total_steps": 0,
+      "episodes": 10,
+      "co2_total": 55679924.07902987,
+      "co2_direct": 38975946.85532091,
+      "co2_indirect": 16703977.223708961,
+      "episode_rewards": [
+        1776.4402,
+        2001.5436,
+        2004.392,
+        2014.6238,
+        2008.3312,
+        2005.7336,
+        2004.2015,
+        1995.3706,
+        1999.3802,
+        2000.593
+      ],
+      "solar_cumsum": [
+        7404273.742536545,
+        15696787.87348938,
+        23989302.004442215,
+        32281816.13539505,
+        40574330.266347885,
+        48866844.39730072,
+        57159358.528253555,
+        65451872.65920639,
+        73744386.79015923,
+        82036900.92111206
+      ],
+      "grid_cumsum": [],
+      "motos_cumsum": [],
+      "taxis_cumsum": [],
+      "kpi_consumption": [],
+      "kpi_cost": [],
+      "kpi_carbon": [],
+      "kpi_ramping": [],
+      "kpi_peak": [],
+      "kpi_load_factor": []
+    },
+    "PPO": {
+      "total_steps": 0,
+      "episodes": 0,
+      "co2_total": 43095361.50172028,
+      "co2_direct": 3567337.003199984,
+      "co2_indirect": 39528024.49852029,
+      "episode_rewards": [],
+      "solar_cumsum": [],
+      "grid_cumsum": [],
+      "motos_cumsum": [],
+      "taxis_cumsum": [],
+      "kpi_consumption": [],
+      "kpi_cost": [],
+      "kpi_carbon": [],
+      "kpi_ramping": [],
+      "kpi_peak": [],
+      "kpi_load_factor": []
+    },
+    "A2C": {
+      "total_steps": 0,
+      "episodes": 0,
+      "co2_total": 42407029.484044,
+      "co2_direct": 2119783.1893548258,
+      "co2_indirect": 40287246.29468918,
+      "episode_rewards": [],
+      "solar_cumsum": [],
+      "grid_cumsum": [],
+      "motos_cumsum": [],
+      "taxis_cumsum": [],
+      "kpi_consumption": [],
+      "kpi_cost": [],
+      "kpi_carbon": [],
+      "kpi_ramping": [],
+      "kpi_peak": [],
+      "kpi_load_factor": []
+    }
+  },
+  "health": {
+    "BASELINE_CON_SOLAR": {
+      "common": {
+        "total_steps": 0,
+        "episodes_completed": 1
+      },
+      "baseline_type": "CON SOLAR (4,050 kWp)"
+    },
+    "BASELINE_SIN_SOLAR": {
+      "common": {
+        "total_steps": 0,
+        "episodes_completed": 1
+      },
+      "baseline_type": "SIN SOLAR (0 kWp)"
+    },
+    "SAC": {
+      "common": {
+        "total_steps": 0,
+        "episodes": 10,
+        "training_time_hours": 0
+      },
+      "sac": {
+        "actor_loss": 0,
+        "critic_loss": 0,
+        "alpha": 0.15,
+        "entropy": 0,
+        "mean_q": 0
+      }
+    },
+    "PPO": {
+      "common": {
+        "total_steps": 0,
+        "episodes": 0,
+        "training_time_hours": 0
+      },
+      "ppo": {
+        "policy_loss": 0,
+        "value_loss": 0,
+        "kl_div": 0,
+        "clip_frac": 0,
+        "entropy": 0,
+        "explained_var": 0
+      }
+    },
+    "A2C": {
+      "common": {
+        "total_steps": 0,
+        "episodes": 0,
+        "training_time_hours": 0
+      },
+      "a2c": {
+        "policy_loss": 0,
+        "value_loss": 0,
+        "entropy": 0,
+        "explained_var": 0,
+        "grad_norm": 0
+      }
+    }
+  },
+  "objectives": {
+    "BASELINE_CON_SOLAR": {
+      "1\ufe0f\u20e3 CO2 Grid": 0.6244833333333334,
+      "2\ufe0f\u20e3 Solar": 0.45,
+      "3\ufe0f\u20e3 EVCharge": 1.0,
+      "4\ufe0f\u20e3 Stability": 0.9,
+      "5\ufe0f\u20e3 Cost": 0.99811,
+      "6\ufe0f\u20e3 BESS": 0.85
+    },
+    "BASELINE_SIN_SOLAR": {
+      "1\ufe0f\u20e3 CO2 Grid": 0.0,
+      "2\ufe0f\u20e3 Solar": 0.0,
+      "3\ufe0f\u20e3 EVCharge": 1.0,
+      "4\ufe0f\u20e3 Stability": 0.9,
+      "5\ufe0f\u20e3 Cost": 0.98977,
+      "6\ufe0f\u20e3 BESS": 0.85
+    },
+    "SAC": {
+      "1\ufe0f\u20e3 CO2 Reduction": 5.567992407902988,
+      "2\ufe0f\u20e3 Solar": 0,
+      "3\ufe0f\u20e3 EV Charge": 0,
+      "4\ufe0f\u20e3 Grid Stability": 0,
+      "5\ufe0f\u20e3 Cost": 0,
+      "6\ufe0f\u20e3 BESS": 0
+    },
+    "PPO": {
+      "1\ufe0f\u20e3 CO2 Reduction": 43.09536150172028,
+      "2\ufe0f\u20e3 Solar": 0,
+      "3\ufe0f\u20e3 EV Charge": 0,
+      "4\ufe0f\u20e3 Grid Stability": 0,
+      "5\ufe0f\u20e3 Cost": 0.9971888461514309,
+      "6\ufe0f\u20e3 BESS": 0
+    },
+    "A2C": {
+      "1\ufe0f\u20e3 CO2 Reduction": 42.407029484044,
+      "2\ufe0f\u20e3 Solar": 0,
+      "3\ufe0f\u20e3 EV Charge": 0,
+      "4\ufe0f\u20e3 Grid Stability": 0,
+      "5\ufe0f\u20e3 Cost": 0.9920929875,
+      "6\ufe0f\u20e3 BESS": 0
+    }
+  }
+}
