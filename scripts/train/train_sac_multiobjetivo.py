@@ -717,7 +717,7 @@ def load_datasets_from_processed():
     
     ===========================================================================
     Tiempo: 8,760 horas (365 dias × 24 horas, resolucion horaria)
-    ESCENARIO RECOMENDADO: PE=1.00, FC=1.00, 19 cargadores, 38 tomas, 1129 kWh/dia
+    ESCENARIO RECOMENDADO v5.2: PE=1.00, FC=1.00, 19 cargadores, 38 tomas, 1550.34 kWh/dia (565,875 anual)
     ===========================================================================
     """
     

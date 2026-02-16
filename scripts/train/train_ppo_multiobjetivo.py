@@ -335,7 +335,7 @@ def validate_oe2_datasets() -> Dict[str, Any]:
       - tabla_estadisticas_escenarios.csv: Estadisticas agregadas
       - escenarios_tabla13.csv: 101 escenarios PE/FC
       -> Cargar con: data_loader.load_scenarios_metadata()
-      -> ESCENARIO RECOMENDADO v5.5: PE=1.00, FC=1.00, 19 cargadores, 38 tomas, 1129 kWh/dia
+      -> ESCENARIO RECOMENDADO v5.2: PE=1.00, FC=1.00, 19 cargadores, 38 tomas, 1550.34 kWh/dia (565,875 anual)
     
     El agente PPO recibe observaciones de TODAS ESTAS COLUMNAS para entrenar.
     ================================================================================
