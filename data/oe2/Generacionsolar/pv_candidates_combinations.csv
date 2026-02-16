@@ -1,0 +1,6 @@
+module_name,inverter_name,annual_kwh,energy_per_m2,performance_ratio,score,system_dc_kw,area_modules_m2,modules_per_string,strings_parallel,total_modules,num_inverters
+Kyocera_Solar_KS20__2008__E__,Eaton__Xpert1670,8043147,599.69,1.2853,599.69,3759.86,13412.09,31,6009,186279,2
+Kyocera_Solar_KS20__2008__E__,INGETEAM_POWER_TECHNOLOGY_S_A___Ingecon_Sun_1640TL_U_B630_Indoor__450V_,7944328,592.27,1.2694,592.27,3760.2,13413.31,44,4234,186296,2
+Kyocera_Solar_KS20__2008__E__,INGETEAM_POWER_TECHNOLOGY_S_A___Ingecon_Sun_1640TL_U_B630_Outdoor__450V_,7944328,592.27,1.2694,592.27,3760.2,13413.31,44,4234,186296,2
+Kyocera_Solar_KS20__2008__E__,Power_Electronics__FS1590CU__440V_,7856783,585.8,1.2555,585.8,3759.86,13412.09,31,6009,186279,2
+Kyocera_Solar_KS20__2008__E__,Power_Electronics__FS1475CU15__600V_,7841852,584.74,1.2533,584.74,3759.49,13410.79,47,3963,186261,2
