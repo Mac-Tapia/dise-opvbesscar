@@ -1,5 +1,0 @@
-escenario,penetracion,factor_carga,vehicles_day_motos,vehicles_day_mototaxis,vehicles_day_total,vehicles_year_motos,vehicles_year_mototaxis,vehicles_year_total,cargadores,tomas_totales,energia_dia_kwh,energia_anio_kwh,sesiones_pico_4h,sesiones_peak_total,sesiones_day_total,co2_direct_avoided_year_kg,co2_indirect_avoided_year_kg,co2_net_avoided_year_kg
-CONSERVADOR,0.1,0.8,90,13,103,32850,4745,37595,4,16,185.6,67744.0,103,96,312,145225.07093333337,10209.0208,155434.09173333336
-MEDIANO,0.55,0.6,495,72,567,180675,26280,206955,20,80,765.6,279444.0,567,480,1560,599053.4176,42112.2108,641165.6284
-RECOMENDADO,0.9,0.9,810,117,927,295650,42705,338355,33,132,3252.0,1186980.0,927,792,2574,2544568.592,178877.886,2723446.478
-MÁXIMO,1.0,1.0,900,130,1030,328500,47450,375950,35,140,4013.6,1464964.0,1030,840,2730,3140492.158933334,220770.07480000003,3361262.233733334
