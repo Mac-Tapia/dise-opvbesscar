@@ -408,7 +408,7 @@ gae_lambda: 0.95
    - Archivo: chargers_real_hourly_2024.csv
 
 ✅ BESS Config:
-   - Capacidad: 940 kWh / 342 kW (exclusivo EV, 100% cobertura)
+   - Capacidad: 1,700 kWh max SOC / 342 kW (verificado desde bess_simulation_hourly.csv)
    - SOC Medio: 90.5%
    - Eficiencia: 95% (round-trip)
    - Archivo: bess_hourly_dataset_2024.csv

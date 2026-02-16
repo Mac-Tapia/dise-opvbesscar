@@ -60,7 +60,7 @@ DEFINICIONES CRITICAS:
    - EV co2 factor: 2.146 kg/kWh (DEMANDA DIRECTA - tracking)
    - EV demand: 50.0 kW (CONSTANTE)
    - Chargers: 19 (38 tomas = 30 motos + 8 mototaxis) @ 7.4 kW/toma
-   - BESS: 940 kWh / 342 kW (exclusivo EV, 100% cobertura)
+   - BESS: 1,700 kWh max SOC / 342 kW (verificado desde bess_simulation_hourly.csv)
 
 Objetivos optimizados:
 1. Minimizar emisiones de CO₂ (indirectas por grid import)
@@ -78,7 +78,7 @@ Contexto Iquitos (OE2/OE3 - DATOS REALES v5.2 2026-02-12):
 - Potencia instalada: 281.2 kW simultanea (38 × 7.4 kW Modo 3)
 - Demanda EV: 50 kW constante (54% uptime × 100kW = workaround CityLearn 2.5.0)
 - Capacidad diaria: 270 motos + 39 mototaxis (pe=0.30, fc=0.55)
-- BESS: 940 kWh / 342 kW (exclusivo EV, 100% cobertura)
+- BESS: 1,700 kWh max SOC / 342 kW (verificado desde bess_simulation_hourly.csv)
 - Resultado OE3: Agente A2C -25.1% CO₂ (4,280,119 kg/ano vs 5,710,257 kg/ano baseline)
 
 VINCULACIONES EN SISTEMA:
@@ -735,7 +735,7 @@ class CityLearnMultiObjectiveWrapper(gym.Env):
             obs, original_reward, terminated, truncated, info = self.env.step(action)
         except (KeyboardInterrupt, AttributeError, TypeError, Exception) as e:
             # Si falla el step del environment, retornar observacion segura
-            obs = np.zeros(394)  # 394-dim observation space (129 actions)
+            obs = np.zeros(394)  # 394-dim observation space (39 actions: 1 BESS + 38 sockets, v5.2)
             original_reward = 0.0
             terminated = True
             truncated = False
@@ -964,7 +964,7 @@ def calculate_solar_dispatch(
         mall_demand_kw: Demanda mall/no-desplazable (kW)
         bess_soc_pct: SOC de bateria (0-100%)
         bess_max_power_kw: Maxima potencia carga/descarga (342 kW v5.2)
-        bess_capacity_kwh: Capacidad de bateria (940 kWh v5.2)
+        bess_capacity_kwh: Capacidad de bateria (1,700 kWh max SOC, v5.2 CORRECTED)
 
     Returns:
         dict: Desglose de despacho {

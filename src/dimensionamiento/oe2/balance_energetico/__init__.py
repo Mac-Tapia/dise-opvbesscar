@@ -4,7 +4,7 @@ Modulo de Balance Energetico del Sistema Electrico de Iquitos.
 Proporciona herramientas para analizar y visualizar el balance energetico
 integral del sistema considerando:
 - Generacion solar PV (4,050 kWp)
-- Almacenamiento BESS (940 kWh / 342 kW - exclusivo EV, 100% cobertura)
+- Almacenamiento BESS (1,700 kWh max SOC / 342 kW - verificado)
 - Demanda de cargas (Mall + EV)
 - Importacion de red electrica
 """

@@ -4796,7 +4796,7 @@ def main():
     print(f'  Target entropy:  {sac_config.target_entropy}')
     print(f'  Learning rate:   {sac_config.learning_rate}')
     print(f'  Networks:        Actor/Critic {list(sac_config.policy_kwargs.get("net_arch", {}).get("pi", [256, 256]))}')
-    print(f'  Datos: Datos reales OE2 (solar 8.29GWh + chargers + mall 12.37GWh + BESS 940kWh)')
+    print(f'  Datos: Datos reales OE2 (solar 8.29GWh + chargers + mall 12.37GWh + BESS 1,700 kWh max SOC)')
     print(f'  Device: {DEVICE.upper()}')
     print()
     print('  METRICAS LOGUEADAS (cada 500 steps):')

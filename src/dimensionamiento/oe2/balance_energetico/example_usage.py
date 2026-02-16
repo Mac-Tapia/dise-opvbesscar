@@ -35,7 +35,7 @@ def example_custom_config():
     config = BalanceEnergeticoConfig(
         data_dir=Path("data/processed/citylearn/iquitos_ev_mall"),
         pv_capacity_kwp=4050.0,
-        bess_capacity_kwh=940.0,   # v5.2: 940 kWh (exclusivo EV, 100% cobertura)
+        bess_capacity_kwh=1700.0,   # v5.2 CORRECTED: 1,700 kWh max SOC
         bess_power_kw=342.0,       # v5.2: 342 kW
         dod=0.80,  # Profundidad de descarga 80%
         efficiency_roundtrip=0.95,  # Eficiencia 95%

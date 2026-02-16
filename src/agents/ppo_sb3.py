@@ -38,7 +38,7 @@ class PPOConfig:
     """Configuracion avanzada para PPO con soporte CUDA/GPU y multiobjetivo.
 
     Nota: train_steps=500000 es el minimo recomendado para problemas de alta
-    dimensionalidad como CityLearn con ~394 obs dims × 129 action dims.
+    dimensionalidad como CityLearn con ~156 obs dims × 39 action dims (v5.2).
     Para convergencia optima, usar 1M+ pasos.
     """
     # Hiperparametros de entrenamiento - PPO OPTIMIZADO PARA RTX 4060
