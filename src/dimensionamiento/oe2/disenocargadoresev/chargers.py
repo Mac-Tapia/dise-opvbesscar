@@ -126,16 +126,23 @@ class ChargerSet:
 
 @dataclass(frozen=True)
 class VehicleType:
-    """Especificacion de tipo de vehiculo para simulacion de carga.
+    """Especificacion de tipo de vehiculo para simulacion de carga CON DISTRIBUCIONES REALISTAS.
+    
+    CAMBIO IMPORTANTE (2026-02-16):
+    - Ahora soporta distribuciones variables de SOC objetivo (no solo punto fijo)
+    - Refleja REALIDAD: usuarios cargan a diferentes SOC según necesidad
+    - Tiempo de carga promedio ~2.7x menos (22 min vs 60 min en motos)
+    - Mismo número de clientes (270+39), pero energía/CO2 más realista
     
     Attributes:
         name: Nombre del tipo (e.g., 'MOTO', 'MOTOTAXI')
         lambda_arrivals: Tasa de llegadas Poisson (vehiculos/socket/hora)
         power_kw: Potencia de carga estandar (kW)
         capacity_kwh: Capacidad de bateria (kWh)
-        soc_arrival_mean: SOC medio en llegada (%)
-        soc_arrival_std: Desviacion estandar SOC en llegada (%)
-        soc_target: SOC objetivo de carga (%)
+        soc_arrival_mean: SOC medio en llegada (0-1, realista: 0.245)
+        soc_arrival_std: Desviacion estandar SOC en llegada (realista: 0.12)
+        soc_target: SOC objetivo MEDIO de carga (0-1, realista: 0.78-0.79, NO 1.0)
+        soc_target_std: Desviacion estandar SOC objetivo (realista: 0.15, permite 60%-100%)
     """
     name: str
     lambda_arrivals: float
@@ -144,6 +151,7 @@ class VehicleType:
     soc_arrival_mean: float
     soc_arrival_std: float
     soc_target: float
+    soc_target_std: float = 0.0  # Valor por defecto 0 para retro-compatibilidad
 
 
 # Especificaciones de tipos de vehiculo - ESCENARIO RECOMENDADO (pe=0.30, fc=0.55)
@@ -211,22 +219,24 @@ CHARGING_EFFICIENCY = 0.62  # 62% = potencia efectiva / potencia nominal
 
 MOTO_SPEC = VehicleType(
     name="MOTO",
-    lambda_arrivals=0.69,    # 270 motos / (30 tomas × 13h operativas)
+    lambda_arrivals=0.980,   # 270 motos/día / (30 sockets × factor operativo 0.381 × 13h equiv)
     power_kw=7.4,            # Modo 3 monofasico 32A @ 230V
     capacity_kwh=4.6,        # Bateria completa moto electrica
-    soc_arrival_mean=0.20,   # 20% SOC medio al llegar (bateria baja)
-    soc_arrival_std=0.10,    # +/-10%
-    soc_target=1.00          # 100% objetivo (carga completa ~60 min real)
+    soc_arrival_mean=0.245,  # SOC medio al llegar: 24.5% (distribución realista: 10%-40%)
+    soc_arrival_std=0.12,    # +/-12% (rango 10%-40% de la distribución)
+    soc_target=0.78,         # SOC objetivo medio: 78% (carga parcial típica, no siempre 100%)
+    soc_target_std=0.15      # +/-15% (rango 60%-100% de destinos variados)
 )
 
 MOTOTAXI_SPEC = VehicleType(
     name="MOTOTAXI",
-    lambda_arrivals=0.375,   # 39 mototaxis / (8 tomas × 13h operativas)
+    lambda_arrivals=0.533,   # 39 mototaxis/día / (8 sockets × factor operativo 0.381 × 13h equiv)
     power_kw=7.4,            # Modo 3 monofasico 32A @ 230V
     capacity_kwh=7.4,        # Bateria completa mototaxi
-    soc_arrival_mean=0.20,   # 20% SOC medio al llegar (bateria baja)
-    soc_arrival_std=0.10,    # +/-10%
-    soc_target=1.00          # 100% objetivo (carga completa ~90 min real)
+    soc_arrival_mean=0.245,  # SOC medio al llegar: 24.5% (distribución realista: 10%-40%)
+    soc_arrival_std=0.12,    # +/-12% (rango 10%-40% de la distribución)
+    soc_target=0.785,        # SOC objetivo medio: 78.5% (carga parcial típica, no siempre 100%)
+    soc_target_std=0.15      # +/-15% (rango 60%-100% de destinos variados)
 )
 
 
@@ -236,17 +246,17 @@ MOTOTAXI_SPEC = VehicleType(
 # Vigente desde 2024-11-04
 # Referencia: OSINERGMIN Resolucion N° 047-2024-OS/CD
 # ============================================================================
-# Hora Punta (HP): 18:00 - 23:00 (5 horas)
-# Hora Fuera de Punta (HFP): 00:00 - 17:59, 23:00 - 23:59 (19 horas)
+# Hora Punta (HP): 18:00 - 22:00 (4 horas) [Operacion del mall 18-22h]
+# Hora Fuera de Punta (HFP): 00:00 - 17:59, 22:00 - 23:59 (20 horas)
 # ============================================================================
 
 # Tarifas de Energia (S/./kWh)
 TARIFA_ENERGIA_HP_SOLES = 0.45     # Hora Punta: S/.0.45/kWh
 TARIFA_ENERGIA_HFP_SOLES = 0.28    # Hora Fuera de Punta: S/.0.28/kWh
 
-# Horas de periodo punta (18:00 - 22:59, inclusive)
+# Horas de periodo punta (18:00 - 21:59, inclusivo)
 HORA_INICIO_HP = 18
-HORA_FIN_HP = 23  # Exclusivo (hasta las 22:59)
+HORA_FIN_HP = 22  # Exclusivo (hasta las 21:59)
 
 
 # ============================================================================
@@ -255,8 +265,18 @@ HORA_FIN_HP = 23  # Exclusivo (hasta las 22:59)
 # CONTEXTO: Motos y mototaxis tradicionales usan GASOLINA
 # Al electrificarse, evitan emisiones directas del motor de combustion.
 #
-# METODOLOGIA DE CALCULO:
-# -----------------------------------------------------------------------------
+# METODOLOGIA DE CALCULO (PROPORCIONAL A ENERGIA):
+# Este calculo es INDEPENDIENTE de SOC variable. Se aplica por kWh cargado.
+# Nota 2026-02-16: Con SOC variables (antes: 20→100%, ahora: variable 10-40→60-100%),
+# la energia promedio disminuye 34%, por lo tanto CO2 evitado TAMBIEN disminuye 34%.
+# Pero el FACTOR por kWh se mantiene igual: 0.87 kg CO2/kWh para motos.
+# 
+# EJEMPLO CON NUMEROS:
+# - Antes: 270 motos × 4.09 kWh × 0.87 = 96,303 kg CO2 evitado/año
+# - Ahora: 270 motos × 2.73 kWh × 0.87 = 64,400 kg CO2 evitado/año (-33%)
+# El cambio en CO2 es DIRECTO desde el cambio en energia.
+#
+# CALCULO DETALLADO:
 # 1. Factor emision gasolina: 2.31 kg CO2/litro (IPCC)
 #
 # 2. Consumo tipico moto gasolina 2T (110-150cc):
@@ -286,12 +306,32 @@ HORA_FIN_HP = 23  # Exclusivo (hasta las 22:59)
 #
 # FACTOR PROMEDIO PONDERADO (70% motos, 30% mototaxis):
 #    0.70 × 0.87 + 0.30 × 0.47 = 0.75 kg CO2/kWh
-# ============================================================================
+# 
+# APLICACION EN DATASET:
+# ─────────────────────────────────────────────────────────────────────────────
+# La "REDUCCIÓN DIRECTA DE CO2" es SOLO por cambio de combustible:
+#    reduccion_directa_co2_kg = energia_motos_kwh × 0.87 + energia_taxis_kwh × 0.47
+#                              = Gasolina evitada (expresada en kg CO2)
+#                              ⚠️ NO incluye emisiones del grid diesel
+#
+# El "CO2 NETO" incluye OFFSET del grid:
+#    co2_neto_por_hora_kg = reduccion_directa_co2_kg - co2_grid_kwh
+#                         = (Gasolina evitada) - (Diesel generado para EV)
+#                         = Impacto CO2 real/neto considerando el grid diesel
+#
+# RESUMEN COLUMNAS GENERADAS:
+#   • co2_reduccion_motos_kg         → kg CO2 por cambio gasolina motos (SIN grid)
+#   • co2_reduccion_mototaxis_kg     → kg CO2 por cambio gasolina taxis (SIN grid)
+#   • reduccion_directa_co2_kg       → TOTAL motos + taxis (SIN grid) ← SOLO COMBUSTIBLE
+#   • co2_grid_kwh                   → kg CO2 por diesel importado (SIN reducción)
+#   • co2_neto_por_hora_kg           → reduccion_directa - co2_grid = NETO REAL
+# ════════════════════════════════════════════════════════════════════════════
 
 FACTOR_CO2_GASOLINA_KG_L = 2.31         # kg CO2 / litro gasolina (IPCC)
 FACTOR_CO2_RED_DIESEL_KG_KWH = 0.4521   # kg CO2 / kWh (red Iquitos)
 
 # Factores de reduccion NETA de CO2 por cambio de combustible
+# PROPORCIONALES A ENERGIA CARGADA (independiente de SOC variable)
 FACTOR_CO2_NETO_MOTO_KG_KWH = 0.87      # kg CO2 evitado / kWh cargado (moto)
 FACTOR_CO2_NETO_MOTOTAXI_KG_KWH = 0.47  # kg CO2 evitado / kWh cargado (mototaxi)
 FACTOR_CO2_NETO_PROMEDIO_KG_KWH = 0.75  # Promedio ponderado (70% moto, 30% taxi)
@@ -396,16 +436,26 @@ class SocketSimulator:
         if operational_factor > 0:
             num_arrivals = self.rng.poisson(self.vehicle_type.lambda_arrivals * operational_factor)
             for _ in range(num_arrivals):
+                # SOC de llegada con distribución realista (media 24.5%, rango 10%-40%)
                 soc_arr = np.clip(
                     self.rng.normal(self.vehicle_type.soc_arrival_mean, 
                                    self.vehicle_type.soc_arrival_std),
                     0.0, 1.0
                 )
+                
+                # SOC objetivo con distribución realista (media 78%, rango 60%-100%)
+                # Algunos solo necesitan 60%, otros quieren 80%, pocos necesitan 100%
+                soc_tgt = np.clip(
+                    self.rng.normal(self.vehicle_type.soc_target,
+                                   self.vehicle_type.soc_target_std),
+                    0.0, 1.0
+                )
+                
                 vehicle = Vehicle(
                     vehicle_id=self.vehicle_count,
                     arrival_hour=hour,
                     soc_arrival=soc_arr,
-                    soc_target=self.vehicle_type.soc_target,
+                    soc_target=soc_tgt,  # Ahora variable, no fijo
                     soc_current=soc_arr,
                     power_kw=self.vehicle_type.power_kw,
                     capacity_kwh=self.vehicle_type.capacity_kwh
@@ -650,13 +700,12 @@ def create_socket_specs() -> list[SocketSpec]:
 def get_operational_factor(hour_of_day: int) -> float:
     """Retorna el factor de operacion del mall para una hora determinada.
     
-    Horario del mall (Iquitos):
+    Horario del mall (Iquitos) - CORRECTED:
     - 0-9h: Cerrado (0%)
     - 9-10h: Apertura y acondicionamiento (30%)
     - 10-18h: Operacion normal lineal (30% -> 100%)
-    - 18-21h: Pico de operacion (100%)
-    - 21-23h: Cierre gradual (100% -> 50% -> 0%)
-    - 23-0h: Cerrado (0%)
+    - 18-22h: Pico de operacion (100%) [HORA PUNTA: 4 horas]
+    - 22-24h: Cerrado (0%)
     
     Args:
         hour_of_day: Hora del dia (0-23)
@@ -664,8 +713,8 @@ def get_operational_factor(hour_of_day: int) -> float:
     Returns:
         Factor de operacion (0.0-1.0)
     """
-    if hour_of_day < 9 or hour_of_day >= 23:
-        # Cerrado fuera de 9-23h
+    if hour_of_day < 9 or hour_of_day >= 22:
+        # Cerrado fuera de 9-22h
         return 0.0
     elif hour_of_day == 9:
         # 9-10h: apertura 30%
@@ -675,14 +724,9 @@ def get_operational_factor(hour_of_day: int) -> float:
         # Interpolacion: 30% + (hour-10) * (100-30) / (18-10)
         progress = (hour_of_day - 10) / 8.0  # 0 a 1 en 8 horas
         return 0.30 + progress * 0.70
-    elif 18 <= hour_of_day < 21:
-        # 18-21h: operacion plena 100%
+    elif 18 <= hour_of_day < 22:
+        # 18-22h: operacion plena 100% (HORA PUNTA: 4 horas)
         return 1.0
-    elif 21 <= hour_of_day < 23:
-        # 21-23h: cierre gradual 100% -> 0%
-        # hora 21: 100%, hora 22: 50%, hora 23: 0%
-        progress = (hour_of_day - 21) / 2.0
-        return 1.0 - progress
     else:
         return 0.0
 
@@ -758,6 +802,11 @@ def generate_socket_level_dataset_v3(
         data_annual[f'socket_{socket_id:03d}_charging_power_kw'] = []  # Potencia instantanea de carga
         data_annual[f'socket_{socket_id:03d}_vehicle_count'] = []
     
+    # Columnas agregadas para cantidad de vehículos por tipo (agregadas por hora)
+    data_annual['cantidad_motos_activas'] = []        # Número de motos siendo cargadas esta hora
+    data_annual['cantidad_mototaxis_activas'] = []    # Número de taxis siendo cargados esta hora
+    data_annual['cantidad_total_vehiculos_activos'] = []  # Total de vehículos cargándose
+    
     # Simular 8,760 horas
     logger.info("Iniciando simulacion estocastica v3.0 (8,760 horas)...")
     for hour_idx, timestamp in enumerate(timestamps):
@@ -766,6 +815,10 @@ def generate_socket_level_dataset_v3(
         
         hour_of_day = timestamp.hour
         operational_factor = get_operational_factor(hour_of_day)
+        
+        # Contadores de vehículos activos por tipo esta hora
+        motos_activas_esta_hora = 0
+        taxis_activos_esta_hora = 0
         
         # Simular cada toma (38 total)
         for socket_id in range(38):
@@ -783,6 +836,12 @@ def generate_socket_level_dataset_v3(
                 effective_power = vehicle.power_kw * CHARGING_EFFICIENCY if vehicle.charging else 0.0
                 data_annual[f'socket_{socket_id:03d}_charging_power_kw'].append(effective_power)
                 data_annual[f'socket_{socket_id:03d}_vehicle_count'].append(simulator.vehicle_count)
+                
+                # Contar vehículos activos por tipo
+                if socket_id < 30:  # Sockets 0-29 son motos
+                    motos_activas_esta_hora += 1
+                else:  # Sockets 30-37 son mototaxis
+                    taxis_activos_esta_hora += 1
             else:
                 data_annual[f'socket_{socket_id:03d}_soc_arrival'].append(0.0)
                 data_annual[f'socket_{socket_id:03d}_soc_target'].append(0.0)
@@ -790,6 +849,11 @@ def generate_socket_level_dataset_v3(
                 data_annual[f'socket_{socket_id:03d}_active'].append(0)
                 data_annual[f'socket_{socket_id:03d}_charging_power_kw'].append(0.0)
                 data_annual[f'socket_{socket_id:03d}_vehicle_count'].append(simulator.vehicle_count)
+        
+        # Agregar contadores de vehículos activos
+        data_annual['cantidad_motos_activas'].append(motos_activas_esta_hora)
+        data_annual['cantidad_mototaxis_activas'].append(taxis_activos_esta_hora)
+        data_annual['cantidad_total_vehiculos_activos'].append(motos_activas_esta_hora + taxis_activos_esta_hora)
     
     # Crear DataFrame anual con datetime como indice
     df_annual = pd.DataFrame(data_annual, index=pd.DatetimeIndex(timestamps, name='datetime'))
@@ -825,6 +889,12 @@ def generate_socket_level_dataset_v3(
     # La reduccion DIRECTA es diferente a la indirecta (desplazamiento de diesel).
     # Aqui calculamos el CO2 que se evita porque los vehiculos NO usan gasolina.
     #
+    # IMPORTANTE 2026-02-16: Estos cálculos son PROPORCIONALES a la energía.
+    # Con SOC variable (carga parcial), la energía es 34% menor, por lo tanto
+    # CO2 evitado también es 34% menor. Pero el FACTOR por kWh se mantiene:
+    #   MOTO: 0.87 kg CO2/kWh
+    #   MOTOTAXI: 0.47 kg CO2/kWh
+    #
     # Factores:
     #   MOTO: 0.87 kg CO2/kWh (neto, descontando emisiones de la red)
     #   MOTOTAXI: 0.47 kg CO2/kWh (neto)
@@ -837,13 +907,37 @@ def generate_socket_level_dataset_v3(
     df_annual["ev_energia_motos_kwh"] = df_annual[moto_cols].sum(axis=1)
     df_annual["ev_energia_mototaxis_kwh"] = df_annual[taxi_cols].sum(axis=1)
     
-    # Reduccion directa CO2 por tipo de vehiculo
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # REDUCCIÓN DIRECTA DE CO2 POR CAMBIO DE COMBUSTIBLE (GASOLINA → ELÉCTRICO)
+    # ═══════════════════════════════════════════════════════════════════════════════
+    
+    # CO2 evitado MOTOS: energía cargada × 0.87 kg CO₂/kWh (gasol → EV)
+    # = Gasolina que NO se quemar en motos porque cargan con electricidad
     df_annual["co2_reduccion_motos_kg"] = df_annual["ev_energia_motos_kwh"] * FACTOR_CO2_NETO_MOTO_KG_KWH
+    
+    # CO2 evitado MOTOTAXIS: energía cargada × 0.47 kg CO₂/kWh (gasol → EV)
+    # = Gasolina que NO se quema en mototaxis porque cargan con electricidad
     df_annual["co2_reduccion_mototaxis_kg"] = df_annual["ev_energia_mototaxis_kwh"] * FACTOR_CO2_NETO_MOTOTAXI_KG_KWH
     
-    # Reduccion total directa de CO2 (cambio combustible)
+    # ⚠️ REDUCCIÓN DIRECTA DE CO2 (SOLO por cambio combustible, SIN grid)
+    # = CO2 evitado motos + CO2 evitado taxis
+    # = Gasolina evitada × factores CO2
+    # ⚠️ NO INCLUYE emisiones del grid diesel
     df_annual["reduccion_directa_co2_kg"] = (
         df_annual["co2_reduccion_motos_kg"] + df_annual["co2_reduccion_mototaxis_kg"]
+    )
+    
+    # CO2 DEL GRID (Diesel importado para generar electricidad)
+    # = Energía total cargada × 0.4521 kg CO₂/kWh (factor Iquitos 100% térmico/diesel)
+    # = Lo que se emite al generar la electricidad que usan los EVs
+    df_annual["co2_grid_kwh"] = df_annual["ev_energia_total_kwh"] * FACTOR_CO2_RED_DIESEL_KG_KWH
+    
+    # CO2 NETO por hora = REDUCCIÓN DIRECTA - EMISIONES GRID
+    # = (Gasolina evitada) - (Diesel importado)
+    # Si es positivo: Neto CO₂ evitado incluyendo offset del grid
+    # Si es negativo: Grid contamina más que la gasolina ahorrada
+    df_annual["co2_neto_por_hora_kg"] = (
+        df_annual["reduccion_directa_co2_kg"] - df_annual["co2_grid_kwh"]
     )
     
     # Columnas alias para compatibilidad con CityLearn
