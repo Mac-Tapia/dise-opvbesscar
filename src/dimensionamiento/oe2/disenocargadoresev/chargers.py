@@ -203,7 +203,8 @@ class VehicleType:
 # ENERGIA POR CARGA (bateria completa, NO afectada por fc):
 #   - Moto: 4.6 kWh/carga
 #   - Mototaxi: 7.4 kWh/carga
-#   - Energia diaria (9h-22h): 270×4.6 + 39×7.4 = 1,129 kWh/dia (412,236 kWh/ano)
+#   - Energia diaria real (v5.2, horaro 9h-22h): 1,550.34 kWh/dia (565,875 kWh/ano)
+#     Basado en: Motos cargando promedio 11.9/h × 60min/carga × 4.6kWh + Taxis 2.2/h × 90min/carga × 7.4kWh
 #
 # Referencias: IEA GEO 2024, BNEF EVO 2025, ICCT India 2022, NREL 2021
 # ============================================================================

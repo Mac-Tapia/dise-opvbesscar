@@ -1,4 +1,5 @@
-Opcion B: Unificar data_loader con catalogo (RECOMENDADO)"""
+"""
+DIMENSIONAMIENTO BESS v5.4
 Modulo de dimensionamiento de sistema de almacenamiento BESS.
 
 PROPOSITO: Calcular capacidad y potencia optima del BESS para el sistema
@@ -16,7 +17,7 @@ NOTA: El balance energetico completo del sistema esta en:
 
 Valores v5.3 (2026-02-XX):
 - 38 sockets (19 cargadores × 2) @ 7.4 kW = 281.2 kW instalado
-- Demanda EV (9h-22h): 1,129 kWh/dia (412,236 kWh/ano)
+- Demanda EV (9h-22h): 1,550.34 kWh/dia (565,875 kWh/ano) - v5.2 actualizado
 - BESS: 1,700 kWh / 400 kW (optimizado para arbitraje HP/HFP)
 - Tarifas OSINERGMIN: HP(18-23h) S/.0.45/kWh | HFP S/.0.28/kWh
 - Ahorro estimado arbitraje: ~S/.450,000/ano
@@ -186,7 +187,7 @@ def load_mall_demand_real(
     df = df.rename(columns={date_col: "datetime", demand_col: "power_kw"})
 
     # Asegurar indice datetime
-    df['datetime'] = pd.to_datetime(df['datetime'], dayfirst=True, errors='coerce')  # type: ignore[attr-defined]
+    df['datetime'] = pd.to_datetime(df['datetime'], dayfirst=False, errors='coerce')  # type: ignore[attr-defined]
     df['power_kw'] = pd.to_numeric(df['power_kw'], errors='coerce')  # type: ignore[attr-defined]
     df = df.dropna(subset=['datetime', 'power_kw'])  # type: ignore[attr-defined]
     df = df.set_index('datetime')  # type: ignore[attr-defined]
@@ -283,7 +284,7 @@ def load_ev_demand(ev_profile_path: Path, year: int = 2024) -> pd.DataFrame:
     El archivo CSV puede tener:
     - Formato v5.2: 38 columnas socket_XXX_charging_power_kw (estocastico)
       -> Suma todas las potencias de sockets (19 cargadores × 2 tomas = 38 sockets)
-      -> Total esperado (9h-22h): 412,236 kWh/ano (1,129 kWh/dia)
+      -> Total esperado (9h-22h): 565,875 kWh/ano (1,550.34 kWh/dia - v5.2)
     - 96 intervalos (15 minutos) para un dia tipico -> se suma a 24 horas
     - 8,760 intervalos (horario) -> se retorna tal cual
     - 24 horas (formato antiguo) -> se expande a 8,760 horas/ano
