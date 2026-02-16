@@ -1,0 +1,78 @@
+{
+  "timestamp": "2026-02-15T22:34:28.774611",
+  "baselines": {
+    "CON_SOLAR": {
+      "co2_net_kg": 8470608.0,
+      "solar_generation_kwh": 82930000.0,
+      "grid_import_kwh": 18740000.0,
+      "solar_impact_kg": 37468929.0,
+      "solar_impact_pct": 81.56139884474673
+    },
+    "SIN_SOLAR": {
+      "co2_net_kg": 45939537.0,
+      "solar_generation_kwh": 0.0,
+      "grid_import_kwh": 101670000.0
+    }
+  },
+  "agents": {
+    "PPO": {
+      "total_co2_avoided_kg": 43095361.50172028,
+      "episodes": 0,
+      "timesteps": 87600
+    },
+    "A2C": {
+      "total_co2_avoided_kg": 42407029.484044,
+      "episodes": 0,
+      "timesteps": 87600
+    },
+    "SAC": {
+      "total_co2_avoided_kg": 0,
+      "episodes": 0,
+      "timesteps": 0
+    }
+  },
+  "coverage_scenarios": {
+    "30%": {
+      "PPO": {
+        "co2_anual_projected_kg": 471894208.44383705,
+        "improvement_pct": 5570.960295221276
+      },
+      "A2C": {
+        "co2_anual_projected_kg": 464356972.85028183,
+        "improvement_pct": 5481.97924930869
+      },
+      "SAC": {
+        "co2_anual_projected_kg": 0,
+        "improvement_pct": 0
+      }
+    },
+    "50%": {
+      "PPO": {
+        "co2_anual_projected_kg": 786490347.4063951,
+        "improvement_pct": 9284.933825368793
+      },
+      "A2C": {
+        "co2_anual_projected_kg": 773928288.083803,
+        "improvement_pct": 9136.63208218115
+      },
+      "SAC": {
+        "co2_anual_projected_kg": 0,
+        "improvement_pct": 0
+      }
+    },
+    "100%": {
+      "PPO": {
+        "co2_anual_projected_kg": 1572980694.8127902,
+        "improvement_pct": 18569.867650737586
+      },
+      "A2C": {
+        "co2_anual_projected_kg": 1547856576.167606,
+        "improvement_pct": 18273.2641643623
+      },
+      "SAC": {
+        "co2_anual_projected_kg": 0,
+        "improvement_pct": 0
+      }
+    }
+  }
+}

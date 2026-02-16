@@ -1,0 +1,2501 @@
+================================================================================
+[PRE-PASO] VALIDAR SINCRONIZACION CON 5 DATASETS OE2
+================================================================================
+  [OK] solar: 8,760 filas x 11 columnas (pv_generation_citylearn2024.csv)
+  [OK] chargers_hourly: 8,760 filas x 353 columnas (chargers_ev_ano_2024_v3.csv)
+  [OK] chargers_stats: 38 filas x 4 columnas (chargers_real_statistics.csv)
+  [OK] bess: 8,760 filas x 25 columnas (bess_ano_2024.csv)
+  [OK] mall_demand: 8,760 filas x 1 columnas (demandamallhorakwh.csv)
+
+  SINCRONIZACION OE2 -> CityLearn:
+    Solar PVGIS:          8,760 horas
+    Chargers 38 sockets:          8,760 horas x 38 sockets (19 chargers × 2)
+    BESS SOC:             8,760 horas
+    Mall Demand:          8,760 horas
+  [OK] Todos los datasets OE2 sincronizados
+================================================================================
+
+
+================================================================================
+[VALIDACION] Sincronizacion PPO - Constantes contra SAC/A2C
+================================================================================
+  [OK] 1. BESS Capacity (940 kWh)
+  [OK] 2. BESS Max normalizacion (1700 kWh)
+  [OK] 3. Solar Max (2887 kW)
+  [OK] 4. Mall Max (3000 kW)
+  [OK] 5. Columnas observables (27)
+  [OK] 6. Chargers (10 cols)
+  [OK] 7. Solar (6 cols)
+  [OK] 8. BESS (5 cols)
+  [OK] 9. Mall (3 cols)
+
+
+[PRE-VALIDACION] Verificando especificacion de entrenamiento completo...
+
+================================================================================
+[VALIDACION DE ENTRENAMIENTO] PPO
+================================================================================
+  [OK] Episodes: 10 (CORRECTO)
+  [OK] Timesteps: 87,600 (CORRECTO: 10 anos × 8760)
+  [OK] solar       : data/oe2/Generacionsolar/pv_generation_citylearn2024.csv (0.9 MB)
+  [OK] chargers    : data/oe2/chargers/chargers_ev_ano_2024_v3.csv (16.3 MB)
+  [OK] mall        : data/oe2/demandamallkwh/demandamallhorakwh.csv (0.4 MB)
+  [OK] bess        : data/processed/citylearn/iquitos_ev_mall/bess_ano_2024.csv (1.6 MB)
+  [OK] Observation dim: 156 (>=  27 requeridas)
+  [OK] Action dim: 39 (1 BESS + 38 sockets)
+  [OK] Reward weights loaded (co2_focus mode)
+  [OK] CO2 factor: 0.4521
+  [OK] Chargers: 19
+  [OK] Total sockets: 38
+
+================================================================================
+[RESULTADO] [OK] PPO PREPARADO PARA ENTRENAMIENTO COMPLETO
+================================================================================
+Config:
+  - Episodes: 10 (10 anos completos)
+  - Timesteps: 87,600 (87,600 pasos)
+  - Observation: 156 dims
+  - Action: 39 dims
+  - Datasets: TODOS cargados
+  - Multiobjetivo: SI (27 columnas observables)
+  - Validacion: OK [OK]
+[OK] Entrenamiento COMPLETO garantizado: 10 episodios × 87,600 steps × 27 observables × multiobjetivo.
+
+[PRE-PASO] LIMPIEZA DE CHECKPOINTS PPO
+--------------------------------------------------------------------------------
+  No hay checkpoints previos
+
+================================================================================
+ENTRENAR PPO - MULTIOBJETIVO CON DATOS REALES - 10 EPISODIOS
+================================================================================
+Inicio: 2026-02-15 19:12:27
+
+GPU DISPONIBLE: NVIDIA GeForce RTX 4060 Laptop GPU
+  RAM: 8.6 GB
+  CUDA: 12.1
+
+2026-02-15 19:12:29,180 | __main__ | INFO | Device: cuda | Batch: 256 | Epochs: 3
+[PASO 1] Cargar configuracion y contexto OE2
+--------------------------------------------------------------------------------
+2026-02-15 19:12:29,198 | __main__ | INFO | Config validado: default.yaml OK
+  REWARD WEIGHTS (ACTUALIZADOS 2026-02-07):
+    CO2 grid (0.50): Minimizar importacion grid
+    Solar (0.20): Autoconsumo PV
+    EV satisfaction (0.30): SOC 90% (PRIORIDAD MAXIMA)
+    Cost (0.10): Minimizar costo
+    Grid stability (0.05): Suavizar picos
+  [Valores cargados: CO2=0.35, Solar=0.20, EV=0.30, Cost=0.10, Grid=0.05]
+
+[PASO 2] Cargar datos OE2 (8760 horas = 1 ano)
+--------------------------------------------------------------------------------
+2026-02-15 19:12:29,211 | __main__ | INFO | [SYNC A2C] Solar: columna='ac_power_kw' | 8292514 kWh/ano (8760h) | Path: pv_generation_hourly_citylearn_v2.csv
+2026-02-15 19:12:29,355 | __main__ | INFO | Chargers REALES (socket power columns): 38 sockets | Demanda anual: 2463312 kWh
+2026-02-15 19:12:29,358 | __main__ | INFO | Charger STATS (5to OE2): max_power=2.45-3.59 kW, mean_power=0.95 kW
+2026-02-15 19:12:29,364 | __main__ | INFO | [SYNC A2C] Mall: 4424186 kWh/ano (promedio 505.0 kW/h) | Path: demandamallhorakwh.csv
+2026-02-15 19:12:29,378 | __main__ | INFO | [SYNC A2C] BESS: SOC media 55.2% | Path: bess_ano_2024.csv
+
+[PASO 3] Crear environment Gymnasium
+--------------------------------------------------------------------------------
+2026-02-15 19:12:29,545 | __main__ | INFO | VecNormalize aplicado: norm_obs=True, norm_reward=True (gamma=0.88)
+2026-02-15 19:12:29,547 | __main__ | INFO | Environment creado:
+2026-02-15 19:12:29,547 | __main__ | INFO |   Observation: (156,)
+2026-02-15 19:12:29,548 | __main__ | INFO |   Action: (39,)
+2026-02-15 19:12:29,548 | __main__ | INFO |   Timesteps/episodio: 8760 (1 ano completo)
+
+[PASO 4] Crear agente PPO
+--------------------------------------------------------------------------------
+2026-02-15 19:12:29,548 | __main__ | INFO | LR Schedule habilitado: 1.00e-04 -> 0 (lineal sobre 87600 timesteps)
+2026-02-15 19:12:30,879 | __main__ | INFO | PPO creado: LR=schedule(1.00e-04->0), n_steps=2048, target_kl=0.06, device=cuda
+  Hiperparametros PPO v5.0 [Papers: Schulman 2017, Engstrom 2020, Andrychowicz 2021]:
+    Learning Rate:     0.000100 -> 0 (schedule lineal, CRITICO)
+    N Steps (rollout): 2048  (mas contexto = mejor value function)
+    Batch Size:        256  (minibatch dentro del rollout)
+    Epochs per update: 3  (3-10, mas = sample efficiency pero overfitting)
+    Gamma:             0.88  (REDUCIDO para episodios de 8760 pasos)
+    Clip Range (eps):  0.2  (0.1-0.3, limita cambio de politica)
+    GAE Lambda:        0.97  (0.9-0.97, bias-variance tradeoff)
+    Entropy Coef:      0.02  (0.0-0.02, promueve exploracion)
+    Value Coef:        0.7  (peso del value loss)
+    Max Grad Norm:     0.5  (gradient clipping)
+    Target KL:         0.06  (early stop si KL >, ESTABILIDAD)
+    Clip Range VF:     None  (DESHABILITADO - dana EV segun Andrychowicz 2021)
+    Normalize Adv:     True  (normalizar advantages)
+    Actor Network:     [256, 256, 128] (policy)
+    Critic Network:    [512, 512, 256] (value function, MAS GRANDE)
+    VecNormalize:      norm_obs=True, norm_reward=True (CLAVE para EV)
+
+[PASO 5] ENTRENAMIENTO CON DATOS REALES OE2
+--------------------------------------------------------------------------------
+  CONFIGURACION:
+    Episodios: 10 x 8760 horas = 87,600 timesteps
+    Datos: 100% REALES (OE2 Iquitos)
+    Device: CUDA
+    Duracion est.: ~1.3 minutos
+
+  REWARD WEIGHTS (ACTUALIZADOS 2026-02-08 - LOG SAC):
+    CO2 grid (0.35): Minimizar importacion grid
+    Solar (0.20): Autoconsumo PV
+    EV satisfaction (0.30): SOC 90%
+    Cost (0.10): Minimizar costo
+    Grid stability (0.05): Suavizar picos
+
+  Iniciando entrenamiento...
+
+  [BESS REAL] Cargado: 8760 horas de bess_ano_2024.csv
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=0.0, grid=456.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=187.0, grid=0.0, total=1455.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=173.9, grid=500.0, total=673.9 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=0.0, grid=496.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=0.0, grid=462.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=122.6, grid=0.0, total=1260.8 kW
+    Steps:   1,000 | Ep:  0 | Progreso:  11.4% | CO2_grid:  178,775 kg | CO2_evitado:  463,907 kg
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=169.5, grid=310.3, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=342.0, grid=0.0, total=561.5 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=115.9, grid=0.0, total=1009.5 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=0.0, grid=474.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=0.0, grid=411.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+    Steps:   2,000 | Ep:  0 | Progreso:  22.8% | CO2_grid:  349,497 kg | CO2_evitado:  941,124 kg
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=342.0, grid=0.0, total=2494.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=0.0, grid=466.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=0.0, grid=400.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=247.7, grid=206.6, total=454.3 kW
+    Steps:   3,000 | Ep:  0 | Progreso:  34.2% | CO2_grid:  517,957 kg | CO2_evitado: 1,434,175 kg
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=0.0, grid=428.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=342.0, grid=0.0, total=1429.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=0.0, grid=434.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=0.0, grid=410.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=342.0, grid=0.0, total=2612.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+    Steps:   4,000 | Ep:  0 | Progreso:  45.7% | CO2_grid:  678,896 kg | CO2_evitado: 1,924,859 kg
+    [PPO] Step   4,096:
+           KL: 0.0106 | Clip%: 7.4% | Entropy: 55.352
+           Policy L: -0.0134 | Value L: 0.6992 | Expl.Var: -0.582
+    [!]  [PPO WARNING] Explained variance negativa: -0.582 (total: 1)
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=186.7, grid=500.0, total=686.7 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=0.0, grid=452.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=0.0, grid=413.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=342.0, grid=0.0, total=1133.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=0.0, grid=442.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=0.0, grid=403.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+    Steps:   5,000 | Ep:  0 | Progreso:  57.1% | CO2_grid:  843,855 kg | CO2_evitado: 2,413,134 kg
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=0.0, grid=449.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=0.0, grid=403.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=342.0, grid=0.0, total=2504.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=251.9, grid=0.0, total=1779.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=89.1, grid=371.2, total=460.3 kW
+    Steps:   6,000 | Ep:  0 | Progreso:  68.5% | CO2_grid: 1,011,043 kg | CO2_evitado: 2,943,003 kg
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=0.0, grid=413.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=59.2, grid=479.1, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=0.0, grid=408.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+    Steps:   7,000 | Ep:  0 | Progreso:  79.9% | CO2_grid: 1,181,061 kg | CO2_evitado: 3,465,563 kg
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=0.0, grid=491.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=103.7, grid=328.4, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=0.0, grid=489.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=0.0, grid=428.5, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+    Steps:   8,000 | Ep:  0 | Progreso:  91.3% | CO2_grid: 1,358,992 kg | CO2_evitado: 3,960,622 kg
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+    [PPO] Step   8,192:
+           KL: 0.0111 | Clip%: 6.6% | Entropy: 55.408
+           Policy L: -0.0146 | Value L: 0.1445 | Expl.Var: 0.840
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=0.0, grid=403.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=0.0, grid=495.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+
+  ================================================================
+  EPISODIO 1 COMPLETADO
+  ================================================================
+    Reward Total (acumulado):      1,352.70
+
+  CO2 CONTABILIDAD (SIN DOUBLE-COUNTING):
+    Grid Import CO2:              1,489,637 kg
+    - Reducido Indirecto:         3,952,802 kg (solar/BESS -> grid avoidance)
+    - Reducido Directo:             356,734 kg (EV renewable -> avoid combustion)
+    = Reduccion Total:            4,309,536 kg
+    CO2 Neto (Grid - Reducido):           0 kg
+
+  ENERGIA:
+    Solar Aprovechado:            8,292,514 kWh
+    EV Cargado:                     286,188 kWh
+    Grid Import:                  3,294,930 kWh
+
+  FLOTA MOVILIDAD:
+    Motos cargadas (max):                28 / 112 (2,685 diarias)
+    Mototaxis cargados (max):             8 / 16 (388 diarias)
+    Motos cargando (pico):               28 veh
+    Taxis cargando (pico):                8 veh
+
+  BESS ALMACENAMIENTO:
+    Descarga:                       677,836 kWh
+    Carga:                          790,716 kWh
+
+  AHORROS DE COSTOS v7.0:
+    Ahorro Solar (grid evitado): S/. 604,886.44
+    Ahorro BESS (HP evitado):    S/. 216,017.09
+    Costo Grid Import:           S/. 1,268,836.12
+    Ahorro Combustible (EVs):    USD  42,928.23
+    AHORRO TOTAL OPERACIONAL:    S/. 820,903.53
+    AHORRO TOTAL (USD):          USD 264,794.05
+
+  6 COMPONENTES REWARD (promedios):
+    r_co2 (45%):       0.0824  | r_solar (15%):    -0.0483
+    r_vehicles (25%):  0.2804  | r_grid (5%):       0.0447
+    r_bess (5%):       0.1178  | r_priority (5%):   0.1188
+  ================================================================
+
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=131.7, grid=324.7, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=267.7, grid=0.0, total=548.1 kW
+    Steps:   9,000 | Ep:  1 | Progreso:   2.7% | CO2_grid:   38,848 kg | CO2_evitado:  108,285 kg
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=195.3, grid=0.0, total=2400.7 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=216.9, grid=0.0, total=1485.2 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=0.0, grid=462.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=342.0, grid=0.0, total=2558.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=265.4, grid=500.0, total=765.4 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=148.1, grid=363.8, total=511.9 kW
+    Steps:  10,000 | Ep:  1 | Progreso:  14.2% | CO2_grid:  201,439 kg | CO2_evitado:  573,205 kg
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=0.0, grid=479.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=88.1, grid=0.0, total=981.8 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=17.9, grid=456.8, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+    Steps:  11,000 | Ep:  1 | Progreso:  25.6% | CO2_grid:  355,290 kg | CO2_evitado: 1,057,813 kg
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=0.0, grid=400.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=342.0, grid=0.0, total=1445.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=325.6, grid=500.0, total=825.6 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=0.0, grid=454.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=0.0, grid=428.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+    Steps:  12,000 | Ep:  1 | Progreso:  37.0% | CO2_grid:  511,759 kg | CO2_evitado: 1,556,153 kg
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+    [PPO INFO] Entropy baseline establecido: 55.4056
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=0.0, grid=434.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=55.2, grid=500.0, total=555.2 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+    Steps:  13,000 | Ep:  1 | Progreso:  48.4% | CO2_grid:  650,041 kg | CO2_evitado: 2,041,110 kg
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=165.1, grid=277.2, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=0.0, grid=403.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+    Steps:  14,000 | Ep:  1 | Progreso:  59.8% | CO2_grid:  793,726 kg | CO2_evitado: 2,539,868 kg
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=0.0, grid=449.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=0.0, grid=403.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=150.7, grid=500.0, total=650.7 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=0.0, grid=413.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+    Steps:  15,000 | Ep:  1 | Progreso:  71.2% | CO2_grid:  938,219 kg | CO2_evitado: 3,070,378 kg
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=179.4, grid=358.9, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=0.0, grid=491.2, total=491.2 kW
+    Steps:  16,000 | Ep:  1 | Progreso:  82.6% | CO2_grid: 1,085,670 kg | CO2_evitado: 3,590,281 kg
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=342.0, grid=90.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+    [PPO] Step  16,384:
+           KL: 0.0203 | Clip%: 14.2% | Entropy: 55.495
+           Policy L: -0.0211 | Value L: 0.1500 | Expl.Var: 0.821
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=342.0, grid=86.5, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+    Steps:  17,000 | Ep:  1 | Progreso:  94.1% | CO2_grid: 1,227,283 kg | CO2_evitado: 4,079,722 kg
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=0.0, grid=403.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=0.0, grid=495.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+
+  ================================================================
+  EPISODIO 2 COMPLETADO
+  ================================================================
+    Reward Total (acumulado):      1,690.67
+
+  CO2 CONTABILIDAD (SIN DOUBLE-COUNTING):
+    Grid Import CO2:              1,300,337 kg
+    - Reducido Indirecto:         3,952,802 kg (solar/BESS -> grid avoidance)
+    - Reducido Directo:             356,734 kg (EV renewable -> avoid combustion)
+    = Reduccion Total:            4,309,536 kg
+    CO2 Neto (Grid - Reducido):           0 kg
+
+  ENERGIA:
+    Solar Aprovechado:            8,292,514 kWh
+    EV Cargado:                     289,174 kWh
+    Grid Import:                  2,876,216 kWh
+
+  FLOTA MOVILIDAD:
+    Motos cargadas (max):                28 / 112 (2,685 diarias)
+    Mototaxis cargados (max):             8 / 16 (388 diarias)
+    Motos cargando (pico):               28 veh
+    Taxis cargando (pico):                8 veh
+
+  BESS ALMACENAMIENTO:
+    Descarga:                       677,836 kWh
+    Carga:                          790,716 kWh
+
+  AHORROS DE COSTOS v7.0:
+    Ahorro Solar (grid evitado): S/. 605,509.83
+    Ahorro BESS (HP evitado):    S/. 258,495.81
+    Costo Grid Import:           S/. 1,131,419.40
+    Ahorro Combustible (EVs):    USD  43,376.14
+    AHORRO TOTAL OPERACIONAL:    S/. 864,005.64
+    AHORRO TOTAL (USD):          USD 276,891.18
+
+  6 COMPONENTES REWARD (promedios):
+    r_co2 (45%):       0.1267  | r_solar (15%):    -0.0481
+    r_vehicles (25%):  0.2849  | r_grid (5%):       0.0416
+    r_bess (5%):       0.1728  | r_priority (5%):   0.1190
+  ================================================================
+
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=0.0, grid=456.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+    Steps:  18,000 | Ep:  2 | Progreso:   5.5% | CO2_grid:   60,703 kg | CO2_evitado:  228,981 kg
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=0.0, grid=462.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=335.4, grid=176.5, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=0.0, grid=479.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+    Steps:  19,000 | Ep:  2 | Progreso:  16.9% | CO2_grid:  195,394 kg | CO2_evitado:  686,341 kg
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=342.0, grid=0.0, total=1235.6 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=0.0, grid=411.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=342.0, grid=0.0, total=1438.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+    Steps:  20,000 | Ep:  2 | Progreso:  28.3% | CO2_grid:  321,114 kg | CO2_evitado: 1,177,283 kg
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=0.0, grid=400.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=48.7, grid=405.6, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+    Steps:  21,000 | Ep:  2 | Progreso:  39.7% | CO2_grid:  442,102 kg | CO2_evitado: 1,666,423 kg
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=0.0, grid=452.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+    Steps:  22,000 | Ep:  2 | Progreso:  51.1% | CO2_grid:  551,942 kg | CO2_evitado: 2,159,513 kg
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=131.5, grid=271.8, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=319.2, grid=130.0, total=449.2 kW
+    Steps:  23,000 | Ep:  2 | Progreso:  62.6% | CO2_grid:  662,526 kg | CO2_evitado: 2,666,877 kg
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+    Steps:  24,000 | Ep:  2 | Progreso:  74.0% | CO2_grid:  782,347 kg | CO2_evitado: 3,193,695 kg
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+    [PPO] Step  24,576:
+           KL: 0.0192 | Clip%: 13.0% | Entropy: 55.562
+           Policy L: -0.0180 | Value L: 0.1864 | Expl.Var: 0.712
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=0.0, grid=432.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+    Steps:  25,000 | Ep:  2 | Progreso:  85.4% | CO2_grid:  897,059 kg | CO2_evitado: 3,709,500 kg
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=331.1, grid=97.4, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=42.2, grid=500.0, total=542.2 kW
+    Steps:  26,000 | Ep:  2 | Progreso:  96.8% | CO2_grid: 1,005,802 kg | CO2_evitado: 4,201,147 kg
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+
+  ================================================================
+  EPISODIO 3 COMPLETADO
+  ================================================================
+    Reward Total (acumulado):      2,129.28
+
+  CO2 CONTABILIDAD (SIN DOUBLE-COUNTING):
+    Grid Import CO2:              1,037,369 kg
+    - Reducido Indirecto:         3,952,802 kg (solar/BESS -> grid avoidance)
+    - Reducido Directo:             356,734 kg (EV renewable -> avoid combustion)
+    = Reduccion Total:            4,309,536 kg
+    CO2 Neto (Grid - Reducido):           0 kg
+
+  ENERGIA:
+    Solar Aprovechado:            8,292,514 kWh
+    EV Cargado:                     293,244 kWh
+    Grid Import:                  2,294,559 kWh
+
+  FLOTA MOVILIDAD:
+    Motos cargadas (max):                28 / 112 (2,685 diarias)
+    Mototaxis cargados (max):             7 / 16 (388 diarias)
+    Motos cargando (pico):               28 veh
+    Taxis cargando (pico):                7 veh
+
+  BESS ALMACENAMIENTO:
+    Descarga:                       677,836 kWh
+    Carga:                          790,716 kWh
+
+  AHORROS DE COSTOS v7.0:
+    Ahorro Solar (grid evitado): S/. 606,270.74
+    Ahorro BESS (HP evitado):    S/. 356,465.03
+    Costo Grid Import:           S/. 930,244.98
+    Ahorro Combustible (EVs):    USD  43,986.66
+    AHORRO TOTAL OPERACIONAL:    S/. 962,735.77
+    AHORRO TOTAL (USD):          USD 304,185.52
+
+  6 COMPONENTES REWARD (promedios):
+    r_co2 (45%):       0.1843  | r_solar (15%):    -0.0480
+    r_vehicles (25%):  0.2913  | r_grid (5%):       0.0713
+    r_bess (5%):       0.2369  | r_priority (5%):   0.1258
+  ================================================================
+
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=204.9, grid=500.0, total=704.9 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=244.0, grid=252.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+    Steps:  27,000 | Ep:  3 | Progreso:   8.2% | CO2_grid:   74,370 kg | CO2_evitado:  340,795 kg
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=342.0, grid=137.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+    Steps:  28,000 | Ep:  3 | Progreso:  19.6% | CO2_grid:  172,860 kg | CO2_evitado:  808,714 kg
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+    Steps:  29,000 | Ep:  3 | Progreso:  31.1% | CO2_grid:  270,073 kg | CO2_evitado: 1,285,502 kg
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+    Steps:  30,000 | Ep:  3 | Progreso:  42.5% | CO2_grid:  362,293 kg | CO2_evitado: 1,782,843 kg
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=0.0, grid=452.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=274.9, grid=500.0, total=774.9 kW
+    Steps:  31,000 | Ep:  3 | Progreso:  53.9% | CO2_grid:  449,539 kg | CO2_evitado: 2,280,865 kg
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=0.0, grid=442.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=0.0, grid=403.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=342.0, grid=107.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+    Steps:  32,000 | Ep:  3 | Progreso:  65.3% | CO2_grid:  545,028 kg | CO2_evitado: 2,791,754 kg
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+    [PPO] Step  32,768:
+           KL: 0.0145 | Clip%: 9.3% | Entropy: 55.619
+           Policy L: -0.0119 | Value L: 0.1792 | Expl.Var: 0.669
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=213.4, grid=500.0, total=713.4 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+    Steps:  33,000 | Ep:  3 | Progreso:  76.7% | CO2_grid:  643,231 kg | CO2_evitado: 3,320,290 kg
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=186.1, grid=246.0, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+    Steps:  34,000 | Ep:  3 | Progreso:  88.1% | CO2_grid:  738,939 kg | CO2_evitado: 3,830,626 kg
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=0.0, grid=428.5, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=220.9, grid=500.0, total=720.9 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=0.0, grid=495.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+    Steps:  35,000 | Ep:  3 | Progreso:  99.5% | CO2_grid:  831,836 kg | CO2_evitado: 4,289,248 kg
+
+  ================================================================
+  EPISODIO 4 COMPLETADO
+  ================================================================
+    Reward Total (acumulado):      2,465.61
+
+  CO2 CONTABILIDAD (SIN DOUBLE-COUNTING):
+    Grid Import CO2:                836,881 kg
+    - Reducido Indirecto:         3,952,802 kg (solar/BESS -> grid avoidance)
+    - Reducido Directo:             356,734 kg (EV renewable -> avoid combustion)
+    = Reduccion Total:            4,309,536 kg
+    CO2 Neto (Grid - Reducido):           0 kg
+
+  ENERGIA:
+    Solar Aprovechado:            8,292,514 kWh
+    EV Cargado:                     295,163 kWh
+    Grid Import:                  1,851,098 kWh
+
+  FLOTA MOVILIDAD:
+    Motos cargadas (max):                28 / 112 (2,685 diarias)
+    Mototaxis cargados (max):             8 / 16 (388 diarias)
+    Motos cargando (pico):               28 veh
+    Taxis cargando (pico):                8 veh
+
+  BESS ALMACENAMIENTO:
+    Descarga:                       677,836 kWh
+    Carga:                          790,716 kWh
+
+  AHORROS DE COSTOS v7.0:
+    Ahorro Solar (grid evitado): S/. 607,097.23
+    Ahorro BESS (HP evitado):    S/. 454,361.34
+    Costo Grid Import:           S/. 771,170.00
+    Ahorro Combustible (EVs):    USD  44,274.50
+    AHORRO TOTAL OPERACIONAL:    S/. 1,061,458.57
+    AHORRO TOTAL (USD):          USD 331,155.19
+
+  6 COMPONENTES REWARD (promedios):
+    r_co2 (45%):       0.2305  | r_solar (15%):    -0.0478
+    r_vehicles (25%):  0.2949  | r_grid (5%):       0.1126
+    r_bess (5%):       0.2720  | r_priority (5%):   0.1295
+  ================================================================
+
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=342.0, grid=0.0, total=622.4 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=173.3, grid=323.3, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+    Steps:  36,000 | Ep:  4 | Progreso:  11.0% | CO2_grid:   83,555 kg | CO2_evitado:  444,149 kg
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=317.3, grid=500.0, total=817.3 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=342.0, grid=137.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=0.0, grid=411.7, total=411.7 kW
+    Steps:  37,000 | Ep:  4 | Progreso:  22.4% | CO2_grid:  165,818 kg | CO2_evitado:  928,565 kg
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=342.0, grid=0.0, total=1445.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+    Steps:  38,000 | Ep:  4 | Progreso:  33.8% | CO2_grid:  250,521 kg | CO2_evitado: 1,409,069 kg
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=210.9, grid=500.0, total=710.9 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+    Steps:  39,000 | Ep:  4 | Progreso:  45.2% | CO2_grid:  327,389 kg | CO2_evitado: 1,900,817 kg
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=39.4, grid=374.4, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+    Steps:  40,000 | Ep:  4 | Progreso:  56.6% | CO2_grid:  404,517 kg | CO2_evitado: 2,401,756 kg
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=342.0, grid=107.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=0.0, grid=403.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+    [PPO] Step  40,960:
+           KL: 0.0084 | Clip%: 4.3% | Entropy: 55.667
+           Policy L: -0.0079 | Value L: 0.1802 | Expl.Var: 0.655
+    Steps:  41,000 | Ep:  4 | Progreso:  68.0% | CO2_grid:  489,059 kg | CO2_evitado: 2,917,623 kg
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+    Steps:  42,000 | Ep:  4 | Progreso:  79.5% | CO2_grid:  580,086 kg | CO2_evitado: 3,442,412 kg
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=342.0, grid=90.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=342.0, grid=0.0, total=1522.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=342.0, grid=86.5, total=428.5 kW
+    Steps:  43,000 | Ep:  4 | Progreso:  90.9% | CO2_grid:  667,712 kg | CO2_evitado: 3,946,646 kg
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+
+  ================================================================
+  EPISODIO 5 COMPLETADO
+  ================================================================
+    Reward Total (acumulado):      2,627.79
+
+  CO2 CONTABILIDAD (SIN DOUBLE-COUNTING):
+    Grid Import CO2:                745,057 kg
+    - Reducido Indirecto:         3,952,802 kg (solar/BESS -> grid avoidance)
+    - Reducido Directo:             356,734 kg (EV renewable -> avoid combustion)
+    = Reduccion Total:            4,309,536 kg
+    CO2 Neto (Grid - Reducido):           0 kg
+
+  ENERGIA:
+    Solar Aprovechado:            8,292,514 kWh
+    EV Cargado:                     299,635 kWh
+    Grid Import:                  1,647,989 kWh
+
+  FLOTA MOVILIDAD:
+    Motos cargadas (max):                28 / 112 (2,685 diarias)
+    Mototaxis cargados (max):             8 / 16 (388 diarias)
+    Motos cargando (pico):               28 veh
+    Taxis cargando (pico):                8 veh
+
+  BESS ALMACENAMIENTO:
+    Descarga:                       677,836 kWh
+    Carga:                          790,716 kWh
+
+  AHORROS DE COSTOS v7.0:
+    Ahorro Solar (grid evitado): S/. 607,448.82
+    Ahorro BESS (HP evitado):    S/. 507,687.07
+    Costo Grid Import:           S/. 695,133.39
+    Ahorro Combustible (EVs):    USD  44,945.31
+    AHORRO TOTAL OPERACIONAL:    S/. 1,115,135.89
+    AHORRO TOTAL (USD):          USD 346,333.38
+
+  6 COMPONENTES REWARD (promedios):
+    r_co2 (45%):       0.2479  | r_solar (15%):    -0.0477
+    r_vehicles (25%):  0.3015  | r_grid (5%):       0.1358
+    r_bess (5%):       0.2895  | r_priority (5%):   0.1302
+  ================================================================
+
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+    Steps:  44,000 | Ep:  5 | Progreso:   2.3% | CO2_grid:   15,532 kg | CO2_evitado:   88,189 kg
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=342.0, grid=0.0, total=924.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+    Steps:  45,000 | Ep:  5 | Progreso:  13.7% | CO2_grid:   96,249 kg | CO2_evitado:  550,135 kg
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=342.0, grid=137.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=262.1, grid=212.6, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+    Steps:  46,000 | Ep:  5 | Progreso:  25.1% | CO2_grid:  170,791 kg | CO2_evitado: 1,045,163 kg
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+    Steps:  47,000 | Ep:  5 | Progreso:  36.5% | CO2_grid:  251,910 kg | CO2_evitado: 1,531,810 kg
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+    Steps:  48,000 | Ep:  5 | Progreso:  47.9% | CO2_grid:  321,144 kg | CO2_evitado: 2,017,231 kg
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+    Steps:  49,000 | Ep:  5 | Progreso:  59.4% | CO2_grid:  393,100 kg | CO2_evitado: 2,525,050 kg
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+    [PPO] Step  49,152:
+           KL: 0.0101 | Clip%: 5.8% | Entropy: 55.705
+           Policy L: -0.0107 | Value L: 0.1532 | Expl.Var: 0.663
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=342.0, grid=107.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=0.0, grid=460.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+    Steps:  50,000 | Ep:  5 | Progreso:  70.8% | CO2_grid:  473,571 kg | CO2_evitado: 3,046,547 kg
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+    Steps:  51,000 | Ep:  5 | Progreso:  82.2% | CO2_grid:  563,830 kg | CO2_evitado: 3,566,512 kg
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=342.0, grid=90.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=342.0, grid=86.5, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+    Steps:  52,000 | Ep:  5 | Progreso:  93.6% | CO2_grid:  646,397 kg | CO2_evitado: 4,065,747 kg
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+
+  ================================================================
+  EPISODIO 6 COMPLETADO
+  ================================================================
+    Reward Total (acumulado):      2,762.84
+
+  CO2 CONTABILIDAD (SIN DOUBLE-COUNTING):
+    Grid Import CO2:                696,462 kg
+    - Reducido Indirecto:         3,952,802 kg (solar/BESS -> grid avoidance)
+    - Reducido Directo:             356,734 kg (EV renewable -> avoid combustion)
+    = Reduccion Total:            4,309,536 kg
+    CO2 Neto (Grid - Reducido):           0 kg
+
+  ENERGIA:
+    Solar Aprovechado:            8,292,514 kWh
+    EV Cargado:                     303,862 kWh
+    Grid Import:                  1,540,501 kWh
+
+  FLOTA MOVILIDAD:
+    Motos cargadas (max):                28 / 112 (2,685 diarias)
+    Mototaxis cargados (max):             8 / 16 (388 diarias)
+    Motos cargando (pico):               28 veh
+    Taxis cargando (pico):                8 veh
+
+  BESS ALMACENAMIENTO:
+    Descarga:                       677,836 kWh
+    Carga:                          790,716 kWh
+
+  AHORROS DE COSTOS v7.0:
+    Ahorro Solar (grid evitado): S/. 607,949.23
+    Ahorro BESS (HP evitado):    S/. 537,551.91
+    Costo Grid Import:           S/. 657,458.63
+    Ahorro Combustible (EVs):    USD  45,579.32
+    AHORRO TOTAL OPERACIONAL:    S/. 1,145,501.14
+    AHORRO TOTAL (USD):          USD 355,174.22
+
+  6 COMPONENTES REWARD (promedios):
+    r_co2 (45%):       0.2597  | r_solar (15%):    -0.0476
+    r_vehicles (25%):  0.3083  | r_grid (5%):       0.1532
+    r_bess (5%):       0.2966  | r_priority (5%):   0.1352
+  ================================================================
+
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+    Steps:  53,000 | Ep:  6 | Progreso:   5.0% | CO2_grid:   32,006 kg | CO2_evitado:  203,825 kg
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=210.2, grid=269.6, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+    Steps:  54,000 | Ep:  6 | Progreso:  16.4% | CO2_grid:  108,042 kg | CO2_evitado:  664,239 kg
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+    Steps:  55,000 | Ep:  6 | Progreso:  27.9% | CO2_grid:  178,357 kg | CO2_evitado: 1,161,941 kg
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+    Steps:  56,000 | Ep:  6 | Progreso:  39.3% | CO2_grid:  254,147 kg | CO2_evitado: 1,644,911 kg
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+    Steps:  57,000 | Ep:  6 | Progreso:  50.7% | CO2_grid:  323,754 kg | CO2_evitado: 2,136,680 kg
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+    [PPO] Step  57,344:
+           KL: 0.0073 | Clip%: 3.7% | Entropy: 55.737
+           Policy L: -0.0071 | Value L: 0.1874 | Expl.Var: 0.608
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=0.0, grid=500.0, total=500.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=0.0, grid=449.2, total=449.2 kW
+    Steps:  58,000 | Ep:  6 | Progreso:  62.1% | CO2_grid:  393,245 kg | CO2_evitado: 2,652,080 kg
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+    Steps:  59,000 | Ep:  6 | Progreso:  73.5% | CO2_grid:  477,357 kg | CO2_evitado: 3,168,937 kg
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=301.3, grid=130.8, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+    Steps:  60,000 | Ep:  6 | Progreso:  84.9% | CO2_grid:  563,710 kg | CO2_evitado: 3,687,997 kg
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=182.1, grid=246.4, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+    Steps:  61,000 | Ep:  6 | Progreso:  96.3% | CO2_grid:  644,300 kg | CO2_evitado: 4,186,446 kg
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+
+  ================================================================
+  EPISODIO 7 COMPLETADO
+  ================================================================
+    Reward Total (acumulado):      2,849.42
+
+  CO2 CONTABILIDAD (SIN DOUBLE-COUNTING):
+    Grid Import CO2:                674,239 kg
+    - Reducido Indirecto:         3,952,802 kg (solar/BESS -> grid avoidance)
+    - Reducido Directo:             356,734 kg (EV renewable -> avoid combustion)
+    = Reduccion Total:            4,309,536 kg
+    CO2 Neto (Grid - Reducido):           0 kg
+
+  ENERGIA:
+    Solar Aprovechado:            8,292,514 kWh
+    EV Cargado:                     309,705 kWh
+    Grid Import:                  1,491,348 kWh
+
+  FLOTA MOVILIDAD:
+    Motos cargadas (max):                28 / 112 (2,685 diarias)
+    Mototaxis cargados (max):             8 / 16 (388 diarias)
+    Motos cargando (pico):               28 veh
+    Taxis cargando (pico):                8 veh
+
+  BESS ALMACENAMIENTO:
+    Descarga:                       677,836 kWh
+    Carga:                          790,716 kWh
+
+  AHORROS DE COSTOS v7.0:
+    Ahorro Solar (grid evitado): S/. 608,126.03
+    Ahorro BESS (HP evitado):    S/. 552,933.25
+    Costo Grid Import:           S/. 638,871.69
+    Ahorro Combustible (EVs):    USD  46,455.76
+    AHORRO TOTAL OPERACIONAL:    S/. 1,161,059.28
+    AHORRO TOTAL (USD):          USD 360,255.57
+
+  6 COMPONENTES REWARD (promedios):
+    r_co2 (45%):       0.2619  | r_solar (15%):    -0.0475
+    r_vehicles (25%):  0.3176  | r_grid (5%):       0.1592
+    r_bess (5%):       0.3004  | r_priority (5%):   0.1457
+  ================================================================
+
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+    Steps:  62,000 | Ep:  7 | Progreso:   7.8% | CO2_grid:   49,299 kg | CO2_evitado:  315,427 kg
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=126.2, grid=500.0, total=626.2 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=342.0, grid=137.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=159.1, grid=100.6, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+    Steps:  63,000 | Ep:  7 | Progreso:  19.2% | CO2_grid:  124,354 kg | CO2_evitado:  787,111 kg
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+    Steps:  64,000 | Ep:  7 | Progreso:  30.6% | CO2_grid:  196,125 kg | CO2_evitado: 1,270,012 kg
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+    Steps:  65,000 | Ep:  7 | Progreso:  42.0% | CO2_grid:  266,599 kg | CO2_evitado: 1,759,255 kg
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+    [PPO] Step  65,536:
+           KL: 0.0041 | Clip%: 1.0% | Entropy: 55.765
+           Policy L: -0.0068 | Value L: 0.2028 | Expl.Var: 0.587
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+    Steps:  66,000 | Ep:  7 | Progreso:  53.4% | CO2_grid:  335,906 kg | CO2_evitado: 2,258,091 kg
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=342.0, grid=107.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+    Steps:  67,000 | Ep:  7 | Progreso:  64.8% | CO2_grid:  406,526 kg | CO2_evitado: 2,776,251 kg
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+    Steps:  68,000 | Ep:  7 | Progreso:  76.3% | CO2_grid:  489,547 kg | CO2_evitado: 3,295,349 kg
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=342.0, grid=90.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+    Steps:  69,000 | Ep:  7 | Progreso:  87.7% | CO2_grid:  572,012 kg | CO2_evitado: 3,806,727 kg
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=342.0, grid=86.5, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+    Steps:  70,000 | Ep:  7 | Progreso:  99.1% | CO2_grid:  651,764 kg | CO2_evitado: 4,275,307 kg
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+
+  ================================================================
+  EPISODIO 8 COMPLETADO
+  ================================================================
+    Reward Total (acumulado):      2,931.33
+
+  CO2 CONTABILIDAD (SIN DOUBLE-COUNTING):
+    Grid Import CO2:                660,178 kg
+    - Reducido Indirecto:         3,952,802 kg (solar/BESS -> grid avoidance)
+    - Reducido Directo:             356,734 kg (EV renewable -> avoid combustion)
+    = Reduccion Total:            4,309,536 kg
+    CO2 Neto (Grid - Reducido):           0 kg
+
+  ENERGIA:
+    Solar Aprovechado:            8,292,514 kWh
+    EV Cargado:                     312,853 kWh
+    Grid Import:                  1,460,250 kWh
+
+  FLOTA MOVILIDAD:
+    Motos cargadas (max):                28 / 112 (2,685 diarias)
+    Mototaxis cargados (max):             8 / 16 (388 diarias)
+    Motos cargando (pico):               28 veh
+    Taxis cargando (pico):                8 veh
+
+  BESS ALMACENAMIENTO:
+    Descarga:                       677,836 kWh
+    Carga:                          790,716 kWh
+
+  AHORROS DE COSTOS v7.0:
+    Ahorro Solar (grid evitado): S/. 608,027.56
+    Ahorro BESS (HP evitado):    S/. 562,354.97
+    Costo Grid Import:           S/. 629,161.65
+    Ahorro Combustible (EVs):    USD  46,927.89
+    AHORRO TOTAL OPERACIONAL:    S/. 1,170,382.53
+    AHORRO TOTAL (USD):          USD 363,247.49
+
+  6 COMPONENTES REWARD (promedios):
+    r_co2 (45%):       0.2652  | r_solar (15%):    -0.0474
+    r_vehicles (25%):  0.3227  | r_grid (5%):       0.1649
+    r_bess (5%):       0.3025  | r_priority (5%):   0.1522
+  ================================================================
+
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+    Steps:  71,000 | Ep:  8 | Progreso:  10.5% | CO2_grid:   64,382 kg | CO2_evitado:  426,000 kg
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=342.0, grid=137.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+    Steps:  72,000 | Ep:  8 | Progreso:  21.9% | CO2_grid:  136,742 kg | CO2_evitado:  904,485 kg
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+    Steps:  73,000 | Ep:  8 | Progreso:  33.3% | CO2_grid:  206,080 kg | CO2_evitado: 1,395,579 kg
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+    [PPO] Step  73,728:
+           KL: 0.0017 | Clip%: 0.0% | Entropy: 55.784
+           Policy L: -0.0033 | Value L: 0.2197 | Expl.Var: 0.607
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+    Steps:  74,000 | Ep:  8 | Progreso:  44.7% | CO2_grid:  273,899 kg | CO2_evitado: 1,877,640 kg
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+    Steps:  75,000 | Ep:  8 | Progreso:  56.2% | CO2_grid:  341,852 kg | CO2_evitado: 2,377,914 kg
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=342.0, grid=107.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+    Steps:  76,000 | Ep:  8 | Progreso:  67.6% | CO2_grid:  414,345 kg | CO2_evitado: 2,902,134 kg
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+    Steps:  77,000 | Ep:  8 | Progreso:  79.0% | CO2_grid:  496,527 kg | CO2_evitado: 3,420,627 kg
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=342.0, grid=90.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=342.0, grid=86.5, total=428.5 kW
+    Steps:  78,000 | Ep:  8 | Progreso:  90.4% | CO2_grid:  579,142 kg | CO2_evitado: 3,923,546 kg
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+
+  ================================================================
+  EPISODIO 9 COMPLETADO
+  ================================================================
+    Reward Total (acumulado):      3,001.00
+
+  CO2 CONTABILIDAD (SIN DOUBLE-COUNTING):
+    Grid Import CO2:                645,749 kg
+    - Reducido Indirecto:         3,952,802 kg (solar/BESS -> grid avoidance)
+    - Reducido Directo:             356,734 kg (EV renewable -> avoid combustion)
+    = Reduccion Total:            4,309,536 kg
+    CO2 Neto (Grid - Reducido):           0 kg
+
+  ENERGIA:
+    Solar Aprovechado:            8,292,514 kWh
+    EV Cargado:                     314,477 kWh
+    Grid Import:                  1,428,329 kWh
+
+  FLOTA MOVILIDAD:
+    Motos cargadas (max):                28 / 112 (2,685 diarias)
+    Mototaxis cargados (max):             8 / 16 (388 diarias)
+    Motos cargando (pico):               28 veh
+    Taxis cargando (pico):                8 veh
+
+  BESS ALMACENAMIENTO:
+    Descarga:                       677,836 kWh
+    Carga:                          790,716 kWh
+
+  AHORROS DE COSTOS v7.0:
+    Ahorro Solar (grid evitado): S/. 608,305.15
+    Ahorro BESS (HP evitado):    S/. 575,079.97
+    Costo Grid Import:           S/. 616,809.43
+    Ahorro Combustible (EVs):    USD  47,171.57
+    AHORRO TOTAL OPERACIONAL:    S/. 1,183,385.11
+    AHORRO TOTAL (USD):          USD 367,005.38
+
+  6 COMPONENTES REWARD (promedios):
+    r_co2 (45%):       0.2685  | r_solar (15%):    -0.0474
+    r_vehicles (25%):  0.3252  | r_grid (5%):       0.1715
+    r_bess (5%):       0.3034  | r_priority (5%):   0.1539
+  ================================================================
+
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+    Steps:  79,000 | Ep:  9 | Progreso:   1.8% | CO2_grid:    9,639 kg | CO2_evitado:   73,706 kg
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+    Steps:  80,000 | Ep:  9 | Progreso:  13.2% | CO2_grid:   79,312 kg | CO2_evitado:  526,384 kg
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=342.0, grid=137.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=221.1, grid=500.0, total=721.1 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+    Steps:  81,000 | Ep:  9 | Progreso:  24.7% | CO2_grid:  148,001 kg | CO2_evitado: 1,022,984 kg
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+    [PPO] Step  81,920:
+           KL: 0.0004 | Clip%: 0.0% | Entropy: 55.793
+           Policy L: -0.0017 | Value L: 0.1981 | Expl.Var: 0.648
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+    Steps:  82,000 | Ep:  9 | Progreso:  36.1% | CO2_grid:  218,345 kg | CO2_evitado: 1,517,117 kg
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+    Steps:  83,000 | Ep:  9 | Progreso:  47.5% | CO2_grid:  284,056 kg | CO2_evitado: 1,992,978 kg
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+    Steps:  84,000 | Ep:  9 | Progreso:  58.9% | CO2_grid:  353,041 kg | CO2_evitado: 2,500,893 kg
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=342.0, grid=107.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=273.9, grid=129.4, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+    Steps:  85,000 | Ep:  9 | Progreso:  70.3% | CO2_grid:  426,254 kg | CO2_evitado: 3,031,609 kg
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=219.1, grid=319.2, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+    Steps:  86,000 | Ep:  9 | Progreso:  81.7% | CO2_grid:  510,118 kg | CO2_evitado: 3,542,706 kg
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=342.0, grid=90.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=40.9, grid=500.0, total=540.9 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=342.0, grid=86.5, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+    Steps:  87,000 | Ep:  9 | Progreso:  93.2% | CO2_grid:  591,987 kg | CO2_evitado: 4,044,910 kg
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+
+  ================================================================
+  EPISODIO 10 COMPLETADO
+  ================================================================
+    Reward Total (acumulado):      3,049.83
+
+  CO2 CONTABILIDAD (SIN DOUBLE-COUNTING):
+    Grid Import CO2:                640,926 kg
+    - Reducido Indirecto:         3,952,802 kg (solar/BESS -> grid avoidance)
+    - Reducido Directo:             356,734 kg (EV renewable -> avoid combustion)
+    = Reduccion Total:            4,309,536 kg
+    CO2 Neto (Grid - Reducido):           0 kg
+
+  ENERGIA:
+    Solar Aprovechado:            8,292,514 kWh
+    EV Cargado:                     316,230 kWh
+    Grid Import:                  1,417,662 kWh
+
+  FLOTA MOVILIDAD:
+    Motos cargadas (max):                28 / 112 (2,685 diarias)
+    Mototaxis cargados (max):             8 / 16 (388 diarias)
+    Motos cargando (pico):               28 veh
+    Taxis cargando (pico):                8 veh
+
+  BESS ALMACENAMIENTO:
+    Descarga:                       677,836 kWh
+    Carga:                          790,716 kWh
+
+  AHORROS DE COSTOS v7.0:
+    Ahorro Solar (grid evitado): S/. 608,834.59
+    Ahorro BESS (HP evitado):    S/. 575,966.78
+    Costo Grid Import:           S/. 613,308.52
+    Ahorro Combustible (EVs):    USD  47,434.45
+    AHORRO TOTAL OPERACIONAL:    S/. 1,184,801.37
+    AHORRO TOTAL (USD):          USD 367,651.04
+
+  6 COMPONENTES REWARD (promedios):
+    r_co2 (45%):       0.2684  | r_solar (15%):    -0.0473
+    r_vehicles (25%):  0.3284  | r_grid (5%):       0.1708
+    r_bess (5%):       0.3045  | r_priority (5%):   0.1595
+  ================================================================
+
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+    Steps:  88,000 | Ep: 10 | Progreso:   4.6% | CO2_grid:   26,724 kg | CO2_evitado:  189,007 kg
+
+  ================================================================
+  RESUMEN METRICAS PPO
+  ================================================================
+    KL divergence:        mean=0.0085, max=0.0203
+    Clip fraction:        mean=5.0%, max=14.2%
+    Entropy:              mean=55.654, final=55.797
+    Explained variance:   mean=0.648, final=0.642
+  ================================================================
+
+================================================================================
+RESUMEN DE PROBLEMAS DETECTADOS (PPO)
+================================================================================
+  Total de eventos problematicos: 1
+
+  [!]  Explained variance negativa: 1 veces
+
+  RECOMENDACIONES PARA SIGUIENTE ENTRENAMIENTO:
+================================================================================
+
+    [GRAPH] KL Divergence: outputs\ppo_training\ppo_kl_divergence.png
+    [GRAPH] Clip Fraction: outputs\ppo_training\ppo_clip_fraction.png
+    [GRAPH] Entropy: outputs\ppo_training\ppo_entropy.png
+    [GRAPH] Value Metrics: outputs\ppo_training\ppo_value_metrics.png
+    [GRAPH] Dashboard: outputs\ppo_training\ppo_dashboard.png
+  [OK] 5 graficas PPO generadas en: outputs\ppo_training
+ 100% ------------------------- 88,064/87,600  [ 0:02:38 < 0:00:00 , 538 it/s ]
+2026-02-15 19:15:10,894 | __main__ | INFO | Entrenamiento exitoso: 2.7 min (speed: 548 steps/s)
+2026-02-15 19:15:10,894 | __main__ | INFO | Modelo guardado: checkpoints\PPO\ppo_final.zip
+
+Entrenamiento completado: 2.7 min (548 steps/s)
+
+[PASO 6] VALIDACION - 10 EPISODIOS DETERMINISICOS
+--------------------------------------------------------------------------------
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=342.0, grid=137.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=342.0, grid=107.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=342.0, grid=90.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=342.0, grid=86.5, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+2026-02-15 19:15:20,917 | __main__ | INFO |   Episodio 1/10: 8760 steps | R=  2147.5 | CO2=   4309536 kg | Solar=   8292514 kWh
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=342.0, grid=137.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=342.0, grid=107.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=342.0, grid=90.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=342.0, grid=86.5, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+2026-02-15 19:15:31,000 | __main__ | INFO |   Episodio 2/10: 8760 steps | R=  2172.2 | CO2=   4309536 kg | Solar=   8292514 kWh
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=342.0, grid=137.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=342.0, grid=107.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=342.0, grid=90.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=342.0, grid=86.5, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+2026-02-15 19:15:40,944 | __main__ | INFO |   Episodio 3/10: 8760 steps | R=  2196.3 | CO2=   4309536 kg | Solar=   8292514 kWh
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=342.0, grid=137.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=342.0, grid=107.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=342.0, grid=90.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=342.0, grid=86.5, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+2026-02-15 19:15:50,864 | __main__ | INFO |   Episodio 4/10: 8760 steps | R=  2219.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=342.0, grid=137.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=342.0, grid=107.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=342.0, grid=90.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=342.0, grid=86.5, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+2026-02-15 19:16:00,631 | __main__ | INFO |   Episodio 5/10: 8760 steps | R=  2241.3 | CO2=   4309536 kg | Solar=   8292514 kWh
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=342.0, grid=137.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=342.0, grid=107.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=342.0, grid=90.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=342.0, grid=86.5, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+2026-02-15 19:16:10,585 | __main__ | INFO |   Episodio 6/10: 8760 steps | R=  2262.1 | CO2=   4309536 kg | Solar=   8292514 kWh
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=342.0, grid=137.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=342.0, grid=107.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=342.0, grid=90.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=342.0, grid=86.5, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+2026-02-15 19:16:20,514 | __main__ | INFO |   Episodio 7/10: 8760 steps | R=  2281.8 | CO2=   4309536 kg | Solar=   8292514 kWh
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=342.0, grid=137.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=342.0, grid=107.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=342.0, grid=90.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=342.0, grid=86.5, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+2026-02-15 19:16:30,492 | __main__ | INFO |   Episodio 8/10: 8760 steps | R=  2300.4 | CO2=   4309536 kg | Solar=   8292514 kWh
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=342.0, grid=137.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=342.0, grid=107.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=342.0, grid=90.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=342.0, grid=86.5, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+2026-02-15 19:16:40,335 | __main__ | INFO |   Episodio 9/10: 8760 steps | R=  2318.0 | CO2=   4309536 kg | Solar=   8292514 kWh
+[PPO-POWER-DEBUG] Step 100: solar=0.0, bess=342.0, grid=114.4, total=456.4 kW
+[PPO-POWER-DEBUG] Step 200: solar=280.4, bess=0.0, grid=229.7, total=510.1 kW
+[PPO-POWER-DEBUG] Step 300: solar=2205.4, bess=0.0, grid=0.0, total=2205.4 kW
+[PPO-POWER-DEBUG] Step 400: solar=1268.3, bess=0.0, grid=0.0, total=1268.3 kW
+[PPO-POWER-DEBUG] Step 500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 600: solar=0.0, bess=342.0, grid=154.6, total=496.6 kW
+[PPO-POWER-DEBUG] Step 700: solar=0.0, bess=342.0, grid=120.4, total=462.4 kW
+[PPO-POWER-DEBUG] Step 800: solar=582.7, bess=0.0, grid=0.0, total=582.7 kW
+[PPO-POWER-DEBUG] Step 900: solar=2216.4, bess=0.0, grid=0.0, total=2216.4 kW
+[PPO-POWER-DEBUG] Step 1000: solar=1138.1, bess=0.0, grid=0.0, total=1138.1 kW
+[PPO-POWER-DEBUG] Step 1100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1200: solar=0.0, bess=342.0, grid=169.9, total=511.9 kW
+[PPO-POWER-DEBUG] Step 1300: solar=0.0, bess=342.0, grid=137.8, total=479.8 kW
+[PPO-POWER-DEBUG] Step 1400: solar=219.5, bess=0.0, grid=259.7, total=479.2 kW
+[PPO-POWER-DEBUG] Step 1500: solar=1102.0, bess=0.0, grid=0.0, total=1102.0 kW
+[PPO-POWER-DEBUG] Step 1600: solar=893.6, bess=0.0, grid=13.4, total=907.0 kW
+[PPO-POWER-DEBUG] Step 1700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 1800: solar=0.0, bess=342.0, grid=132.7, total=474.7 kW
+[PPO-POWER-DEBUG] Step 1900: solar=0.0, bess=342.0, grid=69.7, total=411.7 kW
+[PPO-POWER-DEBUG] Step 2000: solar=620.2, bess=0.0, grid=0.0, total=620.2 kW
+[PPO-POWER-DEBUG] Step 2100: solar=2152.0, bess=0.0, grid=0.0, total=2152.0 kW
+[PPO-POWER-DEBUG] Step 2200: solar=1096.9, bess=0.0, grid=0.0, total=1096.9 kW
+[PPO-POWER-DEBUG] Step 2300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 2400: solar=0.0, bess=342.0, grid=124.0, total=466.0 kW
+[PPO-POWER-DEBUG] Step 2500: solar=0.0, bess=342.0, grid=58.9, total=400.9 kW
+[PPO-POWER-DEBUG] Step 2600: solar=1103.6, bess=0.0, grid=0.0, total=1103.6 kW
+[PPO-POWER-DEBUG] Step 2700: solar=2197.3, bess=0.0, grid=0.0, total=2197.3 kW
+[PPO-POWER-DEBUG] Step 2800: solar=1700.8, bess=0.0, grid=0.0, total=1700.8 kW
+[PPO-POWER-DEBUG] Step 2900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3000: solar=0.0, bess=342.0, grid=112.3, total=454.3 kW
+[PPO-POWER-DEBUG] Step 3100: solar=0.0, bess=342.0, grid=86.8, total=428.8 kW
+[PPO-POWER-DEBUG] Step 3200: solar=1025.2, bess=0.0, grid=0.0, total=1025.2 kW
+[PPO-POWER-DEBUG] Step 3300: solar=2271.1, bess=0.0, grid=0.0, total=2271.1 kW
+[PPO-POWER-DEBUG] Step 3400: solar=1087.4, bess=0.0, grid=0.0, total=1087.4 kW
+[PPO-POWER-DEBUG] Step 3500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 3600: solar=0.0, bess=342.0, grid=92.8, total=434.8 kW
+[PPO-POWER-DEBUG] Step 3700: solar=0.0, bess=342.0, grid=68.8, total=410.8 kW
+[PPO-POWER-DEBUG] Step 3800: solar=862.0, bess=0.0, grid=0.0, total=862.0 kW
+[PPO-POWER-DEBUG] Step 3900: solar=2270.2, bess=0.0, grid=0.0, total=2270.2 kW
+[PPO-POWER-DEBUG] Step 4000: solar=1308.6, bess=0.0, grid=0.0, total=1308.6 kW
+[PPO-POWER-DEBUG] Step 4100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4200: solar=0.0, bess=342.0, grid=110.5, total=452.5 kW
+[PPO-POWER-DEBUG] Step 4300: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 4400: solar=791.7, bess=0.0, grid=0.0, total=791.7 kW
+[PPO-POWER-DEBUG] Step 4500: solar=2246.2, bess=0.0, grid=0.0, total=2246.2 kW
+[PPO-POWER-DEBUG] Step 4600: solar=973.2, bess=0.0, grid=0.0, total=973.2 kW
+[PPO-POWER-DEBUG] Step 4700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 4800: solar=0.0, bess=342.0, grid=100.3, total=442.3 kW
+[PPO-POWER-DEBUG] Step 4900: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5000: solar=993.7, bess=0.0, grid=0.0, total=993.7 kW
+[PPO-POWER-DEBUG] Step 5100: solar=2220.7, bess=0.0, grid=0.0, total=2220.7 kW
+[PPO-POWER-DEBUG] Step 5200: solar=1732.2, bess=0.0, grid=0.0, total=1732.2 kW
+[PPO-POWER-DEBUG] Step 5300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 5400: solar=0.0, bess=342.0, grid=107.2, total=449.2 kW
+[PPO-POWER-DEBUG] Step 5500: solar=0.0, bess=342.0, grid=61.3, total=403.3 kW
+[PPO-POWER-DEBUG] Step 5600: solar=690.4, bess=0.0, grid=0.0, total=690.4 kW
+[PPO-POWER-DEBUG] Step 5700: solar=2162.8, bess=0.0, grid=0.0, total=2162.8 kW
+[PPO-POWER-DEBUG] Step 5800: solar=1527.4, bess=0.0, grid=0.0, total=1527.4 kW
+[PPO-POWER-DEBUG] Step 5900: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6000: solar=0.0, bess=342.0, grid=118.3, total=460.3 kW
+[PPO-POWER-DEBUG] Step 6100: solar=0.0, bess=342.0, grid=71.8, total=413.8 kW
+[PPO-POWER-DEBUG] Step 6200: solar=1266.7, bess=0.0, grid=0.0, total=1266.7 kW
+[PPO-POWER-DEBUG] Step 6300: solar=2156.2, bess=0.0, grid=0.0, total=2156.2 kW
+[PPO-POWER-DEBUG] Step 6400: solar=1427.2, bess=0.0, grid=0.0, total=1427.2 kW
+[PPO-POWER-DEBUG] Step 6500: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 6600: solar=0.0, bess=342.0, grid=196.3, total=538.3 kW
+[PPO-POWER-DEBUG] Step 6700: solar=0.0, bess=342.0, grid=66.7, total=408.7 kW
+[PPO-POWER-DEBUG] Step 6800: solar=1773.9, bess=0.0, grid=0.0, total=1773.9 kW
+[PPO-POWER-DEBUG] Step 6900: solar=2238.4, bess=0.0, grid=0.0, total=2238.4 kW
+[PPO-POWER-DEBUG] Step 7000: solar=1216.2, bess=0.0, grid=0.0, total=1216.2 kW
+[PPO-POWER-DEBUG] Step 7100: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7200: solar=0.0, bess=342.0, grid=149.2, total=491.2 kW
+[PPO-POWER-DEBUG] Step 7300: solar=0.0, bess=342.0, grid=90.1, total=432.1 kW
+[PPO-POWER-DEBUG] Step 7400: solar=666.4, bess=0.0, grid=0.0, total=666.4 kW
+[PPO-POWER-DEBUG] Step 7500: solar=2177.8, bess=0.0, grid=0.0, total=2177.8 kW
+[PPO-POWER-DEBUG] Step 7600: solar=1180.6, bess=0.0, grid=0.0, total=1180.6 kW
+[PPO-POWER-DEBUG] Step 7700: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 7800: solar=0.0, bess=342.0, grid=147.7, total=489.7 kW
+[PPO-POWER-DEBUG] Step 7900: solar=0.0, bess=342.0, grid=86.5, total=428.5 kW
+[PPO-POWER-DEBUG] Step 8000: solar=1172.9, bess=0.0, grid=0.0, total=1172.9 kW
+[PPO-POWER-DEBUG] Step 8100: solar=2109.4, bess=0.0, grid=0.0, total=2109.4 kW
+[PPO-POWER-DEBUG] Step 8200: solar=1385.5, bess=0.0, grid=0.0, total=1385.5 kW
+[PPO-POWER-DEBUG] Step 8300: solar=0.0, bess=342.0, grid=500.0, total=842.0 kW
+[PPO-POWER-DEBUG] Step 8400: solar=0.0, bess=342.0, grid=218.2, total=560.2 kW
+[PPO-POWER-DEBUG] Step 8500: solar=0.0, bess=342.0, grid=61.0, total=403.0 kW
+[PPO-POWER-DEBUG] Step 8600: solar=0.0, bess=342.0, grid=153.4, total=495.4 kW
+[PPO-POWER-DEBUG] Step 8700: solar=1867.0, bess=0.0, grid=0.0, total=1867.0 kW
+2026-02-15 19:16:50,140 | __main__ | INFO |   Episodio 10/10: 8760 steps | R=  2334.6 | CO2=   4309536 kg | Solar=   8292514 kWh
+
+================================================================================
+RESULTADOS FINALES - ENTRENAMIENTO Y VALIDACION
+================================================================================
+
+ENTRENAMIENTO:
+  Total timesteps: 87,600
+  Duracion: 2.7 minutos (548 steps/s)
+  Device: CUDA
+
+VALIDACION (10 episodios):
+  Reward promedio:             2247.36 +/- 59.88
+  CO2 evitado (kg):            4309536
+  Solar aprovechado (kWh):       8292514
+  Grid import (kWh):           1306437
+
+  GUARDANDO ARCHIVOS DE SALIDA:
+    [OK] outputs\ppo_training\result_ppo.json
+    [OK] outputs\ppo_training\timeseries_ppo.csv (88,064 registros)
+    [OK] outputs\ppo_training\trace_ppo.csv (88,064 registros)
+
+2026-02-15 19:16:51,644 | __main__ | INFO | Archivos generados en: outputs\ppo_training
+================================================================================
+ENTRENAMIENTO PPO COMPLETADO EXITOSAMENTE
+================================================================================
+

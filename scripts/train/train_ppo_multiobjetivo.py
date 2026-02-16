@@ -232,8 +232,8 @@ BESS_MAX_POWER_KW = 342.0    # 342 kW potencia maxima BESS
 # - Value Loss muy alto (gradientes inestables)
 # 
 # Valores de normalizacion basados en datos OE2 Iquitos:
-SOLAR_MAX_KW = 4100.0        # 4,050 kWp instalado + margen
-MALL_MAX_KW = 150.0          # Demanda maxima mall ~100 kW + margen
+SOLAR_MAX_KW = 2887.0        # Real max desde pv_generation_citylearn_enhanced_v2.csv [FIXED 2026-02-15]
+MALL_MAX_KW = 3000.0         # Real max=2,763 kW from data/oe2/demandamallkwh/demandamallhorakwh.csv [FIXED 2026-02-15]
 CHARGER_MAX_KW = 10.0        # Por socket: 7.4 kW nominal + margen
 CHARGER_MEAN_KW = 4.6        # Consumo promedio por socket (kW)
 DEMAND_MAX_KW = 300.0        # Demanda total maxima esperada
@@ -1247,7 +1247,12 @@ class CityLearnEnvironment(Env):
         self.bess_available_kwh = bess_soc * BESS_MAX_KWH * 0.90
         self.solar_surplus_kwh = max(0.0, solar_kw - total_demand_kwh)
         self.current_grid_import = grid_import_kwh
-
+        # [FIX v7.1] GUARDAR ENERGY VALUES COMO ATRIBUTOS PARA QUE DETAILED_LOGGING_CALLBACK LOS ACCEDA DIRECTAMENTE
+        # Bypass VecNormalize wrapper que está corruptiendo el info dict
+        self._last_step_solar_kw = solar_kw
+        self._last_step_ev_charging_kwh = ev_charging_kwh
+        self._last_step_grid_import_kwh = grid_import_kwh
+        
         # SIGUIENTE OBSERVACION
         obs = self._make_observation(self.step_count)
 
@@ -1260,12 +1265,12 @@ class CityLearnEnvironment(Env):
             'step': self.step_count,
             'hour': h % 24,
             'hour_of_year': h,
-            # Energia - NOMBRES ESTANDAR COMPATIBLES
-            'solar_kw': solar_kw,  # CORRECCION: cambiar de solar_generation_kwh
-            'ev_charging_kw': ev_charging_kwh,  # CORRECCION: cambiar de ev_charging_kwh
-            'grid_import_kw': grid_import_kwh,  # CORRECCION: cambiar de grid_import_kwh
+            # Energia - NOMBRES ESTANDAR COMPATIBLES CON SAC/A2C
+            'solar_generation_kwh': solar_kw,  # CORREGIDO: usar nombre estándar
+            'ev_charging_kwh': ev_charging_kwh,  # CORREGIDO: usar nombre estándar
+            'grid_import_kwh': grid_import_kwh,  # CORREGIDO: usar nombre estándar
             'grid_export_kwh': grid_export_kwh,
-            'mall_demand_kw': mall_kw,  # CORRECCION: cambiar de mall_demand_kwh
+            'mall_demand_kw': mall_kw,  # CORREGIDO: usar nombre estándar
             'total_demand_kwh': total_demand_kwh,
             # BESS
             'bess_soc': bess_soc,
@@ -1328,6 +1333,12 @@ class CityLearnEnvironment(Env):
             'episode_co2_avoided_cumulative': float(self.episode_co2_avoided),
         }
 
+        # [FIX v7.2] GUARDAR EN GLOBAL DICT (persiste a través de VecEnv wrapper)
+        global GLOBAL_ENERGY_VALUES
+        GLOBAL_ENERGY_VALUES['solar_kw'] = float(solar_kw)
+        GLOBAL_ENERGY_VALUES['ev_charging_kwh'] = float(ev_charging_kwh)
+        GLOBAL_ENERGY_VALUES['grid_import_kwh'] = float(grid_import_kwh)
+
         if terminated:
             info['episode'] = {
                 'r': float(self.episode_reward),
@@ -1341,6 +1352,9 @@ class CityLearnEnvironment(Env):
 # DETAILED LOGGING CALLBACK - Para tracking paso a paso y generacion de archivos
 # ============================================================================
 from stable_baselines3.common.callbacks import BaseCallback
+
+# [FIX v7.2] GLOBAL DICT para energía - persiste a través de VecEnv/VecNormalize
+GLOBAL_ENERGY_VALUES = {'solar_kw': 0.0, 'ev_charging_kwh': 0.0, 'grid_import_kwh': 0.0}
 
 
 class DetailedLoggingCallback(BaseCallback):
@@ -1465,20 +1479,34 @@ class DetailedLoggingCallback(BaseCallback):
         # Obtener info del ultimo step
         infos = self.locals.get('infos', [{}])
         info = infos[0] if infos else {}
+        
+        # [FIX v7.2] LEER DESDE GLOBAL DICT - única forma que sobrevive VecEnv/VecNormalize wrapper
+        global GLOBAL_ENERGY_VALUES
+        solar_val = float(GLOBAL_ENERGY_VALUES.get('solar_kw', 0))
+        ev_val = float(GLOBAL_ENERGY_VALUES.get('ev_charging_kwh', 0))
+        grid_val = float(GLOBAL_ENERGY_VALUES.get('grid_import_kwh', 0))
+        
+        # Fallback a info dict si global dict tiene 0
+        if solar_val == 0:
+            solar_val = float(info.get('solar_generation_kwh', 0))
+        if ev_val == 0:
+            ev_val = float(info.get('ev_charging_kwh', 0))
+        if grid_val == 0:
+            grid_val = float(info.get('grid_import_kwh', 0))
 
         # Acumular metricas basicas - NOMBRES ESTANDAR COMPATIBLES
         self.ep_co2_grid += info.get('co2_grid_kg', 0)
         self.ep_co2_avoided_indirect += info.get('co2_avoided_indirect_kg', 0)
         self.ep_co2_avoided_direct += info.get('co2_avoided_direct_kg', 0)
-        self.ep_solar += info.get('solar_kw', info.get('solar_generation_kwh', 0))  # Fallback para compatibilidad
-        self.ep_ev += info.get('ev_charging_kw', info.get('ev_charging_kwh', 0))  # Fallback para compatibilidad
-        self.ep_grid += info.get('grid_import_kw', info.get('grid_import_kwh', 0))  # Fallback para compatibilidad
+        self.ep_solar += solar_val
+        self.ep_ev += ev_val
+        self.ep_grid += grid_val
         self.ep_steps += 1
         
         # [OK] NUEVAS METRICAS: Estabilidad, costos, motos/mototaxis
         # Estabilidad: calcular ratio de variacion
-        grid_import = info.get('grid_import_kw', info.get('grid_import_kwh', 0.0))  # Compatibilidad
-        grid_export = info.get('grid_export_kwh', 0.0) if 'grid_export_kwh' in info else 0.0
+        grid_import = grid_val
+        grid_export = info.get('grid_export_kwh', 0.0)  # Nombre estándar
         peak_demand_limit = 450.0  # kW limite tipico
         stability = 1.0 - min(1.0, abs(grid_import - grid_export) / peak_demand_limit)
         self.ep_stability_sum += stability
@@ -1602,9 +1630,10 @@ class DetailedLoggingCallback(BaseCallback):
             'timestep': self.num_timesteps,
             'episode': self.current_episode,
             'hour': self.ep_steps - 1,
-            'solar_kw': info.get('solar_kw', 0),  # Nombre estandar compartido
-            'ev_charging_kw': info.get('ev_charging_kw', 0),  # Nombre estandar compartido
-            'grid_import_kw': info.get('grid_import_kw', 0),  # Nombre estandar compartido
+            #  [FIX v7.1] Usar solar_val, ev_val, grid_val calculados arriba con fallback
+            'solar_generation_kwh': solar_val,
+            'ev_charging_kwh': ev_val,
+            'grid_import_kwh': grid_val,
             'bess_power_kw': info.get('bess_power_kw', 0),  # Ya estandar
             'bess_soc': info.get('bess_soc', 0.0),
             'mall_demand_kw': info.get('mall_demand_kw', 0),  # Nombre estandar
@@ -3004,8 +3033,8 @@ def validate_ppo_sync() -> bool:
     checks = {
         '1. BESS Capacity (940 kWh)': BESS_CAPACITY_KWH == 940.0,
         '2. BESS Max normalizacion (1700 kWh)': BESS_MAX_KWH == 1700.0,
-        '3. Solar Max (4100 kW)': SOLAR_MAX_KW == 4100.0,
-        '4. Mall Max (150 kW)': MALL_MAX_KW == 150.0,
+        '3. Solar Max (2887 kW)': SOLAR_MAX_KW == 2887.0,
+        '4. Mall Max (3000 kW)': MALL_MAX_KW == 3000.0,
         '5. Columnas observables (27)': len(ALL_OBSERVABLE_COLS) == 27,
         '6. Chargers (10 cols)': len(CHARGERS_OBSERVABLE_COLS) == 10,
         '7. Solar (6 cols)': len(SOLAR_OBSERVABLE_COLS) == 6,

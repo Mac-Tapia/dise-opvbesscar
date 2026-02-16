@@ -1,7 +1,7 @@
 ================================================================================
 REPORTE COMPARATIVO DE AGENTES RL - PVBESSCAR
 ================================================================================
-Fecha: 2026-02-15 09:08:10
+Fecha: 2026-02-15 22:13:58
 
 OBJETIVO PRINCIPAL: Maximizar reducción de CO2
 
@@ -19,18 +19,18 @@ RANKING COMPLETO:
        Steps:        87,600
 
   🥈 #2 A2C:
-       CO2 Total:    42.65M kg
-       CO2 Directo:  2.37M kg
+       CO2 Total:    42.41M kg
+       CO2 Directo:  2.12M kg
        CO2 Indirecto:40.29M kg
        Episodios:    10
        Steps:        87,600
 
   🥉 #3 SAC:
-       CO2 Total:    39.28M kg
-       CO2 Directo:  2.19M kg
+       CO2 Total:    39.09M kg
+       CO2 Directo:  2.00M kg
        CO2 Indirecto:37.09M kg
        Episodios:    10
-       Steps:        87,600
+       Steps:        280,320
 
 MÉTRICAS DETALLADAS POR AGENTE:
 ----------------------------------------
@@ -38,20 +38,26 @@ MÉTRICAS DETALLADAS POR AGENTE:
 PPO:
   Timesteps:     87,600
   Episodios:     10
-  Reward Final:  3060.59
-  Reward Medio:  2514.13
+  Return (min):  1469.9361
+  Return (max):  3139.7312
+  Return (avg):  2618.6491
+  CO2 Total Evitado: 43.10M kg
 
 A2C:
   Timesteps:     87,600
   Episodios:     10
-  Reward Final:  3170.36
-  Reward Medio:  2859.65
+  Return (min):  1985.1733
+  Return (max):  2954.0143
+  Return (avg):  2680.0072
+  CO2 Total Evitado: 42.41M kg
 
 SAC:
-  Timesteps:     87,600
+  Timesteps:     280,320
   Episodios:     10
-  Reward Final:  -2.91
-  Reward Medio:  -3.18
+  Return (min):  1776.4402
+  Return (max):  2014.6238
+  Return (avg):  1981.0610
+  CO2 Total Evitado: 39.09M kg
 
 ================================================================================
 FIN DEL REPORTE
