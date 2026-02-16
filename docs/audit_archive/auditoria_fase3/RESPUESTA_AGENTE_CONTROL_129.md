@@ -246,16 +246,16 @@ def _unflatten_action(self, action):
 
 | Item | Verificación | Status |
 |------|---|---|
-| **128 Chargers generados** | Code: range(38) | ✅ |
-| **112 Motos** | Code: if idx < 112 | ✅ |
-| **16 Mototaxis** | Code: else idx ≥ 112 | ✅ |
-| **128 en Schema** | Code: electric_vehicle_chargers = all_chargers | ✅ |
+| **38 Chargers generados** | Code: 19 cargadores × 2 sockets | ✅ |
+| **30 Tomas Motos** | Code: sockets 0-29 (MOTO_SPEC) | ✅ |
+| **8 Tomas Mototaxis** | Code: sockets 30-37 (MOTOTAXI_SPEC) | ✅ |
+| **38 sockets en Schema** | Code: socket_specs = create_socket_specs() | ✅ |
 | **1 BESS presente** | Code: electrical_storage config | ✅ |
-| **BESS capacidad** | Code: 4520 kWh | ✅ |
-| **BESS potencia** | Code: 2712 kW | ✅ |
-| **Action dimension** | Code: action_dim = 129 | ✅ |
-| **Agent outputs 129** | Code: _get_action_dim() = 129 | ✅ |
-| **129 en training** | Code: unflatten_action(129) | ✅ |
+| **BESS capacidad** | Code: 1700 kWh max SOC (CORRECTED) | ✅ |
+| **BESS potencia** | Code: Despachable por agentes RL | ✅ |
+| **Action dimension** | Code: action_dim = 39 (1 BESS + 38 sockets) | ✅ |
+| **Agent outputs 39** | Code: _get_action_dim() = 39 | ✅ |
+| **39 en training** | Code: unflatten_action(39) | ✅ |
 
 ---
 
