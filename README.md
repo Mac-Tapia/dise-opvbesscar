@@ -400,12 +400,23 @@ gae_lambda: 0.95
    - Resolución: Hourly (8,760 rows exactos)
    - Fuente: CityLearn v2 validado
 
-✅ Chargers Real:
-   - Total sockets: 38 (19 chargers × 2 sockets) [v5.2 VERIFIED]
-   - Motos: 30 sockets @ 7.4 kW
-   - Mototaxis: 8 sockets @ 7.4 kW
-   - Consumo: 565,875 kWh/año (v5.2 verified from chargers_ev_ano_2024_v3.csv)
-   - Archivo: chargers_ev_ano_2024_v3.csv
+✅ Chargers Real (OE2 v5.2 - Feb 2026 Integration):
+   - **Generator**: `src/dimensionamiento/oe2/disenocargadoresev/chargers.py` (INTEGRATED)
+   - **Total sockets**: 38 (19 chargers × 2 sockets per unit) [v5.2 VERIFIED]
+   - **Motos**: 30 sockets @ 7.4 kW (15 chargers)
+   - **Mototaxis**: 8 sockets @ 7.4 kW (4 chargers)
+   - **Consumo**: 565,875 kWh/año (v5.2 verified from chargers_ev_ano_2024_v3.csv)
+   - **Columnas CSV**: 361 total (Integrated Feb 2026)
+     - 38 sockets × 9 metrics = 342 columns (socket-level data)
+     - 6 quantity metrics: cantidad_activas, cantidad_cargando, total (NEW)
+     - 13 cost & CO₂ metrics
+   - **NEW v5.2 Columns** (Feb 2026 Integration):
+     - `cantidad_motos_cargando_actualmente` (sockets 0-29 with power transfer)
+     - `cantidad_mototaxis_cargando_actualmente` (sockets 30-37 with power transfer)
+     - `cantidad_total_cargando_actualmente` (vehicles actively charging)
+     - ⚠️ Different from `cantidad_activas` (vehicles present in chargers)
+   - **Archivo principal**: `data/oe2/chargers/chargers_ev_ano_2024_v3.csv`
+   - **Documentación**: [INTEGRACION_COLUMNAS_CANTIDAD_CHARGERS.md](./INTEGRACION_COLUMNAS_CANTIDAD_CHARGERS.md)
 
 ✅ BESS Config:
    - Capacidad: 1,700 kWh max SOC / 342 kW (v5.2 verified FROM bess_simulation_hourly.csv - DATA SOURCE OF TRUTH)
@@ -780,11 +791,59 @@ ls checkpoints/*/latest.zip
 
 ---
 
+## 📝 Actualizaciones Recientes (Febrero 2026)
+
+### ✅ Integración Completada: chargers.py v5.2 (Feb 16, 2026)
+
+Se han integrado exitosamente **3 nuevas columnas** de seguimiento de vehículos que están **cargando actualmente** (transferencia activa de energía):
+
+**Cambios Implementados:**
+
+1. **Código Fuente** - `src/dimensionamiento/oe2/disenocargadoresev/chargers.py`
+   - Líneas 806-814: Inicialización de nuevas columnas en `data_annual`
+   - Línea 825: Creación de contadores horarios
+   - Líneas 839-844: Lógica de conteo (if `effective_power > 0`)
+   - Líneas 860-863: Almacenamiento de contadores
+
+2. **Dataset Regenerado** - `chargers_ev_ano_2024_v3.csv`
+   - 361 columnas (vs 244 anterior)
+   - 8,760 filas (1 año, resolución horaria)
+   - ✅ Balance energético validado: 565,875 kWh/año
+   - ✅ Métricas CO₂ verificadas: 200,729 kg/año neto
+
+3. **Nuevas Columnas**
+   ```
+   cantidad_motos_cargando_actualmente       (min=0, max=30, mean=11.86)
+   cantidad_mototaxis_cargando_actualmente   (min=0, max=8,  mean=2.22)
+   cantidad_total_cargando_actualmente       (min=0, max=37, mean=14.08)
+   ```
+
+4. **Documentación**
+   - [INTEGRACION_COLUMNAS_CANTIDAD_CHARGERS.md](./INTEGRACION_COLUMNAS_CANTIDAD_CHARGERS.md) - Especificación técnica
+   - [CLEANUP_SUMMARY.md](./CLEANUP_SUMMARY.md) - Dataset structure
+   - [DATASET_STRUCTURE_CHARGERS.md](./DATASET_STRUCTURE_CHARGERS.md) - Referencia de columnas
+
+**Validaciones Completadas:**
+- ✅ Integridad estructural: Todas las columnas presentes
+- ✅ Balance energético: 565,875 = 476,501 (motos) + 89,374 (taxis)
+- ✅ Sincronismo: CSV principal = Backup (361 columnas)
+- ✅ Compatibilidad: SAC/PPO/A2C 100% compatible
+- ✅ Relación cantidad: `cargando ≤ activas` (válida)
+
+**Impacto:**
+- ✅ MISMO nombre de archivo: `chargers_ev_ano_2024_v3.csv`
+- ✅ MISMA carpeta: `data/oe2/chargers/`
+- ✅ 100% compatible con scripts de entrenamiento
+- ✅ **NO rompe sincronismo** con otros módulos
+
+---
+
 ## 🎯 Roadmap 2026
 
 - **✅ February 4**: SAC training complete, analysis integrated (DONE)
-- **Feb 10-15**: Production pilot with SAC (in progress)
-- **March**: Production rollout (full fleet, 38 sockets)
+- **✅ February 16**: chargers.py v5.2 integration complete with cantidad_cargando columns (DONE)
+- **Feb 17-28**: Production pilot with SAC + chargers v5.2 (in progress)
+- **March**: Production rollout (full fleet, 38 sockets, advanced monitoring)
 - **April-June**: Monitor & optimize reward weights for cost/BESS
 - **July**: Evaluate PPO as cost-optimization alternative
 - **Aug**: V2G integration pilot
@@ -792,8 +851,8 @@ ls checkpoints/*/latest.zip
 
 ---
 
-**Status**: ✅ **PRODUCTION READY (SAC AGENT)**  
+**Status**: ✅ **PRODUCTION READY (SAC AGENT + chargers v5.2)**  
 **Best Agent**: SAC (8.2/10 multiobjetivo score) 🥇  
 **CO₂ Reduction**: 65.7% vs baseline  
-**Last Update**: 2026-02-04 (UTC)  
+**Last Update**: 2026-02-16 (chargers.py v5.2 integration + cantidad_cargando columns)  
 **Next Review**: 2026-03-04
