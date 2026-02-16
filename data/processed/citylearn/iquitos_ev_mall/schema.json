@@ -1,0 +1,3893 @@
+{
+  "random_seed": 2022,
+  "root_directory": ".",
+  "central_agent": false,
+  "simulation_start_time_step": 0,
+  "simulation_end_time_step": 8759,
+  "episode_time_steps": 8760,
+  "rolling_episode_split": false,
+  "random_episode_split": false,
+  "seconds_per_time_step": 3600,
+  "start_date": "2024-01-01",
+  "observations": {
+    "month": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "day_type": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "hour": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "daylight_savings_status": {
+      "active": false,
+      "shared_in_central_agent": true
+    },
+    "outdoor_dry_bulb_temperature": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "outdoor_dry_bulb_temperature_predicted_1": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "outdoor_dry_bulb_temperature_predicted_2": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "outdoor_dry_bulb_temperature_predicted_3": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "outdoor_relative_humidity": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "outdoor_relative_humidity_predicted_1": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "outdoor_relative_humidity_predicted_2": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "outdoor_relative_humidity_predicted_3": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "diffuse_solar_irradiance": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "diffuse_solar_irradiance_predicted_1": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "diffuse_solar_irradiance_predicted_2": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "diffuse_solar_irradiance_predicted_3": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "direct_solar_irradiance": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "direct_solar_irradiance_predicted_1": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "direct_solar_irradiance_predicted_2": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "direct_solar_irradiance_predicted_3": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "carbon_intensity": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "indoor_dry_bulb_temperature": {
+      "active": false,
+      "shared_in_central_agent": false
+    },
+    "average_unmet_cooling_setpoint_difference": {
+      "active": false,
+      "shared_in_central_agent": false
+    },
+    "indoor_relative_humidity": {
+      "active": false,
+      "shared_in_central_agent": false
+    },
+    "non_shiftable_load": {
+      "active": true,
+      "shared_in_central_agent": false
+    },
+    "solar_generation": {
+      "active": true,
+      "shared_in_central_agent": false
+    },
+    "cooling_storage_soc": {
+      "active": false,
+      "shared_in_central_agent": false
+    },
+    "heating_storage_soc": {
+      "active": false,
+      "shared_in_central_agent": false
+    },
+    "dhw_storage_soc": {
+      "active": false,
+      "shared_in_central_agent": false
+    },
+    "electrical_storage_soc": {
+      "active": true,
+      "shared_in_central_agent": false
+    },
+    "net_electricity_consumption": {
+      "active": true,
+      "shared_in_central_agent": false
+    },
+    "electricity_pricing": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "electricity_pricing_predicted_1": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "electricity_pricing_predicted_2": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "electricity_pricing_predicted_3": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "power_outage": {
+      "active": false,
+      "shared_in_central_agent": false
+    },
+    "hvac_mode": {
+      "active": false,
+      "shared_in_central_agent": false
+    },
+    "comfort_band": {
+      "active": false,
+      "shared_in_central_agent": false
+    },
+    "electric_vehicle_charger_connected_state": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "connected_electric_vehicle_at_charger_battery_capacity": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "connected_electric_vehicle_at_charger_departure_time": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "connected_electric_vehicle_at_charger_required_soc_departure": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "connected_electric_vehicle_at_charger_soc": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "electric_vehicle_charger_incoming_state": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "incoming_electric_vehicle_at_charger_estimated_arrival_time": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "washing_machine_start_time_step": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "washing_machine_end_time_step": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "washing_machine_load_profile": {
+      "active": true,
+      "stochaicity:": "0.0",
+      "shared_in_central_agent": true
+    }
+  },
+  "actions": {
+    "cooling_storage": {
+      "active": false
+    },
+    "heating_storage": {
+      "active": false
+    },
+    "dhw_storage": {
+      "active": false
+    },
+    "electrical_storage": {
+      "active": true
+    },
+    "electric_vehicle_storage": {
+      "active": true
+    },
+    "washing_machine": {
+      "active": true
+    }
+  },
+  "agent": {
+    "type": "citylearn.agents.rbc.BasicElectricVehicleRBC_ReferenceController",
+    "attributes": {}
+  },
+  "reward_function": {
+    "type": "citylearn.reward_function.Electric_Vehicles_Reward_Function",
+    "attributes": {}
+  },
+  "electric_vehicles_def": {
+    "EV_Mall_1": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_2": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_3": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_4": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_5": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_6": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_7": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_8": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_9": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_10": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_11": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_12": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_13": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_14": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_15": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_16": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_17": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_18": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_19": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_20": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_21": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_22": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_23": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_24": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_25": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_26": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_27": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_28": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_29": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_30": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_31": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_32": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_33": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_34": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_35": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_36": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_37": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_38": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_39": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_40": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_41": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_42": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_43": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_44": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_45": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_46": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_47": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_48": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_49": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_50": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_51": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_52": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_53": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_54": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_55": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_56": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_57": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_58": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_59": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_60": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_61": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_62": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_63": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_64": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_65": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_66": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_67": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_68": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_69": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_70": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_71": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_72": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_73": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_74": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_75": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_76": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_77": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_78": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_79": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_80": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_81": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_82": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_83": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_84": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_85": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_86": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_87": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_88": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_89": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_90": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_91": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_92": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_93": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_94": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_95": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_96": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_97": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_98": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_99": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_100": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_101": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_102": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_103": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_104": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_105": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_106": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_107": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_108": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_109": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_110": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_111": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_112": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 2.5,
+          "nominal_power": 2.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_113": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 4.5,
+          "nominal_power": 3.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_114": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 4.5,
+          "nominal_power": 3.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_115": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 4.5,
+          "nominal_power": 3.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_116": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 4.5,
+          "nominal_power": 3.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_117": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 4.5,
+          "nominal_power": 3.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_118": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 4.5,
+          "nominal_power": 3.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_119": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 4.5,
+          "nominal_power": 3.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_120": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 4.5,
+          "nominal_power": 3.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_121": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 4.5,
+          "nominal_power": 3.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_122": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 4.5,
+          "nominal_power": 3.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_123": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 4.5,
+          "nominal_power": 3.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_124": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 4.5,
+          "nominal_power": 3.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_125": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 4.5,
+          "nominal_power": 3.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_126": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 4.5,
+          "nominal_power": 3.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_127": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 4.5,
+          "nominal_power": 3.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    },
+    "EV_Mall_128": {
+      "include": true,
+      "battery": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 4.5,
+          "nominal_power": 3.0,
+          "initial_soc": 0.2,
+          "depth_of_discharge": 0.9,
+          "efficiency": 0.95
+        }
+      }
+    }
+  },
+  "buildings": {
+    "Mall_Iquitos": {
+      "include": true,
+      "energy_simulation": "Building_1.csv",
+      "weather": "weather.csv",
+      "carbon_intensity": "carbon_intensity.csv",
+      "pricing": "pricing.csv",
+      "inactive_observations": [],
+      "inactive_actions": [],
+      "electrical_storage": {
+        "type": "citylearn.energy_model.Battery",
+        "autosize": false,
+        "attributes": {
+          "capacity": 940.0,
+          "efficiency": 0.95,
+          "capacity_loss_coefficient": 1e-05,
+          "loss_coefficient": 0.0,
+          "nominal_power": 342.0,
+          "initial_soc": 0.20
+        },
+        "capacity": 940.0,
+        "nominal_power": 342.0,
+        "efficiency": 0.95,
+        "energy_simulation": "electrical_storage_simulation.csv"
+      },
+      "pv": {
+        "type": "citylearn.energy_model.PV",
+        "autosize": false,
+        "attributes": {
+          "nominal_power": 4162.0
+        },
+        "nominal_power": 4162.0
+      },
+      "chargers": {
+        "charger_mall_1": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_001.csv"
+        },
+        "charger_mall_2": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_002.csv"
+        },
+        "charger_mall_3": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_003.csv"
+        },
+        "charger_mall_4": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_004.csv"
+        },
+        "charger_mall_5": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_005.csv"
+        },
+        "charger_mall_6": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_006.csv"
+        },
+        "charger_mall_7": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_007.csv"
+        },
+        "charger_mall_8": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_008.csv"
+        },
+        "charger_mall_9": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_009.csv"
+        },
+        "charger_mall_10": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_010.csv"
+        },
+        "charger_mall_11": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_011.csv"
+        },
+        "charger_mall_12": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_012.csv"
+        },
+        "charger_mall_13": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_013.csv"
+        },
+        "charger_mall_14": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_014.csv"
+        },
+        "charger_mall_15": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_015.csv"
+        },
+        "charger_mall_16": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_016.csv"
+        },
+        "charger_mall_17": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_017.csv"
+        },
+        "charger_mall_18": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_018.csv"
+        },
+        "charger_mall_19": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_019.csv"
+        },
+        "charger_mall_20": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_020.csv"
+        },
+        "charger_mall_21": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_021.csv"
+        },
+        "charger_mall_22": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_022.csv"
+        },
+        "charger_mall_23": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_023.csv"
+        },
+        "charger_mall_24": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_024.csv"
+        },
+        "charger_mall_25": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_025.csv"
+        },
+        "charger_mall_26": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_026.csv"
+        },
+        "charger_mall_27": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_027.csv"
+        },
+        "charger_mall_28": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_028.csv"
+        },
+        "charger_mall_29": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_029.csv"
+        },
+        "charger_mall_30": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_030.csv"
+        },
+        "charger_mall_31": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_031.csv"
+        },
+        "charger_mall_32": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_032.csv"
+        },
+        "charger_mall_33": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_033.csv"
+        },
+        "charger_mall_34": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_034.csv"
+        },
+        "charger_mall_35": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_035.csv"
+        },
+        "charger_mall_36": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_036.csv"
+        },
+        "charger_mall_37": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_037.csv"
+        },
+        "charger_mall_38": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_038.csv"
+        },
+        "charger_mall_39": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_039.csv"
+        },
+        "charger_mall_40": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_040.csv"
+        },
+        "charger_mall_41": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_041.csv"
+        },
+        "charger_mall_42": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_042.csv"
+        },
+        "charger_mall_43": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_043.csv"
+        },
+        "charger_mall_44": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_044.csv"
+        },
+        "charger_mall_45": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_045.csv"
+        },
+        "charger_mall_46": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_046.csv"
+        },
+        "charger_mall_47": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_047.csv"
+        },
+        "charger_mall_48": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_048.csv"
+        },
+        "charger_mall_49": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_049.csv"
+        },
+        "charger_mall_50": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_050.csv"
+        },
+        "charger_mall_51": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_051.csv"
+        },
+        "charger_mall_52": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_052.csv"
+        },
+        "charger_mall_53": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_053.csv"
+        },
+        "charger_mall_54": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_054.csv"
+        },
+        "charger_mall_55": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_055.csv"
+        },
+        "charger_mall_56": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_056.csv"
+        },
+        "charger_mall_57": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_057.csv"
+        },
+        "charger_mall_58": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_058.csv"
+        },
+        "charger_mall_59": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_059.csv"
+        },
+        "charger_mall_60": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_060.csv"
+        },
+        "charger_mall_61": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_061.csv"
+        },
+        "charger_mall_62": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_062.csv"
+        },
+        "charger_mall_63": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_063.csv"
+        },
+        "charger_mall_64": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_064.csv"
+        },
+        "charger_mall_65": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_065.csv"
+        },
+        "charger_mall_66": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_066.csv"
+        },
+        "charger_mall_67": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_067.csv"
+        },
+        "charger_mall_68": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_068.csv"
+        },
+        "charger_mall_69": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_069.csv"
+        },
+        "charger_mall_70": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_070.csv"
+        },
+        "charger_mall_71": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_071.csv"
+        },
+        "charger_mall_72": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_072.csv"
+        },
+        "charger_mall_73": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_073.csv"
+        },
+        "charger_mall_74": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_074.csv"
+        },
+        "charger_mall_75": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_075.csv"
+        },
+        "charger_mall_76": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_076.csv"
+        },
+        "charger_mall_77": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_077.csv"
+        },
+        "charger_mall_78": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_078.csv"
+        },
+        "charger_mall_79": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_079.csv"
+        },
+        "charger_mall_80": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_080.csv"
+        },
+        "charger_mall_81": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_081.csv"
+        },
+        "charger_mall_82": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_082.csv"
+        },
+        "charger_mall_83": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_083.csv"
+        },
+        "charger_mall_84": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_084.csv"
+        },
+        "charger_mall_85": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_085.csv"
+        },
+        "charger_mall_86": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_086.csv"
+        },
+        "charger_mall_87": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_087.csv"
+        },
+        "charger_mall_88": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_088.csv"
+        },
+        "charger_mall_89": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_089.csv"
+        },
+        "charger_mall_90": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_090.csv"
+        },
+        "charger_mall_91": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_091.csv"
+        },
+        "charger_mall_92": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_092.csv"
+        },
+        "charger_mall_93": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_093.csv"
+        },
+        "charger_mall_94": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_094.csv"
+        },
+        "charger_mall_95": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_095.csv"
+        },
+        "charger_mall_96": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_096.csv"
+        },
+        "charger_mall_97": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_097.csv"
+        },
+        "charger_mall_98": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_098.csv"
+        },
+        "charger_mall_99": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_099.csv"
+        },
+        "charger_mall_100": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_100.csv"
+        },
+        "charger_mall_101": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_101.csv"
+        },
+        "charger_mall_102": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_102.csv"
+        },
+        "charger_mall_103": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_103.csv"
+        },
+        "charger_mall_104": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_104.csv"
+        },
+        "charger_mall_105": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_105.csv"
+        },
+        "charger_mall_106": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_106.csv"
+        },
+        "charger_mall_107": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_107.csv"
+        },
+        "charger_mall_108": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_108.csv"
+        },
+        "charger_mall_109": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_109.csv"
+        },
+        "charger_mall_110": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_110.csv"
+        },
+        "charger_mall_111": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_111.csv"
+        },
+        "charger_mall_112": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_112.csv"
+        },
+        "charger_mall_113": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_113.csv"
+        },
+        "charger_mall_114": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_114.csv"
+        },
+        "charger_mall_115": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_115.csv"
+        },
+        "charger_mall_116": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_116.csv"
+        },
+        "charger_mall_117": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_117.csv"
+        },
+        "charger_mall_118": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_118.csv"
+        },
+        "charger_mall_119": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_119.csv"
+        },
+        "charger_mall_120": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_120.csv"
+        },
+        "charger_mall_121": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_121.csv"
+        },
+        "charger_mall_122": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_122.csv"
+        },
+        "charger_mall_123": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_123.csv"
+        },
+        "charger_mall_124": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_124.csv"
+        },
+        "charger_mall_125": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_125.csv"
+        },
+        "charger_mall_126": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_126.csv"
+        },
+        "charger_mall_127": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_127.csv"
+        },
+        "charger_mall_128": {
+          "type": "citylearn.electric_vehicle_charger.Charger",
+          "autosize": false,
+          "active": true,
+          "attributes": {
+            "efficiency": 0.95,
+            "charger_type": 0,
+            "min_charging_power": 0.5,
+            "nominal_power": 2.0,
+            "max_charging_power": 2.0,
+            "num_sockets": 1
+          },
+          "charger_simulation": "charger_simulation_128.csv"
+        }
+      },
+      "name": "Mall_Iquitos",
+      "electric_vehicle_storage": {
+        "active": true
+      },
+      "pv_power_plant": {
+        "type": "citylearn.energy_model.PV",
+        "autosize": false,
+        "attributes": {
+          "nominal_power": 4162.0
+        }
+      }
+    }
+  },
+  "co2_context": {
+    "co2_factor_kg_per_kwh": 0.4521,
+    "co2_conversion_factor": 2.146,
+    "motos_daily_capacity": 2685,
+    "mototaxis_daily_capacity": 388,
+    "max_evs_total": 128,
+    "tariff_usd_per_kwh": 0.28,
+    "peak_hours": [
+      18,
+      19,
+      20,
+      21
+    ],
+    "description": "Contexto real de Iquitos para cálculo de CO₂ y recompensas"
+  },
+  "reward_weights": {
+    "co2": 0.35,
+    "cost": 0.1,
+    "solar": 0.2,
+    "ev_satisfaction": 0.3,
+    "ev_utilization": 0.0,
+    "grid_stability": 0.05,
+    "description": "Pesos multiobjetivo para cálculo de recompensa en agentes OE3"
+  }
+}

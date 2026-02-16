@@ -1,0 +1,107 @@
+sac:
+  name: "Soft Actor-Critic"
+  description: "Off-policy actor-critic agent with entropy regularization"
+
+  # Training hyperparameters
+  training:
+    episodes: 3
+    total_timesteps: 26280  # 3 complete years × 8,760 hours for seasonal pattern learning
+    learning_rate: 5e-4  # UPDATED v7.1: Adaptive schedule for GPU (batch_size=128)
+    buffer_size: 400000  # UPDATED v7.1: GPU optimized (RTX 4060 8GB, was 2M = OOM)
+    batch_size: 128  # GPU optimized (era 256, ajustado para estabilidad)
+    gamma: 0.99  # UPDATED v7.1: Stable discount horizon
+    tau: 0.005  # UPDATED v7.1: Slower target network updates
+
+  # Entropy (exploration)
+  entropy:
+    ent_coef: "auto"
+    ent_coef_init: 0.5
+    ent_coef_lr: 1e-3
+    ent_coef_min: 0.01
+    ent_coef_max: 1.0
+
+  # Network architecture
+  network:
+    hidden_sizes: [384, 384]  # UPDATED v7.1: Enlarged from [256,256] for increased capacity
+    activation: "relu"
+
+  # Stability features
+  stability:
+    clip_gradients: true
+    max_grad_norm: 10.0
+    critic_max_grad_norm: 1.0
+    critic_loss_scale: 0.1
+    q_target_clip: 10.0
+
+  # Multi-Objective Weights (VALIDATED 2026-02-15 - v7.1 UPDATED)
+  multi_objective_weights:
+    co2: 0.45                # PRIMARY: Grid minimization (increased from 0.35)
+    solar: 0.15              # UPDATED: Solar utilization (reduced from 0.20)
+    vehicles: 0.20           # UPDATED: EV charging satisfaction
+    completion: 0.10         # UPDATED: 100% charge goal
+    stability: 0.05          # UPDATED: BESS smoothing
+    bess_peak: 0.03          # NEW: Peak shaving
+    prioritization: 0.02     # NEW: Urgency respect
+    # Total: 1.00 exactly
+  # NOTE: v7.1 uses 7-component framework vs previous 5-component.
+  #       Weights validated mathematically. CO2 is primary objective.
+
+  # Electricity Tariffs (OSINERGMIN IQUITOS 2025 - REFERENCIAL)
+  tariffs_osinergmin_usd_per_kwh:
+    generation_solar: 0.10              # Generación solar (CAPEX bajo + O&M bajo)
+    storage_bess: 0.06                  # Almacenamiento BESS (CAPEX batería + O&M)
+    distribution_ev_charge: 0.12        # Distribución EV (red + transformadores + pérdidas)
+    integrated_tariff: 0.28             # Tarifa integral OSINERGMIN (solar + BESS + dist)
+  # Description: Integrated tariff covers generation, storage, and distribution costs for EV charging
+  #   in isolated grid (SEIN aislado) Iquitos. Used for cost_baseline calculation.
+  
+  
+  # Dispatch Hierarchy Penalties (STRICT ENFORCEMENT - 2026-02-08)
+  dispatch_hierarchy:
+    description: "Strict day/night dispatch rules with exponential penalties"
+    day_rules:
+      solar_to_ev_target_pct: 90          # EVs deben recibir 90% solar
+      solar_to_ev_penalty: -0.80          # Penalidad si deficit
+      bess_priority_penalty: -0.40        # Penalidad si BESS carga antes que EVs completen
+    night_rules:
+      bess_to_ev_exclusive: true          # BESS NUNCA para Mall
+      bess_over_grid_penalty: -0.90       # Penalidad FUERTE si Grid > BESS disponible
+      bess_soc_min_closure: 0.20          # BESS ≥ 20% al cierre (hora 23)
+      bess_soc_penalty_closure: -0.95     # Exponential penalty if violated
+
+  # SOC Modulation Factors (AGGRESSIVE DAYTIME - 2026-02-08)
+  soc_modulation:
+    description: "Aggressive daytime factors to reach 2,500-3,073 EV events/day target"
+    soc_critical:  # SOC < 30%
+      daytime: [1.80, 2.20]               # Was [1.30, 1.50], +47-50% increase
+      nighttime: [1.50, 1.80]             # Was [1.20, 1.35], +25-33% increase
+    soc_normal:    # 30-70%
+      daytime: [1.30, 1.60]               # Was [1.00, 1.15], +39-30% increase
+      nighttime: [1.10, 1.35]             # Was [0.95, 1.10], +10-35% increase
+    soc_high:      # > 70%
+      daytime: [0.95, 1.25]               # Was [0.85, 0.95], +5-31% increase
+      nighttime: [0.85, 1.10]             # Was [0.80, 0.90], +6-25% increase
+
+  # Device
+  device: "auto"  # "cuda", "mps", "cpu", or "auto"
+  use_amp: true
+
+  # Logging
+  verbose: 1
+  log_interval: 500
+  checkpoint_freq_steps: 1000
+  save_final: true
+
+  # Reproducibility
+  seed: 42
+
+performance:
+  # Métricas esperadas basadas en Episode 1 validado (2026-02-07)
+  expected_co2_reduction: 0.589  # 58.9% reduction vs baseline
+  expected_solar_utilization: 0.472  # 47.2% autoconsumo  
+  expected_ev_satisfaction: 0.9998  # Satisfacción carga EV
+  expected_bess_soc_avg: 0.905  # 90.5% SOC promedio
+  motos_per_day_avg: 1199
+  mototaxis_per_day_avg: 336
+  cost_savings_usd: 1658503
+  training_time_hours: 6.5  # 5-7 hours on RTX 4060 (26,280 timesteps ≈ 3 years of hourly data)

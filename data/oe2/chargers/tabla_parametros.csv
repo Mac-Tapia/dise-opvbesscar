@@ -1,0 +1,15 @@
+Parametro,Valor
+PE (Penetracion EV),0.30
+FC (Factor Carga diaria),0.55
+Base motos/dia,1636
+Base mototaxis/dia,236
+Motos que cargan/dia,270
+Mototaxis que cargan/dia,39
+Potencia por toma (kW),7.4
+Tomas por cargador,2
+Tiempo carga moto (min),60
+Tiempo carga mototaxi (min),90
+Horario apertura,09:00
+Horario cierre,22:00
+Horas operacion,13h
+Horas punta (HP),18:00-23:00

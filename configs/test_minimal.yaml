@@ -1,0 +1,308 @@
+oe1:
+  grid_connection:
+    available_capacity_kva: null
+    continuity: sistema aislado termico
+    power_factor: 0.95
+  site:
+    access_notes: Acceso vial y seguridad verificados en visita de campo.
+    area_estacionamiento_m2: 957.0
+    area_per_moto_m2: 2.0
+    area_per_mototaxi_m2: 4.0
+    area_techada_m2: 20637.0
+    coverage_required_pct: 0.65
+    distance_to_substation_m: 60.0
+    dwell_hours_min: 4.0
+    name: Mall de Iquitos
+    restrictions_notes: Sombras puntuales por equipos; sin arbolado alto.
+    security_notes: Zona de estacionamiento con vigilancia.
+    vehicles_peak_motos: 900
+    vehicles_peak_mototaxis: 130
+oe2:
+  bess:
+    autonomy_hours: 4.0
+    c_rate: 0.36  # v5.2: 0.36 C-rate
+    discharge_only_ev_hours: true
+    discharge_only_no_solar: true
+    dod: 0.8
+    efficiency_roundtrip: 0.95   # v5.2
+    fixed_capacity_kwh: 940.0    # v5.2: exclusivo EV
+    fixed_power_kw: 342.0        # v5.2: 0.36 C-rate
+    load_scope: ev_only
+    min_soc_percent: 25.86
+    pv_night_threshold_kwh: 0.1
+    round_kwh: 100
+    sizing_mode: open_hours
+    surplus_target_kwh_day: 9630.4
+  dispatch_rules:
+    description: "Cubrir bloque pico (18-21h) con prioridades: FV\xE2\u2020\u2019\
+      EV \xE2\u2020\u2019 FV\xE2\u2020\u2019BESS \xE2\u2020\u2019 BESS\xE2\u2020\u2019\
+      EV(noche) \xE2\u2020\u2019 BESS\xE2\u2020\u2019MALL(saturada)"
+    enabled: true
+    priority_1_pv_to_ev:
+      description: "FV directamente a EVs (m\xC3\xA1xima prioridad)"
+      enabled: true
+      ev_power_limit_kw: 150.0
+      pv_threshold_kwh: 0.5
+    priority_2_pv_to_bess:
+      bess_power_max_kw: 342.0  # v5.2: 0.36 C-rate
+      bess_soc_max_percent: 95.0
+      bess_soc_target_percent: 85.0
+      description: FV excedente a BESS (cargar reserva para pico)
+      enabled: true
+    priority_3_bess_to_ev:
+      bess_power_max_kw: 342.0  # v5.2
+      bess_soc_min_percent: 20.0
+      description: BESS a EVs cuando cae el sol (noche)
+      enabled: true
+      pv_night_threshold_kwh: 0.1
+    priority_4_bess_to_mall:
+      bess_saturation_percent: 95.0
+      description: "BESS saturada + FV excedente \xE2\u2020\u2019 Mall (descargar\
+        \ exceso)"
+      enabled: true
+      mall_power_max_kw: 500.0
+    priority_5_grid_import:
+      allowed: true
+      cost_multiplier_peak: 2.0
+      description: "Importar desde red si es necesario cubrir d\xC3\xA9ficit"
+      enabled: true
+    reward_bonuses:
+      battery_charge_bonus_weight: 0.005
+      direct_solar_bonus_weight: 0.01
+      grid_import_penalty_weight: 0.0001
+  ev_fleet:
+    charger_power_kw_moto: 2.0
+    charger_power_kw_mototaxi: 3.0
+    closing_hour: 22
+    daily_sessions_factor: 1.0
+    ev_demand_constant_kw: 50.0
+    fc_motos: 0.9
+    fc_mototaxis: 0.9
+    motos_count: 900
+    mototaxis_count: 130
+    n_chargers: 32
+    opening_hour: 9
+    pe_motos: 0.9
+    pe_mototaxis: 0.9
+    peak_hours:
+    - 18
+    - 19
+    - 20
+    - 21
+    peak_share_day: 0.5
+    session_minutes: 30
+    sockets_per_charger: 2             # 2 tomas por cargador (Modo 3)
+    total_chargers: 19                  # 15 motos + 4 mototaxis
+    total_sockets: 38                   # 19 × 2 = 38 (30 motos + 8 mototaxis)
+    utilization: 0.92
+  location:
+    alt: 104.0
+    lat: -3.75
+    lon: -73.25
+    tz: America/Lima
+  mall:
+    energy_kwh_day: 9202.4
+    shape_24h: null
+  operational_control:
+    bess_soc_target:
+      during_peak_hours: 0.4
+      normal_hours: 0.6
+      pre_peak_hours: 0.85
+    fairness_penalty_weight: 0.15
+    import_penalty_weight: 0.3
+    peak_cost_multiplier: 1.5
+    peak_hours:
+    - 18
+    - 19
+    - 20
+    - 21
+    power_limits_kw:
+      playa_motos: 120.0
+      playa_mototaxis: 48.0
+      total_aggregate: 150.0
+    soc_reserve_penalty: 0.2
+    valley_hours:
+    - 9
+    - 10
+    - 11
+    - 12
+  solar:
+    area_total_m2: 20637.0
+    candidate_count: 5
+    factor_diseno: 0.65
+    inverter_name: Eaton__Xpert1670
+    module_name: Kyocera_Solar_KS20__2008__E__
+    scale_to_target_annual: true
+    selection_metric: energy_per_m2
+    selection_mode: auto_top5
+    surface_azimuth: 0.0
+    surface_tilt: 10.0
+    target_ac_kw: 3201.2
+    target_annual_kwh: 8030119
+    target_dc_kw: 4162.0
+    use_pvlib: true
+oe3:
+  baseline_episodes: 3
+  city_baseline_tpy:
+    electricity_generation: 290000.0
+    transport: 258250.0
+  co2_emissions:
+    annual_co2_budget_kg: 7000000
+    bess_calendar_aging_kg_per_day: 0.01
+    bess_charging_efficiency: 0.95
+    bess_cycling_co2_per_cycle: 0.05
+    bess_discharging_efficiency: 0.95
+    bess_standby_loss_percent_day: 0.1
+    co2_grid_factor_kg_per_kwh: 0.4521
+    diesel_backup_factor_kg_kwh: 0.2667
+    ev_co2_conversion_kg_per_kwh: 2.146
+    ev_demand_constant_kw: 50.0
+    grid_import_factor_kg_kwh: 0.4521
+    reduction_strategies:
+      bess_efficiency_optimization:
+        description: Optimizar ciclos y conversiones BESS
+        enabled: true
+        max_cycles_per_year: 200
+        weight: 0.15
+      cost_reduction:
+        description: Minimizar costo operativo (colateral)
+        enabled: true
+        weight: 0.05
+      direct_solar_maximization:
+        co2_avoided_per_kwh: 0.4521
+        description: Maximizar FV directo a EVs (P1 despacho)
+        enabled: true
+        weight: 0.5
+      grid_import_minimization:
+        description: "Minimizar importaci\xC3\xB3n desde grid"
+        enabled: true
+        penalty_multiplier_peak_hours: 2.0
+        weight: 0.3
+  dataset:
+    central_agent: true
+    name: iquitos_ev_mall
+    template_name: citylearn_challenge_2022_phase_all_plus_evs
+  emissions:
+    kgco2_per_gallon: 8.9
+    km_per_gallon: 120.0
+    km_per_kwh: 35.0
+    project_life_years: 20
+  evaluation:
+    a2c:
+      batch_size: 146
+      checkpoint_freq_steps: 200
+      device: cuda
+      entropy_coef: 0.001
+      episodes: 3
+      gae_lambda: 0.95
+      gamma: 0.99
+      hidden_sizes:
+      - 128
+      - 128
+      learning_rate: 0.0001
+      learning_rate_schedule: linear
+      log_interval: 100
+      max_grad_norm: 0.5
+      n_steps: 128
+      normalize_advantage: true
+      normalize_observations: true
+      normalize_rewards: true
+      progress_interval_episodes: 1
+      reward_scale: 0.1
+      save_final: true
+      use_rms_prop: true
+    agents:
+    - SAC
+    co2_tracking: true
+    multi_objective_priority: ev_focus
+    ppo:
+      batch_size: 120
+      checkpoint_freq_steps: 500
+      clip_obs: 5.0
+      clip_range: 0.5
+      clip_range_vf: 0.5
+      clip_reward: 1.0
+      device: cuda
+      ent_coef: 0.01
+      episodes: 3
+      gae_lambda: 0.98
+      gamma: 0.99
+      hidden_sizes:
+      - 256
+      - 256
+      kl_adaptive: true
+      learning_rate: 1e-4
+      learning_rate_schedule: linear
+      log_interval: 100
+      max_grad_norm: 1.0
+      n_epochs: 10
+      n_steps: 2048
+      normalize_advantage: true
+      normalize_observations: true
+      normalize_rewards: true
+      prefer_citylearn: false
+      progress_interval_episodes: 1
+      resume_checkpoints: false
+      reward_scale: 0.5
+      reward_smooth_lambda: 0.15
+      save_final: true
+      sde_sample_freq: -1
+      target_kl: 0.02
+      use_sde: true
+    resume_checkpoints: true
+    reward_components:
+      base_weight: 0.8
+      co2_direct_weight: 0.12
+      co2_indirect_weight: 0.08
+    sac:
+      batch_size: 256
+      buffer_size: 200000
+      checkpoint_freq_steps: 500
+      clip_obs: 100.0
+      clip_reward: 1.0
+      deterministic_eval: true
+      device: cuda
+      ent_coef: auto
+      ent_coef_init: 0.5
+      ent_coef_lr: 1e-3
+      episodes: 1
+      gamma: 0.995
+      gradient_steps: 1
+      hidden_sizes:
+      - 256
+      - 256
+      learning_rate: 5e-5
+      learning_starts: 2000
+      log_interval: 10
+      max_grad_norm: 10.0
+      normalize_observations: true
+      normalize_rewards: true
+      per_alpha: 0.6
+      per_beta: 0.4
+      per_epsilon: 1e-6
+      prefer_citylearn: false
+      progress_interval_episodes: 1
+      reward_scale: 0.5
+      save_final: true
+      tau: 0.02
+      train_freq: 1
+      use_amp: true
+      use_prioritized_replay: false
+      use_sde: true
+  grid:
+    carbon_intensity_kg_per_kwh: 0.4521
+    tariff_usd_per_kwh: 0.2
+  rewards:
+    co2_grid_factor_kg_per_kwh: 0.4521
+    ev_co2_conversion_kg_per_kwh: 2.146
+paths:
+  analyses_dir: analyses
+  interim_dir: data/interim
+  outputs_dir: outputs
+  processed_dir: data/processed
+  raw_dir: data/raw
+  reports_dir: reports
+project:
+  seconds_per_time_step: 3600
+  seed: 42
+  year: 2024

@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-02-15T22:23:34.516114",
+  "iquitos_baseline": {
+    "transporte": {
+      "mototaxis": {
+        "cantidad": 61000,
+        "co2_anual_tco2": 152500,
+        "co2_anual_kg": 152500000
+      },
+      "motos": {
+        "cantidad": 70500,
+        "co2_anual_tco2": 105750,
+        "co2_anual_kg": 105750000
+      },
+      "total": {
+        "cantidad": 131500,
+        "co2_anual_tco2": 258250,
+        "co2_anual_kg": 258250000
+      }
+    },
+    "generacion_electrica": {
+      "tipo": "Sistema aislado térmico",
+      "combustible_galones_anual": 22500000,
+      "co2_anual_tco2": 290000,
+      "co2_anual_kg": 290000000
+    },
+    "total_iquitos_tco2": 548250
+  },
+  "ppo_reduction": {
+    "co2_directo_anual_kg": 130207800.61679941,
+    "co2_indirecto_anual_kg": 1442772894.1959906,
+    "co2_total_anual_kg": 1572980694.8127902,
+    "co2_total_anual_tco2": 1572980.6948127903,
+    "transporte_reduction_pct": 50.41928387872194,
+    "electrica_reduction_pct": 497.5078945503416,
+    "total_iquitos_reduction_pct": 286.90938345878527
+  },
+  "scenarios": {
+    "partial_30_50": {
+      "description": "30% motos + 50% mototaxis",
+      "co2_reducido_tco2": 0.107975,
+      "pct_transporte": 41.81026137463698
+    },
+    "full_100_100": {
+      "description": "100% motos + 100% mototaxis (all-EV)",
+      "co2_reducido_tco2": 0.25825,
+      "pct_transporte": 100.0
+    }
+  }
+}

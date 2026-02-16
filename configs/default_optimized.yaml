@@ -19,16 +19,17 @@ oe1:
     vehicles_peak_mototaxis: 130
 oe2:
   bess:
+    # BESS v5.5 (2026-02-13) - Dual-purpose: EV + MALL discharge to peak
     autonomy_hours: 4.0
-    c_rate: 0.6
-    discharge_only_ev_hours: true
-    discharge_only_no_solar: true
-    dod: 0.8
-    efficiency_roundtrip: 0.9
-    fixed_capacity_kwh: 4520.0
-    fixed_power_kw: 2712.0
-    load_scope: ev_only
-    min_soc_percent: 25.86
+    c_rate: 0.235  # 400 kW / 1700 kWh = 0.235
+    discharge_only_ev_hours: false  # v5.5: MALL discharge enabled
+    discharge_only_no_solar: false  # v5.5: MALL discharge during day if excess
+    dod: 0.80      # 80% Depth of Discharge (min SOC = 20%)
+    efficiency_roundtrip: 0.95
+    fixed_capacity_kwh: 1700.0  # v5.5: 1700 kWh nominal (1360 usable @ 20-100% SOC)
+    fixed_power_kw: 400.0       # v5.5: 400 kW carga/descarga (actualizado de 342 kW)
+    load_scope: dual_ev_and_mall  # v5.5: EV + MALL priority
+    min_soc_percent: 20.0       # v5.5: Hard constraint @ 22h closing
     pv_night_threshold_kwh: 0.1
     round_kwh: 100
     sizing_mode: open_hours
@@ -44,14 +45,14 @@ oe2:
       ev_power_limit_kw: 150.0
       pv_threshold_kwh: 0.5
     priority_2_pv_to_bess:
-      bess_power_max_kw: 2712.0
-      bess_soc_max_percent: 95.0
+      bess_power_max_kw: 400.0  # v5.5: 400 kW (actualizado de 342 kW)
+      bess_soc_max_percent: 100.0  # v5.5: Allow 100% (hard constraint via simulation)
       bess_soc_target_percent: 85.0
       description: FV excedente a BESS (cargar reserva para pico)
       enabled: true
     priority_3_bess_to_ev:
-      bess_power_max_kw: 2712.0
-      bess_soc_min_percent: 20.0
+      bess_power_max_kw: 400.0  # v5.5: 400 kW
+      bess_soc_min_percent: 20.0  # v5.5: Hard minimum @ 22h
       description: BESS a EVs cuando cae el sol (noche)
       enabled: true
       pv_night_threshold_kwh: 0.1
@@ -71,8 +72,13 @@ oe2:
       direct_solar_bonus_weight: 0.01
       grid_import_penalty_weight: 0.0001
   ev_fleet:
-    charger_power_kw_moto: 2.0
-    charger_power_kw_mototaxi: 3.0
+    # Configuración de cargadores (DATOS REALES OE2 v5.2 - 2026-02-12)
+    charger_power_kw: 7.4               # Modo 3 monofásico 32A @ 230V
+    charger_power_kw_moto: 7.4          # 15 cargadores motos @ 7.4kW/toma
+    charger_power_kw_mototaxi: 7.4      # 4 cargadores mototaxis @ 7.4kW/toma
+    total_chargers: 19                  # 15 + 4 = 19 físicos
+    total_sockets: 38                   # 19 × 2 = 38 (30 motos + 8 mototaxis)
+    ev_demand_constant_kw: 50.0         # Workaround: demanda constante para CO₂ tracking
     closing_hour: 22
     daily_sessions_factor: 1.0
     fc_motos: 0.9
@@ -89,7 +95,7 @@ oe2:
     - 21
     peak_share_day: 0.5
     session_minutes: 30
-    sockets_per_charger: 4
+    sockets_per_charger: 2             # 2 tomas por cargador (Modo 3)
     utilization: 0.92
   location:
     alt: 104.0
@@ -176,29 +182,30 @@ oe3:
     name: iquitos_ev_mall
     template_name: citylearn_challenge_2022_phase_all_plus_evs
   emissions:
-    kgco2_per_gallon: 8.9
-    km_per_gallon: 120.0
-    km_per_kwh: 35.0
+    # CO₂ evitado por vehículos eléctricos vs combustión
+    kgco2_per_gallon: 8.9      # kg CO₂ por galón de gasolina (combustión)
+    km_per_gallon: 120.0        # Eficiencia motos/mototaxis a combustión (km/galón)
+    km_per_kwh: 35.0            # Eficiencia motos/mototaxis eléctricos (km/kWh)
     project_life_years: 20
   evaluation:
     a2c:
       batch_size: 1024
       checkpoint_freq_steps: 200
       device: cuda
-      entropy_coef: 0.03
+      entropy_coef: 0.015  # ✅ ÓPTIMO A2C (fue 0.03)
       episodes: 5
       gamma: 0.99
-      gae_lambda: 0.92
-      learning_rate: 0.003
-      learning_rate_schedule: exponential
+      gae_lambda: 0.95  # ✅ ÓPTIMO A2C (fue 0.92)
+      learning_rate: 7e-4  # ✅ ÓPTIMO A2C (fue 0.003)
+      learning_rate_schedule: linear
       log_interval: 250
-      max_grad_norm: 1.0
+      max_grad_norm: 0.75  # ✅ ÓPTIMO A2C (fue 1.0)
       multi_objective_weights:
-        co2: 0.5
-        cost: 0.15
-        ev: 0.1
+        co2: 0.35
+        cost: 0.10
+        ev: 0.30
         grid: 0.05
-        solar: 0.2
+        solar: 0.20
       n_steps: 8
       progress_interval_episodes: 1
       resume_checkpoints: false
@@ -214,7 +221,7 @@ oe3:
     - PPO
     - A2C
     co2_tracking: true
-    multi_objective_priority: co2_focus
+    multi_objective_priority: ev_focus
     ppo:
       batch_size: 512
       checkpoint_freq_steps: 200
@@ -229,11 +236,11 @@ oe3:
       log_interval: 250
       max_grad_norm: 0.5
       multi_objective_weights:
-        co2: 0.5
-        cost: 0.15
-        ev: 0.1
+        co2: 0.35
+        cost: 0.10
+        ev: 0.30
         grid: 0.05
-        solar: 0.2
+        solar: 0.20
       n_epochs: 20
       n_steps: 8192
       progress_interval_episodes: 1
@@ -268,11 +275,11 @@ oe3:
       learning_starts: 2000
       log_interval: 100
       multi_objective_weights:
-        co2: 0.5
-        cost: 0.15
-        ev: 0.1
+        co2: 0.35
+        cost: 0.10
+        ev: 0.30
         grid: 0.05
-        solar: 0.2
+        solar: 0.20
       prefer_citylearn: false
       progress_interval_episodes: 1
       resume_checkpoints: false

@@ -1,0 +1,50 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "pylance: restart",
+			"type": "shell",
+			"command": "echo",
+			"args": [
+				"Restarting Pylance..."
+			],
+			"presentation": {
+				"reveal": "silent"
+			},
+			"runOptions": {
+				"runOn": "folderOpen"
+			}
+		},
+		{
+			"label": "pylance: clean-cache",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-Command",
+				"Write-Host '🧹 Limpiando caché de análisis...' -ForegroundColor Yellow; $vscodePath = [Environment]::GetFolderPath('ApplicationData') + '\\.vscode'; if (Test-Path $vscodePath) { Get-ChildItem $vscodePath -Filter '*pylance*' -Recurse | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }; Write-Host '✅ Caché limpio' -ForegroundColor Green"
+			],
+			"presentation": {
+				"reveal": "silent"
+			}
+		},
+		{
+			"label": "PPO Training v7.1 with Live Monitoring",
+			"type": "shell",
+			"command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$env:PYTHONIOENCODING='utf-8'; Write-Host '═══════════════════════════════════════════════════════════════' -ForegroundColor Cyan; Write-Host 'PPO TRAINING v7.1 - VecNormalize Attribute Bypass Fix' -ForegroundColor Green; Write-Host '═══════════════════════════════════════════════════════════════' -ForegroundColor Cyan; Write-Host ''; python scripts/train/train_ppo_multiobjetivo.py 2>&1\"",
+			"isBackground": true
+		},
+		{
+			"label": "PPO Training - Complete Pipeline",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"$env:PYTHONIOENCODING='utf-8'; Write-Host '═════════════════════════════════════════════════════════════════' -ForegroundColor Cyan; Write-Host 'FASE 3/3: ENTRENAR PPO - COMPLETE PIPELINE' -ForegroundColor Green; Write-Host '═════════════════════════════════════════════════════════════════' -ForegroundColor Cyan; Write-Host ''; Write-Host 'Checkpoints: Limpios ✓ | Datasets: Validados ✓ | Iniciando...'; Write-Host ''; python scripts/train/train_ppo_multiobjetivo.py 2>&1"
+			],
+			"isBackground": true
+		}
+	]
+}

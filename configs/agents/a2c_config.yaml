@@ -1,0 +1,105 @@
+a2c:
+  name: "Advantage Actor-Critic"
+  description: "Synchronous on-policy agent with shared network"
+
+  # Training hyperparameters
+  training:
+    train_steps: 500000
+    n_steps: 8  # ✅ ÓPTIMO A2C: Updates frecuentes cada 8 pasos (fortaleza A2C)
+    learning_rate: 7e-4  # ✅ ÓPTIMO A2C: Tasa estándar alta (converge rápido)
+    lr_schedule: "linear"
+    lr_final_ratio: 0.7
+
+  # A2C-specific
+  a2c:
+    gamma: 0.99
+    gae_lambda: 0.95
+    ent_coef: 0.015  # ✅ ÓPTIMO A2C: Ligeramente más exploración
+    vf_coef: 0.5
+    max_grad_norm: 0.75
+    normalize_advantage: true
+
+  # Learning rates (separate actor/critic)
+  separate_learning_rates:
+    actor_learning_rate: 1e-4
+    critic_learning_rate: 1e-4
+    actor_lr_schedule: "linear"
+    critic_lr_schedule: "linear"
+    actor_lr_final_ratio: 0.7
+    critic_lr_final_ratio: 0.7
+
+  # Entropy decay schedule
+  entropy_schedule:
+    type: "exponential"  # "constant", "linear", or "exponential"
+    initial_value: 0.01
+    final_value: 0.001
+    decay_rate: 0.998
+
+  # EV Utilization Bonus
+  ev_utilization:
+    enabled: true
+    weight: 0.05
+    optimal_soc_min: 0.70
+    optimal_soc_max: 0.90
+    overcharge_threshold: 0.95
+    decay_rate: 0.98
+
+  # Multi-Objective Weights (VALIDATED 2026-02-08)
+  multi_objective_weights:
+    co2: 0.35                # PRIMARY: Reduce CO2 (grid import minimization)
+    solar: 0.20              # TERTIARY: Solar self-consumption
+    ev: 0.30                 # SECONDARY: EV satisfaction
+    cost: 0.10               # TERTIARY: Cost optimization
+    grid: 0.05               # QUATERNARY: Grid stability
+    # NOTE: Dispatch hierarchy + SOC modulation enforce EVs; balanced EV weight with CO2 priority
+
+  # Electricity Tariffs (OSINERGMIN IQUITOS 2025 - REFERENCIAL)
+  tariffs_osinergmin_usd_per_kwh:
+    generation_solar: 0.10              # Generación solar
+    storage_bess: 0.06                  # Almacenamiento BESS
+    distribution_ev_charge: 0.12        # Distribución EV
+    integrated_tariff: 0.28             # Tarifa integral OSINERGMIN
+
+  # Network architecture
+  network:
+    hidden_sizes: [256, 256]
+    activation: "relu"
+
+  # Advanced features
+  advanced:
+    use_huber_loss: true
+    huber_delta: 1.0
+    optimizer_type: "adam"  # "adam" or "rmsprop"
+    use_amp: true
+
+  # Normalizations
+  normalization:
+    normalize_observations: true
+    normalize_rewards: true
+    reward_scale: 0.1
+    clip_obs: 5.0
+    clip_reward: 1.0
+
+  # Device
+  device: "auto"  # "cuda", "mps", "cpu", or "auto"
+  deterministic_cuda: false
+
+  # Logging
+  verbose: 1
+  log_interval: 500
+  checkpoint_freq_steps: 1000
+  save_final: true
+
+  # Reproducibility
+  seed: 42
+
+performance:
+  # Métricas esperadas basadas en Episode 1 validado (2026-02-07)
+  expected_co2_reduction: 0.589  # 58.9% reduction vs baseline
+  expected_solar_utilization: 0.472  # 47.2% autoconsumo
+  expected_ev_satisfaction: 0.9998  # Satisfacción carga EV
+  expected_bess_soc_avg: 0.905  # 90.5% SOC promedio
+  motos_per_day_avg: 1199
+  mototaxis_per_day_avg: 336
+  cost_savings_usd: 1658503
+  training_time_hours: 4  # Approximate on RTX 4060 (fastest)
