@@ -1,12 +1,12 @@
 {
-  "timestamp": "2026-02-15T23:05:11.015521",
+  "timestamp": "2026-02-16T00:11:55.306866",
   "metrics": {
     "SAC": {
-      "total_steps": 0,
+      "total_steps": 280320,
       "episodes": 10,
-      "co2_avoided_kg": 0.0,
-      "co2_direct_kg": 0.0,
-      "co2_indirect_kg": 0.0
+      "co2_avoided_kg": 55679924.07902987,
+      "co2_direct_kg": 38975946.85532091,
+      "co2_indirect_kg": 16703977.223708961
     },
     "PPO": {
       "total_steps": 0,
@@ -33,7 +33,7 @@
       "6️⃣ BESS Optimization": 0.3
     },
     "PPO": {
-      "1️⃣ CO2 Reduction": 4.309536150172028,
+      "1️⃣ CO2 Reduction": 43.09536150172028,
       "2️⃣ Solar Self-Consumption": -0.04802740321205811,
       "3️⃣ EV Charge Completion": 0.29381380985396877,
       "4️⃣ Grid Stability": 0.25321078300476074,
@@ -41,7 +41,7 @@
       "6️⃣ BESS Optimization": 0.979034201273906
     },
     "A2C": {
-      "1️⃣ CO2 Reduction": 4.2407029484044,
+      "1️⃣ CO2 Reduction": 42.407029484044,
       "2️⃣ Solar Self-Consumption": -0.2802457204516565,
       "3️⃣ EV Charge Completion": 0,
       "4️⃣ Grid Stability": 0.19303105771541595,

@@ -138,20 +138,29 @@ python -c "from src.agents.a2c_sb3 import make_a2c; agent = make_a2c(...)"
 **Script consolidado para análisis de todos los agentes:**
 
 ```bash
-# Generar análisis completo con 5 gráficas comparativas
+# Generar análisis completo con gráficas mejoradas desde checkpoints
 python compare_agents_complete.py
 
 # Outputs:
-#  ✓ 01_episode_returns.png         - Evolución de rewards por episodio
-#  ✓ 02_co2_comparison.png          - Ranking CO₂ y comparativa
-#  ✓ 03_energy_metrics.png          - Solar consumido y grid import
-#  ✓ 04_vehicles_charged.png        - Motos y mototaxis cargados
-#  ✓ 05_dashboard_complete.png      - Dashboard integrado
-#  ✓ ANALISIS_COMPLETO_INTEGRADO.txt - Reporte detallado
-#  ✓ analisis_integrado_data.json   - Datos exportables
+#  ✓ 01_episode_returns.png         - Evolución de returns por episodio
+#  ✓ 02_co2_comparison.png          - Ranking CO₂ y comparativa (SAC 55.68M kg)
+#  ✓ 03_energy_metrics.png          - Solar acumulado y grid import
+#  ✓ 04_vehicles_charged.png        - Motos y mototaxis cargados acumulados
+#  ✓ 05_dashboard_complete.png      - Dashboard integrado con KPI completo
+#  ✓ 01_kpi_evolution.png           - ⭐ NUEVA: Evolución 6 KPI reales
+#                                       (Consumo, Costo, CO₂, Ramping, Peak, Load Factor)
+#  ✓ ANALISIS_COMPLETO_INTEGRADO.txt - Reporte detallado con ranking
+#  ✓ analisis_integrado_data.json   - Datos exportables en JSON
 ```
 
-**Ubicación de outputs:** `reports/mejoragent/`
+**Gráficas Mejoradas (2026-02-16):**
+- **01_kpi_evolution.png**: 6 paneles con datos REALES desde checkpoints de agentes
+  - SAC: 280,320 timesteps (10 episodios completados)
+  - PPO: 88,000 timesteps (10 episodios completados)
+  - A2C: 86,000 timesteps (10 episodios completados)
+- Validación: ✓ Contenido real (6.6% densidad de color), 308 colores únicos
+
+**Ubicación de outputs:** `reports/mejoragent/graphs/`
 
 #### Impacto Esperado en Producción (Iquitos)
 
