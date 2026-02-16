@@ -13,13 +13,13 @@
 **pvbesscar** optimiza la carga de 38 tomas eléctricas (270 motos + 39 mototaxis/día) utilizando:
 
 - **Solar PV**: 4,050 kWp de generación fotovoltaica
-- **BESS**: 940 kWh / 342 kW de almacenamiento (exclusivo EV)
+- **BESS**: 1,700 kWh max SOC de almacenamiento (verificado desde `data/oe2/bess/bess_simulation_hourly.csv`)
 - **RL Agents**: SAC, PPO, A2C para minimizar emisiones CO₂
 
-**Infraestructura v5.2**:
+**Infraestructura v5.2** (FINAL):
 - 19 cargadores (15 motos + 4 mototaxis) × 2 tomas = 38 tomas
 - Modo 3 @ 7.4 kW/toma (281.2 kW instalados)
-- Escenario RECOMENDADO: pe=0.30, fc=0.55
+- Escenario RECOMENDADO: pe=0.30, fc=0.55 (IEA Global EV Outlook 2024)
 
 **Ubicación**: Iquitos, Perú (red aislada, 0.4521 kg CO₂/kWh de generación térmica)
 

@@ -246,8 +246,8 @@ Dataset: 150+ líneas auditadas
 ```
 OE2 Artifacts:
   ✅ Solar: 8760 horas exactas
-  ✅ Chargers: 8760 × 128 matriz
-  ✅ BESS: 4520 kWh capacidad
+  ✅ Chargers: 8760 × 38 matriz (19 cargadores × 2 sockets)
+  ✅ BESS: 1700 kWh max SOC (verificado desde bess_simulation_hourly.csv)
   ✅ Mall: 8760 valores horarios
   ✅ Validación: 0 fallos
 
