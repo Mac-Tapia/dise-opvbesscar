@@ -793,48 +793,69 @@ ls checkpoints/*/latest.zip
 
 ## 📝 Actualizaciones Recientes (Febrero 2026)
 
-### ✅ Integración Completada: chargers.py v5.2 (Feb 16, 2026)
+### 🔧 IMPORTANTE: Corrección de Datos v5.2 - Restauración de CSV Correcto (Feb 16, 2026)
 
-Se han integrado exitosamente **3 nuevas columnas** de seguimiento de vehículos que están **cargando actualmente** (transferencia activa de energía):
+Se identificó y **corrigió un problema crítico de integridad de datos** durante la integración v5.2:
 
-**Cambios Implementados:**
+**Problema Identificado:**
+- CSV regenerado tenía **datos corruptos** (todos los sockets siempre a 7.4 kW)
+- Resultaba en 2,463,312 kWh/año (4.35x mayor que lo correcto)
+- Causa: Error durante regeneración desde chargers.py
 
-1. **Código Fuente** - `src/dimensionamiento/oe2/disenocargadoresev/chargers.py`
-   - Líneas 806-814: Inicialización de nuevas columnas en `data_annual`
-   - Línea 825: Creación de contadores horarios
-   - Líneas 839-844: Lógica de conteo (if `effective_power > 0`)
-   - Líneas 860-863: Almacenamiento de contadores
+**Solución Implementada:**
+1. ✅ **Restaurar CSV correcto** desde versión anterior (244 columnas, 565,875 kWh/año)
+2. ✅ **Agregar 3 nuevas columnas** cantidad_cargando basadas en power > 0.1 kW
+3. ✅ **Actualizar código** con valores correctos (1,129 → 1,550.34 kWh/día)
+4. ✅ **Sincronizar GitHub** (commit 201ec301)
 
-2. **Dataset Regenerado** - `chargers_ev_ano_2024_v3.csv`
-   - 361 columnas (vs 244 anterior)
-   - 8,760 filas (1 año, resolución horaria)
-   - ✅ Balance energético validado: 565,875 kWh/año
-   - ✅ Métricas CO₂ verificadas: 200,729 kg/año neto
+**Dataset v5.2 - Valores Finales Verificados:**
 
-3. **Nuevas Columnas**
-   ```
-   cantidad_motos_cargando_actualmente       (min=0, max=30, mean=11.86)
-   cantidad_mototaxis_cargando_actualmente   (min=0, max=8,  mean=2.22)
-   cantidad_total_cargando_actualmente       (min=0, max=37, mean=14.08)
-   ```
+| Métrica | Valor | Status |
+|---------|-------|--------|
+| Energía EV anual | 565,875 kWh/año ✅ | Correcto |
+| Promedio EV diario | 1,550.34 kWh/día ✅ | Correcto |
+| Energía Mall anual | 394,461 kWh/año ✅ | Correcto |
+| Promedio Mall diario | 1,080.71 kWh/día ✅ | Correcto |
+| Motos cargando (mean) | 11.9 vehículos/hora ✅ | Realista |
+| Taxis cargando (mean) | 2.2 vehículos/hora ✅ | Realista |
+| Sockets totales | 38 (30 motos + 8 taxis) ✅ | Correcto |
 
-4. **Documentación**
-   - [INTEGRACION_COLUMNAS_CANTIDAD_CHARGERS.md](./INTEGRACION_COLUMNAS_CANTIDAD_CHARGERS.md) - Especificación técnica
-   - [CLEANUP_SUMMARY.md](./CLEANUP_SUMMARY.md) - Dataset structure
-   - [DATASET_STRUCTURE_CHARGERS.md](./DATASET_STRUCTURE_CHARGERS.md) - Referencia de columnas
-
-**Validaciones Completadas:**
-- ✅ Integridad estructural: Todas las columnas presentes
-- ✅ Balance energético: 565,875 = 476,501 (motos) + 89,374 (taxis)
-- ✅ Sincronismo: CSV principal = Backup (361 columnas)
-- ✅ Compatibilidad: SAC/PPO/A2C 100% compatible
-- ✅ Relación cantidad: `cargando ≤ activas` (válida)
+**Archivos Afectados y Corregidos:**
+- ✅ `data/oe2/chargers/chargers_ev_ano_2024_v3.csv` - Restaurado (565,875 kWh)
+- ✅ `src/dimensionamiento/oe2/disenocargadoresev/chargers.py` - Comentarios actualizados
+- ✅ `src/dimensionamiento/oe2/disenobess/bess.py` - Referencias actualizadas (412,236 → 565,875)
+- ✅ `scripts/train/train_ppo_multiobjetivo.py` - Escenario v5.2 documentado
+- ✅ `scripts/train/train_sac_multiobjetivo.py` - Escenario v5.2 documentado
+- ✅ Documentación: [REPORTE_FINAL_V52_LIMPIEZA.md](./REPORTE_FINAL_V52_LIMPIEZA.md)
 
 **Impacto:**
-- ✅ MISMO nombre de archivo: `chargers_ev_ano_2024_v3.csv`
-- ✅ MISMA carpeta: `data/oe2/chargers/`
-- ✅ 100% compatible con scripts de entrenamiento
-- ✅ **NO rompe sincronismo** con otros módulos
+- ✅ Dataset íntegro y confiable para entrenamiento
+- ✅ Todas las métricas realistas y consistentes
+- ✅ SAC/PPO/A2C pueden entrenar con confianza
+- ✅ GitHub repository sincronizado (commit 201ec301)
+
+---
+
+### ✅ Integración de Columnas v5.2 (Feb 16, 2026)
+
+Se han integrado exitosamente **3 nuevas columnas** de seguimiento de vehículos:
+
+**Nuevas Columnas en chargers_ev_ano_2024_v3.csv:**
+```
+cantidad_motos_cargando_actualmente       (min=0, max=30, mean=11.9)
+cantidad_mototaxis_cargando_actualmente   (min=0, max=8,  mean=2.2)
+cantidad_total_cargando_actualmente       (min=0, max=37, mean=14.1)
+```
+
+**Cambios en Código Fuente:**
+- `src/dimensionamiento/oe2/disenocargadoresev/chargers.py` (líneas 806-863)
+- Inicialización, contadores, lógica y almacenamiento de datos
+
+**Validaciones:**
+- ✅ Integridad: 8,760 filas × 244 columnas (correctas)
+- ✅ Energía: 565,875 kWh/año = 476,501 + 89,374 ✅
+- ✅ Relación: `cargando ≤ activas` (válida en todo el dataset)
+- ✅ Compatibilidad: SAC/PPO/A2C 100% compatible
 
 ---
 
