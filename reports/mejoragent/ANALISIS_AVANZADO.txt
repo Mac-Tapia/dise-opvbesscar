@@ -1,0 +1,178 @@
+════════════════════════════════════════════════════════════════════════════════════════════════════
+ANÁLISIS AVANZADO MULTI-OBJETIVO: SAC vs PPO vs A2C
+════════════════════════════════════════════════════════════════════════════════════════════════════
+Fecha: 2026-02-15 23:16:56
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+PARÁMETROS COMUNES (Todos los agentes)
+────────────────────────────────────────────────────────────────────────────────────────────────────
+  gamma: 0.99
+  learning_rate: 0.0002
+  batch_size: 128
+  network_arch: [512, 512]
+  activation: relu
+  max_grad_norm: 0.5
+  normalize_observations: True
+  normalize_rewards: True
+  reward_scaling: 1.0
+  seed: 42
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+PARÁMETROS ESPECÍFICOS POR ALGORITMO
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+SAC:
+  buffer_size: 2000000
+  entropy_coef: 0.15
+  target_entropy: auto
+  tau: 0.02
+  train_freq: 1
+  gradient_steps: 1
+
+PPO:
+  n_steps: 2048
+  n_epochs: 10
+  clip_range: 0.2
+  ent_coef: 0.01
+  vf_coef: 0.5
+  gae_lambda: 0.95
+
+A2C:
+  n_steps: 8
+  ent_coef: 0.01
+  vf_coef: 0.5
+  gae_lambda: 0.95
+  use_rms_prop: True
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+MÉTRICAS DE SALUD (ALGORITMO-ESPECÍFICAS)
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+BASELINE_CON_SOLAR:
+  Total Steps: 0
+  Episodes: 1
+
+BASELINE_SIN_SOLAR:
+  Total Steps: 0
+  Episodes: 1
+
+SAC:
+  Total Steps: 0
+  Episodes: 10
+  actor_loss: 0.0000
+  critic_loss: 0.0000
+  alpha: 0.1500
+  entropy: 0.0000
+  mean_q: 0.0000
+
+PPO:
+  Total Steps: 0
+  Episodes: 0
+  policy_loss: 0.0000
+  value_loss: 0.0000
+  kl_div: 0.0000
+  clip_frac: 0.0000
+  entropy: 0.0000
+  explained_var: 0.0000
+
+A2C:
+  Total Steps: 0
+  Episodes: 0
+  policy_loss: 0.0000
+  value_loss: 0.0000
+  entropy: 0.0000
+  explained_var: 0.0000
+  grad_norm: 0.0000
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+MÉTRICAS DE DESEMPEÑO
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+BASELINE_CON_SOLAR:
+  Return Mean: 37.47
+
+BASELINE_SIN_SOLAR:
+  Return Mean: 0.00
+
+SAC:
+  Return Mean: 1981.06
+  Return Std: 68.39
+  Sample Efficiency: 0 steps/ep
+
+PPO:
+  Return Mean: 0.00
+  Return Std: 0.00
+  Sample Efficiency: 0 steps/ep
+
+A2C:
+  Return Mean: 0.00
+  Return Std: 0.00
+  Sample Efficiency: 0 steps/ep
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+6 OBJETIVOS MULTI-OBJETIVO
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+1️⃣ CO2 Grid:
+  BASELINE_CON_SOLAR: 0.624
+  BASELINE_SIN_SOLAR: 0.000
+
+2️⃣ Solar:
+  BASELINE_CON_SOLAR: 0.450
+  BASELINE_SIN_SOLAR: 0.000
+  SAC: 0.000
+  PPO: 0.000
+  A2C: 0.000
+
+3️⃣ EVCharge:
+  BASELINE_CON_SOLAR: 1.000
+  BASELINE_SIN_SOLAR: 1.000
+
+4️⃣ Stability:
+  BASELINE_CON_SOLAR: 0.900
+  BASELINE_SIN_SOLAR: 0.900
+
+5️⃣ Cost:
+  BASELINE_CON_SOLAR: 0.998
+  BASELINE_SIN_SOLAR: 0.990
+  SAC: 0.000
+  PPO: 0.997
+  A2C: 0.992
+
+6️⃣ BESS:
+  BASELINE_CON_SOLAR: 0.850
+  BASELINE_SIN_SOLAR: 0.850
+  SAC: 0.000
+  PPO: 0.000
+  A2C: 0.000
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+CO2 EVITADO (M kg)
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+BASELINE_CON_SOLAR:
+  Direct: 0.00 M kg
+  Indirect: 0.00 M kg
+  Total: 0.00 M kg
+
+BASELINE_SIN_SOLAR:
+  Direct: 0.00 M kg
+  Indirect: 0.00 M kg
+  Total: 0.00 M kg
+
+SAC:
+  Direct: 38.98 M kg
+  Indirect: 16.70 M kg
+  Total: 55.68 M kg
+
+PPO:
+  Direct: 3.57 M kg
+  Indirect: 39.53 M kg
+  Total: 43.10 M kg
+
+A2C:
+  Direct: 2.12 M kg
+  Indirect: 40.29 M kg
+  Total: 42.41 M kg
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
