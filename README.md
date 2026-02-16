@@ -208,7 +208,7 @@ python scripts/verify_5_datasets.py
 │                    CityLearn v2 Environment                         │
 │  ┌──────────────┐  ┌──────────────┐  ┌─────────────────────────┐   │
 │  │  Solar PV    │  │    BESS      │  │   38 EV Sockets       │   │
-│  │  4,050 kWp   │  │  940 kWh     │  │   (19 units x 2)      │   │
+│  │  4,050 kWp   │  │ 1,700 kWh    │  │   (19 units x 2)      │   │
 │  └──────────────┘  └──────────────┘  └─────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────┘
                               │
@@ -222,12 +222,12 @@ python scripts/verify_5_datasets.py
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Espacios de Observación y Acción
+### Espacios de Observación y Acción (v5.2 Final - VERIFICADO)
 
 | Componente       | Dimensiones | Descripción                                       |
 | ---------------- | ----------- | ------------------------------------------------- |
-| **Observación**  | 124-dim     | Solar W/m², BESS SOC %, 38 sockets × 3, tiempo  |
-| **Acción**       | 39-dim     | 1 BESS + 38 sockets, valores continuos [0,1]    |
+| **Observación**  | 156-dim     | Solar W/m², BESS SOC %, 38 sockets × 3, tiempo  |
+| **Acción**       | 39-dim      | 1 BESS + 38 sockets (v5.2 verified: 30 motos + 8 taxis) |
 
 ---
 
@@ -401,17 +401,17 @@ gae_lambda: 0.95
    - Fuente: CityLearn v2 validado
 
 ✅ Chargers Real:
-   - Total sockets: 128 (19 units × 4)
-   - Motos: 112 sockets @ 2 kW
-   - Mototaxis: 16 sockets @ 3 kW
-   - Consumo: 1,024,818 kWh/año
-   - Archivo: chargers_real_hourly_2024.csv
+   - Total sockets: 38 (19 chargers × 2 sockets) [v5.2 VERIFIED]
+   - Motos: 30 sockets @ 7.4 kW
+   - Mototaxis: 8 sockets @ 7.4 kW
+   - Consumo: 565,875 kWh/año (v5.2 verified from chargers_ev_ano_2024_v3.csv)
+   - Archivo: chargers_ev_ano_2024_v3.csv
 
 ✅ BESS Config:
-   - Capacidad: 1,700 kWh max SOC / 342 kW (verificado desde bess_simulation_hourly.csv)
-   - SOC Medio: 90.5%
+   - Capacidad: 1,700 kWh max SOC / 342 kW (v5.2 verified FROM bess_simulation_hourly.csv - DATA SOURCE OF TRUTH)
+   - SOC Inicial: 90.5%
    - Eficiencia: 95% (round-trip)
-   - Archivo: bess_hourly_dataset_2024.csv
+   - Archivo: bess_simulation_hourly.csv
 
 ✅ Mall Demand:
    - Consumo: 12,368,653 kWh/año
@@ -544,21 +544,23 @@ Total:     12,368,653 kWh/año (12.37 GWh)
 Máximo:    2,767.4 kWh/hora
 ```
 
-#### 3. Chargers EV (38 sockets controlables)
+#### 3. Chargers EV (38 sockets controlables - v5.2)
 
 ```text
 Ubicación: data/interim/oe2/chargers/
-Formato:   19 chargers x 2 sockets = 128 puntos de carga
-Total:     232,341 kWh/año demanda EV
-Tipos:     30 motos (2 kWh) + 8 mototaxis (7.4 kWh)
+Formato:   19 cargadores × 2 sockets = 38 puntos de carga (v5.2 VERIFIED)
+Total:     565,875 kWh/año demanda EV (30 motos + 8 mototaxis)
+Tipos:     30 motos (7.4 kW) + 8 mototaxis (7.4 kW)
+Archivo:   chargers_ev_ano_2024_v3.csv (357 columns)
 ```
 
-#### 4. BESS - Battery Energy Storage System (940 kWh / 342 kW)
+#### 4. BESS - Battery Energy Storage System (1,700 kWh max SOC / 342 kW)
 
 ```text
 Ubicación: data/interim/oe2/bess/
-Columnas:  timestamp, power_kw, energy_kwh, soc_percent
-Capacidad: 940 kWh | Potencia máx: 342 kW (exclusivo EV)
+Columnas:  1,700 kWh max SOC | Potencia máx: 342 kW (exclusivo EV)
+SOC prom:  90.5% | SOC máx: 99%
+Archivo:   bess_simulation_hourly.csv (DATA SOURCE OF TRUTH para BESS capacity): 342 kW (exclusivo EV)
 SOC prom:  15.6% | SOC máx: 75.4%
 ```
 
