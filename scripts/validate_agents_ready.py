@@ -268,7 +268,7 @@ class ConfigurationValidator:
         """Validar constantes OE2 criticas."""
         constants = {
             'CO2_FACTOR_IQUITOS': 0.4521,
-            'BESS_CAPACITY_KWH': 940.0,
+            'BESS_CAPACITY_KWH': 1700.0,  # 1,700 kWh max SOC (v5.2 verified)
             'HOURS_PER_YEAR': 8760,
         }
         

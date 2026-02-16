@@ -9,7 +9,7 @@ Este módulo integra **todos los datasets** de CityLearn en un análisis unifica
 | Componente | Capacidad | Fuente Datos |
 |-----------|-----------|------------|
 | **Generación Solar (PV)** | 4,050 kWp | `pv_generation_hourly_citylearn_v2.csv` |
-| **Almacenamiento (BESS)** | 940 kWh / 342 kW | `electrical_storage_simulation.csv` |
+| **Almacenamiento (BESS)** | 1,700 kWh max SOC / 342 kW | `electrical_storage_simulation.csv` |
 | **Demanda Mall** | ~100 kW | `demandamallhorakwh.csv` |
 | **Demanda EV (38 sockets)** | ~50 kW (9h-22h) | `chargers_real_hourly_2024.csv` |
 | **Red Eléctrica** | ilimitada | Complementa déficit de PV+BESS |
@@ -50,7 +50,7 @@ from src.dimensionamiento.oe2.balance_energetico import BalanceEnergeticoSystem,
 config = BalanceEnergeticoConfig(
     data_dir=Path("data/processed/citylearn/iquitos_ev_mall"),
     pv_capacity_kwp=4050.0,
-    bess_capacity_kwh=940.0,  # v5.2: exclusivo EV
+    bess_capacity_kwh=1700.0,  # v5.2 CORRECTED: 1,700 kWh max SOC
     dod=0.80,  # 80% depth of discharge
 )
 
@@ -148,7 +148,7 @@ BalanceEnergeticoConfig(
     
     # Capacidades del sistema
     pv_capacity_kwp: float = 4050.0          # kW pico
-    bess_capacity_kwh: float = 940.0         # kWh (v5.2: exclusivo EV)
+    bess_capacity_kwh: float = 1700.0         # kWh (v5.2 CORRECTED)
     bess_power_kw: float = 342.0             # kW nominal (0.36 C-rate)
     
     # Parámetros de operación

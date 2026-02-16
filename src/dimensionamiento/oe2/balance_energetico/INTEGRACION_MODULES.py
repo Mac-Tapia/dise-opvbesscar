@@ -204,7 +204,7 @@ def integration_example():
         pv_kwh=df_pv['pv_kwh'].values,
         ev_kwh=df_ev['ev_kwh'].values,
         mall_kwh=df_mall['mall_kwh'].values,
-        capacity_kwh=940.0,   # v5.2: 940 kWh (exclusivo EV, 100% cobertura)
+        capacity_kwh=1700.0,   # v5.2 CORRECTED: 1,700 kWh max SOC
         power_kw=342.0,       # v5.2: 342 kW
         dod=0.80,
         efficiency=0.95,
@@ -231,7 +231,7 @@ def integration_example():
     config = BalanceEnergeticoConfig(
         data_dir=Path("data/processed/citylearn/iquitos_ev_mall"),
         pv_capacity_kwp=4050.0,
-        bess_capacity_kwh=940.0,   # v5.2: 940 kWh (exclusivo EV, 100% cobertura)
+        bess_capacity_kwh=1700.0,   # v5.2 CORRECTED: 1,700 kWh max SOC
         bess_power_kw=342.0,       # v5.2: 342 kW
         dod=0.80,
         efficiency_roundtrip=0.95,

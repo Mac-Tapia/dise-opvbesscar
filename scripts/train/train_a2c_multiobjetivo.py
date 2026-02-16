@@ -42,7 +42,7 @@ from src.agents.training_validation import validate_agent_config
 
 # ===== CONSTANTES IQUITOS v5.3 (2026-02-14) CON COMUNICACION SISTEMA =====
 CO2_FACTOR_IQUITOS: float = 0.4521  # kg CO2/kWh (grid termico aislado)
-BESS_CAPACITY_KWH: float = 940.0    # 940 kWh (exclusivo EV, 100% cobertura)
+BESS_CAPACITY_KWH: float = 1700.0   # 1,700 kWh max SOC (verificado desde bess_simulation_hourly.csv)
 BESS_MAX_POWER_KW: float = 342.0    # 342 kW potencia maxima BESS
 HOURS_PER_YEAR: int = 8760
 
@@ -2087,7 +2087,7 @@ def validate_a2c_sync() -> bool:
     print('='*80)
     
     checks = {
-        '1. BESS Capacity (940 kWh)': BESS_CAPACITY_KWH == 940.0,
+        '1. BESS Capacity (1700 kWh)': BESS_CAPACITY_KWH == 1700.0,
         '2. BESS Max normalizacion (1700 kWh)': BESS_MAX_KWH_CONST == 1700.0,
         '3. Solar Max (2887 kW)': SOLAR_MAX_KW == 2887.0,
         '4. Mall Max (3000 kW)': MALL_MAX_KW == 3000.0,
@@ -3354,7 +3354,7 @@ try:
         print(f'     Device: {DEVICE.upper()}')
         print(f'     Velocidad: ~{SPEED_ESTIMATED:,} timesteps/segundo')
         print(f'     Duracion: {DURATION_TEXT}')
-        print('     Datos: REALES OE2 (chargers_ev_ano_2024_v3.csv 38 sockets, 940 kWh BESS, 4.05 MWp solar)')
+        print('     Datos: REALES OE2 (chargers_ev_ano_2024_v3.csv 38 sockets, 1,700 kWh BESS max SOC, 4.05 MWp solar)')
         print('     Network: 256x256 (on-policy A2C), n_steps=8 (updates frecuentes)')
         print('     Output: result_a2c.json, timeseries_a2c.csv, trace_a2c.csv')
         print()

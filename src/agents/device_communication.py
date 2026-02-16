@@ -166,7 +166,7 @@ class BESSCommunicationController:
     2. Resto al Mall (con limite 2000 kW para evitar sobrecarga)
     3. Si mall demanda >2000 kW, BESS corta para mantener 20-22%
     """
-    bess_capacity_kwh: float = 940.0
+    bess_capacity_kwh: float = 1700.0  # 1,700 kWh max SOC (v5.2 verified)
     bess_max_power_kw: float = 342.0  # Potencia maxima descarga
     bess_charge_max_power_kw: float = 342.0
     

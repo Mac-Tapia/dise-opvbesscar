@@ -32,7 +32,7 @@ def show_help():
 DESCRIPCION:
   Analiza el balance energetico integral considerando:
   - Generacion solar PV (4,050 kWp)
-  - Almacenamiento BESS (940 kWh / 342 kW - exclusivo EV)
+  - Almacenamiento BESS (1,700 kWh max SOC / 342 kW - verificado)
   - Demanda Mall (~100 kW)
   - Demanda Vehiculos Electricos (38 sockets, 1,129 kWh/dia 9h-22h)
   - Importacion de red electrica
@@ -213,7 +213,7 @@ def run_custom_config():
         config = BalanceEnergeticoConfig(
             data_dir=Path("data/processed/citylearn/iquitos_ev_mall"),
             pv_capacity_kwp=4050.0,
-            bess_capacity_kwh=940.0,   # v5.2: 940 kWh (exclusivo EV, 100% cobertura)
+            bess_capacity_kwh=1700.0,   # v5.2 CORRECTED: 1,700 kWh max SOC
             bess_power_kw=342.0,       # v5.2: 342 kW
             dod=0.80,  # Profundidad de descarga 80%
             efficiency_roundtrip=0.95,  # Eficiencia 95%

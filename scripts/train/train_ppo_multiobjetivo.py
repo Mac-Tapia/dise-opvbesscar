@@ -214,12 +214,12 @@ class PPOConfig:
         }
 
 # ============================================================================
-# CONSTANTES OE2 v5.2 (Iquitos, Peru) - 2026-02-12
+# CONSTANTES OE2 v5.2 (Iquitos, Peru) - 2026-02-16 (ACTUALIZADO)
 # ============================================================================
 CO2_FACTOR_IQUITOS = 0.4521  # kg CO2/kWh - factor de emision grid Iquitos
-BESS_CAPACITY_KWH = 940.0    # 940 kWh (exclusivo EV, 100% cobertura)
+BESS_CAPACITY_KWH = 1700.0   # 1,700 kWh max SOC (verificado desde bess_simulation_hourly.csv)
 BESS_MAX_KWH_CONST = 1700.0  # 1,700 kWh total (para normalizacion observaciones)
-BESS_MAX_KWH = BESS_MAX_KWH_CONST  # Usar 1700 para normalizacion, NO 940
+BESS_MAX_KWH = BESS_MAX_KWH_CONST  # Usar 1700 para normalizacion (CORRECTED)
 BESS_MAX_POWER_KW = 342.0    # 342 kW potencia maxima BESS
 
 # ============================================================================
@@ -474,7 +474,7 @@ class CityLearnEnvironment(Env):
     - [154]: Eficiencia sistema completo [0,1]
     - [155]: Meta diaria de vehiculos (progreso [0,1])
 
-    Action Space (129-dim REAL v5.2):
+    Action Space (39-dim REAL v5.2):
     - [0]: BESS control [0,1] (0=carga max, 0.5=idle, 1=descarga max)
     - [1:39]: 38 socket setpoints [0,1] (potencia asignada a cada socket)
     """
@@ -3031,7 +3031,7 @@ def validate_ppo_sync() -> bool:
     print('='*80)
     
     checks = {
-        '1. BESS Capacity (940 kWh)': BESS_CAPACITY_KWH == 940.0,
+        '1. BESS Capacity (1700 kWh)': BESS_CAPACITY_KWH == 1700.0,
         '2. BESS Max normalizacion (1700 kWh)': BESS_MAX_KWH == 1700.0,
         '3. Solar Max (2887 kW)': SOLAR_MAX_KW == 2887.0,
         '4. Mall Max (3000 kW)': MALL_MAX_KW == 3000.0,
