@@ -807,6 +807,12 @@ def generate_socket_level_dataset_v3(
     data_annual['cantidad_mototaxis_activas'] = []    # Número de taxis siendo cargados esta hora
     data_annual['cantidad_total_vehiculos_activos'] = []  # Total de vehículos cargándose
     
+    # Columnas nuevas v5.2: Cantidad de vehículos CARGANDO (transferencia activa de energía)
+    # Basadas en: socket_XXX_charging_power_kw > 0 (diferente a cantidad_activas)
+    data_annual['cantidad_motos_cargando_actualmente'] = []        # Motos transferiendo energía (socket 0-29)
+    data_annual['cantidad_mototaxis_cargando_actualmente'] = []    # Taxis transferiendo energía (socket 30-37)
+    data_annual['cantidad_total_cargando_actualmente'] = []        # Total vehículos cargando
+    
     # Simular 8,760 horas
     logger.info("Iniciando simulacion estocastica v3.0 (8,760 horas)...")
     for hour_idx, timestamp in enumerate(timestamps):
@@ -819,6 +825,10 @@ def generate_socket_level_dataset_v3(
         # Contadores de vehículos activos por tipo esta hora
         motos_activas_esta_hora = 0
         taxis_activos_esta_hora = 0
+        
+        # Contadores de vehículos CARGANDO (transferencia activa de energía) esta hora
+        motos_cargando_esta_hora = 0
+        taxis_cargando_esta_hora = 0
         
         # Simular cada toma (38 total)
         for socket_id in range(38):
@@ -840,8 +850,14 @@ def generate_socket_level_dataset_v3(
                 # Contar vehículos activos por tipo
                 if socket_id < 30:  # Sockets 0-29 son motos
                     motos_activas_esta_hora += 1
+                    # Contar si está cargando (transferencia activa)
+                    if effective_power > 0:
+                        motos_cargando_esta_hora += 1
                 else:  # Sockets 30-37 son mototaxis
                     taxis_activos_esta_hora += 1
+                    # Contar si está cargando (transferencia activa)
+                    if effective_power > 0:
+                        taxis_cargando_esta_hora += 1
             else:
                 data_annual[f'socket_{socket_id:03d}_soc_arrival'].append(0.0)
                 data_annual[f'socket_{socket_id:03d}_soc_target'].append(0.0)
@@ -854,6 +870,11 @@ def generate_socket_level_dataset_v3(
         data_annual['cantidad_motos_activas'].append(motos_activas_esta_hora)
         data_annual['cantidad_mototaxis_activas'].append(taxis_activos_esta_hora)
         data_annual['cantidad_total_vehiculos_activos'].append(motos_activas_esta_hora + taxis_activos_esta_hora)
+        
+        # Agregar contadores de vehículos CARGANDO (v5.2)
+        data_annual['cantidad_motos_cargando_actualmente'].append(motos_cargando_esta_hora)
+        data_annual['cantidad_mototaxis_cargando_actualmente'].append(taxis_cargando_esta_hora)
+        data_annual['cantidad_total_cargando_actualmente'].append(motos_cargando_esta_hora + taxis_cargando_esta_hora)
     
     # Crear DataFrame anual con datetime como indice
     df_annual = pd.DataFrame(data_annual, index=pd.DatetimeIndex(timestamps, name='datetime'))
@@ -946,10 +967,22 @@ def generate_socket_level_dataset_v3(
     logger.info("[OK] Columnas OSINERGMIN y CO2 agregadas al dataset")
     
     # Guardar CSV anual (datetime como indice)
+    # ⚠️ NOTA: Esta función genera el CSV con 358 columnas (todas las del estado interno).
+    #   Luego se ejecuta clean_datasets.py que lo reduce a 240 columnas mantiendo:
+    #   - 38 socket power demands (acción RL crítica)
+    #   - 114 SOC columns (debugging)
+    #   - 76 socket state columns (validación)
+    #   - 3 vehicle counts (tracking demanda)
+    #   - 3 energy aggregates (balance)
+    #   - 5 CO2 metrics (objetivo principal)
+    #   - 1 alias CityLearn
+    #
+    #   Ver: DATASET_STRUCTURE_CHARGERS.md para detalles completos
     output_path_annual = output_dir / 'chargers_ev_ano_2024_v3.csv'
     df_annual.to_csv(output_path_annual, index=True)
     logger.info(f"[OK] Annual dataset saved: {output_path_annual}")
     logger.info(f"  Shape: {df_annual.shape} (8,760 rows × {len(df_annual.columns)} columns)")
+    logger.info(f"  ⚠️  Post-processing: Run clean_datasets.py to reduce to 240 columns")
     
     # Crear DataFrame diario de ejemplo (dia 1) - mantener datetime como indice
     df_daily = df_annual.iloc[0:24, :].copy()
