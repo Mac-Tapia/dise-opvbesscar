@@ -11,8 +11,9 @@ Determina el MEJOR AGENTE basado en:
 Gráficas generadas:
   - Return de evaluación vs Environment Steps
   - CO2 evitado comparativo (directo + indirecto)
-  - Episode length vs Steps
-  - Return vs Wall-clock time
+  - Evolución de CO2 por episodio
+  - Métricas de energía (Solar, Grid, BESS)
+  - Vehículos cargados
   - Dashboard comparativo completo
 
 Autor: pvbesscar Team
@@ -27,10 +28,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import matplotlib
-matplotlib.use('Agg')  # Backend sin GUI
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+matplotlib.use('Agg')  # Backend sin GUI
 from matplotlib.gridspec import GridSpec
 
 warnings.filterwarnings('ignore')
@@ -142,13 +144,15 @@ def extract_metrics(results: Dict[str, Dict]) -> Dict[str, Dict]:
             m['total_cost_usd'] = summary.get('total_cost_usd', 0)
             
         elif agent == 'SAC':
-            # Estructura SAC
+            # Estructura SAC v7.1: datos directamente en raíz (NO nested)
             def to_float_list(arr):
                 return [float(x) if x is not None else 0.0 for x in arr]
             
+            # SAC v7.1 guarda datos en raíz, no en nested dicts
             m['timesteps'] = data.get('total_timesteps', 0)
             m['episodes'] = data.get('episodes_completed', 0)
             
+            # Cargar datos de episodios disponibles
             m['episode_rewards'] = to_float_list(data.get('episode_rewards', []))
             m['co2_grid_kg'] = to_float_list(data.get('episode_co2_grid_kg', []))
             m['solar_kwh'] = to_float_list(data.get('episode_solar_kwh', []))
@@ -157,21 +161,21 @@ def extract_metrics(results: Dict[str, Dict]) -> Dict[str, Dict]:
             m['bess_discharge_kwh'] = to_float_list(data.get('episode_bess_discharge_kwh', []))
             m['bess_charge_kwh'] = to_float_list(data.get('episode_bess_charge_kwh', []))
             
-            # Para SAC, calcular CO2 evitado desde los datos de episodios
-            # Usar factor CO2 Iquitos: 0.4521 kg/kWh
-            CO2_FACTOR = 0.4521
+            # SAC no proporciona CO2 evitado directo/indirecto, calcular estimado
+            # CO2 evitado ≈ Solar generado × factor CO2 grid (0.4521)
+            # + EV charging × factor EV (0.87 motos, 0.47 mototaxis promedio ~0.70)
             if m['solar_kwh']:
-                # CO2 indirecto = solar usado × factor
-                m['co2_avoided_indirect_kg'] = [s * CO2_FACTOR for s in m['solar_kwh']]
-                m['total_co2_avoided_indirect_kg'] = sum(m['co2_avoided_indirect_kg'])
-            
-            # CO2 directo = EV cargado × factor EV (estimado)
-            EV_CO2_FACTOR = 0.87  # kg CO2/kWh promedio motos
+                m['total_co2_avoided_indirect_kg'] = sum(m['solar_kwh']) * 0.4521
             if m['ev_charging_kwh']:
-                m['co2_avoided_direct_kg'] = [e * EV_CO2_FACTOR for e in m['ev_charging_kwh']]
-                m['total_co2_avoided_direct_kg'] = sum(m['co2_avoided_direct_kg'])
+                m['total_co2_avoided_direct_kg'] = sum(m['ev_charging_kwh']) * 0.70  # Factor promedio EV
             
             m['total_co2_avoided_kg'] = m['total_co2_avoided_direct_kg'] + m['total_co2_avoided_indirect_kg']
+            
+            # Repetir para listas de episodios (aproximación)
+            m['co2_avoided_direct_kg'] = [x * 0.70 for x in m['ev_charging_kwh']]
+            m['co2_avoided_indirect_kg'] = [x * 0.4521 for x in m['solar_kwh']]
+            m['motos_charged'] = [0.0] * len(m['episode_rewards'])  # SAC no registra esto
+            m['mototaxis_charged'] = [0.0] * len(m['episode_rewards'])  # SAC no registra esto
         
         metrics[agent] = m
     
@@ -202,7 +206,7 @@ def determine_best_agent(metrics: Dict[str, Dict]) -> Tuple[str, Dict]:
     # Ordenar por CO2
     ranking.sort(key=lambda x: x['co2_avoided_total_kg'], reverse=True)
     
-    return best_agent, {'ranking': ranking, 'best_co2_kg': best_co2}
+    return best_agent or 'N/A', {'ranking': ranking, 'best_co2_kg': best_co2}
 
 
 def plot_episode_rewards(metrics: Dict[str, Dict], save_path: Path) -> None:
@@ -214,7 +218,7 @@ def plot_episode_rewards(metrics: Dict[str, Dict], save_path: Path) -> None:
         if not rewards:
             continue
         
-        # Convertir a float (por si vienen como strings)
+        # Convertir a float
         rewards = [float(r) for r in rewards]
             
         episodes = len(rewards)
@@ -282,11 +286,13 @@ def plot_co2_comparison(metrics: Dict[str, Dict], save_path: Path) -> None:
     
     # Añadir valores en barras
     for bar, val in zip(bars1, direct):
-        ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height(), 
-                f'{val:.1f}M', ha='center', va='bottom', fontsize=9)
+        if val > 0:
+            ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height(), 
+                    f'{val:.1f}M', ha='center', va='bottom', fontsize=9)
     for bar, val in zip(bars2, indirect):
-        ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height(), 
-                f'{val:.1f}M', ha='center', va='bottom', fontsize=9)
+        if val > 0:
+            ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height(), 
+                    f'{val:.1f}M', ha='center', va='bottom', fontsize=9)
     
     # Subplot 2: CO2 total (ranking)
     ax2 = axes[1]
@@ -300,16 +306,18 @@ def plot_co2_comparison(metrics: Dict[str, Dict], save_path: Path) -> None:
     bars = ax2.barh(agents_sorted, totals_sorted, color=colors_sorted, edgecolor='black')
     
     # Destacar el mejor
-    bars[0].set_edgecolor('gold')
-    bars[0].set_linewidth(3)
+    if bars:
+        bars[0].set_edgecolor('gold')
+        bars[0].set_linewidth(3)
     
     ax2.set_xlabel('CO2 Total Evitado (millones kg)', fontsize=11)
     ax2.set_title('🏆 RANKING CO2 EVITADO', fontsize=12, fontweight='bold')
     ax2.grid(True, alpha=0.3, axis='x')
     
     for bar, val in zip(bars, totals_sorted):
-        ax2.text(val + 0.5, bar.get_y() + bar.get_height()/2, 
-                f'{val:.2f}M kg', va='center', fontsize=11, fontweight='bold')
+        if val > 0:
+            ax2.text(val + 0.5, bar.get_y() + bar.get_height()/2, 
+                    f'{val:.2f}M kg', va='center', fontsize=11, fontweight='bold')
     
     plt.tight_layout()
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
@@ -325,7 +333,7 @@ def plot_co2_evolution(metrics: Dict[str, Dict], save_path: Path) -> None:
     ax1 = axes[0]
     for agent, m in metrics.items():
         co2_direct = m.get('co2_avoided_direct_kg', [])
-        if co2_direct:
+        if co2_direct and len(co2_direct) > 0:
             cumsum = np.cumsum(co2_direct) / 1e6
             episodes = range(len(cumsum))
             ax1.plot(episodes, cumsum, 
@@ -346,7 +354,7 @@ def plot_co2_evolution(metrics: Dict[str, Dict], save_path: Path) -> None:
     ax2 = axes[1]
     for agent, m in metrics.items():
         co2_indirect = m.get('co2_avoided_indirect_kg', [])
-        if co2_indirect:
+        if co2_indirect and len(co2_indirect) > 0:
             cumsum = np.cumsum(co2_indirect) / 1e6
             episodes = range(len(cumsum))
             ax2.plot(episodes, cumsum,
@@ -377,7 +385,7 @@ def plot_energy_metrics(metrics: Dict[str, Dict], save_path: Path) -> None:
     ax1 = axes[0, 0]
     for agent, m in metrics.items():
         solar = m.get('solar_kwh', [])
-        if solar:
+        if solar and len(solar) > 0:
             cumsum = np.cumsum(solar) / 1e6
             ax1.plot(range(len(cumsum)), cumsum,
                     color=AGENT_COLORS[agent],
@@ -393,7 +401,7 @@ def plot_energy_metrics(metrics: Dict[str, Dict], save_path: Path) -> None:
     ax2 = axes[0, 1]
     for agent, m in metrics.items():
         grid = m.get('grid_import_kwh', [])
-        if grid:
+        if grid and len(grid) > 0:
             cumsum = np.cumsum(grid) / 1e6
             ax2.plot(range(len(cumsum)), cumsum,
                     color=AGENT_COLORS[agent],
@@ -409,7 +417,7 @@ def plot_energy_metrics(metrics: Dict[str, Dict], save_path: Path) -> None:
     ax3 = axes[1, 0]
     for agent, m in metrics.items():
         bess = m.get('bess_discharge_kwh', [])
-        if bess:
+        if bess and len(bess) > 0:
             cumsum = np.cumsum(bess) / 1e6
             ax3.plot(range(len(cumsum)), cumsum,
                     color=AGENT_COLORS[agent],
@@ -425,7 +433,7 @@ def plot_energy_metrics(metrics: Dict[str, Dict], save_path: Path) -> None:
     ax4 = axes[1, 1]
     for agent, m in metrics.items():
         ev = m.get('ev_charging_kwh', [])
-        if ev:
+        if ev and len(ev) > 0:
             cumsum = np.cumsum(ev) / 1e6
             ax4.plot(range(len(cumsum)), cumsum,
                     color=AGENT_COLORS[agent],
@@ -451,7 +459,7 @@ def plot_vehicle_charging(metrics: Dict[str, Dict], save_path: Path) -> None:
     ax1 = axes[0]
     for agent, m in metrics.items():
         motos = m.get('motos_charged', [])
-        if motos:
+        if motos and len(motos) > 0:
             ax1.plot(range(len(motos)), motos,
                     color=AGENT_COLORS[agent],
                     label=f'{agent} (max={max(motos)})',
@@ -468,7 +476,7 @@ def plot_vehicle_charging(metrics: Dict[str, Dict], save_path: Path) -> None:
     ax2 = axes[1]
     for agent, m in metrics.items():
         taxis = m.get('mototaxis_charged', [])
-        if taxis:
+        if taxis and len(taxis) > 0:
             ax2.plot(range(len(taxis)), taxis,
                     color=AGENT_COLORS[agent],
                     label=f'{agent} (max={max(taxis)})',
@@ -509,22 +517,27 @@ def plot_comprehensive_dashboard(metrics: Dict[str, Dict], best_agent: str, rank
     colors = [AGENT_COLORS[a] for a in agents]
     
     bars = ax_rank.barh(agents, co2_vals, color=colors, edgecolor='black')
-    bars[0].set_edgecolor('gold')
-    bars[0].set_linewidth(3)
+    if bars:
+        bars[0].set_edgecolor('gold')
+        bars[0].set_linewidth(3)
     ax_rank.set_xlabel('CO2 Evitado (M kg)')
     ax_rank.set_title('RANKING CO2', fontweight='bold')
     for bar, val in zip(bars, co2_vals):
-        ax_rank.text(val + 0.3, bar.get_y() + bar.get_height()/2, 
-                    f'{val:.1f}M', va='center', fontsize=10)
+        if val > 0:
+            ax_rank.text(val + 0.3, bar.get_y() + bar.get_height()/2, 
+                        f'{val:.1f}M', va='center', fontsize=10)
     
     # === REWARDS ===
     ax_rewards = fig.add_subplot(gs[1, 1])
     for agent, m in metrics.items():
         rewards = m.get('episode_rewards', [])
-        if rewards:
-            window = max(1, len(rewards) // 5)
-            smooth = pd.Series(rewards).rolling(window=window, min_periods=1).mean()
-            ax_rewards.plot(smooth, color=AGENT_COLORS[agent], label=agent, linewidth=2)
+        if rewards and len(rewards) > 0:
+            ax_rewards.plot(range(len(rewards)), rewards,
+                    color=AGENT_COLORS[agent],
+                    label=f'{agent}',
+                    linewidth=2,
+                    marker=AGENT_MARKERS[agent],
+                    markersize=4)
     ax_rewards.set_xlabel('Episodio')
     ax_rewards.set_ylabel('Return')
     ax_rewards.set_title('Episode Returns', fontweight='bold')
@@ -553,9 +566,12 @@ def plot_comprehensive_dashboard(metrics: Dict[str, Dict], best_agent: str, rank
     ax_solar = fig.add_subplot(gs[2, 0])
     for agent, m in metrics.items():
         solar = m.get('solar_kwh', [])
-        if solar:
+        if solar and len(solar) > 0:
             cumsum = np.cumsum(solar) / 1e6
-            ax_solar.plot(cumsum, color=AGENT_COLORS[agent], label=agent, linewidth=2)
+            ax_solar.plot(range(len(cumsum)), cumsum,
+                    color=AGENT_COLORS[agent],
+                    label=f'{agent}',
+                    linewidth=2)
     ax_solar.set_xlabel('Episodio')
     ax_solar.set_ylabel('GWh')
     ax_solar.set_title('Solar Acumulado', fontweight='bold')
@@ -566,9 +582,12 @@ def plot_comprehensive_dashboard(metrics: Dict[str, Dict], best_agent: str, rank
     ax_grid = fig.add_subplot(gs[2, 1])
     for agent, m in metrics.items():
         grid = m.get('grid_import_kwh', [])
-        if grid:
+        if grid and len(grid) > 0:
             cumsum = np.cumsum(grid) / 1e6
-            ax_grid.plot(cumsum, color=AGENT_COLORS[agent], label=agent, linewidth=2)
+            ax_grid.plot(range(len(cumsum)), cumsum,
+                    color=AGENT_COLORS[agent],
+                    label=f'{agent}',
+                    linewidth=2)
     ax_grid.set_xlabel('Episodio')
     ax_grid.set_ylabel('GWh')
     ax_grid.set_title('Grid Import Acumulado', fontweight='bold')
@@ -641,8 +660,11 @@ def generate_report(metrics: Dict[str, Dict], best_agent: str, ranking: Dict) ->
         report.append(f'  Timesteps:     {m.get("timesteps", 0):,}')
         report.append(f'  Episodios:     {m.get("episodes", 0)}')
         if m.get('episode_rewards'):
-            report.append(f'  Reward Final:  {m["episode_rewards"][-1]:.2f}')
-            report.append(f'  Reward Medio:  {np.mean(m["episode_rewards"]):.2f}')
+            rewards = m['episode_rewards']
+            report.append(f'  Return (min):  {min(rewards):.4f}')
+            report.append(f'  Return (max):  {max(rewards):.4f}')
+            report.append(f'  Return (avg):  {np.mean(rewards):.4f}')
+        report.append(f'  CO2 Total Evitado: {m.get("total_co2_avoided_kg", 0)/1e6:.2f}M kg')
     
     report.append('')
     report.append('=' * 80)

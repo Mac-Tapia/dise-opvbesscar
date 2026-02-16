@@ -1,0 +1,52 @@
+{
+  "timestamp": "2026-02-15T22:54:48.001681",
+  "metrics": {
+    "SAC": {
+      "total_steps": 0,
+      "episodes": 10,
+      "co2_avoided_kg": 0.0,
+      "co2_direct_kg": 0.0,
+      "co2_indirect_kg": 0.0
+    },
+    "PPO": {
+      "total_steps": 0,
+      "episodes": 10,
+      "co2_avoided_kg": 43095361.50172028,
+      "co2_direct_kg": 3567337.003199984,
+      "co2_indirect_kg": 39528024.49852029
+    },
+    "A2C": {
+      "total_steps": 0,
+      "episodes": 10,
+      "co2_avoided_kg": 42407029.484044,
+      "co2_direct_kg": 2119783.1893548258,
+      "co2_indirect_kg": 40287246.29468918
+    }
+  },
+  "objectives": {
+    "SAC": {
+      "1️⃣ CO2 Reduction": 5.567992407902988,
+      "2️⃣ Solar Self-Consumption": 0.9651400108366124,
+      "3️⃣ EV Charge Completion": 0.9517035498588877,
+      "4️⃣ Grid Stability": 0.5,
+      "5️⃣ Cost Minimization": 0.4,
+      "6️⃣ BESS Optimization": 0.3
+    },
+    "PPO": {
+      "1️⃣ CO2 Reduction": 4.309536150172028,
+      "2️⃣ Solar Self-Consumption": -0.04802740321205811,
+      "3️⃣ EV Charge Completion": 0.29381380985396877,
+      "4️⃣ Grid Stability": 0.25321078300476074,
+      "5️⃣ Cost Minimization": 0.648605768928862,
+      "6️⃣ BESS Optimization": 0.979034201273906
+    },
+    "A2C": {
+      "1️⃣ CO2 Reduction": 4.2407029484044,
+      "2️⃣ Solar Self-Consumption": -0.2802457204516565,
+      "3️⃣ EV Charge Completion": 0,
+      "4️⃣ Grid Stability": 0.19303105771541595,
+      "5️⃣ Cost Minimization": 0.011623437499999945,
+      "6️⃣ BESS Optimization": 0.979034201273906
+    }
+  }
+}

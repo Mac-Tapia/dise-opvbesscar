@@ -11,21 +11,21 @@
     },
     {
       "agent": "A2C",
-      "co2_avoided_total_kg": 42652278.91945976,
-      "co2_avoided_direct_kg": 2365032.6247705794,
+      "co2_avoided_total_kg": 42407029.484044,
+      "co2_avoided_direct_kg": 2119783.1893548258,
       "co2_avoided_indirect_kg": 40287246.29468918,
       "episodes": 10,
       "timesteps": 87600
     },
     {
       "agent": "SAC",
-      "co2_avoided_total_kg": 39281659.66082059,
-      "co2_avoided_direct_kg": 2192776.7543858257,
+      "co2_avoided_total_kg": 39087460.361138426,
+      "co2_avoided_direct_kg": 1998577.4547036644,
       "co2_avoided_indirect_kg": 37088882.90643476,
       "episodes": 10,
-      "timesteps": 87600
+      "timesteps": 280320
     }
   ],
   "best_co2_kg": 43095361.50172028,
-  "timestamp": "2026-02-15T09:08:10.349790"
+  "timestamp": "2026-02-15T22:13:58.440896"
 }

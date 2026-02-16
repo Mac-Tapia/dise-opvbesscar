@@ -141,4 +141,4 @@ Este analisis utiliza **pvlib-python** con los siguientes modelos:
 - Holmgren, W.F., Hansen, C.W., Mikofski, M.A. (2018). *pvlib python: a python package for modeling solar energy systems*. Journal of Open Source Software.
 
 ---
-*Generado automaticamente - 2026-02-14 10:10:19*
+*Generado automaticamente - 2026-02-15 18:47:23*

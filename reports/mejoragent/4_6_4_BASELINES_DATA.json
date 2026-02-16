@@ -1,0 +1,43 @@
+{
+  "timestamp": "2026-02-15T22:27:47.620765",
+  "baseline_0": {
+    "descripcion": "Sin Solar, Sin BESS, Sin RL (Grid 100%)",
+    "consumo_kwh_anual": 1114710.0,
+    "co2_kg": 503960.391,
+    "co2_tco2": 503.960391,
+    "nota": "Estado actual de Iquitos"
+  },
+  "baseline_1": {
+    "descripcion": "Con Solar, Sin BESS, Sin RL (Carga manual)",
+    "solar_kwh_anual": 445884.0,
+    "grid_kwh_anual": 668826.0,
+    "solar_ratio": 0.4,
+    "co2_kg": 302376.2346,
+    "co2_tco2": 302.37623460000003,
+    "mejora_vs_b0_kg": 201584.15639999998,
+    "mejora_vs_b0_pct": 40.0
+  },
+  "baseline_2_ppo": {
+    "descripcion": "Con Solar, Con BESS, Con RL (Control inteligente)",
+    "solar_kwh_anual": 3026767657.797785,
+    "grid_kwh_anual": 684047436.4851494,
+    "solar_ratio": 0.815661136676137,
+    "co2_from_grid_kg": 309257846.034936,
+    "co2_evitado_kg": 1572980694.8127902,
+    "co2_evitado_directo_kg": 130207800.61679941,
+    "co2_evitado_indirecto_kg": 1442772894.1959906,
+    "mejora_vs_b0_kg": -308753885.64393604,
+    "mejora_vs_b0_pct": -61265.50640840661,
+    "mejora_vs_b1_kg": -308955469.800336,
+    "mejora_vs_b1_pct": -102175.84401401102
+  },
+  "resumen": {
+    "b0_co2_kg": 503960.391,
+    "b1_co2_kg": 302376.2346,
+    "b2_co2_kg": 309257846.034936,
+    "total_reduction_b0_to_b2_kg": -308753885.64393604,
+    "total_reduction_b0_to_b2_pct": -61265.50640840661,
+    "solar_impact_kg": 201584.15639999998,
+    "ppo_bess_impact_kg": -308955469.800336
+  }
+}

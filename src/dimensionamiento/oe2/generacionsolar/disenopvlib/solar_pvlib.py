@@ -12,7 +12,7 @@ Implementa modelo riguroso de generacion FV usando pvlib con:
 
 Parametros de diseno Iquitos:
     area_total_m2: 20637.0
-    factor_diseno: 0.65
+    factor_diseno: 0.70
     surface_tilt: 10.0°
     surface_azimuth: 0.0° (Norte)
     lat: -3.75°

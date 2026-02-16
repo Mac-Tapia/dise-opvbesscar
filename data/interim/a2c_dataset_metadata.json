@@ -1,0 +1,40 @@
+{
+  "timestamp": "2026-02-15T19:24:01.679245",
+  "version": "A2C_v7.0_OE2_Complete",
+  "datasets": {
+    "solar": {
+      "rows": 8760,
+      "columns": 16,
+      "generation_kwh": 8292514.169921598,
+      "file": "data\\oe2\\Generacionsolar\\pv_generation_citylearn_enhanced_v2.csv"
+    },
+    "chargers": {
+      "rows": 8760,
+      "columns": 353,
+      "co2_avoided_kg": 356733.70031999995,
+      "cost_soles": 161104.77543999994,
+      "file": "data\\oe2\\chargers\\chargers_ev_ano_2024_v3.csv"
+    },
+    "bess": {
+      "rows": 8760,
+      "columns": 25,
+      "co2_avoided_kg": 279679.0600411667,
+      "charge_kwh": 790715.5703739091,
+      "soc_mean": 55.2006560284066,
+      "file": "data\\oe2\\bess\\bess_ano_2024.csv"
+    },
+    "mall": {
+      "rows": 8760,
+      "columns": 6,
+      "demand_kwh": 12368653.0,
+      "co2_kg": 5591868.0213,
+      "file": "data\\oe2\\demandamallkwh\\demandamallhorakwh.csv"
+    }
+  },
+  "totals": {
+    "timesteps": 8760,
+    "co2_avoided_kg": 636412.7603611667,
+    "solar_generation_kwh": 8292514.169921598,
+    "mall_demand_kwh": 12368653.0
+  }
+}

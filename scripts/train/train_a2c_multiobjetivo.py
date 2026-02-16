@@ -47,8 +47,8 @@ BESS_MAX_POWER_KW: float = 342.0    # 342 kW potencia maxima BESS
 HOURS_PER_YEAR: int = 8760
 
 # v5.3: Constantes para normalizacion de observaciones
-SOLAR_MAX_KW: float = 4100.0        # 4,050 kWp nominal + margen
-MALL_MAX_KW: float = 150.0          # Demanda maxima mall
+SOLAR_MAX_KW: float = 2887.0        # Real max desde pv_generation_citylearn_enhanced_v2.csv [FIXED 2026-02-15]
+MALL_MAX_KW: float = 3000.0         # Real max=2,763 kW from data/oe2/demandamallkwh/demandamallhorakwh.csv [FIXED 2026-02-15]
 BESS_MAX_KWH_CONST: float = 1700.0  # Capacidad maxima BESS (referencia normalizacion)
 CHARGER_MAX_KW: float = 10.0        # Max por socket (7.4 kW nominal, 10 kW margen)
 CHARGER_MEAN_KW: float = 4.6        # Potencia media efectiva por socket
@@ -2089,8 +2089,8 @@ def validate_a2c_sync() -> bool:
     checks = {
         '1. BESS Capacity (940 kWh)': BESS_CAPACITY_KWH == 940.0,
         '2. BESS Max normalizacion (1700 kWh)': BESS_MAX_KWH_CONST == 1700.0,
-        '3. Solar Max (4100 kW)': SOLAR_MAX_KW == 4100.0,
-        '4. Mall Max (150 kW)': MALL_MAX_KW == 150.0,
+        '3. Solar Max (2887 kW)': SOLAR_MAX_KW == 2887.0,
+        '4. Mall Max (3000 kW)': MALL_MAX_KW == 3000.0,
         '5. Chargers CO2 cols (4)': len(CHARGERS_AGGREGATE_COLS) == 4,
         '6. BESS cols (25)': len(BESS_REAL_COLS) == 25,
         '7. Solar cols (16)': len(SOLAR_REAL_COLS) == 16,

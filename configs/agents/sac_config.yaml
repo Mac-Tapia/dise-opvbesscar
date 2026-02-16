@@ -6,11 +6,11 @@ sac:
   training:
     episodes: 3
     total_timesteps: 26280  # 3 complete years × 8,760 hours for seasonal pattern learning
-    learning_rate: 2e-4  # OPCIÓN A: Reducido 33% para GPU (batch_size=128)
-    buffer_size: 2000000  # Aumentado para GPU (era 200000)
+    learning_rate: 5e-4  # UPDATED v7.1: Adaptive schedule for GPU (batch_size=128)
+    buffer_size: 400000  # UPDATED v7.1: GPU optimized (RTX 4060 8GB, was 2M = OOM)
     batch_size: 128  # GPU optimized (era 256, ajustado para estabilidad)
-    gamma: 0.995
-    tau: 0.02
+    gamma: 0.99  # UPDATED v7.1: Stable discount horizon
+    tau: 0.005  # UPDATED v7.1: Slower target network updates
 
   # Entropy (exploration)
   entropy:
@@ -22,7 +22,7 @@ sac:
 
   # Network architecture
   network:
-    hidden_sizes: [256, 256]
+    hidden_sizes: [384, 384]  # UPDATED v7.1: Enlarged from [256,256] for increased capacity
     activation: "relu"
 
   # Stability features
@@ -33,15 +33,18 @@ sac:
     critic_loss_scale: 0.1
     q_target_clip: 10.0
 
-  # Multi-Objective Weights (VALIDATED 2026-02-08)
+  # Multi-Objective Weights (VALIDATED 2026-02-15 - v7.1 UPDATED)
   multi_objective_weights:
-    co2: 0.35                # PRIMARY: Minimizar importación grid
-    solar: 0.20
-    ev: 0.30                 # SECONDARY: Satisfacción de carga EVs
-    cost: 0.10
-    grid: 0.05               # Total: 1.00 exactly
-  # NOTE: Dispatch hierarchy penalties + aggressive SOC modulation already enforce EVs,
-  #       so moderate EV weight (0.30) is balanced. CO2 is primary (0.35).
+    co2: 0.45                # PRIMARY: Grid minimization (increased from 0.35)
+    solar: 0.15              # UPDATED: Solar utilization (reduced from 0.20)
+    vehicles: 0.20           # UPDATED: EV charging satisfaction
+    completion: 0.10         # UPDATED: 100% charge goal
+    stability: 0.05          # UPDATED: BESS smoothing
+    bess_peak: 0.03          # NEW: Peak shaving
+    prioritization: 0.02     # NEW: Urgency respect
+    # Total: 1.00 exactly
+  # NOTE: v7.1 uses 7-component framework vs previous 5-component.
+  #       Weights validated mathematically. CO2 is primary objective.
 
   # Electricity Tariffs (OSINERGMIN IQUITOS 2025 - REFERENCIAL)
   tariffs_osinergmin_usd_per_kwh:
