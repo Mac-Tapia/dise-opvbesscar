@@ -1,0 +1,1315 @@
+================================================================================
+ENTRENAR SAC - CON MULTIOBJETIVO REAL (CO2, SOLAR, COST, EV, GRID)
+================================================================================
+Inicio: 2026-02-17 00:34:06
+
+[GPU] NVIDIA GeForce RTX 4060 Laptop GPU
+   VRAM: 8.6 GB
+   CUDA: 12.1
+   Entrenamiento SAC en GPU (actor-critic 512x512, replay buffer 2M - OPCION A Aggressive)
+   Device: CUDA
+
+
+[INFO] Checkpoints SAC existentes seran PRESERVADOS (continuar entrenamiento)
+       Para entrenar desde cero, descomentar clean_sac_checkpoints_safe() en main()
+
+  Dataset precompilado: data\processed\citylearn\iquitos_ev_mall
+  OK Dataset: data\processed\citylearn\iquitos_ev_mall
+
+[3] CARGAR DATOS DEL DATASET CITYLEARN V2 CONSTRUIDO (8760 horas = 1 ano)
+--------------------------------------------------------------------------------
+  [SOLAR] Cargando de: pv_generation_citylearn_enhanced_v2.csv (16 columnas)
+  [SOLAR] [OK] REAL: col=potencia_kw | 8292514 kWh/year (8760h)
+  [SOLAR] Columnas cargadas (15): ['irradiancia_ghi', 'temperatura_c', 'velocidad_viento_ms', 'potencia_kw', 'energia_kwh', 'is_hora_punta', 'tarifa_aplicada_soles', 'ahorro_solar_soles', 'reduccion_indirecta_co2_kg', 'energia_suministrada_al_bess_kwh', 'energia_suministrada_al_ev_kwh', 'energia_suministrada_al_mall_kwh', 'energia_suministrada_a_red_kwh', 'reduccion_indirecta_co2_kg_total', 'hora_tipo']
+  [SOLAR]   GHI: max=1000 W/m2
+  [SOLAR]   Temp: min=20.7C, max=33.2C
+  [SOLAR]   Solar->EV: 323,327 kWh/a├▒o
+  [SOLAR]   Solar->BESS: 790,716 kWh/a├▒o
+  [SOLAR]   CO2 indirecto evitado: 3,749,046 kg/a├▒o
+  [CHARGERS] [OK] REAL: Loading from chargers_ev_ano_2024_v3.csv
+  [CHARGERS] Columnas globales cargadas (7): ['ev_energia_total_kwh', 'ev_energia_motos_kwh', 'ev_energia_mototaxis_kwh', 'co2_reduccion_motos_kg', 'co2_reduccion_mototaxis_kg', 'reduccion_directa_co2_kg', 'ev_demand_kwh']
+  [CHARGERS]   CO2 DIRECTO evitado: 456,561 kg/a├▒o
+  [CHARGERS]   CO2 motos evitado: 414,555 kg/a├▒o
+  [CHARGERS]   CO2 mototaxis evitado: 42,006 kg/a├▒o
+  [CHARGERS] [OK] REAL: 38 sockets total (ESPECIFICACION OE2: 38)
+  [CHARGERS]   MOTOS:     30 sockets | 476,500 kWh/ano | 54.4 kW avg
+  [CHARGERS]   MOTOTAXIS: 8 sockets | 89,374 kWh/ano | 10.2 kW avg
+  [CHARGERS]   TOTAL:     565,875 kWh/ano | 64.6 kW avg
+  [MALL] Columnas cargadas (5): ['mall_demand_kwh', 'mall_co2_indirect_kg', 'is_hora_punta', 'tarifa_soles_kwh', 'mall_cost_soles']
+  [MALL] [OK] REAL: 12368653 kWh/year (avg 1411.9 kW/h)
+  [MALL]   CO2 EMITIDO por mall: 5,591,868 kg/a├▒o (NO reduce, EMITE)
+  [MALL]   Costo operacion mall: 4,424,186 soles/a├▒o
+  [BESS] [!] SIMULATED - Loading from: bess_ano_2024.csv (OE2 REAL)
+  [BESS] Columnas energy_flows cargadas (19): ['pv_generation_kwh', 'ev_demand_kwh', 'mall_demand_kwh', 'pv_to_ev_kwh', 'pv_to_bess_kwh', 'pv_to_mall_kwh', 'pv_curtailed_kwh', 'bess_charge_kwh', 'bess_discharge_kwh', 'bess_to_ev_kwh', 'bess_to_mall_kwh', 'grid_to_ev_kwh', 'grid_to_mall_kwh', 'grid_to_bess_kwh', 'grid_import_total_kwh', 'mall_grid_import_kwh', 'peak_reduction_savings_normalized', 'co2_avoided_indirect_normalized', 'bess_mode']
+  [BESS] Simulated avg SOC: 55.2%
+  [BESS] Costos grid:         2,300,787.00 soles/ano
+  [BESS] Ahorros pico:        182,247.53 soles/ano
+  [BESS] CO2 evitado indirecto: 279,679 kg/ano
+  [BESS] Solar->EV:            179,587 kWh/ano
+  [BESS] BESS->EV:             143,740 kWh/ano
+  [BESS] Grid import total:   6,485,565 kWh/ano
+  [CHARGER STATS] Cargada desde: chargers_real_statistics.csv
+  [BESS] EV Demand (REAL):    412,236 kWh/ano
+  [BESS] Mall Demand (REAL):  12,368,653 kWh/ano
+  [BESS] PV Gen (REAL):       8,292,514 kWh/ano
+
+[LOAD] Extrayendo TODAS las variables observables del dataset_builder v5.5...
+[LOAD] Cargando variables observables...
+
+  [OK] Validacion de dimensiones OK (8760 horas x 4 datasets)
+[3.5] VALIDAR CALIDAD DE DATOS
+--------------------------------------------------------------------------------
+  [OK] Solar: OK (sin NaN/inf)
+  [OK] Chargers: OK (sin NaN/inf)
+  [OK] Mall: OK (sin NaN/inf)
+  [OK] BESS SOC: OK (sin NaN/inf)
+  [OK] BESS Costs: OK (sin NaN/inf)
+  [OK] Charger Max Power: OK (sin NaN/inf)
+  [OK] Charger Mean Power: OK (sin NaN/inf)
+
+[4] CONFIGURAR AGENTE SAC CON DATOS 100% REALES
+--------------------------------------------------------------------------------
+  === SOLAR (PVGIS + PVLib) ===
+  Solar AC Power:  cargado [OK] (8760 horas, 8,292,514 kWh/ano)
+  Solar Columnas:  15 columnas REALES: ['irradiancia_ghi', 'temperatura_c', 'velocidad_viento_ms', 'potencia_kw', 'energia_kwh', 'is_hora_punta', 'tarifa_aplicada_soles', 'ahorro_solar_soles', 'reduccion_indirecta_co2_kg', 'energia_suministrada_al_bess_kwh', 'energia_suministrada_al_ev_kwh', 'energia_suministrada_al_mall_kwh', 'energia_suministrada_a_red_kwh', 'reduccion_indirecta_co2_kg_total', 'hora_tipo']
+
+  === CHARGERS (MEDICIONES) ===
+  MOTOS:           30 sockets | 476,500 kWh/ano
+  MOTOTAXIS:       8 sockets | 89,374 kWh/ano
+  TOTAL:           38 sockets | 565,875 kWh/ano
+  Chargers Cols:   7 columnas globales: ['ev_energia_total_kwh', 'ev_energia_motos_kwh', 'ev_energia_mototaxis_kwh', 'co2_reduccion_motos_kg', 'co2_reduccion_mototaxis_kg', 'reduccion_directa_co2_kg', 'ev_demand_kwh']
+  CO2 Reduccion:   456,561 kg/ano (DIRECTO - Solo EV)
+
+  === MALL (MEDICIONES) ===
+  Mall demand:     cargado [OK] (12,368,653 kWh/ano)
+  Mall Columnas:   5 columnas: ['mall_demand_kwh', 'mall_co2_indirect_kg', 'is_hora_punta', 'tarifa_soles_kwh', 'mall_cost_soles']
+  CO2 Mall EMITE:  5,591,868 kg/ano (grid termico)
+
+  === BESS (SIMULACION CON DATOS REALES) ===
+  BESS SOC:        cargado [OK] (avg: 55.2%)
+  BESS Costos:     cargado [OK] (2,300,787 soles/ano)
+  BESS Peak Svngs: cargado [OK] (182,248 soles/ano)
+  Tarifa OSINERG:  cargado [OK] (mean: 0.3083 sol/kWh)
+  CO2 Evitado:     cargado [OK] (279,679 kg/ano)
+  Energy Flows:    cargado [OK] (19 flujos)
+
+  === DEMANDAS REALES (DATASET BESS) ===
+  EV Demand REAL:  412,236 kWh/ano
+  Mall Dem REAL:   12,368,653 kWh/ano
+  PV Gen REAL:     8,292,514 kWh/ano
+
+  Learning rate:        0.0005
+  Buffer size:          600,000
+  Batch size:           128
+  Tau (soft update):    0.005
+  Entropy coef:         auto
+  Network:              Actor/Critic [512, 512]
+
+[5] CONFIGURAR MULTIOBJETIVO (CO2, SOLAR, COST, EV, GRID)
+--------------------------------------------------------------------------------
+  OK Reward weights loaded (co2_focus):
+     - CO2 grid:         0.350
+     - Solar:            0.200
+     - EV satisfaction:  0.300
+     - Cost:             0.100
+     - Grid stability:   0.050
+
+[6] CREAR AMBIENTE REAL CON DATOS OE2 (CON REWARD WEIGHTS)
+--------------------------------------------------------------------------------
+  [OK] Ambiente REAL creado con datos OE2 100% REALES:
+     - Observation space: 246 dims (v6.0: 156 base + 90 new features = bidirectional communication)
+     - Action space:      39 dims (BESS + 38 sockets)
+     - Solar data:        15 columnas REALES (16: irradiancia, energia_suministrada_al_*, etc.)
+     - Chargers data:     7 columnas globales (11: co2_reduccion, costo_carga, etc.)
+     - Mall data:         5 columnas (6: mall_co2_indirect_kg, tarifa, etc.)
+     - MOTOS:             30 sockets (30 max)
+     - MOTOTAXIS:         8 sockets (8 max)
+     - Energy flows:      19 flujos REALES (25 columnas BESS)
+     - Observable vars:   27 columnas del dataset_builder (todas las reales)
+     - EV Demand REAL:    SI
+     - Mall Demand REAL:  SI
+     - COMUNICACION:      BESS<->Solar<->EV<->Cargadores<->Motos<->Mototaxis + Dataset_Builder
+  Observation space: 246 (v6.0: 156 base + 38 per-socket SOC + 38 time remaining + 14 signals)
+  Action space:      39 (1 BESS + 38 chargers)
+  Datos cargados:
+    - Solar:     8760 horas
+    - Chargers:  38 sockets
+
+[7] INICIALIZAR AGENTE SAC
+--------------------------------------------------------------------------------
+  Creando nuevo agente SAC
+Using cuda device
+Wrapping the env with a `Monitor` wrapper
+Wrapping the env in a DummyVecEnv.
+  Device: cuda
+
+[8] ENTRENAMIENTO SAC - 15 EPISODIOS COMPLETOS (OPTIMIZADO)
+--------------------------------------------------------------------------------
+  Total timesteps: 131,400 (15 episodios x 8,760 h/episodio)
+  Checkpoint cada: 1,000 steps
+  Warmup steps:    5,000 (random exploration)
+  Batch size:      128
+  Buffer size:     600,000
+  tau:             0.005
+  gamma:           0.99
+  Train freq:      (1, 'step')
+  Gradient steps:  2 (updates per env step)
+  Entropy coef:    auto
+  Target entropy:  -20.0
+  Learning rate:   0.0005
+  Networks:        Actor/Critic [512, 512]
+  Datos: Datos reales OE2 (solar 8.29GWh + chargers + mall 12.37GWh + BESS 1,700 kWh max SOC)
+  Device: CUDA
+
+  METRICAS LOGUEADAS (cada 500 steps):
+  - Actor loss, Critic loss (Q1/Q2)
+  - Mean Q-value (alerta si > 1000)
+  - Entropy y alpha (alerta si entropy < 0.1 o alpha < 0.01)
+  - Replay buffer fill %
+  - Updates per step (ratio real)
+  - Mean/Std acciones, log_std
+  EVAL (cada 8760 steps = 1 episodio):
+  - Eval Return (deterministico, sin ruido)
+
+  Progreso por episodio (cada 100 timesteps dentro del episodio):
+--------------------------------------------------------------------------------
+
+[PARAMETROS MULTIOBJETIVO - PESOS DE RECOMPENSA]
+--------------------------------------------------------------------------------
+  [OK] Reward weights cargados (priority=co2_focus):
+    - CO2 Grid Minimization:    0.350
+    - Solar Self-Consumption:  0.200
+    - EV Satisfaction:         0.300
+    - Cost Minimization:       0.100
+    - Grid Stability:          0.050
+  [OK] Total weight sum:          1.000
+
+
+[INTENTO 1/3] Iniciando entrenamiento SAC...
+Logging to outputs\sac_training\tensorboard\SAC_0
+    [EP 01] h=  100/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 584.0kW | EV=0.00 | Prio=+0.000 
+    [EP 01] h=  200/8760 | Solar= 509.3kW | BESS=47.2%/IDL | Grid= 653.7kW | EV=65.50 | Prio=+0.496 [LOW]
+    [EP 01] h=  300/8760 | Solar=2886.7kW | BESS=100.0%/DIS | Grid=   0.0kW | EV=0.95 | Prio=+0.239 [MEDIUM]
+    [EP 01] h=  400/8760 | Solar=1858.7kW | BESS=75.9%/DIS | Grid=  68.0kW | EV=0.09 | Prio=-0.866 [HIGH]
+    [EP 01] h=  500/8760 | Solar=   0.0kW | BESS=27.6%/DIS | Grid=1798.3kW | EV=0.31 | Prio=+0.719 [HIGH]
+    [STEP    500] | Q=-0.0 | Buf=0.1% | Upd/s=0.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 500] PROGRESO MULTIOBJETIVO SAC - 0.06 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     499 / 600,000 (0.1%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   0 (gradient steps)
+    - Ratio updates:     0.000 upd/step
+  [LOSS FUNCTIONS]
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     500 / 131,400
+
+    [EP 01] h=  600/8760 | Solar=   0.0kW | BESS=20.0%/IDL | Grid= 718.0kW | EV=33.95 | Prio=+0.728 [LOW]
+    [EP 01] h=  700/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 604.0kW | EV=0.00 | Prio=+0.000 
+    [EP 01] h=  800/8760 | Solar= 773.5kW | BESS=42.9%/DIS | Grid= 262.5kW | EV=75.92 | Prio=+0.000 [LOW]
+    [EP 01] h=  900/8760 | Solar=2883.0kW | BESS=100.0%/DIS | Grid=   0.0kW | EV=0.75 | Prio=+0.328 [MEDIUM]
+    [EP 01] h= 1000/8760 | Solar=1792.4kW | BESS=75.9%/CHG | Grid=  66.6kW | EV=0.05 | Prio=+1.443 [HIGH]
+    [STEP   1000] | Q=-0.0 | Buf=0.2% | Upd/s=0.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 1,000] PROGRESO MULTIOBJETIVO SAC - 0.11 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     999 / 600,000 (0.2%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   0 (gradient steps)
+    - Ratio updates:     0.000 upd/step
+  [LOSS FUNCTIONS]
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     1000 / 131,400
+
+    [EP 01] h= 1100/8760 | Solar=   0.0kW | BESS=51.7%/IDL | Grid=1753.3kW | EV=0.29 | Prio=+0.463 [HIGH]
+    [EP 01] h= 1200/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 769.0kW | EV=40.27 | Prio=+0.569 [LOW]
+    [EP 01] h= 1300/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 662.0kW | EV=0.00 | Prio=+0.000 
+    [EP 01] h= 1400/8760 | Solar= 417.5kW | BESS=42.9%/DIS | Grid= 642.5kW | EV=67.10 | Prio=+0.516 [LOW]
+    [EP 01] h= 1500/8760 | Solar=1708.0kW | BESS=75.9%/CHG | Grid= 350.0kW | EV=0.69 | Prio=+0.411 [MEDIUM]
+    [STEP   1500] | Q=-0.0 | Buf=0.2% | Upd/s=0.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 1,500] PROGRESO MULTIOBJETIVO SAC - 0.17 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     1,499 / 600,000 (0.2%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   0 (gradient steps)
+    - Ratio updates:     0.000 upd/step
+  [LOSS FUNCTIONS]
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     1500 / 131,400
+
+    [EP 01] h= 1600/8760 | Solar=1519.4kW | BESS=75.9%/DIS | Grid= 272.1kW | EV=0.04 | Prio=-0.369 [HIGH]
+    [EP 01] h= 1700/8760 | Solar=   0.0kW | BESS=51.7%/CHG | Grid=1686.9kW | EV=0.40 | Prio=+0.492 [HIGH]
+    [EP 01] h= 1800/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 645.0kW | EV=47.13 | Prio=+0.901 [LOW]
+    [EP 01] h= 1900/8760 | Solar=   0.0kW | BESS=20.0%/IDL | Grid= 435.0kW | EV=0.00 | Prio=+0.000 
+    [EP 01] h= 2000/8760 | Solar= 769.9kW | BESS=47.3%/CHG | Grid= 129.1kW | EV=77.12 | Prio=+0.000 [LOW]
+    [STEP   2000] | Q=-0.0 | Buf=0.3% | Upd/s=0.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 2,000] PROGRESO MULTIOBJETIVO SAC - 0.23 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     1,999 / 600,000 (0.3%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   0 (gradient steps)
+    - Ratio updates:     0.000 upd/step
+  [LOSS FUNCTIONS]
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     2000 / 131,400
+
+    [EP 01] h= 2100/8760 | Solar=2886.7kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=1.00 | Prio=+0.348 [MEDIUM]
+    [EP 01] h= 2200/8760 | Solar=1810.0kW | BESS=75.9%/DIS | Grid= 226.7kW | EV=0.06 | Prio=+0.000 [HIGH]
+    [EP 01] h= 2300/8760 | Solar=   0.0kW | BESS=41.7%/DIS | Grid=1903.5kW | EV=0.29 | Prio=+0.743 [HIGH]
+    [EP 01] h= 2400/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 616.0kW | EV=22.10 | Prio=+0.887 [LOW]
+    [EP 01] h= 2500/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 399.0kW | EV=0.00 | Prio=+0.000 
+    [STEP   2500] | Q=-0.0 | Buf=0.4% | Upd/s=0.00 | LR=5.0e-04
+    [SAC INFO] Baselines establecidos:
+
+====================================================================================================
+[TIMESTEP 2,500] PROGRESO MULTIOBJETIVO SAC - 0.29 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     2,499 / 600,000 (0.4%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   0 (gradient steps)
+    - Ratio updates:     0.000 upd/step
+  [LOSS FUNCTIONS]
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     2500 / 131,400
+
+    [EP 01] h= 2600/8760 | Solar=1304.3kW | BESS=52.0%/IDL | Grid=   0.0kW | EV=82.19 | Prio=+0.000 [LOW]
+    [EP 01] h= 2700/8760 | Solar=2886.7kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=1.43 | Prio=+0.364 [MEDIUM]
+    [EP 01] h= 2800/8760 | Solar=2378.8kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=0.09 | Prio=-1.271 [HIGH]
+    [EP 01] h= 2900/8760 | Solar=   0.0kW | BESS=36.8%/IDL | Grid=1899.3kW | EV=0.43 | Prio=+0.745 [HIGH]
+    [EP 01] h= 3000/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 577.0kW | EV=46.10 | Prio=+0.484 [LOW]
+    [STEP   3000] | Q=-0.0 | Buf=0.5% | Upd/s=0.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 3,000] PROGRESO MULTIOBJETIVO SAC - 0.34 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     2,999 / 600,000 (0.5%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   0 (gradient steps)
+    - Ratio updates:     0.000 upd/step
+  [LOSS FUNCTIONS]
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     3000 / 131,400
+
+    [EP 01] h= 3100/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 492.0kW | EV=0.00 | Prio=+0.000 
+    [EP 01] h= 3200/8760 | Solar=1228.0kW | BESS=51.6%/CHG | Grid=   0.0kW | EV=72.78 | Prio=+0.000 [LOW]
+    [EP 01] h= 3300/8760 | Solar=2886.7kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=1.12 | Prio=+0.148 [MEDIUM]
+    [EP 01] h= 3400/8760 | Solar=1734.8kW | BESS=98.8%/CHG | Grid= 905.8kW | EV=0.08 | Prio=-1.390 [HIGH]
+    [EP 01] h= 3500/8760 | Solar=   0.0kW | BESS=31.6%/CHG | Grid=1976.8kW | EV=0.40 | Prio=+0.366 [HIGH]
+    [STEP   3500] | Q=-0.0 | Buf=0.6% | Upd/s=0.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 3,500] PROGRESO MULTIOBJETIVO SAC - 0.40 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     3,499 / 600,000 (0.6%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   0 (gradient steps)
+    - Ratio updates:     0.000 upd/step
+  [LOSS FUNCTIONS]
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     3500 / 131,400
+
+    [EP 01] h= 3600/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 512.0kW | EV=39.51 | Prio=+0.873 [LOW]
+    [EP 01] h= 3700/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 432.0kW | EV=0.00 | Prio=+0.000 
+    [EP 01] h= 3800/8760 | Solar= 992.8kW | BESS=52.9%/CHG | Grid=   0.0kW | EV=64.90 | Prio=+0.000 [LOW]
+    [EP 01] h= 3900/8760 | Solar=2886.7kW | BESS=100.0%/DIS | Grid=   0.0kW | EV=0.91 | Prio=+0.253 [MEDIUM]
+    [EP 01] h= 4000/8760 | Solar=1970.1kW | BESS=75.9%/DIS | Grid= 129.0kW | EV=0.04 | Prio=+0.834 [HIGH]
+    [STEP   4000] | Q=-0.0 | Buf=0.7% | Upd/s=0.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 4,000] PROGRESO MULTIOBJETIVO SAC - 0.46 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     3,999 / 600,000 (0.7%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   0 (gradient steps)
+    - Ratio updates:     0.000 upd/step
+  [LOSS FUNCTIONS]
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     4000 / 131,400
+
+    [EP 01] h= 4100/8760 | Solar=   0.0kW | BESS=32.7%/DIS | Grid=1927.9kW | EV=0.30 | Prio=-0.180 [HIGH]
+    [EP 01] h= 4200/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 571.0kW | EV=36.78 | Prio=+0.343 [LOW]
+    [EP 01] h= 4300/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 442.0kW | EV=0.00 | Prio=+0.000 
+    [EP 01] h= 4400/8760 | Solar= 984.0kW | BESS=42.9%/DIS | Grid=  57.0kW | EV=68.90 | Prio=+0.000 [LOW]
+    [EP 01] h= 4500/8760 | Solar=2886.7kW | BESS=100.0%/DIS | Grid=   0.0kW | EV=0.82 | Prio=+0.046 [MEDIUM]
+    [STEP   4500] | Q=-0.0 | Buf=0.7% | Upd/s=0.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 4,500] PROGRESO MULTIOBJETIVO SAC - 0.51 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     4,499 / 600,000 (0.7%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   0 (gradient steps)
+    - Ratio updates:     0.000 upd/step
+  [LOSS FUNCTIONS]
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     4500 / 131,400
+
+    [EP 01] h= 4600/8760 | Solar=1640.7kW | BESS=75.9%/CHG | Grid= 243.9kW | EV=0.03 | Prio=+0.000 [HIGH]
+    [EP 01] h= 4700/8760 | Solar=   0.0kW | BESS=51.7%/DIS | Grid=1597.9kW | EV=0.33 | Prio=+0.499 [HIGH]
+    [EP 01] h= 4800/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 537.0kW | EV=39.62 | Prio=+1.003 [LOW]
+    [EP 01] h= 4900/8760 | Solar=   0.0kW | BESS=20.0%/IDL | Grid= 407.0kW | EV=0.00 | Prio=+0.000 
+    [EP 01] h= 5000/8760 | Solar=1182.1kW | BESS=42.9%/CHG | Grid=   0.0kW | EV=69.27 | Prio=+0.000 [LOW]
+    [STEP   5000] | Q=-0.0 | Buf=0.8% | Upd/s=0.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 5,000] PROGRESO MULTIOBJETIVO SAC - 0.57 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     4,999 / 600,000 (0.8%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   0 (gradient steps)
+    - Ratio updates:     0.000 upd/step
+  [LOSS FUNCTIONS]
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     5000 / 131,400
+
+    [EP 01] h= 5100/8760 | Solar=2886.7kW | BESS=100.0%/DIS | Grid=   0.0kW | EV=0.45 | Prio=+0.278 [MEDIUM]
+    [EP 01] h= 5200/8760 | Solar=2414.7kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=0.06 | Prio=+1.155 [HIGH]
+    [EP 01] h= 5300/8760 | Solar=   0.0kW | BESS=35.8%/DIS | Grid=2026.3kW | EV=0.36 | Prio=+0.628 [HIGH]
+    [EP 01] h= 5400/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 560.0kW | EV=25.65 | Prio=+1.000 [LOW]
+    [EP 01] h= 5500/8760 | Solar=   0.0kW | BESS=20.0%/IDL | Grid= 407.0kW | EV=0.00 | Prio=+0.000 
+    [STEP   5500] | Actor=-105.032 | Critic=0.761 | Q=89.2 | alpha=0.6074 | Buf=0.9% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 5,500] PROGRESO MULTIOBJETIVO SAC - 0.63 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     5,499 / 600,000 (0.9%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   998 (gradient steps)
+    - Ratio updates:     0.181 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.761473
+    - Actor Loss:        -105.032215 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     5500 / 131,400
+
+    [EP 01] h= 5600/8760 | Solar= 896.8kW | BESS=48.3%/DIS | Grid= 191.2kW | EV=85.39 | Prio=+0.000 [LOW]
+    [EP 01] h= 5700/8760 | Solar=2886.7kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=0.83 | Prio=+0.350 [MEDIUM]
+    [EP 01] h= 5800/8760 | Solar=2242.3kW | BESS=75.9%/IDL | Grid= 148.8kW | EV=0.09 | Prio=-0.843 [HIGH]
+    [EP 01] h= 5900/8760 | Solar=   0.0kW | BESS=51.7%/CHG | Grid=1832.9kW | EV=0.47 | Prio=+0.104 [HIGH]
+    [EP 01] h= 6000/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 597.0kW | EV=33.41 | Prio=+1.271 [LOW]
+    [STEP   6000] | Actor=-146.885 | Critic=0.647 | Q=136.8 | alpha=0.3685 | Buf=1.0% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 6,000] PROGRESO MULTIOBJETIVO SAC - 0.68 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     5,999 / 600,000 (1.0%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   1,998 (gradient steps)
+    - Ratio updates:     0.333 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.646863
+    - Actor Loss:        -146.884621 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     6000 / 131,400
+
+    [EP 01] h= 6100/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 442.0kW | EV=1.36 | Prio=+0.000 
+    [EP 01] h= 6200/8760 | Solar=1456.3kW | BESS=63.8%/CHG | Grid=   0.0kW | EV=65.38 | Prio=+0.000 [LOW]
+    [EP 01] h= 6300/8760 | Solar=2886.7kW | BESS=100.0%/DIS | Grid=   0.0kW | EV=0.46 | Prio=+0.353 [MEDIUM]
+    [EP 01] h= 6400/8760 | Solar=2229.1kW | BESS=75.9%/CHG | Grid= 131.1kW | EV=0.07 | Prio=-0.820 [HIGH]
+    [EP 01] h= 6500/8760 | Solar=   0.0kW | BESS=51.7%/CHG | Grid=2142.1kW | EV=0.39 | Prio=+0.682 [HIGH]
+    [STEP   6500] | Actor=-169.262 | Critic=0.690 | Q=163.0 | alpha=0.2239 | Buf=1.1% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 6,500] PROGRESO MULTIOBJETIVO SAC - 0.74 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     6,499 / 600,000 (1.1%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   2,998 (gradient steps)
+    - Ratio updates:     0.461 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.689870
+    - Actor Loss:        -169.261955 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     6500 / 131,400
+
+    [EP 01] h= 6600/8760 | Solar=   0.0kW | BESS=20.0%/IDL | Grid= 857.0kW | EV=42.04 | Prio=+1.413 [LOW]
+    [EP 01] h= 6700/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 425.0kW | EV=0.00 | Prio=+0.000 
+    [EP 01] h= 6800/8760 | Solar=1987.8kW | BESS=64.3%/CHG | Grid=   0.0kW | EV=73.66 | Prio=+0.000 [LOW]
+    [EP 01] h= 6900/8760 | Solar=2886.7kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=0.75 | Prio=+0.078 [MEDIUM]
+    [EP 01] h= 7000/8760 | Solar=2020.5kW | BESS=75.9%/DIS | Grid= 333.9kW | EV=0.11 | Prio=+0.906 [HIGH]
+    [STEP   7000] | Actor=-179.596 | Critic=0.474 | Q=176.3 | alpha=0.1367 | Buf=1.2% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 7,000] PROGRESO MULTIOBJETIVO SAC - 0.80 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     6,999 / 600,000 (1.2%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   3,998 (gradient steps)
+    - Ratio updates:     0.571 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.473734
+    - Actor Loss:        -179.596046 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     7000 / 131,400
+
+    [EP 01] h= 7100/8760 | Solar=   0.0kW | BESS=32.1%/CHG | Grid=2062.1kW | EV=0.40 | Prio=+0.369 [HIGH]
+    [EP 01] h= 7200/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 700.0kW | EV=27.99 | Prio=+0.777 [LOW]
+    [EP 01] h= 7300/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 503.0kW | EV=0.00 | Prio=+0.000 
+    [EP 01] h= 7400/8760 | Solar= 873.7kW | BESS=59.3%/CHG | Grid= 217.3kW | EV=63.82 | Prio=+0.000 [LOW]
+    [EP 01] h= 7500/8760 | Solar=2886.7kW | BESS=100.0%/DIS | Grid=   0.0kW | EV=1.93 | Prio=+0.345 [MEDIUM]
+    [STEP   7500] | Actor=-182.704 | Critic=0.462 | Q=180.1 | alpha=0.0844 | Buf=1.2% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 7,500] PROGRESO MULTIOBJETIVO SAC - 0.86 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     7,499 / 600,000 (1.2%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   4,998 (gradient steps)
+    - Ratio updates:     0.666 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.462017
+    - Actor Loss:        -182.703682 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     7500 / 131,400
+
+    [EP 01] h= 7600/8760 | Solar=1958.8kW | BESS=75.9%/CHG | Grid= 336.1kW | EV=0.10 | Prio=+1.445 [HIGH]
+    [EP 01] h= 7700/8760 | Solar=   0.0kW | BESS=51.7%/DIS | Grid=1847.0kW | EV=0.52 | Prio=+0.817 [HIGH]
+    [EP 01] h= 7800/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 695.0kW | EV=41.78 | Prio=+1.240 [LOW]
+    [EP 01] h= 7900/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 491.0kW | EV=0.00 | Prio=+0.000 
+    [EP 01] h= 8000/8760 | Solar=1377.2kW | BESS=56.1%/CHG | Grid=   0.0kW | EV=85.13 | Prio=+0.000 [LOW]
+    [STEP   8000] | Actor=-181.387 | Critic=1.231 | Q=180.5 | alpha=0.0531 | Buf=1.3% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 8,000] PROGRESO MULTIOBJETIVO SAC - 0.91 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     7,999 / 600,000 (1.3%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   5,998 (gradient steps)
+    - Ratio updates:     0.750 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  1.231417
+    - Actor Loss:        -181.386597 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     8000 / 131,400
+
+    [EP 01] h= 8100/8760 | Solar=2886.7kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=0.62 | Prio=+0.154 [MEDIUM]
+    [EP 01] h= 8200/8760 | Solar=2090.2kW | BESS=75.9%/DIS | Grid=  73.7kW | EV=0.11 | Prio=-1.399 [HIGH]
+    [EP 01] h= 8300/8760 | Solar=   0.0kW | BESS=51.7%/DIS | Grid=1840.7kW | EV=0.33 | Prio=+0.980 [HIGH]
+    [EP 01] h= 8400/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 930.0kW | EV=28.70 | Prio=+0.613 [LOW]
+    [EP 01] h= 8500/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 406.0kW | EV=1.15 | Prio=+0.000 
+    [STEP   8500] | Actor=-178.379 | Critic=0.525 | Q=176.9 | alpha=0.0338 | Buf=1.4% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 8,500] PROGRESO MULTIOBJETIVO SAC - 0.97 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     8,499 / 600,000 (1.4%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   6,998 (gradient steps)
+    - Ratio updates:     0.823 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.525463
+    - Actor Loss:        -178.378571 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 0
+    - Horas simuladas:     8500 / 131,400
+
+    [EP 01] h= 8600/8760 | Solar= 108.7kW | BESS=28.6%/CHG | Grid= 714.0kW | EV=56.65 | Prio=+1.445 [LOW]
+    [EP 01] h= 8700/8760 | Solar=2536.9kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=1.55 | Prio=-0.055 [MEDIUM]
+    [EP 01]  EPISODIO COMPLETADO (MULTIOBJETIVO + PRIORIZACION SOC):
+         Total Reward:                0.67 pts
+         Solar kWh:              8292514.1 kWh
+         Grid Import:            6501609.6 kWh
+         CO2 Avoided:            7581469.4 kg
+         EV Satisfaction:       6651524.63 %
+         Prioritization Rwd:       2852.71 pts
+         Completion Reward:         541.10 pts
+
+         --- DATOS REALES (DATASET BESS) ---
+           Solar->EV (REAL):        179,587 kWh
+           BESS->EV (REAL):         143,740 kWh
+           Grid Import (REAL):   6,485,565 kWh
+           CO2 Evitado (REAL):     279,679 kg
+           Costo Grid (REAL): 2,300,787.03 soles
+           Ahorro Pico (REAL):  182,247.54 soles
+
+         --- BESS AGENTE ---
+             BESS Descarga:        677835.7 kWh
+             BESS Carga:           790715.6 kWh
+             BESS Ciclos:              3590
+
+         --- CO2 ESTRUCTURA v7.1 ---
+           CO2 DIRECTO (EV):       456,561 kg (cambio combustible)
+           CO2 INDIRECTO:
+             Solar->EV,BESS,Mall:  3,749,046 kg
+             BESS->EV,Mall:          425,198 kg (peak shaving)
+           CO2 TOTAL EVITADO:    4,630,805 kg
+           CO2 MALL EMITIDO:     5,591,868 kg (NO reduce)
+           CO2 Grid Emitido:     2,939,378 kg
+         --- COSTOS CALCULADOS ---
+           Costo Grid:        2,300,787.03 soles
+           Ahorro Solar:      1,595,159.54 soles
+           Ahorro BESS:         182,247.54 soles
+
+          MOTOS @ SOC:     10%= 10 | 20%= 11 | 30%= 15 | 50%= 13 | 70%=  8 | 80%= 13 | 100%=  0
+          MOTOTAXIS @ SOC:  10%=  5 | 20%=  5 | 30%=  6 | 50%=  6 | 70%=  5 | 80%=  6 | 100%=  0
+          PRIORIZACION:     Accuracy=46.5% | Decisiones bajo escasez: 6505
+          CARGADOS AL 100%: 47756 vehiculos
+         Pesos usados:        CO2=0.35 | Solar=0.20 | EV=0.30 | (v9.2 minimal reward function)
+
+
+====================================================================================================
+[EPISODIO 1 COMPLETADO] Timestep 8,760 / 131,400
+====================================================================================================
+[LOSSES]
+  - Critic Loss (TD):        +0.525463 (entrenamiento mas estable)
+  - Actor Loss (POLICY):     -178.378571 (aprendiendo mejores acciones)
+[EXPLORACION]
+  - Entropy (policy):        +0.000000 (varianza en acciones)
+  - Alpha (alpha):           +0.033790 (peso de entropy)
+[MULTIOBJETIVO - CO2]
+  - CO2 GRID (actual):       2,939,377.7 kg (importacion desde grid termico)
+  - CO2 BASELINE:            3,674,222.1 kg (sin control RL)
+  - REDUCCION CO2:           +20.0% (objetivo principal)
+[MULTIOBJETIVO - SOLAR]
+  - PV Utilizado:            8,292,514.1 kWh (de 8.29 GWh/ano)
+[MULTIOBJETIVO - CARGA EV]
+  - EVs Cargados:            328,095.9 kWh (motos + mototaxis)
+[MULTIOBJETIVO - BESS]
+  - Descarga BESS:           932,065.5 kWh (alimentar carga)
+  - Carga BESS:              918,483.0 kWh (from solar)
+  - Eficiencia implicita:    101.5% (discharge/charge ratio)
+[MULTIOBJETIVO - GRID]
+  - Importacion neta:        6,501,609.6 kWh (necesaria)
+[RECOMPENSA TOTAL]
+  - Reward episodio:         +0.67 pts (suma ponderada multiobjetivo)
+[PROGRESO]
+  - Entrenamiento:           6.7% completado
+  - Episodios:               1 / 15
+
+    [EP 03] h=  100/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 584.0kW | EV=1.58 | Prio=+0.000 
+    [EP 03] h=  200/8760 | Solar= 509.3kW | BESS=47.2%/CHG | Grid= 653.7kW | EV=79.13 | Prio=+0.443 [LOW]
+    [EP 03] h=  300/8760 | Solar=2886.7kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=0.96 | Prio=+0.407 [MEDIUM]
+    [EP 03] h=  400/8760 | Solar=1858.7kW | BESS=75.9%/CHG | Grid= 116.6kW | EV=0.06 | Prio=+0.466 [HIGH]
+    [EP 03] h=  500/8760 | Solar=   0.0kW | BESS=27.6%/DIS | Grid=1798.3kW | EV=0.27 | Prio=+1.060 [HIGH]
+    [EP 03] h=  600/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 718.0kW | EV=24.31 | Prio=+0.873 [LOW]
+    [EP 03] h=  700/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 604.0kW | EV=4.30 | Prio=+0.000 
+    [EP 03] h=  800/8760 | Solar= 773.5kW | BESS=42.9%/CHG | Grid= 262.5kW | EV=71.53 | Prio=+0.000 [LOW]
+    [EP 03] h=  900/8760 | Solar=2883.0kW | BESS=100.0%/DIS | Grid=   0.0kW | EV=0.65 | Prio=+0.217 [MEDIUM]
+    [EP 03] h= 1000/8760 | Solar=1792.4kW | BESS=75.9%/DIS | Grid=  66.6kW | EV=0.05 | Prio=+0.203 [HIGH]
+    [EVAL] Step   8760 | Deterministic Return: 0.06
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 8.76e+03 |
+|    ep_rew_mean     | 0.674    |
+| time/              |          |
+|    episodes        | 1        |
+|    fps             | 121      |
+|    time_elapsed    | 71       |
+|    total_timesteps | 8760     |
+| train/             |          |
+|    actor_loss      | -176     |
+|    critic_loss     | 0.622    |
+|    ent_coef        | 0.0271   |
+|    ent_coef_loss   | -92.2    |
+|    learning_rate   | 0.0005   |
+|    n_updates       | 7518     |
+---------------------------------
+    [EP 03] h= 1100/8760 | Solar=   0.0kW | BESS=51.7%/CHG | Grid=1753.3kW | EV=0.39 | Prio=+0.522 [HIGH]
+    [EP 03] h= 1200/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 769.0kW | EV=36.93 | Prio=+1.135 [LOW]
+    [STEP   9000] | Actor=-173.202 | Critic=0.483 | Q=172.4 | alpha=0.0232 | Buf=1.5% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 9,000] PROGRESO MULTIOBJETIVO SAC - 1.03 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     8,999 / 600,000 (1.5%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   7,998 (gradient steps)
+    - Ratio updates:     0.889 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.482848
+    - Actor Loss:        -173.202385 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     9000 / 131,400
+
+    [EP 03] h= 1300/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 662.0kW | EV=0.02 | Prio=+0.000 
+    [EP 03] h= 1400/8760 | Solar= 417.5kW | BESS=42.9%/DIS | Grid= 642.5kW | EV=63.37 | Prio=+0.522 [LOW]
+    [EP 03] h= 1500/8760 | Solar=1708.0kW | BESS=75.9%/CHG | Grid= 357.4kW | EV=0.65 | Prio=+0.251 [MEDIUM]
+    [EP 03] h= 1600/8760 | Solar=1519.4kW | BESS=75.9%/CHG | Grid= 272.1kW | EV=0.02 | Prio=-0.264 [HIGH]
+    [EP 03] h= 1700/8760 | Solar=   0.0kW | BESS=51.7%/DIS | Grid=1686.9kW | EV=0.50 | Prio=+1.574 [HIGH]
+    [STEP   9500] | Actor=-169.235 | Critic=0.512 | Q=168.2 | alpha=0.0165 | Buf=1.6% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 9,500] PROGRESO MULTIOBJETIVO SAC - 1.08 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     9,499 / 600,000 (1.6%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   8,998 (gradient steps)
+    - Ratio updates:     0.947 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.511694
+    - Actor Loss:        -169.235260 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     9500 / 131,400
+
+    [EP 03] h= 1800/8760 | Solar=   0.0kW | BESS=20.0%/IDL | Grid= 645.0kW | EV=23.04 | Prio=+1.590 [LOW]
+    [EP 03] h= 1900/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 435.0kW | EV=0.79 | Prio=+0.000 
+    [EP 03] h= 2000/8760 | Solar= 769.9kW | BESS=47.3%/CHG | Grid= 129.1kW | EV=72.50 | Prio=+0.000 [LOW]
+    [EP 03] h= 2100/8760 | Solar=2886.7kW | BESS=100.0%/IDL | Grid=   0.0kW | EV=0.78 | Prio=+0.455 [MEDIUM]
+    [EP 03] h= 2200/8760 | Solar=1810.0kW | BESS=75.9%/CHG | Grid= 226.7kW | EV=0.13 | Prio=+0.186 [HIGH]
+    [STEP  10000] | Actor=-163.660 | Critic=0.649 | Q=163.3 | alpha=0.0128 | Buf=1.7% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 10,000] PROGRESO MULTIOBJETIVO SAC - 1.14 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     9,999 / 600,000 (1.7%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   9,998 (gradient steps)
+    - Ratio updates:     1.000 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.649428
+    - Actor Loss:        -163.659752 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     10000 / 131,400
+
+    [EP 03] h= 2300/8760 | Solar=   0.0kW | BESS=41.7%/CHG | Grid=1903.5kW | EV=0.35 | Prio=+1.374 [HIGH]
+    [EP 03] h= 2400/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 616.0kW | EV=33.94 | Prio=+1.177 [LOW]
+    [EP 03] h= 2500/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 399.0kW | EV=5.09 | Prio=-1.119 
+    [EP 03] h= 2600/8760 | Solar=1304.3kW | BESS=52.0%/IDL | Grid=   0.0kW | EV=76.49 | Prio=+0.000 [LOW]
+    [EP 03] h= 2700/8760 | Solar=2886.7kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=1.01 | Prio=+0.176 [MEDIUM]
+    [STEP  10500] | Actor=-158.844 | Critic=54.218 | Q=158.9 | alpha=0.0111 | Buf=1.7% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 10,500] PROGRESO MULTIOBJETIVO SAC - 1.20 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     10,499 / 600,000 (1.7%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   10,998 (gradient steps)
+    - Ratio updates:     1.047 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  54.218137
+    - Actor Loss:        -158.843857 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     10500 / 131,400
+
+    [EP 03] h= 2800/8760 | Solar=2378.8kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=0.14 | Prio=+0.390 [HIGH]
+    [EP 03] h= 2900/8760 | Solar=   0.0kW | BESS=36.8%/DIS | Grid=1899.3kW | EV=0.52 | Prio=+0.926 [HIGH]
+    [EP 03] h= 3000/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 577.0kW | EV=31.90 | Prio=+1.099 [LOW]
+    [EP 03] h= 3100/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 492.0kW | EV=7.53 | Prio=-0.528 
+    [EP 03] h= 3200/8760 | Solar=1228.0kW | BESS=51.6%/CHG | Grid=   0.0kW | EV=72.57 | Prio=+0.000 [LOW]
+    [STEP  11000] | Actor=-155.632 | Critic=0.839 | Q=155.4 | alpha=0.0110 | Buf=1.8% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 11,000] PROGRESO MULTIOBJETIVO SAC - 1.26 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     10,999 / 600,000 (1.8%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   11,998 (gradient steps)
+    - Ratio updates:     1.091 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.838520
+    - Actor Loss:        -155.632248 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     11000 / 131,400
+
+    [EP 03] h= 3300/8760 | Solar=2886.7kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=0.78 | Prio=+0.303 [MEDIUM]
+    [EP 03] h= 3400/8760 | Solar=1734.8kW | BESS=98.8%/DIS | Grid= 905.8kW | EV=0.06 | Prio=+0.417 [HIGH]
+    [EP 03] h= 3500/8760 | Solar=   0.0kW | BESS=31.6%/DIS | Grid=1976.8kW | EV=0.57 | Prio=+1.187 [HIGH]
+    [EP 03] h= 3600/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 512.0kW | EV=29.86 | Prio=+1.110 [LOW]
+    [EP 03] h= 3700/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 432.0kW | EV=10.87 | Prio=+0.000 
+    [STEP  11500] | Actor=-151.282 | Critic=0.538 | Q=150.7 | alpha=0.0099 | Buf=1.9% | Upd/s=2.00 | LR=5.0e-04
+    [!]  ALPHA BAJO: 0.0099 (exploracion colapsada)
+            -> Accion: Usar ent_coef fijo en lugar de 'auto'
+
+====================================================================================================
+[TIMESTEP 11,500] PROGRESO MULTIOBJETIVO SAC - 1.31 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     11,499 / 600,000 (1.9%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   12,998 (gradient steps)
+    - Ratio updates:     1.130 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.538142
+    - Actor Loss:        -151.281784 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     11500 / 131,400
+
+    [EP 03] h= 3800/8760 | Solar= 992.8kW | BESS=52.9%/CHG | Grid=   0.0kW | EV=83.70 | Prio=+0.000 [LOW]
+    [EP 03] h= 3900/8760 | Solar=2886.7kW | BESS=100.0%/DIS | Grid=   0.0kW | EV=0.67 | Prio=+0.267 [MEDIUM]
+    [EP 03] h= 4000/8760 | Solar=1970.1kW | BESS=75.9%/DIS | Grid= 101.5kW | EV=0.04 | Prio=-0.060 [HIGH]
+    [EP 03] h= 4100/8760 | Solar=   0.0kW | BESS=32.7%/CHG | Grid=1927.9kW | EV=0.35 | Prio=+1.460 [HIGH]
+    [EP 03] h= 4200/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 571.0kW | EV=22.27 | Prio=+0.680 [LOW]
+    [STEP  12000] | Actor=-146.585 | Critic=0.305 | Q=146.2 | alpha=0.0080 | Buf=2.0% | Upd/s=2.00 | LR=5.0e-04
+    [!]  ALPHA BAJO: 0.0080 (exploracion colapsada)
+            -> Accion: Usar ent_coef fijo en lugar de 'auto'
+
+====================================================================================================
+[TIMESTEP 12,000] PROGRESO MULTIOBJETIVO SAC - 1.37 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     11,999 / 600,000 (2.0%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   13,998 (gradient steps)
+    - Ratio updates:     1.167 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.304800
+    - Actor Loss:        -146.584793 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     12000 / 131,400
+
+    [EP 03] h= 4300/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 442.0kW | EV=3.95 | Prio=-1.129 
+    [EP 03] h= 4400/8760 | Solar= 984.0kW | BESS=42.9%/CHG | Grid=  57.0kW | EV=35.47 | Prio=+0.000 [LOW]
+    [EP 03] h= 4500/8760 | Solar=2886.7kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=0.90 | Prio=+0.214 [MEDIUM]
+    [EP 03] h= 4600/8760 | Solar=1640.7kW | BESS=75.9%/DIS | Grid= 243.9kW | EV=0.13 | Prio=+0.769 [HIGH]
+    [EP 03] h= 4700/8760 | Solar=   0.0kW | BESS=51.7%/CHG | Grid=1597.9kW | EV=0.31 | Prio=+0.844 [HIGH]
+    [STEP  12500] | Actor=-141.573 | Critic=0.257 | Q=141.4 | alpha=0.0071 | Buf=2.1% | Upd/s=2.00 | LR=5.0e-04
+    [!]  ALPHA BAJO: 0.0071 (exploracion colapsada)
+            -> Accion: Usar ent_coef fijo en lugar de 'auto'
+
+====================================================================================================
+[TIMESTEP 12,500] PROGRESO MULTIOBJETIVO SAC - 1.43 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     12,499 / 600,000 (2.1%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   14,998 (gradient steps)
+    - Ratio updates:     1.200 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.257213
+    - Actor Loss:        -141.572624 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     12500 / 131,400
+
+    [EP 03] h= 4800/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 537.0kW | EV=28.51 | Prio=+0.685 [LOW]
+    [EP 03] h= 4900/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 407.0kW | EV=1.27 | Prio=+0.000 
+    [EP 03] h= 5000/8760 | Solar=1182.1kW | BESS=42.9%/DIS | Grid=   0.0kW | EV=94.32 | Prio=+0.000 [LOW]
+    [EP 03] h= 5100/8760 | Solar=2886.7kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=0.87 | Prio=+0.282 [MEDIUM]
+    [EP 03] h= 5200/8760 | Solar=2414.7kW | BESS=100.0%/DIS | Grid=   0.0kW | EV=0.04 | Prio=+0.855 [HIGH]
+    [STEP  13000] | Actor=-136.212 | Critic=0.254 | Q=136.2 | alpha=0.0057 | Buf=2.2% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 13,000] PROGRESO MULTIOBJETIVO SAC - 1.48 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     12,999 / 600,000 (2.2%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   15,998 (gradient steps)
+    - Ratio updates:     1.231 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.253942
+    - Actor Loss:        -136.212334 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     13000 / 131,400
+
+    [EP 03] h= 5300/8760 | Solar=   0.0kW | BESS=35.8%/CHG | Grid=2026.3kW | EV=0.33 | Prio=+0.814 [HIGH]
+    [EP 03] h= 5400/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 560.0kW | EV=36.61 | Prio=+1.311 [LOW]
+    [EP 03] h= 5500/8760 | Solar=   0.0kW | BESS=20.0%/IDL | Grid= 407.0kW | EV=2.30 | Prio=+0.000 
+    [EP 03] h= 5600/8760 | Solar= 896.8kW | BESS=48.3%/DIS | Grid= 191.2kW | EV=66.90 | Prio=+0.000 [LOW]
+    [EP 03] h= 5700/8760 | Solar=2886.7kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=0.46 | Prio=+0.249 [MEDIUM]
+    [STEP  13500] | Actor=-130.469 | Critic=0.684 | Q=130.4 | alpha=0.0047 | Buf=2.2% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 13,500] PROGRESO MULTIOBJETIVO SAC - 1.54 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     13,499 / 600,000 (2.2%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   16,998 (gradient steps)
+    - Ratio updates:     1.259 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.683519
+    - Actor Loss:        -130.468857 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     13500 / 131,400
+
+    [EP 03] h= 5800/8760 | Solar=2242.3kW | BESS=75.9%/DIS | Grid=   0.0kW | EV=0.02 | Prio=-0.380 [HIGH]
+    [EP 03] h= 5900/8760 | Solar=   0.0kW | BESS=51.7%/DIS | Grid=1832.9kW | EV=0.43 | Prio=+1.021 [HIGH]
+    [EP 03] h= 6000/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 597.0kW | EV=38.65 | Prio=+1.189 [LOW]
+    [EP 03] h= 6100/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 442.0kW | EV=1.23 | Prio=-1.638 
+    [EP 03] h= 6200/8760 | Solar=1456.3kW | BESS=63.8%/IDL | Grid=   0.0kW | EV=98.28 | Prio=+0.000 [LOW]
+    [STEP  14000] | Actor=-125.737 | Critic=0.201 | Q=125.6 | alpha=0.0042 | Buf=2.3% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 14,000] PROGRESO MULTIOBJETIVO SAC - 1.60 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     13,999 / 600,000 (2.3%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   17,998 (gradient steps)
+    - Ratio updates:     1.286 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.201023
+    - Actor Loss:        -125.736706 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     14000 / 131,400
+
+    [EP 03] h= 6300/8760 | Solar=2886.7kW | BESS=100.0%/DIS | Grid=   0.0kW | EV=0.52 | Prio=+0.003 [MEDIUM]
+    [EP 03] h= 6400/8760 | Solar=2229.1kW | BESS=75.9%/CHG | Grid= 131.1kW | EV=0.07 | Prio=+0.197 [HIGH]
+    [EP 03] h= 6500/8760 | Solar=   0.0kW | BESS=51.7%/DIS | Grid=2142.1kW | EV=0.42 | Prio=+1.557 [HIGH]
+    [EP 03] h= 6600/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 857.0kW | EV=21.76 | Prio=+1.419 [LOW]
+    [EP 03] h= 6700/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 425.0kW | EV=1.13 | Prio=-1.593 
+    [STEP  14500] | Actor=-120.585 | Critic=0.175 | Q=120.6 | alpha=0.0037 | Buf=2.4% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 14,500] PROGRESO MULTIOBJETIVO SAC - 1.66 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     14,499 / 600,000 (2.4%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   18,998 (gradient steps)
+    - Ratio updates:     1.310 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.175424
+    - Actor Loss:        -120.585125 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     14500 / 131,400
+
+    [EP 03] h= 6800/8760 | Solar=1987.8kW | BESS=64.3%/CHG | Grid=   0.0kW | EV=63.40 | Prio=+0.000 [LOW]
+    [EP 03] h= 6900/8760 | Solar=2886.7kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=0.75 | Prio=+0.182 [MEDIUM]
+    [EP 03] h= 7000/8760 | Solar=2020.5kW | BESS=75.9%/DIS | Grid= 333.9kW | EV=0.13 | Prio=+0.444 [HIGH]
+    [EP 03] h= 7100/8760 | Solar=   0.0kW | BESS=32.1%/DIS | Grid=2062.1kW | EV=0.28 | Prio=+1.257 [HIGH]
+    [EP 03] h= 7200/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 700.0kW | EV=28.23 | Prio=+0.753 [LOW]
+    [STEP  15000] | Actor=-115.569 | Critic=0.151 | Q=115.3 | alpha=0.0032 | Buf=2.5% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 15,000] PROGRESO MULTIOBJETIVO SAC - 1.71 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     14,999 / 600,000 (2.5%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   19,998 (gradient steps)
+    - Ratio updates:     1.333 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.150628
+    - Actor Loss:        -115.568630 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     15000 / 131,400
+
+    [EP 03] h= 7300/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 503.0kW | EV=2.77 | Prio=+0.000 
+    [EP 03] h= 7400/8760 | Solar= 873.7kW | BESS=59.3%/DIS | Grid= 217.3kW | EV=83.45 | Prio=+0.000 [LOW]
+    [EP 03] h= 7500/8760 | Solar=2886.7kW | BESS=100.0%/DIS | Grid=   0.0kW | EV=1.83 | Prio=+0.324 [MEDIUM]
+    [EP 03] h= 7600/8760 | Solar=1958.8kW | BESS=75.9%/CHG | Grid= 336.1kW | EV=0.03 | Prio=-0.623 [HIGH]
+    [EP 03] h= 7700/8760 | Solar=   0.0kW | BESS=51.7%/DIS | Grid=1847.0kW | EV=0.50 | Prio=+1.464 [HIGH]
+    [STEP  15500] | Actor=-110.791 | Critic=0.116 | Q=110.6 | alpha=0.0029 | Buf=2.6% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 15,500] PROGRESO MULTIOBJETIVO SAC - 1.77 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     15,499 / 600,000 (2.6%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   20,998 (gradient steps)
+    - Ratio updates:     1.355 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.115629
+    - Actor Loss:        -110.791321 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     15500 / 131,400
+
+    [EP 03] h= 7800/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 695.0kW | EV=33.51 | Prio=+1.072 [LOW]
+    [EP 03] h= 7900/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 491.0kW | EV=1.46 | Prio=+0.000 
+    [EP 03] h= 8000/8760 | Solar=1377.2kW | BESS=56.1%/DIS | Grid=   0.0kW | EV=108.51 | Prio=+0.000 [LOW]
+    [EP 03] h= 8100/8760 | Solar=2886.7kW | BESS=100.0%/DIS | Grid=   0.0kW | EV=0.77 | Prio=+0.353 [MEDIUM]
+    [EP 03] h= 8200/8760 | Solar=2090.2kW | BESS=75.9%/DIS | Grid=  87.6kW | EV=0.15 | Prio=+0.317 [HIGH]
+    [STEP  16000] | Actor=-105.913 | Critic=0.137 | Q=105.8 | alpha=0.0024 | Buf=2.7% | Upd/s=2.00 | LR=5.0e-04
+    [!]  ALPHA BAJO: 0.0024 (exploracion colapsada)
+            -> Accion: Usar ent_coef fijo en lugar de 'auto'
+
+====================================================================================================
+[TIMESTEP 16,000] PROGRESO MULTIOBJETIVO SAC - 1.83 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     15,999 / 600,000 (2.7%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   21,998 (gradient steps)
+    - Ratio updates:     1.375 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.137287
+    - Actor Loss:        -105.912712 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     16000 / 131,400
+
+    [EP 03] h= 8300/8760 | Solar=   0.0kW | BESS=51.7%/DIS | Grid=1840.7kW | EV=0.25 | Prio=+1.122 [HIGH]
+    [EP 03] h= 8400/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 930.0kW | EV=43.66 | Prio=+0.997 [LOW]
+    [EP 03] h= 8500/8760 | Solar=   0.0kW | BESS=20.0%/CHG | Grid= 406.0kW | EV=3.57 | Prio=+0.000 
+    [EP 03] h= 8600/8760 | Solar= 108.7kW | BESS=28.6%/CHG | Grid= 714.0kW | EV=67.54 | Prio=+1.477 [LOW]
+    [EP 03] h= 8700/8760 | Solar=2536.9kW | BESS=100.0%/DIS | Grid=   0.0kW | EV=1.27 | Prio=+0.168 [MEDIUM]
+    [STEP  16500] | Actor=-101.457 | Critic=0.131 | Q=101.3 | alpha=0.0023 | Buf=2.7% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 16,500] PROGRESO MULTIOBJETIVO SAC - 1.88 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     16,499 / 600,000 (2.7%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   22,998 (gradient steps)
+    - Ratio updates:     1.394 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.131169
+    - Actor Loss:        -101.457493 [!] PROBLEMA: Rewards muy grandes (esperado [-10, 10])
+              -> Esta ocurriendo overflow de rewards
+              -> Verificar normalizacion en step function
+              -> Solucion: Dividir rewards por mayor factor
+  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     16500 / 131,400
+
+    [EP 03]  EPISODIO COMPLETADO (MULTIOBJETIVO + PRIORIZACION SOC):
+         Total Reward:                0.67 pts
+         Solar kWh:              8292514.1 kWh
+         Grid Import:            6500927.0 kWh
+         CO2 Avoided:            7582231.0 kg
+         EV Satisfaction:       6519041.67 %
+         Prioritization Rwd:       4067.97 pts
+         Completion Reward:         542.25 pts
+
+         --- DATOS REALES (DATASET BESS) ---
+           Solar->EV (REAL):        179,587 kWh
+           BESS->EV (REAL):         143,740 kWh
+           Grid Import (REAL):   6,485,565 kWh
+           CO2 Evitado (REAL):     279,679 kg
+           Costo Grid (REAL): 2,300,787.03 soles
+           Ahorro Pico (REAL):  182,247.54 soles
+
+         --- BESS AGENTE ---
+             BESS Descarga:        677835.7 kWh
+             BESS Carga:           790715.6 kWh
+             BESS Ciclos:              2598
+
+         --- CO2 ESTRUCTURA v7.1 ---
+           CO2 DIRECTO (EV):       456,561 kg (cambio combustible)
+           CO2 INDIRECTO:
+             Solar->EV,BESS,Mall:  3,749,046 kg
+             BESS->EV,Mall:          445,478 kg (peak shaving)
+           CO2 TOTAL EVITADO:    4,651,085 kg
+           CO2 MALL EMITIDO:     5,591,868 kg (NO reduce)
+           CO2 Grid Emitido:     2,939,069 kg
+         --- COSTOS CALCULADOS ---
+           Costo Grid:        2,300,787.03 soles
+           Ahorro Solar:      1,595,159.54 soles
+           Ahorro BESS:         182,247.54 soles
+
+          MOTOS @ SOC:     10%=  9 | 20%=  7 | 30%= 15 | 50%= 17 | 70%= 10 | 80%= 14 | 100%=  0
+          MOTOTAXIS @ SOC:  10%=  4 | 20%=  4 | 30%=  6 | 50%=  7 | 70%=  5 | 80%=  5 | 100%=  0
+          PRIORIZACION:     Accuracy=63.6% | Decisiones bajo escasez: 6505
+          CARGADOS AL 100%: 44689 vehiculos
+         Pesos usados:        CO2=0.35 | Solar=0.20 | EV=0.30 | (v9.2 minimal reward function)
+
+
+====================================================================================================
+[EPISODIO 2 COMPLETADO] Timestep 16,520 / 131,400
+====================================================================================================
+[LOSSES]
+  - Critic Loss (TD):        +0.131169 (entrenamiento mas estable)
+  - Actor Loss (POLICY):     -101.457493 (aprendiendo mejores acciones)
+[EXPLORACION]
+  - Entropy (policy):        +0.000000 (varianza en acciones)
+  - Alpha (alpha):           +0.002303 (peso de entropy)
+[MULTIOBJETIVO - CO2]
+  - CO2 GRID (actual):       2,585,699.3 kg (importacion desde grid termico)
+  - CO2 BASELINE:            3,232,124.1 kg (sin control RL)
+  - REDUCCION CO2:           +20.0% (objetivo principal)
+[MULTIOBJETIVO - SOLAR]
+  - PV Utilizado:            7,404,273.7 kWh (de 8.29 GWh/ano)
+[MULTIOBJETIVO - CARGA EV]
+  - EVs Cargados:            287,889.0 kWh (motos + mototaxis)
+[MULTIOBJETIVO - BESS]
+  - Descarga BESS:           987,289.2 kWh (alimentar carga)
+  - Carga BESS:              1,196,116.1 kWh (from solar)
+  - Eficiencia implicita:    82.5% (discharge/charge ratio)
+[MULTIOBJETIVO - GRID]
+  - Importacion neta:        5,719,308.3 kWh (necesaria)
+[RECOMPENSA TOTAL]
+  - Reward episodio:         +0.62 pts (suma ponderada multiobjetivo)
+[PROGRESO]
+  - Entrenamiento:           12.6% completado
+  - Episodios:               2 / 15
+
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 8.76e+03 |
+|    ep_rew_mean     | 0.674    |
+| time/              |          |
+|    episodes        | 2        |
+|    fps             | 75       |
+|    time_elapsed    | 219      |
+|    total_timesteps | 16520    |
+| train/             |          |
+|    actor_loss      | -101     |
+|    critic_loss     | 0.16     |
+|    ent_coef        | 0.0023   |
+|    ent_coef_loss   | -5.08    |
+|    learning_rate   | 0.0005   |
+|    n_updates       | 23038    |
+---------------------------------
+    [EP 04] h=  100/8760 | Solar=   0.0kW | BESS=20.0%/DIS | Grid= 584.0kW | EV=9.16 | Prio=+1.402 
+    [EP 04] h=  200/8760 | Solar= 509.3kW | BESS=47.2%/CHG | Grid= 653.7kW | EV=86.75 | Prio=+0.496 [LOW]
+    [EP 04] h=  300/8760 | Solar=2886.7kW | BESS=100.0%/CHG | Grid=   0.0kW | EV=0.49 | Prio=+0.338 [MEDIUM]
+    [EP 04] h=  400/8760 | Solar=1858.7kW | BESS=75.9%/DIS | Grid=  89.7kW | EV=0.10 | Prio=+0.504 [HIGH]
+    [STEP  17000] | Actor=-97.115 | Critic=0.144 | Q=97.3 | alpha=0.0025 | Buf=2.8% | Upd/s=2.00 | LR=5.0e-04
+
+====================================================================================================
+[TIMESTEP 17,000] PROGRESO MULTIOBJETIVO SAC - 1.94 EPISODIOS
+====================================================================================================
+  [EXPLORACION]
+    - Entropy coefficient (alpha): AUTO-TUNING (dinamico)
+  [BUFFER DE EXPERIENCIAS]
+    - Tamano actual:     16,999 / 600,000 (2.8%)
+  [APRENDIZAJE]
+    - Learning rate:     5.00e-04 (fijo)
+    - Actualizaciones:   23,998 (gradient steps)
+    - Ratio updates:     1.412 upd/step
+  [LOSS FUNCTIONS]
+    - Critic Loss (TD):  0.143884
+    - Actor Loss:        -97.115181  [Q-VALUES (CRITIC)]
+  [ESTADO]
+    - Episodios completos: 1
+    - Horas simuladas:     17000 / 131,400
+

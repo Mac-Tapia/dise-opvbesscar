@@ -44,9 +44,9 @@
 - **Mean Validation Reward:** 659.35
 
 ### SAC
-- **Final Reward:** 0.67
-- **Best Reward:** 0.68
-- **Average Reward:** 0.67
+- **Final Reward:** 0.01
+- **Best Reward:** 0.01
+- **Average Reward:** 0.01
 - **Mean Validation Reward:** 0.00
 
 ## CO2 METRICS
@@ -68,9 +68,9 @@
 - **Mean Solar Available (kWh):** 8292514
 
 ### SAC
-- **Final CO2 Grid (kg):** 2940169
-- **Best CO2 Grid (kg):** 2586090
-- **Average CO2 Grid (kg):** 2904378
+- **Final CO2 Grid (kg):** 2938950
+- **Best CO2 Grid (kg):** 2586153
+- **Average CO2 Grid (kg):** 2904216
 - **Mean CO2 Avoided (kg):** 0
 - **Mean Grid Import (kWh):** 0
 - **Mean Solar Available (kWh):** 0

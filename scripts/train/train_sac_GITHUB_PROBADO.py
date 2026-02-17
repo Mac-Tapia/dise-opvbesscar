@@ -64,7 +64,7 @@ SOLAR_MAX_KW: float = 2887.0        # Real max desde pv_generation_citylearn_enh
 MALL_MAX_KW: float = 3000.0         # Real max=2,763 kW from data/oe2/demandamallkwh/demandamallhorakwh.csv [FIXED 2026-02-15]
 BESS_MAX_KWH_CONST: float = 1700.0  # Capacidad maxima BESS (referencia normalizacion) [VALIDATED]
 CHARGER_MAX_KW: float = 3.7         # Max per socket: 7.4 kW charger / 2 sockets from src/dimensionamiento/oe2/disenocargadoresev/chargers.py [FIXED 2026-02-15]
-CHARGER_MEAN_KW: float = 4.6        # Potencia media efectiva por socket (7.4 kW × 0.62 efficiency) [VALIDATED]
+CHARGER_MEAN_KW: float = 4.6        # Potencia media efectiva por socket (7.4 kW ├ù 0.62 efficiency) [VALIDATED]
 
 # ===== SAC CONFIG =====
 # (imports ya arriba: dataclass, field, Dict, List, Optional, Tuple)
@@ -200,7 +200,7 @@ class VehicleSOCTracker:
     def spawn_vehicle(self, socket_id: int, hour: int, initial_soc: float = 20.0) -> VehicleSOCState:
         """Crea un vehiculo nuevo en el socket dado."""
         vehicle_type = 'moto' if socket_id < self.n_moto_sockets else 'mototaxi'
-        max_rate = 7.4  # AMBOS Modo 3 @ 32A 230V (chargers.py Línea 197, 207)
+        max_rate = 7.4  # AMBOS Modo 3 @ 32A 230V (chargers.py L├¡nea 197, 207)
         
         state = VehicleSOCState(
             socket_id=socket_id,
@@ -328,16 +328,16 @@ class SACConfig:
     
     Hiperparametros SAC (Soft Actor-Critic):
     =========================================
-    - Replay buffer size: 1e5–1e6 (usamos 1e6 para GPU)
-    - Warmup / random steps: 1e3–1e4 (learning_starts)
-    - Batch size: 128–512 (usamos 256)
-    - τ (tau) soft update: 0.005 (tipico)
+    - Replay buffer size: 1e5ÔÇô1e6 (usamos 1e6 para GPU)
+    - Warmup / random steps: 1e3ÔÇô1e4 (learning_starts)
+    - Batch size: 128ÔÇô512 (usamos 256)
+    - ¤ä (tau) soft update: 0.005 (tipico)
     - Update frequency: cada paso (train_freq)
     - Update-to-data ratio: 1-4 (gradient_steps)
     - alpha (alpha) / temperatura entropia: auto-tuning recomendado
     - Target entropy: -|A| (dimension acciones)
     - Learning rates: 3e-4 (actor/critic/alpha)
-    - γ (gamma): 0.99
+    - ╬│ (gamma): 0.99
     
     Metricas clave a monitorear:
     - Eval episodic return (sin ruido)
@@ -365,13 +365,13 @@ class SACConfig:
     # ===== BATCH Y UPDATES (OPTIMO PARA GPU) =====
     batch_size: int = 128  # REDUCIDO v7.2: 128 permite train_freq=2
     train_freq: Tuple[int, str] = (2, 'step')  # v7.2: Entrenar cada 2 steps
-    gradient_steps: int = 2  # REDUCIDO v7.2: 2 updates (was 4) - menos aggressive para evitar explosión
+    gradient_steps: int = 2  # REDUCIDO v7.2: 2 updates (was 4) - menos aggressive para evitar explosi├│n
     
-    # ===== SOFT UPDATE (τ = 0.005 TIPICO) =====
+    # ===== SOFT UPDATE (¤ä = 0.005 TIPICO) =====
     tau: float = 0.005  # Soft update coefficient para target networks
     target_update_interval: int = 1  # Update target cada N gradient steps
     
-    # ===== DISCOUNT (γ = 0.99 TIPICO) =====
+    # ===== DISCOUNT (╬│ = 0.99 TIPICO) =====
     gamma: float = 0.99  # Discount factor
     
     # ===== ENTROPY (AUTO-TUNING - ESTANDAR SAC) =====
@@ -379,7 +379,7 @@ class SACConfig:
     # Permitir que SAC ajuste alpha automaticamente segun entropy target
     # Nota: Evita colapso de exploracion cuando rewards estan normalizados
     ent_coef: str = 'auto'  # AUTO-TUNE (mejor con rewards normalizados)
-    target_entropy: float = -50.0  # AUMENTADO v7.2: -50 (was -39) más exploracion para evitar Q-value collapse
+    target_entropy: float = -50.0  # AUMENTADO v7.2: -50 (was -39) m├ís exploracion para evitar Q-value collapse
     
     # ===== EXPLORACION SDE (v7.2 - EVITAR ALPHA COLLAPSE) =====
     # SDE (State-Dependent Exploration) mejora exploracion en espacios continuos
@@ -455,7 +455,7 @@ class SACConfig:
         6. +50% networks: 256->384 (mas capacidad representacional)
         7. +150% tau: 0.002 -> 0.005 (standard per SAC paper)
         8. +2% gamma: 0.98 -> 0.99 (mejor long-term reward consideration)
-        9. +2x entropy: -5 -> -10 (exploración balanceada)
+        9. +2x entropy: -5 -> -10 (exploraci├│n balanceada)
         
         RESULTADO ESPERADO: +50% mejor rendimiento (15.35M -> 23M kg CO2)
         """
@@ -491,7 +491,7 @@ class SACConfig:
             # target_entropy = -39 es OPTIMO segun paper (basado en |A|)
             # Pero -10 permite mas exploracion sin collapse
             ent_coef='auto',  # DINAMICO - SAC ajusta alpha automaticamente
-            target_entropy=-10.0,  # AUMENTADO: -5 -> -10 (exploración balanceada)
+            target_entropy=-10.0,  # AUMENTADO: -5 -> -10 (exploraci├│n balanceada)
             
             # Networks - MAS EXPRESIVOS para problema complejo (39D continuo)
             policy_kwargs={
@@ -627,7 +627,7 @@ def load_datasets_from_processed():
        - Cuando BESS suministra a: EV y Mall
        - Columnas: bess_to_ev_kwh, bess_to_mall_kwh, co2_avoided_indirect_kg
        - Condicion PEAK SHAVING: cortes demanda pico > 2000 kW
-       - Factor: 0.4521 kg CO2/kWh × energia descargada
+       - Factor: 0.4521 kg CO2/kWh ├ù energia descargada
        - Fuente: data/oe2/bess/bess_ano_2024.csv
     
     4. MALL EMITE CO2 (NO REDUCE):
@@ -709,14 +709,14 @@ def load_datasets_from_processed():
     Donde:
     - CO2_directo_EV:      reduccion_directa_co2_kg del chargers dataset
     - CO2_indirecto_solar: reduccion_indirecta_co2_kg_total (solar -> EV,BESS,Mall,Red)
-    - CO2_indirecto_BESS:  (bess_to_ev_kwh + bess_to_mall_kwh) × 0.4521
+    - CO2_indirecto_BESS:  (bess_to_ev_kwh + bess_to_mall_kwh) ├ù 0.4521
                            cuando demanda > 2000 kW (peak shaving)
     
     CO2_neto = CO2_total_evitado - CO2_mall_emitido
     - CO2_mall_emitido:    mall_co2_indirect_kg (mall EMITE, NO reduce)
     
     ===========================================================================
-    Tiempo: 8,760 horas (365 dias × 24 horas, resolucion horaria)
+    Tiempo: 8,760 horas (365 dias ├ù 24 horas, resolucion horaria)
     ESCENARIO RECOMENDADO v5.2: PE=1.00, FC=1.00, 19 cargadores, 38 tomas, 1550.34 kWh/dia (565,875 anual)
     ===========================================================================
     """
@@ -815,11 +815,11 @@ def load_datasets_from_processed():
     if 'temperatura_c' in solar_data:
         print(f'  [SOLAR]   Temp: min={solar_data["temperatura_c"].min():.1f}C, max={solar_data["temperatura_c"].max():.1f}C')
     if 'energia_suministrada_al_ev_kwh' in solar_data:
-        print(f'  [SOLAR]   Solar->EV: {np.sum(solar_data["energia_suministrada_al_ev_kwh"]):,.0f} kWh/año')
+        print(f'  [SOLAR]   Solar->EV: {np.sum(solar_data["energia_suministrada_al_ev_kwh"]):,.0f} kWh/a├▒o')
     if 'energia_suministrada_al_bess_kwh' in solar_data:
-        print(f'  [SOLAR]   Solar->BESS: {np.sum(solar_data["energia_suministrada_al_bess_kwh"]):,.0f} kWh/año')
+        print(f'  [SOLAR]   Solar->BESS: {np.sum(solar_data["energia_suministrada_al_bess_kwh"]):,.0f} kWh/a├▒o')
     if 'reduccion_indirecta_co2_kg_total' in solar_data:
-        print(f'  [SOLAR]   CO2 indirecto evitado: {np.sum(solar_data["reduccion_indirecta_co2_kg_total"]):,.0f} kg/año')
+        print(f'  [SOLAR]   CO2 indirecto evitado: {np.sum(solar_data["reduccion_indirecta_co2_kg_total"]):,.0f} kg/a├▒o')
 
     # ====================================================================
     # CHARGERS - [OK] REAL HOURLY DEMAND (MOTOS + MOTOTAXIS SEPARADOS)
@@ -859,17 +859,17 @@ def load_datasets_from_processed():
     
     print(f'  [CHARGERS] Columnas globales cargadas ({len(chargers_data)}): {list(chargers_data.keys())}')
     if 'reduccion_directa_co2_kg' in chargers_data:
-        print(f'  [CHARGERS]   CO2 DIRECTO evitado: {np.sum(chargers_data["reduccion_directa_co2_kg"]):,.0f} kg/año')
+        print(f'  [CHARGERS]   CO2 DIRECTO evitado: {np.sum(chargers_data["reduccion_directa_co2_kg"]):,.0f} kg/a├▒o')
     if 'co2_reduccion_motos_kg' in chargers_data:
-        print(f'  [CHARGERS]   CO2 motos evitado: {np.sum(chargers_data["co2_reduccion_motos_kg"]):,.0f} kg/año')
+        print(f'  [CHARGERS]   CO2 motos evitado: {np.sum(chargers_data["co2_reduccion_motos_kg"]):,.0f} kg/a├▒o')
     if 'co2_reduccion_mototaxis_kg' in chargers_data:
-        print(f'  [CHARGERS]   CO2 mototaxis evitado: {np.sum(chargers_data["co2_reduccion_mototaxis_kg"]):,.0f} kg/año')
+        print(f'  [CHARGERS]   CO2 mototaxis evitado: {np.sum(chargers_data["co2_reduccion_mototaxis_kg"]):,.0f} kg/a├▒o')
     if 'costo_carga_ev_soles' in chargers_data:
-        print(f'  [CHARGERS]   Costo carga EV: {np.sum(chargers_data["costo_carga_ev_soles"]):,.0f} soles/año')
+        print(f'  [CHARGERS]   Costo carga EV: {np.sum(chargers_data["costo_carga_ev_soles"]):,.0f} soles/a├▒o')
     
     # ===== PROCESAR ARCHIVO v3: EXTRAER POTENCIA DE CARGA =====
     # Estructura: socket_XXX_charging_power_kw para cada socket 0-37 (38 total)
-    # 38 sockets × 9 columnas/socket + 1 datetime = 343 columnas
+    # 38 sockets ├ù 9 columnas/socket + 1 datetime = 343 columnas
     socket_power_cols = [c for c in df_chargers.columns if c.endswith('_charging_power_kw')]
     
     if len(socket_power_cols) != 38:
@@ -950,9 +950,9 @@ def load_datasets_from_processed():
     print(f'  [MALL] Columnas cargadas ({len(mall_data_dict)}): {list(mall_data_dict.keys())}')
     print("  [MALL] [OK] REAL: %.0f kWh/year (avg %.1f kW/h)" % (float(np.sum(mall_hourly)), float(np.mean(mall_hourly))))
     if 'mall_co2_indirect_kg' in mall_data_dict:
-        print(f'  [MALL]   CO2 EMITIDO por mall: {np.sum(mall_data_dict["mall_co2_indirect_kg"]):,.0f} kg/año (NO reduce, EMITE)')
+        print(f'  [MALL]   CO2 EMITIDO por mall: {np.sum(mall_data_dict["mall_co2_indirect_kg"]):,.0f} kg/a├▒o (NO reduce, EMITE)')
     if 'mall_cost_soles' in mall_data_dict:
-        print(f'  [MALL]   Costo operacion mall: {np.sum(mall_data_dict["mall_cost_soles"]):,.0f} soles/año')
+        print(f'  [MALL]   Costo operacion mall: {np.sum(mall_data_dict["mall_cost_soles"]):,.0f} soles/a├▒o')
 
     # ====================================================================
     # BESS - [!] SIMULATED (dispatch optimization output, not real device)
@@ -1348,7 +1348,7 @@ def main():
     print(f'  TOTAL:           {chargers_hourly.shape[1]} sockets | {np.sum(chargers_hourly):,.0f} kWh/ano')
     if chargers_data:
         print(f'  Chargers Cols:   {len(chargers_data)} columnas globales: {list(chargers_data.keys())}')
-        # Mostrar CO2 reducción directa si está disponible
+        # Mostrar CO2 reducci├│n directa si est├í disponible
         if 'reduccion_directa_co2_kg' in chargers_data:
             co2_directo = chargers_data['reduccion_directa_co2_kg']
             print(f'  CO2 Reduccion:   {np.sum(co2_directo):,.0f} kg/ano (DIRECTO - Solo EV)')
@@ -1504,8 +1504,8 @@ def main():
         """
         
         HOURS_PER_YEAR: int = 8760
-        NUM_CHARGERS: int = 38  # v5.2: 19 chargers × 2 sockets
-        OBS_DIM: int = 246      # 🆕 v6.0: 156 (v5.3 base) + 27 (observables) + 38 (per-socket SOC) + 38 (time remaining) + 7 (communication)
+        NUM_CHARGERS: int = 38  # v5.2: 19 chargers ├ù 2 sockets
+        OBS_DIM: int = 246      # ­ƒåò v6.0: 156 (v5.3 base) + 27 (observables) + 38 (per-socket SOC) + 38 (time remaining) + 7 (communication)
         ACTION_DIM: int = 39    # 1 BESS + 38 chargers
         
         # Socket distribution (from actual chargers_ev_ano_2024_v3.csv)
@@ -2105,7 +2105,7 @@ def main():
             
             # ===== SOLUCION v9.2 RADICAL - REWARD MINIMALISTA PURO =====
             # PROBLEMA RAIZ: base_reward complejo genera Q-values 300+
-            # SOLUCION: IGNORA TODO EXCEPTO grid_import -BASED reward simplísimo
+            # SOLUCION: IGNORA TODO EXCEPTO grid_import -BASED reward simpl├¡simo
             # 
             # Solo 1 signal: grid import (kW)
             # Solo 2 rangos: [0.0005, +0.0003] cuidadosamente calibrado
@@ -2334,7 +2334,7 @@ def main():
             solar_surplus = max(0.0, solar_kw - total_demand)
             grid_import_needed = max(0.0, total_demand - solar_kw)
             
-            # BESS energia disponible (SOC × capacidad max × eficiencia)
+            # BESS energia disponible (SOC ├ù capacidad max ├ù eficiencia)
             bess_energy_available = bess_soc * BESS_MAX_KWH_CONST * 0.90  # 90% eficiencia
             
             obs[0] = np.clip(solar_kw / SOLAR_MAX_KW, 0.0, 1.0)                    # Solar norm
@@ -2483,16 +2483,16 @@ def main():
             obs[155] = np.clip(daily_progress, 0.0, 1.0)
 
             # ================================================================
-            # 🆕 v6.0 [156-193] PER-SOCKET SOC (38 features)
+            # ­ƒåò v6.0 [156-193] PER-SOCKET SOC (38 features)
             # Visibilidad individual de SOC por socket - CRITICO para v6.0
             # ================================================================
             # Usar potencia entregada como proxy de SOC actual
             socket_power = obs[46:84]  # Potencia actual por socket normalizada
-            # Estimar SOC: suma acumulada de potencia × margen de seguridad
+            # Estimar SOC: suma acumulada de potencia ├ù margen de seguridad
             if not hasattr(self, '_socket_soc_accumulated'):
                 self._socket_soc_accumulated = np.zeros(self.NUM_CHARGERS, dtype=np.float32)
             
-            # Incrementar SOC segun potencia × eficiencia
+            # Incrementar SOC segun potencia ├ù eficiencia
             soc_increment = socket_power * 0.05  # ~5% SOC por hora a potencia maxima
             self._socket_soc_accumulated = np.clip(self._socket_soc_accumulated + soc_increment, 0.0, 1.0)
             
@@ -2503,7 +2503,7 @@ def main():
             obs[156:194] = np.clip(self._socket_soc_accumulated, 0.0, 1.0)
 
             # ================================================================
-            # 🆕 v6.0 [194-231] TIME REMAINING PER SOCKET (38 features)
+            # ­ƒåò v6.0 [194-231] TIME REMAINING PER SOCKET (38 features)
             # Tiempo para llegar a 100% SOC por socket - CRITICO para urgencia
             # ================================================================
             if not hasattr(self, '_socket_time_remaining'):
@@ -2524,7 +2524,7 @@ def main():
             obs[194:232] = self._socket_time_remaining
 
             # ================================================================
-            # 🆕 v6.0 [232-237] BIDIRECTIONAL COMMUNICATION SIGNALS (6 features)
+            # ­ƒåò v6.0 [232-237] BIDIRECTIONAL COMMUNICATION SIGNALS (6 features)
             # Senales explicitas: BESS supply, Solar available, Grid penalty (por tipo vehiculo)
             # ================================================================
             # BESS dispatch: disponibilidad de energia BESS para motos vs taxis
@@ -2547,7 +2547,7 @@ def main():
             obs[237] = np.clip(grid_penalty_taxis, 0.0, 1.0)      # Grid cost -> Taxis
 
             # ================================================================
-            # 🆕 v6.0 [238-245] PRIORITY/URGENCY/CAPACITY AGGREGATES (8 features)
+            # ­ƒåò v6.0 [238-245] PRIORITY/URGENCY/CAPACITY AGGREGATES (8 features)
             # ================================================================
             # Contar cuantos sockets tienen baja SOC (urgentes)
             urgent_motos = np.sum((self._socket_soc_accumulated[:30] < 0.3) & (occupancy[:30] > 0.5))
@@ -2871,7 +2871,7 @@ def main():
                                             
                                             print(f'  [Q-VALUES (CRITIC)]')
                                     except Exception:
-                                        pass  # No crítico si falla
+                                        pass  # No cr├¡tico si falla
                     except Exception:
                         pass
                     
@@ -2962,7 +2962,7 @@ def main():
             self._alpha_baseline_sum: float = 0.0
             self._std_baseline_sum: float = 0.0
             
-            # Deteccion de colapso TEMPRANO (¿ocurrio antes del 30% del training?)
+            # Deteccion de colapso TEMPRANO (┬┐ocurrio antes del 30% del training?)
             self.early_entropy_collapse_count: int = 0
             self.early_alpha_collapse_count: int = 0
             self.early_std_collapse_count: int = 0
@@ -3176,7 +3176,7 @@ def main():
                                         if hasattr(action_dist, 'log_std'):
                                             metrics['log_std'] = float(action_dist.log_std.mean().cpu().numpy())
                     except Exception:
-                        pass  # No crítico
+                        pass  # No cr├¡tico
             except Exception:
                 pass
             
@@ -4283,7 +4283,7 @@ def main():
             4. Ramping vs Steps
             5. Average Daily Peak vs Steps
             6. (1 - Load Factor) vs Steps
-            7. Dashboard KPIs combinado 2×3
+            7. Dashboard KPIs combinado 2├ù3
             """
             
             if len(self.kpi_steps_history) < 2:
@@ -4388,7 +4388,7 @@ def main():
                     ax.axhline(y=baseline, color='gray', linestyle='--', alpha=0.5, label=f'Baseline ({baseline:.1f} kg)')
                 
                 ax.set_xlabel('Training Steps (K)')
-                ax.set_ylabel('Carbon Emissions (kg CO₂/day)')
+                ax.set_ylabel('Carbon Emissions (kg COÔéé/day)')
                 ax.set_title('SAC: Carbon Emissions vs Training Steps\n(Lower = better environmental impact)')
                 ax.legend(loc='upper right')
                 ax.grid(True, alpha=0.3)
@@ -4398,7 +4398,7 @@ def main():
                 if len(emissions) > 1:
                     reduction = (emissions[0] - emissions[-1]) / max(emissions[0], 0.001) * 100
                     color = 'green' if reduction > 0 else 'red'
-                    ax.annotate(f'{"v" if reduction > 0 else "^"} {abs(reduction):.1f}% CO₂', 
+                    ax.annotate(f'{"v" if reduction > 0 else "^"} {abs(reduction):.1f}% COÔéé', 
                                xy=(0.98, 0.02), xycoords='axes fraction',
                                fontsize=10, color=color, ha='right')
                 
@@ -4510,7 +4510,7 @@ def main():
                 print(f'     [X] Error en load factor graph: {e}')
             
             # ====================================================================
-            # GRAFICO 7: DASHBOARD KPIs COMBINADO 2×3
+            # GRAFICO 7: DASHBOARD KPIs COMBINADO 2├ù3
             # ====================================================================
             try:
                 fig, axes = plt.subplots(2, 3, figsize=(16, 10))
@@ -4536,7 +4536,7 @@ def main():
                 ax = axes[0, 2]
                 emissions = np.array(self.carbon_emissions_history)
                 ax.plot(steps_k, smooth(list(emissions)), 'brown', linewidth=2)
-                ax.set_title('CO₂ Emissions (kg/day)')
+                ax.set_title('COÔéé Emissions (kg/day)')
                 ax.set_xlabel('Steps (K)')
                 ax.grid(True, alpha=0.3)
                 ax.set_ylim(bottom=0)
@@ -4579,7 +4579,7 @@ def main():
                 if len(emissions) > 1:
                     imp = (emissions[0] - emissions[-1]) / max(emissions[0], 0.001) * 100
                     if imp > 0:
-                        improvements.append(f'CO₂: {imp:.1f}%v')
+                        improvements.append(f'COÔéé: {imp:.1f}%v')
                 if len(peak) > 1:
                     imp = (peak[0] - peak[-1]) / max(peak[0], 0.001) * 100
                     if imp > 0:

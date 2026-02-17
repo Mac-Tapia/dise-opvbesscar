@@ -8,7 +8,77 @@
 
 ---
 
-## 📋 Recent Updates (Feb 16-17, 2026) - A2C v7.2 + Type Checking Fix Complete
+## 🏆 RESULTADO FINAL: Agente A2C Seleccionado (62.4% Reducción CO₂)
+
+| Métrica | A2C | PPO | SAC |
+|---------|-----|-----|-----|
+| **Reward Promedio** | 2,725.09 | 818.55 | 0.0067 |
+| **CO₂ Grid (kg/año)** | 2,200,222 | 3,074,701 | 2,904,216 |
+| **Reducción CO₂** | **62.4%** | 47.4% | 50.3% |
+
+**Impacto Cuantificado:** 
+- 🌱 **3,647.5 toneladas de CO₂ evitadas/año**
+- ⚡ 270 motos + 39 mototaxis/día gestionados
+- ☀️ 8.29 GWh/año de energía solar aprovechada
+
+📄 **Documento completo:** [docs/4.6.4_SELECCION_AGENTE_INTELIGENTE.md](docs/4.6.4_SELECCION_AGENTE_INTELIGENTE.md)
+
+---
+
+## 📋 Recent Updates (Feb 17, 2026) - SAC v10.5 Complete + Agent Selection
+
+### ✅ Phase 5: SAC v10.5 Training + Selección Final del Agente
+**Status:** ✅ COMPLETADO - SAC entrenado correctamente + A2C seleccionado como óptimo
+
+#### 5.1 SAC v10.5 - Entropía Fija (SOLUCIONADO)
+**Problema Anterior:** SAC tenía entropy=0 (sin exploración)
+
+**Solución v10.5:**
+```python
+ent_coef=0.2,        # FIXED (no 'auto') - presión de exploración constante
+use_sde=False,       # OFF - log_std_init controla exploración directamente
+log_std_init=0.0,    # std=1.0 varianza inicial
+target_entropy='auto'
+```
+
+**Resultados SAC v10.5:**
+| Métrica | Valor |
+|---------|-------|
+| Episodes | 10 (87,600 timesteps) |
+| alpha | 0.2000 FIJO ✓ |
+| Actor Loss | -176 → -329 |
+| Q-values | 171 → 325.7 |
+| Buffer | 21% utilizado |
+
+#### 5.2 Selección del Agente Óptimo: A2C
+**Análisis Comparativo (3 agentes evaluados):**
+
+| Agente | Reward Promedio | CO₂ (kg/año) | Reducción | Score Total |
+|--------|-----------------|--------------|-----------|-------------|
+| **A2C** | 2,725.09 | 2,200,222 | **62.4%** | **109,041** |
+| PPO | 818.55 | 3,074,701 | 47.4% | 32,771 |
+| SAC | 0.0067 | 2,904,216 | 50.3% | 30.5 |
+
+**Justificación A2C:**
+- ✅ Mayor reducción de CO₂ (62.4% vs 47-50%)
+- ✅ Reward promedio 3.3× superior a PPO
+- ✅ On-policy: Eficiente en recursos, estable
+- ✅ Convergencia rápida en 10 episodios
+
+#### 5.3 Cuantificación del Impacto Ambiental
+```
+Baseline SIN Solar:     5,847,700 kg CO₂/año
+Con Agente A2C:         2,200,222 kg CO₂/año
+─────────────────────────────────────────────
+REDUCCIÓN ABSOLUTA:     3,647,478 kg CO₂/año
+REDUCCIÓN PORCENTUAL:   62.4%
+EQUIVALENTE:            3,647.5 toneladas CO₂/año
+```
+
+#### 5.4 Documentación Académica Generada
+- **[docs/4.6.4_SELECCION_AGENTE_INTELIGENTE.md](docs/4.6.4_SELECCION_AGENTE_INTELIGENTE.md)** - Sección completa para tesis
+
+---
 
 ### ✅ Phase 4: A2C v7.2 - Corrección Completa & Regeneración de Gráficas
 **Status:** ✅ EXITOSO - 18 errores type-checking resueltos a CERO
@@ -185,15 +255,15 @@ pip install -r requirements-training.txt  # Para GPU
 # 1️⃣ Validar sistema antes de entrenar
 python ejecutar.py --validate
 
-# 2️⃣ Entrenar agente SAC (RECOMENDADO - 65.7% reducción CO₂, Score 8.2/10)
-python ejecutar.py --agent sac
+# 2️⃣ Entrenar agente A2C (RECOMENDADO - 62.4% reducción CO₂, Score 109,041)
+python ejecutar.py --agent a2c
 
 # 3️⃣ Entrenar otros agentes (opcional)
-python ejecutar.py --agent ppo  # PPO - 50.9% reducción CO₂, Score 5.9/10
-python ejecutar.py --agent a2c  # A2C - 50.1% reducción CO₂, Score 3.1/10
+python ejecutar.py --agent ppo  # PPO - 47.4% reducción CO₂
+python ejecutar.py --agent sac  # SAC - 50.3% reducción CO₂
 
 # 4️⃣ Análisis comparativo con visualización
-python compare_agents_complete.py
+python analyze_agents_selection.py  # Genera tabla comparativa
 
 # 5️⃣ Ver ayuda completa
 python ejecutar.py --help
