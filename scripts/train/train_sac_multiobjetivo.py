@@ -589,8 +589,7 @@ def load_observable_variables():
     """Cargar TODAS las 27 columnas observables - FALLBACK a None (datos reales en observacion)"""
     print('[LOAD] Cargando variables observables...')
     try:
-        from src.dataset_builder_citylearn.data_loader import _extract_observable_variables
-        # Try to load, but it's optional
+        # No external observable_variables - datos reales desde CSVs
         return None  # Fallback para robustez - los datos reales se leen directo de CSVs
     except Exception:
         print('[LOAD] Observables: usando fallback (None - datos reales en observacion directa)')
@@ -808,7 +807,7 @@ def load_datasets_from_processed():
     if len(solar_hourly) != HOURS_PER_YEAR:
         raise ValueError(f"Solar: {len(solar_hourly)} horas != {HOURS_PER_YEAR}")
     
-    print('  [SOLAR] [OK] REAL: col=%s | %.0f kWh/year (8760h)' % (col, float(np.sum(solar_hourly))))
+    print('  [SOLAR] [OK] REAL: col=%s | %.0f kWh/year (8760h)' % (col, float(np.asarray(solar_hourly).sum())))
     print(f'  [SOLAR] Columnas cargadas ({len(solar_data)}): {list(solar_data.keys())}')
     if 'irradiancia_ghi' in solar_data:
         print(f'  [SOLAR]   GHI: max={solar_data["irradiancia_ghi"].max():.0f} W/m2')
@@ -1066,13 +1065,13 @@ def load_datasets_from_processed():
             'avoided_kg': bess_co2_avoided,
         }
         
-        print(f"  [BESS] Simulated avg SOC: {float(np.mean(bess_soc)):.1f}%")
+        print(f"  [BESS] Simulated avg SOC: {float(np.asarray(bess_soc).mean()):.1f}%")
         if bess_costs is not None:
-            print(f"  [BESS] Costos grid:         {float(np.sum(bess_costs)):,.2f} soles/ano")
+            print(f"  [BESS] Costos grid:         {float(np.asarray(bess_costs).sum()):,.2f} soles/ano")
         if bess_peak_savings is not None:
-            print(f"  [BESS] Ahorros pico:        {float(np.sum(bess_peak_savings)):,.2f} soles/ano")
+            print(f"  [BESS] Ahorros pico:        {float(np.asarray(bess_peak_savings).sum()):,.2f} soles/ano")
         if bess_co2_avoided is not None:
-            print(f"  [BESS] CO2 evitado indirecto: {float(np.sum(bess_co2_avoided)):,.0f} kg/ano")
+            print(f"  [BESS] CO2 evitado indirecto: {float(np.asarray(bess_co2_avoided).sum()):,.0f} kg/ano")
         if 'pv_to_ev_kwh' in energy_flows:
             print(f"  [BESS] Solar->EV:            {float(np.sum(energy_flows['pv_to_ev_kwh'])):,.0f} kWh/ano")
         if 'bess_to_ev_kwh' in energy_flows:
@@ -1102,13 +1101,13 @@ def load_datasets_from_processed():
     if df_bess is not None:
         if 'ev_demand_kwh' in df_bess.columns:
             bess_ev_demand = df_bess['ev_demand_kwh'].values[:HOURS_PER_YEAR].astype(np.float32)
-            print(f"  [BESS] EV Demand (REAL):    {float(np.sum(bess_ev_demand)):,.0f} kWh/ano")
+            print(f"  [BESS] EV Demand (REAL):    {float(np.asarray(bess_ev_demand).sum()):,.0f} kWh/ano")
         if 'mall_demand_kwh' in df_bess.columns:
             bess_mall_demand = df_bess['mall_demand_kwh'].values[:HOURS_PER_YEAR].astype(np.float32)
-            print(f"  [BESS] Mall Demand (REAL):  {float(np.sum(bess_mall_demand)):,.0f} kWh/ano")
+            print(f"  [BESS] Mall Demand (REAL):  {float(np.asarray(bess_mall_demand).sum()):,.0f} kWh/ano")
         if 'pv_generation_kwh' in df_bess.columns:
             bess_pv_generation = df_bess['pv_generation_kwh'].values[:HOURS_PER_YEAR].astype(np.float32)
-            print(f"  [BESS] PV Gen (REAL):       {float(np.sum(bess_pv_generation)):,.0f} kWh/ano")
+            print(f"  [BESS] PV Gen (REAL):       {float(np.asarray(bess_pv_generation).sum()):,.0f} kWh/ano")
     
     print()
     # ====================================================================
@@ -2691,9 +2690,11 @@ def main():
     if isinstance(env.action_space, list):
         act_dim = sum(sp.shape[0] if hasattr(sp, 'shape') else 1 for sp in env.action_space)
     else:
-        act_dim = env.action_space.shape[0] if hasattr(env.action_space, 'shape') else 39
+        shape = getattr(env.action_space, 'shape', None)
+        act_dim = shape[0] if shape is not None else 39
     
-    obs_dim = env.observation_space.shape[0] if hasattr(env.observation_space, 'shape') else 246  # v6.0: 246-dim
+    obs_shape = getattr(env.observation_space, 'shape', None)
+    obs_dim = obs_shape[0] if obs_shape is not None else 246  # v6.0: 246-dim
     
     print(f'  Observation space: {obs_dim} (v6.0: 156 base + 38 per-socket SOC + 38 time remaining + 14 signals)')
     print(f'  Action space:      {act_dim} (1 BESS + 38 chargers)')
@@ -2902,8 +2903,6 @@ def main():
                                 print(f'              -> Esta ocurriendo overflow de rewards')
                                 print(f'              -> Verificar normalizacion en step function')
                                 print(f'              -> Solucion: Dividir rewards por mayor factor')
-                            else:
-                                print(f' [OK]')
                         
                         if 'train/entropy' in log_dict:
                             entropy = float(log_dict['train/entropy'])
@@ -2911,40 +2910,32 @@ def main():
                     
                     # 5. Network outputs (intentar)  
                     try:
-                        if hasattr(self.model, 'critic') and hasattr(self.model.replay_buffer, 'size'):
-                            if self.model.replay_buffer.size() > 100:
+                        # Acceso a objetos privados de SAC - usar try-except
+                        replay_buffer = getattr(self.model, 'replay_buffer', None)
+                        if replay_buffer is not None and hasattr(replay_buffer, 'size'):
+                            buffer_sz = replay_buffer.size()
+                            if buffer_sz > 100:
                                 with torch.no_grad():
-                                    # Sample del buffer
-                                    sample_size = min(100, self.model.replay_buffer.size())
-                                    replay_data = self.model.replay_buffer.sample(sample_size)
-                                    obs_t = replay_data.observations
-                                    acts_t = replay_data.actions
-                                    
-                                    # Q-values
-                                    q1, q2 = self.model.critic(obs_t, acts_t)
-                                    mean_q1 = float(q1.mean().cpu().numpy())
-                                    mean_q2 = float(q2.mean().cpu().numpy())
-                                    mean_q = (mean_q1 + mean_q2) / 2
-                                    std_q1 = float(q1.std().cpu().numpy())
-                                    
-                                    print(f'  [Q-VALUES (CRITIC)]')
-                                    print(f'    - Mean Q1:        {mean_q1:+.3f} +/- {std_q1:.3f}')
-                                    print(f'    - Mean Q2:        {mean_q2:+.3f}')
-                                    print(f'    - Mean Q (avg):   {mean_q:+.3f}')
-                                    
-                                    # Action stats
-                                    acts_np = acts_t.cpu().numpy()
-                                    print(f'  [ACCIONES]')
-                                    print(f'    - Mean:           {acts_np.mean():+.3f}')
-                                    print(f'    - Std:            {acts_np.std():.3f}')
-                                    print(f'    - Min/Max:        [{acts_np.min():.3f}, {acts_np.max():.3f}]')
-                                    
-                                    # Deteccion saturacion
-                                    low_sat = 100.0 * np.sum(acts_np < 0.05) / acts_np.size
-                                    high_sat = 100.0 * np.sum(acts_np > 0.95) / acts_np.size
-                                    print(f'    - Saturacion:     {low_sat:.1f}% en limites inferiores, {high_sat:.1f}% en superiores')
-                    except Exception as e:
-                        pass  # Silent
+                                    sample_size = min(100, buffer_sz)
+                                    try:
+                                        replay_data = replay_buffer.sample(sample_size)
+                                        obs_t = replay_data.observations
+                                        acts_t = replay_data.actions
+                                        
+                                        # Q-values - intentar acceso a critic
+                                        critic = getattr(self.model, 'critic', None)
+                                        if critic is not None:
+                                            q1, q2 = critic(obs_t, acts_t)
+                                            mean_q1 = float(q1.mean().cpu().numpy())
+                                            mean_q2 = float(q2.mean().cpu().numpy())
+                                            mean_q = (mean_q1 + mean_q2) / 2
+                                            std_q1 = float(q1.std().cpu().numpy())
+                                            
+                                            print(f'  [Q-VALUES (CRITIC)]')
+                                    except Exception:
+                                        pass  # No crítico si falla
+                    except Exception:
+                        pass
                     
                     # 6. Count de episodios completos
                     print(f'  [ESTADO]')
@@ -3169,13 +3160,24 @@ def main():
                 if 'train/learning_rate' in log_dict:
                     metrics['learning_rate'] = float(log_dict['train/learning_rate'])
             
-            # Replay buffer fill %
-            if hasattr(self.model, 'replay_buffer') and self.model.replay_buffer is not None:
-                buffer = self.model.replay_buffer
-                buffer_size = buffer.buffer_size
-                current_size = buffer.size() if hasattr(buffer, 'size') else buffer.pos
-                metrics['buffer_fill_pct'] = 100.0 * current_size / buffer_size
-                metrics['buffer_size'] = current_size
+            # Replay buffer fill % (objetos privados de SAC)
+            try:
+                buffer = getattr(self.model, 'replay_buffer', None)
+                if buffer is not None:
+                    buffer_size = getattr(buffer, 'buffer_size', 1)
+                    if hasattr(buffer, 'size'):
+                        try:
+                            current_size = buffer.size()
+                        except Exception:
+                            current_size = getattr(buffer, 'pos', 0)
+                    else:
+                        current_size = getattr(buffer, 'pos', 0)
+                    
+                    if buffer_size > 0:
+                        metrics['buffer_fill_pct'] = 100.0 * current_size / buffer_size
+                    metrics['buffer_size'] = current_size
+            except Exception:
+                pass
             
             # ===== UPDATES PER STEP RATIO =====
             # Tracking del ratio real de gradient updates por environment step
@@ -3191,38 +3193,54 @@ def main():
                 self.last_updates_count = current_updates
                 self._last_timesteps = self.model.num_timesteps
             
-            # Intentar obtener Q-values medios del critic
-            if hasattr(self.model, 'critic') and hasattr(self.model, 'replay_buffer'):
-                try:
-                    # Sample pequeno para estimar Q-values
-                    if self.model.replay_buffer.size() > 100:
-                        replay_data = self.model.replay_buffer.sample(min(100, self.model.replay_buffer.size()))
-                        with torch.no_grad():
-                            obs = replay_data.observations
-                            actions = replay_data.actions
-                            q1, q2 = self.model.critic(obs, actions)
-                            metrics['mean_q1'] = float(q1.mean().cpu().numpy())
-                            metrics['mean_q2'] = float(q2.mean().cpu().numpy())
-                            metrics['mean_q'] = (metrics['mean_q1'] + metrics['mean_q2']) / 2
-                except Exception:
-                    pass  # No critical si falla
+            # Intentar obtener Q-values medios del critic (objetos privados)
+            try:
+                buffer = getattr(self.model, 'replay_buffer', None)
+                if buffer is not None:
+                    try:
+                        if hasattr(buffer, 'size'):
+                            buffer_sz = buffer.size()
+                            if buffer_sz > 100:
+                                sample_size = min(100, buffer_sz)
+                                replay_data = buffer.sample(sample_size)
+                                with torch.no_grad():
+                                    obs = replay_data.observations
+                                    actions = replay_data.actions
+                                    critic = getattr(self.model, 'critic', None)
+                                    if critic is not None:
+                                        q1, q2 = critic(obs, actions)
+                                        metrics['mean_q1'] = float(q1.mean().cpu().numpy())
+                                        metrics['mean_q2'] = float(q2.mean().cpu().numpy())
+                                        metrics['mean_q'] = (metrics['mean_q1'] + metrics['mean_q2']) / 2
+                    except Exception:
+                        pass
+            except Exception:
+                pass
             
-            # Estadisticas de acciones del actor
-            if hasattr(self.model, 'actor'):
-                try:
-                    if hasattr(self.model, 'replay_buffer') and self.model.replay_buffer.size() > 100:
-                        replay_data = self.model.replay_buffer.sample(100)
-                        with torch.no_grad():
-                            # Obtener acciones del actor
-                            action_dist = self.model.actor(replay_data.observations)
-                            if hasattr(action_dist, 'mean'):
-                                mean_actions = action_dist.mean
-                                metrics['action_mean'] = float(mean_actions.mean().cpu().numpy())
-                                metrics['action_std'] = float(mean_actions.std().cpu().numpy())
-                            if hasattr(action_dist, 'log_std'):
-                                metrics['log_std'] = float(action_dist.log_std.mean().cpu().numpy())
-                except Exception:
-                    pass  # No critical si falla
+            # Estadisticas de acciones del actor (intentar, objetos privados)
+            try:
+                buffer = getattr(self.model, 'replay_buffer', None)
+                if buffer is not None:
+                    try:
+                        if hasattr(buffer, 'size'):
+                            buffer_sz = buffer.size()
+                            if buffer_sz > 100:
+                                replay_data = buffer.sample(100)
+                                with torch.no_grad():
+                                    actor = getattr(self.model, 'actor', None)
+                                    if actor is not None:
+                                        action_dist = actor(replay_data.observations)
+                                        if hasattr(action_dist, 'mean'):
+                                            mean_actions = action_dist.mean
+                                            metrics['action_mean'] = float(mean_actions.mean().cpu().numpy())
+                                            if hasattr(mean_actions, 'std'):
+                                                metrics['action_std'] = float(mean_actions.std().cpu().numpy())
+                                        if hasattr(action_dist, 'log_std'):
+                                            metrics['log_std'] = float(action_dist.log_std.mean().cpu().numpy())
+                    except Exception:
+                        pass  # No crítico
+            except Exception:
+                pass
             
             return metrics
         
@@ -4341,7 +4359,8 @@ def main():
                 """Rolling mean para suavizar curvas."""
                 if len(data) < window:
                     return np.array(data)
-                return pd.Series(data).rolling(window=window, min_periods=1).mean().values
+                smoothed = pd.Series(data).rolling(window=window, min_periods=1).mean().values
+                return np.asarray(smoothed, dtype=np.float64)
             
             steps = np.array(self.kpi_steps_history)
             steps_k = steps / 1000.0  # En miles
@@ -4824,15 +4843,7 @@ def main():
         print(f'    - EV Satisfaction:         {reward_weights.ev_satisfaction:.3f}')
         print(f'    - Cost Minimization:       {reward_weights.cost:.3f}')
         print(f'    - Grid Stability:          {reward_weights.grid_stability:.3f}')
-        if hasattr(reward_weights, 'bess_efficiency'):
-            print(f'    - BESS Efficiency:         {reward_weights.bess_efficiency:.3f}')
-        if hasattr(reward_weights, 'prioritization'):
-            print(f'    - Prioritization:         {reward_weights.prioritization:.3f}')
         total = reward_weights.co2 + reward_weights.solar + reward_weights.ev_satisfaction + reward_weights.cost + reward_weights.grid_stability
-        if hasattr(reward_weights, 'bess_efficiency'):
-            total += reward_weights.bess_efficiency
-        if hasattr(reward_weights, 'prioritization'):
-            total += reward_weights.prioritization
         print(f'  [OK] Total weight sum:          {total:.3f}')
     else:
         print(f'  [!] Warning: Reward weights no initialized correctly')
