@@ -61,7 +61,7 @@ df_solar = integrate_datasets.integrate_datasets()
 ```
 OE2 Módulos Base
 ├── Solar       (8.29 GWh/año, 3,201 kW AC)
-├── Chargers    (453 MWh/año, 38 sockets)
+├── Chargers    (565.9 MWh/año, 38 sockets - 270 motos + 39 mototaxis/día)
 └── BESS        (1,700 kWh, 400 kW)
         │
         ▼
