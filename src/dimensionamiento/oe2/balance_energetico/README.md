@@ -11,7 +11,7 @@ Este módulo integra **todos los datasets** de CityLearn en un análisis unifica
 | **Generación Solar (PV)** | 4,050 kWp | `pv_generation_hourly_citylearn_v2.csv` |
 | **Almacenamiento (BESS)** | 1,700 kWh / 400 kW (v5.4) | `electrical_storage_simulation.csv` |
 | **Demanda Mall** | ~100 kW | `demandamallhorakwh.csv` |
-| **Demanda EV (38 sockets)** | ~50 kW (9h-22h) | `chargers_real_hourly_2024.csv` |
+| **Demanda EV (38 sockets)** | ~65 kW avg (119 kW 9h-22h) | `chargers_real_hourly_2024.csv` |
 | **Red Eléctrica** | ilimitada | Complementa déficit de PV+BESS |
 
 ## 🏗️ Estructura del Módulo

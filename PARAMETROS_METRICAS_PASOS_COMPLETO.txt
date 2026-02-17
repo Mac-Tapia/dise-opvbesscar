@@ -108,12 +108,15 @@ EV CHARGING INFRASTRUCTURE:
   Charging Standard:               Mode 3 (32A @ 230V)
   Total Installed Power:           281.2 kW
 
-VEHICLE DEMAND:
-  Electric Motorcycles:            270
-  Mototaxi (Shared Taxi):          39
-  Total Vehicles:                  309
-  Daily Demand:                    4100 vehicle-hours
-  Average Charge Duration:         1-2 hours
+VEHICLE DEMAND (v5.2 Chargers):
+  Electric Motorcycles:            270/día (pe=0.30, fc=0.55)
+  Mototaxi (Shared Taxi):          39/día (pe=0.30, fc=0.55)
+  Total Vehicles:                  309/día
+  Daily Energy Demand:             1,550.34 kWh/día (565,875 kWh/año)
+  Moto Battery:                    4.6 kWh
+  Mototaxi Battery:                7.4 kWh
+  Charge Time (real):              Moto ~60 min, Mototaxi ~90 min
+  Charging Efficiency:             62% (includes losses and taper)
 
 GRID CONNECTION:
   Max Import Capacity:             500 kW

@@ -34,7 +34,7 @@ DESCRIPCION:
   - Generacion solar PV (4,050 kWp)
   - Almacenamiento BESS (1,700 kWh / 400 kW - v5.4)
   - Demanda Mall (~100 kW)
-  - Demanda Vehiculos Electricos (38 sockets, 1,129 kWh/dia 9h-22h)
+  - Demanda Vehiculos Electricos (38 sockets, 1,550 kWh/dia 9h-22h)
   - Importacion de red electrica
 
 USO:
