@@ -1,0 +1,65 @@
+{
+  "selected_agent": "A2C",
+  "scores": {
+    "A2C": 0,
+    "PPO": 0,
+    "SAC": 0
+  },
+  "evaluations": {
+    "A2C": {
+      "co2_kg": 2115420.5,
+      "co2_score": 1.0,
+      "solar_consumption_pct": 65.0,
+      "solar_score": 1.0,
+      "avg_grid_kw": 4680326.5,
+      "grid_stability_score": -20.061465334569,
+      "vehicles_charged": 0,
+      "ev_satisfaction_score": 0.5,
+      "robustness_score": 1.0
+    },
+    "PPO": {
+      "co2_kg": 2738263.0,
+      "co2_score": 0.24480946501781767,
+      "solar_consumption_pct": 65.0,
+      "solar_score": 1.0,
+      "avg_grid_kw": 5335239.364672089,
+      "grid_stability_score": -23.00862515196762,
+      "vehicles_charged": 0,
+      "ev_satisfaction_score": 0.5,
+      "robustness_score": 1.0
+    },
+    "SAC": {
+      "co2_kg": 2940169.316554878,
+      "co2_score": 0.0,
+      "solar_consumption_pct": 0,
+      "solar_score": 0.0,
+      "avg_grid_kw": 2000,
+      "grid_stability_score": 0.9913748480323782,
+      "vehicles_charged": 0,
+      "ev_satisfaction_score": 0.5,
+      "robustness_score": 0.7
+    }
+  },
+  "criteria": {
+    "co2_reduction": {
+      "weight": 0.35,
+      "lower_is_better": true
+    },
+    "solar_utilization": {
+      "weight": 0.2,
+      "lower_is_better": false
+    },
+    "grid_stability": {
+      "weight": 0.15,
+      "lower_is_better": true
+    },
+    "ev_satisfaction": {
+      "weight": 0.2,
+      "lower_is_better": false
+    },
+    "robustness": {
+      "weight": 0.1,
+      "lower_is_better": false
+    }
+  }
+}
