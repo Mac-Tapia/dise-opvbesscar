@@ -460,9 +460,10 @@ class SACConfig:
         RESULTADO ESPERADO: +50% mejor rendimiento (15.35M -> 23M kg CO2)
         """
         # Learning rate ADAPTATIVO con warmup + cosine decay
+        # v7.4 FIX: Reducir LR para evitar Q-value explosion con reward scaling agresivo
         lr_schedule = cls.adaptive_lr_schedule(
-            initial_lr=5e-4,   # AUMENTADO: LR maximo 5e-4 (vs 3e-4)
-            min_lr=7e-5,       # AUMENTADO: min_lr 7e-5 (vs 5e-5)
+            initial_lr=2e-4,   # REDUCIDO v7.4: 5e-4 -> 2e-4 (mas conservador, evita grad explosion)
+            min_lr=3e-5,       # REDUCIDO v7.4: 7e-5 -> 3e-5
             warmup_fraction=0.05  # Sin cambio: 5% warmup
         )
         
@@ -474,10 +475,10 @@ class SACConfig:
             buffer_size=400_000,  # AUMENTADO: 300K -> 400K (33% mas experiencias)
             learning_starts=5_000,  # Sin cambio - warmup estandar
             
-            # Batch y updates - AGRESIVO MAS TRAINING
-            batch_size=128,  # AUMENTADO: 64 -> 128 (doble batch size)
-            train_freq=(2, 'step'),  # AUMENTADO: (4,step) -> (2,step) (x2 training)
-            gradient_steps=1,  # REDUCIDO: 2 -> 1 (evita overtraining, mas fresh data)
+            # Batch y updates - MODERADO (v7.4: FIX overtraining)
+            batch_size=64,  # REDUCIDO v7.4: 128 -> 64 (evita overshooting con aggressive schedule)
+            train_freq=(4, 'step'),  # REDUCIDO v7.4: (2,step) -> (4,step) (x2 menos training, mas stability)
+            gradient_steps=1,  # Sin cambio: 1 (evita overtraining)
             
             # Soft update - STANDARD SAC (paper recomienda 0.005)
             tau=0.005,  # AUMENTADO: 0.002 -> 0.005 (standard SAC paper)
@@ -867,9 +868,9 @@ def load_datasets_from_processed():
         print(f'  [CHARGERS]   Costo carga EV: {np.sum(chargers_data["costo_carga_ev_soles"]):,.0f} soles/año')
     
     # ===== PROCESAR ARCHIVO v3: EXTRAER POTENCIA DE CARGA =====
-    # Estructura: socket_XXX_charger_power_kw para cada socket 0-37 (38 total)
+    # Estructura: socket_XXX_charging_power_kw para cada socket 0-37 (38 total)
     # 38 sockets × 9 columnas/socket + 1 datetime = 343 columnas
-    socket_power_cols = [c for c in df_chargers.columns if c.endswith('_charger_power_kw')]
+    socket_power_cols = [c for c in df_chargers.columns if c.endswith('_charging_power_kw')]
     
     if len(socket_power_cols) != 38:
         raise ValueError(
@@ -2102,89 +2103,26 @@ def main():
                 r_time_urgency         # +/-2% - Urgencia temporal
             )
             
-            # ===== REWARD MULTIOBJETIVO v6.2 - FIX ACTOR LOSS -497 =====
-            # CRITICO: Normalizar TODOS componentes a [-1, 1] Y mantener reward en [-1, 1]
-            # No dividir por factores extra - SAC sabe manejar [-1, 1]
-            
-            W_CO2 = 0.45
-            W_SOLAR = 0.15
-            W_VEHICLES = 0.20          # Vehiculos cargando
-            W_COMPLETION = 0.10        # Vehiculos completados al 100%
-            W_STABILITY = 0.05
-            W_BESS_PEAK = 0.03
-            W_PRIORITIZATION = 0.02
-            # Total = 1.0 [OK]
-            
-            # ===== NORMALIZACION DE COMPONENTES (TODOS EN [-1, 1] O [0, 1]) =====
-            
-            # 1. CO2 Component: [0, 0.45] (positivo = recompensar solar, no penalizar grid)
-            # Grid import tipico: 0-1500 kW -> normalizar a [0, 1]
-            grid_import_normalized = np.clip(grid_import / 1500.0, 0.0, 1.0)
-            co2_component = W_CO2 * (1.0 - grid_import_normalized)  # [0, 0.45] - Positivo
-            
-            # 2. SOLAR Component: [0, 1] (cuanto solar se usa directo vs total demanda)
-            solar_fraction = solar_h / max(1.0, total_demand)
-            solar_component = W_SOLAR * np.clip(solar_fraction, 0.0, 1.0)  # [0, 0.15]
-            
-            # 3. VEHICLES Component: Cuantos vehiculos estan cargando AHORA
-            # 0-38 vehiculos conectados -> [0, 1]
-            vehicles_ratio_normalized = np.clip(total_vehicles / 38.0, 0.0, 1.0)
-            vehicles_component = W_VEHICLES * vehicles_ratio_normalized  # [0, 0.20]
-            
-            # 4. COMPLETION Component: Cuantos vehiculos completaron 100% hoy
-            # Sistema que premia completaciones por hora
-            completion_rate = (motos_100_count + taxis_100_count) / max(1.0, total_vehicles) if total_vehicles > 0 else 0.0
-            completion_component = W_COMPLETION * np.clip(completion_rate, 0.0, 1.0)  # [0, 0.10]
-            
-            # 5. STABILITY Component: Penalista cambios bruscos en BESS
-            # 1.0 = cambio suave, 0.0 = cambio brusco
-            bess_stability = 1.0 - np.clip(abs(bess_action - 0.5) * 2.0, 0.0, 1.0)
-            stability_component = W_STABILITY * bess_stability  # [0, 0.05]
-            
-            # 6. BESS PEAK Component: Bonus por usar BESS en horas pico inteligentemente
-            is_peak = 6 <= hour_24 <= 22
-            if is_peak and bess_action > 0.55:
-                # Descargando en pico = bueno
-                bess_peak_component = W_BESS_PEAK * 1.0  # [0, 0.03]
-            elif not is_peak and bess_action < 0.45:
-                # Cargando en valle = bueno
-                bess_peak_component = W_BESS_PEAK * 0.5  # [0, 0.015]
-            else:
-                # Posicion neutra o incorrecta
-                bess_peak_component = W_BESS_PEAK * 0.0
-            
-            # 7. PRIORITIZATION Component: Respeta urgencias de carga
-            prioritization_component = W_PRIORITIZATION * np.clip(prioritization_reward, -1.0, 1.0)  # [-0.02, 0.02]
-            
-            # ===== SUMA FINAL - RANGO GARANTIZADO [-1, 1] =====
-            base_reward = (
-                co2_component +           # [0, 0.45] - FIXED v7.1: positivo ahora
-                solar_component +         # [0, 0.15]
-                vehicles_component +      # [0, 0.20]
-                completion_component +    # [0, 0.10]
-                stability_component +     # [0, 0.05]
-                bess_peak_component +     # [0, 0.03]
-                prioritization_component  # [-0.02, 0.02]
-            )
-            # Suma dinamica: min ~+0.03, max ~+0.98 -> POSITIVA (FIXED v7.1: era [-0.47, +0.55])
-            
-            # ===== REWARD SCALING v7.3 CONTINUOUS IMPROVEMENT =====
-            # Objetivo: Q-values en rango [50, 100] (actual) -> [25, 50] (mejorado)
-            # Con gamma=0.99: Q_max = reward_max / (1-gamma) = reward_max * 100
+            # ===== SOLUCION v9.2 RADICAL - REWARD MINIMALISTA PURO =====
+            # PROBLEMA RAIZ: base_reward complejo genera Q-values 300+
+            # SOLUCION: IGNORA TODO EXCEPTO grid_import -BASED reward simplísimo
             # 
-            # Para Q_max = 50: reward_max = 50/100 = 0.5 ✓
-            # Para Q_max = 100: reward_max = 100/100 = 1.0 (actual v7.2)
+            # Solo 1 signal: grid import (kW)
+            # Solo 2 rangos: [0.0005, +0.0003] cuidadosamente calibrado
             #
-            # CONFIGURACION v7.3 MEJORADA:
-            # - base_reward tipico: [+0.03, +0.98] (positivo)
-            # - REWARD_SCALE = 0.5 -> scaled: [+0.015, +0.49] (mitad de v7.2)
-            # - Clip [-0.95, 0.95] -> Q-values esperados [25, 95] (mejor que 192)
-            REWARD_SCALE = 0.5  # REDUCIDO v7.3: 0.5 evita inflation (was 1.0) - Q ~= 50 en lugar de 192
             
-            # Aplicar scaling y clip para Q-values optimos
-            scaled_reward = base_reward * REWARD_SCALE
-            # v7.3 FIX: Clip con margen de seguridad [-0.5, 0.5] para rango final [-0.475, +0.475]
-            reward = float(np.clip(scaled_reward, -0.5, 0.5))  # Rango [-0.5, 0.5] (was [-0.95, 0.95]) - Q-values mejorados
+            if grid_import >= 800.0:
+                # Grid alto - penalizar
+                reward = -0.0003
+            elif grid_import >= 300.0:
+                # Grid moderado - neutral
+                reward = 0.0
+            else:
+                # Grid bajo - bonus
+                reward = +0.0005
+            
+            # CRITICAL: Static assignment, no base_reward interference
+            reward = float(np.clip(reward, -0.0005, 0.0005))
             
             # Acumular metricas por episodio
             self.episode_reward += reward
@@ -2360,7 +2298,7 @@ def main():
                 print(f'          PRIORIZACION:     Accuracy={m["prioritization_accuracy"]*100:.1f}% | Decisiones bajo escasez: {m["scarcity_decisions"]}')
                 print(f'          CARGADOS AL 100%: {m["total_charged_100"]} vehiculos')
                 if self.reward_weights:
-                    print(f'         Pesos usados:        CO2={self.reward_weights.co2:.2f} | Solar={self.reward_weights.solar:.2f} | EV={self.reward_weights.ev_satisfaction:.2f} | Prio={W_PRIORITIZATION:.2f}')
+                    print(f'         Pesos usados:        CO2={self.reward_weights.co2:.2f} | Solar={self.reward_weights.solar:.2f} | EV={self.reward_weights.ev_satisfaction:.2f} | (v9.2 minimal reward function)')
                 print()
             
             return obs, reward, done, truncated, info
