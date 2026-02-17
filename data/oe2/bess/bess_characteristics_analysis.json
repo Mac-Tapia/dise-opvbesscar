@@ -1,32 +1,32 @@
 {
-  "timestamp": "2026-02-14T10:28:43.157503",
+  "timestamp": "2026-02-17T07:28:24.190908",
   "bess_specs": {
     "capacity_kwh": 1700.0,
     "power_kw": 400.0,
     "efficiency_roundtrip": 0.95
   },
   "analysis": {
-    "horas_carga": 2278,
-    "horas_descarga": 1752,
-    "horas_idle": 4730,
+    "horas_carga": 2285,
+    "horas_descarga": 1755,
+    "horas_idle": 2530,
     "horas_full": 0,
-    "carga_total_kwh": 790715.5703739091,
-    "descarga_total_kwh": 677835.7315369502,
-    "carga_por_hora_activa_kwh": 347.10955679276077,
-    "descarga_por_hora_activa_kwh": 386.8925408315926,
-    "carga_promedio_pct_nominal": 86.77738919819019,
-    "descarga_promedio_pct_nominal": 96.72313520789815,
-    "cycles_per_year": 465.12680610229944,
-    "cycles_per_day": 1.2743200167186286,
-    "lifetime_wear_percent_per_year": 15.504226870076648,
-    "color_headroom_carga_descarga": 112879.83883695886,
-    "eficiencia_realizada_roundtrip": 85.7243434850308,
-    "bess_to_mall_kwh": 474882.29852431314,
-    "bess_to_mall_pct_demanda": 3.83940190192346,
-    "bess_to_ev_kwh": 143739.82056696466,
-    "bess_to_ev_pct_demanda": 34.868300021822606,
-    "horas_bess_atiende_mall": 1672,
-    "energia_prom_mall_por_hora_kwh": 284.02051347147915,
+    "carga_total_kwh": 792855.1539288275,
+    "descarga_total_kwh": 640332.0550346945,
+    "carga_por_hora_activa_kwh": 346.982561894454,
+    "descarga_por_hora_activa_kwh": 364.86156982033873,
+    "carga_promedio_pct_nominal": 86.7456404736135,
+    "descarga_promedio_pct_nominal": 91.21539245508467,
+    "cycles_per_year": 466.38538466401616,
+    "cycles_per_day": 1.277768177161688,
+    "lifetime_wear_percent_per_year": 15.546179488800538,
+    "color_headroom_carga_descarga": 152523.098894133,
+    "eficiencia_realizada_roundtrip": 80.76280413410485,
+    "bess_to_mall_kwh": 448737.89829667506,
+    "bess_to_mall_pct_demanda": 3.6280256087439358,
+    "bess_to_ev_kwh": 171443.47880081914,
+    "bess_to_ev_pct_demanda": 33.94573332626089,
+    "horas_bess_atiende_mall": 1531,
+    "energia_prom_mall_por_hora_kwh": 293.1011745895983,
     "horas_activas_mall_del_dia": [
       11,
       12,
@@ -46,7 +46,7 @@
       "soc_max_pct": 100.0,
       "soc_min_pct": 20.0,
       "carga_total_kwh": 967.2143549040596,
-      "descarga_total_kwh": 1600.0
+      "descarga_total_kwh": 1332.1726640989673
     }
   }
 }

@@ -204,8 +204,8 @@ def integration_example():
         pv_kwh=df_pv['pv_kwh'].values,
         ev_kwh=df_ev['ev_kwh'].values,
         mall_kwh=df_mall['mall_kwh'].values,
-        capacity_kwh=1700.0,   # v5.2 CORRECTED: 1,700 kWh max SOC
-        power_kw=342.0,       # v5.2: 342 kW
+        capacity_kwh=1700.0,   # v5.4: 1,700 kWh max SOC
+        power_kw=400.0,        # v5.4: 400 kW
         dod=0.80,
         efficiency=0.95,
     )
@@ -213,10 +213,10 @@ def integration_example():
     # Generar graficas BESS
     generate_bess_plots(
         df_bess_sim,
-        capacity_kwh=940.0,   # v5.2
-        power_kw=342.0,       # v5.2
+        capacity_kwh=1700.0,   # v5.4: 1,700 kWh
+        power_kw=400.0,        # v5.4: 400 kW
         dod=0.80,
-        c_rate=0.36,
+        c_rate=0.235,  # 400/1700 = 0.235
         mall_kwh_day=df_mall['mall_kwh'].mean(),
         ev_kwh_day=df_ev['ev_kwh'].mean(),
         pv_kwh_day=df_pv['pv_kwh'].mean(),
@@ -231,8 +231,8 @@ def integration_example():
     config = BalanceEnergeticoConfig(
         data_dir=Path("data/processed/citylearn/iquitos_ev_mall"),
         pv_capacity_kwp=4050.0,
-        bess_capacity_kwh=1700.0,   # v5.2 CORRECTED: 1,700 kWh max SOC
-        bess_power_kw=342.0,       # v5.2: 342 kW
+        bess_capacity_kwh=1700.0,   # v5.4: 1,700 kWh max SOC
+        bess_power_kw=400.0,        # v5.4: 400 kW
         dod=0.80,
         efficiency_roundtrip=0.95,
     )

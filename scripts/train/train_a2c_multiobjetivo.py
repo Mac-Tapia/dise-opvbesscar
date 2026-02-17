@@ -40,10 +40,10 @@ from src.dataset_builder_citylearn.rewards import (
 )
 from src.agents.training_validation import validate_agent_config
 
-# ===== CONSTANTES IQUITOS v5.3 (2026-02-14) CON COMUNICACION SISTEMA =====
+# ===== CONSTANTES IQUITOS v5.4 (2026-02-17) CON COMUNICACION SISTEMA =====
 CO2_FACTOR_IQUITOS: float = 0.4521  # kg CO2/kWh (grid termico aislado)
-BESS_CAPACITY_KWH: float = 1700.0   # 1,700 kWh max SOC (verificado desde bess_simulation_hourly.csv)
-BESS_MAX_POWER_KW: float = 342.0    # 342 kW potencia maxima BESS
+BESS_CAPACITY_KWH: float = 1700.0   # 1,700 kWh max SOC (DoD 80%)
+BESS_MAX_POWER_KW: float = 400.0    # 400 kW potencia maxima BESS (v5.4)
 HOURS_PER_YEAR: int = 8760
 
 # v5.3: Constantes para normalizacion de observaciones

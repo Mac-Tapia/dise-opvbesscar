@@ -214,13 +214,13 @@ class PPOConfig:
         }
 
 # ============================================================================
-# CONSTANTES OE2 v5.2 (Iquitos, Peru) - 2026-02-16 (ACTUALIZADO)
+# CONSTANTES OE2 v5.4 (Iquitos, Peru) - 2026-02-17 (ACTUALIZADO)
 # ============================================================================
 CO2_FACTOR_IQUITOS = 0.4521  # kg CO2/kWh - factor de emision grid Iquitos
-BESS_CAPACITY_KWH = 1700.0   # 1,700 kWh max SOC (verificado desde bess_simulation_hourly.csv)
+BESS_CAPACITY_KWH = 1700.0   # 1,700 kWh max SOC (DoD 80%)
 BESS_MAX_KWH_CONST = 1700.0  # 1,700 kWh total (para normalizacion observaciones)
 BESS_MAX_KWH = BESS_MAX_KWH_CONST  # Usar 1700 para normalizacion (CORRECTED)
-BESS_MAX_POWER_KW = 342.0    # 342 kW potencia maxima BESS
+BESS_MAX_POWER_KW = 400.0    # 400 kW potencia maxima BESS (v5.4)
 
 # ============================================================================
 # CONSTANTES DE NORMALIZACION (CRITICO para PPO - Engstrom 2020)
