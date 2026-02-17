@@ -243,6 +243,117 @@ class MultiObjectiveReward:
         self._reward_history: list[dict[str, float]] = []
         self._max_history = 1000
 
+    def calculate_vehicles_charged_detailed(
+        self,
+        charger_soc_motos: list[float] | None = None,
+        charger_soc_mototaxis: list[float] | None = None,
+        soc_target: float = 0.90,
+        soc_charging_threshold: float = 0.85,
+    ) -> dict[str, float]:
+        """
+        CALCULO MEJORADO DE VEHICULOS CARGADOS - DIFERENCIA MOTOS Y MOTOTAXIS (2026-02-16)
+        
+        Diferencia entre motos (30 sockets) y mototaxis (8 sockets) basado en:
+        - State of Charge (SOC) actual de cada socket
+        - Meta de carga (target = 0.90 por defecto)
+        - Capacidad máxima cargable por día (270 motos + 39 mototaxis)
+        
+        Args:
+            charger_soc_motos: Lista de SOC actual para 30 sockets de motos [0-1]
+            charger_soc_mototaxis: Lista de SOC actual para 8 sockets de mototaxis [0-1]
+            soc_target: Meta de SOC objetivo (default 0.90 = 90%)
+            soc_charging_threshold: SOC minimo para contar como "en carga" (default 0.85)
+        
+        Returns:
+            Dict con métricas detalladas:
+            - motos_charged: # motos que alcanzaron target
+            - mototaxis_charged: # mototaxis que alcanzaron target
+            - total_charged: # total vehículos cargados
+            - motos_in_progress: # motos en proceso (<target)
+            - mototaxis_in_progress: # mototaxis en proceso (<target)
+            - motos_pct_of_daily_capacity: % del objetivo diario (270 motos)
+            - mototaxis_pct_of_daily_capacity: % del objetivo diario (39 mototaxis)
+            - vehicles_charged_equivalent: Total normalizado a capacidad diaria
+            - charging_status: str resumen del estado
+        """
+        result = {
+            'motos_charged': 0,
+            'mototaxis_charged': 0,
+            'total_charged': 0,
+            'motos_in_progress': 0,
+            'mototaxis_in_progress': 0,
+            'motos_pct_of_daily_capacity': 0.0,
+            'mototaxis_pct_of_daily_capacity': 0.0,
+            'vehicles_charged_equivalent': 0.0,
+            'charging_status': 'IDLE',
+            'motos_avg_soc': 0.0,
+            'mototaxis_avg_soc': 0.0,
+        }
+
+        # Si no hay data de chargers, usar fallback simple
+        if charger_soc_motos is None and charger_soc_mototaxis is None:
+            return result
+
+        # Procesar MOTOS (30 sockets)
+        if charger_soc_motos is not None and len(charger_soc_motos) > 0:
+            motos_soc = np.array(charger_soc_motos, dtype=np.float32)
+            motos_soc = np.clip(motos_soc, 0.0, 1.0)
+
+            # Contar motos que alcanzaron target (≥ soc_target)
+            motos_at_target = np.sum(motos_soc >= soc_target)
+            # Contar motos en carga (target > SOC ≥ threshold)
+            motos_charging = np.sum((motos_soc >= soc_charging_threshold) & (motos_soc < soc_target))
+
+            result['motos_charged'] = int(motos_at_target)
+            result['motos_in_progress'] = int(motos_charging)
+            result['motos_avg_soc'] = float(np.mean(motos_soc))
+            
+            # % de capacidad diaria (270 motos/día target)
+            result['motos_pct_of_daily_capacity'] = (motos_at_target / self.context.motos_daily_capacity) * 100.0
+
+        # Procesar MOTOTAXIS (8 sockets)
+        if charger_soc_mototaxis is not None and len(charger_soc_mototaxis) > 0:
+            taxis_soc = np.array(charger_soc_mototaxis, dtype=np.float32)
+            taxis_soc = np.clip(taxis_soc, 0.0, 1.0)
+
+            # Contar mototaxis que alcanzaron target
+            taxis_at_target = np.sum(taxis_soc >= soc_target)
+            # Contar mototaxis en carga
+            taxis_charging = np.sum((taxis_soc >= soc_charging_threshold) & (taxis_soc < soc_target))
+
+            result['mototaxis_charged'] = int(taxis_at_target)
+            result['mototaxis_in_progress'] = int(taxis_charging)
+            result['mototaxis_avg_soc'] = float(np.mean(taxis_soc))
+            
+            # % de capacidad diaria (39 mototaxis/día target)
+            result['mototaxis_pct_of_daily_capacity'] = (taxis_at_target / self.context.mototaxis_daily_capacity) * 100.0
+
+        # Totales
+        result['total_charged'] = result['motos_charged'] + result['mototaxis_charged']
+        
+        # Calculo normalizado: comparar vs capacidad diaria
+        # Formula: (motos_cargadas / 270) × 0.87 + (taxis_cargadas / 39) × 0.13
+        # Factor 0.87 = proporción de motos en flota (270/309)
+        # Factor 0.13 = proporción de taxis en flota (39/309)
+        motos_ratio = result['motos_charged'] / max(1, self.context.motos_daily_capacity)
+        taxis_ratio = result['mototaxis_charged'] / max(1, self.context.mototaxis_daily_capacity)
+        
+        moto_weight = 0.87
+        taxi_weight = 0.13
+        result['vehicles_charged_equivalent'] = (motos_ratio * moto_weight) + (taxis_ratio * taxi_weight)
+
+        # Status string
+        total_in_progress = result['motos_in_progress'] + result['mototaxis_in_progress']
+        if result['total_charged'] > 0:
+            if total_in_progress > 0:
+                result['charging_status'] = f"CHARGING: {result['total_charged']} done, {total_in_progress} in progress"
+            else:
+                result['charging_status'] = f"COMPLETE: {result['total_charged']} vehicles at target"
+        else:
+            result['charging_status'] = "IDLE: No vehicles charging"
+
+        return result
+
     def compute(
         self,
         grid_import_kwh: float,

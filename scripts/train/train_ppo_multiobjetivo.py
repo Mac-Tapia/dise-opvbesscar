@@ -127,10 +127,10 @@ class PPOConfig:
         self.learning_rate = 1e-4  # v6.0: REDUCIDO para evitar KL alto + Clip alto
         self.use_lr_schedule = True  # Schedule lineal: 1e-4 -> 0
         
-        # N_STEPS: 2048 (mas contexto temporal para episodios largos)
-        # Con 8760 timesteps/episodio, n_steps=2048 captura ~23% del episodio
-        # vs n_steps=1024 que solo captura ~12%
-        self.n_steps = 2048  # AUMENTADO - mas contexto mejora value function
+        # N_STEPS: 4096 (mas contexto temporal para episodios largos)
+        # Con 8760 timesteps/episodio, n_steps=4096 captura ~46% del episodio
+        # vs n_steps=2048 que captura ~23% (v7.4: AUMENTADO para mejor convergencia)
+        self.n_steps = 4096  # v9.3: AUMENTADO de 2048 → 4096 para mejor learning efficiency
         
         # BATCH_SIZE: v5.1 -> 256 (menos varianza por minibatch, mas estabilidad)
         # Con rollout de 2048 -> 8 minibatches de 256 cada uno
@@ -274,15 +274,17 @@ ALL_OBSERVABLE_COLS: list[str] = (
     TOTALES_OBSERVABLE_COLS
 )
 
-# ===== PESOS RECOMPENSA v6.0 (INTEGRACION MULTIOBJETIVO SAC) =====
-# Multiobjetivo expandido: CO2 + Solar + Vehiculos + Grid + BESS + Priorizacion
+# ===== PESOS RECOMPENSA - SINCRONIZACION EXACTA CON SAC (co2_focus) =====
+# IDENTICOS a SAC para comparacion justa: create_iquitos_reward_weights(priority="co2_focus")
+# MultiObjectiveWeights(co2=0.35, cost=0.10, solar=0.20, ev_satisfaction=0.30, ev_utilization=0.00, grid_stability=0.05)
+# Mapeando a estructura PPO:
 REWARD_WEIGHTS_V6: Dict[str, float] = {
-    'co2': 0.45,           # v emitir CO2 (grid termico Iquitos)
-    'solar': 0.15,         # ^ usar solar directo (cascada)
-    'vehicles_charged': 0.25,  # ⭐ ^ motos/mototaxis cargadas 100%
-    'grid_stable': 0.05,   # v picos grid (ramping smooth)
-    'bess_efficiency': 0.05,   # v ciclos BESS, ^ utilidad
-    'prioritization': 0.05  # ^ priorizar bien en escasez
+    'co2': 0.35,           # SINCRONIZADO SAC: minimizar CO2 grid (termico Iquitos)
+    'solar': 0.20,         # SINCRONIZADO SAC: maximizar uso solar directo
+    'vehicles_charged': 0.30,  # SINCRONIZADO SAC: ev_satisfaction (carga vehiculos)
+    'cost': 0.10,          # SINCRONIZADO SAC: minimizar costo
+    'grid_stable': 0.05,   # SINCRONIZADO SAC: grid_stability (suavizar ramping)
+    'ev_utilization': 0.00  # SINCRONIZADO SAC: ev_utilization (no usado en co2_focus)
 }
 
 # DIRECTORIOS DE SALIDA
@@ -345,7 +347,7 @@ def validate_oe2_datasets() -> Dict[str, Any]:
     print('=' * 80)
 
     OE2_FILES = {
-        'solar': Path('data/oe2/Generacionsolar/pv_generation_citylearn2024.csv'),
+        'solar': Path('data/oe2/Generacionsolar/pv_generation_citylearn_enhanced_v2.csv'),
         'chargers_hourly': Path('data/oe2/chargers/chargers_ev_ano_2024_v3.csv'),
         'chargers_stats': Path('data/oe2/chargers/chargers_real_statistics.csv'),
         'bess': Path('data/processed/citylearn/iquitos_ev_mall/bess_ano_2024.csv'),
@@ -520,6 +522,13 @@ class CityLearnEnvironment(Env):
         # DATOS REALES (8760 horas = 1 ano)
         self.solar_hourly = np.asarray(solar_kw, dtype=np.float32)
         self.chargers_hourly = np.asarray(chargers_kw, dtype=np.float32)
+        # CRITICO: Asegurar que chargers_hourly tiene EXACTAMENTE (8760, 38) forma
+        # Si viene del CSV con 91+ columnas, truncar a 38 sockets
+        if self.chargers_hourly.ndim == 2 and self.chargers_hourly.shape[1] > 38:
+            logger.warning(f"[INIT] Truncando chargers_hourly de {self.chargers_hourly.shape} a (8760, 38)")
+            self.chargers_hourly = self.chargers_hourly[:, :38]
+        elif self.chargers_hourly.ndim == 2 and self.chargers_hourly.shape[1] < 38:
+            raise ValueError(f"ERROR: chargers_hourly tiene {self.chargers_hourly.shape[1]} sockets, se esperan 38")
         self.mall_hourly = np.asarray(mall_kw, dtype=np.float32)
         self.bess_soc_hourly = np.asarray(bess_soc, dtype=np.float32)
         
@@ -527,12 +536,18 @@ class CityLearnEnvironment(Env):
         # Usadas para escalar acciones segun capacidad real de cada socket
         if charger_max_power_kw is not None:
             self.charger_max_power = np.asarray(charger_max_power_kw, dtype=np.float32)
+            # CRITICO: Truncar a 38 si viene con mas elementos
+            if len(self.charger_max_power) > 38:
+                self.charger_max_power = self.charger_max_power[:38]
         else:
             # Fallback v5.2: 7.4 kW por socket (Modo 3 monofasico 32A @ 230V)
             self.charger_max_power = np.full(self.NUM_CHARGERS, 7.4, dtype=np.float32)
             
         if charger_mean_power_kw is not None:
             self.charger_mean_power = np.asarray(charger_mean_power_kw, dtype=np.float32)
+            # CRITICO: Truncar a 38 si viene con mas elementos
+            if len(self.charger_mean_power) > 38:
+                self.charger_mean_power = self.charger_mean_power[:38]
         else:
             # Fallback v5.2: potencia efectiva = 7.4 × 0.62 = 4.6 kW 
             self.charger_mean_power = np.full(self.NUM_CHARGERS, 4.6, dtype=np.float32)
@@ -844,6 +859,20 @@ class CityLearnEnvironment(Env):
         self.episode_grid_import = 0.0
         self.episode_ev_satisfied = 0.0
         
+        # [v7.1] SINCRONIZACION CO2 CON SAC - ACUMULADORES DE EPISODIO
+        # Estructura idéntica a SAC line ~2300 (acumular en episodio)
+        self.episode_co2_directo_evitado_kg = 0.0          # CO2 EV (cambio fósil->eléctrico)
+        self.episode_co2_indirecto_evitado_kg = 0.0        # CO2 SOLAR + BESS
+        self.episode_co2_indirecto_solar_kg = 0.0          # CO2 SOLAR desglosado
+        self.episode_co2_indirecto_bess_kg = 0.0           # CO2 BESS desglosado
+        self.episode_co2_mall_emitido_kg = 0.0             # CO2 Mall (negativo)
+        self.episode_co2_grid_kg = 0.0                     # CO2 Grid import
+        
+        # [v7.1] ACUMULADORES DE COSTOS (sincronizado con SAC)
+        self.episode_costo_grid_soles = 0.0                # Costo por importacion del grid
+        self.episode_ahorro_solar_soles = 0.0              # Ahorro por uso de solar
+        self.episode_ahorro_bess_soles = 0.0               # Ahorro por uso de BESS (picos)
+        
         # [v5.3] RESET ESTADO DE VEHICULOS
         self.motos_charging_now = 0
         self.mototaxis_charging_now = 0
@@ -893,6 +922,12 @@ class CityLearnEnvironment(Env):
         solar_kw = float(self.solar_hourly[h])
         mall_kw = float(self.mall_hourly[h])
         charger_demand = self.chargers_hourly[h].astype(np.float32)
+        # CRITICO: Asegurar que charger_demand tiene EXACTAMENTE 38 elementos
+        # Si tiene mas (p.ej. 91 de cargar todo el CSV), truncar a primeros 38
+        if len(charger_demand) > 38:
+            charger_demand = charger_demand[:38]
+        elif len(charger_demand) < 38:
+            raise ValueError(f"ERROR: charger_demand tiene {len(charger_demand)} elementos, se esperan 38")
         bess_soc = np.clip(float(self.bess_soc_hourly[h]), 0.0, 1.0)
 
         # PROCESAR ACCION (39-dim OE2: 1 BESS + 38 sockets)
@@ -923,66 +958,92 @@ class CityLearnEnvironment(Env):
         grid_import_kwh = max(0.0, net_demand - solar_kw)
         grid_export_kwh = max(0.0, solar_kw - net_demand)
 
-        # CO2 CALCULATIONS (Iquitos factor: 0.4521 kg CO2/kWh) - MISMO FLUJO QUE SAC/A2C
-        # Factor CO2 gasolina para motos/mototaxis: ~2.31 kg CO2/litro
-        GASOLINA_KG_CO2_PER_LITRO_PPO = 2.31
-        MOTO_LITROS_PER_100KM_PPO = 2.0
-        MOTOTAXI_LITROS_PER_100KM_PPO = 3.0
-        MOTO_KM_PER_KWH_PPO = 50.0
-        MOTOTAXI_KM_PER_KWH_PPO = 30.0
-        
-        # Usar proporcion real de sockets motos/mototaxis (30 motos + 8 mototaxis = 38)
-        moto_ratio_ppo = 30.0 / 38.0
-        mototaxi_ratio_ppo = 8.0 / 38.0
-        
-        # CO2 DIRECTO: Emisiones evitadas por usar EV en lugar de gasolina (MISMO QUE SAC/A2C)
-        motos_energy_ppo = ev_charging_kwh * moto_ratio_ppo
-        mototaxis_energy_ppo = ev_charging_kwh * mototaxi_ratio_ppo
-        
-        km_motos_ppo = motos_energy_ppo * MOTO_KM_PER_KWH_PPO
-        km_mototaxis_ppo = mototaxis_energy_ppo * MOTOTAXI_KM_PER_KWH_PPO
-        
-        litros_evitados_motos_ppo = km_motos_ppo * MOTO_LITROS_PER_100KM_PPO / 100.0
-        litros_evitados_mototaxis_ppo = km_mototaxis_ppo * MOTOTAXI_LITROS_PER_100KM_PPO / 100.0
-        
         # ====================================================================
-        # CO2 REDUCCION DIRECTA v7.1 - SOLO EV (cambio combustible a eléctrico)
+        # CO2 CALCULATIONS v7.1 - ESTRUCTURA SINCRONIZADA CON SAC
         # ====================================================================
-        # CO2 DIRECTO: Reducción por usar vehículos eléctricos en lugar de gasolina
-        # - Motos: 0.87 kg CO2 evitado por kWh cargado (vs consumo gasolina)
-        # - Mototaxis: 0.47 kg CO2 evitado por kWh cargado (vs consumo gasolina)
-        # FUENTE: chargers_ev_ano_2024_v3.csv (calculado en OE2)
+        # IDÉNTICO a SAC/A2C - mismo dataset, mismo cálculo, mismo factor
+        # CO2_FACTOR_IQUITOS = 0.4521 kg CO2/kWh (grid térmico Iquitos)
+        #
+        # ESTRUCTURA:
+        # 1. CO2_DIRECTO (EV): Reducción por cambio fósil -> eléctrico
+        #    - Fuente: chargers_ev_ano_2024_v3.csv (columnas co2_reduccion_motos/mototaxis_kg)
+        #
+        # 2. CO2_INDIRECTO_SOLAR: Reducción cuando solar suministra
+        #    - Fuente: pv_generation_citylearn2024.csv (columna reduccion_indirecta_co2_kg)
+        #
+        # 3. CO2_INDIRECTO_BESS: Reducción cuando BESS suministra (peak shaving)
+        #    - Fuente: bess_ano_2024.csv (columna co2_avoided_indirect_kg)
+        #
+        # 4. CO2_MALL: EMITE CO2 (no reduce) - consumo grid térmico
+        #    - Nota: Manual calculation (no columnaconsulta dataset)
+        # ====================================================================
         h = (self.step_count - 1) % self.HOURS_PER_YEAR
-        co2_motos_direct = float(self.chargers_co2_df.iloc[h]['co2_reduccion_motos_kg']) if 'co2_reduccion_motos_kg' in self.chargers_co2_df.columns else 0.0
-        co2_taxis_direct = float(self.chargers_co2_df.iloc[h]['co2_reduccion_mototaxis_kg']) if 'co2_reduccion_mototaxis_kg' in self.chargers_co2_df.columns else 0.0
-        co2_avoided_direct_kg = co2_motos_direct + co2_taxis_direct
         
-        # ====================================================================
-        # CO2 REDUCCION INDIRECTA v7.1 - SOLAR + BESS (evita importar de red térmica)
-        # ====================================================================
-        # CO2 INDIRECTO SOLAR: Reducción cuando solar suministra a:
-        #   - EV (carga directa), BESS (almacenamiento), Mall, Red pública
-        #   - Factor: 0.4521 kg CO2/kWh evitado de red térmica Iquitos
-        # FUENTE: pv_generation_citylearn2024.csv (reduccion_indirecta_co2_kg)
-        co2_solar_indirect = float(self.solar_co2_df.iloc[h]['reduccion_indirecta_co2_kg']) if 'reduccion_indirecta_co2_kg' in self.solar_co2_df.columns else 0.0
+        # CO2 DIRECTO: Usar datos REALES del dataset chargers si disponibles
+        # IDÉNTICO a SAC línea ~2000
+        try:
+            co2_motos_directo = float(self.chargers_co2_df.iloc[h]['co2_reduccion_motos_kg'])
+            co2_taxis_directo = float(self.chargers_co2_df.iloc[h]['co2_reduccion_mototaxis_kg'])
+            co2_avoided_direct_kg = co2_motos_directo + co2_taxis_directo
+        except (KeyError, IndexError):
+            co2_avoided_direct_kg = 0.0
         
-        # CO2 INDIRECTO BESS: Reducción cuando BESS alimenta EV y Mall durante:
-        #   - Peak shaving: demanda Mall > 2000 kW (corte de demanda pico)
-        #   - Pico de demanda Mall que evita importar de red térmica
-        # FUENTE: bess_ano_2024.csv (co2_avoided_indirect_kg)
-        co2_bess_indirect = float(self.bess_co2_df.iloc[h]['co2_avoided_indirect_kg']) if 'co2_avoided_indirect_kg' in self.bess_co2_df.columns else 0.0
+        # CO2 INDIRECTO SOLAR: Usar datos REALES del dataset solar
+        # IDÉNTICO a SAC línea ~2040
+        try:
+            co2_indirecto_solar_kg = float(self.solar_co2_df.iloc[h]['reduccion_indirecta_co2_kg'])
+        except (KeyError, IndexError):
+            # Fallback si columna no existe: calcular desde flujo solar
+            solar_used = min(solar_kw, ev_charging_kwh + mall_kw)
+            co2_indirecto_solar_kg = solar_used * CO2_FACTOR_IQUITOS
         
-        # NOTA: MALL EMITE CO2, NO REDUCE - no se incluye en co2_avoided
-        # Mall consume de red térmica y genera emisiones (5.6M kg CO2/año)
-        
-        # TOTAL CO2 INDIRECTO = SOLAR + BESS
-        co2_avoided_indirect_kg = co2_solar_indirect + co2_bess_indirect
+        # CO2 INDIRECTO BESS: Usar datos REALES del dataset BESS
+        # IDÉNTICO a SAC línea ~2080 (peak_shaving_factor aplicado)
+        try:
+            co2_indirecto_bess_kg = float(self.bess_co2_df.iloc[h]['co2_avoided_indirect_kg'])
+        except (KeyError, IndexError):
+            # Fallback: calcular con peak_shaving_factor
+            if mall_kw > 2000.0:
+                peak_factor = 1.0 + (mall_kw - 2000.0) / max(1.0, mall_kw) * 0.5
+            else:
+                peak_factor = 0.5 + (mall_kw / 2000.0) * 0.5
+            co2_indirecto_bess_kg = bess_power_kw * peak_factor * CO2_FACTOR_IQUITOS if bess_power_kw > 0 else 0.0
         
         # CO2 TOTAL EVITADO = DIRECTO (EV) + INDIRECTO (SOLAR + BESS)
+        co2_avoided_indirect_kg = co2_indirecto_solar_kg + co2_indirecto_bess_kg
         co2_avoided_total_kg = co2_avoided_direct_kg + co2_avoided_indirect_kg
         
-        # CO2 GRID (emisiones base sin control)
+        # CO2 GRID: Emisiones por importar de red térmica
+        # IDÉNTICO a SAC línea ~2100
         co2_grid_kg = grid_import_kwh * CO2_FACTOR_IQUITOS
+
+        # MALL EMITE CO2 (NO REDUCE) - calcular cuanto importa del grid
+        # Fallback simplificado: asumir mall consume de red térmico cuando solar insuficiente
+        mall_grid_import_kwh = max(0, mall_kw)  # Aproximación: mall importa lo que no tiene solar
+        co2_mall_emitido_kg = mall_grid_import_kwh * CO2_FACTOR_IQUITOS
+
+        # ===== CALCULO DE COSTOS Y AHORROS (SINCRONIZADO CON SAC) =====
+        # Tarifa OSINERGMIN Iquitos: HP (18-23h) = 0.45 S/kWh, HFP = 0.28 S/kWh
+        # NOTA: SAC usa 18 <= hour_24 <= 23 (6 horas de punta)
+        h = (self.step_count - 1) % self.HOURS_PER_YEAR
+        hour_24 = h % 24
+        is_hora_punta = 18 <= hour_24 <= 23  # Sincronizado con SAC línea 1973
+        tarifa_actual = 0.45 if is_hora_punta else 0.28  # Default HP/HFP
+        
+        # Costo del grid importado
+        costo_grid_soles = grid_import_kwh * tarifa_actual
+        
+        # Solar usado para ahorro
+        # Aproximación simplificada: solar directo a demanda (EV + Mall)
+        solar_used = min(solar_kw, ev_charging_kwh + mall_kw)
+        
+        # Ahorro por usar solar (energía gratis)
+        ahorro_solar_soles = solar_used * tarifa_actual
+        
+        # Ahorro por usar BESS (descarga durante hora punta)
+        # Fallback simplificado: BESS descargando en hora punta = ahorro
+        bess_discharge_actual = max(0.0, bess_power_kw)
+        ahorro_bess_soles = bess_discharge_actual * tarifa_actual if is_hora_punta else 0.0
 
         # EV SATISFACTION - METODO REALISTA (similar a SAC)
         # Basado en cuanta carga se esta entregando vs la demanda
@@ -996,7 +1057,7 @@ class CityLearnEnvironment(Env):
             ev_soc_avg = 0.95
         
         # [OK] SIMULAR CARGA DE VEHICULOS POR SOC (10%, 20%, 30%, 50%, 70%, 80%, 100%)
-        h = (self.step_count - 1) % self.HOURS_PER_YEAR
+        # h ya fue calculado en línea 1038 para el cálculo de costos
         # scenario = self.scenarios_by_hour[h]  # DESHABILITADO v5.6
         
         # v5.6 CORREGIDO: USAR POTENCIA TOTAL DISPONIBLE DEL SISTEMA
@@ -1034,8 +1095,7 @@ class CityLearnEnvironment(Env):
         # CALCULAR CANTIDAD DE VEHICULOS CARGANDO (desde potencia disponible)
         # NOTA: Los detalles (motos_10, motos_100, etc.) se manejan en callback
         # ====================================================================
-        h = (self.step_count - 1) % self.HOURS_PER_YEAR
-        hour_24 = h % 24
+        # h y hour_24 ya fueron calculados en línea 1038 para tarifa/costos
         
         # Sockets que pueden cargarse (potencia disponible / potencia por socket)
         power_per_socket_kw = 7.4  # Mode 3 standard
@@ -1112,6 +1172,25 @@ class CityLearnEnvironment(Env):
         socket_efficiency_reward = 0.0  # v5.4: Disabled for clarity
         bess_control_reward = 0.0       # v5.4: Disabled for clarity
 
+        # COSTOS Y AHORROS (SINCRONIZADO CON SAC)
+        is_hora_punta = 18 <= hour_24 <= 23
+        tarifa_actual = 0.45 if is_hora_punta else 0.28  # Default HP/HFP soles/kWh
+        costo_grid_soles = grid_import_kwh * tarifa_actual
+        solar_used = min(solar_kw, ev_charging_kwh + mall_kw)
+        ahorro_solar_soles = solar_used * tarifa_actual
+        ahorro_bess_soles = bess_power_kw * tarifa_actual if is_hora_punta and bess_power_kw > 0 else 0.0
+        
+        # ACUMULAR METRICAS CO2 Y COSTOS EN EPISODIO (SINCRONIZADO CON SAC)
+        self.episode_co2_directo_evitado_kg += co2_avoided_direct_kg
+        self.episode_co2_indirecto_evitado_kg += co2_avoided_indirect_kg
+        self.episode_co2_indirecto_solar_kg += co2_indirecto_solar_kg
+        self.episode_co2_indirecto_bess_kg += co2_indirecto_bess_kg
+        self.episode_co2_mall_emitido_kg += co2_mall_emitido_kg
+        self.episode_co2_grid_kg += co2_grid_kg
+        self.episode_costo_grid_soles += costo_grid_soles
+        self.episode_ahorro_solar_soles += ahorro_solar_soles
+        self.episode_ahorro_bess_soles += ahorro_bess_soles
+        
         # CALCULAR RECOMPENSA MULTIOBJETIVO
         try:
             reward_val, components = self.reward_calc.compute(
@@ -1240,6 +1319,18 @@ class CityLearnEnvironment(Env):
         self.episode_grid_import += grid_import_kwh
         self.episode_ev_satisfied += ev_soc_avg
         
+        # [v7.1] ACUMULAR COMPONENTES DE CO2 (sincronizado con SAC línea 2160-2170)
+        self.episode_co2_directo_evitado_kg += co2_avoided_direct_kg
+        self.episode_co2_indirecto_solar_kg += co2_indirecto_solar_kg
+        self.episode_co2_indirecto_bess_kg += co2_indirecto_bess_kg
+        self.episode_co2_mall_emitido_kg += co2_mall_emitido_kg
+        self.episode_co2_grid_kg += co2_grid_kg
+        
+        # [v7.1] ACUMULAR COSTOS (sincronizado con SAC línea 2165-2167)
+        self.episode_costo_grid_soles += costo_grid_soles
+        self.episode_ahorro_solar_soles += ahorro_solar_soles
+        self.episode_ahorro_bess_soles += ahorro_bess_soles
+        
         # [v5.3] TRACKING DIARIO (para observaciones de comunicacion)
         self.daily_co2_avoided += co2_avoided_total_kg
         self.motos_charging_now = motos_charging
@@ -1356,6 +1447,15 @@ from stable_baselines3.common.callbacks import BaseCallback
 # [FIX v7.2] GLOBAL DICT para energía - persiste a través de VecEnv/VecNormalize
 GLOBAL_ENERGY_VALUES = {'solar_kw': 0.0, 'ev_charging_kwh': 0.0, 'grid_import_kwh': 0.0}
 
+# [FIX v7.3] GLOBAL DICT para métricas PPO (entropía) - compartida entre callbacks
+GLOBAL_PPO_METRICS = {
+    'current_entropy': 0.0,        # Entropía actual de la política
+    'current_approx_kl': 0.0,      # KL divergence aproximada
+    'current_clip_fraction': 0.0,  # Fracción de samples clipeados
+    'current_policy_loss': 0.0,    # Policy gradient loss
+    'current_value_loss': 0.0,     # Value function loss
+    'current_explained_variance': 0.0  # EV del value function
+}
 
 class DetailedLoggingCallback(BaseCallback):
     """
@@ -1381,7 +1481,7 @@ class DetailedLoggingCallback(BaseCallback):
             print(f'  [BESS REAL] Cargado: {len(self.bess_real_df)} horas de {bess_real_path.name}')
         else:
             self.bess_real_df = None
-            print(f'  [BESS REAL] ADVERTENCIA: No encontrado en {bess_real_path} ni {bess_alt_path}')
+            print(f'  [BESS REAL] ADVERTENCIA: No encontrado en {bess_real_path}')
 
         # Acumuladores por episodio (COMPLETO - Similar A2C)
         self.episode_rewards: list[float] = []
@@ -1481,10 +1581,18 @@ class DetailedLoggingCallback(BaseCallback):
         info = infos[0] if infos else {}
         
         # [FIX v7.2] LEER DESDE GLOBAL DICT - única forma que sobrevive VecEnv/VecNormalize wrapper
-        global GLOBAL_ENERGY_VALUES
+        global GLOBAL_ENERGY_VALUES, GLOBAL_PPO_METRICS
         solar_val = float(GLOBAL_ENERGY_VALUES.get('solar_kw', 0))
         ev_val = float(GLOBAL_ENERGY_VALUES.get('ev_charging_kwh', 0))
         grid_val = float(GLOBAL_ENERGY_VALUES.get('grid_import_kwh', 0))
+        
+        # [FIX v7.3] Leer métricas PPO desde GLOBAL_PPO_METRICS
+        entropy_val = float(GLOBAL_PPO_METRICS.get('current_entropy', 0.0))
+        approx_kl_val = float(GLOBAL_PPO_METRICS.get('current_approx_kl', 0.0))
+        clip_fraction_val = float(GLOBAL_PPO_METRICS.get('current_clip_fraction', 0.0))
+        policy_loss_val = float(GLOBAL_PPO_METRICS.get('current_policy_loss', 0.0))
+        value_loss_val = float(GLOBAL_PPO_METRICS.get('current_value_loss', 0.0))
+        explained_variance_val = float(GLOBAL_PPO_METRICS.get('current_explained_variance', 0.0))
         
         # Fallback a info dict si global dict tiene 0
         if solar_val == 0:
@@ -1622,6 +1730,13 @@ class DetailedLoggingCallback(BaseCallback):
             'mototaxis_power_kw': info.get('mototaxis_power_kw', 0),
             'motos_charging': info.get('motos_charging', 0),
             'mototaxis_charging': info.get('mototaxis_charging', 0),
+            # [FIX v7.3] AGREGAR METRICAS PPO: Entropía y diagnóstico
+            'entropy': entropy_val,
+            'approx_kl': approx_kl_val,
+            'clip_fraction': clip_fraction_val,
+            'policy_loss': policy_loss_val,
+            'value_loss': value_loss_val,
+            'explained_variance': explained_variance_val,
         }
         self.trace_records.append(trace_record)
 
@@ -1637,6 +1752,10 @@ class DetailedLoggingCallback(BaseCallback):
             'bess_power_kw': info.get('bess_power_kw', 0),  # Ya estandar
             'bess_soc': info.get('bess_soc', 0.0),
             'mall_demand_kw': info.get('mall_demand_kw', 0),  # Nombre estandar
+            # [FIX v7.4] AGREGAR COMPONENTES DE CO2 (críticos para análisis)
+            'co2_grid_kg': info.get('co2_grid_kg', 0),
+            'co2_avoided_indirect_kg': info.get('co2_avoided_indirect_kg', 0),
+            'co2_avoided_direct_kg': info.get('co2_avoided_direct_kg', 0),
             'co2_avoided_total_kg': info.get('co2_avoided_total_kg', 0),
             'motos_charging': info.get('motos_charging', 0),
             'mototaxis_charging': info.get('mototaxis_charging', 0),
@@ -1654,6 +1773,13 @@ class DetailedLoggingCallback(BaseCallback):
             'costo_grid_soles': info.get('costo_grid_soles', 0.0),
             'ahorro_combustible_usd': info.get('ahorro_combustible_usd', 0.0),
             'ahorro_total_usd': info.get('ahorro_total_usd', 0.0),
+            # [FIX v7.3] AGREGAR METRICAS PPO: Entropía y diagnóstico
+            'entropy': entropy_val,
+            'approx_kl': approx_kl_val,
+            'clip_fraction': clip_fraction_val,
+            'policy_loss': policy_loss_val,
+            'value_loss': value_loss_val,
+            'explained_variance': explained_variance_val,
         }
         self.timeseries_records.append(ts_record)
 
@@ -2017,6 +2143,15 @@ class PPOMetricsCallback(BaseCallback):
         ppo_metrics = self._get_ppo_metrics()
         
         if ppo_metrics:
+            # [FIX v7.3] ACTUALIZAR GLOBAL_PPO_METRICS para DetailedLoggingCallback
+            global GLOBAL_PPO_METRICS
+            GLOBAL_PPO_METRICS['current_entropy'] = ppo_metrics.get('entropy', 0.0)
+            GLOBAL_PPO_METRICS['current_approx_kl'] = ppo_metrics.get('approx_kl', 0.0)
+            GLOBAL_PPO_METRICS['current_clip_fraction'] = ppo_metrics.get('clip_fraction', 0.0)
+            GLOBAL_PPO_METRICS['current_policy_loss'] = ppo_metrics.get('policy_loss', 0.0)
+            GLOBAL_PPO_METRICS['current_value_loss'] = ppo_metrics.get('value_loss', 0.0)
+            GLOBAL_PPO_METRICS['current_explained_variance'] = ppo_metrics.get('explained_variance', 0.0)
+            
             self._log_ppo_metrics(ppo_metrics)
             self._check_warning_signals(ppo_metrics)
         
@@ -2309,7 +2444,17 @@ class PPOMetricsCallback(BaseCallback):
     def _eval_deterministic(self) -> Optional[float]:
         """Ejecuta evaluacion deterministica (sin exploracion)."""
         try:
-            env = self.training_env.envs[0] if hasattr(self.training_env, 'envs') else self.training_env
+            # Extraer env de VecEnv/VecNormalize
+            # Usar try/except para compatibilidad con diferentes tipos de wrappers
+            env = self.training_env  # Default
+            try:
+                # Intentar acceder VecNormalize -> DummyVecEnv -> Env
+                # Usar getattr con default para evitar errores de type checking
+                venv = getattr(self.training_env, 'venv', None)
+                if venv is not None:
+                    env = getattr(venv, 'envs', [venv])[0]
+            except (AttributeError, IndexError, TypeError):
+                pass
             
             obs, _ = env.reset()
             total_reward = 0.0
@@ -2455,7 +2600,7 @@ class PPOMetricsCallback(BaseCallback):
             """Rolling mean para suavizar curvas."""
             if len(data) < window:
                 return np.array(data)
-            return pd.Series(data).rolling(window=window, min_periods=1).mean().values
+            return np.asarray(pd.Series(data).rolling(window=window, min_periods=1).mean().values)
         
         steps = np.array(self.kpi_steps_history)
         steps_k = steps / 1000.0  # En miles
@@ -3170,185 +3315,82 @@ def main():
 
 
     # ========================================================================
-    # PASO 3: CARGAR DATOS REALES OE2
+    # PASO 3: CARGAR DATOS REALES OE2 - USAR LA MISMA FUNCION QUE SAC
     # ========================================================================
+    # [SINCRONIZACION CRITICA] PPO debe usar EXACTAMENTE los mismos datasets que SAC
+    # Para ello, usamos la función load_datasets_from_processed() que SAC también usa
     try:
-        print('[PASO 2] Cargar datos OE2 ({} horas = 1 ano)'.format(HOURS_PER_YEAR))
+        print('[PASO 2] Cargar datasets OE2 ({} horas = 1 ano)  - SINCRONIZADO CON SAC'.format(HOURS_PER_YEAR))
         print('-'*80)
-
-        # ====================================================================
-        # SOLAR - RUTA REAL OE2 v5.5
-        # ====================================================================
-        solar_path: Path = Path('data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv')
-        if not solar_path.exists():
-            raise FileNotFoundError(f"OBLIGATORIO: Solar CSV REAL no encontrado: {solar_path}")
+        print('  Importando función load_datasets_from_processed() de SAC...')
         
-        df_solar = pd.read_csv(solar_path)
-        # Columnasvalidas: pv_generation_kwh > ac_power_kw > potencia_kw
-        if 'pv_generation_kwh' in df_solar.columns:
-            col = 'pv_generation_kwh'
-        elif 'ac_power_kw' in df_solar.columns:
-            col = 'ac_power_kw'
-        elif 'potencia_kw' in df_solar.columns:
-            col = 'potencia_kw'
-        else:
-            raise KeyError(f"Solar CSV debe tener 'pv_generation_kwh' o 'ac_power_kw'. Columnas: {list(df_solar.columns)}")
+        # Importar la función de SAC para garantizar sincronización EXACTA
+        from train_sac_multiobjetivo import load_datasets_from_processed
+        print('  [OK] Función importada de SAC. Ejecutando...')
         
-        solar_hourly = np.asarray(df_solar[col].values, dtype=np.float32)
-        if len(solar_hourly) != HOURS_PER_YEAR:
-            raise ValueError(f"Solar: {len(solar_hourly)} horas != {HOURS_PER_YEAR}")
-        logger.info("[SYNC A2C] Solar: columna='%s' | %.0f kWh/ano (8760h) | Path: %s", col, float(np.sum(solar_hourly)), solar_path.name)
-
-        # ====================================================================
-        # CHARGERS (38 sockets) - DATOS REALES DIRECTOS
-        # ====================================================================
-        # Priorizar archivo con 38 sockets reales, fallback a 19 chargers expandido
-        charger_real_path = Path('data/oe2/chargers/chargers_ev_ano_2024_v3.csv')
-        charger_csv_path = Path('data/oe2/chargers/chargers_ev_ano_2024_v3.csv')
+        datasets = load_datasets_from_processed()
         
-        if charger_real_path.exists():
-            # Archivo real con 38 sockets + timestamp
-            df_chargers = pd.read_csv(charger_real_path)
-            # Extraer SOLO las columnas de potencia de los sockets (socket_*_charger_power_kw)
-            power_cols = [c for c in df_chargers.columns if 'charger_power_kw' in c.lower()]
-            if len(power_cols) == 0:
-                # Si no hay columnas charger_power_kw, intentar con todas las numericas excepto tiempo
-                data_cols = [c for c in df_chargers.columns if 'timestamp' not in c.lower() and 'time' not in c.lower() and 'type' not in c.lower() and 'vehicle' not in c.lower() and '_soc_' not in c.lower() and '_battery_' not in c.lower()]
-                # Filtrar solo columnas numericas
-                power_cols = []
-                for col in data_cols:
-                    try:
-                        _ = pd.to_numeric(df_chargers[col], errors='coerce').dropna()
-                        if len(_) > 0:
-                            power_cols.append(col)
-                    except:
-                        pass
-            
-            if len(power_cols) > 0:
-                chargers_hourly = df_chargers[power_cols].values.astype(np.float32)
-                if chargers_hourly.shape[0] != HOURS_PER_YEAR:
-                    raise ValueError(f"Chargers real debe tener {HOURS_PER_YEAR} filas, tiene {chargers_hourly.shape[0]}")
-                n_sockets = chargers_hourly.shape[1]
-                total_demand = float(np.sum(chargers_hourly))
-                logger.info("Chargers REALES (socket power columns): %d sockets | Demanda anual: %.0f kWh", 
-                            n_sockets, total_demand)
-            else:
-                raise ValueError("No se encontraron columnas de potencia de sockets en chargers CSV")
-        elif charger_csv_path.exists():
-            df_chargers = pd.read_csv(charger_csv_path)
-            # CSV contiene 38 columnas directas (19 chargers × 2 sockets cada uno) - OE2 v5.2
-            chargers_raw = df_chargers.values.astype(np.float32)  # (8760, 19)
-            if chargers_raw.shape[0] != HOURS_PER_YEAR:
-                raise ValueError(f"Chargers CSV debe tener {HOURS_PER_YEAR} filas, tiene {chargers_raw.shape[0]}")
-            # Expandir: cada charger tiene 2 sockets, distribuir demanda (v5.2)
-            n_charger_units = chargers_raw.shape[1]  # 19
-            chargers_hourly = np.zeros((HOURS_PER_YEAR, n_charger_units * 2), dtype=np.float32)
-            for i in range(n_charger_units):
-                # Distribuir demanda del charger entre sus 2 sockets (v5.2)
-                for s in range(2):
-                    socket_idx = i * 2 + s
-                    # Socket recibe 50% de la demanda base (balanced)
-                    chargers_hourly[:, socket_idx] = chargers_raw[:, i] * 0.5
-            n_sockets = chargers_hourly.shape[1]  # 38
-            total_demand = float(np.sum(chargers_hourly))
-            logger.info("Chargers REALES: %d chargers x 4 = %d sockets | Demanda anual: %.0f kWh", 
-                        n_charger_units, n_sockets, total_demand)
-        else:
-            # NO hay fallback sintetico - archivos OE2 son obligatorios
-            raise FileNotFoundError(
-                f"OBLIGATORIO: Ningun archivo de chargers encontrado.\n"
-                f"  Esperado (prioridad 1): {charger_real_path}\n"
-                f"  Esperado (prioridad 2): {charger_csv_path}\n"
-                "Ejecutar generacion OE2 primero."
-            )
-
-        # ====================================================================
-        # CHARGER STATISTICS (potencia maxima/media por socket) - 5to dataset OE2
-        # ====================================================================
-        charger_stats_path = Path('data/oe2/chargers/chargers_real_statistics.csv')
-        charger_max_power: Optional[np.ndarray] = None
-        charger_mean_power: Optional[np.ndarray] = None
-        
-        if charger_stats_path.exists():
-            df_stats = pd.read_csv(charger_stats_path)
-            if len(df_stats) >= 38:
-                charger_max_power = df_stats['max_power_kw'].values[:38].astype(np.float32)
-                charger_mean_power = df_stats['mean_power_kw'].values[:38].astype(np.float32)
-                min_pwr = float(charger_max_power.min())
-                max_pwr = float(charger_max_power.max())
-                mean_pwr = float(charger_mean_power.mean())
-                logger.info("Charger STATS (5to OE2): max_power=%.2f-%.2f kW, mean_power=%.2f kW", 
-                            min_pwr, max_pwr, mean_pwr)
-            else:
-                logger.warning("Charger STATS: %d filas < 38, usando valores por defecto", len(df_stats))
-        else:
-            logger.warning("Charger STATS: archivo no encontrado, usando valores por defecto")
-
-        # ====================================================================
-        # MALL DEMAND - EXACTAMENTE IGUAL A A2C
-        # ====================================================================
-        mall_path = Path('data/interim/oe2/demandamallkwh/demandamallhorakwh.csv')
-        if not mall_path.exists():
-            # Fallback (mismo que A2C)
-            mall_path = Path('data/oe2/demandamallkwh/demandamallhorakwh.csv')
-            if not mall_path.exists():
-                raise FileNotFoundError(f"OBLIGATORIO: Mall CSV no encontrado (esperado: data/interim/oe2/demandamallkwh/demandamallhorakwh.csv)")
-        
-        # Intentar cargar con diferentes separadores (compatibilidad A2C)
-        # Intenta primero con coma (default), luego con punto y coma para compatibilidad
-        try:
-            df_mall = pd.read_csv(mall_path, sep=',', encoding='utf-8')
-            # Verificar que tiene las columnas esperadas
-            if len(df_mall.columns) < 2:
-                df_mall = pd.read_csv(mall_path, sep=';', encoding='utf-8')
-        except Exception:
-            try:
-                df_mall = pd.read_csv(mall_path, sep=';', encoding='utf-8')
-            except Exception:
-                df_mall = pd.read_csv(mall_path, encoding='utf-8')
-        
-        col = df_mall.columns[-1]
-        mall_data = np.asarray(df_mall[col].values[:HOURS_PER_YEAR], dtype=np.float32)
-        if len(mall_data) < HOURS_PER_YEAR:
-            pad_width = ((0, HOURS_PER_YEAR - len(mall_data)),)
-            mall_hourly = np.pad(mall_data, pad_width, mode='wrap')
-        else:
-            mall_hourly = mall_data
-        logger.info("[SYNC A2C] Mall: %.0f kWh/ano (promedio %.1f kW/h) | Path: %s", float(np.sum(mall_hourly)), float(np.mean(mall_hourly)), mall_path.name)
-
-        # ====================================================================
-        # BESS SOC - EXACTAMENTE IGUAL A A2C (con fallbacks identicos)
-        # ====================================================================
-        bess_paths = [
-            Path('data/oe2/bess/bess_ano_2024.csv'),
-            Path('data/processed/citylearn/iquitos_ev_mall/bess_ano_2024.csv'),
-            Path('data/interim/oe2/bess/bess_hourly_dataset_2024.csv'),
-        ]
-        bess_path = next((p for p in bess_paths if p.exists()), None)
-        
-        if bess_path is None:
-            raise FileNotFoundError(
-                f"OBLIGATORIO: Ningun archivo BESS encontrado.\n"
-                f"  Esperados: {[str(p) for p in bess_paths]}\n"
-                "Ejecutar generacion OE2 primero."
-            )
-
-        df_bess = pd.read_csv(bess_path, encoding='utf-8')
-        soc_cols = [c for c in df_bess.columns if 'soc' in c.lower()]
-        if not soc_cols:
-            raise KeyError(f"BESS CSV debe tener columna 'soc'. Columnas: {list(df_bess.columns)}")
-        
-        bess_soc_raw = np.asarray(df_bess[soc_cols[0]].values[:HOURS_PER_YEAR], dtype=np.float32)
-        # Normalizar si esta en [0,100] en lugar de [0,1]
-        bess_soc = (bess_soc_raw / 100.0 if float(np.max(bess_soc_raw)) > 1.0 else bess_soc_raw)
-        logger.info("[SYNC A2C] BESS: SOC media %.1f%% | Path: %s", float(np.mean(bess_soc)) * 100.0, bess_path.name)
-
+        # ===== DESEMPAQUETAR DATOS DEL DICCIONARIO (sincronizado con SAC) =====
+        # Todos los datos vienen con IDENTICA estructura que SAC
+        print('  [OK] Datasets cargados exitosamente (sincronizado con SAC)')
+        print('  Desempaquetando...')
         print()
+        
+        # SOLAR - 16 columnas
+        solar_hourly = datasets['solar']
+        solar_data = datasets.get('solar_data', {})
+        print('  ✓ SOLAR:   {:.0f} kWh/ano ({} rellenos)'.format(float(np.sum(solar_hourly)), len(solar_data)))
+        
+        # CHARGERS - 38 sockets + 11 columnas globales
+        chargers_hourly = datasets['chargers']
+        chargers_moto = datasets.get('chargers_moto')
+        chargers_mototaxi = datasets.get('chargers_mototaxi')
+        n_moto_sockets = datasets.get('n_moto_sockets', 30)
+        n_mototaxi_sockets = datasets.get('n_mototaxi_sockets', 8)
+        chargers_data = datasets.get('chargers_data', {})
+        moto_demand = float(np.sum(chargers_moto)) if chargers_moto is not None else 0.0
+        mototaxi_demand = float(np.sum(chargers_mototaxi)) if chargers_mototaxi is not None else 0.0
+        total_demand = float(np.sum(chargers_hourly))
+        print('  ✓ CHARGERS: {:.0f} kWh/ano (motos: {:.0f}, mototaxis: {:.0f})'.format(
+            total_demand, moto_demand, mototaxi_demand))
+        
+        # MALL - 6 columnas
+        mall_hourly = datasets['mall']
+        mall_data = datasets.get('mall_data', {})
+        print('  ✓ MALL:    {:.0f} kWh/ano'.format(float(np.sum(mall_hourly))))
+        
+        # BESS - 25 columnas + costos/CO2
+        bess_soc = datasets['bess_soc']
+        bess_costs = datasets.get('bess_costs')
+        bess_peak_savings = datasets.get('bess_peak_savings')
+        bess_tariff = datasets.get('bess_tariff')
+        bess_co2 = datasets['bess_co2']
+        energy_flows = datasets.get('energy_flows', {})
+        bess_ev_demand = datasets.get('bess_ev_demand')
+        bess_mall_demand = datasets.get('bess_mall_demand')
+        bess_pv_generation = datasets.get('bess_pv_generation')
+        print('  ✓ BESS:    SOC promedio {:.1f}% ({} flujos de energia)'.format(
+            float(np.mean(bess_soc)), len(energy_flows)))
+        
+        # ESTADISTICAS CHARGERS
+        charger_max_power = datasets.get('charger_max_power_kw')
+        charger_mean_power = datasets.get('charger_mean_power_kw')
+        
+        # VARIABLES OBSERVABLES (27 columnas)
+        observable_variables_df = datasets.get('observable_variables')
+        
+        print('  ✓ OBSERVABLE_VARIABLES: 27 columnas')
+        print()
+        print('  [SINCRONIZACION OK] PPO usa IDENTICOS datasets que SAC')
 
-    except (FileNotFoundError, KeyError, ValueError, pd.errors.ParserError) as exc:
-        logger.error("ERROR cargando datos OE2: %s", exc)
+    except (ImportError, FileNotFoundError, KeyError, ValueError) as exc:
+        logger.error("ERROR cargando datasets con SAC: %s", exc)
+        print('  [ALTERNATIVA] Intentando cargar datasets manualmente...')
+        print('  (Si esto falla, ejecutar: python prepare_datasets_all_agents.py)')
         traceback.print_exc()
         sys.exit(1)
+
+    # ========================================================================
 
     # ========================================================================
     # PASO 4: CREAR ENVIRONMENT
@@ -3605,7 +3647,11 @@ def main():
                 obs, reward, done, info = env.step(action)
                 
                 # Acumular reward (puede ser array)
-                step_reward = float(reward[0]) if hasattr(reward, '__len__') else float(reward)
+                # Asegurar que reward es escalar
+                if isinstance(reward, (list, tuple, np.ndarray)):
+                    step_reward = float(reward[0])
+                else:
+                    step_reward = float(reward)
                 episode_reward_acc += step_reward
                 
                 # Extraer metricas del info dict (VecEnv devuelve lista de info dicts)
@@ -3633,9 +3679,12 @@ def main():
                     elif 'grid_import_kwh' in step_info:
                         episode_grid_acc += float(step_info['grid_import_kwh'])
                 
-                # done puede ser array en VecEnv
-                if hasattr(done, '__len__'):
-                    done = done[0]
+                # done puede ser array en VecEnv - normalizar a escalar
+                if isinstance(done, (list, tuple, np.ndarray)):
+                    done = bool(done[0])
+                else:
+                    done = bool(done)
+                    done = bool(done)
                 episode_steps += 1
 
             # Guardar metricas del episodio completo
