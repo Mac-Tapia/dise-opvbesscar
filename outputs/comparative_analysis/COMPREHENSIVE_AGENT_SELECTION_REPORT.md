@@ -322,7 +322,7 @@ OE2 Datasets (Iquitos 2024):
 - Solar Generation: 8,292,514 kWh/year (4,050 kWp installation)
 - Chargers: 38 sockets × 7.4 kW (19 chargers for 38 vehicles/day)
 - BESS: 1,700 kWh max SOC (4.4 MWh total capacity design)
-- Mall Load: 12,368,653 kWh/year (baseline consumption)
+- Mall Load: 12,403,168 kWh/year (baseline consumption)
 - EV Demand: 565,874.75 kWh/year from 30 motos + 8 mototaxis daily
 - Grid CO₂ Factor: 0.4521 kg/kWh (thermal generation in isolated grid)
 ```

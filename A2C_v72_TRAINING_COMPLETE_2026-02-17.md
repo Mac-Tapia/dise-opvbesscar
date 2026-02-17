@@ -26,7 +26,7 @@ DESPUÉS: SAC: 11 ZIP | PPO: 46 ZIP | A2C: 0 ZIP
 ✓ Solar     | 8,760 × 16 cols | 8,292,514 kWh/año
 ✓ Chargers  | 8,760 × 244 cols | 565,875 kWh/año
 ✓ BESS      | 8,760 × 25 cols | 55.2% avg SOC
-✓ Mall      | 8,760 × 6 cols | 12,368,653 kWh/año
+✓ Mall      | 8,760 × 6 cols | 12,403,168 kWh/año
 ```
 
 ---

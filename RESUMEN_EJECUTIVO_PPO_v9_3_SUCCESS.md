@@ -25,7 +25,7 @@ Acciones:
 ```
 ✅ Solar:    8,292,514 kWh/año (946.6 kW promedio)
 ✅ Chargers: 565,875 kWh/año (64.6 kW promedio, 38 sockets)
-✅ Mall:     12,368,653 kWh/año (1,411.9 kW promedio)
+✅ Mall:     12,403,168 kWh/año (1,415.9 kW promedio)
 ✅ BESS:     1,700 kWh máx, 55.2% SOC promedio
 ```
 

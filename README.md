@@ -630,8 +630,8 @@ gae_lambda: 0.95
    - Archivo: bess_simulation_hourly.csv
 
 ✅ Mall Demand:
-   - Consumo: 12,368,653 kWh/año
-   - Media: 1,411.9 kW
+   - Consumo: 12,403,168 kWh/año
+   - Media: 1,415.9 kW
    - Patrón: Diario, previsible
    - Archivo: demandamallhorakwh.csv
 
@@ -736,7 +736,7 @@ Todos los datasets están completos con **8,760 horas** (1 año) de datos reales
 | Dataset | Archivo | Filas | Valor Anual | Promedio/Hora |
 | ------- | ------- | ----- | ----------- | ------------- |
 | **Generación Solar** | `pv_generation_timeseries.csv` | 8,760 | **8,292.5 MWh** | 946.6 kWh |
-| **Demanda Mall** | `demandamallhorakwh.csv` | 8,760 | **12.37 GWh** | 1,411.9 kWh |
+| **Demanda Mall** | `demandamallhorakwh.csv` | 8,760 | **12.40 GWh** | 1,415.9 kWh |
 | **Chargers EV** | `chargers_hourly_profiles_annual.csv` | 8,760 | **232,341 kWh** | 26.5 kWh |
 | **BESS SOC** | `bess_hourly_dataset_2024.csv` | 8,760 | SOC 15.6% prom | - |
 
@@ -756,7 +756,7 @@ Máximo:    3,201 kWh/hora (AC nominal inversor)
 ```text
 Ubicación: data/interim/oe2/demandamallkwh/
 Columnas:  FECHAHORA, kWh
-Total:     12,368,653 kWh/año (12.37 GWh)
+Total:     12,403,168 kWh/año (12.40 GWh)
 Máximo:    2,767.4 kWh/hora
 ```
 
@@ -902,7 +902,7 @@ Project Root (3 archivos .md solamente):
 | ------------ | ------------------------------- |
 | Código       | ✅ 0 errores Pylance            |
 | Dataset Solar | ✅ 8,760 horas - 8.29 GWh/año  |
-| Dataset Mall  | ✅ 8,760 horas - 12.37 GWh/año |
+| Dataset Mall  | ✅ 8,760 horas - 12.40 GWh/año |
 | Dataset Chargers | ✅ 8,760 × 38 sockets       |
 | Dataset BESS | ✅ 8,760 horas - 1,700 kWh max |
 | Agentes      | ✅ SAC 🥇, PPO 🥈, A2C 🥉 entrenados |
