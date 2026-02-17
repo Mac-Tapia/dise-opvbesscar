@@ -106,6 +106,36 @@ Diseñar e implementar un sistema inteligente de carga para vehículos eléctric
 | **Agente RL** | A2C (Advantage Actor-Critic) | Optimización multi-objetivo |
 | **Ambiente** | CityLearn v2 | Simulación y entrenamiento |
 
+### Arquitectura CityLearn v2
+
+El proyecto utiliza **CityLearn v2** como ambiente de simulación para el entrenamiento de agentes de Aprendizaje por Refuerzo. CityLearn es un framework estándar para investigación en control inteligente de edificios y sistemas energéticos distribuidos.
+
+```mermaid
+graph TB
+    subgraph ENV["🏙️ CityLearn v2 Environment"]
+        OBS["📊 Observations<br/>156 dimensiones"]
+        ACT["🎮 Actions<br/>39 dimensiones"]
+        REW["🎯 Reward<br/>Multi-objetivo"]
+    end
+    
+    subgraph DATA["📁 Datasets OE2"]
+        SOLAR["☀️ Solar PV<br/>8,292 MWh/año"]
+        BESS["🔋 BESS<br/>1,700 kWh"]
+        CHARGERS["⚡ Chargers<br/>38 sockets"]
+        MALL["🏬 Mall<br/>12,403 MWh/año"]
+    end
+    
+    subgraph AGENTS["🤖 RL Agents"]
+        A2C["A2C ✅<br/>62.4% CO₂"]
+        PPO["PPO<br/>47.4% CO₂"]
+        SAC["SAC<br/>50.3% CO₂"]
+    end
+    
+    DATA --> ENV
+    ENV --> AGENTS
+    A2C --> |"Política Óptima"|CTRL["🔧 Control BESS + EVs"]
+```
+
 ### Flujo de Datos
 
 ```
@@ -348,6 +378,10 @@ HORA    POTENCIA (kW)   | Gráfico (escala: █ = 200 kW)
 19:00         0         | 
 ```
 
+**Gráfica de Generación Solar Anual**:
+
+![Perfil de Generación Solar 2024](data/oe2/Generacionsolar/solar_profile_visualization_2024.png)
+
 ---
 
 ### 2.2 Cargadores para Motos y Mototaxis
@@ -481,6 +515,10 @@ HORA    MOTOS    TAXIS    TOTAL   | Gráfico (█ = 5 vehículos)
 22:00      5       1         6    | █
 ```
 
+**Gráfica de Perfil Horario de Carga v5.2**:
+
+![Perfil Horario de Carga EV v5.2](outputs/perfil_horario_carga_v52.png)
+
 **CO₂ Evitado por Electrificación (Directo)**:
 
 | Tipo | Factor CO₂ Gasolina | Factor CO₂ Eléctrico | CO₂ Evitado/kWh | CO₂ Evitado Anual |
@@ -610,6 +648,10 @@ HORA    SOC (%)   FLUJO        | Gráfico SOC (escala: █ = 5%)
 20:00     65%    Descargando ↘ | █████████████
 22:00     50%    Descargando ↘ | ██████████
 ```
+
+**Gráfica del Sistema BESS Completo**:
+
+![Sistema BESS Completo](data/oe2/bess/plots/bess_sistema_completo.png)
 
 ---
 
@@ -932,6 +974,10 @@ a2c_params = {
 | **Timesteps** | 87,600 | 87,600 | 280,320 |
 | **Tiempo Entrenamiento** | 2.9 min | 8.5 min | 45 min |
 
+**Gráfica Comparativa de Reducción de CO₂**:
+
+![Comparación de Emisiones CO₂ por Agente](outputs/comparative_analysis/02_co2_comparison.png)
+
 #### Agente Seleccionado: A2C
 
 ```
@@ -1001,6 +1047,14 @@ EPISODIO    REWARD      CO₂ (kg)     MEJORA
 ────────────────────────────────────────────
                         CONVERGENCIA EN EP 10
 ```
+
+**Dashboard de Entrenamiento A2C**:
+
+![Dashboard A2C - Métricas de Entrenamiento](outputs/a2c_training/a2c_dashboard.png)
+
+**KPI de Emisiones de Carbono**:
+
+![KPI Emisiones de Carbono - Evolución A2C](outputs/a2c_training/kpi_carbon_emissions.png)
 
 #### Gráficas Generadas
 
