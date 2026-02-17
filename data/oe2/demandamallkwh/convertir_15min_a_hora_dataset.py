@@ -53,9 +53,9 @@ MALL_DIR = Path(__file__).parent
 MALL_INPUT = MALL_DIR / "demandamall15kwh" / "demandamallkwh.csv"
 MALL_OUTPUT = MALL_DIR / "demandamallhorakwh.csv"
 
-SOLAR_DIR = MALL_DIR.parent / "solar"
-SOLAR_INPUT = SOLAR_DIR / "pv_generation_timeseries.csv"
-SOLAR_OUTPUT = SOLAR_DIR / "pv_generation_timeseries_clean.csv"
+SOLAR_DIR = MALL_DIR.parent / "Generacionsolar"
+SOLAR_INPUT = SOLAR_DIR / "pv_generation_citylearn2024.csv"
+SOLAR_OUTPUT = SOLAR_DIR / "pv_generation_citylearn2024_clean.csv"
 
 # Constantes
 CO2_FACTOR_KG_KWH = 0.4521  # Factor emisión Iquitos (grid térmico)

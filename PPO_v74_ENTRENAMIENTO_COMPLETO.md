@@ -25,7 +25,7 @@ Datos OE2 (Real):
 ✓ Solar:    8,292,514 kWh/año (946.6 kW avg, PVGIS Iquitos)
 ✓ Chargers: 565,875 kWh/año (64.6 kW avg, 38 sockets × 19 chargers)
 ✓ BESS:     1,700 kWh max SOC, 55.2% promedio
-✓ Mall:     12,368,653 kWh/año (1,411.9 kW avg)
+✓ Mall:     12,403,168 kWh/año (1,415.9 kW avg)
 ```
 
 **Validación:** Todos los 4 datasets sincronizados → EXITOSO
