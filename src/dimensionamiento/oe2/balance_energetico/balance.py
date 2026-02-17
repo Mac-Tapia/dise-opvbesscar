@@ -314,21 +314,21 @@ class BalanceEnergeticoSystem:
             # Dataset OE2 tiene: bess_charge_kwh, bess_discharge_kwh, bess_action_kwh, soc_percent, bess_mode
             if 'bess_action_kwh' in bess_cols:
                 # Usar bess_action_kwh directamente (contiene carga OR descarga, siempre positivo)
-                bess_action = df_bess['bess_action_kwh'].values.astype(float)
-                bess_charge = df_bess['bess_charge_kwh'].values.astype(float) if 'bess_charge_kwh' in bess_cols else np.zeros(len(df_bess))
-                bess_discharge = df_bess['bess_discharge_kwh'].values.astype(float) if 'bess_discharge_kwh' in bess_cols else np.zeros(len(df_bess))
-                bess_soc = df_bess['soc_percent'].values.astype(float) if 'soc_percent' in bess_cols else np.zeros(len(df_bess))
-                bess_mode = df_bess['bess_mode'].values if 'bess_mode' in bess_cols else np.array(['idle'] * len(df_bess))
+                bess_action = np.array(df_bess['bess_action_kwh'].values, dtype=float)
+                bess_charge = np.array(df_bess['bess_charge_kwh'].values, dtype=float) if 'bess_charge_kwh' in bess_cols else np.zeros(len(df_bess))
+                bess_discharge = np.array(df_bess['bess_discharge_kwh'].values, dtype=float) if 'bess_discharge_kwh' in bess_cols else np.zeros(len(df_bess))
+                bess_soc = np.array(df_bess['soc_percent'].values, dtype=float) if 'soc_percent' in bess_cols else np.zeros(len(df_bess))
+                bess_mode = np.array(df_bess['bess_mode'].values) if 'bess_mode' in bess_cols else np.array(['idle'] * len(df_bess))
                 print(f"  OK BESS: Usando bess_action_kwh (carga/descarga combinado)")
-                print(f"    - Accion total: {bess_action.sum():,.0f} kWh/ano")
-                print(f"    - SOC: {bess_soc.min():.1f}% - {bess_soc.max():.1f}%")
-                print(f"    - Modos: idle={sum(bess_mode=='idle')}, charge={sum(bess_mode=='charge')}, discharge={sum(bess_mode=='discharge')}")
+                print(f"    - Accion total: {float(np.sum(bess_action)):,.0f} kWh/ano")
+                print(f"    - SOC: {float(np.min(bess_soc)):.1f}% - {float(np.max(bess_soc)):.1f}%")
+                print(f"    - Modos: idle={int(np.sum(bess_mode=='idle'))}, charge={int(np.sum(bess_mode=='charge'))}, discharge={int(np.sum(bess_mode=='discharge'))}")
             elif 'bess_charge_kwh' in bess_cols and 'bess_discharge_kwh' in bess_cols:
-                bess_charge = df_bess['bess_charge_kwh'].values.astype(float)
-                bess_discharge = df_bess['bess_discharge_kwh'].values.astype(float)
+                bess_charge = np.array(df_bess['bess_charge_kwh'].values, dtype=float)
+                bess_discharge = np.array(df_bess['bess_discharge_kwh'].values, dtype=float)
                 bess_action = bess_charge + bess_discharge  # Calcular action si no existe
-                bess_soc = df_bess['soc_percent'].values.astype(float) if 'soc_percent' in bess_cols else np.zeros(len(df_bess))
-                bess_mode = df_bess['bess_mode'].values if 'bess_mode' in bess_cols else np.array(['idle'] * len(df_bess))
+                bess_soc = np.array(df_bess['soc_percent'].values, dtype=float) if 'soc_percent' in bess_cols else np.zeros(len(df_bess))
+                bess_mode = np.array(df_bess['bess_mode'].values) if 'bess_mode' in bess_cols else np.array(['idle'] * len(df_bess))
                 print(f"  OK BESS: Calculando bess_action desde charge+discharge")
             else:
                 has_bess = False
@@ -358,18 +358,18 @@ class BalanceEnergeticoSystem:
         pv_available = solar_gen
         
         # PV directo a demanda (prioridad: cubrir demanda primero)
-        pv_to_demand = np.minimum(pv_available, total_demand)
-        pv_surplus = np.maximum(pv_available - total_demand, 0)
+        pv_to_demand = np.minimum(pv_available.astype(float), total_demand.astype(float))
+        pv_surplus = np.maximum(pv_available.astype(float) - total_demand.astype(float), 0)
         
         # Deficit (demanda no cubierta por PV)
-        demand_deficit = np.maximum(total_demand - pv_available, 0)
+        demand_deficit = np.maximum(total_demand.astype(float) - pv_available.astype(float), 0)
         
         # Cobertura de BESS (si disponible)
-        bess_to_demand = np.minimum(bess_discharge, demand_deficit)
-        demand_from_grid = np.maximum(demand_deficit - bess_to_demand, 0)
+        bess_to_demand = np.minimum(bess_discharge.astype(float), demand_deficit.astype(float))
+        demand_from_grid = np.maximum(demand_deficit.astype(float) - bess_to_demand.astype(float), 0)
         
         # PV excedente: carga BESS o exporta (sin uso en sistema aislado)
-        pv_to_bess = np.minimum(bess_charge, pv_surplus)
+        pv_to_bess = np.minimum(bess_charge.astype(float), pv_surplus.astype(float))
         pv_to_grid = np.maximum(pv_surplus - pv_to_bess, 0)  # Excedente no aprovechado
         
         # Calcular emisiones
@@ -424,13 +424,13 @@ class BalanceEnergeticoSystem:
         charging_cols = [col for col in df.columns if 'charging_power_kw' in col.lower()]
         if len(charging_cols) > 0:  # Es un archivo de chargers v5.2
             # Sumar todos los sockets - demanda real
-            return df[charging_cols].sum(axis=1).values.astype(float)
+            return np.array(df[charging_cols].sum(axis=1).values, dtype=float)
         
         # Caso especial: Chargers legacy (MOTO_XX_SOCKET_Y, MOTOTAXI_XX_SOCKET_Y)
         socket_cols = [col for col in df.columns if 'SOCKET' in col.upper()]
         if len(socket_cols) > 0:  # Es un archivo de chargers legacy
             # Sumar todos los sockets
-            return df[socket_cols].sum(axis=1).values.astype(float)
+            return np.array(df[socket_cols].sum(axis=1).values, dtype=float)
         
         # Caso normal: buscar columna unica
         # Normalizar nombres de columna (minusculas, sin espacios)
@@ -440,13 +440,13 @@ class BalanceEnergeticoSystem:
         for norm_cand in normalized_candidates:
             if norm_cand in normalized_cols:
                 actual_col = normalized_cols[norm_cand]
-                return df[actual_col].values.astype(float)
+                return np.array(df[actual_col].values, dtype=float)
         
         # Si no encuentra columnas exactas, buscar por contener la palabra clave
         for keyword in ['kWh', 'kwh', 'demand', 'energy', 'power', 'soc', 'charge']:
             for col in df.columns:
                 if keyword.lower() in col.lower():
-                    return df[col].values.astype(float)
+                    return np.array(df[col].values, dtype=float)
         
         raise ValueError(f"No se encontro ninguna de las columnas {candidates} en {list(df.columns)[:10]}")
     
@@ -473,7 +473,7 @@ class BalanceEnergeticoSystem:
         for norm_cand in normalized_candidates:
             if norm_cand in normalized_cols:
                 actual_col = normalized_cols[norm_cand]
-                return df[actual_col].values.astype(float)
+                return np.array(df[actual_col].values, dtype=float)
         
         raise ValueError(f"No se encontro ninguna de las columnas exactas {candidates} en {list(df.columns)}")
     
@@ -973,7 +973,7 @@ class BalanceEnergeticoSystem:
                                  gridspec_kw={'height_ratios': [1.2, 1]})
         
         days = daily_action['day'].values
-        action = daily_action['bess_action_kw'].values
+        action = np.asarray(daily_action['bess_action_kw'].values, dtype=float)
         
         # === Panel 1: BESS Action (Carga/Descarga combinado) ===
         ax1 = axes[0]
@@ -987,7 +987,7 @@ class BalanceEnergeticoSystem:
         ax1.set_title(f'BESS {self.config.bess_capacity_kwh:.0f} kWh / {self.config.bess_power_kw:.0f} kW - Accion y Estado de Carga',
                      fontsize=13, fontweight='bold', pad=10)
         ax1.grid(True, alpha=0.3, axis='y')
-        ax1.set_ylim(0, action.max() * 1.1)
+        ax1.set_ylim(0, action.max() * 1.1 if action.max() > 0 else 1)
         
         # === Panel 2: SOC (Estado de Carga) ===
         ax2 = axes[1]
