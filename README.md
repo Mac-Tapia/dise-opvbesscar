@@ -8,6 +8,34 @@
 
 ---
 
+## 📋 Recent Updates (Feb 16, 2026)
+
+### ✅ Correcciones Aplicadas - v8.2
+- **Fixed:** 40 syntax/type errors en `scripts/train/train_sac_multiobjetivo.py`
+  - Import faltantes (`Callable`)
+  - Acceso a arrays NumPy/Pandas (`.max()`, `.min()`)
+  - Atributos de callback inicializados
+  - Try-except para acceso seguro a SAC internals
+- **Cleaned:** Eliminados 59 archivos temporales y 2 carpetas (`analysis/`, `build/`)
+- **Optimized:** Estructura de proyecto sincronizada con rama `smartcharger`
+
+### 📁 Structure Cleanup
+```
+scripts/
+├── activate_env.ps1
+├── run_training.ps1
+└── train/
+    ├── train_sac_multiobjetivo.py       ✅ Fixed v8.2
+    ├── train_ppo_multiobjetivo.py       ✅ Ready
+    ├── train_a2c_multiobjetivo.py       ✅ Ready
+    ├── TRAINING_MASTER.py               ✅ Orchestrator
+    └── vehicle_charging_scenarios.py    ✅ Scenarios
+```
+
+**Ver:** [CORRECCIONES_SAC_v8.2.md](./CORRECCIONES_SAC_v8.2.md) para detalles técnicos
+
+---
+
 ## 🎯 Descripción del Proyecto
 
 **pvbesscar** optimiza la carga de 38 tomas eléctricas (270 motos + 39 mototaxis/día) utilizando:

@@ -18,7 +18,7 @@ import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 # ===== AGREGAR WORKSPACE AL PATH =====
 workspace_root = Path(__file__).parent.parent.parent  # scripts/train/... -> workspace root
@@ -996,8 +996,9 @@ def load_datasets_from_processed():
             bess_soc = df_bess['soc_percent'].values[:HOURS_PER_YEAR].astype(np.float32)
         elif 'soc_kwh' in df_bess.columns:
             soc_kwh = df_bess['soc_kwh'].values[:HOURS_PER_YEAR].astype(np.float32)
-            soc_max = soc_kwh.max()
-            bess_soc = 100.0 * soc_kwh / soc_max
+            soc_kwh_arr = np.asarray(soc_kwh, dtype=np.float32)
+            soc_max = float(np.max(soc_kwh_arr))
+            bess_soc = 100.0 * soc_kwh_arr / soc_max
         else:
             bess_soc = np.full(HOURS_PER_YEAR, 50.0, dtype=np.float32)
         
