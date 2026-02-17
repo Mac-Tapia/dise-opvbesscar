@@ -9,7 +9,19 @@
 
 ---
 
-## 📋 Tabla de Contenidos
+## � DOCUMENTACIÓN CENTRAL
+
+> **¿Dónde encontrar qué?** Consulta el [ÍNDICE CENTRAL DE DOCUMENTACIÓN](docs/DOCUMENTACION_INDEX.md)
+
+Este documento es tu **mapa único** de toda la documentación técnica:
+- 🚀 [Empezar rápido](#documentación-central) (nuevos developers)
+- 🤖 [Entrenar agentes](docs/DOCUMENTACION_INDEX.md#entrenar-agentes) (RL training)
+- 📊 [Datos y datasets](docs/DOCUMENTACION_INDEX.md#datos-y-datasets) (estructura de datos)
+- 📚 [Referencias académicas](docs/REFERENCIAS_ACADEMICAS_COMPLETAS.md) (PPO vs SAC vs A2C)
+
+---
+
+## �📋 Tabla de Contenidos
 
 1. [Resumen del Proyecto](#resumen-del-proyecto)
 2. [Arquitectura del Sistema](#arquitectura-del-sistema)
