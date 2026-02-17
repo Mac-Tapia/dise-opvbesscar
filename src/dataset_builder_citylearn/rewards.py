@@ -55,12 +55,12 @@ DEFINICIONES CRITICAS:
    NOTE: Dispatch hierarchy penalties (-0.80/-0.90/-0.95) + aggressive SOC modulation (1.80-2.20)
          already enforce EVs priority, so moderate EV weight (0.35) is sufficient.
 
-5. VALORES DE REFERENCIA (OE2 v5.2 Real - 2026-02-12):
+5. VALORES DE REFERENCIA (OE2 v5.4 Real - 2026-02-17):
    - Co2 grid factor: 0.4521 kg/kWh (GRID IMPORT - indirecto)
    - EV co2 factor: 2.146 kg/kWh (DEMANDA DIRECTA - tracking)
    - EV demand: 50.0 kW (CONSTANTE)
    - Chargers: 19 (38 tomas = 30 motos + 8 mototaxis) @ 7.4 kW/toma
-   - BESS: 1,700 kWh max SOC / 342 kW (verificado desde bess_simulation_hourly.csv)
+   - BESS: 1,700 kWh / 400 kW (v5.4 - DoD 80%, eficiencia 95%)
 
 Objetivos optimizados:
 1. Minimizar emisiones de CO₂ (indirectas por grid import)
@@ -78,8 +78,8 @@ Contexto Iquitos (OE2/OE3 - DATOS REALES v5.2 2026-02-12):
 - Potencia instalada: 281.2 kW simultanea (38 × 7.4 kW Modo 3)
 - Demanda EV: 50 kW constante (54% uptime × 100kW = workaround CityLearn 2.5.0)
 - Capacidad diaria: 270 motos + 39 mototaxis (pe=0.30, fc=0.55)
-- BESS: 1,700 kWh max SOC / 342 kW (verificado desde bess_simulation_hourly.csv)
-- Resultado OE3: Agente A2C -25.1% CO₂ (4,280,119 kg/ano vs 5,710,257 kg/ano baseline)
+- BESS: 1,700 kWh / 400 kW (v5.4 - DoD 80%, eficiencia 95%)
+- Resultado OE3: Agente A2C -62.4% CO₂ (3,647,478 kg/ano reduccion)
 
 VINCULACIONES EN SISTEMA:
 - config.yaml (SOURCE OF TRUTH): co2_grid_factor_kg_per_kwh, ev_co2_conversion_kg_per_kwh
@@ -1074,8 +1074,8 @@ def calculate_solar_dispatch(
         ev_demand_kw: Demanda EV (tipicamente 50 kW constante 9AM-10PM)
         mall_demand_kw: Demanda mall/no-desplazable (kW)
         bess_soc_pct: SOC de bateria (0-100%)
-        bess_max_power_kw: Maxima potencia carga/descarga (342 kW v5.2)
-        bess_capacity_kwh: Capacidad de bateria (1,700 kWh max SOC, v5.2 CORRECTED)
+        bess_max_power_kw: Maxima potencia carga/descarga (400 kW v5.4)
+        bess_capacity_kwh: Capacidad de bateria (1,700 kWh max SOC)
 
     Returns:
         dict: Desglose de despacho {

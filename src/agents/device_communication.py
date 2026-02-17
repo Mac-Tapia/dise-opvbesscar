@@ -400,8 +400,8 @@ class EnergyPrioritizer:
             # [9] Mototaxis cargando ahora
             min(1.0, mototaxis_stats['charging_now'] / 8.0),
             
-            # [10] Demanda total EVs / capacidad max (342 kW BESS)
-            min(1.0, self.charger_manager.total_ev_power_demand_kw() / 342.0),
+            # [10] Demanda total EVs / capacidad max (400 kW BESS v5.4)
+            min(1.0, self.charger_manager.total_ev_power_demand_kw() / 400.0),
             
             # [11] Saturacion sistema (si motos+mototaxis >20)
             1.0 if (motos_stats['charging_now'] + mototaxis_stats['charging_now']) > 20 else 0.0,

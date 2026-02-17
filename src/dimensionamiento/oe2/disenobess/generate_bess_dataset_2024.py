@@ -118,8 +118,8 @@ def simulate_bess_simple(
     pv_kwh: np.ndarray,
     ev_kwh: np.ndarray,
     mall_kwh: np.ndarray,
-    capacity_kwh: float = 1700.0,  # v5.2 CORRECTED: 1,700 kWh max SOC (from bess_simulation_hourly.csv)
-    power_kw: float = 342.0,       # v5.2: 342 kW
+    capacity_kwh: float = 1700.0,  # v5.4: 1,700 kWh max SOC
+    power_kw: float = 400.0,       # v5.4: 400 kW
     dod: float = 0.80,
     efficiency: float = 0.95,
     initial_soc: float = 0.50,
@@ -257,8 +257,8 @@ def main():
             pv_kwh=df_pv['pv_kwh'].values,
             ev_kwh=df_ev['ev_kwh'].values,
             mall_kwh=df_mall['mall_kwh'].values,
-            capacity_kwh=1700.0,   # v5.2 CORRECTED: 1,700 kWh max SOC
-            power_kw=342.0,       # v5.2: 342 kW
+            capacity_kwh=1700.0,   # v5.4: 1,700 kWh max SOC
+            power_kw=400.0,        # v5.4: 400 kW
             dod=0.80,             # 80% DoD
             efficiency=0.95,      # 95% eficiencia
             initial_soc=0.50,     # 50% SOC inicial

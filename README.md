@@ -218,7 +218,7 @@ outputs/a2c_training/
 **pvbesscar** optimiza la carga de 38 tomas eléctricas (270 motos + 39 mototaxis/día) utilizando:
 
 - **Solar PV**: 4,050 kWp de generación fotovoltaica
-- **BESS**: 1,700 kWh max SOC de almacenamiento (verificado desde `data/oe2/bess/bess_simulation_hourly.csv`)
+- **BESS**: 1,700 kWh / 400 kW de almacenamiento (v5.4: DoD 80%, eficiencia 95%)
 - **RL Agents**: SAC, PPO, A2C para minimizar emisiones CO₂
 
 **Infraestructura v5.2** (FINAL):
@@ -623,10 +623,10 @@ gae_lambda: 0.95
    - **Archivo principal**: `data/oe2/chargers/chargers_ev_ano_2024_v3.csv`
    - **Documentación**: [INTEGRACION_COLUMNAS_CANTIDAD_CHARGERS.md](./INTEGRACION_COLUMNAS_CANTIDAD_CHARGERS.md)
 
-✅ BESS Config:
-   - Capacidad: 1,700 kWh max SOC / 342 kW (v5.2 verified FROM bess_simulation_hourly.csv - DATA SOURCE OF TRUTH)
-   - SOC Inicial: 90.5%
-   - Eficiencia: 95% (round-trip)
+✅ BESS Config v5.4:
+   - Capacidad: 1,700 kWh max SOC / 400 kW (v5.4 verified FROM bess.py - BESS_POWER_KW_V53)
+   - SOC Inicial: 90.5% | SOC min: 20% | SOC max: 100%
+   - Eficiencia: 95% (round-trip) | DoD: 80%
    - Archivo: bess_simulation_hourly.csv
 
 ✅ Mall Demand:
@@ -770,14 +770,14 @@ Tipos:     30 motos (7.4 kW) + 8 mototaxis (7.4 kW)
 Archivo:   chargers_ev_ano_2024_v3.csv (357 columns)
 ```
 
-#### 4. BESS - Battery Energy Storage System (1,700 kWh max SOC / 342 kW)
+#### 4. BESS - Battery Energy Storage System (1,700 kWh / 400 kW - v5.4)
 
 ```text
 Ubicación: data/interim/oe2/bess/
-Columnas:  1,700 kWh max SOC | Potencia máx: 342 kW (exclusivo EV)
-SOC prom:  90.5% | SOC máx: 99%
-Archivo:   bess_simulation_hourly.csv (DATA SOURCE OF TRUTH para BESS capacity): 342 kW (exclusivo EV)
-SOC prom:  15.6% | SOC máx: 75.4%
+Capacidad: 1,700 kWh max SOC | Potencia: 400 kW (v5.4)
+DoD: 80% | Eficiencia: 95% round-trip
+SOC min: 20% | SOC max: 100%
+Archivo:   bess_simulation_hourly.csv
 ```
 
 ### Verificar Datasets
