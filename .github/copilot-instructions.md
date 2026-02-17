@@ -36,7 +36,7 @@ python -m scripts.run_dual_baselines --config configs/default.yaml
 # Generates: outputs/baselines/{with_solar,without_solar}/baseline_comparison.csv
 ```
 
-See [BASELINE_QUICK_START.md](../BASELINE_QUICK_START.md) for details.
+See the README.md for details on baseline comparisons.
 
 ---
 
@@ -44,7 +44,7 @@ See [BASELINE_QUICK_START.md](../BASELINE_QUICK_START.md) for details.
 
 ### OE2 (Dimensioning Phase)
 **Location:** `src/dimensionamiento/oe2/`
-- [data_loader.py](../src/dimensionamiento/oe2/data_loader.py): Loads solar, chargers, BESS with validation
+- [src/dimensionamiento/oe2/](../src/dimensionamiento/oe2/): OE2 dimensioning phase modules including data loading and validation
 - [chargers.py](../src/dimensionamiento/oe2/disenocargadoresev/chargers.py): Charger models v5.2 (19 chargers × 2 sockets = 38 total). **Key pattern:** Extensive use of `@dataclass(frozen=True)` for immutable specs
 - [solar_pvlib.py](../src/dimensionamiento/oe2/generacionsolar/disenopvlib/solar_pvlib.py): PVGIS solar generation timeseries validation
 - **Critical constraint:** All solar data must be 8,760 hourly rows (NOT 15-minute)
@@ -66,7 +66,7 @@ See [BASELINE_QUICK_START.md](../BASELINE_QUICK_START.md) for details.
 
 
 ### ⚠️ CRITICAL: Hourly Data Only (8,760 rows = 1 year)
-**Solar timeseries MUST be exactly hourly (NOT 15-minute).** If you have PVGIS 15-min data: `df.set_index('time').resample('h').mean()`. Validation enforced in [dataset_builder.py](../src/citylearnv2/dataset_builder/dataset_builder.py).
+**Solar timeseries MUST be exactly hourly (NOT 15-minute).** If you have PVGIS 15-min data: `df.set_index('time').resample('h').mean()`. Validation enforced in dataset builder modules.
 
 ### The Pipeline: OE2 → OE3
 ```
@@ -80,7 +80,7 @@ Results: CO₂ reduction %, solar self-consumption %, training metrics CSV
 ```
 
 ### Key Files by Responsibility (ACTUAL CODEBASE)
-- [data_loader.py](../src/dimensionamiento/oe2/data_loader.py): **Load & validate** OE2 artifacts; raises `OE2ValidationError` early if solar not 8,760 rows
+- [src/dimensionamiento/oe2/](../src/dimensionamiento/oe2/): **Load & validate** OE2 artifacts; raises `OE2ValidationError` early if solar not 8,760 rows
 - [chargers.py](../src/dimensionamiento/oe2/disenocargadoresev/chargers.py): **Charger specs v5.2** with immutable `@dataclass(frozen=True)` - 19 units × 2 sockets = 38 controllable sockets
 - [agent_utils.py](../src/utils/agent_utils.py): **Environment validation** with `validate_env_spaces()` - checks obs/action dimensions
 - [sac.py](../src/agents/sac.py), [ppo_sb3.py](../src/agents/ppo_sb3.py), [a2c_sb3.py](../src/agents/a2c_sb3.py): **Agent implementations** - stable-baselines3 wrappers with GPU/CPU config
@@ -144,7 +144,7 @@ python -c "import pandas as pd; df=pd.read_csv('data/interim/oe2/solar/pv_genera
 
 ### Code Patterns (ENFORCED)
 - **ALWAYS** import `from __future__ import annotations` (Python 3.11+ required)
-- **ALWAYS** use `@dataclass(frozen=True)` for immutable config/spec containers (see [chargers.py](../src/dimensionamiento/oe2/chargers.py))
+- **ALWAYS** use `@dataclass(frozen=True)` for immutable config/spec containers (see src/dimensionamiento/oe2/ for examples)
 - **ALWAYS** validate environment with `validate_env_spaces(env)` from [agent_utils.py](../src/utils/agent_utils.py) before agent init
 - **Path handling:** Use `Path()` from pathlib; avoid hardcoded paths
 - **Error handling:** Raise `OE2ValidationError` (from data_loader) or custom exceptions early, don't silently fail
@@ -250,7 +250,7 @@ python -c "import json; c=json.load(open('data/interim/oe2/chargers/individual_c
 
 ## Key References
 
-- **Data Sources Map** ([docs/DATA_SOURCES_REAL_VS_SIMULATED.md](../docs/DATA_SOURCES_REAL_VS_SIMULATED.md)): ✅ REAL vs ⚠️ SIMULATED data architecture
+- **Project Overview** (Line 3): project scope, OE2 dimensioning specs
 - **Project Overview** (Line 3): project scope, OE2 dimensioning specs
 - **Reward Function** (Line 100): detailed reward component breakdown
 - **Training workflows** (Line 70): latest training commands and KPIs
