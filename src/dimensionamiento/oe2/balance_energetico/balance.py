@@ -77,7 +77,7 @@ class BalanceEnergeticoConfig:
     # ==========================================
     # PARAMETROS DEL SISTEMA v5.2
     # ==========================================
-    pv_capacity_kwp: float = 4050.0  # kW pico solar (genera 4,775,948 kWh/ano)
+    pv_capacity_kwp: float = 4050.0  # kW pico solar (genera 8,292,514 kWh/ano)
     
     # Restriccion de demanda pico (limite RED PUBLICA Iquitos)
     demand_peak_limit_kw: float = 2000.0  # kW maximo (BESS intenta reducir)

@@ -735,7 +735,7 @@ Todos los datasets están completos con **8,760 horas** (1 año) de datos reales
 
 | Dataset | Archivo | Filas | Valor Anual | Promedio/Hora |
 | ------- | ------- | ----- | ----------- | ------------- |
-| **Generación Solar** | `pv_generation_timeseries.csv` | 8,760 | **4,775.9 MWh** | 545.2 kWh |
+| **Generación Solar** | `pv_generation_timeseries.csv` | 8,760 | **8,292.5 MWh** | 946.6 kWh |
 | **Demanda Mall** | `demandamallhorakwh.csv` | 8,760 | **12.37 GWh** | 1,411.9 kWh |
 | **Chargers EV** | `chargers_hourly_profiles_annual.csv` | 8,760 | **232,341 kWh** | 26.5 kWh |
 | **BESS SOC** | `bess_hourly_dataset_2024.csv` | 8,760 | SOC 15.6% prom | - |
@@ -747,8 +747,8 @@ Todos los datasets están completos con **8,760 horas** (1 año) de datos reales
 ```text
 Ubicación: data/interim/oe2/solar/
 Columnas:  fecha, hora, irradiancia_ghi, potencia_kw, energia_kwh, temperatura_c, velocidad_viento_ms
-Total:     4,775,948 kWh/año (4.78 GWh)
-Máximo:    1,982.7 kWh/hora
+Total:     8,292,514 kWh/año (8.29 GWh)
+Máximo:    3,201 kWh/hora (AC nominal inversor)
 ```
 
 #### 2. Demanda Mall (Centro Comercial)
@@ -901,7 +901,7 @@ Project Root (3 archivos .md solamente):
 | Componente   | Estado                          |
 | ------------ | ------------------------------- |
 | Código       | ✅ 0 errores Pylance            |
-| Dataset Solar | ✅ 8,760 horas - 4.78 GWh/año  |
+| Dataset Solar | ✅ 8,760 horas - 8.29 GWh/año  |
 | Dataset Mall  | ✅ 8,760 horas - 12.37 GWh/año |
 | Dataset Chargers | ✅ 8,760 × 38 sockets       |
 | Dataset BESS | ✅ 8,760 horas - 1,700 kWh max |
