@@ -1,16 +1,17 @@
 """
-Balance Energetico del Sistema Electrico de Iquitos v5.3.
+Balance Energetico del Sistema Electrico de Iquitos v5.4.
 
 Modulo para cargar todos los datasets de OE2 e integrarlos en un analisis 
 completo del balance energetico, considerando:
-- Generacion solar PV (4,162 kWp) - data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv
-  * 8,292,514 kWh/ano | 18 columnas (con OSINERGMIN + CO₂ indirecto)
+- Generacion solar PV (4,050 kWp) - data/oe2/Generacionsolar/pv_generation_citylearn2024_clean.csv
+  * 8,292,514 kWh/ano | 11 columnas (con OSINERGMIN + CO₂ indirecto)
 - Demanda del mall (RED PUBLICA) - data/oe2/demandamallkwh/demandamallhorakwh.csv
   * 12,403,168 kWh/ano (33,981 kWh/dia, 2,763 kW pico)
 - Demanda EV (38 tomas v5.2) - data/oe2/chargers/chargers_ev_ano_2024_v3.csv
-  * 453,349 kWh/ano (1,242 kWh/dia, ~160 kW pico) - Solo 9h-22h
-  * 353 columnas (38 sockets × 9 cols + 10 OSINERGMIN/CO₂ + datetime)
-- Almacenamiento BESS (calculado por bess.py)
+  * 565,875 kWh/ano (1,550 kWh/dia, ~119 kW pico) - Solo 9h-22h
+  * 38 sockets = 19 cargadores × 2 tomas (270 motos + 39 mototaxis/día)
+- Almacenamiento BESS - data/oe2/bess/bess_ano_2024.csv
+  * 1,700 kWh capacidad / 400 kW potencia (v5.4)
 
 REDUCCION DE CO₂ v5.3:
 ---------------------------------------------------------------------------
@@ -45,19 +46,18 @@ from matplotlib import pyplot as plt
 
 @dataclass(frozen=True)
 class BalanceEnergeticoConfig:
-    """Configuracion del analisis de balance energetico v5.3.
+    """Configuracion del analisis de balance energetico v5.4.
     
     Rutas de datos OE2 REALES:
-    - Solar: data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv
-      * 8,292,514 kWh/ano | 18 columnas
-      * Columnas CO₂: reduccion_indirecta_co2_kg, co2_evitado_mall_kg, co2_evitado_ev_kg
-      * Columnas OSINERGMIN: is_hora_punta, tarifa_aplicada_soles, ahorro_solar_soles
+    - Solar: data/oe2/Generacionsolar/pv_generation_citylearn2024_clean.csv
+      * 8,292,514 kWh/ano | 11 columnas
+      * Columnas: potencia_kw, energia_kwh, is_hora_punta, tarifa_aplicada_soles, ahorro_solar_soles, reduccion_indirecta_co2_kg
       
     - Mall: data/oe2/demandamallkwh/demandamallhorakwh.csv
       * 12,403,168 kWh/ano (RED PUBLICA)
       
     - EV: data/oe2/chargers/chargers_ev_ano_2024_v3.csv
-      * 453,349 kWh/ano | 353 columnas | 38 sockets v5.2 | 9h-22h
+      * 565,875 kWh/ano | 38 sockets v5.2 | 9h-22h
       * Columnas socket: socket_XXX_{charger_power_kw, charging_power_kw, soc_*, active, vehicle_*}
       * Columnas CO₂: reduccion_directa_co2_kg, co2_reduccion_motos_kg, co2_reduccion_mototaxis_kg
       * Columnas OSINERGMIN: is_hora_punta, tarifa_aplicada_soles, costo_carga_ev_soles
@@ -65,14 +65,15 @@ class BalanceEnergeticoConfig:
     """
     
     # ==========================================
-    # RUTAS DE DATOS OE2 - ARCHIVOS REALES
+    # RUTAS DE DATOS OE2 - ARCHIVOS REALES v5.4
     # ==========================================
     data_dir_oe2: Path = Path("data/oe2")
     
-    # Archivos especificos OE2 (v2 usa pv_generation_hourly_citylearn_v2.csv)
-    solar_path: Path = Path("data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv")
+    # Archivos especificos OE2 v5.4 (datasets reales validados)
+    solar_path: Path = Path("data/oe2/Generacionsolar/pv_generation_citylearn2024_clean.csv")
     mall_path: Path = Path("data/oe2/demandamallkwh/demandamallhorakwh.csv")
     chargers_path: Path = Path("data/oe2/chargers/chargers_ev_ano_2024_v3.csv")
+    bess_path: Path = Path("data/oe2/bess/bess_ano_2024.csv")
     
     # ==========================================
     # PARAMETROS DEL SISTEMA v5.2
@@ -129,12 +130,13 @@ class BalanceEnergeticoSystem:
     
     def load_all_datasets(self) -> bool:
         """
-        Carga todos los datasets de OE2 (archivos reales).
+        Carga todos los datasets de OE2 (archivos reales v5.4).
         
         Archivos fuente:
-        - Solar: data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv (8,292,514 kWh/ano)
-        - Mall: data/oe2/demandamallkwh/demandamallhorakwh.csv (RED PUBLICA)
-        - EV: data/oe2/chargers/chargers_ev_ano_2024_v3.csv (38 sockets v5.2)
+        - Solar: data/oe2/Generacionsolar/pv_generation_citylearn2024_clean.csv (8,292,514 kWh/ano)
+        - Mall: data/oe2/demandamallkwh/demandamallhorakwh.csv (12,403,168 kWh/ano)
+        - EV: data/oe2/chargers/chargers_ev_ano_2024_v3.csv (565,875 kWh/ano, 38 sockets)
+        - BESS: data/oe2/bess/bess_ano_2024.csv (1,700 kWh / 400 kW)
         
         Returns:
             True si todos los datasets se cargaron exitosamente
@@ -1112,12 +1114,13 @@ def main(
     generate_plots: bool = True
 ) -> BalanceEnergeticoSystem:
     """
-    Ejecuta el analisis completo de balance energetico v5.2.
+    Ejecuta el analisis completo de balance energetico v5.4.
     
     Carga datos desde archivos OE2 reales:
-    - Solar: data/oe2/Generacionsolar/pv_generation_timeseries.csv
-    - Mall: data/oe2/demandamallkwh/demandamallhorakwh.csv (RED PUBLICA)
-    - EV: data/oe2/chargers/chargers_ev_ano_2024_v3.csv (38 sockets v5.2)
+    - Solar: data/oe2/Generacionsolar/pv_generation_citylearn2024_clean.csv (8,292,514 kWh/ano)
+    - Mall: data/oe2/demandamallkwh/demandamallhorakwh.csv (12,403,168 kWh/ano)
+    - EV: data/oe2/chargers/chargers_ev_ano_2024_v3.csv (565,875 kWh/ano, 38 sockets)
+    - BESS: data/oe2/bess/bess_ano_2024.csv (1,700 kWh / 400 kW)
     
     Args:
         output_dir: Ruta para guardar las graficas
