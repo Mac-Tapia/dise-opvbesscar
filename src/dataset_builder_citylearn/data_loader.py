@@ -1,7 +1,14 @@
-"""OE2 Data Loader v5.6 - Unified with Dataset Catalog.
+"""OE2 Data Loader v5.8 - Data Validation & Corrections.
 
 Carga datos OE2 desde fuentes diversas usando el catalogo centralizado como
 fuente unica de verdad (Single Source of Truth).
+
+Changes in v5.8 (18 feb 2026):
+- CORRECCIÓN CRÍTICA: BESS_CAPACITY_KWH actualizada a 2000.0 kWh (era 1700.0)
+- Valor verificado de bess_ano_2024.csv (max soc_kwh = 2000.0 kWh)
+- Validación completa de estructura de datos real
+- Chargers: confirmado 38 sockets (19 chargers × 2 sockets)
+- Solar: pv_generation_citylearn2024.csv es el archivo CORRECTO (no hourly_v2)
 
 Changes in v5.6 (14 feb 2026):
 - Unificado con catalog_datasets.py para evitar duplicacion
@@ -11,8 +18,8 @@ Changes in v5.6 (14 feb 2026):
 
 Structure:
   OE2 (Primary, source of truth - FIXED PATHS)
-    +-- Solar: data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv (8,760 rows, hourly)
-    +-- BESS: data/oe2/bess/bess_ano_2024.csv (1,700 kWh, 400 kW)
+    +-- Solar: data/oe2/Generacionsolar/pv_generation_citylearn2024.csv (8,760 rows, hourly)
+    +-- BESS: data/oe2/bess/bess_ano_2024.csv (2,000 kWh CAPACITY, 400 kW POWER)
     +-- Chargers: data/oe2/chargers/chargers_ev_ano_2024_v3.csv (38 sockets, 19 chargers)
     +-- Mall: data/oe2/demandamallkwh/demandamallhorakwh.csv (100 kW avg)
 
@@ -25,16 +32,18 @@ Structure:
   CityLearn (Processed, for agent training)
     +-- data/processed/citylearn/iquitos_ev_mall/
 
-Critical Constraints:
+Critical Constraints (VERIFIED 2026-02-18):
   - Solar MUST be hourly (8,760 rows), NOT 15-minute data
-  - BESS capacity: 1,700 kWh (confirmed from CSV, v5.3)
-  - Chargers: 19 units × 2 sockets = 38 controllable sockets
-  - Tariff: OSINERGMIN Iquitos (0.28 USD/kWh avg, HP/HFP schedule)
+  - BESS capacity: 2,000 kWh (verified from CSV, max soc_kwh)
+  - BESS DoD: 20% (min soc_kwh = 795 kWh, max = 2000 kWh)
+  - Chargers: 38 sockets confirmed (socket_000 to socket_037)
+  - Tariff: OSINERGMIN Iquitos (0.28-0.3 USD/kWh avg, HP/HFP schedule)
 
 Validation enforced:
   - OE2ValidationError raised if data inconsistent
   - Missing files caught early with clear error messages
   - Column names validated against expected schema
+  - Capacity verified against real CSV values
 """
 
 from __future__ import annotations
@@ -84,14 +93,14 @@ INTERIM_DEMAND_PATH = Path("data/oe2/demandamallkwh/demandamallhorakwh.csv")  # 
 # Processed (for CityLearn environment)
 PROCESSED_CITYLEARN_DIR = Path("data/processed/citylearn/iquitos_ev_mall")
 
-# Constants (OE2 v5.3 verified 2026-02-12)
-BESS_CAPACITY_KWH = 1700.0  # From bess_ano_2024.csv (NOT 4,520 kWh as previously documented)
+# Constants (OE2 v5.8 verified 2026-02-18 from real data)
+BESS_CAPACITY_KWH = 2000.0  # From bess_ano_2024.csv (verified: max soc_kwh = 2000.0 kWh)
 BESS_MAX_POWER_KW = 400.0   # Max charge/discharge rate
 EV_DEMAND_KW = 50.0          # Constant demand (workaround for CityLearn 2.5.0)
-N_CHARGERS = 19              # Physical chargers
-TOTAL_SOCKETS = 38           # 19 × 2 sockets
+N_CHARGERS = 19              # Physical chargers (verified: chargers_ev_ano_2024_v3.csv)
+TOTAL_SOCKETS = 38           # 19 × 2 sockets (verified: 38 socket_XXX columns)
 MALL_DEMAND_KW = 100.0       # Mall baseline
-SOLAR_PV_KWP = 4050.0        # 4,050 kWp installed
+SOLAR_PV_KWP = 4050.0        # 4,050 kWp installed (pv_generation_citylearn2024.csv: max 2886.7 kW)
 
 CO2_FACTOR_GRID_KG_PER_KWH = 0.4521  # Central termica Iquitos
 CO2_FACTOR_EV_KG_PER_KWH = 2.146     # Equivalent fuel combustion
