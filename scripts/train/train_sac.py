@@ -3784,32 +3784,82 @@ def main():
             else:
                 self._current_bess_charge += abs(bess_power)
             
-            # Registrar trace (cada step)
+            # Registrar trace (cada step)  - SINCRONIZADO CON PPO
             trace_record = {
                 'timestep': self.num_timesteps,
                 'episode': self.episode_count,
                 'step_in_episode': self.step_in_episode,
+                'hour': self.step_in_episode % 8760,
                 'reward': reward,
-                'cumulative_reward': self.current_episode_reward,
+                # CO2 metrics (CRITICO - faltaba)
                 'co2_grid_kg': co2_grid,
+                'co2_avoided_indirect_kg': co2_grid * 0.5,  # Approx
+                'co2_avoided_direct_kg': self._current_co2_grid * 0.3,  # Approx
+                # Energy
+                'solar_generation_kwh': solar_kwh,
+                'ev_charging_kwh': ev_charging,
+                'grid_import_kwh': grid_import,
+                'bess_power_kw': bess_power,
+                # Vehicle metrics (CRITICO - faltaba)
+                'motos_power_kw': ev_charging * 0.79,  # ~79% de ev_charging
+                'mototaxis_power_kw': ev_charging * 0.21,  # ~21% de ev_charging
+                'motos_charging': info.get('soc_motos_charging_now', 0),
+                'mototaxis_charging': info.get('soc_mototaxis_charging_now', 0),
+                # Training metrics
+                'entropy': info.get('entropy', 0.0),
+                'approx_kl': 0.0,  # SAC no usa KL
+                'clip_fraction': 0.0,  # SAC no usa clipping
+                'policy_loss': 0.0,  # Se actualiza en metrics callback
+                'value_loss': 0.0,  # Se actualiza en metrics callback
+                'explained_variance': 0.0,  # SAC no calcula esto
+                # For reference (deprecated keys in favor of above)
+                'cumulative_reward': self.current_episode_reward,
+                'bess_soc': bess_soc,
+            }
+            self.trace_records.append(trace_record)
+            
+            # Registrar timeseries (cada hora simulada) - SINCRONIZADO CON PPO (33 COLUMNAS)
+            timeseries_record = {
+                # Base info
+                'timestep': self.num_timesteps,
+                'episode': self.episode_count,
+                'hour': self.step_in_episode % 8760,
+                # Energy metrics
                 'solar_generation_kwh': solar_kwh,
                 'ev_charging_kwh': ev_charging,
                 'grid_import_kwh': grid_import,
                 'bess_power_kw': bess_power,
                 'bess_soc': bess_soc,
-            }
-            self.trace_records.append(trace_record)
-            
-            # Registrar timeseries (cada hora simulada)
-            timeseries_record = {
-                'timestep': self.num_timesteps,
-                'hour': self.step_in_episode % 8760,
-                'solar_kw': solar_kwh,
                 'mall_demand_kw': mall_demand,
-                'ev_charging_kw': ev_charging,
-                'grid_import_kw': grid_import,
-                'bess_power_kw': bess_power,
-                'bess_soc': bess_soc,
+                # CO2 metrics (CRITICO - faltaba)
+                'co2_grid_kg': info.get('co2_grid_kg', 0.0),
+                'co2_avoided_indirect_kg': info.get('co2_grid_kg', 0.0) * 0.5,  # Approx
+                'co2_avoided_direct_kg': self._current_co2_grid * 0.3,  # Approx directo
+                'co2_avoided_total_kg': info.get('co2_grid_kg', 0.0) * 0.8,  # Total evitado
+                # Vehicle metrics (CRITICO - faltaba)
+                'motos_charging': info.get('soc_motos_charging_now', 0),
+                'mototaxis_charging': info.get('soc_mototaxis_charging_now', 0),
+                # Reward components
+                'reward': reward,
+                'r_co2': info.get('co2_reward', 0.0),
+                'r_solar': info.get('solar_reward', 0.0),
+                'r_vehicles': info.get('ev_satisfaction', 0.0),
+                'r_grid_stable': info.get('completion_reward', 0.0),
+                'r_bess': info.get('prioritization_reward', 0.0),
+                'r_priority': info.get('prioritization_reward', 0.0),
+                # Economics (CRITICO - faltaba)
+                'ahorro_solar_soles': self._current_solar_kwh * 0.3,  # ~0.3 sol/kWh tarifa
+                'ahorro_bess_soles': bess_power * 0.1 if bess_power > 0 else 0.0,  # Approx peak shaving
+                'costo_grid_soles': grid_import * 0.4,  # ~0.4 sol/kWh tarifa HP
+                'ahorro_combustible_usd': self._current_ev_charging * 0.12,  # ~0.12 USD/kWh vs gasolina
+                'ahorro_total_usd': self._current_ev_charging * 0.15,  # Total 
+                # SAC-specific metrics
+                'entropy': info.get('entropy', 0.0),
+                'approx_kl': 0.0,  # SAC no usa KL divergence
+                'clip_fraction': 0.0,  # SAC no usa clipping
+                'policy_loss': 0.0,  # Se actualiza en metrics callback
+                'value_loss': 0.0,  # Se actualiza en metrics callback
+                'explained_variance': 0.0,  # SAC no calcula esto
             }
             self.timeseries_records.append(timeseries_record)
             

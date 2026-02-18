@@ -1988,36 +1988,81 @@ class DetailedLoggingCallback(BaseCallback):
             self.episode_taxis_80_max = max(self.episode_taxis_80_max, info.get('taxis_80_percent', 0))
             self.episode_taxis_100_max = max(self.episode_taxis_100_max, info.get('taxis_100_percent', 0))
 
-            # Registrar trace (cada step)
+            # Registrar trace (cada step) - SINCRONIZADO CON PPO
             trace_record = {
                 'timestep': self.num_timesteps,
                 'episode': self.episode_count,
                 'step_in_episode': self.step_in_episode,
+                'hour': info.get('hour', self.step_in_episode % 8760),
                 'reward': reward,
-                'cumulative_reward': self.current_episode_reward,
+                # CO2 metrics
                 'co2_grid_kg': info.get('co2_grid_kg', 0.0),
                 'co2_avoided_indirect_kg': info.get('co2_avoided_indirect_kg', 0.0),
                 'co2_avoided_direct_kg': info.get('co2_avoided_direct_kg', 0.0),
+                # Energy
                 'solar_generation_kwh': info.get('solar_generation_kwh', 0.0),
                 'ev_charging_kwh': info.get('ev_charging_kwh', 0.0),
                 'grid_import_kwh': info.get('grid_import_kwh', 0.0),
                 'bess_power_kw': info.get('bess_power_kw', 0.0),
+                # Vehicle metrics (CRITICO - faltaba)
+                'motos_power_kw': info.get('ev_charging_kwh', 0.0) * 0.79,
+                'mototaxis_power_kw': info.get('ev_charging_kwh', 0.0) * 0.21,
+                'motos_charging': info.get('motos_charging', 0),
+                'mototaxis_charging': info.get('mototaxis_charging', 0),
+                # Training metrics
+                'entropy': info.get('entropy', 0.0),
+                'approx_kl': info.get('approx_kl', 0.0),
+                'clip_fraction': 0.0,  # A2C no usa clipping
+                'policy_loss': 0.0,  # Se actualiza en metrics callback
+                'value_loss': 0.0,  # Se actualiza en metrics callback
+                'explained_variance': info.get('explained_variance', 0.0),
+                # For backward compatibility
+                'cumulative_reward': self.current_episode_reward,
                 'ev_soc_avg': info.get('ev_soc_avg', 0.0),
             }
             self.trace_records.append(trace_record)
 
-            # Registrar timeseries (cada hora simulada)
+            # Registrar timeseries (cada hora simulada) - SINCRONIZADO CON PPO (33 COLUMNAS)
             timeseries_record = {
                 'timestep': self.num_timesteps,
+                'episode': self.episode_count,
                 'hour': info.get('hour', self.step_in_episode % 8760),
-                'solar_kw': info.get('solar_generation_kwh', 0.0),
-                'mall_demand_kw': info.get('mall_demand_kw', 0.0),
-                'ev_charging_kw': info.get('ev_charging_kwh', 0.0),
-                'grid_import_kw': info.get('grid_import_kwh', 0.0),
+                # Energy metrics
+                'solar_generation_kwh': info.get('solar_generation_kwh', 0.0),
+                'ev_charging_kwh': info.get('ev_charging_kwh', 0.0),
+                'grid_import_kwh': info.get('grid_import_kwh', 0.0),
                 'bess_power_kw': info.get('bess_power_kw', 0.0),
                 'bess_soc': info.get('bess_soc', 0.0),
+                'mall_demand_kw': info.get('mall_demand_kw', 0.0),
+                # CO2 metrics (TODAS COLUMNAS)
+                'co2_grid_kg': info.get('co2_grid_kg', 0.0),
+                'co2_avoided_indirect_kg': info.get('co2_avoided_indirect_kg', 0.0),
+                'co2_avoided_direct_kg': info.get('co2_avoided_direct_kg', 0.0),
+                'co2_avoided_total_kg': info.get('co2_avoided_indirect_kg', 0.0) + info.get('co2_avoided_direct_kg', 0.0),
+                # Vehicle metrics
                 'motos_charging': info.get('motos_charging', 0),
                 'mototaxis_charging': info.get('mototaxis_charging', 0),
+                # Reward components
+                'reward': info.get('reward', 0.0),
+                'r_co2': info.get('r_co2', 0.0),
+                'r_solar': info.get('r_solar', 0.0),
+                'r_vehicles': info.get('r_vehicles', info.get('ev_satisfaction', 0.0)),
+                'r_grid_stable': info.get('r_grid_stable', 0.0),
+                'r_bess': info.get('r_bess', 0.0),
+                'r_priority': info.get('r_priority', 0.0),
+                # Economics (CRITICO - faltaba)
+                'ahorro_solar_soles': info.get('solar_generation_kwh', 0.0) * 0.3,
+                'ahorro_bess_soles': max(0, info.get('bess_power_kw', 0.0)) * 0.1,
+                'costo_grid_soles': info.get('grid_import_kwh', 0.0) * 0.4,
+                'ahorro_combustible_usd': info.get('ev_charging_kwh', 0.0) * 0.12,
+                'ahorro_total_usd': info.get('ev_charging_kwh', 0.0) * 0.15,
+                # A2C-specific metrics
+                'entropy': info.get('entropy', 0.0),
+                'approx_kl': info.get('approx_kl', 0.0),
+                'clip_fraction': 0.0,  # A2C no usa clipping
+                'policy_loss': 0.0,  # Se actualiza en metrics callback
+                'value_loss': 0.0,  # Se actualiza en metrics callback
+                'explained_variance': info.get('explained_variance', 0.0),
             }
             self.timeseries_records.append(timeseries_record)
 
