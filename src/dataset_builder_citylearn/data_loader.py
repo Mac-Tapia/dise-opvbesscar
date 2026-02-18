@@ -56,7 +56,7 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 # Primary data sources (OE2 - source of truth - FIXED PATHS v5.7)
-DEFAULT_SOLAR_PATH = Path("data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv")
+DEFAULT_SOLAR_PATH = Path("data/oe2/Generacionsolar/pv_generation_citylearn2024.csv")
 DEFAULT_BESS_PATH = Path("data/oe2/bess/bess_ano_2024.csv")
 DEFAULT_CHARGERS_PATH = Path("data/oe2/chargers/chargers_ev_ano_2024_v3.csv")
 DEFAULT_MALL_DEMAND_PATH = Path("data/oe2/demandamallkwh/demandamallhorakwh.csv")
@@ -71,6 +71,7 @@ SCENARIOS_TABLA13_PATH = DEFAULT_SCENARIOS_DIR / "escenarios_tabla13.csv"
 
 # Interim fallback paths (ONLY valid paths that exist)
 INTERIM_SOLAR_PATHS = [
+    Path("data/oe2/Generacionsolar/pv_generation_citylearn2024.csv"),
     Path("data/interim/oe2/solar/pv_generation_hourly_citylearn_v2.csv"),
     Path("data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv"),
 ]
@@ -512,6 +513,260 @@ def rebuild_oe2_datasets_complete(
 
 
 # ============================================================================
+# CITYLEARN v2 DATASET BUILDER
+# ============================================================================
+
+def build_citylearn_dataset(
+    solar_path: Optional[Path] = None,
+    bess_path: Optional[Path] = None,
+    chargers_path: Optional[Path] = None,
+    demand_path: Optional[Path] = None,
+    cwd: Optional[Path] = None,
+) -> Dict[str, Any]:
+    """Build complete CityLearn v2 dataset from OE2 sources.
+
+    Loads all OE2 data (Solar, BESS, Chargers, Mall demand) and combines
+    them into a unified dataset for CityLearn v2 environment training.
+
+    Args:
+        solar_path: Override default solar data path
+        bess_path: Override default BESS data path
+        chargers_path: Override default chargers data path
+        demand_path: Override default mall demand data path
+        cwd: Working directory (default: current cwd)
+
+    Returns:
+        Dict with keys:
+            - 'solar': SolarData object
+            - 'bess': BESSData object
+            - 'chargers': ChargerData object
+            - 'demand': DemandData object
+            - 'scenarios': Dict[str, pd.DataFrame] of scenario metadata
+            - 'combined': pd.DataFrame with merged hourly data
+            - 'config': Dict with system configuration
+
+    Raises:
+        OE2ValidationError: If any data validation fails
+    """
+    print("=" * 80)
+    print("🔨 BUILDING CITYLEARN v2 DATASET")
+    print("=" * 80)
+    print()
+
+    # Load all OE2 data
+    print("📥 Loading OE2 datasets...")
+    datasets = rebuild_oe2_datasets_complete(
+        solar_path=solar_path,
+        bess_path=bess_path,
+        chargers_path=chargers_path,
+        demand_path=demand_path,
+        cwd=cwd,
+    )
+
+    solar = datasets["solar"]
+    bess = datasets["bess"]
+    chargers = datasets["chargers"]
+    demand = datasets["demand"]
+    scenarios = datasets["scenarios"]
+
+    print(f"\n✅ All OE2 datasets loaded successfully")
+    print(f"   • Solar: {solar.n_hours} hours, {solar.mean_kw:.1f} kW avg")
+    print(f"   • BESS: {bess.capacity_kwh:.0f} kWh capacity, {bess.n_hours} hours")
+    print(f"   • Chargers: {chargers.n_chargers} units, {chargers.total_sockets} sockets")
+    print(f"   • Demand: {demand.n_hours} hours, {demand.mall_mean_kw:.1f} kW avg mall")
+
+    # Build combined dataset
+    print(f"\n🔗 Merging hourly data...")
+    
+    # Start with solar
+    combined = solar.df.copy()
+    combined['hour'] = range(len(combined))
+    combined.rename(columns={list(solar.df.columns)[0]: 'solar_generation_kw'}, inplace=True)
+    
+    # Add BESS data
+    if len(bess.df) == 8760:
+        bess_cols = bess.df.columns
+        for col in bess_cols[:5]:  # Take first 5 relevant columns
+            if col not in combined.columns:
+                combined[col] = bess.df[col].values
+    
+    # Add demand data
+    if len(demand.df) == 8760:
+        demand_cols = demand.df.columns
+        for col in demand_cols:
+            if col not in combined.columns and col != 'hour':
+                combined[col] = demand.df[col].values
+
+    print(f"✅ Combined dataset shape: {combined.shape} (rows, columns)")
+
+    # Build configuration dict
+    config = {
+        "version": "7.0",
+        "date": "2026-02-18",
+        "system": {
+            "pv_capacity_kwp": SOLAR_PV_KWP,
+            "bess_capacity_kwh": BESS_CAPACITY_KWH,
+            "bess_max_power_kw": BESS_MAX_POWER_KW,
+            "n_chargers": N_CHARGERS,
+            "n_sockets": TOTAL_SOCKETS,
+            "charger_power_kw": 7.4,
+        },
+        "demand": {
+            "mall_avg_kw": demand.mall_mean_kw,
+            "ev_avg_kw": EV_DEMAND_KW,
+        },
+        "co2": {
+            "grid_factor_kg_per_kwh": CO2_FACTOR_GRID_KG_PER_KWH,
+            "ev_factor_kg_per_kwh": CO2_FACTOR_EV_KG_PER_KWH,
+        },
+        "data_sources": {
+            "solar": str(solar.path),
+            "bess": str(bess.path),
+            "chargers": str(chargers.path),
+            "demand": str(demand.path),
+        },
+    }
+
+    result = {
+        "solar": solar,
+        "bess": bess,
+        "chargers": chargers,
+        "demand": demand,
+        "scenarios": scenarios,
+        "combined": combined,
+        "config": config,
+    }
+
+    print(f"\n✅ CityLearn v2 dataset built successfully")
+    print(f"\n📊 Dataset Summary:")
+    print(f"   • Total hours: {len(combined)}")
+    print(f"   • Total columns: {combined.shape[1]}")
+    print(f"   • PV system: {config['system']['pv_capacity_kwp']:.0f} kWp")
+    print(f"   • BESS: {config['system']['bess_capacity_kwh']:.0f} kWh")
+    print(f"   • Chargers: {config['system']['n_chargers']} × {config['system']['charger_power_kw']} kW")
+
+    return result
+
+
+def save_citylearn_dataset(
+    dataset: Dict[str, Any],
+    output_dir: Optional[Path] = None,
+) -> Path:
+    """Save CityLearn v2 dataset to disk for training.
+
+    Args:
+        dataset: Dict returned by build_citylearn_dataset()
+        output_dir: Output directory (default: PROCESSED_CITYLEARN_DIR)
+
+    Returns:
+        Path to output directory
+    """
+    if output_dir is None:
+        output_dir = PROCESSED_CITYLEARN_DIR
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"\n💾 Saving CityLearn v2 dataset to {output_dir}...")
+
+    # Save combined dataset
+    combined_path = output_dir / "citylearnv2_combined_dataset.csv"
+    dataset["combined"].to_csv(combined_path, index=False)
+    print(f"   ✓ Combined data: {combined_path.name}")
+
+    # Save individual components
+    solar_path = output_dir / "solar_generation.csv"
+    dataset["solar"].df.to_csv(solar_path, index=False)
+    print(f"   ✓ Solar: {solar_path.name}")
+
+    bess_path = output_dir / "bess_timeseries.csv"
+    dataset["bess"].df.to_csv(bess_path, index=False)
+    print(f"   ✓ BESS: {bess_path.name}")
+
+    chargers_path = output_dir / "chargers_timeseries.csv"
+    dataset["chargers"].df.to_csv(chargers_path, index=False)
+    print(f"   ✓ Chargers: {chargers_path.name}")
+
+    demand_path = output_dir / "mall_demand.csv"
+    dataset["demand"].df.to_csv(demand_path, index=False)
+    print(f"   ✓ Demand: {demand_path.name}")
+
+    # Save configuration
+    config_path = output_dir / "dataset_config_v7.json"
+    with open(config_path, 'w', encoding='utf-8') as f:
+        json.dump(dataset["config"], f, indent=2, default=str)
+    print(f"   ✓ Config: {config_path.name}")
+
+    print(f"\n✅ Dataset saved successfully to {output_dir}")
+
+    return output_dir
+
+
+def load_citylearn_dataset(
+    input_dir: Optional[Path] = None,
+) -> Dict[str, pd.DataFrame]:
+    """Load pre-built CityLearn v2 dataset from disk.
+
+    Args:
+        input_dir: Input directory (default: PROCESSED_CITYLEARN_DIR)
+
+    Returns:
+        Dict with keys: 'combined', 'solar', 'bess', 'chargers', 'demand', 'config'
+    """
+    if input_dir is None:
+        input_dir = PROCESSED_CITYLEARN_DIR
+
+    input_dir = Path(input_dir)
+
+    if not input_dir.exists():
+        raise OE2ValidationError(
+            f"CityLearn dataset directory not found: {input_dir}\n"
+            f"Run build_citylearn_dataset() and save_citylearn_dataset() first."
+        )
+
+    print(f"📂 Loading CityLearn v2 dataset from {input_dir}...")
+
+    result = {}
+
+    # Load combined dataset
+    combined_path = input_dir / "citylearnv2_combined_dataset.csv"
+    if combined_path.exists():
+        result["combined"] = pd.read_csv(combined_path)
+        print(f"   ✓ Combined data: {result['combined'].shape}")
+    else:
+        raise OE2ValidationError(f"Missing {combined_path.name}")
+
+    # Load individual components
+    for name, filename in [
+        ("solar", "solar_generation.csv"),
+        ("bess", "bess_timeseries.csv"),
+        ("chargers", "chargers_timeseries.csv"),
+        ("demand", "mall_demand.csv"),
+    ]:
+        path = input_dir / filename
+        if path.exists():
+            result[name] = pd.read_csv(path)
+            print(f"   ✓ {name}: {result[name].shape}")
+        else:
+            logger.warning(f"Missing {filename}")
+
+    # Load configuration
+    config_path = input_dir / "dataset_config_v7.json"
+    if config_path.exists():
+        with open(config_path, 'r', encoding='utf-8') as f:
+            result["config"] = json.load(f)
+        print(f"   ✓ Config: {len(result['config'])} keys")
+    else:
+        logger.warning(f"Missing {config_path.name}")
+
+    print(f"\n✅ CityLearn v2 dataset loaded successfully")
+    print(f"   • Total hours: {len(result['combined'])}")
+    print(f"   • Total columns: {result['combined'].shape[1]}")
+
+    return result
+
+
+# ============================================================================
 # CONVENIENCE EXPORTS (for backward compatibility)
 # ============================================================================
 
@@ -553,4 +808,8 @@ __all__ = [
     "load_scenarios_metadata",
     "validate_oe2_complete",
     "rebuild_oe2_datasets_complete",
+    # CityLearn v2 builders
+    "build_citylearn_dataset",
+    "save_citylearn_dataset",
+    "load_citylearn_dataset",
 ]
