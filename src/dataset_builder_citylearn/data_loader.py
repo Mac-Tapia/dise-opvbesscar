@@ -254,8 +254,8 @@ def load_solar_data(
             raise OE2ValidationError(f"No numeric column found in {path}")
         power_col = numeric_cols[0]
 
-    solar_w = df[power_col].values
-    solar_kw = solar_w / 1000.0 if max(solar_w) > 1000 else solar_w
+    solar_w: np.ndarray = df[power_col].values.astype(np.float64)
+    solar_kw: np.ndarray = solar_w / 1000.0 if np.max(solar_w) > 1000 else solar_w
 
     return SolarData(
         df=df,

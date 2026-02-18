@@ -174,9 +174,9 @@ def analyze_dataframe(df: pd.DataFrame, required_columns: List[str]) -> Tuple[Li
                     analysis.max_value = float(df[col].max())
                     analysis.mean_value = float(df[col].mean())
                     analysis.std_value = float(df[col].std())
-                    analysis.has_zeros = (df[col] == 0).any()
-                    analysis.all_zeros = (df[col] == 0).all()
-                    analysis.has_negatives = (df[col] < 0).any()
+                    analysis.has_zeros = bool((df[col] == 0).any())
+                    analysis.all_zeros = bool((df[col] == 0).all())
+                    analysis.has_negatives = bool((df[col] < 0).any())
                 except:
                     pass
             
@@ -261,9 +261,13 @@ def main():
             status_symbol = "✓" if status.exists else "✗"
             if status.exists:
                 if status.file_type == ".csv":
-                    detail = f"({status.rows:,} rows × {status.columns} cols, {status.size_bytes / 1024:.1f} KB)"
+                    rows_str = f"{status.rows:,}" if status.rows is not None else "?"
+                    cols_str = f"{status.columns}" if status.columns is not None else "?"
+                    size_kb = f"{status.size_bytes / 1024:.1f}" if status.size_bytes is not None else "?"
+                    detail = f"({rows_str} rows × {cols_str} cols, {size_kb} KB)"
                 else:
-                    detail = f"({status.size_bytes / 1024:.1f} KB)"
+                    size_kb = f"{status.size_bytes / 1024:.1f}" if status.size_bytes is not None else "?"
+                    detail = f"({size_kb} KB)"
             else:
                 detail = "NO ENCONTRADO"
             
