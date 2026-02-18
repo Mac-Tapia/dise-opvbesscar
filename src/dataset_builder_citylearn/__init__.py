@@ -60,6 +60,10 @@ from .data_loader import (
     load_scenarios_metadata,
     validate_oe2_complete,
     rebuild_oe2_datasets_complete,
+    # CityLearn v2 builders
+    build_citylearn_dataset,
+    save_citylearn_dataset,
+    load_citylearn_dataset,
     # Constants
     BESS_CAPACITY_KWH,
     BESS_MAX_POWER_KW,
@@ -105,6 +109,11 @@ __all__ = [
     "load_scenarios_metadata",
     "validate_oe2_complete",
     "rebuild_oe2_datasets_complete",
+    
+    # ===== CITYLEARN V2 BUILDERS =====
+    "build_citylearn_dataset",
+    "save_citylearn_dataset",
+    "load_citylearn_dataset",
     
     # ===== OE2 CONSTANTS =====
     "BESS_CAPACITY_KWH",
