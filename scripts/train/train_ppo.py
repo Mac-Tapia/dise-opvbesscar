@@ -3369,21 +3369,143 @@ def main():
     # PASO 3: CARGAR DATOS REALES OE2 - USAR LA MISMA FUNCION QUE SAC
     # ========================================================================
     # [SINCRONIZACION CRITICA] PPO debe usar EXACTAMENTE los mismos datasets que SAC
-    # Para ello, usamos la función load_datasets_from_processed() que SAC también usa
+    # Ambos usan data_loader centralizado - no hay función importada, llamamos a data_loader directo
     try:
-        print('[PASO 2] Cargar datasets OE2 ({} horas = 1 ano)  - SINCRONIZADO CON SAC'.format(HOURS_PER_YEAR))
+        print('[PASO 2] Cargar datasets OE2 ({} horas = 1 ano)  - SINCRONIZADO CON data_loader v7.2'.format(HOURS_PER_YEAR))
         print('-'*80)
-        print('  Importando función load_datasets_from_processed() de SAC...')
+        print('  Usando: rebuild_oe2_datasets_complete() from data_loader')
         
-        # Importar la función de SAC para garantizar sincronización EXACTA
-        from train_sac_multiobjetivo import load_datasets_from_processed
-        print('  [OK] Función importada de SAC. Ejecutando...')
+        from src.dataset_builder_citylearn.data_loader import rebuild_oe2_datasets_complete
+        
+        # Define load_datasets_from_processed locally (same as SAC)
+        def load_datasets_from_processed():
+            """Load datasets using CENTRALIZED data_loader (v7.2)"""
+            print('  [CARGANDO] Usando data_loader centralizado...')
+            
+            oe2_datasets = rebuild_oe2_datasets_complete()
+            
+            # SOLAR
+            solar_obj = oe2_datasets['solar']
+            solar_hourly = solar_obj.df['potencia_kw'].values[:HOURS_PER_YEAR].astype(np.float32)
+            solar_data = {}
+            for col in solar_obj.df.columns:
+                if col != 'datetime':
+                    try:
+                        solar_data[col] = solar_obj.df[col].values[:HOURS_PER_YEAR].astype(np.float32)
+                    except:
+                        solar_data[col] = solar_obj.df[col].values[:HOURS_PER_YEAR]
+            
+            # CHARGERS
+            chargers_obj = oe2_datasets['chargers']
+            df_chargers = chargers_obj.df.copy()
+            chargers_data = {}
+            chargers_global_cols = [
+                'is_hora_punta', 'tarifa_aplicada_soles', 'ev_energia_total_kwh',
+                'costo_carga_ev_soles', 'ev_energia_motos_kwh', 'ev_energia_mototaxis_kwh',
+                'co2_reduccion_motos_kg', 'co2_reduccion_mototaxis_kg', 
+                'reduccion_directa_co2_kg', 'ev_demand_kwh'
+            ]
+            for col in chargers_global_cols:
+                if col in df_chargers.columns:
+                    if col == 'is_hora_punta':
+                        chargers_data[col] = df_chargers[col].values[:HOURS_PER_YEAR].astype(np.int32)
+                    else:
+                        chargers_data[col] = df_chargers[col].values[:HOURS_PER_YEAR].astype(np.float32)
+            
+            socket_power_cols = [c for c in df_chargers.columns if c.endswith('_charging_power_kw')]
+            socket_power_cols.sort(key=lambda x: int(x.split('_')[1]))
+            chargers_hourly = df_chargers[socket_power_cols].values[:HOURS_PER_YEAR].astype(np.float32)
+            chargers_moto_hourly = chargers_hourly[:, :30].astype(np.float32)
+            chargers_mototaxi_hourly = chargers_hourly[:, 30:38].astype(np.float32)
+            n_sockets = chargers_hourly.shape[1]
+            
+            # MALL
+            demand_obj = oe2_datasets['demand']
+            df_mall = demand_obj.df.copy()
+            if 'mall_demand_kwh' in df_mall.columns:
+                col = 'mall_demand_kwh'
+            elif 'demand_kwh' in df_mall.columns:
+                col = 'demand_kwh'
+            else:
+                col = df_mall.columns[-1]
+            mall_data_dict = {}
+            mall_cols = ['mall_demand_kwh', 'mall_co2_indirect_kg', 'is_hora_punta', 'tarifa_soles_kwh', 'mall_cost_soles']
+            for col_name in mall_cols:
+                if col_name in df_mall.columns:
+                    if col_name == 'is_hora_punta':
+                        mall_data_dict[col_name] = df_mall[col_name].values[:HOURS_PER_YEAR].astype(np.int32)
+                    else:
+                        mall_data_dict[col_name] = df_mall[col_name].values[:HOURS_PER_YEAR].astype(np.float32)
+            mall_data = np.asarray(df_mall[col].values[:HOURS_PER_YEAR], dtype=np.float32)
+            mall_hourly = np.pad(mall_data, ((0, HOURS_PER_YEAR - len(mall_data)),), mode='wrap') if len(mall_data) < HOURS_PER_YEAR else mall_data
+            
+            # BESS
+            bess_obj = oe2_datasets['bess']
+            df_bess = bess_obj.df.copy()
+            if 'bess_soc_percent' in df_bess.columns:
+                bess_soc = df_bess['bess_soc_percent'].values[:HOURS_PER_YEAR].astype(np.float32)
+            elif 'soc_percent' in df_bess.columns:
+                bess_soc = df_bess['soc_percent'].values[:HOURS_PER_YEAR].astype(np.float32)
+            else:
+                bess_soc = np.full(HOURS_PER_YEAR, 50.0, dtype=np.float32)
+            
+            bess_costs = df_bess['cost_grid_import_soles'].values[:HOURS_PER_YEAR].astype(np.float32) if 'cost_grid_import_soles' in df_bess.columns else None
+            bess_peak_savings = df_bess['peak_reduction_savings_soles'].values[:HOURS_PER_YEAR].astype(np.float32) if 'peak_reduction_savings_soles' in df_bess.columns else None
+            bess_tariff = df_bess['tariff_osinergmin_soles_kwh'].values[:HOURS_PER_YEAR].astype(np.float32) if 'tariff_osinergmin_soles_kwh' in df_bess.columns else None
+            bess_co2_avoided = df_bess['co2_avoided_indirect_kg'].values[:HOURS_PER_YEAR].astype(np.float32) if 'co2_avoided_indirect_kg' in df_bess.columns else None
+            CO2_FACTOR_IQUITOS = 0.4521
+            bess_co2_grid = np.full(HOURS_PER_YEAR, CO2_FACTOR_IQUITOS, dtype=np.float32)
+            
+            energy_flows = {}
+            flow_columns = ['pv_generation_kwh', 'ev_demand_kwh', 'mall_demand_kwh',
+                           'pv_to_ev_kwh', 'pv_to_bess_kwh', 'pv_to_mall_kwh', 'pv_curtailed_kwh',
+                           'bess_charge_kwh', 'bess_discharge_kwh', 'bess_to_ev_kwh', 'bess_to_mall_kwh',
+                           'grid_to_ev_kwh', 'grid_to_mall_kwh', 'grid_to_bess_kwh', 'grid_import_total_kwh',
+                           'mall_grid_import_kwh', 'peak_reduction_savings_normalized', 'co2_avoided_indirect_normalized']
+            for col_name in flow_columns:
+                if col_name in df_bess.columns:
+                    energy_flows[col_name] = df_bess[col_name].values[:HOURS_PER_YEAR].astype(np.float32)
+            
+            bess_co2 = {
+                'grid_kg': bess_co2_grid,
+                'avoided_kg': bess_co2_avoided if bess_co2_avoided is not None else np.zeros(HOURS_PER_YEAR, dtype=np.float32),
+            }
+            
+            bess_ev_demand = df_bess['ev_demand_kwh'].values[:HOURS_PER_YEAR].astype(np.float32) if 'ev_demand_kwh' in df_bess.columns else None
+            bess_mall_demand = df_bess['mall_demand_kwh'].values[:HOURS_PER_YEAR].astype(np.float32) if 'mall_demand_kwh' in df_bess.columns else None
+            bess_pv_generation = df_bess['pv_generation_kwh'].values[:HOURS_PER_YEAR].astype(np.float32) if 'pv_generation_kwh' in df_bess.columns else None
+            
+            return {
+                'solar': solar_hourly,
+                'solar_data': solar_data,
+                'chargers': chargers_hourly,
+                'chargers_moto': chargers_moto_hourly,
+                'chargers_mototaxi': chargers_mototaxi_hourly,
+                'n_moto_sockets': 30,
+                'n_mototaxi_sockets': 8,
+                'chargers_data': chargers_data,
+                'mall': mall_hourly,
+                'mall_data': mall_data_dict,
+                'bess_soc': bess_soc,
+                'bess_costs': bess_costs,
+                'bess_peak_savings': bess_peak_savings,
+                'bess_tariff': bess_tariff,
+                'bess_co2': bess_co2,
+                'energy_flows': energy_flows,
+                'bess_ev_demand': bess_ev_demand,
+                'bess_mall_demand': bess_mall_demand,
+                'bess_pv_generation': bess_pv_generation,
+                'charger_max_power_kw': np.full(n_sockets, 7.0, dtype=np.float32),
+                'charger_mean_power_kw': np.full(n_sockets, 2.5, dtype=np.float32),
+            }
+        
+        print('  [OK] Función load_datasets_from_processed() lista (usa data_loader centralizado). Ejecutando...')
         
         datasets = load_datasets_from_processed()
         
         # ===== DESEMPAQUETAR DATOS DEL DICCIONARIO (sincronizado con SAC) =====
         # Todos los datos vienen con IDENTICA estructura que SAC
-        print('  [OK] Datasets cargados exitosamente (sincronizado con SAC)')
+        print('  [OK] Datasets cargados exitosamente (sincronizado con data_loader v7.2)')
         print('  Desempaquetando...')
         print()
         
