@@ -53,10 +53,11 @@ from src.dataset_builder_citylearn.rewards import (
 # No dependemos de modulo externo - todo auto-contenido aqui
 VEHICLE_SCENARIOS_AVAILABLE = True  # Siempre disponible porque esta definido aqui
 
-# ===== CONSTANTES IQUITOS v5.5 (2026-02-15) CON COMUNICACION SISTEMA =====
+# ===== CONSTANTES IQUITOS v5.8 (2026-02-18) CON COMUNICACION SISTEMA =====
+# CRÍTICO: BESS_CAPACITY_KWH actualizado a 2000.0 kWh (verificado contra bess_ano_2024.csv max soc_kwh)
 CO2_FACTOR_IQUITOS: float = 0.4521  # kg CO2/kWh (grid termico aislado)
-BESS_CAPACITY_KWH: float = 1700.0   # 1700 kWh (OE2 v5.5 UPDATED - dual-purpose EV+MALL)
-BESS_MAX_POWER_KW: float = 400.0    # 400 kW potencia maxima BESS (OE2 v5.5 UPDATED)
+BESS_CAPACITY_KWH: float = 2000.0   # 2,000 kWh max SOC (verificado v5.8 - antes 1700)
+BESS_MAX_POWER_KW: float = 400.0    # 400 kW potencia maxima BESS
 HOURS_PER_YEAR: int = 8760
 
 # v5.3: Constantes para normalizacion de observaciones (comunicacion sistema)
@@ -2441,7 +2442,7 @@ def main():
             # Moto: (80-20)% × 4.6 kWh / 0.95 eficiencia = 2.90 kWh
             # Mototaxi: (80-20)% × 7.4 kWh / 0.95 eficiencia = 4.68 kWh
             motos_completed = int(ev_energy_motos_kwh / max(MOTO_ENERGY_TO_CHARGE, 0.01))
-                taxis_completed = int(ev_energy_taxis_kwh / max(MOTOTAXI_ENERGY_TO_CHARGE, 0.01))
+            taxis_completed = int(ev_energy_taxis_kwh / max(MOTOTAXI_ENERGY_TO_CHARGE, 0.01))
             self.motos_charged_today += motos_completed
             self.mototaxis_charged_today += taxis_completed
             
@@ -4785,7 +4786,8 @@ def main():
     print(f'  Entropy coef:    {sac_config.ent_coef}')
     print(f'  Target entropy:  {sac_config.target_entropy}')
     print(f'  Learning rate:   {sac_config.learning_rate}')
-    print(f'  Networks:        Actor/Critic {list(sac_config.policy_kwargs.get("net_arch", {}).get("pi", [256, 256]))}')    print(f'  Datos: Datos reales OE2 (solar 8.29GWh + chargers + mall 12.40GWh + BESS 1,700 kWh max SOC)')
+    print(f'  Networks:        Actor/Critic {list(sac_config.policy_kwargs.get("net_arch", {}).get("pi", [256, 256]))}')
+    print(f'  Datos: Datos reales OE2 (solar 8.29GWh + chargers + mall 12.40GWh + BESS 2,000 kWh max SOC)')
     print(f'  Device: {DEVICE.upper()}')
     print()
     print('  METRICAS LOGUEADAS (cada 500 steps):')
