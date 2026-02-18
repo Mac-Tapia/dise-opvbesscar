@@ -75,7 +75,8 @@ CO2_FACTOR_IQUITOS: float = 0.4521  # kg CO2/kWh (grid termico aislado)
 HOURS_PER_YEAR: int = 8760
 
 # v5.3: Constantes para normalizacion de observaciones (comunicacion sistema)
-# SOLAR_MAX_KW reemplazado con SOLAR_PV_KWP (4,050 kWp)
+# SOLAR_MAX_KW: pico real de generacion solar observado en datos (2,887 kW)
+SOLAR_MAX_KW: float = 2887.0        # Max real observado en solar timeseries
 MALL_MAX_KW: float = 3000.0         # Real max=2,763 kW from data/oe2/demandamallkwh/demandamallhorakwh.csv [FIXED 2026-02-15]
 BESS_MAX_KWH_CONST: float = 1700.0  # Capacidad maxima BESS (referencia normalizacion) [VALIDATED]
 CHARGER_MAX_KW: float = 3.7         # Max per socket: 7.4 kW charger / 2 sockets from src/dimensionamiento/oe2/disenocargadoresev/chargers.py [FIXED 2026-02-15]
@@ -868,8 +869,8 @@ def load_datasets_from_processed():
         'bess_pv_generation': bess_pv_generation,  # PV real por hora
         
         # Estadisticas chargers
-        'charger_max_power_kw': charger_max_power_kw,
-        'charger_mean_power_kw': charger_mean_power_kw,
+        'charger_max_power_kw': CHARGER_MAX_KW,  # 3.7 kW por socket
+        'charger_mean_power_kw': CHARGER_MEAN_KW,  # 4.6 kW por socket (media)
         
         # TODAS LAS 27 VARIABLES OBSERVABLES DEL DATASET_BUILDER
         'observable_variables': observable_variables_df,
@@ -2127,11 +2128,11 @@ def main():
             
             # CALCULAR VEHICULOS COMPLETADOS DESDE DATASET REAL v7.2 (2026-02-17)
             # Usar ev_energia_motos_kwh y ev_energia_mototaxis_kwh del dataset (DATO REAL)
-            if h < len(self.chargers_hourly):
+            if h < len(self.chargers):
                 try:
                     # Leer energía cargada por tipo de vehículo
-                    ev_energy_motos_kwh = float(self.chargers_hourly[h, 0]) if len(self.chargers_hourly.shape) > 1 else 0.0
-                    ev_energy_taxis_kwh = float(self.chargers_hourly[h, 1]) if len(self.chargers_hourly.shape) > 1 else 0.0
+                    ev_energy_motos_kwh = float(self.chargers[h, 0]) if len(self.chargers.shape) > 1 else 0.0
+                    ev_energy_taxis_kwh = float(self.chargers[h, 1]) if len(self.chargers.shape) > 1 else 0.0
                 except (IndexError, TypeError, ValueError):
                     ev_energy_motos_kwh = 0.0
                     ev_energy_taxis_kwh = 0.0
@@ -2745,6 +2746,10 @@ def main():
             self.ramping_history: List[float] = []
             self.avg_daily_peak_history: List[float] = []
             self.one_minus_load_factor_history: List[float] = []
+            
+            # Vehicle charging tracking
+            self.episode_motos_charged: List[int] = []
+            self.episode_mototaxis_charged: List[int] = []
             
             # Acumuladores KPI (ventana de 24 horas)
             self._kpi_window_size: int = 24  # 24 steps = 1 dia
