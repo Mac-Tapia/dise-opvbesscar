@@ -62,7 +62,8 @@ CO2_FACTOR_IQUITOS: float = 0.4521  # kg CO2/kWh (grid termico aislado)
 HOURS_PER_YEAR: int = 8760
 
 # v5.3: Constantes para normalizacion de observaciones
-# SOLAR_MAX_KW reemplazado con SOLAR_PV_KWP (4,050 kWp)
+# SOLAR_MAX_KW: pico real de generacion solar observado en datos (2,887 kW)
+SOLAR_MAX_KW: float = 2887.0        # Max real observado en solar timeseries
 MALL_MAX_KW: float = 3000.0         # Real max=2,763 kW from data/oe2/demandamallkwh/demandamallhorakwh.csv [FIXED 2026-02-15]
 BESS_MAX_KWH_CONST: float = 1700.0  # Capacidad maxima BESS (referencia normalizacion)
 CHARGER_MAX_KW: float = 10.0        # Max por socket (7.4 kW nominal, 10 kW margen)
