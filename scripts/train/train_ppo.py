@@ -51,6 +51,20 @@ from dataset_builder_citylearn.rewards import (
     MultiObjectiveReward,
     create_iquitos_reward_weights,
 )
+
+# Data loader v5.8 - Centralizado con validación automática y fallbacks
+from dataset_builder_citylearn.data_loader import (
+    rebuild_oe2_datasets_complete,
+    load_citylearn_dataset,
+    BESS_CAPACITY_KWH,      # Constante centralizada (2,000 kWh verificado)
+    BESS_MAX_POWER_KW,      # 400 kW
+    N_CHARGERS,             # 19 chargers
+    TOTAL_SOCKETS,          # 38 sockets
+    SOLAR_PV_KWP,           # 4,050 kWp
+    CO2_FACTOR_GRID_KG_PER_KWH,  # 0.4521 kg CO2/kWh
+    CO2_FACTOR_EV_KG_PER_KWH,    # 2.146 kg CO2/kWh
+    OE2ValidationError,
+)
 from agents.training_validation import validate_agent_config
 
 # ============================================================================

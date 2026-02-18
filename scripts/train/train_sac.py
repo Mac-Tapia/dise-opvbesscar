@@ -49,6 +49,20 @@ from src.dataset_builder_citylearn.rewards import (
     create_iquitos_reward_weights,
 )
 
+# Data loader v5.8 - Centralizado con validación automática y fallbacks
+from src.dataset_builder_citylearn.data_loader import (
+    rebuild_oe2_datasets_complete,
+    load_citylearn_dataset,
+    BESS_CAPACITY_KWH,      # Constante centralizada (2,000 kWh verificado)
+    BESS_MAX_POWER_KW,      # 400 kW
+    N_CHARGERS,             # 19 chargers
+    TOTAL_SOCKETS,          # 38 sockets
+    SOLAR_PV_KWP,           # 4,050 kWp
+    CO2_FACTOR_GRID_KG_PER_KWH,  # 0.4521 kg CO2/kWh
+    CO2_FACTOR_EV_KG_PER_KWH,    # 2.146 kg CO2/kWh
+    OE2ValidationError,
+)
+
 # ===== VEHICLE CHARGING SCENARIOS - DEFINIDOS LOCALMENTE (ROBUSTO) =====
 # No dependemos de modulo externo - todo auto-contenido aqui
 VEHICLE_SCENARIOS_AVAILABLE = True  # Siempre disponible porque esta definido aqui
@@ -56,12 +70,12 @@ VEHICLE_SCENARIOS_AVAILABLE = True  # Siempre disponible porque esta definido aq
 # ===== CONSTANTES IQUITOS v5.8 (2026-02-18) CON COMUNICACION SISTEMA =====
 # CRÍTICO: BESS_CAPACITY_KWH actualizado a 2000.0 kWh (verificado contra bess_ano_2024.csv max soc_kwh)
 CO2_FACTOR_IQUITOS: float = 0.4521  # kg CO2/kWh (grid termico aislado)
-BESS_CAPACITY_KWH: float = 2000.0   # 2,000 kWh max SOC (verificado v5.8 - antes 1700)
-BESS_MAX_POWER_KW: float = 400.0    # 400 kW potencia maxima BESS
+# BESS_CAPACITY_KWH importado de data_loader (2,000 kWh verificado)
+# BESS_MAX_POWER_KW importado de data_loader (400 kW)
 HOURS_PER_YEAR: int = 8760
 
 # v5.3: Constantes para normalizacion de observaciones (comunicacion sistema)
-SOLAR_MAX_KW: float = 2887.0        # Real max desde pv_generation_citylearn_enhanced_v2.csv (capacity factor: 32.79%) [FIXED 2026-02-15]
+# SOLAR_MAX_KW reemplazado con SOLAR_PV_KWP (4,050 kWp)
 MALL_MAX_KW: float = 3000.0         # Real max=2,763 kW from data/oe2/demandamallkwh/demandamallhorakwh.csv [FIXED 2026-02-15]
 BESS_MAX_KWH_CONST: float = 1700.0  # Capacidad maxima BESS (referencia normalizacion) [VALIDATED]
 CHARGER_MAX_KW: float = 3.7         # Max per socket: 7.4 kW charger / 2 sockets from src/dimensionamiento/oe2/disenocargadoresev/chargers.py [FIXED 2026-02-15]

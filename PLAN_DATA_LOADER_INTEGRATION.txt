@@ -1,0 +1,260 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+PLAN: CONECTAR AGENTES (SAC, PPO, A2C) AL DATA_LOADER
+
+Resumen del problema:
+═════════════════════════════════════════════════════════════════════════════
+Actualmente, los agentes (SAC, PPO, A2C) cargan datos directamente desde
+archivos CSV en sus funciones load_datasets_from_processed().
+
+El objetivo es que usen el data_loader centralizado que:
+- Valida datos automáticamente
+- Usa fallbacks si archivos no existen
+- Asegura sincronización de BESS_CAPACITY_KWH = 2,000 kWh
+- Proporciona datos en formato estándar (clases SolarData, BESSData, etc.)
+
+═════════════════════════════════════════════════════════════════════════════
+
+VISTA ACTUAL (❌ SIN DATA_LOADER):
+════════════════════════════════════════════════════════════════════════════
+
+train_sac.py / train_ppo.py / train_a2c.py:
+│
+├─ def load_datasets_from_processed():
+│  ├─ Carga manually: solar.csv
+│  ├─ Carga manually: chargers.csv
+│  ├─ Carga manually: bess.csv (PERO sin validación v5.8)
+│  └─ Carga manually: mall.csv
+│
+├─ Variables globales hardcoded:
+│  ├─ BESS_CAPACITY_KWH = 2000.0 (code duplication)
+│  ├─ SOLAR_MAX_KW = 2887.0
+│  └─ Otros constants esparcidos
+│
+└─ Problemas:
+   ├─ ❌ Cada agente duplica lógica de carga
+   ├─ ❌ Inconsistencia si archivos se mueven
+   ├─ ❌ No hay validación automática (8760 horas)
+   ├─ ❌ Fallbacks manuales para rutas alternativas
+   └─ ❌ Código de carga es ~200+ líneas por agente
+
+
+VISTA PROPUESTA (✅ CON DATA_LOADER):
+════════════════════════════════════════════════════════════════════════════
+
+train_sac.py / train_ppo.py / train_a2c.py:
+│
+├─ Import data_loader:
+│  └─ from src.dataset_builder_citylearn.data_loader import (
+│       rebuild_oe2_datasets_complete,
+│       load_citylearn_dataset,
+│       BESS_CAPACITY_KWH,  # ← Central, no duplicado
+│       SOLAR_PV_KWP,
+│     )
+│
+├─ def load_datasets_from_processed():
+│  ├─ # Opción A: Cargar desde archivos OE2 (más rápido)
+│  │  datasets = rebuild_oe2_datasets_complete()
+│  │  solar = datasets['solar'].df
+│  │  bess = datasets['bess'].df
+│  │  chargers = datasets['chargers'].df
+│  │  demand = datasets['demand'].df
+│  │
+│  ├─ # Opción B: Cargar desde dataset combinado (si existe)
+│  │  try:
+│  │      combined = load_citylearn_dataset()
+│  │  except:
+│  │      datasets = rebuild_oe2_datasets_complete()
+│  │
+│  └─ # Automático: Valida 8760 horas, fallbacks, etc.
+│
+└─ Beneficios:
+   ├─ ✅ Código de carga: ~10 líneas (vs 200+)
+   ├─ ✅ Una sola fuente de verdad (data_loader)
+   ├─ ✅ Validación automática
+   ├─ ✅ Fallbacks automáticos
+   ├─ ✅ BESS_CAPACITY_KWH sincronizado
+   ├─ ✅ Fácil de mantener/actualizar
+   └─ ✅ Código limpio y legible
+
+
+IMPLEMENTACION (PASO A PASO):
+════════════════════════════════════════════════════════════════════════════
+
+PASO 1: Modificar imports en train_sac.py
+─────────────────────────────────────────
+Reemplazar:
+  # Carga manual de constantes
+  CO2_FACTOR_IQUITOS: float = 0.4521
+  BESS_CAPACITY_KWH: float = 2000.0
+  SOLAR_MAX_KW: float = 2887.0
+  HOURS_PER_YEAR: int = 8760
+
+Con:
+  from src.dataset_builder_citylearn.data_loader import (
+      rebuild_oe2_datasets_complete,
+      load_citylearn_dataset,
+      BESS_CAPACITY_KWH,
+      BESS_MAX_POWER_KW,
+      N_CHARGERS,
+      TOTAL_SOCKETS,
+      SOLAR_PV_KWP,
+      CO2_FACTOR_GRID_KG_PER_KWH,
+      CO2_FACTOR_EV_KG_PER_KWH,
+  )
+  
+  CO2_FACTOR_IQUITOS = CO2_FACTOR_GRID_KG_PER_KWH  # Alias
+  HOURS_PER_YEAR = 8760  # Constante local
+
+
+PASO 2: Simplificar load_datasets_from_processed()
+──────────────────────────────────────────────────
+Antes (200+ líneas):
+  def load_datasets_from_processed():
+      # Busca archivos solares en 5 rutas diferentes
+      # Busca archivos chargers en 3 rutas diferentes
+      # Carga CSV manualmente
+      # Valida columnas manualmente
+      # etc...
+      return solar_kw, chargers_kw, mall_kw, bess_soc, ...
+
+Después (10-15 líneas):
+  def load_datasets_from_processed():
+      from src.dataset_builder_citylearn.data_loader import rebuild_oe2_datasets_complete
+      
+      datasets = rebuild_oe2_datasets_complete()
+      
+      solar_df = datasets['solar'].df
+      bess_df = datasets['bess'].df
+      chargers_df = datasets['chargers'].df
+      demand_df = datasets['demand'].df
+      
+      # Extraer columnas necesarias (igual que antes)
+      solar_kw = solar_df['columna_solar'].values
+      # ... resto igual
+
+
+PASO 3: Hacer lo mismo en train_ppo.py
+──────────────────────────────────────
+Aplicar cambios idénticos a PPO
+
+
+PASO 4: Hacer lo mismo en train_a2c.py
+──────────────────────────────────────
+Aplicar cambios idénticos a A2C
+
+
+BENEFICIOS INMEDIATOS:
+════════════════════════════════════════════════════════════════════════════
+
+1. SINCRONIZACION CENTRALIZADA:
+   ├─ BESS_CAPACITY_KWH = 2000.0 (un solo lugar)
+   ├─ SOLAR_PV_KWP = 4050.0 (un solo lugar)
+   ├─ N_CHARGERS = 19 (un solo lugar)
+   └─ Si necesitas cambiar → edita data_loader.py (cambio global)
+
+2. VALIDACION AUTOMATICA:
+   ├─ OE2ValidationError si no 8760 horas
+   ├─ OE2ValidationError si BESS capacity mismatch
+   ├─ OE2ValidationError si socket count mismatch
+   └─ Errores claros y tempranos
+
+3. FALLBACKS INTELIGENTES:
+   ├─ Si data/oe2/solar/pv_generation_citylearn2024.csv no existe
+   ├─ Intenta data/interim/oe2/solar/...
+   ├─ Intenta otras rutas alternativas
+   └─ Falla solo si ninguna ruta funciona
+
+4. MANTENIBILIDAD:
+   ├─ Agregar nuevo dataset → edita data_loader.py
+   ├─ Cambiar rutas → edita constantes en data_loader.py
+   ├─ Cambiar validación → edita validate_oe2_complete()
+   └─ Cambios automáticos en TODOS los agentes
+
+5. COMPATIBILIDAD FORWARD:
+   ├─ Si hay versión v6.0 de data_loader
+   ├─ Todos los agentes heredan automáticamente
+   ├─ No necesitas actualizar 3 archivos
+
+
+DIAGRAMA DE FLUJO:
+════════════════════════════════════════════════════════════════════════════
+
+AGENTE (SAC/PPO/A2C)
+    │
+    ├─ from src.dataset_builder_citylearn.data_loader import rebuild_oe2_datasets_complete
+    │
+    ├─ datasets = rebuild_oe2_datasets_complete()
+    │
+    └─ Dentro de rebuild_oe2_datasets_complete():
+       │
+       ├─ load_solar_data()
+       │  ├─ resolve_data_path(DEFAULT_SOLAR_PATH, INTERIM_SOLAR_PATHS)
+       │  ├─ Intenta: data/oe2/Generacionsolar/pv_generation_citylearn2024.csv
+       │  ├─ Fallback 1: data/interim/oe2/solar/pv_generation_hourly_citylearn_v2.csv
+       │  ├─ Fallback 2: data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv
+       │  └─ Retorna: SolarData(df, n_hours=8760, min/max/mean_kw)
+       │
+       ├─ load_bess_data()
+       │  ├─ resolve_data_path(DEFAULT_BESS_PATH, ...)
+       │  ├─ Intenta: data/oe2/bess/bess_ano_2024.csv
+       │  ├─ Valida: capacity_kwh = 2000.0
+       │  └─ Retorna: BESSData(df, capacity=2000, power=400)
+       │
+       ├─ load_chargers_data()
+       │  ├─ resolve_data_path(DEFAULT_CHARGERS_PATH, ...)
+       │  ├─ Intenta: data/oe2/chargers/chargers_ev_ano_2024_v3.csv
+       │  ├─ Valida: total_sockets = 38
+       │  └─ Retorna: ChargerData(df, n_chargers=19, total_sockets=38)
+       │
+       ├─ load_mall_demand_data()
+       │  ├─ resolve_data_path(DEFAULT_MALL_DEMAND_PATH, ...)
+       │  ├─ Intenta: data/oe2/demandamallkwh/demandamallhorakwh.csv
+       │  └─ Retorna: DemandData(df, mall_mean_kw=...)
+       │
+       └─ validate_oe2_complete()
+          ├─ Valida: todos tienen 8760 horas ✓
+          ├─ Valida: BESS capacity = 2000 kWh ✓
+          ├─ Valida: Chargers = 38 sockets ✓
+          └─ Retorna: True (o raise OE2ValidationError)
+
+
+CODIGO MINIMO REQUERIDO (en cada agente):
+════════════════════════════════════════════════════════════════════════════
+
+# Reemplazar la función load_datasets_from_processed() con:
+
+def load_datasets_from_processed():
+    \"\"\"Load datasets using centralized data_loader.\"\"\"
+    from src.dataset_builder_citylearn.data_loader import rebuild_oe2_datasets_complete
+    
+    # Cargar todos los datos OE2 (con validación automática)
+    datasets = rebuild_oe2_datasets_complete()
+    
+    # Extraer DataFrames
+    solar_df = datasets['solar'].df
+    bess_df = datasets['bess'].df
+    chargers_df = datasets['chargers'].df
+    demand_df = datasets['demand'].df
+    
+    print(f"✅ Datasets cargados desde data_loader:")
+    print(f"   - Solar: {len(solar_df)} horas")
+    print(f"   - BESS: {len(bess_df)} horas")
+    print(f"   - Chargers: {len(chargers_df)} horas")
+    print(f"   - Mall: {len(demand_df)} horas")
+    
+    # RESTO DEL CÓDIGO SIN CAMBIOS
+    # (extrae columnas igual que antes)
+    return solar_kw, chargers_kw, mall_kw, bess_soc, ...
+
+
+═════════════════════════════════════════════════════════════════════════════
+SIGUIENTE PASO:
+Ejecuta: python scripts/implement_data_loader_integration.py
+Esto modifica automáticamente los 3 archivos de agentes.
+═════════════════════════════════════════════════════════════════════════════
+"""
+
+if __name__ == '__main__':
+    print(__doc__)
