@@ -1,93 +1,90 @@
 oe1:
   grid_connection:
     available_capacity_kva: null
-    continuity: sistema aislado termico
+    continuity: sistema aislado termico (diesel)
     power_factor: 0.95
+    co2_factor_kg_per_kwh: 0.4521
   site:
     access_notes: Acceso vial y seguridad verificados en visita de campo.
     area_estacionamiento_m2: 957.0
     area_per_moto_m2: 2.0
     area_per_mototaxi_m2: 4.0
-    area_techada_m2: 20637.0
+    area_techada_m2: 14450.0
     coverage_required_pct: 0.65
     distance_to_substation_m: 60.0
     dwell_hours_min: 4.0
-    name: Mall de Iquitos
+    name: BESS Mall Iquitos
     restrictions_notes: Sombras puntuales por equipos; sin arbolado alto.
     security_notes: Zona de estacionamiento con vigilancia.
-    vehicles_peak_motos: 900
-    vehicles_peak_mototaxis: 130
+    vehicles_peak_motos: 270
+    vehicles_peak_mototaxis: 39
 oe2:
   bess:
-    # BESS v5.5 (2026-02-13) - Dual-purpose: EV + MALL discharge to peak
     autonomy_hours: 4.0
-    c_rate: 0.235  # 400 kW / 1700 kWh = 0.235
-    discharge_only_ev_hours: false  # v5.5: MALL discharge enabled
-    discharge_only_no_solar: false  # v5.5: MALL discharge during day if excess
-    dod: 0.80      # 80% Depth of Discharge (min SOC = 20%)
+    c_rate: 0.2
+    discharge_only_ev_hours: false
+    discharge_only_no_solar: false
+    dod: 0.8
     efficiency_roundtrip: 0.95
-    fixed_capacity_kwh: 1700.0  # v5.5: 1700 kWh nominal (1360 usable @ 20-100% SOC)
-    fixed_power_kw: 400.0       # v5.5: 400 kW carga/descarga (actualizado de 342 kW)
-    load_scope: dual_ev_and_mall  # v5.5: EV + MALL priority
-    min_soc_percent: 20.0       # v5.5: Hard constraint @ 22h closing
+    fixed_capacity_kwh: 2000.0
+    fixed_power_kw: 400.0
+    load_scope: dual_ev_and_mall
+    min_soc_percent: 20.0
     pv_night_threshold_kwh: 0.1
     round_kwh: 100
     sizing_mode: open_hours
     surplus_target_kwh_day: 9630.4
   dispatch_rules:
-    description: "Cubrir bloque pico (18-21h) con prioridades: FV\xE2\u2020\u2019\
-      EV \xE2\u2020\u2019 FV\xE2\u2020\u2019BESS \xE2\u2020\u2019 BESS\xE2\u2020\u2019\
-      EV(noche) \xE2\u2020\u2019 BESS\xE2\u2020\u2019MALL(saturada)"
+    description: 'Cubrir bloque pico (18-21h) con prioridades: FVâ†’EV â†’ FVâ†’BESS
+      â†’ BESSâ†’EV(noche) â†’ BESSâ†’MALL(saturada)'
     enabled: true
     priority_1_pv_to_ev:
-      description: "FV directamente a EVs (m\xC3\xA1xima prioridad)"
+      description: FV directamente a EVs (mÃ¡xima prioridad)
       enabled: true
       ev_power_limit_kw: 150.0
       pv_threshold_kwh: 0.5
     priority_2_pv_to_bess:
-      bess_power_max_kw: 400.0  # v5.5: 400 kW (actualizado de 342 kW)
-      bess_soc_max_percent: 100.0  # v5.5: Allow 100% (hard constraint via simulation)
+      bess_power_max_kw: 400.0
+      bess_soc_max_percent: 100.0
       bess_soc_target_percent: 85.0
       description: FV excedente a BESS (cargar reserva para pico)
       enabled: true
     priority_3_bess_to_ev:
-      bess_power_max_kw: 400.0  # v5.5: 400 kW
-      bess_soc_min_percent: 20.0  # v5.5: Hard minimum @ 22h
+      bess_power_max_kw: 400.0
+      bess_soc_min_percent: 20.0
       description: BESS a EVs cuando cae el sol (noche)
       enabled: true
       pv_night_threshold_kwh: 0.1
     priority_4_bess_to_mall:
       bess_saturation_percent: 95.0
-      description: "BESS saturada + FV excedente \xE2\u2020\u2019 Mall (descargar\
-        \ exceso)"
+      description: BESS saturada + FV excedente â†’ Mall (descargar exceso)
       enabled: true
       mall_power_max_kw: 500.0
     priority_5_grid_import:
       allowed: true
       cost_multiplier_peak: 2.0
-      description: "Importar desde red si es necesario cubrir d\xC3\xA9ficit"
+      description: Importar desde red si es necesario cubrir dÃ©ficit
       enabled: true
     reward_bonuses:
       battery_charge_bonus_weight: 0.005
       direct_solar_bonus_weight: 0.01
       grid_import_penalty_weight: 0.0001
   ev_fleet:
-    # Configuración de cargadores (DATOS REALES OE2 v5.2 - 2026-02-12)
-    charger_power_kw: 7.4               # Modo 3 monofásico 32A @ 230V
-    charger_power_kw_moto: 7.4          # 15 cargadores motos @ 7.4kW/toma
-    charger_power_kw_mototaxi: 7.4      # 4 cargadores mototaxis @ 7.4kW/toma
-    total_chargers: 19                  # 15 + 4 = 19 físicos
-    total_sockets: 38                   # 19 × 2 = 38 (30 motos + 8 mototaxis)
-    ev_demand_constant_kw: 50.0         # Workaround: demanda constante para CO₂ tracking
+    charger_power_kw: 7.4
+    charger_power_kw_moto: 7.4
+    charger_power_kw_mototaxi: 7.4
+    total_chargers: 19
+    total_sockets: 38
+    ev_demand_constant_kw: 50.0
     closing_hour: 22
     daily_sessions_factor: 1.0
-    fc_motos: 0.9
-    fc_mototaxis: 0.9
-    motos_count: 900
-    mototaxis_count: 130
+    fc_motos: 0.55
+    fc_mototaxis: 0.55
+    motos_count: 270
+    mototaxis_count: 39
     opening_hour: 9
-    pe_motos: 0.9
-    pe_mototaxis: 0.9
+    pe_motos: 0.3
+    pe_mototaxis: 0.3
     peak_hours:
     - 18
     - 19
@@ -95,7 +92,7 @@ oe2:
     - 21
     peak_share_day: 0.5
     session_minutes: 30
-    sockets_per_charger: 2             # 2 tomas por cargador (Modo 3)
+    sockets_per_charger: 2
     utilization: 0.92
   location:
     alt: 104.0
@@ -103,7 +100,7 @@ oe2:
     lon: -73.25
     tz: America/Lima
   mall:
-    energy_kwh_day: 9202.4
+    energy_kwh_day: 2400.0
     shape_24h: null
   operational_control:
     bess_soc_target:
@@ -140,8 +137,8 @@ oe2:
     surface_azimuth: 0.0
     surface_tilt: 10.0
     target_ac_kw: 3201.2
-    target_annual_kwh: 8030119
-    target_dc_kw: 4162.0
+    target_annual_kwh: 1217300.0
+    target_dc_kw: 4050.0
     use_pvlib: true
 oe3:
   baseline_episodes: 3
@@ -173,7 +170,7 @@ oe3:
         enabled: true
         weight: 0.5
       grid_import_minimization:
-        description: "Minimizar importaci\xC3\xB3n desde grid"
+        description: Minimizar importaciÃ³n desde grid
         enabled: true
         penalty_multiplier_peak_hours: 2.0
         weight: 0.3
@@ -182,30 +179,29 @@ oe3:
     name: iquitos_ev_mall
     template_name: citylearn_challenge_2022_phase_all_plus_evs
   emissions:
-    # CO₂ evitado por vehículos eléctricos vs combustión
-    kgco2_per_gallon: 8.9      # kg CO₂ por galón de gasolina (combustión)
-    km_per_gallon: 120.0        # Eficiencia motos/mototaxis a combustión (km/galón)
-    km_per_kwh: 35.0            # Eficiencia motos/mototaxis eléctricos (km/kWh)
+    kgco2_per_gallon: 8.9
+    km_per_gallon: 120.0
+    km_per_kwh: 35.0
     project_life_years: 20
   evaluation:
     a2c:
       batch_size: 1024
       checkpoint_freq_steps: 200
       device: cuda
-      entropy_coef: 0.015  # ✅ ÓPTIMO A2C (fue 0.03)
+      entropy_coef: 0.015
       episodes: 5
       gamma: 0.99
-      gae_lambda: 0.95  # ✅ ÓPTIMO A2C (fue 0.92)
-      learning_rate: 7e-4  # ✅ ÓPTIMO A2C (fue 0.003)
+      gae_lambda: 0.95
+      learning_rate: 7e-4
       learning_rate_schedule: linear
       log_interval: 250
-      max_grad_norm: 0.75  # ✅ ÓPTIMO A2C (fue 1.0)
+      max_grad_norm: 0.75
       multi_objective_weights:
-        co2: 0.35
-        cost: 0.10
-        ev: 0.30
-        grid: 0.05
-        solar: 0.20
+        co2: 0.5
+        cost: 0.05
+        ev: 0.15
+        grid: 0.1
+        solar: 0.2
       n_steps: 8
       progress_interval_episodes: 1
       resume_checkpoints: false
@@ -236,11 +232,11 @@ oe3:
       log_interval: 250
       max_grad_norm: 0.5
       multi_objective_weights:
-        co2: 0.35
-        cost: 0.10
-        ev: 0.30
-        grid: 0.05
-        solar: 0.20
+        co2: 0.5
+        cost: 0.05
+        ev: 0.15
+        grid: 0.1
+        solar: 0.2
       n_epochs: 20
       n_steps: 8192
       progress_interval_episodes: 1
@@ -275,11 +271,11 @@ oe3:
       learning_starts: 2000
       log_interval: 100
       multi_objective_weights:
-        co2: 0.35
-        cost: 0.10
-        ev: 0.30
-        grid: 0.05
-        solar: 0.20
+        co2: 0.5
+        cost: 0.05
+        ev: 0.15
+        grid: 0.1
+        solar: 0.2
       prefer_citylearn: false
       progress_interval_episodes: 1
       resume_checkpoints: false
@@ -294,7 +290,7 @@ oe3:
       entropy_coef_init: 0.1
   grid:
     carbon_intensity_kg_per_kwh: 0.4521
-    tariff_usd_per_kwh: 0.2
+    tariff_usd_per_kwh: 0.28
 paths:
   analyses_dir: analyses
   interim_dir: data/interim

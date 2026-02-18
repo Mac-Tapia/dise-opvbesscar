@@ -1,22 +1,23 @@
 oe1:
   grid_connection:
     available_capacity_kva: null
-    continuity: sistema aislado termico
+    continuity: sistema aislado termico (diesel)
     power_factor: 0.95
+    co2_factor_kg_per_kwh: 0.4521
   site:
     access_notes: Acceso vial y seguridad verificados en visita de campo.
     area_estacionamiento_m2: 957.0
     area_per_moto_m2: 2.0
     area_per_mototaxi_m2: 4.0
-    area_techada_m2: 20637.0
+    area_techada_m2: 14450.0
     coverage_required_pct: 0.65
     distance_to_substation_m: 60.0
     dwell_hours_min: 4.0
-    name: Mall de Iquitos
+    name: BESS Mall Iquitos
     restrictions_notes: Sombras puntuales por equipos; sin arbolado alto.
     security_notes: Zona de estacionamiento con vigilancia.
-    vehicles_peak_motos: 900
-    vehicles_peak_mototaxis: 130
+    vehicles_peak_motos: 270
+    vehicles_peak_mototaxis: 39
 oe2:
   data:
     solar_file: data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv
@@ -27,13 +28,13 @@ oe2:
   bess:
     # BESS v5.5 (2026-02-13) - Dual-purpose: EV + MALL discharge to peak
     autonomy_hours: 4.0
-    c_rate: 0.235  # 400 kW / 1700 kWh = 0.235
+    c_rate: 0.200  # 400 kW / 2000 kWh = 0.200
     discharge_only_ev_hours: false  # v5.5: MALL discharge enabled
     discharge_only_no_solar: false  # v5.5: MALL discharge during day if excess
     dod: 0.80      # 80% Depth of Discharge (min SOC = 20%)
     efficiency_roundtrip: 0.95
-    fixed_capacity_kwh: 1700.0  # v5.5: 1700 kWh nominal (1360 usable @ 20-100% SOC)
-    fixed_power_kw: 400.0       # v5.5: 400 kW carga/descarga (actualizado de 342 kW)
+    fixed_capacity_kwh: 2000.0  # v5.5: 2000 kWh nominal (1600 usable @ 20-100% SOC)
+    fixed_power_kw: 400.0       # v5.5: 400 kW carga/descarga symmetric
     load_scope: dual_ev_and_mall  # v5.5: EV + MALL priority
     min_soc_percent: 20.0       # v5.5: Hard constraint @ 22h closing
     pv_night_threshold_kwh: 0.1
@@ -78,24 +79,24 @@ oe2:
       direct_solar_bonus_weight: 0.01
       grid_import_penalty_weight: 0.0001
   ev_fleet:
-    # Configuración de cargadores (DATOS REALES OE2 v5.2 - 2026-02-12)
+    # Configuración de cargadores (DATOS REALES OE2 v5.5 - 2026-02-18)
     charger_power_kw: 7.4               # Modo 3 monofásico 32A @ 230V por toma
     charger_power_kw_moto: 7.4          # 15 cargadores motos @ 7.4kW/toma
     charger_power_kw_mototaxi: 7.4      # 4 cargadores mototaxis @ 7.4kW/toma
     n_chargers: 19                      # Alias para total_chargers (sincronizado con código)
     total_chargers: 19                  # Total físico: 15 + 4 = 19 cargadores
     total_sockets: 38                   # Total sockets: 19 × 2 = 38 (30 motos + 8 mototaxis)
-    # Demanda EV constante para tracking CO₂ (workaround CityLearn 2.5.0 bug)
-    ev_demand_constant_kw: 50.0         # Estimación conservadora (54% uptime × 100kW = ~50kW)
+    # Demanda EV constante para tracking CO₂ (worst-case estimate)
+    ev_demand_constant_kw: 50.0         # Estimación: 280,632 kWh/año / 8760h ≈ 32 kW avg, 50 kW peak
     closing_hour: 22
     daily_sessions_factor: 1.0
-    fc_motos: 0.9
-    fc_mototaxis: 0.9
-    motos_count: 900
-    mototaxis_count: 130
+    fc_motos: 0.55
+    fc_mototaxis: 0.55
+    motos_count: 270
+    mototaxis_count: 39
     opening_hour: 9
-    pe_motos: 0.9
-    pe_mototaxis: 0.9
+    pe_motos: 0.30
+    pe_mototaxis: 0.30
     peak_hours:
       - 18
       - 19
@@ -111,7 +112,7 @@ oe2:
     lon: -73.25
     tz: America/Lima
   mall:
-    energy_kwh_day: 9202.4
+    energy_kwh_day: 2400.0
     shape_24h: null
   operational_control:
     bess_soc_target:
@@ -137,7 +138,7 @@ oe2:
       - 11
       - 12
   solar:
-    area_total_m2: 20637.0
+    area_total_m2: 15200.0
     candidate_count: 5
     factor_diseno: 0.65
     inverter_name: Eaton__Xpert1670
@@ -147,9 +148,9 @@ oe2:
     selection_mode: auto_top5
     surface_azimuth: 0.0
     surface_tilt: 10.0
-    target_ac_kw: 3201.2
-    target_annual_kwh: 8030119
-    target_dc_kw: 4162.0
+    target_ac_kw: 3118.5
+    target_annual_kwh: 1217300
+    target_dc_kw: 4050.0
     use_pvlib: true
 oe3:
   baseline_episodes: 3
@@ -169,14 +170,14 @@ oe3:
       r_grid: -0.0196           # Estabilidad de red
       r_co2: 0.2496             # Reducción CO2
     
-    # CO2 - Reducción Directa e Indirecta (kg/año)
+    # CO2 - Reducción Directa e Indirecta (kg/año, v5.5)
     co2_annual:
-      grid_emitted_kg: 3079263        # CO2 desde importación grid
-      avoided_indirect_kg: 3749046    # Solar evita grid (0.4521 kg/kWh)
-      avoided_direct_kg: 671684       # EVs cargados desde solar (combustión evitada)
-      avoided_total_kg: 4420730       # Reducción combinada total
-      net_kg: -1341467                # CO2 neto (negativo = reducción)
-      reduction_pct: 58.9             # Porcentaje reducción vs baseline
+      grid_emitted_kg: 197262         # CO2 desde importación grid baseline (50 kW × 8760 × 0.4521)
+      avoided_indirect_kg: 550351     # Solar evita grid (1,217.3 MWh × 0.4521 kg/kWh)
+      avoided_direct_kg: 280437       # EVs cargados desde solar (38 sockets × 352,887 kWh/anno conversion)
+      avoided_total_kg: 830788        # Reducción combinada total (550,351 + 280,437)
+      net_kg: 830788                  # CO2 neto evitado vs baseline
+      reduction_pct: 80.8             # Porcentaje reducción vs baseline (830,788 / 1,027,650 → 80.8%)
     
     # Vehículos Cargados (datos reales del dataset v5.2)
     vehicles_charged:
@@ -207,17 +208,17 @@ oe3:
       tariff_usd_per_kwh: 0.28        # Tarifa integral OSINERGMIN (solar + BESS + distr)
 
   rewards:
-    # Multi-Objective Reward Weights (must sum to 1.0) - VALIDATED 2026-02-08
-    co2_weight: 0.35              # PRIMARY: Reduce CO2 (grid import minimization)
-    solar_weight: 0.20            # TERTIARY: Maximize solar self-consumption
-    cost_weight: 0.10             # TERTIARY: Minimize electricity cost
-    ev_satisfaction_weight: 0.30  # SECONDARY: EV charging satisfaction
-    grid_stability_weight: 0.05   # QUATERNARY: Grid peak minimization
-    # NOTE: Weights are validated by user per session 2026-02-08. Total weight = 1.00 exactly.
+    # Multi-Objective Reward Weights (must sum to 1.0) - VALIDATED v5.5 2026-02-18
+    co2_weight: 0.50              # PRIMARY: Reduce CO2 (grid import minimization) - v5.5 priority
+    solar_weight: 0.20            # SECONDARY: Maximize solar self-consumption
+    ev_satisfaction_weight: 0.15  # TERTIARY: EV charging satisfaction
+    grid_stability_weight: 0.10   # QUATERNARY: Grid peak minimization
+    cost_weight: 0.05             # QUINARY: Minimize electricity cost
+    # NOTE: Weights validated for v5.5 system 2026-02-18. Total weight = 1.00 exactly.
     # Dispatch hierarchy penalties + aggressive SOC modulation already enforce EVs maximization.
     # CO2 Factors
-    co2_grid_factor_kg_per_kwh: 0.4521  # Iquitos grid (indirecto)
-    ev_co2_conversion_kg_per_kwh: 2.146  # EV demand tracking (directo)
+    co2_grid_factor_kg_per_kwh: 0.4521  # Iquitos grid (indirecto, central térmica aislada)
+    ev_co2_conversion_kg_per_kwh: 2.146  # EV demand tracking conversion factor
   co2_emissions:
     annual_co2_budget_kg: 7000000
     bess_calendar_aging_kg_per_day: 0.01

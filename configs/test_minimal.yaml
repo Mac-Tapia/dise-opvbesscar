@@ -15,75 +15,73 @@ oe1:
     name: Mall de Iquitos
     restrictions_notes: Sombras puntuales por equipos; sin arbolado alto.
     security_notes: Zona de estacionamiento con vigilancia.
-    vehicles_peak_motos: 900
-    vehicles_peak_mototaxis: 130
+    vehicles_peak_motos: 270
+    vehicles_peak_mototaxis: 39
 oe2:
   bess:
     autonomy_hours: 4.0
-    c_rate: 0.36  # v5.2: 0.36 C-rate
-    discharge_only_ev_hours: true
-    discharge_only_no_solar: true
+    c_rate: 0.2
+    discharge_only_ev_hours: false
+    discharge_only_no_solar: false
     dod: 0.8
-    efficiency_roundtrip: 0.95   # v5.2
-    fixed_capacity_kwh: 940.0    # v5.2: exclusivo EV
-    fixed_power_kw: 342.0        # v5.2: 0.36 C-rate
-    load_scope: ev_only
+    efficiency_roundtrip: 0.95
+    fixed_capacity_kwh: 2000.0
+    fixed_power_kw: 400.0
+    load_scope: dual_ev_and_mall
     min_soc_percent: 25.86
     pv_night_threshold_kwh: 0.1
     round_kwh: 100
     sizing_mode: open_hours
     surplus_target_kwh_day: 9630.4
   dispatch_rules:
-    description: "Cubrir bloque pico (18-21h) con prioridades: FV\xE2\u2020\u2019\
-      EV \xE2\u2020\u2019 FV\xE2\u2020\u2019BESS \xE2\u2020\u2019 BESS\xE2\u2020\u2019\
-      EV(noche) \xE2\u2020\u2019 BESS\xE2\u2020\u2019MALL(saturada)"
+    description: 'Cubrir bloque pico (18-21h) con prioridades: FVâ†’EV â†’ FVâ†’BESS
+      â†’ BESSâ†’EV(noche) â†’ BESSâ†’MALL(saturada)'
     enabled: true
     priority_1_pv_to_ev:
-      description: "FV directamente a EVs (m\xC3\xA1xima prioridad)"
+      description: FV directamente a EVs (mÃ¡xima prioridad)
       enabled: true
       ev_power_limit_kw: 150.0
       pv_threshold_kwh: 0.5
     priority_2_pv_to_bess:
-      bess_power_max_kw: 342.0  # v5.2: 0.36 C-rate
-      bess_soc_max_percent: 95.0
+      bess_power_max_kw: 400.0
+      bess_soc_max_percent: 100.0
       bess_soc_target_percent: 85.0
       description: FV excedente a BESS (cargar reserva para pico)
       enabled: true
     priority_3_bess_to_ev:
-      bess_power_max_kw: 342.0  # v5.2
+      bess_power_max_kw: 400.0
       bess_soc_min_percent: 20.0
       description: BESS a EVs cuando cae el sol (noche)
       enabled: true
       pv_night_threshold_kwh: 0.1
     priority_4_bess_to_mall:
       bess_saturation_percent: 95.0
-      description: "BESS saturada + FV excedente \xE2\u2020\u2019 Mall (descargar\
-        \ exceso)"
+      description: BESS saturada + FV excedente â†’ Mall (descargar exceso)
       enabled: true
       mall_power_max_kw: 500.0
     priority_5_grid_import:
       allowed: true
       cost_multiplier_peak: 2.0
-      description: "Importar desde red si es necesario cubrir d\xC3\xA9ficit"
+      description: Importar desde red si es necesario cubrir dÃ©ficit
       enabled: true
     reward_bonuses:
       battery_charge_bonus_weight: 0.005
       direct_solar_bonus_weight: 0.01
       grid_import_penalty_weight: 0.0001
   ev_fleet:
-    charger_power_kw_moto: 2.0
-    charger_power_kw_mototaxi: 3.0
+    charger_power_kw_moto: 7.4
+    charger_power_kw_mototaxi: 7.4
     closing_hour: 22
     daily_sessions_factor: 1.0
     ev_demand_constant_kw: 50.0
-    fc_motos: 0.9
-    fc_mototaxis: 0.9
-    motos_count: 900
-    mototaxis_count: 130
-    n_chargers: 32
+    fc_motos: 0.55
+    fc_mototaxis: 0.55
+    motos_count: 270
+    mototaxis_count: 39
+    n_chargers: 19
     opening_hour: 9
-    pe_motos: 0.9
-    pe_mototaxis: 0.9
+    pe_motos: 0.3
+    pe_mototaxis: 0.3
     peak_hours:
     - 18
     - 19
@@ -91,9 +89,9 @@ oe2:
     - 21
     peak_share_day: 0.5
     session_minutes: 30
-    sockets_per_charger: 2             # 2 tomas por cargador (Modo 3)
-    total_chargers: 19                  # 15 motos + 4 mototaxis
-    total_sockets: 38                   # 19 × 2 = 38 (30 motos + 8 mototaxis)
+    sockets_per_charger: 2
+    total_chargers: 19
+    total_sockets: 38
     utilization: 0.92
   location:
     alt: 104.0
@@ -101,7 +99,7 @@ oe2:
     lon: -73.25
     tz: America/Lima
   mall:
-    energy_kwh_day: 9202.4
+    energy_kwh_day: 2400.0
     shape_24h: null
   operational_control:
     bess_soc_target:
@@ -138,8 +136,8 @@ oe2:
     surface_azimuth: 0.0
     surface_tilt: 10.0
     target_ac_kw: 3201.2
-    target_annual_kwh: 8030119
-    target_dc_kw: 4162.0
+    target_annual_kwh: 1217300.0
+    target_dc_kw: 4050.0
     use_pvlib: true
 oe3:
   baseline_episodes: 3
@@ -174,7 +172,7 @@ oe3:
         enabled: true
         weight: 0.5
       grid_import_minimization:
-        description: "Minimizar importaci\xC3\xB3n desde grid"
+        description: Minimizar importaciÃ³n desde grid
         enabled: true
         penalty_multiplier_peak_hours: 2.0
         weight: 0.3

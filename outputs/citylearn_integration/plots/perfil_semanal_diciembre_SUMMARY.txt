@@ -1,0 +1,135 @@
+
+==================================================================================================================================
+PERFIL SEMANAL - DICIEMBRE 2024 (1-7 Dic)
+==================================================================================================================================
+
+PERÍODO: 1 Diciembre - 7 Diciembre 2024 (Semana 1)
+GENERADO: 2026-02-18 10:07:42
+DATASET: chargers_ev_ano_2024_v3_enhanced.csv
+
+==================================================================================================================================
+1. RESUMEN EJECUTIVO
+==================================================================================================================================
+
+ENERGÍA TOTAL SEMANA
+  • Consumo total: 8,170.8 kWh
+  • Promedio diario: 1,167.3 kWh/día
+  • Promedio horario: 48.6 kWh/h
+  • Energía pico (hora): 126.7 kWh/h (hora 15:00)
+
+DEMANDA VEHICULAR SEMANA
+  • Motos cargadas: 5,245,046 vehículos
+  • Mototaxis cargados: 1,395,776 vehículos
+  • Total vehículos: 6,640,822
+  • Ratio motos/total: 79.0%
+  • Pico motos (hora): 54,057 vehículos/h
+
+REDUCCIÓN CO2 DIRECTO SEMANA
+  • CO2 evitado: 15,159,423.1 kg
+  • En toneladas: 15,159.423 ton
+  • Promedio diario: 2,165,631.9 kg/día
+  • Por vehículo (promedio): 2.283 kg/vehículo
+
+==================================================================================================================================
+2. ANÁLISIS DIARIO
+==================================================================================================================================
+
+
+DÍA 1 de Diciembre (Sunday):
+  • Energía: 1,165.2 kWh
+  • Motos: 742,567
+  • Mototaxis: 197,760
+  • CO2 reducido: 2,146,501.2 kg
+
+DÍA 2 de Diciembre (Monday):
+  • Energía: 1,158.4 kWh
+  • Motos: 744,745
+  • Mototaxis: 198,346
+  • CO2 reducido: 2,152,817.3 kg
+
+DÍA 3 de Diciembre (Tuesday):
+  • Energía: 1,161.4 kWh
+  • Motos: 747,046
+  • Mototaxis: 198,813
+  • CO2 reducido: 2,159,172.0 kg
+
+DÍA 4 de Diciembre (Wednesday):
+  • Energía: 1,170.6 kWh
+  • Motos: 749,279
+  • Mototaxis: 199,364
+  • CO2 reducido: 2,165,530.8 kg
+
+DÍA 5 de Diciembre (Thursday):
+  • Energía: 1,173.7 kWh
+  • Motos: 751,515
+  • Mototaxis: 199,906
+  • CO2 reducido: 2,171,879.6 kg
+
+DÍA 6 de Diciembre (Friday):
+  • Energía: 1,164.6 kWh
+  • Motos: 753,857
+  • Mototaxis: 200,489
+  • CO2 reducido: 2,178,577.4 kg
+
+DÍA 7 de Diciembre (Saturday):
+  • Energía: 1,176.9 kWh
+  • Motos: 756,037
+  • Mototaxis: 201,098
+  • CO2 reducido: 2,184,944.8 kg
+
+
+==================================================================================================================================
+3. ANÁLISIS HORARIO (PROMEDIO)
+==================================================================================================================================
+
+Hora    Energía (kWh)   Motos   Mototaxis   CO2 (kg)
+------------------------------------------------------------
+ 9:00         38.8      53460.0    14226.7     166411.6
+10:00         66.2      53469.1    14229.0     166439.7
+11:00         88.1      53479.3    14231.7     166471.3
+12:00        107.0      53488.9    14233.4     166499.3
+13:00        112.0      53497.6    14236.4     166527.9
+14:00        117.3      53507.1    14239.3     166558.4
+15:00        121.9      53516.0    14242.3     166587.4
+16:00        115.9      53525.4    14244.9     166616.9
+17:00        104.6      53535.4    14247.0     166646.9
+18:00         94.2      53544.6    14249.6     166675.6
+19:00         84.9      53553.9    14251.4     166703.2
+20:00         66.0      53563.3    14253.4     166731.4
+21:00         50.4      53573.7    14255.4     166762.2
+
+
+==================================================================================================================================
+4. GRÁFICAS GENERADAS
+==================================================================================================================================
+
+  ✓ 04_perfil_semanal_diciembre.png (5 subgráficas)
+    - Perfil horario de energía (línea)
+    - Demanda motos vs mototaxis (barras + scatter)
+    - Reducción CO2 direto (barras)
+    - Resumen energía diaria
+    - Resumen demanda diaria
+
+  ✓ 04_analisis_horario_diciembre.png (4 subgráficas)
+    - Perfil horario promedio energía
+    - Demanda horaria promedio
+    - CO2 por hora del día
+    - Tabla resumen estadístico
+
+==================================================================================================================================
+5. NOTA SOBRE CO2 DIRECTO vs INDIRECTO
+==================================================================================================================================
+
+CO2 DIRECTO (incluido en estas gráficas):
+  • Reducción por cambio de combustible (Gasolina → EV)
+  • Motos: 1.759 kg CO2/carga (30% diésel + 70% gasolina)
+  • Mototaxis: 3.845 kg CO2/carga
+  • Total semana: 15,159,423.1 kg
+
+CO2 INDIRECTO:
+  • Impacto neto incluida generación de energía (solar + grid)
+  • Se calcula en solar_pvlib.py con BESS y solar PV
+  • Factor grid Iquitos: 0.4521 kg CO2/kWh (térmico)
+
+==================================================================================================================================
+Fin del reporte

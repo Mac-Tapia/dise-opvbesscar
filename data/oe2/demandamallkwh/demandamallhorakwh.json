@@ -1,12 +1,13 @@
 {
   "metadata": {
-    "name": "Mall Hourly Demand",
-    "description": "Demanda horaria del mall (Centro Comercial) - Converted from 15-minute to hourly resolution",
-    "version": "2.0",
+    "name": "Mall Hourly Demand - v5.5 Updated",
+    "description": "Demanda horaria del mall (Centro Comercial) 876,000 kWh/año - Base 100 kW constante con variación horaria ±20%",
+    "version": "5.5",
+    "date_updated": "2026-02-18T13:05:13",
     "date_created": "2026-02-03T22:06:31.274259",
-    "source": "data/interim/oe2/demandamallkwh/demandamallkwh.csv (15-minute) → demandamallhorakwh.csv (1-hour)",
+    "source": "MALL Iquitos - 876,000 kWh/año proyectado (100 kW base)",
     "location": "Iquitos, Perú",
-    "project": "pvbesscar OE3 - CityLearn v2 Integration"
+    "project": "pvbesscar OE2 v5.5 - Sistema integrado solar + BESS + cargadores"
   },
   "file": {
     "path": "data\\interim\\oe2\\demandamallkwh\\demandamallhorakwh.csv",
@@ -16,18 +17,19 @@
     "file_size_bytes": 198322
   },
   "data": {
-    "rows": 8785,
+    "rows": 8760,
     "columns": [
-      "FECHAHORA",
+      "datetime",
       "kWh",
-      "datetime"
+      "potencia_kw"
     ],
     "time_resolution": "Hourly (1 hour per record)",
-    "time_format": "%d/%m/%Y %H:%M",
-    "start_datetime": "2024-01-01",
-    "end_datetime": "2025-01-01",
-    "days_covered": 366,
-    "year": 2024
+    "time_format": "%Y-%m-%d %H:%M:%S",
+    "start_datetime": "2024-01-01 00:00:00",
+    "end_datetime": "2024-12-31 23:00:00",
+    "days_covered": 365,
+    "year": 2024,
+    "description": "MALL Iquitos - 876,000 kWh anual (2,400 kWh promedio diario, 100 kW base constante)"
   },
   "columns": {
     "FECHAHORA": {
@@ -41,15 +43,17 @@
     "kWh": {
       "name": "kWh",
       "type": "float64",
-      "description": "Energy consumption of mall during this hour",
-      "unit": "kWh (kilowatt-hours)",
+      "description": "Consumo energético del MALL en esta hora",
+      "unit": "kWh (kilowatt-horas)",
       "nullable": false,
       "statistics": {
-        "total": 12403168.0,
-        "mean": 1411.857484348321,
-        "min": 0.0,
-        "max": 2763.0,
-        "std": 805.1217665185493
+        "total": 876000.0,
+        "mean": 100.0,
+        "min": 80.0,
+        "max": 120.0,
+        "std": 15.4,
+        "base_load_kw": 100.0,
+        "variacion_pct": 20
       }
     }
   },
@@ -89,11 +93,12 @@
     "business_hours": "09:00-21:00 (peak shopping)"
   },
   "energy_metrics": {
-    "annual_demand_kwh": 12403168.0,
-    "daily_average_kwh": 33888.43715846995,
-    "hourly_average_kwh": 1411.857484348321,
-    "peak_hour_kwh": 2763.0,
-    "off_peak_hour_kwh": 0.0
+    "annual_demand_kwh": 876000.0,
+    "daily_average_kwh": 2400.0,
+    "hourly_average_kwh": 100.0,
+    "peak_hour_kwh": 120.0,
+    "off_peak_hour_kwh": 80.0,
+    "notes": "MALL Iquitos - Demanda constante 100 kW con variación ±20% según horario comercial"
   },
   "transformations_applied": {
     "source_resolution": "15 minutes (35,136 records)",

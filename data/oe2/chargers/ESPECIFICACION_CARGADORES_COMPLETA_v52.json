@@ -1,0 +1,288 @@
+{
+  "timestamp": "2026-02-18T13:05:13",
+  "version": "v5.2-completa",
+  "titulo": "ESPECIFICACIÓN COMPLETA DE CARGADORES EV - MOTOS Y MOTOTAXIS",
+  "ubicacion": {
+    "ciudad": "Iquitos",
+    "pais": "Perú",
+    "region": "Loreto",
+    "mall": "BESS Mall Shopping Center"
+  },
+  "infraestructura_instalada": {
+    "total_cargadores": 19,
+    "cargadores_motos": 15,
+    "cargadores_mototaxis": 4,
+    "sockets_totales": 38,
+    "sockets_motos": 30,
+    "sockets_mototaxis": 8,
+    "potencia_instalada_kw": 281.2,
+    "potencia_por_socket_kw": 7.4,
+    "estandar_electronico": "Modo 3 IEC 62196-2",
+    "amperaje": 32,
+    "voltaje": 230,
+    "fase": "monofasica"
+  },
+  "demanda_vehicular": {
+    "motos_total_diaria": 270,
+    "mototaxis_total_diaria": 39,
+    "total_carga_diaria": 309,
+    "motos_total_anual": 98550,
+    "mototaxis_total_anual": 14235,
+    "total_carga_anual": 112785
+  },
+  "parametros_dimensionamiento": {
+    "penetracion_ev": 0.30,
+    "factor_carga_diario": 0.55,
+    "aplicacion": "pe × fc se aplican UNA SOLA VEZ a cantidades base",
+    "vehiculos_base_motos_diario": 1636,
+    "vehiculos_base_mototaxis_diario": 236,
+    "calculos": {
+      "motos_dimension": "1,636 × 0.30 × 0.55 = 270 motos/día",
+      "mototaxis_dimension": "236 × 0.30 × 0.55 = 39 mototaxis/día"
+    }
+  },
+  "distribucion_horaria": {
+    "horario_operativo_inicio": "09:00",
+    "horario_operativo_cierre": "22:00",
+    "horas_operativas": 13,
+    "punta": {
+      "rango_horario": "18:00-23:00",
+      "horas": 5,
+      "motos_punta": 149,
+      "motos_punta_por_hora": 30,
+      "mototaxis_punta": 21,
+      "mototaxis_punta_por_hora": 4.2,
+      "factor_cargas_punta": 0.55
+    },
+    "fuera_punta": {
+      "rango_horario": "09:00-18:00",
+      "horas": 7,
+      "motos_fuera_punta": 122,
+      "motos_fuera_punta_por_hora": 17,
+      "mototaxis_fuera_punta": 18,
+      "mototaxis_fuera_punta_por_hora": 2.6,
+      "factor_cargas_fuera_punta": 0.45
+    }
+  },
+  "especificaciones_tecnicas": {
+    "baterias": {
+      "moto": {
+        "capacidad_nominal_kwh": 4.6,
+        "soc_llegada_media": 0.39,
+        "soc_llegada_rango": "10%-70%",
+        "soc_objetivo_media": 0.78,
+        "soc_objetivo_rango": "60%-100%",
+        "energia_a_cargar_kwh": 2.906,
+        "energia_calculo": "0.60 × 4.6 kWh / 0.95 eficiencia",
+        "autonomia_km": "80-100",
+        "rendimiento_ev_km_per_kwh": 20
+      },
+      "mototaxi": {
+        "capacidad_nominal_kwh": 7.4,
+        "soc_llegada_media": 0.39,
+        "soc_llegada_rango": "10%-70%",
+        "soc_objetivo_media": 0.78,
+        "soc_objetivo_rango": "60%-100%",
+        "energia_a_cargar_kwh": 4.674,
+        "energia_calculo": "0.60 × 7.4 kWh / 0.95 eficiencia",
+        "autonomia_km": "60-80",
+        "rendimiento_ev_km_per_kwh": 10
+      }
+    },
+    "potencia_efectiva": {
+      "potencia_nominal_kw": 7.4,
+      "potencia_efectiva_kw": 4.6,
+      "eficiencia_total_pct": 62,
+      "componentes_eficiencia": {
+        "cargador_eficiencia_pct": 92,
+        "cable_conexion_pct": 97,
+        "bateria_conversion_pct": 94,
+        "taper_cv_phase_pct": 85,
+        "resultado_combinado_pct": 62
+      }
+    },
+    "tiempos_carga_reales": {
+      "moto": {
+        "tiempo_ideal_minutos": 41,
+        "tiempo_real_minutos": 60,
+        "rango_minutos": "50-70",
+        "capacidad_cargas_por_hora": 1.0
+      },
+      "mototaxi": {
+        "tiempo_ideal_minutos": 67,
+        "tiempo_real_minutos": 90,
+        "rango_minutos": "75-105",
+        "capacidad_cargas_por_hora": 0.67
+      }
+    }
+  },
+  "dimensionamiento_playas": {
+    "playa_motos": {
+      "numero_cargadores": 15,
+      "sockets_por_cargador": 2,
+      "total_sockets": 30,
+      "potencia_total_kw": 222.0,
+      "dimesionamiento_logica": "30 motos/h punta ÷ 1.0 cargas/h/socket = 30 sockets",
+      "capacidad_punta_verificacion": "30 motos/h < 30 sockets ✓",
+      "capacidad_fuera_punta_verificacion": "17 motos/h < 30 sockets ✓"
+    },
+    "playa_mototaxis": {
+      "numero_cargadores": 4,
+      "sockets_por_cargador": 2,
+      "total_sockets": 8,
+      "potencia_total_kw": 59.2,
+      "dimesionamiento_logica": "4.2 mototaxis/h punta ÷ 0.67 cargas/h/socket = 6.3 ≈ 8 sockets",
+      "capacidad_punta_verificacion": "4.2 taxis/h < 8 sockets ✓",
+      "capacidad_fuera_punta_verificacion": "2.6 taxis/h < 8 sockets ✓"
+    }
+  },
+  "energia_anual_2024": {
+    "motos": {
+      "cargas_anual": 98550,
+      "energia_por_carga_kwh": 2.906,
+      "energia_total_anual_kwh": 286300.0,
+      "energia_promedio_diario_kwh": 784.4,
+      "energia_promedio_horario_kwh": 32.7
+    },
+    "mototaxis": {
+      "cargas_anual": 14235,
+      "energia_por_carga_kwh": 4.674,
+      "energia_total_anual_kwh": 66587.0,
+      "energia_promedio_diario_kwh": 182.4,
+      "energia_promedio_horario_kwh": 7.6
+    },
+    "total": {
+      "energia_total_anual_kwh": 352887.0,
+      "energia_promedio_diario_kwh": 966.8,
+      "energia_promedio_horario_kwh": 40.3,
+      "factor_carga_anual_pct": 15.2
+    }
+  },
+  "reduccion_co2_directa": {
+    "factor_emision_gasolina_kg_per_l": 2.31,
+    "consumo_tipico_moto_gasolina_km_per_l": 35.0,
+    "consumo_tipico_moto_gasolina_l_per_100km": 2.86,
+    "consumo_tipico_mototaxi_km_per_l": 25.0,
+    "rendimiento_ev_km_per_kwh_moto": 20,
+    "rendimiento_ev_km_per_kwh_mototaxi": 10,
+    "calculos": {
+      "moto_bruto_co2_kg_per_kwh": 1.32,
+      "mototaxi_bruto_co2_kg_per_kwh": 0.92,
+      "offset_grid_diesel_kg_per_kwh": 0.4521
+    },
+    "reduccion_neta": {
+      "moto_neto_kg_per_kwh": 0.87,
+      "mototaxi_neto_kg_per_kwh": 0.47,
+      "promedio_ponderado_kg_per_kwh": 0.75
+    },
+    "co2_total_evitado_anual": {
+      "motos_kg": 249181.0,
+      "mototaxis_kg": 31256.0,
+      "total_kg": 280437.0,
+      "total_toneladas": 280.4,
+      "equivalencia_arboles": 13354,
+      "equivalencia_autos_sin_conducir": 122.3
+    }
+  },
+  "tarifas_osinergmin": {
+    "distribuidor": "Electro Oriente S.A.",
+    "hora_punta": {
+      "rango": "18:00-22:59",
+      "horas_anual": 1825,
+      "tarifa_soles_per_kwh": 0.45
+    },
+    "fuera_punta": {
+      "rango": "00:00-17:59",
+      "horas_anual": 6935,
+      "tarifa_soles_per_kwh": 0.28
+    },
+    "estimacion_costo_anual": {
+      "costo_total_soles": 120827.0,
+      "costo_hp_soles": 56500.0,
+      "costo_hfp_soles": 64327.0,
+      "energia_hp_kwh": 125556.0,
+      "energia_hfp_kwh": 229671.0
+    }
+  },
+  "caracteristicas_operativas": {
+    "simultaneidad_promedio_pct": 55.2,
+    "simultaneidad_fuera_punta_pct": 51.4,
+    "simultaneidad_punta_pct": 58.9,
+    "factor_operativo_horario": {
+      "0_9h": "Cerrado 0%",
+      "9_10h": "Apertura 30%",
+      "10_18h": "Rampa lineal 30% -> 100%",
+      "18_22h": "Pico operacional 100%",
+      "22_24h": "Cerrado 0%"
+    },
+    "distribucion_poisson": {
+      "motos_lambda_socket_hora": 0.98,
+      "mototaxis_lambda_socket_hora": 0.533,
+      "tipo": "Llegadas aleatorias modeladas como Poisson"
+    }
+  },
+  "dataset_generado": {
+    "archivo": "data/oe2/chargers/chargers_ev_ano_2024_v3.csv",
+    "filas": 8760,
+    "columnas_total": 1060,
+    "columnas_por_socket": 12,
+    "columnas_motos_totales": 360,
+    "columnas_mototaxis_totales": 96,
+    "columnas_cargador": 228,
+    "columnas_globales": 34,
+    "tamaño_mb": 50,
+    "periodo": "2024-01-01 a 2024-12-31",
+    "resolucion": "Horaria (8,760 horas)",
+    "integridad": "100% (sin valores nulos)"
+  },
+  "referencias_metodologicas": {
+    "fuentes": [
+      "IEA Global EV Outlook 2024 - Penetración 30% mercados emergentes 2030",
+      "BNEF Electric Vehicle Outlook 2025 - 2/3 ruedas Asia emergente",
+      "ICCT Electric Two/Three-Wheelers - India market study 2022",
+      "NREL EV Charging Behavior Study - Factor carga 0.55",
+      "NREL ChargePoint Analysis 2022 - Tiempos reales con taper",
+      "OSINERGMIN - Tarifas Electro Oriente Iquitos",
+      "IPCC - Factores de emisión CO2"
+    ],
+    "parametros": {
+      "random_seed": 42,
+      "simulacion_duracion_horas": 8760,
+      "simulacion_dias": 365,
+      "resolucion_temporal": "Horaria",
+      "disponibilidad_mall": "09:00-22:00 (13 horas/día operativas)"
+    }
+  },
+  "validaciones": {
+    "motos_cargadas_anual": {
+      "esperado": 98550,
+      "validado": true
+    },
+    "mototaxis_cargados_anual": {
+      "esperado": 14235,
+      "validado": true
+    },
+    "energia_motos_kwh": {
+      "esperado": 286300,
+      "validado": true
+    },
+    "energia_mototaxis_kwh": {
+      "esperado": 66587,
+      "validado": true
+    },
+    "co2_evitado_kg": {
+      "esperado": 280437,
+      "validado": true
+    },
+    "sincronizacion": "EXITOSA",
+    "estado_dataset": "VALIDADO Y LISTO PARA CITYLEARN V2"
+  },
+  "compatibilidad": {
+    "citylearn_v2": true,
+    "agentes_rl_sb3": true,
+    "multiobjeto_reward": true,
+    "frecuencia_muestreo": "Horaria",
+    "duracion_episodio_horas": 8760,
+    "numero_episodios_entrenamiento": 5
+  }
+}

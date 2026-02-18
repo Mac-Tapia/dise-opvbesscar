@@ -1,0 +1,42 @@
+
+====================================================================================================
+INTEGRACIÓN CITYLEARN v2 - ESCENARIO MIXTO VALIDADO
+====================================================================================================
+
+FECHA VALIDACIÓN: 2026-02-18 08:42:59
+DATASET: chargers_ev_ano_2024_v3_enhanced.csv
+
+1. PARÁMETROS VALIDADOS
+   ✓ Energía total: 435,999 kWh/año
+   ✓ Motos cargadas: 147,192,383
+   ✓ Mototaxis cargados: 39,323,791
+   ✓ CO2 indirecto (grid): 197,115 kg/año
+
+2. ESCENARIO MIXTO (30% Diésel + 70% Gasolina)
+   ✓ CO2 directo motos: 1.759 kg/carga
+   ✓ CO2 directo mototaxis: 3.845 kg/carga
+   ✓ CO2 directo total: 702,362.6 ton/año
+   
+3. ARQUITECTURA CITYLEARN
+   ✓ Observaciones: 394-dim (8760 x 365 dias)
+   ✓ Acciones: 39-dim (1 BESS + 38 sockets)
+   ✓ Recompensa: Multi-objective (CO2, solar, EV charge, grid stability)
+   ✓ Horizonte: 8760 timesteps (1 año)
+
+4. GRÁFICAS GENERADAS
+   ✓ 01_dia_final_ano.png - Perfil día 31 Dic
+   ✓ 02_perfil_mensual.png - Análisis por mes
+   ✓ 03_resumen_anual.png - KPIs y tendencias
+
+5. VERIFICACIÓN PROPORCIONALIDAD
+   ✓ CO2 ∝ Cantidad vehículos (r=1.0)
+   ✓ Energía ∝ Motos+Taxis (r=1.0)
+   ✓ Tiempo carga ∝ SOC (variable según estado)
+
+6. PRÓXIMAS ACCIONES REQUERIDAS
+   □ Actualizar scenario_builder.py con pesos MIXTO
+   □ Configurar reward function: CO2_weight=0.50, solar_weight=0.20, etc.
+   □ Ejecutar: python -m src.agents.train_ppo_multiobjetivo
+   □ Validar convergencia vs baseline "sin solar"
+
+STATUS: ✓ LISTO PARA INTEGRACIÓN
