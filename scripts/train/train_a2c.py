@@ -1577,194 +1577,154 @@ def load_real_charger_dataset(charger_data_path: Path) -> Optional[pd.DataFrame]
 
 def build_oe2_dataset(interim_oe2_dir: Path) -> dict[str, Any]:
     """
-    Build complete OE2 dataset from 4 required CSV files v7.0.
+    Build complete OE2 dataset using CENTRALIZED data_loader v7.2
     
-    CARGA COMPLETA DE DATASETS OE2 - SIN OMITIR NINGUNA COLUMNA
+    Uses rebuild_oe2_datasets_complete() for unified schema and validation.
+    CARGA COMPLETA DE DATASETS OE2 - DESDE DATA_LOADER CENTRALIZADO
     ================================================================================
     
-    1. CHARGERS (353 columnas):
-       - data/oe2/chargers/chargers_ev_ano_2024_v3.csv
-       - 4 columnas agregadas (CO2 directo, costo)
-       - 39 sockets × 9 columnas (SOC, active, power, etc.)
-    
-    2. BESS (25 columnas):
-       - data/oe2/bess/bess_ano_2024.csv
-       - Flujos energeticos (pv_to_*, bess_to_*, grid_to_*)
-       - CO2 indirecto, costos, SOC, tarifas
-    
-    3. SOLAR (16 columnas):
-       - data/oe2/Generacionsolar/pv_generation_citylearn_enhanced_v2.csv
-       - Generacion, irradiancia, temperatura
-       - CO2 indirecto, ahorros, suministro a EV/BESS/Mall
-    
-    4. MALL (6 columnas):
-       - data/oe2/demandamallkwh/demandamallhorakwh.csv
-       - Demanda, CO2 indirecto, tarifa, costo
-    
-    RETURN: dict con DataFrames COMPLETOS + arrays numpy para environment
-    ================================================================================
+    Returns: dict con DataFrames COMPLETOS + arrays numpy para environment (compatible con SAC/PPO)
     """
     print("\n" + "="*80)
-    print("[DATASET BUILD v7.0] Cargando 4 DATASETS COMPLETOS - SIN OMITIR COLUMNAS")
+    print("[DATASET BUILD v7.2] Cargando desde data_loader CENTRALIZADO (igual SAC/PPO)")
     print("="*80)
+    
+    # Cargar datos desde data_loader centralizado
+    oe2_datasets = rebuild_oe2_datasets_complete()
     
     result: dict[str, Any] = {}
     
-    # ===== 1. CHARGERS - 353 columnas (CO2 directo, costos, 39 sockets) =====
-    chargers_path = Path('data/oe2/chargers/chargers_ev_ano_2024_v3.csv')
-    if not chargers_path.exists():
-        raise ValueError(f"[X] Chargers REQUERIDO: {chargers_path}")
+    # ===== 1. CHARGERS - desde ChargerData =====
+    chargers_obj = oe2_datasets['chargers']
+    chargers_df = chargers_obj.df.copy()
     
-    chargers_df = pd.read_csv(chargers_path)
     if len(chargers_df) != 8760:
         raise ValueError(f"[X] Chargers debe tener 8760 filas, tiene {len(chargers_df)}")
     
-    # Extraer columnas clave para reward
-    result['chargers_df'] = chargers_df  # DataFrame COMPLETO
-    result['chargers_co2_motos_kg'] = chargers_df['co2_reduccion_motos_kg'].values.astype(np.float32)
-    result['chargers_co2_mototaxis_kg'] = chargers_df['co2_reduccion_mototaxis_kg'].values.astype(np.float32)
-    result['chargers_co2_total_kg'] = chargers_df['reduccion_directa_co2_kg'].values.astype(np.float32)
-    result['chargers_cost_soles'] = chargers_df['costo_carga_ev_soles'].values.astype(np.float32)
+    result['chargers_df'] = chargers_df
     
-    # Extraer demanda por socket (columnas socket_XXX_charging_power_kw)
-    socket_power_cols = [f'socket_{i:03d}_charging_power_kw' for i in range(39)]
-    available_socket_cols = [c for c in socket_power_cols if c in chargers_df.columns]
-    if len(available_socket_cols) >= 38:
-        chargers_hourly = chargers_df[available_socket_cols[:38]].values.astype(np.float32)
-    else:
-        # Fallback: usar todas las columnas numericas que parezcan sockets
-        socket_cols = [c for c in chargers_df.columns if 'socket' in c.lower() and 'power' in c.lower()]
-        chargers_hourly = chargers_df[socket_cols[:38]].values.astype(np.float32) if socket_cols else np.zeros((8760, 38), dtype=np.float32)
+    # Columnas globales
+    if 'co2_reduccion_motos_kg' in chargers_df.columns:
+        result['chargers_co2_motos_kg'] = chargers_df['co2_reduccion_motos_kg'].values.astype(np.float32)
+    if 'co2_reduccion_mototaxis_kg' in chargers_df.columns:
+        result['chargers_co2_mototaxis_kg'] = chargers_df['co2_reduccion_mototaxis_kg'].values.astype(np.float32)
+    if 'reduccion_directa_co2_kg' in chargers_df.columns:
+        result['chargers_co2_total_kg'] = chargers_df['reduccion_directa_co2_kg'].values.astype(np.float32)
+    if 'costo_carga_ev_soles' in chargers_df.columns:
+        result['chargers_cost_soles'] = chargers_df['costo_carga_ev_soles'].values.astype(np.float32)
+    
+    # Socket power columns (38 total)
+    socket_power_cols = [c for c in chargers_df.columns if c.endswith('_charging_power_kw')]
+    socket_power_cols.sort(key=lambda x: int(x.split('_')[1]))
+    chargers_hourly = chargers_df[socket_power_cols[:38]].values.astype(np.float32)
     result['chargers'] = chargers_hourly
     
-    # Extraer SOC por socket
-    socket_soc_cols = [f'socket_{i:03d}_soc_current' for i in range(39)]
-    available_soc_cols = [c for c in socket_soc_cols if c in chargers_df.columns]
-    if available_soc_cols:
-        result['chargers_soc'] = chargers_df[available_soc_cols[:38]].values.astype(np.float32)
+    # Socket SOC
+    socket_soc_cols = [c for c in chargers_df.columns if c.endswith('_soc_current')]
+    if socket_soc_cols:
+        result['chargers_soc'] = chargers_df[socket_soc_cols[:38]].values.astype(np.float32)
     
-    # Extraer active por socket
-    socket_active_cols = [f'socket_{i:03d}_active' for i in range(39)]
-    available_active_cols = [c for c in socket_active_cols if c in chargers_df.columns]
-    if available_active_cols:
-        result['chargers_active'] = chargers_df[available_active_cols[:38]].values.astype(np.float32)
+    # Socket active
+    socket_active_cols = [c for c in chargers_df.columns if c.endswith('_active')]
+    if socket_active_cols:
+        result['chargers_active'] = chargers_df[socket_active_cols[:38]].values.astype(np.float32)
     
-    # Extraer vehicle_count por socket
-    socket_count_cols = [f'socket_{i:03d}_vehicle_count' for i in range(39)]
-    available_count_cols = [c for c in socket_count_cols if c in chargers_df.columns]
-    if available_count_cols:
-        result['chargers_vehicle_count'] = chargers_df[available_count_cols[:38]].values.astype(np.float32)
+    # Socket vehicle count
+    socket_count_cols = [c for c in chargers_df.columns if c.endswith('_vehicle_count')]
+    if socket_count_cols:
+        result['chargers_vehicle_count'] = chargers_df[socket_count_cols[:38]].values.astype(np.float32)
     
-    print(f"[CHARGERS] [OK] {len(chargers_df)} horas × {len(chargers_df.columns)} columnas")
-    print(f"           CO2 directo total: {sum(result['chargers_co2_total_kg']):,.0f} kg/año")
-    print(f"           Costo EV: {sum(result['chargers_cost_soles']):,.0f} soles/año")
+    print(f"[CHARGERS] [OK] {len(chargers_df)} horas × {len(chargers_df.columns)} columnas (from data_loader)")
     
-    # ===== 2. BESS - 25 columnas (flujos, CO2 indirecto, costos) =====
-    bess_path = Path('data/oe2/bess/bess_ano_2024.csv')
-    if not bess_path.exists():
-        raise ValueError(f"[X] BESS REQUERIDO: {bess_path}")
+    # ===== 2. BESS - desde BESSData =====
+    bess_obj = oe2_datasets['bess']
+    bess_df = bess_obj.df.copy()
     
-    bess_df = pd.read_csv(bess_path)
     if len(bess_df) != 8760:
         raise ValueError(f"[X] BESS debe tener 8760 filas, tiene {len(bess_df)}")
     
-    result['bess_df'] = bess_df  # DataFrame COMPLETO
-    result['bess_soc_percent'] = bess_df['bess_soc_percent'].values.astype(np.float32)
-    result['bess_charge_kwh'] = bess_df['bess_charge_kwh'].values.astype(np.float32)
-    result['bess_discharge_kwh'] = bess_df['bess_discharge_kwh'].values.astype(np.float32)
-    result['bess_to_ev_kwh'] = bess_df['bess_to_ev_kwh'].values.astype(np.float32)
-    result['bess_to_mall_kwh'] = bess_df['bess_to_mall_kwh'].values.astype(np.float32)
-    result['bess_co2_avoided_kg'] = bess_df['co2_avoided_indirect_kg'].values.astype(np.float32)
-    result['bess_cost_soles'] = bess_df['cost_grid_import_soles'].values.astype(np.float32)
-    result['bess_tariff'] = bess_df['tariff_osinergmin_soles_kwh'].values.astype(np.float32)
-    result['bess_peak_savings'] = bess_df['peak_reduction_savings_soles'].values.astype(np.float32)
-    result['bess_pv_to_ev'] = bess_df['pv_to_ev_kwh'].values.astype(np.float32)
-    result['bess_pv_to_bess'] = bess_df['pv_to_bess_kwh'].values.astype(np.float32)
-    result['bess_pv_to_mall'] = bess_df['pv_to_mall_kwh'].values.astype(np.float32)
-    result['bess_pv_curtailed'] = bess_df['pv_curtailed_kwh'].values.astype(np.float32)
-    result['bess_grid_import'] = bess_df['grid_import_total_kwh'].values.astype(np.float32)
-    result['bess_grid_to_ev'] = bess_df['grid_to_ev_kwh'].values.astype(np.float32)
-    result['bess'] = result['bess_soc_percent'] / 100.0  # Normalizado [0,1] para compatibilidad
+    result['bess_df'] = bess_df
     
-    print(f"[BESS] [OK] {len(bess_df)} horas × {len(bess_df.columns)} columnas")
-    print(f"       CO2 indirecto evitado: {sum(result['bess_co2_avoided_kg']):,.0f} kg/año")
-    bess_mean = sum(result['bess_soc_percent']) / len(result['bess_soc_percent'])
-    print(f"       SOC promedio: {bess_mean:.1f}%")
+    # SOC
+    soc_col = [c for c in bess_df.columns if 'soc' in c.lower()][0] if any('soc' in c.lower() for c in bess_df.columns) else None
+    if soc_col:
+        result['bess_soc_percent'] = bess_df[soc_col].values.astype(np.float32)
     
-    # ===== 3. SOLAR - 16 columnas (generacion, CO2 indirecto, flujos) =====
-    solar_path = Path('data/oe2/Generacionsolar/pv_generation_citylearn_enhanced_v2.csv')
-    if not solar_path.exists():
-        # Fallback a otras rutas
-        solar_path = Path('data/oe2/Generacionsolar/pv_generation_citylearn2024.csv')
-    if not solar_path.exists():
-        solar_path = Path('data/interim/oe2/solar/pv_generation_hourly_citylearn_v2.csv')
-    if not solar_path.exists():
-        raise ValueError(f"[X] Solar REQUERIDO no encontrado")
+    # Energy flows
+    for col in ['bess_charge_kwh', 'bess_discharge_kwh', 'bess_to_ev_kwh', 'bess_to_mall_kwh',
+                'pv_to_ev_kwh', 'pv_to_bess_kwh', 'pv_to_mall_kwh', 'pv_curtailed_kwh',
+                'grid_to_ev_kwh', 'grid_to_mall_kwh', 'grid_to_bess_kwh', 'grid_import_total_kwh']:
+        if col in bess_df.columns:
+            result[f'bess_{col}'] = bess_df[col].values.astype(np.float32)
     
-    solar_df = pd.read_csv(solar_path)
+    # CO2 and costs
+    if 'co2_avoided_indirect_kg' in bess_df.columns:
+        result['bess_co2_avoided_kg'] = bess_df['co2_avoided_indirect_kg'].values.astype(np.float32)
+    if 'cost_grid_import_soles' in bess_df.columns:
+        result['bess_cost_soles'] = bess_df['cost_grid_import_soles'].values.astype(np.float32)
+    if 'tariff_osinergmin_soles_kwh' in bess_df.columns:
+        result['bess_tariff'] = bess_df['tariff_osinergmin_soles_kwh'].values.astype(np.float32)
+    if 'peak_reduction_savings_soles' in bess_df.columns:
+        result['bess_peak_savings'] = bess_df['peak_reduction_savings_soles'].values.astype(np.float32)
+    
+    result['bess'] = result.get('bess_soc_percent', np.full(8760, 50.0, dtype=np.float32)) / 100.0
+    
+    print(f"[BESS] [OK] {len(bess_df)} horas × {len(bess_df.columns)} columnas (from data_loader)")
+    
+    # ===== 3. SOLAR - desde SolarData =====
+    solar_obj = oe2_datasets['solar']
+    solar_df = solar_obj.df.copy()
+    
     if len(solar_df) != 8760:
         raise ValueError(f"[X] Solar debe tener 8760 filas, tiene {len(solar_df)}")
     
-    result['solar_df'] = solar_df  # DataFrame COMPLETO
+    result['solar_df'] = solar_df
     
-    # Columnas principales
-    energy_col = 'energia_kwh' if 'energia_kwh' in solar_df.columns else 'potencia_kw' if 'potencia_kw' in solar_df.columns else solar_df.columns[1]
+    # Main power column
+    energy_col = 'potencia_kw' if 'potencia_kw' in solar_df.columns else 'energia_kwh' if 'energia_kwh' in solar_df.columns else solar_df.columns[1]
     result['solar'] = solar_df[energy_col].values.astype(np.float32)
     
+    # CO2 avoided
     if 'reduccion_indirecta_co2_kg' in solar_df.columns:
         result['solar_co2_avoided_kg'] = solar_df['reduccion_indirecta_co2_kg'].values.astype(np.float32)
     else:
         result['solar_co2_avoided_kg'] = result['solar'] * CO2_FACTOR_IQUITOS
     
-    if 'ahorro_solar_soles' in solar_df.columns:
-        result['solar_savings_soles'] = solar_df['ahorro_solar_soles'].values.astype(np.float32)
+    # Additional columns
+    for col in ['ahorro_solar_soles', 'irradiancia_ghi', 'temperatura_c',
+                'energia_suministrada_al_ev_kwh', 'energia_suministrada_al_bess_kwh',
+                'energia_suministrada_al_mall_kwh']:
+        if col in solar_df.columns:
+            result[f'solar_{col.replace("energia_suministrada_al_", "")}'] = solar_df[col].values.astype(np.float32)
     
-    if 'irradiancia_ghi' in solar_df.columns:
-        result['solar_irradiance'] = solar_df['irradiancia_ghi'].values.astype(np.float32)
+    print(f"[SOLAR] [OK] {len(solar_df)} horas × {len(solar_df.columns)} columnas (from data_loader)")
     
-    if 'temperatura_c' in solar_df.columns:
-        result['solar_temperature'] = solar_df['temperatura_c'].values.astype(np.float32)
+    # ===== 4. MALL - desde DemandData =====
+    demand_obj = oe2_datasets['demand']
+    mall_df = demand_obj.df.copy()
     
-    if 'energia_suministrada_al_ev_kwh' in solar_df.columns:
-        result['solar_to_ev_kwh'] = solar_df['energia_suministrada_al_ev_kwh'].values.astype(np.float32)
-    
-    if 'energia_suministrada_al_bess_kwh' in solar_df.columns:
-        result['solar_to_bess_kwh'] = solar_df['energia_suministrada_al_bess_kwh'].values.astype(np.float32)
-    
-    print(f"[SOLAR] [OK] {len(solar_df)} horas × {len(solar_df.columns)} columnas")
-    print(f"        Generacion total: {sum(result['solar']):,.0f} kWh/año")
-    print(f"        CO2 indirecto evitado: {sum(result['solar_co2_avoided_kg']):,.0f} kg/año")
-    
-    # ===== 4. MALL - 6 columnas (demanda, CO2 indirecto, costo) =====
-    mall_path = Path('data/oe2/demandamallkwh/demandamallhorakwh.csv')
-    if not mall_path.exists():
-        mall_path = Path('data/interim/oe2/demandamallkwh/demandamallhorakwh.csv')
-    if not mall_path.exists():
-        raise ValueError(f"[X] Mall REQUERIDO no encontrado")
-    
-    mall_df = pd.read_csv(mall_path)
     if len(mall_df) != 8760:
         raise ValueError(f"[X] Mall debe tener 8760 filas, tiene {len(mall_df)}")
     
-    result['mall_df'] = mall_df  # DataFrame COMPLETO
+    result['mall_df'] = mall_df
     
-    demand_col = 'mall_demand_kwh' if 'mall_demand_kwh' in mall_df.columns else mall_df.columns[1]
+    # Main demand column
+    demand_col = 'mall_demand_kwh' if 'mall_demand_kwh' in mall_df.columns else 'demand_kwh' if 'demand_kwh' in mall_df.columns else mall_df.columns[1]
     result['mall'] = mall_df[demand_col].values.astype(np.float32)
     
+    # CO2 indirect
     if 'mall_co2_indirect_kg' in mall_df.columns:
         result['mall_co2_indirect_kg'] = mall_df['mall_co2_indirect_kg'].values.astype(np.float32)
     else:
         result['mall_co2_indirect_kg'] = result['mall'] * CO2_FACTOR_IQUITOS
     
+    # Cost and tariff
     if 'mall_cost_soles' in mall_df.columns:
         result['mall_cost_soles'] = mall_df['mall_cost_soles'].values.astype(np.float32)
-    
     if 'tarifa_soles_kwh' in mall_df.columns:
         result['mall_tariff'] = mall_df['tarifa_soles_kwh'].values.astype(np.float32)
     
-    print(f"[MALL] [OK] {len(mall_df)} horas × {len(mall_df.columns)} columnas")
-    print(f"       Demanda total: {sum(result['mall']):,.0f} kWh/año")
-    print(f"       CO2 indirecto: {sum(result['mall_co2_indirect_kg']):,.0f} kg/año")
+    print(f"[MALL] [OK] {len(mall_df)} horas × {len(mall_df.columns)} columnas (from data_loader)")
     
     # ===== 5. CONTEXT (Iquitos parameters) =====
     context = IquitosContext()
@@ -1772,9 +1732,9 @@ def build_oe2_dataset(interim_oe2_dir: Path) -> dict[str, Any]:
     
     # ===== RESUMEN FINAL =====
     print("\n" + "="*80)
-    print("[DATASET BUILD v7.0] RESUMEN COLUMNAS CARGADAS:")
+    print("[DATASET BUILD v7.2] RESUMEN - DATOS DESDE DATA_LOADER CENTRALIZADO:")
     print("="*80)
-    print(f"  CHARGERS: {len(chargers_df.columns)} columnas (CO2 directo + 39 sockets)")
+    print(f"  CHARGERS: {len(chargers_df.columns)} columnas (38 sockets + CO2 directo)")
     print(f"  BESS:     {len(bess_df.columns)} columnas (flujos + CO2 indirecto)")
     print(f"  SOLAR:    {len(solar_df.columns)} columnas (generacion + CO2)")
     print(f"  MALL:     {len(mall_df.columns)} columnas (demanda + CO2)")

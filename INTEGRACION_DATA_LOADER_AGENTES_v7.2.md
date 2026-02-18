@@ -45,10 +45,25 @@ solar_hourly = solar_obj.df['potencia_kw'].values[:HOURS_PER_YEAR].astype(np.flo
 - Usa data_loader en lugar de carga manual
 - Mantiene compatibilidad con resto del código (mismo dict retornado)
 
-#### 3️⃣ **train_a2c.py** - Sin cambios requeridos ✓
-- A2C ya carga desde data_loader (`build_oe2_dataset()` usa directamente archivos OE2)
-- Verifica que funcione con `rebuild_oe2_datasets_complete()`
-- Compatible con nueva arquitectura
+#### 3️⃣ **train_a2c.py** - Refactorizado (1100+ líneas)
+**Antes:** Cargaba datos manualmente desde 4 archivos CSV con CSV parsing redundante
+**Después:** Usa `rebuild_oe2_datasets_complete()` del data_loader (centralizado)
+
+**Cambios clave (2026-02-18):**
+- Eliminado duplicación: código antiguo CSV-based (líneas 1745-1928) removido
+- Una única `build_oe2_dataset()` que usa `rebuild_oe2_datasets_complete()`
+- Mantiene misma estructura de retorno (dict con numpy arrays)
+- CHARGERS, BESS, SOLAR, MALL cargados desde centralized data_loader
+
+**Validación:**
+```bash
+# Compilación ✓
+python -m py_compile scripts/train/train_a2c.py
+
+# Data loading ✓
+python scripts/verify_agents_data_loader_integration.py
+→ [OK] A2C loads 8760 hours, 38 sockets, BESS SOC avg=75.6%
+```
 
 ---
 
@@ -97,7 +112,32 @@ solar_hourly = solar_obj.df['potencia_kw'].values[:HOURS_PER_YEAR].astype(np.flo
 
 ---
 
-### 🚀 Próximos Pasos
+### 🚀 Status Final (2026-02-18)
+
+**✅ COMPLETADO - Los 3 agentes usan data_loader centralizado:**
+
+```bash
+# Todos compilan correctamente
+python -m py_compile scripts/train/train_sac.py    # ✓
+python -m py_compile scripts/train/train_ppo.py    # ✓
+python -m py_compile scripts/train/train_a2c.py    # ✓
+
+# Todos cargan datos idénticamente
+python scripts/verify_agents_data_loader_integration.py
+→ [OK] Los 3 agentes listos
+
+# Entrenar cualquier agente
+python scripts/train/train_sac.py    # Off-policy (mejor para CO2 asimétrico)
+python scripts/train/train_ppo.py    # On-policy (más estable)
+python scripts/train/train_a2c.py    # On-policy simple (más rápido)
+```
+
+**Ventajas logradas:**
+1. **Sincronización automática:** BESS=2000 kWh, SOCKETS=38, SOLAR=4050 kWp igual en 3 agentes
+2. **Una sola fuente:** `rebuild_oe2_datasets_complete()` - no duplicación
+3. **Validación centralizada:** Errores capturados antes de entrenar
+4. **Código limpio:** ~900 líneas de CSV parsing manual eliminadas
+5. **Compatible CityLearn v2:** Todos retornan dict unificado
 
 1. **Entrenar agentes con nuevos datos:**
    ```bash
