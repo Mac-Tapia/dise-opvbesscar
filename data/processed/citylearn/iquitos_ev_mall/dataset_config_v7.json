@@ -1,0 +1,26 @@
+{
+  "version": "7.0",
+  "date": "2026-02-18",
+  "system": {
+    "pv_capacity_kwp": 4050.0,
+    "bess_capacity_kwh": 2000.0,
+    "bess_max_power_kw": 400.0,
+    "n_chargers": 19,
+    "n_sockets": 38,
+    "charger_power_kw": 7.4
+  },
+  "demand": {
+    "mall_avg_kw": 1411.946689497717,
+    "ev_avg_kw": 50.0
+  },
+  "co2": {
+    "grid_factor_kg_per_kwh": 0.4521,
+    "ev_factor_kg_per_kwh": 2.146
+  },
+  "data_sources": {
+    "solar": "D:\\dise\u00f1opvbesscar\\data\\oe2\\Generacionsolar\\pv_generation_citylearn2024.csv",
+    "bess": "D:\\dise\u00f1opvbesscar\\data\\oe2\\bess\\bess_ano_2024.csv",
+    "chargers": "D:\\dise\u00f1opvbesscar\\data\\oe2\\chargers\\chargers_ev_ano_2024_v3.csv",
+    "demand": "D:\\dise\u00f1opvbesscar\\data\\oe2\\demandamallkwh\\demandamallhorakwh.csv"
+  }
+}
