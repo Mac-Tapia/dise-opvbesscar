@@ -40,10 +40,11 @@ from src.dataset_builder_citylearn.rewards import (
 )
 from src.agents.training_validation import validate_agent_config
 
-# ===== CONSTANTES IQUITOS v5.4 (2026-02-17) CON COMUNICACION SISTEMA =====
+# ===== CONSTANTES IQUITOS v5.8 (2026-02-18) CON COMUNICACION SISTEMA =====
+# CRÍTICO: BESS_CAPACITY_KWH actualizado a 2000.0 kWh (verificado contra bess_ano_2024.csv)
 CO2_FACTOR_IQUITOS: float = 0.4521  # kg CO2/kWh (grid termico aislado)
-BESS_CAPACITY_KWH: float = 1700.0   # 1,700 kWh max SOC (DoD 80%)
-BESS_MAX_POWER_KW: float = 400.0    # 400 kW potencia maxima BESS (v5.4)
+BESS_CAPACITY_KWH: float = 2000.0   # 2,000 kWh max SOC (VERIFICADO v5.8 - antes 1700)
+BESS_MAX_POWER_KW: float = 400.0    # 400 kW potencia maxima BESS
 HOURS_PER_YEAR: int = 8760
 
 # v5.3: Constantes para normalizacion de observaciones
@@ -70,7 +71,7 @@ MOTOTAXI_BATTERY_KWH: float = 7.4   # Capacidad bateria mototaxi (kWh)
 MOTO_SOC_ARRIVAL: float = 0.20      # SOC al llegar (20%)
 MOTO_SOC_TARGET: float = 0.80       # SOC objetivo (80%)
 MOTO_ENERGY_TO_CHARGE: float = (MOTO_SOC_TARGET - MOTO_SOC_ARRIVAL) * MOTO_BATTERY_KWH / 0.95  # ~2.90 kWh
-MOTOTAXI_ENERGY_TO_CHARGE: float = (MOTO_SOC_TARGET - MOTO_SOC_ARRIVAL) * MOTOT AXI_BATTERY_KWH / 0.95  # ~4.68 kWh
+MOTOTAXI_ENERGY_TO_CHARGE: float = (MOTO_SOC_TARGET - MOTO_SOC_ARRIVAL) * MOTOTAXI_BATTERY_KWH / 0.95  # ~4.68 kWh
 
 CO2_FACTOR_MOTO_KG_KWH: float = 0.87      # kg CO2 por kWh cargado (moto vs gasolina)
 CO2_FACTOR_MOTOTAXI_KG_KWH: float = 0.47  # kg CO2 por kWh cargado (mototaxi vs gasolina)

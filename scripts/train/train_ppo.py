@@ -214,13 +214,15 @@ class PPOConfig:
         }
 
 # ============================================================================
-# CONSTANTES OE2 v5.4 (Iquitos, Peru) - 2026-02-17 (ACTUALIZADO)
+# CONSTANTES OE2 v5.8 (Iquitos, Peru) - 2026-02-18 (ACTUALIZADO CRÍTICO)
 # ============================================================================
+# IMPORTANTE: BESS_CAPACITY_KWH = 2000.0 kWh (fue 1700.0, error detectado en auditoría)
+# Fuente: bess_ano_2024.csv column soc_kwh max value = 2000.0 kWh
 CO2_FACTOR_IQUITOS = 0.4521  # kg CO2/kWh - factor de emision grid Iquitos
-BESS_CAPACITY_KWH = 1700.0   # 1,700 kWh max SOC (DoD 80%)
-BESS_MAX_KWH_CONST = 1700.0  # 1,700 kWh total (para normalizacion observaciones)
-BESS_MAX_KWH = BESS_MAX_KWH_CONST  # Usar 1700 para normalizacion (CORRECTED)
-BESS_MAX_POWER_KW = 400.0    # 400 kW potencia maxima BESS (v5.4)
+BESS_CAPACITY_KWH = 2000.0   # 2,000 kWh max SOC (VERIFICADO v5.8)
+BESS_MAX_KWH_CONST = 2000.0  # 2,000 kWh total (para normalizacion observaciones)
+BESS_MAX_KWH = BESS_MAX_KWH_CONST  # Usar 2000 para normalizacion (ACTUALIZADO v5.8)
+BESS_MAX_POWER_KW = 400.0    # 400 kW potencia maxima BESS
 
 # ============================================================================
 # CONSTANTES DE NORMALIZACION (CRITICO para PPO - Engstrom 2020)
@@ -251,7 +253,7 @@ MOTOTAXI_BATTERY_KWH = 7.4   # Capacidad bateria mototaxi
 MOTO_SOC_ARRIVAL = 0.20      # SOC al llegar (20%)
 MOTO_SOC_TARGET = 0.80       # SOC objetivo (80%)
 MOTO_ENERGY_TO_CHARGE = (MOTO_SOC_TARGET - MOTO_SOC_ARRIVAL) * MOTO_BATTERY_KWH / 0.95
-MOTOTAXI_ENERGY_TO_CHARGE = (MOTO_SOC_TARGET - MOTO_SOC_ARRIVAL) * MOTOT AXI_BATTERY_KWH / 0.95
+MOTOTAXI_ENERGY_TO_CHARGE = (MOTO_SOC_TARGET - MOTO_SOC_ARRIVAL) * MOTOTAXI_BATTERY_KWH / 0.95
 
 CO2_FACTOR_MOTO_KG_KWH = 0.87      # kg CO2 por kWh (moto vs gasolina)
 CO2_FACTOR_MOTOTAXI_KG_KWH = 0.47  # kg CO2 por kWh (mototaxi vs gasolina)
@@ -784,7 +786,7 @@ class CityLearnEnvironment(Env):
         # Mototaxi: (80-20)% × 7.4 kWh / 0.95 eficiencia = 4.68 kWh
         # Proporción ponderada de vehículos por energía cargada
         motos_completed = int(ev_energy_motos_kwh / max(MOTO_ENERGY_TO_CHARGE, 0.01))
-                taxis_completed = int(ev_energy_taxis_kwh / max(MOTOTAXI_ENERGY_TO_CHARGE, 0.01))
+        taxis_completed = int(ev_energy_taxis_kwh / max(MOTOTAXI_ENERGY_TO_CHARGE, 0.01))
         self.motos_charged_today += motos_completed
         self.mototaxis_charged_today += taxis_completed
         
