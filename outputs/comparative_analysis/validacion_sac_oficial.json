@@ -1,0 +1,59 @@
+{
+  "validation_source": "https://github.com/Mac-Tapia/dise-opvbesscar",
+  "validation_date": "2026-02-04",
+  "timestamp": "2026-02-17T10:04:00.460908",
+  "best_agent": {
+    "name": "SAC",
+    "score": 8.2,
+    "reason": "Domina CO\u2082 (principal), Solar, EV Charge. Off-policy m\u00e1s eficiente."
+  },
+  "rankings": {
+    "1st": {
+      "agent": "SAC",
+      "score": 8.2,
+      "co2_reduction": "65.7%"
+    },
+    "2nd": {
+      "agent": "PPO",
+      "score": 5.9,
+      "co2_reduction": "50.9%"
+    },
+    "3rd": {
+      "agent": "A2C",
+      "score": 3.1,
+      "co2_reduction": "50.1%"
+    }
+  },
+  "six_objectives": {
+    "CO\u2082 Reduction": {
+      "best": "SAC (5.57)",
+      "second": "PPO (4.31)",
+      "third": "A2C (4.24)"
+    },
+    "Solar Score": {
+      "best": "SAC (0.965)",
+      "second": "PPO (-0.048)",
+      "third": "A2C (-0.280)"
+    },
+    "EV Charge": {
+      "best": "SAC (0.952)",
+      "second": "PPO (0.294)",
+      "third": "A2C (0.000)"
+    },
+    "Grid Stability": {
+      "best": "SAC (0.500)",
+      "second": "PPO (0.253)",
+      "third": "A2C (0.193)"
+    },
+    "Cost": {
+      "best": "PPO (0.649)",
+      "second": "SAC (0.400)",
+      "third": "A2C (0.012)"
+    },
+    "BESS": {
+      "best": "PPO (0.979)",
+      "second": "A2C (0.979)",
+      "third": "SAC (0.300)"
+    }
+  }
+}

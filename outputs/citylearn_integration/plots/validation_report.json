@@ -1,0 +1,75 @@
+{
+  "timestamp": "2026-02-18T08:13:06.037711",
+  "csv_files": {
+    "baseline": {
+      "status": "✓",
+      "file": "chargers_ev_ano_2024_v3.csv",
+      "rows": 8760,
+      "cols": 343,
+      "size_mb": 15.765717
+    },
+    "enhanced": {
+      "status": "✓",
+      "file": "chargers_ev_ano_2024_v3_enhanced.csv",
+      "rows": 8760,
+      "cols": 423,
+      "size_mb": 21.140435
+    },
+    "mixto": {
+      "status": "✓",
+      "file": "chargers_ev_ano_2024_v3_citylearn_mixto.csv",
+      "rows": 8760,
+      "cols": 473,
+      "size_mb": 24.10468
+    }
+  },
+  "plots": {
+    "01_dia_final_ano.png": {
+      "status": "✓",
+      "size_mb": 0.396314
+    },
+    "02_perfil_mensual.png": {
+      "status": "✓",
+      "size_mb": 0.343431
+    },
+    "03_resumen_anual.png": {
+      "status": "✓",
+      "size_mb": 0.538871
+    },
+    "integracion_citylearn_mixto_VALIDADO.txt": {
+      "status": "✓",
+      "size_mb": "text"
+    }
+  },
+  "builder": {
+    "file": "src\\dataset_builder_citylearn\\scenario_builder.py",
+    "checks": {
+      "mixto": true,
+      "enhanced": true,
+      "MIXTO factores": true,
+      "load_all()": true,
+      "_load_chargers()": true
+    }
+  },
+  "proporcionalidad": {
+    "status": "ERROR: can only concatenate str (not \"int\") to str"
+  },
+  "agents": {
+    "SAC": {
+      "status": "✓",
+      "path": "src\\agents\\sac.py"
+    },
+    "PPO": {
+      "status": "✓",
+      "path": "src\\agents\\ppo_sb3.py"
+    },
+    "A2C": {
+      "status": "✓",
+      "path": "src\\agents\\a2c_sb3.py"
+    },
+    "Agent Utils": {
+      "status": "✓",
+      "path": "src\\utils\\agent_utils.py"
+    }
+  }
+}

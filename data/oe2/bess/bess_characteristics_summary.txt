@@ -14,49 +14,49 @@ ANALISIS DETALLADO: CARACTERISTICAS DE CARGA/DESCARGA DEL BESS v5.4
 
 [2] DISTRIBUCION DE HORAS DE OPERACION (8,760 horas/ano)
 ----------------------------------------------------------------------------------------------------
-  - Horas CARGANDO:             2285h ( 26.1%)
-  - Horas DESCARGANDO:          1755h ( 20.0%)
+  - Horas CARGANDO:             2280h ( 26.0%)
+  - Horas DESCARGANDO:          1754h ( 20.0%)
   - Horas LLENO (sin actividad):     0h (  0.0%)
-  - Horas INACTIVO:             2530h ( 28.9%)
+  - Horas INACTIVO:             2536h ( 28.9%)
 
 [3] VELOCIDAD DE CARGA vs DESCARGA
 ----------------------------------------------------------------------------------------------------
 
   CARGA (cuando esta activa):
-    - Total anual:              792,855.2 kWh
-    - Velocidad promedio:           347.0 kWh/h
-    - Como % del maximo:             86.7% de 400 kW
+    - Total anual:              791,902.0 kWh
+    - Velocidad promedio:           347.3 kWh/h
+    - Como % del maximo:             86.8% de 400 kW
 
   DESCARGA (cuando esta activa):
-    - Total anual:              640,332.1 kWh
-    - Velocidad promedio:           364.9 kWh/h
-    - Como % del maximo:             91.2% de 400 kW
+    - Total anual:              633,982.6 kWh
+    - Velocidad promedio:           361.4 kWh/h
+    - Como % del maximo:             90.4% de 400 kW
 
 [4] CICLOS ANUALES Y DESGASTE
 ----------------------------------------------------------------------------------------------------
-  Ciclos por ano:                     466.4 ciclos
+  Ciclos por ano:                     465.8 ciclos
   Ciclos por dia (promedio):           1.28 ciclos/dia
   Desgaste esperado (Li-ion):          15.5% de vida/ano
                                (asumiendo 3,000 ciclos de vida tipica)
 
 [5] BALANCE ENERGETICO (ANO 2024)
 ----------------------------------------------------------------------------------------------------
-  - Energia entrante (carga):      792,855.2 kWh
-  - Energia saliente (descarga):    640,332.1 kWh
-  - Diferencia:                    152,523.1 kWh
-  - Eficiencia round-trip:              80.8%
+  - Energia entrante (carga):      791,902.0 kWh
+  - Energia saliente (descarga):    633,982.6 kWh
+  - Diferencia:                    157,919.3 kWh
+  - Eficiencia round-trip:              80.1%
 
 [6] ENERGIA DEL BESS QUE ATIENDE AL MALL
 ----------------------------------------------------------------------------------------------------
 
   DESGLOSE ANUAL DE DESCARGA:
-    - BESS -> EV:       171,443.5 kWh ( 33.9% de demanda EV)
-    - BESS -> MALL:     448,737.9 kWh (  3.6% de demanda MALL)
+    - BESS -> EV:       190,228.1 kWh ( 40.4% de demanda EV)
+    - BESS -> MALL:     429,047.8 kWh (  3.5% de demanda MALL)
 
   HORARIOS CUANDO BESS ATIENDE AL MALL:
-    - Horas activas: 1531 horas
-    - Energia promedio/hora: 293.1 kWh/h
-    - Horas principales del dia: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+    - Horas activas: 1507 horas
+    - Energia promedio/hora: 284.7 kWh/h
+    - Horas principales del dia: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
 [7] CICLO TIPICO DE UN DIA
 ----------------------------------------------------------------------------------------------------

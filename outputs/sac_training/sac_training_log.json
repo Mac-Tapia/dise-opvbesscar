@@ -1,0 +1,68 @@
+{
+  "timestamp": "2026-02-16T12:58:24.296057",
+  "episodes": 10,
+  "total_steps": 87600,
+  "total_seconds": 920.50369,
+  "episodes_results": [
+    {
+      "episode": 1,
+      "elapsed_seconds": 105.125098,
+      "checkpoint": "sac_ep01_124448.zip",
+      "checkpoint_mb": 7.605504989624023
+    },
+    {
+      "episode": 2,
+      "elapsed_seconds": 93.877926,
+      "checkpoint": "sac_ep02_124622.zip",
+      "checkpoint_mb": 7.605546951293945
+    },
+    {
+      "episode": 3,
+      "elapsed_seconds": 90.923365,
+      "checkpoint": "sac_ep03_124753.zip",
+      "checkpoint_mb": 7.605585098266602
+    },
+    {
+      "episode": 4,
+      "elapsed_seconds": 90.078131,
+      "checkpoint": "sac_ep04_124923.zip",
+      "checkpoint_mb": 7.605623245239258
+    },
+    {
+      "episode": 5,
+      "elapsed_seconds": 90.493217,
+      "checkpoint": "sac_ep05_125054.zip",
+      "checkpoint_mb": 7.60566520690918
+    },
+    {
+      "episode": 6,
+      "elapsed_seconds": 90.437434,
+      "checkpoint": "sac_ep06_125224.zip",
+      "checkpoint_mb": 7.605703353881836
+    },
+    {
+      "episode": 7,
+      "elapsed_seconds": 89.544616,
+      "checkpoint": "sac_ep07_125354.zip",
+      "checkpoint_mb": 7.605741500854492
+    },
+    {
+      "episode": 8,
+      "elapsed_seconds": 90.201783,
+      "checkpoint": "sac_ep08_125524.zip",
+      "checkpoint_mb": 7.6057844161987305
+    },
+    {
+      "episode": 9,
+      "elapsed_seconds": 90.489743,
+      "checkpoint": "sac_ep09_125655.zip",
+      "checkpoint_mb": 7.605822563171387
+    },
+    {
+      "episode": 10,
+      "elapsed_seconds": 89.096465,
+      "checkpoint": "sac_ep10_125824.zip",
+      "checkpoint_mb": 7.605863571166992
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "timestamp": "2026-02-16T11:25:51.598803",
+  "operation": "DATASET_BUILD",
+  "hours": 8760,
+  "files": {
+    "solar": "D:\\diseñopvbesscar\\data\\oe2\\Generacionsolar\\pv_generation_citylearn_enhanced_v2.csv",
+    "chargers": "D:\\diseñopvbesscar\\data\\oe2\\chargers\\chargers_ev_ano_2024_v3.csv",
+    "bess": "D:\\diseñopvbesscar\\data\\oe2\\bess\\bess_ano_2024.csv",
+    "mall": "D:\\diseñopvbesscar\\data\\oe2\\demandamallkwh\\demandamallhorakwh.csv"
+  },
+  "validations": {
+    "solar": {
+      "rows": 8760,
+      "valid": true
+    },
+    "chargers": {
+      "rows": 8760,
+      "valid": true,
+      "sockets": 38
+    },
+    "bess": {
+      "rows": 8760,
+      "valid": true
+    },
+    "mall": {
+      "rows": 8760,
+      "valid": true
+    }
+  },
+  "status": "SUCCESS"
+}

@@ -1,95 +1,71 @@
 ppo:
-  name: "Proximal Policy Optimization"
-  description: "On-policy agent with clipped objective"
-
-  # Training hyperparameters
+  name: Proximal Policy Optimization
+  description: On-policy agent with clipped objective
   training:
     train_steps: 500000
-    n_steps: 2048  # OPCIÓN A: Mantener para ratio óptimo (~8 mini-batches)
-    batch_size: 256  # GPU optimized (era 128)
+    n_steps: 2048
+    batch_size: 256
     n_epochs: 10
-    learning_rate: 2e-4  # OPCIÓN A: Reducido 33% para GPU (batch_size=256, n_steps=2048)
-    lr_schedule: "linear"
+    learning_rate: 2e-4
+    lr_schedule: linear
     lr_final_ratio: 0.5
-
-  # PPO-specific
   ppo:
     gamma: 0.99
     gae_lambda: 0.98
     clip_range: 0.2
     clip_range_vf: 0.5
     normalize_advantage: true
-
-  # Entropy and value function
   losses:
     ent_coef: 0.01
     vf_coef: 0.5
     max_grad_norm: 1.0
-
-  # Entropy decay schedule
   entropy_schedule:
-    type: "exponential"  # "constant", "linear", or "exponential"
+    type: exponential
     final_value: 0.001
     decay_rate: 0.999
-
-  # Network architecture
   network:
-    hidden_sizes: [256, 256]
-    activation: "relu"
+    hidden_sizes:
+    - 256
+    - 256
+    activation: relu
     ortho_init: true
-
-  # Normalizations
   normalization:
     normalize_observations: true
     normalize_rewards: true
     reward_scale: 0.1
     clip_obs: 5.0
     clip_reward: 1.0
-
-  # Advanced features
   advanced:
-    use_sde: true  # State-dependent exploration
+    use_sde: true
     target_kl: 0.02
     kl_adaptive: true
     kl_adaptive_down: 0.5
     kl_adaptive_up: 1.05
-
-  # Multi-Objective Weights (VALIDATED 2026-02-08)
   multi_objective_weights:
-    co2: 0.35                # PRIMARY: Reduce CO2 (grid import minimization)
-    solar: 0.20              # TERTIARY: Solar self-consumption
-    ev: 0.30                 # SECONDARY: EV satisfaction
-    cost: 0.10               # TERTIARY: Cost optimization
-    grid: 0.05               # QUATERNARY: Grid stability
-    # NOTE: Dispatch hierarchy + SOC modulation enforce EVs; balanced EV weight with CO2 priority
-
-  # Electricity Tariffs (OSINERGMIN IQUITOS 2025 - REFERENCIAL)
+    co2: 0.5
+    solar: 0.2
+    ev: 0.15
+    grid: 0.1
+    cost: 0.05
   tariffs_osinergmin_usd_per_kwh:
-    generation_solar: 0.10              # Generación solar
-    storage_bess: 0.06                  # Almacenamiento BESS
-    distribution_ev_charge: 0.12        # Distribución EV
-    integrated_tariff: 0.28             # Tarifa integral OSINERGMIN
-
-  # Device
-  device: "auto"  # "cuda", "mps", "cpu", or "auto"
+    generation_solar: 0.1
+    storage_bess: 0.06
+    distribution_ev_charge: 0.12
+    integrated_tariff: 0.28
+  device: auto
   use_amp: true
-
-  # Logging
   verbose: 1
   log_interval: 500
   checkpoint_freq_steps: 1000
   save_final: true
-
-  # Reproducibility
   seed: 42
-
 performance:
-  # Métricas esperadas basadas en Episode 1 validado (2026-02-07)
-  expected_co2_reduction: 0.589  # 58.9% reduction vs baseline
-  expected_solar_utilization: 0.472  # 47.2% autoconsumo
-  expected_ev_satisfaction: 0.9998  # Satisfacción carga EV
-  expected_bess_soc_avg: 0.905  # 90.5% SOC promedio
-  motos_per_day_avg: 1199
-  mototaxis_per_day_avg: 336
-  cost_savings_usd: 1658503
-  training_time_hours: 5  # Approximate on RTX 4060
+  expected_co2_reduction: 0.808
+  expected_solar_utilization: 0.798
+  expected_ev_satisfaction: 1.0
+  expected_bess_soc_avg: 0.85
+  motos_per_day_avg: 270
+  mototaxis_per_day_avg: 39
+  annual_ev_demand_kwh: 352887
+  cost_savings_usd: 30530
+  training_time_hours: 5

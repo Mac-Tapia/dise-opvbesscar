@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-02-16T12:30:17.839022",
+  "hours_per_year": 8760,
+  "solar_kwh": 8292514.0,
+  "chargers_kwh": 565874.75,
+  "chargers_motos_kwh": 476500.46875,
+  "chargers_mototaxis_kwh": 89374.2421875,
+  "mall_kwh": 12368653.0,
+  "bess_soc_avg": 56.35948181152344,
+  "total_co2_reduction": -1167521.25,
+  "status": "OK"
+}

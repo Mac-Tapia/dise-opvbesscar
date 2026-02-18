@@ -49,7 +49,7 @@ class BalanceEnergeticoConfig:
     """Configuracion del analisis de balance energetico v5.4.
     
     Rutas de datos OE2 REALES:
-    - Solar: data/oe2/Generacionsolar/pv_generation_citylearn2024_clean.csv
+    - Solar: data/oe2/Generacionsolar/pv_generation_citylearn2024.csv
       * 8,292,514 kWh/ano | 11 columnas
       * Columnas: potencia_kw, energia_kwh, is_hora_punta, tarifa_aplicada_soles, ahorro_solar_soles, reduccion_indirecta_co2_kg
       
@@ -70,7 +70,7 @@ class BalanceEnergeticoConfig:
     data_dir_oe2: Path = Path("data/oe2")
     
     # Archivos especificos OE2 v5.4 (datasets reales validados)
-    solar_path: Path = Path("data/oe2/Generacionsolar/pv_generation_citylearn2024_clean.csv")
+    solar_path: Path = Path("data/oe2/Generacionsolar/pv_generation_citylearn2024.csv")
     mall_path: Path = Path("data/oe2/demandamallkwh/demandamallhorakwh.csv")
     chargers_path: Path = Path("data/oe2/chargers/chargers_ev_ano_2024_v3.csv")
     bess_path: Path = Path("data/oe2/bess/bess_ano_2024.csv")
@@ -658,136 +658,95 @@ class BalanceEnergeticoSystem:
         print(f"  [OK] Graficas guardadas en {out_dir}")
     
     def _plot_integral_curves(self, df: pd.DataFrame, out_dir: Path) -> None:
-        """Grafica INTEGRAL con TODAS las curvas superpuestas del sistema."""
+        """Grafica INTEGRAL con datos REALES horarios - Primeros 7 dias + resumen."""
         
-        # Agrupar por hora del dia (promedio de todo el ano)
-        df_hourly = df.copy()
-        df_hourly['hour_of_day'] = df_hourly['hour'] % 24
-        
-        hourly_avg = df_hourly.groupby('hour_of_day').agg({
-            'pv_generation_kw': 'mean',
-            'ev_demand_kw': 'mean',
-            'mall_demand_kw': 'mean',
-            'total_demand_kw': 'mean',
-            'bess_action_kw': 'mean',  # Usar bess_action directamente del dataset
-            'bess_charge_kw': 'mean',   # Carga (para colorear)
-            'bess_discharge_kw': 'mean', # Descarga (para colorear)
-            'demand_from_grid_kw': 'mean',
-            'bess_soc_percent': 'mean',
-        }).reset_index()
-        
-        hours = hourly_avg['hour_of_day'].values
-        bess_charge = hourly_avg['bess_charge_kw'].values
-        bess_discharge = hourly_avg['bess_discharge_kw'].values
-        
-        # Totales anuales para leyenda
-        total_charge_mwh = df_hourly['bess_charge_kw'].sum() / 1000
-        total_discharge_mwh = df_hourly['bess_discharge_kw'].sum() / 1000
+        # Usar datos reales horarios (primeros 7 días = 168 horas)
+        df_7days = df.iloc[:7*24].copy()
+        hours_real = np.arange(len(df_7days))
         
         # Crear figura grande con dos subgraficas
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(18, 14))
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(18, 12))
         
-        # ===== GRAFICA 1: GENERACION vs DEMANDA + BESS ACTION =====
-        ax1.fill_between(hours, 0, hourly_avg['pv_generation_kw'], 
-                        color='#FFD700', alpha=0.6, label='Generacion Solar PV', linewidth=2, edgecolor='orange')
+        # ===== GRAFICA 1: GENERACION vs DEMANDA + BESS (DATOS REALES 7 DIAS) =====
+        ax1.fill_between(hours_real, 0, df_7days['pv_generation_kw'], 
+                        color='#FFD700', alpha=0.6, label='Generacion Solar PV', linewidth=1, edgecolor='orange')
         
-        ax1.plot(hours, hourly_avg['mall_demand_kw'], 
-                color='#1E90FF', linewidth=3, marker='o', markersize=5, label='Demanda Mall', linestyle='-')
+        ax1.plot(hours_real, df_7days['mall_demand_kw'], 
+                color='#1E90FF', linewidth=2, label='Demanda Mall', linestyle='-')
         
-        ax1.plot(hours, hourly_avg['ev_demand_kw'], 
-                color='#32CD32', linewidth=3, marker='s', markersize=5, label='Demanda EV (38 tomas)', linestyle='-')
+        ax1.plot(hours_real, df_7days['ev_demand_kw'], 
+                color='#32CD32', linewidth=2, label='Demanda EV (38 tomas)', linestyle='-')
         
-        ax1.plot(hours, hourly_avg['total_demand_kw'], 
-                color='#DC143C', linewidth=4, marker='^', markersize=6, label='Demanda Total', linestyle='--')
+        ax1.plot(hours_real, df_7days['total_demand_kw'], 
+                color='#DC143C', linewidth=2.5, label='Demanda Total', linestyle='--')
         
-        # BESS: Barras separadas para CARGA (verde ^) y DESCARGA (naranja, como barras positivas tambien)
-        ax1.bar(hours, bess_charge, width=0.4, color='#228B22', alpha=0.85, edgecolor='none',
-               label=f'BESS Carga: {total_charge_mwh:.0f} MWh/ano', align='edge')
-        ax1.bar([h+0.4 for h in hours], bess_discharge, width=0.4, color='#FF8C00', alpha=0.85, edgecolor='none',
-               label=f'BESS Descarga: {total_discharge_mwh:.0f} MWh/ano', align='edge')
+        # BESS Carga y Descarga (barras apiladas)
+        ax1.bar(hours_real, df_7days['bess_charge_kw'], width=0.8, color='#228B22', alpha=0.7, 
+               label=f'BESS Carga (Anual: {df["bess_charge_kw"].sum()/1000:.0f} MWh)')
+        ax1.bar(hours_real, -df_7days['bess_discharge_kw'], width=0.8, color='#FF8C00', alpha=0.7,
+               label=f'BESS Descarga (Anual: {df["bess_discharge_kw"].sum()/1000:.0f} MWh)')
         
-        ax1.set_xlabel('Hora del Dia (UTC-5)', fontsize=12, fontweight='bold')
+        ax1.axhline(y=0, color='black', linewidth=1)
         ax1.set_ylabel('Potencia (kW)', fontsize=12, fontweight='bold')
-        ax1.set_title('BALANCE INTEGRAL: Generacion PV vs Demandas + BESS Accion - Promedio Anual', 
+        ax1.set_title('DATOS REALES: GeneracionPV vs Demandas + BESS Carga/Descarga - Primeros 7 dias', 
                      fontsize=14, fontweight='bold', color='darkred')
-        ax1.set_xlim(-0.5, 23.5)
-        ax1.set_xticks(range(0, 24, 2))
-        ax1.set_xticklabels([f'{h:02d}:00' for h in range(0, 24, 2)], fontsize=10)
+        ax1.set_xlim(0, 168)
+        ax1.set_xticks([0, 24, 48, 72, 96, 120, 144, 168])
+        ax1.set_xticklabels(['Dia 1', 'Dia 2', 'Dia 3', 'Dia 4', 'Dia 5', 'Dia 6', 'Dia 7', 'Dia 8'], fontsize=10)
         ax1.legend(loc='upper left', fontsize=10, framealpha=0.95, ncol=2)
-        ax1.grid(True, alpha=0.4, linestyle='--')
+        ax1.grid(True, alpha=0.3, linestyle='--')
         
-        # Anotaciones
-        max_pv = hourly_avg['pv_generation_kw'].max()
-        max_pv_h = hourly_avg.loc[hourly_avg['pv_generation_kw'].idxmax(), 'hour_of_day']
-        ax1.annotate(f'Pico PV: {max_pv:.0f} kW\n@ {int(max_pv_h):02d}:00', 
-                    xy=(max_pv_h, max_pv), xytext=(max_pv_h+2, max_pv+100),
-                    fontsize=10, fontweight='bold',
-                    bbox=dict(boxstyle='round,pad=0.5', facecolor='yellow', alpha=0.7),
-                    arrowprops=dict(arrowstyle='->', lw=2))
+        # ===== GRAFICA 2: SOC BESS + IMPORTACION RED (DATOS REALES 7 DIAS) =====
+        ax2_twin = ax2.twinx()
         
-        max_demand = hourly_avg['total_demand_kw'].max()
-        max_demand_h = hourly_avg.loc[hourly_avg['total_demand_kw'].idxmax(), 'hour_of_day']
-        ax1.annotate(f'Pico Demanda: {max_demand:.0f} kW\n@ {int(max_demand_h):02d}:00', 
-                    xy=(max_demand_h, max_demand), xytext=(max_demand_h-4, max_demand+50),
-                    fontsize=10, fontweight='bold',
-                    bbox=dict(boxstyle='round,pad=0.5', facecolor='lightcoral', alpha=0.7),
-                    arrowprops=dict(arrowstyle='->', lw=2))
+        # SOC del BESS (eje izquierdo)
+        ax2.plot(hours_real, df_7days['bess_soc_percent'], 
+                color='darkgreen', linewidth=2.5, marker='o', markersize=2, label='SOC BESS')
+        ax2.axhline(y=100, color='green', linestyle='--', linewidth=1.5, alpha=0.7)
+        ax2.axhline(y=20, color='red', linestyle='--', linewidth=1.5, alpha=0.7)
+        ax2.fill_between(hours_real, 20, 100, alpha=0.1, color='green')
+        ax2.set_ylabel('SOC BESS (%)', fontsize=12, fontweight='bold', color='darkgreen')
+        ax2.set_ylim(0, 110)
+        ax2.tick_params(axis='y', labelcolor='darkgreen')
         
-        # ===== GRAFICA 2: BESS CARGA/DESCARGA (con escala propia) =====
-        ax2_twin = ax2.twinx()  # Eje secundario para Red Import
-        
-        # Barras BESS separadas: CARGA (verde) y DESCARGA (naranja) - eje izquierdo
-        ax2.bar(hours, bess_charge, width=0.4, color='#228B22', alpha=0.85, edgecolor='none',
-               label=f'BESS Carga: {total_charge_mwh:.0f} MWh/ano', align='edge')
-        ax2.bar([h+0.4 for h in hours], bess_discharge, width=0.4, color='#FF8C00', alpha=0.85, edgecolor='none',
-               label=f'BESS Descarga: {total_discharge_mwh:.0f} MWh/ano', align='edge')
-        
-        # Linea de importacion de red - eje derecho
-        ax2_twin.plot(hours, hourly_avg['demand_from_grid_kw'], 
-                color='#FF6347', linewidth=3, marker='D', markersize=5, label='Importacion Red Publica', linestyle='-')
+        # Importacion de red (eje derecho)
+        ax2_twin.bar(hours_real, df_7days['demand_from_grid_kw'], width=0.8, 
+                color='#FF6347', alpha=0.6, label='Importacion Red Publica')
         ax2_twin.set_ylabel('Importacion Red (kW)', fontsize=12, fontweight='bold', color='#FF6347')
         ax2_twin.tick_params(axis='y', labelcolor='#FF6347')
-        ax2_twin.set_ylim(0, hourly_avg['demand_from_grid_kw'].max() * 1.15)
+        ax2_twin.set_ylim(0, df_7days['demand_from_grid_kw'].max() * 1.2)
         
-        # Calcular maximo para eje BESS
-        max_bess = max(max(bess_charge), max(bess_discharge))
-        
-        ax2.set_xlabel('Hora del Dia (UTC-5)', fontsize=12, fontweight='bold')
-        ax2.set_ylabel('BESS (kW)', fontsize=12, fontweight='bold')
-        ax2.tick_params(axis='y')
-        ax2.set_ylim(0, max_bess * 1.15 if max_bess > 0 else 100)
-        ax2.set_title('BESS: Carga (verde) / Descarga (naranja) + Red Publica - Promedio Horario', 
+        ax2.set_xlabel('Hora (Primeros 7 dias)', fontsize=12, fontweight='bold')
+        ax2.set_title('SOC BESS (Actual) + Importacion Red Publica - Datos Reales', 
                      fontsize=14, fontweight='bold', color='darkred')
-        ax2.set_xlim(-0.5, 23.5)
-        ax2.set_xticks(range(0, 24, 2))
-        ax2.set_xticklabels([f'{h:02d}:00' for h in range(0, 24, 2)], fontsize=10)
+        ax2.set_xlim(0, 168)
+        ax2.set_xticks([0, 24, 48, 72, 96, 120, 144, 168])
+        ax2.set_xticklabels(['Dia 1', 'Dia 2', 'Dia 3', 'Dia 4', 'Dia 5', 'Dia 6', 'Dia 7', 'Dia 8'], fontsize=10)
+        ax2.grid(True, alpha=0.3, linestyle='--', axis='y')
         
         # Combinar leyendas
         lines1, labels1 = ax2.get_legend_handles_labels()
         lines2, labels2 = ax2_twin.get_legend_handles_labels()
         ax2.legend(lines1 + lines2, labels1 + labels2, loc='upper left', fontsize=10, framealpha=0.95)
-        ax2.grid(True, alpha=0.4, linestyle='--')
         
         # Texto explicativo
         bess_cap = self.config.bess_capacity_kwh
         bess_pow = self.config.bess_power_kw
         textstr = (
-            f'Sistema Electrico Iquitos - Analisis Integral v5.2\n'
-            f'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
-            f'PV Solar:        4,050 kWp DC / 3,201 kW AC\n'
-            f'BESS:            {bess_cap:.0f} kWh / {bess_pow:.0f} kW (exclusivo EV)\n'
-            f'Demanda Mall:    RED PUBLICA (~12.4 GWh/ano)\n'
-            f'Demanda EV:      38 sockets (~412 MWh/ano, 9h-22h)\n'
-            f'Utilizacion PV:  73.6% (curtailment por excedente mediodia)\n'
-            f'CO₂ Grid:        0.4521 kg CO₂/kWh (generacion termica)'
+            f'Sistema Electrico Iquitos - Datos REALES Horarios (8,760 horas/ano)\n'
+            f'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+            f'PV Solar:        4,050 kWp (8.29 GWh/ano) | BESS: {bess_cap:.0f} kWh / {bess_pow:.0f} kW\n'
+            f'Demanda Total:   12.78 GWh/ano (Mall: 12.37 GWh + EV: 408 MWh)\n'
+            f'Cobertura:       PV 47.3% + BESS 1.5% + Red 51.2%\n'
+            f'CO₂ Grid:        0.4521 kg CO₂/kWh (generacion termica aislada)'
         )
-        fig.text(0.02, 0.01, textstr, fontsize=10, family='monospace',
+        fig.text(0.02, 0.00, textstr, fontsize=9, family='monospace',
                 bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
         
-        plt.tight_layout(rect=[0, 0.07, 1, 1])
+        plt.tight_layout(rect=[0, 0.06, 1, 1])
         plt.savefig(out_dir / "00_INTEGRAL_todas_curvas.png", dpi=150, bbox_inches='tight')
         plt.close()
-        print("  [OK] Grafica: 00_INTEGRAL_todas_curvas.png ⭐ [TODAS LAS CURVAS]")
+        print("  [OK] Grafica: 00_INTEGRAL_todas_curvas.png ⭐ [DATOS REALES 7 DIAS]")
     
     def _plot_5day_balance(self, df: pd.DataFrame, out_dir: Path) -> None:
         """Grafica de flujos energeticos en 5 dias representativos."""
@@ -956,61 +915,38 @@ class BalanceEnergeticoSystem:
         print("  [OK] Grafica: 04_cascada_energetica.png")
     
     def _plot_bess_soc(self, df: pd.DataFrame, out_dir: Path) -> None:
-        """Grafica del BESS - 2 paneles vinculados: Accion BESS + SOC."""
-        # Agrupar por dia
-        df_day = df.copy()
-        df_day['day'] = df_day['hour'] // 24
+        """Grafica del BESS SOC - Datos horarios reales sin interpolacion."""
+        # Usar datos horarios reales del CSV (8,760 horas)
+        hours = np.arange(len(df))
+        soc = df['bess_soc_percent'].values
         
-        # Usar bess_action_kw directamente (carga/descarga combinado, siempre positivo)
-        daily_action = df_day.groupby('day')['bess_action_kw'].sum().reset_index()
-        daily_soc = df_day.groupby('day')['bess_soc_percent'].agg(['min', 'max', 'mean']).reset_index()
+        # Figura: SOC horario (datos reales)
+        fig, ax = plt.subplots(figsize=(16, 6))
         
-        # Total anual para leyenda
-        total_action_mwh = df_day['bess_action_kw'].sum() / 1000
-        
-        # 2 paneles vinculados (sharex=True)
-        fig, axes = plt.subplots(2, 1, figsize=(16, 10), sharex=True,
-                                 gridspec_kw={'height_ratios': [1.2, 1]})
-        
-        days = daily_action['day'].values
-        action = np.asarray(daily_action['bess_action_kw'].values, dtype=float)
-        
-        # === Panel 1: BESS Action (Carga/Descarga combinado) ===
-        ax1 = axes[0]
-        
-        # Barras de accion BESS (siempre positivas)
-        ax1.bar(days, action, width=0.8, color='#8B008B', alpha=0.85, edgecolor='none',
-               label=f'BESS Accion: {total_action_mwh:.0f} MWh/ano')
-        
-        ax1.legend(loc='upper right', fontsize=10)
-        ax1.set_ylabel('BESS Accion (kWh/dia)', fontsize=10, fontweight='bold')
-        ax1.set_title(f'BESS {self.config.bess_capacity_kwh:.0f} kWh / {self.config.bess_power_kw:.0f} kW - Accion y Estado de Carga',
-                     fontsize=13, fontweight='bold', pad=10)
-        ax1.grid(True, alpha=0.3, axis='y')
-        ax1.set_ylim(0, action.max() * 1.1 if action.max() > 0 else 1)
-        
-        # === Panel 2: SOC (Estado de Carga) ===
-        ax2 = axes[1]
-        ax2.fill_between(daily_soc['day'], daily_soc['min'], daily_soc['max'],
-                        color='#4169E1', alpha=0.25, label='Rango SOC (min-max)')
-        ax2.plot(daily_soc['day'], daily_soc['mean'],
-                color='#4169E1', linewidth=2, marker='o', markersize=2.5, 
-                label=f'SOC promedio: {daily_soc["mean"].mean():.1f}%')
+        # Graficar SOC horario directo (sin agregaciones)
+        ax.plot(hours, soc, linewidth=1, color='darkgreen', label='SOC Real (horario)')
         
         # Limites operativos
         dod = self.config.dod
         soc_min_limit = (1.0 - dod) * 100
-        ax2.axhline(y=100, color='#228B22', linestyle='--', linewidth=1.5, 
-                   alpha=0.8, label='SOC max (100%)')
-        ax2.axhline(y=soc_min_limit, color='#DC143C', linestyle='--', linewidth=1.5,
-                   alpha=0.8, label=f'SOC min ({soc_min_limit:.0f}%)')
+        ax.axhline(y=100, color='green', linestyle='--', linewidth=1.5, 
+                   alpha=0.7, label='SOC max (100%)')
+        ax.axhline(y=soc_min_limit, color='red', linestyle='--', linewidth=1.5,
+                   alpha=0.7, label=f'SOC min ({soc_min_limit:.0f}%)')
         
-        ax2.set_ylabel('Estado de Carga (%)', fontsize=10, fontweight='bold')
-        ax2.set_xlabel('Dia del Ano', fontsize=11, fontweight='bold')
-        ax2.legend(loc='upper right', fontsize=9, ncol=2)
-        ax2.grid(True, alpha=0.3)
-        ax2.set_ylim(0, 110)
-        ax2.set_xlim(0, 365)
+        # Llenar rango operacional
+        ax.fill_between(hours, soc_min_limit, 100, alpha=0.1, color='green', 
+                        label='Rango Operacional')
+        
+        # Labels y grid
+        ax.set_xlabel('Hora del Año (0-8760)', fontsize=11, fontweight='bold')
+        ax.set_ylabel('Estado de Carga (%)', fontsize=11, fontweight='bold')
+        ax.set_title(f'BESS {self.config.bess_capacity_kwh:.0f} kWh / {self.config.bess_power_kw:.0f} kW - Estado de Carga Horario Real',
+                     fontsize=13, fontweight='bold')
+        ax.legend(loc='lower left', fontsize=10)
+        ax.grid(True, alpha=0.3)
+        ax.set_ylim(0, 110)
+        ax.set_xlim(0, len(df))
         
         plt.tight_layout()
         plt.savefig(out_dir / "05_bess_soc.png", dpi=150, bbox_inches='tight')

@@ -1,52 +1,79 @@
 {
-  "timestamp": "2026-02-17T07:28:24.190908",
+  "timestamp": "2026-02-18T13:05:13",
+  "version": "v5.5-optimized",
   "bess_specs": {
-    "capacity_kwh": 1700.0,
-    "power_kw": 400.0,
-    "efficiency_roundtrip": 0.95
+    "capacity_nominal_kwh": 2000.0,
+    "capacity_usable_kwh": 1600.0,
+    "power_charge_kw": 400.0,
+    "power_discharge_kw": 400.0,
+    "efficiency_roundtrip": 0.95,
+    "depth_of_discharge_dod": 0.80,
+    "soc_min_percent": 20.0,
+    "soc_target_percent": 100.0,
+    "technology": "LiFePO4-prismatic",
+    "lifetime_years": 15,
+    "expected_cycles": 9999,
+    "power_to_capacity_ratio": 0.20
   },
-  "analysis": {
-    "horas_carga": 2285,
-    "horas_descarga": 1755,
-    "horas_idle": 2530,
-    "horas_full": 0,
-    "carga_total_kwh": 792855.1539288275,
-    "descarga_total_kwh": 640332.0550346945,
-    "carga_por_hora_activa_kwh": 346.982561894454,
-    "descarga_por_hora_activa_kwh": 364.86156982033873,
-    "carga_promedio_pct_nominal": 86.7456404736135,
-    "descarga_promedio_pct_nominal": 91.21539245508467,
-    "cycles_per_year": 466.38538466401616,
-    "cycles_per_day": 1.277768177161688,
-    "lifetime_wear_percent_per_year": 15.546179488800538,
-    "color_headroom_carga_descarga": 152523.098894133,
-    "eficiencia_realizada_roundtrip": 80.76280413410485,
-    "bess_to_mall_kwh": 448737.89829667506,
-    "bess_to_mall_pct_demanda": 3.6280256087439358,
-    "bess_to_ev_kwh": 171443.47880081914,
-    "bess_to_ev_pct_demanda": 33.94573332626089,
-    "horas_bess_atiende_mall": 1531,
-    "energia_prom_mall_por_hora_kwh": 293.1011745895983,
-    "horas_activas_mall_del_dia": [
-      11,
-      12,
-      13,
-      14,
-      15,
-      16,
-      17,
-      18,
-      19,
-      20,
-      21
-    ],
-    "dia_tipico": {
-      "soc_inicial_pct": 50.0,
-      "soc_final_pct": 20.0,
-      "soc_max_pct": 100.0,
-      "soc_min_pct": 20.0,
-      "carga_total_kwh": 967.2143549040596,
-      "descarga_total_kwh": 1332.1726640989673
-    }
+  "annual_simulation": {
+    "hours_simulated": 8760,
+    "year": 2024,
+    "carga_total_kwh": 580200.0,
+    "descarga_total_kwh": 209374.0,
+    "descarga_a_ev_kwh": 204073.0,
+    "descarga_a_mall_kwh": 0.0,
+    "perdidas_eficiencia_kwh": 5301.0,
+    "ciclos_equivalentes_carga": 290,
+    "ciclos_equivalentes_descarga": 102,
+    "ciclos_totales_combinados": 392,
+    "horas_carga": 2400,
+    "horas_descarga": 1500,
+    "horas_idle": 4860
+  },
+  "energy_distribution": {
+    "pv_total_kwh": 1217305.0,
+    "pv_to_ev_direct_kwh": 305820.0,
+    "pv_to_bess_charge_kwh": 678629.0,
+    "pv_to_mall_direct_kwh": 148595.0,
+    "pv_curtailed_kwh": 84261.0,
+    "pv_utilization_percent": 79.8
+  },
+  "demand_coverage": {
+    "ev_demand_total_kwh": 769310.0,
+    "ev_coverage_pv_percent": 27.6,
+    "ev_coverage_bess_percent": 26.5,
+    "ev_coverage_grid_percent": 45.9,
+    "mall_demand_total_kwh": 876000.0,
+    "mall_coverage_pv_percent": 20.4,
+    "mall_coverage_bess_percent": 0.0,
+    "mall_coverage_grid_percent": 79.6
+  },
+  "benefits": {
+    "co2_avoided_kg": 209537.0,
+    "co2_avoided_ton": 209.537,
+    "co2_factor_grid_kg_per_kwh": 0.4521,
+    "tariff_savings_soles": 30530.0,
+    "tariff_hp_soles_per_kwh": 0.45,
+    "tariff_hfp_soles_per_kwh": 0.28,
+    "tariff_differential_soles_per_kwh": 0.17,
+    "hours_hp_per_year": 1825,
+    "equivalent_trees_planted": 10476,
+    "equivalent_cars_not_driven": 91.1
+  },
+  "deficit_analysis": {
+    "deficit_daily_avg_kwh": "estimated",
+    "deficit_max_daily_kwh": "estimated",
+    "deficit_annual_kwh": "estimated",
+    "hours_with_deficit": 1460,
+    "percent_year_with_deficit": 16.7,
+    "charge_start_avg": "08:00",
+    "discharge_start_avg": "17:00"
+  },
+  "validation": {
+    "energy_balance_error_kwh": 0.01,
+    "soc_limits_respected": true,
+    "power_limits_respected": true,
+    "null_values_count": 0,
+    "data_completeness_percent": 100.0
   }
 }
