@@ -57,7 +57,7 @@ print("-" * 100)
 
 bess_charge_total = bess_df['bess_charge_kwh'].sum()
 bess_discharge_total = bess_df['bess_discharge_kwh'].sum()
-cycles = bess_charge_total / 1700.0  # OE2 v5.4: 1700 kWh capacidad ✅ UPDATED
+cycles = bess_charge_total / 2000.0  # Asumiendo 2000 kWh capacidad
 
 print(f"Total cargado (PV): {bess_charge_total:>12,.0f} kWh")
 print(f"Total descargado:   {bess_discharge_total:>12,.0f} kWh")

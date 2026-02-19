@@ -18,7 +18,7 @@ HOURS_PER_YEAR: int = 8760
 # ============================================================================
 # CONSTANTES BESS (VALIDADAS v5.4 - 2026-02-19) ✅ UPDATED
 # ============================================================================
-BESS_MAX_KWH_CONST: float = 1700.0  # 1,700 kWh max SOC (OE2 v5.4 spec) ✅ UPDATED
+BESS_MAX_KWH_CONST: float = 2000.0  # 2,000 kWh max SOC (VERIFIED v5.8 audit)
 BESS_MAX_POWER_KW: float = 400.0    # 400 kW potencia maxima BESS
 BESS_MIN_SOC_PERCENT: float = 20.0  # 20% SOC minimo
 BESS_MAX_SOC_PERCENT: float = 100.0 # 100% SOC maximo
@@ -60,7 +60,7 @@ TOTAL_SOCKETS: int = 38             # 38 sockets (19 × 2)
 MOTOS_SOCKETS: int = 30             # Primeros 30 sockets para motos
 TAXIS_SOCKETS: int = 8              # Ultimos 8 sockets para mototaxis
 SOLAR_PV_KWP: float = 4050.0        # 4,050 kWp solar capacity
-BESS_CAPACITY_KWH: float = 1700.0   # 1,700 kWh BESS capacity (v5.4) ✅ UPDATED
+BESS_CAPACITY_KWH: float = 2000.0   # 2,000 kWh BESS capacity (v5.8 audit)
 
 # ============================================================================
 # NORMALIZACION DE RECOMPENSAS

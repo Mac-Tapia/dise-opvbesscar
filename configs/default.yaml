@@ -33,7 +33,7 @@ oe2:
     discharge_only_no_solar: false  # v5.4: MALL discharge during day if excess
     dod: 0.80      # 80% Depth of Discharge (min SOC = 20%)
     efficiency_roundtrip: 0.95
-    fixed_capacity_kwh: 1700.0  # v5.4: 1700 kWh nominal (1360 usable @ 20-100% SOC) ✅ UPDATED
+    fixed_capacity_kwh: 2000.0  # v5.5: 2000 kWh nominal (1600 usable @ 20-100% SOC)
     fixed_power_kw: 400.0       # v5.4: 400 kW carga/descarga symmetric
     load_scope: dual_ev_and_mall  # v5.4: EV + MALL priority
     min_soc_percent: 20.0       # v5.4: Hard constraint @ 22h closing

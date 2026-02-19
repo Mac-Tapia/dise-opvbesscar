@@ -250,14 +250,14 @@ class PPOConfig:
         }
 
 # ============================================================================
-# CONSTANTES OE2 v5.4 (Iquitos, Peru) - 2026-02-19 (ACTUALIZADO CRITICO) ✅
+# CONSTANTES OE2 v5.8 (Iquitos, Peru) - 2026-02-18 (ACTUALIZADO CRÍTICO)
 # ============================================================================
-# IMPORTANTE: BESS_CAPACITY_KWH = 1700.0 kWh (OE2 v5.4 specification confirmed)
-# Fuente: OE2 balance_energetico v5.4 + configs/default.yaml
+# IMPORTANTE: BESS_CAPACITY_KWH = 2000.0 kWh (fue 1700.0, error detectado en auditoría)
+# Fuente: bess_ano_2024.csv column soc_kwh max value = 2000.0 kWh
 CO2_FACTOR_IQUITOS = 0.4521  # kg CO2/kWh - factor de emision grid Iquitos
-BESS_CAPACITY_KWH = 1700.0   # 1,700 kWh max SOC (OE2 v5.4) ✅ UPDATED
-BESS_MAX_KWH_CONST = 1700.0  # 1,700 kWh total (para normalizacion observaciones) ✅ UPDATED
-BESS_MAX_KWH = BESS_MAX_KWH_CONST  # Usar 1700 para normalizacion (OE2 v5.4)
+BESS_CAPACITY_KWH = 2000.0   # 2,000 kWh max SOC (VERIFICADO v5.8)
+BESS_MAX_KWH_CONST = 2000.0  # 2,000 kWh total (para normalizacion observaciones)
+BESS_MAX_KWH = BESS_MAX_KWH_CONST  # Usar 2000 para normalizacion (ACTUALIZADO v5.8)
 BESS_MAX_POWER_KW = 400.0    # 400 kW potencia maxima BESS
 
 # ============================================================================

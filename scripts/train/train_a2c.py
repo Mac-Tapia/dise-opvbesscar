@@ -2229,8 +2229,8 @@ def validate_a2c_sync() -> bool:
     print('='*80)
     
     checks = {
-        '1. BESS Capacity (1700 kWh)': BESS_CAPACITY_KWH == 1700.0,
-        '2. BESS Max normalizacion (1700 kWh)': BESS_MAX_KWH_CONST == 1700.0,
+        '1. BESS Capacity (2000 kWh)': BESS_CAPACITY_KWH == 2000.0,
+        '2. BESS Max normalizacion (2000 kWh)': BESS_MAX_KWH_CONST == 2000.0,
         '3. Solar Max (2887 kW)': SOLAR_MAX_KW == 2887.0,
         '4. Mall Max (3000 kW)': MALL_MAX_KW == 3000.0,
         '5. Chargers Max (3.7 kW)': CHARGER_MAX_KW == 3.7,

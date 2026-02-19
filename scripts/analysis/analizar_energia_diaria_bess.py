@@ -126,12 +126,15 @@ print(f"  Usable (80% DoD):             1,600 kWh (rango 20%-100%)")
 print(f"\nDESCARGA DIARIA para EV:")
 print(f"  Promedio BESS→EV/día:         {prom_bess_to_ev:>6,.0f} kWh (37.1% de demanda EV)")
 
-print(f"\nRESERVA MINIMA (20% SOC):")
-print(f"  Reserva minima:               {0.20 * 1700:>6,.0f} kWh (nunca bajamos) ✅ UPDATED to 1700")
+print(f"\nENERGIA QUE QUEDA EN BESS:")
+print(f"  Promedio SOC máximo (manana): {prom_soc_max:>6,.0f} kWh (100%)")
+print(f"  Promedio SOC mínimo (critico):{prom_soc_min:>6,.0f} kWh ({daily_stats['SOC_min_%'].mean():.1f}%)")
+print(f"  Promedio SOC al cierre (22h): {prom_soc_mean:>6,.0f} kWh ({daily_stats['SOC_mean_%'].mean():.1f}%)")
+print(f"  Reserva minima (20%):         {0.20 * 2000:>6,.0f} kWh (nunca bajamos)")
 
 print(f"\nRESPUESTA A LA PREGUNTA:")
 print(f"  ✅ Después de descargar {prom_bess_to_ev:.0f} kWh para EV,")
 print(f"  ✅ El BESS aún tiene {prom_soc_mean:.0f} kWh ({daily_stats['SOC_mean_%'].mean():.1f}%),")
-print(f"  ✅ Puede llegar al 20% mínimo operacional ({0.20*1700:.0f} kWh) ✅ UPDATED")
+print(f"  ✅ Puede llegar al 20% mínimo operacional ({0.20*2000:.0f} kWh)")
 
 print("\n" + "=" * 100)
