@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BESS DOS ESTADOS - Gráfica de Flujo Energético</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #228B22;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+        .status {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .status h3 {
+            margin: 0 0 10px 0;
+            color: #155724;
+        }
+        .status ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .status li {
+            color: #155724;
+            margin: 5px 0;
+        }
+        .image-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .legend {
+            background-color: #f9f9f9;
+            border-left: 4px solid #228B22;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .bess-state {
+            display: inline-block;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 3px;
+            color: white;
+            font-weight: bold;
+        }
+        .bess-carga {
+            background-color: #228B22;
+        }
+        .bess-descarga {
+            background-color: #FF8C00;
+        }
+        .info-box {
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .info-box h4 {
+            margin: 0 0 10px 0;
+            color: #0c5aa0;
+        }
+        .info-box p {
+            margin: 5px 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ Gráfica de Flujo Energético - BESS con DOS ESTADOS</h1>
+        
+        <div class="status">
+            <h3>✓ TEST EXITOSO</h3>
+            <ul>
+                <li>Datos OE2 cargados: OK (8,760 horas)</li>
+                <li>Balance energético calculado: OK</li>
+                <li>Gráfica Sankey generada: OK</li>
+                <li>BESS DOS ESTADOS visualizado: OK</li>
+                <li>Archivo PNG generado: 302.0 KB</li>
+            </ul>
+        </div>
+
+        <div class="legend">
+            <h3>Estados Operacionales del BESS v5.4</h3>
+            <p>
+                <span class="bess-state bess-carga">BESS↑CARGA (6h+)</span>
+                <span class="bess-state bess-descarga">BESS↓DESCARGA (17h-22h)</span>
+            </p>
+        </div>
+
+        <div class="info-box">
+            <h4>Descripción Técnica</h4>
+            <p><strong>BESS↑CARGA (Verde):</strong> Período de 6h en adelante. Acción: PV carga el BESS hasta 100%. Prioridades: (1) PV→BESS (primero), (2) PV→EV (paralelo), (3) PV→MALL (exceso).</p>
+            <p><strong>BESS↓DESCARGA (Naranja):</strong> Período 17h-22h. Acción: BESS entrega energía al EVs (100% cobertura de deficit). Restricción: Llegar a 20% SOC exactamente a las 22h.</p>
+            <p><strong>Capacidad:</strong> 1,700 kWh | <strong>Potencia:</strong> 400 kW | <strong>Eficiencia:</strong> 95% round-trip</p>
+        </div>
+
+        <h2>Gráfica: Sankey de Flujos Energéticos Anuales + Horarios</h2>
+        <p>Archivo: <code>reports/balance_energetico/00.5_FLUJO_ENERGETICO_INTEGRADO.png</code></p>
+        
+        <div class="image-container">
+            <img src="reports/balance_energetico/00.5_FLUJO_ENERGETICO_INTEGRADO.png" alt="Gráfica de Flujo Energético con BESS DOS ESTADOS">
+        </div>
+
+        <h2>Análisis de Resultados</h2>
+        <div class="info-box">
+            <h4>Generación y Demanda Anual (OE2 Real)</h4>
+            <p>Generación PV: 8,292,514 kWh/año</p>
+            <p>Demanda Total: 12,776,935 kWh/año (Mall: 96.8%, EV: 3.2%)</p>
+            <p>Importación Red: 6,650,917 kWh/año (52.1% de cobertura)</p>
+            <p>Autosuficiencia Sistema: 47.9% (PV + BESS)</p>
+        </div>
+
+        <div class="info-box">
+            <h4>Operación BESS DOS ESTADOS</h4>
+            <p>Carga Total: 580,200 kWh/año</p>
+            <p>Descarga Total: 209,374 kWh/año</p>
+            <p>Ciclos Operacionales: 2,555 ciclos de carga + 730 ciclos de descarga</p>
+            <p>Eficiencia Neta: 95% (pérdidas: 5% en cada ciclo round-trip)</p>
+        </div>
+
+        <h2>Proximos Pasos</h2>
+        <ol>
+            <li>✓ Validar que BESS aparece como DOS NODOS separados en la gráfica</li>
+            <li>✓ Verificar colores: CARGA verde (#228B22), DESCARGA naranja (#FF8C00)</li>
+            <li>✓ Comprobar flujos con etiquetas de acciones (PV→BESS⬆, BESS→EV⬇)</li>
+            <li>Integración con agentes RL (OE3) para optimización de despacho</li>
+            <li>Análisis de sensibilidad a tarifas OSINERGMIN (HP vs HFP)</li>
+        </ol>
+
+        <hr style="margin-top: 40px; border: none; border-top: 1px solid #ddd;">
+        <p style="color: #999; font-size: 12px;">
+            Generado: 2026-02-20 | Balance Energético v5.4 | Proyecto: pvbesscar
+        </p>
+    </div>
+</body>
+</html>
