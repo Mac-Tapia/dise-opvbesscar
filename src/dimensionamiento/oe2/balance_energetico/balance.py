@@ -755,174 +755,251 @@ class BalanceEnergeticoSystem:
         """
         Diagrama de FLUJO ENERGETICO integrado (Sankey style).
         
-        Muestra en una sola gráfica:
-        - Generación PV (fuente)
-        - Demandas: Mall + EV (cargas)
-        - BESS: Carga y Descarga (almacenamiento)
-        - Red Pública: Importación (fuente backup)
+        Diseño basado en LÓGICA REAL BESS v5.4:
+        - BESS CARGA (6h+): PV carga BESS hasta 100% manteniendo EV en paralelo
+        - BESS DESCARGA (17h-22h): Cubre 100% déficit EV + peak shaving Mall
         
-        Usa datos REALES anuales cargados desde OE2.
+        Muestra en una sola gráfica:
+        - Generación PV (fuente) → distribuida a BESS + EV + Mall
+        - BESS 2 Estados: CARGA (verde) vs DESCARGA (naranja)
+        - Demandas: Mall + EV (cargas)
+        - Red Pública: Importación backup
+        
+        Usa datos REALES anuales cargados desde OE2 (datasets validados).
         """
         # Calcular totales anuales reales (datos ya cargados)
         total_pv = df['pv_generation_kw'].sum()
         total_ev = df['ev_demand_kw'].sum()
         total_mall = df['mall_demand_kw'].sum()
         total_demand = df['total_demand_kw'].sum()
-        total_bess_charge = df['bess_charge_kw'].sum()
-        total_bess_discharge = df['bess_discharge_kw'].sum()
+        
+        # BESS: Separar claramente CARGA vs DESCARGA
+        total_bess_charge = df['bess_charge_kw'].sum()      # Energía que ENTRA al BESS
+        total_bess_discharge = df['bess_discharge_kw'].sum()  # Energía que SALE del BESS
+        
         total_grid_import = df['demand_from_grid_kw'].sum()
         total_pv_to_demand = df['pv_to_demand_kw'].sum()
-        total_pv_to_bess = df['pv_to_bess_kw'].sum()
+        total_pv_to_bess = df['pv_to_bess_kw'].sum()        # PV que carga BESS
         total_pv_waste = df['pv_to_grid_kw'].sum()
+        
+        # BESS energía neta (cuenta pérdidas de eficiencia en ciclo)
+        bess_efficiency = 0.95  # 95% round-trip eficiencia real
         
         # Convertir a MWh para mejor legibilidad
         scale = 1000  # kWh a MWh
         
         # Crear figura con subplots: flujo anual + flujo horario representativo
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(22, 11))
         
         # ========== SUBPLOT 1: FLUJO ANUAL (Sankey estilo) ==========
+        # DISEÑO BASADO EN LÓGICA REAL BESS v5.4:
+        # - BESS CARGA (6h+): PV entra al BESS (verde)
+        # - BESS DESCARGA (17h-22h): BESS sale para cubrir EV (naranja)
         
-        # Posiciones de nodos
+        # Posiciones de nodos (separar CARGA vs DESCARGA del BESS)
         nodes = {
-            'pv': (0.1, 0.7),
-            'grid': (0.1, 0.2),
-            'demand': (0.5, 0.5),
-            'bess': (0.5, 0.15),
-            'mall': (0.85, 0.65),
-            'ev': (0.85, 0.45),
-            'bess_out': (0.85, 0.15),
-            'waste': (0.85, 0.02),
+            'pv': (0.08, 0.75),         # Fuente: Solar PV (izquierda superior)
+            'grid': (0.08, 0.15),       # Fuente: Red Pública (izquierda inferior)
+            # Almacenamiento - SEPARADO EN DOS PUNTOS
+            'bess_carga': (0.4, 0.75),  # BESS CARGA (recibe PV) - arriba
+            'bess_descarga': (0.4, 0.25),  # BESS DESCARGA (entrega a EV) - abajo
+            # Salidas (demandas)
+            'mall': (0.85, 0.75),       # Carga: Mall (derecha superior)
+            'ev': (0.85, 0.35),         # Carga: EV motos/taxi (derecha medio)
+            'waste': (0.85, 0.02),      # Pérdida: Desperdicio PV (derecha inferior)
         }
         
-        node_width = 0.08
-        node_height = 0.08
+        node_width = 0.07
+        node_height = 0.07
         
-        # Nodo PV Solar
+        # Nodo PV Solar (Fuente - Amarillo/Oro)
         rect_pv = plt.Rectangle(
             (nodes['pv'][0] - node_width/2, nodes['pv'][1] - node_height/2),
             node_width, node_height, 
-            color='#FFD700', edgecolor='orange', linewidth=3, alpha=0.8
+            facecolor='#FFD700', edgecolor='orange', linewidth=3, alpha=0.9
         )
         ax1.add_patch(rect_pv)
         ax1.text(nodes['pv'][0], nodes['pv'][1], 'Solar PV\n4,050 kWp', 
                 ha='center', va='center', fontsize=10, fontweight='bold')
         
-        # Nodo Red Pública
+        # Nodo Red Pública (Fuente - Rojo)
         rect_grid = plt.Rectangle(
             (nodes['grid'][0] - node_width/2, nodes['grid'][1] - node_height/2),
             node_width, node_height,
-            color='#FF6347', edgecolor='darkred', linewidth=3, alpha=0.8
+            facecolor='#FF6347', edgecolor='darkred', linewidth=3, alpha=0.9
         )
         ax1.add_patch(rect_grid)
         ax1.text(nodes['grid'][0], nodes['grid'][1], 'Red Publica\n(Iquitos)', 
                 ha='center', va='center', fontsize=10, fontweight='bold', color='white')
         
-        # Nodo BESS
-        rect_bess = plt.Rectangle(
-            (nodes['bess'][0] - node_width/2, nodes['bess'][1] - node_height/2),
+        # ========== NODO BESS CARGA (Recibe PV) - VERDE ==========
+        # Estado: 6h-22h | Acción: PV → BESS (carga hasta 100%)
+        rect_bess_carga = plt.Rectangle(
+            (nodes['bess_carga'][0] - node_width/2, nodes['bess_carga'][1] - node_height/2),
             node_width, node_height,
-            color='#228B22', edgecolor='darkgreen', linewidth=3, alpha=0.8
+            facecolor='#228B22', edgecolor='darkgreen', linewidth=4, alpha=0.95
         )
-        ax1.add_patch(rect_bess)
-        ax1.text(nodes['bess'][0], nodes['bess'][1], 'BESS\n1,700 kWh', 
-                ha='center', va='center', fontsize=10, fontweight='bold', color='white')
+        ax1.add_patch(rect_bess_carga)
+        ax1.text(nodes['bess_carga'][0], nodes['bess_carga'][1] + 0.02, 'BESS↑CARGA', 
+                ha='center', va='center', fontsize=9, fontweight='bold', color='white')
+        ax1.text(nodes['bess_carga'][0], nodes['bess_carga'][1] - 0.02, '1,700 kWh', 
+                ha='center', va='center', fontsize=7, color='white')
         
-        # Nodo Demanda
-        rect_demand = plt.Rectangle(
-            (nodes['demand'][0] - node_width/2, nodes['demand'][1] - node_height/2),
+        # ========== NODO BESS DESCARGA (Entrega a EV) - NARANJA ==========
+        # Estado: 17h-22h | Acción: BESS → EV (100% cobertura deficit)
+        rect_bess_desca = plt.Rectangle(
+            (nodes['bess_descarga'][0] - node_width/2, nodes['bess_descarga'][1] - node_height/2),
             node_width, node_height,
-            color='#4169E1', edgecolor='navy', linewidth=3, alpha=0.8
+            facecolor='#FF8C00', edgecolor='darkorange', linewidth=4, alpha=0.95
         )
-        ax1.add_patch(rect_demand)
-        ax1.text(nodes['demand'][0], nodes['demand'][1], 'Distribucion\nDemanda', 
-                ha='center', va='center', fontsize=10, fontweight='bold', color='white')
+        ax1.add_patch(rect_bess_desca)
+        ax1.text(nodes['bess_descarga'][0], nodes['bess_descarga'][1] + 0.02, 'BESS↓DESCARGA', 
+                ha='center', va='center', fontsize=9, fontweight='bold', color='white')
+        ax1.text(nodes['bess_descarga'][0], nodes['bess_descarga'][1] - 0.02, '400 kW', 
+                ha='center', va='center', fontsize=7, color='white')
         
-        # Nodo Mall
+        # Nodo Mall (Carga - Azul)
         rect_mall = plt.Rectangle(
             (nodes['mall'][0] - node_width/2, nodes['mall'][1] - node_height/2),
             node_width, node_height,
-            color='#1E90FF', edgecolor='darkblue', linewidth=2, alpha=0.8
+            facecolor='#1E90FF', edgecolor='darkblue', linewidth=2, alpha=0.9
         )
         ax1.add_patch(rect_mall)
         ax1.text(nodes['mall'][0], nodes['mall'][1], 'Mall\n(RED)', 
                 ha='center', va='center', fontsize=9, fontweight='bold')
         
-        # Nodo EV
+        # Nodo EV (Carga - Verde Lima)
         rect_ev = plt.Rectangle(
             (nodes['ev'][0] - node_width/2, nodes['ev'][1] - node_height/2),
             node_width, node_height,
-            color='#32CD32', edgecolor='darkgreen', linewidth=2, alpha=0.8
+            facecolor='#32CD32', edgecolor='darkgreen', linewidth=2, alpha=0.9
         )
         ax1.add_patch(rect_ev)
-        ax1.text(nodes['ev'][0], nodes['ev'][1], 'EV\n(38 sockets)', 
+        ax1.text(nodes['ev'][0], nodes['ev'][1], 'EV\n38 sockets', 
                 ha='center', va='center', fontsize=9, fontweight='bold')
         
-        # Nodo Desperdicio
+        # Nodo Desperdicio (Gris)
         rect_waste = plt.Rectangle(
             (nodes['waste'][0] - node_width/2, nodes['waste'][1] - node_height/2),
             node_width, node_height,
-            color='#A9A9A9', edgecolor='black', linewidth=2, alpha=0.6
+            facecolor='#A9A9A9', edgecolor='black', linewidth=2, alpha=0.6
         )
         ax1.add_patch(rect_waste)
-        ax1.text(nodes['waste'][0], nodes['waste'][1], 'Desperdicio', 
+        ax1.text(nodes['waste'][0], nodes['waste'][1], 'Curtailment', 
                 ha='center', va='center', fontsize=8, fontweight='bold')
         
         # Función para dibujar flechas
-        def draw_flow_arrow(ax, start, end, flow_kwh, color, style='-'):
+        def draw_flow_arrow(ax, start, end, flow_kwh, color, style='-', label_text=''):
             max_flow = max(total_pv, total_grid_import) * 1.1
-            arrow_width = max(0.001, (flow_kwh / max_flow) * 0.03)
+            arrow_width = max(0.001, (flow_kwh / max_flow) * 0.035)
             
             ax.annotate('', xy=end, xytext=start,
                        arrowprops=dict(
                            arrowstyle='->', lw=arrow_width * 100,
-                           color=color, alpha=0.7, 
-                           connectionstyle='arc3,rad=0.1', linestyle=style
+                           color=color, alpha=0.75, 
+                           connectionstyle='arc3,rad=0.15', linestyle=style
                        ))
             
             mid_x = (start[0] + end[0]) / 2
             mid_y = (start[1] + end[1]) / 2
             flow_mwh = flow_kwh / scale
-            ax.text(mid_x, mid_y, f'{flow_mwh:.1f} MWh', 
-                   fontsize=8, bbox=dict(boxstyle='round', facecolor='white', alpha=0.9),
-                   ha='center', va='center')
+            
+            # Mostrar valor o etiqueta personalizada
+            display_text = label_text if label_text else f'{flow_mwh:.1f} MWh'
+            ax.text(mid_x, mid_y, display_text, 
+                   fontsize=7.5, bbox=dict(boxstyle='round', facecolor='white', alpha=0.95),
+                   ha='center', va='center', fontweight='bold')
         
-        # Dibujar flechas de flujo
-        draw_flow_arrow(ax1, nodes['pv'], nodes['demand'], total_pv_to_demand, '#FFD700')
-        draw_flow_arrow(ax1, nodes['pv'], nodes['bess'], total_pv_to_bess, '#32CD32')
+        # ========== FLUJOS DE ENERGÍA BASADOS EN LÓGICA REAL BESS v5.4 ==========
+        
+        # PV → BESS CARGA (6h+: Prioridad 1 - Carga hasta 100%)
+        draw_flow_arrow(ax1, nodes['pv'], nodes['bess_carga'], total_pv_to_bess, 
+                       '#228B22', label_text='PV→BESS⬆\nCARGA')
+        
+        # PV → EV DIRECTO (Paralelo con carga BESS: Prioridad 2)
+        draw_flow_arrow(ax1, nodes['pv'], nodes['ev'], total_pv_to_demand, 
+                       '#FFD700', label_text='PV→EV\nDIRECTO')
+        
+        # PV → MALL DIRECTO (Excedente: Prioridad 3)
+        if 'pv_to_mall_kw' in df.columns:
+            pv_to_mall_direct = df['pv_to_mall_kw'].sum()
+        else:
+            pv_to_mall_direct = max(total_pv - total_pv_to_bess - total_pv_to_demand - total_pv_waste, 0)
+        
+        if pv_to_mall_direct > 0:
+            draw_flow_arrow(ax1, nodes['pv'], nodes['mall'], pv_to_mall_direct, 
+                           '#FFD700', style='--', label_text='PV→MALL\nEXCED.')
+        
+        # Desperdicio PV (Curtailment)
         if total_pv_waste > 0:
-            draw_flow_arrow(ax1, nodes['pv'], nodes['waste'], total_pv_waste, '#808080', style='--')
-        draw_flow_arrow(ax1, nodes['demand'], nodes['mall'], total_mall, '#1E90FF')
-        draw_flow_arrow(ax1, nodes['demand'], nodes['ev'], total_ev, '#32CD32')
-        draw_flow_arrow(ax1, nodes['grid'], nodes['demand'], total_grid_import, '#FF6347')
-        if total_bess_discharge > 0:
-            draw_flow_arrow(ax1, nodes['bess'], nodes['demand'], total_bess_discharge, '#FF8C00')
+            draw_flow_arrow(ax1, nodes['pv'], nodes['waste'], total_pv_waste, 
+                           '#808080', style=':', label_text='PV\nWASTE')
+        
+        # ========== BESS DESCARGA (17h-22h: 100% EV + Peak Shaving MALL) ==========
+        
+        # BESS → EV DESCARGA (Cubre 100% déficit EV en punto crítico 17h-22h)
+        if 'bess_to_demand_kw' in df.columns:
+            bess_to_ev_annual = df['bess_to_demand_kw'].sum()
+        else:
+            bess_to_ev_annual = max(total_bess_discharge * 0.85, 0)  # ~85% a EV, ~15% peak shaving MALL
+        
+        draw_flow_arrow(ax1, nodes['bess_descarga'], nodes['ev'], bess_to_ev_annual, 
+                       '#FF8C00', label_text='BESS→EV⬇\n100% COBER.')
+        
+        # Red Pública → EV (Solo lo que PV + BESS no cubre)
+        grid_to_ev = max(total_ev - total_pv_to_demand - bess_to_ev_annual, 0)
+        if grid_to_ev > 0:
+            draw_flow_arrow(ax1, nodes['grid'], nodes['ev'], grid_to_ev, 
+                           '#FF6347', label_text='RED→EV\nBACKUP')
+        
+        # Red Pública → MALL (Principal fuente del Mall)
+        grid_to_mall = max(total_mall - pv_to_mall_direct, 0)
+        if grid_to_mall > 0:
+            draw_flow_arrow(ax1, nodes['grid'], nodes['mall'], grid_to_mall, 
+                           '#FF6347', label_text='RED→MALL')
         
         ax1.set_xlim(-0.05, 1.05)
         ax1.set_ylim(-0.1, 1.1)
         ax1.axis('off')
-        ax1.set_title('FLUJO ENERGETICO ANUAL - Datos Reales OE2\nPV + Red → Mall + EV + BESS', 
-                     fontsize=14, fontweight='bold', color='darkred')
+        ax1.set_title('FLUJO ENERGETICO ANUAL - Datos Reales OE2\nPV + Red → Mall + EV | BESS: CARGA (verde) vs DESCARGA (naranja)', 
+                     fontsize=13, fontweight='bold', color='darkred')
         
-        # Panel informativo
-        info_text = (
-            f'BALANCE ANUAL (OE2 REAL)\n'
-            f'━━━━━━━━━━━━━━━━━━━━━\n'
-            f'PV:  {total_pv/scale:>10.1f} MWh\n'
-            f'  ├─ Directo: {total_pv_to_demand/scale:>8.1f} (47%)\n'
-            f'  ├─ BESS:    {total_pv_to_bess/scale:>8.1f}\n'
-            f'  └─ Waste:   {total_pv_waste/scale:>8.1f}\n'
-            f'\nDemanda: {total_demand/scale:>8.1f} MWh\n'
-            f'Mall:    {total_mall/scale:>8.1f} (97%)\n'
-            f'EV:      {total_ev/scale:>8.1f} (3%)\n'
-            f'\nCobertura:\n'
-            f'PV: {100*total_pv_to_demand/total_demand:>6.1f}%\n'
-            f'BESS: {100*total_bess_discharge/total_demand:>5.1f}%\n'
-            f'Red: {100*total_grid_import/total_demand:>6.1f}%'
+        # ========== LEYENDA DE ESTADOS BESS ==========
+        # Mostrar claramente los DOS estados del BESS
+        bess_legend = (
+            '█ BESS↑CARGA(6h+): PV → BESS hasta 100%  |  █ BESS↓DESCARGA(17h-22h): BESS → EV (100% cobertura deficit)'
         )
-        ax1.text(0.02, 0.98, info_text, transform=ax1.transAxes,
-                fontsize=8, verticalalignment='top', family='monospace',
-                bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.95))
+        ax1.text(0.5, 0.97, bess_legend, transform=ax1.transAxes, fontsize=8, ha='center',
+                bbox=dict(boxstyle='round', facecolor='#E8F4F8', alpha=0.95, pad=0.6),
+                fontweight='bold')
+        
+        # Panel informativo detallado
+        info_text = (
+            f'BALANCE ANUAL (OE2 REAL) - LÓGICA BESS v5.4\n'
+            f'━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+            f'\n⭐ GENERACIÓN:\n'
+            f'  Solar PV:        {total_pv/scale:>10.1f} MWh (4,050 kWp)\n'
+            f'  Red Pública:     {total_grid_import/scale:>10.1f} MWh (backup)\n'
+            f'\n📊 DEMANDA:\n'
+            f'  Mall (RED):      {total_mall/scale:>10.1f} MWh (97%)\n'
+            f'  EV (38 sockets): {total_ev/scale:>10.1f} MWh (3%)\n'
+            f'  TOTAL:           {total_demand/scale:>10.1f} MWh\n'
+            f'\n🔶 BESS OPERACIÓN (1,700 kWh, 400 kW):\n'
+            f'  ⬆ CARGA (6h+):   {total_pv_to_bess/scale:>10.1f} MWh PV\n'
+            f'  ⬇ DESCARGA:      {total_bess_discharge/scale:>10.1f} MWh → EV\n'
+            f'  Eficiencia 95%:  {total_pv_to_bess/scale*0.95:>10.1f} MWh disponible\n'
+            f'\n✅ COBERTURA DEMANDA:\n'
+            f'  PV Directo:      {100*total_pv_to_demand/total_demand:>10.1f}%\n'
+            f'  BESS:            {100*bess_to_ev_annual/total_demand:>10.1f}%\n'
+            f'  Red Grid:        {100*grid_to_ev/total_demand:>10.1f}%\n'
+            f'\n📋 HORARIO BESS:\n'
+            f'  Carga: 6h - 17h (PV abundante)\n'
+            f'  Descarga: 17h - 22h (deficit PV)\n'
+            f'  Cierre: 22h @ 20% SOC'
+        )
+        ax1.text(0.01, 0.96, info_text, transform=ax1.transAxes,
+                fontsize=7.5, verticalalignment='top', family='monospace',
+                bbox=dict(boxstyle='round', facecolor='#FFFACD', alpha=0.95, pad=0.8))
         
         # ========== SUBPLOT 2: FLUJO HORARIO ==========
         
