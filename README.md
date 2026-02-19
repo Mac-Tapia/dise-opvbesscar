@@ -14,7 +14,7 @@ Iquitos, Perú - Control inteligente de 38 sockets de carga (270 motos + 39 moto
 Especificaciones de infraestructura confirmadas:
 - **19 cargadores** (15 motos + 4 mototaxis) × 2 sockets = **38 puntos de carga**
 - **Solar:** **4,050 kWp** PVGIS (hourly validated, 8,760 rows)
-- **BESS:** **1,700 kWh** max SOC (80% DoD, 95% efficiency, 20% min SOC)
+- **BESS:** **2,000 kWh** max SOC (80% DoD, 95% efficiency, 20% min SOC)
 - **CO₂ Factor:** 0.4521 kg CO₂/kWh (thermal generation Iquitos)
 - **Data:** 977 technical columns × 8,760 hourly timesteps
 
@@ -319,7 +319,7 @@ TOTAL_CHARGERS: 19          # Motos + mototaxis
 SOCKETS_PER_CHARGER: 2      # = 38 total sockets
 CHARGER_MAX_KW: 7.4         # Per socket (Mode 3, 32A @ 230V)
 SOLAR_CAPACITY_KWP: 4050    # PVGIS timeseries
-BESS_CAPACITY_KWH: 1700     # v5.4 specification
+BESS_CAPACITY_KWH: 2000     # Confirmed capacity per bess_ano_2024.csv
 BESS_MIN_SOC_PCT: 20        # Minimum state of charge
 BESS_MAX_DOD_PCT: 80        # Maximum depth of discharge
 BESS_EFFICIENCY_PCT: 95     # Round-trip efficiency
