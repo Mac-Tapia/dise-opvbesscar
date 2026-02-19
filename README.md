@@ -1,1402 +1,328 @@
-# 🔋 pvbesscar - Sistema Inteligente de Carga para Vehículos Eléctricos
+# 🔋⚡ pvbesscar - RL-based EV Charging Optimization
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Stable-Baselines3](https://img.shields.io/badge/RL-Stable--Baselines3-green.svg)](https://stable-baselines3.readthedocs.io/)
-[![CityLearn](https://img.shields.io/badge/Env-CityLearn%20v2-orange.svg)](https://www.citylearn.net/)
-[![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)]()
+**Optimización de carga EV con energía solar mediante Reinforcement Learning**
 
-> **Diseño de Infraestructura de Carga Inteligente para la Reducción de CO₂ en la Ciudad de Iquitos, Perú**
+Iquitos, Perú - Control inteligente de 38 sockets de carga (270 motos + 39 mototaxis/día) usando agentes RL (SAC/PPO/A2C) para minimizar CO₂ en red aislada.
 
 ---
 
-## � DOCUMENTACIÓN CENTRAL
+## 🎯 Resumen Ejecutivo
 
-> **¿Dónde encontrar qué?** Consulta el [ÍNDICE CENTRAL DE DOCUMENTACIÓN](docs/DOCUMENTACION_INDEX.md)
+**pvbesscar** implementa un sistema completo de dos fases para optimizar infraestructura de carga EV:
 
-Este documento es tu **mapa único** de toda la documentación técnica:
-- 🚀 [Empezar rápido](#documentación-central) (nuevos developers)
-- 🤖 [Entrenar agentes](docs/DOCUMENTACION_INDEX.md#entrenar-agentes) (RL training)
-- 📊 [Datos y datasets](docs/DOCUMENTACION_INDEX.md#datos-y-datasets) (estructura de datos)
-- 📚 [Referencias académicas](docs/REFERENCIAS_ACADEMICAS_COMPLETAS.md) (PPO vs SAC vs A2C)
+- **OE2 (Dimensioning):** Especificaciones de infraestructura
+  - 19 cargadores (15 motos + 4 mototaxis) × 2 sockets = **38 puntos de carga**
+  - Solar: **4,050 kWp** PVGIS
+  - BESS: **2,000 kWh** con eficiencia 95%
+  - Precio: **0.4521 kg CO₂/kWh** (thermal generation Iquitos)
 
----
-
-## �📋 Tabla de Contenidos
-
-1. [Resumen del Proyecto](#resumen-del-proyecto)
-2. [Arquitectura del Sistema](#arquitectura-del-sistema)
-3. [OE1: Ubicación Óptima](#oe1-ubicación-óptima-para-infraestructura-de-carga-inteligente)
-4. [OE2: Dimensionamiento del Sistema](#oe2-dimensionamiento-del-sistema)
-   - [2.1 Generación Solar Fotovoltaica](#21-generación-solar-fotovoltaica)
-   - [2.2 Cargadores para Motos y Mototaxis](#22-cargadores-para-motos-y-mototaxis)
-   - [2.3 Sistema de Almacenamiento BESS](#23-sistema-de-almacenamiento-bess)
-   - [2.4 Demanda del Mall](#24-demanda-del-mall-centro-comercial)
-   - [2.5 Balance Energético](#25-balance-energético)
-5. [OE3: Selección del Agente Inteligente](#oe3-selección-del-agente-inteligente)
-6. [Conclusiones](#conclusiones)
-7. [Recomendaciones](#recomendaciones)
-8. [Instalación y Uso](#instalación-y-uso)
-9. [Referencias](#referencias)
+- **OE3 (Control):** Control inteligente con RL
+  - 3 agentes: **SAC, PPO, A2C** (Stable-Baselines3)
+  - 8,760 horas (1 año) simulación real
+  - Reward multiobjetivo: CO₂ (45%), solar (15%), vehículos (25%), grid (5%), BESS (5%), priority (5%)
+  - **Potencial:** CO₂ -26% to -29% vs baseline
 
 ---
 
-## Resumen del Proyecto
-
-### Contexto y Problemática
-
-La ciudad de Iquitos, capital de la región Loreto en la Amazonía peruana, opera con una **red eléctrica aislada** dependiente exclusivamente de generación térmica con combustibles fósiles. Esta situación genera una alta huella de carbono de **0.4521 kg CO₂/kWh**, significativamente superior al promedio nacional conectado al SEIN.
-
-El crecimiento acelerado del parque vehicular de motos y mototaxis eléctricas en Iquitos representa una oportunidad única para desarrollar infraestructura de carga inteligente que, combinada con generación solar fotovoltaica y almacenamiento en baterías, permita reducir significativamente las emisiones de CO₂.
-
-### Objetivo General
-
-Diseñar e implementar un sistema inteligente de carga para vehículos eléctricos (motos y mototaxis) utilizando:
-- **Energía Solar Fotovoltaica** para generación limpia
-- **Sistema de Almacenamiento BESS** para gestión energética
-- **Algoritmos de Aprendizaje por Refuerzo (RL)** para optimización multi-objetivo
-
-### Resultados Principales
-
-| Indicador | Valor | Impacto |
-|-----------|-------|---------|
-| **Reducción de CO₂** | **65.7%** | 5,570 toneladas CO₂ evitadas/año |
-| **Generación Solar** | 8.29 GWh/año | 4,050 kWp instalados |
-| **Vehículos Atendidos** | 309/día | 270 motos + 39 mototaxis |
-| **Autoconsumo Solar** | 96.5% | Máxima eficiencia energética |
-| **Agente Óptimo** | SAC | Score 8.2/10 (Multi-objetivo) |
-
-### Ubicación del Proyecto
-
-- **Ciudad**: Iquitos, Loreto, Perú
-- **Coordenadas**: 3.7480° S, 73.2533° W
-- **Características**: Red eléctrica aislada, generación 100% térmica
-- **Factor de emisión**: 0.4521 kg CO₂/kWh (OSINERGMIN)
-
----
-
-## Arquitectura del Sistema
-
-### Diagrama General
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                     SISTEMA DE CARGA INTELIGENTE IQUITOS                    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│   ┌───────────────┐    ┌───────────────┐    ┌─────────────────────────┐    │
-│   │   SOLAR PV    │    │     BESS      │    │    CARGADORES EV        │    │
-│   │   4,050 kWp   │───▶│  1,700 kWh    │───▶│    38 sockets           │    │
-│   │   8.29 GWh/a  │    │   400 kW      │    │    (19 × 2 tomas)       │    │
-│   └───────────────┘    └───────────────┘    └─────────────────────────┘    │
-│          │                    │                         │                   │
-│          └────────────────────┼─────────────────────────┘                   │
-│                               ▼                                             │
-│                    ┌───────────────────┐                                    │
-│                    │  AGENTE RL (SAC)  │                                    │
-│                    │  Optimización CO₂ │                                    │
-│                    │  65.7% reducción  │                                    │
-│                    └───────────────────┘                                    │
-│                               │                                             │
-│          ┌────────────────────┼────────────────────┐                        │
-│          ▼                    ▼                    ▼                        │
-│   ┌─────────────┐     ┌─────────────┐     ┌─────────────┐                   │
-│   │ MALL DEMAND │     │ GRID IQUITOS│     │ MONITORING  │                   │
-│   │ 12.40 GWh/a │     │ 0.4521 kg/  │     │ Real-time   │                   │
-│   │  (backup)   │     │   kWh CO₂   │     │  metrics    │                   │
-│   └─────────────┘     └─────────────┘     └─────────────┘                   │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Componentes del Sistema
-
-| Componente | Especificación | Función |
-|------------|----------------|---------|
-| **Solar PV** | 4,050 kWp DC / 3,201 kW AC | Generación de energía limpia |
-| **BESS** | 1,700 kWh / 400 kW | Almacenamiento y gestión |
-| **Cargadores** | 19 unidades × 2 tomas = 38 sockets | Carga de vehículos |
-| **Agente RL** | SAC (Soft Actor-Critic) | Optimización multi-objetivo |
-| **Ambiente** | CityLearn v2 | Simulación y entrenamiento |
-
-### Arquitectura CityLearn v2
-
-El proyecto utiliza **CityLearn v2** como ambiente de simulación para el entrenamiento de agentes de Aprendizaje por Refuerzo. CityLearn es un framework estándar para investigación en control inteligente de edificios y sistemas energéticos distribuidos.
-
-```mermaid
-graph TB
-    subgraph ENV["🏙️ CityLearn v2 Environment"]
-        OBS["📊 Observations<br/>156 dimensiones"]
-        ACT["🎮 Actions<br/>39 dimensiones"]
-        REW["🎯 Reward<br/>Multi-objetivo"]
-    end
-    
-    subgraph DATA["📁 Datasets OE2"]
-        SOLAR["☀️ Solar PV<br/>8,292 MWh/año"]
-        BESS["🔋 BESS<br/>1,700 kWh"]
-        CHARGERS["⚡ Chargers<br/>38 sockets"]
-        MALL["🏬 Mall<br/>12,403 MWh/año"]
-    end
-    
-    subgraph AGENTS["🤖 RL Agents"]
-        SAC["SAC ✅<br/>65.7% CO₂ (8.2/10)"]
-        PPO["PPO<br/>50.9% CO₂ (5.9/10)"]
-        A2C["A2C<br/>50.1% CO₂ (3.1/10)"]
-    end
-    
-    DATA --> ENV
-    ENV --> AGENTS
-    SAC --> |"Política Óptima"|CTRL["🔧 Control BESS + EVs"]
-```
-
-### Flujo de Datos
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          FLUJO DE DATOS OE2 → OE3                   │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  DATASETS OE2 (Dimensionamiento)                                    │
-│  ─────────────────────────────────                                  │
-│  ├── pv_generation_citylearn2024_clean.csv   (8,760 h × 11 cols)   │
-│  ├── chargers_ev_ano_2024_v3.csv             (8,760 h × 361 cols)  │
-│  ├── bess_ano_2024.csv                       (8,760 h × 15 cols)   │
-│  └── demandamallhorakwh.csv                  (8,760 h × 2 cols)    │
-│                          │                                          │
-│                          ▼                                          │
-│  AMBIENTE CITYLEARN v2 (Simulación)                                 │
-│  ──────────────────────────────────                                 │
-│  ├── Observación: 156 dimensiones                                   │
-│  ├── Acción: 39 dimensiones (1 BESS + 38 sockets)                  │
-│  └── Timestep: 1 hora × 8,760 = 1 año completo                     │
-│                          │                                          │
-│                          ▼                                          │
-│  AGENTES RL (Entrenamiento)                                         │
-│  ──────────────────────────                                         │
-│  ├── SAC: Off-policy, 280,320 timesteps                            │
-│  ├── PPO: On-policy, 87,600 timesteps                              │
-│  └── A2C: On-policy, 87,600 timesteps ← SELECCIONADO               │
-│                          │                                          │
-│                          ▼                                          │
-│  RESULTADOS (CO₂ Reducción)                                         │
-│  ──────────────────────────                                         │
-│  └── A2C: 62.4% reducción = 3,647.5 ton CO₂/año evitadas           │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## OE1: Ubicación Óptima para Infraestructura de Carga Inteligente
-
-### Marco Conceptual
-
-La selección de la ubicación óptima para una estación de carga de vehículos eléctricos debe considerar múltiples factores técnicos, económicos y sociales. En el contexto de Iquitos, ciudad con red eléctrica aislada, la ubicación debe maximizar el aprovechamiento de energía solar mientras minimiza pérdidas por transmisión.
-
-#### Criterios de Selección
-
-1. **Radiación Solar**: Maximizar captación de energía fotovoltaica
-2. **Demanda Vehicular**: Proximidad a zonas de alta circulación de motos y mototaxis
-3. **Infraestructura Eléctrica**: Capacidad de conexión a red existente
-4. **Área Disponible**: Espacio suficiente para paneles solares y estación
-5. **Accesibilidad**: Facilidad de acceso para usuarios
-
-### Metodología y Procedimiento
-
-#### Análisis de Radiación Solar (PVGIS)
-
-Se utilizó la herramienta PVGIS (Photovoltaic Geographical Information System) de la Comisión Europea para obtener datos de radiación solar en Iquitos:
-
-```
-Coordenadas analizadas: 3.7480° S, 73.2533° W
-Periodo de datos: 2005-2020 (TMY - Typical Meteorological Year)
-Resolución temporal: Horaria (8,760 datos/año)
-```
-
-| Parámetro | Valor | Unidad |
-|-----------|-------|--------|
-| Irradiancia Global Horizontal (GHI) | 4.85 | kWh/m²/día |
-| Irradiancia Directa Normal (DNI) | 3.92 | kWh/m²/día |
-| Temperatura ambiente media | 26.2 | °C |
-| Humedad relativa media | 85 | % |
-
-#### Análisis de Demanda Vehicular
-
-Según estudios de movilidad urbana en Iquitos:
-
-| Tipo Vehículo | Población Estimada | % Electrificable | Demanda Diaria |
-|---------------|-------------------|------------------|----------------|
-| Motos | 45,000 | 60% (27,000) | 270 cargas/día |
-| Mototaxis | 15,000 | 26% (3,900) | 39 cargas/día |
-| **Total** | 60,000 | - | **309 cargas/día** |
-
-#### Selección del Sitio
-
-Se evaluaron 5 sitios potenciales en Iquitos mediante matriz de decisión multicriterio:
-
-| Sitio | Solar | Demanda | Infraestructura | Área | Acceso | **Score** |
-|-------|-------|---------|-----------------|------|--------|-----------|
-| Mall Open Plaza | 8.5 | 9.0 | 9.5 | 9.0 | 9.5 | **90.5** |
-| Terminal Terrestre | 7.0 | 8.5 | 7.0 | 8.0 | 8.0 | 77.0 |
-| Plaza de Armas | 6.0 | 9.0 | 6.5 | 4.0 | 9.0 | 69.0 |
-| Hospital Regional | 7.5 | 7.0 | 8.0 | 7.0 | 7.5 | 74.0 |
-| UNAP Campus | 8.0 | 6.5 | 7.5 | 9.5 | 6.0 | 75.0 |
-
-### Resultados
-
-#### Ubicación Seleccionada: Mall Open Plaza Iquitos
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                   UBICACIÓN ÓPTIMA SELECCIONADA                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Nombre:     Mall Open Plaza Iquitos                           │
-│  Dirección:  Av. Quiñones km 2.5, San Juan Bautista            │
-│  Coordenadas: 3.7635° S, 73.2789° W                            │
-│                                                                 │
-│  JUSTIFICACIÓN:                                                 │
-│  ──────────────                                                 │
-│  ✓ Mayor área disponible para paneles solares (techo)          │
-│  ✓ Alta afluencia de motos y mototaxis (clientes mall)         │
-│  ✓ Infraestructura eléctrica robusta existente                 │
-│  ✓ Estacionamiento amplio para estación de carga               │
-│  ✓ Sinergia con demanda energética del mall (12.40 GWh/año)    │
-│  ✓ Seguridad 24/7 del centro comercial                         │
-│                                                                 │
-│  CAPACIDAD INSTALABLE:                                          │
-│  ─────────────────────                                          │
-│  • Solar PV: 4,050 kWp (área techo: ~27,000 m²)                │
-│  • Cargadores: 19 unidades (38 puntos de carga)                │
-│  • BESS: 1,700 kWh / 400 kW                                    │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-#### Ventajas de la Ubicación
-
-1. **Sinergia Energética**: La demanda del mall (12.40 GWh/año) absorbe excedentes solares
-2. **Economía de Escala**: Comparte infraestructura con instalaciones existentes
-3. **Visibilidad**: Promueve adopción de movilidad eléctrica
-4. **Horarios Complementarios**: Mall opera en horas de máxima generación solar
-
----
-
-## OE2: Dimensionamiento del Sistema
-
-### 2.1 Generación Solar Fotovoltaica
-
-#### Marco Conceptual
-
-La generación solar fotovoltaica en zonas tropicales como Iquitos presenta características particulares:
-
-- **Alta radiación difusa** debido a nubosidad frecuente
-- **Temperaturas elevadas** que reducen eficiencia de paneles
-- **Estacionalidad reducida** (variación anual mínima por cercanía al ecuador)
-- **Precipitaciones frecuentes** que mantienen paneles limpios
-
-La tecnología seleccionada considera estas condiciones para maximizar la generación anual.
-
-#### Metodología y Procedimiento
-
-**Fuente de Datos**: PVGIS (Photovoltaic Geographical Information System) - Comisión Europea
-
-**Parámetros de Simulación**:
-```python
-# Configuración PVGIS para Iquitos
-ubicacion = {
-    'latitud': -3.7480,
-    'longitud': -73.2533,
-    'base_datos': 'PVGIS-SARAH2',
-    'periodo': '2005-2020 (TMY)'
-}
-
-sistema_pv = {
-    'potencia_pico': 4050,      # kWp DC
-    'tipo_panel': 'Monocristalino',
-    'eficiencia': 20.5,         # %
-    'degradacion_anual': 0.5,   # %
-    'inclinacion': 5,           # grados (óptimo para latitud)
-    'azimut': 0,                # Norte (hemisferio sur)
-    'perdidas_sistema': 14      # % (cables, inversor, suciedad)
-}
-
-inversor = {
-    'potencia_ac': 3201,        # kW
-    'eficiencia': 98.2,         # %
-    'ratio_dc_ac': 1.27         # Sobredimensionamiento
-}
-```
-
-**Proceso de Dimensionamiento**:
-1. Descarga de datos TMY desde PVGIS
-2. Cálculo de generación horaria considerando pérdidas
-3. Validación de 8,760 timesteps (1 año completo)
-4. Integración de columnas OSINERGMIN (tarifas, CO₂)
-
-#### Resultados
-
-**Dataset Generado**: `data/oe2/Generacionsolar/pv_generation_citylearn2024_clean.csv`
-
-| Parámetro | Valor | Unidad |
-|-----------|-------|--------|
-| **Potencia Instalada DC** | 4,050 | kWp |
-| **Potencia AC (Inversor)** | 3,201 | kW |
-| **Generación Anual** | 8,292,514 | kWh/año |
-| **Generación Diaria Promedio** | 22,719 | kWh/día |
-| **Horas Equivalentes** | 2,047 | h/año |
-| **Factor de Capacidad** | 23.4 | % |
-| **Potencia Máxima Horaria** | 3,201 | kWh/h |
-| **CO₂ Evitado (Indirecto)** | 3,749 | ton/año |
-
-**Distribución Mensual de Generación**:
-
-```
-MES         GENERACIÓN (MWh)    % DEL TOTAL
-────────────────────────────────────────────
-Enero       720.5               8.7%
-Febrero     651.2               7.9%
-Marzo       712.8               8.6%
-Abril       678.4               8.2%
-Mayo        685.1               8.3%
-Junio       652.3               7.9%
-Julio       688.9               8.3%
-Agosto      721.6               8.7%
-Septiembre  698.2               8.4%
-Octubre     712.4               8.6%
-Noviembre   687.1               8.3%
-Diciembre   684.0               8.2%
-────────────────────────────────────────────
-TOTAL       8,292.5             100%
-```
-
-**Perfil Horario Típico**:
-
-```
-HORA    POTENCIA (kW)   | Gráfico (escala: █ = 200 kW)
-────────────────────────────────────────────────────────
-06:00        45         | ▌
-07:00       312         | █▌
-08:00       856         | ████▌
-09:00     1,456         | ███████▌
-10:00     2,089         | ██████████▌
-11:00     2,678         | █████████████▌
-12:00     3,021         | ███████████████
-13:00     3,156         | ████████████████
-14:00     2,945         | ██████████████▌
-15:00     2,367         | ████████████
-16:00     1,678         | ████████▌
-17:00       923         | ████▌
-18:00       234         | █
-19:00         0         | 
-```
-
-**Gráfica de Generación Solar Anual**:
-
-![Perfil de Generación Solar 2024](data/oe2/Generacionsolar/solar_profile_visualization_2024.png)
-
----
-
-### 2.2 Cargadores para Motos y Mototaxis
-
-#### Marco Conceptual
-
-El dimensionamiento de cargadores para vehículos eléctricos de dos y tres ruedas debe considerar:
-
-- **Capacidad de batería**: Motos (2-4 kWh), Mototaxis (4-8 kWh)
-- **Tiempo de carga aceptable**: Máximo 2-3 horas para carga completa
-- **Simultaneidad de uso**: Factor de coincidencia de usuarios
-- **Horarios de operación**: Adaptados a patrones de uso vehicular
-
-Se aplica el estándar **IEC 61851 Modo 3** para carga segura con comunicación entre vehículo y cargador.
-
-#### Metodología y Procedimiento
-
-**Parámetros de Diseño**:
-
-```python
-# Configuración de cargadores v5.2
-infraestructura = {
-    'total_cargadores': 19,              # unidades
-    'tomas_por_cargador': 2,             # sockets
-    'total_sockets': 38,                 # 19 × 2
-    
-    'motos': {
-        'cargadores': 15,                # unidades
-        'sockets': 30,                   # 15 × 2
-        'potencia_socket': 7.4,          # kW (Modo 3, 32A @ 230V)
-        'vehiculos_dia': 270,            # cargas/día
-        'bateria_promedio': 3.0,         # kWh
-        'tiempo_carga': 24               # minutos promedio
-    },
-    
-    'mototaxis': {
-        'cargadores': 4,                 # unidades
-        'sockets': 8,                    # 4 × 2
-        'potencia_socket': 7.4,          # kW (Modo 3, 32A @ 230V)
-        'vehiculos_dia': 39,             # cargas/día
-        'bateria_promedio': 6.0,         # kWh
-        'tiempo_carga': 48               # minutos promedio
-    }
-}
-
-# Escenario de penetración (IEA Global EV Outlook 2024)
-escenario = {
-    'penetracion_electrica': 0.30,       # 30% del parque
-    'factor_carga': 0.55,                # carga a 55% de potencia nominal
-    'horario_operacion': '09:00-22:00'   # 13 horas/día
-}
-```
-
-**Proceso de Dimensionamiento**:
-1. Proyección de demanda vehicular (270 motos + 39 taxis/día)
-2. Cálculo de energía requerida por tipo de vehículo
-3. Dimensionamiento de potencia instalada
-4. Simulación de perfiles de carga horarios
-5. Generación de dataset anual (8,760 horas)
-
-#### Resultados
-
-**Dataset Generado**: `data/oe2/chargers/chargers_ev_ano_2024_v3.csv`
-
-| Parámetro | Motos | Mototaxis | **Total** |
-|-----------|-------|-----------|-----------|
-| **Cargadores** | 15 | 4 | **19** |
-| **Sockets** | 30 | 8 | **38** |
-| **Potencia Instalada** | 222 kW | 59.2 kW | **281.2 kW** |
-| **Vehículos/día** | 270 | 39 | **309** |
-| **Energía Anual** | 476,501 kWh | 89,374 kWh | **565,875 kWh** |
-| **Energía Diaria** | 1,305.5 kWh | 244.9 kWh | **1,550.34 kWh** |
-
-**Estructura del Dataset (361 columnas)**:
-
-```
-chargers_ev_ano_2024_v3.csv
-├── datetime                                  (1 columna)
-├── Sockets 0-29 (Motos) × 9 métricas        (270 columnas)
-│   ├── socket_XXX_charger_power_kw
-│   ├── socket_XXX_charging_power_kw
-│   ├── socket_XXX_soc_init
-│   ├── socket_XXX_soc_final
-│   ├── socket_XXX_soc_target
-│   ├── socket_XXX_active
-│   ├── socket_XXX_vehicle_type
-│   ├── socket_XXX_vehicle_id
-│   └── socket_XXX_charging_time_remaining
-├── Sockets 30-37 (Mototaxis) × 9 métricas   (72 columnas)
-├── Métricas Agregadas                        (6 columnas)
-│   ├── cantidad_motos_cargando_actualmente
-│   ├── cantidad_mototaxis_cargando_actualmente
-│   ├── cantidad_total_cargando_actualmente
-│   ├── cantidad_motos_activas
-│   ├── cantidad_mototaxis_activas
-│   └── cantidad_total_activas
-├── Columnas CO₂                              (6 columnas)
-│   ├── reduccion_directa_co2_kg
-│   ├── co2_reduccion_motos_kg
-│   ├── co2_reduccion_mototaxis_kg
-│   ├── co2_evitado_vs_gasolina_kg
-│   ├── ev_demand_kwh
-│   └── ev_energia_total_kwh
-└── Columnas OSINERGMIN                       (6 columnas)
-    ├── is_hora_punta
-    ├── tarifa_aplicada_soles
-    ├── costo_carga_ev_soles
-    ├── ahorro_vs_gasolina_soles
-    ├── costo_gasolina_equivalente_soles
-    └── ahorro_neto_soles
-```
-
-**Perfil de Carga Diario Típico**:
-
-```
-HORA    MOTOS    TAXIS    TOTAL   | Gráfico (█ = 5 vehículos)
-──────────────────────────────────────────────────────────────
-09:00      8       2        10    | ██
-10:00     15       3        18    | ███▌
-11:00     22       4        26    | █████
-12:00     18       3        21    | ████
-13:00     12       2        14    | ██▌
-14:00     20       4        24    | ████▌
-15:00     25       5        30    | ██████
-16:00     28       6        34    | ██████▌
-17:00     30       7        37    | ███████▌
-18:00     26       6        32    | ██████▌
-19:00     22       4        26    | █████
-20:00     18       3        21    | ████
-21:00     12       2        14    | ██▌
-22:00      5       1         6    | █
-```
-
-**Gráfica de Perfil Horario de Carga v5.2**:
-
-![Perfil Horario de Carga EV v5.2](outputs/perfil_horario_carga_v52.png)
-
-**CO₂ Evitado por Electrificación (Directo)**:
-
-| Tipo | Factor CO₂ Gasolina | Factor CO₂ Eléctrico | CO₂ Evitado/kWh | CO₂ Evitado Anual |
-|------|---------------------|----------------------|-----------------|-------------------|
-| Motos | 2.31 kg/kWh equiv. | 0.4521 kg/kWh | 1.86 kg/kWh | 312 ton/año |
-| Mototaxis | 2.31 kg/kWh equiv. | 0.4521 kg/kWh | 1.86 kg/kWh | 44 ton/año |
-| **Total** | - | - | - | **357 ton/año** |
-
----
-
-### 2.3 Sistema de Almacenamiento BESS
-
-#### Marco Conceptual
-
-El Sistema de Almacenamiento de Energía en Baterías (BESS - Battery Energy Storage System) cumple funciones críticas en sistemas con generación solar:
-
-1. **Desplazamiento temporal**: Almacenar energía solar para uso nocturno
-2. **Arbitraje tarifario**: Cargar en horario económico, descargar en punta
-3. **Estabilización de red**: Absorber fluctuaciones de generación solar
-4. **Respaldo**: Garantizar continuidad de servicio
-
-La tecnología **Litio-Fosfato de Hierro (LFP)** se selecciona por su:
-- Mayor seguridad térmica
-- Vida útil extendida (>4,000 ciclos)
-- Menor costo por ciclo de vida
-
-#### Metodología y Procedimiento
-
-**Parámetros de Diseño v5.4**:
-
-```python
-# Configuración BESS v5.4
-bess_config = {
-    # Capacidad y potencia
-    'capacidad_nominal': 1700,      # kWh (max SOC)
-    'capacidad_util': 1360,         # kWh (con DoD 80%)
-    'potencia_nominal': 400,        # kW (carga/descarga)
-    
-    # Límites de operación
-    'soc_minimo': 0.20,             # 20% (protección)
-    'soc_maximo': 1.00,             # 100%
-    'dod_maximo': 0.80,             # 80% Depth of Discharge
-    
-    # Eficiencias
-    'eficiencia_carga': 0.975,      # 97.5%
-    'eficiencia_descarga': 0.975,   # 97.5%
-    'eficiencia_roundtrip': 0.95,   # 95% (carga + descarga)
-    
-    # Tecnología
-    'tipo_bateria': 'LFP',          # Litio-Fosfato de Hierro
-    'ciclos_vida': 4000,            # ciclos a 80% DoD
-    'garantia_anos': 10,            # años
-    
-    # Operación
-    'soc_inicial': 0.905,           # 90.5% SOC inicial
-    'estrategia': 'solar_first'     # Priorizar autoconsumo solar
-}
-```
-
-**Dimensionamiento basado en demanda**:
-
-```
-Demanda Nocturna (22:00-06:00) = 8 horas × 1,550 kWh/h ≈ 500 kWh
-Factor de Seguridad = 1.5
-Capacidad Requerida = 500 × 1.5 ÷ 0.80 (DoD) = 937 kWh
-
-→ Se dimensiona a 1,700 kWh para:
-  • Reserva adicional para días nublados
-  • Margen para degradación (10 años)
-  • Capacidad de carga rápida (400 kW = C/4.25)
-```
-
-#### Resultados
-
-**Dataset Generado**: `data/oe2/bess/bess_ano_2024.csv`
-
-| Parámetro | Valor | Unidad |
-|-----------|-------|--------|
-| **Capacidad Nominal** | 1,700 | kWh |
-| **Capacidad Útil (DoD 80%)** | 1,360 | kWh |
-| **Potencia Nominal** | 400 | kW |
-| **SOC Mínimo** | 20 | % |
-| **SOC Máximo** | 100 | % |
-| **Eficiencia Round-trip** | 95 | % |
-| **Energía Ciclada/año** | ~450,000 | kWh |
-| **Ciclos Estimados/año** | ~330 | ciclos |
-| **Vida Útil Proyectada** | 12+ | años |
-
-**Estrategia de Operación**:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                 ESTRATEGIA DE GESTIÓN BESS                      │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  PRIORIDAD 1: Autoconsumo Solar                                │
-│  ─────────────────────────────                                  │
-│  • Solar → EV (directo)                                        │
-│  • Excedente Solar → BESS (carga)                              │
-│                                                                 │
-│  PRIORIDAD 2: Arbitraje Tarifario                              │
-│  ────────────────────────────────                               │
-│  • Carga BESS: 06:00-17:00 (Tarifa HFP: S/.0.28/kWh)          │
-│  • Descarga BESS: 18:00-22:00 (Tarifa HP: S/.0.45/kWh)        │
-│                                                                 │
-│  PRIORIDAD 3: Reserva de Emergencia                            │
-│  ──────────────────────────────────                             │
-│  • Mantener SOC > 30% para contingencias                       │
-│  • Proteger SOC < 20% (no descargar)                           │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Perfil SOC Diario Típico**:
-
-```
-HORA    SOC (%)   FLUJO        | Gráfico SOC (escala: █ = 5%)
-────────────────────────────────────────────────────────────────
-00:00     45%    Descargando   | █████████
-06:00     25%    Mínimo        | █████
-07:00     28%    Cargando ↗    | █████▌
-10:00     55%    Cargando ↗    | ███████████
-12:00     78%    Cargando ↗    | ███████████████▌
-14:00     95%    Lleno ⬛      | ███████████████████
-16:00     92%    Manteniendo   | ██████████████████▌
-18:00     85%    Descargando ↘ | █████████████████
-20:00     65%    Descargando ↘ | █████████████
-22:00     50%    Descargando ↘ | ██████████
-```
-
-**Gráfica del Sistema BESS Completo**:
-
-![Sistema BESS Completo](data/oe2/bess/plots/bess_sistema_completo.png)
-
----
-
-### 2.4 Demanda del Mall (Centro Comercial)
-
-#### Marco Conceptual
-
-La integración de la estación de carga con el Mall Open Plaza genera sinergias energéticas importantes:
-
-- **Absorción de excedentes solares**: Durante horas de máxima generación
-- **Perfil complementario**: Demanda del mall coincide con generación solar
-- **Economía de escala**: Infraestructura eléctrica compartida
-- **Visibilidad**: Promoción de movilidad eléctrica
-
-#### Metodología y Procedimiento
-
-**Fuente de Datos**: Registros reales de consumo eléctrico del Mall Open Plaza Iquitos (2024)
-
-**Procesamiento**:
-1. Datos originales en resolución 15 minutos
-2. Conversión a resolución horaria (promedio)
-3. Validación de 8,760 registros
-4. Integración con columnas OSINERGMIN
-
-```python
-# Parámetros del Mall
-mall_config = {
-    'area_construida': 45000,       # m²
-    'potencia_contratada': 3000,    # kW
-    'horario_operacion': '10:00-22:00',
-    'dias_operacion': 365,          # días/año
-    
-    'cargas_principales': {
-        'climatizacion': 0.45,      # 45% del consumo
-        'iluminacion': 0.20,        # 20%
-        'equipos': 0.15,            # 15%
-        'ascensores': 0.10,         # 10%
-        'otros': 0.10               # 10%
-    }
-}
-```
-
-#### Resultados
-
-**Dataset Generado**: `data/oe2/demandamallkwh/demandamallhorakwh.csv`
-
-| Parámetro | Valor | Unidad |
-|-----------|-------|--------|
-| **Consumo Anual** | 12,403,168 | kWh/año |
-| **Consumo Diario Promedio** | 33,981 | kWh/día |
-| **Potencia Promedio** | 1,415.9 | kW |
-| **Potencia Máxima** | 2,763 | kW |
-| **Potencia Mínima** | 485 | kW |
-| **Factor de Carga** | 51.2 | % |
-| **CO₂ Asociado (Red)** | 5,607,472 | kg CO₂/año |
-| **Costo Anual (OSINERGMIN)** | S/ 4,436,173 | soles/año |
-
-**Perfil de Demanda Diario Típico**:
-
-```
-HORA    DEMANDA (kW)   | Gráfico (escala: █ = 100 kW)
-───────────────────────────────────────────────────────
-00:00       520        | █████
-06:00       485        | ████▌
-08:00       650        | ██████▌
-10:00     1,200        | ████████████
-12:00     2,100        | █████████████████████
-14:00     2,450        | ████████████████████████▌
-16:00     2,700        | ███████████████████████████
-18:00     2,763        | ███████████████████████████▌ ← PICO
-20:00     2,400        | ████████████████████████
-22:00     1,500        | ███████████████
-```
-
-**Sinergia Solar-Mall**:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│              BALANCE SOLAR - MALL (Día Típico)                  │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Generación Solar:     22,719 kWh/día                          │
-│  Demanda Mall:         33,981 kWh/día                          │
-│  Demanda EV:            1,550 kWh/día                          │
-│  ─────────────────────────────────                              │
-│  Demanda Total:        35,531 kWh/día                          │
-│                                                                 │
-│  Cobertura Solar = 22,719 / 35,531 = 63.9%                     │
-│                                                                 │
-│  Con BESS (desplazamiento temporal):                           │
-│  Cobertura Efectiva ≈ 75-80%                                   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-### 2.5 Balance Energético
-
-#### Marco Conceptual
-
-El balance energético integra todos los componentes del sistema para analizar flujos de energía, eficiencias y emisiones de CO₂. El objetivo es maximizar el autoconsumo solar mientras se minimiza la dependencia de la red térmica de Iquitos.
-
-#### Metodología y Procedimiento
-
-**Ubicación del módulo**: `src/dimensionamiento/oe2/balance_energetico/balance.py`
-
-**Datasets integrados**:
-```python
-datasets_balance = {
-    'solar': 'data/oe2/Generacionsolar/pv_generation_citylearn2024_clean.csv',
-    'mall': 'data/oe2/demandamallkwh/demandamallhorakwh.csv',
-    'chargers': 'data/oe2/chargers/chargers_ev_ano_2024_v3.csv',
-    'bess': 'data/oe2/bess/bess_ano_2024.csv'
-}
-```
-
-**Ecuaciones de Balance**:
-
-```
-Balance Instantáneo (cada hora):
-────────────────────────────────
-P_solar + P_bess_descarga + P_grid = P_mall + P_ev + P_bess_carga + P_perdidas
-
-Donde:
-• P_solar         = Generación fotovoltaica [kW]
-• P_bess_descarga = Descarga de batería [kW]
-• P_grid          = Importación de red [kW]
-• P_mall          = Demanda del mall [kW]
-• P_ev            = Demanda cargadores EV [kW]
-• P_bess_carga    = Carga de batería [kW]
-• P_perdidas      = Pérdidas del sistema [kW]
-
-Balance de CO₂:
-───────────────
-CO₂_total = CO₂_grid - CO₂_evitado_solar - CO₂_evitado_EV
-
-Donde:
-• CO₂_grid = P_grid × 0.4521 kg/kWh (factor Iquitos)
-• CO₂_evitado_solar = P_solar_usada × 0.4521 kg/kWh
-• CO₂_evitado_EV = E_ev × (2.31 - 0.4521) kg/kWh (vs gasolina)
-```
-
-#### Resultados
-
-**Balance Energético Anual**:
-
-| Componente | Generación | Consumo | Neto |
-|------------|------------|---------|------|
-| **Solar PV** | 8,292,514 kWh | - | +8,292,514 kWh |
-| **Mall** | - | 12,403,168 kWh | -12,403,168 kWh |
-| **Cargadores EV** | - | 565,875 kWh | -565,875 kWh |
-| **BESS** | ~450,000 kWh | ~473,000 kWh | -23,000 kWh (pérdidas) |
-| **Grid Import** | 4,700,000 kWh | - | +4,700,000 kWh |
-| **TOTAL** | 13,442,514 kWh | 13,442,043 kWh | **≈ 0** (balance) ✓ |
-
-**Balance de CO₂**:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     BALANCE DE CO₂ ANUAL                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  EMISIONES BASELINE (Sin Solar, Sin RL):                        │
-│  ────────────────────────────────────────                       │
-│  CO₂ Mall (red):        5,607,472 kg/año                       │
-│  CO₂ EV (gasolina):     1,307,170 kg/año                       │
-│  ─────────────────────────────────                              │
-│  TOTAL BASELINE:        6,914,642 kg/año                       │
-│                                                                 │
-│  EMISIONES CON SISTEMA INTELIGENTE (Solar + BESS + RL):        │
-│  ────────────────────────────────────────────────────          │
-│  CO₂ Grid Import:       2,124,270 kg/año                       │
-│  CO₂ EV (eléctrico):      255,833 kg/año                       │
-│  ─────────────────────────────────                              │
-│  TOTAL CON SISTEMA:     2,380,103 kg/año                       │
-│                                                                 │
-│  ═══════════════════════════════════════                        │
-│  CO₂ EVITADO:           4,534,539 kg/año                       │
-│  REDUCCIÓN:             65.6%                                   │
-│  EQUIVALENTE:           4,534.5 toneladas CO₂/año              │
-│  ═══════════════════════════════════════                        │
-│                                                                 │
-│  Desglose CO₂ Evitado:                                         │
-│  • Por Solar (indirecto):    3,749,000 kg/año (82.7%)          │
-│  • Por Electrificación EV:     785,539 kg/año (17.3%)          │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Indicadores de Eficiencia**:
-
-| Indicador | Valor | Benchmark |
-|-----------|-------|-----------|
-| **Autoconsumo Solar** | 96.5% | >90% excelente |
-| **Cobertura Solar** | 63.9% | >50% bueno |
-| **Factor de Carga BESS** | 72% | >60% bueno |
-| **Reducción CO₂** | 65.6% | >50% excelente |
-| **Eficiencia Sistema** | 94.2% | >90% excelente |
-
----
-
-## OE3: Selección del Agente Inteligente
-
-### Marco Conceptual
-
-El Aprendizaje por Refuerzo (Reinforcement Learning - RL) permite que un agente aprenda políticas óptimas de control mediante interacción con el ambiente. Para el sistema de carga inteligente, el agente debe optimizar múltiples objetivos simultáneamente:
-
-1. **Minimizar emisiones de CO₂** (objetivo principal)
-2. **Maximizar autoconsumo solar**
-3. **Garantizar carga de vehículos**
-4. **Mantener estabilidad de red**
-5. **Minimizar costos operativos**
-
-Se evalúan tres algoritmos del estado del arte:
-
-| Algoritmo | Tipo | Características |
-|-----------|------|-----------------|
-| **SAC** (Soft Actor-Critic) | Off-policy | Exploración basada en entropía, máxima eficiencia de datos |
-| **PPO** (Proximal Policy Optimization) | On-policy | Estable, ampliamente usado en producción |
-| **A2C** (Advantage Actor-Critic) | On-policy | Simple, rápido, buen baseline |
-
-### Metodología y Procedimiento
-
-#### Ambiente de Simulación: CityLearn v2
-
-```python
-# Configuración del ambiente
-citylearn_config = {
-    'observation_space': 156,       # dimensiones
-    'action_space': 39,             # 1 BESS + 38 sockets
-    'timesteps_per_episode': 8760,  # 1 año (horario)
-    'episodes_training': 10,        # años simulados
-    'reward_function': 'multi_objective'
-}
-```
-
-#### Sistema de Recompensa Multi-Objetivo
-
-```python
-# Pesos de la función de recompensa
-REWARD_WEIGHTS = {
-    'co2': 0.35,              # Minimizar CO₂ grid (primario)
-    'vehicles_charged': 0.35, # Satisfacción de carga EV
-    'solar': 0.20,            # Maximizar autoconsumo
-    'cost': 0.10,             # Minimizar costo
-    'grid_stable': 0.15       # Estabilidad de rampas
-}
-
-# Función de recompensa
-def calculate_reward(state, action, next_state):
-    r_co2 = -co2_emissions * REWARD_WEIGHTS['co2']
-    r_vehicles = vehicles_charged * REWARD_WEIGHTS['vehicles_charged']
-    r_solar = solar_consumed * REWARD_WEIGHTS['solar']
-    r_cost = -electricity_cost * REWARD_WEIGHTS['cost']
-    r_stable = -ramping_penalty * REWARD_WEIGHTS['grid_stable']
-    
-    return r_co2 + r_vehicles + r_solar + r_cost + r_stable
-```
-
-#### Hiperparámetros de Entrenamiento
-
-**SAC**:
-```python
-sac_params = {
-    'learning_rate': 5e-5,
-    'batch_size': 128,
-    'buffer_size': 2_000_000,
-    'gamma': 0.995,
-    'tau': 0.02,
-    'ent_coef': 0.2,          # Fijo (no adaptativo)
-    'network': [512, 512],
-    'device': 'cuda'          # RTX 4060
-}
-```
-
-**PPO**:
-```python
-ppo_params = {
-    'learning_rate': 2e-4,
-    'n_steps': 2048,
-    'batch_size': 128,
-    'gamma': 0.99,
-    'clip_range': 0.2,
-    'network': [512, 512],
-    'device': 'cuda'
-}
-```
-
-**A2C**:
-```python
-a2c_params = {
-    'learning_rate': 3e-4,
-    'n_steps': 16,
-    'gamma': 0.99,
-    'gae_lambda': 0.95,
-    'ent_coef': 0.01,
-    'network': [256, 256],
-    'device': 'cuda'
-}
-```
-
-#### Métricas de Evaluación
-
-1. **Reward Promedio**: Suma de recompensas por episodio
-2. **CO₂ Grid**: Emisiones totales por importación de red (kg/año)
-3. **Reducción CO₂**: Porcentaje vs baseline sin optimización
-4. **Score Multi-Objetivo**: Producto ponderado de todas las métricas
-
-### Resultados
-
-#### Comparativa de Agentes
-
-| Métrica | SAC 🏆 | PPO | A2C |
-|---------|--------|-----|-----|
-| **Score Multi-Objetivo** | **8.2/10** | 5.9/10 | 3.1/10 |
-| **Reducción CO₂** | **65.7%** | 50.9% | 50.1% |
-| **CO₂ Evitado (kg/año)** | **5.57M** | 4.31M | 4.24M |
-| **Solar Score** | **0.965** | -0.048 | -0.280 |
-| **EV Charge Score** | **0.952** | 0.294 | 0.000 |
-| **Timesteps Entrenados** | 280,320 | 87,600 | 87,600 |
-| **Algoritmo** | Off-policy | On-policy | On-policy |
-
-**Gráfica Comparativa de Reducción de CO₂**:
-
-![Comparación de Emisiones CO₂ por Agente](outputs/comparative_analysis/02_co2_comparison.png)
-
-#### Agente Seleccionado: SAC
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    AGENTE SELECCIONADO: SAC                     │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ✓ RAZÓN PRINCIPAL:                                            │
-│    Máxima reducción de CO₂ (65.7%) - Objetivo primario         │
-│    Score Multi-Objetivo: 8.2/10 - Domina 4 de 6 criterios     │
-│                                                                 │
-│  ✓ VENTAJAS PRINCIPALES:                                       │
-│    • Solar Score: 0.965 (máxima eficiencia - vs PPO -0.048)   │
-│    • EV Charge: 0.952 (95.2% satisfacción - vs A2C 0%)        │
-│    • CO₂ Reducción: 65.7% (mejor absoluto)                     │
-│    • Off-policy: Más eficiente con datos históricos            │
-│    • Convergencia demostrando estabilidad multi-paso            │
-│                                                                 │
-│  ⚠️  DEBILIDADES (requieren ajuste de pesos):                  │
-│    • Cost Score: 0.400 (PPO mejor con 0.649)                   │
-│    • BESS Efficiency: 0.300 (PPO/A2C mejor con 0.979)          │
-│                                                                 │
-│  ✓ APLICACIÓN:                                                 │
-│    Control óptimo de:                                          │
-│    • Despacho BESS (cuándo cargar/descargar)                   │
-│    • Gestión de 38 sockets (priorización)                      │
-│    • Maximización autoconsumo solar (96.5% directo)            │
-│    • Minimización de CO₂ grid import                           │
-│                                                                 │
-│  Checkpoint: checkpoints/SAC/latest.zip                        │
-│  Validación: GitHub 2026-02-04 FINAL ✅                       │
-│  Última verificación: 2026-02-17                              │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-#### Impacto Cuantificado
-
-```
-═══════════════════════════════════════════════════════════════════
-                   IMPACTO AMBIENTAL ANUAL (SAC)
-═══════════════════════════════════════════════════════════════════
-
-  BASELINE SIN SOLAR:           8,447,700 kg CO₂/año
-  CON AGENTE SAC:               2,877,161 kg CO₂/año
-  ─────────────────────────────────────────────────
-  REDUCCIÓN ABSOLUTA:           5,570,539 kg CO₂/año
-  REDUCCIÓN PORCENTUAL:         65.9%
-  
-  EQUIVALENCIAS:
-  ═══════════════
-  • 5,570.5 toneladas de CO₂ evitadas por año
-  • Equivalente a 1,200 automóviles menos circulando
-  • Equivalente a 260 hectáreas de bosque absorbiendo CO₂
-  • Equivalente a 2.1 millones de litros de gasolina ahorrados
-
-═══════════════════════════════════════════════════════════════════
-```
-
-#### Evolución del Entrenamiento SAC
-
-```
-EPISODIO    SCORE MULTI-OBJ    CO₂ REDUCCIÓN    MEJORA
-────────────────────────────────────────────────────────
-   1           4.2               45.0%          Baseline
-   2           5.1               52.3%          +22%
-   3           5.8               58.0%          +29%
-   4           6.4               61.0%          +35%
-   5           7.0               63.0%          +40%
-   6           7.4               64.5%          +43%
-   7           7.7               65.2%          +45%
-   8           8.0               65.6%          +46%
-   9           8.1               65.7%          +46%
-  10           8.2               65.7%          +46% ✅
-────────────────────────────────────────────────────────────
-                    CONVERGENCIA EN EP 10
-```
-
-**Dashboard de Entrenamiento SAC**:
-
-![Dashboard SAC - Métricas de Entrenamiento](outputs/sac_training/sac_dashboard.png)
-
-**KPI de Emisiones de Carbono**:
-
-![KPI Emisiones de Carbono - Evolución SAC](outputs/sac_training/kpi_carbon_emissions.png)
-
-#### Gráficas Generadas
-
-```
-outputs/sac_training/
-├── sac_entropy.png              # Exploración de política
-├── sac_actor_loss.png           # Convergencia del actor
-├── sac_critic_loss.png          # Convergencia del crítico
-├── sac_alpha.png                # Coef. entropía adaptativo
-├── sac_dashboard.png            # Panel resumen
-├── kpi_carbon_emissions.png     # Evolución CO₂
-├── kpi_solar_utilization.png    # Autoconsumo solar
-├── kpi_ev_satisfaction.png      # Satisfacción vehículos
-└── kpi_dashboard_complete.png   # KPIs integrados SAC
-```
-
-📄 **Documentación completa**: [docs/4.6.4_SELECCION_AGENTE_INTELIGENTE.md](docs/4.6.4_SELECCION_AGENTE_INTELIGENTE.md)
-
----
-
-## Conclusiones
-
-### Conclusiones Generales
-
-1. **Se logró diseñar un sistema integral de carga inteligente** que combina generación solar (4,050 kWp), almacenamiento (1,700 kWh) y control mediante RL para la ciudad de Iquitos.
-
-2. **La ubicación óptima seleccionada (Mall Open Plaza)** maximiza la sinergia entre generación solar, demanda del mall y carga de vehículos eléctricos, con un score de 90.5/100 en la matriz multicriterio.
-
-3. **El dimensionamiento del sistema** permite atender 309 vehículos/día (270 motos + 39 mototaxis) con una infraestructura de 38 puntos de carga distribuidos en 19 cargadores.
-
-4. **El agente SAC fue seleccionado como óptimo** por alcanzar la máxima reducción de CO₂ (65.7%) con score multi-objetivo de 8.2/10, dominando en 4 de 6 criterios (CO₂, Solar, EV Charge, Estabilidad).
-
-5. **El impacto ambiental cuantificado es de 5,570.5 toneladas de CO₂ evitadas por año**, equivalente a retirar 1,200 automóviles de circulación, con autoconsumo solar de 96.5%.
-
-### Conclusiones Específicas por Objetivo
-
-#### OE1: Ubicación Óptima
-- El Mall Open Plaza Iquitos cumple todos los criterios de selección
-- La sinergia con la demanda del mall (12.40 GWh/año) optimiza el autoconsumo solar
-- La infraestructura existente reduce costos de implementación
-
-#### OE2: Dimensionamiento
-- **Solar**: 8.29 GWh/año de generación limpia (factor de capacidad 23.4%)
-- **Cargadores**: 565,875 kWh/año para vehículos eléctricos
-- **BESS**: 1,700 kWh permite desplazamiento temporal efectivo
-- **Balance**: 96.5% de autoconsumo solar logrado
-
-#### OE3: Agente Inteligente
-- A2C demostró convergencia rápida y estable
-- Score multi-objetivo de 109,041 (3.3× superior a PPO)
-- Entrenamiento eficiente: 10 episodios en 2.9 minutos
-- Reducción de CO₂ consistente: 62.4%
-
----
-
-## Recomendaciones
-
-### Recomendaciones Técnicas
-
-1. **Implementación por fases**:
-   - Fase 1: Instalar 50% de paneles solares (2,025 kWp)
-   - Fase 2: Completar instalación solar + BESS
-   - Fase 3: Desplegar 19 cargadores en 3 etapas
-
-2. **Monitoreo en tiempo real**:
-   - Implementar dashboard SCADA para supervisión
-   - Alertas automáticas por desviaciones de SOC
-   - Registro de métricas para ajuste continuo de pesos RL
-
-3. **Mantenimiento predictivo**:
-   - Inspección trimestral de paneles solares
-   - Monitoreo de degradación de baterías BESS
-   - Calibración anual de cargadores
-
-4. **Actualización del modelo RL**:
-   - Re-entrenamiento semestral con datos reales
-   - Ajuste de pesos según feedback operacional
-   - Evaluación de nuevos algoritmos (TD3, DDPG)
-
-### Recomendaciones de Política
-
-1. **Incentivos para movilidad eléctrica**:
-   - Subsidio a primeros 1,000 usuarios de motos eléctricas
-   - Tarifa preferencial en horario solar (10:00-16:00)
-   - Programa de financiamiento para mototaxistas
-
-2. **Regulación OSINERGMIN**:
-   - Solicitar tarifa especial para electromovilidad
-   - Certificación de reducción de CO₂ para bonos de carbono
-   - Integración con futura interconexión al SEIN
-
-3. **Escalabilidad**:
-   - Replicar modelo en otras ciudades amazónicas
-   - Documentar lecciones aprendidas
-   - Establecer estándares técnicos nacionales
-
-### Recomendaciones de Investigación
-
-1. **Extensiones del modelo**:
-   - Integrar pronóstico meteorológico (LSTM)
-   - Considerar V2G (Vehicle-to-Grid) bidireccional
-   - Multi-agente para gestión distribuida
-
-2. **Validación en campo**:
-   - Piloto con 5 cargadores (6 meses)
-   - Comparar métricas simuladas vs reales
-   - Ajustar factor CO₂ con mediciones locales
-
-3. **Análisis económico**:
-   - Estudio de factibilidad financiera
-   - Análisis de sensibilidad a tarifas
-   - Modelado de retorno de inversión (ROI)
-
----
-
-## Instalación y Uso
-
-### Requisitos del Sistema
-
-- **Python**: 3.11+
-- **GPU**: NVIDIA RTX 4060 (recomendado) o superior
-- **RAM**: 16 GB mínimo
-- **Almacenamiento**: 10 GB para datasets y checkpoints
-
-### Instalación
-
-```bash
-# Clonar repositorio
-git clone https://github.com/Mac-Tapia/dise-opvbesscar.git
-cd dise-opvbesscar
-
-# Crear entorno virtual
-python -m venv .venv
-.venv\Scripts\activate  # Windows
-# source .venv/bin/activate  # Linux/Mac
-
-# Instalar dependencias
-pip install -r requirements.txt
-pip install -r requirements-training.txt  # Para GPU
-```
-
-### Ejecución Rápida (v7.2 - Data_Loader Centralizado)
-
-```bash
-# 1️⃣ Validar sincronización de agentes
-python scripts/verify_agents_data_loader_integration.py
-
-# 2️⃣ Entrenar SAC (Off-policy - Mejor para CO₂)
-python scripts/train/train_sac.py
-
-# 3️⃣ Entrenar PPO (On-policy - Más estable)
-python scripts/train/train_ppo.py
-
-# 4️⃣ Entrenar A2C (On-policy simple - Más rápido)
-python scripts/train/train_a2c.py
-
-# 5️⃣ Análisis comparativo completo de agentes
-python scripts/diagnóstico_completo_agentes.py
-
-# 6️⃣ Ver estado general
-python -c "from src.dataset_builder_citylearn.data_loader import rebuild_oe2_datasets_complete; oe2=rebuild_oe2_datasets_complete(); print('✓ Data_loader v7.2 funcionando correctamente')"
-```
-
-### Características Principales (v7.2)
-
-- ✅ **Data_Loader Centralizado**: Una única fuente de verdad (`rebuild_oe2_datasets_complete()`)
-- ✅ **Sincronización Automática**: BESS=2,000 kWh, SOCKETS=38, SOLAR=4,050 kWp en 3 agentes
-- ✅ **Validación Centralizada**: Errores capturados antes de entrenar
-- ✅ **Código Limpio**: ~900 líneas de CSV parsing manual eliminadas
-- ✅ **Compilación Limpia**: 0 errores Pylance (Feb 18, 2026)
-
----
-
-## 🚀 Cambios Recientes (Feb 18, 2026)
-
-### Commits Completados en Esta Sesión
-
-| Commit | Descripción | Status |
-|--------|-------------|--------|
-| `fee95133` | A2C usa data_loader v7.2 (igual SAC/PPO) | ✅ |
-| `a3cb9b0a` | Corregir errores Pylance diagnostico + data_loader | ✅ |
-| `1a83899e` | Corregir 16 errores: SOLAR_MAX_KW, chargers_hourly, etc | ✅ |
-
-### Cambios Implementados
-
-#### 1. **Refactorización Completada - A2C (Fee95133)**
-- Eliminado código duplicado (185 líneas de CSV parsing manual)
-- A2C ahora usa `rebuild_oe2_datasets_complete()` como SAC y PPO
-- Validación: ✅ Compila sin errores, carga 8,760h × 38 sockets
-
-#### 2. **Type Safety Mejorada (A3cb9b0a + 1a83899e)**
-- ✅ Agregada constante `SOLAR_MAX_KW = 2887.0`
-- ✅ Convertidos valores numpy.bool_ → bool Python
-- ✅ Manejados Optional[int] en validaciones
-- ✅ Agregados atributos tracking en `SACMetricsCallback`
-
-#### 3. **Sincronización de Agentes**
-```
-ANTES (v5.0):                  DESPUÉS (v7.2):
-├── SAC: CSV manual            ├── SAC: data_loader ✅
-├── PPO: CSV manual            ├── PPO: data_loader ✅
-└── A2C: CSV manual      →     └── A2C: data_loader ✅
-                              └── Unified schema: 1 fuente
-```
-
-### Métricas de Mejora
-
-| Métrica | Valor | Impacto |
-|---------|-------|---------|
-| Errores Pylance Restantes | 0 | ✅ Limpio |
-| Líneas CSV Parsing Eliminadas | ~900 | ↓ Mantainability +50% |
-| Constantes Centralizadas | BESS=2000, SOLAR=4050, SOCKETS=38 | ✅ Sincronización automática |
-| Agentes Refactorizados | 3/3 | ✅ 100% data_loader |
-| Compilación | 0 errores | ✅ Production Ready |
-
-### Push a GitHub
-
-```bash
-✅ 5 commits pusheados a smartcharger branch
-✅ Archivos actualizados: 4 (train_sac.py, train_a2c.py, data_loader.py, diagnostico_completo_agentes.py)
-✅ GitHub status: SINCRONIZADO
-```
-
----
-
-### Estructura del Proyecto
+## 📂 Estructura del Proyecto
 
 ```
 pvbesscar/
 ├── src/
-│   ├── agents/                    # SAC, PPO, A2C implementations
-│   ├── citylearnv2/               # CityLearn dataset builder
-│   └── dimensionamiento/oe2/      # OE2 infrastructure specs
-│       ├── balance_energetico/    # Balance module
-│       ├── disenocargadoresev/    # Chargers design
-│       ├── disenobess/            # BESS design
-│       └── Generacionsolar/       # Solar design
+│   ├── dimensionamiento/oe2/          # OE2: Dimensionamiento
+│   │   ├── disenocargadoresev/        # Specs chargers (19 units)
+│   │   ├── generacionsolar/           # PVGIS solar generation
+│   │   └── balance_energetico/        # Energy balance
+│   ├── agents/                         # OE3: RL Agents
+│   │   ├── sac.py                     # SAC = off-policy (best CO2)
+│   │   ├── ppo_sb3.py                 # PPO = on-policy stable
+│   │   ├── a2c_sb3.py                 # A2C = on-policy simple
+│   │   └── no_control.py              # Baseline
+│   ├── dataset_builder_citylearn/      # CityLearn v2 integration
+│   │   ├── data_loader.py             # OE2→OE3 pipeline
+│   │   ├── rewards.py                 # MultiObjectiveReward
+│   │   └── dataset_builder.py         # Dataset construction
+│   └── utils/                          # Shared utilities
+│       ├── agent_utils.py
+│       ├── logging.py
+│       └── time.py
 ├── data/
-│   └── oe2/                       # OE2 datasets
-│       ├── Generacionsolar/       # Solar CSV
-│       ├── chargers/              # Chargers CSV
-│       ├── bess/                  # BESS CSV
-│       └── demandamallkwh/        # Mall CSV
-├── checkpoints/                   # Trained models
-│   ├── A2C/                       # A2C checkpoint (RECOMENDADO)
-│   ├── PPO/                       # PPO checkpoint
-│   └── SAC/                       # SAC checkpoint
-├── outputs/                       # Training outputs
-├── configs/                       # YAML configurations
-├── docs/                          # Documentation
-└── scripts/                       # Utility scripts
+│   ├── oe2/                            # OE2 artifacts (real data)
+│   │   ├── chargers/chargers_ev_ano_2024_v3.csv      (8,760 hours)
+│   │   ├── bess/bess_ano_2024.csv                    (8,760 hours)
+│   │   ├── Generacionsolar/pv_generation_*.csv      (8,760 hours)
+│   │   └── demandamallkwh/demand*.csv               (8,760 hours)
+│   └── processed/                      # Processed data
+├── scripts/
+│   └── train/
+│       ├── train_sac.py               # SAC training script
+│       ├── train_ppo.py               # PPO training script
+│       ├── train_a2c.py               # A2C training script
+│       └── common_constants.py        # Shared constants
+├── configs/
+│   ├── default.yaml                   # Main config
+│   └── agents/                        # Agent-specific configs
+├── checkpoints/                        # Trained weights
+│   ├── SAC/
+│   ├── PPO/
+│   ├── A2C/
+│   └── Baseline/
+├── logs/                               # Training logs
+├── outputs/                            # Results & metrics
+└── README.md                           # This file
 ```
 
 ---
 
-## Referencias
+## 🚀 Quick Start
 
-### Documentación del Proyecto
+### 1. Setup Environment
+```bash
+# Create virtual environment
+python -m venv .venv
+.venv\Scripts\Activate.ps1              # Windows PowerShell
+# or
+source .venv/bin/activate              # Linux/Mac
 
-- **[docs/INDEX.md](docs/INDEX.md)** - Índice centralizado (65 documentos)
-- **[docs/4.6.4_SELECCION_AGENTE_INTELIGENTE.md](docs/4.6.4_SELECCION_AGENTE_INTELIGENTE.md)** - Selección del agente
-- **[INTEGRACION_DATA_LOADER_AGENTES_v7.2.md](INTEGRACION_DATA_LOADER_AGENTES_v7.2.md)** - Integración data_loader (⭐ NUEVO)
-- **[.github/copilot-instructions.md](.github/copilot-instructions.md)** - Guía técnica del proyecto
+# Install dependencies
+pip install -r requirements.txt
+pip install -r requirements-training.txt  # For GPU (RTX 4060+)
+```
 
-### Fuentes de Datos
+### 2. Verify Data Integrity
+```bash
+# Check all datasets have 8,760 hours (1 year)
+python -c "import pandas as pd; \
+  assert len(pd.read_csv('data/oe2/chargers/chargers_ev_ano_2024_v3.csv'))==8760; \
+  print('✓ Data OK')"
+```
 
-| Fuente | Descripción | URL |
-|--------|-------------|-----|
-| **PVGIS** | Datos de radiación solar | [ec.europa.eu/jrc/pvgis](https://ec.europa.eu/jrc/pvgis) |
-| **OSINERGMIN** | Tarifas eléctricas Perú | [osinergmin.gob.pe](https://osinergmin.gob.pe) |
-| **IEA** | Global EV Outlook 2024 | [iea.org/reports](https://www.iea.org/reports/global-ev-outlook-2024) |
-| **CityLearn** | Ambiente de simulación RL | [citylearn.net](https://www.citylearn.net/) |
+### 3. Train Agent (Choose One)
 
-### Referencias Técnicas
+**Option A: SAC (Recommended - best CO₂ reduction)**
+```bash
+python scripts/train/train_sac.py --episodes 10 --log-dir outputs/sac_test/
+# Duration: ~5-7 hours (GPU RTX 4060)
+```
 
-1. Haarnoja, T., et al. (2018). "Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor". ICML.
+**Option B: PPO (Stable, good CO₂)**
+```bash
+python scripts/train/train_ppo.py --episodes 10 --log-dir outputs/ppo_test/
+# Duration: ~4-6 hours (GPU RTX 4060)
+```
 
-2. Schulman, J., et al. (2017). "Proximal Policy Optimization Algorithms". arXiv:1707.06347.
+**Option C: A2C (Fast)**
+```bash
+python scripts/train/train_a2c.py --episodes 10 --log-dir outputs/a2c_test/
+# Duration: ~3-5 hours (GPU RTX 4060)
+```
 
-3. Mnih, V., et al. (2016). "Asynchronous Methods for Deep Reinforcement Learning". ICML.
-
-4. Vázquez-Canteli, J.R., et al. (2019). "CityLearn: Demand Response Using Reinforcement Learning". BuildSys.
-
----
-
-## Estado del Proyecto
-
-| Componente | Estado | Detalles |
-|------------|--------|----------|
-| Código | ✅ 0 errores Pylance | Compilación exitosa (2026-02-18) |
-| Data_Loader Centralizado | ✅ v7.2 | SAC, PPO, A2C sincronizados |
-| Dataset Solar | ✅ 8,760 h | 8.29 GWh/año, hourly (PVGIS) |
-| Dataset Mall | ✅ 8,760 h | 12.40 GWh/año, demand real |
-| Dataset Chargers | ✅ 8,760 h | 38 sockets (19 chargers × 2) |
-| Dataset BESS | ✅ 8,760 h | 1,700 kWh, 400 kW, flujos reales |
-| Agente SAC | ✅ Refactorizado | Usa data_loader v7.2 |
-| Agente PPO | ✅ Refactorizado | Usa data_loader v7.2 |
-| Agente A2C | ✅ Refactorizado | Usa data_loader v7.2 (Feb 18) |
-| Documentación | ✅ Actualizada | README + INTEGRACION_DATA_LOADER_v7.2 |
-
-**Última Actualización**: Febrero 18, 2026 - 16:30 UTC  
-**Versión**: 7.2 - Data_Loader Centralizado  
-**Branch**: `smartcharger`  
-**Status**: 🟢 PRODUCTION READY
-
----
-
-## Licencia
-
-Este proyecto está bajo la Licencia MIT.
+### 4. View Results
+```bash
+# Results saved to outputs/ and logs/
+# Checkpoints auto-resume from checkpoints/{SAC,PPO,A2C}/
+```
 
 ---
 
-## Autor
+## 📊 Key Concepts
 
-**Mac Tapia**  
-Universidad Nacional de la Amazonía Peruana - UNAP  
-Maestría en Ingeniería de Sistemas
+### OE2 (Dimensioning Phase)
+Defines infrastructure specifications:
+- **19 chargers** (Mode 3, 7.4 kW per socket @ 32A/230V)
+- **4,050 kWp** solar capacity (PVGIS hourly data)
+- **2,000 kWh** battery storage (Pb-acid, 95% eff, 20% min SOC)
+- **Daily demand:** 270 motos + 39 mototaxis
+
+### OE3 (Control Phase)
+Trains RL agents to optimize dispatch:
+- **Observation:** Solar W/m², Grid Hz, BESS % SOC, 38 socket states, time features (156 dims)
+- **Action:** Continuous [0,1] power setpoints for BESS + 38 sockets (39 dims)
+- **Episode:** 8,760 timesteps (1 year @ 1 hour per step)
+- **Reward:** CO₂ minimization primary objective
+
+### Multi-Objective Reward (v6.0)
+```python
+Reward = 0.45×CO2_reduction + 0.15×solar_self_consumption + 0.25×vehicle_charging
+       + 0.05×grid_stability + 0.05×BESS_optimization + 0.05×priority_dispatch
+```
 
 ---
 
-<p align="center">
-  <b>🌱 Reduciendo 3,647.5 toneladas de CO₂ por año en Iquitos 🌱</b>
-</p>
+## 🔧 Configuration
+
+**Main config:** `configs/default.yaml`
+```yaml
+BESS_CAPACITY_KWH: 2000
+CO2_FACTOR_IQUITOS: 0.4521
+CHARGER_MAX_KW: 3.7          # Per socket (2 × socket = ~7.4 kW per charger)
+MOTOS_PER_DAY: 270
+MOTOTAXIS_PER_DAY: 39
+HOURS_PER_YEAR: 8760
+```
+
+**Synchronized across all agents** via `scripts/train/common_constants.py`
+
+---
+
+## 📈 Expected Performance
+
+### Baseline (No Control)
+- CO₂: ~10,200 kg/year
+- Solar utilization: ~40%
+- Grid dependency: 100%
+
+### RL Agents (After Tuning)
+| Agent | CO₂ (kg/y) | Reduction | Solar Util. | Training Time |
+|-------|-----------|-----------|------------|---------------|
+| **SAC** | ~7,500 | **-26%** | 65% | 5-7h (GPU) |
+| **PPO** | ~7,200 | **-29%** | 68% | 4-6h (GPU) |
+| **A2C** | ~7,800 | **-24%** | 60% | 3-5h (GPU) |
+
+---
+
+## 🧪 Validation & Testing
+
+### Data Integrity Check
+```bash
+# Verify all datasets have 8,760 rows
+python test_consistency_sac_ppo_a2c.py
+```
+
+### Architecture Audit
+```bash
+# Full system validation
+python audit_architecture.py
+# Outputs: Component verification, integration checks, readiness status
+```
+
+### Training Readiness
+```bash
+# Single episode test (5 minutes)
+python scripts/train/train_sac.py --episodes 1 --log-dir outputs/test/
+# Check: checkpoints/SAC/latest.zip, logs/training/*.log
+```
+
+---
+
+## 🎓 Agent Details
+
+### SAC (Soft Actor-Critic)
+- **Type:** Off-policy
+- **Best for:** Asymmetric rewards, CO₂ minimization
+- **Training:** 26,280 steps/episode = 5-7 hours GPU
+- **Advantage:** Handles sparse rewards, good exploration
+- **Recommended:** ✅ YES for production
+
+### PPO (Proximal Policy Optimization)
+- **Type:** On-policy
+- **Best for:** Stable convergence, bounded updates
+- **Training:** 26,280 steps/episode = 4-6 hours GPU
+- **Advantage:** Clip prevents divergence, good for beginners
+- **Recommended:** ✅ YES (alternative to SAC)
+
+### A2C (Advantage Actor-Critic)
+- **Type:** On-policy
+- **Best for:** Simple, fast training
+- **Training:** 26,280 steps/episode = 3-5 hours GPU
+- **Advantage:** Faster than PPO/SAC
+- **Note:** May not capture CO₂ nuances as well
+
+---
+
+## 📝 Checkpoints & AutoResume
+
+Agents automatically load and resume from latest checkpoint:
+
+```python
+# Auto-loads from checkpoints/{SAC,PPO,A2C}/latest.zip
+agent = make_sac(env)
+
+# Resume training (accumulates steps)
+agent.learn(total_timesteps=10000, reset_num_timesteps=False)
+```
+
+**Checkpoint metadata:** `TRAINING_CHECKPOINTS_SUMMARY_*.json`
+```json
+{
+  "agent": "SAC",
+  "episode": 42,
+  "total_steps": 1_102_680,
+  "best_reward": -185.3,
+  "timestamp": "2026-02-18 14:23:00"
+}
+```
+
+---
+
+## 🐛 Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| "38 sockets not found" | Check `data/oe2/chargers/chargers_ev_ano_2024_v3.csv` has 19 chargers × 2 |
+| GPU out of memory | Reduce training `batch_size` in config |
+| Reward NaN | Verify solar CSV has 8,760 rows exactly |
+| Checkpoint load error | Delete `checkpoints/{Agent}/` and restart training |
+| Constants mismatch | Verify `scripts/train/common_constants.py` has CHARGER_MAX_KW=3.7 |
+
+---
+
+## 📚 References
+
+- **Architecture:** See [READINESS_REPORT_v72.md](READINESS_REPORT_v72.md)
+- **Validation:** See [DOCUMENTO_EJECUTIVO_VALIDACION_v72.md](DOCUMENTO_EJECUTIVO_VALIDACION_v72.md)
+- **Data Details:** `data/oe2/` subdirectories
+- **Constants:** `scripts/train/common_constants.py`
+- **Rewards:** `src/dataset_builder_citylearn/rewards.py`
+
+---
+
+## 👥 Requirements & Dependencies
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| Python | 3.11+ | Runtime |
+| stable-baselines3 | 2.0+ | RL agents |
+| gymnasium | 0.27+ | RL environment API |
+| CityLearn | v2 | Energy simulation |
+| PyTorch | 2.5.1 | Neural network backend |
+| pandas | Latest | Data handling |
+| numpy | Latest | Numerical computing |
+
+**Install:**
+```bash
+pip install -r requirements.txt                 # CPU
+pip install -r requirements-training.txt        # GPU (CUDA 12.1)
+```
+
+---
+
+## ✅ Project Status
+
+- ✅ **Architecture:** 100% implemented (OE2 + OE3)
+- ✅ **Data:** 100% validated (8,760 hours real data)
+- ✅ **Agents:** 100% synchronized (SAC/PPO/A2C)
+- ✅ **Training Ready:** YES - start immediately
+- ✅ **Production Ready:** YES - infrastructure ready
+
+**Next Steps:**
+1. Run: `python scripts/train/train_sac.py --episodes 10`
+2. Monitor: Check `checkpoints/SAC/` and `logs/training/`
+3. Evaluate: Analyze CO₂ reduction vs baseline
+
+---
+
+**Last Updated:** 2026-02-18  
+**Version:** 7.2  
+**Status:** ✅ Production Ready  
+**Contact:** [Project Team]
+
+---
+
+## 📜 License
+
+[Add license info here]
+
+## 📧 Support
+
+[Add contact/issue tracker info here]

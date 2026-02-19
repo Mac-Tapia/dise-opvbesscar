@@ -2,7 +2,8 @@ a2c:
   name: Advantage Actor-Critic
   description: Synchronous on-policy agent with shared network
   training:
-    train_steps: 500000
+    episodes: 10
+    train_steps: 87600
     n_steps: 8
     learning_rate: 7e-4
     lr_schedule: linear
@@ -34,11 +35,11 @@ a2c:
     overcharge_threshold: 0.95
     decay_rate: 0.98
   multi_objective_weights:
-    co2: 0.5
-    solar: 0.2
-    ev: 0.15
-    grid: 0.1
-    cost: 0.05
+    co2: 0.35
+    cost: 0.10
+    solar: 0.20
+    ev: 0.30
+    grid: 0.05
   tariffs_osinergmin_usd_per_kwh:
     generation_solar: 0.1
     storage_bess: 0.06

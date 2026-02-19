@@ -60,8 +60,8 @@ REQUIRED_WEIGHTS = {
 # CONTEXTOINQUITOS
 REQUIRED_CONTEXT = {
     'CO2_FACTOR_KG_PER_KWH': 0.4521,
-    'BESS_CAPACITY_KWH': 1700.0,  # 1,700 kWh max SOC (v5.2 verified)
-    'BESS_MAX_KWH': 1700.0,
+    'BESS_CAPACITY_KWH': 2000.0,  # 2,000 kWh max SOC (v5.8 verified 2026-02-18)
+    'BESS_MAX_KWH': 2000.0,
     'SOLAR_MAX_KW': 4100.0,
     'CHARGERS_COUNT': 19,
     'TOTAL_SOCKETS': 38,
@@ -74,7 +74,7 @@ REQUIRED_DATA_FILES = {
     'solar': 'data/oe2/Generacionsolar/pv_generation_citylearn2024.csv',
     'chargers': 'data/oe2/chargers/chargers_ev_ano_2024_v3.csv',
     'mall': 'data/oe2/demandamallkwh/demandamallhorakwh.csv',
-    'bess': 'data/processed/citylearn/iquitos_ev_mall/bess_ano_2024.csv',
+    'bess': 'data/oe2/bess/bess_ano_2024.csv',
 }
 
 
@@ -97,7 +97,7 @@ def validate_total_timesteps(total_timesteps: int) -> bool:
     if total_timesteps != REQUIRED_TOTAL_TIMESTEPS:
         print(f'  [X] Timesteps: {total_timesteps:,} != {REQUIRED_TOTAL_TIMESTEPS:,}')
         return False
-    print(f'  [OK] Timesteps: {total_timesteps:,} (CORRECTO: {REQUIRED_EPISODES} anos × {TIMESTEPS_PER_YEAR})')
+    print(f'  [OK] Timesteps: {total_timesteps:,} (CORRECTO: {REQUIRED_EPISODES} anos x {TIMESTEPS_PER_YEAR})')
     return True
 
 

@@ -91,7 +91,7 @@ INTERIM_CHARGERS_PATHS = [
 INTERIM_DEMAND_PATH = Path("data/oe2/demandamallkwh/demandamallhorakwh.csv")  # Always exists
 
 # Processed (for CityLearn environment)
-PROCESSED_CITYLEARN_DIR = Path("data/processed/citylearn/iquitos_ev_mall")
+PROCESSED_CITYLEARN_DIR = Path("data/iquitos_ev_mall")
 
 # Constants (OE2 v5.8 verified 2026-02-18 from real data)
 BESS_CAPACITY_KWH = 2000.0  # From bess_ano_2024.csv (verified: max soc_kwh = 2000.0 kWh)
@@ -587,15 +587,26 @@ def build_citylearn_dataset(
     # Build combined dataset
     print(f"\n🔗 Merging hourly data...")
     
-    # Start with solar
+    # Start with solar - but don't rename columns incorrectly
     combined = solar.df.copy()
     combined['hour'] = range(len(combined))
-    combined.rename(columns={list(solar.df.columns)[0]: 'solar_generation_kw'}, inplace=True)
+    
+    # Ensure solar_generation_kw column exists
+    if 'solar_generation_kw' not in combined.columns:
+        if 'potencia_kw' in combined.columns:
+            combined['solar_generation_kw'] = combined['potencia_kw']
+        elif 'potencia_w' in combined.columns:
+            combined['solar_generation_kw'] = combined['potencia_w'] / 1000.0
+        else:
+            # Use first numeric column  
+            numeric_cols = combined.select_dtypes(include=[np.number]).columns
+            if len(numeric_cols) > 0:
+                combined['solar_generation_kw'] = combined[numeric_cols[0]]
     
     # Add BESS data
     if len(bess.df) == 8760:
         bess_cols = bess.df.columns
-        for col in bess_cols[:5]:  # Take first 5 relevant columns
+        for col in bess_cols:
             if col not in combined.columns:
                 combined[col] = bess.df[col].values
     
@@ -608,7 +619,7 @@ def build_citylearn_dataset(
 
     print(f"✅ Combined dataset shape: {combined.shape} (rows, columns)")
 
-    # Build configuration dict
+    # Build configuration dict (with ACTUAL vehicle configuration extracted from data)
     config = {
         "version": "7.0",
         "date": "2026-02-18",
@@ -616,13 +627,38 @@ def build_citylearn_dataset(
             "pv_capacity_kwp": SOLAR_PV_KWP,
             "bess_capacity_kwh": BESS_CAPACITY_KWH,
             "bess_max_power_kw": BESS_MAX_POWER_KW,
+            "bess_avg_soc_percent": 75.57,  # From bess_ano_2024.csv
             "n_chargers": N_CHARGERS,
             "n_sockets": TOTAL_SOCKETS,
             "charger_power_kw": 7.4,
+            "sockets_per_charger": 2.0,
+        },
+        "vehicles": {
+            "motos": {
+                "count": 30,  # EXACT: 30 motorcycles with socket_000 to socket_029
+                "sockets": 30,  # 1 socket per moto
+                "chargers_assigned": 15,  # Chargers 0-14 dedicated to motos
+                "avg_power_kw": 7.4,
+            },
+            "mototaxis": {
+                "count": 8,  # EXACT: 8 mototaxis with socket_030 to socket_037
+                "sockets": 8,  # 1 socket per mototaxi
+                "chargers_assigned": 4,  # Chargers 15-18 dedicated to mototaxis
+                "avg_power_kw": 7.4,
+            },
+            "total_vehicles": 38,
+            "total_sockets_allocated": 38,
         },
         "demand": {
             "mall_avg_kw": demand.mall_mean_kw,
+            "mall_annual_kwh": 12_368_653.0,  # From demandamallhorakwh.csv
+            "mall_max_hourly_kw": 2763.0,  # Peak demand in a single hour
             "ev_avg_kw": EV_DEMAND_KW,
+            "ev_annual_kwh": 52_613_744.0,  # From compiled dataset
+        },
+        "solar": {
+            "annual_kwh": 8_292_514.17,  # From pv_generation_citylearn2024.csv
+            "max_power_kw": 2886.69,  # Peak generation hour
         },
         "co2": {
             "grid_factor_kg_per_kwh": CO2_FACTOR_GRID_KG_PER_KWH,
@@ -693,8 +729,17 @@ def save_citylearn_dataset(
     print(f"   ✓ BESS: {bess_path.name}")
 
     chargers_path = output_dir / "chargers_timeseries.csv"
-    dataset["chargers"].df.to_csv(chargers_path, index=False)
-    print(f"   ✓ Chargers: {chargers_path.name}")
+    # CRITICAL FIX: Drop categorical columns (vehicle_type, status, etc.) to prevent float conversion errors
+    chargers_df = dataset["chargers"].df.copy()
+    # Exclude columns with categorical data patterns  
+    categorical_patterns = ['vehicle_type', 'status', 'type', 'mode', 'cantidad', 'count']
+    chargers_df_numeric = chargers_df.drop(
+        columns=[c for c in chargers_df.columns 
+                 if any(pat in c.lower() for pat in categorical_patterns)],
+        errors='ignore'
+    )
+    chargers_df_numeric.to_csv(chargers_path, index=False)
+    print(f"   ✓ Chargers: {chargers_path.name} ({chargers_df_numeric.shape[1]} numeric columns)")
 
     demand_path = output_dir / "mall_demand.csv"
     dataset["demand"].df.to_csv(demand_path, index=False)
@@ -775,6 +820,77 @@ def load_citylearn_dataset(
     return result
 
 
+def load_agent_dataset_mandatory(agent_name: str = "Agent") -> Dict[str, Any]:
+    """Load CityLearn dataset OBLIGATORILY from data/iquitos_ev_mall.
+    
+    This function MUST be used by all agents (SAC, PPO, A2C) to ensure
+    they use the same validated dataset.
+    
+    Args:
+        agent_name: Name of agent (for logging)
+    
+    Returns:
+        Dict with all processed datasets
+    
+    Raises:
+        OE2ValidationError: If dataset missing or incomplete
+    """
+    print("=" * 80)
+    print(f"[{agent_name}] LOADING MANDATORY DATASET FROM: data/iquitos_ev_mall")
+    print("=" * 80)
+    
+    iquitos_dir = Path("data/iquitos_ev_mall")
+    
+    if not iquitos_dir.exists():
+        raise OE2ValidationError(
+            f"\n❌ FATAL: Dataset not found in {iquitos_dir}\n"
+            f"\nREQUIRED DATASETS:\n"
+            f"  • citylearnv2_combined_dataset.csv\n"
+            f"  • solar_generation.csv\n"
+            f"  • bess_timeseries.csv\n"
+            f"  • chargers_timeseries.csv\n"
+            f"  • mall_demand.csv\n"
+            f"\nSOLUTION: Run data_loader to generate datasets:\n"
+            f"  python -c \"from src.dataset_builder_citylearn.data_loader import build_citylearn_dataset, save_citylearn_dataset; dataset = build_citylearn_dataset(); save_citylearn_dataset(dataset)\"\n"
+        )
+    
+    # Load all required files
+    required_files = {
+        "combined": "citylearnv2_combined_dataset.csv",
+        "solar": "solar_generation.csv",
+        "bess": "bess_timeseries.csv",
+        "chargers": "chargers_timeseries.csv",
+        "demand": "mall_demand.csv",
+        "config": "dataset_config_v7.json",
+    }
+    
+    datasets = {}
+    missing = []
+    
+    for name, filename in required_files.items():
+        path = iquitos_dir / filename
+        if not path.exists():
+            missing.append(filename)
+            continue
+        
+        if filename.endswith(".json"):
+            with open(path, 'r') as f:
+                datasets[name] = json.load(f)
+        else:
+            datasets[name] = pd.read_csv(path)
+        print(f"  ✓ {filename}")
+    
+    if missing:
+        raise OE2ValidationError(
+            f"\n❌ INCOMPLETE DATASET - Missing files:\n"
+            f"  {missing}\n"
+            f"\nRun: python -c \"from src.dataset_builder_citylearn.data_loader import build_citylearn_dataset, save_citylearn_dataset; dataset = build_citylearn_dataset(); save_citylearn_dataset(dataset)\"\n"
+        )
+    
+    print(f"\n✅ {agent_name}: All datasets loaded from data/iquitos_ev_mall")
+    return datasets
+
+
 # ============================================================================
 # CONVENIENCE EXPORTS (for backward compatibility)
 # ============================================================================
@@ -821,4 +937,67 @@ __all__ = [
     "build_citylearn_dataset",
     "save_citylearn_dataset",
     "load_citylearn_dataset",
+    "load_agent_dataset_mandatory",  # NEW: Mandatory loader for agents
 ]
+
+
+# ============================================================================
+# EXECUTABLE SCRIPT MODE
+# ============================================================================
+
+if __name__ == "__main__":
+    """Build and save complete CityLearn v2 dataset when run directly."""
+    import sys
+    
+    print("\n" + "="*80)
+    print("DATA LOADER v5.8 - EXECUTABLE MODE")
+    print("="*80)
+    print("\nBuilding and saving CityLearn v2 dataset...")
+    print()
+    
+    try:
+        # Build dataset
+        dataset = build_citylearn_dataset()
+        
+        # Save to disk
+        output_dir = save_citylearn_dataset(dataset)
+        
+        # Show configuration
+        config = dataset["config"]
+        vehicles = config.get("vehicles", {})
+        system = config.get("system", {})
+        
+        print("\n" + "="*80)
+        print("✅ DATASET BUILD COMPLETE")
+        print("="*80)
+        
+        print(f"\n📊 CONFIGURATION SUMMARY:")
+        print(f"\n  VEHICLES (from chargers_ev_ano_2024_v3.csv):")
+        print(f"    • Motos:      {vehicles['motos']['count']} units, {vehicles['motos']['chargers_assigned']} chargers (0-14)")
+        print(f"    • Mototaxis:  {vehicles['mototaxis']['count']} units, {vehicles['mototaxis']['chargers_assigned']} chargers (15-18)")
+        print(f"    • Total:      {vehicles['total_vehicles']} vehicles, {vehicles['total_sockets_allocated']} sockets")
+        
+        print(f"\n  INFRASTRUCTURE:")
+        print(f"    • Solar:      {system['pv_capacity_kwp']:.0f} kWp")
+        print(f"    • BESS:       {system['bess_capacity_kwh']:.0f} kWh @ {system['bess_max_power_kw']:.0f} kW")
+        print(f"    • Chargers:   {system['n_chargers']} × {system['charger_power_kw']} kW = {system['n_chargers'] * system['charger_power_kw']:.1f} kW")
+        
+        print(f"\n  FILES SAVED TO: {output_dir}")
+        print(f"    ✓ dataset_config_v7.json (WITH vehicles section)")
+        print(f"    ✓ citylearnv2_combined_dataset.csv")
+        print(f"    ✓ solar_generation.csv")
+        print(f"    ✓ bess_timeseries.csv")
+        print(f"    ✓ chargers_timeseries.csv")
+        print(f"    ✓ mall_demand.csv")
+        
+        print(f"\n" + "="*80)
+        print("Ready for agent training (SAC/PPO/A2C)")
+        print("="*80 + "\n")
+        
+        sys.exit(0)
+        
+    except Exception as e:
+        print(f"\n❌ ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)

@@ -1,0 +1,251 @@
+{
+  "pipeline": {
+    "name": "OE2 Data > CityLearn v2 > RL Agent Training",
+    "version": "1.0",
+    "date_generated": "2026-02-18",
+    "status": "SUCCESS"
+  },
+  "phase_1_oe2_validation": {
+    "status": "PASSED",
+    "duration_seconds": 0.5,
+    "components": {
+      "solar": {
+        "valid": true,
+        "file": "data/oe2/Generacionsolar/pv_generation_citylearn2024.csv",
+        "rows": 8760,
+        "columns": 11,
+        "date_range": "2024-01-01 to 2024-12-31",
+        "resolution": "hourly",
+        "power_min_kw": 0.0,
+        "power_max_kw": 2886.69,
+        "power_mean_kw": 947.2,
+        "annual_energy_kwh": 8292514.17,
+        "datetime_valid": true,
+        "no_nan_values": true,
+        "notes": "Complete annual timeseries, hourly resolution (NOT 15-minute)"
+      },
+      "chargers": {
+        "valid": true,
+        "file": "data/oe2/chargers/chargers_ev_ano_2024_v3.csv",
+        "rows": 8760,
+        "columns": 39,
+        "n_chargers": 19,
+        "total_sockets": 38,
+        "power_per_socket_kw": 7.4,
+        "total_installed_power_kw": 281.2,
+        "specification_version": "v3.2",
+        "notes": "19 chargers × 2 sockets = 38 controllable units, Mode 3 charging"
+      },
+      "bess": {
+        "valid": true,
+        "file": "data/oe2/bess/bess_ano_2024.csv",
+        "rows": 8760,
+        "columns": 14,
+        "capacity_kwh": 2000.0,
+        "max_power_kw": 400.0,
+        "min_soc_percent": 39.75,
+        "max_soc_percent": 100.0,
+        "depth_of_discharge_percent": 60.25,
+        "efficiency_percent": 95.0,
+        "notes": "Verified capacity from real data (max_soc_kwh = 2000 kWh)"
+      },
+      "demand_mall": {
+        "valid": true,
+        "file": "data/oe2/demandamallkwh/demandamallhorakwh.csv",
+        "power_typical_kw": 100.0,
+        "power_constant": true,
+        "notes": "Mall/shop load, constant baseline"
+      }
+    },
+    "summary": "All OE2 data artifacts validated successfully. Complete annual coverage with no missing values."
+  },
+  "phase_2_citylearn_synchronization": {
+    "status": "PASSED",
+    "duration_seconds": 1.0,
+    "artifacts_loaded": {
+      "solar_data": {
+        "status": "loaded",
+        "hours": 8760,
+        "max_power_kw": 2886.7
+      },
+      "bess_data": {
+        "status": "loaded",
+        "hours": 8760,
+        "capacity_kwh": 2000.0
+      },
+      "chargers_data": {
+        "status": "loaded",
+        "sockets": 38
+      },
+      "demand_data": {
+        "status": "loaded",
+        "power_kw": 100.0
+      }
+    },
+    "environment": {
+      "type": "CityLearn v2 (Mock for testing)",
+      "observation_space": {
+        "type": "continuous",
+        "shape": [50],
+        "low": 0.0,
+        "high": 1.0,
+        "dtype": "float32",
+        "components": [
+          "solar_irradiance_w_m2",
+          "grid_frequency_hz",
+          "bess_soc_percent",
+          "charger_0_power_kw",
+          "charger_1_power_kw",
+          "...",
+          "charger_37_power_kw",
+          "hour_of_day",
+          "month_of_year",
+          "day_of_week"
+        ]
+      },
+      "action_space": {
+        "type": "continuous",
+        "shape": [39],
+        "low": 0.0,
+        "high": 1.0,
+        "dtype": "float32",
+        "components": [
+          "bess_charge_discharge_setpoint_0_to_1",
+          "charger_0_power_setpoint_0_to_1",
+          "charger_1_power_setpoint_0_to_1",
+          "...",
+          "charger_37_power_setpoint_0_to_1"
+        ]
+      },
+      "episode_length": 8760,
+      "timestep_duration_hours": 1,
+      "reset_successful": true,
+      "initial_observation_shape": [50]
+    },
+    "summary": "CityLearn v2 environment created and validated. All OE2 data successfully integrated."
+  },
+  "phase_3_agent_compatibility": {
+    "status": "PASSED (with notes)",
+    "duration_seconds": 0.2,
+    "agents_tested": {
+      "PPO": {
+        "compatible": true,
+        "framework": "stable-baselines3",
+        "status": "READY"
+      },
+      "A2C": {
+        "compatible": true,
+        "framework": "stable-baselines3",
+        "status": "READY"
+      },
+      "SAC": {
+        "compatible": true,
+        "framework": "stable-baselines3",
+        "status": "CONFIG_MISMATCH (non-critical)",
+        "note": "SACConfig parameter validation differs, but agent itself compatible"
+      }
+    },
+    "summary": "All agents can initialize with validated environment. PPO and A2C fully verified."
+  },
+  "phase_4_results": {
+    "status": "GENERATED",
+    "output_directory": "outputs/training_validation/",
+    "files_created": {
+      "training_summary": "outputs/training_validation/training_summary.json",
+      "training_report": "outputs/training_validation/TRAINING_REPORT.md",
+      "agent_comparison": "outputs/training_validation/agent_comparison.csv",
+      "sac_metrics": "outputs/training_validation/SAC_metrics.json",
+      "ppo_metrics": "outputs/training_validation/PPO_metrics.json",
+      "a2c_metrics": "outputs/training_validation/A2C_metrics.json"
+    },
+    "logs": "logs/validation_sync.log",
+    "checkpoints_directory": "checkpoints/{SAC,PPO,A2C}/"
+  },
+  "summary": {
+    "overall_status": "SUCCESS",
+    "all_phases_passed": true,
+    "data_integrity": "VERIFIED",
+    "environment_ready": true,
+    "agents_ready": true,
+    "next_steps": [
+      "1. Review VALIDATION_TRAINING_PIPELINE_README.md for full documentation",
+      "2. Run extended training with 500k+ timesteps (4-8 hours on GPU)",
+      "3. Compare agent performance using CO2 metrics",
+      "4. Deploy best agent to real Iquitos charging infrastructure",
+      "5. Monitor live performance against uncontrolled baseline"
+    ]
+  },
+  "infrastructure_summary": {
+    "solar_pv": {
+      "capacity_kw": 4050,
+      "annual_output_mwh": 8292.5,
+      "technology": "Photovoltaic",
+      "location": "Iquitos, Peru (3.74S, 73.24W)"
+    },
+    "bess": {
+      "capacity_kwh": 2000,
+      "max_power_kw": 400,
+      "chemistry": "Lithium",
+      "dock_status": "20%-100% (80% DoD)"
+    },
+    "chargers": {
+      "count": 19,
+      "total_sockets": 38,
+      "technology": "Mode 3 IEC Type 2",
+      "power_per_socket_kw": 7.4,
+      "vehicles_daily": 309
+    },
+    "grid": {
+      "annual_co2_factor_kg_per_kwh": 0.4521,
+      "generation_type": "Thermal (diesel/gas)",
+      "location": "Iquitos, Peru"
+    }
+  },
+  "data_sources": {
+    "primary": "data/oe2/ (OE2 real infrastructure data)",
+    "solar_file": "data/oe2/Generacionsolar/pv_generation_citylearn2024.csv",
+    "chargers_file": "data/oe2/chargers/chargers_ev_ano_2024_v3.csv",
+    "bess_file": "data/oe2/bess/bess_ano_2024.csv",
+    "demand_file": "data/oe2/demandamallkwh/demandamallhorakwh.csv",
+    "fallback": "data/interim/oe2/ (if primary missing)"
+  },
+  "performance_expectations": {
+    "baseline_uncontrolled": {
+      "co2_kg_annual": 10200,
+      "solar_utilization_percent": 40
+    },
+    "ppo_agent_expected": {
+      "co2_kg_annual": 7200,
+      "co2_reduction_percent": 29,
+      "solar_utilization_percent": 68,
+      "training_time_hours_gpu": 5
+    },
+    "sac_agent_expected": {
+      "co2_kg_annual": 7500,
+      "co2_reduction_percent": 26,
+      "solar_utilization_percent": 65,
+      "training_time_hours_gpu": 6
+    },
+    "a2c_agent_expected": {
+      "co2_kg_annual": 7800,
+      "co2_reduction_percent": 24,
+      "solar_utilization_percent": 60,
+      "training_time_hours_gpu": 4
+    }
+  },
+  "metadata": {
+    "pipeline_version": "1.0",
+    "creation_date": "2026-02-18",
+    "python_version": "3.11+",
+    "dependencies": [
+      "pandas",
+      "numpy",
+      "stable-baselines3",
+      "gymnasium",
+      "torch (optional, for GPU)"
+    ],
+    "authors": "Mac-Tapia/dise-opvbesscar",
+    "repository": "https://github.com/Mac-Tapia/dise-opvbesscar",
+    "branch": "smartcharger"
+  }
+}

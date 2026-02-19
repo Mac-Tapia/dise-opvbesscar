@@ -12,19 +12,19 @@ agents:
     type: on-policy
     enabled: true
 training:
-  episodes: 3
-  max_timesteps: 26280
+  episodes: 10
+  max_timesteps: 87600
   evaluation_frequency: 1
   checkpoint_frequency: 1000
 environment:
   episode_length: 8760
   time_step_minutes: 60
 reward_weights:
-  co2: 0.5
-  solar: 0.2
-  ev: 0.15
-  grid: 0.1
-  cost: 0.05
+  co2: 0.35
+  solar: 0.20
+  ev: 0.30
+  grid: 0.05
+  cost: 0.10
 infrastructure:
   solar_capacity_kwp: 4050.0
   bess_capacity_kwh: 2000

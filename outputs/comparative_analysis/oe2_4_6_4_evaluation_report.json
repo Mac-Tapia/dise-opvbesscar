@@ -1,43 +1,43 @@
 {
   "selected_agent": "A2C",
   "scores": {
-    "A2C": 0,
-    "PPO": 0,
-    "SAC": 0
+    "A2C": 45.82526479288746,
+    "PPO": 20.89092953793399,
+    "SAC": 33.28380566917855
   },
   "evaluations": {
     "A2C": {
-      "co2_kg": -3062.615395592959,
+      "co2_kg": 6295283.279176565,
       "co2_score": 1.0,
-      "solar_consumption_pct": 0,
-      "solar_score": 0.65,
-      "avg_grid_kw": 4680326.5,
-      "grid_stability_score": -60.74188881153206,
-      "vehicles_charged": 0,
-      "ev_satisfaction_score": 0.5,
+      "solar_consumption_pct": 65.0,
+      "solar_score": 1.0,
+      "avg_grid_kw": 71.8639643741617,
+      "grid_stability_score": 1.0,
+      "vehicles_charged": 3000.0,
+      "ev_satisfaction_score": 0.8571428571428571,
       "robustness_score": 1.0
     },
     "PPO": {
-      "co2_kg": -659.3463998114108,
-      "co2_score": 0.21528695699870137,
-      "solar_consumption_pct": 0,
-      "solar_score": 0.65,
-      "avg_grid_kw": 5335239.364672089,
-      "grid_stability_score": -69.75699170644693,
-      "vehicles_charged": 0,
-      "ev_satisfaction_score": 0.5,
+      "co2_kg": 14588970.516441409,
+      "co2_score": 0.0,
+      "solar_consumption_pct": 65.0,
+      "solar_score": 1.0,
+      "avg_grid_kw": 161.89819909048083,
+      "grid_stability_score": 0.0,
+      "vehicles_charged": 2500.0,
+      "ev_satisfaction_score": 0.7142857142857143,
       "robustness_score": 1.0
     },
     "SAC": {
-      "co2_kg": -0.006691410159999999,
-      "co2_score": 0.0,
-      "solar_consumption_pct": 0,
-      "solar_score": 0.65,
-      "avg_grid_kw": 6423835.02512134,
-      "grid_stability_score": -84.74188881153205,
-      "vehicles_charged": 0,
-      "ev_satisfaction_score": 0.5,
-      "robustness_score": 1.0
+      "co2_kg": 10288003.96726574,
+      "co2_score": 0.5185831616425982,
+      "solar_consumption_pct": 65.0,
+      "solar_score": 1.0,
+      "avg_grid_kw": 117.44296766285092,
+      "grid_stability_score": 0.49375919690659836,
+      "vehicles_charged": 3500.0,
+      "ev_satisfaction_score": 1.0,
+      "robustness_score": 0.5
     }
   },
   "criteria": {
