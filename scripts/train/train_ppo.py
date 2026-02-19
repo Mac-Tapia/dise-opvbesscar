@@ -1073,11 +1073,11 @@ class CityLearnEnvironment(Env):
         try:
             co2_indirecto_bess_kg = float(self.bess_co2_df.iloc[h]['co2_avoided_indirect_kg'])
         except (KeyError, IndexError):
-            # Fallback: calcular con peak_shaving_factor
-            if mall_kw > 2000.0:
-                peak_factor = 1.0 + (mall_kw - 2000.0) / max(1.0, mall_kw) * 0.5
+            # Fallback: calcular con peak_shaving_factor - v5.5: 1900 kW
+            if mall_kw > 1900.0:
+                peak_factor = 1.0 + (mall_kw - 1900.0) / max(1.0, mall_kw) * 0.5
             else:
-                peak_factor = 0.5 + (mall_kw / 2000.0) * 0.5
+                peak_factor = 0.5 + (mall_kw / 1900.0) * 0.5
             co2_indirecto_bess_kg = bess_power_kw * peak_factor * CO2_FACTOR_IQUITOS if bess_power_kw > 0 else 0.0
         
         # CO2 TOTAL EVITADO = DIRECTO (EV) + INDIRECTO (SOLAR + BESS)

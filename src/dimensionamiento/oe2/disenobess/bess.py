@@ -821,7 +821,7 @@ def simulate_bess_ev_exclusive(
         # REGLA: Horario de operacion EV es 6h-22h (cierre)
         # BESS DESCARGA CON PRIORIDADES:
         # 1. EV (17h-22h): 100% cobertura
-        # 2. MALL picos (10h-22h): Peak shaving cuando mall > 2100 kW
+        # 2. MALL picos (10h-22h): Peak shaving cuando mall > 1900 kW (v5.5 optimal)
         # Fuera de horario (22-6h): EV = 0, BESS en standby
         # ====================================
         if hour_of_day >= closing_hour or hour_of_day < 6:
@@ -831,16 +831,16 @@ def simulate_bess_ev_exclusive(
             bess_to_ev[h] = 0
             grid_to_ev[h] = 0  # Noche: NO hay demanda EV, asignar 0
             
-            # DESCARGA NOCTURNA 22-6h: PEAK SHAVING MALL si demanda > 2100 kW
+            # DESCARGA NOCTURNA 22-6h: PEAK SHAVING MALL si demanda > 1900 kW (v5.5)
             # Mail tiene picos a las 0h que necesitan peak shaving
-            mall_peak_threshold_kw = 2100.0
+            mall_peak_threshold_kw = 1900.0
             
             # PV directo al MALL (normalmente 0 de noche)
             pv_direct_to_mall = min(pv_h, mall_h)
             pv_to_mall[h] = pv_direct_to_mall
             mall_deficit = mall_h - pv_direct_to_mall
             
-            # PEAK SHAVING: Si MALL > 2100 kW, descargar BESS para reducir grid import
+            # PEAK SHAVING: Si MALL > 1900 kW, descargar BESS para reducir grid import (v5.5)
             if mall_deficit > 0 and mall_h > mall_peak_threshold_kw and current_soc > soc_min:
                 # Descargar BESS para cubrir parcial/total del deficit peak shaving
                 max_bess_for_mall = min(power_kw, (current_soc - soc_min) * capacity_kwh)
@@ -1563,7 +1563,7 @@ def simulate_bess_solar_priority(
         pv_curtailed[h] = max(pv_remaining, 0.0)
         
         # =====================================================================
-        # PASO 4: BESS DESCARGA (NUEVA LOGICA v5.5 - Peak Shaving 2000 kW)
+        # PASO 4: BESS DESCARGA (NUEVA LOGICA v5.5 - Peak Shaving 1900 kW)
         # =====================================================================
         
         # NUEVA ESTRATEGIA DE DESCARGA:
@@ -1590,7 +1590,7 @@ def simulate_bess_solar_priority(
         # - PRIORIDAD 1: Deficit EV siempre -> descarga para cubrir 100%
         activar_descarga_ev = (ev_deficit > 0.01 and puede_descargar)
         
-        # - PRIORIDAD 2: Crisis solar MALL + pico > 2000 kW -> peak shaving
+        # - PRIORIDAD 2: Crisis solar MALL + pico > 1900 kW -> peak shaving (v5.5)
         #   (solo descargar si hay carencia solar para el MALL, no para cubrir todo)
         activar_descarga_peak_shaving = (crisis_solar_para_mall and pico_total_critico and puede_descargar)
         
@@ -1636,7 +1636,7 @@ def simulate_bess_solar_priority(
                     bess_mode[h] = 'discharge'
             
             # ===============================================================
-            # PRIORIDAD 2: DESCARGAR PARA PEAK SHAVING MALL (máximo 2000 kW)
+            # PRIORIDAD 2: DESCARGAR PARA PEAK SHAVING MALL (máximo 1900 kW v5.5)
             # ===============================================================
             # NUEVA LOGICA v5.5:
             # - Objetivo: Mantener consumo total (EV + MALL) ≤ 2000 kW

@@ -1007,13 +1007,12 @@ class BalanceEnergeticoSystem:
                 bbox=dict(boxstyle='round', facecolor='#FFFACD', alpha=0.95, pad=0.8))
         
         # ========== SUBPLOT 2: FLUJO OPERATIVO REAL - DÍA REPRESENTATIVO ==========
-        # Mostrar lógica OPERATIVA real:
-        # - Demanda del mall (RED) + demanda de EV
-        # - Generación PV disponible
-        # - BESS cargando (6h+) vs descargando (17h-22h)
-        # - Límite de picos (2000 kW)
-        # - Importación de red
-        # - SOC del BESS (gráfica inferior)
+        # LÓGICA REAL BESS v5.4:
+        # CARGA (6h+): PV -> BESS (paralelo) + PV -> EV directo | Resultado: BESS al 100% antes 17h
+        # DESCARGA (17h-22h): 
+        #   - Prioridad 1: BESS -> EV (100% cobertura deficit EV)
+        #   - Prioridad 2: Peak shaving MALL si >1,900 kW + SOC>50%
+        #   - Restricción: Exactamente 20% SOC a las 22h
         
         ax2_top = ax2
         day_idx = 180  # Día representativo (año 360 días -> día 180 = equilibrio)
@@ -1032,81 +1031,211 @@ class BalanceEnergeticoSystem:
         total_dem = day_df['total_demand_kw'].values
         peak_limit = 1900  # kW - threshold real peak shaving BESS (bess.py:969)
         
-        # ========== GRÁFICA SUPERIOR: FLUJOS ENERGÉTICOS POR HORA ==========
-        width = 0.6
+        # ========== GRÁFICA SUPERIOR: LÓGICA OPERATIVA REAL POR HORA ==========
+        # Mostrar claramente cómo PV se distribuye:
+        # CARGA (6h+): PV -> BESS EN PARALELO con PV -> EV
+        # DESCARGA (17h-22h): BESS -> EV (Prioridad 1) + Peak shaving MALL (Prioridad 2 si >1900 y SOC>50%)
         
-        # PV generado (barras doradas)
-        ax2_top.bar(hours, pv_gen, width=width, label='PV Generado', 
-                   color='#FFD700', alpha=0.85, edgecolor='orange', linewidth=0.5)
+        width = 0.65
         
-        # Demandas acumuladas (apiladas)
-        # MALL (azul)
-        ax2_top.bar(hours, mall_dem, width=width, label='Demanda Mall (RED)', 
-                   color='#1E90FF', alpha=0.75, edgecolor='darkblue', linewidth=0.5)
+        # 1. LÍNEA DE GENERACIÓN PV (amarilla)
+        ax2_top.plot(hours, pv_gen, color='#FFD700', linewidth=3, marker='o', 
+                    markersize=5, label='Generacion PV', zorder=6, alpha=0.95)
+        ax2_top.fill_between(hours, 0, pv_gen, color='#FFD700', alpha=0.3)
         
-        # EV (verde lima)
-        ax2_top.bar(hours, ev_dem, width=width, bottom=mall_dem, label='Demanda EV (38 sockets)',
-                   color='#32CD32', alpha=0.75, edgecolor='darkgreen', linewidth=0.5)
+        # 2. DEMANDA BASE: MALL (azul)
+        bar1 = ax2_top.bar(hours, mall_dem, width=width, label='Demanda Mall (RED)', 
+                          color='#1E90FF', alpha=0.8, edgecolor='darkblue', linewidth=0.8, zorder=3)
         
-        # BESS descarga (naranja) - mostrada como parte de cobertura
-        bottom_ev = mall_dem + ev_dem
-        bess_visible = np.minimum(bess_discharge, 300)  # Limitar altura para visualización
-        ax2_top.bar(hours, bess_visible, width=width, bottom=bottom_ev, 
-                   label='BESS Descargando ⬇', color='#FF8C00', alpha=0.8, 
-                   edgecolor='darkorange', linewidth=0.5)
+        # 3. DEMANDA EV (verde) - apilada sobre MALL
+        bar2 = ax2_top.bar(hours, ev_dem, width=width, bottom=mall_dem, 
+                          label='Demanda EV (38 sockets)', color='#32CD32', 
+                          alpha=0.8, edgecolor='darkgreen', linewidth=0.8, zorder=3)
         
-        # Línea de demanda TOTAL (necesario conocer para ver picos)
-        ax2_top.plot(hours, total_dem, color='#DC143C', marker='o', linewidth=2.5,
-                    markersize=6, label='Demanda Total (M+E)', zorder=5)
+        # 4. BESS DESCARGA (NARANJA) - mostrada cuando activa (17h-22h)
+        # Solo mostrar en horas donde descarga > 0
+        bess_discharge_visible = np.where(bess_discharge > 10, bess_discharge, 0)
+        bar3 = ax2_top.bar(hours, bess_discharge_visible * 0.5, width=width*0.4, 
+                          label='BESS Descargando (Prioridad 1: EV)', 
+                          color='#FF8C00', alpha=0.9, edgecolor='darkorange', linewidth=1, zorder=4)
         
-        # Línea de importación de RED
-        ax2_top.plot(hours, grid_im, color='#FF6347', marker='s', linewidth=2,
-                    markersize=5, label='Red Importada (deficit)', linestyle='--', zorder=4)
+        # 5. BESS CARGA (VERDE OSCURO) - mostrada en horas de carga (6h+)
+        # Se muestra como POSITIVA EN EJE PARA INDICAR QUE PV ESTÁ CARGANDO
+        bess_charge_visible = np.where(bess_charge > 10, bess_charge, 0)
+        bar4 = ax2_top.bar(hours, -bess_charge_visible * 0.35, width=width*0.4, 
+                          label='BESS Cargando (PV paralelo a EV)', 
+                          color='#228B22', alpha=0.85, edgecolor='darkgreen', linewidth=1, zorder=4)
         
-        # LÍNEA DE LÍMITE DE PICOS (1900 kW - threshold real peak shaving BESS v5.5)
-        ax2_top.axhline(y=peak_limit, color='red', linewidth=2.5, linestyle='--', 
-                       label=f'Threshold Peak Shaving (1,900 kW)', alpha=0.7, zorder=3)
+        # 6. LÍNEA DE DEMANDA TOTAL (rojo punteado)
+        ax2_top.plot(hours, total_dem, color='#DC143C', marker='D', linewidth=2.5,
+                    markersize=5, label='Demanda Total (Mall+EV)', linestyle='--', zorder=5, alpha=0.9)
         
-        # Sombreado de zona de riesgo (>1900 kW - threshold peak shaving v5.5)
+        # 7. LÍNEA DE IMPORTACIÓN DE RED (roja oscura, línea sólida)
+        ax2_top.plot(hours, grid_im, color='#8B0000', marker='s', linewidth=2,
+                    markersize=4, label='Red Importada', linestyle='-', zorder=4, alpha=0.8)
+        
+        # 8. THRESHOLD DE PICOS (1900 kW - línea roja punteada gruesa)
+        ax2_top.axhline(y=peak_limit, color='#FF4500', linewidth=2.5, linestyle='--', 
+                       label='Threshold Peak Shaving (1,900 kW)', alpha=0.8, zorder=7)
+        
+        # 9. SOMBREADO DE ZONA DE RIESGO (>1900 kW)
         above_limit = total_dem > peak_limit
-        ax2_top.fill_between(hours, peak_limit, total_dem, where=above_limit, 
-                           color='#FF6347', alpha=0.2, label='Exceso sobre límite')
+        ax2_top.fill_between(hours, peak_limit, 3500, where=above_limit, 
+                           color='#FF6347', alpha=0.15, zorder=2)
         
-        # Línea BESS carga (verde oscuro, arriba)
-        bess_charge_normalized = bess_charge / 10  # Normalizar para visualización
-        ax2_top.plot(hours, bess_charge_normalized + total_dem.max() + 200, 
-                    color='#228B22', marker='^', linewidth=2, markersize=6,
-                    label='BESS Cargando ⬆ (6h+) - escala reducida', zorder=4)
+        # 10. ZONAS OPERATIVAS CLARAS
+        # Zona de CARGA (6h-17h) - verde claro de fondo
+        ax2_top.axvspan(6, 17, alpha=0.08, color='#228B22', zorder=1)
         
-        ax2_top.axhline(y=0, color='black', linewidth=0.8)
+        # Zona de DESCARGA (17h-22h) - naranja claro de fondo
+        ax2_top.axvspan(17, 22, alpha=0.08, color='#FF8C00', zorder=1)
+        
+        # Línea de hora crítica (17h)
+        ax2_top.axvline(x=17, color='#FF6347', linewidth=1.5, linestyle=':', alpha=0.6, zorder=2)
+        
+        # Línea de cierre (22h)
+        ax2_top.axvline(x=22, color='#8B0000', linewidth=1.5, linestyle=':', alpha=0.6, zorder=2)
+        
+        # Línea de cero
+        ax2_top.axhline(y=0, color='black', linewidth=0.8, zorder=2)
+        
+        # Configuración de ejes y etiquetas
         ax2_top.set_xlabel('Hora del Día (UTC-5 Lima)', fontsize=11, fontweight='bold')
         ax2_top.set_ylabel('Potencia (kW)', fontsize=11, fontweight='bold')
-        ax2_top.set_title(f'DÍA REPRESENTATIVO #{day_idx}: Lógica OPERATIVA REAL BESS vs Demandas vs Límite de Picos\n' +
-                         f'PV->BESS(verde carga 6h+) | BESS->EV(naranja descarga 17h-22h) | Threshold Peak Shaving (1,900 kW)',
-                         fontsize=12, fontweight='bold', color='darkred')
-        ax2_top.set_xticks(range(0, 24, 2))
-        ax2_top.set_xlim(-0.8, 23.8)
-        ax2_top.grid(True, alpha=0.25, axis='y', linestyle=':')
-        ax2_top.legend(loc='upper left', fontsize=8.5, framealpha=0.96, ncol=2)
+        ax2_top.set_title(
+            f'DÍA REPRESENTATIVO #{day_idx}: LÓGICA OPERATIVA REAL BESS v5.4\n'
+            f'CARGA(6h-17h, verde): PV->BESS EN PARALELO + PV->EV | DESCARGA(17h-22h, naranja): BESS->EV (100%) + Peak Shaving (>1,900 kW, SOC>50%)',
+            fontsize=12, fontweight='bold', color='darkred'
+        )
         
-        # Anotaciones de puntos críticos
-        # Punto de inicio carga BESS (6h)
-        ax2_top.annotate('Inicio carga\nBESS (6h)', xy=(6, total_dem[6]), xytext=(6, total_dem[6]+400),
+        ax2_top.set_xticks(range(0, 25, 1))
+        ax2_top.set_xlim(-0.8, 23.8)
+        ax2_top.set_ylim(min(grid_im) - 300, max(pv_gen) + 300)
+        ax2_top.grid(True, alpha=0.2, axis='y', linestyle=':')
+        ax2_top.legend(loc='upper left', fontsize=8, framealpha=0.95, ncol=2, 
+                      bbox_to_anchor=(0, 1), borderaxespad=0)
+        
+        # ANOTACIONES DE PRUEBA DE CONCEPTO
+        # Prioridad 1: CARGA (inicio 6h)
+        ax2_top.annotate('FASE 1: CARGA (6h+)\nPV->BESS paralelo a EV\nHasta 100% antes 17h',
+                        xy=(6, pv_gen[6]), xytext=(9, pv_gen[6]+400),
+                        arrowprops=dict(arrowstyle='->', color='#228B22', lw=2, 
+                                      connectionstyle='arc3,rad=0.3'),
+                        fontsize=8.5, ha='left', color='#228B22', fontweight='bold',
+                        bbox=dict(boxstyle='round', facecolor='#E8F4E8', alpha=0.9, pad=0.5))
+        
+        # Prioridad 2: DESCARGA inicio (17h)
+        ax2_top.annotate('FASE 2: DESCARGA (17h-22h)\nPrioridad 1: BESS->EV (100%)\nPrioridad 2: Peak Shaving (>1900, SOC>50%)',
+                        xy=(17, total_dem[17]), xytext=(14, total_dem[17]-800),
+                        arrowprops=dict(arrowstyle='->', color='#FF8C00', lw=2,
+                                      connectionstyle='arc3,rad=-0.3'),
+                        fontsize=8.5, ha='right', color='#FF8C00', fontweight='bold',
+                        bbox=dict(boxstyle='round', facecolor='#FFE4D0', alpha=0.9, pad=0.5))
+        
+        # Restricción de cierre (22h @ 20% SOC)
+        ax2_top.annotate('CIERRE (22h)\nSOC = 20% exacto',
+                        xy=(22, 500), xytext=(20, 1500),
+                        arrowprops=dict(arrowstyle='->', color='#8B0000', lw=2,
+                                      connectionstyle='arc3,rad=0.2'),
+                        fontsize=8.5, ha='center', color='#8B0000', fontweight='bold',
+                        bbox=dict(boxstyle='round', facecolor='#FFB6C1', alpha=0.9, pad=0.5))
+        
+        # ========== SUBPLOT 3: SOC DEL BESS + INDICADORES DE OPERACIÓN ==========
+        # Muestra:
+        # - SOC en tiempo real (curva negra gruesa)
+        # - Zona de operación normal (20%-100%, zona verde)
+        # - Zones prohibidas (rojo < 20%)
+        # - Marcas de Prioridad 2 (SOC > 50%, zona azul punteada)
+        # - Restricción crítica: exactamente 20% a las 22h
+        
+        ax3_soc = ax3
+        
+        # PLOT 1: SOC del BESS (línea negra gruesa)
+        ax3_soc.plot(hours, bess_soc, color='#000000', linewidth=3.5, marker='o', 
+                    markersize=5, label='SOC BESS Real', zorder=5, alpha=0.95)
+        
+        # PLOT 2: Llenar área de riesgo (<20%, zona ROJA)
+        ax3_soc.fill_between(hours, 0, 20, alpha=0.25, color='#FF0000', label='Zona PROHIBIDA (<20%)', zorder=1)
+        
+        # PLOT 3: Llenar área operativa (20%-100%, zona VERDE)
+        ax3_soc.fill_between(hours, 20, 100, alpha=0.15, color='#228B22', label='Zona Operativa (20%-100%)', zorder=1)
+        
+        # PLOT 4: Llenar área Prioridad 2 disponible (> 50%, zona AZUL punteada)
+        soc_above_50 = bess_soc.copy()
+        soc_above_50[soc_above_50 < 50] = 50
+        ax3_soc.fill_between(hours, 50, soc_above_50, alpha=0.3, color='#4169E1', 
+                             label='Prioridad 2 disponible (SOC>50%)', zorder=2)
+        
+        # LÍNEAS CRÍTICAS
+        # Máximo operativo (100%)
+        ax3_soc.axhline(y=100, color='green', linewidth=2, linestyle='--', 
+                       label='Máximo (100%)', alpha=0.7, zorder=3)
+        
+        # Mínimo operativo (20%)
+        ax3_soc.axhline(y=20, color='red', linewidth=2, linestyle='--', 
+                       label='Mínimo requerido (20%)', alpha=0.7, zorder=3)
+        
+        # Nivel Prioridad 2 (50%)
+        ax3_soc.axhline(y=50, color='#4169E1', linewidth=1.5, linestyle=':', 
+                       label='Umbral Prioridad 2 (50%)', alpha=0.6, zorder=3)
+        
+        # ZONAS OPERATIVAS VERTICALES
+        # Zona de CARGA (6h-17h)
+        ax3_soc.axvspan(6, 17, alpha=0.05, color='#228B22', zorder=1)
+        
+        # Zona de DESCARGA (17h-22h)
+        ax3_soc.axvspan(17, 22, alpha=0.05, color='#FF8C00', zorder=1)
+        
+        # EVENTOS CRÍTICOS
+        # Marca: 17h - Inicio descarga (debe alcanzar 100%)
+        soc_at_17h = bess_soc[17] if len(bess_soc) > 17 else 100
+        ax3_soc.plot(17, soc_at_17h, 'go', markersize=12, markeredgewidth=2, 
+                    markeredgecolor='darkgreen', zorder=6, label='17h: Debe ser ~100%')
+        
+        # Marca: 22h - Cierre (DEBE ser exactamente 20%)
+        soc_at_22h = bess_soc[22] if len(bess_soc) > 22 else 20
+        ax3_soc.plot(22, soc_at_22h, 'rs', markersize=12, markeredgewidth=2, 
+                    markeredgecolor='darkred', zorder=6, label='22h: DEBE ser 20%')
+        
+        # ANOTACIONES
+        # Anotación: Carga hacia 100%
+        ax3_soc.annotate('CARGA hasta 100%\nantes de 17h',
+                        xy=(14, bess_soc[14]), xytext=(10, 70),
                         arrowprops=dict(arrowstyle='->', color='#228B22', lw=1.5),
                         fontsize=8, ha='center', color='#228B22', fontweight='bold',
-                        bbox=dict(boxstyle='round', facecolor='#E8F4E8', alpha=0.8))
+                        bbox=dict(boxstyle='round', facecolor='#E8F4E8', alpha=0.85, pad=0.4))
         
-        # Punto crítico 17h (inicio descarga)
-        ax2_top.annotate('Punto crítico\n17h (deficit PV)',
-                        xy=(17, total_dem[17]), xytext=(17, total_dem[17]-600),
+        # Anotación: Descarga hacia 20%
+        ax3_soc.annotate('DESCARGA\nhacia 20%\n(Prioridad 1+2)',
+                        xy=(20, bess_soc[20]), xytext=(19, 60),
                         arrowprops=dict(arrowstyle='->', color='#FF8C00', lw=1.5),
                         fontsize=8, ha='center', color='#FF8C00', fontweight='bold',
-                        bbox=dict(boxstyle='round', facecolor='#FFE4D0', alpha=0.8))
+                        bbox=dict(boxstyle='round', facecolor='#FFE4D0', alpha=0.85, pad=0.4))
+        
+        # Anotación: Restricción crítica 22h
+        ax3_soc.annotate('RESTRICCIÓN CRÍTICA\nSOC = 20% exacto\na las 22h',
+                        xy=(22, 20), xytext=(21, 35),
+                        arrowprops=dict(arrowstyle='->', color='#8B0000', lw=2),
+                        fontsize=8.5, ha='center', color='#8B0000', fontweight='bold',
+                        bbox=dict(boxstyle='round', facecolor='#FFB6C1', alpha=0.9, pad=0.5))
+        
+        # Configuración de eje SOC
+        ax3_soc.set_xlabel('Hora del Día (UTC-5 Lima)', fontsize=10, fontweight='bold')
+        ax3_soc.set_ylabel('SOC BESS (%)', fontsize=10, fontweight='bold')
+        ax3_soc.set_title('Estado de Carga (SOC) del BESS - Restricciones Operativas\n' +
+                         'Objetivo: 100% a 17h | Cierre: 20% exacto a 22h | Prioridad 2 solo si SOC>50%',
+                         fontsize=11, fontweight='bold', color='darkred')
+        ax3_soc.set_xticks(range(0, 25, 1))
+        ax3_soc.set_xlim(-0.8, 23.8)
+        ax3_soc.set_ylim(-5, 110)
+        ax3_soc.grid(True, alpha=0.2, axis='y', linestyle=':')
+        ax3_soc.legend(loc='right', fontsize=7.5, framealpha=0.93, ncol=1, 
+                      bbox_to_anchor=(1.0, 1))
         
         plt.tight_layout()
         plt.savefig(out_dir / "00.5_FLUJO_ENERGETICO_INTEGRADO.png", dpi=150, bbox_inches='tight')
         plt.close()
-        print("  [OK] Grafica: 00.5_FLUJO_ENERGETICO_INTEGRADO.png  [FLUJO ANUAL + HORARIO]")
+        print("  [OK] Grafica: 00.5_FLUJO_ENERGETICO_INTEGRADO.png  [FLUJO ANUAL + LÓGICA OPERATIVA REAL v5.4]")
     
     def _plot_5day_balance(self, df: pd.DataFrame, out_dir: Path) -> None:
         """Grafica de flujos energeticos en 5 dias representativos."""
