@@ -26,17 +26,17 @@ oe2:
     mall_file: data/interim/oe2/demandamallkwh/demandamallhorakwh.csv
     charger_stats_file: data/oe2/chargers/chargers_real_statistics.csv
   bess:
-    # BESS v5.5 (2026-02-13) - Dual-purpose: EV + MALL discharge to peak
+    # BESS v5.4 (2026-02-19) - Dual-purpose: EV + MALL discharge to peak
     autonomy_hours: 4.0
-    c_rate: 0.200  # 400 kW / 2000 kWh = 0.200
-    discharge_only_ev_hours: false  # v5.5: MALL discharge enabled
-    discharge_only_no_solar: false  # v5.5: MALL discharge during day if excess
+    c_rate: 0.235  # 400 kW / 1700 kWh = 0.235
+    discharge_only_ev_hours: false  # v5.4: MALL discharge enabled
+    discharge_only_no_solar: false  # v5.4: MALL discharge during day if excess
     dod: 0.80      # 80% Depth of Discharge (min SOC = 20%)
     efficiency_roundtrip: 0.95
-    fixed_capacity_kwh: 2000.0  # v5.5: 2000 kWh nominal (1600 usable @ 20-100% SOC)
-    fixed_power_kw: 400.0       # v5.5: 400 kW carga/descarga symmetric
-    load_scope: dual_ev_and_mall  # v5.5: EV + MALL priority
-    min_soc_percent: 20.0       # v5.5: Hard constraint @ 22h closing
+    fixed_capacity_kwh: 1700.0  # v5.4: 1700 kWh nominal (1360 usable @ 20-100% SOC) ✅ UPDATED
+    fixed_power_kw: 400.0       # v5.4: 400 kW carga/descarga symmetric
+    load_scope: dual_ev_and_mall  # v5.4: EV + MALL priority
+    min_soc_percent: 20.0       # v5.4: Hard constraint @ 22h closing
     pv_night_threshold_kwh: 0.1
     round_kwh: 100
     sizing_mode: open_hours
