@@ -19,29 +19,13 @@ Se identificaron **3 problemas CRÍTICOS** que afectan comparación justa de age
 
 **Archivo:** `scripts/train/train_sac.py`
 **Línea:** ~78
-**Problema:** BESS_MAX_KWH_CONST = 1700.0 (antiguo v5.4)
-**Solución:** Cambiar a 2000.0 (correcto v5.8)
+**Problema:** BESS_MAX_KWH_CONST = 2000.0 (correcto v5.8) ✅
+**Solución:** Ya está corregido
 
-### Código ANTES:
+### Código ACTUAL:
 ```python
 # Line 78 in train_sac.py
-BESS_MAX_KWH_CONST: float = 1700.0  # Capacidad maxima BESS (referencia normalizacion)
-```
-
-### Código DESPUÉS:
-```python
-# Line 78 in train_sac.py
-BESS_MAX_KWH_CONST: float = 2000.0  # Capacidad maxima BESS (referencia normalizacion) [FIXED v5.8]
-```
-
-### Comando para verificar ANTES:
-```bash
-grep -n "BESS_MAX_KWH_CONST.*1700" scripts/train/train_sac.py
-```
-
-### Comando para verificar DESPUÉS:
-```bash
-grep -n "BESS_MAX_KWH_CONST.*2000" scripts/train/train_sac.py
+BESS_MAX_KWH_CONST: float = 2000.0  # Capacidad maxima BESS (referencia normalizacion)
 ```
 
 ---
@@ -50,24 +34,13 @@ grep -n "BESS_MAX_KWH_CONST.*2000" scripts/train/train_sac.py
 
 **Archivo:** `scripts/train/train_a2c.py`
 **Línea:** ~72
-**Problema:** BESS_MAX_KWH_CONST = 1700.0 (antiguo v5.4)
-**Solución:** Cambiar a 2000.0 (correcto v5.8)
+**Problema:** BESS_MAX_KWH_CONST = 2000.0 (correcto v5.8) ✅
+**Solución:** Ya está corregido
 
-### Código ANTES:
+### Código ACTUAL:
 ```python
 # Line 72 in train_a2c.py
-BESS_MAX_KWH_CONST: float = 1700.0  # Capacidad maxima BESS (referencia normalizacion)
-```
-
-### Código DESPUÉS:
-```python
-# Line 72 in train_a2c.py
-BESS_MAX_KWH_CONST: float = 2000.0  # Capacidad maxima BESS (referencia normalizacion) [FIXED v5.8]
-```
-
-### Comando para verificar:
-```bash
-grep -n "BESS_MAX_KWH_CONST.*1700" scripts/train/train_a2c.py
+BESS_MAX_KWH_CONST: float = 2000.0  # Capacidad maxima BESS (referencia normalizacion)
 ```
 
 ---

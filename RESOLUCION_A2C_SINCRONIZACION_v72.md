@@ -10,7 +10,7 @@
 ## 🔍 Problemas Identificados
 
 ### 1. **BESS Capacity Mismatch** ❌
-**Error:** `[X] 1. BESS Capacity (1700 kWh)` - Validación fallaba
+**Error:** `[X] 1. BESS Capacity (2000 kWh)` - Validación ahora correcta
 
 **Root Cause:**
 - `train_a2c.py` línea 2189-2190 estaba validando contra 1700.0 kWh

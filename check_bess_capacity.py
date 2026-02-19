@@ -27,9 +27,9 @@ if 'soc_percent' in bess_df.columns:
 print('\n' + '=' * 80)
 print('CONCLUSION:')
 print(f'Capacidad real del BESS = {max_soc:.0f} kWh')
-print(f'Valor en data_loader.py = 1700.0 kWh')
-if max_soc != 1700:
-    print(f'ERROR: DIFERENCIA = {max_soc - 1700:.0f} kWh')
+print(f'Valor en data_loader.py = 2000.0 kWh')
+if max_soc != 2000:
+    print(f'ERROR: DIFERENCIA = {max_soc - 2000:.0f} kWh')
     print('NECESARIO ACTUALIZAR data_loader.py')
 else:
     print('OK: Valor coincide')
