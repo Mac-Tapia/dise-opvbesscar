@@ -319,10 +319,12 @@ TOTAL_CHARGERS: 19          # Motos + mototaxis
 SOCKETS_PER_CHARGER: 2      # = 38 total sockets
 CHARGER_MAX_KW: 7.4         # Per socket (Mode 3, 32A @ 230V)
 SOLAR_CAPACITY_KWP: 4050    # PVGIS timeseries
-BESS_CAPACITY_KWH: 2000     # Confirmed capacity per bess_ano_2024.csv
+BESS_CAPACITY_KWH: 2000     # Confirmed capacity per bess_ano_2024.csv ✅
+BESS_C_RATE: 0.200          # 400 kW / 2000 kWh = 0.200 ✅ CORRECTED
 BESS_MIN_SOC_PCT: 20        # Minimum state of charge
 BESS_MAX_DOD_PCT: 80        # Maximum depth of discharge
 BESS_EFFICIENCY_PCT: 95     # Round-trip efficiency
+BESS_USABLE_KWH: 1600       # 1,600 kWh usable (20%-100% SOC)
 
 # OE3 Control
 CO2_FACTOR_IQUITOS: 0.4521  # kg CO2/kWh (thermal)
@@ -338,6 +340,11 @@ TECHNICAL_COLUMNS: 977     # Full dataset width
 ```
 
 **All agents use:** `scripts/train/common_constants.py`
+
+**BESS Specification Verified:**
+- Total Capacity: **2,000 kWh** (per bess_ano_2024.csv max SOC) ✅
+- C-Rate: **0.200** (charge/discharge rate at 400 kW) ✅
+- Usable Capacity: 1,600 kWh (at 20%-100% SOC range) ✅
 
 ---
 
