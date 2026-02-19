@@ -12,11 +12,9 @@ integral del sistema considerando:
 from .balance import (
     BalanceEnergeticoConfig,
     BalanceEnergeticoSystem,
-    main,
 )
 
 __all__ = [
     "BalanceEnergeticoConfig",
     "BalanceEnergeticoSystem",
-    "main",
 ]

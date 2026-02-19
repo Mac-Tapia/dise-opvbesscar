@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance Energético - Gráficas v5.4</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .specs {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        .specs h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        .specs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            font-size: 0.95em;
+        }
+        .spec-item {
+            background: white;
+            padding: 12px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .spec-item strong {
+            color: #667eea;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .chart-container {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 2px solid #e0e0e0;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .chart-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+        .chart-container h3 {
+            margin-top: 0;
+            color: #667eea;
+            font-size: 1.1em;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        .chart-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .chart-desc {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            color: #999;
+            font-size: 0.9em;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+        .highlight strong {
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ Balance Energético Sistema Eléctrico Iquitos</h1>
+        <div class="subtitle">BESS v5.4 + EV Profile desde Chargers | Generación: 19/02/2026</div>
+        
+        <div class="specs">
+            <h3>📊 Especificaciones del Sistema</h3>
+            <div class="specs-grid">
+                <div class="spec-item">
+                    <strong>🔆 Generación Solar:</strong><br>4,050 kWp (PVGIS)
+                </div>
+                <div class="spec-item">
+                    <strong>🔋 Almacenamiento BESS:</strong><br>1,700 kWh / 400 kW (DoD 80%)
+                </div>
+                <div class="spec-item">
+                    <strong>🏪 Demanda Mall (REAL):</strong><br>Min: 0 kW | Max: 2,763 kW | Mean: 1,412 kW
+                </div>
+                <div class="spec-item">
+                    <strong>🛵 Flota EV:</strong><br>270 motos + 39 taxis = 309 veh/día
+                </div>
+                <div class="spec-item">
+                    <strong>🔌 Sockets Carga:</strong><br>30 motos + 8 taxis = 38 tomas
+                </div>
+                <div class="spec-item">
+                    <strong>♻️ Factor CO₂ Grid:</strong><br>0.4521 kg/kWh (generación térmica)
+                </div>
+            </div>
+            <div class="highlight">
+                <strong>⚙️ Lógica BESS Operativa:</strong><br>
+                Prioridad 1: EV 100% (9h-22h) | Prioridad 2: Peak Shaving (>1,900 kW, SOC>50%)
+            </div>
+        </div>
+
+        <div class="gallery">
+            <div class="chart-container" style="grid-column: 1 / -1;">
+                <h3>⚡ BALANCE INTEGRADO COMPLETO DEL SISTEMA (DÍA REPRESENTATIVO)</h3>
+                <img src="00_BALANCE_INTEGRADO_COMPLETO.png" alt="Balance Integrado Completo">
+                <div class="chart-desc">
+                    <strong>Integración de TODOS los componentes en un único plot:</strong><br>
+                    • ☀️ <strong>Generación Solar PV</strong> (área dorada, arriba)<br>
+                    • 🔋 <strong>BESS Cargando</strong> (barras verdes invertidas, abajo) - Para almacenar energía excedente<br>
+                    • 🔋 <strong>BESS Descargando</strong> (barras naranjas, arriba) - Para complementar demanda<br>
+                    • 🏪 <strong>Demanda Mall (REAL)</strong> (barras azules) - 0-2,763 kW horarios, desde archivo demandamallhorakwh.csv<br>
+                    • 🛵 <strong>Motos Eléctricas</strong> (barras verde claro) - 270/día, 30 sockets, 2.9 kWh cada<br>
+                    • 🚕 <strong>Mototaxis Eléctricos</strong> (barras verde oscuro) - 39/día, 8 sockets, 4.7 kWh cada<br>
+                    • 🌐 <strong>Red Pública</strong> (línea roja) - Importación cuando recursos insuficientes<br>
+                    • 📊 <strong>Total Demand</strong> (línea roja punteada) - Referencia de consumo total<br>
+                    <strong style="color: #FF4500;">⚡ Threshold Peak: 1,900 kW</strong> - Límite para activar peak shaving con BESS<br>
+                    <strong style="color: green;">Zonas:</strong> Verde (6-17h carga BESS), Naranja (17-22h descarga EV+peak)
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>🌊 Flujo Energético Integrado</h3>
+                <img src="00.5_FLUJO_ENERGETICO_INTEGRADO.png" alt="Flujo Energético">
+                <div class="chart-desc">
+                    <strong>Subplots:</strong><br>
+                    • <strong>Arriba:</strong> Sankey anual con desagregación BESS (carga/descarga) y EV<br>
+                    • <strong>Centro:</strong> Día representativo (día 180) con zonas operativas<br>
+                    • <strong>Abajo:</strong> SOC horario con restricciones (20%-100%)
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>📈 Curvas Integrales (7 primeros días)</h3>
+                <img src="00_INTEGRAL_todas_curvas.png" alt="Integral">
+                <div class="chart-desc">
+                    Generación PV vs demandas (Mall + EV) + operación BESS y carga desde red
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>☀️ Balance 5 Días Representativos</h3>
+                <img src="01_balance_5dias.png" alt="5 Días">
+                <div class="chart-desc">
+                    Generación solar en días 0, 89, 180, 270, 359 (variación estacional)
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>📊 Balance Diario Anual (365 días)</h3>
+                <img src="02_balance_diario.png" alt="Diario">
+                <div class="chart-desc">
+                    Energía diaria: PV generada, demanda total, importación desde red
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>🥧 Distribución de Fuentes Energéticas</h3>
+                <img src="03_distribucion_fuentes.png" alt="Distribución">
+                <div class="chart-desc">
+                    Porcentaje anual: PV directo, BESS, Red pública
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>⛵ Cascada Energética Anual</h3>
+                <img src="04_cascada_energetica.png" alt="Cascada">
+                <div class="chart-desc">
+                    Flujos: PV→Demanda, PV→BESS, PV→Pérdida + BESS salida + Red
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>🔋 Estado de Carga BESS (8,760 horas)</h3>
+                <img src="05_bess_soc.png" alt="SOC">
+                <div class="chart-desc">
+                    SOC horario con restricciones: mínimo 20%, máximo 100%
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>🌍 Emisiones CO₂ Diarias (365 días)</h3>
+                <img src="06_emisiones_co2.png" alt="CO₂">
+                <div class="chart-desc">
+                    Emisiones desde generación térmica (grid imports × 0.4521 kg/kWh)
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>📆 Utilización Mensual de PV</h3>
+                <img src="07_utilizacion_pv.png" alt="Utilización">
+                <div class="chart-desc">
+                    Destino mensual de PV: Demanda directo, carga BESS, pérdida (curtailment)
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><strong>Generado por:</strong> Balance.py (Graphics Only Module v5.4)</p>
+            <p><strong>Repositorio:</strong> Mac-Tapia/dise-opvbesscar (rama: smartcharger)</p>
+            <p><strong>Datos:</strong> Simulated 8,760 hours hourly resolution</p>
+        </div>
+    </div>
+</body>
+</html>

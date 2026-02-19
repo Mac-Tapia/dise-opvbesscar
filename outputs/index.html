@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráficas de Balance Energético - pvBESScar Iquitos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-bottom: 4px solid #3498db;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+        
+        .specs {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            font-size: 0.95em;
+        }
+        
+        .spec-item {
+            background: rgba(255,255,255,0.15);
+            padding: 10px 15px;
+            border-radius: 5px;
+            border-left: 3px solid #3498db;
+        }
+        
+        .spec-item strong {
+            color: #ecf0f1;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        .section-title {
+            font-size: 1.8em;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #3498db;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #e74c3c;
+            border-radius: 2px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .chart-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .chart-title {
+            background: #34495e;
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        
+        .chart-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            padding: 15px;
+            background: white;
+        }
+        
+        .description {
+            padding: 15px 20px;
+            color: #555;
+            font-size: 0.95em;
+            border-top: 1px solid #ddd;
+        }
+        
+        .info-box {
+            background: #ecf0f1;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            line-height: 1.8;
+        }
+        
+        .info-box strong {
+            color: #2c3e50;
+        }
+        
+        .footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9em;
+            border-top: 1px solid #34495e;
+        }
+        
+        .data-source {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+        }
+        
+        .data-source strong {
+            display: block;
+            margin-bottom: 10px;
+            color: #721c24;
+        }
+        
+        .data-source ul {
+            margin-left: 20px;
+        }
+        
+        .data-source li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>⚡ pvBESScar - Balance Energético Iquitos</h1>
+            <p>Sistema de optimización de carga de vehículos eléctricos con energía solar y almacenamiento BESS</p>
+            <div class="specs">
+                <div class="spec-item"><strong>☀️ PV:</strong> 4,050 kWp</div>
+                <div class="spec-item"><strong>🔋 BESS:</strong> 1,700 kWh / 400 kW</div>
+                <div class="spec-item"><strong>🛵 Motos:</strong> 30 sockets, 5.19 kWh</div>
+                <div class="spec-item"><strong>🚕 Taxis:</strong> 8 sockets, 7.40 kWh</div>
+                <div class="spec-item"><strong>⏰ Horario EV:</strong> 9h-22h</div>
+                <div class="spec-item"><strong>📍 Ubicación:</strong> Iquitos, Perú</div>
+            </div>
+        </div>
+        
+        <!-- CONTENT -->
+        <div class="content">
+            <!-- SECCIÓN 1: BALANCE INTEGRADO -->
+            <div class="section">
+                <h2 class="section-title">Balance Energético Integrado</h2>
+                
+                <div class="data-source">
+                    <strong>📊 Fuentes de Datos Reales (OE2 2024):</strong>
+                    <ul>
+                        <li><strong>Generación Solar:</strong> data/oe2/Generacionsolar/pv_generation_citylearn2024.csv (2,887 kW pico)</li>
+                        <li><strong>Demanda Mall:</strong> data/oe2/demandamallkwh/demandamallhorakwh.csv (0-2,763 kW)</li>
+                        <li><strong>Demanda EV:</strong> data/oe2/chargers/chargers_ev_ano_2024_v3.csv (281.2 kW base × perfil horario)</li>
+                    </ul>
+                </div>
+                
+                <div class="grid">
+                    <div class="chart-container">
+                        <div class="chart-title">00 - Balance Integrado Completo</div>
+                        <img src="00_BALANCE_INTEGRADO_COMPLETO.png" alt="Balance Integrado" class="chart-image">
+                        <div class="description">
+                            Vista completa del balance energético mostrando: generación solar (dorado), 
+                            BESS carga/descarga (verde/naranja), demanda mall (azul), demanda EV (motos/taxis verde claro/oscuro), 
+                            importación red (rojo), con perfil horario 9-22h (ramp-up, punta 18-20h, descenso 21-22h).
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-title">00.5 - Flujo Energético Integrado</div>
+                        <img src="00.5_FLUJO_ENERGETICO_INTEGRADO.png" alt="Flujo Energético" class="chart-image">
+                        <div class="description">
+                            Diagrama Sankey mostrando el flujo de energía: origen (PV, BESS, Grid) 
+                            hacia destino (Demanda Total, Pérdidas). Porcentajes de distribución energética.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SECCIÓN 2: ANÁLISIS TEMPORAL -->
+            <div class="section">
+                <h2 class="section-title">Análisis Temporal</h2>
+                
+                <div class="grid">
+                    <div class="chart-container">
+                        <div class="chart-title">00A - Integral de 7 Días</div>
+                        <img src="00_INTEGRAL_todas_curvas.png" alt="7 Días" class="chart-image">
+                        <div class="description">
+                            Perfil continuo de 7 primeros días del año: generación solar, 
+                            demanda mall, demanda EV, y estado de SOC del BESS.
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-title">01 - Balance de 5 Días</div>
+                        <img src="01_balance_5dias.png" alt="Balance 5 días" class="chart-image">
+                        <div class="description">
+                            Zoom en 5 días representativos mostrando: generación PV máxima, 
+                            BESS operación (carga 6-17h, descarga 17-22h), demanda diaria.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid">
+                    <div class="chart-container">
+                        <div class="chart-title">02 - Balance Diario</div>
+                        <img src="02_balance_diario.png" alt="Balance diario" class="chart-image">
+                        <div class="description">
+                            Perfil de un día representativo (Día 180) mostrando todas las componentes: 
+                            curva de generación solar, BESS operación completa, demanda mall y EV, grid.
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-title">03 - Distribución de Fuentes</div>
+                        <img src="03_distribucion_fuentes.png" alt="Distribución" class="chart-image">
+                        <div class="description">
+                            Porcentajes de contribución anual: PV directo, BESS, importación grid. 
+                            Total energía = 23,124 GWh/año (PV 8,293 + Mall 12,369 + EV 2,463 GWh).
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SECCIÓN 3: ANÁLISIS PROFUNDO -->
+            <div class="section">
+                <h2 class="section-title">Análisis BESS y Operación</h2>
+                
+                <div class="grid">
+                    <div class="chart-container">
+                        <div class="chart-title">04 - Cascada Energética</div>
+                        <img src="04_cascada_energetica.png" alt="Cascada" class="chart-image">
+                        <div class="description">
+                            Diagrama de cascada mostrando cómo fluye la energía: PV generada → Demanda directa → BESS carga → Grid.
+                            Muestra el destino de cada kWh durante el año.
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-title">05 - SOC del BESS</div>
+                        <img src="05_bess_soc.png" alt="SOC BESS" class="chart-image">
+                        <div class="description">
+                            State of Charge del BESS 1,700 kWh: rango operativo 20-100%,
+                            carga máxima ~6-17h (PV abundante), descarga máxima 17-22h (punta EV+Mall).
+                            Restricción: SOC mín 20% (22h cada día).
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SECCIÓN 4: SOSTENIBILIDAD -->
+            <div class="section">
+                <h2 class="section-title">Sostenibilidad y Utilización</h2>
+                
+                <div class="grid">
+                    <div class="chart-container">
+                        <div class="chart-title">06 - Emisiones CO₂</div>
+                        <img src="06_emisiones_co2.png" alt="CO2" class="chart-image">
+                        <div class="description">
+                            Huella de carbono anual por tipo de demanda:
+                            Grid importación (0.4521 kg CO₂/kWh en Iquitos por generación térmica).
+                            Reducción CO₂: energía solar evita ~3,750 toneladas CO₂/año vs. grid 100%.
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-title">07 - Utilización PV</div>
+                        <img src="07_utilizacion_pv.png" alt="Utilización PV" class="chart-image">
+                        <div class="description">
+                            Destino de la energía solar generada: consumo directo (PV→Demanda), 
+                            almacenamiento (PV→BESS), y desperdicio (PV no utilizado).
+                            Objetivo operativo: maximizar auto-consumo solar.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- INFO -->
+            <div class="info-box">
+                <strong>📌 Actualización Reciente (2026-02-19 18:21):</strong><br><br>
+                ✅ <strong>Generación Solar:</strong> Integrada desde pv_generation_citylearn2024.csv 
+                (2,887 kW pico, perfil 6h-17h)<br><br>
+                ✅ <strong>Demanda EV Realista:</strong> Perfil horario 9-22h con ramp-up (9-17h), 
+                punta máxima (18-20h), descenso (21-22h)<br><br>
+                ✅ <strong>Especificaciones Motos/Taxis:</strong> Motos 5.19 kWh (+79%), 
+                Taxis 7.40 kWh (+57%) desde datos reales<br><br>
+                ✅ <strong>Demanda Mall Variable:</strong> 0-2,763 kW desde demandamallhorakwh.csv 
+                (no constante)
+            </div>
+        </div>
+        
+        <!-- FOOTER -->
+        <div class="footer">
+            <p>pvBESScar © 2026 | Proyecto de Optimización EV Iquitos | Datos OE2 2024</p>
+            <p>Ubicación: D:\diseñopvbesscar\outputs\ | Generado: 2026-02-19</p>
+        </div>
+    </div>
+</body>
+</html>
