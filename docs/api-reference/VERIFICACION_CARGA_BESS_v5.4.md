@@ -43,7 +43,7 @@ FASE 2: CARGA SOLAR (6h-11h) ← GÉNESIS SOLAR
    Hora 11h: PV=450 kW → BESS carga 198 kW │ SOC: 100%→100%   │ ✅ LIMITA CARGA
 
    📍 PUNTO CLAVE: En hora 11h, SOC alcanza 100%, por eso:
-      - Capacidad para cargar = (100% - 100%) × 1700 kWh = 0 kWh disponible
+      - Capacidad para cargar = (100% - 100%) × 2000 kWh = 0 kWh disponible
       - max_charge = min(400 kW, 450 kW, 0/0.903) = min(..., 0) = 0 kW
       - BESS NO carga más, pero el PV puede alimentar EV + MALL directamente
 
@@ -84,7 +84,7 @@ FASE 5: DESCARGA CRÍTICA (18h-21h)
    Hora 21h: PV=0 kW,   EV=140 kW  │ BESS descarga 143.6 kW │ SOC: 62.0%→53.5%
 
    📍 PUNTO CLAVE: Descarga calendarizada:
-      soc_available = (current_soc - soc_min) × 1700 kWh
+      soc_available = (current_soc - soc_min) × 2000 kWh
       max_discharge = min(power_kw=400, deficit/eff, soc_available)
 
 FASE 6: CIERRE OPERATIVO (22h)
@@ -137,10 +137,10 @@ if current_soc < soc_max and pv_h > 0:
 **Ejemplo Hora 10h:**
 ```
 current_soc = 88.6% (antes de carga)
-soc_headroom = (1.0 - 0.886) × 1700 = 193.8 kWh
-max_charge = min(400, 400, 193.8/0.903) = min(400, 400, 214.6) = 400 kW
+soc_headroom = (1.0 - 0.886) × 2000 = 228 kWh
+max_charge = min(400, 400, 228/0.903) = min(400, 400, 252.6) = 400 kW
 actual_charge = 400 × 0.903 = 361.2 kWh
-new_soc = 0.886 + 361.2/1700 = 0.886 + 0.2125 = 1.098 → Cap at 1.0 (100%)
+new_soc = 0.886 + 361.2/2000 = 0.886 + 0.1806 = 1.0666 → Cap at 1.0 (100%)
 ```
 
 ✅ **CORRECTO:** Carga desde 50 kW (hora 6) hasta alcanzar 100% (hora 11)
@@ -196,10 +196,10 @@ pv_to_ev = min(50, 140) = 50 kW
 ev_deficit = 140 - 50 = 90 kW (falta)
 
 current_soc = 100% (antes de descarga)
-soc_available = (1.0 - 0.20) × 1700 = 1360 kWh
-max_discharge = min(400, 90/0.903, 1360) = min(400, 99.7, 1360) = 99.7 kW
+soc_available = (1.0 - 0.20) × 2000 = 1600 kWh
+max_discharge = min(400, 90/0.903, 1600) = min(400, 99.7, 1600) = 99.7 kW
 actual_discharge = 99.7 × 0.903 = 90.0 kW
-new_soc = 1.0 - 99.7/1700 = 1.0 - 0.0587 = 0.941 (94.1%)
+new_soc = 1.0 - 99.7/2000 = 1.0 - 0.04985 = 0.950 (95.0%)
 ```
 
 ✅ **CORRECTO:** Descarga exactamente la diferencia (90 kW) para cubrir 100% EV
@@ -221,8 +221,8 @@ PV = 0 kW, EV = 200 kW, MALL = 220 kW
 pv_to_ev = 0
 ev_deficit = 200 kW
 
-soc_available = (0.946 - 0.20) × 1700 = 1269 kWh
-max_discharge = min(400, 200/0.903, 1269) = min(400, 221.5, 1269) = 400 kW
+soc_available = (0.946 - 0.20) × 2000 = 1492 kWh
+max_discharge = min(400, 200/0.903, 1492) = min(400, 221.5, 1492) = 400 kW
 
 Pero espera... La lógica descarga 205.2 kW, no 400 kW
 ¿Por qué? Porque:

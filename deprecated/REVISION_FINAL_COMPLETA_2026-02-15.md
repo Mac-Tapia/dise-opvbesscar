@@ -8,7 +8,7 @@
 
 | Sección | Estado | Notas |
 |---------|--------|-------|
-| Constantes Iquitos v5.5 | ✅ OK | BESS 1700 kWh, CO2 0.4521 kg/kWh |
+| Constantes Iquitos v5.5 | ✅ OK | BESS 2000 kWh, CO2 0.4521 kg/kWh |
 | Capacidades Baterías | ✅ CORREGIDO | Motos 4.6↔4.6, Mototaxis 7.4↔7.4 |
 | Potencia Cargadores | ✅ CORREGIDO | Ambos 7.4 kW (Modo 3 @ 32A 230V) |
 | Normalización | ✅ VALIDADO | MALL 3000, CHARGER 3.7, SOLAR 4100 |
@@ -25,7 +25,7 @@
 
 ```python
 CO2_FACTOR_IQUITOS: float = 0.4521        # ✅ Grid termico aislado (chargers.py ref)
-BESS_CAPACITY_KWH: float = 1700.0         # ✅ OE2 v5.5 (specs del proyecto)
+BESS_CAPACITY_KWH: float = 2000.0         # ✅ OE2 v5.5 (specs del proyecto)
 BESS_MAX_POWER_KW: float = 400.0          # ✅ 400 kW discharge (OE2 v5.5)
 HOURS_PER_YEAR: int = 8760                # ✅ 365 × 24 horas
 
@@ -479,7 +479,7 @@ class SACConfig:
 - [x] ✅ Chargers.py v5.2 vs train_sac
 - [x] ✅ Dataset BESS vs demandas utilizadas
 - [x] ✅ CO2 Factor Iquitos (0.4521)
-- [x] ✅ BESS Capacity (1700 kWh)
+- [x] ✅ BESS Capacity (2000 kWh)
 - [x] ✅ BESS Power (400 kW)
 
 ---
@@ -517,7 +517,7 @@ class SACConfig:
    - demandamallhorakwh.csv (6 cols, 8760h)
 
 3. **configs/default.yaml** - OE2 v5.5 Authority
-   - BESS: 1700 kWh, 400 kW
+   - BESS: 2000 kWh, 400 kW
    - Infrastructure specs
 
 4. **train_sac_multiobjetivo.py** - Código auditado (5,070 líneas)
