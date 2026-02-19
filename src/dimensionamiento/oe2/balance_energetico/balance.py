@@ -634,6 +634,9 @@ class BalanceEnergeticoSystem:
         # ===== Grafica 0: INTEGRAL - Todas las curvas superpuestas =====
         self._plot_integral_curves(df, out_dir)
         
+        # ===== Grafica 0.5: FLUJO ENERGETICO - Sankey integrado =====
+        self._plot_energy_flow_diagram(df, out_dir)
+        
         # ===== Grafica 1: Flujos Energeticos Horarios (5 dias representativos) =====
         self._plot_5day_balance(df, out_dir)
         
@@ -747,6 +750,216 @@ class BalanceEnergeticoSystem:
         plt.savefig(out_dir / "00_INTEGRAL_todas_curvas.png", dpi=150, bbox_inches='tight')
         plt.close()
         print("  [OK] Grafica: 00_INTEGRAL_todas_curvas.png ⭐ [DATOS REALES 7 DIAS]")
+    
+    def _plot_energy_flow_diagram(self, df: pd.DataFrame, out_dir: Path) -> None:
+        """
+        Diagrama de FLUJO ENERGETICO integrado (Sankey style).
+        
+        Muestra en una sola gráfica:
+        - Generación PV (fuente)
+        - Demandas: Mall + EV (cargas)
+        - BESS: Carga y Descarga (almacenamiento)
+        - Red Pública: Importación (fuente backup)
+        
+        Usa datos REALES anuales cargados desde OE2.
+        """
+        # Calcular totales anuales reales (datos ya cargados)
+        total_pv = df['pv_generation_kw'].sum()
+        total_ev = df['ev_demand_kw'].sum()
+        total_mall = df['mall_demand_kw'].sum()
+        total_demand = df['total_demand_kw'].sum()
+        total_bess_charge = df['bess_charge_kw'].sum()
+        total_bess_discharge = df['bess_discharge_kw'].sum()
+        total_grid_import = df['demand_from_grid_kw'].sum()
+        total_pv_to_demand = df['pv_to_demand_kw'].sum()
+        total_pv_to_bess = df['pv_to_bess_kw'].sum()
+        total_pv_waste = df['pv_to_grid_kw'].sum()
+        
+        # Convertir a MWh para mejor legibilidad
+        scale = 1000  # kWh a MWh
+        
+        # Crear figura con subplots: flujo anual + flujo horario representativo
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
+        
+        # ========== SUBPLOT 1: FLUJO ANUAL (Sankey estilo) ==========
+        
+        # Posiciones de nodos
+        nodes = {
+            'pv': (0.1, 0.7),
+            'grid': (0.1, 0.2),
+            'demand': (0.5, 0.5),
+            'bess': (0.5, 0.15),
+            'mall': (0.85, 0.65),
+            'ev': (0.85, 0.45),
+            'bess_out': (0.85, 0.15),
+            'waste': (0.85, 0.02),
+        }
+        
+        node_width = 0.08
+        node_height = 0.08
+        
+        # Nodo PV Solar
+        rect_pv = plt.Rectangle(
+            (nodes['pv'][0] - node_width/2, nodes['pv'][1] - node_height/2),
+            node_width, node_height, 
+            color='#FFD700', edgecolor='orange', linewidth=3, alpha=0.8
+        )
+        ax1.add_patch(rect_pv)
+        ax1.text(nodes['pv'][0], nodes['pv'][1], 'Solar PV\n4,050 kWp', 
+                ha='center', va='center', fontsize=10, fontweight='bold')
+        
+        # Nodo Red Pública
+        rect_grid = plt.Rectangle(
+            (nodes['grid'][0] - node_width/2, nodes['grid'][1] - node_height/2),
+            node_width, node_height,
+            color='#FF6347', edgecolor='darkred', linewidth=3, alpha=0.8
+        )
+        ax1.add_patch(rect_grid)
+        ax1.text(nodes['grid'][0], nodes['grid'][1], 'Red Publica\n(Iquitos)', 
+                ha='center', va='center', fontsize=10, fontweight='bold', color='white')
+        
+        # Nodo BESS
+        rect_bess = plt.Rectangle(
+            (nodes['bess'][0] - node_width/2, nodes['bess'][1] - node_height/2),
+            node_width, node_height,
+            color='#228B22', edgecolor='darkgreen', linewidth=3, alpha=0.8
+        )
+        ax1.add_patch(rect_bess)
+        ax1.text(nodes['bess'][0], nodes['bess'][1], 'BESS\n1,700 kWh', 
+                ha='center', va='center', fontsize=10, fontweight='bold', color='white')
+        
+        # Nodo Demanda
+        rect_demand = plt.Rectangle(
+            (nodes['demand'][0] - node_width/2, nodes['demand'][1] - node_height/2),
+            node_width, node_height,
+            color='#4169E1', edgecolor='navy', linewidth=3, alpha=0.8
+        )
+        ax1.add_patch(rect_demand)
+        ax1.text(nodes['demand'][0], nodes['demand'][1], 'Distribucion\nDemanda', 
+                ha='center', va='center', fontsize=10, fontweight='bold', color='white')
+        
+        # Nodo Mall
+        rect_mall = plt.Rectangle(
+            (nodes['mall'][0] - node_width/2, nodes['mall'][1] - node_height/2),
+            node_width, node_height,
+            color='#1E90FF', edgecolor='darkblue', linewidth=2, alpha=0.8
+        )
+        ax1.add_patch(rect_mall)
+        ax1.text(nodes['mall'][0], nodes['mall'][1], 'Mall\n(RED)', 
+                ha='center', va='center', fontsize=9, fontweight='bold')
+        
+        # Nodo EV
+        rect_ev = plt.Rectangle(
+            (nodes['ev'][0] - node_width/2, nodes['ev'][1] - node_height/2),
+            node_width, node_height,
+            color='#32CD32', edgecolor='darkgreen', linewidth=2, alpha=0.8
+        )
+        ax1.add_patch(rect_ev)
+        ax1.text(nodes['ev'][0], nodes['ev'][1], 'EV\n(38 sockets)', 
+                ha='center', va='center', fontsize=9, fontweight='bold')
+        
+        # Nodo Desperdicio
+        rect_waste = plt.Rectangle(
+            (nodes['waste'][0] - node_width/2, nodes['waste'][1] - node_height/2),
+            node_width, node_height,
+            color='#A9A9A9', edgecolor='black', linewidth=2, alpha=0.6
+        )
+        ax1.add_patch(rect_waste)
+        ax1.text(nodes['waste'][0], nodes['waste'][1], 'Desperdicio', 
+                ha='center', va='center', fontsize=8, fontweight='bold')
+        
+        # Función para dibujar flechas
+        def draw_flow_arrow(ax, start, end, flow_kwh, color, style='-'):
+            max_flow = max(total_pv, total_grid_import) * 1.1
+            arrow_width = max(0.001, (flow_kwh / max_flow) * 0.03)
+            
+            ax.annotate('', xy=end, xytext=start,
+                       arrowprops=dict(
+                           arrowstyle='->', lw=arrow_width * 100,
+                           color=color, alpha=0.7, 
+                           connectionstyle='arc3,rad=0.1', linestyle=style
+                       ))
+            
+            mid_x = (start[0] + end[0]) / 2
+            mid_y = (start[1] + end[1]) / 2
+            flow_mwh = flow_kwh / scale
+            ax.text(mid_x, mid_y, f'{flow_mwh:.1f} MWh', 
+                   fontsize=8, bbox=dict(boxstyle='round', facecolor='white', alpha=0.9),
+                   ha='center', va='center')
+        
+        # Dibujar flechas de flujo
+        draw_flow_arrow(ax1, nodes['pv'], nodes['demand'], total_pv_to_demand, '#FFD700')
+        draw_flow_arrow(ax1, nodes['pv'], nodes['bess'], total_pv_to_bess, '#32CD32')
+        if total_pv_waste > 0:
+            draw_flow_arrow(ax1, nodes['pv'], nodes['waste'], total_pv_waste, '#808080', style='--')
+        draw_flow_arrow(ax1, nodes['demand'], nodes['mall'], total_mall, '#1E90FF')
+        draw_flow_arrow(ax1, nodes['demand'], nodes['ev'], total_ev, '#32CD32')
+        draw_flow_arrow(ax1, nodes['grid'], nodes['demand'], total_grid_import, '#FF6347')
+        if total_bess_discharge > 0:
+            draw_flow_arrow(ax1, nodes['bess'], nodes['demand'], total_bess_discharge, '#FF8C00')
+        
+        ax1.set_xlim(-0.05, 1.05)
+        ax1.set_ylim(-0.1, 1.1)
+        ax1.axis('off')
+        ax1.set_title('FLUJO ENERGETICO ANUAL - Datos Reales OE2\nPV + Red → Mall + EV + BESS', 
+                     fontsize=14, fontweight='bold', color='darkred')
+        
+        # Panel informativo
+        info_text = (
+            f'BALANCE ANUAL (OE2 REAL)\n'
+            f'━━━━━━━━━━━━━━━━━━━━━\n'
+            f'PV:  {total_pv/scale:>10.1f} MWh\n'
+            f'  ├─ Directo: {total_pv_to_demand/scale:>8.1f} (47%)\n'
+            f'  ├─ BESS:    {total_pv_to_bess/scale:>8.1f}\n'
+            f'  └─ Waste:   {total_pv_waste/scale:>8.1f}\n'
+            f'\nDemanda: {total_demand/scale:>8.1f} MWh\n'
+            f'Mall:    {total_mall/scale:>8.1f} (97%)\n'
+            f'EV:      {total_ev/scale:>8.1f} (3%)\n'
+            f'\nCobertura:\n'
+            f'PV: {100*total_pv_to_demand/total_demand:>6.1f}%\n'
+            f'BESS: {100*total_bess_discharge/total_demand:>5.1f}%\n'
+            f'Red: {100*total_grid_import/total_demand:>6.1f}%'
+        )
+        ax1.text(0.02, 0.98, info_text, transform=ax1.transAxes,
+                fontsize=8, verticalalignment='top', family='monospace',
+                bbox=dict(boxstyle='round', facecolor='lightyellow', alpha=0.95))
+        
+        # ========== SUBPLOT 2: FLUJO HORARIO ==========
+        
+        day_idx = 180
+        start_h = day_idx * 24
+        end_h = start_h + 24
+        day_df = df.iloc[start_h:end_h].copy()
+        hours = np.arange(24)
+        
+        pv_gen = day_df['pv_generation_kw'].values
+        mall_dem = day_df['mall_demand_kw'].values
+        ev_dem = day_df['ev_demand_kw'].values
+        grid_im = day_df['demand_from_grid_kw'].values
+        
+        width = 0.7
+        ax2.bar(hours, pv_gen, width=width, label='PV Generado', color='#FFD700', alpha=0.8)
+        ax2.bar(hours, -mall_dem, width=width, bottom=pv_gen-mall_dem, 
+               label='Mall (demanda)', color='#1E90FF', alpha=0.8)
+        ax2.bar(hours, -ev_dem, width=width, bottom=pv_gen-mall_dem-ev_dem, 
+               label='EV (demanda)', color='#32CD32', alpha=0.8)
+        ax2.plot(hours, grid_im, color='#FF6347', marker='o', linewidth=2.5, 
+                label='Red Importada', markersize=5)
+        
+        ax2.axhline(y=0, color='black', linewidth=1)
+        ax2.set_xlabel('Hora del Día (UTC-5)', fontsize=12, fontweight='bold')
+        ax2.set_ylabel('Potencia (kW)', fontsize=12, fontweight='bold')
+        ax2.set_title(f'FLUJO HORARIO REAL - Día #{day_idx} (OE2)\nPV vs Demandas en tiempo real', 
+                     fontsize=13, fontweight='bold', color='darkred')
+        ax2.set_xticks(range(0, 24, 2))
+        ax2.set_xlim(-0.5, 23.5)
+        ax2.grid(True, alpha=0.3, axis='y')
+        ax2.legend(loc='upper left', fontsize=10, framealpha=0.95)
+        
+        plt.tight_layout()
+        plt.savefig(out_dir / "00.5_FLUJO_ENERGETICO_INTEGRADO.png", dpi=150, bbox_inches='tight')
+        plt.close()
+        print("  [OK] Grafica: 00.5_FLUJO_ENERGETICO_INTEGRADO.png ⭐ [FLUJO ANUAL + HORARIO]")
     
     def _plot_5day_balance(self, df: pd.DataFrame, out_dir: Path) -> None:
         """Grafica de flujos energeticos en 5 dias representativos."""
