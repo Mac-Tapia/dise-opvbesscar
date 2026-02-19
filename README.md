@@ -936,9 +936,14 @@ cat agents_comparison_summary.csv     # 23 metrics per agent
 ## 📚 Generated Documentation (2026-02-19)
 
 ### OE3 Analysis Documents
-- **[OE3_FINAL_RESULTS.md](outputs/comparative_analysis/OE3_FINAL_RESULTS.md)** - Complete OE3 evaluation & deployment guide (9 KB)
+- **[OE3_FINAL_RESULTS.md](outputs/comparative_analysis/OE3_FINAL_RESULTS.md)** ⭐ **USE THIS** - Complete OE3 evaluation & deployment guide (9 KB)
+  - Full year evaluation (8,760 timesteps)
+  - All agents fully trained (A2C/SAC/PPO)
+  - Correct annualized CO₂ metrics
 - **[OE2_OE3_COMPARISON.md](outputs/comparative_analysis/OE2_OE3_COMPARISON.md)** - Architecture & phase differences (14.8 KB)
 - **[oe3_evaluation_report.md](outputs/comparative_analysis/oe3_evaluation_report.md)** - Detailed metrics (2.4 KB)
+
+> ⚠️ **DEPRECATED:** Ignore `outputs/complete_agent_analysis/COMPLETE_COMPARISON_REPORT.md` (17/02 - only 10 episodes, SAC not trained). Use **OE3_FINAL_RESULTS.md** (19/02 - complete evaluation). Details: see [ANALISIS_DISCREPANCIAS_REPORTES_2026-02-19.md](ANALISIS_DISCREPANCIAS_REPORTES_2026-02-19.md)
 
 ### OE3 Comparison Graphs
 ```
