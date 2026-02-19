@@ -139,7 +139,63 @@ python scripts/train/train_a2c.py --episodes 5 --log-dir outputs/continued_train
 
 ---
 
-## 📂 Estructura del Proyecto
+## � Visualizaciones Interactivas (OE2 - Balance Energético Real)
+
+**Gráficas del Balance Energético con Datos Reales 2024:**
+
+### 🔗 **[VER GRÁFICAS INTERACTIVAS EN HTML](outputs/index.html)**
+
+Galería interactiva con 10 gráficas completas mostrando:
+
+#### Gráfics Principales:
+1. **[00_BALANCE_INTEGRADO_COMPLETO.png](outputs/00_BALANCE_INTEGRADO_COMPLETO.png)** ⭐
+   - Generación solar real (6h-17h, pico 2,887 kW)
+   - Demanda EV con perfil horario 9-22h (ramp-up 9-17h, punta 18-20h, descenso 21-22h)
+   - Motos: 5.19 kWh/vehículo, 30 sockets (78.9%) | Taxis: 7.40 kWh/vehículo, 8 sockets (21.1%)
+   - Demanda Mall variable (0-2,763 kW)
+   - BESS operación (carga 6-17h, descarga 17-22h)
+   - Importación desde grid público
+
+2. **[00_INTEGRAL_todas_curvas.png](outputs/00_INTEGRAL_todas_curvas.png)** - Perfil 7 días continuo
+3. **[00.5_FLUJO_ENERGETICO_INTEGRADO.png](outputs/00.5_FLUJO_ENERGETICO_INTEGRADO.png)** - Diagrama Sankey
+4. **[01_balance_5dias.png](outputs/01_balance_5dias.png)** - Balance 5 días representativos
+5. **[02_balance_diario.png](outputs/02_balance_diario.png)** - Perfil diario detallado
+6. **[03_distribucion_fuentes.png](outputs/03_distribucion_fuentes.png)** - Distribución energética anual
+7. **[04_cascada_energetica.png](outputs/04_cascada_energetica.png)** - Cascada de energía
+8. **[05_bess_soc.png](outputs/05_bess_soc.png)** - State of Charge BESS (20-100%)
+9. **[06_emisiones_co2.png](outputs/06_emisiones_co2.png)** - Huella de carbono (kg CO₂/año)
+10. **[07_utilizacion_pv.png](outputs/07_utilizacion_pv.png)** - Utilización de energía solar
+
+### 📈 Datos Reales Integrados (2024):
+- **Generación Solar:** `data/oe2/Generacionsolar/pv_generation_citylearn2024.csv`
+  - Pico: 2,887 kW (vs. 4,050 kWp nominal)
+  - Perfil: 6h-17h (equinoxio Iquitos)
+  - Media anual: 946.6 kW
+
+- **Demanda Mall:** `data/oe2/demandamallkwh/demandamallhorakwh.csv`
+  - Variable: 0 a 2,763 kW
+  - Media: 1,411.95 kW
+  - Total anual: 12,368,653 kWh
+
+- **Demanda EV (Motos + Taxis):** `data/oe2/chargers/chargers_ev_ano_2024_v3.csv`
+  - Base: 281.2 kW × perfil horario 9-22h
+  - Motos: 5,328 kWh/día (78.9%), Taxis: 1,421 kWh/día (21.1%)
+  - Total anual: 2,463,312 kWh
+
+### 🔧 Abrir Gráficas Localmente:
+```bash
+# En Windows
+start outputs/index.html
+
+# En Linux/Mac
+open outputs/index.html
+# o
+firefox outputs/index.html
+```
+
+---
+
+## �📂 Estructura del Proyecto
 
 ```
 pvbesscar/
