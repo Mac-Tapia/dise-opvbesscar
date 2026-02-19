@@ -4,7 +4,7 @@ Balance Energetico del Sistema Electrico de Iquitos v5.4.
 Modulo para cargar todos los datasets de OE2 e integrarlos en un analisis 
 completo del balance energetico, considerando:
 - Generacion solar PV (4,050 kWp) - data/oe2/Generacionsolar/pv_generation_citylearn2024_clean.csv
-  * 8,292,514 kWh/ano | 11 columnas (con OSINERGMIN + CO₂ indirecto)
+  * 8,292,514 kWh/ano | 11 columnas (con OSINERGMIN + CO2 indirecto)
 - Demanda del mall (RED PUBLICA) - data/oe2/demandamallkwh/demandamallhorakwh.csv
   * 12,403,168 kWh/ano (33,981 kWh/dia, 2,763 kW pico)
 - Demanda EV (38 tomas v5.2) - data/oe2/chargers/chargers_ev_ano_2024_v3.csv
@@ -13,18 +13,18 @@ completo del balance energetico, considerando:
 - Almacenamiento BESS - data/oe2/bess/bess_ano_2024.csv
   * 1,700 kWh capacidad / 400 kW potencia (v5.4)
 
-REDUCCION DE CO₂ v5.3:
+REDUCCION DE CO2 v5.3:
 ---------------------------------------------------------------------------
 1. INDIRECTA (Solar desplaza diesel para Mall+EV):
-   - CO₂ evitado: 3,749 ton/ano (factor 0.4521 kg/kWh)
+   - CO2 evitado: 3,749 ton/ano (factor 0.4521 kg/kWh)
    - Desglose: Mall 67% (2,499 ton) + EV 33% (1,250 ton)
    
 2. DIRECTA (Cambio combustible gasolina -> electrico):
-   - CO₂ evitado: 357 ton/ano
-   - Motos: 0.87 kg CO₂/kWh neto (312 ton)
-   - Mototaxis: 0.47 kg CO₂/kWh neto (44 ton)
+   - CO2 evitado: 357 ton/ano
+   - Motos: 0.87 kg CO2/kWh neto (312 ton)
+   - Mototaxis: 0.47 kg CO2/kWh neto (44 ton)
    
-TOTAL CO₂ EVITADO: 4,106 ton/ano
+TOTAL CO2 EVITADO: 4,106 ton/ano
 ---------------------------------------------------------------------------
 
 TARIFAS OSINERGMIN (Electro Oriente S.A. - Iquitos):
@@ -59,7 +59,7 @@ class BalanceEnergeticoConfig:
     - EV: data/oe2/chargers/chargers_ev_ano_2024_v3.csv
       * 565,875 kWh/ano | 38 sockets v5.2 | 9h-22h
       * Columnas socket: socket_XXX_{charger_power_kw, charging_power_kw, soc_*, active, vehicle_*}
-      * Columnas CO₂: reduccion_directa_co2_kg, co2_reduccion_motos_kg, co2_reduccion_mototaxis_kg
+      * Columnas CO2: reduccion_directa_co2_kg, co2_reduccion_motos_kg, co2_reduccion_mototaxis_kg
       * Columnas OSINERGMIN: is_hora_punta, tarifa_aplicada_soles, costo_carga_ev_soles
       * Alias CityLearn: ev_demand_kwh, ev_energia_total_kwh
     """
@@ -81,7 +81,7 @@ class BalanceEnergeticoConfig:
     pv_capacity_kwp: float = 4050.0  # kW pico solar (genera 8,292,514 kWh/ano)
     
     # Restriccion de demanda pico (limite RED PUBLICA Iquitos)
-    demand_peak_limit_kw: float = 2000.0  # kW maximo (BESS intenta reducir)
+    demand_peak_limit_kw: float = 1900.0  # kW maximo (threshold peak shaving BESS - bess.py:969)
     
     # BESS - valores calculados dinamicamente por bess.py
     # Estos son valores por defecto, se actualizan con load_bess_sizing()
@@ -268,16 +268,16 @@ class BalanceEnergeticoSystem:
         3. PV excedente -> BESS (carga a 100%)
         
         PRIORIDADES DE DESCARGA (cuando deficit o exceso demanda):
-        1. Limitar picos: Si (EV+Mall) > 2000 kW, BESS descarga para reducir
+        1. Limitar picos: Si (EV+Mall) > 1900 kW, BESS descarga para reducir (threshold real v5.5)
         2. Cubrir deficit EV: Si PV < EV y SOC > 20%
         3. Cubrir deficit Mall: Si PV < Mall y SOC > 20%
         
         RESTRICCIONES:
         - SOC operacional: 20%-100% (DoD: 80%)
         - Horario operativo: 6h-22h (fuera: sin carga/descarga BESS)
-        - Limite demanda recomendado: 2000 kW (Red Publica)
+        - Limite demanda recomendado: 1900 kW (Red Publica - threshold peak shaving BESS)
         
-        NOTA: Actual potencia (400 kW) reduce pero no elimina picos > 2000 kW
+        NOTA: Actual potencia (400 kW) reduce pero no elimina picos > 1900 kW
               Para limitar completamente se necesitaria ~900 kW de potencia
         
         Returns:
@@ -378,7 +378,7 @@ class BalanceEnergeticoSystem:
         # ANALISIS DE PICOS (5.4): Verificar control de demanda maxima
         peak_limit = self.config.demand_peak_limit_kw
         demand_after_bess = demand_deficit - bess_to_demand  # Demanda que debe cubrir red
-        peak_exceeded = np.maximum(total_demand - peak_limit, 0)  # Exceso sobre 2000 kW
+        peak_exceeded = np.maximum(total_demand - peak_limit, 0)  # Exceso sobre 1900 kW (threshold real v5.5)
         
         # DataFrame de balance
         df_balance = pd.DataFrame({
@@ -398,7 +398,7 @@ class BalanceEnergeticoSystem:
             'bess_to_demand_kw': bess_to_demand,
             'demand_from_grid_kw': demand_from_grid,
             'bess_soc_percent': bess_soc,
-            'peak_exceeded_above_2000kw': peak_exceeded,  # Exceso sobre limite
+            'peak_exceeded_above_1900kw': peak_exceeded,  # Exceso sobre limite 1900 kW (v5.5)
             'co2_from_grid_kg': co2_from_grid,
         })
         
@@ -505,7 +505,7 @@ class BalanceEnergeticoSystem:
         # Cobertura Red (% importado de red publica)
         grid_coverage = total_grid_import / max(total_demand_kwh, 1e-6)
         
-        # Emisiones CO₂
+        # Emisiones CO2
         total_co2_kg = df['co2_from_grid_kg'].sum()
         co2_per_kwh = total_co2_kg / max(total_demand_kwh, 1e-6)
         co2_avoided_kg = total_pv_to_demand * self.config.co2_intensity_kg_per_kwh
@@ -516,7 +516,7 @@ class BalanceEnergeticoSystem:
         
         # ANALISIS DE PICOS v5.4
         peak_limit_kw = self.config.demand_peak_limit_kw
-        peak_exceeded_total = df['peak_exceeded_above_2000kw'].sum()  # kWh sobre limite
+        peak_exceeded_total = df['peak_exceeded_above_1900kw'].sum()  # kWh sobre limite 1900 kW (v5.5)
         peak_hours = (df['total_demand_kw'] > peak_limit_kw).sum()
         peak_hours_avg = df[df['total_demand_kw'] > peak_limit_kw]['total_demand_kw'].mean() if peak_hours > 0 else 0
         peak_max = df['total_demand_kw'].max()
@@ -589,25 +589,25 @@ class BalanceEnergeticoSystem:
         print(f"  ---------------------------------")
         print(f"  AUTOSUFICIENCIA:        {m['self_sufficiency_percent']:>12.1f} %")
         
-        print("\n☀️ EFICIENCIA PV (4,050 kWp instalado):")
+        print("\n[PV] EFICIENCIA PV (4,050 kWp instalado):")
         print(f"  PV Utilizado:           {m['total_pv_to_demand_kwh']:>12,.0f} kWh/ano")
         print(f"  PV Desperdiciado:       {m['total_pv_waste_kwh']:>12,.0f} kWh/ano")
         print(f"  Utilizacion:            {m['pv_utilization_percent']:>12.1f} %")
         
-        print("\n🌍 EMISIONES CO₂ (Red @ 0.4521 kg CO₂/kWh - Iquitos termica):")
-        print(f"  CO₂ por Red:            {m['total_co2_kg']:>12,.0f} kg CO₂/ano")
-        print(f"  CO₂ Evitado (PV):       {m['total_pv_to_demand_kwh'] * 0.4521:>12,.0f} kg CO₂/ano")
-        print(f"  Intensidad Sistema:     {m['co2_per_kwh']:>12.4f} kg CO₂/kWh")
+        print("\n[CO2] EMISIONES CO2 (Red @ 0.4521 kg CO2/kWh - Iquitos termica):")
+        print(f"  CO2 por Red:            {m['total_co2_kg']:>12,.0f} kg CO2/ano")
+        print(f"  CO2 Evitado (PV):       {m['total_pv_to_demand_kwh'] * 0.4521:>12,.0f} kg CO2/ano")
+        print(f"  Intensidad Sistema:     {m['co2_per_kwh']:>12.4f} kg CO2/kWh")
         
-        print("\n⚡ CONTROL DE DEMANDA PICO (Limite RED PUBLICA: 2000 kW):")
+        print("\n[POWER] CONTROL DE DEMANDA PICO (Threshold peak shaving BESS: 1900 kW - bess.py:969):")
         print(f"  Pico maximo observado:  {m['peak_max_kw']:>12.1f} kW")
-        print(f"  Horas sobre 2000 kW:    {m['peak_hours_above_limit']:>12.0f} horas/ano ({m['peak_hours_above_limit']/87.6:.1f}%)")
+        print(f"  Horas sobre 1900 kW:    {m['peak_hours_above_limit']:>12.0f} horas/ano ({m['peak_hours_above_limit']/87.6:.1f}%)")
         print(f"  Promedio en esas horas: {m['peak_hours_avg_kw']:>12.1f} kW")
         print(f"  Exceso total anual:     {m['peak_exceeded_total_kwh']:>12,.0f} kWh/ano")
         print(f"  BESS reduce picos:      {m['peak_reduction_by_bess_kwh']:>12,.0f} kWh/ano")
         print(f"  Ahorro por reduccion:   S/. {m['peak_reduction_savings_soles']:>10,.0f}/ano")
         print(f"\n  NOTA: BESS (400 kW) reduce pero no elimina picos. Para limitarlos")
-        print(f"        completamente a 2000 kW se requeriria ~900 kW de potencia.")
+        print(f"        completamente a 1900 kW se requeriria ~900 kW de potencia.")
         print(f"        Ahorro calculado a tarifa: HP S/.0.45/kWh (18h-23h) + HFP S/.0.28/kWh (resto)")
         
         print("\n" + "="*70 + "\n")
@@ -741,7 +741,7 @@ class BalanceEnergeticoSystem:
             f'PV Solar:        4,050 kWp (8.29 GWh/ano) | BESS: {bess_cap:.0f} kWh / {bess_pow:.0f} kW\n'
             f'Demanda Total:   12.78 GWh/ano (Mall: 12.37 GWh + EV: 408 MWh)\n'
             f'Cobertura:       PV 47.3% + BESS 1.5% + Red 51.2%\n'
-            f'CO₂ Grid:        0.4521 kg CO₂/kWh (generacion termica aislada)'
+            f'CO2 Grid:        0.4521 kg CO2/kWh (generacion termica aislada)'
         )
         fig.text(0.02, 0.00, textstr, fontsize=9, family='monospace',
                 bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
@@ -749,7 +749,7 @@ class BalanceEnergeticoSystem:
         plt.tight_layout(rect=[0, 0.06, 1, 1])
         plt.savefig(out_dir / "00_INTEGRAL_todas_curvas.png", dpi=150, bbox_inches='tight')
         plt.close()
-        print("  [OK] Grafica: 00_INTEGRAL_todas_curvas.png ⭐ [DATOS REALES 7 DIAS]")
+        print("  [OK] Grafica: 00_INTEGRAL_todas_curvas.png  [DATOS REALES 7 DIAS]")
     
     def _plot_energy_flow_diagram(self, df: pd.DataFrame, out_dir: Path) -> None:
         """
@@ -760,7 +760,7 @@ class BalanceEnergeticoSystem:
         - BESS DESCARGA (17h-22h): Cubre 100% déficit EV + peak shaving Mall
         
         Muestra en una sola gráfica:
-        - Generación PV (fuente) → distribuida a BESS + EV + Mall
+        - Generación PV (fuente) -> distribuida a BESS + EV + Mall
         - BESS 2 Estados: CARGA (verde) vs DESCARGA (naranja)
         - Demandas: Mall + EV (cargas)
         - Red Pública: Importación backup
@@ -788,8 +788,13 @@ class BalanceEnergeticoSystem:
         # Convertir a MWh para mejor legibilidad
         scale = 1000  # kWh a MWh
         
-        # Crear figura con subplots: flujo anual + flujo horario representativo
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(22, 11))
+        # Crear figura con 3 subplots: flujo anual (izq), flujos horarios (superior der), SOC (inferior der)
+        fig = plt.figure(figsize=(24, 13))
+        gs = fig.add_gridspec(2, 2, width_ratios=[1, 1], height_ratios=[1, 0.7], hspace=0.35, wspace=0.25)
+        
+        ax1 = fig.add_subplot(gs[0:2, 0])  # Subplot anual (izquierda, ocupa ambas filas)
+        ax2 = fig.add_subplot(gs[0, 1])     # Subplot hogarios flujos (arriba derecha)
+        ax3 = fig.add_subplot(gs[1, 1])     # Subplot SOC del BESS (abajo derecha)
         
         # ========== SUBPLOT 1: FLUJO ANUAL (Sankey estilo) ==========
         # DISEÑO BASADO EN LÓGICA REAL BESS v5.4:
@@ -833,7 +838,7 @@ class BalanceEnergeticoSystem:
                 ha='center', va='center', fontsize=10, fontweight='bold', color='white')
         
         # ========== NODO BESS CARGA (Recibe PV) - VERDE ==========
-        # Estado: 6h-22h | Acción: PV → BESS (carga hasta 100%)
+        # Estado: 6h-22h | Acción: PV -> BESS (carga hasta 100%)
         rect_bess_carga = plt.Rectangle(
             (nodes['bess_carga'][0] - node_width/2, nodes['bess_carga'][1] - node_height/2),
             node_width, node_height,
@@ -846,7 +851,7 @@ class BalanceEnergeticoSystem:
                 ha='center', va='center', fontsize=7, color='white')
         
         # ========== NODO BESS DESCARGA (Entrega a EV) - NARANJA ==========
-        # Estado: 17h-22h | Acción: BESS → EV (100% cobertura deficit)
+        # Estado: 17h-22h | Acción: BESS -> EV (100% cobertura deficit)
         rect_bess_desca = plt.Rectangle(
             (nodes['bess_descarga'][0] - node_width/2, nodes['bess_descarga'][1] - node_height/2),
             node_width, node_height,
@@ -912,15 +917,15 @@ class BalanceEnergeticoSystem:
         
         # ========== FLUJOS DE ENERGÍA BASADOS EN LÓGICA REAL BESS v5.4 ==========
         
-        # PV → BESS CARGA (6h+: Prioridad 1 - Carga hasta 100%)
+        # PV -> BESS CARGA (6h+: Prioridad 1 - Carga hasta 100%)
         draw_flow_arrow(ax1, nodes['pv'], nodes['bess_carga'], total_pv_to_bess, 
-                       '#228B22', label_text='PV→BESS⬆\nCARGA')
+                       '#228B22', label_text='PV->BESS⬆\nCARGA')
         
-        # PV → EV DIRECTO (Paralelo con carga BESS: Prioridad 2)
+        # PV -> EV DIRECTO (Paralelo con carga BESS: Prioridad 2)
         draw_flow_arrow(ax1, nodes['pv'], nodes['ev'], total_pv_to_demand, 
-                       '#FFD700', label_text='PV→EV\nDIRECTO')
+                       '#FFD700', label_text='PV->EV\nDIRECTO')
         
-        # PV → MALL DIRECTO (Excedente: Prioridad 3)
+        # PV -> MALL DIRECTO (Excedente: Prioridad 3)
         if 'pv_to_mall_kw' in df.columns:
             pv_to_mall_direct = df['pv_to_mall_kw'].sum()
         else:
@@ -928,7 +933,7 @@ class BalanceEnergeticoSystem:
         
         if pv_to_mall_direct > 0:
             draw_flow_arrow(ax1, nodes['pv'], nodes['mall'], pv_to_mall_direct, 
-                           '#FFD700', style='--', label_text='PV→MALL\nEXCED.')
+                           '#FFD700', style='--', label_text='PV->MALL\nEXCED.')
         
         # Desperdicio PV (Curtailment)
         if total_pv_waste > 0:
@@ -937,37 +942,37 @@ class BalanceEnergeticoSystem:
         
         # ========== BESS DESCARGA (17h-22h: 100% EV + Peak Shaving MALL) ==========
         
-        # BESS → EV DESCARGA (Cubre 100% déficit EV en punto crítico 17h-22h)
+        # BESS -> EV DESCARGA (Cubre 100% déficit EV en punto crítico 17h-22h)
         if 'bess_to_demand_kw' in df.columns:
             bess_to_ev_annual = df['bess_to_demand_kw'].sum()
         else:
             bess_to_ev_annual = max(total_bess_discharge * 0.85, 0)  # ~85% a EV, ~15% peak shaving MALL
         
         draw_flow_arrow(ax1, nodes['bess_descarga'], nodes['ev'], bess_to_ev_annual, 
-                       '#FF8C00', label_text='BESS→EV⬇\n100% COBER.')
+                       '#FF8C00', label_text='BESS->EV⬇\n100% COBER.')
         
-        # Red Pública → EV (Solo lo que PV + BESS no cubre)
+        # Red Pública -> EV (Solo lo que PV + BESS no cubre)
         grid_to_ev = max(total_ev - total_pv_to_demand - bess_to_ev_annual, 0)
         if grid_to_ev > 0:
             draw_flow_arrow(ax1, nodes['grid'], nodes['ev'], grid_to_ev, 
-                           '#FF6347', label_text='RED→EV\nBACKUP')
+                           '#FF6347', label_text='RED->EV\nBACKUP')
         
-        # Red Pública → MALL (Principal fuente del Mall)
+        # Red Pública -> MALL (Principal fuente del Mall)
         grid_to_mall = max(total_mall - pv_to_mall_direct, 0)
         if grid_to_mall > 0:
             draw_flow_arrow(ax1, nodes['grid'], nodes['mall'], grid_to_mall, 
-                           '#FF6347', label_text='RED→MALL')
+                           '#FF6347', label_text='RED->MALL')
         
         ax1.set_xlim(-0.05, 1.05)
         ax1.set_ylim(-0.1, 1.1)
         ax1.axis('off')
-        ax1.set_title('FLUJO ENERGETICO ANUAL - Datos Reales OE2\nPV + Red → Mall + EV | BESS: CARGA (verde) vs DESCARGA (naranja)', 
+        ax1.set_title('FLUJO ENERGETICO ANUAL - Datos Reales OE2\nPV + Red -> Mall + EV | BESS: CARGA (verde) vs DESCARGA (naranja)', 
                      fontsize=13, fontweight='bold', color='darkred')
         
         # ========== LEYENDA DE ESTADOS BESS ==========
         # Mostrar claramente los DOS estados del BESS
         bess_legend = (
-            '█ BESS↑CARGA(6h+): PV → BESS hasta 100%  |  █ BESS↓DESCARGA(17h-22h): BESS → EV (100% cobertura deficit)'
+            '█ BESS↑CARGA(6h+): PV -> BESS hasta 100%  |  █ BESS↓DESCARGA(17h-22h): BESS -> EV (100% cobertura deficit)'
         )
         ax1.text(0.5, 0.97, bess_legend, transform=ax1.transAxes, fontsize=8, ha='center',
                 bbox=dict(boxstyle='round', facecolor='#E8F4F8', alpha=0.95, pad=0.6),
@@ -986,7 +991,7 @@ class BalanceEnergeticoSystem:
             f'  TOTAL:           {total_demand/scale:>10.1f} MWh\n'
             f'\n🔶 BESS OPERACIÓN (1,700 kWh, 400 kW):\n'
             f'  ⬆ CARGA (6h+):   {total_pv_to_bess/scale:>10.1f} MWh PV\n'
-            f'  ⬇ DESCARGA:      {total_bess_discharge/scale:>10.1f} MWh → EV\n'
+            f'  ⬇ DESCARGA:      {total_bess_discharge/scale:>10.1f} MWh -> EV\n'
             f'  Eficiencia 95%:  {total_pv_to_bess/scale*0.95:>10.1f} MWh disponible\n'
             f'\n✅ COBERTURA DEMANDA:\n'
             f'  PV Directo:      {100*total_pv_to_demand/total_demand:>10.1f}%\n'
@@ -1001,9 +1006,17 @@ class BalanceEnergeticoSystem:
                 fontsize=7.5, verticalalignment='top', family='monospace',
                 bbox=dict(boxstyle='round', facecolor='#FFFACD', alpha=0.95, pad=0.8))
         
-        # ========== SUBPLOT 2: FLUJO HORARIO ==========
+        # ========== SUBPLOT 2: FLUJO OPERATIVO REAL - DÍA REPRESENTATIVO ==========
+        # Mostrar lógica OPERATIVA real:
+        # - Demanda del mall (RED) + demanda de EV
+        # - Generación PV disponible
+        # - BESS cargando (6h+) vs descargando (17h-22h)
+        # - Límite de picos (2000 kW)
+        # - Importación de red
+        # - SOC del BESS (gráfica inferior)
         
-        day_idx = 180
+        ax2_top = ax2
+        day_idx = 180  # Día representativo (año 360 días -> día 180 = equilibrio)
         start_h = day_idx * 24
         end_h = start_h + 24
         day_df = df.iloc[start_h:end_h].copy()
@@ -1012,31 +1025,88 @@ class BalanceEnergeticoSystem:
         pv_gen = day_df['pv_generation_kw'].values
         mall_dem = day_df['mall_demand_kw'].values
         ev_dem = day_df['ev_demand_kw'].values
+        bess_charge = day_df['bess_charge_kw'].values
+        bess_discharge = day_df['bess_discharge_kw'].values
+        bess_soc = day_df['bess_soc_percent'].values
         grid_im = day_df['demand_from_grid_kw'].values
+        total_dem = day_df['total_demand_kw'].values
+        peak_limit = 1900  # kW - threshold real peak shaving BESS (bess.py:969)
         
-        width = 0.7
-        ax2.bar(hours, pv_gen, width=width, label='PV Generado', color='#FFD700', alpha=0.8)
-        ax2.bar(hours, -mall_dem, width=width, bottom=pv_gen-mall_dem, 
-               label='Mall (demanda)', color='#1E90FF', alpha=0.8)
-        ax2.bar(hours, -ev_dem, width=width, bottom=pv_gen-mall_dem-ev_dem, 
-               label='EV (demanda)', color='#32CD32', alpha=0.8)
-        ax2.plot(hours, grid_im, color='#FF6347', marker='o', linewidth=2.5, 
-                label='Red Importada', markersize=5)
+        # ========== GRÁFICA SUPERIOR: FLUJOS ENERGÉTICOS POR HORA ==========
+        width = 0.6
         
-        ax2.axhline(y=0, color='black', linewidth=1)
-        ax2.set_xlabel('Hora del Día (UTC-5)', fontsize=12, fontweight='bold')
-        ax2.set_ylabel('Potencia (kW)', fontsize=12, fontweight='bold')
-        ax2.set_title(f'FLUJO HORARIO REAL - Día #{day_idx} (OE2)\nPV vs Demandas en tiempo real', 
-                     fontsize=13, fontweight='bold', color='darkred')
-        ax2.set_xticks(range(0, 24, 2))
-        ax2.set_xlim(-0.5, 23.5)
-        ax2.grid(True, alpha=0.3, axis='y')
-        ax2.legend(loc='upper left', fontsize=10, framealpha=0.95)
+        # PV generado (barras doradas)
+        ax2_top.bar(hours, pv_gen, width=width, label='PV Generado', 
+                   color='#FFD700', alpha=0.85, edgecolor='orange', linewidth=0.5)
+        
+        # Demandas acumuladas (apiladas)
+        # MALL (azul)
+        ax2_top.bar(hours, mall_dem, width=width, label='Demanda Mall (RED)', 
+                   color='#1E90FF', alpha=0.75, edgecolor='darkblue', linewidth=0.5)
+        
+        # EV (verde lima)
+        ax2_top.bar(hours, ev_dem, width=width, bottom=mall_dem, label='Demanda EV (38 sockets)',
+                   color='#32CD32', alpha=0.75, edgecolor='darkgreen', linewidth=0.5)
+        
+        # BESS descarga (naranja) - mostrada como parte de cobertura
+        bottom_ev = mall_dem + ev_dem
+        bess_visible = np.minimum(bess_discharge, 300)  # Limitar altura para visualización
+        ax2_top.bar(hours, bess_visible, width=width, bottom=bottom_ev, 
+                   label='BESS Descargando ⬇', color='#FF8C00', alpha=0.8, 
+                   edgecolor='darkorange', linewidth=0.5)
+        
+        # Línea de demanda TOTAL (necesario conocer para ver picos)
+        ax2_top.plot(hours, total_dem, color='#DC143C', marker='o', linewidth=2.5,
+                    markersize=6, label='Demanda Total (M+E)', zorder=5)
+        
+        # Línea de importación de RED
+        ax2_top.plot(hours, grid_im, color='#FF6347', marker='s', linewidth=2,
+                    markersize=5, label='Red Importada (deficit)', linestyle='--', zorder=4)
+        
+        # LÍNEA DE LÍMITE DE PICOS (1900 kW - threshold real peak shaving BESS v5.5)
+        ax2_top.axhline(y=peak_limit, color='red', linewidth=2.5, linestyle='--', 
+                       label=f'Threshold Peak Shaving (1,900 kW)', alpha=0.7, zorder=3)
+        
+        # Sombreado de zona de riesgo (>1900 kW - threshold peak shaving v5.5)
+        above_limit = total_dem > peak_limit
+        ax2_top.fill_between(hours, peak_limit, total_dem, where=above_limit, 
+                           color='#FF6347', alpha=0.2, label='Exceso sobre límite')
+        
+        # Línea BESS carga (verde oscuro, arriba)
+        bess_charge_normalized = bess_charge / 10  # Normalizar para visualización
+        ax2_top.plot(hours, bess_charge_normalized + total_dem.max() + 200, 
+                    color='#228B22', marker='^', linewidth=2, markersize=6,
+                    label='BESS Cargando ⬆ (6h+) - escala reducida', zorder=4)
+        
+        ax2_top.axhline(y=0, color='black', linewidth=0.8)
+        ax2_top.set_xlabel('Hora del Día (UTC-5 Lima)', fontsize=11, fontweight='bold')
+        ax2_top.set_ylabel('Potencia (kW)', fontsize=11, fontweight='bold')
+        ax2_top.set_title(f'DÍA REPRESENTATIVO #{day_idx}: Lógica OPERATIVA REAL BESS vs Demandas vs Límite de Picos\n' +
+                         f'PV->BESS(verde carga 6h+) | BESS->EV(naranja descarga 17h-22h) | Threshold Peak Shaving (1,900 kW)',
+                         fontsize=12, fontweight='bold', color='darkred')
+        ax2_top.set_xticks(range(0, 24, 2))
+        ax2_top.set_xlim(-0.8, 23.8)
+        ax2_top.grid(True, alpha=0.25, axis='y', linestyle=':')
+        ax2_top.legend(loc='upper left', fontsize=8.5, framealpha=0.96, ncol=2)
+        
+        # Anotaciones de puntos críticos
+        # Punto de inicio carga BESS (6h)
+        ax2_top.annotate('Inicio carga\nBESS (6h)', xy=(6, total_dem[6]), xytext=(6, total_dem[6]+400),
+                        arrowprops=dict(arrowstyle='->', color='#228B22', lw=1.5),
+                        fontsize=8, ha='center', color='#228B22', fontweight='bold',
+                        bbox=dict(boxstyle='round', facecolor='#E8F4E8', alpha=0.8))
+        
+        # Punto crítico 17h (inicio descarga)
+        ax2_top.annotate('Punto crítico\n17h (deficit PV)',
+                        xy=(17, total_dem[17]), xytext=(17, total_dem[17]-600),
+                        arrowprops=dict(arrowstyle='->', color='#FF8C00', lw=1.5),
+                        fontsize=8, ha='center', color='#FF8C00', fontweight='bold',
+                        bbox=dict(boxstyle='round', facecolor='#FFE4D0', alpha=0.8))
         
         plt.tight_layout()
         plt.savefig(out_dir / "00.5_FLUJO_ENERGETICO_INTEGRADO.png", dpi=150, bbox_inches='tight')
         plt.close()
-        print("  [OK] Grafica: 00.5_FLUJO_ENERGETICO_INTEGRADO.png ⭐ [FLUJO ANUAL + HORARIO]")
+        print("  [OK] Grafica: 00.5_FLUJO_ENERGETICO_INTEGRADO.png  [FLUJO ANUAL + HORARIO]")
     
     def _plot_5day_balance(self, df: pd.DataFrame, out_dir: Path) -> None:
         """Grafica de flujos energeticos en 5 dias representativos."""
