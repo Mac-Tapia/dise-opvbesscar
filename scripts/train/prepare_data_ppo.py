@@ -23,7 +23,7 @@ def main():
     datasets = {
         'Solar': 'data/oe2/Generacionsolar/pv_generation_citylearn2024.csv',
         'Chargers': 'data/oe2/chargers/chargers_ev_ano_2024_v3.csv',
-        'BESS': 'data/processed/citylearn/iquitos_ev_mall/bess_ano_2024.csv',
+        'BESS': 'data/oe2/bess/bess_ano_2024.csv',
         'Mall': 'data/oe2/demandamallkwh/demandamallhorakwh.csv',
     }
     

@@ -2,8 +2,8 @@ sac:
   name: Soft Actor-Critic
   description: Off-policy actor-critic agent with entropy regularization
   training:
-    episodes: 3
-    total_timesteps: 26280
+    episodes: 10
+    total_timesteps: 87600
     learning_rate: 5e-4
     buffer_size: 400000
     batch_size: 128
@@ -27,11 +27,11 @@ sac:
     critic_loss_scale: 0.1
     q_target_clip: 10.0
   multi_objective_weights:
-    co2: 0.5
-    solar: 0.2
-    ev_satisfaction: 0.15
-    grid_stability: 0.1
-    cost: 0.05
+    co2: 0.35
+    cost: 0.10
+    solar: 0.20
+    ev_satisfaction: 0.30
+    grid_stability: 0.05
   tariffs_osinergmin_usd_per_kwh:
     generation_solar: 0.1
     storage_bess: 0.06

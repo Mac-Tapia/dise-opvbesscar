@@ -39,11 +39,11 @@
     "description": "v5.5 OPTIMIZED (2026-02-18): BESS 2,000 kWh @ 400 kW, 38 sockets (30 motos + 8 taxis), 4,050 kWp PV, 876 MWh/año MALL"
   },
   "rewards": {
-    "co2_weight": 0.5,
-    "solar_weight": 0.2,
-    "cost_weight": 0.05,
-    "ev_satisfaction_weight": 0.15,
-    "grid_stability_weight": 0.1,
+    "co2_weight": 0.35,
+    "cost_weight": 0.10,
+    "ev_satisfaction_weight": 0.30,
+    "grid_stability_weight": 0.05,
+    "solar_weight": 0.20,
     "primary_objective": "CO2 minimization (50%) + Solar utilization (20%)",
     "description": "Multi-objective 2026-02-18 v5.5: CO2 priority (0.50) → Solar (0.20) → Stability (0.10) → EV (0.15) → Cost (0.05)",
     "dispatch_hierarchy_priorities": {

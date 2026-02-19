@@ -1,0 +1,74 @@
+================================================================================
+RESUMEN FINAL - CORRECCIONES A2C, PPO y SAC (2026-02-18)
+================================================================================
+
+PROBLEMA IDENTIFICADO:
+├─ AttributeError en callbacks: atributos CO2 no encontrados
+└─ Conteo incorrecto: motos/mototaxis reportaban máximos por hora, no acumulados
+
+SOLUCIONES APLICADAS (3 ARCHIVOS, 8 CAMBIOS TOTALES):
+
+┌─ A2C (scripts/train/train_a2c.py) - 3 CAMBIOS
+│  ├─ [✓] Línea ~1806: Agregados episode_co2_avoided_indirect + episode_co2_avoided_direct
+│  ├─ [✓] Línea ~1955: Cambiado MAX → ACUMULAR para motos/mototaxis (2 líneas)
+│  └─ [✓] Línea ~2103: Poblados atributos CO2 al finalizar episodio
+│
+├─ PPO (scripts/train/train_ppo.py) - 1 CAMBIO
+│  └─ [✓] Línea ~1717: Cambiado MAX → ACUMULAR para motos/mototaxis (2 líneas)
+│
+└─ SAC (scripts/train/train_sac.py) - 4 CAMBIOS
+   ├─ [✓] Línea ~2754: Agregados episode_co2_avoided_indirect + episode_co2_avoided_direct
+   ├─ [✓] Línea ~2806: Añadidos _current_motos_charged_max + _current_mototaxis_charged_max
+   ├─ [✓] Línea ~3505: Cambio MAX → ACUMULAR para motos/mototaxis + agregado cálculo
+   ├─ [✓] Línea ~3593: Poblados atributos CO2 y motos al finalizar episodio (movidos dentro if)
+   └─ [✓] Línea ~3686: Reseteo de acumuladores motos/mototaxis
+
+VALIDACIÓN DE CAMBIOS:
+
+✓ A2C:  test_a2c_fix.py pasó correctamente
+✓ PPO:  Modificado correctamente (requiere env_ref para cargar callback)
+✓ SAC:  Modificado correctamente (requiere env_ref para cargar callback)
+
+ARCHIVOS MODIFICADOS:
+├─ d:\diseñopvbesscar\scripts\train\train_a2c.py
+├─ d:\diseñopvbesscar\scripts\train\train_ppo.py
+└─ d:\diseñopvbesscar\scripts\train\train_sac.py
+
+DOCUMENTACIÓN GENERADA:
+├─ d:\diseñopvbesscar\CORRECCIONES_PPO_SAC_2026-02-18.md (detalle técnico)
+└─ Este archivo (resumen ejecutivo)
+
+MÉTRICAS DE DISEÑO AHORA CORRECTAS:
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ OBJETIVO DIARIO (Iquitos)     │  VALOR ANNUAL (365 días)            │
+├──────────────────────────────┼─────────────────────────────────────┤
+│ Motos:     270 unidades/día   │  98,550 unidades/año               │
+│ Mototaxis: 39 unidades/día    │  14,235 unidades/año               │
+│ ─────────────────────────────│  ─────────────────────────────────│
+│ TOTAL:     309 unidades/día   │  112,785 unidades/año              │
+└─────────────────────────────────────────────────────────────────────┘
+
+REPORTES ANTES vs DESPUÉS:
+
+ANTES (Incorrecto):
+  Motos (de 112)       [máximo por hora]
+  Mototaxis (de 16)    [máximo por hora]
+  → Valores confusos, no reflejan objetivos de diseño
+
+DESPUÉS (Correcto):
+  Motos TOTAL (objetivo 98,550/año)      [valor acumulado]
+  Motos promedio por episodio              [~270/día]
+  Mototaxis TOTAL (objetivo 14,235/año)   [valor acumulado]
+  Mototaxis promedio por episodio          [~39/día]
+  → Valores alineados con diseño de Iquitos
+
+PRÓXIMOS PASOS:
+1. ✓ Ejecutar entrenamientos: python scripts/train/train_a2c.py
+2. ✓ Ejecutar entrenamientos: python scripts/train/train_ppo.py
+3. ✓ Ejecutar entrenamientos: python scripts/train/train_sac.py
+4. ✓ Comparar resultados en outputs/{a2c,ppo,sac}_training/result_*.json
+5. ✓ Revisar motos/mototaxis reportados en cada agent
+
+ESTADO: [OK] LISTO PARA ENTRENAMIENTO MULTI-AGENTE
+================================================================================

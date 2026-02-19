@@ -297,7 +297,7 @@ oe3:
       checkpoint_freq_steps: 200
       device: cuda # ✅ FIXED: cpu→cuda (usar GPU para entrenamiento real)
       entropy_coef: 0.001
-      episodes: 3  # Test rápido
+      episodes: 10  # 10 episodios = 87,600 timesteps
       gamma: 0.99 # Paper standard
       gae_lambda: 0.95 # Paper: GAE
       learning_rate: 0.0001 # 1e-4 (can match PPO, on-policy simple)
@@ -324,7 +324,7 @@ oe3:
       batch_size: 120 # ✓ FIXED: 256→120 (perfect divisor: 8760/120=73 mini-batches, no truncation)
       checkpoint_freq_steps: 500
       device: cuda
-      episodes: 3  # Test rápido
+      episodes: 10  # 10 episodios = 87,600 timesteps
       ent_coef: 0.01 # ↑ OPTIMIZED: 0.001→0.01 (exploration incentive)
       gamma: 0.99 # Paper standard
       gae_lambda: 0.98 # ↑ OPTIMIZED: 0.95→0.98 (better long-term advantages)

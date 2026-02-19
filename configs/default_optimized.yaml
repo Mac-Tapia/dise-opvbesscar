@@ -189,7 +189,7 @@ oe3:
       checkpoint_freq_steps: 200
       device: cuda
       entropy_coef: 0.015
-      episodes: 5
+      episodes: 10
       gamma: 0.99
       gae_lambda: 0.95
       learning_rate: 7e-4
@@ -197,18 +197,18 @@ oe3:
       log_interval: 250
       max_grad_norm: 0.75
       multi_objective_weights:
-        co2: 0.5
-        cost: 0.05
-        ev: 0.15
-        grid: 0.1
-        solar: 0.2
+        co2: 0.35
+        cost: 0.10
+        ev: 0.30
+        grid: 0.05
+        solar: 0.20
       n_steps: 8
       progress_interval_episodes: 1
       resume_checkpoints: false
       reward_smooth_lambda: 0.1
       reward_scale: 1.2
       save_final: true
-      timesteps: 43800
+      timesteps: 87600
       use_rms_prop: true
       vf_coef: 0.5
       normalize_advantage: true
@@ -222,7 +222,7 @@ oe3:
       batch_size: 512
       checkpoint_freq_steps: 200
       device: cuda
-      episodes: 5
+      episodes: 10
       ent_coef: 0.002
       gamma: 0.99
       gae_lambda: 0.98
@@ -232,11 +232,11 @@ oe3:
       log_interval: 250
       max_grad_norm: 0.5
       multi_objective_weights:
-        co2: 0.5
-        cost: 0.05
-        ev: 0.15
-        grid: 0.1
-        solar: 0.2
+        co2: 0.35
+        cost: 0.10
+        ev: 0.30
+        grid: 0.05
+        solar: 0.20
       n_epochs: 20
       n_steps: 8192
       progress_interval_episodes: 1
@@ -245,7 +245,7 @@ oe3:
       reward_scale: 1.0
       save_final: true
       target_kl: 0.003
-      timesteps: 43800
+      timesteps: 87600
       use_amp: true
       use_sde: false
       clip_range: 0.2
@@ -261,7 +261,7 @@ oe3:
       checkpoint_freq_steps: 200
       deterministic_eval: true
       device: cuda
-      episodes: 5
+      episodes: 10
       ent_coef_init: 0.2
       ent_coef_learned: true
       gradient_steps: 2048
@@ -271,11 +271,11 @@ oe3:
       learning_starts: 2000
       log_interval: 100
       multi_objective_weights:
-        co2: 0.5
-        cost: 0.05
-        ev: 0.15
-        grid: 0.1
-        solar: 0.2
+        co2: 0.35
+        cost: 0.10
+        ev: 0.30
+        grid: 0.05
+        solar: 0.20
       prefer_citylearn: false
       progress_interval_episodes: 1
       resume_checkpoints: false
@@ -287,7 +287,6 @@ oe3:
       train_freq: 1
       use_amp: true
       use_sde: true
-      entropy_coef_init: 0.1
   grid:
     carbon_intensity_kg_per_kwh: 0.4521
     tariff_usd_per_kwh: 0.28

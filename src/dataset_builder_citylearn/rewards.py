@@ -957,7 +957,8 @@ def create_iquitos_reward_weights(
         MultiObjectiveWeights configurado
     """
     # Version estandar (todos los casos ahora usan esto)
-    # ACTUALIZADO 2026-02-07: Pesos sincronizados con resultados validados
+    # ACTUALIZADO 2026-02-18: Sincronizado para comparacion justa entre SAC/PPO/A2C
+    # Opcion A: co2(0.35) + ev_satisfaction(0.30) + solar(0.20) + cost(0.10) + grid_stability(0.05)
     presets = {
         "balanced": MultiObjectiveWeights(co2=0.30, cost=0.25, solar=0.20, ev_satisfaction=0.10, ev_utilization=0.05, grid_stability=0.10),
         "co2_focus": MultiObjectiveWeights(co2=0.35, cost=0.10, solar=0.20, ev_satisfaction=0.30, ev_utilization=0.00, grid_stability=0.05),

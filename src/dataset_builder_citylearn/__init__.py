@@ -64,6 +64,7 @@ from .data_loader import (
     build_citylearn_dataset,
     save_citylearn_dataset,
     load_citylearn_dataset,
+    load_agent_dataset_mandatory,  # [NEW] Mandatory loader for agents
     # Constants
     BESS_CAPACITY_KWH,
     BESS_MAX_POWER_KW,
@@ -114,6 +115,7 @@ __all__ = [
     "build_citylearn_dataset",
     "save_citylearn_dataset",
     "load_citylearn_dataset",
+    "load_agent_dataset_mandatory",  # [NEW] Mandatory loader for agents (SAC/PPO/A2C)
     
     # ===== OE2 CONSTANTS =====
     "BESS_CAPACITY_KWH",
