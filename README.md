@@ -217,7 +217,29 @@ pvbesscar/
 977 TOTAL technical columns per 1-hour timestep
 ```
 
-### OE3 Evaluation Criteria (All Weighted & Validated)
+### ⚖️ Multi-Objective Reward Weights (Agent Training - v6.0, 2026-02-08)
+
+**Used in SAC/PPO/A2C Training (from `src/dataset_builder_citylearn/rewards.py`)**
+
+| Component | Weight | Priority | Description |
+|-----------|--------|----------|-------------|
+| **CO₂ Minimization** | 0.35 | PRIMARY | Grid import CO₂ (0.4521 kg/kWh) |
+| **EV Satisfaction** | 0.30 | SECONDARY | Vehicle charging completion |
+| **Solar Self-Consumption** | 0.20 | TERTIARY | PV direct usage vs grid |
+| **Cost Optimization** | 0.10 | QUATERNARY | Tariff-aware charging timing |
+| **Grid Stability** | 0.05 | QUINARY | Peak power ramping smoothness |
+| **TOTAL** | **1.00** | **NORMALIZED** | **Perfectly balanced** |
+
+**Reward Formula (A2C Empirical):**
+```
+Total = (0.35 × 0.6005) + (0.30 × 0.9876) + (0.20 × -0.3745) +
+        (0.10 × 0.7884) + (0.05 × 0.4845)
+      = 0.5346  (mean normalized reward)
+```
+
+---
+
+### OE3 Evaluation Criteria (Composite Agent Scoring)
 
 1. **CO2 Minimization** (Weight: 40%)
    - A2C = 6.3M kg/year ✅ (-88% vs baseline)
