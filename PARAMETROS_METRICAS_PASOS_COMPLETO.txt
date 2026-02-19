@@ -93,12 +93,12 @@ SOLAR GENERATION:
   Expected Annual Generation:      8,292,514 kWh
   Utilization Target:              65%
 
-ENERGY STORAGE (BESS v5.4):
+ENERGY STORAGE (BESS v5.8):
   Max Capacity:                    2000 kWh
   Operating Range:                 20-100% SOC (DoD 80%)
   Max Power Output:                400 kW
   Round-trip Efficiency:           95%
-  C-Rate:                          0.235 (400/1700)
+  C-Rate:                          0.200 (400/2000) ✅ CORRECTED
 
 EV CHARGING INFRASTRUCTURE:
   Number of Chargers:              19
