@@ -3134,11 +3134,11 @@ try:
                 try:
                     co2_indirecto_bess_kg = float(self.bess_metrics['co2_avoided'][h]) if 'co2_avoided' in self.bess_metrics else 0.0
                 except (KeyError, IndexError, TypeError):
-                    # Fallback: calcular con peak_shaving_factor (IGUAL A PPO)
-                    if mall_kw > 2000.0:
-                        peak_factor = 1.0 + (mall_kw - 2000.0) / max(1.0, mall_kw) * 0.5
+                    # Fallback: calcular con peak_shaving_factor (IGUAL A PPO) - v5.5: 1900 kW
+                    if mall_kw > 1900.0:
+                        peak_factor = 1.0 + (mall_kw - 1900.0) / max(1.0, mall_kw) * 0.5
                     else:
-                        peak_factor = 0.5 + (mall_kw / 2000.0) * 0.5
+                        peak_factor = 0.5 + (mall_kw / 1900.0) * 0.5
                     bess_discharge = max(0.0, bess_power_kw)
                     co2_indirecto_bess_kg = bess_discharge * peak_factor * CO2_FACTOR_IQUITOS if bess_discharge > 0 else 0.0
                 

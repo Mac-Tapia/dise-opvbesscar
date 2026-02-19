@@ -74,10 +74,10 @@ if BESS_PATH.exists():
 
 # ANÁLISIS DE PEAK SHAVING
 print("\n" + "="*80)
-print(" PEAK SHAVING: HORAS DONDE MALL > 2,100 kW (threshold optimal)")
+print(" PEAK SHAVING: HORAS DONDE MALL > 1,900 kW (threshold optimal v5.5)")
 print("="*80)
 
-peak_threshold_kw = 2100.0
+peak_threshold_kw = 1900.0
 hours_above_threshold = (mall_demand_kwh > peak_threshold_kw).sum()
 total_kwh_above_threshold = (mall_demand_kwh[mall_demand_kwh > peak_threshold_kw]).sum()
 max_demand_observed = mall_demand_kwh.max()
@@ -152,21 +152,21 @@ print(" CONCLUSIONES Y RECOMENDACIONES")
 print("="*80)
 print(f"""
 1. VALOR ÓPTIMO DE THRESHOLD:
-   - BESS.py: 2,100 kW (valor real usado para peak shaving)
-   - Balance.py: Debe actualizarse para usar 2,100 kW (NO 2,000 kW)
+   - BESS.py: 1,900 kW (valor real usado para peak shaving v5.5 bess.py:969)
+   - Balance.py: Ya actualizado a 1,900 kW
 
 2. DEMANDA MALL REAL:
    - Mínima: {mall_demand_kwh.min():.1f} kWh/h
    - Máxima: {mall_demand_kwh.max():.1f} kWh/h
-   - Horas con picos > 2,100 kW: {hours_above_threshold} h/año ({100*hours_above_threshold/8760:.1f}%)
+   - Horas con picos > 1,900 kW: {hours_above_threshold} h/año ({100*hours_above_threshold/8760:.1f}%)
 
 3. OPERACIÓN BESS:
    - CARGA (6h-17h): PV carga BESS a 400 kW hasta 100%
-   - DESCARGA (17h-22h): BESS descarga para cubrir EV + peak shaving MALL > 2,100 kW
+   - DESCARGA (17h-22h): BESS descarga para cubrir EV + peak shaving MALL > 1,900 kW
    - Prioridad: (1) EV 100%, (2) Peak shaving si SOC > 50%, (3) Reposo si SOC < 20%
 
-4. ACCIONES NECESARIAS EN CÓDIGO:
-   a) Cambiar en balance.py línea 84: 2000.0 → 2100.0
+4. ACCIONES COMPLETADAS:
+   a) Actualizado en balance.py línea 84: 2100.0 → 1900.0
    b) Actualizar gráficas para mostrar datos reales de MALL
    c) Visualizar claramente cuándo se activa peak shaving
    d) Mostrar interacción BESS ↔ demanda MALL en tiempo real
