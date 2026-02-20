@@ -1424,19 +1424,29 @@ class BalanceEnergeticoSystem:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
         
         # Gráfico 1: Pastel - Desglose de generación solar anual
-        pv_total = df['pv_kwh'].sum() if 'pv_kwh' in df.columns else 0
+        # Usar las columnas normalizadas del dataset
+        pv_total = df['pv_generation_kw'].sum() if 'pv_generation_kw' in df.columns else df['pv_kwh'].sum() if 'pv_kwh' in df.columns else 0
         
-        pv_to_ev = df['pv_to_ev_kwh'].sum() if 'pv_to_ev_kwh' in df.columns else 0
-        pv_to_bess = df['pv_to_bess_kwh'].sum() if 'pv_to_bess_kwh' in df.columns else 0
-        pv_to_mall = df['pv_to_mall_kwh'].sum() if 'pv_to_mall_kwh' in df.columns else 0
-        pv_to_grid = df['grid_export_kwh'].sum() if 'grid_export_kwh' in df.columns else 0
+        pv_to_ev = df['pv_to_ev_kw'].sum() if 'pv_to_ev_kw' in df.columns else df['pv_to_ev_kwh'].sum() if 'pv_to_ev_kwh' in df.columns else 0
+        pv_to_bess = df['pv_to_bess_kw'].sum() if 'pv_to_bess_kw' in df.columns else df['pv_to_bess_kwh'].sum() if 'pv_to_bess_kwh' in df.columns else 0
+        pv_to_mall = df['pv_to_mall_kw'].sum() if 'pv_to_mall_kw' in df.columns else df['pv_to_mall_kwh'].sum() if 'pv_to_mall_kwh' in df.columns else 0
+        pv_to_grid = df['grid_export_kw'].sum() if 'grid_export_kw' in df.columns else df['grid_export_kwh'].sum() if 'grid_export_kwh' in df.columns else 0
+        
+        # Protección contra división por cero
+        if pv_total > 0:
+            pv_to_ev_pct = pv_to_ev/pv_total*100
+            pv_to_bess_pct = pv_to_bess/pv_total*100
+            pv_to_mall_pct = pv_to_mall/pv_total*100
+            pv_to_grid_pct = pv_to_grid/pv_total*100
+        else:
+            pv_to_ev_pct = pv_to_bess_pct = pv_to_mall_pct = pv_to_grid_pct = 0
         
         sizes = [pv_to_ev, pv_to_bess, pv_to_mall, pv_to_grid]
         labels = [
-            f'EV\n{pv_to_ev:,.0f} kWh\n({pv_to_ev/pv_total*100:.1f}%)',
-            f'BESS\n{pv_to_bess:,.0f} kWh\n({pv_to_bess/pv_total*100:.1f}%)',
-            f'Mall\n{pv_to_mall:,.0f} kWh\n({pv_to_mall/pv_total*100:.1f}%)',
-            f'Grid Export\n{pv_to_grid:,.0f} kWh\n({pv_to_grid/pv_total*100:.1f}%)',
+            f'EV\n{pv_to_ev:,.0f} kWh\n({pv_to_ev_pct:.1f}%)',
+            f'BESS\n{pv_to_bess:,.0f} kWh\n({pv_to_bess_pct:.1f}%)',
+            f'Mall\n{pv_to_mall:,.0f} kWh\n({pv_to_mall_pct:.1f}%)',
+            f'Grid Export\n{pv_to_grid:,.0f} kWh\n({pv_to_grid_pct:.1f}%)',
         ]
         colors = ['#FFD700', '#32CD32', '#FF8C00', '#87CEEB']
         explode = (0.05, 0.05, 0.05, 0.1)  # Destacar exportación
@@ -1454,7 +1464,7 @@ class BalanceEnergeticoSystem:
         for month in range(12):
             month_filter = (df_temp['month'] == month)
             if month_filter.sum() > 0:
-                export = df_temp.loc[month_filter, 'grid_export_kwh'].sum() if 'grid_export_kwh' in df.columns else 0
+                export = df_temp.loc[month_filter, 'grid_export_kw'].sum() if 'grid_export_kw' in df.columns else df_temp.loc[month_filter, 'grid_export_kwh'].sum() if 'grid_export_kwh' in df.columns else 0
                 monthly_export.append(export)
         
         months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
