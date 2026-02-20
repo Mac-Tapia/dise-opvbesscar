@@ -983,156 +983,225 @@ def simulate_bess_ev_exclusive(
             continue
         
         # ====================================
-        # PRIORIDAD 1: PV -> BESS (CARGA PRIMERO)
-        # Ni bien el PV empieza a generar, carga el BESS
-        # Solo cargar si no estamos al 100% (mantiene una vez lleno)
-        # NUEVO v5.9: PROTECCIÓN HORARIA - Solo cargar BESS entre 6h-14h
-        # RAZON: En la tarde (15h+), el PV está bajando. No se debe cargar BESS con PV
-        #        residual de tarde. La carga debe ocurrir mientras haya PV CRECIENTE.
-        # OPTIMIZACIÓN v5.6.1: Maximizar carga BESS para máxima eficiencia global
+        # FASE 1 (6 AM - 9 AM): BESS CARGA PRIMERO
+        # EV no opera (abre carga a 9 AM)
+        # Prioridad: BESS 100% → MALL (excedente) → RED
         # ====================================
-        charge_window_start = 6
-        charge_window_end = 15  # 15h = 3 PM (cierre ventana de carga - punto crítico)
-        permite_cargar_bess = (hour_of_day >= charge_window_start and hour_of_day < charge_window_end)
-        
-        pv_remaining = pv_h
-        if current_soc < soc_max and pv_h > 0 and permite_cargar_bess:
-            # Capacidad disponible para carga BESS
-            soc_headroom = (soc_max - current_soc) * capacity_kwh
-            # max_charge = cuánto PV podemos usar para cargar BESS
-            max_charge = min(power_kw, pv_remaining, soc_headroom / eff_charge)
+        if hour_of_day < 9:
+            # EV NO OPERA EN FASE 1 (forzado a 0)
+            ev_h_phase1 = 0.0
             
-            if max_charge > 0:
-                bess_charge[h] = max_charge
-                # ENERGÍA REAL ACUMULADA EN BESS (con pérdidas de eficiencia)
-                energy_stored = max_charge * eff_charge
-                pv_to_bess[h] = energy_stored  # Registrar energía útil almacenada
-                current_soc += energy_stored / capacity_kwh
-                # GARANTÍA: No exceder SOC 100%
-                current_soc = min(current_soc, soc_max)
-                pv_remaining -= max_charge  # Consumo de PV (incluye pérdidas)
+            pv_remaining = pv_h
+            
+            # PRIORIDAD 1: BESS absorbe TODO el PV disponible
+            if current_soc < soc_max and pv_h > 0:
+                # Capacidad disponible para carga BESS
+                soc_headroom = (soc_max - current_soc) * capacity_kwh
+                # max_charge = cuánto PV podemos usar para cargar BESS (TODO)
+                max_charge = min(power_kw, pv_remaining, soc_headroom / eff_charge)
+                
+                if max_charge > 0:
+                    bess_charge[h] = max_charge
+                    # ENERGÍA REAL ACUMULADA EN BESS (con eficiencia)
+                    energy_stored = max_charge * eff_charge
+                    pv_to_bess[h] = energy_stored
+                    current_soc += energy_stored / capacity_kwh
+                    # GARANTÍA: No exceder SOC 100%
+                    current_soc = min(current_soc, soc_max)
+                    pv_remaining -= max_charge
+            
+            # PRIORIDAD 2: MALL recibe SOLO excedente después BESS
+            pv_direct_to_mall = min(pv_remaining, mall_h)
+            pv_to_mall[h] = pv_direct_to_mall
+            pv_remaining -= pv_direct_to_mall
+            mall_deficit = mall_h - pv_direct_to_mall
+            
+            # PRIORIDAD 3: RED (exportación)
+            grid_export[h] = max(pv_remaining, 0)
+            
+            # En FASE 1: EV = 0 (no opera)
+            pv_to_ev[h] = 0.0
+            ev_deficit = ev_h_phase1
+            grid_to_ev[h] = ev_h_phase1
+            grid_to_mall[h] = max(mall_deficit, 0)
         
         # ====================================
-        # PRIORIDAD 2: PV -> EV (EN PARALELO CON CARGA BESS)
-        # Mientras BESS se carga, PV TAMBIÉN atiende EV
-        # El mismo PV puede cargar BESS y alimentar EV simultaneamente
+        # FASE 2 (9 AM - DINÁMICO): EV MÁXIMA PRIORIDAD + BESS CARGA EN PARALELO
+        # Mientras BESS no está al 100%
+        # Prioridad: EV 100% → BESS EN PARALELO → MALL (excedente) → RED
         # ====================================
-        pv_direct_to_ev = min(pv_remaining, ev_h)
-        pv_to_ev[h] = pv_direct_to_ev
-        pv_remaining -= pv_direct_to_ev
-        ev_deficit = ev_h - pv_direct_to_ev
+        if hour_of_day >= 9 and current_soc < 0.99:  # FASE 2: mientras BESS < 100%
+            pv_remaining = pv_h
+            
+            # PRIORIDAD 1: EV MÁXIMA PRIORIDAD (recibe 100% de su demanda del PV)
+            pv_direct_to_ev = min(pv_remaining, ev_h)
+            pv_to_ev[h] = pv_direct_to_ev
+            pv_remaining -= pv_direct_to_ev
+            ev_deficit = ev_h - pv_direct_to_ev
+            
+            # PRIORIDAD 2: BESS CARGA EN PARALELO (recibe PV que sobra después EV)
+            if current_soc < soc_max and pv_remaining > 0:
+                # Capacidad disponible para carga BESS
+                soc_headroom = (soc_max - current_soc) * capacity_kwh
+                max_charge = min(power_kw, pv_remaining, soc_headroom / eff_charge)
+                
+                if max_charge > 0:
+                    bess_charge[h] = max_charge
+                    energy_stored = max_charge * eff_charge
+                    pv_to_bess[h] = energy_stored
+                    current_soc += energy_stored / capacity_kwh
+                    current_soc = min(current_soc, soc_max)
+                    pv_remaining -= max_charge
+            
+            # PRIORIDAD 3: MALL recibe SOLO excedente (PV - EV - BESS)
+            pv_direct_to_mall = min(pv_remaining, mall_h)
+            pv_to_mall[h] = pv_direct_to_mall
+            pv_remaining -= pv_direct_to_mall
+            mall_deficit = mall_h - pv_direct_to_mall
+            
+            # PRIORIDAD 4: RED (exportación si sobra)
+            grid_export[h] = max(pv_remaining, 0)
         
         # ====================================
-        # PRIORIDAD 3: PV excedente -> Mall
-        # Solo lo que sobra después de cargar BESS y cubrir EV
+        # FASE 3 (cuando SOC >= 99%) - HOLDING
+        # FASE 3 (~DINÁMICO): HOLDING MODE - BESS MANTIENE 100% SOC
+        # 
+        # Prioridad: BESS EN ESPERA (0 carga, 0 descarga)
+        # ├─ BESS a 100%, entra modo holding (sin acción)
+        # ├─ Hasta punto crítico de pv con mall
+        # ├─ PV suministra con prioridad a EV
+        # ├─ Si después PV a MALL
+        # ├─ Si excede PV a RED
+        # └─ Objetivo: Conservar energía para punto crítico
         # ====================================
-        pv_direct_to_mall = min(pv_remaining, mall_h)
-        pv_to_mall[h] = pv_direct_to_mall
-        pv_remaining -= pv_direct_to_mall
-        mall_deficit = mall_h - pv_direct_to_mall
+        elif hour_of_day >= 9 and current_soc >= 0.99:  # FASE 3: BESS a 100% (HOLDING)
+            pv_remaining = pv_h
+            
+            # BESS EN HOLDING: No carga, no descarga (conserva energía para punto crítico)
+            bess_charge[h] = 0.0
+            bess_discharge[h] = 0.0
+            pv_to_bess[h] = 0.0
+            
+            # PRIORIDAD 1: EV MÁXIMA PRIORIDAD (recibe PV directo)
+            pv_direct_to_ev = min(pv_remaining, ev_h)
+            pv_to_ev[h] = pv_direct_to_ev
+            pv_remaining -= pv_direct_to_ev
+            ev_deficit = ev_h - pv_direct_to_ev
+            
+            # PRIORIDAD 2: MALL recibe excedente (si después PV)
+            pv_direct_to_mall = min(pv_remaining, mall_h)
+            pv_to_mall[h] = pv_direct_to_mall
+            pv_remaining -= pv_direct_to_mall
+            mall_deficit = mall_h - pv_direct_to_mall
+            
+            # PRIORIDAD 3: RED (si excede PV)
+            grid_export[h] = max(pv_remaining, 0)
         
         # ====================================
-        # PRIORIDAD 4: PV sobrante EXPORTADO a red pública
-        # Sin desperdicio: todo excedente se vende a OSINERGMIN
+        # FASE 4 (DESCARGA DINÁMICA - PUNTO CRÍTICO): CUANDO PV < MALL
+        # ├─ Trigger: pv_h < mall_h AND mall_h > 1900 kW
+        # ├─ BESS cubre deficit MALL > 1900 kW (peak shaving)
+        # ├─ BESS descarga de 100% → 20% dinámicamente
+        # │  (solo descarga para MALL encima de 1900 kW)
+        # │  (desde punto crítico de pv con mall)
+        # └─ Distribución PV:
+        #    ├─ PV → EV (prioridad 100%)
+        #    ├─ PV sobrante → MALL
+        #    └─ Exceso → RED
         # ====================================
-        grid_export[h] = max(pv_remaining, 0)  # EXPORTACIÓN a red, cero curtailment
+        PEAK_SHAVING_THRESHOLD_KW = 1900.0
         
-        # ====================================
-        # DESCARGA BESS: Una vez cargado al 100%, mantiene hasta punto crítico
-        # Cuando PV < EV (punto crítico): BESS descarga LA DIFERENCIA EXACTA
-        # Descarga solo lo que falta para cubrir 100% de EV hasta las 22h
-        # CRÍTICO: Máxima eficiencia, 100% EV coverage, no bajar de SOC 20%
-        # ====================================
-        if ev_deficit > 0 and current_soc > soc_min and hour_of_day < closing_hour:
-            # BESS descarga la DIFERENCIA EXACTA que EV necesita (100% COVERAGE)
-            # Capacidad disponible para descarga (no bajar de 20%)
+        if pv_h < mall_h and mall_h > PEAK_SHAVING_THRESHOLD_KW and current_soc > soc_min and hour_of_day < closing_hour:
+            # Punto crítico: PV < MALL y pico > 1900 kW
+            # BESS descarga SOLO para el MALL que está POR ENCIMA de 1900 kW
+            
+            # Excess de MALL por encima del threshold
+            mall_excess_above_threshold = mall_h - PEAK_SHAVING_THRESHOLD_KW
+            
+            # BESS cubre el excess (peak shaving)
             soc_available = (current_soc - soc_min) * capacity_kwh
-            # OPTIMIZACIÓN: Para entregar ev_deficit, descargar ev_deficit/eff_discharge del BESS
-            max_discharge_raw = min(power_kw, ev_deficit / eff_discharge, soc_available)
+            max_discharge_raw = min(power_kw, mall_excess_above_threshold / eff_discharge, soc_available)
             
             if max_discharge_raw > 0:
-                # ENERGÍA ENTREGADA A EV (considerando eficiencia 95%)
-                energy_to_ev = max_discharge_raw * eff_discharge
+                energy_to_mall = max_discharge_raw * eff_discharge
                 bess_discharge[h] = max_discharge_raw
-                bess_to_ev[h] = energy_to_ev  # Energía REAL al EV
+                bess_to_mall[h] = energy_to_mall
                 current_soc -= max_discharge_raw / capacity_kwh
-                # GARANTÍA CRÍTICA: No bajar de SOC 20% bajo ninguna circunstancia
                 current_soc = max(current_soc, soc_min)
-                ev_deficit -= energy_to_ev  # Usar energía REAL entregada
+                mall_deficit -= energy_to_mall
         
-        # ===========================================================================
-        # PEAK SHAVING BESS: REDUCIR PICOS MALL EN HORA PUNTA (HP)
-        # ===========================================================================
-        # JUSTIFICACION DEL UMBRAL 2,100 kW:
-        # - Demanda MALL típica: 30-35 MWh/dia (pico: ~4,500 kW en HP)
-        # - Contrato con Electro Oriente: Limitación de potencia coincidente
-        # - Threshold 2,100 kW evita penalizaciones por exceso de potencia contratada
-        # - Diferencial tarifario HP/HFP: S/.0.17/kWh (60.7% ahorro) en arbitraje
-        #
-        # ESTRATEGIA:
-        # 1. PRIORIDAD: BESS cubre 100% EV PRIMERO (punto critico 17h)
-        # 2. SOBRANTE: Reduce picos MALL solo si hay energía disponible en SOC
-        # 3. RESTRICCION: Debe llegar exactamente a SOC 20% a las 22h (cierre)
-        # 4. HORARIO: Activo en 17h-21h (antes de cierre 22h)
-        # 5. CONDICION: MALL > 2,100 kW Y PV < MALL (punto critico)
-        #
-        # RESULTADO:
-        # - Ahorro de arbitraje anual: S/. 48,000 (tarifa HP vs HFP) [OPTIMIZADO v5.5]
-        # - Reduccion picos: ~10-50 kWh/hora con umbral 1900 kW
-        # - CO2 evitado: ~150 ton/ano (reemplaza grid diesel en HP) [OPTIMIZADO]
-        # ===========================================================================
-        # CAMBIO v5.5: Threshold optimizado a 1900 kW (balance seguridad-rendimiento)
-        # 
-        PEAK_SHAVING_THRESHOLD_KW = 1900.0  # OPTIMIZADO v5.5: Balance arbitraje vs estabilidad
-        CLOSING_HOUR = 22
-        PEAK_SHAVING_START = 10  # Inicio de ventana de picos (10h es primer pico detectado)
+        # ====================================
+        # FASE 5 (~DINÁMICO): CUANDO PV DEFICIT CON EV
+        # ├─ Condición: ev_deficit > 0 (PV insuficiente para EV)
+        # ├─ BESS descarga para EV con MÁXIMA PRIORIDAD (cubrir 100%)
+        # ├─ BESS sigue descargando para MALL > 1900 kW (peak shaving paralelo)
+        # ├─ PV suministra a EV hasta que deje de generar
+        # ├─ BESS cubre diferencia de EV hasta 100%
+        # └─ BESS tiene tope descarga a SOC 20% hasta la hora que pueda
+        # ====================================
         
-        # PEAK SHAVING AGRESIVO v5.6.1: DESCARGAR SIN RESTRICCION HORARIA + MÁXIMA EFICIENCIA
-        # Objetivo: CORTAR TODO deficit de MALL > 1900 kW
-        # Estrategia: Descargar hasta SOC 20% en CUALQUIER hora si MALL > 1900 kW
-        # OPTIMIZACIÓN: Registrar energía ENTREGADA, no energía descargada
-        if mall_h > PEAK_SHAVING_THRESHOLD_KW and current_soc > soc_min:
-            # DESCARGA AGRESIVA: Cortar TODO el deficit que supere 1900 kW
-            # Calcular el verdadero deficit actualizado (después de todas las descargas previas)
-            remaining_mall_deficit = max(mall_h - pv_to_mall[h] - bess_to_mall[h], 0)
-            if remaining_mall_deficit > 0:
-                # Descargar hasta cubrir el deficit o llegar a límite de SOC 20%
-                peak_excess_demand = remaining_mall_deficit
+        if ev_deficit > 0 and current_soc > soc_min and hour_of_day < closing_hour:
+            # DESCARGA 1: BESS → EV (MÁXIMA PRIORIDAD)
+            soc_available = (current_soc - soc_min) * capacity_kwh
+            max_discharge_ev = min(power_kw, ev_deficit / eff_discharge, soc_available)
+            
+            if max_discharge_ev > 0:
+                energy_to_ev = max_discharge_ev * eff_discharge
+                bess_discharge[h] = max_discharge_ev
+                bess_to_ev[h] = energy_to_ev
+                current_soc -= max_discharge_ev / capacity_kwh
+                current_soc = max(current_soc, soc_min)
+                ev_deficit -= energy_to_ev
                 soc_available = (current_soc - soc_min) * capacity_kwh
-                # OPTIMIZACIÓN: Calcular descarga necesaria considerando eficiencia
-                max_discharge_raw = min(power_kw, peak_excess_demand / eff_discharge, soc_available)
+            
+            # DESCARGA 2: BESS → MALL peak shaving (si queda SOC y mall > 1900 kW)
+            if pv_h < mall_h and mall_h > PEAK_SHAVING_THRESHOLD_KW and soc_available > 0:
+                mall_excess_above_threshold = mall_h - PEAK_SHAVING_THRESHOLD_KW
+                max_discharge_mall = min(power_kw, mall_excess_above_threshold / eff_discharge, soc_available)
                 
-                if max_discharge_raw > 0:
-                    # ENERGÍA ENTREGADA AL MALL (considerando eficiencia 95%)
-                    energy_delivered = max_discharge_raw * eff_discharge
-                    bess_discharge[h] += max_discharge_raw
-                    bess_to_mall[h] += energy_delivered  # Energía REAL entregada
-                    current_soc -= max_discharge_raw / capacity_kwh
-                    # GARANTÍA CRÍTICA: No bajar de SOC 20% bajo ninguna circunstancia
+                if max_discharge_mall > 0:
+                    energy_to_mall = max_discharge_mall * eff_discharge
+                    bess_discharge[h] += max_discharge_mall
+                    bess_to_mall[h] += energy_to_mall
+                    current_soc -= max_discharge_mall / capacity_kwh
                     current_soc = max(current_soc, soc_min)
-        
-        # ===========================================================================
-        # RESTRICCION: CIERRE A SOC 20% EXACTO A LAS 22h
-        # ===========================================================================
-        # Lógica: Si al llegar a 22h, SOC > soc_min, descargar todo lo sobrante
-        # Esto garantiza que cada dia comience con 100% SOC (cargado por PV en HFP)
-        # y cierre con exactamente 20% (listo para reutilizar 1,600 kWh al día siguiente)
-        # ===========================================================================
-        if h == CLOSING_HOUR and current_soc > soc_min:
-            # Descargar todo lo que sobra hasta llegar a exactamente 20%
-            soc_to_discharge = current_soc - soc_min
-            if soc_to_discharge > 0.001:  # Diferencia minima para evitar errores numericos
-                kwh_to_discharge = soc_to_discharge * capacity_kwh
-                # Limitar por potencia del BESS
-                kwh_actual = min(kwh_to_discharge, power_kw)
-                bess_to_mall[h] += kwh_actual  # Agregar a peak shaving / cobertura mall
-                current_soc = soc_min  # Forzar a 20% exacto
+                    mall_deficit -= energy_to_mall
         
         # ====================================
         # GRID: Cubrir deficits restantes
         # ====================================
         grid_to_ev[h] = max(ev_deficit, 0)
         grid_to_mall[h] = max(mall_deficit, 0)
+        
+        # ====================================
+        # FASE 6 (22h A 9 AM): CIERRE DE CICLO Y REPOSO
+        # ├─ Condición: hour_of_day >= 22 OR hour_of_day < 9
+        # ├─ BESS: IDLE (0 carga, 0 descarga, mantiene SOC 20%)
+        # ├─ PV: CERO (no hay generación hasta amanecer)
+        # ├─ EV: CERO (no opera fuera de 22h - 9 AM)
+        # ├─ BESS: No carga de RED, no descarga a RED
+        # └─ Objetivo: Reposo y cierre de ciclo diario
+        # ====================================
+        if hour_of_day >= 22 or hour_of_day < 9:
+            # FASE 6: CIERRE Y REPOSO
+            # BESS en IDLE: No hay acción
+            bess_charge[h] = 0.0
+            bess_discharge[h] = 0.0
+            
+            # PV es CERO en horario de cierre (sin generación solar)
+            pv_to_bess[h] = 0.0
+            pv_to_ev[h] = 0.0
+            pv_to_mall[h] = 0.0
+            
+            # EV es CERO fuera de 22h - 9 AM (sin demanda operativa en FASE 6)
+            grid_to_ev[h] = 0.0
+            
+            # BESS mantiene SOC en 20% (soc_min) sin acción
+            current_soc = soc_min
+            
+            # MALL sigue obteniendo de PV o GRID
+            # (BESS en reposo, no contribuye)
+            grid_to_mall[h] = max(mall_deficit, 0)
         
         # Guardar SOC
         soc[h] = current_soc
@@ -1730,7 +1799,7 @@ def simulate_bess_solar_priority(
         #        residual de tarde. La carga debe ocurrir mientras haya PV CRECIENTE (mañana).
         charge_window_start = 6
         charge_window_end = 15  # 15h = 3 PM (cierre ventana de carga - punto crítico)
-        permite_cargar_bess = (hour_of_day >= charge_window_start and hour_of_day < charge_window_end)
+        permite_cargar_bess = (hour_of_day >= charge_window_start and hour_of_day < closing_hour)
         
         if pv_remaining > 0.01 and current_soc < soc_max and permite_cargar_bess:
             # ---------------------------------------------------------------

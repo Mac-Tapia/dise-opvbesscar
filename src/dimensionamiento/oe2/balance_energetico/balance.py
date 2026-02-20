@@ -1582,7 +1582,8 @@ def main():
     # Cargar dataset completo real desde bess.py
     try:
         project_root = Path(__file__).parent.parent.parent.parent.parent
-        bess_csv_path = project_root / "data" / "oe2" / "bess" / "bess_ano_2024.csv"
+        # CORRECCIÓN: bess.py guarda en data/iquitos_ev_mall/bess_timeseries.csv (NO en oe2/bess/)
+        bess_csv_path = project_root / "data" / "iquitos_ev_mall" / "bess_timeseries.csv"
         df_bess = pd.read_csv(bess_csv_path)
         
         # Usar columnas reales del dataset (NO SINTETICAS)
