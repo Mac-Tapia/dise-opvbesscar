@@ -1671,44 +1671,61 @@ def main():
     grid_export_kwh = np.zeros(hours)  # NEW: Exportación a red pública (kWh)
     bess_to_mall_kwh = np.zeros(hours)  # NEW: Peak shaving BESS→MALL (kWh) - para picos > 1900 kW
     
-    for t in range(1, hours):
-        available_pv = pv_gen[t]
-        demand_t = total_demand[t]
-        mall_demand_t = mall_demand[t]
-        pv_to_demand_t = min(available_pv, demand_t)
-        available_pv -= pv_to_demand_t
-        
-        # BESS Charge: Convertir porcentaje SOC a kWh correctamente
-        # FIXED v5.8: 1% de SOC = 20 kWh (2000 kWh / 100%)
-        if available_pv > 0 and bess_soc[t-1] < 100:
-            # Espacio disponible en BESS en kWh = (100 - SOC_actual) * 20
-            bess_capacity_available_kwh = (100 - bess_soc[t-1]) * 20.0
-            bess_charge_t = min(available_pv, 400, bess_capacity_available_kwh)
-            pv_to_bess[t] = bess_charge_t
-            bess_charge[t] = bess_charge_t
-            available_pv -= bess_charge_t
-        
-        pv_to_grid[t] = available_pv
-        grid_export_kwh[t] = available_pv  # NEW: Exportación = PV excedente (kWh)
-        pv_to_demand[t] = pv_to_demand_t
-        
-        deficit = demand_t - pv_to_demand_t
-        if deficit > 0:
-            # BESS Discharge: Energía disponible en BESS = SOC_actual * 20 kWh (FIXED v5.8)
-            bess_discharge_t = min(deficit, 400, bess_soc[t-1] * 20.0)
-            bess_discharge[t] = min(bess_discharge_t, deficit)
-            demand_from_grid[t] = max(0, deficit - bess_discharge[t])
-        
-        # NEW: Peak shaving - BESS discharge when MALL demand exceeds 1900 kW (aggressive shaving)
-        if mall_demand_t > peak_shaving_threshold_kw and bess_discharge[t] > 0:
-            # Calculate how much of BESS discharge contributes to peak shaving
-            # Peak shaving = minimum(BESS discharge when exceeding threshold, excess above 1900 kW)
-            excess_over_threshold = mall_demand_t - peak_shaving_threshold_kw
-            bess_to_mall_kwh[t] = min(bess_discharge[t], excess_over_threshold)
-        
-        bess_soc[t] = bess_soc[t-1] + (bess_charge[t] - bess_discharge[t]) / 2000 * 100  # FIXED v5.8: 2000 kWh
-        bess_soc[t] = np.clip(bess_soc[t], 20, 100)
-        co2_from_grid[t] = demand_from_grid[t] * 0.4521 / 1000
+    # =====================================================
+    # CARGAR DATOS BESS REALES desde bess_ano_2024.csv (YA CONTIENE LÓGICA SIMULADA)
+    # =====================================================
+    print("[CARGANDO] BESS Completo desde dataset OE2...")
+    df_bess_full = pd.read_csv(bess_csv_path)
+    
+    # Usar columnas reales del BESS (nombres exactos del dataset bess.py)
+    # NOTA: bess.py genera 'bess_action_kwh', 'bess_to_ev_kwh', 'bess_to_mall_kwh'
+    # NO 'bess_charge_kwh' / 'bess_discharge_kwh' (no están en OUTPUT de bess.py)
+    
+    # Columns disponibles en bess_ano_2024.csv:
+    # ['datetime', 'pv_kwh', 'ev_kwh', 'mall_kwh', 'load_kwh', 
+    #  'pv_to_ev_kwh', 'pv_to_bess_kwh', 'pv_to_mall_kwh', 'grid_export_kwh',
+    #  'bess_action_kwh', 'bess_mode', 'bess_to_ev_kwh', 'bess_to_mall_kwh',
+    #  'grid_import_ev_kwh', 'grid_import_mall_kwh', 'grid_import_kwh', 'soc_percent', ...]
+    
+    if 'pv_to_demand_kw' in df_bess_full.columns:
+        pv_to_demand = df_bess_full['pv_to_demand_kw'].values[:hours]
+    else:
+        # FALLBACK: PV a demanda = PV_to_EV + PV_to_Mall
+        pv_to_demand = (df_bess_full['pv_to_ev_kwh'].values[:hours] + 
+                       df_bess_full['pv_to_mall_kwh'].values[:hours])
+    
+    if 'pv_to_bess_kwh' in df_bess_full.columns:
+        pv_to_bess = df_bess_full['pv_to_bess_kwh'].values[:hours]
+    
+    if 'pv_to_grid_kw' in df_bess_full.columns:
+        pv_to_grid = df_bess_full['pv_to_grid_kw'].values[:hours]
+    else:
+        pv_to_grid = df_bess_full['grid_export_kwh'].values[:hours]  # Exportación = PV a red
+    
+    # BESS Charge: NO EXISTE EN bess.py, calcular desde bess_to_ev + bess_to_mall
+    # (solo descarga, no carga explícita registrada)
+    bess_to_ev = df_bess_full['bess_to_ev_kwh'].values[:hours]
+    bess_to_mall_kwh = df_bess_full['bess_to_mall_kwh'].values[:hours]
+    bess_discharge = bess_to_ev + bess_to_mall_kwh  # Total descarga BESS
+    
+    # BESS Charge: Usar PV_to_BESS como proxy (energía cargada al BESS desde PV)
+    bess_charge = pv_to_bess
+    
+    if 'soc_percent' in df_bess_full.columns:
+        bess_soc = df_bess_full['soc_percent'].values[:hours]
+    
+    if 'grid_import_kwh' in df_bess_full.columns:
+        demand_from_grid = df_bess_full['grid_import_kwh'].values[:hours]
+    else:
+        # FALLBACK: Grid = grid_import_ev + grid_import_mall
+        demand_from_grid = (df_bess_full['grid_import_ev_kwh'].values[:hours] + 
+                           df_bess_full['grid_import_mall_kwh'].values[:hours])
+    
+    if 'grid_export_kwh' in df_bess_full.columns:
+        grid_export_kwh = df_bess_full['grid_export_kwh'].values[:hours]
+    
+    # Calcular CO2 desde grid importado real
+    co2_from_grid = demand_from_grid * 0.4521 / 1000
     
     df = pd.DataFrame({
         'hour': np.arange(hours),
@@ -1719,10 +1736,12 @@ def main():
         'total_demand_kw': total_demand,
         'pv_to_demand_kw': pv_to_demand,
         'pv_to_bess_kw': pv_to_bess,
+        'pv_to_bess_kwh': pv_to_bess,  # ALIAS para compatibilidad
         'pv_to_grid_kw': pv_to_grid,
         'grid_export_kwh': grid_export_real,  # REAL: Usar valores reales del dataset bess_ano_2024.csv
         'bess_charge_kw': bess_charge,
         'bess_discharge_kw': bess_discharge,
+        'bess_to_ev_kwh': bess_to_ev,  # NUEVO: Descarga BESS EV
         'bess_to_mall_kwh': bess_to_mall_kwh,  # NEW: Peak shaving BESS→MALL
         'bess_soc_percent': bess_soc,
         'demand_from_grid_kw': demand_from_grid,
