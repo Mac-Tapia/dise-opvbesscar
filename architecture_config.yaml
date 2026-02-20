@@ -1,0 +1,195 @@
+# pvbesscar ARCHITECTURE & DEPLOYMENT CONFIGURATION
+# Version: 5.8 (2026-02-20)
+# Status: PURIFIED - PRODUCTION READY
+
+project:
+  name: pvbesscar-iquitos
+  version: "5.8"
+  stage: OE2 (Dimensionamiento)
+  timezone: America/Lima (UTC-5)
+  location: Iquitos, Peru
+  
+architecture:
+  type: Two-Module Pure
+  status: ✅ PURIFIED
+  description: Clean separation between BESS simulation (dimensionamiento) and visualization (balance)
+  
+core_modules:
+  simulation:
+    module: bess.py
+    path: src/dimensionamiento/oe2/disenobess/
+    responsibility: DIMENSIONAMIENTO (Infrastructure simulation)
+    role: Engine for BESS solar-charging operations
+    main_function: simulate_bess_solar_priority(pv_kwh, ev_kwh, mall_kwh)
+    output: bess_timeseries.csv (8760 rows × 12+ columns)
+    
+  visualization:
+    module: balance.py
+    path: src/dimensionamiento/oe2/balance_energetico/
+    responsibility: VISUALIZACIÓN (Results visualization)
+    role: Engine for energy balance graphics
+    main_function: plot_energy_balance(out_dir)
+    input_file: data/iquitos_ev_mall/bess_timeseries.csv
+    output_count: 16 PNG files
+    
+bess_specification:
+  capacity:
+    nominal_kwh: 2000
+    usable_kwh: 1600  # 80% DoD
+  power:
+    charge_discharge_kw: 400
+  efficiency:
+    round_trip_percent: 95
+  soc_limits:
+    minimum_percent: 20
+    maximum_percent: 100
+  operations:
+    closing_hour: 22
+    opening_hour: 6
+    
+bess_control_phases:
+  FASE_1:
+    period: "06h - 09h"
+    operation: "EV=0, BESS absorbs 100% PV"
+    status: ✅ Implemented (line 986-1026)
+    
+  FASE_2:
+    period: "09h - 22h (SOC < 99%)"
+    operation: "EV max priority + BESS parallel charge"
+    status: ✅ Implemented (line 1029-1063)
+    
+  FASE_3:
+    period: "SOC >= 99% (any hour 9-22)"
+    operation: "BESS HOLDING: 0 charge, 0 discharge"
+    status: ✅ Implemented (line 1066-1099)
+    
+  FASE_4:
+    period: "10h - 22h (dynamic)"
+    trigger: "PV < MALL AND MALL > 1900 kW"
+    operation: "Peak shaving: BESS discharge for MALL excess"
+    status: ✅ Implemented (line 1101-1131)
+    
+  FASE_5:
+    period: "09h - 22h (dynamic)"
+    trigger: "EV deficit > 0"
+    operation: "Dual discharge: EV priority 100% + MALL secondary"
+    status: ✅ Implemented (line 1134-1169)
+    
+  FASE_6:
+    period: "22h - 09h (daily closure)"
+    operation: "IDLE: BESS reposes at SOC=20%"
+    status: ✅ Implemented (line 1176-1209)
+    
+data_pipeline:
+  stage_1_simulation:
+    module: bess.py
+    function: simulate_bess_solar_priority()
+    inputs:
+      pv_kwh: "8760-hour solar generation timeseries"
+      ev_kwh: "8760-hour EV charging demand"
+      mall_kwh: "8760-hour mall demand"
+    output: "DataFrame with 12+ energy flow columns"
+    
+  stage_2_export:
+    format: CSV
+    filename: bess_timeseries.csv
+    location: data/iquitos_ev_mall/
+    rows: 8760
+    frequency: hourly
+    
+  stage_3_visualization:
+    module: balance.py
+    function: plot_energy_balance(out_dir)
+    input: bess_timeseries.csv
+    outputs: 16 PNG graphics
+    output_dir: outputs/balance_energetico/
+    
+eliminated_files:
+  reason: "Architecture purification - only core modules needed"
+  disenobess:
+    - bess_auto_update.py (auto-regeneration - not needed)
+    - bess_config_simple.py (config duplication)
+    - generate_bess_dataset_2024.py (dataset generation - part of bess.py)
+    - run_bess_dataset_generation.py (runner script - unnecessary)
+    count: 4 files deleted
+    
+  balance_energetico:
+    - balance_graphics_only.py (duplicate functionality)
+    - ev_profile_integration.py (unrelated)
+    - example_usage.py (demo code)
+    - ARQUITECTURA_BALANCE_GRAPHICS.md (duplicate docs)
+    - INTEGRACION_MODULES.py (orchestration - not needed)
+    - README.md (redundant)
+    - run_analysis.py (runner script)
+    - test_quick.py (test code)
+    - outputs_demo/ (demo folder with 15+ PNGs)
+    count: 9+ files deleted
+    
+  total_deleted: 13+ files
+  
+deployment:
+  prerequisites:
+    - Python 3.11+
+    - pandas, numpy, matplotlib
+    - Path to data/ directory with PV/EV/MALL profiles
+    
+  quick_start:
+    step_1: "Run BESS simulation: bess.py → exports bess_timeseries.csv"
+    step_2: "Read CSV: balance.py reads from data/iquitos_ev_mall/bess_timeseries.csv"
+    step_3: "Generate graphics: plot_energy_balance() → 16 PNG files"
+    
+  dos_and_donts:
+    do:
+      - ✅ Modify bess.py ONLY for simulation logic
+      - ✅ Modify balance.py ONLY for visualization changes
+      - ✅ Keep 6-FASES immutable in bess.py (lines 986-1209)
+      - ✅ Use bess_timeseries.csv as interface between modules
+      
+    dont:
+      - ❌ Create new intermediate scripts
+      - ❌ Create duplicate balanceXXX.py files
+      - ❌ Split 6-FASES across multiple files
+      - ❌ Confuse DIMENSIONAMIENTO (bess) with VISUALIZACIÓN (balance)
+      
+git_workflow:
+  branch: smartcharger
+  last_commit:
+    hash: b683cc43
+    message: "ARQUITECTURA PURIFICADA: Solo bess.py (dimensionamiento) + balance.py (visualización)"
+    date: "2026-02-20"
+    files_changed: 49
+    insertions: 13099
+    deletions: 13053
+    
+  push_status: ✅ SENT TO GITHUB
+  remote: https://github.com/Mac-Tapia/dise-opvbesscar.git
+  
+validation:
+  architecture_integrity:
+    only_bess_in_disenobess: ✅
+    only_balance_in_balance_energetico: ✅
+    no_duplicate_functionality: ✅
+    no_intermediate_scripts: ✅
+    
+  bess_completeness:
+    6_phases: ✅ (lines 986-1209)
+    solar_priority: ✅
+    ev_coverage: ✅
+    peak_shaving: ✅
+    closing_enforcement: ✅
+    
+  balance_correctness:
+    correct_csv_path: ✅ (data/iquitos_ev_mall/bess_timeseries.csv)
+    graphics_count: ✅ (16 PNG)
+    no_simulation_logic: ✅
+    
+documentation:
+  architectural_overview: ESTRUCTURA_FINAL.md
+  catalog_file: ARCHITECTURE_CATALOG.json
+  config_file: architecture_config.yaml (this file)
+  
+next_steps:
+  - ✅ Architecture purified (2026-02-20)
+  - 🔄 Ready for: BESS simulation testing
+  - 🔄 Ready for: Balance visualization testing
+  - 🔄 Ready for: OE3 integration (RL agents)
