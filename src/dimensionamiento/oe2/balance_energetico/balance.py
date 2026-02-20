@@ -168,10 +168,10 @@ class BalanceEnergeticoSystem:
         """Genera todas las gráficas de balance energético (incluyendo exportación e integración peak shaving).
         
         Args:
-            out_dir: Directorio para guardar (default: reports/balance_energetico)
+            out_dir: Directorio para guardar (default: outputs/balance_energetico)
         """
         if out_dir is None:
-            out_dir = Path("reports/balance_energetico")
+            out_dir = Path("outputs/balance_energetico")
         
         out_dir.mkdir(parents=True, exist_ok=True)
         
@@ -1728,7 +1728,7 @@ def main():
     print()
     
     # Generar gráficas
-    out_dir = Path(__file__).parent / "outputs_demo"
+    out_dir = Path("outputs/balance_energetico")
     graphics.plot_energy_balance(out_dir)
     print()
     print("=" * 80)
