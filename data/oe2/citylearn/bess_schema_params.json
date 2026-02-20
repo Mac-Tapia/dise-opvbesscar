@@ -46,7 +46,7 @@
   },
   "photovoltaic": {
     "type": "PV",
-    "nominal_power": 0.0
+    "nominal_power": 4162.0
   },
   "building_load_path": "D:\\dise\u00f1opvbesscar\\data\\oe2\\citylearn\\building_load.csv",
   "solar_generation_path": "D:\\dise\u00f1opvbesscar\\data\\oe2\\citylearn\\bess_solar_generation.csv"
