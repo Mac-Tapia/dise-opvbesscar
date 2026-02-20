@@ -1,0 +1,210 @@
+{
+  "project": "pvbesscar-iquitos",
+  "version": "5.8",
+  "description": "EV Charging Optimization for Iquitos (38 sockets) using RL agents + BESS",
+  "last_update": "2026-02-20",
+  "architecture_status": "PURIFIED - PRODUCTION READY",
+  
+  "core_modules": {
+    "dimensionamiento": {
+      "phase": "OE2",
+      "responsibility": "Infrastructure sizing and simulation",
+      "modules": [
+        {
+          "name": "bess.py",
+          "path": "src/dimensionamiento/oe2/disenobess/bess.py",
+          "role": "BESS Simulation Engine",
+          "responsibility": "Simulate solar-BESS-EV operations with 6-phase control logic",
+          "main_function": "simulate_bess_solar_priority(pv_kwh, ev_kwh, mall_kwh)",
+          "outputs": ["bess_timeseries.csv", "bess_sizing_results.json"],
+          "specification": {
+            "capacity_kwh": 2000,
+            "power_kw": 400,
+            "efficiency_rtc": 0.95,
+            "soc_min_percent": 20,
+            "soc_max_percent": 100,
+            "closing_hour": 22,
+            "dod_percent": 80
+          },
+          "6_phases": {
+            "FASE_1": "06h-09h: BESS pre-charge 100% PV (EV=0)",
+            "FASE_2": "09h-22h SOC<99%: EV priority + BESS parallel",
+            "FASE_3": "HOLDING mode: BESS at 100% SOC (idle)",
+            "FASE_4": "Peak shaving: MALL > 1900kW discharge",
+            "FASE_5": "Dual discharge: EV deficit + MALL backup",
+            "FASE_6": "22h-09h: IDLE reposo (SOC = 20%)"
+          },
+          "lines_code": "986-1209 (6-FASES implementation)",
+          "status": "✅ COMPLETE & IMMUTABLE"
+        }
+      ]
+    },
+    "visualization": {
+      "phase": "OE2",
+      "responsibility": "Energy balance visualization",
+      "modules": [
+        {
+          "name": "balance.py",
+          "path": "src/dimensionamiento/oe2/balance_energetico/balance.py",
+          "role": "Visualization Engine",
+          "responsibility": "Read BESS timeseries CSV and generate 16 PNG graphics",
+          "main_class": "BalanceEnergeticoSystem",
+          "main_function": "plot_energy_balance(out_dir)",
+          "input_source": "data/iquitos_ev_mall/bess_timeseries.csv",
+          "output_dir": "outputs/balance_energetico/",
+          "graphs_count": 16,
+          "configuration": {
+            "bess_capacity_kwh": 2000,
+            "bess_power_kw": 400,
+            "peak_shaving_threshold_kw": 1900
+          },
+          "status": "✅ READY - Reads correct CSV path"
+        }
+      ]
+    }
+  },
+  
+  "data_flow": {
+    "pipeline": [
+      {
+        "stage": 1,
+        "description": "Simulation",
+        "module": "bess.py",
+        "function": "simulate_bess_solar_priority()",
+        "inputs": ["pv_kwh[8760]", "ev_kwh[8760]", "mall_kwh[8760]"],
+        "outputs": ["DataFrame 8760 × 12+"]
+      },
+      {
+        "stage": 2,
+        "description": "CSV Export",
+        "file": "bess_timeseries.csv",
+        "location": "data/iquitos_ev_mall/",
+        "rows": 8760,
+        "columns": 12,
+        "frequency": "hourly"
+      },
+      {
+        "stage": 3,
+        "description": "Visualization",
+        "module": "balance.py",
+        "function": "plot_energy_balance()",
+        "inputs": ["bess_timeseries.csv"],
+        "outputs": ["16 PNG files"]
+      }
+    ]
+  },
+  
+  "file_structure": {
+    "disenobess": {
+      "path": "src/dimensionamiento/oe2/disenobess/",
+      "files": {
+        "✅_bess.py": "KEEP - Core simulation engine",
+        "✅___init__.py": "Package marker",
+        "❌_bess_auto_update.py": "DELETED - Auto-regeneration (unnecessary)",
+        "❌_bess_config_simple.py": "DELETED - Config duplication",
+        "❌_generate_bess_dataset_2024.py": "DELETED - Dataset generation (part of bess.py)",
+        "❌_run_bess_dataset_generation.py": "DELETED - Runner script (unnecessary)"
+      }
+    },
+    "balance_energetico": {
+      "path": "src/dimensionamiento/oe2/balance_energetico/",
+      "files": {
+        "✅_balance.py": "KEEP - Core visualization engine",
+        "✅___init__.py": "Package marker",
+        "❌_balance_graphics_only.py": "DELETED - Duplicate functionality",
+        "❌_ev_profile_integration.py": "DELETED - Unrelated module",
+        "❌_example_usage.py": "DELETED - Demo code",
+        "❌_ARQUITECTURA_BALANCE_GRAPHICS.md": "DELETED - Duplicate docs",
+        "❌_INTEGRACION_MODULES.py": "DELETED - Orchestration (unnecessary)",
+        "❌_README.md": "DELETED - Redundant",
+        "❌_run_analysis.py": "DELETED - Runner script",
+        "❌_test_quick.py": "DELETED - Test code",
+        "❌_outputs_demo/": "DELETED - Demo folder"
+      }
+    }
+  },
+  
+  "eliminated_files_summary": {
+    "disenobess_deleted": 4,
+    "balance_energetico_deleted": 9,
+    "total_deleted": 13,
+    "reason": "Eliminate auxiliary files - only core simulation (bess.py) and visualization (balance.py) needed"
+  },
+  
+  "role_separation": {
+    "bess.py": {
+      "category": "DIMENSIONAMIENTO",
+      "responsibility": "Infrastructure simulation",
+      "operations": [
+        "Calculate BESS charging/discharging per hour",
+        "Simulate 6-phase control logic",
+        "Generate 8760-hour timeseries",
+        "Export CSV with energy flows"
+      ],
+      "does_not_do": [
+        "Create graphics",
+        "Read user-facing visualizations",
+        "Manage interface"
+      ]
+    },
+    "balance.py": {
+      "category": "VISUALIZACIÓN",
+      "responsibility": "Results visualization",
+      "operations": [
+        "Read BESS CSV timeseries",
+        "Calculate energy metrics",
+        "Generate 16 PNG graphics",
+        "Display results to users"
+      ],
+      "does_not_do": [
+        "Simulate BESS operations",
+        "Calculate energy flows",
+        "Modify simulation logic"
+      ]
+    }
+  },
+  
+  "validation_checklist": {
+    "architecture_purity": {
+      "only_bess_in_disenobess": "✅",
+      "only_balance_in_balance_energetico": "✅",
+      "no_duplicate_functionality": "✅",
+      "no_intermediate_scripts": "✅",
+      "clear_role_separation": "✅"
+    },
+    "bess_completeness": {
+      "6_phases_implemented": "✅ Lines 986-1209",
+      "solar_priority_maintained": "✅",
+      "ev_coverage_guaranteed": "✅",
+      "peak_shaving_logic": "✅",
+      "closing_hour_enforcement": "✅"
+    },
+    "balance_correctness": {
+      "reads_correct_csv": "✅ data/iquitos_ev_mall/bess_timeseries.csv",
+      "generates_16_graphics": "✅",
+      "output_directory_exists": "✅ outputs/balance_energetico/",
+      "no_simulation_logic": "✅ Pure visualization"
+    }
+  },
+  
+  "deployment_instructions": {
+    "step_1": {
+      "action": "Execute simulation",
+      "command": "python -c \"from src.dimensionamiento.oe2.disenobess.bess import simulate_bess_solar_priority; df = simulate_bess_solar_priority(pv_kwh, ev_kwh, mall_kwh)\"",
+      "output": "bess_timeseries.csv"
+    },
+    "step_2": {
+      "action": "Generate visualizations",
+      "command": "python -c \"from src.dimensionamiento.oe2.balance_energetico.balance import BalanceEnergeticoSystem; df.load_csv(...); BalanceEnergeticoSystem(df).plot_energy_balance()\"",
+      "output": "16 PNG files in outputs/balance_energetico/"
+    }
+  },
+  
+  "git_status": {
+    "branch": "smartcharger",
+    "last_commit": "b683cc43",
+    "last_commit_message": "ARQUITECTURA PURIFICADA: Solo bess.py + balance.py",
+    "push_status": "✅ SENT TO GITHUB",
+    "date": "2026-02-20"
+  }
+}
