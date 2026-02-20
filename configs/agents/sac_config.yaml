@@ -28,9 +28,9 @@ sac:
     q_target_clip: 10.0
   multi_objective_weights:
     co2: 0.35
-    cost: 0.10
-    solar: 0.20
-    ev_satisfaction: 0.30
+    cost: 0.1
+    solar: 0.2
+    ev_satisfaction: 0.3
     grid_stability: 0.05
   tariffs_osinergmin_usd_per_kwh:
     generation_solar: 0.1
@@ -88,3 +88,11 @@ performance:
   annual_ev_demand_kwh: 352887
   cost_savings_usd: 30530
   training_time_hours: 6.5
+tariff:
+  hp_soles_kwh: 0.45
+  hfp_soles_kwh: 0.28
+  difference_soles_kwh: 0.17
+  factor_hp_hfp: 1.607
+rewards:
+  hp_weight: 0.4
+  hfp_weight: 0.15

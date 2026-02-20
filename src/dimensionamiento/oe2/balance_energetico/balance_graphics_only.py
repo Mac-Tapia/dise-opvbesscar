@@ -28,11 +28,31 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 # Integración con perfil EV desde chargers.py
-from .ev_profile_integration import (
-    MOTO_SPEC,
-    MOTOTAXI_SPEC,
-    CHARGING_EFFICIENCY,
-)
+# Importes robustos para funcionar tanto como módulo como script directo
+try:
+    from .ev_profile_integration import (
+        MOTO_SPEC,
+        MOTOTAXI_SPEC,
+        CHARGING_EFFICIENCY,
+    )
+except ImportError:
+    # Fallback: si se ejecuta como script directo, importar desde mismo directorio
+    import sys
+    from pathlib import Path as PathlibPath
+    try:
+        current_dir = PathlibPath(__file__).parent
+    except NameError:
+        # Fallback si __file__ no está definido (exec mode)
+        current_dir = PathlibPath.cwd() / 'src' / 'dimensionamiento' / 'oe2' / 'balance_energetico'
+    
+    if str(current_dir) not in sys.path:
+        sys.path.insert(0, str(current_dir))
+    
+    from ev_profile_integration import (  # type: ignore
+        MOTO_SPEC,
+        MOTOTAXI_SPEC,
+        CHARGING_EFFICIENCY,
+    )
 
 
 @dataclass(frozen=True)
@@ -85,6 +105,7 @@ class BalanceEnergeticoGraphics:
         
         # Generar todas las graficas
         self._plot_integral_curves(df, out_dir)
+        self._plot_export_and_peak_shaving(df, out_dir)  # NUEVA - Exportación + Peak Shaving
         self._plot_energy_flow_diagram(df, out_dir)
         self._plot_5day_balance(df, out_dir)
         self._plot_daily_balance(df, out_dir)
@@ -98,6 +119,19 @@ class BalanceEnergeticoGraphics:
     
     def _plot_integral_curves(self, df: pd.DataFrame, out_dir: Path) -> None:
         """Grafica 0: Curvas integrales superpuestas."""
+        pass  # Implementar
+    
+    def _plot_export_and_peak_shaving(self, df: pd.DataFrame, out_dir: Path) -> None:
+        """Grafica NEW: Exportación Solar + Peak Shaving BESS al MALL (CityLearn v2 Ready).
+        
+        Columnas requeridas:
+        - grid_export_kwh: Energía exportada a red pública (kWh/hora)
+        - bess_to_mall_kwh: Reducción de pico demanda del MALL por BESS (kWh/hora)
+        
+        Esta gráfica muestra dos métricas clave para control RL:
+        1. Exportación de generación solar a la red pública (8,760 horas anuales)
+        2. Capacidad del BESS para reducir picos de demanda del mall
+        """
         pass  # Implementar
     
     def _plot_energy_flow_diagram(self, df: pd.DataFrame, out_dir: Path) -> None:

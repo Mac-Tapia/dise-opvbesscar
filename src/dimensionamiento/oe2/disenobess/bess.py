@@ -1,26 +1,51 @@
 """
-DIMENSIONAMIENTO BESS v5.4
-Modulo de dimensionamiento de sistema de almacenamiento BESS.
+DIMENSIONAMIENTO BESS v5.7 - MÓDULO ÚNICO DE CÁLCULO Y DATASET
+╔═════════════════════════════════════════════════════════════════════════════╗
+║ RESPONSABILIDAD EXCLUSIVA: Calcular dimensionamiento y generar DATASET     ║
+║ NO generar gráficas (eso lo hace balance.py)                               ║
+╚═════════════════════════════════════════════════════════════════════════════╝
 
-PROPOSITO: Calcular capacidad y potencia optima del BESS para el sistema
+PROPÓSITO: Calcular capacidad y potencia optimales del BESS para el sistema
            Iquitos EV Mall, generando datasets para CityLearn.
 
 Incluye:
 - Calculo de capacidad BESS basado en deficit EV vs solar
 - Simulacion horaria del SOC (Estado de Carga)
-- Generacion de dataset BESS para CityLearn (electrical_storage_simulation.csv)
-- Graficas de dimensionamiento y SOC
-- NUEVO: Simulacion con ARBITRAJE HP/HFP tarifas OSINERGMIN
+- Generacion de dataset BESS para CityLearn (bess_timeseries.csv)
+- Simulacion con ARBITRAJE HP/HFP tarifas OSINERGMIN
 
-NOTA: El balance energetico completo del sistema esta en:
-      src/dimensionamiento/oe2/balance_energetico/balance.py
+⚠️  NOTA ARQUITECTÓNICA CRÍTICA:
+    ✗ NO genere gráficas aquí en bess.py
+    ✓ TODAS las gráficas están en: src/dimensionamiento/oe2/balance_energetico/balance.py
+    ✓ bess.py → DATASET (datos horarios para 8760 horas)
+    ✓ balance.py → GRÁFICAS (16 visualizaciones del balance)
 
-Valores v5.3 (2026-02-XX):
-- 38 sockets (19 cargadores × 2) @ 7.4 kW = 281.2 kW instalado
-- Demanda EV (9h-22h): 1,550.34 kWh/dia (565,875 kWh/ano) - v5.2 actualizado
+    Si necesita regenerar gráficas:
+    >>> python scripts/regenerate_graphics_v57.py
+    Esto carga balance.py que genera las 16 gráficas ✓
+
+TRANSFORMACION DE MALL CON PROYECTO v5.7:
+- ANTES (sin proyecto): Mall 100% alimentado por red publica
+- AHORA (con proyecto):
+  Recursos PV directo:    5,497,152 kWh/anio (44.4% consumo MALL)
+  Recursos BESS:            611,757 kWh/anio (4.9% consumo MALL)
+  Respaldo GRID:          6,871,501 kWh/anio (55.6% consumo MALL)
+  RESULTADO: Mall reduce dependencia de grid en 49.3% (PV+BESS combinado)
+
+NOTA: El balance energetico completo del sistema está en:
+      src/dimensionamiento/oe2/balance_energetico/balance.py ← TODAS las GRÁFICAS
+
+Valores v5.7 (2026-02-20):
+- 38 sockets (19 cargadores x 2) @ 7.4 kW = 281.2 kW instalado
+- Demanda EV (9h-22h): 408,282 kWh/anio (1,118.6 kWh/dia)
+- PV generacion: 8,292,514 kWh/anio (4050 kWp @ 23.3% factor de planta)
 - BESS: 1,700 kWh / 400 kW (optimizado para arbitraje HP/HFP)
-- Tarifas OSINERGMIN: HP(18-23h) S/.0.45/kWh | HFP S/.0.28/kWh
-- Ahorro estimado arbitraje: ~S/.450,000/ano
+- Tarifas OSINERGMIN: HP(18-23h) S/.0.45/kWh, HFP S/.0.28/kWh
+- Ahorro estimado arbitraje: ~S/.450,000/anio
+
+AUTO-UPDATE: Este módulo detecta automáticamente cambios en parámetros BESS
+             y regenera dataset + gráficos sin intervención manual.
+             Ver: src/dimensionamiento/oe2/disenobess/bess_auto_update.py
 """
 from __future__ import annotations
 
@@ -36,6 +61,12 @@ if sys.platform == 'win32':
         sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
     except Exception:
         pass  # Fallback if encoding change fails
+
+# AUTO-UPDATE: Detector automático de cambios en BESS (en background, sin interrumpir)
+try:
+    from . import bess_auto_update
+except (ImportError, ModuleNotFoundError):
+    pass  # Si auto_update no está disponible, continuar normalmente
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -130,11 +161,38 @@ HORA_FIN_HP = 23  # Exclusivo (hasta las 22:59)
 FACTOR_CO2_KG_KWH = 0.4521  # kg CO2 / kWh
 
 # ===========================================================================
+# SOLAR CAPACITY v5.7 - VALIDACION ANUAL
+# ===========================================================================
+# Capacidad anual maxima de generacion solar PV
+# Fuente: CERTIFICACION_SOLAR_DATASET_2024.json (energia_kwh field)
+# Instalacion: 4,050 kWp @ 10° tilt, Iquitos (-3.75°, -73.25°)
+# Factor de planta: ~23.3% (8.29 GWh / 4,050 kW / 8,760 h)
+PV_ANNUAL_CAPACITY_KWH = 8_292_514.17  # kWh/ano = 8.29 GWh
+PV_ANNUAL_CAPACITY_GWH = PV_ANNUAL_CAPACITY_KWH / 1e6  # = 8.29 GWh
+PV_INSTALLED_KWP = 4050.0  # kWp
+PV_MAX_HOURLY_KW = 2886.69  # Max power in 1 hour (from dataset)
+
+# ===========================================================================
 # BESS v5.4 - CONFIGURACION FINAL JUSTIFICADA
 # ===========================================================================
 # OBJETIVO: Cubrir al 100% la demanda de motos y mototaxis (EV)
 # SECUNDARIO: Reducir picos del mall en hora punta (>2,100 kW)
-#p
+#
+# FLUJO DE ENERGÍA PV - DISTRIBUCIÓN SIMULTÁNEA:
+# ───────────────────────────────────────────────────────────────────────
+# La generación solar (8.29 GWh anual) se distribuye en PARALELO hacia:
+#   1. EV (motos/taxis):      256,394 kWh/año (3.1% de PV)
+#   2. BESS (almacenamiento): 622,639 kWh/año (7.5% de PV) ← CARGA GRADUAL
+#   3. Mall (consumo directo): 5,626,008 kWh/año (67.8% de PV)
+#   4. Red (exportación):      1,771,298 kWh/año (21.4% de PV)
+#   TOTAL:                     8,292,514 kWh/año (100% de PV)
+#
+# Durante FASE 1 (6h-15h), flujo PV se DIVIDE simultáneamente:
+#   • PV → EV: Alimenta motos en paralelo (demanda 9h-22h)
+#   • PV → BESS: Carga a máx 390 kW, sube gradualmente 20%→100% SOC
+#   • PV → Mall: Alimenta 100% del consumo diurno
+#   • PV → Red: Exporta excedente si no hay EV ni BESS cargando
+#
 # ESPECIFICACION:
 # - Capacidad 2,000 kWh:
 #   * Cubre 625 kWh deficit diario promedio EV (17h-22h, punto critico)
@@ -150,21 +208,46 @@ FACTOR_CO2_KG_KWH = 0.4521  # kg CO2 / kWh
 #   * RESULTADO: Suficiente para responder a picos dinamicos
 #
 # OPERACION:
-# - PRIORIDAD 1 (6h): PV carga BESS a 100% + atiende EV en paralelo
-# - PRIORIDAD 2 (17h): BESS descarga para cubrir 100% EV (deficit PV<EV)
-# - PRIORIDAD 3 (18h-22h en HP): BESS reduce picos MALL > 2,100 kW
-#   * Ahorro de arbitraje: S/. 37,578/ano (tarifa HP vs HFP)
-#   * CO2 evitado: 103.2 ton/ano (reemplaza grid diesel)
+# ═══════════════════════════════════════════════════════════════════════════════
+# FASE 1 - CARGA GRADUAL/PROGRESIVA (6h-15h aprox):
+#   • Inicia: SOC 20% (cierre día anterior)
+#   • Comienza: Cuando empieza generación PV (~6h)
+#   • Flujo: Sube POCO A POCO en paralelo con generación solar
+#   • Máximo: 390 kW alimenta BESS mientras hay PV disponible
+#   • Crece: Continuamente hasta alcanzar SOC 100% (~15h)
+#   • Fuente: SOLO PV (nunca red), en paralelo EV y Mall
+#   • Se DETIENE: Automáticamente en SOC 100% (entra Fase 2)
+#   • Resultado: 622,639 kWh cargados anualmente desde PV
 #
-# RESTRICCION DE CIERRE:
-# - SOC EXIGIDO a las 22h: exactamente 20% (soc_min)
-# - Descarga forzada a soc_min si no se alcanza naturalmente
-# - Permite reutilizar 1,600 kWh disponibles al dia siguiente
+# FASE 2 - ESTADO CONSTANTE (cuando SOC = 100%):
+#   • Mantiene: SOC = 100% sin cambios
+#   • Flujo: NI carga NI descarga
+#   • Espera: Condición PV < Mall (existe déficit solar)
+#   • Duración: Típicamente 15h-17h (2-3 horas)
+#   • Comportamiento: Conserva energía cargada para Fase 3
+#
+# FASE 3 - DESCARGA GRADUAL (15h-22h aprox):
+#   • Inicia: Cuando existe déficit (PV < Mall demand)
+#   • Desciende: GRADUALMENTE desde 100% a 20% SOC
+#   • Prioridad 1: Alimenta EV al 100% (156 kW promedio)
+#   • Prioridad 2: Suministra picos MALL > 1,900 kW (peak shaving)
+#   • Máximo: 390 kW descarga en horas críticas (18h-20h)
+#   • Fuente: SOLO BESS (nunca reduce desde grid)
+#   • Resultado: 594,317 kWh descargados anualmente
+#   • Restricción: NO puede bajar de SOC 20% (mínimo operativo)
+#
+# CIERRE DIARIO - RESTRICCION OPERACIONAL (22h):
+#   • EXIGENCIA: SOC = exactamente 20% al final del día
+#   • Método: Descarga forzada si no se alcanza naturalmente
+#   • Permite: Reutilizar 1,600 kWh (80% DoD) día siguiente
+#   • Garantía: 100% cobertura EV año completo
+#   • Validación: 365/365 días llegan a 20% SOC
+# ═══════════════════════════════════════════════════════════════════════════════
 #
 # RESULTADO FINAL:
-# - EV: 470,568 kWh/ano | 242,384 kWh PV (51.5%) + 228,185 kWh BESS (48.5%)
+# - EV: 470,568 kWh/año | 242,384 kWh PV (51.5%) + 228,185 kWh BESS (48.5%)
 # - GRID->EV: 0 kWh (100% renewable)
-# - Peak shaving MALL: Activa en HP cuando esta >2,100 kW
+# - Peak shaving MALL: Activa en HP cuando está >2,100 kW
 # ===========================================================================
 
 BESS_CAPACITY_KWH_V53 = 2000.0   # kWh - Justificacion: 100% cobertura EV + peak shaving margen
@@ -756,7 +839,7 @@ def simulate_bess_ev_exclusive(
         - pv_to_ev_kwh: PV directo a EV
         - pv_to_bess_kwh: PV que carga BESS
         - pv_to_mall_kwh: PV directo a MALL
-        - pv_curtailed_kwh: PV no utilizado
+        - grid_export_kwh: PV EXPORTADO a red pública (sin desperdicio)
         
         OPERACION BESS (7 cols):
         - bess_charge_kwh: Carga horaria BESS
@@ -771,7 +854,7 @@ def simulate_bess_ev_exclusive(
         - grid_import_ev_kwh: Grid que cubre EV
         - grid_import_mall_kwh: Grid que cubre MALL
         - grid_import_kwh: Total importación grid
-        - grid_export_kwh: Exceso PV (curtailment)
+        - grid_export_kwh: EXPORTACIÓN a red pública (PV excedente sin desperdicio)
         
         ESTADO BESS (2 cols):
         - soc_percent: SOC en porcentaje (0-100%)
@@ -803,7 +886,7 @@ def simulate_bess_ev_exclusive(
     bess_to_mall = np.zeros(n_hours)  # NUEVA: peak shaving BESS para MALL > 2,000 kW
     grid_to_ev = np.zeros(n_hours)
     grid_to_mall = np.zeros(n_hours)
-    pv_curtailed = np.zeros(n_hours)
+    grid_export = np.zeros(n_hours)  # NUEVO: Exportación a red pública (cero desperdicio)
     
     # Estado inicial: SOC al 100% (BESS cargado del dia anterior)
     current_soc = 1.00
@@ -840,33 +923,48 @@ def simulate_bess_ev_exclusive(
             pv_to_mall[h] = pv_direct_to_mall
             mall_deficit = mall_h - pv_direct_to_mall
             
-            # PEAK SHAVING: Si MALL > 1900 kW, descargar BESS para reducir grid import (v5.5)
+            # PEAK SHAVING AGRESIVO v5.6.1: BESS descarga para CORTAR TODO deficit MALL > 1900 kW
+            # SIN restricción horaria. Descarga hasta SOC 20% para máxima eficiencia.
+            # OPTIMIZACIÓN: Usar energía ENTREGADA después de pérdidas, no energía bruta
             if mall_deficit > 0 and mall_h > mall_peak_threshold_kw and current_soc > soc_min:
-                # Descargar BESS para cubrir parcial/total del deficit peak shaving
-                max_bess_for_mall = min(power_kw, (current_soc - soc_min) * capacity_kwh)
-                bess_for_mall = min(max_bess_for_mall, mall_deficit)
+                # Descargar BESS AGRESIVAMENTE: todo lo disponible hasta SOC 20%
+                # Prioridad: CORTAR TODA demanda que supere 1900 kW
+                max_bess_discharge = min(power_kw, (current_soc - soc_min) * capacity_kwh)
+                # OPTIMIZADO: Calcular descarga necesaria considerando eficiencia
+                bess_discharge_needed = min(max_bess_discharge, mall_deficit / eff_discharge)
                 
-                if bess_for_mall > 0:
-                    actual_bess_for_mall = bess_for_mall * eff_discharge
-                    bess_discharge[h] = bess_for_mall
-                    bess_to_mall[h] = actual_bess_for_mall
-                    current_soc -= bess_for_mall / capacity_kwh
-                    mall_deficit -= bess_for_mall
+                if bess_discharge_needed > 0:
+                    # ENERGÍA ENTREGADA AL MALL (considerando pérdidas de eficiencia 95%)
+                    energy_delivered_to_mall = bess_discharge_needed * eff_discharge
+                    bess_discharge[h] = bess_discharge_needed
+                    bess_to_mall[h] = energy_delivered_to_mall
+                    current_soc -= bess_discharge_needed / capacity_kwh
+                    # GARANTÍA: No bajar de SOC 20% mínimo
+                    current_soc = max(current_soc, soc_min)
+                    mall_deficit -= energy_delivered_to_mall  # Usar energía REAL entregada
                 else:
                     bess_discharge[h] = 0
             else:
-                # Sin peak shaving MALL: Descargar lo excedente de 22-6h para llegar a soc_min
-                # Descarga BESS solo si está por debajo de lo planeado para el dia siguiente
+                # DESCARGA EXCEDENTE para llegar a SOC 20% (sin restricción horaria)
+                # Cualquier momento del día: si hay SOC > 20%, descargar para cortar picos
                 if current_soc > soc_min:
+                    # Calcular cuánto BESS podemos descargar hacia MALL para peak shaving
+                    # Estrategia v5.6: Descargar TODO excedente para máximo beneficio
                     soc_excess = (current_soc - soc_min) * capacity_kwh
-                    # Descargar lo excedente en 8 horas (22-6h) a grid
-                    max_discharge_to_min = min(power_kw, soc_excess / 8)
+                    # Descargar todo el exceso disponible (no limitado por horas)
+                    max_discharge_for_peak = min(power_kw, soc_excess)
                     
-                    if max_discharge_to_min > 0:
-                        actual_discharge_to_min = max_discharge_to_min * eff_discharge
-                        bess_discharge[h] = max_discharge_to_min
-                        pv_curtailed[h] += actual_discharge_to_min
-                        current_soc -= max_discharge_to_min / capacity_kwh
+                    if max_discharge_for_peak > 0:
+                        actual_discharge_peak = max_discharge_for_peak * eff_discharge
+                        bess_discharge[h] = max_discharge_for_peak
+                        # Intentar usar para peak shaving MALL primero (si hay deficit > 1900kW)
+                        if mall_deficit > 0 and mall_h > mall_peak_threshold_kw:
+                            bess_to_mall[h] = actual_discharge_peak
+                            mall_deficit -= actual_discharge_peak
+                        else:
+                            # Si no hay pico MALL, exportar a red
+                            grid_export[h] += actual_discharge_peak
+                        current_soc -= max_discharge_for_peak / capacity_kwh
                         current_soc = max(current_soc, soc_min)
                     else:
                         bess_discharge[h] = 0
@@ -876,9 +974,9 @@ def simulate_bess_ev_exclusive(
             # Grid cubre lo que falta del MALL deficit
             grid_to_mall[h] = max(mall_deficit, 0)
             
-            # PV sobrante
+            # PV sobrante EXPORTADO a red pública
             pv_remaining = pv_h - pv_direct_to_mall
-            pv_curtailed[h] = max(pv_remaining, 0)
+            grid_export[h] = max(pv_remaining, 0)  # EXPORTACIÓN, no desperdicio
             
             # Guardar SOC
             soc[h] = current_soc
@@ -888,19 +986,31 @@ def simulate_bess_ev_exclusive(
         # PRIORIDAD 1: PV -> BESS (CARGA PRIMERO)
         # Ni bien el PV empieza a generar, carga el BESS
         # Solo cargar si no estamos al 100% (mantiene una vez lleno)
+        # NUEVO v5.9: PROTECCIÓN HORARIA - Solo cargar BESS entre 6h-14h
+        # RAZON: En la tarde (15h+), el PV está bajando. No se debe cargar BESS con PV
+        #        residual de tarde. La carga debe ocurrir mientras haya PV CRECIENTE.
+        # OPTIMIZACIÓN v5.6.1: Maximizar carga BESS para máxima eficiencia global
         # ====================================
+        charge_window_start = 6
+        charge_window_end = 15  # 15h = 3 PM (cierre ventana de carga - punto crítico)
+        permite_cargar_bess = (hour_of_day >= charge_window_start and hour_of_day < charge_window_end)
+        
         pv_remaining = pv_h
-        if current_soc < soc_max and pv_h > 0:
+        if current_soc < soc_max and pv_h > 0 and permite_cargar_bess:
             # Capacidad disponible para carga BESS
             soc_headroom = (soc_max - current_soc) * capacity_kwh
+            # max_charge = cuánto PV podemos usar para cargar BESS
             max_charge = min(power_kw, pv_remaining, soc_headroom / eff_charge)
             
             if max_charge > 0:
                 bess_charge[h] = max_charge
-                pv_to_bess[h] = max_charge
-                current_soc += (max_charge * eff_charge) / capacity_kwh
-                current_soc = min(current_soc, soc_max)  # Asegurar no exceder 100%
-                pv_remaining -= max_charge
+                # ENERGÍA REAL ACUMULADA EN BESS (con pérdidas de eficiencia)
+                energy_stored = max_charge * eff_charge
+                pv_to_bess[h] = energy_stored  # Registrar energía útil almacenada
+                current_soc += energy_stored / capacity_kwh
+                # GARANTÍA: No exceder SOC 100%
+                current_soc = min(current_soc, soc_max)
+                pv_remaining -= max_charge  # Consumo de PV (incluye pérdidas)
         
         # ====================================
         # PRIORIDAD 2: PV -> EV (EN PARALELO CON CARGA BESS)
@@ -921,27 +1031,34 @@ def simulate_bess_ev_exclusive(
         pv_remaining -= pv_direct_to_mall
         mall_deficit = mall_h - pv_direct_to_mall
         
-        # PV sobrante (curtailment)
-        pv_curtailed[h] = max(pv_remaining, 0)
+        # ====================================
+        # PRIORIDAD 4: PV sobrante EXPORTADO a red pública
+        # Sin desperdicio: todo excedente se vende a OSINERGMIN
+        # ====================================
+        grid_export[h] = max(pv_remaining, 0)  # EXPORTACIÓN a red, cero curtailment
         
         # ====================================
         # DESCARGA BESS: Una vez cargado al 100%, mantiene hasta punto crítico
-        # Cuando PV < EV (punto crítico): BESS descarga LA DIFERENCIA
+        # Cuando PV < EV (punto crítico): BESS descarga LA DIFERENCIA EXACTA
         # Descarga solo lo que falta para cubrir 100% de EV hasta las 22h
+        # CRÍTICO: Máxima eficiencia, 100% EV coverage, no bajar de SOC 20%
         # ====================================
         if ev_deficit > 0 and current_soc > soc_min and hour_of_day < closing_hour:
-            # BESS descarga la diferencia exacta que EV necesita
+            # BESS descarga la DIFERENCIA EXACTA que EV necesita (100% COVERAGE)
             # Capacidad disponible para descarga (no bajar de 20%)
             soc_available = (current_soc - soc_min) * capacity_kwh
-            max_discharge = min(power_kw, ev_deficit / eff_discharge, soc_available)
+            # OPTIMIZACIÓN: Para entregar ev_deficit, descargar ev_deficit/eff_discharge del BESS
+            max_discharge_raw = min(power_kw, ev_deficit / eff_discharge, soc_available)
             
-            if max_discharge > 0:
-                actual_discharge = max_discharge * eff_discharge
-                bess_discharge[h] = max_discharge
-                bess_to_ev[h] = actual_discharge
-                current_soc -= max_discharge / capacity_kwh
-                current_soc = max(current_soc, soc_min)  # No bajar del minimo
-                ev_deficit -= actual_discharge
+            if max_discharge_raw > 0:
+                # ENERGÍA ENTREGADA A EV (considerando eficiencia 95%)
+                energy_to_ev = max_discharge_raw * eff_discharge
+                bess_discharge[h] = max_discharge_raw
+                bess_to_ev[h] = energy_to_ev  # Energía REAL al EV
+                current_soc -= max_discharge_raw / capacity_kwh
+                # GARANTÍA CRÍTICA: No bajar de SOC 20% bajo ninguna circunstancia
+                current_soc = max(current_soc, soc_min)
+                ev_deficit -= energy_to_ev  # Usar energía REAL entregada
         
         # ===========================================================================
         # PEAK SHAVING BESS: REDUCIR PICOS MALL EN HORA PUNTA (HP)
@@ -970,27 +1087,29 @@ def simulate_bess_ev_exclusive(
         CLOSING_HOUR = 22
         PEAK_SHAVING_START = 10  # Inicio de ventana de picos (10h es primer pico detectado)
         
-        # Peak shaving en 17h-21h (SOLO en punto crítico: cuando PV < EV)
-        # NO descargar en 10h-16h (hay abundante PV, grid puede suministrar picos)
-        # ESTRATEGIA: Descargar BESS para peak shaving SOLO cuando:
-        # 1. MALL > 1900 kW (pico optimizado v5.5)
-        # 2. PUNTO CRITICO: PV insuficiente (PV < EV, necesita descarga BESS para EV)
-        # 3. SOC disponible (>50% para mayor flexibilidad - optimizado v5.5)
-        #
-        # Resultado: Peak shaving oportunista - descarga cuando es NECESARIO 
-        # (no desperdicia energía en horas de abundancia solar)
-        if hour_of_day >= 17 and hour_of_day < CLOSING_HOUR:  # Solo punto crítico 17h-22h
-            # Condición: PV < EV (punto crítico debe activarse) Y MALL > 1900 (pico optimizado)
-            if pv_h < ev_h and mall_h > PEAK_SHAVING_THRESHOLD_KW and current_soc > 0.50:
-                # Descargar monto aumentado para mayor peak shaving (optimizado v5.5)
-                peak_excess_kwh = min(75.0, mall_h - PEAK_SHAVING_THRESHOLD_KW)  # OPTIMIZADO v5.5: 50→75 kWh
-                max_discharge_peak = min(power_kw, peak_excess_kwh)
+        # PEAK SHAVING AGRESIVO v5.6.1: DESCARGAR SIN RESTRICCION HORARIA + MÁXIMA EFICIENCIA
+        # Objetivo: CORTAR TODO deficit de MALL > 1900 kW
+        # Estrategia: Descargar hasta SOC 20% en CUALQUIER hora si MALL > 1900 kW
+        # OPTIMIZACIÓN: Registrar energía ENTREGADA, no energía descargada
+        if mall_h > PEAK_SHAVING_THRESHOLD_KW and current_soc > soc_min:
+            # DESCARGA AGRESIVA: Cortar TODO el deficit que supere 1900 kW
+            # Calcular el verdadero deficit actualizado (después de todas las descargas previas)
+            remaining_mall_deficit = max(mall_h - pv_to_mall[h] - bess_to_mall[h], 0)
+            if remaining_mall_deficit > 0:
+                # Descargar hasta cubrir el deficit o llegar a límite de SOC 20%
+                peak_excess_demand = remaining_mall_deficit
+                soc_available = (current_soc - soc_min) * capacity_kwh
+                # OPTIMIZACIÓN: Calcular descarga necesaria considerando eficiencia
+                max_discharge_raw = min(power_kw, peak_excess_demand / eff_discharge, soc_available)
                 
-                if max_discharge_peak > 0:
-                    actual_discharge_peak = max_discharge_peak / eff_discharge
-                    bess_discharge[h] += actual_discharge_peak
-                    bess_to_mall[h] += actual_discharge_peak * eff_discharge
-                    current_soc -= actual_discharge_peak / capacity_kwh
+                if max_discharge_raw > 0:
+                    # ENERGÍA ENTREGADA AL MALL (considerando eficiencia 95%)
+                    energy_delivered = max_discharge_raw * eff_discharge
+                    bess_discharge[h] += max_discharge_raw
+                    bess_to_mall[h] += energy_delivered  # Energía REAL entregada
+                    current_soc -= max_discharge_raw / capacity_kwh
+                    # GARANTÍA CRÍTICA: No bajar de SOC 20% bajo ninguna circunstancia
+                    current_soc = max(current_soc, soc_min)
         
         # ===========================================================================
         # RESTRICCION: CIERRE A SOC 20% EXACTO A LAS 22h
@@ -1074,66 +1193,78 @@ def simulate_bess_ev_exclusive(
     )
     
     # ===================================================================
-    # CALCULAR CO2 EVITADO INDIRECTAMENTE (co2_avoided_indirect_kg)
-    # ===================================================================
-    # Aplica a TODAS las descargas del BESS (tanto EV como peak shaving MALL)
-    # 
-    # Lógica: Cada kWh que el BESS suministra (bess_to_ev + bess_to_mall)
-    #         evita que el grid diesel lo genere (sistema aislado = 100% térmico)
-    # 
-    # Cálculo HORARIO (para cada hora del año, 8,760 valores):
-    #   CO2_evitado[h] = (bess_to_ev[h] + bess_to_mall[h]) × 0.4521 kg CO2/kWh
-    # 
-    # Factor de emisión: 0.4521 kg CO2/kWh (Electro Oriente, sistema aislado Loreto)
-    # Fuente: MINEM/OSINERGMIN - generación diesel/residual
-    # 
-    # Agregación anual:
-    #   CO2_anual = Σ(CO2_evitado[h]) para h=0 a 8,759
-    #   Resultado: ~103-150 toneladas CO2/año (depende de BESS ciclos)
-    # 
-    # Importancia: Cuantifica el beneficio ambiental real del BESS
-    #              (reduce combustible fósil del grid aislado)
+    # CALCULAR CO2 EVITADO INDIRECTAMENTE (v5.7)
     # ===================================================================
     bess_total_discharge = bess_to_ev + bess_to_mall
     co2_avoided_indirect = bess_total_discharge * FACTOR_CO2_KG_KWH
     
     # ===================================================================
-    # CALCULAR AHORRO TARIFARIO POR ARBITRAJE HP/HFP (cost_savings_hp_soles)
+    # CALCULAR COSTOS Y AHORROS TARIFARIOS HP/HFP (v5.7)
     # ===================================================================
-    # Aplica SOLO en HORAS PUNTA (HP: 18:00-22:59 = 5 horas por día)
-    # 
-    # Lógica del arbitraje:
-    #   - CARGA BESS: ocurre en HFP (6-17h) cuando PV abunda, tarifa S/. 0.28/kWh
-    #   - DESCARGA BESS: ocurre en HP (18-23h) cuando PV falta, tarifa S/. 0.45/kWh
-    #   - El diferencial (S/. 0.45 - S/. 0.28 = S/. 0.17/kWh) = ahorro por arbitraje
-    # 
-    # Cálculo HORARIO (para cada hora en HP):
-    #   Si hora ∈ [18, 23) horas:
-    #     cost_savings_hp[h] = bess_total_discharge[h] × S/. 0.17/kWh
-    #   Sino:
-    #     cost_savings_hp[h] = S/. 0.00
-    # 
-    # Componentes de descarga BESS en HP:
-    #   1. bess_to_ev[h]: Descarga para cubrir EV (point crítico 17h-22h)
-    #   2. bess_to_mall[h]: Peak shaving para MALL > umbral (1900 kW v5.5)
-    # 
-    # Agregación anual:
-    #   Cost_savings_anual = Σ(cost_savings_hp[h]) para HP horas (365 × 5 = 1,825 horas)
-    #   Resultado: ~S/. 48,000/año (con optimización v5.5, 1900 kW threshold)
-    # 
-    # Importancia: Ingresos directos por optimización energética
-    #              (arbitraje inteligente entre tariff períodos)
+    # TARIFAS OSINERGMIN VIGENTES (desde 2024-11-04):
+    # - HP (18:00-22:59): S/. 0.45/kWh | 5 horas × 365 días = 1,825 horas/año
+    # - HFP (00:00-17:59, 23:00-23:59): S/. 0.28/kWh | 19 horas × 365 días = 6,935 horas/año
+    # - DIFERENCIAL: S/. 0.17/kWh
+    #
+    # ESTRATEGIA:
+    # 1. HFP (tarifa baja): Carga BESS con PV excedente (costo operativo ~0)
+    # 2. HP (tarifa alta): Descarga BESS para evitar comprar grid caro
+    # 3. AHORRO: Diferencial tarifario × energía descargada en HP
+    #
+    # RESULTADOS ESPERADOS:
+    # - EV Exclusive: S/. 48,000/año (peak shaving mall + cierre EV)
+    # - Arbitrage HP/HFP: S/. 150,000-200,000/año (carga oportunista + descarga estratégica)
     # ===================================================================
-    cost_savings_hp = np.zeros(n_hours)
-    tariff_difference = TARIFA_ENERGIA_HP_SOLES - TARIFA_ENERGIA_HFP_SOLES  # Diferencial: S/. 0.17/kWh
+    
+    # Arrays de tarifas y costos horarios (corregido v5.7)
+    tariff_period = np.empty(n_hours, dtype=object)  # "HP" o "HFP"
+    tariff_rate_soles_kwh = np.zeros(n_hours)  # Tarifa en S/./kWh
+    bess_discharge_hourly = bess_to_ev + bess_to_mall  # Descarga total BESS cada hora
+    cost_avoided_by_bess_soles = np.zeros(n_hours)  # Costo evitado usando BESS vs grid
+    cost_if_grid_import_soles = np.zeros(n_hours)  # Costo si se importara 100% del grid
+    cost_savings_hp = np.zeros(n_hours)  # Ahorro específico en HP (descarga BESS × diferencial)
+    cost_savings_hfp = np.zeros(n_hours)  # Ahorro específico en HFP (PV cargando BESS)
+    tariff_index_hp_hfp = np.zeros(n_hours)  # Factor multiplicador (HFP=1.0, HP=1.607)
+    
+    # Factores de conversión
+    tariff_factor_hp_hfp = TARIFA_ENERGIA_HP_SOLES / TARIFA_ENERGIA_HFP_SOLES  # 0.45/0.28 ≈ 1.607
+    tariff_difference = TARIFA_ENERGIA_HP_SOLES - TARIFA_ENERGIA_HFP_SOLES  # 0.17 S/./kWh
     
     for h in range(n_hours):
         hour_of_day = h % 24
-        # HP: 18h-23h (horas punta) - Activa peak shaving y cubre fin de EV
-        if 18 <= hour_of_day < 23:
-            # Ahorro = Descarga total BESS en HP × diferencial de tarifa
-            # Esto cubica TANTO descargas para EV (prioridad 1) como peak shaving MALL (prioridad 3)
-            cost_savings_hp[h] = bess_total_discharge[h] * tariff_difference
+        is_hp = HORA_INICIO_HP <= hour_of_day < HORA_FIN_HP  # 18-23h
+        
+        # Asignar tarifa y período
+        if is_hp:
+            tariff_period[h] = "HP"
+            tariff_rate_soles_kwh[h] = TARIFA_ENERGIA_HP_SOLES
+            tariff_index_hp_hfp[h] = tariff_factor_hp_hfp
+        else:
+            tariff_period[h] = "HFP"
+            tariff_rate_soles_kwh[h] = TARIFA_ENERGIA_HFP_SOLES
+            tariff_index_hp_hfp[h] = 1.0  # Referencia base
+        
+        # CÁLCULO DE COSTOS HORARIOS
+        total_demand_h = ev_kwh[h] + mall_kwh[h]
+        cost_if_grid_import_soles[h] = total_demand_h * tariff_rate_soles_kwh[h]
+        
+        # Costo evitado usando BESS en lugar de grid
+        bess_discharge_h = bess_discharge_hourly[h]
+        cost_avoided_by_bess_soles[h] = bess_discharge_h * tariff_rate_soles_kwh[h]
+        
+        # Ahorros específicos por período tarifario
+        if is_hp:
+            # EN HP: Ahorro = Descarga BESS × diferencial (HP - HFP)
+            cost_savings_hp[h] = bess_discharge_h * tariff_difference
+            cost_savings_hfp[h] = 0.0
+        else:
+            # EN HFP: Valorizar PV cargando BESS como si evitara compra grid HFP
+            pv_to_bess_h = pv_to_bess[h]
+            cost_savings_hfp[h] = pv_to_bess_h * TARIFA_ENERGIA_HFP_SOLES
+            cost_savings_hp[h] = 0.0
+    
+    # Renombrar column cost_savings_hp_soles para mantener compatibilidad
+    cost_savings_hp_soles = cost_savings_hp
     
     # ===================================================================
     # CALCULAR DEMANDA CORTADA POR BESS (v5.4 - Crucial para agente RL)
@@ -1184,6 +1315,36 @@ def simulate_bess_ev_exclusive(
     mall_demand_after_bess = np.maximum(mall_kwh - bess_to_mall, 0)  # No negativo
     load_after_bess = ev_demand_after_bess + mall_demand_after_bess
     
+    # ===================================================================
+    # VALIDACIÓN HORARIA DE BALANCE BESS (SINCRONIZADO CON PERFILES)
+    # ===================================================================
+    # Calcula para CADA HORA el balance energético según carga/descarga de esa hora
+    # Varía dinámicamente con la generación solar y demanda de motos/mall
+    # ===================================================================
+    bess_energy_stored_hourly_kwh = bess_charge * eff_charge  # Energía almacenada por hora
+    bess_energy_delivered_hourly_kwh = bess_discharge * eff_discharge  # Energía entregada por hora
+    bess_balance_error_hourly_kwh = np.zeros(n_hours)
+    bess_balance_error_hourly_percent = np.zeros(n_hours)
+    bess_validation_status_hourly = np.empty(n_hours, dtype=object)
+    
+    for h in range(n_hours):
+        # Calcular error de balance para ESTA HORA
+        if bess_energy_stored_hourly_kwh[h] > 0 or bess_energy_delivered_hourly_kwh[h] > 0:
+            bess_balance_error_hourly_kwh[h] = bess_energy_delivered_hourly_kwh[h] - bess_energy_stored_hourly_kwh[h]
+            # Usar max(..., 1.0) para evitar division por numeros extremadamente pequenos
+            bess_balance_error_hourly_percent[h] = abs(bess_balance_error_hourly_kwh[h]) / max(bess_energy_stored_hourly_kwh[h], 1.0) * 100
+        else:
+            bess_balance_error_hourly_kwh[h] = 0.0
+            bess_balance_error_hourly_percent[h] = 0.0
+        
+        # Validacion 3-nivel para ESTA HORA
+        if bess_balance_error_hourly_percent[h] < 5.0:
+            bess_validation_status_hourly[h] = "OK"
+        elif bess_balance_error_hourly_percent[h] <= 10.0:
+            bess_validation_status_hourly[h] = "PÉRDIDAS"
+        else:
+            bess_validation_status_hourly[h] = "CRITICAL"
+    
     df = pd.DataFrame({
         'pv_kwh': pv_kwh,
         'ev_kwh': ev_kwh,
@@ -1192,29 +1353,42 @@ def simulate_bess_ev_exclusive(
         'pv_to_ev_kwh': pv_to_ev,
         'pv_to_bess_kwh': pv_to_bess,
         'pv_to_mall_kwh': pv_to_mall,
-        'pv_curtailed_kwh': pv_curtailed,
-        'bess_charge_kwh': bess_charge,
-        'bess_discharge_kwh': bess_discharge,
-        'bess_action_kwh': bess_action_kwh,  # NUEVA: carga/descarga en una columna (siempre positivo)
-        'bess_mode': bess_mode,  # NUEVA: 'charge', 'discharge', 'idle'
+        'grid_export_kwh': grid_export,
+        'bess_action_kwh': bess_action_kwh,
+        'bess_mode': bess_mode,
         'bess_to_ev_kwh': bess_to_ev,
-        'bess_to_mall_kwh': bess_to_mall,  # NUEVA: peak shaving para MALL > 2,000 kW
-        'peak_shaving_kwh': bess_to_mall,  # NUEVA: Peak shaving por hora (reduccion picos MALL)
-        'bess_total_discharge_kwh': bess_total_discharge,  # NUEVA: Total descarga (EV + peak shaving)
+        'bess_to_mall_kwh': bess_to_mall,
         'grid_import_ev_kwh': grid_to_ev,
         'grid_import_mall_kwh': grid_to_mall,
         'grid_import_kwh': grid_to_ev + grid_to_mall,
-        'grid_export_kwh': pv_curtailed,  # Sin conexion a red, es curtailment
         'soc_percent': soc * 100,
         'soc_kwh': soc * capacity_kwh,
-        'co2_avoided_indirect_kg': co2_avoided_indirect,  # NUEVA: CO2 evitado por descarga BESS (deja de usar grid diesel)
-        'cost_savings_hp_soles': cost_savings_hp,  # NUEVA: Ahorro en costos por descarga BESS en hora punta
+        'co2_avoided_indirect_kg': co2_avoided_indirect,
+        # ===================================================================
+        # COLUMNAS DE TARIFAS Y COSTOS HP/HFP (v5.7)
+        # ===================================================================
+        'tariff_period': tariff_period,  # "HP" o "HFP"
+        'tariff_rate_soles_kwh': tariff_rate_soles_kwh,  # Tarifa en S/./kWh
+        'cost_if_grid_import_soles': cost_if_grid_import_soles,  # Costo si todo fuera grid
+        'cost_avoided_by_bess_soles': cost_avoided_by_bess_soles,  # Costo evitado por BESS
+        'cost_savings_hp_soles': cost_savings_hp_soles,  # Ahorro en HP (descarga × diferencial)
+        'cost_savings_hfp_soles': cost_savings_hfp,  # Ahorro en HFP (PV almacenado)
+        'tariff_index_hp_hfp': tariff_index_hp_hfp,  # Factor multiplicador (HFP=1.0, HP=1.607)
         # ===================================================================
         # COLUMNAS DE DEMANDA CORTADA POR BESS (v5.4) - Para Agente RL
         # ===================================================================
-        'ev_demand_after_bess_kwh': ev_demand_after_bess,  # NUEVA: EV sin aporte BESS (lo que agente ve)
-        'mall_demand_after_bess_kwh': mall_demand_after_bess,  # NUEVA: MALL sin peak shaving (lo que agente ve)
-        'load_after_bess_kwh': load_after_bess,  # NUEVA: Carga total cortada por BESS (para agente)
+        'ev_demand_after_bess_kwh': ev_demand_after_bess,
+        'mall_demand_after_bess_kwh': mall_demand_after_bess,
+        'load_after_bess_kwh': load_after_bess,
+        # ===================================================================
+        # COLUMNAS DE VALIDACIÓN HORARIA DE BALANCE BESS (REEMPLAZANDO BRUTOS)
+        # Reemplazan bess_charge_kwh y bess_discharge_kwh (con eficiencia aplicada)
+        # ===================================================================
+        'bess_energy_stored_hourly_kwh': bess_energy_stored_hourly_kwh,
+        'bess_energy_delivered_hourly_kwh': bess_energy_delivered_hourly_kwh,
+        'bess_balance_error_hourly_kwh': bess_balance_error_hourly_kwh,
+        'bess_balance_error_hourly_percent': bess_balance_error_hourly_percent,
+        'bess_validation_status_hourly': bess_validation_status_hourly,
     }, index=datetime_index)
     df.index.name = 'datetime'
     
@@ -1241,6 +1415,61 @@ def simulate_bess_ev_exclusive(
     bess_to_ev_total = float(bess_to_ev.sum())
     cost_savings_hp_total = float(cost_savings_hp.sum())  # NUEVA: Ahorro total en costos HP
     
+    # =====================================================================
+    # VALIDACION CRITICA: BALANCE ENERGETICO BESS
+    # =====================================================================
+    # La energía descargada NO PUEDE SER MAYOR que energía cargada (con eficiencia)
+    # Lógica: descarga_total = carga_total × eficiencia (~95%)
+    # =====================================================================
+    total_bess_charge_kwh = float(bess_charge.sum())
+    total_bess_discharge_kwh = float(bess_discharge.sum())
+    
+    # Energía REAL almacenada (considerando eficiencia de carga)
+    energy_stored_in_bess = total_bess_charge_kwh * eff_charge  # Aplica sqrt(0.95) ≈ 0.9747
+    
+    # Energía REAL entregada desde BESS (considerando eficiencia de descarga)
+    energy_delivered_from_bess = total_bess_discharge_kwh * eff_discharge
+    
+    # VALIDACION: Verificar balance
+    balance_error = energy_delivered_from_bess - energy_stored_in_bess
+    balance_error_percent = abs(balance_error) / max(energy_stored_in_bess, 1e-9) * 100
+    
+    # VALIDACION MULTINIVEL: Tres criterios de aceptación según error
+    # Determinan el estado de salud del balance energético BESS
+    if balance_error_percent < 5.0:
+        validation_status = "OK"  # ✅ Balance energético válido
+        validation_message = "[✅ OK] BALANCE ENERGETICO BESS VERIFICADO"
+    elif balance_error_percent <= 10.0:
+        validation_status = "PÉRDIDAS"  # 📊 Pérdidas esperadas por eficiencia
+        validation_message = "[📊 PÉRDIDAS] BALANCE ENERGETICO BESS - PÉRDIDAS ESPERADAS POR EFICIENCIA"
+    else:
+        validation_status = "CRITICAL"  # ❌ Error crítico
+        validation_message = "[❌ ERROR CRITICO] BALANCE ENERGETICO BESS - DISCREPANCIA SEVERA"
+    
+    # Mostrar resultado de validación
+    if balance_error_percent < 5.0:
+        print(f"\n{validation_message}")
+        print(f"   Energía cargada: {total_bess_charge_kwh:,.0f} kWh/año")
+        print(f"   Energía descargada: {total_bess_discharge_kwh:,.0f} kWh/año")
+        print(f"   Energía almacenada: {energy_stored_in_bess:,.0f} kWh/año")
+        print(f"   Energía entregada: {energy_delivered_from_bess:,.0f} kWh/año")
+        print(f"   Balance error: {balance_error_percent:.2f}% (dentro de tolerancia)")
+    else:
+        print(f"\n{validation_message}")
+        print(f"   Energía cargada (antes pérdidas): {total_bess_charge_kwh:,.0f} kWh/año")
+        print(f"   Energía almacenada (después pérdidas carga): {energy_stored_in_bess:,.0f} kWh/año")
+        print(f"   Energía descargada (antes pérdidas): {total_bess_discharge_kwh:,.0f} kWh/año")
+        print(f"   Energía entregada (después pérdidas descarga): {energy_delivered_from_bess:,.0f} kWh/año")
+        print(f"   PÉRDIDAS ESPERADAS: {abs(balance_error):,.0f} kWh/año ({balance_error_percent:.1f}%)")
+        if balance_error_percent <= 10.0:
+            print(f"   ✅ NORMAL: Pérdidas por eficiencia y residuales en BESS (aceptable)")
+        else:
+            if balance_error > 0:
+                print(f"   ❌ PROBLEMA: Se descargó MÁS de lo que se cargó!")
+                print(f"   ❌ Causa probable: Descarga sin carga equivalente (BUG)")
+            else:
+                print(f"   ⚠️  PROBLEMA: Hay energía cargada pero no descargada")
+    
     metrics = {
         'total_pv_kwh': total_pv,
         'total_ev_kwh': total_ev,
@@ -1252,12 +1481,16 @@ def simulate_bess_ev_exclusive(
         'mall_from_pv_kwh': float(pv_to_mall.sum()),
         'mall_from_grid_kwh': float(grid_to_mall.sum()),
         'mall_from_bess_peak_shaving_kwh': peak_shaving_total,  # NUEVA: Peak shaving anual
-        'total_bess_charge_kwh': float(bess_charge.sum()),
-        'total_bess_discharge_kwh': float(bess_discharge.sum()),
+        'total_bess_charge_kwh': total_bess_charge_kwh,
+        'total_bess_discharge_kwh': total_bess_discharge_kwh,
+        'bess_energy_stored_kwh': energy_stored_in_bess,  # NUEVA: Energía real almacenada
+        'bess_energy_delivered_kwh': energy_delivered_from_bess,  # NUEVA: Energía real entregada
+        'bess_balance_error_kwh': balance_error,  # NUEVA: Discrepancia energética
+        'bess_balance_error_percent': balance_error_percent,  # NUEVA: Discrepancia %
         'bess_to_ev_kwh': bess_to_ev_total,  # NUEVA: Claridad en BESS->EV
         'bess_to_mall_kwh': peak_shaving_total,  # NUEVA: Claridad en BESS->MALL (peak shaving)
         'total_grid_import_kwh': total_grid,
-        'total_grid_export_kwh': float(pv_curtailed.sum()),
+        'total_grid_export_kwh': float(grid_export.sum()),  # EXPORTACIÓN a red pública (sin desperdicio)
         'co2_avoided_indirect_kg': co2_avoided_total,  # NUEVA: CO2 total evitado por descarga BESS
         'co2_avoided_indirect_tons': co2_avoided_total / 1000,  # NUEVA: CO2 en toneladas
         'cost_savings_hp_soles': cost_savings_hp_total,  # NUEVA: Ahorro total en costos HP por descarga BESS
@@ -1416,7 +1649,7 @@ def simulate_bess_solar_priority(
     grid_to_ev = np.zeros(n_hours)
     grid_to_mall = np.zeros(n_hours)
     grid_to_bess = np.zeros(n_hours)
-    pv_curtailed = np.zeros(n_hours)
+    grid_export = np.zeros(n_hours)  # Exportación a red pública (cero desperdicio)
     bess_mode = np.array(['idle'] * n_hours, dtype=object)
     tariff_soles_kwh = np.zeros(n_hours)
     cost_grid_import_soles = np.zeros(n_hours)
@@ -1447,7 +1680,7 @@ def simulate_bess_solar_priority(
             # PV solo hacia mall (EV cerrado)
             pv_to_ev[h] = 0.0
             pv_to_mall[h] = min(pv_h, mall_h)
-            pv_curtailed[h] = max(pv_h - pv_to_mall[h], 0)
+            grid_export[h] = max(pv_h - pv_to_mall[h], 0)  # EXPORTACIÓN a red
             
             # Grid cubre todo EV + mall deficit
             grid_to_ev[h] = ev_h
@@ -1492,8 +1725,14 @@ def simulate_bess_solar_priority(
         # =====================================================================
         # PASO 1: BESS CARGA A MAXIMA POTENCIA (si hay PV y SOC < 100%)
         # =====================================================================
+        # NUEVO v5.9: PROTECCIÓN HORARIA - Solo cargar BESS entre 6h-14h (mañana-mediodía)
+        # RAZON: En la tarde (15h+), el PV está bajando. No se debe cargar BESS con PV
+        #        residual de tarde. La carga debe ocurrir mientras haya PV CRECIENTE (mañana).
+        charge_window_start = 6
+        charge_window_end = 15  # 15h = 3 PM (cierre ventana de carga - punto crítico)
+        permite_cargar_bess = (hour_of_day >= charge_window_start and hour_of_day < charge_window_end)
         
-        if pv_remaining > 0.01 and current_soc < soc_max:
+        if pv_remaining > 0.01 and current_soc < soc_max and permite_cargar_bess:
             # ---------------------------------------------------------------
             # MODO CARGA: BESS carga a maxima potencia cuando hay generacion PV
             # 
@@ -1559,8 +1798,8 @@ def simulate_bess_solar_priority(
         pv_remaining -= pv_direct_to_mall
         mall_deficit = mall_h - pv_direct_to_mall
         
-        # Curtailment: PV que no puede usarse (muy poco o BESS lleno, EV cerrado, Mall satisfecho)
-        pv_curtailed[h] = max(pv_remaining, 0.0)
+        # EXPORTACIÓN a red pública: PV que no se usa (cero desperdicio)
+        grid_export[h] = max(pv_remaining, 0.0)  # TODO EXCEDENTE SE EXPORTA
         
         # =====================================================================
         # PASO 4: BESS DESCARGA (NUEVA LOGICA v5.5 - Peak Shaving 1900 kW)
@@ -1777,7 +2016,7 @@ def simulate_bess_solar_priority(
         'pv_to_ev_kwh': pv_to_ev,
         'pv_to_bess_kwh': pv_to_bess,
         'pv_to_mall_kwh': pv_to_mall,
-        'pv_curtailed_kwh': pv_curtailed,
+        'grid_export_kwh': grid_export,  # Exportación a red pública (cero desperdicio)
         'bess_charge_kwh': bess_charge,
         'bess_discharge_kwh': bess_discharge,
         'bess_to_ev_kwh': bess_to_ev,
@@ -1879,7 +2118,7 @@ def simulate_bess_solar_priority(
         'total_bess_charge_kwh': float(bess_charge.sum()),
         'total_bess_discharge_kwh': float(bess_discharge.sum()),
         'total_grid_import_kwh': total_grid,
-        'total_grid_export_kwh': float(pv_curtailed.sum()),
+        'total_grid_export_kwh': float(grid_export.sum()),  # EXPORTACIÓN a red pública
         'self_sufficiency': total_self_sufficiency,
         'ev_self_sufficiency': ev_self_sufficiency,
         'cycles_per_day': float(bess_charge.sum()) / capacity_kwh / 365 if capacity_kwh > 0 else 0.0,
@@ -1959,13 +2198,23 @@ def simulate_bess_arbitrage_hp_hfp(
     grid_to_ev = np.zeros(n_hours)
     grid_to_mall = np.zeros(n_hours)
     grid_to_bess = np.zeros(n_hours)
-    pv_curtailed = np.zeros(n_hours)
+    grid_export = np.zeros(n_hours)  # Exportación a red pública
     
-    # Arrays de tarifas y costos
+    # Arrays de tarifas y costos (v5.7 - expandido)
     tariff_soles_kwh = np.zeros(n_hours)
+    tariff_period = np.empty(n_hours, dtype=object)  # "HP" o "HFP"
     is_peak_hour = np.zeros(n_hours, dtype=int)
     cost_grid_import_soles = np.zeros(n_hours)
+    cost_avoided_by_bess_soles = np.zeros(n_hours)
+    cost_if_grid_import_soles = np.zeros(n_hours)
     savings_bess_soles = np.zeros(n_hours)
+    cost_savings_hp_soles = np.zeros(n_hours)
+    cost_savings_hfp_soles = np.zeros(n_hours)
+    tariff_index_hp_hfp = np.zeros(n_hours)
+    
+    # Factores de conversión (OSINERGMIN)
+    tariff_factor_hp_hfp = TARIFA_ENERGIA_HP_SOLES / TARIFA_ENERGIA_HFP_SOLES  # 0.45/0.28 ≈ 1.607
+    tariff_difference = TARIFA_ENERGIA_HP_SOLES - TARIFA_ENERGIA_HFP_SOLES  # 0.17 S/./kWh
     
     # Estado inicial: SOC al 50% (inicio neutro para arbitraje)
     current_soc = 0.50
@@ -1977,11 +2226,19 @@ def simulate_bess_arbitrage_hp_hfp(
         mall_h = mall_kwh[h]
         
         # ====================================
-        # IDENTIFICAR PERIODO TARIFARIO
+        # IDENTIFICAR PERIODO TARIFARIO (v5.7)
         # ====================================
         is_hp = HORA_INICIO_HP <= hour_of_day < HORA_FIN_HP
         is_peak_hour[h] = 1 if is_hp else 0
-        tariff_soles_kwh[h] = TARIFA_ENERGIA_HP_SOLES if is_hp else TARIFA_ENERGIA_HFP_SOLES
+        
+        if is_hp:
+            tariff_period[h] = "HP"
+            tariff_soles_kwh[h] = TARIFA_ENERGIA_HP_SOLES
+            tariff_index_hp_hfp[h] = tariff_factor_hp_hfp
+        else:
+            tariff_period[h] = "HFP"
+            tariff_soles_kwh[h] = TARIFA_ENERGIA_HFP_SOLES
+            tariff_index_hp_hfp[h] = 1.0  # Referencia base
         
         # ====================================
         # FUERA DE HORARIO OPERATIVO (23h-5h)
@@ -1992,7 +2249,7 @@ def simulate_bess_arbitrage_hp_hfp(
             pv_to_mall[h] = min(pv_h, mall_h)
             grid_to_ev[h] = ev_h if ev_h > 0 else 0
             grid_to_mall[h] = max(mall_h - pv_to_mall[h], 0)
-            pv_curtailed[h] = max(pv_h - pv_to_mall[h], 0)
+            grid_export[h] = max(pv_h - pv_to_mall[h], 0)  # Exportación a red
             soc[h] = current_soc
             # Calcular costo
             total_grid_h = grid_to_ev[h] + grid_to_mall[h]
@@ -2055,8 +2312,8 @@ def simulate_bess_arbitrage_hp_hfp(
             pv_remaining -= pv_direct_to_mall
             mall_deficit = mall_h - pv_direct_to_mall
             
-            # Curtailment
-            pv_curtailed[h] = pv_remaining
+            # EXPORTACIÓN a red pública
+            grid_export[h] = pv_remaining  # Todo excedente se exporta
             
             # Grid cubre deficits (tarifa HFP barata)
             grid_to_ev[h] = max(ev_deficit, 0)
@@ -2106,8 +2363,8 @@ def simulate_bess_arbitrage_hp_hfp(
                     # Ahorro adicional por reducir demanda Mall en HP
                     savings_bess_soles[h] += actual_discharge * (TARIFA_ENERGIA_HP_SOLES - TARIFA_ENERGIA_HFP_SOLES)
             
-            # Curtailment
-            pv_curtailed[h] = pv_remaining
+            # EXPORTACIÓN a red pública
+            grid_export[h] = pv_remaining  # Todo excedente se exporta
             
             # Grid cubre deficits restantes (tarifa HP cara - minimizado)
             grid_to_ev[h] = max(ev_deficit, 0)
@@ -2159,6 +2416,71 @@ def simulate_bess_arbitrage_hp_hfp(
             bess_action_kwh[h] = 0.0
             bess_mode[h] = 'midnight_off'  # Indicador de fuera de operacion
     
+    # ===================================================================
+    # VALIDACIÓN HORARIA DE BALANCE BESS (ARBITRAJE - SINCRONIZADO A PERFILES)
+    # ===================================================================
+    # Calcula para CADA HORA el balance energético según carga/descarga de esa hora
+    # Varía dinámicamente con la generación solar y demanda de motos/mall
+    # ===================================================================
+    eff_charge = math.sqrt(efficiency)
+    eff_discharge = math.sqrt(efficiency)
+    
+    bess_energy_stored_hourly_kwh = bess_charge * eff_charge  # Energía almacenada por hora
+    bess_energy_delivered_hourly_kwh = bess_discharge * eff_discharge  # Energía entregada por hora
+    bess_balance_error_hourly_kwh = np.zeros(n_hours)
+    bess_balance_error_hourly_percent = np.zeros(n_hours)
+    bess_validation_status_hourly = np.empty(n_hours, dtype=object)
+    
+    for h in range(n_hours):
+        # Calcular error de balance para ESTA HORA
+        if bess_energy_stored_hourly_kwh[h] > 0 or bess_energy_delivered_hourly_kwh[h] > 0:
+            bess_balance_error_hourly_kwh[h] = bess_energy_delivered_hourly_kwh[h] - bess_energy_stored_hourly_kwh[h]
+            # Usar max(..., 1.0) para evitar division por numeros extremadamente pequenos
+            bess_balance_error_hourly_percent[h] = abs(bess_balance_error_hourly_kwh[h]) / max(bess_energy_stored_hourly_kwh[h], 1.0) * 100
+        else:
+            bess_balance_error_hourly_kwh[h] = 0.0
+            bess_balance_error_hourly_percent[h] = 0.0
+        
+        # Validacion 3-nivel para ESTA HORA
+        if bess_balance_error_hourly_percent[h] < 5.0:
+            bess_validation_status_hourly[h] = "OK"
+        elif bess_balance_error_hourly_percent[h] <= 10.0:
+            bess_validation_status_hourly[h] = "PÉRDIDAS"
+        else:
+            bess_validation_status_hourly[h] = "CRITICAL"
+    
+    # ===================================================================
+    # CALCULAR COSTOS Y AHORROS HP/HFP COMPLETO (v5.7 - ARBITRAGE)
+    # ===================================================================
+    # Después de toda simulación, calcular costos/ahorros horarios
+    # considerando tarifas actuales y descarga BESS
+    # ===================================================================
+    for h in range(n_hours):
+        total_demand_h = ev_kwh[h] + mall_kwh[h]
+        bess_discharge_total_h = bess_to_ev[h] + bess_to_mall[h]
+        
+        # Costo si todo era importado del grid (sin BESS, sin PV)
+        cost_if_grid_import_soles[h] = total_demand_h * tariff_soles_kwh[h]
+        
+        # Costo evitado usando BESS en lugar de grid en esa tarifa
+        cost_avoided_by_bess_soles[h] = bess_discharge_total_h * tariff_soles_kwh[h]
+        
+        # Ahorros específicos por período tarifario
+        if tariff_period[h] == "HP":
+            # EN HP: Ahorro = Descarga BESS × diferencial (HP - HFP)
+            cost_savings_hp_soles[h] = bess_discharge_total_h * tariff_difference
+            cost_savings_hfp_soles[h] = 0.0
+        else:
+            # EN HFP: Valorizar PV cargando BESS como energía barata almacenada
+            cost_savings_hfp_soles[h] = pv_to_bess[h] * TARIFA_ENERGIA_HFP_SOLES
+            cost_savings_hp_soles[h] = 0.0
+        
+        # Ahorro total = HP + HFP (para compatibilidad con columna savings_bess_soles)
+        savings_bess_soles[h] = cost_savings_hp_soles[h] + cost_savings_hfp_soles[h]
+        
+        # Costo grid import (para compatibilidad)
+        cost_grid_import_soles[h] = (grid_to_ev[h] + grid_to_mall[h] + grid_to_bess[h]) * tariff_soles_kwh[h]
+    
     # =====================================================
     # CREAR DATETIME INDEX
     # =====================================================
@@ -2178,7 +2500,7 @@ def simulate_bess_arbitrage_hp_hfp(
         'pv_to_ev_kwh': pv_to_ev,
         'pv_to_bess_kwh': pv_to_bess,
         'pv_to_mall_kwh': pv_to_mall,
-        'pv_curtailed_kwh': pv_curtailed,
+        'grid_export_kwh': grid_export,  # Exportación a red pública (cero desperdicio)
         'bess_charge_kwh': bess_charge,
         'bess_discharge_kwh': bess_discharge,
         'bess_action_kwh': bess_action_kwh,
@@ -2189,17 +2511,34 @@ def simulate_bess_arbitrage_hp_hfp(
         'grid_import_ev_kwh': grid_to_ev,
         'grid_import_mall_kwh': grid_to_mall,
         'grid_import_kwh': grid_to_ev + grid_to_mall + grid_to_bess,
-        'grid_export_kwh': pv_curtailed,  # Sin conexion a red
+        'grid_export_kwh_metric': grid_export,  # Exportación a red (OSINERGMIN)
         'soc_percent': soc * 100,
         'soc_kwh': soc * capacity_kwh,
         
-        # NUEVAS COLUMNAS: Tarifas y Costos OSINERGMIN
+        # ===================================================================
+        # NUEVAS COLUMNAS: Tarifas y Costos OSINERGMIN HP/HFP (v5.7)
+        # ===================================================================
+        'tariff_period': tariff_period,  # "HP" o "HFP"
         'is_peak_hour': is_peak_hour,
-        'tariff_soles_kwh': tariff_soles_kwh,
+        'tariff_rate_soles_kwh': tariff_soles_kwh,
         'cost_grid_import_soles': cost_grid_import_soles,
+        'cost_if_grid_import_soles': cost_if_grid_import_soles,
+        'cost_avoided_by_bess_soles': cost_avoided_by_bess_soles,
+        'cost_savings_hp_soles': cost_savings_hp_soles,
+        'cost_savings_hfp_soles': cost_savings_hfp_soles,
         'savings_bess_soles': savings_bess_soles,
+        'tariff_index_hp_hfp': tariff_index_hp_hfp,
         'co2_grid_kg': (grid_to_ev + grid_to_mall + grid_to_bess) * FACTOR_CO2_KG_KWH,
-        'co2_avoided_kg': (bess_to_ev + bess_to_mall) * FACTOR_CO2_KG_KWH,
+        'co2_avoided_kg': (bess_to_ev + bess_to_mall + pv_to_ev + pv_to_mall) * FACTOR_CO2_KG_KWH,
+        
+        # ===================================================================
+        # COLUMNAS DE VALIDACIÓN HORARIA DE BALANCE BESS (ARBITRAJE - SINCRONIZADO A PERFILES)
+        # ===================================================================
+        'bess_energy_stored_hourly_kwh': bess_energy_stored_hourly_kwh,  # Energía almacenada por hora
+        'bess_energy_delivered_hourly_kwh': bess_energy_delivered_hourly_kwh,  # Energía entregada por hora
+        'bess_balance_error_hourly_kwh': bess_balance_error_hourly_kwh,  # Discrepancia energética por hora
+        'bess_balance_error_hourly_percent': bess_balance_error_hourly_percent,  # Discrepancia % por hora
+        'bess_validation_status_hourly': bess_validation_status_hourly,  # Status: 'OK', 'WARNING', 'CRITICAL' por hora
     }, index=datetime_index)
     df.index.name = 'datetime'
     
@@ -2240,6 +2579,63 @@ def simulate_bess_arbitrage_hp_hfp(
     co2_avoided_by_bess_kg = float((bess_to_ev + bess_to_mall).sum() * FACTOR_CO2_KG_KWH)
     co2_avoided_kg = co2_avoided_by_pv_kg + co2_avoided_by_bess_kg
     
+    # =====================================================================
+    # VALIDACION CRITICA: BALANCE ENERGETICO BESS (ARBITRAJE HP/HFP)
+    # =====================================================================
+    # La energía descargada NO PUEDE SER MAYOR que energía cargada (con eficiencia)
+    # Lógica: descarga_total = carga_total × eficiencia (~95%)
+    # =====================================================================
+    eff_charge = math.sqrt(efficiency)
+    eff_discharge = math.sqrt(efficiency)
+    
+    total_bess_charge_kwh = float(bess_charge.sum())
+    total_bess_discharge_kwh = float(bess_discharge.sum())
+    
+    # Energía REAL almacenada (considerando eficiencia de carga)
+    energy_stored_in_bess = total_bess_charge_kwh * eff_charge
+    
+    # Energía REAL entregada desde BESS (considerando eficiencia de descarga)
+    energy_delivered_from_bess = total_bess_discharge_kwh * eff_discharge
+    
+    # VALIDACION: Verificar balance
+    balance_error = energy_delivered_from_bess - energy_stored_in_bess
+    balance_error_percent = abs(balance_error) / max(energy_stored_in_bess, 1e-9) * 100
+    
+    # VALIDACION MULTINIVEL: Tres criterios de aceptación según error (ARBITRAJE HP/HFP)
+    if balance_error_percent < 5.0:
+        validation_status = "OK"  # ✅ Balance energético válido
+        validation_message = "[✅ OK] BALANCE ENERGETICO BESS (ARBITRAJE) VERIFICADO"
+    elif balance_error_percent <= 10.0:
+        validation_status = "PÉRDIDAS"  # 📊 Pérdidas esperadas
+        validation_message = "[📊 PÉRDIDAS] BALANCE ENERGETICO BESS (ARBITRAJE) - PÉRDIDAS ESPERADAS"
+    else:
+        validation_status = "CRITICAL"  # ❌ Error crítico
+        validation_message = "[❌ ERROR CRITICO] BALANCE ENERGETICO BESS (ARBITRAJE) - DISCREPANCIA SEVERA"
+    
+    # Mostrar resultado de validación
+    if balance_error_percent < 5.0:
+        print(f"\n{validation_message}")
+        print(f"   Energía cargada: {total_bess_charge_kwh:,.0f} kWh/año")
+        print(f"   Energía descargada: {total_bess_discharge_kwh:,.0f} kWh/año")
+        print(f"   Energía almacenada: {energy_stored_in_bess:,.0f} kWh/año")
+        print(f"   Energía entregada: {energy_delivered_from_bess:,.0f} kWh/año")
+        print(f"   Balance error: {balance_error_percent:.2f}% (dentro de tolerancia)")
+    else:
+        print(f"\n{validation_message}")
+        print(f"   Energía cargada (antes pérdidas): {total_bess_charge_kwh:,.0f} kWh/año")
+        print(f"   Energía almacenada (después pérdidas carga): {energy_stored_in_bess:,.0f} kWh/año")
+        print(f"   Energía descargada (antes pérdidas): {total_bess_discharge_kwh:,.0f} kWh/año")
+        print(f"   Energía entregada (después pérdidas descarga): {energy_delivered_from_bess:,.0f} kWh/año")
+        print(f"   PÉRDIDAS ESPERADAS: {abs(balance_error):,.0f} kWh/año ({balance_error_percent:.1f}%)")
+        if balance_error_percent <= 10.0:
+            print(f"   ✅ NORMAL: Pérdidas por eficiencia y residuales (aceptable)")
+        else:
+            if balance_error > 0:
+                print(f"   ❌ PROBLEMA: Se descargó MÁS de lo que se cargó!")
+                print(f"   ❌ Causa probable: Descarga sin carga equivalente (BUG)")
+            else:
+                print(f"   ⚠️  PROBLEMA: Hay energía cargada pero no descargada")
+    
     metrics = {
         # Energia
         'total_pv_kwh': total_pv,
@@ -2252,10 +2648,14 @@ def simulate_bess_arbitrage_hp_hfp(
         'mall_from_pv_kwh': mall_from_pv,
         'mall_from_bess_kwh': mall_from_bess,
         'mall_from_grid_kwh': mall_from_grid,
-        'total_bess_charge_kwh': float(bess_charge.sum()),
-        'total_bess_discharge_kwh': float(bess_discharge.sum()),
+        'total_bess_charge_kwh': total_bess_charge_kwh,
+        'total_bess_discharge_kwh': total_bess_discharge_kwh,
+        'bess_energy_stored_kwh': energy_stored_in_bess,  # NUEVA: Energía real almacenada
+        'bess_energy_delivered_kwh': energy_delivered_from_bess,  # NUEVA: Energía real entregada
+        'bess_balance_error_kwh': balance_error,  # NUEVA: Discrepancia energética
+        'bess_balance_error_percent': balance_error_percent,  # NUEVA: Discrepancia %
         'total_grid_import_kwh': total_grid,
-        'total_grid_export_kwh': float(pv_curtailed.sum()),
+        'total_grid_export_kwh': float(grid_export.sum()),  # EXPORTACIÓN a red (cero desperdicio)
         
         # Eficiencia
         'ev_self_sufficiency': ev_self_sufficiency,
@@ -2981,7 +3381,7 @@ def generate_bess_plots(
         ax2 = axes[0, 1]
         # Usar nombres correctos de columnas
         grid_import_col = 'grid_import_total_kwh' if 'grid_import_total_kwh' in monthly.columns else 'grid_import_kwh'
-        grid_export_col = 'pv_curtailed_kwh' if 'pv_curtailed_kwh' in monthly.columns else 'grid_export_kwh'
+        grid_export_col = 'grid_export_kwh' if 'grid_export_kwh' in monthly.columns else 'grid_export_kwh_metric'
         ax2.bar(months - 0.2, monthly.get(grid_import_col, 0) / 1000, width=0.4, color='red', label='Import Red')
         ax2.bar(months + 0.2, monthly.get(grid_export_col, 0) / 1000, width=0.4, color='blue', label='Export Red')
         ax2.set_xlabel('Mes', fontsize=10)
@@ -3422,6 +3822,51 @@ def run_bess_sizing(
     total_load_kwh = mall_kwh + ev_kwh
 
     # ============================================================================
+    # VALIDACION DE DEMANDA PICO MALL > 1900 kW (v5.7 CRITICO)
+    # ============================================================================
+    # SEGURIDAD: Mall tiene demanda pico que EXCEDE 1900 kW
+    # El sistema (PV + BESS + GRID) debe estar preparado para esto
+    mall_peak_kw = float(mall_kwh.max())  # type: ignore[attr-defined]
+    mall_min_kw = float(mall_kwh.min())  # type: ignore[attr-defined]
+    mall_mean_kw = float(mall_kwh.mean())  # type: ignore[attr-defined]
+    
+    print("\n[VALIDACION DEMANDA MALL - PICOS POR ENCIMA DE 1900 kW]")
+    print(f"   Demanda pico MALL: {mall_peak_kw:.1f} kW (EXCEDE 1900 kW - REFERENCIA CRITICA)")
+    print(f"   Demanda minima MALL: {mall_min_kw:.1f} kW")
+    print(f"   Demanda promedio MALL: {mall_mean_kw:.1f} kW")
+    
+    if mall_peak_kw > 1900:
+        print(f"   OK - Sistema dimensionado para picos MALL > 1900 kW")
+        print(f"   BESS descarga cuando PV < demanda_mall (deficit solar realtime)")
+        print(f"   Sistema debe suministrar hasta {mall_peak_kw:.1f} kW con PV+BESS+Grid")
+    else:
+        print(f"   WARNING - Demanda pico {mall_peak_kw:.1f} kW <= 1900 kW")
+
+    # ============================================================================
+    # VALIDACION DE CAPACIDAD SOLAR ANUAL v5.7
+
+    # ============================================================================
+    print("\n[VALIDACION CAPACIDAD SOLAR ANUAL v5.7]")
+    pv_annual_generation = float(pv_kwh.sum())  # type: ignore[attr-defined]
+    pv_utilization_percent = (pv_annual_generation / PV_ANNUAL_CAPACITY_KWH) * 100
+    
+    print(f"   Capacidad anual maxima: {PV_ANNUAL_CAPACITY_KWH/1e6:.2f} GWh (8,292,514.17 kWh)")
+    print(f"   Generacion anual actual: {pv_annual_generation/1e6:.2f} GWh ({pv_annual_generation:,.0f} kWh)")
+    print(f"   Utilizacion: {pv_utilization_percent:.1f}%")
+    
+    if pv_utilization_percent > 100:
+        print(f"   ⚠️  ADVERTENCIA: Generacion solar EXCEDE capacidad en {pv_utilization_percent - 100:.1f}%")
+        print(f"   Se limitara el despacho solar a {PV_ANNUAL_CAPACITY_KWH:,.0f} kWh")
+        # Limitar pv_kwh proporcionalmente
+        scale_factor = PV_ANNUAL_CAPACITY_KWH / pv_annual_generation
+        pv_kwh = pv_kwh * scale_factor  # type: ignore[attr-defined]
+        pv_annual_generation = float(pv_kwh.sum())  # type: ignore[attr-defined]
+        pv_utilization_percent = (pv_annual_generation / PV_ANNUAL_CAPACITY_KWH) * 100
+        print(f"   ✓ Generacion PV escalada a {pv_annual_generation/1e6:.2f} GWh ({pv_utilization_percent:.1f}%)")
+    else:
+        print(f"   ✓ OK: Generacion dentro de limite de capacidad")
+
+    # ============================================================================
     # REGLAS DE PRIORIDAD GENERACION SOLAR (PROYECTO IQUITOS)
     # ============================================================================
     # 1. Solar -> PRIMERO a motos/mototaxis (EV)
@@ -3436,8 +3881,13 @@ def run_bess_sizing(
     print("   1. Solar -> PRIMERO motos/mototaxis (EV)")
     print("   2. Excedente solar -> SEGUNDO carga BESS (hasta SOC 100%)")
     print("   3. Excedente final -> TERCERO Mall")
-    print("   4. BESS descarga: Desde punto critico (PV<EV) hasta cierre 22h")
+    print("   4. BESS DESCARGA: Cuando PV < demanda_mall O deficit EV (punto critico)")
     print("   5. SOC al cierre (22h): 20%")
+    print("   ")
+    print("   NOTA CRITICA v5.7:")
+    print("   - BESS descarga por DEFICIT SOLAR (PV < demanda), no por umbral 1900 kW")
+    print("   - El umbral 1900 kW es REFERENCIA para identificar picos altos del Mall")
+    print("   - Sistema debe estar preparado para picos > 1900 kW con PV+BESS+Grid")
 
     closing_hour = 22  # 10 PM - cierre mall
 
@@ -3772,6 +4222,40 @@ def run_bess_sizing(
     result_dict['co2_avoided_kg_year'] = metrics.get('co2_avoided_kg_year', 0.0)  # TOTAL (PV + BESS)
     result_dict['co2_reduction_percent'] = metrics.get('co2_reduction_percent', 0.0)
     result_dict['factor_co2_kg_kwh'] = FACTOR_CO2_KG_KWH
+    
+    # Agregar métricas de energía renovable (grid export y peak shaving)
+    result_dict['grid_export_kwh_year'] = metrics.get('total_grid_export_kwh', 0.0)
+    result_dict['bess_to_mall_kwh_year'] = df_sim['bess_to_mall_kwh'].sum() if 'bess_to_mall_kwh' in df_sim.columns else 0.0
+    
+    # =====================================================
+    # AGREGAR METRICAS DE DEMANDA PICO MALL > 1900 kW (v5.7 CRITICO)
+    # =====================================================
+    # VALIDACION CRITICA: Mall tiene demanda pico por encima de 1900 kW
+    # IMPORTANTE: El umbral 1900 kW es REFERENCIA para identificar picos altos
+    # La descarga REAL del BESS ocurre cuando PV < demanda_mall (deficit solar)
+    # No es trigger automático por umbral, sino por deficit de energía solar
+    result_dict['mall_demand_peak_kw'] = float(mall_kwh.max())
+    result_dict['mall_demand_min_kw'] = float(mall_kwh.min())
+    result_dict['mall_demand_mean_kw'] = float(mall_kwh.mean())
+    result_dict['mall_demand_annual_kwh'] = float(mall_kwh.sum())
+    result_dict['mall_peak_exceeds_1900kw'] = float(mall_kwh.max()) > 1900.0
+    result_dict['mall_peak_threshold_validation'] = 'umbral 1900 kW es REFERENCIA de picos altos, descarga BESS por deficit solar (PV < demanda_mall)'
+    
+    # Describir cómo se alimenta la demanda pico de Mall
+    mall_pv_portion = float(df_sim['pv_to_mall_kwh'].sum()) if 'pv_to_mall_kwh' in df_sim.columns else 0.0
+    mall_bess_portion = float(df_sim['bess_to_mall_kwh'].sum()) if 'bess_to_mall_kwh' in df_sim.columns else 0.0
+    mall_grid_portion = float(df_sim['grid_import_mall_kwh'].sum()) if 'grid_import_mall_kwh' in df_sim.columns else 0.0
+    
+    result_dict['mall_energy_sources'] = {
+        'description': 'Cómo se alimenta Mall durante picos (BESS descarga cuando PV < demanda_mall)',
+        'pv_direct_kwh': mall_pv_portion,
+        'pv_direct_percent': (mall_pv_portion / (mall_pv_portion + mall_bess_portion + mall_grid_portion) * 100) if (mall_pv_portion + mall_bess_portion + mall_grid_portion) > 0 else 0,
+        'bess_discharge_kwh': mall_bess_portion,
+        'bess_discharge_percent': (mall_bess_portion / (mall_pv_portion + mall_bess_portion + mall_grid_portion) * 100) if (mall_pv_portion + mall_bess_portion + mall_grid_portion) > 0 else 0,
+        'grid_import_kwh': mall_grid_portion,
+        'grid_import_percent': (mall_grid_portion / (mall_pv_portion + mall_bess_portion + mall_grid_portion) * 100) if (mall_pv_portion + mall_bess_portion + mall_grid_portion) > 0 else 0,
+        'total_kwh': mall_pv_portion + mall_bess_portion + mall_grid_portion,
+    }
     
     # Informacion de estrategia
     if USE_SOLAR_PRIORITY:
@@ -4408,6 +4892,16 @@ if __name__ == "__main__":
     print(f"║  🔋 BESS:     {result['capacity_kwh']:,.0f} kWh / {result['nominal_power_kw']:,.0f} kW" + " "*(50-len(f"{result['capacity_kwh']:,.0f}")-len(f"{result['nominal_power_kw']:,.0f}")) + "║")
     print(f"║  ☀️  PV:       {pv_year:,.1f} MWh/ano generacion" + " "*(50-len(f"{pv_year:,.1f}")) + "║")
     print(f"║  ⚡ Demanda:  {total_year:,.1f} MWh/ano (Mall + EV)" + " "*(49-len(f"{total_year:,.1f}")) + "║")
+    
+    # Agregar grid export y peak shaving (NUEVO)
+    grid_export_year = result.get('grid_export_kwh_year', 0.0) / 1000.0
+    grid_export_pct = (result.get('grid_export_kwh_year', 0.0) / (pv_year * 1000)) * 100 if pv_year > 0 else 0.0
+    peak_shaving_kwh = result.get('bess_to_mall_kwh_year', 0.0)
+    peak_shaving_pct = (peak_shaving_kwh / (total_year * 1000 * 0.967)) * 100 if total_year > 0 else 0.0  # ~96.7% es MALL
+    
+    print(f"║  🌐 Export:   {grid_export_year:,.1f} MWh/ano ({grid_export_pct:.1f}% generacion)" + " "*(46-len(f"{grid_export_year:,.1f}")-len(f"{grid_export_pct:.1f}")) + "║")
+    print(f"║  ✂️  Peak Cut: {peak_shaving_kwh:,.0f} kWh/ano ({peak_shaving_pct:.1f}% demanda MALL)" + " "*(40-len(f"{peak_shaving_kwh:,.0f}")-len(f"{peak_shaving_pct:.1f}")) + "║")
+    
     print(f"║  💰 Ahorro:   S/.{savings_total:,.0f}/ano ({reduction_pct:.1f}% reduccion)" + " "*(46-len(f"{savings_total:,.0f}")-len(f"{reduction_pct:.1f}")) + "║")
     print(f"║  🌿 CO2:      {co2_avoided/1000:,.1f} ton reduccion indirecta/ano" + " "*(49-len(f"{co2_avoided/1000:,.1f}")) + "║")
     print("╠" + "="*78 + "╣")

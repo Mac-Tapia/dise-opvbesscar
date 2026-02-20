@@ -7,13 +7,13 @@
     "power_charge_kw": 400.0,
     "power_discharge_kw": 400.0,
     "efficiency_roundtrip": 0.95,
-    "depth_of_discharge_dod": 0.80,
+    "depth_of_discharge_dod": 0.8,
     "soc_min_percent": 20.0,
     "soc_target_percent": 100.0,
     "technology": "LiFePO4-prismatic",
     "lifetime_years": 15,
     "expected_cycles": 9999,
-    "power_to_capacity_ratio": 0.20
+    "power_to_capacity_ratio": 0.2
   },
   "annual_simulation": {
     "hours_simulated": 8760,
@@ -35,8 +35,10 @@
     "pv_to_ev_direct_kwh": 305820.0,
     "pv_to_bess_charge_kwh": 678629.0,
     "pv_to_mall_direct_kwh": 148595.0,
-    "pv_curtailed_kwh": 84261.0,
-    "pv_utilization_percent": 79.8
+    "pv_exported_to_grid_kwh": 1893393.93,
+    "pv_curtailed_kwh": 0.0,
+    "pv_utilization_percent": 79.8,
+    "grid_export_percent": 155.48
   },
   "demand_coverage": {
     "ev_demand_total_kwh": 769310.0,
@@ -45,8 +47,10 @@
     "ev_coverage_grid_percent": 45.9,
     "mall_demand_total_kwh": 876000.0,
     "mall_coverage_pv_percent": 20.4,
-    "mall_coverage_bess_percent": 0.0,
-    "mall_coverage_grid_percent": 79.6
+    "mall_coverage_bess_percent": 10.07,
+    "mall_coverage_grid_percent": 69.53,
+    "peak_shaving_by_bess_kwh": 88293.23,
+    "peak_shaving_percent_of_mall": 10.07
   },
   "benefits": {
     "co2_avoided_kg": 209537.0,
@@ -75,5 +79,21 @@
     "power_limits_respected": true,
     "null_values_count": 0,
     "data_completeness_percent": 100.0
+  },
+  "tariff_analysis_v57": {
+    "timestamp": "2026-02-19T22:49:51.394031",
+    "hp_rate_soles_kwh": 0.45,
+    "hfp_rate_soles_kwh": 0.28,
+    "tariff_difference": 0.17,
+    "annual_savings": {
+      "hp_soles": 21797.13,
+      "hfp_soles": 145430.59,
+      "total_soles": 167227.72
+    },
+    "hours_distribution": {
+      "hp_hours": 1825,
+      "hfp_hours": 6935,
+      "total": 8760
+    }
   }
 }
