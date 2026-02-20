@@ -1340,7 +1340,7 @@ class BalanceEnergeticoSystem:
             Patch(facecolor='#FF1493', edgecolor='black', label='🔌 Red Importada'),
             Patch(facecolor='#8B0000', edgecolor='black', label='📊 Demanda Total')
         ]
-        ax.legend(handles=legend_elements, loc='upper right', fontsize=10, 
+        ax.legend(handles=legend_elements, loc='upper left', fontsize=10, 
                  framealpha=0.95, title='COMPONENTES ENERGÉTICOS', title_fontsize=11)
         
         ax.set_xticks(x_pos)
