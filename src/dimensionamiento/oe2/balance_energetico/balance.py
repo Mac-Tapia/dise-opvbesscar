@@ -1324,18 +1324,19 @@ class BalanceEnergeticoSystem:
         print("  [OK] 05_bess_soc.png")
     
     def _plot_bess_charge_discharge(self, df: pd.DataFrame, out_dir: Path) -> None:
-        """Grafica NUEVA: BESS CARGA y DESCARGA (P-BESS en kW).
+        """Grafica NUEVA: BESS CARGA y DESCARGA DESGLOSADA (PV→BESS, BESS→EV, BESS→MALL).
         
         Muestra explícitamente:
         - BESS CARGA (positivo): Barras verdes - cuando PV carga el BESS
-        - BESS DESCARGA (negativo): Barras rojas - cuando BESS descarga a EV y Mall
+        - BESS DESCARGA EV (negativo): Barras naranjas - cuando BESS descarga a EV
+        - BESS DESCARGA MALL (negativo): Barras rojas - cuando BESS descarga para peak shaving MALL
         """
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16, 10))
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(18, 12))
         
         hours = np.arange(len(df))
         
-        # Gráfico 1: CARGA vs DESCARGA horaria (barras)
-        # Usar columnas disponibles en el dataset
+        # ===== GRÁFICO 1: CARGA y DESCARGAS HORARIAS (superpuestas) =====
+        # Cargar datos
         if 'pv_to_bess_kw' in df.columns:
             charge_kw = df['pv_to_bess_kw'].values
         elif 'pv_to_bess_kwh' in df.columns:
@@ -1343,30 +1344,39 @@ class BalanceEnergeticoSystem:
         else:
             charge_kw = np.zeros(len(df))
         
-        # Para descarga, usar bess_energy_delivered o sumar descargas individuales
-        if 'bess_energy_delivered_hourly_kwh' in df.columns:
-            discharge_kw = df['bess_energy_delivered_hourly_kwh'].values
-        elif 'bess_to_ev_kwh' in df.columns and 'bess_to_mall_kwh' in df.columns:
-            discharge_kw = df['bess_to_ev_kwh'].values + df['bess_to_mall_kwh'].values
+        if 'bess_to_ev_kwh' in df.columns:
+            discharge_ev_kw = df['bess_to_ev_kwh'].values
         else:
-            discharge_kw = np.zeros(len(df))
+            discharge_ev_kw = np.zeros(len(df))
         
-        # Gráfico de barras superpuestas
-        ax1.bar(hours, charge_kw, width=1, label='BESS CARGA (PV→BESS)', color='#32CD32', alpha=0.8, edgecolor='none')
+        if 'bess_to_mall_kwh' in df.columns:
+            discharge_mall_kw = df['bess_to_mall_kwh'].values
+        else:
+            discharge_mall_kw = np.zeros(len(df))
+        
+        total_discharge_kw = discharge_ev_kw + discharge_mall_kw
+        
+        # Barras de carga (verde)
+        ax1.bar(hours, charge_kw, width=1, label='BESS CARGA (PV→BESS)', color='#32CD32', alpha=0.85, edgecolor='none')
+        
+        # Barras de descarga en eje dual
         ax1_twin = ax1.twinx()
-        ax1_twin.bar(hours, -discharge_kw, width=1, label='BESS DESCARGA', color='#FF6347', alpha=0.8, edgecolor='none')
+        ax1_twin.bar(hours, -discharge_ev_kw, width=1, label='BESS DESCARGA→EV', color='#FFA500', alpha=0.7, edgecolor='none')
+        ax1_twin.bar(hours, -discharge_mall_kw, width=1, bottom=-discharge_ev_kw, label='BESS DESCARGA→MALL (Peak Shaving)', color='#DC143C', alpha=0.75, edgecolor='none')
         
-        ax1.set_xlabel('Hora del Año', fontsize=11, fontweight='bold')
-        ax1.set_ylabel('Carga (kW)', fontsize=11, fontweight='bold', color='#32CD32')
-        ax1_twin.set_ylabel('Descarga (kW)', fontsize=11, fontweight='bold', color='#FF6347')
-        ax1.set_title('Operación Horaria del BESS: CARGA (Verde) y DESCARGA (Rojo)', fontsize=13, fontweight='bold')
+        ax1.set_xlabel('Hora del Año', fontsize=10, fontweight='bold')
+        ax1.set_ylabel('Carga (kW)', fontsize=10, fontweight='bold', color='#32CD32')
+        ax1_twin.set_ylabel('Descarga (kW)', fontsize=10, fontweight='bold', color='#DC143C')
+        ax1.set_title('Operación Horaria del BESS: Carga y Descargas Desglosadas', fontsize=12, fontweight='bold')
+        ax1.tick_params(axis='y', labelcolor='#32CD32')
+        ax1_twin.tick_params(axis='y', labelcolor='#DC143C')
         
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax1_twin.get_legend_handles_labels()
-        ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right', fontsize=10)
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right', fontsize=9)
         ax1.grid(True, alpha=0.3, axis='y')
         
-        # Gráfico 2: Resumen mensual (barras agrupadas)
+        # ===== GRÁFICO 2: RESUMEN MENSUAL CON DESGLOSE =====
         df_temp = df.copy()
         df_temp['month'] = np.arange(len(df_temp)) // (24 * 30)
         
@@ -1382,49 +1392,119 @@ class BalanceEnergeticoSystem:
                 else:
                     carga = 0
                 
-                # Descarga mensual
-                if 'bess_to_ev_kwh' in df.columns and 'bess_to_mall_kwh' in df.columns:
-                    descarga = (df_temp.loc[month_filter, 'bess_to_ev_kwh'].sum() + 
-                               df_temp.loc[month_filter, 'bess_to_mall_kwh'].sum())
-                elif 'bess_energy_delivered_hourly_kwh' in df.columns:
-                    descarga = df_temp.loc[month_filter, 'bess_energy_delivered_hourly_kwh'].sum()
+                # Descarga EV
+                if 'bess_to_ev_kwh' in df.columns:
+                    desc_ev = df_temp.loc[month_filter, 'bess_to_ev_kwh'].sum()
                 else:
-                    descarga = 0
+                    desc_ev = 0
                 
-                monthly_data.append({'month': month, 'carga': carga, 'descarga': descarga})
+                # Descarga MALL
+                if 'bess_to_mall_kwh' in df.columns:
+                    desc_mall = df_temp.loc[month_filter, 'bess_to_mall_kwh'].sum()
+                else:
+                    desc_mall = 0
+                
+                monthly_data.append({
+                    'month': month, 
+                    'carga': carga, 
+                    'desc_ev': desc_ev,
+                    'desc_mall': desc_mall,
+                    'desc_total': desc_ev + desc_mall
+                })
         
         if monthly_data:
-            import pandas as pd
             monthly_df = pd.DataFrame(monthly_data)
             months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
             month_labels = [months[int(m)] for m in monthly_df['month'].values]
             x_pos = np.arange(len(monthly_df))
-            width = 0.35
+            width = 0.25
             
-            ax2.bar(x_pos - width/2, monthly_df['carga'], width, label='Carga mensual (PV→BESS)', 
+            # Carga (verde)
+            ax2.bar(x_pos - width, monthly_df['carga'], width, label='Carga (PV→BESS)', 
                    color='#32CD32', edgecolor='black', linewidth=0.5)
-            ax2.bar(x_pos + width/2, monthly_df['descarga'], width, label='Descarga mensual', 
-                   color='#FF6347', edgecolor='black', linewidth=0.5)
+            
+            # Descarga EV (naranja)
+            ax2.bar(x_pos, monthly_df['desc_ev'], width, label='Descarga→EV', 
+                   color='#FFA500', edgecolor='black', linewidth=0.5)
+            
+            # Descarga MALL (rojo)
+            ax2.bar(x_pos + width, monthly_df['desc_mall'], width, label='Descarga→MALL (Peak Shaving)', 
+                   color='#DC143C', edgecolor='black', linewidth=0.5)
             
             ax2.set_xticks(x_pos)
-            ax2.set_xticklabels(month_labels, fontsize=10, fontweight='bold')
+            ax2.set_xticklabels(month_labels, fontsize=9, fontweight='bold')
         
-        ax2.set_xlabel('Mes', fontsize=11, fontweight='bold')
-        ax2.set_ylabel('Energía BESS (kWh/mes)', fontsize=11, fontweight='bold')
-        ax2.set_title('Resumen Mensual: Carga y Descarga del BESS', fontsize=13, fontweight='bold')
-        ax2.legend(loc='upper right', fontsize=10)
+        ax2.set_xlabel('Mes', fontsize=10, fontweight='bold')
+        ax2.set_ylabel('Energía BESS (kWh/mes)', fontsize=10, fontweight='bold')
+        ax2.set_title('Resumen Mensual: Carga y Descargas del BESS', fontsize=12, fontweight='bold')
+        ax2.legend(loc='upper right', fontsize=9)
         ax2.grid(True, alpha=0.3, axis='y')
         
-        # Totales
-        total_charge = charge_kw.sum()
-        total_discharge = discharge_kw.sum()
-        print(f"\n  Totales BESS:")
-        print(f"    Carga anual (PV→BESS): {total_charge:,.0f} kWh")
-        print(f"    Descarga total: {total_discharge:,.0f} kWh")
+        # ===== GRÁFICO 3: PASTEL - DISTRIBUCIÓN DE DESCARGA =====
+        total_desc_ev = discharge_ev_kw.sum()
+        total_desc_mall = discharge_mall_kw.sum()
+        total_desc = total_desc_ev + total_desc_mall
+        
+        if total_desc > 0:
+            sizes = [total_desc_ev, total_desc_mall]
+            labels = [
+                f'BESS→EV\n{total_desc_ev:,.0f} kWh\n({total_desc_ev/total_desc*100:.1f}%)',
+                f'BESS→MALL\n(Peak Shaving)\n{total_desc_mall:,.0f} kWh\n({total_desc_mall/total_desc*100:.1f}%)'
+            ]
+            colors = ['#FFA500', '#DC143C']
+            explode = (0.05, 0.05)
+            
+            ax3.pie(sizes, labels=labels, colors=colors, autopct='', startangle=90,
+                   explode=explode, textprops={'fontsize': 10, 'fontweight': 'bold'})
+            ax3.set_title(f'Desglose de Descarga BESS Anual\nTotal: {total_desc:,.0f} kWh/año',
+                         fontsize=12, fontweight='bold')
+        else:
+            ax3.text(0.5, 0.5, 'Sin descarga de BESS', ha='center', va='center', 
+                    fontsize=12, fontweight='bold')
+            ax3.set_xlim(0, 1)
+            ax3.set_ylim(0, 1)
+        
+        # ===== GRÁFICO 4: TABLA RESUMEN =====
+        ax4.axis('off')
+        
+        total_charge_annual = charge_kw.sum()
+        
+        summary_text = (
+            f"RESUMEN ANUAL DE OPERACIÓN BESS\n"
+            f"{'='*50}\n\n"
+            f"CARGA (PV → BESS):\n"
+            f"  • Energía cargada: {total_charge_annual:>15,.0f} kWh\n"
+            f"  • Promedio/día:    {total_charge_annual/365:>15,.0f} kWh\n\n"
+            f"DESCARGA (BESS → EV):\n"
+            f"  • Energía entregada: {total_desc_ev:>14,.0f} kWh\n"
+            f"  • Porcentaje:        {total_desc_ev/total_desc*100:>14.1f}%\n"
+            f"  • Promedio/día:      {total_desc_ev/365:>14,.0f} kWh\n\n"
+            f"DESCARGA (BESS → MALL - Peak Shaving):\n"
+            f"  • Energía entregada: {total_desc_mall:>14,.0f} kWh\n"
+            f"  • Porcentaje:        {total_desc_mall/total_desc*100:>14.1f}%\n"
+            f"  • Promedio/día:      {total_desc_mall/365:>14,.0f} kWh\n\n"
+            f"TOTAL DESCARGA:\n"
+            f"  • Anual:            {total_desc:>15,.0f} kWh\n"
+            f"  • Promedio/día:     {total_desc/365:>15,.0f} kWh\n\n"
+            f"RATIO CARGA/DESCARGA:\n"
+            f"  • Carga/Descarga:   {total_charge_annual/total_desc if total_desc > 0 else 0:>15.2f}\n"
+            f"{'='*50}"
+        )
+        
+        ax4.text(0.05, 0.95, summary_text, transform=ax4.transAxes, 
+                fontsize=10, verticalalignment='top', fontfamily='monospace',
+                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
         
         plt.tight_layout()
         plt.savefig(out_dir / "05.1_bess_carga_descarga.png", dpi=150, bbox_inches='tight')
         plt.close()
+        
+        # Imprimir desglose completo
+        print(f"\n  Totales BESS:")
+        print(f"    Carga anual (PV→BESS):        {total_charge_annual:>15,.0f} kWh")
+        print(f"    Descarga→EV:                  {total_desc_ev:>15,.0f} kWh ({total_desc_ev/total_desc*100:.1f}%)")
+        print(f"    Descarga→MALL (Peak Shaving): {total_desc_mall:>15,.0f} kWh ({total_desc_mall/total_desc*100:.1f}%)")
+        print(f"    Descarga total:               {total_desc:>15,.0f} kWh")
         print("  [OK] 05.1_bess_carga_descarga.png")
     
     def _plot_pv_export_breakdown(self, df: pd.DataFrame, out_dir: Path) -> None:
