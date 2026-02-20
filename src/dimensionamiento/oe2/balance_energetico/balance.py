@@ -1694,6 +1694,18 @@ def main():
         pv_to_demand = (df_bess_full['pv_to_ev_kwh'].values[:hours] + 
                        df_bess_full['pv_to_mall_kwh'].values[:hours])
     
+    # Cargar PV → EV (directo)
+    if 'pv_to_ev_kwh' in df_bess_full.columns:
+        pv_to_ev = df_bess_full['pv_to_ev_kwh'].values[:hours]
+    else:
+        pv_to_ev = np.zeros(hours)
+    
+    # Cargar PV → Mall (directo)
+    if 'pv_to_mall_kwh' in df_bess_full.columns:
+        pv_to_mall = df_bess_full['pv_to_mall_kwh'].values[:hours]
+    else:
+        pv_to_mall = np.zeros(hours)
+    
     if 'pv_to_bess_kwh' in df_bess_full.columns:
         pv_to_bess = df_bess_full['pv_to_bess_kwh'].values[:hours]
     
@@ -1730,14 +1742,21 @@ def main():
     df = pd.DataFrame({
         'hour': np.arange(hours),
         'pv_generation_kw': pv_gen,
+        'pv_kwh': pv_gen,  # ALIAS
         'mall_demand_kw': mall_demand,
         'mall_kwh': mall_demand,  # NEW: Mall demand in kWh (same as kW for hourly data)
         'ev_demand_kw': ev_demand,
+        'ev_kwh': ev_demand,  # ALIAS
         'total_demand_kw': total_demand,
         'pv_to_demand_kw': pv_to_demand,
+        'pv_to_ev_kw': pv_to_ev,  # NUEVO: PV directo a EV
+        'pv_to_ev_kwh': pv_to_ev,  # ALIAS para compatibilidad en gráficas
         'pv_to_bess_kw': pv_to_bess,
         'pv_to_bess_kwh': pv_to_bess,  # ALIAS para compatibilidad
+        'pv_to_mall_kw': pv_to_mall,  # NUEVO: PV directo a Mall
+        'pv_to_mall_kwh': pv_to_mall,  # ALIAS para compatibilidad en gráficas
         'pv_to_grid_kw': pv_to_grid,
+        'grid_export_kw': pv_to_grid,  # ALIAS
         'grid_export_kwh': grid_export_real,  # REAL: Usar valores reales del dataset bess_ano_2024.csv
         'bess_charge_kw': bess_charge,
         'bess_discharge_kw': bess_discharge,
