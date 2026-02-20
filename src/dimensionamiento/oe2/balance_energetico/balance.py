@@ -464,8 +464,8 @@ class BalanceEnergeticoSystem:
         # Grid
         ax.grid(True, alpha=0.2, linestyle=':', axis='y')
         ax.set_xlim(-0.8, 23.8)
-        ax.set_xticks(np.arange(0, 24, 2))
-        ax.set_xticklabels([f'{h:02d}h' for h in range(0, 24, 2)], fontsize=10, fontweight='bold')
+        ax.set_xticks(np.arange(0, 24))
+        ax.set_xticklabels([f'{h:02d}h' for h in range(0, 24)], fontsize=9, fontweight='bold', rotation=45)
         
         # Legend en dos columnas con mejor poscionamiento
         ax.legend(loc='upper center', fontsize=10, ncol=3, framealpha=0.98, edgecolor='black', fancybox=True,
