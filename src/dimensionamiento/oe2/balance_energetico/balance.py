@@ -1579,23 +1579,38 @@ def main():
     # Cargar DataFrame REAL desde bess_ano_2024.csv
     print("Cargando datos reales del sistema...")
     
-    # Cargar dataset completo real desde bess.py
+    # Cargar dataset completo real desde archivos OE2
     try:
         project_root = Path(__file__).parent.parent.parent.parent.parent
-        # CORRECCIÓN: bess.py guarda en data/iquitos_ev_mall/bess_timeseries.csv (NO en oe2/bess/)
-        bess_csv_path = project_root / "data" / "iquitos_ev_mall" / "bess_timeseries.csv"
+        
+        # RUTAS ACTUALIZADAS (OE2 - 2026-02-20)
+        bess_csv_path = project_root / "data" / "oe2" / "bess" / "bess_ano_2024.csv"
+        chargers_csv_path = project_root / "data" / "oe2" / "chargers" / "chargers_ev_ano_2024_v3.csv"
+        mall_csv_path = project_root / "data" / "oe2" / "demandamallkwh" / "demandamallhorakwh.csv"
+        pv_csv_path = project_root / "data" / "oe2" / "Generacionsolar" / "pv_generation_citylearn2024.csv"
+        
+        # Cargar BESS timeseries (contiene todas las columnas: PV, EV, Mall, Grid, etc)
+        print("[CARGANDO] BESS: {}".format(bess_csv_path.name))
         df_bess = pd.read_csv(bess_csv_path)
         
         # Usar columnas reales del dataset (NO SINTETICAS)
         pv_gen = df_bess['pv_kwh'].values
-        mall_demand = df_bess['mall_kwh'].values
         ev_demand = df_bess['ev_kwh'].values
-        grid_export_real = df_bess['grid_export_kwh'].values
+        grid_export_real = df_bess['grid_export_kwh'].values if 'grid_export_kwh' in df_bess.columns else np.zeros(len(pv_gen))
+        
+        # Cargar demanda Mall directa desde demandamallhorakwh.csv
+        print("[CARGANDO] Mall: {}".format(mall_csv_path.name))
+        df_mall = pd.read_csv(mall_csv_path, sep=";")
+        df_mall.columns = ['fechahora', 'kwh']
+        df_mall['fechahora'] = pd.to_datetime(df_mall['fechahora'], format='%d/%m/%Y %H:%M', dayfirst=True)
+        df_mall_2024 = df_mall[df_mall['fechahora'].dt.year == 2024].sort_values('fechahora').reset_index(drop=True)
+        mall_demand = df_mall_2024['kwh'].values[:8760]  # Asegurar 8760 horas
         
         print("[OK] Dataset BESS REAL cargado: {} horas".format(len(df_bess)))
         print("[OK] PV real: {:.0f} kWh/año".format(pv_gen.sum()))
-        print("[OK] Demanda Mall REAL: {} horas (min={:.1f} kW, max={:.1f} kW, mean={:.1f} kW)".format(
-            len(mall_demand), mall_demand.min(), mall_demand.max(), mall_demand.mean()))
+        print("[OK] Demanda Mill real: {:.0f} kWh/año (min={:.1f} kW, max={:.1f} kW, mean={:.1f} kW)".format(
+            mall_demand.sum(), mall_demand.min(), mall_demand.max(), mall_demand.mean()))
+        print("[OK] Demanda EV real: {:.0f} kWh/año".format(ev_demand.sum()))
         
         # =====================================================
         # VALIDACION CRITICA: DEMANDA PICO MALL > 1900 kW
@@ -1608,7 +1623,7 @@ def main():
             print("  Sistema PV + BESS + Grid dimensionado para picos > 1900 kW")
         
     except Exception as e:
-        print("[WARNING] No se pudo cargar demanda mall real, usando sintetica: {}".format(e))
+        print("[WARNING] No se pudo cargar datasets OE2 reales, usando sinéticos: {}".format(e))
         mall_demand = 100 + 20 * np.sin(2 * np.pi * np.arange(8760) / (365 * 24))
     
     hours = len(mall_demand)
