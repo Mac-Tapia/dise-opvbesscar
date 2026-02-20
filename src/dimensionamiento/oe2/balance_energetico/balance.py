@@ -1615,11 +1615,10 @@ def main():
         
         # Cargar demanda Mall directa desde demandamallhorakwh.csv
         print("[CARGANDO] Mall: {}".format(mall_csv_path.name))
-        df_mall = pd.read_csv(mall_csv_path, sep=";")
-        df_mall.columns = ['fechahora', 'kwh']
-        df_mall['fechahora'] = pd.to_datetime(df_mall['fechahora'], format='%d/%m/%Y %H:%M', dayfirst=True)
-        df_mall_2024 = df_mall[df_mall['fechahora'].dt.year == 2024].sort_values('fechahora').reset_index(drop=True)
-        mall_demand = df_mall_2024['kwh'].values[:8760]  # Asegurar 8760 horas
+        df_mall = pd.read_csv(mall_csv_path, sep=",")  # CSV con separador coma
+        df_mall['datetime'] = pd.to_datetime(df_mall['datetime'])
+        df_mall_2024 = df_mall[df_mall['datetime'].dt.year == 2024].sort_values('datetime').reset_index(drop=True)
+        mall_demand = df_mall_2024['mall_demand_kwh'].values[:8760]  # Usar columna real del CSV
         
         print("[OK] Dataset BESS REAL cargado: {} horas".format(len(df_bess)))
         print("[OK] PV real: {:.0f} kWh/año".format(pv_gen.sum()))
