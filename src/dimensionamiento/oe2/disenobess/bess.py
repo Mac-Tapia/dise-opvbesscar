@@ -1886,10 +1886,10 @@ def simulate_bess_solar_priority(
         
         # Condicionales de crisis solar
         crisis_solar_para_mall = (pv_h < mall_h)  # Hay más demanda MALL que generación PV
-        pico_total_critico = ((ev_h + pv_h + max(mall_h - pv_h, 0)) > 2000.0)  # ≈ Total pico > 2000 kW
         
-        # Simplificado: Si (EV + MALL) > 2000 kW, hay pico crítico
-        pico_total_critico = ((ev_h + mall_h) > 2000.0)
+        # THRESHOLD PEAK SHAVING: 1900 kW (alineado con gráficas balance.py)
+        # Solo descarga BESS para peak shaving cuando MALL > 1900 kW (no confundir con total EV+MALL)
+        pico_mall_critico = (mall_h > 1900.0)  # ✓ CORREGIDO v5.8: Usar MALL > 1900, no total > 2000
         
         soc_permite_descarga = (current_soc > soc_min)
         puede_descargar = soc_permite_descarga and bess_mode[h] != 'charge'
@@ -1898,16 +1898,17 @@ def simulate_bess_solar_priority(
         # - PRIORIDAD 1: Deficit EV siempre -> descarga para cubrir 100%
         activar_descarga_ev = (ev_deficit > 0.01 and puede_descargar)
         
-        # - PRIORIDAD 2: Crisis solar MALL + pico > 1900 kW -> peak shaving (v5.5)
-        #   (solo descargar si hay carencia solar para el MALL, no para cubrir todo)
-        activar_descarga_peak_shaving = (crisis_solar_para_mall and pico_total_critico and puede_descargar)
+        # - PRIORIDAD 2: Peak Shaving MALL - Solo si MALL > 1900 kW Y hay crisis solar
+        #   (descarga solo para limitar picos del MALL, no total del sistema)
+        #   ✓ CORREGIDO v5.8: Threshold ahora es MALL > 1900 (era EV+MALL > 2000)
+        activar_descarga_peak_shaving = (pico_mall_critico and crisis_solar_para_mall and puede_descargar)
         
         if (activar_descarga_ev or activar_descarga_peak_shaving):
             # ---------------------------------------------------------------
             # MODO DESCARGA: Cubrir deficits con energia BESS
             # PRIORIDAD DESCARGA:
             # 1º BESS -> EV (cobertura 100% - maxima prioridad)
-            # 2º BESS -> MALL (limitar picos > 2000kW, si hay energia residual)
+            # 2º BESS -> MALL (limitar picos MALL > 1900kW, si hay energia residual)
             # ---------------------------------------------------------------
             
             soc_available_kwh = (current_soc - soc_min) * capacity_kwh
@@ -1944,14 +1945,15 @@ def simulate_bess_solar_priority(
                     bess_mode[h] = 'discharge'
             
             # ===============================================================
-            # PRIORIDAD 2: DESCARGAR PARA PEAK SHAVING MALL (máximo 1900 kW v5.5)
+            # PRIORIDAD 2: DESCARGAR PARA PEAK SHAVING MALL (máximo 1900 kW v5.8)
             # ===============================================================
-            # NUEVA LOGICA v5.5:
-            # - Objetivo: Mantener consumo total (EV + MALL) ≤ 2000 kW
-            # - Calcular energía necesaria de BESS para limitar MALL a nivel específico
-            # - Fórmula: MALL_supply = min(PV + BESS, 2000 - EV)
-            #           Si PV > suficiente, BESS no interviene (descarga = 0)
-            #           Si PV < suficiente, BESS = máximo(2000 - EV - PV, 0)
+            # LOGICA v5.8 CORREGIDA:
+            # - Objetivo: Limitar demanda MALL a máximo 1900 kW (peak shaving)
+            # - Solo aplica cuando MALL > 1900 kW Y hay crisis solar (PV < demanda MALL)
+            # - BESS actúa solo si hay carencia solar para el MALL
+            # - Fórmula: MALL_supply = min(PV + BESS, 1900)
+            #           Si (PV + BESS) ≥ 1900, se limita el pico
+            #           Si PV insuficiente, BESS compensa solo la diferencia
             # ---------------------------------------------------------------
             
             if remaining_discharge_power > 0.10 and soc_available_kwh > 0.01 and crisis_solar_para_mall:
@@ -1959,16 +1961,18 @@ def simulate_bess_solar_priority(
                 # Energía de MALL que ya viene de PV
                 mall_from_pv_available = pv_direct_to_mall
                 
-                # Capacidad restante para MALL (del límite de 2000 kW)
-                supply_headroom_for_mall = max(2000.0 - ev_h - mall_from_pv_available, 0.0)
+                # Capacidad para MALL: límite máximo 1900 kW (peak shaving threshold)
+                # ✓ CORREGIDO v5.8: Usar 1900 para limitar MALL (era 2000)
+                supply_headroom_for_mall = max(1900.0 - mall_from_pv_available, 0.0)
                 
                 # Energía que BESS debería suministrar para peak shaving
-                # (solo si hay carencia solar y pico total > 2000 kW)
+                # (solo si MALL > 1900 kW Y hay carencia solar)
                 mall_deficit_remaining = max(mall_h - mall_from_pv_available, 0.0)
                 
                 # BESS suministra lo necesario para:
-                # 1. Respetar límite de 2000 kW (no exceder)
+                # 1. Respetar límite de MALL ≤ 1900 kW (peak shaving)
                 # 2. Pero solo si hay deficit de MALL (crisis solar)
+                # 3. Máximo hasta llevar MALL a 1900 kW
                 power_to_mall_for_peak_shaving = min(
                     remaining_discharge_power,
                     min(supply_headroom_for_mall, mall_deficit_remaining)
