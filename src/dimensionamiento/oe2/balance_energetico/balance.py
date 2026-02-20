@@ -294,8 +294,18 @@ class BalanceEnergeticoSystem:
         
         # 4. Mall Demand cubierta = PV_directo + BESS_mall + Red (según dataset real)
         mall_demand_vals = day_df['mall_demand_kw'].values
-        ax.bar(hours, mall_demand_vals, width=0.6, bottom=bess_discharge_vals, 
-              color='#1E90FF', alpha=0.8, label='🏪 Demanda Mall (real datos OE2)', edgecolor='darkblue', linewidth=1)
+        ax.bar(hours, mall_demand_vals, width=0.7, bottom=bess_discharge_vals, 
+              color='#4169E1', alpha=0.85, label='🏪 DEMANDA MALL (real OE2 - 24h)', edgecolor='#00008B', linewidth=2)
+        
+        # Anotación de consumo del Mall en horas pico
+        mall_max_hour = np.argmax(mall_demand_vals)
+        mall_max_val = mall_demand_vals[mall_max_hour]
+        ax.annotate(f'🏪 PICO MALL\n{mall_max_val:.0f} kW\nhora {mall_max_hour:02d}h', 
+                   xy=(mall_max_hour, bess_discharge_vals[mall_max_hour] + mall_max_val/2), 
+                   xytext=(mall_max_hour-2, max(bess_discharge_vals[mall_max_hour] + mall_max_val + 200, 1000)),
+                   fontsize=9, fontweight='bold', color='#00008B',
+                   bbox=dict(boxstyle='round', facecolor='#ADD8E6', alpha=0.9, edgecolor='#00008B', linewidth=2),
+                   arrowprops=dict(arrowstyle='->', color='#00008B', lw=2.5))
         
         # 5&6. EV Demand con perfil horario realista (9h-22h con punta 18-20h)
         # Perfil horario: 0-8h cerrado, 9-17h ramp-up, 18-20h punta, 21-22h descenso
@@ -341,8 +351,18 @@ class BalanceEnergeticoSystem:
         
         # 7. Importación desde Red Pública (línea roja gruesa)
         grid_import_vals = day_df['demand_from_grid_kw'].values
-        ax.plot(hours, grid_import_vals, color='#FF0000', linewidth=3, marker='D', markersize=6,
-               label='🌐 Red Pública (importación)', linestyle='-', alpha=0.9)
+        ax.plot(hours, grid_import_vals, color='#DC143C', linewidth=4, marker='s', markersize=8,
+               label='🌐 RED PUBLICA (importación - 24h)', linestyle='-', alpha=0.95, zorder=10)
+        
+        # Anotación de consumo de Red Pública en horas pico
+        grid_max_hour = np.argmax(grid_import_vals)
+        grid_max_val = grid_import_vals[grid_max_hour]
+        ax.annotate(f'🌐 PICO RED\n{grid_max_val:.0f} kW\nhora {grid_max_hour:02d}h\n(respaldo)', 
+                   xy=(grid_max_hour, grid_max_val), 
+                   xytext=(grid_max_hour+2.5, grid_max_val+300),
+                   fontsize=10, fontweight='bold', color='#DC143C',
+                   bbox=dict(boxstyle='round', facecolor='#FFE4E1', alpha=0.95, edgecolor='#DC143C', linewidth=2.5),
+                   arrowprops=dict(arrowstyle='->', color='#DC143C', lw=3))
         
         # 8. Total Demand como referencia (línea roja punteada)
         total_demand_vals = day_df['total_demand_kw'].values
@@ -376,8 +396,8 @@ class BalanceEnergeticoSystem:
         # Titulos y etiquetas
         ax.set_xlabel('Hora del Día', fontsize=13, fontweight='bold')
         ax.set_ylabel('Potencia (kW)', fontsize=13, fontweight='bold')
-        ax.set_title(f'⚡ BALANCE INTEGRADO - Día {day_idx}: Generación Solar + BESS Carga/Descarga + EV (motos/taxis) + Mall + Red',
-                    fontsize=14, fontweight='bold', color='darkred', pad=20)
+        ax.set_title(f'⚡ BALANCE INTEGRADO COMPLETO - Día {day_idx}: DEMANDA MALL + RED PUBLICA vs PV + BESS + EV (24h)',
+                    fontsize=15, fontweight='bold', color='#DC143C', pad=20)
         
         # Grid
         ax.grid(True, alpha=0.2, linestyle=':', axis='y')
@@ -385,40 +405,35 @@ class BalanceEnergeticoSystem:
         ax.set_xticks(np.arange(0, 24, 2))
         ax.set_xticklabels([f'{h:02d}h' for h in range(0, 24, 2)], fontsize=10, fontweight='bold')
         
-        # Legend en dos columnas
-        ax.legend(loc='upper left', fontsize=9, ncol=2, framealpha=0.95, edgecolor='black', fancybox=True)
+        # Legend en dos columnas con mejor poscionamiento
+        ax.legend(loc='upper center', fontsize=10, ncol=3, framealpha=0.98, edgecolor='black', fancybox=True,
+                 bbox_to_anchor=(0.5, -0.05))
         
         # Panel de información
         info_text = (
-            f'🔋 LÓGICA BESS EXACTA - SIN CAMBIOS PERMITIDOS:\n'
+            f'🔋 LÓGICA BESS + COBERTURA MALL - OPERACIÓN 24h:\n'
             f'═══════════════════════════════════════════════════════════════════════════════\n'
             f'\n'
-            f'FASE 1: CARGA GRADUAL/PROGRESIVA (6h-15h aprox)\n'
-            f'  • Inicia en 20% SOC (cierre día anterior)\n'
-            f'  • Flujo PV: Se divide en 3 destinos (EV + BESS + Mall)\n'
-            f'  • BESS recibe: Sube POCO A POCO  (máx 390 kW)\n'
-            f'  • Crece: Continuamente hasta SOC 100% (~15h)\n'
-            f'  • SE DETIENE en SOC 100% (entra Fase 2)\n'
-            f'  • Fuente: SOLO PV, NUNCA red\n'
-            f'  • Duración: ~9 horas (6h→15h)\n'
+            f'DEMANDA MALL (100% operativo 24h):\n'
+            f'  • Cobertura de fuentes: PV + BESS + Red Pública\n'
+            f'  • Máximo demanda: ~{mall_demand_vals.max():.0f} kW\n'
+            f'  • Promedio: {mall_demand_vals.mean():.0f} kW/h\n'
+            f'  • Consumo diario: {mall_demand_vals.sum():.0f} kWh\n'
             f'\n'
-            f'FASE 2: ESTADO CONSTANTE (cuando SOC = 100%)\n'
-            f'  • Mantiene SOC = 100% (sin cambios)\n'
-            f'  • NI carga NI descarga\n'
-            f'  • Espera condición: PV < Mall (déficit)\n'
+            f'RED PÚBLICA (respaldo 24h):\n'
+            f'  • Activa cuando: PV + BESS insuficiente\n'
+            f'  • Máximo importación: ~{grid_import_vals.max():.0f} kW\n'
+            f'  • Función: Respaldo y estabilidad\n'
             f'\n'
-            f'FASE 3: DESCARGA GRADUAL (15h-22h aprox)\n'
-            f'  • SOLO cuando PV < Mall (déficit)\n'
-            f'  • Suministra picos > 1,900 kW\n'
-            f'  • Alimenta EV 100%\n'
-            f'  • Baja GRADUALMENTE hasta 20%\n'
-            f'  • Fuente: SOLO BESS\n'
-            f'\n'
-            f'CIERRE DIARIO (22h):\n'
-            f'  • BESS SIEMPRE = 20% SOC exacto\n'
-            f'  • Listo para carga siguiente\n'
+            f'BESS 6-FASES:\n'
+            f'FASE 1: CARGA GRADUAL (6h-15h): PV→BESS (20%→100%)\n'
+            f'FASE 2: HOLDING (100% SOC): Espera déficit\n'
+            f'FASE 3: DESCARGA (15h-22h): BESS→EV/MALL\n'
+            f'FASE 4: PEAK SHAVING (Mall>1900kW): BESS suporta\n'
+            f'FASE 5: DUAL DESCARGA (EV deficit): Máx cobertura\n'
+            f'FASE 6: REPOSO (22h-9h): SOC=20% (cierre)\n'
             f'═══════════════════════════════════════════════════════════════════════════════\n'
-            f'⚙️  Especificación: 2,000 kWh | 400 kW | DoD 80% | SOC min 20%'
+            f'⚙️ ESPECIFICACIÓN: 2,000 kWh | 400 kW | DoD 80% | SOC min 20%'
         )
         # Poner el panel FUERA de la gráfica, arriba a la izquierda sin interponer imágenes
         fig.text(0.02, 0.80, info_text, fontsize=7, verticalalignment='top', horizontalalignment='left', 
