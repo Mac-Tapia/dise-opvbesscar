@@ -302,6 +302,10 @@ class BalanceEnergeticoSystem:
         ax.bar(hours, bess_charge_vals, width=0.5, color='#32CD32', alpha=0.85, 
               label='🔋 BESS Cargando (PV→BESS: 20%→100%, máx 390kW)', edgecolor='darkgreen', linewidth=1.5, zorder=4)
         
+        # Línea superpuesta para perfil de carga (más visible)
+        ax.plot(hours, bess_charge_vals, color='#00FF00', linewidth=2.5, marker='o', markersize=4, 
+               linestyle='-', alpha=0.9, zorder=5)
+        
         # Marcar zona de carga activa (con transición clara de colores)
         charge_starts = np.where(bess_charge_vals > 10)[0]
         if len(charge_starts) > 0:
@@ -341,6 +345,10 @@ class BalanceEnergeticoSystem:
         
         ax.bar(hours, bess_discharge_vals, width=0.6, bottom=0, color='#FF8C00', alpha=0.8,
               label='🔋 BESS Descargando (PV<Mall→descarga, pico>1900kW, EV100%, cierra en SOC=20%)', edgecolor='darkorange', linewidth=1)
+        
+        # Línea superpuesta para perfil de descarga (más visible)
+        ax.plot(hours, bess_discharge_vals, color='#FF0000', linewidth=2.5, marker='s', markersize=4, 
+               linestyle='-', alpha=0.9, zorder=5)
         
         # Marcar cuando BESS está en límite 20% SOC (sin descarga posible)
         bess_at_min = (bess_soc_pct <= 20.01)
