@@ -1,51 +1,75 @@
 {
-  "version": "7.0",
-  "date": "2026-02-18",
-  "system": {
-    "pv_capacity_kwp": 4050.0,
-    "bess_capacity_kwh": 2000.0,
-    "bess_max_power_kw": 400.0,
-    "bess_avg_soc_percent": 75.57,
-    "n_chargers": 19,
-    "n_sockets": 38,
-    "charger_power_kw": 7.4,
-    "sockets_per_charger": 2.0
+  "version": "7.1",
+  "timestamp": "2026-02-19T22:49:51.394031",
+  "dataset_type": "bess_ev_mall_timeseries_with_tariffs",
+  "total_rows": 8760,
+  "total_columns": 33,
+  "tariff_rates": {
+    "hp_soles_kwh": 0.45,
+    "hfp_soles_kwh": 0.28,
+    "tariff_difference_soles_kwh": 0.17,
+    "tariff_factor_hp_hfp": 1.607,
+    "source": "OSINERGMIN Resoluci\u00f3n N\u00b0 047-2024-OS/CD"
   },
-  "vehicles": {
-    "motos": {
-      "count": 30,
-      "sockets": 30,
-      "chargers_assigned": 15,
-      "avg_power_kw": 7.4
-    },
-    "mototaxis": {
-      "count": 8,
-      "sockets": 8,
-      "chargers_assigned": 4,
-      "avg_power_kw": 7.4
-    },
-    "total_vehicles": 38,
-    "total_sockets_allocated": 38
+  "tariff_hours": {
+    "hp_hours_label": "Hora Punta (18:00-22:59)",
+    "hp_hours_count": 1825,
+    "hfp_hours_label": "Fuera de Punta (00:00-17:59, 23:00-23:59)",
+    "hfp_hours_count": 6935,
+    "total_hours_year": 8760
   },
-  "demand": {
-    "mall_avg_kw": 1411.946689497717,
-    "mall_annual_kwh": 12368653.0,
-    "mall_max_hourly_kw": 2763.0,
-    "ev_avg_kw": 50.0,
-    "ev_annual_kwh": 52613744.0
+  "columns": {
+    "original_27_columns": [
+      "pv_kwh",
+      "ev_kwh",
+      "mall_kwh",
+      "load_kwh",
+      "pv_to_ev_kwh",
+      "pv_to_bess_kwh",
+      "pv_to_mall_kwh",
+      "pv_curtailed_kwh",
+      "bess_charge_kwh",
+      "bess_discharge_kwh",
+      "bess_action_kwh",
+      "bess_mode",
+      "bess_to_ev_kwh",
+      "bess_to_mall_kwh",
+      "peak_shaving_kwh",
+      "bess_total_discharge_kwh",
+      "grid_import_ev_kwh",
+      "grid_import_mall_kwh",
+      "grid_import_kwh",
+      "grid_export_kwh",
+      "soc_percent",
+      "soc_kwh",
+      "co2_avoided_indirect_kg",
+      "cost_savings_hp_soles",
+      "ev_demand_after_bess_kwh",
+      "mall_demand_after_bess_kwh",
+      "load_after_bess_kwh"
+    ],
+    "tariff_new_v57_columns": [
+      "tariff_period",
+      "tariff_rate_soles_kwh",
+      "cost_if_grid_import_soles",
+      "cost_avoided_by_bess_soles",
+      "cost_savings_hp_soles",
+      "cost_savings_hfp_soles",
+      "tariff_index_hp_hfp"
+    ]
   },
-  "solar": {
-    "annual_kwh": 8292514.17,
-    "max_power_kw": 2886.69
+  "expected_savings": {
+    "hp_annual_soles": 21797.13,
+    "hfp_annual_soles": 145430.59,
+    "total_annual_soles": 167227.72,
+    "description": "Annual cost savings from BESS dispatch optimization"
   },
-  "co2": {
-    "grid_factor_kg_per_kwh": 0.4521,
-    "ev_factor_kg_per_kwh": 2.146
-  },
-  "data_sources": {
-    "solar": "D:\\dise\u00f1opvbesscar\\data\\oe2\\Generacionsolar\\pv_generation_citylearn2024.csv",
-    "bess": "D:\\dise\u00f1opvbesscar\\data\\oe2\\bess\\bess_ano_2024.csv",
-    "chargers": "D:\\dise\u00f1opvbesscar\\data\\oe2\\chargers\\chargers_ev_ano_2024_v3.csv",
-    "demand": "D:\\dise\u00f1opvbesscar\\data\\oe2\\demandamallkwh\\demandamallhorakwh.csv"
+  "validation_status": {
+    "data_rows": "Complete - 8,760 hourly rows",
+    "tariff_period_distribution": "HP: 1825 hours, HFP: 6935 hours",
+    "tariff_columns": "All 7 tariff columns present",
+    "duplicates_check": "No duplicate rows or columns",
+    "nan_values_check": "0% NaN values",
+    "ready_for_citylearn_v2": true
   }
 }

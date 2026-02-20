@@ -1,0 +1,106 @@
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:217: UserWarning: Glyph 128308 (\N{LARGE RED CIRCLE}) missing from font(s) DejaVu Sans.
+  plt.tight_layout()
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:217: UserWarning: Glyph 65039 (\N{VARIATION SELECTOR-16}) missing from font(s) DejaVu Sans Mono.
+  plt.tight_layout()
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:217: UserWarning: Glyph 128267 (\N{BATTERY}) missing from font(s) DejaVu Sans Mono.
+  plt.tight_layout()
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:217: UserWarning: Glyph 128757 (\N{MOTOR SCOOTER}) missing from font(s) DejaVu Sans Mono.
+  plt.tight_layout()
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:217: UserWarning: Glyph 128661 (\N{TAXI}) missing from font(s) DejaVu Sans Mono.
+  plt.tight_layout()
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:217: UserWarning: Glyph 127978 (\N{CONVENIENCE STORE}) missing from font(s) DejaVu Sans Mono.
+  plt.tight_layout()
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:217: UserWarning: Glyph 127760 (\N{GLOBE WITH MERIDIANS}) missing from font(s) DejaVu Sans Mono.
+  plt.tight_layout()
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:217: UserWarning: Glyph 9200 (\N{ALARM CLOCK}) missing from font(s) DejaVu Sans Mono.
+  plt.tight_layout()
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:217: UserWarning: Glyph 127760 (\N{GLOBE WITH MERIDIANS}) missing from font(s) DejaVu Sans.
+  plt.tight_layout()
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:217: UserWarning: Glyph 128202 (\N{BAR CHART}) missing from font(s) DejaVu Sans.
+  plt.tight_layout()
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:217: UserWarning: Glyph 128267 (\N{BATTERY}) missing from font(s) DejaVu Sans.
+  plt.tight_layout()
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:217: UserWarning: Glyph 127978 (\N{CONVENIENCE STORE}) missing from font(s) DejaVu Sans.
+  plt.tight_layout()
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:217: UserWarning: Glyph 128757 (\N{MOTOR SCOOTER}) missing from font(s) DejaVu Sans.
+  plt.tight_layout()
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:217: UserWarning: Glyph 128661 (\N{TAXI}) missing from font(s) DejaVu Sans.
+  plt.tight_layout()
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:218: UserWarning: Glyph 128308 (\N{LARGE RED CIRCLE}) missing from font(s) DejaVu Sans.
+  plt.savefig(out_dir / "00_BALANCE_INTEGRADO_COMPLETO.png", dpi=150, bbox_inches='tight')
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:218: UserWarning: Glyph 65039 (\N{VARIATION SELECTOR-16}) missing from font(s) DejaVu Sans Mono.
+  plt.savefig(out_dir / "00_BALANCE_INTEGRADO_COMPLETO.png", dpi=150, bbox_inches='tight')
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:218: UserWarning: Glyph 128267 (\N{BATTERY}) missing from font(s) DejaVu Sans Mono.
+  plt.savefig(out_dir / "00_BALANCE_INTEGRADO_COMPLETO.png", dpi=150, bbox_inches='tight')
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:218: UserWarning: Glyph 128757 (\N{MOTOR SCOOTER}) missing from font(s) DejaVu Sans Mono.
+  plt.savefig(out_dir / "00_BALANCE_INTEGRADO_COMPLETO.png", dpi=150, bbox_inches='tight')
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:218: UserWarning: Glyph 128661 (\N{TAXI}) missing from font(s) DejaVu Sans Mono.
+  plt.savefig(out_dir / "00_BALANCE_INTEGRADO_COMPLETO.png", dpi=150, bbox_inches='tight')
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:218: UserWarning: Glyph 127978 (\N{CONVENIENCE STORE}) missing from font(s) DejaVu Sans Mono.
+  plt.savefig(out_dir / "00_BALANCE_INTEGRADO_COMPLETO.png", dpi=150, bbox_inches='tight')
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:218: UserWarning: Glyph 127760 (\N{GLOBE WITH MERIDIANS}) missing from font(s) DejaVu Sans Mono.
+  plt.savefig(out_dir / "00_BALANCE_INTEGRADO_COMPLETO.png", dpi=150, bbox_inches='tight')
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:218: UserWarning: Glyph 9200 (\N{ALARM CLOCK}) missing from font(s) DejaVu Sans Mono.
+  plt.savefig(out_dir / "00_BALANCE_INTEGRADO_COMPLETO.png", dpi=150, bbox_inches='tight')
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:218: UserWarning: Glyph 127760 (\N{GLOBE WITH MERIDIANS}) missing from font(s) DejaVu Sans.
+  plt.savefig(out_dir / "00_BALANCE_INTEGRADO_COMPLETO.png", dpi=150, bbox_inches='tight')
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:218: UserWarning: Glyph 128202 (\N{BAR CHART}) missing from font(s) DejaVu Sans.
+  plt.savefig(out_dir / "00_BALANCE_INTEGRADO_COMPLETO.png", dpi=150, bbox_inches='tight')
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:218: UserWarning: Glyph 128267 (\N{BATTERY}) missing from font(s) DejaVu Sans.
+  plt.savefig(out_dir / "00_BALANCE_INTEGRADO_COMPLETO.png", dpi=150, bbox_inches='tight')
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:218: UserWarning: Glyph 127978 (\N{CONVENIENCE STORE}) missing from font(s) DejaVu Sans.
+  plt.savefig(out_dir / "00_BALANCE_INTEGRADO_COMPLETO.png", dpi=150, bbox_inches='tight')
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:218: UserWarning: Glyph 128757 (\N{MOTOR SCOOTER}) missing from font(s) DejaVu Sans.
+  plt.savefig(out_dir / "00_BALANCE_INTEGRADO_COMPLETO.png", dpi=150, bbox_inches='tight')
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:218: UserWarning: Glyph 128661 (\N{TAXI}) missing from font(s) DejaVu Sans.
+  plt.savefig(out_dir / "00_BALANCE_INTEGRADO_COMPLETO.png", dpi=150, bbox_inches='tight')
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:376: UserWarning: Attempting to set identical low and high ylims makes transformation singular; automatically expanding.
+  ax2_twin.set_ylim(0, df_7days['demand_from_grid_kw'].max() * 1.2)
+D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py:511: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  plt.tight_layout()
+Traceback (most recent call last):
+  File "D:\dise±opvbesscar\generate_all_graphics.py", line 157, in <module>
+    graphics.plot_energy_balance(out_dir)
+  File "D:\dise±opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py", line 77, in plot_energy_balance
+    print(f"\u2713 Grßficas guardadas")
+  File "C:\Users\Lenovo Legion\AppData\Local\Programs\Python\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2713' in position 0: character maps to <undefined>
+================================================================================
+GENERACION DE GRAFICAS DE BALANCE ENERGETICO v5.4
+================================================================================
+
+[1] Cargando dataset: data\oe2\bess\bess_ano_2024.csv
+    [OK] Datos cargados:
+        - Filas: 8760
+        - Columnas: 29
+
+[2] Verificando columnas crÝticas para CityLearn v2:
+    [OK] pv_kwh
+    [OK] ev_kwh
+    [OK] mall_kwh
+    [OK] grid_export_kwh
+    [OK] bess_to_mall_kwh
+
+[3] Inicializando configuraci¾n de visualizaci¾n:
+    [OK] Config creada (PV: 4050.0 kWp, BESS: 1700.0 kWh)
+
+[4] Inicializando generador de grßficas:
+    [OK] BalanceEnergeticoSystem inicializado
+
+[5] Generando grßficas en: reports\balance_energetico
+
+Generando grßficas en reports\balance_energetico...
+  [OK] 00_BALANCE_INTEGRADO_COMPLETO.png
+  [OK] 00.1_EXPORTACION_Y_PEAK_SHAVING.png
+  [OK] 00_INTEGRAL_todas_curvas.png
+  [OK] 00.5_FLUJO_ENERGETICO_INTEGRADO.png
+  [OK] 01_balance_5dias.png
+  [OK] 02_balance_diario.png
+  [OK] 03_distribucion_fuentes.png
+  [OK] 04_cascada_energetica.png
+  [OK] 05_bess_soc.png
+  [OK] 06_emisiones_co2.png
+  [OK] 07_utilizacion_pv.png
+    [ERROR] Error generating graphics: 'charmap' codec can't encode character '\u2713' in position 0: character maps to <undefined>

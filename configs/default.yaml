@@ -26,68 +26,83 @@ oe2:
     mall_file: data/interim/oe2/demandamallkwh/demandamallhorakwh.csv
     charger_stats_file: data/oe2/chargers/chargers_real_statistics.csv
   bess:
-    # BESS v5.4 (2026-02-19) - Dual-purpose: EV + MALL discharge to peak
     autonomy_hours: 4.0
-    c_rate: 0.200  # 400 kW / 2000 kWh = 0.200 ✅ CORRECTED
-    discharge_only_ev_hours: false  # v5.5: MALL discharge enabled
-    discharge_only_no_solar: false  # v5.5: MALL discharge during day if excess
-    dod: 0.80      # 80% Depth of Discharge (min SOC = 20%)
+    c_rate: 0.2
+    discharge_only_ev_hours: false
+    discharge_only_no_solar: false
+    dod: 0.8
     efficiency_roundtrip: 0.95
-    fixed_capacity_kwh: 2000.0  # v5.5: 2000 kWh nominal (1600 usable @ 20-100% SOC)
-    fixed_power_kw: 400.0       # v5.5: 400 kW carga/descarga symmetric
-    load_scope: dual_ev_and_mall  # v5.5: EV + MALL priority
-    min_soc_percent: 20.0       # v5.5: Hard constraint @ 22h closing
+    fixed_capacity_kwh: 2000.0
+    fixed_power_kw: 400.0
+    load_scope: dual_ev_and_mall
+    min_soc_percent: 20.0
     pv_night_threshold_kwh: 0.1
     round_kwh: 100
     sizing_mode: open_hours
     surplus_target_kwh_day: 9630.4
+  citylearn_v2_columns:
+    grid_export_kwh:
+      description: Energia exportada a red publica OSINERGMIN
+      unit: kWh
+      annual_total: 1893393.93
+      daily_average: 5187.38
+      range_min: 0.0
+      range_max: 2822.46
+      hours_with_data: 8760
+      status: Complete - Ready for RL
+    bess_to_mall_kwh:
+      description: Reduccion pico demanda MALL (peak shaving)
+      unit: kWh
+      annual_total: 88293.23
+      daily_average: 241.91
+      range_min: 0.0
+      range_max: 389.87
+      hours_with_data: 8760
+      peak_shaving_hours: 18h-23h (horas punta) con SOC BESS > 50%
+      status: Complete - Ready for RL
   dispatch_rules:
-    description:
-      "Cubrir bloque pico (18-21h) con prioridades: FV\xE2\u2020\u2019\
-      EV \xE2\u2020\u2019 FV\xE2\u2020\u2019BESS \xE2\u2020\u2019 BESS\xE2\u2020\u2019\
-      EV(noche) \xE2\u2020\u2019 BESS\xE2\u2020\u2019MALL(saturada)"
+    description: 'Cubrir bloque pico (18-21h) con prioridades: FVâ†’EV â†’ FVâ†’BESS
+      â†’ BESSâ†’EV(noche) â†’ BESSâ†’MALL(saturada)'
     enabled: true
     priority_1_pv_to_ev:
-      description: "FV directamente a EVs (m\xC3\xA1xima prioridad)"
+      description: FV directamente a EVs (mÃ¡xima prioridad)
       enabled: true
       ev_power_limit_kw: 150.0
       pv_threshold_kwh: 0.5
     priority_2_pv_to_bess:
-      bess_power_max_kw: 400.0  # v5.5: 400 kW (actualizado de 342 kW)
-      bess_soc_max_percent: 100.0  # v5.5: Allow 100% (hard constraint via simulation)
+      bess_power_max_kw: 400.0
+      bess_soc_max_percent: 100.0
       bess_soc_target_percent: 85.0
       description: FV excedente a BESS (cargar reserva para pico)
       enabled: true
     priority_3_bess_to_ev:
-      bess_power_max_kw: 400.0  # v5.5: 400 kW
-      bess_soc_min_percent: 20.0  # v5.5: Hard minimum @ 22h
+      bess_power_max_kw: 400.0
+      bess_soc_min_percent: 20.0
       description: BESS a EVs cuando cae el sol (noche)
       enabled: true
       pv_night_threshold_kwh: 0.1
     priority_4_bess_to_mall:
       bess_saturation_percent: 95.0
-      description: "BESS saturada + MALL discharge (v5.5: +78.8% vs v5.2)"
-      enabled: true  # v5.5: MALL discharge HABILITADO
+      description: 'BESS saturada + MALL discharge (v5.5: +78.8% vs v5.2)'
+      enabled: true
       mall_power_max_kw: 500.0
     priority_5_grid_import:
       allowed: true
       cost_multiplier_peak: 2.0
-      description: "Importar desde red si es necesario cubrir d\xC3\xA9ficit"
+      description: Importar desde red si es necesario cubrir dÃ©ficit
       enabled: true
     reward_bonuses:
       battery_charge_bonus_weight: 0.005
       direct_solar_bonus_weight: 0.01
       grid_import_penalty_weight: 0.0001
   ev_fleet:
-    # Configuración de cargadores (DATOS REALES OE2 v5.5 - 2026-02-18)
-    charger_power_kw: 7.4               # Modo 3 monofásico 32A @ 230V por toma
-    charger_power_kw_moto: 7.4          # 15 cargadores motos @ 7.4kW/toma
-    charger_power_kw_mototaxi: 7.4      # 4 cargadores mototaxis @ 7.4kW/toma
-    n_chargers: 19                      # Alias para total_chargers (sincronizado con código)
-    total_chargers: 19                  # Total físico: 15 + 4 = 19 cargadores
-    total_sockets: 38                   # Total sockets: 19 × 2 = 38 (30 motos + 8 mototaxis)
-    # Demanda EV constante para tracking CO₂ (worst-case estimate)
-    ev_demand_constant_kw: 50.0         # Estimación: 280,632 kWh/año / 8760h ≈ 32 kW avg, 50 kW peak
+    charger_power_kw: 7.4
+    charger_power_kw_moto: 7.4
+    charger_power_kw_mototaxi: 7.4
+    n_chargers: 19
+    total_chargers: 19
+    total_sockets: 38
+    ev_demand_constant_kw: 50.0
     closing_hour: 22
     daily_sessions_factor: 1.0
     fc_motos: 0.55
@@ -95,16 +110,16 @@ oe2:
     motos_count: 270
     mototaxis_count: 39
     opening_hour: 9
-    pe_motos: 0.30
-    pe_mototaxis: 0.30
+    pe_motos: 0.3
+    pe_mototaxis: 0.3
     peak_hours:
-      - 18
-      - 19
-      - 20
-      - 21
+    - 18
+    - 19
+    - 20
+    - 21
     peak_share_day: 0.5
     session_minutes: 30
-    sockets_per_charger: 2              # 2 tomas por cargador (Modo 3)
+    sockets_per_charger: 2
     utilization: 0.92
   location:
     alt: 104.0
@@ -123,20 +138,20 @@ oe2:
     import_penalty_weight: 0.3
     peak_cost_multiplier: 1.5
     peak_hours:
-      - 18
-      - 19
-      - 20
-      - 21
+    - 18
+    - 19
+    - 20
+    - 21
     power_limits_kw:
       playa_motos: 120.0
       playa_mototaxis: 48.0
       total_aggregate: 150.0
     soc_reserve_penalty: 0.2
     valley_hours:
-      - 9
-      - 10
-      - 11
-      - 12
+    - 9
+    - 10
+    - 11
+    - 12
   solar:
     area_total_m2: 15200.0
     candidate_count: 5
@@ -157,68 +172,50 @@ oe3:
   city_baseline_tpy:
     electricity_generation: 290000.0
     transport: 258250.0
-  
-  # ===========================================================================
-  # MÉTRICAS DE REFERENCIA EPISODIO 1 VALIDADO (CityLearn v2 - 2026-02-07)
-  # ===========================================================================
   reference_metrics:
-    # Componentes de Reward (multiobjetivo) - VALIDADO
     reward_components:
-      r_solar: -0.2478          # Autoconsumo solar (47.2%)
-      r_cost: -0.2797           # Minimizar tarifa
-      r_ev: 0.9998              # Satisfacción carga EV (excelente)
-      r_grid: -0.0196           # Estabilidad de red
-      r_co2: 0.2496             # Reducción CO2
-    
-    # CO2 - Reducción Directa e Indirecta (kg/año, v5.5)
+      r_solar: -0.2478
+      r_cost: -0.2797
+      r_ev: 0.9998
+      r_grid: -0.0196
+      r_co2: 0.2496
     co2_annual:
-      grid_emitted_kg: 197262         # CO2 desde importación grid baseline (50 kW × 8760 × 0.4521)
-      avoided_indirect_kg: 550351     # Solar evita grid (1,217.3 MWh × 0.4521 kg/kWh)
-      avoided_direct_kg: 280437       # EVs cargados desde solar (38 sockets × 352,887 kWh/anno conversion)
-      avoided_total_kg: 830788        # Reducción combinada total (550,351 + 280,437)
-      net_kg: 830788                  # CO2 neto evitado vs baseline
-      reduction_pct: 80.8             # Porcentaje reducción vs baseline (830,788 / 1,027,650 → 80.8%)
-    
-    # Vehículos Cargados (datos reales del dataset v5.2)
+      grid_emitted_kg: 197262
+      avoided_indirect_kg: 550351
+      avoided_direct_kg: 280437
+      avoided_total_kg: 830788
+      net_kg: 830788
+      reduction_pct: 80.8
     vehicles_charged:
-      motos_vehicle_hours: 98550      # Vehículo-horas motos/año (270/día × 365)
-      motos_per_day_avg: 270          # Promedio motos/día (30 tomas)
-      mototaxis_vehicle_hours: 14235  # Vehículo-horas mototaxis/año (39/día × 365)
-      mototaxis_per_day_avg: 39       # Promedio mototaxis/día (8 tomas)
-      total_sockets: 38               # 30 motos + 8 mototaxis
-    
-    # Control y Operación - MÉTRICAS VALIDADAS
+      motos_vehicle_hours: 98550
+      motos_per_day_avg: 270
+      mototaxis_vehicle_hours: 14235
+      mototaxis_per_day_avg: 39
+      total_sockets: 38
     control_operation:
-      sockets_active_pct: 50.0        # % sockets activos (de 38)
-      bess_control_intensity: 0.517   # 51.7% intensidad de control BESS
-      bess_soc_avg: 0.905             # 90.5% SOC promedio BESS
-      ev_soc_avg: 1.000               # 100% SOC promedio EVs
-      grid_ramp_kwh_per_h: 207.5      # kWh/h rampa de grid
-      grid_stability_score: 0.8       # 1 - |rampa|/max_rampa
-    
-    # Ahorro de Costos (USD/año) - VALIDADO
+      sockets_active_pct: 50.0
+      bess_control_intensity: 0.517
+      bess_soc_avg: 0.905
+      ev_soc_avg: 1.0
+      grid_ramp_kwh_per_h: 207.5
+      grid_stability_score: 0.8
     cost_savings:
-      cost_total_usd: 917705          # Costo total operación
-      savings_vs_baseline: 1658503    # Ahorro vs baseline sin solar
-      # ========== TARIFAS OSINERGMIN IQUITOS 2025 (REFERENCIAL) ==========
-      # Tarifa integrada para carga de motos y mototaxis
-      tariff_generation_solar_usd_per_kwh: 0.10   # Generación solar (CAPEX + O&M bajo)
-      tariff_bess_storage_usd_per_kwh: 0.06      # Almacenamiento BESS (CAPEX batería + O&M)
-      tariff_ev_charge_distribution_usd_per_kwh: 0.12  # Distribución EV (red, transf, pérdidas)
-      tariff_usd_per_kwh: 0.28        # Tarifa integral OSINERGMIN (solar + BESS + distr)
-
+      cost_total_usd: 917705
+      savings_vs_baseline: 1658503
+      tariff_generation_solar_usd_per_kwh: 0.1
+      tariff_bess_storage_usd_per_kwh: 0.06
+      tariff_ev_charge_distribution_usd_per_kwh: 0.12
+      tariff_usd_per_kwh: 0.28
   rewards:
-    # Multi-Objective Reward Weights (must sum to 1.0) - VALIDATED v5.5 2026-02-18
-    co2_weight: 0.50              # PRIMARY: Reduce CO2 (grid import minimization) - v5.5 priority
-    solar_weight: 0.20            # SECONDARY: Maximize solar self-consumption
-    ev_satisfaction_weight: 0.15  # TERTIARY: EV charging satisfaction
-    grid_stability_weight: 0.10   # QUATERNARY: Grid peak minimization
-    cost_weight: 0.05             # QUINARY: Minimize electricity cost
-    # NOTE: Weights validated for v5.5 system 2026-02-18. Total weight = 1.00 exactly.
-    # Dispatch hierarchy penalties + aggressive SOC modulation already enforce EVs maximization.
-    # CO2 Factors
-    co2_grid_factor_kg_per_kwh: 0.4521  # Iquitos grid (indirecto, central térmica aislada)
-    ev_co2_conversion_kg_per_kwh: 2.146  # EV demand tracking conversion factor
+    co2_weight: 0.5
+    solar_weight: 0.2
+    ev_satisfaction_weight: 0.15
+    grid_stability_weight: 0.1
+    cost_weight: 0.05
+    co2_grid_factor_kg_per_kwh: 0.4521
+    ev_co2_conversion_kg_per_kwh: 2.146
+    hp_weight: 0.4
+    hfp_weight: 0.15
   co2_emissions:
     annual_co2_budget_kg: 7000000
     bess_calendar_aging_kg_per_day: 0.01
@@ -227,40 +224,10 @@ oe3:
     bess_discharging_efficiency: 0.95
     bess_standby_loss_percent_day: 0.1
     diesel_backup_factor_kg_kwh: 0.2667
-    grid_import_factor_kg_kwh: 0.4521  # Factor de emisión grid Iquitos (central térmica aislada)
-    #    - ev_co2_conversion_kg_per_kwh: 2.146 (equivalente combustión)
-    #    - Demanda: 50.0 kW constante
-    #    - Acumulado/hora: 50 × 2.146 = 107.3 kg CO₂/h
-    #    - Anual (baseline): 50 × 2.146 × 8760 = 938,460 kg CO₂/año
-    #    - NO SE REDUCE (es la demanda fija)
-    #    - Propósito: Referencia de línea base
-    #
-    # 2. CO₂ INDIRECTO (Grid Import - OBJETIVO PRINCIPAL):
-    #    - co2_grid_factor_kg_per_kwh: 0.4521 (central térmica aislada)
-    #    - Reducción indirecta = Solar PV directo × 0.4521
-    #    - Ejemplo: 1000 kWh PV directo → 1000 × 0.4521 = 452.1 kg CO₂ evitado
-    #    - SE REDUCE por: Maximizar PV directo a EVs
-    #    - Propósito: Objetivo de optimización principal (peso: 0.50)
-    #
-    # 3. ARQUITECTURA DE REDUCCIONES:
-    #    Baseline: Grid import = 50 kW × 8760 h × 0.4521 = 197,262 kg CO₂/año (indirecto)
-    #    Con RL:   Grid import reducido = (50 - solar_directo) × 8760 × 0.4521
-    #    Reducción neta = solar_directo_anual × 0.4521 (kg CO₂ evitado)
-    #
-    # 4. SINCRONIZACIÓN EN SISTEMA:
-    #    - dataset_builder.py: L443-456 - Valida y carga valores
-    #    - rewards.py: Calcula reward basado en reducciones indirectas
-    #    - agents (SAC/PPO/A2C): Optimizan para maximizar PV directo
-    #    - simulate.py: Reporta ambas reducciones (directa + indirecta)
-    #
-    co2_grid_factor_kg_per_kwh: 0.4521        # Grid CO₂ factor [INDIRECTO]
-    ev_co2_conversion_kg_per_kwh: 2.146       # Demanda EV CO₂ [DIRECTO - tracking]
-    ev_demand_constant_kw: 50.0               # Demanda EV constante [DIRECTO - fijo]
-    # TRACKING CO₂ DIRECTO (workaround CityLearn 2.5.0):
-    # - ev_demand_kw = 50 kW constante (definido en agentes SAC/PPO/A2C)
-    # - co2_direct_kg = 50 kW × 2.146 kg/kWh = 107.3 kg/h acumulativo
-    # - motos_activas = (50 × 0.80) / 2 = 20 motos/h
-    # - mototaxis_activas = (50 × 0.20) / 3 = 3 mototaxis/h
+    grid_import_factor_kg_kwh: 0.4521
+    co2_grid_factor_kg_per_kwh: 0.4521
+    ev_co2_conversion_kg_per_kwh: 2.146
+    ev_demand_constant_kw: 50.0
     reduction_strategies:
       bess_efficiency_optimization:
         description: Optimizar ciclos y conversiones BESS
@@ -277,7 +244,7 @@ oe3:
         enabled: true
         weight: 0.5
       grid_import_minimization:
-        description: "Minimizar importaci\xC3\xB3n desde grid"
+        description: Minimizar importaciÃ³n desde grid
         enabled: true
         penalty_multiplier_peak_hours: 2.0
         weight: 0.3
@@ -286,68 +253,69 @@ oe3:
     name: iquitos_ev_mall
     template_name: citylearn_challenge_2022_phase_all_plus_evs
   emissions:
-    # CO₂ evitado por vehículos eléctricos vs combustión
-    kgco2_per_gallon: 8.9      # kg CO₂ por galón de gasolina (combustión)
-    km_per_gallon: 120.0        # Eficiencia motos/mototaxis a combustión (km/galón)
-    km_per_kwh: 35.0            # Eficiencia motos/mototaxis eléctricos (km/kWh)
+    kgco2_per_gallon: 8.9
+    km_per_gallon: 120.0
+    km_per_kwh: 35.0
     project_life_years: 20
   evaluation:
     a2c:
-      batch_size: 146 # ✓ FIXED: 64→146 (perfect divisor: 8760/146=60 mini-batches, no truncation)
+      batch_size: 146
       checkpoint_freq_steps: 200
-      device: cuda # ✅ FIXED: cpu→cuda (usar GPU para entrenamiento real)
+      device: cuda
       entropy_coef: 0.001
-      episodes: 10  # 10 episodios = 87,600 timesteps
-      gamma: 0.99 # Paper standard
-      gae_lambda: 0.95 # Paper: GAE
-      learning_rate: 0.0001 # 1e-4 (can match PPO, on-policy simple)
+      episodes: 10
+      gamma: 0.99
+      gae_lambda: 0.95
+      learning_rate: 0.0001
       learning_rate_schedule: linear
       log_interval: 100
       max_grad_norm: 0.5
-      n_steps: 128 # 128 (vs Paper variable), short rollouts
-      normalize_advantage: true # Paper standard
+      n_steps: 128
+      normalize_advantage: true
       normalize_observations: true
       normalize_rewards: true
       reward_scale: 0.1
-      hidden_sizes: [128, 128]
-      use_rms_prop: true # Paper: RMSProp is standard for A3C/A2C
+      hidden_sizes:
+      - 128
+      - 128
+      use_rms_prop: true
       progress_interval_episodes: 1
       save_final: true
-      # NOTA: Pesos multiobjetivo se configuran en rewards.py via multi_objective_priority
     agents:
-      - SAC
-      - PPO
-      - A2C
+    - SAC
+    - PPO
+    - A2C
     co2_tracking: true
-    multi_objective_priority: co2_focus  # PRIMARY: Grid CO₂ minimization (weight 0.35)
+    multi_objective_priority: co2_focus
     ppo:
-      batch_size: 120 # ✓ FIXED: 256→120 (perfect divisor: 8760/120=73 mini-batches, no truncation)
+      batch_size: 120
       checkpoint_freq_steps: 500
       device: cuda
-      episodes: 10  # 10 episodios = 87,600 timesteps
-      ent_coef: 0.01 # ↑ OPTIMIZED: 0.001→0.01 (exploration incentive)
-      gamma: 0.99 # Paper standard
-      gae_lambda: 0.98 # ↑ OPTIMIZED: 0.95→0.98 (better long-term advantages)
-      kl_adaptive: true # ↑ OPTIMIZED: Enable adaptive KL divergence
-      target_kl: 0.02 # ↑ OPTIMIZED: NEW - Early stopping for KL divergence
-      learning_rate: 1e-4 # 1e-4 (3x smaller than before, more stable)
+      episodes: 10
+      ent_coef: 0.01
+      gamma: 0.99
+      gae_lambda: 0.98
+      kl_adaptive: true
+      target_kl: 0.02
+      learning_rate: 1e-4
       learning_rate_schedule: linear
       log_interval: 100
-      max_grad_norm: 1.0 # ↑ OPTIMIZED: 0.5→1.0 (gradient clipping)
-      clip_range: 0.5 # ↑ OPTIMIZED: 0.2→0.5 (2.5x more flexible)
-      clip_range_vf: 0.5 # ↑ OPTIMIZED: NEW - Value function clipping
-      n_epochs: 10 # ↑ OPTIMIZED: 2→10 (more training passes)
-      n_steps: 2048 # ✅ FIXED: 8760→2048 (proper rollout size, ~4 updates/episode)
-      normalize_advantage: true # ✅ Normalize advantages by batch
-      use_sde: true # ↑ OPTIMIZED: NEW - State-Dependent Exploration
-      sde_sample_freq: -1 # Resample every step
+      max_grad_norm: 1.0
+      clip_range: 0.5
+      clip_range_vf: 0.5
+      n_epochs: 10
+      n_steps: 2048
+      normalize_advantage: true
+      use_sde: true
+      sde_sample_freq: -1
       normalize_observations: true
       normalize_rewards: true
-      reward_scale: 0.5 # AJUSTE: 0.1→0.5 (evita explosión critic_loss)
-      clip_reward: 1.0 # ✅ CRITICAL: Clip rewards to [-1, 1]
-      clip_obs: 5.0 # ↑ OPTIMIZED: Aggressive obs clipping
-      hidden_sizes: [256, 256] # ↑ OPTIMIZED: 64→256 (more capacity)
-      # NOTA: Pesos multiobjetivo se configuran en rewards.py via multi_objective_priority
+      reward_scale: 0.5
+      clip_reward: 1.0
+      clip_obs: 5.0
+      hidden_sizes:
+      - 256
+      - 256
       prefer_citylearn: false
       progress_interval_episodes: 1
       save_final: true
@@ -359,42 +327,53 @@ oe3:
       co2_direct_weight: 0.12
       co2_indirect_weight: 0.08
     sac:
-      batch_size: 256 # ✅ FIX: 512→256 (evita OOM en RTX 4060, coincide con SACConfig)
-      buffer_size: 200000 # ✅ FIX: 50k→200k (captura variación anual completa, coincide con SACConfig)
+      batch_size: 256
+      buffer_size: 200000
       checkpoint_freq_steps: 500
       deterministic_eval: true
       device: cuda
-      episodes: 3  # Test rápido
-      ent_coef: auto # ✅ Auto-tuning entropy (adaptive exploration)
-      ent_coef_init: 0.5 # ✅ FIX: 0.2→0.5 (más exploración para descubrir política solar, coincide con SACConfig)
-      ent_coef_lr: 1e-3 # ✅ FIX: 3e-5→1e-3 (adaptación 33× más rápida, coincide con SACConfig)
-      gamma: 0.995 # ↑ OPTIMIZED: 0.99→0.995 (mayor horizonte temporal)
-      tau: 0.02 # ↑ OPTIMIZED: 0.01→0.02 (target network actualiza más rápido)
-      gradient_steps: 1 # ✅ FIX: 8→1 (coincide con SACConfig, SAC es off-policy con 1 update por sample)
-      learning_rate: 5e-5 # ✅ FIX: 1e-4→5e-5 (reduce inestabilidad gradient, coincide con SACConfig)
-      learning_starts: 2000 # ↓ OPTIMIZED: 5000→2000 (empezar antes a aprender)
+      episodes: 3
+      ent_coef: auto
+      ent_coef_init: 0.5
+      ent_coef_lr: 1e-3
+      gamma: 0.995
+      tau: 0.02
+      gradient_steps: 1
+      learning_rate: 5e-5
+      learning_starts: 2000
       log_interval: 100
-      max_grad_norm: 10.0 # ✅ SINCRONIZADO: 0.5→10.0 (SAC off-policy necesita gradientes más grandes)
-      reward_scale: 0.5 # AJUSTE: 0.1→0.5 (evita explosión critic_loss)
-      hidden_sizes: [256, 256] # 🔴 FIX: 512→256 (prevent overfitting)
-      use_prioritized_replay: false # 🔴 CRITICAL FIX: Disable PER (causing instability)
-      per_alpha: 0.6 # ↑ OPTIMIZED: Prioritization exponent
-      per_beta: 0.4 # ↑ OPTIMIZED: Importance sampling
-      per_epsilon: 1e-6 # ↑ OPTIMIZED: Min priority epsilon
+      max_grad_norm: 10.0
+      reward_scale: 0.5
+      hidden_sizes:
+      - 256
+      - 256
+      use_prioritized_replay: false
+      per_alpha: 0.6
+      per_beta: 0.4
+      per_epsilon: 1e-6
       normalize_observations: true
       normalize_rewards: true
-      clip_reward: 1.0 # ✅ CRITICAL: Clip rewards to [-1, 1]
-      clip_obs: 100.0 # ✅ SINCRONIZADO: 5.0→100.0 (evita destruir data post-normalización)
-      # NOTA: Pesos multiobjetivo se configuran en rewards.py via multi_objective_priority
+      clip_reward: 1.0
+      clip_obs: 100.0
       prefer_citylearn: false
       progress_interval_episodes: 1
       save_final: true
-      train_freq: 1 # ↑ OPTIMIZED: 2→1 (entrenar cada step)
+      train_freq: 1
       use_amp: true
-      use_sde: true # ↑ OPTIMIZED: false→true (mejor exploración)
+      use_sde: true
   grid:
     carbon_intensity_kg_per_kwh: 0.4521
     tariff_usd_per_kwh: 0.2
+  cost_savings:
+    tariff_hp_soles_kwh: 0.45
+    tariff_hfp_soles_kwh: 0.28
+    tariff_difference_soles_kwh: 0.17
+    tariff_factor_hp_hfp: 1.607
+    savings_hp_annual_soles: 21797.13
+    savings_hfp_annual_soles: 145430.59
+    savings_total_annual_soles: 167227.72
+    hp_hours_per_year: 1825
+    hfp_hours_per_year: 6935
 paths:
   analyses_dir: analyses
   interim_dir: data/interim
@@ -406,3 +385,8 @@ project:
   seconds_per_time_step: 3600
   seed: 42
   year: 2024
+grid:
+  tariff_hp_soles_per_kwh: 0.45
+  tariff_hfp_soles_per_kwh: 0.28
+  tariff_hours_peak: 18:00-22:59
+  tariff_hours_offpeak: 00:00-17:59, 23:00-23:59

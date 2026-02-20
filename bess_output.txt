@@ -1,0 +1,483 @@
+
+
++==============================================================================+
+|                    SISTEMA BESS v5.4 - IQUITOS EV MALL                      |
+|               Dimensionamiento Solar-Priority v5.4                          |
++==============================================================================+
+
+Fecha ejecucion: 2026-02-19 21:11:43
+
+[1] ESPECIFICACIONES TECNICAS BESS v5.4
+------------------------------------------------------------
+  Capacidad nominal:      2,000 kWh
+  Potencia nominal:       400 kW
+  Profundidad descarga:   80%
+  Eficiencia round-trip:  95%
+  SOC operacional:        20% - 100%
+
+[2] TARIFAS OSINERGMIN MT3 - ELECTRO ORIENTE (IQUITOS)
+------------------------------------------------------------
+  HP (18:00-23:00, 5h):   S/.0.45/kWh
+  HFP (resto, 19h):       S/.0.28/kWh
+  Diferencial:            S/.0.17/kWh (60.7%)
+  Factor CO2 grid:        0.4521 kg CO2/kWh
+
+[3] VERIFICACION DE ARCHIVOS DE ENTRADA
+------------------------------------------------------------
+  OK PV Solar:    pv_generation_citylearn2024.csv (837.3 KB)
+  OK EV Chargers: chargers_ev_ano_2024_v3.csv (71202.8 KB)
+  OK Mall Demand: demandamallhorakwh.csv (411.9 KB)
+
+  Output dir: D:\dise├▒opvbesscar\data\oe2\bess
+
+[4] EJECUTANDO DIMENSIONAMIENTO BESS...
+------------------------------------------------------------
+
+============================================================
+  DIMENSIONAMIENTO DE SISTEMA BESS
+============================================================
+
+Cargando datos de entrada...
+   Generacion PV: 8760 registros (columna: energia_kwh)
+   Demanda Mall (real, horaria): 33887 kWh/dia (basado en 8,760 horas)
+      [OK] Usando columna 'ev_energia_total_kwh' (dataset preparado para BESS)
+      [OK] Dataset ANUAL (chargers_ev_ano_2024_v3.csv - 8,760 horas)
+      [OK] Total EV (38 sockets):          1,118.6 kWh/dia -> 408,282 kWh/ano
+      [OK] Energia motos (30 sockets):     345,343.3 kWh/dia -> 345,343 kWh/ano
+      [OK] Energia mototaxis (8 sockets):  62,938.2 kWh/dia -> 62,938 kWh/ano
+      [OK] Dataset normalizado a 8760 horas (365 dias x 24 horas)
+   Demanda EV (horaria, 8760 horas): 1119 kWh/dia
+      - 19 cargadores, 38 tomas totales (Modo 3 @ 7.4 kW)
+      - Playa Motos: 15 cargadores x 2 = 30 tomas
+      - Playa Mototaxis: 4 cargadores x 2 = 8 tomas
+   Alineados a 8,760 horas (formato horario)
+
+[REGLAS BESS - PRIORIDAD SOLAR - EXCLUSIVO EV]
+   1. Solar -> PRIMERO motos/mototaxis (EV)
+   2. Excedente solar -> SEGUNDO carga BESS (hasta SOC 100%)
+   3. Excedente final -> TERCERO Mall
+   4. BESS descarga: Desde punto critico (PV<EV) hasta cierre 22h
+   5. SOC al cierre (22h): 20%
+
+[ANALISIS CRUCE CURVAS PV vs EV]
+   Hora fin carga BESS (PV >= EV): ~6h (SOC se mantiene 100%)
+   Hora inicio descarga (PV < EV): ~17h (punto critico)
+   Hora cierre: 22h (SOC debe ser 20%)
+   Deficit EV promedio: 415.4 kWh/dia
+   Deficit EV MAXIMO: 559.6 kWh/dia [USADO PARA 100% COBERTURA]
+   Pico deficit EV: 169.8 kW
+
+[FLUJOS ENERGETICOS DIARIOS]
+   Generacion PV: 22719 kWh/dia
+   Demanda EV: 1119 kWh/dia
+   PV->EV directo: 703 kWh/dia
+   Excedente PV (para BESS): 22016 kWh/dia
+   Deficit EV promedio: 415 kWh/dia
+   Deficit EV MAXIMO: 560 kWh/dia
+
+============================================================
+  DIMENSIONAMIENTO BESS - 100% COBERTURA DEFICIT EV
+============================================================
+
+[PARAMETROS DE DISENO]
+   SOC operacional: 20% - 100%
+   DoD efectivo: 80%
+   Eficiencia round-trip: 95%
+
+[CRITERIO CAPACIDAD - DINAMICO]
+   Criterio: Cubrir DEFICIT EV desde punto critico (EV>PV) hasta cierre (22h)
+   SOC final al cierre: 20% (regla operacional)
+   Deficit EV en descarga: 560 kWh/dia
+   Horas de descarga: 5 horas (17h-22h)
+   Pico deficit EV: 169.8 kW
+
+DIMENSIONAMIENTO OPTIMO (segun analisis perfil 15 min):
+   Capacidad base:   740 kWh
+   Factor de diseno: 1.20 (margen 20%)
+   Capacidad final:  740 kWh
+   Potencia:         269 kW
+   DoD:              80%
+   Eficiencia:       95%
+   Ratio Cap/Pot:    2.75
+   Ciclos/dia:       0.76
+   Deficit cubierto: 560 kWh/dia (18h-22h)
+
+Simulando operacion BESS con PRIORIDAD EV-EXCLUSIVE (basado en carga BESS primero)...
+
+[ESTRATEGIA PV-PRIORITY v5.4 - CORRECCION DE FLUJOS]
+   BESS Capacidad:           2,000 kWh
+   BESS Potencia:            400 kW
+
+   [PRIORIDAD 1] Manana (6h) cuando PV genera
+           -> PV CARGA BESS primero (ni bien empieza a generar)
+           -> Carga hasta 100%, luego MANTIENE
+   [PRIORIDAD 2] EN PARALELO - Mientras BESS se carga
+           -> PV ATIENDE EV directamente (simultaneously)
+           -> El mismo PV carga BESS Y alimenta EV
+   [PRIORIDAD 3] EXCEDENTE - Lo que sobra
+           -> PV SUMINISTRA a MALL (solo exceso)
+   [DESCARGA] Punto critico (17h, PV<EV) hasta cierre (22h)
+           -> BESS suministra LA DIFERENCIA para cubrir 100% EV
+   [SOC] 20%-100% con eficiencia 95%
+
+   Ventajas: Logica intuitiva solar, 100% EV coverage, mayor autonomia
+
+   Cobertura EV por BESS: 88.1%
+   EV desde PV directo: 218 MWh/ano
+   EV desde BESS: 142 MWh/ano
+   EV desde red: 49 MWh/ano
+   Ciclos/dia:      1.11
+   SOC min/max:     20.0% / 100.0%
+   Import red EV:   133 kWh/dia
+   [OK] Guardado: bess_ano_2024.csv (8760 filas, ano completo 2024)
+
+Datos CityLearn guardados en: D:\dise├▒opvbesscar\data\oe2\citylearn
+  Ô£à building_load.csv (demanda cortada)
+  Ô£à bess_solar_generation.csv (generaci├│n PV)
+  Ô£à bess_schema_params.json (par├ímetros)
+  Ô£à DEMAND_CUT_EXPLANATION.md (documentaci├│n agente)
+
+Analizando caracteristicas detalladas del BESS...
+  Advertencia: No se pudo realizar analisis detallado: 'bess_soc_percent'
+  Continuando...
+
+Generando graficas...
+  Advertencia: No se pudieron generar graficas: 'numpy.ndarray' object has no attribute 'values'
+  Continuando sin graficas...
+
+============================================================
+Resultados guardados en: D:\dise├▒opvbesscar\data\oe2\bess
+============================================================
+
+[5] RESULTADOS FINALES DIMENSIONAMIENTO BESS v5.4
+============================================================
+
+CAPACIDAD:
+  Capacidad:        2,000 kWh
+  Potencia:         400 kW
+  DoD:              80%
+  Eficiencia:       95%
+
+ENERGETICO (ANUAL):
+  Generacion PV:    8,292.5 MWh/ano
+  Demanda Mall:     12,368.7 MWh/ano
+  Demanda EV:       408.3 MWh/ano
+  Demanda Total:    12,776.9 MWh/ano
+
+FINANCIERO:
+  Costo baseline:   S/.0/ano
+  Ahorro total:     S/.0/ano
+  Reduccion costo:  0.0%
+
+CO2 (INDIRECTO):
+  Reduccion CO2:    0.0 ton/ano
+  Reduccion %:      0.0%
+
+============================================================
+DIMENSIONAMIENTO COMPLETADO EXITOSAMENTE
+Resultados en: D:\dise├▒opvbesscar\data\oe2\bess
+============================================================
+
+
+    +---------------------------------------------------------------------+
+    |  ESPECIFICACIONES TECNICAS BESS                                    |
+    +---------------------------------------------------------------------+
+    |  Capacidad nominal:         2,000 kWh                          |
+    |  Potencia nominal:            400 kW                           |
+    |  Profundidad descarga:         80 % (DoD)                       |
+    |  Eficiencia round-trip:        95 %                           |
+    |  SOC minimo:                   20 %                           |
+    |  SOC maximo:                  100 %                           |
+    |  Capacidad util:            1,600 kWh (80% DoD)                   |
+    |  C-rate nominal:             0.20 C                            |
+    +---------------------------------------------------------------------+
+    
++------------------------------------------------------------------------------+
+|  [2] TARIFAS OSINERGMIN MT3 - ELECTRO ORIENTE S.A. (IQUITOS)               |
++------------------------------------------------------------------------------+
+
+    +---------------------------------------------------------------------+
+    |  TARIFAS MT3 - Resolucion OSINERGMIN N┬░ 047-2024-OS/CD             |
+    +---------------------------------------------------------------------+
+    |                                                                     |
+    |  [TIME] HORA PUNTA (HP): 18:00 - 23:00 (5 horas)                        |
+    |     - Energia:    S/.0.45/kWh  (~USD 0.120/kWh)              |
+    |     - Potencia:   S/.48.50/kW-mes                                 |
+    |                                                                     |
+    |  [TIME] HORA FUERA DE PUNTA (HFP): 00:00-17:59, 23:00-23:59 (19 horas)  |
+    |     - Energia:    S/.0.28/kWh  (~USD 0.075/kWh)              |
+    |     - Potencia:   S/.22.80/kW-mes                                 |
+    |                                                                     |
+    |  [COST] DIFERENCIAL ARBITRAJE: S/.0.17/kWh (60.7% ahorro)          |
+    |                                                                     |
+    |  [TEMP] FACTOR CO2 (Sistema termico aislado): 0.4521 kg/kWh         |
+    +---------------------------------------------------------------------+
+    
++------------------------------------------------------------------------------+
+|  [3] DATOS DE ENTRADA - VERIFICACION DE ARCHIVOS                           |
++------------------------------------------------------------------------------+
+
+    ­ƒôé ARCHIVOS DE ENTRADA:
+    [OK] PV Solar:    pv_generation_citylearn2024.csv (837.3 KB)
+    [OK] EV Chargers: chargers_ev_ano_2024_v3.csv (71202.8 KB)
+    [OK] Mall Demand: demandamallhorakwh.csv (411.9 KB)
+
+    ­ƒôü Directorio salida: D:\dise├▒opvbesscar\data\oe2\bess
+
+
++------------------------------------------------------------------------------+
+|  [4] EJECUTANDO DIMENSIONAMIENTO BESS...                                   |
++------------------------------------------------------------------------------+
+
+============================================================
+  DIMENSIONAMIENTO DE SISTEMA BESS
+============================================================
+
+Cargando datos de entrada...
+   Generacion PV: 8760 registros (columna: energia_kwh)
+   Demanda Mall (real, horaria): 33887 kWh/dia (basado en 8,760 horas)
+      [OK] Usando columna 'ev_energia_total_kwh' (dataset preparado para BESS)
+      [OK] Dataset ANUAL (chargers_ev_ano_2024_v3.csv - 8,760 horas)
+      [OK] Total EV (38 sockets):          1,118.6 kWh/dia -> 408,282 kWh/ano
+      [OK] Energia motos (30 sockets):     345,343.3 kWh/dia -> 345,343 kWh/ano
+      [OK] Energia mototaxis (8 sockets):  62,938.2 kWh/dia -> 62,938 kWh/ano
+      [OK] Dataset normalizado a 8760 horas (365 dias x 24 horas)
+   Demanda EV (horaria, 8760 horas): 1119 kWh/dia
+      - 19 cargadores, 38 tomas totales (Modo 3 @ 7.4 kW)
+      - Playa Motos: 15 cargadores x 2 = 30 tomas
+      - Playa Mototaxis: 4 cargadores x 2 = 8 tomas
+   Alineados a 8,760 horas (formato horario)
+
+[REGLAS BESS - PRIORIDAD SOLAR - EXCLUSIVO EV]
+   1. Solar -> PRIMERO motos/mototaxis (EV)
+   2. Excedente solar -> SEGUNDO carga BESS (hasta SOC 100%)
+   3. Excedente final -> TERCERO Mall
+   4. BESS descarga: Desde punto critico (PV<EV) hasta cierre 22h
+   5. SOC al cierre (22h): 20%
+
+[ANALISIS CRUCE CURVAS PV vs EV]
+   Hora fin carga BESS (PV >= EV): ~6h (SOC se mantiene 100%)
+   Hora inicio descarga (PV < EV): ~17h (punto critico)
+   Hora cierre: 22h (SOC debe ser 20%)
+   Deficit EV promedio: 415.4 kWh/dia
+   Deficit EV MAXIMO: 559.6 kWh/dia [USADO PARA 100% COBERTURA]
+   Pico deficit EV: 169.8 kW
+
+[FLUJOS ENERGETICOS DIARIOS]
+   Generacion PV: 22719 kWh/dia
+   Demanda EV: 1119 kWh/dia
+   PV->EV directo: 703 kWh/dia
+   Excedente PV (para BESS): 22016 kWh/dia
+   Deficit EV promedio: 415 kWh/dia
+   Deficit EV MAXIMO: 560 kWh/dia
+
+============================================================
+  DIMENSIONAMIENTO BESS - 100% COBERTURA DEFICIT EV
+============================================================
+
+[PARAMETROS DE DISENO]
+   SOC operacional: 20% - 100%
+   DoD efectivo: 80%
+   Eficiencia round-trip: 95%
+
+[CRITERIO CAPACIDAD - DINAMICO]
+   Criterio: Cubrir DEFICIT EV desde punto critico (EV>PV) hasta cierre (22h)
+   SOC final al cierre: 20% (regla operacional)
+   Deficit EV en descarga: 560 kWh/dia
+   Horas de descarga: 5 horas (17h-22h)
+   Pico deficit EV: 169.8 kW
+
+DIMENSIONAMIENTO OPTIMO (segun analisis perfil 15 min):
+   Capacidad base:   740 kWh
+   Factor de diseno: 1.20 (margen 20%)
+   Capacidad final:  740 kWh
+   Potencia:         269 kW
+   DoD:              80%
+   Eficiencia:       95%
+   Ratio Cap/Pot:    2.75
+   Ciclos/dia:       0.76
+   Deficit cubierto: 560 kWh/dia (18h-22h)
+
+Simulando operacion BESS con PRIORIDAD EV-EXCLUSIVE (basado en carga BESS primero)...
+
+[ESTRATEGIA PV-PRIORITY v5.4 - CORRECCION DE FLUJOS]
+   BESS Capacidad:           2,000 kWh
+   BESS Potencia:            400 kW
+
+   [PRIORIDAD 1] Manana (6h) cuando PV genera
+           -> PV CARGA BESS primero (ni bien empieza a generar)
+           -> Carga hasta 100%, luego MANTIENE
+   [PRIORIDAD 2] EN PARALELO - Mientras BESS se carga
+           -> PV ATIENDE EV directamente (simultaneously)
+           -> El mismo PV carga BESS Y alimenta EV
+   [PRIORIDAD 3] EXCEDENTE - Lo que sobra
+           -> PV SUMINISTRA a MALL (solo exceso)
+   [DESCARGA] Punto critico (17h, PV<EV) hasta cierre (22h)
+           -> BESS suministra LA DIFERENCIA para cubrir 100% EV
+   [SOC] 20%-100% con eficiencia 95%
+
+   Ventajas: Logica intuitiva solar, 100% EV coverage, mayor autonomia
+
+   Cobertura EV por BESS: 88.1%
+   EV desde PV directo: 218 MWh/ano
+   EV desde BESS: 142 MWh/ano
+   EV desde red: 49 MWh/ano
+   Ciclos/dia:      1.11
+   SOC min/max:     20.0% / 100.0%
+   Import red EV:   133 kWh/dia
+   [OK] Guardado: bess_ano_2024.csv (8760 filas, ano completo 2024)
+
+Datos CityLearn guardados en: D:\dise├▒opvbesscar\data\oe2\citylearn
+  Ô£à building_load.csv (demanda cortada)
+  Ô£à bess_solar_generation.csv (generaci├│n PV)
+  Ô£à bess_schema_params.json (par├ímetros)
+  Ô£à DEMAND_CUT_EXPLANATION.md (documentaci├│n agente)
+
+Analizando caracteristicas detalladas del BESS...
+  Advertencia: No se pudo realizar analisis detallado: 'bess_soc_percent'
+  Continuando...
+
+Generando graficas...
+  Advertencia: No se pudieron generar graficas: 'numpy.ndarray' object has no attribute 'values'
+  Continuando sin graficas...
+
+============================================================
+Resultados guardados en: D:\dise├▒opvbesscar\data\oe2\bess
+============================================================
+
+
++------------------------------------------------------------------------------+
+|  [5] RESULTADOS DIMENSIONAMIENTO BESS v5.3                                 |
++------------------------------------------------------------------------------+
+
+    +---------------------------------------------------------------------+
+    |  DIMENSIONAMIENTO FINAL                                            |
+    +---------------------------------------------------------------------+
+    |  Capacidad nominal:           2,000 kWh                        |
+    |  Capacidad util (DoD):        1,600 kWh (80% DoD)                |
+    |  Potencia nominal:              400 kW                         |
+    |  C-rate efectivo:              0.36                             |
+    |  Ratio Potencia/Cap:           0.20                             |
+    |  Modo dimensionamiento:  ev_open_hours                             |
+    +---------------------------------------------------------------------+
+    
++------------------------------------------------------------------------------+
+|  [6] BALANCE ENERGETICO - FLUJOS DIARIOS Y ANUALES                         |
++------------------------------------------------------------------------------+
+
+    +---------------------------------------------------------------------+
+    |  GENERACION                                                        |
+    +---------------------------------------------------------------------+
+    |  [SUN] PV Solar:             22,719 kWh/dia  |   8,292.5 MWh/ano     |
+    +---------------------------------------------------------------------+
+    |  DEMANDA                                                           |
+    +---------------------------------------------------------------------+
+    |  [MALL] Mall:                  33,887 kWh/dia  |  12,368.7 MWh/ano     |
+    |  [EV] EV Chargers:            1,119 kWh/dia  |     408.3 MWh/ano     |
+    |  -----------------------------------------------------------------  |
+    |  [GRAPH] TOTAL DEMANDA:         35,005 kWh/dia  |  12,776.9 MWh/ano     |
+    +---------------------------------------------------------------------+
+    |  BALANCE                                                           |
+    +---------------------------------------------------------------------+
+    |  [UP] Excedente PV:          22,016 kWh/dia  (PV - Demanda)        |
+    |  [DOWN] Deficit EV:               560 kWh/dia  (EV sin PV)           |
+    +---------------------------------------------------------------------+
+    |  INTERCAMBIO RED                                                   |
+    +---------------------------------------------------------------------+
+    |  ­ƒôÑ Import red:            18,959 kWh/dia  |   6,920.2 MWh/ano     |
+    |  ­ƒôñ Export red:             4,852 kWh/dia  |   1,770.8 MWh/ano     |
+    +---------------------------------------------------------------------+
+    
++------------------------------------------------------------------------------+
+|  [7] OPERACION BESS - SIMULACION ARBITRAJE HP/HFP                          |
++------------------------------------------------------------------------------+
+
+    +---------------------------------------------------------------------+
+    |  ESTRATEGIA OPERACION ARBITRAJE                                    |
+    +---------------------------------------------------------------------+
+    |  ­ƒöï CARGA (HFP 06:00-17:00):                                        |
+    |     - Fuente: Excedente PV + Grid si SOC < 80%                     |
+    |     - Tarifa aplicada: S/.0.28/kWh                               |
+    |                                                                     |
+    |  ­ƒöï DESCARGA (HP 18:00-22:00):                                      |
+    |     - Destino: EV Chargers + Mall                                  |
+    |     - Tarifa evitada: S/.0.45/kWh                                |
+    |     - SOC objetivo cierre (22h): 20%                               |
+    +---------------------------------------------------------------------+
+    |  METRICAS OPERACION                                                |
+    +---------------------------------------------------------------------+
+    |  ÔÜí Autosuficiencia:           45.8 %                           |
+    |  ­ƒöä Ciclos/dia:                1.11                             |
+    |  [CHART] SOC minimo:                  20 %                           |
+    |  [CHART] SOC maximo:                 100 %                           |
+    |  [BALANCE] Rango SOC:           20% - 100%                            |
+    +---------------------------------------------------------------------+
+    
++------------------------------------------------------------------------------+
+|  [8] METRICAS ECONOMICAS - AHORRO ARBITRAJE OSINERGMIN                     |
++------------------------------------------------------------------------------+
+
+    +---------------------------------------------------------------------+
+    |  COSTOS ANUALES                                                    |
+    +---------------------------------------------------------------------+
+    |  ­ƒÆ© Costo BASELINE (sin BESS, sin PV):                             |
+    |     S/.      4,030,058/ano                                        |
+    |                                                                     |
+    |  [COST] Costo CON SISTEMA (PV + BESS + Arbitraje):                     |
+    |     S/.      2,182,740/ano                                        |
+    +---------------------------------------------------------------------+
+    |  AHORROS                                                           |
+    +---------------------------------------------------------------------+
+    |  ­ƒÄ» Ahorro por arbitraje BESS:  S/.     554,195/ano                |
+    |  ­ƒÄ» Ahorro TOTAL sistema:       S/.   1,847,318/ano                |
+    |  [CHART] Reduccion costo:                    45.8 %                     |
+    |  [CHART] ROI estimado:                      307.9 %                     |
+    +---------------------------------------------------------------------+
+    
++------------------------------------------------------------------------------+
+|  [9] METRICAS CO2 - IMPACTO AMBIENTAL                                      |
++------------------------------------------------------------------------------+
+
+    +---------------------------------------------------------------------+
+    |  Factor de emision: 0.4521 kg CO2/kWh (Sistema termico aislado)   |
+    +---------------------------------------------------------------------+
+    |  EMISIONES CO2                                                     |
+    +---------------------------------------------------------------------+
+    |  ­ƒÅ¡ BASELINE (sin PV, sin BESS):       5,776.5 ton CO2/ano      |
+    |  ­ƒî▒ CON SISTEMA (PV + BESS):           3,128.6 ton CO2/ano      |
+    +---------------------------------------------------------------------+
+    |  REDUCCION INDIRECTA (BESS reemplaza energia termica de red)       |
+    +---------------------------------------------------------------------+
+    |  ­ƒî┐ REDUCCION INDIRECTA CO2:           2,647.8 ton CO2/ano      |
+    |  [CHART] Reduccion emisiones:                  45.8 %               |
+    +---------------------------------------------------------------------+
+    
++------------------------------------------------------------------------------+
+|  ­ƒöƒ ARCHIVOS GENERADOS                                                       |
++------------------------------------------------------------------------------+
+
+    ­ƒôü ARCHIVOS DE DATOS:
+    [OK] bess_results.json
+       +- Configuracion y metricas BESS (2.3 KB)
+    [OK] bess_ano_2024.csv
+       +- Simulacion 8,760 horas (29 cols) (1978.7 KB)
+    [OK] bess_daily_balance_24h.csv
+       +- Perfil dia tipico (24 horas) (9.2 KB)
+
+    [GRAPH] GRAFICAS:
+    [!]  bess_sistema_completo.png (no generado)
+
+
+Ôòö==============================================================================Ôòù
+Ôòæ                         [GRAPH] RESUMEN EJECUTIVO                                 Ôòæ
+Ôòá==============================================================================Ôòú
+Ôòæ  ­ƒöï BESS:     2,000 kWh / 400 kW                                          Ôòæ
+Ôòæ  ÔÿÇ´©Å  PV:       8,292.5 MWh/ano generacion                                           Ôòæ
+Ôòæ  ÔÜí Demanda:  12,776.9 MWh/ano (Mall + EV)                                         Ôòæ
+Ôòæ  ­ƒÆ░ Ahorro:   S/.1,847,318/ano (45.8% reduccion)                                 Ôòæ
+Ôòæ  ­ƒî┐ CO2:      2,647.8 ton reduccion indirecta/ano                                          Ôòæ
+Ôòá==============================================================================Ôòú
+Ôòæ  [OK] DIMENSIONAMIENTO BESS v5.3 COMPLETADO EXITOSAMENTE                        Ôòæ
+ÔòÜ==============================================================================ÔòØ
+
+

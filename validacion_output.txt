@@ -1,0 +1,106 @@
+
+====================================================================================================
+Ô£à VALIDACI├ôN: COSTOS Y AHORROS HP/HFP - OSINERGMIN INTEGRADO v5.7
+====================================================================================================
+
+­ƒôè TARIFAS OSINERGMIN (desde 2024-11-04):
+   - Hora Punta (HP 18-23h): S/. 0.45/kWh
+   - Fuera de Punta (HFP): S/. 0.28/kWh
+   - DIFERENCIAL: S/. 0.16999999999999998/kWh
+   - FACTOR HP/HFP: 1.607x
+
+====================================================================================================
+1´©ÅÔâú  VALIDACI├ôN: simulate_bess_ev_exclusive
+====================================================================================================
+
+[­ƒôè P├ëRDIDAS] BALANCE ENERGETICO BESS - P├ëRDIDAS ESPERADAS POR EFICIENCIA
+   Energ├¡a cargada (antes p├®rdidas): 287,371 kWh/a├▒o
+   Energ├¡a almacenada (despu├®s p├®rdidas carga): 280,095 kWh/a├▒o
+   Energ├¡a descargada (antes p├®rdidas): 269,535 kWh/a├▒o
+   Energ├¡a entregada (despu├®s p├®rdidas descarga): 262,710 kWh/a├▒o
+   P├ëRDIDAS ESPERADAS: 17,384 kWh/a├▒o (6.2%)
+   Ô£à NORMAL: P├®rdidas por eficiencia y residuales en BESS (aceptable)
+Ô£à Ejecuci├│n exitosa
+
+­ƒôï COLUMNAS DE COSTOS/TARIFAS:
+   - tariff_period
+   - tariff_rate_soles_kwh
+   - cost_if_grid_import_soles
+   - cost_avoided_by_bess_soles
+   - cost_savings_hp_soles
+   - cost_savings_hfp_soles
+   - tariff_index_hp_hfp
+
+­ƒôè ESTAD├ìSTICAS DE COSTOS (EV Exclusive):
+   Horas HP: 1825 (esperado ~1,825)
+   Horas HFP: 6935 (esperado ~6,935)
+   Ahorro total HP: S/. 11,432.10/a├▒o
+   Ahorro total HFP: S/. 58,827.06/a├▒o
+   Costo evitado total: S/. 84,991.01/a├▒o
+   Factor ├¡ndice: [np.float64(1.0), np.float64(1.607142857142857)]
+Ô£à validate_ev_exclusive: PASS
+
+====================================================================================================
+2´©ÅÔâú  VALIDACI├ôN: simulate_bess_arbitrage_hp_hfp
+====================================================================================================
+
+[Ô£à OK] BALANCE ENERGETICO BESS (ARBITRAJE) VERIFICADO
+   Energ├¡a cargada: 340,548 kWh/a├▒o
+   Energ├¡a descargada: 332,347 kWh/a├▒o
+   Energ├¡a almacenada: 331,925 kWh/a├▒o
+   Energ├¡a entregada: 323,932 kWh/a├▒o
+   Balance error: 2.41% (dentro de tolerancia)
+Ô£à Ejecuci├│n exitosa
+
+­ƒôï COLUMNAS DE COSTOS/TARIFAS:
+   - tariff_period
+   - tariff_rate_soles_kwh
+   - cost_grid_import_soles
+   - cost_if_grid_import_soles
+   - cost_avoided_by_bess_soles
+   - cost_savings_hp_soles
+   - cost_savings_hfp_soles
+   - savings_bess_soles
+   - tariff_index_hp_hfp
+
+­ƒôè ESTAD├ìSTICAS DE COSTOS (Arbitrage HP/HFP):
+   Horas HP: 1825 (esperado ~1,825)
+   Horas HFP: 6935 (esperado ~6,935)
+   Ahorro total HP: S/. 39,558.80/a├▒o
+   Ahorro total HFP: S/. 12,521.64/a├▒o
+   Ahorro BESS total: S/. 52,080.44/a├▒o
+   Costo evitado total: S/. 130,259.82/a├▒o
+   Factor ├¡ndice: [np.float64(1.0), np.float64(1.607142857142857)]
+Ô£à validate_arbitrage: PASS
+
+====================================================================================================
+3´©ÅÔâú  COMPARACI├ôN: EV Exclusive vs Arbitrage
+====================================================================================================
+
+­ƒôè Muestra de datos (primeras 3 horas):
+
+EV Exclusive (columnas de costo):
+                    tariff_period  cost_savings_hp_soles  cost_savings_hfp_soles  cost_avoided_by_bess_soles
+datetime                                                                                                    
+2024-01-01 00:00:00           HFP                    0.0                     0.0                         0.0
+2024-01-01 01:00:00           HFP                    0.0                     0.0                         0.0
+2024-01-01 02:00:00           HFP                    0.0                     0.0                         0.0
+
+Arbitrage (columnas de costo):
+                    tariff_period  cost_savings_hp_soles  cost_savings_hfp_soles  cost_avoided_by_bess_soles
+datetime                                                                                                    
+2024-01-01 00:00:00           HFP                    0.0                     0.0                         0.0
+2024-01-01 01:00:00           HFP                    0.0                     0.0                         0.0
+2024-01-01 02:00:00           HFP                    0.0                     0.0                         0.0
+
+­ƒôê Ahorros HP:
+   EV Exclusive: S/. 11,432.10
+   Arbitrage: S/. 39,558.80
+   Diferencia: S/. 28,126.70 (246.0%)
+
+Ô£à COMPARACI├ôN: PASS
+
+====================================================================================================
+Ô£à VALIDACI├ôN COMPLETADA
+====================================================================================================
+

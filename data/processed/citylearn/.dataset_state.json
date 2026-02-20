@@ -1,0 +1,30 @@
+{
+  "BESS": {
+    "path": "data/oe2/bess/bess_ano_2024.csv",
+    "timestamp": 1771562477.6147716,
+    "file_hash": "9ea3d0b1118789cc53c992e4416c333b6a415355f604ae9e2c26c9c8602c570d",
+    "file_size": 2447217,
+    "last_checked": "2026-02-20T00:04:44.552889"
+  },
+  "SOLAR": {
+    "path": "data/interim/oe2/solar/pv_generation_timeseries.csv",
+    "timestamp": 0,
+    "file_hash": "NOT_FOUND",
+    "file_size": 0,
+    "last_checked": "2026-02-20T00:04:44.552889"
+  },
+  "EV_CHARGERS": {
+    "path": "data/oe2/chargers/chargers_ev_ano_2024_v3.csv",
+    "timestamp": 1771429157.0937214,
+    "file_hash": "c35d01f62b9925ce9e6c333c8dadb569e65430eb504df8f71ae64a387c119c5d",
+    "file_size": 72911701,
+    "last_checked": "2026-02-20T00:04:44.609566"
+  },
+  "TRANSFORMED_BESS": {
+    "path": "data/processed/citylearn/iquitos_ev_mall/bess_timeseries.csv",
+    "timestamp": 1771563134.189964,
+    "file_hash": "e420886bdc23ccbb46f0def6df4e51e1a4ca7b2a6879c51be1b0c20dd4965e77",
+    "file_size": 3847335,
+    "last_checked": "2026-02-20T00:04:44.609566"
+  }
+}
