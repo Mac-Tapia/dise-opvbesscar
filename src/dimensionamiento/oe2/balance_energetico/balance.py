@@ -1563,9 +1563,9 @@ class BalanceEnergeticoSystem:
         
         # Imprimir desglose completo
         print(f"\n  Totales BESS:")
-        print(f"    Carga anual (PV→BESS):        {total_charge_annual:>15,.0f} kWh")
-        print(f"    Descarga→EV:                  {total_desc_ev:>15,.0f} kWh ({total_desc_ev/total_desc*100:.1f}%)")
-        print(f"    Descarga→MALL (Peak Shaving): {total_desc_mall:>15,.0f} kWh ({total_desc_mall/total_desc*100:.1f}%)")
+        print(f"    Carga anual (PV a BESS):     {total_charge_annual:>15,.0f} kWh")
+        print(f"    Descarga a EV:                {total_desc_ev:>15,.0f} kWh ({total_desc_ev/total_desc*100:.1f}%)")
+        print(f"    Descarga a MALL (Peak Shaving): {total_desc_mall:>15,.0f} kWh ({total_desc_mall/total_desc*100:.1f}%)")
         print(f"    Descarga total:               {total_desc:>15,.0f} kWh")
         print("  [OK] 05.1_bess_carga_descarga.png")
     
@@ -1646,10 +1646,10 @@ class BalanceEnergeticoSystem:
         
         # Resumen en consola
         print(f"\n  Desglose Generación Solar (PV):")
-        print(f"    → EV (Directo):            {pv_to_ev:>15,.0f} kWh ({pv_to_ev/pv_total*100:>6.1f}%)")
-        print(f"    → BESS (Almacén):          {pv_to_bess:>15,.0f} kWh ({pv_to_bess/pv_total*100:>6.1f}%)")
-        print(f"    → Mall (Directo):          {pv_to_mall:>15,.0f} kWh ({pv_to_mall/pv_total*100:>6.1f}%)")
-        print(f"    → Red (Exportación):       {pv_to_grid:>15,.0f} kWh ({pv_to_grid/pv_total*100:>6.1f}%)")
+        print(f"    - EV (Directo):               {pv_to_ev:>15,.0f} kWh ({pv_to_ev/pv_total*100:>6.1f}%)")
+        print(f"    - BESS (Almacén):             {pv_to_bess:>15,.0f} kWh ({pv_to_bess/pv_total*100:>6.1f}%)")
+        print(f"    - Mall (Directo):             {pv_to_mall:>15,.0f} kWh ({pv_to_mall/pv_total*100:>6.1f}%)")
+        print(f"    - Red (Exportación):          {pv_to_grid:>15,.0f} kWh ({pv_to_grid/pv_total*100:>6.1f}%)")
         print(f"    Total Autoconsumo (no-export): {pv_total - pv_to_grid:>15,.0f} kWh ({(pv_total-pv_to_grid)/pv_total*100:>6.1f}%)")
         print("  [OK] 08_pv_exportacion_desglose.png")
     
