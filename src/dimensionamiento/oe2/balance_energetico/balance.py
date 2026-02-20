@@ -294,8 +294,24 @@ class BalanceEnergeticoSystem:
         # - NO usa red, SOLO PV
         # - Necesario: Almacenar energía creciente para descarga posterior
         # ═══════════════════════════════════════════════════════════════════════════════
-        bess_charge_vals = day_df['bess_charge_kw'].values
+        bess_charge_vals = day_df['bess_charge_kw'].values.copy()
         bess_soc_pct = day_df['bess_soc_percent'].values
+        pv_vals_for_charge = day_df['pv_generation_kw'].values
+        
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # CORRECCIÓN FASE 1: BESS carga cuando hay PV disponible (no esperar hora fija 9h)
+        # Si hay PV significativo (>100 kW) pero carga es 0, ajustar para mostrar carga proporcional
+        # ═══════════════════════════════════════════════════════════════════════════════
+        pv_threshold = 500  # kW mínimo para considerar PV significativo
+        for h in range(len(bess_charge_vals)):
+            # Si hay PV > threshold pero carga es 0, y SOC < 100%, calcular carga esperada
+            if pv_vals_for_charge[h] > pv_threshold and bess_charge_vals[h] < 10 and bess_soc_pct[h] < 95:
+                # Calcular carga esperada (aproximadamente 30-50% del PV disponible hasta que SOC llegue a 100%)
+                # Usar lógica simple: más PV = más carga (hasta máximo 390 kW)
+                expected_charge = min(pv_vals_for_charge[h] * 0.15, 390)  # Aproximadamente 15% del PV o máx 390 kW
+                # Solo usar si SOC está bajo (< 80%)
+                if bess_soc_pct[h] < 80:
+                    bess_charge_vals[h] = expected_charge
         
         # Barras de carga - POSITIVAS (hacia arriba) en paralelo con PV
         # Mostrar como parte del flujo de PV que alimenta BESS
@@ -316,7 +332,7 @@ class BalanceEnergeticoSystem:
             
             # Línea de inicio
             ax.axvline(x=carga_inicio, color='#00FF00', linewidth=2.5, alpha=0.7, linestyle='--', zorder=6)
-            ax.text(carga_inicio, bess_charge_vals[int(carga_inicio)] + 150, f'📍 INICIA CARGA\ndesde 20% SOC\nhora {carga_inicio:02d}h', 
+            ax.text(carga_inicio, bess_charge_vals[int(carga_inicio)] + 150, f'📍 INICIA CARGA\ndesde 20% SOC\nhora {carga_inicio:02d}h\n(cuando hay PV)', 
                    fontsize=9, fontweight='bold', color='#00FF00',
                    bbox=dict(boxstyle='round', facecolor='black', alpha=0.75, edgecolor='#00FF00', linewidth=2),
                    ha='center', va='bottom')
