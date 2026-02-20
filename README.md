@@ -6,17 +6,38 @@ Iquitos, Perú - Control inteligente de 38 sockets de carga (270 motos + 39 moto
 
 ---
 
-## 🎯 Resumen Ejecutivo (Actualizado 2026-02-19)
+## 📢 Latest Updates (2026-02-20)
+
+### Graphics Enhancements v5.8-v6.0
+- ✅ **BESS FASE 1 Synchronization Fix:** Carga ahora inicia cuando aparece PV (no espera hora fija)
+- ✅ **6-FASES Visual Enhancement:** Zonas coloreadas (verde carga, azul holding, rojo descarga, gris reposo)
+- ✅ **BESS Profile Lines:** Líneas superpuestas (verde=carga, roja=descarga) para mejor visibilidad
+- ✅ **Hourly X-axis Labels:** Etiquetas completas 0h-23h para precisión temporal
+- ✅ **Console Output Cleanup:** Caracteres Unicode reemplazados (→ becomes "a")
+- ✅ **Legend Repositioning:** Gráfica 04_cascada_energetica.png optimizada
+- ✅ **16 Graphics Regenerated:** Todos los outputs actualizados con últimas correcciones
+
+### Branch Status
+- **Current Branch:** `smartcharger` ✅ Up to date
+- **Latest Commit:** `507b0099` - FIX FASE 1 BESS timing synchronization
+- **Previous Commits:** 9 enhancements in last session (peak shaving, Unicode cleanup, FASE visualization)
+
+---
+
+## 🎯 Resumen Ejecutivo (Actualizado 2026-02-20)
 
 **pvbesscar** implementa un sistema completo de dos fases para optimizar infraestructura de carga EV:
 
 ### ✅ OE2 (Dimensioning) - COMPLETADO (Infraestructura)
-Especificaciones de infraestructura confirmadas:
+Especificaciones de infraestructura confirmadas con visualizaciones mejoradas:
 - **19 cargadores** (15 motos + 4 mototaxis) × 2 sockets = **38 puntos de carga**
 - **Solar:** **4,050 kWp** PVGIS (hourly validated, 8,760 rows)
 - **BESS:** **2,000 kWh** max SOC (80% DoD, 95% efficiency, 20% min SOC)
+  - **6-FASES intocables:** Carga gradual→Holding→Descarga→Peak Shaving→Dual Descarga→Reposo
+  - **FASE 1 sync:** Carga inicia cuando PV disponible (corrección v5.8)
 - **CO₂ Factor:** 0.4521 kg CO₂/kWh (thermal generation Iquitos)
 - **Data:** 977 technical columns × 8,760 hourly timesteps
+- **Graphics v5.8+:** Perfiles BESS visualizados, 6-fases coloreadas, sincronización horaria
 
 ### ✅ OE3 (Control) - COMPLETADO (Evaluación de Agentes RL)
 Control inteligente con Reinforcement Learning - **A2C SELECTED (100.0/100 score)** ⭐
@@ -148,13 +169,18 @@ python scripts/train/train_a2c.py --episodes 5 --log-dir outputs/continued_train
 Galería interactiva con 10 gráficas completas mostrando:
 
 #### Gráfics Principales:
-1. **[00_BALANCE_INTEGRADO_COMPLETO.png](outputs/00_BALANCE_INTEGRADO_COMPLETO.png)** ⭐
-   - Generación solar real (6h-17h, pico 2,887 kW)
-   - Demanda EV con perfil horario 9-22h (ramp-up 9-17h, punta 18-20h, descenso 21-22h)
-   - Motos: 5.19 kWh/vehículo, 30 sockets (78.9%) | Taxis: 7.40 kWh/vehículo, 8 sockets (21.1%)
-   - Demanda Mall variable (0-2,763 kW)
-   - BESS operación (carga 6-17h, descarga 17-22h)
-   - Importación desde grid público
+1. **[00_BALANCE_INTEGRADO_COMPLETO.png](outputs/balance_energetico/00_BALANCE_INTEGRADO_COMPLETO.png)** ⭐
+   - **Generación solar real:** 6h-17h, pico 2,887 kW
+   - **Demanda EV:** perfil horario 9-22h (ramp-up 9-17h, punta 18-20h, descenso 21-22h)
+     - Motos: 5.19 kWh/vehículo, 30 sockets (78.9%) | Taxis: 7.40 kWh/vehículo, 8 sockets (21.1%)
+   - **Demanda Mall:** variable 0-2,763 kW
+   - **BESS 6-FASES:**
+     - FASE 1 (6-15h): Carga gradual desde SOC 20%→100% (línea verde, sincronizada con PV)
+     - FASE 2 (15-17h): Holding a 100% SOC (espera punto crítico)
+     - FASE 3-5 (17-22h): Descarga EV + peak shaving MALL (línea roja, máx 390 kW)
+     - FASE 6 (22-6h): Reposo a SOC 20% (standby)
+   - **Grid import:** Respaldo 24h, solo cuando PV+BESS insuficiente
+   - **Visualización mejorada:** Etiquetas 0h-23h en eje X, perfiles de carga/descarga superpuestos, anotaciones FASE 1 inicio
 
 2. **[00_INTEGRAL_todas_curvas.png](outputs/00_INTEGRAL_todas_curvas.png)** - Perfil 7 días continuo
 3. **[00.5_FLUJO_ENERGETICO_INTEGRADO.png](outputs/00.5_FLUJO_ENERGETICO_INTEGRADO.png)** - Diagrama Sankey
@@ -165,6 +191,14 @@ Galería interactiva con 10 gráficas completas mostrando:
 8. **[05_bess_soc.png](outputs/05_bess_soc.png)** - State of Charge BESS (20-100%)
 9. **[06_emisiones_co2.png](outputs/06_emisiones_co2.png)** - Huella de carbono (kg CO₂/año)
 10. **[07_utilizacion_pv.png](outputs/07_utilizacion_pv.png)** - Utilización de energía solar
+
+### ✨ Graphics v5.8+ Improvements (2026-02-20)
+- ✅ **FASE 1 Timing Correction:** BESS carga inicia cuando aparece PV (7h), no espera a 9h
+- ✅ **BESS Charge/Discharge Profiles:** Líneas superpuestas (verde para carga, roja para descarga) para mayor claridad
+- ✅ **Hourly X-axis Labels:** Etiquetas 0h-23h para mejor referencia temporal
+- ✅ **6-FASES Color Zones:** Zonas visuales (verde/azul/rojo/gris) respetando las 6 fases intocables
+- ✅ **Clean Console Output:** Caracteres Unicode reemplazados con ASCII (→ becomes "a")
+- ✅ **Legend Repositioned:** Gráfica 04 leyenda movida a esquina superior izquierda
 
 ### 📈 Datos Reales Integrados (2024):
 - **Generación Solar:** `data/oe2/Generacionsolar/pv_generation_citylearn2024.csv`
