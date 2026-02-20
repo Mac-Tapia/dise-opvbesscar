@@ -198,14 +198,40 @@ class BalanceEnergeticoSystem:
         print(f"[OK] Graficas guardadas")
     
     def _plot_integrated_balance(self, df: pd.DataFrame, out_dir: Path) -> None:
-        """Gráfica INTEGRADA: Generación, BESS, EV (motos+taxis), Mall, Red - UN DÍA COMPLETO.
+        """Gráfica INTEGRADA: Generación, BESS (6-FASES), EV, Mall, Red - UN DÍA COMPLETO.
         
-        Muestra la LÓGICA REAL del BESS:
-        - Inicia en SOC 20% (cierre día anterior)
-        - 6h-15h: Carga desde PV hasta SOC 100%
-        - 15h-22h: Descarga hacia Mall/EV
-        - SOC 20% mínimo: No descarga más
-        - Mall demand real (PV_directo + BESS + Red si falta)
+        RESPETA LAS 6 FASES INTOCABLES DE BESS:
+        
+        FASE 1: CARGA GRADUAL (6h-15h)
+          ├─ Inicia en SOC 20% (cierre día anterior)
+          ├─ Carga desde PV hasta SOC 100% (máx 390 kW)
+          ├─ Carga PROGRESIVA/GRADUAL: sube poco a poco
+          └─ SE DETIENE en SOC 100%
+        
+        FASE 2: HOLDING (aprox 15h-17h)
+          ├─ Mantiene SOC 100% constante (sin carga/descarga)
+          ├─ Espera punto crítico (PV < EV)
+          └─ PV atiende EV directamente
+        
+        FASE 3: DESCARGA (aprox 17h-22h)
+          ├─ Cuando PV < demanda (punto crítico)
+          ├─ BESS→EV: Cubre 100% deficit EV
+          └─ BESS→MALL: Peak shaving cuando mall > 1900 kW
+        
+        FASE 4: PEAK SHAVING (17h-21h)
+          ├─ Activa cuando mall_demand > 1900 kW
+          ├─ BESS reduce picos del mall
+          └─ Descarga paralela a cobertura EV
+        
+        FASE 5: DUAL DESCARGA (17h-22h)
+          ├─ Simultanea cobertura EV + peak shaving MALL
+          ├─ Prioridad: EV 100% > MALL picos
+          └─ Descarga hasta SOC 20%
+        
+        FASE 6: REPOSO (22h-9h)
+          ├─ BESS en standby (SOC 20% mínimo)
+          ├─ NO carga, NO descarga
+          └─ EV cerrado, awaiting amanecer
         """
         day_idx = 180  # Día representativo
         day_df = df.iloc[day_idx*24:(day_idx+1)*24].copy()
@@ -213,6 +239,42 @@ class BalanceEnergeticoSystem:
         
         # Crear figura con 2 ejes: uno para potencias, otro para SOC
         fig, (ax, ax_soc) = plt.subplots(2, 1, figsize=(18, 12), height_ratios=[3, 1], sharex=True)
+        
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # MARCA VISUAL DE LAS 6 FASES INTOCABLES DEL BESS
+        # ═══════════════════════════════════════════════════════════════════════════════
+        # FASE 1: CARGA GRADUAL (6h-15h)
+        #   Color: Verde claro
+        #   Carac: Barras verdes ascendentes (carga progresiva)
+        # FASE 2: HOLDING (15h-17h aprox)
+        #   Color: Azul claro
+        #   Carac: SOC 100% constante, sin carga/descarga
+        # FASE 3: DESCARGA (17h-22h)
+        #   Color: Rojo claro
+        #   Carac: Barras rojas descendentes (descarga)
+        # FASE 4: PEAK SHAVING (17h-21h en picos > 1900 kW)
+        #   Color: Naranja
+        #   Carac: Descarga adicional para MALL
+        # FASE 5: DUAL DESCARGA (17h-22h)
+        #   Color: Rojo + Naranja superpuesto
+        #   Carac: Descarga simultanea EV + peak shaving
+        # FASE 6: REPOSO (22h-9h)
+        #   Color: Gris
+        #   Carac: SOC 20% constante, sin movimiento
+        # ═══════════════════════════════════════════════════════════════════════════════
+        
+        # FASE 1: CARGA GRADUAL (6h-15h approx)
+        ax.axvspan(6, 15, alpha=0.08, color='green', label='FASE 1: Carga Gradual (6-15h)', zorder=0)
+        
+        # FASE 2: HOLDING (15h-17h approx - zona transicion)
+        ax.axvspan(15, 17, alpha=0.08, color='blue', label='FASE 2: Holding (15-17h)', zorder=0)
+        
+        # FASE 3-4-5: DESCARGA (17h-22h)
+        ax.axvspan(17, 22, alpha=0.08, color='red', label='FASE 3-5: Descarga + Peak Shaving (17-22h)', zorder=0)
+        
+        # FASE 6: REPOSO (22h-6h)
+        ax.axvspan(22, 24, alpha=0.08, color='gray', label='FASE 6: Reposo (22-6h)', zorder=0)
+        ax.axvspan(0, 6, alpha=0.08, color='gray', zorder=0)
         
         # ═══════════════════════════════════════════════════════════════════════════════
         # EJE SUPERIOR: Potencias (PV, BESS, EV, Mall)
