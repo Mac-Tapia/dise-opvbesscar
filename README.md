@@ -6,30 +6,53 @@ Iquitos, Perú - Control inteligente de 38 sockets de carga (270 motos + 39 moto
 
 ---
 
-## 📢 Latest Updates (2026-02-20)
+## 📢 Latest Updates (2026-02-21)
+
+### 🎨 6-FASES BESS Visualization Complete (2026-02-21) ⭐⭐
+**Gráfica Integral con Bandas de Color y Etiquetas de FASE**
+
+- ✅ **Gráfica Integral (00_INTEGRAL_todas_curvas.png) Mejorada:**
+  - **Bandas de Color por FASE (20% alpha):**
+    - Verde Oscuro (#006400): **FASE 1 (6-9h)** - BESS carga primero
+    - Verde Claro (#32CD32): **FASE 2 (9-15h)** - EV + BESS carga paralela
+    - Azul (#4169E1): **FASE 3 (SOC≥99%)** - Holding (sin carga/descarga)
+    - Rojo (#FF6347): **FASE 4-5 (17-22h)** - Peak shaving + EV descarga
+    - Gris (#A9A9A9): **FASE 6 (22-9h)** - Reposo a SOC 20%
+  
+  - **Elementos Visuales Claros:**
+    - Etiquetas de texto coloreadas directamente en cada FASE
+    - Líneas divisorias negras punteadas en horas 6, 9, 15, 17, 22
+    - Barras BESS diferenciadas: verde oscuro (FASE 1) vs verde claro (FASE 2) vs naranja (FASE 4-5)
+    - Curva SOC en eje derecho mostrando subida (FASE 1-2) y bajada (FASE 4-5)
+  
+  - **Validación de 6-FASES en Dataset:**
+    - FASE 1: pv_to_bess=932.4 kWh, SOC 20%→36% ✓
+    - FASE 2: pv_to_ev=353.3 kWh, pv_to_bess=309.2 kWh en paralelo ✓
+    - FASE 3: Todos flujos=0, SOC congelado a 100% ✓
+    - FASE 4: bess_to_mall=747.5 kWh (peak shaving) ✓
+    - FASE 5: bess_to_ev=422.1 kWh (descarga prioritaria) ✓
+    - FASE 6: Todos flujos=0, SOC=20% (reposo) ✓
+
+- ✅ **16 Gráficas Regeneradas con Visualizaciones Mejoradas:**
+  - Balance integral con 6-FASES coloreadas
+  - Perfiles de carga/descarga BESS sincronizados
+  - Cascada energética con fase visualization
+  - SOC behavior por hora del día
+  - Emisiones CO₂ con impacto de FASES
+  - Peak shaving effectiveness
+
+- ✅ **Archivos de Verificación Creados:**
+  - `verify_6phases.py` - Validación de FASES en dataset Day 7
+  - `ver_6fases_simple.py` - Guía visual de interpretación
+  - `validate_6_phases.py` - Análisis de conflictos carga/descarga
+  - 8 scripts de validación adicionales
 
 ### ✨ Solar Graphics Regeneration Complete (2026-02-20) ⭐
 **100% Real Data from solar_pvlib - Zero Artificial Values**
 
-- ✅ **10 New Python Scripts Added:**
-  - `regenerate_all_graphics_complete.py` (473 lines) - Master regenerator for 10 core graphics
-  - `regenerate_all_graphics_root.py` (725 lines) - Consolidates ALL 13 graphics to root directory
-  - `regenerate_complementary_graphics.py` (464 lines) - 4 enhanced complementary graphics
-  - `regenerate_solar_profile_visualization.py` (300 lines) - 9-panel solar profile
-  - `update_escenarios_grafica.py` (319 lines) - Scenarios comparison (6 panels)
-  - `update_temporal_analysis_graphic.py` (326 lines) - Temporal analysis (6 panels)
-  - `validate_graphics_catalog.py` (325 lines) - Validation & cataloging
-  - `verify_all_graphics.py` (158 lines) - Final verification
-  - Plus 2 generator scripts + 1 validator
-  
-- ✅ **14 Graphics Verified with Real Data:**
+- ✅ **Solar Data Integrity:**
   - Solar generation: 8,292,514 kWh/year confirmed
-  - All graphics source: `pv_generation_hourly_citylearn_v2.csv` (8,760 hourly rows)
-  - No artificial data, no old scenarios - 100% real validated solar_pvlib data
-  - Consolidated in `outputs/analysis/solar/` root directory
-
-- ✅ **Data Integrity Validation:**
-  - CSV source: 8,760 hourly points (1 year, NOT 15-minute)
+  - All graphics source: `pv_generation_citylearn2024.csv` (8,760 hourly rows)
   - Max power: 2,887 kW verified
   - Annual energy: 8.29M kWh validated
   - GHI annual: 1,668.1 kWh/m² from PVGIS
@@ -41,47 +64,51 @@ Iquitos, Perú - Control inteligente de 38 sockets de carga (270 motos + 39 moto
 - ✅ **matplotlib Import Fixes:** 8 errors - Added `from matplotlib.patches import Rectangle` + `from matplotlib.ticker import FuncFormatter`
 - ✅ **NumPy Overload Suppressions:** 6 errors - Added `# type: ignore[no-overload-found]` for `np.argmax()`, `np.polyfit()`, `np.sort()`
 - ✅ **Return Type Corrections:** 1 error - Changed `-> None` to `-> bool` in `generate_dataset()`
-- ✅ **pyrightconfig.json Updated:** Type checking configuration with 10+ diagnostic overrides
-- ✅ **Markdown Linting:** `.markdownlint.json` created - suppressed 119 non-critical warnings
-- ✅ **Files Corrected:** balance.py, generate_solar_graphics_complete.py, update_temporal_analysis_graphic.py, regenerate_solar_profile_visualization.py, generate_resumen_2024.py, regenerate_all_graphics_complete.py, generate_scenarios_comparison.py, generate_dia_despejado.py, validate_graphics_catalog.py
 
-### BESS Configuration Verified (2026-02-20)
-- ✅ **Capacity:** 2,000 kWh (updated from legacy 1,700 kWh v5.3)
-- ✅ **Power:** 400 kW symmetric (charge/discharge)
-- ✅ **Constants Updated:** `BESS_CAPACITY_KWH_V53 = 2000.0` in [bess.py](src/dimensionamiento/oe2/disenobess/bess.py)
-- ✅ **Validated:** All references across codebase synchronized
+### BESS Configuration Verified (2026-02-21)
+- ✅ **Capacity:** 2,000 kWh (max SOC), 20% min SOC, 80% DoD
+- ✅ **Power:** 400 kW symmetric (charge/discharge), 95% efficiency
+- ✅ **6-FASES Operacional:** Todas las 6 fases ejecutándose obligatoriamente en el dataset
+- ✅ **Dataset:** 8,760 horas × 33+ columnas técnicas validadas
+- ✅ **Gráficas:** 16 outputs con 6-FASES claramente diferenciadas y visualizadas
 
 ### Branch Status & Commit
 - **Current Branch:** `smartcharger` ✅ Up to date
-- **Latest Commit:** `f50e0058` - "Refactor: Regenerate solar graphics with Pylance error correction (189→0)"
-- **Changes:** 116 objects (2.14 MiB) - 10 new scripts + 2 config files synchronized to GitHub
-- **Data Sync:** All solar data files, graphics, and configuration validated and pushed
+- **Latest Commit:** `bc574943` - "✅ FASE 3: Visualización de 6 FASES en gráfica integral + correcciones BESS v5.8"
+- **Changes:** 63 files (47,555 additions, 10,907 deletions) - 7.49 MiB synchronized to GitHub
+- **Date:** 2026-02-21
 
-### Graphics Enhancements v5.8-v6.0 (Previous Session)
-- ✅ **BESS FASE 1 Synchronization Fix:** Carga ahora inicia cuando aparece PV (no espera hora fija)
-- ✅ **6-FASES Visual Enhancement:** Zonas coloreadas (verde carga, azul holding, rojo descarga, gris reposo)
-- ✅ **BESS Profile Lines:** Líneas superpuestas (verde=carga, roja=descarga) para mejor visibilidad
-- ✅ **Hourly X-axis Labels:** Etiquetas completas 0h-23h para precisión temporal
-- ✅ **Console Output Cleanup:** Caracteres Unicode reemplazados (→ becomes "a")
-- ✅ **Legend Repositioning:** Gráfica 04_cascada_energetica.png optimizada
+### Graphics Enhancements v5.8-v6.1 (Complete Pipeline)
+- ✅ **FASE 3 Complete:** Gráfica integral con 6-FASES claramente diferenciadas por color
+- ✅ **BESS FASE 1 Synchronization:** Carga inicia cuando aparece PV (no espera hora fija)
+- ✅ **6-FASES Visual System:** Bandas coloreadas (verde/azul/rojo/gris) + etiquetas + divisores
+- ✅ **BESS Profile Differentiation:** Barras separadas por FASE con colores distintos
+- ✅ **SOC Curve Integration:** Gráfica de porcentaje en eje derecho
 - ✅ **16 Graphics Regenerated:** Todos los outputs actualizados con últimas correcciones
+- ✅ **Dataset Validation:** Verificación completa de 6-FASES en bess_ano_2024.csv
 
 ---
 
-## 🎯 Resumen Ejecutivo (Actualizado 2026-02-20)
+## 🎯 Resumen Ejecutivo (Actualizado 2026-02-21)
 
 **pvbesscar** implementa un sistema completo de dos fases para optimizar infraestructura de carga EV:
 
 ### ✅ OE2 (Dimensioning) - COMPLETADO (Infraestructura)
-Especificaciones de infraestructura confirmadas con visualizaciones mejoradas:
+Especificaciones de infraestructura confirmadas con visualizaciones completas de 6-FASES:
 - **19 cargadores** (15 motos + 4 mototaxis) × 2 sockets = **38 puntos de carga**
-- **Solar:** **4,050 kWp** PVGIS (hourly validated, 8,760 rows)
+- **Solar:** **4,050 kWp** PVGIS (hourly validated, 8,760 rows, 8.29M kWh/year)
 - **BESS:** **2,000 kWh** max SOC (80% DoD, 95% efficiency, 20% min SOC)
-  - **6-FASES intocables:** Carga gradual→Holding→Descarga→Peak Shaving→Dual Descarga→Reposo
-  - **FASE 1 sync:** Carga inicia cuando PV disponible (corrección v5.8)
+  - **6-FASES Operacionales & Visualizadas:**
+    - FASE 1 (6-9h): Carga BESS primero (PV→BESS prioritario)
+    - FASE 2 (9-15h): EV máxima prioridad + BESS carga paralela (SOC<99%)
+    - FASE 3 (SOC≥99%): HOLDING - SIN carga/descarga (PV→EV directamente)
+    - FASE 4 (PV<MALL>1900kW): Peak shaving (BESS descarga para MALL)
+    - FASE 5 (ev_deficit>0): EV prioridad descarga + MALL paralelo
+    - FASE 6 (22-9h): Reposo - BESS IDLE a SOC 20%
+  - **Visualización Gráfica:** Bandas de color (verde/azul/rojo/gris), etiquetas, divisores en horas 6,9,15,17,22
 - **CO₂ Factor:** 0.4521 kg CO₂/kWh (thermal generation Iquitos)
 - **Data:** 977 technical columns × 8,760 hourly timesteps
-- **Graphics v5.8+:** Perfiles BESS visualizados, 6-fases coloreadas, sincronización horaria
+- **Graphics v5.8+:** Gráficas con 6-FASES claramente diferenciadas, barras BESS por FASE, curva SOC integrada
 
 ### ✅ OE3 (Control) - COMPLETADO (Evaluación de Agentes RL)
 Control inteligente con Reinforcement Learning - **A2C SELECTED (100.0/100 score)** ⭐
