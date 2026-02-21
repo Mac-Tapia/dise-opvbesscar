@@ -888,6 +888,9 @@ def simulate_bess_ev_exclusive(
     grid_to_mall = np.zeros(n_hours)
     grid_export = np.zeros(n_hours)  # NUEVO: Exportación a red pública (cero desperdicio)
     
+    # ✅ VALIDACIÓN EXCLUSIVIDAD: Bandera para garantizar carga XOR descarga por hora
+    bess_action_assigned = np.zeros(n_hours, dtype=bool)  # True si se asignó UNA acción BESS
+    
     # Estado inicial: SOC al 100% (BESS cargado del dia anterior)
     current_soc = 1.00
     
@@ -983,6 +986,11 @@ def simulate_bess_ev_exclusive(
             continue
         
         # ====================================
+        # DEFINICIONES DE CONSTANTES PARA FASES DIURNAS (9h-22h)
+        # ====================================
+        PEAK_SHAVING_THRESHOLD_KW = 1900.0
+        
+        # ====================================
         # FASE 1 (6 AM - 9 AM): BESS CARGA PRIMERO
         # EV no opera (abre carga a 9 AM)
         # Prioridad: BESS 100% → MALL (excedente) → RED
@@ -1002,6 +1010,7 @@ def simulate_bess_ev_exclusive(
                 
                 if max_charge > 0:
                     bess_charge[h] = max_charge
+                    bess_action_assigned[h] = True  # ✅ MARCAR que se ejecutó UNA acción (carga)
                     # ENERGÍA REAL ACUMULADA EN BESS (con eficiencia)
                     energy_stored = max_charge * eff_charge
                     pv_to_bess[h] = energy_stored
@@ -1047,6 +1056,7 @@ def simulate_bess_ev_exclusive(
                 
                 if max_charge > 0:
                     bess_charge[h] = max_charge
+                    bess_action_assigned[h] = True  # ✅ MARCAR que se ejecutó UNA acción (carga)
                     energy_stored = max_charge * eff_charge
                     pv_to_bess[h] = energy_stored
                     current_soc += energy_stored / capacity_kwh
@@ -1109,9 +1119,7 @@ def simulate_bess_ev_exclusive(
         #    ├─ PV sobrante → MALL
         #    └─ Exceso → RED
         # ====================================
-        PEAK_SHAVING_THRESHOLD_KW = 1900.0
-        
-        if pv_h < mall_h and mall_h > PEAK_SHAVING_THRESHOLD_KW and current_soc > soc_min and hour_of_day < closing_hour:
+        if pv_h < mall_h and mall_h > PEAK_SHAVING_THRESHOLD_KW and current_soc > soc_min and hour_of_day < closing_hour and not bess_action_assigned[h]:
             # Punto crítico: PV < MALL y pico > 1900 kW
             # BESS descarga SOLO para el MALL que está POR ENCIMA de 1900 kW
             
@@ -1125,6 +1133,7 @@ def simulate_bess_ev_exclusive(
             if max_discharge_raw > 0:
                 energy_to_mall = max_discharge_raw * eff_discharge
                 bess_discharge[h] = max_discharge_raw
+                bess_action_assigned[h] = True  # ✅ MARCAR que se ejecutó UNA acción (descarga)
                 bess_to_mall[h] = energy_to_mall
                 current_soc -= max_discharge_raw / capacity_kwh
                 current_soc = max(current_soc, soc_min)
@@ -1140,7 +1149,7 @@ def simulate_bess_ev_exclusive(
         # └─ BESS tiene tope descarga a SOC 20% hasta la hora que pueda
         # ====================================
         
-        if ev_deficit > 0 and current_soc > soc_min and hour_of_day < closing_hour:
+        elif ev_deficit > 0 and current_soc > soc_min and hour_of_day < closing_hour and not bess_action_assigned[h]:
             # DESCARGA 1: BESS → EV (MÁXIMA PRIORIDAD)
             soc_available = (current_soc - soc_min) * capacity_kwh
             max_discharge_ev = min(power_kw, ev_deficit / eff_discharge, soc_available)
@@ -1148,6 +1157,7 @@ def simulate_bess_ev_exclusive(
             if max_discharge_ev > 0:
                 energy_to_ev = max_discharge_ev * eff_discharge
                 bess_discharge[h] = max_discharge_ev
+                bess_action_assigned[h] = True  # ✅ MARCAR que se ejecutó UNA acción (descarga)
                 bess_to_ev[h] = energy_to_ev
                 current_soc -= max_discharge_ev / capacity_kwh
                 current_soc = max(current_soc, soc_min)

@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-02-20T23:02:36.993727",
+  "dataset_file": "D:\\dise\u00f1opvbesscar\\data\\oe2\\bess\\bess_ano_2024.csv",
+  "total_rows": 8760,
+  "date_range": "2024-01-01 00:00:00 \u2192 2024-12-30 23:00:00",
+  "validation_status": "OK",
+  "errors_total": 0,
+  "warnings_total": 4101,
+  "soc_error_max": 76.55,
+  "soc_error_mean": 12.619708312169548,
+  "balance_errors": 3234,
+  "phases_found": [
+    "FASE6_REPOSO",
+    "FASE1_CARGA",
+    "FASE2_EV_BESS",
+    "FASE3_HOLDING",
+    "FASE5_EV_DESCARGA",
+    "FASE4_PEAK_SHAVING"
+  ],
+  "phase_counts": {
+    "FASE6_REPOSO": 2920,
+    "FASE1_CARGA": 1095,
+    "FASE2_EV_BESS": 1729,
+    "FASE3_HOLDING": 1063,
+    "FASE5_EV_DESCARGA": 52,
+    "FASE4_PEAK_SHAVING": 1901
+  },
+  "bess_carga_anual": 677794.8743058905,
+  "bess_descarga_anual": 509828.7115894886,
+  "pv_generado_anual": 8292514.169921598,
+  "grid_import_anual": 6504451.82101319
+}
