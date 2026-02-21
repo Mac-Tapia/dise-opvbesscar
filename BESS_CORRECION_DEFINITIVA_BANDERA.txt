@@ -1,0 +1,59 @@
+"""
+CORRECCIÓN DEFINITIVA: Garantizar exclusividad usando bandera bess_action_assigned
+"""
+
+# Usar una lista para rastrear cuándo el BESS ha actuado en cada hora
+# bess_action_assigned[h] = True si ya hemos asignado CARGA o DESCARGA en esta hora
+# bess_action_assigned[h] = False si aún se puede asignar UNA acción
+
+# MODIFICACIÓN A INSERTAR en simulate_bess_ev_exclusive, línea ~895:
+
+"""
+# Inicializar banderas de rastreo
+bess_action_assigned = np.zeros(n_hours, dtype=bool)  # True si ya se asignó carga O descarga
+"""
+
+# Luego, EN FASE 2 (después de asignar bess_charge):
+"""
+if max_charge > 0:
+    bess_charge[h] = max_charge
+    bess_action_assigned[h] = True  # MARCAR que se ejecutó UNA acción
+    ...
+"""
+
+# En FASE 4 (cambiar la condición):
+"""
+if (pv_h < mall_h and mall_h > PEAK_SHAVING_THRESHOLD_KW and 
+    current_soc > soc_min and hour_of_day < closing_hour and 
+    NOT bess_action_assigned[h]):  # SOLO si no ha habido acción aún
+"""
+
+# En FASE 5 (igual que FASE 4):
+"""
+elif (ev_deficit > 0 and current_soc > soc_min and 
+      hour_of_day < closing_hour and 
+      NOT bess_action_assigned[h]):  # SOLO si no ha habido acción aún
+"""
+
+print("=" * 100)
+print("ESTRATEGIA DE CORRECCIÓN: BANDERA bess_action_assigned")
+print("=" * 100)
+print("""
+⚠️ PROBLEMA IDENTIFICADO:
+- FASE 2 y FASE 4/5 pueden ejecutarse en la MISMA HORA
+- Resultado: bess_charge > 0 Y bess_discharge > 0 simultáneamente
+- Las validaciones `bess_discharge[h] == 0` no solucionan porque la asignación ocurre DENTRO del bloque
+
+✅ SOLUCIÓN: Bandera bess_action_assigned[h]
+- Inicializar como False para cada hora
+- Cuando FASE 2 asigna bess_charge: SET bess_action_assigned[h] = True
+- Cuando FASE 4/5 quieren ejecutar: VERIFICAR NOT bess_action_assigned[h]
+- Esto garantiza que SOLO UNA acción (carga O descarga) por hora
+
+📋 CAMBIOS REQUERIDOS:
+1. Línea ~895: Inicializar bess_action_assigned = np.zeros(n_hours, dtype=bool)
+2. FASE 1/2: Agregar bess_action_assigned[h] = True cuando se asigna bess_charge[h]
+3. FASE 4: Cambiar `if` a validar `NOT bess_action_assigned[h]`
+4. FASE 5: Cambiar `elif` a validar `NOT bess_action_assigned[h]`
+5. FASE 6: ASEGURAR que reinicia bess_action_assigned[h] = False (en reposo)
+""")
