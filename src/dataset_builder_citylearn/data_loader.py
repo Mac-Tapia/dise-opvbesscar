@@ -271,7 +271,7 @@ def load_bess_data(
     path: Optional[Path] = None,
     cwd: Optional[Path] = None,
 ) -> BESSData:
-    """Load BESS data (1,700 kWh capacity verified).
+    """Load BESS data (2,000 kWh capacity verified).
 
     Args:
         path: Override default primary path

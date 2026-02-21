@@ -3531,7 +3531,7 @@ try:
         print(f'     Device: {DEVICE.upper()}')
         print(f'     Velocidad: ~{SPEED_ESTIMATED:,} timesteps/segundo')
         print(f'     Duracion: {DURATION_TEXT}')
-        print('     Datos: REALES OE2 (chargers_ev_ano_2024_v3.csv 38 sockets, 1,700 kWh BESS max SOC, 4.05 MWp solar)')
+        print('     Datos: REALES OE2 (chargers_ev_ano_2024_v3.csv 38 sockets, 2,000 kWh BESS max SOC, 4,050 kWp solar)')
         print('     Network: 256x256 (on-policy A2C), n_steps=8 (updates frecuentes)')
         print('     Output: result_a2c.json, timeseries_a2c.csv, trace_a2c.csv')
         print()

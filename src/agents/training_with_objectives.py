@@ -107,8 +107,8 @@ class RealWorldSimulationEnvironment:
         # Controladores
         self.charger_manager = ChargerManager(n_moto_sockets=30, n_mototaxi_sockets=8)
         self.bess_controller = BESSCommunicationController(
-            bess_capacity_kwh=1700.0,  # 1,700 kWh max SOC (v5.2 verified)
-            bess_max_power_kw=342.0,
+            bess_capacity_kwh=2000.0,  # 2,000 kWh max SOC (v5.7 verified)
+            bess_max_power_kw=400.0,
             current_soc_percent=50.0
         )
         self.energy_prioritizer = EnergyPrioritizer(

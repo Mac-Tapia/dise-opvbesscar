@@ -512,7 +512,7 @@ class SystemOrchestrator:
         
         self.solar_controller = SolarController(solar_data)
         self.charger_controller = ChargerController(n_motos=n_motos, n_mototaxis=n_mototaxis)
-        self.bess_controller = BESSController(capacity_kwh=1700.0, max_power_kw=342.0)  # v5.2: 1,700 kWh max SOC (verified from bess_simulation_hourly.csv)
+        self.bess_controller = BESSController(capacity_kwh=2000.0, max_power_kw=400.0)  # v5.7: 2,000 kWh max SOC (verified from bess.py BESS_CAPACITY_KWH_V53)
         self.mall_controller = MallController(mall_data)
     
     def step(self, timestep: int, action: np.ndarray, solar_data: np.ndarray,

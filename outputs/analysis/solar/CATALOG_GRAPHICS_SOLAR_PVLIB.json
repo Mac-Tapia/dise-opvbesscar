@@ -1,0 +1,87 @@
+{
+  "validation_date": "2026-02-20T21:40:56.243329",
+  "solar_pvlib_source": "pv_generation_hourly_citylearn_v2.csv",
+  "data_period": {
+    "start": "2024-01-01 00:00:00-05:00",
+    "end": "2024-12-30 23:00:00-05:00",
+    "total_points": 8760
+  },
+  "solar_pvlib_metrics": {
+    "annual_energy_kwh": 8292514.17,
+    "max_power_kw": 2886.69,
+    "annual_ghi_kwh_m2": 1668.08,
+    "system_capacity_dc_kw": 4049.56,
+    "system_capacity_ac_kw": 3201.0
+  },
+  "graphics_baseline_info": {
+    "directory": "outputs/analysis/solar/",
+    "total_graphics": 3,
+    "generation_date": "2026-02-20T21:40:56.246438",
+    "data_source": "EXCLUSIVELY from solar_pvlib (NO artificial/old data)"
+  },
+  "graphics": [
+    {
+      "filename": "analisis_temporal_real_2024.png",
+      "relative_path": "analisis_temporal_real_2024.png",
+      "size_mb": 0.177,
+      "modified": "2026-02-20T21:35:39.172221",
+      "metadata": {
+        "title": "Análisis Temporal Avanzado",
+        "description": "Análisis temporal completo con 6 paneles de datos reales",
+        "data_source": "Datos reales de solar_pvlib (8,760 puntos horarios)",
+        "category": "temporal_analysis",
+        "panels": 6,
+        "elements": [
+          "Heatmap potencia mensual-horaria",
+          "Box plot distribución mensual",
+          "Barras trimestral",
+          "Variabilidad diaria con banda",
+          "Histograma distribución",
+          "Performance Ratio mensual"
+        ],
+        "validation": "REAL - Calculado desde 8,760 horas observadas"
+      },
+      "validation_status": "✅ VALIDATED (Solar_pvlib data)"
+    },
+    {
+      "filename": "dia_despejado_real_2024.png",
+      "relative_path": "dia_despejado_real_2024.png",
+      "size_mb": 0.043,
+      "modified": "2026-02-20T21:35:38.291796",
+      "metadata": {
+        "title": "Día Despejado Representativo",
+        "description": "Día con máxima radiación GHI observada en 2024",
+        "data_source": "Datos reales de solar_pvlib (8,760 puntos horarios)",
+        "category": "daily_profiles",
+        "panels": 1,
+        "elements": [
+          "Energía 15 min (barras)",
+          "Potencia AC (línea)"
+        ],
+        "validation": "REAL - Máx GHI día seleccionado de 365 días reales"
+      },
+      "validation_status": "✅ VALIDATED (Solar_pvlib data)"
+    },
+    {
+      "filename": "sistema_fv_iquitos_resumen_real_2024.png",
+      "relative_path": "sistema_fv_iquitos_resumen_real_2024.png",
+      "size_mb": 0.078,
+      "modified": "2026-02-20T21:35:38.751689",
+      "metadata": {
+        "title": "Resumen Sistema FV Iquitos 2024",
+        "description": "Análisis de 365 días reales de generación 2024",
+        "data_source": "Datos reales de solar_pvlib (8,760 puntos horarios)",
+        "category": "annual_summary",
+        "panels": 4,
+        "elements": [
+          "Energía diaria 365 valores",
+          "Energía mensual 12 valores",
+          "Distribución histograma",
+          "Energía por hora 24 valores"
+        ],
+        "validation": "REAL - Todos los 365 días de 2024"
+      },
+      "validation_status": "✅ VALIDATED (Solar_pvlib data)"
+    }
+  ]
+}

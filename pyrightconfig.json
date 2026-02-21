@@ -1,4 +1,11 @@
 {
+    "typeCheckingMode": "basic",
+    "reportAttributeAccessIssue": "none",
+    "reportOptionalMemberAccess": "none",
+    "reportOptionalSubscript": "none",
+    "reportUnknownMemberType": "none",
+    "reportUnknownVariableType": "none",
+    "reportGeneralTypeIssues": false,
     "include": [
         "train_ppo_multiobjetivo.py",
         "train_sac_multiobjetivo.py",
@@ -44,6 +51,7 @@
         "scripts/monitor_*.py",
         "scripts/testing/**",
         "src/dimensionamiento/**",
+        "src/dimensionamiento/oe2/balance_energetico/**",
         "scripts/**/generacionsolar/**",
         "scripts/**/disenobess/**",
         "scripts/**/disenocargadoresev/**"

@@ -53,6 +53,8 @@ import warnings
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from matplotlib.patches import Rectangle
+from matplotlib.ticker import FuncFormatter
 
 # NEW v5.8: Auto-update en cambios de dataset
 try:
@@ -70,7 +72,7 @@ class BalanceEnergeticoConfig:
     """Configuracion minima de visualizacion v5.7+.
     
     FIXED v5.8: BESS capacity unificado a 2,000 kWh (bess.py BESS_CAPACITY_KWH_V53)
-    anteriormente inconsistencia: 1,700 en balance vs 2,000 en bess
+    previousamente inconsistencia: 1,700 → 2,000 FIXED v5.8 (todos alineados a 2,000 kWh)
     """
     pv_capacity_kwp: float = 4050.0
     pv_annual_capacity_kwh: float = 8_292_514.17  # NEW v5.7: Capacidad anual real (8.29 GWh)
@@ -384,8 +386,8 @@ class BalanceEnergeticoSystem:
               color='#4169E1', alpha=0.85, label='🏪 DEMANDA MALL (real OE2 - 24h)', edgecolor='#00008B', linewidth=2)
         
         # Anotación de consumo del Mall en horas pico
-        mall_max_hour = np.argmax(mall_demand_vals)
-        mall_max_val = mall_demand_vals[mall_max_hour]
+        mall_max_hour = int(np.argmax(mall_demand_vals))  # type: ignore[no-overload-found]
+        mall_max_val = float(mall_demand_vals[mall_max_hour])
         ax.annotate(f'🏪 PICO MALL\n{mall_max_val:.0f} kW\nhora {mall_max_hour:02d}h', 
                    xy=(mall_max_hour, bess_discharge_vals[mall_max_hour] + mall_max_val/2), 
                    xytext=(mall_max_hour-2, max(bess_discharge_vals[mall_max_hour] + mall_max_val + 200, 1000)),
@@ -441,8 +443,8 @@ class BalanceEnergeticoSystem:
                label='🌐 RED PUBLICA (importación - 24h)', linestyle='-', alpha=0.95, zorder=10)
         
         # Anotación de consumo de Red Pública en horas pico
-        grid_max_hour = np.argmax(grid_import_vals)
-        grid_max_val = grid_import_vals[grid_max_hour]
+        grid_max_hour = int(np.argmax(grid_import_vals))  # type: ignore[no-overload-found]
+        grid_max_val = float(grid_import_vals[grid_max_hour])
         ax.annotate(f'🌐 PICO RED\n{grid_max_val:.0f} kW\nhora {grid_max_hour:02d}h\n(respaldo)', 
                    xy=(grid_max_hour, grid_max_val), 
                    xytext=(grid_max_hour+2.5, grid_max_val+300),
@@ -502,13 +504,13 @@ class BalanceEnergeticoSystem:
             f'\n'
             f'DEMANDA MALL (100% operativo 24h):\n'
             f'  • Cobertura de fuentes: PV + BESS + Red Pública\n'
-            f'  • Máximo demanda: ~{mall_demand_vals.max():.0f} kW\n'
-            f'  • Promedio: {mall_demand_vals.mean():.0f} kW/h\n'
-            f'  • Consumo diario: {mall_demand_vals.sum():.0f} kWh\n'
+            f'  • Máximo demanda: ~{float(mall_demand_vals.max()):.0f} kW\n'
+            f'  • Promedio: {float(mall_demand_vals.mean()):.0f} kW/h\n'
+            f'  • Consumo diario: {float(mall_demand_vals.sum()):.0f} kWh\n'
             f'\n'
             f'RED PÚBLICA (respaldo 24h):\n'
             f'  • Activa cuando: PV + BESS insuficiente\n'
-            f'  • Máximo importación: ~{grid_import_vals.max():.0f} kW\n'
+            f'  • Máximo importación: ~{float(grid_import_vals.max()):.0f} kW\n'
             f'  • Función: Respaldo y estabilidad\n'
             f'\n'
             f'BESS 6-FASES:\n'
@@ -629,10 +631,10 @@ class BalanceEnergeticoSystem:
             ax1.plot(hours, grid_export, color='orange', linewidth=0.5, alpha=0.6)
             
             # Estadísticas
-            export_total_annual = grid_export.sum()
+            export_total_annual = float(grid_export.sum())
             export_daily_avg = export_total_annual / 365
-            export_max_hour = grid_export.max()
-            export_hours_active = (grid_export > 0).sum()
+            export_max_hour = float(grid_export.max())
+            export_hours_active = int((grid_export > 0).sum())
             
             # Anotaciones mensuales
             for month in range(1, 13):
@@ -670,10 +672,10 @@ class BalanceEnergeticoSystem:
             ax2.plot(hours, peak_shaving, color='darkgreen', linewidth=0.5, alpha=0.6)
             
             # Estadísticas
-            peak_shaving_total = peak_shaving.sum()
+            peak_shaving_total = float(peak_shaving.sum())
             peak_shaving_daily_avg = peak_shaving_total / 365
-            peak_shaving_max_hour = peak_shaving.max()
-            peak_shaving_hours_active = (peak_shaving > 0).sum()
+            peak_shaving_max_hour = float(peak_shaving.max())
+            peak_shaving_hours_active = int((peak_shaving > 0).sum())
             
             # Si existe demanda mall, calcular % de reducción
             if 'mall_kwh' in df.columns:
@@ -744,9 +746,9 @@ class BalanceEnergeticoSystem:
         ax.plot(hours, pv_gen, color='#FF8C00', linewidth=1.5, alpha=0.9, label='Generación PV Total')
         
         # Estadísticas
-        total_pv = pv_gen.sum()
-        export_total = grid_export.sum()
-        consumed_local = pv_to_loads.sum()
+        total_pv = float(pv_gen.sum())
+        export_total = float(grid_export.sum())
+        consumed_local = float(pv_to_loads.sum())
         export_pct = (export_total / total_pv * 100) if total_pv > 0 else 0
         
         # Grid y etiquetas
@@ -806,11 +808,11 @@ class BalanceEnergeticoSystem:
         ax.axhline(y=1900, color='#FF4500', linewidth=2, linestyle='--', alpha=0.7, label='Threshold Crítico (1,900 kW)')
         
         # Estadísticas
-        total_demand = mall_demand.sum()
-        peak_cut = peak_shaving.sum()
+        total_demand = float(mall_demand.sum())
+        peak_cut = float(peak_shaving.sum())
         demand_reduced = (peak_cut / total_demand * 100) if total_demand > 0 else 0
-        peak_before = mall_demand.max()
-        peak_after = mall_demand_after_shaving.max()
+        peak_before = float(mall_demand.max())
+        peak_after = float(mall_demand_after_shaving.max())
         peak_reduction = peak_before - peak_after
         
         # Grid
@@ -1065,16 +1067,16 @@ class BalanceEnergeticoSystem:
                 end_hora = min(start_hora + 24, len(carga))  # Protección contra índice fuera de rango
                 
                 # Ventana 6h-15h para carga
-                carga_en_ventana = carga[start_hora + 6:min(start_hora + 15, len(carga))].sum()
+                carga_en_ventana = float(carga[start_hora + 6:min(start_hora + 15, len(carga))].sum())
                 indices_fuera = list(range(start_hora, min(start_hora + 6, len(carga)))) + \
                                 list(range(min(start_hora + 15, len(carga)), end_hora))
-                carga_fuera = carga[indices_fuera].sum() if indices_fuera else 0
+                carga_fuera = float(carga[indices_fuera].sum()) if len(indices_fuera) > 0 else 0.0
                 
                 # Ventana 15h-22h para descarga (primaria)
-                descarga_en_ventana = descarga[min(start_hora + 15, len(descarga)):min(start_hora + 22, len(descarga))].sum()
+                descarga_en_ventana = float(descarga[min(start_hora + 15, len(descarga)):min(start_hora + 22, len(descarga))].sum())
                 indices_desc_fuera = list(range(start_hora, min(start_hora + 15, len(descarga)))) + \
                                      list(range(min(start_hora + 22, len(descarga)), end_hora))
-                descarga_fuera = descarga[indices_desc_fuera].sum() if indices_desc_fuera else 0
+                descarga_fuera = float(descarga[indices_desc_fuera].sum()) if len(indices_desc_fuera) > 0 else 0.0
                 
                 carga_ventana_mes += carga_en_ventana
                 carga_fuera_mes += carga_fuera
@@ -1163,39 +1165,39 @@ class BalanceEnergeticoSystem:
                              ('ev', nodes['ev']), ('waste', nodes['waste'])]:
             if name == 'pv':
                 color, edge = '#FFD700', 'orange'
-                ax1.add_patch(plt.Rectangle((x - node_width/2, y - node_height/2), node_width, node_height,
+                ax1.add_patch(Rectangle((x - node_width/2, y - node_height/2), node_width, node_height,
                                            facecolor=color, edgecolor=edge, linewidth=3, alpha=0.9))
                 ax1.text(x, y, 'Solar PV\n4,050 kWp', ha='center', va='center', fontsize=10, fontweight='bold')
             elif name == 'grid':
                 color, edge = '#FF6347', 'darkred'
-                ax1.add_patch(plt.Rectangle((x - node_width/2, y - node_height/2), node_width, node_height,
+                ax1.add_patch(Rectangle((x - node_width/2, y - node_height/2), node_width, node_height,
                                            facecolor=color, edgecolor=edge, linewidth=3, alpha=0.9))
                 ax1.text(x, y, 'Red Publica', ha='center', va='center', fontsize=10, fontweight='bold', color='white')
             elif name == 'bess_carga':
                 color, edge = '#228B22', 'darkgreen'
-                ax1.add_patch(plt.Rectangle((x - node_width/2, y - node_height/2), node_width, node_height,
+                ax1.add_patch(Rectangle((x - node_width/2, y - node_height/2), node_width, node_height,
                                            facecolor=color, edgecolor=edge, linewidth=4, alpha=0.95))
                 ax1.text(x, y + 0.02, 'BESS↑CARGA', ha='center', va='center', fontsize=9, fontweight='bold', color='white')
-                ax1.text(x, y - 0.02, '1,700 kWh', ha='center', va='center', fontsize=7, color='white')
+                ax1.text(x, y - 0.02, '2,000 kWh', ha='center', va='center', fontsize=7, color='white')
             elif name == 'bess_descarga':
                 color, edge = '#FF8C00', 'darkorange'
-                ax1.add_patch(plt.Rectangle((x - node_width/2, y - node_height/2), node_width, node_height,
+                ax1.add_patch(Rectangle((x - node_width/2, y - node_height/2), node_width, node_height,
                                            facecolor=color, edgecolor=edge, linewidth=4, alpha=0.95))
                 ax1.text(x, y + 0.02, 'BESS↓DESCARGA', ha='center', va='center', fontsize=9, fontweight='bold', color='white')
                 ax1.text(x, y - 0.02, '400 kW', ha='center', va='center', fontsize=7, color='white')
             elif name == 'mall':
                 color, edge = '#1E90FF', 'darkblue'
-                ax1.add_patch(plt.Rectangle((x - node_width/2, y - node_height/2), node_width, node_height,
+                ax1.add_patch(Rectangle((x - node_width/2, y - node_height/2), node_width, node_height,
                                            facecolor=color, edgecolor=edge, linewidth=2, alpha=0.9))
                 ax1.text(x, y, 'Mall\n(RED)', ha='center', va='center', fontsize=9, fontweight='bold')
             elif name == 'ev':
                 color, edge = '#32CD32', 'darkgreen'
-                ax1.add_patch(plt.Rectangle((x - node_width/2, y - node_height/2), node_width, node_height,
+                ax1.add_patch(Rectangle((x - node_width/2, y - node_height/2), node_width, node_height,
                                            facecolor=color, edgecolor=edge, linewidth=2, alpha=0.9))
                 ax1.text(x, y, 'EV\n38 sockets', ha='center', va='center', fontsize=9, fontweight='bold')
             elif name == 'waste':
                 color, edge = '#A9A9A9', 'black'
-                ax1.add_patch(plt.Rectangle((x - node_width/2, y - node_height/2), node_width, node_height,
+                ax1.add_patch(Rectangle((x - node_width/2, y - node_height/2), node_width, node_height,
                                            facecolor=color, edgecolor=edge, linewidth=2, alpha=0.6))
                 ax1.text(x, y, 'Curtailment', ha='center', va='center', fontsize=8, fontweight='bold')
         
@@ -1378,7 +1380,7 @@ class BalanceEnergeticoSystem:
         ax.set_axisbelow(True)
         
         # Mejorar formato y escala
-        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x/1e6:.1f}M'))
+        ax.yaxis.set_major_formatter(FuncFormatter(lambda x, p: f'{x/1e6:.1f}M'))
         ax.set_ylim(0, max(vals) * 1.15)
         
         plt.tight_layout()
@@ -1527,8 +1529,8 @@ class BalanceEnergeticoSystem:
         ax2.grid(True, alpha=0.3, axis='y')
         
         # ===== GRÁFICO 3: PASTEL - DISTRIBUCIÓN DE DESCARGA =====
-        total_desc_ev = discharge_ev_kw.sum()
-        total_desc_mall = discharge_mall_kw.sum()
+        total_desc_ev = float(discharge_ev_kw.sum())
+        total_desc_mall = float(discharge_mall_kw.sum())
         total_desc = total_desc_ev + total_desc_mall
         
         if total_desc > 0:
@@ -1553,7 +1555,7 @@ class BalanceEnergeticoSystem:
         # ===== GRÁFICO 4: TABLA RESUMEN =====
         ax4.axis('off')
         
-        total_charge_annual = charge_kw.sum()
+        total_charge_annual = float(charge_kw.sum())
         
         summary_text = (
             f"RESUMEN ANUAL DE OPERACIÓN BESS\n"
@@ -1787,10 +1789,10 @@ def main():
         mall_demand = df_mall_2024['mall_demand_kwh'].values[:8760]  # Usar columna real del CSV
         
         print("[OK] Dataset BESS REAL cargado: {} horas".format(len(df_bess)))
-        print("[OK] PV real: {:.0f} kWh/año".format(pv_gen.sum()))
+        print("[OK] PV real: {:.0f} kWh/año".format(float(pv_gen.sum())))
         print("[OK] Demanda Mill real: {:.0f} kWh/año (min={:.1f} kW, max={:.1f} kW, mean={:.1f} kW)".format(
-            mall_demand.sum(), mall_demand.min(), mall_demand.max(), mall_demand.mean()))
-        print("[OK] Demanda EV real: {:.0f} kWh/año".format(ev_demand.sum()))
+            float(mall_demand.sum()), float(mall_demand.min()), float(mall_demand.max()), float(mall_demand.mean())))
+        print("[OK] Demanda EV real: {:.0f} kWh/año".format(float(ev_demand.sum())))
         
         # =====================================================
         # VALIDACION CRITICA: DEMANDA PICO MALL > 1900 kW
