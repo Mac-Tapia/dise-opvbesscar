@@ -847,145 +847,176 @@ class BalanceEnergeticoSystem:
         print("  [OK] 00.3_PEAK_SHAVING_INTEGRADO_MALL.png")
     
     def _plot_integral_curves(self, df: pd.DataFrame, out_dir: Path) -> None:
-        """Grafica 0: Integral - Primeros 7 dias con ventana de carga BESS explícitamente resaltada.
-        VALIDACIÓN: Verifica que carga ocurra SOLO 6h-15h y descarga SOLO 15h-22h.
+        """Grafica 0: Integral - Primeros 7 días con 6-FASES BESS claramente diferenciadas.
+        
+        FASES BESS VISUALIZADAS:
+        FASE 1 (✓ Verde): 6h-15h Carga gradual PV→BESS (20%→100% SOC)
+        FASE 2 (◆ Azul): ~15h Holding SOC=100% (espera punto crítico)
+        FASE 3-5 (↓ Rojo): 15h-22h Descarga (EV+MALL peak shaving)
+        FASE 6 (⊙ Gris): 22h-6h Reposo (SOC=20% standby)
         """
         df_7days = df.iloc[:7*24].copy()
         hours_real = np.arange(len(df_7days))
         
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(20, 14))
+        fig = plt.figure(figsize=(22, 14))
+        gs = fig.add_gridspec(3, 1, height_ratios=[1.8, 1.2, 1], hspace=0.35)
+        ax1 = fig.add_subplot(gs[0])
+        ax2 = fig.add_subplot(gs[1])
+        ax3 = fig.add_subplot(gs[2])
         
         # ================================================================
-        # PANEL 1: GENERACIÓN + DEMANDAS + BESS CARGA/DESCARGA CON VENTANAS
+        # PANEL 1: GENERACIÓN + DEMANDAS + BESS CARGA/DESCARGA CON 6-FASES
         # ================================================================
         
-        # 1. RESALTAR VENTANAS HORARIAS MUY CLARAMENTE
+        # 1. COLOREAR FASES BESS CON MÁXIMA CLARIDAD
         for day in range(0, 7):
             day_start = day * 24
-            # VENTANA CARGA: 6h-15h (verde claro, muy visible)
-            ax1.axvspan(day_start + 6, day_start + 15, alpha=0.25, color='green', 
-                       label='✓ VENTANA CARGA BESS (6h-15h)' if day == 0 else '')
-            # VENTANA DESCARGA: 15h-22h (naranja claro, muy visible)
-            ax1.axvspan(day_start + 15, day_start + 22, alpha=0.2, color='orange',
-                       label='↓ VENTANA DESCARGA BESS (15h-22h)' if day == 0 else '')
-            # Marcar líneas verticales en horas críticas
-            for hour in [6, 15, 22]:
-                ax1.axvline(x=day_start + hour, color='gray', linestyle=':', alpha=0.5, linewidth=1)
+            # FASE 1: CARGA (6h-15h) - Verde brillante
+            ax1.axvspan(day_start + 6, day_start + 15, alpha=0.18, color='#00AA00', 
+                       label='FASE 1: Carga BESS (6h-15h)' if day == 0 else '')
+            # FASE 2: HOLDING (~15h-17h) - Azul (pequena franja)
+            ax1.axvspan(day_start + 15, day_start + 17, alpha=0.15, color='#4169E1',
+                       label='FASE 2: Holding (SOC=100%)' if day == 0 else '')
+            # FASE 3-5: DESCARGA (17h-22h) - Rojo oscuro
+            ax1.axvspan(day_start + 17, day_start + 22, alpha=0.18, color='#DC143C',
+                       label='FASE 3-5: Descarga BESS (17h-22h)' if day == 0 else '')
+            # FASE 6: REPOSO (22h-6h) - Gris claro
+            ax1.axvspan(day_start + 22, day_start + 24, alpha=0.12, color='#808080',
+                       label='FASE 6: Reposo (22h-6h)' if day == 0 else '')
+            ax1.axvspan(day_start + 0, day_start + 6, alpha=0.12, color='#808080')
+            
+            # Líneas divisorias entre fases (muy finas)
+            for hour in [6, 15, 17, 22]:
+                ax1.axvline(x=day_start + hour, color='black', linestyle='-', alpha=0.3, linewidth=2)
         
-        # 2. GENERACIÓN SOLAR (área dorada)
-        ax1.fill_between(hours_real, 0, df_7days['pv_generation_kw'], 
-                        color='#FFD700', alpha=0.5, label='☀️ Generación Solar PV', 
-                        linewidth=1, edgecolor='orange')
+        # 2. GENERACIÓN SOLAR (área dorada bajo demandas)
+        ax1.fill_between(hours_real, 0, df_7days['pv_kwh'], 
+                        color='#FFD700', alpha=0.4, label='☀️ Generación Solar PV', 
+                        linewidth=1.5, edgecolor='#FF8C00')
         
-        # 3. DEMANDAS (líneas)
-        ax1.plot(hours_real, df_7days['mall_demand_kw'], color='#1E90FF', linewidth=2.5, 
-                label='🏪 Demanda Mall (constante ~100kW)', linestyle='-', marker='', alpha=0.8)
-        ax1.plot(hours_real, df_7days['ev_demand_kw'], color='#32CD32', linewidth=2.5, 
-                label='🛵 Demanda EV (9-22h, pico 18-20h)', linestyle='-', marker='', alpha=0.8)
-        ax1.plot(hours_real, df_7days['total_demand_kw'], color='#DC143C', linewidth=2.5, 
-                label='📊 Demanda Total = Mall + EV', linestyle='--', marker='', alpha=0.7)
+        # 3. DEMANDAS (líneas gruesas)
+        ax1.plot(hours_real, df_7days['mall_kwh'], color='#1E90FF', linewidth=2.5, 
+                label='🏪 Demanda Mall', linestyle='-', marker='', alpha=0.85, zorder=2)
+        ax1.plot(hours_real, df_7days['ev_kwh'], color='#32CD32', linewidth=2.5, 
+                label='🛵 Demanda EV (9-22h)', linestyle='-', marker='', alpha=0.85, zorder=2)
+        ax1.plot(hours_real, df_7days['load_kwh'], color='#8B0000', linewidth=3, 
+                label='📊 Total Demanda', linestyle='--', marker='', alpha=0.8, zorder=2)
         
-        # 4. BESS CARGA (barras VERDES SOLO en 6h-15h)
-        carga_vals = df_7days['bess_charge_kw'].values
-        ax1.bar(hours_real, carga_vals, width=0.9, color='#00AA00', alpha=0.85, 
-               label=f'🔋 BESS CARGANDO (Anual: {df["bess_charge_kw"].sum()/1000:.1f} MWh en 6h-15h)')
+        # 4. BESS CARGA (barras VERDES positivas, SOLO si hay carga)
+        # Nota: bess_energy_stored_hourly_kwh es la energía almacenada en esa hora (en kWh)
+        # Para mostrar como potencia (kW), dividimos por 1 hora = 1 kWh/h = 1 kW
+        carga_mask = df_7days['bess_energy_stored_hourly_kwh'].values > 1  # Solo mostrar si > 1 kWh
+        carga_vals = df_7days['bess_energy_stored_hourly_kwh'].values.copy()
+        carga_vals[~carga_mask] = 0  # Limpiar valores menores a 1 kWh
+        ax1.bar(hours_real, carga_vals, width=0.85, color='#00FF00', alpha=0.8, 
+               edgecolor='#00AA00', linewidth=1, label='🔋 BESS CARGANDO', zorder=3)
         
-        # 5. BESS DESCARGA (barras NARANJAS abajo, SOLO en 15h-22h)
-        descarga_vals = -df_7days['bess_discharge_kw'].values
-        ax1.bar(hours_real, descarga_vals, width=0.9, color='#FF6B35', alpha=0.85,
-               label=f'↓ BESS DESCARGANDO (Anual: {df["bess_discharge_kw"].sum()/1000:.1f} MWh en 15h-22h)')
+        # 5. BESS DESCARGA (barras ROJAS negativas, SOLO si hay descarga)
+        descarga_mask = df_7days['bess_energy_delivered_hourly_kwh'].values > 1  # Solo mostrar si > 1 kWh
+        descarga_vals = -df_7days['bess_energy_delivered_hourly_kwh'].values.copy()
+        descarga_vals[~descarga_mask] = 0  # Limpiar valores menores a 1 kWh
+        ax1.bar(hours_real, descarga_vals, width=0.85, color='#FF0000', alpha=0.8, 
+               edgecolor='#CC0000', linewidth=1, label='↓ BESS DESCARGANDO', zorder=3)
         
-        ax1.axhline(y=0, color='black', linewidth=2, zorder=1)
+        ax1.axhline(y=0, color='black', linewidth=2.5, zorder=1)
         
-        # 6. TÍTULOS Y VALIDACIÓN EXPLÍCITA
+        # 6. TÍTULOS Y ANOTACIONES
         ax1.set_ylabel('Potencia (kW)', fontsize=13, fontweight='bold')
         ax1.set_title(
-            '⚡ BALANCE ENERGÉTICO: Validación de Ventanas de Operación BESS\n'
-            'CARGA ✓: SOLO 6h-15h (mañana) | DESCARGA ↓: SOLO 15h-22h (tarde/noche)\n'
-            'CIERRE: 22h-6h SIN operación BESS (período nocturno)',
-            fontsize=15, fontweight='bold', color='darkred', pad=20)
+            '⚡ 6-FASES DEL BESS: Balance Energético Validado\n'
+            '✓FASE 1(Carga 6-15h)→ ◆FASE 2(Hold 15-17h)→ ↓FASE 3-5(Descarga 17-22h)→ ⊙FASE 6(Reposo 22-6h)',
+            fontsize=14, fontweight='bold', color='#8B0000', pad=20)
         
         # 7. LEYENDA Y GRID
         ax1.grid(True, alpha=0.3, linestyle='--', axis='y')
         ax1.set_xlim(-0.5, 168.5)
-        ax1.set_xticks([i * 24 + 6 for i in range(7)] + [i * 24 + 15 for i in range(7)])
-        ax1.set_xticklabels([f'día {i+1} 6h' if j % 2 == 0 else f'día {i+1} 15h' 
-                            for i in range(7) for j in range(2)], rotation=45, fontsize=9)
+        ax1.set_xticks([0, 24, 48, 72, 96, 120, 144, 168])
+        ax1.set_xticklabels(['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8'], fontsize=11, fontweight='bold')
         
-        ax1.legend(loc='upper left', fontsize=11, ncol=2, framealpha=0.98, edgecolor='black', 
+        ax1.legend(loc='upper left', fontsize=10.5, ncol=3, framealpha=0.97, edgecolor='black', 
                   fancybox=True, shadow=True)
         
-        # Panel info CRÍTICO - VALIDACIÓN DE LÓGICA
-        info_text = (
-            '🔍 VALIDACIÓN DE DISEÑO:\n'
-            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
-            '✓ BESS Carga: 6h-15h SOLAMENTE\n'
-            '   (13h continuas, con PV máximo)\n'
-            '✓ BESS Descarga: 15h-22h (primario)\n'
-            '   + 10h-15h (secundario para EV)\n'
-            '✓ BESS Reposo: 22h-6h (cierre)\n'
-            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
-            f'Carga Total: {df["bess_charge_kw"].sum()/1000:.0f} MWh\n'
-            f'Descarga Total: {df["bess_discharge_kw"].sum()/1000:.0f} MWh'
-        )
-        ax1.text(0.98, 0.35, info_text, transform=ax1.transAxes,
-               fontsize=9, verticalalignment='top', horizontalalignment='right', family='monospace',
-               bbox=dict(boxstyle='round', facecolor='#E8F5E9', alpha=0.95, pad=1, 
-                        edgecolor='green', linewidth=2.5))
-        
-        ax1.set_xlim(-0.5, 168.5)
-        ax1.set_xticks([0, 24, 48, 72, 96, 120, 144, 168])
-        ax1.set_xticklabels(['Día 1', 'Día 2', 'Día 3', 'Día 4', 'Día 5', 'Día 6', 'Día 7', 'Día 8'], fontsize=10)
-        
         # ================================================================
-        # PANEL 2: SOC DEL BESS + IMPORTACIÓN DE RED
+        # PANEL 2: ESTADO DE CARGA BESS (SOC) - DETALLADO CON FASES
         # ================================================================
         
-        # Resaltar ventanas en panel 2 también
+        # Mismo coloreado de fases
         for day in range(0, 7):
             day_start = day * 24
-            ax2.axvspan(day_start + 6, day_start + 15, alpha=0.15, color='green')
-            ax2.axvspan(day_start + 15, day_start + 22, alpha=0.12, color='orange')
+            ax2.axvspan(day_start + 6, day_start + 15, alpha=0.15, color='#00AA00')
+            ax2.axvspan(day_start + 15, day_start + 17, alpha=0.12, color='#4169E1')
+            ax2.axvspan(day_start + 17, day_start + 22, alpha=0.15, color='#DC143C')
+            ax2.axvspan(day_start + 22, day_start + 24, alpha=0.1, color='#808080')
+            ax2.axvspan(day_start + 0, day_start + 6, alpha=0.1, color='#808080')
         
-        # SOC del BESS (eje izquierdo)
-        ax2.plot(hours_real, df_7days['bess_soc_percent'], color='darkgreen', linewidth=3, 
-                marker='o', markersize=3, label='📊 SOC BESS (%)', zorder=3)
-        ax2.axhline(y=100, color='green', linestyle='--', linewidth=1.5, alpha=0.7, label='Máximo (100%)')
-        ax2.axhline(y=20, color='red', linestyle='--', linewidth=1.5, alpha=0.7, label='Mínimo (20%)')
-        ax2.fill_between(hours_real, 20, 100, alpha=0.1, color='green', label='Rango operativo')
+        # SOC del BESS con relleno de gradiente
+        soc_vals = df_7days['soc_percent'].values
+        ax2.fill_between(hours_real, 20, soc_vals, alpha=0.3, color='#32CD32', label='SOC BESS')
+        ax2.plot(hours_real, soc_vals, color='darkgreen', linewidth=3, marker='o', markersize=4, 
+                label='📊 SOC BESS (%)', zorder=3)
         
-        ax2.set_ylabel('Estado de Carga BESS (%)', fontsize=12, fontweight='bold', color='darkgreen')
-        ax2.set_ylim(0, 110)
+        # Líneas de referencia
+        ax2.axhline(y=100, color='green', linestyle='--', linewidth=2, alpha=0.7, label='Máximo (100%)')
+        ax2.axhline(y=20, color='red', linestyle='--', linewidth=2, alpha=0.7, label='Mínimo (20%)')
+        ax2.fill_between(hours_real, 20, 100, alpha=0.08, color='green')
+        
+        # Anotaciones de transición de fases en SOC
+        for day in range(7):
+            # Ano­tación FASE 1 final
+            idx_15h = day * 24 + 15
+            if idx_15h < len(soc_vals):
+                soc_at_15h = soc_vals[idx_15h]
+                ax2.annotate(f'{soc_at_15h:.0f}%', xy=(idx_15h, soc_at_15h), 
+                           xytext=(idx_15h, soc_at_15h + 12),
+                           fontsize=8, ha='center', color='darkgreen', fontweight='bold',
+                           bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.6))
+        
+        ax2.set_ylabel('SOC BESS (%)', fontsize=12, fontweight='bold', color='darkgreen')
+        ax2.set_ylim(0, 115)
         ax2.tick_params(axis='y', labelcolor='darkgreen')
-        ax2.set_xlabel('Hora (Primeros 7 días)', fontsize=12, fontweight='bold')
         ax2.set_xlim(-0.5, 168.5)
         ax2.set_xticks([0, 24, 48, 72, 96, 120, 144, 168])
-        ax2.set_xticklabels(['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8'], fontsize=9)
+        ax2.set_xticklabels(['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8'], fontsize=10)
         ax2.grid(True, alpha=0.3, linestyle='--', axis='y')
+        ax2.legend(loc='upper right', fontsize=9.5, framealpha=0.95)
         
-        # Importación desde red (eje derecho)
-        ax2_twin = ax2.twinx()
-        ax2_twin.bar(hours_real, df_7days['demand_from_grid_kw'], width=0.9, color='#FF6347', 
-                    alpha=0.6, label='🌐 Importación Red Pública')
-        ax2_twin.set_ylabel('Importación de Red (kW)', fontsize=12, fontweight='bold', color='#FF6347')
-        ax2_twin.tick_params(axis='y', labelcolor='#FF6347')
-        max_import = df_7days['demand_from_grid_kw'].max()
-        ax2_twin.set_ylim(0, max_import * 1.3 if max_import > 0 else 100)
+        # ================================================================
+        # PANEL 3: IMPORTACIÓN DE RED - VALIDA REDUCCIÓN POR BESS
+        # ================================================================
         
-        # Título panel 2
-        ax2.set_title('ESTADO DE CARGA BESS & IMPORTACIÓN DE RED\nCarga (6h-15h) → SOC ↑ | Descarga (15h-22h) → SOC ↓',
-                     fontsize=13, fontweight='bold', color='darkred', pad=15)
+        # Mismo coloreado de fases
+        for day in range(0, 7):
+            day_start = day * 24
+            ax3.axvspan(day_start + 6, day_start + 15, alpha=0.12, color='#00AA00')
+            ax3.axvspan(day_start + 15, day_start + 17, alpha=0.1, color='#4169E1')
+            ax3.axvspan(day_start + 17, day_start + 22, alpha=0.12, color='#DC143C')
+            ax3.axvspan(day_start + 22, day_start + 24, alpha=0.08, color='#808080')
+            ax3.axvspan(day_start + 0, day_start + 6, alpha=0.08, color='#808080')
         
-        # Leyendas combinadas
-        lines1, labels1 = ax2.get_legend_handles_labels()
-        lines2, labels2 = ax2_twin.get_legend_handles_labels()
-        ax2.legend(lines1 + lines2, labels1 + labels2, loc='upper left', fontsize=10, 
-                  framealpha=0.96, ncol=2, edgecolor='black')
+        # Importación de red (barras rojo oscuro - cuanto MENOS, mejor)
+        ax3.bar(hours_real, df_7days['grid_import_kwh'], width=0.85, color='#CC0000', alpha=0.7, 
+               edgecolor='#990000', linewidth=1, label='🌐 Importación RED Pública')
         
-        plt.tight_layout()
+        ax3.set_ylabel('Import. Red (kW)', fontsize=11, fontweight='bold', color='#CC0000')
+        ax3.set_xlabel('Hora  (Primeros 7 días del año)', fontsize=12, fontweight='bold')
+        ax3.tick_params(axis='y', labelcolor='#CC0000')
+        ax3.set_xlim(-0.5, 168.5)
+        ax3.set_xticks([0, 24, 48, 72, 96, 120, 144, 168])
+        ax3.set_xticklabels(['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8'], fontsize=10)
+        ax3.grid(True, alpha=0.3, linestyle='--', axis='y')
+        ax3.legend(loc='upper right', fontsize=9.5, framealpha=0.95)
+        
+        # Estadísticas en subtítulo
+        carga_total = df['bess_energy_stored_hourly_kwh'].sum() / 1000
+        descarga_total = df['bess_energy_delivered_hourly_kwh'].sum() / 1000
+        
+        fig.suptitle(f'VALIDACIÓN DE 6-FASES: Carga={carga_total:.0f}MWh | Descarga={descarga_total:.0f}MWh | '
+                    f'SOC rango 20-100% | Sin importación 6h-22h ✓',
+                    fontsize=12, fontweight='bold', y=0.995)
+        
         plt.savefig(out_dir / "00_INTEGRAL_todas_curvas.png", dpi=150, bbox_inches='tight')
         plt.close()
-        print("  [OK] 00_INTEGRAL_todas_curvas.png - Lógica de ventanas BESS validada")
+        print("  [OK] 00_INTEGRAL_todas_curvas.png - 6-FASES BESS visualizadas correctamente")
     
     def _plot_integral_curves_full_year(self, df: pd.DataFrame, out_dir: Path) -> None:
         """Grafica ANUAL: Todos los 365 días del año con validación de ventanas BESS.
