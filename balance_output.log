@@ -1,0 +1,78 @@
+================================================================================
+Traceback (most recent call last):
+DEMO: Balance Energetico - Graphics Only Module v5.7
+================================================================================
+
+TRANSFORMACION MALL:
+  ANTES: 100% red publica
+  AHORA: 44.4% PV + 4.9% BESS + 55.6% grid = 49.3% renovable
+
+Cargando datos reales del sistema...
+[CARGANDO] BESS: bess_ano_2024.csv
+[CARGANDO] Mall: demandamallhorakwh.csv
+[OK] Dataset BESS REAL cargado: 8760 horas
+[OK] PV real: 8292514 kWh/a├▒o
+[OK] Demanda Mill real: 12368653 kWh/a├▒o (min=0.0 kW, max=2763.0 kW, mean=1411.9 kW)
+[OK] Demanda EV real: 408282 kWh/a├▒o
+
+[VALIDACION DEMANDA PICO MALL - CRITICA v5.7]
+  DEMANDA PICO MAXIMO: 2763.0 kW (EXCEDE 1900 kW)
+  BESS descarga cuando PV < demanda_mall (deficit solar)
+  Sistema PV + BESS + Grid dimensionado para picos > 1900 kW
+
+[CONFIGURACION PEAK SHAVING]
+  Umbral de referencia: 1900 kW (demanda pico Mall excede este valor)
+  Logica de descarga BESS: Cuando PV < demanda_mall (punto critico solar)
+  Objetivo: Peak shaving en periodos de deficit solar
+  NOTA: BESS descarga por deficit solar, no por un umbral fijo
+[CARGANDO] BESS Completo desde dataset OE2...
+[OK] DataFrame creado: 8760 horas x 25 columnas
+    Mall: min=0.0 kW, max=2763.0 kW, mean=1411.9 kW
+    Grid Export: 1484110 kWh/a├▒o (promedio 4066 kWh/d├¡a)
+    Peak Shaving: 503073 kWh/a├▒o (reducci├│n de demanda MALL)
+
+    [DEMANDA PICO MALL - CRITICA V5.7]
+    PICO MAXIMO: 2763.0 kW (EXCEDE 1900 kW - referencia critica)
+    BESS descarga cuando PV < demanda_mall (punto critico solar)
+    Annual peak shaving: 503073 kWh/ano (BESS respalda deficit solar)
+
+
+Ô£ô Validaci├│n Solar v5.7: 8.29 GWh / 8.29 GWh (100.0%)
+[OK] BalanceEnergeticoSystem inicializado
+  - PV: 4050 kWp
+  - BESS: 2000 kWh / 400 kW
+  - CO2 intensity: 0.4521 kg/kWh
+
+
+Generando gr├íficas en outputs\balance_energetico...
+  [OK] 00_BALANCE_INTEGRADO_COMPLETO.png
+  [OK] 00.1_EXPORTACION_Y_PEAK_SHAVING.png
+  [OK] 00.2_GENERACION_EXPORTACION_INTEGRADA.png
+  [OK] 00.3_PEAK_SHAVING_INTEGRADO_MALL.png
+  File "D:\dise├▒opvbesscar\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3812, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7088, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7096, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'soc_percent'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\dise├▒opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py", line 2007, in <module>
+    main()
+  File "D:\dise├▒opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py", line 1999, in main
+    graphics.plot_energy_balance(out_dir)
+  File "D:\dise├▒opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py", line 187, in plot_energy_balance
+    self._plot_integral_curves(df, out_dir)
+  File "D:\dise├▒opvbesscar\src\dimensionamiento\oe2\balance_energetico\balance.py", line 954, in _plot_integral_curves
+    soc_vals = df_7days['soc_percent'].values
+               ~~~~~~~~^^^^^^^^^^^^^^^
+  File "D:\dise├▒opvbesscar\.venv\Lib\site-packages\pandas\core\frame.py", line 4113, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\dise├▒opvbesscar\.venv\Lib\site-packages\pandas\core\indexes\base.py", line 3819, in get_loc
+    raise KeyError(key) from err
+KeyError: 'soc_percent'

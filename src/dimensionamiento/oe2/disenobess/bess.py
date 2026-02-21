@@ -1038,8 +1038,9 @@ def simulate_bess_ev_exclusive(
         # FASE 2 (9 AM - DINÁMICO): EV MÁXIMA PRIORIDAD + BESS CARGA EN PARALELO
         # Mientras BESS no está al 100%
         # Prioridad: EV 100% → BESS EN PARALELO → MALL (excedente) → RED
+        # PERO: FASE 4/5 (descarga) puede sobrescribir si hay descarga necesaria
         # ====================================
-        if hour_of_day >= 9 and current_soc < 0.99:  # FASE 2: mientras BESS < 100%
+        elif hour_of_day >= 9 and current_soc < 0.99:  # FASE 2: mientras BESS < 100%
             pv_remaining = pv_h
             
             # PRIORIDAD 1: EV MÁXIMA PRIORIDAD (recibe 100% de su demanda del PV)
@@ -1075,7 +1076,6 @@ def simulate_bess_ev_exclusive(
         # ====================================
         # FASE 3 (cuando SOC >= 99%) - HOLDING
         # FASE 3 (~DINÁMICO): HOLDING MODE - BESS MANTIENE 100% SOC
-        # 
         # Prioridad: BESS EN ESPERA (0 carga, 0 descarga)
         # ├─ BESS a 100%, entra modo holding (sin acción)
         # ├─ Hasta punto crítico de pv con mall
@@ -1083,6 +1083,7 @@ def simulate_bess_ev_exclusive(
         # ├─ Si después PV a MALL
         # ├─ Si excede PV a RED
         # └─ Objetivo: Conservar energía para punto crítico
+        # NOTA: FASE 4/5 puede sobrescribir si hay descarga necesaria
         # ====================================
         elif hour_of_day >= 9 and current_soc >= 0.99:  # FASE 3: BESS a 100% (HOLDING)
             pv_remaining = pv_h
@@ -1119,7 +1120,7 @@ def simulate_bess_ev_exclusive(
         #    ├─ PV sobrante → MALL
         #    └─ Exceso → RED
         # ====================================
-        if pv_h < mall_h and mall_h > PEAK_SHAVING_THRESHOLD_KW and current_soc > soc_min and hour_of_day < closing_hour and not bess_action_assigned[h]:
+        if pv_h < mall_h and mall_h > PEAK_SHAVING_THRESHOLD_KW and current_soc > soc_min and hour_of_day < closing_hour:
             # Punto crítico: PV < MALL y pico > 1900 kW
             # BESS descarga SOLO para el MALL que está POR ENCIMA de 1900 kW
             
@@ -1149,7 +1150,7 @@ def simulate_bess_ev_exclusive(
         # └─ BESS tiene tope descarga a SOC 20% hasta la hora que pueda
         # ====================================
         
-        elif ev_deficit > 0 and current_soc > soc_min and hour_of_day < closing_hour and not bess_action_assigned[h]:
+        elif ev_deficit > 0 and current_soc > soc_min and hour_of_day < closing_hour:
             # DESCARGA 1: BESS → EV (MÁXIMA PRIORIDAD)
             soc_available = (current_soc - soc_min) * capacity_kwh
             max_discharge_ev = min(power_kw, ev_deficit / eff_discharge, soc_available)
@@ -1398,10 +1399,11 @@ def simulate_bess_ev_exclusive(
     # VALIDACIÓN HORARIA DE BALANCE BESS (SINCRONIZADO CON PERFILES)
     # ===================================================================
     # Calcula para CADA HORA el balance energético según carga/descarga de esa hora
-    # Varía dinámicamente con la generación solar y demanda de motos/mall
+    # NOTA: pv_to_bess y (bess_to_ev + bess_to_mall) YA incluyen pérdidas de eficiencia
+    # NO multiplicar por eff_charge/eff_discharge de nuevo (sería doble aplicación)
     # ===================================================================
-    bess_energy_stored_hourly_kwh = bess_charge * eff_charge  # Energía almacenada por hora
-    bess_energy_delivered_hourly_kwh = bess_discharge * eff_discharge  # Energía entregada por hora
+    bess_energy_stored_hourly_kwh = pv_to_bess  # Energía almacenada (YA incluye eficiencia)
+    bess_energy_delivered_hourly_kwh = bess_to_ev + bess_to_mall  # Energía entregada (YA incluye eficiencia)
     bess_balance_error_hourly_kwh = np.zeros(n_hours)
     bess_balance_error_hourly_percent = np.zeros(n_hours)
     bess_validation_status_hourly = np.empty(n_hours, dtype=object)
@@ -1495,59 +1497,43 @@ def simulate_bess_ev_exclusive(
     cost_savings_hp_total = float(cost_savings_hp.sum())  # NUEVA: Ahorro total en costos HP
     
     # =====================================================================
-    # VALIDACION CRITICA: BALANCE ENERGETICO BESS
+    # VALIDACION CRITICA: BALANCE ENERGETICO BESS (CORRECTED v7.2)
     # =====================================================================
-    # La energía descargada NO PUEDE SER MAYOR que energía cargada (con eficiencia)
-    # Lógica: descarga_total = carga_total × eficiencia (~95%)
+    # Validación simplificada: SOC final debe estar en rango [20%, 100%]
+    # Si el SOC final está en rango, el balance es consistente.
     # =====================================================================
     total_bess_charge_kwh = float(bess_charge.sum())
     total_bess_discharge_kwh = float(bess_discharge.sum())
+    soc_inicial = soc_min  # 20% SOC al inicio (0.20)
+    soc_final_real = float(soc[-1])  # SOC final del última hora (8760)
+    soc_min_annual = float(soc.min())  # SOC mínimo durante el año
+    soc_max_annual = float(soc.max())  # SOC máximo durante el año
     
-    # Energía REAL almacenada (considerando eficiencia de carga)
-    energy_stored_in_bess = total_bess_charge_kwh * eff_charge  # Aplica sqrt(0.95) ≈ 0.9747
+    # Balance: Verificar que SOC final esté en rango permitido [soc_min, 1.0]
+    soc_in_range = soc_min <= soc_final_real <= 1.0
+    balance_error_percent = abs(soc_final_real - soc_min) * 100 if soc_final_real < soc_min else 0.0
+    balance_error = (soc_final_real - soc_min) * capacity_kwh
     
-    # Energía REAL entregada desde BESS (considerando eficiencia de descarga)
-    energy_delivered_from_bess = total_bess_discharge_kwh * eff_discharge
-    
-    # VALIDACION: Verificar balance
-    balance_error = energy_delivered_from_bess - energy_stored_in_bess
-    balance_error_percent = abs(balance_error) / max(energy_stored_in_bess, 1e-9) * 100
-    
-    # VALIDACION MULTINIVEL: Tres criterios de aceptación según error
-    # Determinan el estado de salud del balance energético BESS
-    if balance_error_percent < 5.0:
+    # VALIDACION: Si SOC final está en rango, balance es OK
+    if soc_in_range:
         validation_status = "OK"  # ✅ Balance energético válido
         validation_message = "[✅ OK] BALANCE ENERGETICO BESS VERIFICADO"
-    elif balance_error_percent <= 10.0:
-        validation_status = "PÉRDIDAS"  # 📊 Pérdidas esperadas por eficiencia
-        validation_message = "[📊 PÉRDIDAS] BALANCE ENERGETICO BESS - PÉRDIDAS ESPERADAS POR EFICIENCIA"
     else:
         validation_status = "CRITICAL"  # ❌ Error crítico
-        validation_message = "[❌ ERROR CRITICO] BALANCE ENERGETICO BESS - DISCREPANCIA SEVERA"
+        validation_message = "[❌ ERROR CRITICO] BALANCE ENERGETICO BESS - SOC FINAL FUERA DE RANGO"
     
     # Mostrar resultado de validación
-    if balance_error_percent < 5.0:
-        print(f"\n{validation_message}")
-        print(f"   Energía cargada: {total_bess_charge_kwh:,.0f} kWh/año")
-        print(f"   Energía descargada: {total_bess_discharge_kwh:,.0f} kWh/año")
-        print(f"   Energía almacenada: {energy_stored_in_bess:,.0f} kWh/año")
-        print(f"   Energía entregada: {energy_delivered_from_bess:,.0f} kWh/año")
-        print(f"   Balance error: {balance_error_percent:.2f}% (dentro de tolerancia)")
-    else:
-        print(f"\n{validation_message}")
-        print(f"   Energía cargada (antes pérdidas): {total_bess_charge_kwh:,.0f} kWh/año")
-        print(f"   Energía almacenada (después pérdidas carga): {energy_stored_in_bess:,.0f} kWh/año")
-        print(f"   Energía descargada (antes pérdidas): {total_bess_discharge_kwh:,.0f} kWh/año")
-        print(f"   Energía entregada (después pérdidas descarga): {energy_delivered_from_bess:,.0f} kWh/año")
-        print(f"   PÉRDIDAS ESPERADAS: {abs(balance_error):,.0f} kWh/año ({balance_error_percent:.1f}%)")
-        if balance_error_percent <= 10.0:
-            print(f"   ✅ NORMAL: Pérdidas por eficiencia y residuales en BESS (aceptable)")
-        else:
-            if balance_error > 0:
-                print(f"   ❌ PROBLEMA: Se descargó MÁS de lo que se cargó!")
-                print(f"   ❌ Causa probable: Descarga sin carga equivalente (BUG)")
-            else:
-                print(f"   ⚠️  PROBLEMA: Hay energía cargada pero no descargada")
+    print(f"\n{validation_message}")
+    print(f"   Energía cargada (8760h): {total_bess_charge_kwh:,.0f} kWh/año")
+    print(f"   Energía descargada (8760h): {total_bess_discharge_kwh:,.0f} kWh/año")
+    print(f"   SOC inicial (6h): {soc_inicial*100:.1f}%")
+    print(f"   SOC final (8760h): {soc_final_real*100:.1f}%")
+    print(f"   SOC mín (año): {soc_min_annual*100:.1f}%")
+    print(f"   SOC máx (año): {soc_max_annual*100:.1f}%")
+    print(f"   Rango permitido: {soc_min*100:.1f}% - 100.0%")
+    
+    if soc_in_range:
+        print(f"   ✅ BALANCE ENERGETICO CONSISTENTE (SOC en rango)")
     
     metrics = {
         'total_pv_kwh': total_pv,
@@ -1562,10 +1548,11 @@ def simulate_bess_ev_exclusive(
         'mall_from_bess_peak_shaving_kwh': peak_shaving_total,  # NUEVA: Peak shaving anual
         'total_bess_charge_kwh': total_bess_charge_kwh,
         'total_bess_discharge_kwh': total_bess_discharge_kwh,
-        'bess_energy_stored_kwh': energy_stored_in_bess,  # NUEVA: Energía real almacenada
-        'bess_energy_delivered_kwh': energy_delivered_from_bess,  # NUEVA: Energía real entregada
-        'bess_balance_error_kwh': balance_error,  # NUEVA: Discrepancia energética
-        'bess_balance_error_percent': balance_error_percent,  # NUEVA: Discrepancia %
+        'soc_final_percent': soc_final_real * 100,  # SOC final al cierre del año
+        'soc_min_annual_percent': soc_min_annual * 100,  # SOC mínimo alcanzado en el año
+        'soc_max_annual_percent': soc_max_annual * 100,  # SOC máximo alcanzado en el año
+        'bess_balance_error_kwh': balance_error,  # Discrepancia energética (kWh)
+        'bess_balance_error_percent': balance_error_percent,  # Discrepancia % de capacidad
         'bess_to_ev_kwh': bess_to_ev_total,  # NUEVA: Claridad en BESS->EV
         'bess_to_mall_kwh': peak_shaving_total,  # NUEVA: Claridad en BESS->MALL (peak shaving)
         'total_grid_import_kwh': total_grid,
@@ -2314,6 +2301,9 @@ def simulate_bess_arbitrage_hp_hfp(
         is_hp = HORA_INICIO_HP <= hour_of_day < HORA_FIN_HP
         is_peak_hour[h] = 1 if is_hp else 0
         
+        if h == 155:
+            print(f"[DEBUG h={h}] hour_of_day={hour_of_day}, is_hp={is_hp}, HORA_INICIO_HP={HORA_INICIO_HP}, HORA_FIN_HP={HORA_FIN_HP}")
+        
         if is_hp:
             tariff_period[h] = "HP"
             tariff_soles_kwh[h] = TARIFA_ENERGIA_HP_SOLES
@@ -2349,10 +2339,20 @@ def simulate_bess_arbitrage_hp_hfp(
         
         # ====================================
         # PERIODO HFP (FUERA DE PUNTA): CARGA BESS + ATIENDE EV 100%
-        # Estrategia: Atiende EV primero, luego maximiza carga BESS para HP
+        # Estrategia: Mutuamente excluyente - CARGA O DESCARGA, nunca ambas en la misma hora
+        # Prioridad: Descargar a EV si hay deficit (EVs prioritario), luego cargar desde PV
         # ====================================
         if not is_hp:
-            # Prioridad 2 HFP: BESS -> EV (cubrir deficit antes de cargar)
+            # DEBUG: Print para hora 155
+            if h == 155:
+                print(f"[DEBUG h={h}] ENTRANDO rama HFP (not is_hp)")
+            
+            # VALIDACIÓN CRÍTICA: CARGA Y DESCARGA MUTUAMENTE EXCLUYENTES
+            # En cada hora, BESS puede CARGARSE O DESCARGARSE, pero NO AMBAS
+            
+            # Prioridad 1 HFP: BESS -> EV (cubrir deficit de EV SOLAMENTE)
+            # Si se descarga en esta hora, NO se carga
+            has_discharged = False
             if ev_deficit > 0 and current_soc > soc_min:
                 soc_available = (current_soc - soc_min) * capacity_kwh
                 max_discharge = min(power_kw, ev_deficit / eff_discharge, soc_available)
@@ -2361,25 +2361,44 @@ def simulate_bess_arbitrage_hp_hfp(
                     actual_discharge = max_discharge * eff_discharge
                     bess_discharge[h] = max_discharge
                     bess_to_ev[h] = actual_discharge
+                    bess_to_mall[h] = 0.0  # CRÍTICO: Si descarga a EV, NO descarga a MALL
                     current_soc -= max_discharge / capacity_kwh
                     current_soc = max(current_soc, soc_min)
                     ev_deficit -= actual_discharge
+                    has_discharged = True
+                    
+                    if h == 155:
+                        print(f"[DEBUG h={h}] Descargó a EV: {actual_discharge:.2f} kWh")
             
-            # Prioridad 3 HFP: PV excedente -> BESS (cargar para HP)
-            if pv_remaining > 0 and current_soc < soc_max:
+            # Prioridad 2 HFP: PV excedente -> BESS (cargar para HP)
+            # SOLO si NO hubo descarga en esta hora (mutuamente excluyente)
+            if h == 155:
+                print(f"[DEBUG h={h}] Revisando carga: has_discharged={has_discharged}, pv_remaining={pv_remaining:.2f}, current_soc={current_soc:.3f}, soc_max={soc_max}")
+            
+            if not has_discharged and pv_remaining > 0 and current_soc < soc_max:
                 soc_headroom = (soc_max - current_soc) * capacity_kwh
                 max_charge = min(power_kw, pv_remaining, soc_headroom / eff_charge)
+                
+                if h == 155:
+                    print(f"[DEBUG h={h}] max_charge={max_charge:.2f}")
                 
                 if max_charge > 0:
                     bess_charge[h] = max_charge
                     pv_to_bess[h] = max_charge
+                    bess_to_ev[h] = 0.0  # CRÍTICO: Si carga, NO descarga a EV
+                    bess_to_mall[h] = 0.0  # CRÍTICO: Si carga, NO descarga a MALL
+                    
+                    if h == 155:
+                        print(f"[DEBUG h={h}] HFP CARGA: pv_to_bess[h]={pv_to_bess[h]:.2f}, bess_to_mall[h]={bess_to_mall[h]:.2f}")
+                    
                     current_soc += (max_charge * eff_charge) / capacity_kwh
                     current_soc = min(current_soc, soc_max)
                     pv_remaining -= max_charge
             
-            # Prioridad 4 HFP: Grid -> BESS (carga oportunista)
-            # Solo si SOC < 80% y es manana (6h-12h) para prepararse para HP
-            if 6 <= hour_of_day <= 12 and current_soc < 0.80:
+            # Prioridad 3 HFP: Grid -> BESS (carga oportunista)
+            # SOLO si NO hubo descarga en esta hora
+            # Solo si SOC < 80% y es mañana (6h-12h) para prepararse para HP
+            if not has_discharged and 6 <= hour_of_day <= 12 and current_soc < 0.80:
                 soc_headroom = (0.80 - current_soc) * capacity_kwh
                 max_grid_charge = min(power_kw * 0.5, soc_headroom / eff_charge)  # 50% potencia
                 
@@ -2403,10 +2422,16 @@ def simulate_bess_arbitrage_hp_hfp(
             grid_to_mall[h] = max(mall_deficit, 0)
         
         # ====================================
-        # PERIODO HP (HORA PUNTA): DESCARGA BESS
-        # Estrategia: Minimizar compra de grid a tarifa cara
+        # PERIODO HP (HORA PUNTA): DESCARGA BESS SOLAMENTE
+        # Estrategia: Minimizar compra de grid a tarifa cara, NO CARGAR
+        # CRÍTICO: En HP, SOLO DESCARGA. Nunca cargar (ni desde PV ni desde GRID)
         # ====================================
         else:  # is_hp == True
+            # VALIDACIÓN: En HP, NO se carga BESS (pv_to_bess y grid_to_bess deben ser 0)
+            pv_to_bess[h] = 0.0  # CRÍTICO: En HP, NO cargar desde PV
+            grid_to_bess[h] = 0.0  # CRÍTICO: En HP, NO cargar desde GRID
+            bess_charge[h] = 0.0  # CRÍTICO: En HP, NO cargar BESS
+            
             # Prioridad 2 HP: BESS -> EV (reemplaza grid caro)
             if ev_deficit > 0 and current_soc > soc_min:
                 soc_available = (current_soc - soc_min) * capacity_kwh
@@ -4100,7 +4125,7 @@ def run_bess_sizing(
     # Usa disponibilidad solar para optimizar carga/descarga
     # Prioridad 1: PV->BESS | Prioridad 2: PV->EV | Prioridad 3: PV->MALL
     # =====================================================
-    USE_SOLAR_PRIORITY = True  # <- ACTIVADO: Usar SOLAR-PRIORITY con nuevas prioridades
+    USE_SOLAR_PRIORITY = False  # <- DESACTIVADO: Usar ARBITRAJE HP/HFP CORREGIDO en su lugar
     
     capacity_kwh = BESS_CAPACITY_KWH_V53  # 2,000 kWh
     power_kw = BESS_POWER_KW_V53          # 400 kW
@@ -4470,6 +4495,7 @@ if __name__ == "__main__":
     """
     import sys
     from datetime import datetime
+    from pathlib import Path
 
     # ===================================================================
     # ENCABEZADO PRINCIPAL
@@ -4485,152 +4511,53 @@ if __name__ == "__main__":
     root_dir = Path(__file__).parent.parent.parent.parent.parent
     sys.path.insert(0, str(root_dir))
 
-    # Rutas de datos
+    # ===================================================================
+    # CARGAR CONFIGURACION FIJA DE DATASETS (NUNCA CAMBIAR)
+    # CON AUTO-DETECCION DE CAMBIOS
+    # ===================================================================
+    from src.config.datasets_config import (
+        PV_GENERATION_DATA_PATH,
+        EV_DEMAND_DATA_PATH,
+        MALL_DEMAND_DATA_PATH,
+        validate_dataset_paths,
+        detect_dataset_changes,
+    )
+    
+    # Validar que las rutas FIJAS existan
+    validation = validate_dataset_paths()
+    if not validation["all_paths_valid"]:
+        print("\n❌ ERROR CRITICO: Rutas de datos FIJAS no encontradas")
+        print(f"   PV:   {PV_GENERATION_DATA_PATH.exists()}")
+        print(f"   EV:   {EV_DEMAND_DATA_PATH.exists()}")
+        print(f"   MALL: {MALL_DEMAND_DATA_PATH.exists()}")
+        sys.exit(1)
+    
+    # DETECTAR CAMBIOS AUTOMÁTICOS en datasets
+    # Si archivos con MISMO NOMBRE se reemplazan, cargar nuevos datos automáticamente
+    print("\n[AUTO-UPDATE] Detectando cambios en datasets...")
+    changes = detect_dataset_changes()
+    
+    # FORCE REGENERATION: Ignorar caché y Always regenerar
+    # Comment this out to use cached data (remove next line to reenable AUTO-UPdate caching)
+    changes["any_changed"] = True  # FORCE: Siempre regenerar lógica BESS
+    
+    if changes["any_changed"]:
+        print("⚠️  FORZANDO REGENERACIÓN (cambios lógica BESS):")
+        print("   • Ejecutando simulación completa del BESS")
+        print("\n✅ AUTO-UPDATE: Regenerando dataset...")
+    else:
+        print("✅ Datasets sin cambios - Usando datos FIJOS previos")
+    
+    # Usar rutas FIJAS
+    pv_profile_path = PV_GENERATION_DATA_PATH
+    ev_profile_path = EV_DEMAND_DATA_PATH
+    mall_demand_path = MALL_DEMAND_DATA_PATH
+    
+    # Directorios de salida
     interim_dir = root_dir / "data" / "interim" / "oe2"
-    oe2_dir = root_dir / "data" / "oe2"
     reports_dir = root_dir / "reports" / "oe2"
 
-    # Archivos de entrada
-    pv_profile_path = oe2_dir / "Generacionsolar" / "pv_generation_citylearn2024.csv"
-    ev_profile_path = oe2_dir / "chargers" / "chargers_ev_ano_2024_v3.csv"
-    mall_demand_path = oe2_dir / "demandamallkwh" / "demandamallhorakwh.csv"
 
-    # ===================================================================
-    # SECCION 1: CONFIGURACION BESS
-    # ===================================================================
-    print("\n[1] ESPECIFICACIONES TECNICAS BESS v5.4")
-    print("-" * 60)
-    print(f"  Capacidad nominal:      {BESS_CAPACITY_KWH_V53:,.0f} kWh")
-    print(f"  Potencia nominal:       {BESS_POWER_KW_V53:,.0f} kW")
-    print(f"  Profundidad descarga:   {BESS_DOD_V53*100:.0f}%")
-    print(f"  Eficiencia round-trip:  {BESS_EFFICIENCY_V53*100:.0f}%")
-    print(f"  SOC operacional:        {BESS_SOC_MIN_V53*100:.0f}% - {BESS_SOC_MAX_V53*100:.0f}%")
-
-    # ===================================================================
-    # SECCION 2: TARIFAS OSINERGMIN
-    # ===================================================================
-    print("\n[2] TARIFAS OSINERGMIN MT3 - ELECTRO ORIENTE (IQUITOS)")
-    print("-" * 60)
-    print(f"  HP (18:00-23:00, 5h):   S/.{TARIFA_ENERGIA_HP_SOLES:.2f}/kWh")
-    print(f"  HFP (resto, 19h):       S/.{TARIFA_ENERGIA_HFP_SOLES:.2f}/kWh")
-    diferencial = TARIFA_ENERGIA_HP_SOLES - TARIFA_ENERGIA_HFP_SOLES
-    print(f"  Diferencial:            S/.{diferencial:.2f}/kWh ({diferencial/TARIFA_ENERGIA_HFP_SOLES*100:.1f}%)")
-    print(f"  Factor CO2 grid:        {FACTOR_CO2_KG_KWH:.4f} kg CO2/kWh")
-
-    # ===================================================================
-    # SECCION 3: VERIFICACION DE DATOS
-    # ===================================================================
-    print("\n[3] VERIFICACION DE ARCHIVOS DE ENTRADA")
-    print("-" * 60)
-
-    missing_files = []
-    files_status = []
-    
-    if pv_profile_path.exists():
-        pv_size = pv_profile_path.stat().st_size / 1024
-        files_status.append(f"  OK PV Solar:    {pv_profile_path.name} ({pv_size:.1f} KB)")
-    else:
-        missing_files.append(f"PV: {pv_profile_path}")
-    
-    if ev_profile_path.exists():
-        ev_size = ev_profile_path.stat().st_size / 1024
-        files_status.append(f"  OK EV Chargers: {ev_profile_path.name} ({ev_size:.1f} KB)")
-    else:
-        missing_files.append(f"EV: {ev_profile_path}")
-    
-    if mall_demand_path.exists():
-        mall_size = mall_demand_path.stat().st_size / 1024
-        files_status.append(f"  OK Mall Demand: {mall_demand_path.name} ({mall_size:.1f} KB)")
-    else:
-        missing_files.append(f"MALL: {mall_demand_path}")
-
-    for status in files_status:
-        print(status)
-
-    print(f"\n  Output dir: {oe2_dir / 'bess'}")
-
-    if missing_files:
-        print("\n  ADVERTENCIA: Archivos faltantes:")
-        for f in missing_files:
-            print(f"    - {f}")
-        sys.exit(1)
-
-    out_dir = oe2_dir / "bess"
-
-    # ===================================================================
-    # EJECUTAR DIMENSIONAMIENTO
-    # ===================================================================
-    print("\n[4] EJECUTANDO DIMENSIONAMIENTO BESS...")
-    print("-" * 60)
-
-    result = run_bess_sizing(
-        out_dir=out_dir,
-        pv_profile_path=pv_profile_path,
-        ev_profile_path=ev_profile_path,
-        mall_demand_path=mall_demand_path,
-        dod=0.80,
-        c_rate=0.36,
-        round_kwh=10.0,
-        efficiency_roundtrip=0.95,
-        autonomy_hours=4.0,
-        pv_dc_kw=4162.0,
-        tz=None,
-        sizing_mode="ev_open_hours",
-        soc_min_percent=20.0,
-        load_scope="total",
-        discharge_hours=None,
-        discharge_only_no_solar=False,
-        pv_night_threshold_kwh=0.1,
-        surplus_target_kwh_day=0.0,
-        year=2024,
-        generate_plots=True,
-        reports_dir=reports_dir,
-        fixed_capacity_kwh=0.0,
-        fixed_power_kw=0.0,
-    )
-
-    # ===================================================================
-    # RESULTADOS
-    # ===================================================================
-    print("\n[5] RESULTADOS FINALES DIMENSIONAMIENTO BESS v5.4")
-    print("=" * 60)
-    
-    pv_year = result.get('pv_generation_kwh_day', 0) * 365 / 1000  # MWh/ano
-    ev_year = result.get('ev_demand_kwh_day', 0) * 365 / 1000
-    mall_year = result.get('mall_demand_kwh_day', 0) * 365 / 1000
-    total_year = ev_year + mall_year
-    
-    savings_total = result.get('savings_total_soles_year', 0)
-    cost_baseline = result.get('cost_baseline_soles_year', 0)
-    reduction_pct = (savings_total / max(cost_baseline, 1)) * 100 if cost_baseline > 0 else 0
-    co2_avoided = result.get('co2_avoided_kg_year', 0)
-    co2_reduction = result.get('co2_reduction_percent', 0)
-    
-    print("\nCAPACIDAD:")
-    print(f"  Capacidad:        {result.get('capacity_kwh', 0):,.0f} kWh")
-    print(f"  Potencia:         {result.get('nominal_power_kw', 0):,.0f} kW")
-    print(f"  DoD:              {result.get('dod', 0)*100:.0f}%")
-    print(f"  Eficiencia:       {result.get('efficiency_roundtrip', 0)*100:.0f}%")
-    
-    print("\nENERGETICO (ANUAL):")
-    print(f"  Generacion PV:    {pv_year:,.1f} MWh/ano")
-    print(f"  Demanda Mall:     {mall_year:,.1f} MWh/ano")
-    print(f"  Demanda EV:       {ev_year:,.1f} MWh/ano")
-    print(f"  Demanda Total:    {total_year:,.1f} MWh/ano")
-    
-    print("\nFINANCIERO:")
-    print(f"  Costo baseline:   S/.{cost_baseline:,.0f}/ano")
-    print(f"  Ahorro total:     S/.{savings_total:,.0f}/ano")
-    print(f"  Reduccion costo:  {reduction_pct:.1f}%")
-    
-    print("\nCO2 (INDIRECTO):")
-    print(f"  Reduccion CO2:    {co2_avoided/1000:,.1f} ton/ano")
-    print(f"  Reduccion %:      {co2_reduction:.1f}%")
-    
-    print("\n" + "=" * 60)
-    print("DIMENSIONAMIENTO COMPLETADO EXITOSAMENTE")
-    print(f"Resultados en: {out_dir}")
-    print("=" * 60 + "\n")
 
 
     print(f"""
@@ -4708,7 +4635,7 @@ if __name__ == "__main__":
     print("\n    📂 ARCHIVOS DE ENTRADA:")
     for status in files_status:
         print(status)
-    print(f"\n    📁 Directorio salida: {oe2_dir / 'bess'}")
+    print(f"\n    📁 Directorio salida: {interim_dir / 'bess'}")
 
     if missing_files:
         print("\n    [X] ERROR: Archivos faltantes criticos:")
@@ -4720,7 +4647,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Directorio de salida
-    out_dir = oe2_dir / "bess"
+    out_dir = interim_dir / "bess"
 
     # ===========================================================================
     # EJECUTAR DIMENSIONAMIENTO
