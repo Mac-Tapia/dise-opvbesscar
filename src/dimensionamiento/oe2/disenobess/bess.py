@@ -1579,7 +1579,7 @@ def calculate_max_discharge_to_mall(
     current_soc_percent: float,
     closing_hour: int = 22,
     target_soc_percent: float = 20.0,
-    capacity_kwh: float = 1700.0,
+    capacity_kwh: float = 2000.0,
     eff_discharge: float = 0.9747,
 ) -> float:
     """
@@ -1593,11 +1593,11 @@ def calculate_max_discharge_to_mall(
     
     Ejemplo:
     - 18h: SOC=100%, cierre=22h -> horas_restantes=4h
-      descarga_requerida = (100-20)% × 1700 = 1,360 kWh
+      descarga_requerida = (100-20)% × 2000 = 1,600 kWh
       ritmo = 1,360 / 4 = 340 kWh/h
       
     - 19h: SOC=80%, cierre=22h -> horas_restantes=3h
-      descarga_requerida = (80-20)% × 1700 = 1,020 kWh
+      descarga_requerida = (80-20)% × 2000 = 1,600 kWh
       ritmo = 1,020 / 3 = 340 kWh/h
       
     ENTRADA:
@@ -1605,7 +1605,7 @@ def calculate_max_discharge_to_mall(
         current_soc_percent: SOC actual en %
         closing_hour: Hora de cierre BESS (default 22h, operacion hasta 21h)
         target_soc_percent: SOC objetivo a cierre (default 20%)
-        capacity_kwh: Capacidad BESS (default 1,700 kWh)
+        capacity_kwh: Capacidad BESS (default 2,000 kWh)
         eff_discharge: Eficiencia descarga (default 0.9747)
     
     SALIDA:
@@ -1689,8 +1689,8 @@ def simulate_bess_solar_priority(
         pv_kwh: Generacion PV horaria (8,760 valores)
         ev_kwh: Demanda EV horaria (8,760 valores)
         mall_kwh: Demanda Mall horaria (8,760 valores)
-        capacity_kwh: Capacidad BESS (default 1,700 kWh v5.3)
-        power_kw: Potencia BESS (default 400 kW v5.3)
+        capacity_kwh: Capacidad BESS (default 2,000 kWh v5.7)
+        power_kw: Potencia BESS (default 400 kW v5.7)
         efficiency: Eficiencia round-trip (default 0.95)
         soc_min: SOC minimo (default 0.20 = 20%)
         soc_max: SOC maximo (default 1.00 = 100%)
@@ -2244,8 +2244,8 @@ def simulate_bess_arbitrage_hp_hfp(
         pv_kwh: Generacion PV horaria (8,760 valores)
         ev_kwh: Demanda EV horaria (8,760 valores)
         mall_kwh: Demanda Mall horaria (8,760 valores)
-        capacity_kwh: Capacidad BESS (default 1,700 kWh v5.3)
-        power_kw: Potencia BESS (default 400 kW v5.3)
+        capacity_kwh: Capacidad BESS (default 2,000 kWh v5.7)
+        power_kw: Potencia BESS (default 400 kW v5.7)
         efficiency: Eficiencia round-trip (default 0.95)
         soc_min: SOC minimo (default 0.20 = 20%)
         soc_max: SOC maximo (default 1.00 = 100%)
@@ -2777,7 +2777,7 @@ def calculate_bess_discharge_allocation(
     Args:
         soc_array: Array de SOC (0-1) para cada hora (8760 valores)
         ev_demand: Array de demanda EV (0-24 horas, repite 365 dias)
-        capacity_kwh: Capacidad BESS (1700 kWh)
+        capacity_kwh: Capacidad BESS (2000 kWh)
         power_kw: Potencia nominal BESS (400 kW)
         soc_min_target: SOC minimo permitido (0.20 = 20%)
         closing_hour: Hora de cierre operativo (22 = 22h)
@@ -2790,7 +2790,7 @@ def calculate_bess_discharge_allocation(
     
     # Convertir SOC a energia (en kWh)
     soc_kwh_array = soc_array * capacity_kwh
-    min_allowed_kwh = soc_min_target * capacity_kwh  # 340 kWh (20% de 1700)
+    min_allowed_kwh = soc_min_target * capacity_kwh  # 400 kWh (20% de 2000)
     
     for h in range(n_hours):
         hour_of_day = h % 24
@@ -4092,7 +4092,7 @@ def run_bess_sizing(
     # =====================================================
     USE_SOLAR_PRIORITY = True  # <- ACTIVADO: Usar SOLAR-PRIORITY con nuevas prioridades
     
-    capacity_kwh = BESS_CAPACITY_KWH_V53  # 1,700 kWh
+    capacity_kwh = BESS_CAPACITY_KWH_V53  # 2,000 kWh
     power_kw = BESS_POWER_KW_V53          # 400 kW
     
     if USE_SOLAR_PRIORITY:

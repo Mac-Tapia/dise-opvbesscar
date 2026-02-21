@@ -25,7 +25,7 @@ data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv
 data/oe2/bess/bess_ano_2024.csv
 ```
 - **Descripción**: Datos horarios de carga/descarga del sistema de almacenamiento
-- **Capacidad**: 1,700 kWh (max SOC)
+- **Capacidad**: 2,000 kWh (max SOC)
 - **Datos**: 8,760 filas (1 año)
 - **Formato**: CSV con índice datetime
 - **Usado en**:
@@ -150,7 +150,7 @@ Current working directory: d:\diseñopvbesscar
 ## 📦 Constantes Asociadas (en `data_loader.py`)
 
 ```python
-BESS_CAPACITY_KWH = 1700.0         # Capacidad máxima BESS (kWh)
+BESS_CAPACITY_KWH = 2000.0         # Capacidad máxima BESS (kWh)
 BESS_MAX_POWER_KW = 400.0          # Potencia máx carga/descarga (kW)
 TOTAL_SOCKETS = 38                 # 19 chargers × 2 sockets
 N_CHARGERS = 19                    # Número de cargadores
@@ -168,7 +168,7 @@ CO2_FACTOR_GRID_KG_PER_KWH = 0.4521   # Factor CO₂ red pública (kg/kWh)
 |---------|--------|-------|
 | v5.7 | Fijadas 4 rutas primarias OE2 como obligatorias | 2026-02-14 |
 | v5.6 | Unificado con catalog_datasets.py | 2026-02-14 |
-| v5.3 | BESS capacity = 1,700 kWh (verificado CSV) | 2026-02-12 |
+| v5.3 | BESS capacity = 2,000 kWh (verificado CSV) | 2026-02-12 |
 
 ---
 

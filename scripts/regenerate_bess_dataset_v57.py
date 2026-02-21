@@ -84,7 +84,7 @@ def regenerate_bess_dataset():
             pv_kwh=solar_kw,
             ev_kwh=ev_kw,
             mall_kwh=mall_kw,
-            capacity_kwh=1700,
+            capacity_kwh=2000,
             power_kw=400,
             efficiency=0.95,
             soc_min=0.20,

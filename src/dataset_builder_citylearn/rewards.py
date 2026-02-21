@@ -60,7 +60,7 @@ DEFINICIONES CRITICAS:
    - EV co2 factor: 2.146 kg/kWh (DEMANDA DIRECTA - tracking)
    - EV demand: 50.0 kW (CONSTANTE)
    - Chargers: 19 (38 tomas = 30 motos + 8 mototaxis) @ 7.4 kW/toma
-   - BESS: 1,700 kWh / 400 kW (v5.4 - DoD 80%, eficiencia 95%)
+   - BESS: 2,000 kWh / 400 kW (v5.7 - DoD 80%, eficiencia 95%)
 
 Objetivos optimizados:
 1. Minimizar emisiones de CO₂ (indirectas por grid import)
@@ -1076,7 +1076,7 @@ def calculate_solar_dispatch(
         mall_demand_kw: Demanda mall/no-desplazable (kW)
         bess_soc_pct: SOC de bateria (0-100%)
         bess_max_power_kw: Maxima potencia carga/descarga (400 kW v5.4)
-        bess_capacity_kwh: Capacidad de bateria (1,700 kWh max SOC)
+        bess_capacity_kwh: Capacidad de bateria (2,000 kWh max SOC)
 
     Returns:
         dict: Desglose de despacho {

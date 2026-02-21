@@ -44,6 +44,18 @@ import requests  # type: ignore[import-untyped]
 
 _pvlib_exceptions: Optional[Any] = None
 _TEMP_MODEL_PARAMS: dict[str, Any] = {}
+_matplotlib_available = False
+_plt = None
+
+try:
+    import matplotlib.pyplot as plt  # type: ignore[import]
+    import matplotlib  # type: ignore[import]
+    _matplotlib_available = True
+    _plt = plt
+except ImportError:  # pragma: no cover
+    plt = None  # type: ignore[assignment]
+    matplotlib = None  # type: ignore[assignment]
+    _matplotlib_available = False
 
 try:
     import pvlib  # type: ignore[import-not-found]
@@ -116,6 +128,90 @@ HORA_FIN_HP = 23  # Exclusivo (hasta las 22:59)
 # ============================================================================
 
 FACTOR_CO2_KG_KWH = 0.4521  # kg CO2 / kWh (sistema termico diesel/residual)
+
+
+# ============================================================================
+# RUTASDE SALIDA PARA GRÁFICAS Y REPORTES
+# ============================================================================
+# Directorio centralizado para guardar TODAS las gráficas generadas por
+# el módulo solar_pvlib.py. Las gráficas incluyen:
+# - Perfiles de generación solar diarios, mensuales, anuales
+# - Análisis de irradiancia (GHI, DNI, DHI)
+# - Comparativas de módulos e inversores
+# - Reportes técnicos visuales
+# ============================================================================
+
+GRAPHICS_OUTPUT_DIR = Path("outputs/analysis")  # Directorio centralizado para gráficas
+SOLAR_GRAPHICS_SUBDIR = GRAPHICS_OUTPUT_DIR / "solar"  # Subdirectorio para gráficas solares
+
+
+def _ensure_graphics_directories() -> None:
+    """Crea directorios para guardar gráficas si no existen."""
+    GRAPHICS_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    SOLAR_GRAPHICS_SUBDIR.mkdir(parents=True, exist_ok=True)
+
+
+def get_graphics_path(filename: str, subdir: str = "solar") -> Path:
+    """
+    Obtiene la ruta completa para guardar una gráfica.
+    
+    Args:
+        filename: Nombre del archivo (ej: "solar_irradiance_profile.png")
+        subdir: Subdirectorio dentro de outputs/analysis (default: "solar")
+    
+    Returns:
+        Path object con la ruta completa para guardar la gráfica
+    """
+    _ensure_graphics_directories()
+    if subdir:
+        output_path = GRAPHICS_OUTPUT_DIR / subdir
+    else:
+        output_path = GRAPHICS_OUTPUT_DIR
+    output_path.mkdir(parents=True, exist_ok=True)
+    return output_path / filename
+
+
+def save_matplotlib_figure(
+    fig: Any,
+    filename: str,
+    subdir: str = "solar",
+    dpi: int = 100,
+    bbox_inches: str = "tight",
+    verbose: bool = True,
+) -> Optional[Path]:
+    """
+    Guarda una figura de matplotlib en el directorio centralizado de gráficas.
+    
+    Args:
+        fig: Objeto matplotlib Figure
+        filename: Nombre del archivo (ej: "solar_profile_24h.png")
+        subdir: Subdirectorio (default: "solar")
+        dpi: Resolución (default: 100 DPI)
+        bbox_inches: Bounding box (default: "tight")
+        verbose: Imprimir mensajes (default: True)
+    
+    Returns:
+        Path al archivo si se guardó exitosamente, None si matplotlib no está disponible
+    """
+    if not _matplotlib_available:
+        if verbose:
+            print(f"⚠ matplotlib no disponible - no se guardó {filename}")
+        return None
+    
+    try:
+        output_path = get_graphics_path(filename, subdir)
+        fig.savefig(output_path, dpi=dpi, bbox_inches=bbox_inches)
+        if verbose:
+            print(f"✓ Gráfica guardada: {output_path}")
+        return output_path
+    except Exception as e:
+        print(f"❌ Error guardando {filename}: {e}")
+        return None
+
+
+def is_matplotlib_available() -> bool:
+    """Verifica si matplotlib está disponible."""
+    return _matplotlib_available
 
 
 @dataclass(frozen=True)
@@ -1964,14 +2060,20 @@ def generate_solar_dataset_citylearn_complete(
     - 12 columnas: irradiancia, temperatura, viento, potencia, energia, tarifas, CO2
     - Validacion 7-fase automatica
     - Certificacion JSON
+    - **Gráficas almacenadas en:** outputs/analysis/solar/
     
     Args:
-        output_dir: Directorio de salida para datasets y certificaciones
+        output_dir: Directorio de salida para datasets y certificaciones (data/oe2/Generacionsolar)
         year: Ano de simulacion (default 2024)
         verbose: Imprimir mensajes de progreso
         
     Returns:
         Tupla (DataFrame con 12 columnas, diccionario de metadatos)
+        
+    Nota:
+        Aunque los datasets se guardan en 'data/oe2/Generacionsolar', TODAS las gráficas
+        (si se generan) se guardarán automáticamente en 'outputs/analysis/solar/' usando
+        las funciones get_graphics_path() y save_matplotlib_figure().
     """
     output_dir.mkdir(parents=True, exist_ok=True)
     
@@ -2442,6 +2544,91 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     return results
 
 
+# ============================================================================
+# EJEMPLOS DE USO DE INFRAESTRUCTURA GRAFICA
+# ============================================================================
+#
+# Las siguientes funciones permiten guardar gráficas matplotlib de forma
+# centralizada en outputs/analysis/solar/ con estructura organizada.
+#
+# EJEMPLO 1: Guardar figura simple con ruta automática
+# --------
+# 
+#     import matplotlib.pyplot as plt
+#     from pathlib import Path
+#     from src.dimensionamiento.oe2.generacionsolar.disenopvlib.solar_pvlib import (
+#         get_graphics_path, save_matplotlib_figure, is_matplotlib_available
+#     )
+#     
+#     # Verificar disponibilidad
+#     if is_matplotlib_available():
+#         # Crear figura
+#         fig, ax = plt.subplots(figsize=(10, 6))
+#         ax.plot([1, 2, 3, 4], [1, 4, 9, 16])
+#         ax.set_title("Mi Gráfica Solar")
+#         ax.set_xlabel("Horas")
+#         ax.set_ylabel("Potencia [kW]")
+#         
+#         # Guardar en outputs/analysis/solar/ejemplo.png
+#         save_matplotlib_figure(fig, "ejemplo.png", subdir="solar")
+#         plt.close()
+#
+# EJEMPLO 2: Guardar en subdirectorio organizado
+# --------
+#
+#     # Guardar en outputs/analysis/solar/profiles/daily_avg.png
+#     save_matplotlib_figure(
+#         fig, 
+#         "daily_avg.png", 
+#         subdir="solar/profiles",
+#         dpi=150,
+#         verbose=True
+#     )
+#
+# EJEMPLO 3: Usar get_graphics_path() directamente
+# --------
+#
+#     from pathlib import Path
+#     import matplotlib.pyplot as plt
+#     
+#     # Obtener ruta donde guardar la gráfica
+#     graphics_path = get_graphics_path("irradiance_heatmap.png", subdir="solar/heatmaps")
+#     
+#     fig, ax = plt.subplots()
+#     ax.imshow([[1,2],[3,4]])
+#     fig.savefig(graphics_path, dpi=100, bbox_inches='tight')
+#     plt.close()
+#     
+#     print(f"Gráfica guardada en: {graphics_path}")
+#
+# ESTRUCTURA DE DIRECTORIOS:
+# --------
+#
+#     outputs/analysis/
+#     ├── solar/                           ← Raiz de gráficas solares
+#     │   ├── profiles/                    ← Perfiles horarios/diarios
+#     │   │   ├── profile_24h.png
+#     │   │   └── profile_monthly.png
+#     │   ├── heatmaps/                    ← Mapas de calor
+#     │   │   └── irradiance_heatmap.png
+#     │   ├── comparisons/                 ← Comparativas modulo/inversor
+#     │   │   ├── modules_comparison.png
+#     │   │   └── inverters_efficiency.png
+#     │   └── irradiance/                  ← Analisis de irradiancia
+#     │       ├── ghi_daily.png
+#     │       ├── dni_distribution.png
+#     │       └── clearsky_comparison.png
+#
+# CARACTERISTICAS:
+# --------
+# - Matplotlib OPCIONAL: Si no está instalado, las funciones retornan None silenciosamente
+# - Directorio AUTO-CREADO: Los directorios se crean automáticamente si no existen
+# - DPI CONFIGURABLE: Ajusta resolución (default 100 para web, 300 para impresión)
+# - VERBOSIDAD CONFIGURABLE: Imprime ruta y confirmación si verbose=True
+#
+# ============================================================================
+
+
 if __name__ == "__main__":
     """
     GENERADOR PRINCIPAL: Solar PV Dataset para CityLearn v2
@@ -2452,6 +2639,10 @@ if __name__ == "__main__":
     3. Certificacion JSON
     4. Generacion de 8 datasets CSV adicionales
     5. Output listo para CityLearn v2 + agentes RL
+    
+    NOTA: Cualquier gráfica matplotlib generada en esta función será
+    guardada automáticamente en outputs/analysis/solar/ usando las
+    funciones de infraestructura gráfica integradas arriba.
     """
     
     # Generar dataset completo
