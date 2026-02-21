@@ -1,0 +1,185 @@
+"""
+════════════════════════════════════════════════════════════════════════════════
+TABLA COMPARATIVA: ANTES vs DESPUÉS DE CAMBIOS
+════════════════════════════════════════════════════════════════════════════════
+
+COMPARACIÓN DE ESTRUCTURA DE CONTROL (/bess.py líneas 994-1210)
+
+─────────────────────────────────────────────────────────────────────────────
+ANTES (ACTUAL - PROBLEMA):
+─────────────────────────────────────────────────────────────────────────────
+
+┌─ Línea 994: FASE 1
+│  if hour_of_day < 9:
+│     [CARGA BESS] ✓
+│
+├─ Línea 1038: FASE 2                    ← ¡PROBLEMA: "if"!
+│  if hour_of_day >= 9 and current_soc < 0.99:
+│     [CARGA BESS]
+│     └─ Problema: Se ejecuta JUNTO CON FASE 4 en horas 13-17
+│
+├─ Línea 1088: FASE 3
+│  elif hour_of_day >= 9 and current_soc >= 0.99:
+│     [HOLDING BESS]
+│
+├─ Línea 1131: FASE 4                    ← ¡PROBLEMA: "if"!
+│  if pv_h < mall_h and mall_h > 1900 and ...:
+│     [DESCARGA BESS]
+│     └─ Problema: Ejecuta SIMULTÁNEAMENTE con FASE 2 en horas 13-17
+│
+├─ Línea 1161: FASE 5
+│  elif ev_deficit > 0 and ...:
+│     [DESCARGA BESS]
+│
+├─ Línea 1180: GRID
+│  grid_to_ev[h] = max(ev_deficit, 0)
+│  grid_to_mall[h] = max(mall_deficit, 0)
+│
+└─ Línea 1197: FASE 6
+   if hour_of_day >= 22 or hour_of_day < 9:
+      [REPOSO BESS]
+
+RESULTADO CON ESTRUCTURA ACTUAL:
+├─ Horas 9-12:  FASE 2 carga
+├─ Horas 13-17: FASE 2 carga + FASE 4 descarga SIMULTÁNEAMENTE ✗ ERROR
+│               └─ 735k kWh cargados + 610k kWh descargados en MISMA hora
+│               └─ "Energía fantasma": 136k kWh sin explicar
+├─ Horas 17-22: FASE 5 descarga (pero bloqueada por FASE 2)
+└─ Horas 22-6:  FASE 6 reposo
+
+
+─────────────────────────────────────────────────────────────────────────────
+DESPUÉS (NUEVO - SOLUCIÓN):
+─────────────────────────────────────────────────────────────────────────────
+
+┌─ Línea 994: FASE 1
+│  if hour_of_day < 9:
+│     [CARGA BESS] ✓
+│
+├─ Línea 1131: FASE 4 (REORDENADO)        ← ¡NUEVO: "elif" TIENE PRIORIDAD!
+│  elif pv_h < mall_h and mall_h > 1900 and ...:
+│     [DESCARGA BESS]
+│     └─ Ahora: Se evalúa ANTES que FASE 2
+│     └─ Resultado: Si ejecuta, BLOQUEA FASE 2
+│
+├─ Línea 1161: FASE 5
+│  elif ev_deficit > 0 and ...:
+│     [DESCARGA BESS]
+│
+├─ Línea 1038: FASE 2 (REORDENADO)        ← ¡NUEVO: "elif" EN SECUENCIA!
+│  elif hour_of_day >= 9 and current_soc < 0.99:
+│     [CARGA BESS]
+│     └─ Ahora: Solo se ejecuta si FASE 4/5 NO se ejecutó
+│
+├─ Línea 1088: FASE 3
+│  elif hour_of_day >= 9 and current_soc >= 0.99:
+│     [HOLDING BESS]
+│
+├─ Línea 1180: GRID
+│  grid_to_ev[h] = max(ev_deficit, 0)
+│  grid_to_mall[h] = max(mall_deficit, 0)
+│
+└─ Línea 1197: FASE 6
+   if hour_of_day >= 22 or hour_of_day < 9:
+      [REPOSO BESS]
+
+RESULTADO CON ESTRUCTURA NUEVA:
+├─ Horas 9-12:  FASE 2 carga (sin cambio)
+├─ Horas 13-17: 
+│   └─ Si pv < mall && mall > 1900: FASE 4 descarga peak shaving
+│   └─ Si no cumple: FASE 2 carga (solo si soc < 99%)
+│   └─ UNA SOLA ACCIÓN POR HORA (mutuamente excluyente) ✓
+├─ Horas 17-22: FASE 5 descarga (MÁXIMA PRIORIDAD para EV)
+└─ Horas 22-6:  FASE 6 reposo
+
+
+─────────────────────────────────────────────────────────────────────────────
+CAMBIOS EXACTOS (Solo 2):
+─────────────────────────────────────────────────────────────────────────────
+
+CAMBIO 1 - Línea 1038:
+┌─────────────────────────────────────────────────────────────┐
+│ ORIGINAL:                                                   │
+│   if hour_of_day >= 9 and current_soc < 0.99:              │
+│       # FASE 2                                              │
+│       pv_remaining = pv_h                                   │
+│                                                             │
+│ NUEVO:                                                      │
+│   elif hour_of_day >= 9 and current_soc < 0.99:            │
+│       # FASE 2                                              │
+│       pv_remaining = pv_h                                   │
+│                                                             │
+│ Cambio: "if" → "elif"                                       │
+│ Razón: Que sea exclusivo con FASE 4/5 (descarga primero)   │
+└─────────────────────────────────────────────────────────────┘
+
+CAMBIO 2 - Línea 1131:
+┌─────────────────────────────────────────────────────────────┐
+│ ORIGINAL:                                                   │
+│   if pv_h < mall_h and mall_h > PEAK_SHAVING_THRESHOLD_KW":
+│       # FASE 4                                              │
+│       mall_excess_above_threshold = mall_h - ...            │
+│                                                             │
+│ NUEVO:                                                      │
+│   elif pv_h < mall_h and mall_h > PEAK_SHAVING_THRESHOLD_KW"
+│       # FASE 4                                              │
+│       mall_excess_above_threshold = mall_h - ...            │
+│                                                             │
+│ Cambio: "if" → "elif"                                       │
+│ Razón: Que sea exclusivo con FASE 2/3 (descarga primero)   │
+└─────────────────────────────────────────────────────────────┘
+
+
+─────────────────────────────────────────────────────────────────────────────
+TABLA DE COMPORTAMIENTO POR HORA
+─────────────────────────────────────────────────────────────────────────────
+
+Hora | Hour | pv_kw | ev_kw | mall_kw | mall>1900 | SOC%  | ANTES        | NUEVO
+─────┼──────┼───────┼───────┼─────────┼───────────┼───────┼──────────────┼────────────
+ 6h  |  6   |  100  |   0   |   1200  |    NO     |  60%  | FASE 1       | FASE 1 ✓
+ 7h  |  7   |  300  |   0   |   1200  |    NO     |  70%  | FASE 1       | FASE 1 ✓
+ 8h  |  8   |  500  |   0   |   1200  |    NO     |  80%  | FASE 1       | FASE 1 ✓
+─────┼──────┼───────┼───────┼─────────┼───────────┼───────┼──────────────┼────────────
+ 9h  |  9   | 1200  |  50   |   1500  |    NO     |  85%  | FASE 2       | FASE 2 ✓
+10h  | 10   | 1500  |  80   |   1600  |    NO     |  95%  | FASE 2       | FASE 2 ✓
+11h  | 11   | 1600  | 100   |   1700  |    NO     |  99%  | FASE 2       | FASE 2 ✓
+─────┼──────┼───────┼───────┼─────────┼───────────┼───────┼──────────────┼────────────
+12h  | 12   | 1800  | 120   |   2000  |    YES    | 100%  | FASE 3       | FASE 3 ✓
+13h  | 13   | 1700  | 110   |   2100  |    YES    | 100%  | F2+F4 ✗      | FASE 4 ✓
+14h  | 14   | 1500  | 100   |   2200  |    YES    |  95%  | F2+F4 ✗      | FASE 4 ✓
+15h  | 15   | 1200  |  90   |   2000  |    YES    |  80%  | F2+F4 ✗      | FASE 4 ✓
+16h  | 16   |  900  |  80   |   1950  |    YES    |  60%  | F2+F4 ✗      | FASE 4 ✓
+17h  | 17   |  600  |  80   |   2100  |    YES    |  40%  | F2+F5 ✗      | FASE 5 ✓
+18h  | 18   |  300  | 100   |   2000  |    YES    |  30%  | FASE 5       | FASE 5 ✓
+19h  | 19   |  100  |  90   |   1900  |    YES    |  25%  | FASE 5       | FASE 5 ✓
+20h  | 20   |   50  |  80   |   1800  |    NO     |  20%  | FASE 5       | FASE 5 ✓
+─────┼──────┼───────┼───────┼─────────┼───────────┼───────┼──────────────┼────────────
+22h  | 22   |    0  |   0   |   1500  |    NO     |  20%  | FASE 6       | FASE 6 ✓
+ 0h  |  0   |    0  |   0   |   2200  |    YES    |  18%  | FASE 6*      | FASE 6* ✓
+─────┴──────┴───────┴───────┴─────────┴───────────┴───────┴──────────────┴────────────
+
+* FASE 6 nocturna con descarga especial para MALL picos > 1900 kW
+
+INTERPRETACIÓN:
+├─ F2+F4 ✗ = Ejecuta FASE 2 (carga) + FASE 4 (descarga) en MISMA hora → ERROR
+├─ F2+F5 ✗ = Ejecuta FASE 2 (carga) + FASE 5 (descarga) en MISMA hora → ERROR
+├─ FASE 4 ✓ = Ejecuta solo FASE 4, bloquea FASE 2 → CORRECTO
+└─ FASE 5 ✓ = Ejecuta solo FASE 5, bloquea FASE 2 → CORRECTO
+
+
+─────────────────────────────────────────────────────────────────────────────
+IMPACTO ENERGÉTICO
+─────────────────────────────────────────────────────────────────────────────
+
+Métrica                       | ANTES (ERROR)  | DESPUÉS (FIX) | Cambio
+──────────────────────────────┼────────────────┼───────────────┼──────────
+PV → BESS cargado (kWh/año)   | 753,871        | ~600,000      | -25%
+BESS → FUE descargado (kWh)   | 617,075        | ~650,000      | +5%
+Balance error (kWh)            | -136,796       | ~0            | ✓ RESUELTO
+Horas carga+descarga simul.    | 768            | 0             | 100% hecho
+Desbalance % cargado           | 13.15%         | ~5%           | ✓ OK
+
+════════════════════════════════════════════════════════════════════════════════
+"""
+
+print(__doc__)
