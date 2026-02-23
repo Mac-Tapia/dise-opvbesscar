@@ -295,32 +295,32 @@ class BalanceEnergeticoSystem:
         # FASE 1 (6 AM - 9 AM): BESS CARGA PRIMERO
         ax.axvspan(6, 9, alpha=0.20, color='green', label='FASE 1: Carga BESS (6-9h)', zorder=0)
         ax.text(7.5, ax.get_ylim()[1] * 0.95, 'FASE 1\nCARGA\nBESS', fontsize=11, fontweight='bold', 
-               ha='center', color='darkgreen', bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.8))
+               ha='center', color='darkgreen', bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.8), zorder=25)
         
         # FASE 2 (9 AM - DINÁMICO): EV MÁXIMA PRIORIDAD + BESS CARGA EN PARALELO
         # Típicamente 9h-15h mientras SOC < 100%
         ax.axvspan(9, 15, alpha=0.20, color='lightgreen', label='FASE 2: EV+BESS Carga (9-15h aprox)', zorder=0)
         ax.text(12, ax.get_ylim()[1] * 0.95, 'FASE 2\nEV + BESS\nCARGA', fontsize=11, fontweight='bold',
-               ha='center', color='darkgreen', bbox=dict(boxstyle='round', facecolor='#90EE90', alpha=0.8))
+               ha='center', color='darkgreen', bbox=dict(boxstyle='round', facecolor='#90EE90', alpha=0.8), zorder=25)
         
         # FASE 3 (CUANDO SOC >= 99%): HOLDING MODE
         # Típicamente 15h-17h, SOC = 100%, sin carga/descarga
         ax.axvspan(15, 17, alpha=0.20, color='blue', label='FASE 3: Holding 100% SOC (15-17h aprox)', zorder=0)
         ax.text(16, ax.get_ylim()[1] * 0.95, 'FASE 3\nHOLDING\nSOC=100%', fontsize=11, fontweight='bold',
-               ha='center', color='darkblue', bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))
+               ha='center', color='darkblue', bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8), zorder=25)
         
         # FASE 4-5 (DESCARGA DINÁMICA): CUANDO PV < MALL O ev_deficit > 0
         # Típicamente 17h-22h, BESS descarga gradualmente a SOC 20%
         ax.axvspan(17, 22, alpha=0.20, color='red', label='FASE 4-5: Descarga + Peak Shaving (17-22h)', zorder=0)
         ax.text(19.5, ax.get_ylim()[1] * 0.95, 'FASE 4-5\nDESC ARGA\nEV+MALL', fontsize=11, fontweight='bold',
-               ha='center', color='darkred', bbox=dict(boxstyle='round', facecolor='#FFB6C6', alpha=0.8))
+               ha='center', color='darkred', bbox=dict(boxstyle='round', facecolor='#FFB6C6', alpha=0.8), zorder=25)
         
         # FASE 6 (22h A 9 AM): CIERRE Y REPOSO
         # BESS IDLE, SOC 20%, sin carga/descarga
         ax.axvspan(22, 24, alpha=0.20, color='gray', label='FASE 6: Reposo SOC 20% (22-9h)', zorder=0)
         ax.axvspan(0, 6, alpha=0.20, color='gray', zorder=0)
         ax.text(23, ax.get_ylim()[1] * 0.95, 'FASE 6\nREP OSO\nSOC=20%', fontsize=11, fontweight='bold',
-               ha='center', color='gray', bbox=dict(boxstyle='round', facecolor='lightgray', alpha=0.8))
+               ha='center', color='gray', bbox=dict(boxstyle='round', facecolor='lightgray', alpha=0.8), zorder=25)
         
         # Líneas divisorias entre fases (más visibles)
         for fase_hora in [6, 9, 15, 17, 22]:
@@ -386,6 +386,10 @@ class BalanceEnergeticoSystem:
         if bess_charge_vals.max() > 10:
             ax.plot(hours, bess_charge_vals, color='#228B22', linewidth=3, marker='o', markersize=5, 
                    linestyle='-', alpha=0.95, zorder=5, label='Perfil Carga BESS')
+            # Etiqueta de Carga BESS - integrada con la curva
+            charge_idx = np.where(bess_charge_vals > 10)[0][len(np.where(bess_charge_vals > 10)[0])//2]
+            ax.text(charge_idx, bess_charge_vals[charge_idx] + 80, 'Carga BESS', fontsize=10, fontweight='bold',
+                   color='white', bbox=dict(boxstyle='round', facecolor='#228B22', alpha=0.95, edgecolor='white', linewidth=2), zorder=25)
         
         # Marcar zona de carga activa (con transición clara de colores)
         charge_starts = np.where(bess_charge_vals > 10)[0]
@@ -400,7 +404,7 @@ class BalanceEnergeticoSystem:
             ax.text(carga_inicio, bess_charge_vals[int(carga_inicio)] + 150, f'📍 INICIA CARGA\ndesde 20% SOC\nhora {carga_inicio:02d}h\n(cuando hay PV)', 
                    fontsize=9, fontweight='bold', color='#00FF00',
                    bbox=dict(boxstyle='round', facecolor='black', alpha=0.75, edgecolor='#00FF00', linewidth=2),
-                   ha='center', va='bottom')
+                   ha='center', va='bottom', zorder=25)
             
             # Línea de fin (cuando llega a 100%)
             ax.axvline(x=carga_fin, color='#32CD32', linewidth=2.5, alpha=0.7, linestyle='--', zorder=6)
@@ -408,7 +412,7 @@ class BalanceEnergeticoSystem:
             ax.text(carga_fin, max_charge_at_end + 150, f'✓ LLEGA A 100%\nhora {carga_fin:02d}h\n(fin carga)', 
                    fontsize=9, fontweight='bold', color='#32CD32',
                    bbox=dict(boxstyle='round', facecolor='black', alpha=0.75, edgecolor='#32CD32', linewidth=2),
-                   ha='center', va='bottom')
+                   ha='center', va='bottom', zorder=25)
         
         # 3. BESS Discharge (barras en naranja)
         # ═══════════════════════════════════════════════════════════════════════════════
@@ -431,6 +435,10 @@ class BalanceEnergeticoSystem:
         if bess_discharge_vals.max() > 10:
             ax.plot(hours, bess_discharge_vals, color='#CC0000', linewidth=3, marker='s', markersize=5, 
                    linestyle='-', alpha=0.95, zorder=5, label='Perfil Descarga BESS')
+            # Etiqueta de Descarga BESS - integrada con la curva
+            discharge_idx = np.where(bess_discharge_vals > 10)[0][len(np.where(bess_discharge_vals > 10)[0])//2]
+            ax.text(discharge_idx, bess_discharge_vals[discharge_idx] + 80, 'Descarga BESS', fontsize=10, fontweight='bold',
+                   color='white', bbox=dict(boxstyle='round', facecolor='#CC0000', alpha=0.95, edgecolor='white', linewidth=2), zorder=25)
         
         # Marcar cuando BESS está en límite 20% SOC (sin descarga posible)
         bess_at_min = (bess_soc_pct <= 20.01)
@@ -452,12 +460,12 @@ class BalanceEnergeticoSystem:
         # Anotación de consumo del Mall en horas pico
         mall_max_hour = int(np.argmax(mall_demand_vals))  # type: ignore[no-overload-found]
         mall_max_val = float(mall_demand_vals[mall_max_hour])
-        ax.annotate(f'🏪 PICO MALL\n{mall_max_val:.0f} kW\nhora {mall_max_hour:02d}h', 
+        ax.annotate(f'PICO MALL\n{mall_max_val:.0f} kW\nhora {mall_max_hour:02d}h', 
                    xy=(mall_max_hour, bess_discharge_vals[mall_max_hour] + mall_max_val/2), 
-                   xytext=(mall_max_hour-2, max(bess_discharge_vals[mall_max_hour] + mall_max_val + 200, 1000)),
-                   fontsize=9, fontweight='bold', color='#00008B',
-                   bbox=dict(boxstyle='round', facecolor='#ADD8E6', alpha=0.9, edgecolor='#00008B', linewidth=2),
-                   arrowprops=dict(arrowstyle='->', color='#00008B', lw=2.5))
+                   xytext=(mall_max_hour-3, max(bess_discharge_vals[mall_max_hour] + mall_max_val + 250, 1100)),
+                   fontsize=10, fontweight='bold', color='white',
+                   bbox=dict(boxstyle='round', facecolor='#00008B', alpha=0.95, edgecolor='lightblue', linewidth=2),
+                   arrowprops=dict(arrowstyle='->', color='#00008B', lw=3), zorder=25)
         
         # 5&6. EV Demand con perfil horario realista (9h-22h con punta 18-20h)
         # Perfil horario: 0-8h cerrado, 9-17h ramp-up, 18-20h punta, 21-22h descenso
@@ -505,21 +513,33 @@ class BalanceEnergeticoSystem:
         grid_import_vals = day_df['demand_from_grid_kw'].values
         ax.plot(hours, grid_import_vals, color='#DC143C', linewidth=4, marker='s', markersize=8,
                label='🌐 RED PUBLICA (importación - 24h)', linestyle='-', alpha=0.95, zorder=10)
+        # Etiqueta de curva RED PUBLICA
+        if grid_import_vals.max() > 100:
+            grid_label_idx = np.argmax(grid_import_vals) - 3
+            if grid_label_idx >= 0:
+                ax.text(grid_label_idx, grid_import_vals[grid_label_idx] + 430, 'RED PUBLICA', fontsize=12, fontweight='bold',
+                       color='white', bbox=dict(boxstyle='round', facecolor='#DC143C', alpha=0.95, edgecolor='yellow', linewidth=2.5), zorder=50)
         
         # Anotación de consumo de Red Pública en horas pico
         grid_max_hour = int(np.argmax(grid_import_vals))  # type: ignore[no-overload-found]
         grid_max_val = float(grid_import_vals[grid_max_hour])
-        ax.annotate(f'🌐 PICO RED\n{grid_max_val:.0f} kW\nhora {grid_max_hour:02d}h\n(respaldo)', 
+        ax.annotate(f'PICO RED\n{grid_max_val:.0f} kW\nhora {grid_max_hour:02d}h\n(respaldo)', 
                    xy=(grid_max_hour, grid_max_val), 
-                   xytext=(grid_max_hour+2.5, grid_max_val+300),
-                   fontsize=10, fontweight='bold', color='#DC143C',
-                   bbox=dict(boxstyle='round', facecolor='#FFE4E1', alpha=0.95, edgecolor='#DC143C', linewidth=2.5),
-                   arrowprops=dict(arrowstyle='->', color='#DC143C', lw=3))
+                   xytext=(grid_max_hour+3, grid_max_val+350),
+                   fontsize=10, fontweight='bold', color='white',
+                   bbox=dict(boxstyle='round', facecolor='#DC143C', alpha=0.95, edgecolor='yellow', linewidth=2.5),
+                   arrowprops=dict(arrowstyle='->', color='#DC143C', lw=3), zorder=25)
         
         # 8. Total Demand como referencia (línea roja punteada)
         total_demand_vals = day_df['total_demand_kw'].values
         ax.plot(hours, total_demand_vals, color='#DC143C', linewidth=2.5, marker='o', markersize=4,
                label='📊 Demanda Total (PV+BESS+Red)', linestyle='--', alpha=0.7)
+        # Etiqueta de curva Demanda Total
+        if total_demand_vals.max() > 100:
+            total_label_idx = np.argmax(total_demand_vals) + 3
+            if total_label_idx < len(total_demand_vals):
+                ax.text(total_label_idx, total_demand_vals[total_label_idx] + 150, 'Demanda Total', fontsize=11, fontweight='bold',
+                       color='white', bbox=dict(boxstyle='round', facecolor='#DC143C', alpha=0.95, edgecolor='yellow', linewidth=2), zorder=25)
         
         # 9. Línea de referencia del threshold de pico (1,900 kW)
         ax.axhline(y=1900, color='#FF4500', linewidth=2.5, linestyle='--', alpha=0.6, label='⚡ Threshold Peak (1,900 kW)')
@@ -533,17 +553,17 @@ class BalanceEnergeticoSystem:
         ax.axvspan(21, 23, alpha=0.10, color='orange', label='Zona: Descenso (21-22h)')
         
         # Anotaciones en horas críticas EV
-        ax.annotate('INICIO OPERATIVO EV\n(9h: 20% demanda)', xy=(9, 150), xytext=(9, 600),
-                   arrowprops=dict(arrowstyle='->', color='blue', lw=2), fontsize=9, fontweight='bold',
-                   bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.7))
+        ax.annotate('INICIO OPERATIVO EV\n(9h: 20% demanda)', xy=(9, 150), xytext=(8, 700),
+                   arrowprops=dict(arrowstyle='->', color='blue', lw=2.5), fontsize=9, fontweight='bold',
+                   bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.95, edgecolor='blue', linewidth=2), zorder=25)
         
-        ax.annotate('🔴 PUNTA MÁXIMA EV\n(18-20h: 100%)', xy=(19, 400), xytext=(19.5, 900),
+        ax.annotate('PUNTA MAXIMA EV\n(18-20h: 100%)', xy=(19, 400), xytext=(20.5, 1050),
                    arrowprops=dict(arrowstyle='->', color='red', lw=3), fontsize=10, fontweight='bold',
-                   bbox=dict(boxstyle='round', facecolor='#FFB6C6', alpha=0.8))
+                   bbox=dict(boxstyle='round', facecolor='#FFB6C6', alpha=0.95, edgecolor='red', linewidth=2), zorder=25)
         
-        ax.annotate('DESCENSO OPERATIVO\n(21-22h: 50-80%)', xy=(21.5, 120), xytext=(21.5, 400),
-                   arrowprops=dict(arrowstyle='->', color='orange', lw=2), fontsize=9, fontweight='bold',
-                   bbox=dict(boxstyle='round', facecolor='#FFE4B5', alpha=0.7))
+        ax.annotate('DESCENSO OPERATIVO\n(21-22h: 50-80%)', xy=(21.5, 120), xytext=(20, 750),
+                   arrowprops=dict(arrowstyle='->', color='orange', lw=2.5), fontsize=9, fontweight='bold',
+                   bbox=dict(boxstyle='round', facecolor='#FFE4B5', alpha=0.95, edgecolor='orange', linewidth=2), zorder=50)
         
         # Titulos y etiquetas
         ax.set_xlabel('Hora del Día', fontsize=13, fontweight='bold')
@@ -555,7 +575,7 @@ class BalanceEnergeticoSystem:
         ax.grid(True, alpha=0.2, linestyle=':', axis='y')
         ax.set_xlim(-0.8, 23.8)
         ax.set_xticks(np.arange(0, 24))
-        ax.set_xticklabels([f'{h:02d}h' for h in range(0, 24)], fontsize=9, fontweight='bold', rotation=45)
+        ax.set_xticklabels([f'{h:02d}h' for h in range(0, 24)], fontsize=16, fontweight='bold', rotation=45)
         
         # Legend en dos columnas con mejor poscionamiento
         ax.legend(loc='upper center', fontsize=10, ncol=3, framealpha=0.98, edgecolor='black', fancybox=True,
@@ -587,10 +607,10 @@ class BalanceEnergeticoSystem:
             f'═══════════════════════════════════════════════════════════════════════════════\n'
             f'⚙️ ESPECIFICACIÓN: 2,000 kWh | 400 kW | DoD 80% | SOC min 20%'
         )
-        # Poner el panel FUERA de la gráfica, arriba a la izquierda sin interponer imágenes
-        fig.text(0.02, 0.80, info_text, fontsize=7, verticalalignment='top', horizontalalignment='left', 
-                family='monospace', transform=fig.transFigure,
-                bbox=dict(boxstyle='round', facecolor='#FFFACD', alpha=0.92, pad=1, edgecolor='black', linewidth=1.5))
+        # Poner el panel DENTRO de la gráfica, en la esquina superior izquierda
+        ax.text(0.01, 0.99, info_text, fontsize=9, verticalalignment='top', horizontalalignment='left', 
+                family='monospace', transform=ax.transAxes,
+                bbox=dict(boxstyle='round,pad=0', facecolor='#FFFACD', alpha=0.92, edgecolor='black', linewidth=1.5))
         
         # ═══════════════════════════════════════════════════════════════════════════════
         # EJE INFERIOR: Estado de Carga (SOC) del BESS
@@ -663,8 +683,9 @@ class BalanceEnergeticoSystem:
                    fontsize=8, verticalalignment='top', family='monospace',
                    bbox=dict(boxstyle='round', facecolor='#E0FFFF', alpha=0.85, edgecolor='#1E90FF', linewidth=1))
         
+        plt.subplots_adjust(bottom=0.18)
         plt.tight_layout()
-        plt.savefig(out_dir / "00_BALANCE_INTEGRADO_COMPLETO.png", dpi=150, bbox_inches='tight')
+        plt.savefig(out_dir / "00_BALANCE_INTEGRADO_COMPLETO.png", dpi=150, bbox_inches=None)
         plt.close()
         print("  [OK] 00_BALANCE_INTEGRADO_COMPLETO.png")
     

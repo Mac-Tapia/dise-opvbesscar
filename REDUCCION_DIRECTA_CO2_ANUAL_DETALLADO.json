@@ -1,0 +1,34 @@
+{
+  "validation_date": "2026-02-22T21:36:56.098924",
+  "period": "1 año completo (8,760 horas)",
+  "motos": {
+    "cantidad": 15,
+    "sockets": 30,
+    "tipo_combustible": "Gasolina",
+    "energía_cargada_kwh": 234111.0,
+    "combustible_equivalente_litros": 33946.0,
+    "factor_co2_kg_per_kwh": 0.87,
+    "reduccion_co2_total_tco2": 203.7,
+    "reduccion_co2_por_vehiculo_tco2": 13.6,
+    "reduccion_co2_diaria_tco2": 0.56
+  },
+  "mototaxis": {
+    "cantidad": 4,
+    "sockets": 8,
+    "tipo_combustible": "Diésel",
+    "energía_cargada_kwh": 84203.0,
+    "combustible_equivalente_litros": 12209.0,
+    "factor_co2_kg_per_kwh": 0.47,
+    "reduccion_co2_total_tco2": 39.6,
+    "reduccion_co2_por_vehiculo_tco2": 9.9,
+    "reduccion_co2_diaria_tco2": 0.11
+  },
+  "totales": {
+    "vehículos_totales": 19,
+    "energía_total_kwh": 318314.0,
+    "combustible_equivalente_total_litros": 46156.0,
+    "reduccion_co2_anual_total_tco2": 243.3,
+    "reduccion_co2_diaria_total_tco2": 0.67,
+    "reduccion_co2_mensual_total_tco2": 20.3
+  }
+}

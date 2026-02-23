@@ -1,0 +1,41 @@
+graph TB
+    subgraph OE2["⚙️ FASE OE2: Dimensionamiento de Infraestructura"]
+        direction LR
+        SOL["☀️ Panel Solar<br/>4,050 kWp<br/>8,760 h/año"]
+        MALL["🏢 Demanda Mall<br/>PROMEDIO: 1,412 kW<br/>PICO: 2,763 kW<br/>ANUAL: 12,368,653 kWh"]
+        BESS["🔋 BESS Battery<br/>2,000 kWh<br/>400 kW<br/>Efficiency: 95%"]
+        CARGADORES["🔌 19 Chargers<br/>38 Sockets<br/>7.4 kW each<br/>Mode 3"]
+        EV["🛵 EV Fleet<br/>270 Motos<br/>39 MotoTaxis<br/>38 daily"]
+        
+        SOL --> BESS
+        MALL --> BESS
+        BESS --> CARGADORES
+        EV --> CARGADORES
+    end
+    
+    subgraph OE3["🤖 FASE OE3: Control con RL Agents"]
+        direction LR
+        CL["CityLearn v2<br/>Environment<br/>8,760 timesteps"]
+        SAC["Soft Actor Critic<br/>Off-Policy<br/>Best for asymmetric"]
+        PPO["Proximal Policy<br/>Optimization<br/>On-Policy stable"]
+        A2C["Advantage Actor<br/>Critic<br/>Lightweight"]
+        
+        CL --> SAC
+        CL --> PPO
+        CL --> A2C
+    end
+    
+    subgraph RESULTADOS["📊 Resultados Entrenados (CO₂ minimización)"]
+        SAC_R["SAC Agent<br/>CO₂: 790,308 kg/año<br/>Solar: 98.93%<br/>Grid: 2,249,319 kWh"]
+        PPO_R["PPO Agent<br/>CO₂: 417,134 kg/año<br/>Solar: 100%<br/>Grid: 2,696,960 kWh"]
+        A2C_R["A2C Agent<br/>CO₂: 407,908 kg/año<br/>Solar: 100%<br/>Grid: 1,276,586 kWh"]
+    end
+    
+    OE2 -.->|Artifact: CSV, JSON| OE3
+    SAC --> SAC_R
+    PPO --> PPO_R
+    A2C --> A2C_R
+    
+    style OE2 fill:#e1f5ff,stroke:#0277bd,stroke-width:2px
+    style OE3 fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style RESULTADOS fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px

@@ -1,0 +1,40 @@
+{
+  "validation_date": "2026-02-22T21:30:55.386027",
+  "requirement": "Reducción indirecta debe ser para 1 año completo (8,760 horas)",
+  "status": "✅ VALIDADO",
+  "input_data_periods": {
+    "pv_timeseries": "8,760 horas (1 año)",
+    "bess_timeseries": "8,760 horas (1 año)",
+    "chargers_timeseries": "8,760 horas (1 año)"
+  },
+  "indirect_co2_reduction": {
+    "components": {
+      "fv_to_mall_kwh": 3504000,
+      "fv_to_evs_kwh": 242384,
+      "fv_to_red_export_kwh": 3947574,
+      "bess_to_mall_kwh": 120117,
+      "bess_to_evs_kwh": 463883
+    },
+    "total_renewable_kwh": 8277958,
+    "co2_factor_kg_per_kwh": 0.4521,
+    "total_co2_reduction_annual_tonnes": 3742464.8,
+    "period": "1 año (8,760 horas = 365 días × 24 horas)"
+  },
+  "comparison_with_baseline": {
+    "ciudad_baseline_co2_annual": 290000,
+    "project_indirect_reduction_annual": 3742464.8,
+    "percentage_vs_ciudad": 1290.51,
+    "comparison_validity": "JUSTA - Ambos valores son anuales, mismo factor"
+  },
+  "key_validations": [
+    "✅ Datos PV: 8,760 horas (1 año completo)",
+    "✅ Datos BESS: 8,760 horas (1 año completo)",
+    "✅ Datos Chargers: 8,760 horas (1 año completo)",
+    "✅ Resolución: HORARIA (no diaria, no extrapolada)",
+    "✅ Cálculo: Σ(potencia × 1h) para 8,760 horas = valor anual",
+    "✅ Factor CO₂: 0.4521 kg/kWh (diesel grid Iquitos) - CONSISTENTE",
+    "✅ Período temporal: 1 año (365 días)",
+    "✅ Comparación ciudad: 290,000 tCO₂/año (también 1 año)",
+    "✅ Conclusion: REDUCCIÓN INDIRECTA ES ANUAL Y COMPARABLE"
+  ]
+}
