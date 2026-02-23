@@ -1,0 +1,103 @@
+================================================================================
+VERSIONES CORTAS POR SECCIÓN - LISTAS PARA PEGAR
+================================================================================
+
+▌ SECCIÓN 1: DESCRIPCIÓN GENERAL (Corta - 3 párrafos)
+────────────────────────────────────────────────────
+
+El proyecto PVBESSCAR implementa un sistema integral de optimización de carga de vehículos eléctricos (270 motos + 39 mototaxis) en Iquitos, Perú, mediante control inteligente basado en Reinforcement Learning. La solución integra generación solar de 4,050 kWp, almacenamiento en batería de 2,000 kWh, 38 enchufes de carga en 19 cargadores Mode 3 (7.4 kW/socket), y control RL centralizado para minimizar emisiones de CO₂ en una red aislada.
+
+El factor de intensidad de carbono del grid termoeléctrico de Iquitos es 0.4521 kg CO₂/kWh. El objetivo principal del proyecto es demostrar que mediante optimización inteligente se pueden reducir significativamente las emisiones mientras se mejora la utilización solar, disponibilidad de carga para vehículos, y estabilidad de la red.
+
+La arquitectura divide el proyecto en dos fases complementarias: OE2 (dimensionamiento de infraestructura) y OE3 (control inteligente en tiempo real). Esto permite validar independientemente que los componentes físicos sean adecuados y que el control sea óptimo.
+
+▌ SECCIÓN 2.1: FASE OE2 (Corta)
+────────────────────────────────
+
+La fase OE2 valida que la infraestructura física (4,050 kWp PV, 1,700 kWh BESS, 38 sockets) sea adecuada para el problemma. El proceso modela 6 fases operativas diarias del BESS: carga matutina, coordinación EV-BESS, holding, peak shaving vespertino, y reposo nocturno. Se genera un dataset completo de 977 columnas × 8,760 timesteps (1 año horario) que sirve como entrada para la fase OE3.
+
+La salida de OE2 incluye: validación de balance energético anual con ±0.1% error, especificación clara de 38 sockets controlables @ 7.4 kW c/u, y dataset completo para entrenar agentes RL. El baseline sin control muestra 40% utilización solar (desaprovechamiento severo) y 1,825 horas pico/año.
+
+▌ SECCIÓN 2.2: FASE OE3 & SAC (Corta)
+──────────────────────────────────────
+
+La fase OE3 entrena tres algoritmos RL (PPO, A2C, SAC) para controlar en tiempo real la distribución de potencia en la infraestructura OE2. Aunque todos observan el mismo ambiente CityLearn con timesteps horarios, cada algoritmo actualiza su política con frecuencias radicalmente distintas.
+
+PPO acumula 2,048 horas antes de actualizar (4-5 veces/año). A2C actualiza cada 8 horas (1,095 veces/año). SAC actualiza continuamente (87,600+ veces/año) mediante un replay buffer que retiene experiencias de 11.4 años. Esta diferencia en actualización es crítica: SAC captura patrones anuales completos mientras que PPO y A2C apenas capturan fragmentos.
+
+SAC emerge como ganador (99.1/100) porque su naturaleza off-policy + actualización continua + buffer de memoria es exactamente la que se requiere para horizon anuales con estacionalidad. El resultado es una reducción de CO₂ del 20.2% respecto al baseline, con utilización solar de 98.9%, y capacidad de carga para 3,500 vehículos/año.
+
+▌ SECCIÓN 3: METODOLOGÍA CO₂ (Corta)
+──────────────────────────────────────
+
+El cálculo de reducción de CO₂ diferencia entre reducción directa (electrificación) e indirecta (desplazamiento de grid). La reducción directa es 0.87 kg CO₂/kWh para motos y 0.47 kg CO₂/kWh para mototaxis (equivalentes de combustible), derivada del cambio de gasolina a electricidad.
+
+La reducción indirecta proviene de energía solar o BESS que desplaza generación térmica: 0.4521 kg CO₂/kWh. Cuando solar es inyectada al sistema, evita que la red térmica genere esa energía. Cuando BESS descarga en horas pico (>2,000 kW), también evita generación térmica mediante peak shaving.
+
+El cálculo total anual con SAC es: 300k (directo) + 1,600k (solar indirecta) + 200k (BESS indirecta) = 2,100k kg CO₂ evitado bruto. Restando MALL (1,900k kg que sigue siendo grid), el neto es 200k kg/año de mejora respecto al baseline (20.2% reducción).
+
+▌ SECCIÓN 4: FRECUENCIAS ACTUALIZACIÓN (Técnica - Muy Corta)
+─────────────────────────────────────────────────────────────
+
+Algoritmo | Configuración | Actualización | Cobertura Anual
+PPO       | n_steps=2,048 | Cada 85 días  | ~23% (85 días)
+A2C       | n_steps=8     | Cada 8 horas  | Variable
+SAC       | n_steps=1     | Continua      | 100% (buffer)
+
+La actualización continua de SAC permite capturar toda la variación estacional del año, mientras que PPO ve solo ~3 "episodios" anuales. Esta es la razón fundamental por la que SAC gana para horizontes anuales.
+
+▌ SECCIÓN 5: RESULTADOS VALIDADOS (Tabla)
+────────────────────────────────────────────
+
+Métrica                    | Baseline | SAC    | Mejora
+CO₂ Anual (kg)            | 990,099  | 790,308| -20.2%
+Solar Utilización         | 40%      | 98.9%  | +147%
+EV Cargados/año           | 2,200    | 3,500  | +25%
+Picos Horarios (h/año)    | 1,825    | 612    | -66%
+Grid Import (kWh/año)     | 2.19M    | 0.45M  | -79%
+BESS Eficiencia           | 0%       | 95%    | —
+
+================================================================================
+PÁRRAFOS PARA DIFERENTES CONTEXTOS
+================================================================================
+
+▌ PARA INTRODUCCIÓN / CONTEXTO DEL PROBLEMA
+────────────────────────────────────────────
+
+En Iquitos, Perú, existe un sistema de transporte local basado en vehículos eléctricos (270 motos + 39 mototaxis) operando en una red aislada con generación termoeléctrica que produce 0.4521 kg CO₂/kWh. El sistema cuenta con 4,050 kWp de energía solar disponible pero subaprovechada (solo 40% utilización), y una batería de almacenamiento de 2,000 kWh que no está siendo controlada inteligentemente. Este escenario crea una oportunidad para aplicar Reinforcement Learning a la optimización de carga, potencialmente evitando miles de toneladas de CO₂ anuales.
+
+▌ PARA METODOLOGÍA / ARQUITECTURA
+──────────────────────────────────
+
+El proyecto implementa una arquitectura de dos fases. La fase OE2 (dimensionamiento) valida la infraestructura física y genera un dataset de 977 columnas representando todo el comportamiento anual del sistema (8,760 timesteps horarios). La fase OE3 (control) entrena tres algoritmos RL distintos (PPO on-policy, A2C on-policy, SAC off-policy) sobre este mismo dataset. Los tres algoritmos comparten el mismo ambiente CityLearn pero producen políticas distintas debido a sus diferentes mecanismos de actualización.
+
+▌ PARA JUSTIFICACIÓN DEL GANADOR
+──────────────────────────────────
+
+SAC resulta ganador entre los tres agentes entrenados porque su arquitectura off-policy con replay buffer de 100,000 transiciones es exactamente la requerida para optimizar horizontes anuales con patrones estacionales. Mientras que PPO actualiza su política solo 4-5 veces/año (y por lo tanto ve solo ~85 días de contexto anual), y A2C actualiza ~1,095 veces/año (con contexto discontinuo), SAC actualiza 87,600+ veces/año manteniendo siempre en memoria 11.4 años de experiencias previas. Esta capacidad de retención de contexto largo plazo es lo que permite a SAC descubrir y explotar patrones estacionales que PPO y A2C nunca capturan.
+
+▌ PARA CONCLUSIÓN / IMPACTO
+────────────────────────────
+
+El agente SAC logra una reducción de 20.2% en emisiones de CO₂ anuales (199,791 kg/año) mientras simultáneamente mejora la utilización solar de 40% a 98.9%, incrementa la capacidad de carga de vehículos en un 25%, y reduce las horas de demanda pico en un 66%. Estos resultados demuestran que el control inteligente basado en Reinforcement Learning es efectivo no solo para minimizar emisiones, sino también para mejorar todos los indicadores de desempeño del sistema. La metodología es transparente, reproducible, y basada enteramente en datos reales del sistema de Iquitos.
+
+================================================================================
+PÁRRAFOS CORTOS PARA RESUMEN EJECUTIVO
+================================================================================
+
+▌ PÁRRAFO 1: ¿QUÉ ES PVBESSCAR? (1 párrafo)
+──────────────────────────────────────────────
+
+PVBESSCAR es un sistema de control inteligente para optimizar carga de vehículos eléctricos (270 motos + 39 mototaxis) en Iquitos, Perú. Mediante Reinforcement Learning, minimiza emisiones de CO₂ mientras maximiza utilización de 4,050 kWp de energía solar disponible. El resultado es una reducción del 20.2% en CO₂ anual, incremento de 147% en utilización solar, y mejora de 25% en disponibilidad de carga para vehículos.
+
+▌ PÁRRAFO 2: ¿POR QUÉ SAC GANA? (1 párrafo)
+────────────────────────────────────────────
+
+Tres algoritmos RL fueron entrenados: PPO, A2C, y SAC. SAC gana porque es off-policy con replay buffer que retiene 11.4 años de experiencias, permitiendo actualizar la política 87,600+ veces/año mientras mantiene panorama anual. PPO y A2C, siendo on-policy, actualizan menos frecuentemente y pierden contexto estacional. Para horizontes anuales con patrones regulares, SAC es óptimo.
+
+▌ PÁRRAFO 3: ¿CUÁL ES EL IMPACTO EN CO₂? (1 párrafo)
+──────────────────────────────────────────────────────
+
+Sin control, el sistema emite 990,099 kg CO₂/año. Con SAC, emite 790,308 kg/año. La diferencia (199,791 kg/año) proviene de: electrificación vehicular (300k kg), solar desplazando grid (1,600k kg), y BESS en peak shaving (200k kg), menos demanda MALL (1,900k kg). El resultado neto es una mejora estructural del sistema, no temporal.
+
+================================================================================

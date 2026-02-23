@@ -8,6 +8,45 @@ Iquitos, Perú - Control inteligente de 38 sockets de carga (270 motos + 39 moto
 
 ## 📢 Latest Updates (2026-02-21)
 
+### 📖 BESS v5.7 Documentation Complete (2026-02-21) ⭐⭐⭐
+**Documentación técnica completa del módulo bess.py en archivo markdown**
+
+- ✅ **Nuevo Archivo:** [BESS_DOCUMENTACION_COMPLETA_2026-02-21.md](BESS_DOCUMENTACION_COMPLETA_2026-02-21.md)
+- ✅ **Contenido:** 4,921 líneas de código bess.py documentadas con:
+  - Resumen ejecutivo v5.7
+  - Configuración BESS final (2,000 kWh / 400 kW)
+  - Las 6 FASES de operación (detalles completos)
+  - Flujo energético PV (distribución simultánea)
+  - Tarifas OSINERGMIN HP/HFP (arbitrage)
+  - Cálculo de emisiones CO₂ (0.4521 kg CO₂/kWh)
+  - Dataset de salida (33+ columnas)
+  - Validaciones completadas
+  - Ejemplos de uso y salida esperada
+- ✅ **Para Word/PDF:** Copia contenido del markdown a documentos
+- ✅ **Actualizado:** Incluye todos los comentarios y variables de bess.py
+
+### 📄 Word & PDF Documentation Generated (2026-02-21) ⭐⭐⭐
+**Documentación formal en formatos profesionales (Word + PDF)**
+
+- ✅ **Word v5.8:** `outputs/docx/BESS_Dimensionamiento_Procedimiento_v5.8_2026-02-21.docx` (46.17 KB)
+  - Generado automáticamente con `scripts/update_word_document_v58.py`
+  - Contiene: 9 secciones completas, tablas de configuración y validaciones, 6 FASES detalladas
+  - Formato: Microsoft Word (.docx) profesional, editable
+  
+- ✅ **PDF v5.8:** `outputs/pdf/BESS_Dimensionamiento_v5.8_2026-02-21.pdf` (20.80 KB)
+  - Convertido automáticamente con `scripts/convert_word_to_pdf_v58.py`
+  - Usa reportlab para máxima portabilidad (sin dependencias externas)
+  - Contiene: Idéntico contenido que Word, pero en formato PDF de lectura universal
+  
+- ✅ **Resumen de Actualización:** [ACTUALIZACION_DOCUMENTOS_COMPLETADA_2026-02-21.md](ACTUALIZACION_DOCUMENTOS_COMPLETADA_2026-02-21.md)
+  - Detalles de qué incluye cada documento
+  - Estructura de contenido (9 secciones principales)
+  - Próximos pasos para distribución
+
+- ✅ **Scripts Reutilizables:**
+  - `scripts/update_word_document_v58.py` - Automatiza markdown → Word
+  - `scripts/convert_word_to_pdf_v58.py` - Automatiza Word → PDF (con fallbacks)
+
 ### 🎨 6-FASES BESS Visualization Complete (2026-02-21) ⭐⭐
 **Gráfica Integral con Bandas de Color y Etiquetas de FASE**
 

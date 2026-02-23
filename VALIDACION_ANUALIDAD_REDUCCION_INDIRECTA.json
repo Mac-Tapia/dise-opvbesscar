@@ -1,0 +1,26 @@
+{
+  "validation_timestamp": "2026-02-22T21:31:53.058888",
+  "requirement": "Reducción indirecta CO₂ debe ser para 1 año completo",
+  "data_sources": {
+    "bess_timeseries": "data/interim/oe2/bess/bess_ano_2024.csv",
+    "rows": 8760,
+    "hours_per_year": 8760,
+    "is_complete_year": true
+  },
+  "energy_flows_real": {
+    "FV → EVs (directo)": 256672.12104867544,
+    "FV → MALL (directo)": 5667569.7055195775,
+    "FV → Red (export)": 1921331.1339512607,
+    "BESS → EVs (peak)": 151609.41095132436,
+    "BESS → MALL (peak)": 417603.3787855191
+  },
+  "total_renewable_kwh_from_timeseries": 8414785.750256358,
+  "co2_factor_kg_per_kwh": 0.4521,
+  "total_indirect_co2_reduction_tco2": 3804.3,
+  "period": "1 año (8,760 horas)",
+  "comparison_with_ciudad_baseline": {
+    "ciudad_baseline": 290000,
+    "project_indirect_reduction": 3804.3,
+    "percentage": 1.31
+  }
+}
