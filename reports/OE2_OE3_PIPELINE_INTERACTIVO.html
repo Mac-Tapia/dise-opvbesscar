@@ -117,7 +117,7 @@ graph TB
         PPO["📈 PPO<br/>On-Policy<br/>Proximal Policy<br/>stable-baselines3"]
         A2C["⚡ A2C<br/>On-Policy<br/>Actor-Critic<br/>stable-baselines3"]
         
-        Reward["Reward Function<br/>w_CO2=0.35 (PRIMARY)<br/>w_EV=0.30 (SECONDARY)<br/>w_solar=0.20<br/>w_cost=0.10<br/>w_grid=0.05"]
+        Reward["Reward Function CO2_DUAL_FOCUS v7.0<br/>w_DirectCO2=0.35 (P1 combustible evitado)<br/>w_IndirectCO2=0.30 (P2 grid termico)<br/>w_EV=0.25 (P3 satisfaccion)<br/>w_solar=0.05 (P4) | w_grid=0.05 (P5)"]
         
         ObsSpace -->|87,600 steps| SAC
         ObsSpace -->|10 episodios| PPO

@@ -1,0 +1,18 @@
+{
+  "name": "Playa_Mototaxis",
+  "vehicle_type": "mototaxi",
+  "n_vehicles": 39,
+  "pe": 0.3,
+  "fc": 0.55,
+  "battery_kwh": 4.0,
+  "charger_power_kw": 7.4,
+  "n_chargers": 4,
+  "sockets_per_charger": 2,
+  "total_sockets": 16,
+  "vehicles_charging_day": 382,
+  "energy_day_kwh": 573.0,
+  "pv_kwp": 0.0,
+  "bess_kwh": 0.0,
+  "n_individual_chargers": 16,
+  "total_power_kw": 59.2
+}

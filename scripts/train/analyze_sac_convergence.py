@@ -14,16 +14,16 @@ ts_df = pd.read_csv('outputs/sac_training/timeseries_sac.csv')
 # Estadísticas generales
 total_steps = len(trace_df)
 n_episodes = trace_df['episode'].max() + 1
-percent_complete = (total_steps / 131400) * 100
+percent_complete = (total_steps / 438000) * 100
 
 print("=" * 70)
 print("SAC TRAINING v9.0 - CONVERGENCE ANALYSIS")
 print("=" * 70)
 print(f"\n✓ TRAINING PROGRESS:")
-print(f"  Timesteps executed: {total_steps:,} / 131,400")
+print(f"  Timesteps executed: {total_steps:,} / 438,000")
 print(f"  Episodes completed: {n_episodes}")
 print(f"  Percent complete: {percent_complete:.1f}%")
-print(f"  Estimated time remaining: {(131400-total_steps)/1000:.1f} hours on GPU")
+print(f"  Estimated time remaining: {(438000-total_steps)/1000:.1f} hours on GPU")
 
 # Análisis de recompensas
 reward_stats = trace_df['reward'].describe()

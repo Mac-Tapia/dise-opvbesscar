@@ -2,8 +2,8 @@ sac:
   name: Soft Actor-Critic
   description: Off-policy actor-critic agent with entropy regularization
   training:
-    episodes: 10
-    total_timesteps: 87600
+    episodes: 50
+    total_timesteps: 438000
     learning_rate: 5e-4
     buffer_size: 400000
     batch_size: 128
@@ -27,11 +27,11 @@ sac:
     critic_loss_scale: 0.1
     q_target_clip: 10.0
   multi_objective_weights:
-    co2: 0.35
-    cost: 0.1
-    solar: 0.2
-    ev_satisfaction: 0.3
-    grid_stability: 0.05
+    direct_co2: 0.35      # P1: Direct CO2 Minimization (combustible vehicular evitado)
+    indirect_co2: 0.30   # P2: Indirect CO2 Minimization (grid import termico)
+    ev_satisfaction: 0.25 # P3: EV Satisfaction (SOC objetivo)
+    solar: 0.05           # P4: Solar Self-Consumption
+    grid_stability: 0.05  # P5: Grid Stability
   tariffs_osinergmin_usd_per_kwh:
     generation_solar: 0.1
     storage_bess: 0.06

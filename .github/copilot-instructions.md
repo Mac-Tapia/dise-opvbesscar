@@ -12,7 +12,7 @@
 
 **Two Phases:**
 - **OE2 (Dimensioning)**: Infrastructure specs (solar, BESS, chargers, demand profiles) in `src/dimensionamiento/oe2/`
-- **OE3 (Control)**: CityLearn v2 RL simulation with observations, actions, CO₂ minimization reward in `src/agents/`
+- **OE3 (Control)**: Seleccionar el agente IA de la infraestructura de carga inteligente para la gestión de recarga de motos y mototaxis eléctricas que contribuye cuantificablemente a la reducción de CO₂ en Iquitos. CityLearn v2 RL simulation in `src/agents/`
 
 ---
 
@@ -162,18 +162,20 @@ agent.learn(total_timesteps=10000, reset_num_timesteps=False)
 
 ## Multi-Objective Reward Function
 
-**Location:** Embedded in agent initialization (weights currently hardcoded, subject to refactor)
+**Location:** `src/dataset_builder_citylearn/rewards.py` (`MultiObjectiveWeights`, `create_iquitos_reward_weights`)
 
-**Reward Weights** (logical, from CO₂ tracking):
-- CO₂ grid minimization: 0.50 (primary: grid imports × 0.4521 kg CO₂/kWh)
-- Solar self-consumption: 0.20 (secondary: maximize PV direct usage)
-- EV charge completion: 0.15 (tertiary: ensure EVs charged by deadline)
-- Grid stability: 0.10 (tertiary: smooth power ramping)
-- Cost minimization: 0.05 (tertiary: low tariff preference)
+**OE3 Objective (2026-04-06):** Seleccionar el agente IA de la infraestructura de carga inteligente para la gestión de recarga de motos y mototaxis eléctricas, apropiada que contribuye de manera cuantificable a la reducción de emisiones de CO₂ en la ciudad de Iquitos.
+
+**Reward Weights v7.0 CO2_DUAL_FOCUS** (alineados con OE3):
+- Direct CO₂ minimization: 0.35 (PRIMARY: combustible vehicular evitado - motos/mototaxis)
+- Indirect CO₂ minimization: 0.30 (SECONDARY: grid imports × 0.4521 kg CO₂/kWh)
+- EV charge completion: 0.25 (TERTIARY: ensure EVs charged by deadline)
+- Solar self-consumption: 0.05 (QUATERNARY: maximize PV direct usage)
+- Grid stability: 0.05 (QUINARY: smooth power ramping)
 
 **How to adjust weights:**
-1. Weights are typically in agent config or reward calculation
-2. Ensure weights sum to 1.0 (auto-normalized if using softmax)
+1. Edit `MultiObjectiveWeights` defaults in `rewards.py` or pass to `create_iquitos_reward_weights()`
+2. Ensure weights sum to 1.0 (auto-normalized in `__post_init__`)
 3. Restart training - agents will reoptimize with new priorities
 4. Compare results via checkpoint inspection or simulation output
 
@@ -242,8 +244,8 @@ python -c "import json; c=json.load(open('data/interim/oe2/chargers/individual_c
 - **A2C** (on-policy, simple): CO₂ ~7,800 kg/year (-24%), solar ~60%, fastest wall-clock
 
 ### Tuning Impact
-- Increasing `co2_weight` from 0.50 → 0.70: +3-5% additional CO₂ reduction
-- Increasing `solar_weight` from 0.20 → 0.40: +5-8% solar utilization
+- Increasing `direct_co2_weight` from 0.35 → 0.50: +5-8% CO₂ direct reduction
+- Increasing `co2_weight` (indirect) from 0.30 → 0.45: +3-5% grid CO₂ reduction
 - Reducing learning rate 2e-4 → 1e-4: Slower convergence but more stable
 
 ---

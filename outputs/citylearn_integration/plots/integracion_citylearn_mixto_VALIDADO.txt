@@ -35,7 +35,7 @@ DATASET: chargers_ev_ano_2024_v3_enhanced.csv
 
 6. PRÓXIMAS ACCIONES REQUERIDAS
    □ Actualizar scenario_builder.py con pesos MIXTO
-   □ Configurar reward function: CO2_weight=0.50, solar_weight=0.20, etc.
+   □ Configurar reward function CO2_DUAL_FOCUS v7.0: direct_co2=0.35, indirect_co2=0.30, ev=0.25, solar=0.05, grid=0.05, cost=0.00
    □ Ejecutar: python -m src.agents.train_ppo_multiobjetivo
    □ Validar convergencia vs baseline "sin solar"
 

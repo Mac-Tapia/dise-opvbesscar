@@ -1,0 +1,1015 @@
+{
+  "profiles_dir": "charger_profile_variants",
+  "variants": [
+    {
+      "scenario_id": 1,
+      "pe": 0.3,
+      "fc": 0.5499999999999999,
+      "energy_day_kwh": 3252.0,
+      "chargers_required": 7,
+      "peak_sessions_per_hour": 23.175,
+      "profile_path": "scenario_001_profile.csv",
+      "is_recommended": true
+    },
+    {
+      "scenario_id": 2,
+      "pe": 0.09999999999999999,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 55.68000000000001,
+      "chargers_required": 3,
+      "peak_sessions_per_hour": 7.725,
+      "profile_path": "scenario_002_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 3,
+      "pe": 0.75,
+      "fc": 0.5,
+      "energy_day_kwh": 261.0,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_003_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 4,
+      "pe": 0.65,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 361.92,
+      "chargers_required": 14,
+      "peak_sessions_per_hour": 50.2125,
+      "profile_path": "scenario_004_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 5,
+      "pe": 0.45,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 125.28,
+      "chargers_required": 10,
+      "peak_sessions_per_hour": 34.7625,
+      "profile_path": "scenario_005_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 6,
+      "pe": 0.45,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 250.56,
+      "chargers_required": 10,
+      "peak_sessions_per_hour": 34.7625,
+      "profile_path": "scenario_006_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 7,
+      "pe": 0.85,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 473.28000000000003,
+      "chargers_required": 18,
+      "peak_sessions_per_hour": 65.6625,
+      "profile_path": "scenario_007_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 8,
+      "pe": 0.09999999999999999,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 55.68000000000001,
+      "chargers_required": 3,
+      "peak_sessions_per_hour": 7.725,
+      "profile_path": "scenario_008_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 9,
+      "pe": 0.75,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 365.4,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_009_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 10,
+      "pe": 0.25,
+      "fc": 0.6,
+      "energy_day_kwh": 104.4,
+      "chargers_required": 6,
+      "peak_sessions_per_hour": 19.3125,
+      "profile_path": "scenario_010_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 11,
+      "pe": 0.09999999999999999,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 55.68000000000001,
+      "chargers_required": 3,
+      "peak_sessions_per_hour": 7.725,
+      "profile_path": "scenario_011_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 12,
+      "pe": 0.5499999999999999,
+      "fc": 0.5,
+      "energy_day_kwh": 191.4,
+      "chargers_required": 12,
+      "peak_sessions_per_hour": 42.4875,
+      "profile_path": "scenario_012_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 13,
+      "pe": 1.0,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 556.8,
+      "chargers_required": 21,
+      "peak_sessions_per_hour": 77.25,
+      "profile_path": "scenario_013_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 14,
+      "pe": 0.75,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 365.4,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_014_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 15,
+      "pe": 0.75,
+      "fc": 0.6,
+      "energy_day_kwh": 313.2,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_015_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 16,
+      "pe": 0.75,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 365.4,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_016_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 17,
+      "pe": 0.85,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 414.11999999999995,
+      "chargers_required": 18,
+      "peak_sessions_per_hour": 65.6625,
+      "profile_path": "scenario_017_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 18,
+      "pe": 0.5499999999999999,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 153.12,
+      "chargers_required": 12,
+      "peak_sessions_per_hour": 42.4875,
+      "profile_path": "scenario_018_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 19,
+      "pe": 0.25,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 69.6,
+      "chargers_required": 6,
+      "peak_sessions_per_hour": 19.3125,
+      "profile_path": "scenario_019_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 20,
+      "pe": 0.85,
+      "fc": 0.5,
+      "energy_day_kwh": 295.8,
+      "chargers_required": 18,
+      "peak_sessions_per_hour": 65.6625,
+      "profile_path": "scenario_020_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 21,
+      "pe": 0.5499999999999999,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 153.12,
+      "chargers_required": 12,
+      "peak_sessions_per_hour": 42.4875,
+      "profile_path": "scenario_021_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 22,
+      "pe": 0.5499999999999999,
+      "fc": 0.6,
+      "energy_day_kwh": 229.68,
+      "chargers_required": 12,
+      "peak_sessions_per_hour": 42.4875,
+      "profile_path": "scenario_022_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 23,
+      "pe": 0.45,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 250.56,
+      "chargers_required": 10,
+      "peak_sessions_per_hour": 34.7625,
+      "profile_path": "scenario_023_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 24,
+      "pe": 0.25,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 121.8,
+      "chargers_required": 6,
+      "peak_sessions_per_hour": 19.3125,
+      "profile_path": "scenario_024_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 25,
+      "pe": 1.0,
+      "fc": 0.6,
+      "energy_day_kwh": 417.6,
+      "chargers_required": 21,
+      "peak_sessions_per_hour": 77.25,
+      "profile_path": "scenario_025_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 26,
+      "pe": 0.85,
+      "fc": 1.0,
+      "energy_day_kwh": 591.6,
+      "chargers_required": 18,
+      "peak_sessions_per_hour": 65.6625,
+      "profile_path": "scenario_026_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 27,
+      "pe": 0.65,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 316.68,
+      "chargers_required": 14,
+      "peak_sessions_per_hour": 50.2125,
+      "profile_path": "scenario_027_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 28,
+      "pe": 0.45,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 125.28,
+      "chargers_required": 10,
+      "peak_sessions_per_hour": 34.7625,
+      "profile_path": "scenario_028_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 29,
+      "pe": 0.85,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 473.28000000000003,
+      "chargers_required": 18,
+      "peak_sessions_per_hour": 65.6625,
+      "profile_path": "scenario_029_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 30,
+      "pe": 0.5499999999999999,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 267.96,
+      "chargers_required": 12,
+      "peak_sessions_per_hour": 42.4875,
+      "profile_path": "scenario_030_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 31,
+      "pe": 0.45,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 219.24,
+      "chargers_required": 10,
+      "peak_sessions_per_hour": 34.7625,
+      "profile_path": "scenario_031_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 32,
+      "pe": 0.5499999999999999,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 267.96,
+      "chargers_required": 12,
+      "peak_sessions_per_hour": 42.4875,
+      "profile_path": "scenario_032_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 33,
+      "pe": 0.35000000000000003,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 170.51999999999998,
+      "chargers_required": 8,
+      "peak_sessions_per_hour": 27.0375,
+      "profile_path": "scenario_033_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 34,
+      "pe": 0.09999999999999999,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 27.840000000000003,
+      "chargers_required": 3,
+      "peak_sessions_per_hour": 7.725,
+      "profile_path": "scenario_034_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 35,
+      "pe": 0.5499999999999999,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 267.96,
+      "chargers_required": 12,
+      "peak_sessions_per_hour": 42.4875,
+      "profile_path": "scenario_035_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 36,
+      "pe": 0.85,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 473.28000000000003,
+      "chargers_required": 18,
+      "peak_sessions_per_hour": 65.6625,
+      "profile_path": "scenario_036_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 37,
+      "pe": 0.09999999999999999,
+      "fc": 0.5,
+      "energy_day_kwh": 34.8,
+      "chargers_required": 3,
+      "peak_sessions_per_hour": 7.725,
+      "profile_path": "scenario_037_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 38,
+      "pe": 0.85,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 414.11999999999995,
+      "chargers_required": 18,
+      "peak_sessions_per_hour": 65.6625,
+      "profile_path": "scenario_038_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 39,
+      "pe": 0.85,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 236.64000000000001,
+      "chargers_required": 18,
+      "peak_sessions_per_hour": 65.6625,
+      "profile_path": "scenario_039_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 40,
+      "pe": 0.35000000000000003,
+      "fc": 0.6,
+      "energy_day_kwh": 146.16,
+      "chargers_required": 8,
+      "peak_sessions_per_hour": 27.0375,
+      "profile_path": "scenario_040_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 41,
+      "pe": 0.65,
+      "fc": 0.6,
+      "energy_day_kwh": 271.44,
+      "chargers_required": 14,
+      "peak_sessions_per_hour": 50.2125,
+      "profile_path": "scenario_041_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 42,
+      "pe": 0.25,
+      "fc": 1.0,
+      "energy_day_kwh": 174.0,
+      "chargers_required": 6,
+      "peak_sessions_per_hour": 19.3125,
+      "profile_path": "scenario_042_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 43,
+      "pe": 0.75,
+      "fc": 0.5,
+      "energy_day_kwh": 261.0,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_043_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 44,
+      "pe": 0.75,
+      "fc": 0.5,
+      "energy_day_kwh": 261.0,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_044_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 45,
+      "pe": 0.45,
+      "fc": 0.6,
+      "energy_day_kwh": 187.92,
+      "chargers_required": 10,
+      "peak_sessions_per_hour": 34.7625,
+      "profile_path": "scenario_045_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 46,
+      "pe": 0.09999999999999999,
+      "fc": 1.0,
+      "energy_day_kwh": 69.6,
+      "chargers_required": 3,
+      "peak_sessions_per_hour": 7.725,
+      "profile_path": "scenario_046_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 47,
+      "pe": 1.0,
+      "fc": 1.0,
+      "energy_day_kwh": 696.0,
+      "chargers_required": 21,
+      "peak_sessions_per_hour": 77.25,
+      "profile_path": "scenario_047_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 48,
+      "pe": 0.5499999999999999,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 153.12,
+      "chargers_required": 12,
+      "peak_sessions_per_hour": 42.4875,
+      "profile_path": "scenario_048_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 49,
+      "pe": 1.0,
+      "fc": 0.5,
+      "energy_day_kwh": 348.0,
+      "chargers_required": 21,
+      "peak_sessions_per_hour": 77.25,
+      "profile_path": "scenario_049_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 50,
+      "pe": 0.75,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 417.6,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_050_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 51,
+      "pe": 0.85,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 236.64000000000001,
+      "chargers_required": 18,
+      "peak_sessions_per_hour": 65.6625,
+      "profile_path": "scenario_051_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 52,
+      "pe": 0.75,
+      "fc": 1.0,
+      "energy_day_kwh": 522.0,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_052_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 53,
+      "pe": 0.25,
+      "fc": 0.5,
+      "energy_day_kwh": 87.0,
+      "chargers_required": 6,
+      "peak_sessions_per_hour": 19.3125,
+      "profile_path": "scenario_053_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 54,
+      "pe": 0.45,
+      "fc": 1.0,
+      "energy_day_kwh": 313.2,
+      "chargers_required": 10,
+      "peak_sessions_per_hour": 34.7625,
+      "profile_path": "scenario_054_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 55,
+      "pe": 0.5499999999999999,
+      "fc": 0.5,
+      "energy_day_kwh": 191.4,
+      "chargers_required": 12,
+      "peak_sessions_per_hour": 42.4875,
+      "profile_path": "scenario_055_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 56,
+      "pe": 0.5499999999999999,
+      "fc": 0.6,
+      "energy_day_kwh": 229.68,
+      "chargers_required": 12,
+      "peak_sessions_per_hour": 42.4875,
+      "profile_path": "scenario_056_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 57,
+      "pe": 0.09999999999999999,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 48.72,
+      "chargers_required": 3,
+      "peak_sessions_per_hour": 7.725,
+      "profile_path": "scenario_057_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 58,
+      "pe": 0.5499999999999999,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 153.12,
+      "chargers_required": 12,
+      "peak_sessions_per_hour": 42.4875,
+      "profile_path": "scenario_058_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 59,
+      "pe": 0.25,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 121.8,
+      "chargers_required": 6,
+      "peak_sessions_per_hour": 19.3125,
+      "profile_path": "scenario_059_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 60,
+      "pe": 0.75,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 365.4,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_060_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 61,
+      "pe": 0.75,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 417.6,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_061_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 62,
+      "pe": 1.0,
+      "fc": 1.0,
+      "energy_day_kwh": 696.0,
+      "chargers_required": 21,
+      "peak_sessions_per_hour": 77.25,
+      "profile_path": "scenario_062_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 63,
+      "pe": 0.75,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 365.4,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_063_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 64,
+      "pe": 0.45,
+      "fc": 0.6,
+      "energy_day_kwh": 187.92,
+      "chargers_required": 10,
+      "peak_sessions_per_hour": 34.7625,
+      "profile_path": "scenario_064_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 65,
+      "pe": 1.0,
+      "fc": 0.6,
+      "energy_day_kwh": 417.6,
+      "chargers_required": 21,
+      "peak_sessions_per_hour": 77.25,
+      "profile_path": "scenario_065_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 66,
+      "pe": 0.45,
+      "fc": 0.6,
+      "energy_day_kwh": 187.92,
+      "chargers_required": 10,
+      "peak_sessions_per_hour": 34.7625,
+      "profile_path": "scenario_066_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 67,
+      "pe": 0.35000000000000003,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 194.88000000000002,
+      "chargers_required": 8,
+      "peak_sessions_per_hour": 27.0375,
+      "profile_path": "scenario_067_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 68,
+      "pe": 1.0,
+      "fc": 0.5,
+      "energy_day_kwh": 348.0,
+      "chargers_required": 21,
+      "peak_sessions_per_hour": 77.25,
+      "profile_path": "scenario_068_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 69,
+      "pe": 0.45,
+      "fc": 0.5,
+      "energy_day_kwh": 156.6,
+      "chargers_required": 10,
+      "peak_sessions_per_hour": 34.7625,
+      "profile_path": "scenario_069_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 70,
+      "pe": 0.09999999999999999,
+      "fc": 0.6,
+      "energy_day_kwh": 41.76,
+      "chargers_required": 3,
+      "peak_sessions_per_hour": 7.725,
+      "profile_path": "scenario_070_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 71,
+      "pe": 0.5499999999999999,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 153.12,
+      "chargers_required": 12,
+      "peak_sessions_per_hour": 42.4875,
+      "profile_path": "scenario_071_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 72,
+      "pe": 0.85,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 236.64000000000001,
+      "chargers_required": 18,
+      "peak_sessions_per_hour": 65.6625,
+      "profile_path": "scenario_072_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 73,
+      "pe": 0.25,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 69.6,
+      "chargers_required": 6,
+      "peak_sessions_per_hour": 19.3125,
+      "profile_path": "scenario_073_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 74,
+      "pe": 0.5499999999999999,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 306.24,
+      "chargers_required": 12,
+      "peak_sessions_per_hour": 42.4875,
+      "profile_path": "scenario_074_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 75,
+      "pe": 0.25,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 139.2,
+      "chargers_required": 6,
+      "peak_sessions_per_hour": 19.3125,
+      "profile_path": "scenario_075_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 76,
+      "pe": 0.75,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 417.6,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_076_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 77,
+      "pe": 0.5499999999999999,
+      "fc": 0.6,
+      "energy_day_kwh": 229.68,
+      "chargers_required": 12,
+      "peak_sessions_per_hour": 42.4875,
+      "profile_path": "scenario_077_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 78,
+      "pe": 0.35000000000000003,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 194.88000000000002,
+      "chargers_required": 8,
+      "peak_sessions_per_hour": 27.0375,
+      "profile_path": "scenario_078_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 79,
+      "pe": 0.35000000000000003,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 97.44000000000001,
+      "chargers_required": 8,
+      "peak_sessions_per_hour": 27.0375,
+      "profile_path": "scenario_079_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 80,
+      "pe": 0.65,
+      "fc": 1.0,
+      "energy_day_kwh": 452.4,
+      "chargers_required": 14,
+      "peak_sessions_per_hour": 50.2125,
+      "profile_path": "scenario_080_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 81,
+      "pe": 0.75,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 365.4,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_081_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 82,
+      "pe": 1.0,
+      "fc": 1.0,
+      "energy_day_kwh": 696.0,
+      "chargers_required": 21,
+      "peak_sessions_per_hour": 77.25,
+      "profile_path": "scenario_082_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 83,
+      "pe": 0.45,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 125.28,
+      "chargers_required": 10,
+      "peak_sessions_per_hour": 34.7625,
+      "profile_path": "scenario_083_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 84,
+      "pe": 0.25,
+      "fc": 0.6,
+      "energy_day_kwh": 104.4,
+      "chargers_required": 6,
+      "peak_sessions_per_hour": 19.3125,
+      "profile_path": "scenario_084_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 85,
+      "pe": 0.85,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 473.28000000000003,
+      "chargers_required": 18,
+      "peak_sessions_per_hour": 65.6625,
+      "profile_path": "scenario_085_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 86,
+      "pe": 0.65,
+      "fc": 0.6,
+      "energy_day_kwh": 271.44,
+      "chargers_required": 14,
+      "peak_sessions_per_hour": 50.2125,
+      "profile_path": "scenario_086_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 87,
+      "pe": 0.75,
+      "fc": 0.6,
+      "energy_day_kwh": 313.2,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_087_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 88,
+      "pe": 0.09999999999999999,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 27.840000000000003,
+      "chargers_required": 3,
+      "peak_sessions_per_hour": 7.725,
+      "profile_path": "scenario_088_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 89,
+      "pe": 0.35000000000000003,
+      "fc": 0.6,
+      "energy_day_kwh": 146.16,
+      "chargers_required": 8,
+      "peak_sessions_per_hour": 27.0375,
+      "profile_path": "scenario_089_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 90,
+      "pe": 0.75,
+      "fc": 0.5,
+      "energy_day_kwh": 261.0,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_090_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 91,
+      "pe": 0.85,
+      "fc": 0.5,
+      "energy_day_kwh": 295.8,
+      "chargers_required": 18,
+      "peak_sessions_per_hour": 65.6625,
+      "profile_path": "scenario_091_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 92,
+      "pe": 0.45,
+      "fc": 0.7999999999999999,
+      "energy_day_kwh": 250.56,
+      "chargers_required": 10,
+      "peak_sessions_per_hour": 34.7625,
+      "profile_path": "scenario_092_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 93,
+      "pe": 0.85,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 414.11999999999995,
+      "chargers_required": 18,
+      "peak_sessions_per_hour": 65.6625,
+      "profile_path": "scenario_093_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 94,
+      "pe": 0.85,
+      "fc": 0.7000000000000001,
+      "energy_day_kwh": 414.11999999999995,
+      "chargers_required": 18,
+      "peak_sessions_per_hour": 65.6625,
+      "profile_path": "scenario_094_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 95,
+      "pe": 0.45,
+      "fc": 0.6,
+      "energy_day_kwh": 187.92,
+      "chargers_required": 10,
+      "peak_sessions_per_hour": 34.7625,
+      "profile_path": "scenario_095_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 96,
+      "pe": 1.0,
+      "fc": 1.0,
+      "energy_day_kwh": 696.0,
+      "chargers_required": 21,
+      "peak_sessions_per_hour": 77.25,
+      "profile_path": "scenario_096_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 97,
+      "pe": 0.35000000000000003,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 97.44000000000001,
+      "chargers_required": 8,
+      "peak_sessions_per_hour": 27.0375,
+      "profile_path": "scenario_097_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 98,
+      "pe": 0.35000000000000003,
+      "fc": 0.6,
+      "energy_day_kwh": 146.16,
+      "chargers_required": 8,
+      "peak_sessions_per_hour": 27.0375,
+      "profile_path": "scenario_098_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 99,
+      "pe": 0.75,
+      "fc": 0.39999999999999997,
+      "energy_day_kwh": 208.8,
+      "chargers_required": 16,
+      "peak_sessions_per_hour": 57.9375,
+      "profile_path": "scenario_099_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 100,
+      "pe": 0.65,
+      "fc": 0.6,
+      "energy_day_kwh": 271.44,
+      "chargers_required": 14,
+      "peak_sessions_per_hour": 50.2125,
+      "profile_path": "scenario_100_profile.csv",
+      "is_recommended": false
+    },
+    {
+      "scenario_id": 101,
+      "pe": 0.25,
+      "fc": 1.0,
+      "energy_day_kwh": 174.0,
+      "chargers_required": 6,
+      "peak_sessions_per_hour": 19.3125,
+      "profile_path": "scenario_101_profile.csv",
+      "is_recommended": false
+    }
+  ]
+}

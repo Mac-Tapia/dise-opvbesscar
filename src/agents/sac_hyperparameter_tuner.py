@@ -148,7 +148,7 @@ class TrainingResult:
         reward_score = min(100, (self.avg_episode_reward + 10) * 5)  # -10 a +10 range
         co2_score = min(100, self.co2_avoided_kg / 1000)  # kg/1000
         solar_score = min(100, self.solar_utilization_pct)  # 0-100%
-        convergence_score = min(100, 131400 / max(1, self.convergence_speed))  # Inversamente proporcional
+        convergence_score = min(100, 438000 / max(1, self.convergence_speed))  # Inversamente proporcional
         stability_score = min(100, 1.0 / (self.stability + 0.01) * 10)  # Inversamente proporcional
         
         # Pesos: prioriza CO2 (50%) luego reward (20%) luego convergencia (15%) luego stability (10%) luego solar (5%)

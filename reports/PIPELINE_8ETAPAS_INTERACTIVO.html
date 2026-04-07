@@ -99,7 +99,7 @@ graph LR
         PPOTr["PPO Training<br/>- 87,600 steps<br/>- on-policy<br/>- ~200 sec GPU"]
         A2CTr["A2C Training<br/>- 87,600 steps<br/>- on-policy simple<br/>- ~160 sec GPU"]
         
-        Reward["🎯 Reward Function<br/>R_total = 0.35×R_CO2<br/>          + 0.30×R_EV<br/>          + 0.20×R_solar<br/>          + 0.10×R_cost<br/>          + 0.05×R_grid<br/>          - P_bess_low<br/>(source: rewards.py)"]
+        Reward["🎯 Reward Function CO2_DUAL_FOCUS v7.0<br/>R_total = 0.35×R_direct_CO2 (P1)<br/>          + 0.30×R_indirect_CO2 (P2)<br/>          + 0.25×R_EV (P3)<br/>          + 0.05×R_solar (P4)<br/>          + 0.05×R_grid (P5)<br/>(source: rewards.py)"]
         
         Obs -->|Feed| SACTr
         Obs -->|Feed| PPOTr

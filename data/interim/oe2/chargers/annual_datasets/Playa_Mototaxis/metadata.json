@@ -1,0 +1,54 @@
+{
+  "playa": "Playa_Mototaxis",
+  "year": 2024,
+  "n_chargers": 16,
+  "charger_ids": [
+    "MOTO_TAXI_CH_113",
+    "MOTO_TAXI_CH_114",
+    "MOTO_TAXI_CH_115",
+    "MOTO_TAXI_CH_116",
+    "MOTO_TAXI_CH_117",
+    "MOTO_TAXI_CH_118",
+    "MOTO_TAXI_CH_119",
+    "MOTO_TAXI_CH_120",
+    "MOTO_TAXI_CH_121",
+    "MOTO_TAXI_CH_122",
+    "MOTO_TAXI_CH_123",
+    "MOTO_TAXI_CH_124",
+    "MOTO_TAXI_CH_125",
+    "MOTO_TAXI_CH_126",
+    "MOTO_TAXI_CH_127",
+    "MOTO_TAXI_CH_128"
+  ],
+  "opening_hour": 9,
+  "closing_hour": 22,
+  "peak_hours": [
+    18,
+    19,
+    20,
+    21
+  ],
+  "scenarios": {
+    "base": {
+      "path": "/app/data/interim/oe2/chargers/annual_datasets/Playa_Mototaxis/base",
+      "n_files": 17,
+      "total_energy_year_kwh": 190861.85704224685,
+      "peak_power_kw": 78.87795286465797,
+      "avg_daily_energy_kwh": 522.9091973760187
+    },
+    "high": {
+      "path": "/app/data/interim/oe2/chargers/annual_datasets/Playa_Mototaxis/high",
+      "n_files": 17,
+      "total_energy_year_kwh": 229034.22845069616,
+      "peak_power_kw": 94.65354343758955,
+      "avg_daily_energy_kwh": 627.4910368512224
+    },
+    "low": {
+      "path": "/app/data/interim/oe2/chargers/annual_datasets/Playa_Mototaxis/low",
+      "n_files": 17,
+      "total_energy_year_kwh": 152689.48563379748,
+      "peak_power_kw": 63.10236229172637,
+      "avg_daily_energy_kwh": 418.327357900815
+    }
+  }
+}

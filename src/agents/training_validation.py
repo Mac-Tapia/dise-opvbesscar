@@ -4,7 +4,7 @@
 VALIDACION CENTRALIZADA - Asegurar que TODOS los agentes entrenan COMPLETAMENTE.
 
 Este modulo valida que cada agente (SAC, PPO, A2C) cumpla con:
-1. 10 EPISODIOS COMPLETOS (87,600 timesteps = 1 ano × 10)
+1. 50 EPISODIOS COMPLETOS (438,000 timesteps = 1 ano × 50)
 2. TODOS los DATASETS cargados (solar, chargers, BESS, mall, context)
 3. TODAS las 27 COLUMNAS OBSERVABLES integradas
 4. MULTIOBJETIVO con pesos consistentes
@@ -19,9 +19,9 @@ from typing import Dict, List, Tuple, Any
 import sys
 
 # Constantes de validacion
-REQUIRED_EPISODES = 10
+REQUIRED_EPISODES = 50
 TIMESTEPS_PER_YEAR = 8760
-REQUIRED_TOTAL_TIMESTEPS = REQUIRED_EPISODES * TIMESTEPS_PER_YEAR  # 87,600
+REQUIRED_TOTAL_TIMESTEPS = REQUIRED_EPISODES * TIMESTEPS_PER_YEAR  # 438,000
 
 # 27 COLUMNAS OBSERVABLES DEFINIDAS (TODAS DEBEN USARSE)
 OBSERVABLE_COLS_REQUIRED = {
@@ -84,7 +84,7 @@ def count_total_observable_cols() -> int:
 
 
 def validate_episodes(num_episodes: int) -> bool:
-    """[OK] Validar que se entrenan EXACTAMENTE 10 EPISODIOS."""
+    """[OK] Validar que se entrenan EXACTAMENTE 50 EPISODIOS."""
     if num_episodes != REQUIRED_EPISODES:
         print(f'  [X] Episodes: {num_episodes} != {REQUIRED_EPISODES}')
         return False
@@ -93,7 +93,7 @@ def validate_episodes(num_episodes: int) -> bool:
 
 
 def validate_total_timesteps(total_timesteps: int) -> bool:
-    """[OK] Validar que total_timesteps = 87,600 (10 anos completos)."""
+    """[OK] Validar que total_timesteps = 438,000 (50 episodios completos)."""
     if total_timesteps != REQUIRED_TOTAL_TIMESTEPS:
         print(f'  [X] Timesteps: {total_timesteps:,} != {REQUIRED_TOTAL_TIMESTEPS:,}')
         return False
@@ -207,8 +207,8 @@ def validate_agent_config(agent_name: str, num_episodes: int, total_timesteps: i
         print(f'[RESULTADO] [OK] {agent_name} PREPARADO PARA ENTRENAMIENTO COMPLETO')
         print('='*80)
         print(f'Config:')
-        print(f'  - Episodes: {num_episodes} (10 anos completos)')
-        print(f'  - Timesteps: {total_timesteps:,} (87,600 pasos)')
+        print(f'  - Episodes: {num_episodes} (50 episodios completos)')
+        print(f'  - Timesteps: {total_timesteps:,} (438,000 pasos)')
         print(f'  - Observation: {obs_dim} dims')
         print(f'  - Action: {action_dim} dims')
         print(f'  - Datasets: TODOS cargados')
@@ -239,9 +239,9 @@ def main():
     
     # Validar each agent
     agents_config = [
-        ('SAC (Off-policy)', 10, 87_600, 246, 39),  # SAC puede usar 246-dim obs
-        ('PPO (On-policy)', 10, 87_600, 156, 39),   # PPO usa 156-dim obs
-        ('A2C (On-policy)', 10, 87_600, 156, 39),   # A2C usa 156-dim obs
+        ('SAC (Off-policy)', 50, 438_000, 246, 39),  # SAC puede usar 246-dim obs
+        ('PPO (On-policy)', 50, 438_000, 156, 39),   # PPO usa 156-dim obs
+        ('A2C (On-policy)', 50, 438_000, 156, 39),   # A2C usa 156-dim obs
     ]
     
     results = []

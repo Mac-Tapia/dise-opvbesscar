@@ -27,10 +27,10 @@
     }
   ],
   "reward_config": {
-    "co2_weight": 0.35,
-    "solar_weight": 0.20,
-    "cost_weight": 0.10,
-    "ev_weight": 0.30,
+    "direct_co2_weight": 0.35,
+    "co2_weight": 0.30,
+    "ev_weight": 0.25,
+    "solar_weight": 0.05,
     "grid_weight": 0.05
   },
   "baseline": {

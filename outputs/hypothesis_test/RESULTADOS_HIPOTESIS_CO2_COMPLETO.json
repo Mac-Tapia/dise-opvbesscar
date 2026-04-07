@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "proyecto": "pvbesscar",
+    "ubicacion": "Iquitos, Peru",
+    "objetivo_oe3": "Seleccionar el agente de inteligencia artificial de la infraestructura de carga inteligente para la gestion de recarga de motos y mototaxis electricas, apropiada que contribuye de manera cuantificable a la reduccion de emisiones de dioxido de carbono en la ciudad de Iquitos",
+    "agente_seleccionado": "A2C",
+    "oe3_score": 100.0,
+    "fecha": "2026-04-06",
+    "factor_co2_grid": "0.4521 kg CO2/kWh (red termica Iquitos)"
+  },
+  "hipotesis": {
+    "H0": "mu_baseline = mu_A2C (reduccion no significativa)",
+    "H1": "mu_baseline > mu_A2C (reduccion estadisticamente significativa)",
+    "alpha": 0.05
+  },
+  "grupos": {
+    "Grupo_A_Baseline": {
+      "descripcion": "CO2 directo (combustion motos/mototaxis) + CO2 indirecto (red termica Iquitos sin solar, sin BESS, sin control inteligente)",
+      "n_dias": 365,
+      "media_kg_dia": 12741.58,
+      "std_kg_dia": 1545.5,
+      "total_anual_kg": 4650678.0,
+      "total_anual_tCO2": 4650.68
+    },
+    "Grupo_B_A2C_Smart": {
+      "descripcion": "CO2 indirecto real con infraestructura de carga inteligente: solar 4050 kWp + BESS 2000 kWh + agente A2C (100/100)",
+      "n_dias": 365,
+      "media_kg_dia": 1566.03,
+      "std_kg_dia": 225.5,
+      "total_anual_kg": 571602.6,
+      "total_anual_tCO2": 571.6
+    }
+  },
+  "normalidad": {
+    "Grupo A – Baseline": {
+      "W": 0.797056,
+      "p": 4.914980645995277e-21,
+      "normal": 

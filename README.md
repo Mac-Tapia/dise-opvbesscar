@@ -114,6 +114,8 @@ Especificaciones de infraestructura confirmadas con visualizaciones completas de
 - **Graphics v5.8+:** Gráficas con 6-FASES claramente diferenciadas, barras BESS por FASE, curva SOC integrada
 
 ### ✅ OE3 (Control) - COMPLETADO (Evaluación de Agentes RL)
+**OE3:** Seleccionar el agente de inteligencia artificial de la infraestructura de carga inteligente para la gestión de recarga de motos y mototaxis eléctricas, apropiada que contribuye de manera cuantificable a la reducción de emisiones de dióxido de carbono en la ciudad de Iquitos.
+
 Control inteligente con Reinforcement Learning - **A2C SELECTED (100.0/100 score)** ⭐
 
 **3 Agentes Evaluados con Datos Reales:**
@@ -381,24 +383,26 @@ pvbesscar/
 977 TOTAL technical columns per 1-hour timestep
 ```
 
-### ⚖️ Multi-Objective Reward Weights (Agent Training - v6.0, 2026-02-08)
+### ⚖️ Multi-Objective Reward Weights (Agent Training - v7.0, 2026-04-06)
+
+**OE3 Objetivo:** Seleccionar el agente IA de la infraestructura de carga inteligente para la gestión de recarga de motos y mototaxis eléctricas, apropiada que contribuye de manera cuantificable a la reducción de emisiones de CO₂ en la ciudad de Iquitos.
 
 **Used in SAC/PPO/A2C Training (from `src/dataset_builder_citylearn/rewards.py`)**
 
 | Component | Weight | Priority | Description |
 |-----------|--------|----------|-------------|
-| **CO₂ Minimization** | 0.35 | PRIMARY | Grid import CO₂ (0.4521 kg/kWh) |
-| **EV Satisfaction** | 0.30 | SECONDARY | Vehicle charging completion |
-| **Solar Self-Consumption** | 0.20 | TERTIARY | PV direct usage vs grid |
-| **Cost Optimization** | 0.10 | QUATERNARY | Tariff-aware charging timing |
+| **Direct CO₂ Minimization** | 0.35 | PRIMARY | Combustible vehicular evitado (motos/mototaxis) |
+| **Indirect CO₂ Minimization** | 0.30 | SECONDARY | Grid import CO₂ termico (0.4521 kg/kWh) |
+| **EV Satisfaction** | 0.25 | TERTIARY | Vehicle charging completion |
+| **Solar Self-Consumption** | 0.05 | QUATERNARY | PV direct usage vs grid |
 | **Grid Stability** | 0.05 | QUINARY | Peak power ramping smoothness |
-| **TOTAL** | **1.00** | **NORMALIZED** | **Perfectly balanced** |
+| **TOTAL** | **1.00** | **NORMALIZED** | **CO₂ reduction focus (0.65 combined)** |
 
-**Reward Formula (A2C Empirical):**
+**Reward Formula (CO2_DUAL_FOCUS v7.0):**
 ```
-Total = (0.35 × 0.6005) + (0.30 × 0.9876) + (0.20 × -0.3745) +
-        (0.10 × 0.7884) + (0.05 × 0.4845)
-      = 0.5346  (mean normalized reward)
+Total = (0.35 x r_direct_co2) + (0.30 x r_indirect_co2) + (0.25 x r_ev) +
+        (0.05 x r_solar) + (0.05 x r_grid)
+      = 0.5346  (mean normalized reward, empirical A2C)
 ```
 
 ---

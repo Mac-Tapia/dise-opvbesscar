@@ -253,7 +253,7 @@ def main() -> None:
     print("="*80)
     print(f"Runs completados: {successful_runs}/{args.runs}")
     print(f"Tiempo total: {duration}")
-    print(f"Timesteps totales: {successful_runs * 87600:,}")
+    print(f"Timesteps totales: {successful_runs * 438000:,}")
     print()
     
     if successful_runs == args.runs:

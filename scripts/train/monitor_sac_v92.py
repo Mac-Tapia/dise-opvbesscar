@@ -40,12 +40,12 @@ def monitor_sac():
         # Estadísticas globales
         total_steps = len(df)
         total_eps = int(df['episode'].max()) + 1
-        percent = (total_steps / 131400) * 100
+        percent = (total_steps / 438000) * 100
         
         print(f"\n✓ PROGRESO:")
-        print(f"  Pasos ejecutados: {total_steps:,} / 131,400 ({percent:.1f}%)")
+        print(f"  Pasos ejecutados: {total_steps:,} / 438,000 ({percent:.1f}%)")
         print(f"  Episodios completados: {total_eps}")
-        print(f"  Tiempo estimado restante: {((131400-total_steps)/1000):.1f} horas")
+        print(f"  Tiempo estimado restante: {((438000-total_steps)/1000):.1f} horas")
         
         # Validación de recompensas
         reward_min = df['reward'].min()

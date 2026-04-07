@@ -121,7 +121,7 @@ outputs/
 ✅ CO₂ Total SAC: 1,303,273 kg/año
 ✅ 3-Canal CO₂: 318,516 (Grid) + 868,514 (Solar) + 116,243 (BESS)
 ✅ EVs SAC: 3,500 motos/año (máximo teórico)
-✅ Pesos Recompensa: 0.35 (CO₂) + 0.30 (EV) + 0.20 (Solar) + 0.10 (Cost) + 0.05 (Grid)
+✅ Pesos Recompensa (CO2_DUAL_FOCUS v7.0): 0.35 (CO₂ Directo) + 0.30 (CO₂ Indirecto) + 0.25 (EV) + 0.05 (Solar) + 0.05 (Grid) + 0.00 (Cost)
 ✅ Infraestructura: 4,050 kWp + 2,000 kWh + 38 chargers (4.4 sockets/charger)
 
 ### Configuración del Agente SAC

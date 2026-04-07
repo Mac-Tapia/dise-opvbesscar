@@ -1,0 +1,18 @@
+{
+  "name": "Playa_Motos",
+  "vehicle_type": "moto",
+  "n_vehicles": 270,
+  "pe": 0.3,
+  "fc": 0.55,
+  "battery_kwh": 2.0,
+  "charger_power_kw": 7.4,
+  "n_chargers": 28,
+  "sockets_per_charger": 2,
+  "total_sockets": 112,
+  "vehicles_charging_day": 2679,
+  "energy_day_kwh": 2679.0,
+  "pv_kwp": 0.0,
+  "bess_kwh": 0.0,
+  "n_individual_chargers": 112,
+  "total_power_kw": 414.40000000000003
+}

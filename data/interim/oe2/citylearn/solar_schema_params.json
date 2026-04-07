@@ -1,0 +1,16 @@
+{
+  "photovoltaic": {
+    "type": "PV",
+    "nominal_power": 4050.0,
+    "efficiency": 0.9192831278023936
+  },
+  "solar_generation_path": "/app/data/interim/oe2/citylearn/solar_generation.csv",
+  "pv_profile_24h_path": "/app/data/interim/oe2/solar/pv_profile_24h.csv",
+  "statistics": {
+    "annual_kwh": 6522865.361634664,
+    "capacity_factor": 0.18385662556047871,
+    "specific_yield_kwh_kwp": 1610.5840399097935,
+    "max_hourly_kwh": 2694.9345214449972,
+    "mean_hourly_kwh": 744.6193335199389
+  }
+}

@@ -207,15 +207,16 @@ oe3:
       tariff_ev_charge_distribution_usd_per_kwh: 0.12
       tariff_usd_per_kwh: 0.28
   rewards:
-    co2_weight: 0.5
-    solar_weight: 0.2
-    ev_satisfaction_weight: 0.15
-    grid_stability_weight: 0.1
-    cost_weight: 0.05
+    direct_co2_weight: 0.35
+    co2_weight: 0.30
+    ev_satisfaction_weight: 0.25
+    solar_weight: 0.05
+    grid_stability_weight: 0.05
     co2_grid_factor_kg_per_kwh: 0.4521
     ev_co2_conversion_kg_per_kwh: 2.146
     hp_weight: 0.4
     hfp_weight: 0.15
+    # OE3 (2026-04-06): CO2_DUAL_FOCUS - direct(0.35)+indirect(0.30)+ev(0.25)+solar(0.05)+grid(0.05)
   co2_emissions:
     annual_co2_budget_kg: 7000000
     bess_calendar_aging_kg_per_day: 0.01
@@ -263,7 +264,7 @@ oe3:
       checkpoint_freq_steps: 200
       device: cuda
       entropy_coef: 0.001
-      episodes: 10
+      episodes: 50
       gamma: 0.99
       gae_lambda: 0.95
       learning_rate: 0.0001
@@ -291,7 +292,7 @@ oe3:
       batch_size: 120
       checkpoint_freq_steps: 500
       device: cuda
-      episodes: 10
+      episodes: 50
       ent_coef: 0.01
       gamma: 0.99
       gae_lambda: 0.98
@@ -332,7 +333,7 @@ oe3:
       checkpoint_freq_steps: 500
       deterministic_eval: true
       device: cuda
-      episodes: 3
+      episodes: 50
       ent_coef: auto
       ent_coef_init: 0.5
       ent_coef_lr: 1e-3

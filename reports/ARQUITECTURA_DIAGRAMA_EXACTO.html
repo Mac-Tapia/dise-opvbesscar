@@ -190,7 +190,7 @@ graph LR
     end
     
     subgraph ETAPA5["ETAPA 5: Reward & Agent Initialization"]
-        RW["🎯 Multi-Objective Reward<br/>w_CO₂=0.35 | w_EV=0.30<br/>w_solar=0.20 | w_cost=0.10<br/>w_grid=0.05"]
+        RW["🎯 Multi-Objective Reward CO2_DUAL_FOCUS v7.0<br/>w_DirectCO₂=0.35 (P1) | w_IndirectCO₂=0.30 (P2)<br/>w_EV=0.25 (P3) | w_solar=0.05 (P4) | w_grid=0.05 (P5)"]
         AGENTS["🤖 Initialize Agents<br/>SAC/PPO/A2C from sb3<br/>policy='MlpPolicy'<br/>validate_env_spaces()"]
     end
     

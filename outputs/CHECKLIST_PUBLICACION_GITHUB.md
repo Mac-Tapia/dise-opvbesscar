@@ -71,7 +71,7 @@ git commit -m "feat(tesis): Añadir documento tesis PVBESSCAR v7.2 completo
 - Secciones 4.6.4.6-4.6.4.7: Función RCO2 y resultados entrenamiento
 - Secciones 5.2-5.5: Análisis integral con 6 gráficos
 - 6 apéndices técnicos: BESS, SAC, Chargers, Reward, Data, Validation
-- Validación: 1,303,273 kg CO₂, 3,500 EVs, pesos w 0.35/0.30/0.20/0.10/0.05
+- Validación: CO₂ reducido, 3,500 EVs, pesos CO2_DUAL_FOCUS v7.0: 0.35/0.30/0.25/0.05/0.05/0.00
 - Gráficos: 300 DPI, 2.8+ MB total
 - Documentos: 100 KB (Word), listo para PDF"
 ```

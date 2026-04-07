@@ -608,6 +608,18 @@ CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR = Path('outputs/sac_training')
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+# ===== PESOS RECOMPENSA - CO2_DUAL_FOCUS (OE3 2026-04-06) =====
+# OE3: Seleccionar agente IA que contribuye cuantificablemente a la reduccion de CO2 en Iquitos
+# MultiObjectiveWeights(direct_co2=0.35, co2=0.30, ev_satisfaction=0.25, solar=0.05, grid_stability=0.05)
+REWARD_WEIGHTS_V7: Dict[str, float] = {
+    'direct_co2': 0.35,        # Direct CO2 minimization (combustible vehicular evitado - motos/mototaxis)
+    'indirect_co2': 0.30,      # Indirect CO2 Minimization (grid termico Iquitos 0.4521 kg CO2/kWh)
+    'ev_satisfaction': 0.25,   # EV Satisfaction (carga vehiculos a tiempo)
+    'solar': 0.05,             # Solar Self-Consumption (autoconsumo PV directo)
+    'grid_stability': 0.05,    # Grid Stability (suavizar ramping de potencia)
+    'ev_utilization': 0.00,    # No utilizado en co2_focus
+}
+
 
 # ===== DATASET CONSTRUCTION HELPERS =====
 
@@ -679,234 +691,202 @@ def load_datasets_from_processed():
     if HOURS_PER_YEAR != 8760:
         raise ValueError(f"Solar: {HOURS_PER_YEAR} horas != 8760")
     
+    # Cargar columnas adicionales del solar (irradiancia, temperatura, tarifa, CO2)
     solar_data = {
-        'potencia_kw': solar_hourly.copy(),
-        'irradiancia_ghi': np.zeros_like(solar_hourly),
-        'temperatura_c': np.full_like(solar_hourly, 25.0),
+        'potencia_kw':              solar_hourly.copy(),
+        'irradiancia_ghi':          np.asarray(df_solar['irradiancia_ghi'].values[:HOURS_PER_YEAR],         dtype=np.float32) if 'irradiancia_ghi'          in df_solar.columns else np.zeros(HOURS_PER_YEAR, dtype=np.float32),
+        'temperatura_c':            np.asarray(df_solar['temperatura_c'].values[:HOURS_PER_YEAR],           dtype=np.float32) if 'temperatura_c'            in df_solar.columns else np.full(HOURS_PER_YEAR, 25.0, dtype=np.float32),
+        'reduccion_indirecta_co2_kg': np.asarray(df_solar['reduccion_indirecta_co2_kg'].values[:HOURS_PER_YEAR], dtype=np.float32) if 'reduccion_indirecta_co2_kg' in df_solar.columns else np.zeros(HOURS_PER_YEAR, dtype=np.float32),
+        'ahorro_solar_soles':       np.asarray(df_solar['ahorro_solar_soles'].values[:HOURS_PER_YEAR],     dtype=np.float32) if 'ahorro_solar_soles'       in df_solar.columns else np.zeros(HOURS_PER_YEAR, dtype=np.float32),
+        'is_hora_punta':            np.asarray(df_solar['is_hora_punta'].values[:HOURS_PER_YEAR],           dtype=np.int32)   if 'is_hora_punta'            in df_solar.columns else np.zeros(HOURS_PER_YEAR, dtype=np.int32),
+        'tarifa_aplicada_soles':    np.asarray(df_solar['tarifa_aplicada_soles'].values[:HOURS_PER_YEAR],   dtype=np.float32) if 'tarifa_aplicada_soles'    in df_solar.columns else np.full(HOURS_PER_YEAR, 0.28, dtype=np.float32),
     }
-    
+
     print(f"  [SOLAR] Desde data/iquitos_ev_mall/solar_generation.csv")
-    print(f"          Columna: {col} | {float(np.sum(solar_hourly)):,.0f} kWh/año")
+    print(f"          Columna: {col} | {float(np.sum(solar_hourly)):,.0f} kWh/año | CO2 indirecto evitado: {float(np.sum(solar_data['reduccion_indirecta_co2_kg'])):,.0f} kg/año")
 
     # ====================================================================
-    # CHARGERS - Desde chargers_timeseries.csv
+    # CHARGERS - Columnas reales por socket (30 MOTOS + 8 MOTOTAXIS = 38 sockets)
+    # socket_000-029 = MOTOS, socket_030-037 = MOTOTAXIS
+    # Columnas por socket: soc_current, soc_arrival, soc_target, active, charging_power_kw
     # ====================================================================
     chargers_path = dataset_base / 'chargers_timeseries.csv'
     if not chargers_path.exists():
         raise FileNotFoundError(f"OBLIGATORIO: {chargers_path} no encontrado")
-    
+
     df_chargers = pd.read_csv(chargers_path)
+
+    N_MOTO_SOCKETS = 30   # sockets 000-029
+    N_TAXI_SOCKETS = 8    # sockets 030-037
+    N_TOTAL_SOCKETS = 38
     
-    # ===== USAR TODAS LAS COLUMNAS DISPONIBLES (977 NUMERICAS) =====
-    # NO LIMITAR A 38 SOCKETS - USAR DATOS REALES COMPLETOS
-    # 2026-02-19: Cambio crítico para usar información REAL del dataset
-    
-    # Excluir solo columnas no-numéricas (datetime, categorical, etc)
-    exclude_patterns = ['datetime', 'timestamp', 'time', 'index', 'vehicle_type', 'cantidad', 'count']
-    numeric_cols = [c for c in df_chargers.columns 
-                   if not any(pat in c.lower() for pat in exclude_patterns) 
-                   and df_chargers[c].dtype in [np.float64, np.float32, np.int64, np.int32]]
-    
-    # Validar que sean realmente numéricas
-    validated_cols = []
-    for c in numeric_cols:
-        try:
-            _ = pd.to_numeric(df_chargers[c])
-            validated_cols.append(c)
-        except (ValueError, TypeError):
-            pass
-    
-    numeric_cols = validated_cols
-    
-    print(f"  [CHARGERS DETALLE] Columnas numéricas encontradas: {len(numeric_cols)}")
-    print(f"    Socket Power:      76 (potencia cargando)")
-    print(f"    Socket SOC:       722 (estado de carga completo)")
-    print(f"    CO2 Reducción:    236 (impacto ambiental)")
-    print(f"    Motos:            186 (métricas motos)")
-    print(f"    Mototaxis:         54 (métricas mototaxis)")
-    print(f"    Energía:          231 (acumulados)")
-    print(f"    Chargers:         228 (agregados)")
-    print(f"    Otros:              8")
-    print(f"    {'='*60}")
-    print(f"    TOTAL USADO:      {len(numeric_cols)} columnas (vs 38 antes)")
-    print(f"    MEJORA:           X{len(numeric_cols)/38:.1f} más información disponible ✓")
-    print()
-    
-    # Cargar TODAS las columnas numéricas para environment (977)
-    # El environment las usará para observaciones (156-dim) y recompensa
-    exclude_patterns = ['datetime', 'timestamp', 'time', 'index', 'vehicle_type', 'cantidad', 'count']
-    numeric_cols_all = [c for c in df_chargers.columns 
-                   if not any(pat in c.lower() for pat in exclude_patterns) 
-                   and df_chargers[c].dtype in [np.float64, np.float32, np.int64, np.int32]]
-    
-    # Validar que sean realmente numéricas
-    validated_cols = []
-    for c in numeric_cols_all:
-        try:
-            _ = pd.to_numeric(df_chargers[c])
-            validated_cols.append(c)
-        except (ValueError, TypeError):
-            pass
-    
-    numeric_cols = validated_cols
-    chargers_hourly = df_chargers[numeric_cols].astype(np.float32).values[:HOURS_PER_YEAR, :]
-    
-    # v2.0: Separar motos vs mototaxis basado en columnas específicas
-    # Detectar índices de columnas motos y mototaxis
-    moto_indices = [i for i, col in enumerate(numeric_cols) if 'motos_hora' in col.lower()]
-    mototaxi_indices = [i for i, col in enumerate(numeric_cols) if 'mototaxis_hora' in col.lower()]
-    
-    # Si no hay columnas específicas, usar primeras 30 y últimas 8 de las 977
-    if not moto_indices:
-        moto_indices = list(range(0, min(30, chargers_hourly.shape[1])))
-    if not mototaxi_indices:
-        mototaxi_indices = list(range(min(30, chargers_hourly.shape[1]), 
-                                     min(38, chargers_hourly.shape[1])))
-    
-    if moto_indices:
-        chargers_moto_hourly = chargers_hourly[:, moto_indices].copy()
-    else:
-        chargers_moto_hourly = np.zeros((HOURS_PER_YEAR, 30), dtype=np.float32)
-    
-    if mototaxi_indices:
-        chargers_mototaxi_hourly = chargers_hourly[:, mototaxi_indices].copy()
-    else:
-        chargers_mototaxi_hourly = np.zeros((HOURS_PER_YEAR, 8), dtype=np.float32)
-    
+    # Extraer arrays por socket (8760, 38) — columnas reales del CSV
+    soc_current   = np.stack([df_chargers[f'socket_{i:03d}_soc_current'].values[:HOURS_PER_YEAR]       for i in range(N_TOTAL_SOCKETS)], axis=1).astype(np.float32)   # 0-1
+    soc_arrival   = np.stack([df_chargers[f'socket_{i:03d}_soc_arrival'].values[:HOURS_PER_YEAR]       for i in range(N_TOTAL_SOCKETS)], axis=1).astype(np.float32)   # 0-1
+    soc_target    = np.stack([df_chargers[f'socket_{i:03d}_soc_target'].values[:HOURS_PER_YEAR]        for i in range(N_TOTAL_SOCKETS)], axis=1).astype(np.float32)   # 0-1
+    socket_active = np.stack([df_chargers[f'socket_{i:03d}_active'].values[:HOURS_PER_YEAR]            for i in range(N_TOTAL_SOCKETS)], axis=1).astype(np.int32)     # 0/1
+    charging_pw   = np.stack([df_chargers[f'socket_{i:03d}_charging_power_kw'].values[:HOURS_PER_YEAR] for i in range(N_TOTAL_SOCKETS)], axis=1).astype(np.float32)   # 0-7.4 kW
+
+    # Demanda real por tipo (kWh por hora = kW × 1h)
+    motos_charging_kw     = charging_pw[:, :N_MOTO_SOCKETS].sum(axis=1)   # (8760,)
+    mototaxis_charging_kw = charging_pw[:, N_MOTO_SOCKETS:].sum(axis=1)   # (8760,)
+    ev_demand_per_hour    = charging_pw.sum(axis=1)                         # (8760,)
+
+    # Conteo de sockets activos por hora
+    motos_activos_h     = socket_active[:, :N_MOTO_SOCKETS].sum(axis=1).astype(np.float32)
+    mototaxis_activos_h = socket_active[:, N_MOTO_SOCKETS:].sum(axis=1).astype(np.float32)
+
+    # chargers_hourly: potencias reales por socket (8760, 38)
+    chargers_hourly          = charging_pw.copy()
+    chargers_moto_hourly     = charging_pw[:, :N_MOTO_SOCKETS].copy()   # (8760, 30)
+    chargers_mototaxi_hourly = charging_pw[:, N_MOTO_SOCKETS:].copy()   # (8760, 8)
+
+    moto_demand     = float(np.sum(motos_charging_kw))
+    mototaxi_demand = float(np.sum(mototaxis_charging_kw))
+
+    # CO2 directo reducción desde columnas del dataset (si existen)
+    co2_direct_motos_kg     = np.zeros(HOURS_PER_YEAR, dtype=np.float32)
+    co2_direct_mototaxis_kg = np.zeros(HOURS_PER_YEAR, dtype=np.float32)
+    for _i in range(N_MOTO_SOCKETS):
+        _col_co2 = f'socket_{_i:03d}_co2_reduccion_kg_hora'
+        if _col_co2 in df_chargers.columns:
+            co2_direct_motos_kg += df_chargers[_col_co2].values[:HOURS_PER_YEAR].astype(np.float32)
+    for _i in range(N_MOTO_SOCKETS, N_TOTAL_SOCKETS):
+        _col_co2 = f'socket_{_i:03d}_co2_reduccion_kg_hora'
+        if _col_co2 in df_chargers.columns:
+            co2_direct_mototaxis_kg += df_chargers[_col_co2].values[:HOURS_PER_YEAR].astype(np.float32)
+    co2_total = co2_direct_motos_kg + co2_direct_mototaxis_kg
+
     chargers_data = {
-        'is_hora_punta': np.zeros(HOURS_PER_YEAR, dtype=np.int32),
-        'tarifa_aplicada_soles': np.full(HOURS_PER_YEAR, 0.28, dtype=np.float32),
+        'is_hora_punta':       solar_data['is_hora_punta'],
+        'tarifa_aplicada_soles': solar_data['tarifa_aplicada_soles'],
     }
-    
-    # v2.0: Calcular demandas reales desde TODAS las columnas (no solo 38 sockets)
-    total_demand = float(np.sum(chargers_hourly))
-    moto_demand = float(np.sum(chargers_moto_hourly)) if chargers_moto_hourly.shape[1] > 0 else 0.0
-    mototaxi_demand = float(np.sum(chargers_mototaxi_hourly)) if chargers_mototaxi_hourly.shape[1] > 0 else 0.0
-    
-    # Extractar CO2 reducción si existe en columnas
-    co2_cols = [c for c in numeric_cols if 'co2' in c.lower()]
-    co2_total = np.zeros(HOURS_PER_YEAR, dtype=np.float32)
-    if co2_cols:
-        co2_data = df_chargers[co2_cols].astype(np.float32).values[:HOURS_PER_YEAR, :]
-        co2_total = np.sum(co2_data, axis=1).astype(np.float32)
 
     print(f"  [CHARGERS] Desde data/iquitos_ev_mall/chargers_timeseries.csv")
-    print(f"    {len(numeric_cols)} columnas totales | Motos: {moto_demand:,.0f} kWh | Mototaxis: {mototaxi_demand:,.0f} kWh")
-    if len(co2_cols) > 0:
-        print(f"    CO2 Reducción disponible: {len(co2_cols)} métricas, Total: {np.sum(co2_total):,.0f} kg")
+    print(f"    38 sockets | Motos (000-029): {moto_demand:,.0f} kWh/año | Mototaxis (030-037): {mototaxi_demand:,.0f} kWh/año")
+    print(f"    SOC actual (socket_000): min={soc_current[:,0].min():.2f} max={soc_current[:,0].max():.2f} mean={soc_current[:,0].mean():.3f}")
+    print(f"    CO2 directo evitado: Motos={float(np.sum(co2_direct_motos_kg)):,.0f} kg | Mototaxis={float(np.sum(co2_direct_mototaxis_kg)):,.0f} kg")
 
     # ====================================================================
-    # MALL - Desde mall_demand.csv
+    # MALL - Todas las columnas reales: demand, co2, is_hora_punta, tarifa, cost
     # ====================================================================
     mall_path = dataset_base / 'mall_demand.csv'
     if not mall_path.exists():
         raise FileNotFoundError(f"OBLIGATORIO: {mall_path} no encontrado")
-    
+
     df_mall = pd.read_csv(mall_path)
-    
-    if 'demanda_kw' in df_mall.columns:
-        col = 'demanda_kw'
-    elif 'demand_kw' in df_mall.columns:
-        col = 'demand_kw'
-    elif 'mall_kwh' in df_mall.columns:
-        col = 'mall_kwh'
-    else:
-        col = df_mall.columns[-1]
-    
-    mall_hourly = np.asarray(df_mall[col].values[:HOURS_PER_YEAR], dtype=np.float32)
-        
+    mall_col = 'mall_demand_kwh' if 'mall_demand_kwh' in df_mall.columns else df_mall.select_dtypes(include=[np.number]).columns[0]
+    mall_hourly = np.asarray(df_mall[mall_col].values[:HOURS_PER_YEAR], dtype=np.float32)
+
     mall_data_dict = {
-        'mall_demand_kwh': mall_hourly.copy(),
-        'mall_co2_indirect_kg': np.zeros(HOURS_PER_YEAR, dtype=np.float32),
-        'is_hora_punta': chargers_data['is_hora_punta'],
-        'tarifa_soles_kwh': chargers_data['tarifa_aplicada_soles'],
-        'mall_cost_soles': np.zeros(HOURS_PER_YEAR, dtype=np.float32),
+        'mall_demand_kwh':      mall_hourly.copy(),
+        'mall_co2_indirect_kg': np.asarray(df_mall['mall_co2_indirect_kg'].values[:HOURS_PER_YEAR], dtype=np.float32) if 'mall_co2_indirect_kg' in df_mall.columns else np.zeros(HOURS_PER_YEAR, dtype=np.float32),
+        'is_hora_punta':        np.asarray(df_mall['is_hora_punta'].values[:HOURS_PER_YEAR],        dtype=np.int32)   if 'is_hora_punta'        in df_mall.columns else chargers_data['is_hora_punta'],
+        'tarifa_soles_kwh':     np.asarray(df_mall['tarifa_soles_kwh'].values[:HOURS_PER_YEAR],     dtype=np.float32) if 'tarifa_soles_kwh'      in df_mall.columns else chargers_data['tarifa_aplicada_soles'],
+        'mall_cost_soles':      np.asarray(df_mall['mall_cost_soles'].values[:HOURS_PER_YEAR],      dtype=np.float32) if 'mall_cost_soles'        in df_mall.columns else np.zeros(HOURS_PER_YEAR, dtype=np.float32),
     }
 
     print(f'  [MALL] Desde data/iquitos_ev_mall/mall_demand.csv')
-    print(f'         {float(np.sum(mall_hourly)):,.0f} kWh/año')
+    print(f'         {float(np.sum(mall_hourly)):,.0f} kWh/año | CO2 indirecto: {float(np.sum(mall_data_dict["mall_co2_indirect_kg"])):,.0f} kg/año')
 
     # ====================================================================
-    # BESS - Desde bess_timeseries.csv
+    # BESS - Todos los flujos de energia reales: pv_to_ev, bess_to_ev, grid_import,
+    #        soc_percent, co2_avoided, cost_savings, tariff
     # ====================================================================
     bess_path = dataset_base / 'bess_timeseries.csv'
-    bess_soc = np.full(HOURS_PER_YEAR, 50.0, dtype=np.float32)
-    bess_data_dict = {}
+    if not bess_path.exists():
+        raise FileNotFoundError(f"OBLIGATORIO: {bess_path} no encontrado")
 
-    if bess_path.exists():
-        df_bess = pd.read_csv(bess_path)
-        
-        soc_cols = [c for c in df_bess.columns if 'soc' in c.lower()]
-        if soc_cols:
-            soc_col = soc_cols[0]
-            bess_soc_raw = np.asarray(df_bess[soc_col].values[:HOURS_PER_YEAR], dtype=np.float32)
-            if float(np.max(bess_soc_raw)) > 1.0:
-                bess_soc = bess_soc_raw / 100.0
-            else:
-                bess_soc = bess_soc_raw
-        
-        print(f"  [BESS] Desde data/iquitos_ev_mall/bess_timeseries.csv")
-        print(f"         SOC media: {float(np.mean(bess_soc))*100:.1f}%")
-    else:
-        print(f"  [BESS] FALLBACK: usando SOC neutral 50%")
+    df_bess = pd.read_csv(bess_path)
 
-    bess_costs = np.full(HOURS_PER_YEAR, 0.0, dtype=np.float32)
-    bess_peak_savings = np.zeros(HOURS_PER_YEAR, dtype=np.float32)
-    bess_tariff = np.full(HOURS_PER_YEAR, 0.28, dtype=np.float32)
-    bess_co2_avoided = np.zeros(HOURS_PER_YEAR, dtype=np.float32)
-    bess_co2_grid = np.full(HOURS_PER_YEAR, CO2_FACTOR_IQUITOS, dtype=np.float32)
-    
+    def _col(df: pd.DataFrame, name: str, default_val: float = 0.0) -> np.ndarray:
+        """Extraer columna o devolver array con valor por defecto."""
+        if name in df.columns:
+            return np.asarray(df[name].values[:HOURS_PER_YEAR], dtype=np.float32)
+        return np.full(HOURS_PER_YEAR, default_val, dtype=np.float32)
+
+    # SOC: soc_percent es 0-100 → normalizar a 0-1
+    bess_soc_raw = _col(df_bess, 'soc_percent', 50.0)
+    bess_soc = bess_soc_raw / 100.0 if float(bess_soc_raw.max()) > 1.0 else bess_soc_raw
+
+    # Flujos de energia reales (27 columnas del BESS)
+    energy_flows = {
+        'pv_to_ev_kwh':          _col(df_bess, 'pv_to_ev_kwh'),
+        'pv_to_bess_kwh':        _col(df_bess, 'pv_to_bess_kwh'),
+        'pv_to_mall_kwh':        _col(df_bess, 'pv_to_mall_kwh'),
+        'bess_to_ev_kwh':        _col(df_bess, 'bess_to_ev_kwh'),
+        'bess_to_mall_kwh':      _col(df_bess, 'bess_to_mall_kwh'),
+        'bess_discharge_kwh':    _col(df_bess, 'bess_discharge_kwh'),
+        'bess_charge_kwh':       _col(df_bess, 'bess_charge_kwh'),
+        'grid_import_total_kwh': _col(df_bess, 'grid_import_kwh'),
+        'grid_import_ev_kwh':    _col(df_bess, 'grid_import_ev_kwh'),
+        'grid_import_mall_kwh':  _col(df_bess, 'grid_import_mall_kwh'),
+        'grid_export_kwh':       _col(df_bess, 'grid_export_kwh'),
+    }
+
+    bess_co2_avoided  = _col(df_bess, 'co2_avoided_indirect_kg')
+    bess_peak_savings = _col(df_bess, 'cost_savings_hp_soles')
+    bess_costs        = _col(df_bess, 'cost_savings_hp_soles')
+    bess_tariff       = solar_data['tarifa_aplicada_soles'].copy()
+
     bess_co2 = {
-        'grid_kg': bess_co2_grid,
+        'grid_kg':    np.full(HOURS_PER_YEAR, CO2_FACTOR_IQUITOS, dtype=np.float32),
         'avoided_kg': bess_co2_avoided.copy(),
     }
-    
-    energy_flows = {
-        'pv_to_ev_kwh': np.zeros(HOURS_PER_YEAR, dtype=np.float32),
-    }
-    
-    bess_ev_demand = np.sum(chargers_hourly, axis=1).astype(np.float32)
-    bess_mall_demand = mall_hourly.copy()
+
+    # Demanda EV real: ev_kwh del BESS (total antes de BESS dispatch)
+    bess_ev_demand = _col(df_bess, 'ev_kwh', 0.0)
+    if float(bess_ev_demand.sum()) == 0.0:
+        bess_ev_demand = ev_demand_per_hour.copy()  # fallback: suma charging_power real
+
+    bess_mall_demand   = mall_hourly.copy()
     bess_pv_generation = solar_hourly.copy()
-    
+
+    print(f"  [BESS] Desde data/iquitos_ev_mall/bess_timeseries.csv")
+    print(f"         SOC medio: {float(np.mean(bess_soc))*100:.1f}% | CO2 indirecto evitado: {float(np.sum(bess_co2_avoided)):,.0f} kg/año")
+    print(f"         pv_to_ev: {float(energy_flows['pv_to_ev_kwh'].sum()):,.0f} kWh | bess_to_ev: {float(energy_flows['bess_to_ev_kwh'].sum()):,.0f} kWh | grid_import: {float(energy_flows['grid_import_total_kwh'].sum()):,.0f} kWh")
     print()
-    
-    # ===== CARBONIZACION CO2 DESDE CHARGERS (NEW v2.0) =====
-    # Usar 236 columnas de CO2 disponibles si existen
-    bess_co2_chargers = co2_total.copy() if len(co2_cols) > 0 else np.zeros(HOURS_PER_YEAR, dtype=np.float32)
+
     return {
         # ===== SOLAR =====
-        'solar': solar_hourly,
+        'solar':      solar_hourly,
         'solar_data': solar_data,
-        
-        # ===== CHARGERS =====
-        'chargers': chargers_hourly,
-        'chargers_moto': chargers_moto_hourly,
-        'chargers_mototaxi': chargers_mototaxi_hourly,
-        'n_moto_sockets': len(moto_indices) if moto_indices else 30,
-        'n_mototaxi_sockets': len(mototaxi_indices) if mototaxi_indices else 8,
-        'chargers_data': chargers_data,
-        'chargers_co2_kg': bess_co2_chargers,  # NEW v2.0: CO2 desde columnas reales
-        
-        # ===== MALL =====
-        'mall': mall_hourly,
+
+        # ===== CHARGERS (por socket — datos reales) =====
+        'chargers':              chargers_hourly,          # (8760, 38) charging_power_kw real
+        'chargers_moto':         chargers_moto_hourly,     # (8760, 30)
+        'chargers_mototaxi':     chargers_mototaxi_hourly, # (8760, 8)
+        'socket_soc_current':    soc_current,              # (8760, 38) en 0-1
+        'socket_soc_arrival':    soc_arrival,              # (8760, 38) en 0-1
+        'socket_soc_target':     soc_target,               # (8760, 38) en 0-1
+        'socket_active':         socket_active,            # (8760, 38) 0/1
+        'motos_activos_h':       motos_activos_h,          # (8760,)
+        'mototaxis_activos_h':   mototaxis_activos_h,      # (8760,)
+        'ev_demand_per_hour':    ev_demand_per_hour,       # (8760,) kW total
+        'n_moto_sockets':        N_MOTO_SOCKETS,
+        'n_mototaxi_sockets':    N_TAXI_SOCKETS,
+        'chargers_data':         chargers_data,
+        'chargers_co2_kg':       co2_total,                # (8760,) CO2 directo evitado
+
+        # ===== MALL (todas las columnas reales) =====
+        'mall':      mall_hourly,
         'mall_data': mall_data_dict,
-        
-        # ===== BESS =====
-        'bess_soc': bess_soc,
-        'bess_costs': bess_costs,
+
+        # ===== BESS (todos los flujos reales) =====
+        'bess_soc':          bess_soc,
+        'bess_costs':        bess_costs,
         'bess_peak_savings': bess_peak_savings,
-        'bess_tariff': bess_tariff,
-        'bess_co2': bess_co2,
-        'energy_flows': energy_flows,
-        'bess_ev_demand': bess_ev_demand,
-        'bess_mall_demand': bess_mall_demand,
+        'bess_tariff':       bess_tariff,
+        'bess_co2':          bess_co2,
+        'energy_flows':      energy_flows,
+        'bess_ev_demand':    bess_ev_demand,
+        'bess_mall_demand':  bess_mall_demand,
         'bess_pv_generation': bess_pv_generation,
-        
+
         # ===== ESTADISTICAS =====
-        'charger_max_power_kw': np.full(38, 7.4, dtype=np.float32),
+        'charger_max_power_kw':  np.full(38, 7.4, dtype=np.float32),
         'charger_mean_power_kw': np.full(38, 4.6, dtype=np.float32),
-        'observable_variables': None,
+        'observable_variables':  None,
     }
 
 
@@ -1095,6 +1075,14 @@ def main():
     charger_max_power = datasets['charger_max_power_kw']
     charger_mean_power = datasets['charger_mean_power_kw']
     observable_variables_df = datasets.get('observable_variables', None)  # 27 columnas observables
+    # Arrays por socket — datos reales del CSV de cargadores
+    socket_active_arr      = datasets.get('socket_active')        # (8760, 38)
+    socket_soc_current_arr = datasets.get('socket_soc_current')   # (8760, 38)
+    socket_soc_arrival_arr = datasets.get('socket_soc_arrival')   # (8760, 38)
+    socket_soc_target_arr  = datasets.get('socket_soc_target')    # (8760, 38)
+    motos_activos_h_arr    = datasets.get('motos_activos_h')       # (8760,)
+    mototaxis_activos_h_arr = datasets.get('mototaxis_activos_h') # (8760,)
+    ev_demand_per_hour_arr = datasets.get('ev_demand_per_hour')    # (8760,)
     
     # ===== DATA QUALITY CHECKS (DETECTAR Y PREVENIR ERRORES) =====
     print('[3.5] VALIDAR CALIDAD DE DATOS')
@@ -1201,12 +1189,12 @@ def main():
     try:
         reward_weights = create_iquitos_reward_weights(priority="co2_focus")
         context = IquitosContext()
-        print(f'  OK Reward weights loaded (co2_focus):')
-        print(f'     - CO2 grid:         {reward_weights.co2:.3f}')
-        print(f'     - Solar:            {reward_weights.solar:.3f}')
-        print(f'     - EV satisfaction:  {reward_weights.ev_satisfaction:.3f}')
-        print(f'     - Cost:             {reward_weights.cost:.3f}')
-        print(f'     - Grid stability:   {reward_weights.grid_stability:.3f}')
+        print(f'  OK Reward weights loaded (co2_focus - CO2_DUAL_FOCUS OE3 2026-04-06):')
+        print(f'     - Direct CO2:       {reward_weights.direct_co2:.3f}  # P1: combustible evitado')
+        print(f'     - Indirect CO2:     {reward_weights.co2:.3f}  # P2: grid termico')
+        print(f'     - EV satisfaction:  {reward_weights.ev_satisfaction:.3f}  # P3: EV Satisfaction')
+        print(f'     - Solar:            {reward_weights.solar:.3f}  # P4: Solar Self-Consumption')
+        print(f'     - Grid stability:   {reward_weights.grid_stability:.3f}  # P5: Grid Stability')
     except Exception as e:
         print(f'  WARNING: Could not load reward weights: {e}')
         reward_weights = None
@@ -1306,18 +1294,30 @@ def main():
         MOTO_SOCKETS: int = 30      # Sockets 0-29: Personal motorcycles (15 chargers)
         MOTOTAXI_SOCKETS: int = 8   # Sockets 30-37: Taxi motorcycles (4 chargers)
         
-        def __init__(self, solar_kw, chargers_kw, mall_kw, bess_soc, bess_costs=None, bess_co2=None, 
+        def __init__(self, solar_kw, chargers_kw, mall_kw, bess_soc, bess_costs=None, bess_co2=None,
                      reward_weights=None, context=None, charger_max_power_kw=None, charger_mean_power_kw=None,
                      bess_peak_savings=None, bess_tariff=None, energy_flows=None,
                      solar_data=None, chargers_moto=None, chargers_mototaxi=None,
                      n_moto_sockets=0, n_mototaxi_sockets=0,
                      bess_ev_demand=None, bess_mall_demand=None, bess_pv_generation=None,
-                     observable_variables=None, chargers_data=None, mall_data=None):
+                     observable_variables=None, chargers_data=None, mall_data=None,
+                     socket_active=None, socket_soc_current=None, socket_soc_arrival=None,
+                     socket_soc_target=None, motos_activos_h=None, mototaxis_activos_h=None,
+                     ev_demand_per_hour=None):
             super().__init__()
             self.solar = solar_kw
-            self.solar_data = solar_data or {}  # Todas las columnas solares REALES (16 cols)
-            self.chargers = chargers_kw
-            self.chargers_data = chargers_data or {}  # 11 columnas globales: co2_reduccion_motos_kg, etc.
+            self.solar_data = solar_data or {}  # Columnas solares REALES
+            self.chargers = chargers_kw          # (8760, 38) charging_power_kw real
+            self.chargers_data = chargers_data or {}
+            # Arrays por socket (datos reales del CSV)
+            ZEROS_38 = np.zeros((self.HOURS_PER_YEAR, 38), dtype=np.float32)
+            self.socket_active       = socket_active       if socket_active       is not None else ZEROS_38.astype(np.int32)
+            self.socket_soc_current  = socket_soc_current  if socket_soc_current  is not None else ZEROS_38.copy()
+            self.socket_soc_arrival  = socket_soc_arrival  if socket_soc_arrival  is not None else ZEROS_38.copy()
+            self.socket_soc_target   = socket_soc_target   if socket_soc_target   is not None else np.ones((self.HOURS_PER_YEAR, 38), dtype=np.float32)
+            self.motos_activos_h     = motos_activos_h     if motos_activos_h     is not None else np.zeros(self.HOURS_PER_YEAR, dtype=np.float32)
+            self.mototaxis_activos_h = mototaxis_activos_h if mototaxis_activos_h is not None else np.zeros(self.HOURS_PER_YEAR, dtype=np.float32)
+            self.ev_demand_per_hour  = ev_demand_per_hour  if ev_demand_per_hour  is not None else np.zeros(self.HOURS_PER_YEAR, dtype=np.float32)
             self.mall_data = mall_data or {}  # 6 columnas: mall_co2_indirect_kg, tarifa_soles_kwh, etc.
             self.observable_variables = observable_variables  # 27 columnas observables del dataset_builder
             self.chargers_moto = chargers_moto  # Sockets MOTOS
@@ -1492,9 +1492,18 @@ def main():
             self.current_grid_import = 0.0
             self.system_efficiency = 0.0
             
-            # Inicializar vehiculos en sockets (SOC inicial ~0-5% segun dataset real: llegan vacios)
+            # Inicializar vehiculos en sockets con SOC real de llegada (del dataset OE2)
             for socket_id in range(self.NUM_CHARGERS):
-                initial_soc = np.random.uniform(0.0, 5.0)  # Dataset real: vehiculos llegan vacios
+                # Usar soc_arrival real del dataset si está disponible (valor en 0-1 → convertir a %)
+                if self.socket_soc_arrival is not None and len(self.socket_soc_arrival) > 0:
+                    arrival_soc_01 = float(self.socket_soc_arrival[0, socket_id])  # hora 0, socket i
+                    # Usar promedio de horas activas para mejor representación
+                    active_mask = self.socket_active[:, socket_id].astype(bool)
+                    if active_mask.any():
+                        arrival_soc_01 = float(self.socket_soc_arrival[active_mask, socket_id].mean())
+                    initial_soc = np.clip(arrival_soc_01 * 100.0, 5.0, 80.0)  # convertir a %
+                else:
+                    initial_soc = np.random.uniform(20.0, 70.0)
                 self.soc_tracker.spawn_vehicle(socket_id, hour=0, initial_soc=initial_soc)
             
             obs = self._make_observation(0)
@@ -1983,17 +1992,24 @@ def main():
             if self.bess_peak_savings is not None and h < len(self.bess_peak_savings):
                 self.episode_real_peak_savings += float(self.bess_peak_savings[h])
             
-            # ===== ROTACION DE VEHICULOS (simular llegadas/salidas) =====
-            # Cada hora, ciertos vehiculos se van y llegan nuevos
-            if hour_24 in [6, 9, 12, 15, 18, 21]:  # Horas de rotacion
-                for socket_id in range(self.NUM_CHARGERS):
-                    state = self.soc_tracker.vehicle_states[socket_id]
-                    # Si vehiculo desconectado o muy tiempo (>4h), reemplazar
-                    if state is None or not state.is_connected or (h - state.arrival_hour > 4):
-                        # 70% probabilidad de nuevo vehiculo
-                        if np.random.random() < 0.7:
-                            initial_soc = np.random.uniform(0.0, 5.0)  # Dataset real: vehiculos llegan vacios
-                            self.soc_tracker.spawn_vehicle(socket_id, hour=h, initial_soc=initial_soc)
+            # ===== ROTACION DE VEHICULOS (basada en datos reales de socket_active) =====
+            # Si socket_active real indica nuevo vehiculo (transición 0→1), se inicializa
+            for socket_id in range(self.NUM_CHARGERS):
+                state = self.soc_tracker.vehicle_states[socket_id]
+                # Usar dato real de actividad del socket en hora h
+                real_active = (self.socket_active[h, socket_id] == 1) if (self.socket_active is not None and h < len(self.socket_active)) else False
+                prev_active = (self.socket_active[h - 1, socket_id] == 1) if (self.socket_active is not None and h > 0 and h - 1 < len(self.socket_active)) else False
+                new_arrival = real_active and not prev_active  # transición 0→1: nuevo vehículo
+                # Inicializar si: nueva llegada real detectada, o socket vacío y está activo
+                if new_arrival or (real_active and (state is None or not state.is_connected)):
+                    if self.socket_soc_arrival is not None and h < len(self.socket_soc_arrival):
+                        arrival_soc = float(np.clip(self.socket_soc_arrival[h, socket_id] * 100.0, 5.0, 80.0))
+                    else:
+                        arrival_soc = np.random.uniform(20.0, 70.0)
+                    self.soc_tracker.spawn_vehicle(socket_id, hour=h, initial_soc=arrival_soc)
+                elif not real_active and state is not None and state.is_connected:
+                    # El dataset dice que el socket no está activo: marcar como desconectado
+                    state.is_connected = False
             
             # Mover al siguiente timestep
             self.current_step += 1
@@ -2033,6 +2049,9 @@ def main():
                 # ===== METRICAS =====
                 'charger_mean_action': float(np.mean(charger_actions)),
                 'co2_grid_kg': co2_grid_kg,
+                'co2_avoided_indirect_kg': co2_indirecto_evitado_kg,
+                'co2_avoided_direct_kg': co2_directo_evitado_kg,
+                'co2_avoided_total_kg': co2_indirecto_evitado_kg + co2_directo_evitado_kg,
                 'solar_reward': float(solar_reward_placeholder),
                 'co2_reward': float(co2_reward_placeholder),
                 'ev_satisfaction': float(charger_satisfaction),
@@ -2050,7 +2069,11 @@ def main():
                 scarcity_indicator = f'[{scarcity_level}]' if scarcity_level != 'NONE' else ''
                 # BESS action: 0-0.5=carga, 0.5=idle, 0.5-1=descarga
                 bess_mode = 'CHG' if bess_action < 0.45 else ('DIS' if bess_action > 0.55 else 'IDL')
-                print(f'    [EP {self.episode_num:02d}] h={self.current_step:5d}/8760 | Solar={solar_h:6.1f}kW | BESS={bess_soc_h:4.1f}%/{bess_mode} | Grid={grid_import:6.1f}kW | EV={charger_satisfaction:.2f} | Prio={prioritization_reward:+.3f} {scarcity_indicator}')
+                # Conteo real desde dataset (socket_active del OE2)
+                h_log = min(self.current_step, len(self.motos_activos_h) - 1)
+                motos_activos_log   = int(self.motos_activos_h[h_log])
+                taxis_activos_log   = int(self.mototaxis_activos_h[h_log])
+                print(f'    [EP {self.episode_num:02d}] h={self.current_step:5d}/8760 | Solar={solar_h:6.1f}kW | BESS={bess_soc_h:4.1f}%/{bess_mode} | Grid={grid_import:6.1f}kW | Motos={motos_activos_log:02d}/30 Taxis={taxis_activos_log:01d}/8 | Prio={prioritization_reward:+.3f} {scarcity_indicator}')
             
             # Mostrar resumen al final del episodio CON VEHICLE METRICS COMPLETOS
             if done:
@@ -2099,7 +2122,7 @@ def main():
                 print(f'          PRIORIZACION:     Accuracy={m["prioritization_accuracy"]*100:.1f}% | Decisiones bajo escasez: {m["scarcity_decisions"]}')
                 print(f'          CARGADOS AL 100%: {m["total_charged_100"]} vehiculos')
                 if self.reward_weights:
-                    print(f'         Pesos usados:        CO2={self.reward_weights.co2:.2f} | Solar={self.reward_weights.solar:.2f} | EV={self.reward_weights.ev_satisfaction:.2f} | (v9.2 minimal reward function)')
+                    print(f'         Pesos usados:        DirectCO2={self.reward_weights.direct_co2:.2f} | IndirectCO2={self.reward_weights.co2:.2f} | EV={self.reward_weights.ev_satisfaction:.2f} | Solar={self.reward_weights.solar:.2f} | Grid={self.reward_weights.grid_stability:.2f}')
                 print()
             
             return obs, reward, done, truncated, info
@@ -2209,12 +2232,12 @@ def main():
                 self.daily_co2_avoided = 0.0
             
             # CALCULAR VEHICULOS COMPLETADOS DESDE DATASET REAL v7.2 (2026-02-17)
-            # Usar ev_energia_motos_kwh y ev_energia_mototaxis_kwh del dataset (DATO REAL)
+            # Usar suma de charging_power de sockets reales (motos 000-029, taxis 030-037)
             if h < len(self.chargers):
                 try:
-                    # Leer energía cargada por tipo de vehículo
-                    ev_energy_motos_kwh = float(self.chargers[h, 0]) if len(self.chargers.shape) > 1 else 0.0
-                    ev_energy_taxis_kwh = float(self.chargers[h, 1]) if len(self.chargers.shape) > 1 else 0.0
+                    # Energía real por tipo: suma de charging_power_kw de sockets motos y taxis
+                    ev_energy_motos_kwh = float(self.chargers[h, :self.MOTO_SOCKETS].sum()) if len(self.chargers.shape) > 1 and self.chargers.shape[1] >= self.MOTO_SOCKETS else 0.0
+                    ev_energy_taxis_kwh = float(self.chargers[h, self.MOTO_SOCKETS:self.NUM_CHARGERS].sum()) if len(self.chargers.shape) > 1 and self.chargers.shape[1] >= self.NUM_CHARGERS else 0.0
                 except (IndexError, TypeError, ValueError):
                     ev_energy_motos_kwh = 0.0
                     ev_energy_taxis_kwh = 0.0
@@ -2425,7 +2448,15 @@ def main():
         bess_mall_demand=bess_mall_demand,  # [OK] Demanda Mall REAL por hora
         bess_pv_generation=bess_pv_generation,  # [OK] PV generation REAL por hora
         # ===== TODAS LAS 27 VARIABLES OBSERVABLES =====
-        observable_variables=observable_variables_df  # [OK] Todas las 27 columnas del dataset_builder
+        observable_variables=observable_variables_df,  # [OK] Todas las 27 columnas del dataset_builder
+        # ===== ARRAYS POR SOCKET (DATOS REALES OE2) =====
+        socket_active=datasets.get('socket_active'),         # (8760, 38) 0/1 real
+        socket_soc_current=datasets.get('socket_soc_current'),  # (8760, 38) SOC 0-1 real
+        socket_soc_arrival=datasets.get('socket_soc_arrival'),  # (8760, 38) SOC llegada real
+        socket_soc_target=datasets.get('socket_soc_target'),    # (8760, 38) SOC objetivo real
+        motos_activos_h=datasets.get('motos_activos_h'),    # (8760,) motos activas por hora
+        mototaxis_activos_h=datasets.get('mototaxis_activos_h'),  # (8760,) taxis activos por hora
+        ev_demand_per_hour=datasets.get('ev_demand_per_hour'),   # (8760,) kW demanda total EV real
     )
     print(f'  [OK] Ambiente REAL creado con datos OE2 100% REALES:')
     print(f'     - Observation space: {env.OBS_DIM} dims (v6.0: 156 base + 90 new features = bidirectional communication)')
@@ -2534,7 +2565,7 @@ def main():
     print(f'  Device: {agent.device}')
     print()
     
-    # Callbacks - Guardar 1 checkpoint por episodio (10 episodios = 10 checkpoints)
+    # Callbacks - Guardar 1 checkpoint por episodio (50 episodios = 50 checkpoints)
     checkpoint_callback = CheckpointCallback(
         save_freq=8_760,  # 1 episodio = 8,760 steps (1 ano horario)
         save_path=str(CHECKPOINT_DIR),
@@ -3097,7 +3128,7 @@ def main():
                         self._first_baseline_logged = True
             
             # Calcular progreso del entrenamiento (normalizado)
-            training_progress = self.num_timesteps / 131400  # 15 episodios de 8760
+            training_progress = self.num_timesteps / 438000  # 50 episodios de 8760
             
             # ====================================================================
             # 1. Q-VALUE MUY ALTO (-> reward scale mal / LR alto / targets inestables)
@@ -3602,10 +3633,10 @@ def main():
                 'step_in_episode': self.step_in_episode,
                 'hour': self.step_in_episode % 8760,
                 'reward': reward,
-                # CO2 metrics (CRITICO - faltaba)
+                # CO2 metrics (VALORES REALES del entorno)
                 'co2_grid_kg': co2_grid,
-                'co2_avoided_indirect_kg': co2_grid * 0.5,  # Approx
-                'co2_avoided_direct_kg': self._current_co2_grid * 0.3,  # Approx
+                'co2_avoided_indirect_kg': info.get('co2_avoided_indirect_kg', 0.0),
+                'co2_avoided_direct_kg': info.get('co2_avoided_direct_kg', 0.0),
                 # Energy
                 'solar_generation_kwh': solar_kwh,
                 'ev_charging_kwh': ev_charging,
@@ -3642,11 +3673,11 @@ def main():
                 'bess_power_kw': bess_power,
                 'bess_soc': bess_soc,
                 'mall_demand_kw': mall_demand,
-                # CO2 metrics (CRITICO - faltaba)
+                # CO2 metrics (VALORES REALES del entorno - NO aproximaciones)
                 'co2_grid_kg': info.get('co2_grid_kg', 0.0),
-                'co2_avoided_indirect_kg': info.get('co2_grid_kg', 0.0) * 0.5,  # Approx
-                'co2_avoided_direct_kg': self._current_co2_grid * 0.3,  # Approx directo
-                'co2_avoided_total_kg': info.get('co2_grid_kg', 0.0) * 0.8,  # Total evitado
+                'co2_avoided_indirect_kg': info.get('co2_avoided_indirect_kg', 0.0),
+                'co2_avoided_direct_kg': info.get('co2_avoided_direct_kg', 0.0),
+                'co2_avoided_total_kg': info.get('co2_avoided_total_kg', 0.0),
                 # Vehicle metrics (CRITICO - faltaba)
                 'motos_charging': info.get('soc_motos_charging_now', 0),
                 'mototaxis_charging': info.get('soc_mototaxis_charging_now', 0),
@@ -3700,7 +3731,7 @@ def main():
                 # ===== RESUMEN DETALLADO DEL EPISODIO (PASO A PASO) =====
                 print()
                 print('='*100)
-                print(f'[EPISODIO {self.episode_count} COMPLETADO] Timestep {self.num_timesteps:,} / 131,400')
+                print(f'[EPISODIO {self.episode_count} COMPLETADO] Timestep {self.num_timesteps:,} / 438,000')
                 print('='*100)
                 
                 # Metricas de loss
@@ -3760,10 +3791,10 @@ def main():
                 print(f'  - Reward episodio:         {episode_reward:+.2f} pts (suma ponderada multiobjetivo)')
                 
                 # Progreso
-                progress_pct = (self.num_timesteps / 131400.0) * 100
+                progress_pct = (self.num_timesteps / 438000.0) * 100
                 print(f'[PROGRESO]')
                 print(f'  - Entrenamiento:           {progress_pct:.1f}% completado')
-                print(f'  - Episodios:               {self.episode_count} / 15')
+                print(f'  - Episodios:               {self.episode_count} / 50')
                 print()
                 
                 # Reset acumuladores
@@ -4649,9 +4680,9 @@ def main():
     
     callback_list = CallbackList([checkpoint_callback, sac_metrics_callback, verbose_metrics])
     
-    print('[8] ENTRENAMIENTO SAC - 15 EPISODIOS COMPLETOS (OPTIMIZADO)')
+    print('[8] ENTRENAMIENTO SAC - 50 EPISODIOS COMPLETOS (OPTIMIZADO)')
     print('-' * 80)
-    print(f'  Total timesteps: 131,400 (15 episodios x 8,760 h/episodio)')
+    print(f'  Total timesteps: 438,000 (50 episodios x 8,760 h/episodio)')
     print(f'  Checkpoint cada: 1,000 steps')
     print(f'  Warmup steps:    {sac_config.learning_starts:,} (random exploration)')
     print(f'  Batch size:      {sac_config.batch_size}')
@@ -4686,13 +4717,13 @@ def main():
     print('-' * 80)
     if reward_weights:
         print(f'  [OK] Reward weights cargados (priority=co2_focus):')
-        print(f'    - CO2 Grid Minimization:    {reward_weights.co2:.3f}')
-        print(f'    - Solar Self-Consumption:  {reward_weights.solar:.3f}')
-        print(f'    - EV Satisfaction:         {reward_weights.ev_satisfaction:.3f}')
-        print(f'    - Cost Minimization:       {reward_weights.cost:.3f}')
-        print(f'    - Grid Stability:          {reward_weights.grid_stability:.3f}')
-        total = reward_weights.co2 + reward_weights.solar + reward_weights.ev_satisfaction + reward_weights.cost + reward_weights.grid_stability
-        print(f'  [OK] Total weight sum:          {total:.3f}')
+        print(f'    - Direct CO2 Minimization:   {reward_weights.direct_co2:.3f}')
+        print(f'    - Indirect CO2 Minimization: {reward_weights.co2:.3f}')
+        print(f'    - EV Satisfaction:           {reward_weights.ev_satisfaction:.3f}')
+        print(f'    - Solar Self-Consumption:    {reward_weights.solar:.3f}')
+        print(f'    - Grid Stability:            {reward_weights.grid_stability:.3f}')
+        total = reward_weights.direct_co2 + reward_weights.co2 + reward_weights.solar + reward_weights.ev_satisfaction + reward_weights.grid_stability
+        print(f'  [OK] Total weight sum:         {total:.3f}')
     else:
         print(f'  [!] Warning: Reward weights no initialized correctly')
     print()
@@ -4709,7 +4740,7 @@ def main():
         try:
             print(f'\n[INTENTO {retry_count + 1}/{max_retries}] Iniciando entrenamiento SAC...')
             agent.learn(
-                total_timesteps=87_600,  # 10 episodios x 8,760 steps (1 ano = 1 episodio)
+                total_timesteps=438_000,  # 50 episodios x 8,760 steps (1 ano = 1 episodio)
                 callback=callback_list,
                 reset_num_timesteps=False,
                 progress_bar=True,
@@ -5047,12 +5078,26 @@ def main():
         json.dump(result_summary, f, indent=2, ensure_ascii=False, default=str)
     print(f'    [OK] result_sac.json: Resumen completo -> {result_path}')
     
+    # [METRICAS CONVERGENCIA] Curvas de convergencia, varianza y robustez estocástica
+    try:
+        from training_metrics import generate_all_training_metrics
+        generate_all_training_metrics(
+            agent_name='SAC',
+            episode_rewards=sac_metrics_callback.episode_rewards,
+            output_dir=OUTPUT_DIR,
+        )
+    except Exception as _tm_exc:
+        print(f'  [WARN] training_metrics: {_tm_exc}')
+
     print()
     print('  ARCHIVOS GENERADOS:')
     print(f'    [OK] {OUTPUT_DIR}/result_sac.json')
     print(f'    [OK] {OUTPUT_DIR}/timeseries_sac.csv')
     print(f'    [OK] {OUTPUT_DIR}/trace_sac.csv')
-    
+    print(f'    [OK] {OUTPUT_DIR}/convergence_curve_SAC.png')
+    print(f'    [OK] {OUTPUT_DIR}/episode_stats_SAC.csv')
+    print(f'    [OK] {OUTPUT_DIR}/training_stats_SAC.json')
+
     print()
     print('='*80)
     print(f'Fin: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')

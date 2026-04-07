@@ -46,15 +46,15 @@ El proyecto sigue [Versionado Semántico](https://semver.org/lang/es/):
 - **Tipo de carga:** Base load + picos horarios (9:00-21:00)
 
 #### Sistema de Recompensas (Reward Function)
-- **Componentes:** 5-objetivo unificado
+- **Componentes:** CO2_DUAL_FOCUS v7.0 — 6-objetivo (OE3 2026-04-06)
 
 | Objetivo | Peso | Descripción |
 |----------|------|-------------|
-| Minimizar CO₂ Grid | 0.50 | PRIMARY: Reducir importación desde grid térmico |
-| Maximizar Solar Self-Consumption | 0.20 | SECONDARY: Usar PV directamente |
-| EV Charge Satisfaction | 0.15 | TERTIARY: Asegurar carga completa antes de deadline |
-| Grid Stability | 0.10 | QUATERNARY: Suavizar rampa de potencia |
-| Cost Minimization | 0.05 | QUINARY: Preferir tariff horas bajas |
+| CO₂ Directo (combustible evitado) | **0.35** | P1: Reducir combustible vehicular motos/mototaxis |
+| CO₂ Indirecto (grid import × 0.4521) | **0.30** | P2: Reducir importación desde grid térmico |
+| EV Satisfaction (SOC 90%) | **0.25** | P3: Asegurar carga completa antes de deadline |
+| Solar Self-Consumption | **0.05** | P4: Usar PV directamente |
+| Grid Stability | **0.05** | P5: Suavizar rampa de potencia |
 
 #### Métricas de CO₂
 - **Factor de grid:** 0.4521 kg CO₂/kWh (generación térmica en Iquitos, Perú)

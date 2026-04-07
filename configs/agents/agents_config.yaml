@@ -12,19 +12,21 @@ agents:
     type: on-policy
     enabled: true
 training:
-  episodes: 10
-  max_timesteps: 87600
+  episodes: 50
+  max_timesteps: 438000
   evaluation_frequency: 1
   checkpoint_frequency: 1000
 environment:
   episode_length: 8760
   time_step_minutes: 60
 reward_weights:
-  co2: 0.35
-  solar: 0.20
-  ev: 0.30
+  direct_co2: 0.35
+  co2: 0.30
+  ev: 0.25
+  solar: 0.05
   grid: 0.05
-  cost: 0.10
+  # OE3 (2026-04-06): Seleccionar agente IA para la gestion de recarga de motos y mototaxis
+  # electricas que contribuye cuantificablemente a la reduccion de CO2 en Iquitos.
 infrastructure:
   solar_capacity_kwp: 4050.0
   bess_capacity_kwh: 2000

@@ -1,0 +1,3 @@
+﻿Grupo,W_Shapiro-Wilk,p-value,alpha,¿Normal? (p>α),Interpretacion
+Grupo A – Baseline,0.797056,0.000000,0.05,NO,p = 0.000000 < 0.05 → distribución NO-NORMAL (Se rechaza H₀ normalidad)
+Grupo B – A2C Smart,0.973751,0.000004,0.05,NO,p = 0.000004 < 0.05 → distribución NO-NORMAL (Se rechaza H₀ normalidad)
