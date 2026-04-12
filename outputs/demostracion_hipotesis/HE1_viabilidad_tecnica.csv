@@ -1,0 +1,8 @@
+Criterio técnico,Valor medido,Umbral mínimo,Estado
+Área techada disponible (m²),18500.0,"> 5,000",CUMPLE ✓
+Estacionamiento motos/día,270.0,> 200,CUMPLE ✓
+Estacionamiento mototaxis/día,39.0,> 30,CUMPLE ✓
+Penetración EV proyectada (%),30.0,≥ 20%,CUMPLE ✓
+Área techada para PV (kWp instalables),4050.0,"> 1,000 kWp",CUMPLE ✓
+Acceso trifásico red eléctrica (kVA),800.0,> 500 kVA,CUMPLE ✓
+Demanda EV diaria cubierta (kWh),1118.58,> 500 kWh/día,CUMPLE ✓

@@ -4,7 +4,7 @@ $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $WORKSPACE_ROOT = Get-Location
-$PYTHON_SCRIPT = "scripts/train/train_sac_multiobjetivo.py"
+$PYTHON_SCRIPT = "scripts/train/train_sac.py"
 $LOG_FILE = "sac_training.log"
 $TIMESTAMP = Get-Date -Format "yyyy-MM-dd_HHmmss"
 

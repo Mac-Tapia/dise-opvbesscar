@@ -1,49 +1,52 @@
 graph LR
-    subgraph ETAPA1["ETAPA 1: Inputs del Proyecto"]
-        MALLF["📊 Demanda Mall<br/>demandamallhorakwh.csv<br/>PROMEDIO: 1,412 kW<br/>PICO: 2,763 kW"]
-        SOLF["☀️ Generación Solar<br/>pv_generation_timeseries.csv<br/>4,050 kWp<br/>8,760 hourly"]
-        EV_F["🛵 EV Demand Profiles<br/>demand_ev_anual.csv<br/>270 motos + 39 taxis<br/>38 sockets"]
-        CFG["⚙️ Configuration<br/>architecture.yaml<br/>500 timesteps"]
+    subgraph ETAPA1["ETAPA 1 — Inputs del Proyecto"]
+        MALLF["📊 Demanda Mall<br/>demandamallhorakwh.csv<br/>100 kW base continuo<br/>8,760 h/año"]
+        SOLF["☀️ Generación Solar PV<br/>pv_generation_timeseries.csv<br/>4,050 kWp instalados<br/>8,760 filas HORARIAS ⚠️"]
+        EV_F["🛵 Perfiles Demanda EV<br/>demand_ev_anual.csv<br/>270 motos + 39 mototaxis<br/>38 sockets activos"]
+        CFG["⚙️ Configuración<br/>configs/default.yaml<br/>BESS 2,000 kWh / 400 kW<br/>FE_red = 0.4521 kg CO₂/kWh"]
     end
-    
-    subgraph ETAPA2["ETAPA 2: Load & Validation"]
-        DL["📥 Data Loader<br/>data_loader.py<br/>✓ Solar: 8,760 rows<br/>✓ Mall: 1,412 kW avg (2,763 peak)<br/>✓ EV: 38 sockets"]
-        VAL["✅ Validation<br/>OE2ValidationError<br/>if solar ≠ 8,760h<br/>if chargers ≠ 38"]
+
+    subgraph ETAPA2["ETAPA 2 — Carga y Validación OE2"]
+        DL["📥 Data Loader<br/>data_loader.py<br/>✓ Solar: exactamente 8,760 filas<br/>✓ Cargadores: 38 sockets<br/>✓ BESS: SOC en rango válido"]
+        VAL["✅ Validación<br/>OE2ValidationError<br/>si solar ≠ 8,760 h<br/>si cargadores ≠ 38<br/>si SOC fuera de (20%, 100%)"]
     end
-    
-    subgraph ETAPA3["ETAPA 3: Build OE2 Artifacts"]
-        CHARGERS["🔌 Charger Specs<br/>chargers.py<br/>19 units × 2 sockets<br/>7.4 kW @ 230V"]
-        BESS_CFG["🔋 BESS Config<br/>bess.py<br/>2,000 kWh<br/>400 kW / SOC 20-100%"]
+
+    subgraph ETAPA3["ETAPA 3 — Artefactos OE2"]
+        CHARGERS["🔌 Especificación Cargadores<br/>chargers.py (frozen dataclass)<br/>19 unidades × 2 sockets<br/>7.4 kW @ 230V / 32A Mode 3"]
+        BESS_CFG["🔋 Configuración BESS<br/>2,000 kWh / 400 kW<br/>DoD 80% | η_c=η_d=95%<br/>SOC_min=20% | SOC_max=100%"]
     end
-    
-    subgraph ETAPA4["ETAPA 4: Create CityLearn Environment"]
-        CL["🏗️ CityLearn v2<br/>Environment<br/>- Obs: 394-dim solar/BESS/38sockets<br/>- Action: 39-dim (1 BESS + 38 chargers)<br/>- HorizonLen: 8,760 timesteps"]
+
+    subgraph ETAPA4["ETAPA 4 — Entorno CityLearn v2"]
+        CL["🏗️ CityLearn Environment<br/>• Observación: 394-dim<br/>  (solar / BESS / 38 sockets / tiempo)<br/>• Acción: 39-dim continuo (0-1)<br/>  (1 BESS + 38 cargadores)<br/>• Horizonte: 8,760 pasos = 1 año"]
     end
-    
-    subgraph ETAPA5["ETAPA 5: Reward & Agent Initialization"]
-        RW["🎯 Multi-Objective Reward CO2_DUAL_FOCUS v7.0<br/>w_DirectCO₂=0.35 (P1) | w_IndirectCO₂=0.30 (P2)<br/>w_EV=0.25 (P3) | w_solar=0.05 (P4) | w_grid=0.05 (P5)"]
-        AGENTS["🤖 Initialize Agents<br/>SAC/PPO/A2C from sb3<br/>policy='MlpPolicy'<br/>validate_env_spaces()"]
+
+    subgraph ETAPA5["ETAPA 5 — Recompensa y Agentes"]
+        RW["🎯 Recompensa CO2_DUAL_FOCUS v7.0<br/>w₁=0.35 CO₂ directo   w₂=0.30 CO₂ indirecto<br/>w₃=0.25 Carga EV       w₄=0.05 Solar<br/>w₅=0.05 Red estable<br/>R_final = 0.65×R + 0.35×r_EV"]
+        AGENTS["🤖 Inicializar 3 Agentes<br/>SAC / PPO / A2C (sb3)<br/>policy=MlpPolicy<br/>validate_env_spaces() ✓"]
     end
-    
-    subgraph ETAPA6["ETAPA 6: Training Loop (26,280 steps)"]
-        TRN["🔄 Learn with CB<br/>agent.learn(total_timesteps=26280)<br/>checkpoint every N steps<br/>save_config_every_callback"]
+
+    subgraph ETAPA6["ETAPA 6 — Entrenamiento (50 episodios × 8,760 pasos)"]
+        TRN["🔄 agent.learn(438,000 steps)<br/>Checkpoint cada episodio<br/>Auto-resume desde último .zip<br/>reset_num_timesteps=False<br/>GPU RTX 4060 (~5-7 h por agente)"]
     end
-    
-    subgraph ETAPA7["ETAPA 7: Evaluation & Results"]
-        EVAL["📊 Evaluate<br/>CO₂ (kg/año)<br/>Solar self-consumption %<br/>Grid import (kWh)<br/>EV satisfaction %"]
-        CSV["💾 Save Results<br/>result_{sac,ppo,a2c}.json<br/>ppo_training_summary.json"]
+
+    subgraph ETAPA7["ETAPA 7 — Evaluación y Resultados"]
+        EVAL["📊 Métricas Reales (CSVs 11-12/04/2026)<br/>SAC ★: F₂=2,622,734 kg CO₂/año (ep 48)<br/>PPO 🥈: F₂=2,787,039 kg CO₂/año (ep 40)<br/>A2C 🥉: F₂=2,834,857 kg CO₂/año (ep 3)<br/>F₀ Baseline diesel: 7,054,000 kg CO₂/año<br/>CO₂ evitado SAC: 4,431,266 kg/año (62.8%)"]
+        CSV["💾 Artefactos<br/>result_sac.json | ppo_summary.json<br/>50 PNG por agente<br/>comparative_analysis/ + seccion52/"]
     end
-    
-    subgraph ETAPA8["ETAPA 8: Document + Report"]
-        DOC["📄 Generate Thesis<br/>generate_oe3_detailed_report.py<br/>Dynamic values from checkpoints<br/>41 acápites (100% completud)"]
-        PDF["📕 Save PDF Report<br/>OE3_INFORME_DETALLADO.pdf<br/>Reward weights validated<br/>MALL: 1,412 kW reflected"]
+
+    subgraph ETAPA8["ETAPA 8 — Validación Estadística"]
+        STAT["📐 Pruebas no paramétricas<br/>Kruskal-Wallis H=81.65 — p=1.86e-18<br/>Mann-Whitney SAC vs PPO — p=3.02e-16<br/>Wilcoxon T=0 — p=1.78e-15<br/>SAC reduce CO2 estadisticamente superior"]
     end
-    
+
+    subgraph ETAPA9["ETAPA 9 — Documento Tesis v11 ✅"]
+        DOC["📖 INFORME_OE3_SELECCION_AGENTE_RL_v11.docx<br/>594 parrafos — 36 tablas — 6,376 KB<br/>§2.2.4 GHG — §4.6.3 Procedimiento OE3<br/>ANEXO A: 33 figs — ANEXO B: 10 figs — ANEXO C: 7 figs<br/>LISTO PARA ASESOR"]
+    end
+
     MALLF --> DL
     SOLF --> DL
     EV_F --> DL
     CFG --> DL
-    
+
     DL --> VAL
     VAL --> CHARGERS
     VAL --> BESS_CFG
@@ -54,9 +57,9 @@ graph LR
     AGENTS --> TRN
     TRN --> EVAL
     EVAL --> CSV
-    CSV --> DOC
-    DOC --> PDF
-    
+    CSV --> STAT
+    STAT --> DOC
+
     style ETAPA1 fill:#fff3e0,stroke:#e65100,stroke-width:2px
     style ETAPA2 fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
     style ETAPA3 fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
@@ -64,4 +67,5 @@ graph LR
     style ETAPA5 fill:#ffe0b2,stroke:#ff6f00,stroke-width:2px
     style ETAPA6 fill:#e0f2f1,stroke:#00695c,stroke-width:2px
     style ETAPA7 fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    style ETAPA8 fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
+    style ETAPA8 fill:#e8eaf6,stroke:#283593,stroke-width:2px
+    style ETAPA9 fill:#c8e6c9,stroke:#1b5e20,stroke-width:3px

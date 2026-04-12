@@ -974,7 +974,7 @@ if __name__ == "__main__":
         print(f"\n📊 CONFIGURATION SUMMARY:")
         print(f"\n  VEHICLES (from chargers_ev_ano_2024_v3.csv):")
         print(f"    • Motos:      {vehicles['motos']['count']} units, {vehicles['motos']['chargers_assigned']} chargers (0-14)")
-        print(f"    • Mototaxis:  {vehicles['mototaxis']['count']} units, {vehicles['mototaxis']['chargers_assigned']} chargers (15-18)")
+        print(f"    • mototaxis:  {vehicles['mototaxis']['count']} units, {vehicles['mototaxis']['chargers_assigned']} chargers (15-18)")
         print(f"    • Total:      {vehicles['total_vehicles']} vehicles, {vehicles['total_sockets_allocated']} sockets")
         
         print(f"\n  INFRASTRUCTURE:")

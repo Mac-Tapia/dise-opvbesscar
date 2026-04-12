@@ -1,0 +1,10 @@
+Componente,Valor dimensionado,Especificación objetivo,Estado
+Solar instalado (kWp),4050.0,"4,050 kWp",CUMPLE ✓
+Generación solar anual (MWh),8293.0,"> 8,000 MWh/año",CUMPLE ✓
+BESS capacidad (kWh),2000.0,"2,000 kWh / 400 kW",CUMPLE ✓
+BESS autonomía (h),4.0,> 3h a carga punta EV,CUMPLE ✓
+Cargadores instalados,19.0,19 unidades × 2 sockets,CUMPLE ✓
+Sockets totales,38.0,38 sockets @ 7.4 kW,CUMPLE ✓
+Potencia instalada (kW),281.2,281.2 kW,CUMPLE ✓
+Cobertura demanda EV anual (%),98.0,> 95%,CUMPLE ✓
+Autosuficiencia energética (%),49.1,> 40%,CUMPLE ✓

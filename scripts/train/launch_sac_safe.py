@@ -85,7 +85,7 @@ def validate_datasets() -> bool:
     print('-' * 100)
     
     required_files = [
-        ('Solar', 'data/oe2/Generacionsolar/pv_generation_citylearn_enhanced_v2.csv', 8760),
+        ('Solar', 'data/oe2/Generacionsolar/pv_generation_citylearn2024.csv', 8760),
         ('Chargers', 'data/oe2/chargers/chargers_ev_ano_2024_v3.csv', 8760),
         ('BESS', 'data/oe2/bess/bess_ano_2024.csv', 8760),
         ('Mall', 'data/oe2/demandamallkwh/demandamallhorakwh.csv', 8760),
@@ -147,7 +147,7 @@ def train_sac():
         return False
     
     # ========================================================================
-    # PASO 2: CREAR AMBIENTE (desde train_sac_multiobjetivo.py)
+    # PASO 2: CREAR AMBIENTE (desde train_sac.py)
     # ========================================================================
     print('[TRAIN] Creando ambiente SAC...')
     print('-' * 100)
@@ -156,9 +156,9 @@ def train_sac():
         # Importar módulos necesarios del proyecto
         sys.path.insert(0, str(Path(__file__).parent.parent.parent))
         
-        # Este import es pesado - se ejecuta desde train_sac_multiobjetivo.py
+        # Este import es pesado - se ejecuta desde train_sac.py
         # Por ahora simplemente indicamos que se va a entrenar
-        print('  ℹ Ambiente se cargará en train_sac_multiobjetivo.py')
+        print('  ℹ Ambiente se cargará en train_sac.py')
         print('  ℹ Iniciando proceso de entrenamiento SAC...')
         print()
         
@@ -169,11 +169,11 @@ def train_sac():
         print('=' * 100)
         print()
         
-        # Ejecutar train_sac_multiobjetivo.py con subprocess para capturar output
+        # Ejecutar train_sac.py con subprocess para capturar output
         import subprocess
         
         result = subprocess.run(
-            [sys.executable, 'scripts/train/train_sac_multiobjetivo.py'],
+            [sys.executable, 'scripts/train/train_sac.py'],
             cwd=Path(__file__).parent.parent.parent,
             capture_output=False,  # Show output directly
             text=True,

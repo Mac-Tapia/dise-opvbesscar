@@ -149,12 +149,12 @@ def check_environment():
     # 7. Training script
     print(f"\n[7] Script de Entrenamiento")
     try:
-        train_script = workspace_root / 'scripts/train/train_sac_multiobjetivo.py'
+        train_script = workspace_root / 'scripts/train/train_sac.py'
         if train_script.exists():
-            print(f"    ✓ train_sac_multiobjetivo.py encontrado")
+            print(f"    ✓ train_sac.py encontrado")
             checks_passed += 1
         else:
-            print(f"    ✗ train_sac_multiobjetivo.py NO encontrado")
+            print(f"    ✗ train_sac.py NO encontrado")
             checks_failed += 1
     except Exception as e:
         print(f"    ✗ Error: {e}")
@@ -167,7 +167,7 @@ def check_environment():
     if checks_failed == 0:
         print("✓ LISTO PARA ENTRENAR SAC")
         print("\nProximo paso:")
-        print(f"  python scripts/train/train_sac_multiobjetivo.py")
+        print(f"  python scripts/train/train_sac.py")
         return 0
     else:
         print("✗ NECESITA CORREGIR LOS ERRORES ANTES DE ENTRENAR")

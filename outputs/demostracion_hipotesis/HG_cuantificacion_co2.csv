@@ -1,0 +1,12 @@
+Indicador,Valor
+F0 Sin Proyecto (kg CO₂/año),"7,054,000"
+"F1 Baseline c/solar, sin RL (kg CO₂/año)","5,790,639"
+F2 Con agente SAC — Ep óptimo (kg CO₂/año),"2,622,735"
+Reducción total F0→F2 (kg CO₂/año),"4,431,265"
+Reducción vs F0 (%),62.8%
+Reducción vs F1 Baseline (%),54.7%
+CO₂ evitado — componente directa (kg/año),"328,652"
+CO₂ evitado — componente indirecta (kg/año),"3,222,351"
+Factor CO₂ red eléctrica Iquitos (kg/kWh),0.4521
+Equivalente árboles plantados,"203,549 árboles"
+Equivalente autos retirados de circulación,"2,216 autos/año"

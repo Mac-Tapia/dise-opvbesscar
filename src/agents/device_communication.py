@@ -79,7 +79,7 @@ class ChargerManager:
     
     # Caracteristicas por tipo
     moto_max_soc: float = 0.8       # Motos cargan 80% (usos frecuentes)
-    mototaxi_max_soc: float = 1.0   # Mototaxis cargan 100%
+    mototaxi_max_soc: float = 1.0   # mototaxis cargan 100%
     
     moto_capacity_kwh: float = 48.0     # Capacidad bateria moto
     mototaxi_capacity_kwh: float = 60.0 # Capacidad bateria mototaxi
@@ -397,7 +397,7 @@ class EnergyPrioritizer:
             # [8] Motos cargando ahora
             min(1.0, motos_stats['charging_now'] / 30.0),
             
-            # [9] Mototaxis cargando ahora
+            # [9] mototaxis cargando ahora
             min(1.0, mototaxis_stats['charging_now'] / 8.0),
             
             # [10] Demanda total EVs / capacidad max (400 kW BESS v5.4)

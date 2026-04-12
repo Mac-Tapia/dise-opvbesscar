@@ -167,7 +167,7 @@ class VehicleCycleSimulator:
                 trips_per_day.append(trip)
                 vehicle_counter += 1
         
-        # Mototaxis: menos viajes pero mas largos
+        # mototaxis: menos viajes pero mas largos
         for arrival_hour in self.mototaxi_arrival_hours:
             for _ in range(max(1, self.n_mototaxis // len(self.mototaxi_arrival_hours))):
                 trip = VehicleTrip(
@@ -386,7 +386,7 @@ if __name__ == '__main__':
             print(f"  Cargados (listos): {stats['trips_charged']}")
             print(f"  Partieron: {stats['departed']}")
             print(f"  Motos 100%: {stats['motos_cargadas_100']}")
-            print(f"  Mototaxis 100%: {stats['mototaxis_cargadas_100']}")
+            print(f"  mototaxis 100%: {stats['mototaxis_cargadas_100']}")
     
     # Estadisticas
     final_stats = simulator.get_statistics()
@@ -395,15 +395,15 @@ if __name__ == '__main__':
     print("="*80)
     print(f"\nViajes completados (3 dias): {final_stats['total_trips']}")
     print(f"  Motos: {final_stats['trips_by_type']['moto']}")
-    print(f"  Mototaxis: {final_stats['trips_by_type']['mototaxi']}")
+    print(f"  mototaxis: {final_stats['trips_by_type']['mototaxi']}")
     
     print(f"\nCarga:")
     print(f"  Motos al 100%: {final_stats['charging_statistics']['motos_charged_100']} (~{final_stats['charging_statistics'].get('motos_charged_100_pct', 0):.1f}%)")
-    print(f"  Mototaxis al 100%: {final_stats['charging_statistics']['mototaxis_charged_100']} (~{final_stats['charging_statistics'].get('mototaxis_charged_100_pct', 0):.1f}%)")
+    print(f"  mototaxis al 100%: {final_stats['charging_statistics']['mototaxis_charged_100']} (~{final_stats['charging_statistics'].get('mototaxis_charged_100_pct', 0):.1f}%)")
     print(f"  Energia total: {final_stats['charging_statistics']['total_energy_charged_kwh']:.0f} kWh")
     
     print(f"\nSOC promedio:")
     print(f"  Motos llegada: {final_stats['trip_statistics']['motos_avg_arrival_soc']:.1f}%")
     print(f"  Motos partida: {final_stats['trip_statistics']['motos_avg_departure_soc']:.1f}%")
-    print(f"  Mototaxis llegada: {final_stats['trip_statistics']['mototaxis_avg_arrival_soc']:.1f}%")
-    print(f"  Mototaxis partida: {final_stats['trip_statistics']['mototaxis_avg_departure_soc']:.1f}%")
+    print(f"  mototaxis llegada: {final_stats['trip_statistics']['mototaxis_avg_arrival_soc']:.1f}%")
+    print(f"  mototaxis partida: {final_stats['trip_statistics']['mototaxis_avg_departure_soc']:.1f}%")

@@ -6,16 +6,18 @@
     "validation_episodes": 50,
     "device": "cuda",
     "batch_size": 256,
-    "buffer_size": 2000000,
+    "buffer_size": 100000,
     "network_architecture": [
-      512,
-      512
+      256,
+      256
     ],
-    "learning_rate": 0.0003,
+    "learning_rate": 0.0001,
     "tau": 0.005,
     "gamma": 0.99,
-    "learning_starts": 1000,
-    "entropy_coeff": "auto"
+    "learning_starts": 5000,
+    "target_entropy": -39.0,
+    "entropy_coeff": "auto",
+    "max_grad_norm": 5.0
   },
   "data": {
     "solar_file": "data/oe2/Generacionsolar/pv_generation_timeseries.csv",

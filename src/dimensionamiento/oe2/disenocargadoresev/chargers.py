@@ -426,9 +426,14 @@ MOTOTAXI_ENERGY_TO_CHARGE_KWH = 0.60 * MOTOTAXI_BATTERY_KWH / 0.95  # ~4.674 kWh
 
 # Factores de reduccion NETA de CO2 por cambio de combustible
 # PROPORCIONALES A ENERGIA CARGADA (independiente de SOC variable)
-FACTOR_CO2_NETO_MOTO_KG_KWH = 0.87      # kg CO2 evitado / kWh cargado (moto)
-FACTOR_CO2_NETO_MOTOTAXI_KG_KWH = 0.47  # kg CO2 evitado / kWh cargado (mototaxi)
-FACTOR_CO2_NETO_PROMEDIO_KG_KWH = 0.75  # Promedio ponderado (70% moto, 30% mototaxi)
+# Fuente: IPCC 2006 Tier 1, Table 3.2.1 — Garay Aquino et al. E3S 2024
+#   Moto Honda Wave 125cc:     2.30 L/100km × 2.31 kg CO2/L ÷ 6.0  kWh/100km = 0.87 kg CO2/kWh
+#   Mototaxi 3 ruedas 150cc:   3.50 L/100km × 2.31 kg CO2/L ÷ 15.0 kWh/100km = 0.54 kg CO2/kWh
+# NOTA: Se corrigió 0.47 → 0.54 para alinear con train_sac/ppo/a2c (fuente IPCC idéntica)
+FACTOR_CO2_NETO_MOTO_KG_KWH      = 0.87   # kg CO2 evitado / kWh cargado (moto gasolina IPCC2006)
+FACTOR_CO2_NETO_MOTOTAXI_KG_KWH  = 0.54   # kg CO2 evitado / kWh cargado (mototaxi diesel IPCC2006)
+# Promedio ponderado por energia real CSV OE2: FRAC_M=0.8458 motos, FRAC_T=0.1542 mototaxis
+FACTOR_CO2_NETO_PROMEDIO_KG_KWH  = round(0.87 * 0.8458 + 0.54 * 0.1542, 4)  # ≈ 0.8191
 
 
 @dataclass

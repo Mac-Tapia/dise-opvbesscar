@@ -237,7 +237,7 @@ class ChargerController:
         
         energy_delivered = 0.0
         motos_charging = 0
-        taxis_charging = 0
+        mototaxis_charging = 0
         
         for socket_id, power_action in enumerate(actions):
             if power_action > 0.1:
@@ -255,7 +255,7 @@ class ChargerController:
                 if socket_id < self.n_motos:
                     motos_charging += 1
                 else:
-                    taxis_charging += 1
+                    mototaxis_charging += 1
                 
                 # Si alcanzo 100%, contar
                 if self.vehicle_socs[socket_id] >= 100.0:
@@ -268,9 +268,9 @@ class ChargerController:
         self.metrics.total_energy_delivered_kwh += energy_delivered
         self.metrics.total_energy_requested_kwh += total_requested
         self.metrics.motos_currently_charging = motos_charging
-        self.metrics.mototaxis_currently_charging = taxis_charging
+        self.metrics.mototaxis_currently_charging = mototaxis_charging
         self.metrics.peak_charging_power_kw = max(self.metrics.peak_charging_power_kw, energy_delivered)
-        self.metrics.sockets_active_total = motos_charging + taxis_charging
+        self.metrics.sockets_active_total = motos_charging + mototaxis_charging
         
         if self.step_count > 0:
             self.metrics.avg_charging_power_kw = self.metrics.total_energy_delivered_kwh / self.step_count
@@ -281,19 +281,19 @@ class ChargerController:
             # vehicle_socs es un Dict[int, float], no una lista
             # Acceder solo a las claves que existen
             motos_socs = [self.vehicle_socs[i] for i in range(self.n_motos) if i in self.vehicle_socs]
-            taxis_socs = [self.vehicle_socs[i] for i in range(self.n_motos, self.n_total_sockets) if i in self.vehicle_socs]
+            mototaxis_socs = [self.vehicle_socs[i] for i in range(self.n_motos, self.n_total_sockets) if i in self.vehicle_socs]
             if motos_socs:
                 self.metrics.motos_avg_soc = float(np.mean(motos_socs))
-            if taxis_socs:
-                self.metrics.mototaxis_avg_soc = float(np.mean(taxis_socs))
+            if mototaxis_socs:
+                self.metrics.mototaxis_avg_soc = float(np.mean(mototaxis_socs))
         
         return {
             'charger_energy_delivered_kwh': energy_delivered,
             'charger_energy_requested_kwh': total_requested,
             'charger_motos_charging': motos_charging,
-            'charger_taxis_charging': taxis_charging,
+            'charger_mototaxis_charging': mototaxis_charging,
             'charger_motos_100': self.metrics.motos_charged_100,
-            'charger_taxis_100': self.metrics.mototaxis_charged_100,
+            'charger_mototaxis_100': self.metrics.mototaxis_charged_100,
             'charger_timestamp': timestep
         }
     
@@ -307,12 +307,12 @@ class ChargerController:
             'charger_timesteps': self.metrics.timesteps_counted,
             'charger_total_kwh': self.metrics.total_energy_delivered_kwh,
             'charger_motos_100': self.metrics.motos_charged_100,
-            'charger_taxis_100': self.metrics.mototaxis_charged_100,
+            'charger_mototaxis_100': self.metrics.mototaxis_charged_100,
             'charger_avg_power': self.metrics.avg_charging_power_kw,
             'charger_peak_power': self.metrics.peak_charging_power_kw,
             'charger_efficiency': self.metrics.charger_efficiency,
             'charger_motos_avg_soc': self.metrics.motos_avg_soc,
-            'charger_taxis_avg_soc': self.metrics.mototaxis_avg_soc,
+            'charger_mototaxis_avg_soc': self.metrics.mototaxis_avg_soc,
         }
 
 
@@ -594,7 +594,7 @@ class SystemOrchestrator:
         summary = (
             f"[TIMESTEP {self.global_timestep:05d}]\n"
             f"  SOLAR:    {metrics['solar'].get('solar_generation_kw', 0):.1f} kW\n"
-            f"  CHARGERS: {metrics['charger'].get('charger_motos_charging', 0)}M + {metrics['charger'].get('charger_taxis_charging', 0)}T\n"
+            f"  CHARGERS: {metrics['charger'].get('charger_motos_charging', 0)}M + {metrics['charger'].get('charger_mototaxis_charging', 0)}T\n"
             f"  BESS:     SOC={metrics['bess'].get('bess_soc_percent', 0):.1f}% | "
             f"Charge={metrics['bess'].get('bess_total_charge_kwh', 0):.1f} | "
             f"Discharge={metrics['bess'].get('bess_total_discharge_kwh', 0):.1f}\n"

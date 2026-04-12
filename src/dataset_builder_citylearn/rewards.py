@@ -190,7 +190,7 @@ class IquitosContext:
     # Flota EV (OE3 REAL v5.2 - 2026-02-12)
     # VALORES DIARIOS (para control):
     vehicles_day_motos: int = 270          # Motos cargadas por dia (pe=0.30, fc=0.55)
-    vehicles_day_mototaxis: int = 39       # Mototaxis cargadas por dia
+    vehicles_day_mototaxis: int = 39       # mototaxis cargadas por dia
 
     # VALORES ANUALES (para impacto y referencia v5.2):
     vehicles_year_motos: int = 98550       # Proyeccion anual: 270 × 365
@@ -313,34 +313,34 @@ class MultiObjectiveReward:
 
         # Procesar MOTOTAXIS (8 sockets)
         if charger_soc_mototaxis is not None and len(charger_soc_mototaxis) > 0:
-            taxis_soc = np.array(charger_soc_mototaxis, dtype=np.float32)
-            taxis_soc = np.clip(taxis_soc, 0.0, 1.0)
+            mototaxis_soc = np.array(charger_soc_mototaxis, dtype=np.float32)
+            mototaxis_soc = np.clip(mototaxis_soc, 0.0, 1.0)
 
             # Contar mototaxis que alcanzaron target
-            taxis_at_target = np.sum(taxis_soc >= soc_target)
+            mototaxis_at_target = np.sum(mototaxis_soc >= soc_target)
             # Contar mototaxis en carga
-            taxis_charging = np.sum((taxis_soc >= soc_charging_threshold) & (taxis_soc < soc_target))
+            mototaxis_charging = np.sum((mototaxis_soc >= soc_charging_threshold) & (mototaxis_soc < soc_target))
 
-            result['mototaxis_charged'] = int(taxis_at_target)
-            result['mototaxis_in_progress'] = int(taxis_charging)
-            result['mototaxis_avg_soc'] = float(np.mean(taxis_soc))
+            result['mototaxis_charged'] = int(mototaxis_at_target)
+            result['mototaxis_in_progress'] = int(mototaxis_charging)
+            result['mototaxis_avg_soc'] = float(np.mean(mototaxis_soc))
             
             # % de capacidad diaria (39 mototaxis/día target)
-            result['mototaxis_pct_of_daily_capacity'] = (taxis_at_target / self.context.mototaxis_daily_capacity) * 100.0
+            result['mototaxis_pct_of_daily_capacity'] = (mototaxis_at_target / self.context.mototaxis_daily_capacity) * 100.0
 
         # Totales
         result['total_charged'] = result['motos_charged'] + result['mototaxis_charged']
         
         # Calculo normalizado: comparar vs capacidad diaria
-        # Formula: (motos_cargadas / 270) × 0.87 + (taxis_cargadas / 39) × 0.13
+        # Formula: (motos_cargadas / 270) × 0.87 + (mototaxis_cargadas / 39) × 0.13
         # Factor 0.87 = proporción de motos en flota (270/309)
-        # Factor 0.13 = proporción de taxis en flota (39/309)
+        # Factor 0.13 = proporción de mototaxis en flota (39/309)
         motos_ratio = result['motos_charged'] / max(1, self.context.motos_daily_capacity)
-        taxis_ratio = result['mototaxis_charged'] / max(1, self.context.mototaxis_daily_capacity)
+        mototaxis_ratio = result['mototaxis_charged'] / max(1, self.context.mototaxis_daily_capacity)
         
         moto_weight = 0.87
-        taxi_weight = 0.13
-        result['vehicles_charged_equivalent'] = (motos_ratio * moto_weight) + (taxis_ratio * taxi_weight)
+        mototaxi_weight = 0.13
+        result['vehicles_charged_equivalent'] = (motos_ratio * moto_weight) + (mototaxis_ratio * mototaxi_weight)
 
         # Status string
         total_in_progress = result['motos_in_progress'] + result['mototaxis_in_progress']
@@ -369,7 +369,7 @@ class MultiObjectiveReward:
 
         MODELO IQUITOS REALISTA:
         ========================
-        CO₂ Reduccion DIRECTA (Principal): Motos/Mototaxis que evitan combustible
+        CO₂ Reduccion DIRECTA (Principal): Motos/mototaxis que evitan combustible
           - Cada kWh de EV cargado = 35 km sin gasolina = 5.2-11.7 kg CO₂ evitado
           - Meta: 3,073 vehiculos/dia (2,685 motos + 388 mototaxis)
           - Energia: 2,912,500 kWh/ano (750k kWh EVs) × factores combustion
@@ -411,9 +411,9 @@ class MultiObjectiveReward:
         # 
         # MODELO REALISTA IQUITOS v5.2:
         # ==============================
-        # CO₂ REDUCCION DIRECTA (Principal): Motos/Mototaxis que evitan combustible
+        # CO₂ REDUCCION DIRECTA (Principal): Motos/mototaxis que evitan combustible
         #   - Motos cargadas: ev_charging_kwh / 4.6 kWh = cantidad motos (v5.2)
-        #   - Mototaxis cargadas: ev_charging_kwh / 7.4 kWh = cantidad mototaxis (v5.2)
+        #   - mototaxis cargadas: ev_charging_kwh / 7.4 kWh = cantidad mototaxis (v5.2)
         #   - CO₂ evitado: (km_viajes × 35 km/kWh) / 120 km/galon × 8.9 kg CO₂/galon
         #
         # CO₂ REDUCCION INDIRECTA (Secundaria): Solar + BESS generan energia limpia
@@ -443,7 +443,7 @@ class MultiObjectiveReward:
         
         # Flota Iquitos v5.2: 270 motos/dia + 39 mototaxis/dia = 309 vehiculos/dia
         #   Motos: 4.6 kWh capacidad @ 35 km/kWh = 161 km/carga
-        #   Mototaxis: 7.4 kWh @ 35 km/kWh = 259 km/carga
+        #   mototaxis: 7.4 kWh @ 35 km/kWh = 259 km/carga
         avg_battery_capacity_kwh = 0.87 * 4.6 + 0.13 * 7.4  # = ~5.0 kWh promedio (270/309 motos)
         vehicles_charged_equivalent = ev_charging_kwh / max(avg_battery_capacity_kwh, 1e-6)
         
@@ -976,7 +976,7 @@ def create_iquitos_reward_weights(
     presets = {
         "balanced": MultiObjectiveWeights(direct_co2=0.20, co2=0.20, solar=0.15, ev_satisfaction=0.30, ev_utilization=0.05, grid_stability=0.10),
         "co2_focus": MultiObjectiveWeights(direct_co2=0.35, co2=0.30, solar=0.05, ev_satisfaction=0.25, ev_utilization=0.00, grid_stability=0.05),
-        "cost_focus": MultiObjectiveWeights(direct_co2=0.20, co2=0.20, solar=0.10, ev_satisfaction=0.25, ev_utilization=0.00, grid_stability=0.05),
+        "cost_focus": MultiObjectiveWeights(direct_co2=0.20, co2=0.20, solar=0.10, ev_satisfaction=0.45, ev_utilization=0.00, grid_stability=0.05),
         "ev_focus": MultiObjectiveWeights(direct_co2=0.20, co2=0.15, solar=0.05, ev_satisfaction=0.50, ev_utilization=0.05, grid_stability=0.05),
         "solar_focus": MultiObjectiveWeights(direct_co2=0.20, co2=0.20, solar=0.35, ev_satisfaction=0.20, ev_utilization=0.00, grid_stability=0.05),
     }

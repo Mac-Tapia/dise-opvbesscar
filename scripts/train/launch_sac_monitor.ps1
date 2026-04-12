@@ -25,7 +25,7 @@ Write-Host "Starting SAC training with v9.0 (grid-centric, minimal reward)..." -
 Write-Host ""
 
 # Initiate training in background
-$job = Start-Process python -ArgumentList "scripts/train/train_sac_multiobjetivo.py" -NoNewWindow -PassThru
+$job = Start-Process python -ArgumentList "scripts/train/train_sac.py" -NoNewWindow -PassThru
 
 Write-Host "Training process started (PID: $($job.Id))" -ForegroundColor $ColorGood
 Write-Host ""

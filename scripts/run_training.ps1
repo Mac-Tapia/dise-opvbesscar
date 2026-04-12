@@ -46,7 +46,7 @@ switch ($Agent.ToLower()) {
         Write-Host "   Duración esperada: 20-30 horas en CPU" -ForegroundColor Gray
         Write-Host ""
         Set-Location $ProjectRoot
-        python train_sac_multiobjetivo.py
+        python train_sac.py
     }
     "ppo" {
         Write-Host "🚀 ENTRENANDO PPO..." -ForegroundColor Yellow

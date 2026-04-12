@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arquitectura PVBESSCAR — Pipeline OE2 → OE3</title>
+<style>
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+  background: #eef1f6;
+  color: #1a2035;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+header {
+  background: linear-gradient(135deg, #0d2b45 0%, #1a4f72 55%, #0e6655 100%);
+  color: white;
+  padding: 28px 48px 22px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+  position: relative;
+  overflow: hidden;
+}
+header::before {
+  content: '';
+  position: absolute; top: -50px; right: -50px;
+  width: 220px; height: 220px;
+  background: rgba(255,255,255,.04); border-radius: 50%;
+}
+header::after {
+  content: '';
+  position: absolute; bottom: -70px; left: 25%;
+  width: 280px; height: 280px;
+  background: rgba(255,255,255,.03); border-radius: 50%;
+}
+.hdr-top { display: flex; align-items: flex-start; gap: 18px; }
+.hdr-icon { font-size: 2.8rem; line-height: 1; z-index: 1; }
+.hdr-text { z-index: 1; }
+.hdr-text h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: .3px; line-height: 1.3; }
+.hdr-text p  { font-size: .87rem; opacity: .78; margin-top: 5px; line-height: 1.5; }
+.badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; z-index: 1; position: relative; }
+.badge {
+  background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.26);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: .74rem;
+  font-weight: 600;
+  letter-spacing: .3px;
+}
+.badge.highlight { background: rgba(249,168,37,.25); border-color: rgba(249,168,37,.5); }
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+nav {
+  background: #12202f;
+  padding: 0 48px;
+  display: flex;
+  gap: 0;
+  box-shadow: 0 3px 10px rgba(0,0,0,.25);
+  overflow-x: auto;
+}
+nav button {
+  background: transparent;
+  color: rgba(255,255,255,.58);
+  border: none;
+  padding: 15px 24px;
+  cursor: pointer;
+  font-size: .87rem;
+  font-weight: 500;
+  border-bottom: 3px solid transparent;
+  transition: all .2s ease;
+  white-space: nowrap;
+}
+nav button:hover { color: rgba(255,255,255,.9); background: rgba(255,255,255,.06); }
+nav button.active { color: #fff; border-bottom-color: #3fb8e8; background: rgba(63,184,232,.12); }
+
+/* ============================================================
+   PANELS
+   ============================================================ */
+.panel { display: none; padding: 36px 48px 48px; }
+.panel.active { display: block; }
+
+/* ============================================================
+   SECTION TITLES
+   ============================================================ */
+.section-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0d2b45;
+  margin-bottom: 24px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #3fb8e8;
+  letter-spacing: .1px;
+}
+
+/* ============================================================
+   KPI CARDS
+   ============================================================ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.kpi-card {
+  background: white;
+  border-radius: 10px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.07);
+  border-left: 4px solid #16a34a;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.11); }
+.kpi-card.gold   { border-left-color: #d97706; }
+.kpi-card.blue   { border-left-color: #1d4ed8; }
+.kpi-card.red    { border-left-color: #dc2626; }
+.kpi-card.purple { border-left-color: #7c3aed; }
+.kpi-card.teal   { border-left-color: #0891b2; }
+.kpi-label { font-size: .7rem; color: #6b7280; text-transform: uppercase; letter-spacing: .7px; font-weight: 600; }
+.kpi-value { font-size: 1.42rem; font-weight: 700; color: #0d2b45; margin-top: 7px; line-height: 1.2; }
+.kpi-sub   { font-size: .74rem; color: #9ca3af; margin-top: 4px; line-height: 1.45; }
+
+/* ============================================================
+   STAT BOXES
+   ============================================================ */
+.stat-box {
+  background: #f0fdf4;
+  border-left: 4px solid #16a34a;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  font-size: .87rem;
+  line-height: 1.78;
+}
+.stat-box.blue   { background: #eff6ff; border-left-color: #1d4ed8; }
+.stat-box.indigo { background: #eef2ff; border-left-color: #4338ca; }
+.stat-box strong { color: #111827; }
+
+/* ============================================================
+   PIPELINE DIAGRAM
+   ============================================================ */
+.pipeline-wrap {
+  background: white;
+  border-radius: 14px;
+  padding: 36px 40px;
+  box-shadow: 0 2px 16px rgba(0,0,0,.08);
+  overflow-x: auto;
+}
+.phase {
+  border-radius: 10px;
+  padding: 16px 20px 20px;
+  margin-bottom: 8px;
+  position: relative;
+}
+.phase-header {
+  font-size: .68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.1px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.phase-header .ph-title { opacity: .85; }
+.nodes {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.nc {
+  background: white;
+  border-radius: 8px;
+  padding: 11px 14px;
+  flex: 1;
+  min-width: 150px;
+  max-width: 280px;
+  box-shadow: 0 1px 5px rgba(0,0,0,.1);
+  border-top: 3px solid;
+  font-size: .8rem;
+  line-height: 1.5;
+}
+.nc-name {
+  font-weight: 700;
+  font-size: .84rem;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nc-detail { color: #4b5563; font-size: .76rem; line-height: 1.55; }
+.connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0;
+  flex-direction: column;
+}
+.connector-line { width: 2px; height: 22px; background: linear-gradient(180deg, #94a3b8, #64748b); }
+.connector-arrow { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 9px solid #64748b; }
+.connector-label { font-size: .7rem; color: #6b7280; font-style: italic; letter-spacing: .2px; margin-top: 2px; }
+
+/* Phase themes */
+.phase-oe2    { background: #fffbeb; border: 1.5px solid #fbbf24; }
+.phase-oe2 .phase-header { color: #78350f; }
+.phase-oe2 .nc { border-top-color: #f59e0b; }
+.phase-load   { background: #eff6ff; border: 1.5px solid #60a5fa; }
+.phase-load .phase-header { color: #1e3a8a; }
+.phase-load .nc { border-top-color: #3b82f6; }
+.phase-env    { background: #f0fdf4; border: 1.5px solid #4ade80; }
+.phase-env .phase-header { color: #14532d; }
+.phase-env .nc { border-top-color: #16a34a; }
+.phase-train  { background: #eef2ff; border: 1.5px solid #818cf8; }
+.phase-train .phase-header { color: #1e1b4b; }
+.phase-train .nc { border-top-color: #6366f1; }
+.phase-ckpt   { background: #faf5ff; border: 1.5px solid #c084fc; }
+.phase-ckpt .phase-header { color: #3b0764; }
+.phase-ckpt .nc { border-top-color: #a855f7; }
+.phase-res    { background: #fff1f2; border: 1.5px solid #fb7185; }
+.phase-res .phase-header { color: #881337; }
+.phase-res .nc { border-top-color: #f43f5e; }
+.phase-stat   { background: #f0fdfe; border: 1.5px solid #22d3ee; }
+.phase-stat .phase-header { color: #0e7490; }
+.phase-stat .nc { border-top-color: #06b6d4; }
+.phase-comp   { background: #fff7ed; border: 1.5px solid #fb923c; }
+.phase-comp .phase-header { color: #7c2d12; }
+.phase-comp .nc { border-top-color: #f97316; }
+.phase-thesis { background: #ecfdf5; border: 2px solid #10b981; }
+.phase-thesis .phase-header { color: #064e3b; font-size: .75rem; }
+.phase-thesis .nc { border-top-color: #10b981; }
+.phase-tech   { background: #f8fafc; border: 1.5px solid #94a3b8; }
+.phase-tech .phase-header { color: #334155; }
+.phase-tech .nc { border-top-color: #64748b; }
+
+/* ============================================================
+   WORKFLOW STEPS
+   ============================================================ */
+.flow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+@media (max-width: 900px) { .flow-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .flow-grid { grid-template-columns: 1fr; } }
+.flow-step {
+  background: white;
+  border-radius: 10px;
+  padding: 20px 18px 18px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.07);
+  border-left: 5px solid #ccc;
+  position: relative;
+}
+.flow-step-badge {
+  position: absolute; top: -11px; left: 14px;
+  background: #0d2b45; color: white;
+  border-radius: 20px; padding: 2px 12px;
+  font-size: .65rem; font-weight: 700; letter-spacing: .6px; text-transform: uppercase;
+}
+.flow-step h4 { font-size: .9rem; font-weight: 700; margin-top: 10px; margin-bottom: 8px; color: #0d2b45; line-height: 1.35; }
+.flow-step ul { padding-left: 16px; font-size: .8rem; color: #4b5563; line-height: 1.65; }
+.flow-step li { margin-bottom: 3px; }
+.flow-step .fs-meta { margin-top: 10px; font-size: .75rem; color: #9ca3af; font-style: italic; line-height: 1.5; }
+.fs-1 { border-left-color: #f59e0b; } .fs-2 { border-left-color: #8b5cf6; }
+.fs-3 { border-left-color: #3b82f6; } .fs-4 { border-left-color: #10b981; }
+.fs-5 { border-left-color: #f97316; } .fs-6 { border-left-color: #06b6d4; }
+.fs-7 { border-left-color: #ec4899; } .fs-8 { border-left-color: #6366f1; }
+.fs-9 { border-left-color: #16a34a; background: #f0fdf4; }
+
+/* ============================================================
+   AGENT TABLE
+   ============================================================ */
+.agent-table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.08); margin-bottom: 24px; font-size: .85rem; }
+.agent-table thead th { background: #0d2b45; color: white; padding: 13px 16px; text-align: left; font-size: .78rem; font-weight: 600; letter-spacing: .4px; }
+.agent-table tbody td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+.agent-table tbody tr:hover td { background: #f8fafc; }
+.row-sac td { background: #fefce8; }
+.row-sac td:first-child { border-left: 4px solid #d97706; }
+.row-ppo td:first-child { border-left: 4px solid #3b82f6; }
+.row-a2c td:first-child { border-left: 4px solid #a855f7; }
+.row-f1 td { background: #fff7ed !important; }
+.row-f0 td { background: #fef2f2 !important; }
+.rank-badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 5px; padding: 3px 9px; font-size: .74rem; font-weight: 700; }
+.rank-1 { background: #fef9c3; color: #78350f; border: 1px solid #fde047; }
+.rank-2 { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+.rank-3 { background: #f3e8ff; color: #4c1d95; border: 1px solid #c4b5fd; }
+
+/* ============================================================
+   FOOTER & UTILS
+   ============================================================ */
+footer { background: #0d2b45; color: rgba(255,255,255,.45); text-align: center; padding: 20px; font-size: .76rem; margin-top: 40px; letter-spacing: .4px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">
+    <div class="hdr-icon">🔋</div>
+    <div class="hdr-text">
+      <h1>Arquitectura PVBESSCAR — Pipeline OE2 → OE3</h1>
+      <p>Sistema de carga inteligente con RL para motos y mototaxis eléctricas · Iquitos, Perú</p>
+    </div>
+  </div>
+  <div class="badge-row">
+    <span class="badge">📅 12 / 04 / 2026</span>
+    <span class="badge highlight">🏆 SAC Ganador OE3</span>
+    <span class="badge">☀️ 4,050 kWp</span>
+    <span class="badge">🔋 2,000 kWh BESS</span>
+    <span class="badge">🔌 38 sockets</span>
+    <span class="badge">📄 v11 — 594 párrafos</span>
+    <span class="badge">Branch: smartcharger</span>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="show('home',this)">📊 &nbsp;KPIs Clave</button>
+  <button onclick="show('pipeline',this)">🔄 &nbsp;Pipeline OE2 → OE3</button>
+  <button onclick="show('flujo',this)">📋 &nbsp;Flujo de Trabajo</button>
+  <button onclick="show('agentes',this)">🤖 &nbsp;Ranking de Agentes</button>
+</nav>
+
+<!-- PANEL KPIs -->
+<div id="home" class="panel active">
+  <div class="section-title">📊 Resultados Clave — OE3 Selección de Agente RL (12 / 04 / 2026)</div>
+  <div class="kpi-grid">
+    <div class="kpi-card gold"><div class="kpi-label">🏆 Agente Ganador</div><div class="kpi-value">SAC</div><div class="kpi-sub">Soft Actor-Critic — off-policy</div></div>
+    <div class="kpi-card"><div class="kpi-label">F₂ Mínimo SAC (ep. 48)</div><div class="kpi-value">2,622,734 kg</div><div class="kpi-sub">CO₂/año con control RL</div></div>
+    <div class="kpi-card red"><div class="kpi-label">F₀ Baseline Diesel</div><div class="kpi-value">7,054,000 kg</div><div class="kpi-sub">CO₂/año — sin solar, sin RL</div></div>
+    <div class="kpi-card"><div class="kpi-label">CO₂ Total Evitado</div><div class="kpi-value">4,431,266 kg</div><div class="kpi-sub">62.8 % reducción vs. F₀</div></div>
+    <div class="kpi-card blue"><div class="kpi-label">Debt Violations SAC</div><div class="kpi-value">0</div><div class="kpi-sub">100 % EVs cargados a tiempo</div></div>
+    <div class="kpi-card purple"><div class="kpi-label">BESS Descarga (ep. 48)</div><div class="kpi-value">875,698 kWh</div><div class="kpi-sub">Energía BESS → red EV</div></div>
+    <div class="kpi-card teal"><div class="kpi-label">Episodios Entrenados</div><div class="kpi-value">50 × 3</div><div class="kpi-sub">= 1,314,000 pasos totales</div></div>
+    <div class="kpi-card"><div class="kpi-label">Documento Final</div><div class="kpi-value">v11</div><div class="kpi-sub">594 párrafos · 36 tablas · 6.4 MB</div></div>
+  </div>
+  <div class="stat-box">
+    <strong>🔬 Validación Estadística:</strong><br>
+    Kruskal-Wallis H = 81.65, p = 1.86 × 10⁻¹⁸ → diferencias altamente significativas entre los 3 agentes<br>
+    Mann-Whitney SAC vs PPO: p = 3.02 × 10⁻¹⁶ → SAC estadísticamente superior<br>
+    Wilcoxon T = 0, p = 1.78 × 10⁻¹⁵ → SAC ep. 48 vs. baseline confirmado
+  </div>
+  <div class="stat-box blue">
+    <strong>📐 Fórmulas CO₂ (§2.2.4 del informe):</strong><br>
+    F₀ = Σ(Nᵥ × dᵥ × 365 × FEᵥ) = 7,054,000 kg CO₂/año &nbsp;|&nbsp; FE_ICE_moto = 2.146 kg CO₂/L<br>
+    F₁ = (E_EV,base + E_mall) × FE_red = 5,789,814 kg CO₂/año &nbsp;|&nbsp; FE_red = 0.4521 kg CO₂/kWh<br>
+    F₂ = E_red,RL × FE_red &nbsp;|&nbsp; E_red(t) = max{0, E_EV + E_mall − E_solar − E_BESS,desc}
+  </div>
+  <div class="two-col">
+    <div class="stat-box" style="background:#f5f3ff; border-left-color:#7c3aed; margin-bottom:0;">
+      <strong>🔋 Infraestructura BESS:</strong><br>
+      Capacidad: 2,000 kWh / 400 kW &nbsp;|&nbsp; DoD 80%<br>
+      Eficiencia carga/descarga: η = 95 %<br>
+      SOC operativo: 20 % – 100 %
+    </div>
+    <div class="stat-box" style="background:#fff7ed; border-left-color:#ea580c; margin-bottom:0;">
+      <strong>☀️ Generación Solar:</strong><br>
+      4,050 kWp instalados — Iquitos, Perú<br>
+      Datos: PVGIS 2024 — resolución horaria<br>
+      8,760 filas/año (⚠️ SOLO datos horarios)
+    </div>
+  </div>
+</div>
+
+<!-- PANEL PIPELINE -->
+<div id="pipeline" class="panel">
+  <div class="section-title">🔄 Pipeline Completo OE2 → OE3 (12 / 04 / 2026)</div>
+  <div class="pipeline-wrap">
+
+    <div class="phase phase-oe2">
+      <div class="phase-header">📦 <span class="ph-title">FASE OE2 — DIMENSIONAMIENTO · Infraestructura PVBESSCAR</span></div>
+      <div class="nodes">
+        <div class="nc"><div class="nc-name">☀️ Generación Solar</div><div class="nc-detail">4,050 kWp · Iquitos, Perú (PVGIS)<br>8,760 h/año — resolución horaria</div></div>
+        <div class="nc"><div class="nc-name">🔋 BESS</div><div class="nc-detail">2,000 kWh / 400 kW<br>DoD 80% · η 95% · SOC: 20%–100%</div></div>
+        <div class="nc"><div class="nc-name">🔌 Infraestructura de Carga</div><div class="nc-detail">19 cargadores × 2 sockets = 38 puntos<br>Mode 3 — 7.4 kW @ 230V / 32A</div></div>
+        <div class="nc"><div class="nc-name">🏢 Carga Base Mall</div><div class="nc-detail">100 kW continuo 24 h<br>demandamallhorakwh.csv</div></div>
+        <div class="nc"><div class="nc-name">🛵 Flota EV Iquitos</div><div class="nc-detail">270 motos + 39 mototaxis = 309 veh/día<br>demand_ev_anual.csv</div></div>
+        <div class="nc"><div class="nc-name">📊 Artefactos OE2</div><div class="nc-detail">data/interim/oe2/<br>pv_generation_timeseries.csv · bess_config.json<br>chargers_ev_ano_2024_v3.csv</div></div>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div><div class="connector-label">Validar &amp; cargar artefactos OE2</div></div>
+
+    <div class="phase phase-load">
+      <div class="phase-header">🔍 <span class="ph-title">VALIDACIÓN Y CARGA DE DATOS · data_loader.py</span></div>
+      <div class="nodes">
+        <div class="nc"><div class="nc-name">📥 data_loader.py</div><div class="nc-detail">✓ Solar: exactamente 8,760 filas<br>✓ Cargadores: 38 sockets<br>✓ BESS: SOC en rango 20–100%<br>OE2ValidationError si falla</div></div>
+        <div class="nc"><div class="nc-name">🏗️ dataset_builder_citylearn/</div><div class="nc-detail">Construye observaciones: 394 dim<br>Pesos de recompensa v7.0 CO2_DUAL_FOCUS</div></div>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div><div class="connector-label">Inicializar entorno</div></div>
+
+    <div class="phase phase-env">
+      <div class="phase-header">🌍 <span class="ph-title">ENTORNO CityLearn v2</span></div>
+      <div class="nodes">
+        <div class="nc"><div class="nc-name">🔄 CityLearn Environment</div><div class="nc-detail">1 timestep = 1 hora (3,600 s)<br>1 episodio = 8,760 pasos = 1 año<br>50 episodios por agente</div></div>
+        <div class="nc"><div class="nc-name">📋 Observación (394-dim)</div><div class="nc-detail">• Irradiancia solar W/m²<br>• Frecuencia red Hz + BESS SOC %<br>• Estado 38 sockets × 3 vars<br>• Hora / mes / día de semana</div></div>
+        <div class="nc"><div class="nc-name">🎮 Acción (39-dim continuo)</div><div class="nc-detail">Rango normalizado [0, 1]<br>• 1 setpoint BESS<br>• 38 setpoints sockets<br>→ kW reales vía action_bounds</div></div>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div><div class="connector-label">Función de recompensa + política RL</div></div>
+
+    <div class="phase phase-train">
+      <div class="phase-header">🤖 <span class="ph-title">ENTRENAMIENTO RL — 3 AGENTES · 50 episodios × 8,760 pasos cada uno</span></div>
+      <div class="nodes">
+        <div class="nc" style="min-width:100%; max-width:100%; margin-bottom:10px;">
+          <div class="nc-name">🎯 Función de Recompensa CO2_DUAL_FOCUS v7.0</div>
+          <div class="nc-detail" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap:4px 20px;">
+            <span>w₁ = 0.35 — CO₂ directo (combustible vehicular evitado)</span>
+            <span>w₂ = 0.30 — CO₂ indirecto (importaciones red × FE_red)</span>
+            <span>w₃ = 0.25 — Carga EV (satisfacción deadline)</span>
+            <span>w₄ = 0.05 — Autoconsumo solar</span>
+            <span>w₅ = 0.05 — Estabilidad red</span>
+            <span>R_final = 0.65 × R + 0.35 × r_EV,energy</span>
+          </div>
+        </div>
+        <div class="nc"><div class="nc-name">🏆 SAC — Ganador OE3</div><div class="nc-detail">Soft Actor-Critic · off-policy<br>50 eps × 8,760 = 438,000 pasos<br>Episodio óptimo: ep. 48<br>F₂ = 2,622,734 kg CO₂/año<br>Debt violations = 0</div></div>
+        <div class="nc"><div class="nc-name">🥈 PPO — Segundo lugar</div><div class="nc-detail">Proximal Policy Optimization<br>50 eps × 8,760 = 438,000 pasos<br>Episodio óptimo: ep. 40<br>F₂ = 2,787,039 kg CO₂/año<br>Debt violations = 0</div></div>
+        <div class="nc"><div class="nc-name">🥉 A2C — Tercer lugar</div><div class="nc-detail">Advantage Actor-Critic<br>50 eps × 8,760 = 438,000 pasos<br>Episodio óptimo: ep. 3<br>F₂ = 2,834,857 kg CO₂/año<br>⚠️ 217 debt violations</div></div>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div><div class="connector-label">Guardar checkpoints · stable-baselines3</div></div>
+
+    <div class="phase phase-ckpt">
+      <div class="phase-header">💾 <span class="ph-title">CHECKPOINTS &amp; MODELOS GUARDADOS</span></div>
+      <div class="nodes">
+        <div class="nc"><div class="nc-name">SAC</div><div class="nc-detail">checkpoints/SAC/<br>sac_ep48_best.zip<br>policy + value networks · optimizer state</div></div>
+        <div class="nc"><div class="nc-name">PPO</div><div class="nc-detail">checkpoints/PPO/<br>ppo_ep40_best.zip</div></div>
+        <div class="nc"><div class="nc-name">A2C</div><div class="nc-detail">checkpoints/A2C/<br>a2c_ep03_best.zip</div></div>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div><div class="connector-label">Exportar métricas y gráficas</div></div>
+
+    <div class="phase phase-res">
+      <div class="phase-header">📊 <span class="ph-title">MÉTRICAS Y RESULTADOS</span></div>
+      <div class="nodes">
+        <div class="nc"><div class="nc-name">SAC</div><div class="nc-detail">outputs/sac_training/<br>sac_co2_oe3_episodios.png<br>sac_dashboard.png · result_sac.json</div></div>
+        <div class="nc"><div class="nc-name">PPO</div><div class="nc-detail">outputs/ppo_training/<br>ppo_co2_oe3_episodios.png · ppo_dashboard.png</div></div>
+        <div class="nc"><div class="nc-name">A2C</div><div class="nc-detail">outputs/a2c_training/<br>a2c_co2_oe3_episodios.png · a2c_dashboard.png</div></div>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div><div class="connector-label">Pruebas estadísticas no paramétricas</div></div>
+
+    <div class="phase phase-stat">
+      <div class="phase-header">✅ <span class="ph-title">VALIDACIÓN ESTADÍSTICA</span></div>
+      <div class="nodes">
+        <div class="nc" style="min-width:100%; max-width:100%;">
+          <div class="nc-name">📐 Resultados Estadísticos</div>
+          <div class="nc-detail" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(270px,1fr)); gap:4px 24px; margin-top:4px;">
+            <span>Kruskal-Wallis H = 81.65 · p = 1.86 × 10⁻¹⁸</span>
+            <span>Mann-Whitney SAC vs PPO · p = 3.02 × 10⁻¹⁶</span>
+            <span>Wilcoxon T = 0 · p = 1.78 × 10⁻¹⁵</span>
+            <span>F₀ Baseline diesel = 7,054,000 kg CO₂/año</span>
+            <span>F₁ Solar + BESS sin RL = 5,789,814 kg CO₂/año</span>
+            <span>F₂ SAC óptimo = 2,622,734 kg CO₂/año (−62.8 % vs F₀)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div><div class="connector-label">Generar gráficas comparativas</div></div>
+
+    <div class="phase phase-comp">
+      <div class="phase-header">📈 <span class="ph-title">ANÁLISIS COMPARATIVO</span></div>
+      <div class="nodes">
+        <div class="nc"><div class="nc-name">📊 Convergencia y Varianza</div><div class="nc-detail">outputs/comparative_analysis/<br>convergence_all_agents.png<br>variance_comparison.png<br>statistical_justification_table.png<br>07_oe3_baseline_comparison.png</div></div>
+        <div class="nc"><div class="nc-name">🔬 Demostración de Hipótesis</div><div class="nc-detail">outputs/seccion52/ + outputs/hypothesis_test/<br>fig1_convergencia_agentes.png<br>fig3_varianza_robustez.png<br>hypothesis_test_co2_figura_completa.png</div></div>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div><div class="connector-label">Insertar figuras en documento tesis</div></div>
+
+    <div class="phase phase-thesis">
+      <div class="phase-header">📄 <span class="ph-title">DOCUMENTO TESIS — v11 FINAL · ✅ LISTO PARA ASESOR</span></div>
+      <div class="nodes">
+        <div class="nc" style="min-width:100%; max-width:100%;">
+          <div class="nc-name">📖 INFORME_OE3_SELECCION_AGENTE_RL_v11.docx</div>
+          <div class="nc-detail" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap:4px 20px; margin-top:6px;">
+            <span>📑 594 párrafos · 36 tablas · 6,376 KB</span>
+            <span>📝 52 correcciones de prosa académica</span>
+            <span>🔬 §4.6.3 Procedimiento OE3 (11 subsecciones)</span>
+            <span>📊 §5.x Resultados descriptivos OE2 + OE3</span>
+            <span>📐 §2.2.4 Bases teóricas GHG (7 fórmulas)</span>
+            <span>🖼️ ANEXO A: 33 figs entrenamiento (SAC+PPO+A2C)</span>
+            <span>🖼️ ANEXO B: 10 figs comparativo agentes</span>
+            <span>🖼️ ANEXO C: 7 figs demostración hipótesis</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div><div class="connector-label">Stack tecnológico</div></div>
+
+    <div class="phase phase-tech">
+      <div class="phase-header">🛠️ <span class="ph-title">STACK TECNOLÓGICO</span></div>
+      <div class="nodes">
+        <div class="nc"><div class="nc-name">🐍 Python 3.11+</div><div class="nc-detail">from __future__ import annotations<br>Runtime base del proyecto</div></div>
+        <div class="nc"><div class="nc-name">📦 stable-baselines3 v2.0+</div><div class="nc-detail">SAC / PPO / A2C · MlpPolicy · VecNormalize</div></div>
+        <div class="nc"><div class="nc-name">🏟️ Gymnasium 0.27+</div><div class="nc-detail">API estándar RL · CityLearn v2 wrapper</div></div>
+        <div class="nc"><div class="nc-name">⚡ PyTorch 2.0+ CUDA</div><div class="nc-detail">GPU: RTX 4060<br>~5–7 h por agente (438k steps)</div></div>
+        <div class="nc"><div class="nc-name">📝 python-docx</div><div class="nc-detail">scripts/analysis/<br>Generación automática del informe</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PANEL FLUJO -->
+<div id="flujo" class="panel">
+  <div class="section-title">📋 Flujo de Trabajo Detallado — 9 Etapas</div>
+  <div class="flow-grid">
+    <div class="flow-step fs-1">
+      <div class="flow-step-badge">Etapa 1</div>
+      <h4>☀️ Inputs del Proyecto</h4>
+      <ul>
+        <li>demandamallhorakwh.csv — 100 kW base continuo</li>
+        <li>pv_generation_timeseries.csv — 4,050 kWp · 8,760 filas horarias ⚠️</li>
+        <li>demand_ev_anual.csv — 270 motos + 39 mototaxis · 38 sockets</li>
+        <li>configs/default.yaml — BESS 2,000 kWh / 400 kW; FE_red = 0.4521 kg CO₂/kWh</li>
+      </ul>
+    </div>
+    <div class="flow-step fs-2">
+      <div class="flow-step-badge">Etapa 2</div>
+      <h4>🔍 Carga y Validación OE2</h4>
+      <ul>
+        <li>data_loader.py verifica integridad de artefactos</li>
+        <li>✓ Solar: exactamente 8,760 filas horarias</li>
+        <li>✓ Cargadores: 38 sockets detectados</li>
+        <li>✓ BESS: SOC en rango (20 %, 100 %)</li>
+        <li>Lanza OE2ValidationError si cualquier check falla</li>
+      </ul>
+    </div>
+    <div class="flow-step fs-3">
+      <div class="flow-step-badge">Etapa 3</div>
+      <h4>🔌 Artefactos OE2</h4>
+      <ul>
+        <li>chargers.py — @dataclass(frozen=True)</li>
+        <li>19 unidades × 2 sockets = 38 puntos · 7.4 kW @ 230V/32A Mode 3</li>
+        <li>bess_config — 2,000 kWh / 400 kW</li>
+        <li>η_c = η_d = 95 % · SOC_min = 20 % · SOC_max = 100 %</li>
+      </ul>
+    </div>
+    <div class="flow-step fs-4">
+      <div class="flow-step-badge">Etapa 4</div>
+      <h4>🌍 Entorno CityLearn v2</h4>
+      <ul>
+        <li>Observación: 394-dim (solar + BESS + 38 sockets + tiempo)</li>
+        <li>Acción: 39-dim continuo [0, 1] — 1 BESS + 38 cargadores</li>
+        <li>Horizonte: 8,760 pasos = 1 año</li>
+        <li>validate_env_spaces() antes de inicializar agente</li>
+      </ul>
+    </div>
+    <div class="flow-step fs-5">
+      <div class="flow-step-badge">Etapa 5</div>
+      <h4>🎯 Recompensa y Agentes</h4>
+      <ul>
+        <li>CO2_DUAL_FOCUS v7.0</li>
+        <li>w₁=0.35 CO₂ directo · w₂=0.30 CO₂ indirecto</li>
+        <li>w₃=0.25 Carga EV · w₄=0.05 Solar · w₅=0.05 Red</li>
+        <li>R_final = 0.65 × R + 0.35 × r_EV</li>
+        <li>SAC / PPO / A2C — policy=MlpPolicy (sb3)</li>
+      </ul>
+    </div>
+    <div class="flow-step fs-6">
+      <div class="flow-step-badge">Etapa 6</div>
+      <h4>🔄 Entrenamiento — 50 ep × 8,760 pasos</h4>
+      <ul>
+        <li>agent.learn(438,000 steps)</li>
+        <li>Checkpoint por episodio — auto-resume desde .zip</li>
+        <li>reset_num_timesteps=False (acumula pasos)</li>
+        <li>GPU RTX 4060 — ~5–7 h por agente</li>
+      </ul>
+    </div>
+    <div class="flow-step fs-7">
+      <div class="flow-step-badge">Etapa 7</div>
+      <h4>📊 Evaluación y Resultados</h4>
+      <ul>
+        <li>SAC ★ F₂ = 2,622,734 kg CO₂/año (ep. 48)</li>
+        <li>PPO 🥈 F₂ = 2,787,039 kg CO₂/año (ep. 40)</li>
+        <li>A2C 🥉 F₂ = 2,834,857 kg CO₂/año (ep. 3)</li>
+        <li>CO₂ evitado SAC: 4,431,266 kg/año (62.8 %)</li>
+      </ul>
+    </div>
+    <div class="flow-step fs-8">
+      <div class="flow-step-badge">Etapa 8</div>
+      <h4>📐 Validación Estadística</h4>
+      <ul>
+        <li>Pruebas no paramétricas</li>
+        <li>Kruskal-Wallis H = 81.65 — p = 1.86e-18</li>
+        <li>Mann-Whitney SAC vs PPO — p = 3.02e-16</li>
+        <li>Wilcoxon T = 0 — p = 1.78e-15</li>
+      </ul>
+    </div>
+    <div class="flow-step fs-9">
+      <div class="flow-step-badge">Etapa 9 · FINAL</div>
+      <h4>📄 Documento Tesis v11 ✅</h4>
+      <ul>
+        <li>INFORME_OE3_SELECCION_AGENTE_RL_v11.docx</li>
+        <li>594 párrafos · 36 tablas · 6,376 KB</li>
+        <li>§2.2.4 GHG · §4.6.3 Procedimiento OE3</li>
+        <li>ANEXO A: 33 figs · B: 10 figs · C: 7 figs</li>
+      </ul>
+      <div class="fs-meta">✅ LISTO PARA ASESOR</div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL AGENTES -->
+<div id="agentes" class="panel">
+  <div class="section-title">🤖 Ranking de Agentes RL — Resultados Reales (50 episodios)</div>
+  <table class="agent-table">
+    <thead>
+      <tr>
+        <th>Rank</th><th>Agente</th><th>F₂ mín (kg CO₂/año)</th><th>Episodio óptimo</th>
+        <th>Debt Violations</th><th>F₂ media ± std</th><th>BESS desc. (kWh)</th><th>Grid import (kWh)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="row-sac">
+        <td><span class="rank-badge rank-1">🏆 1°</span></td>
+        <td><strong>SAC</strong><br><small style="color:#6b7280;">Soft Actor-Critic</small></td>
+        <td><strong>2,622,734</strong></td><td>ep. 48</td>
+        <td style="color:#16a34a;font-weight:700;">✅ 0</td>
+        <td>2,668,375 ± 89,475</td><td>875,698</td><td>5,801,227</td>
+      </tr>
+      <tr class="row-ppo">
+        <td><span class="rank-badge rank-2">🥈 2°</span></td>
+        <td><strong>PPO</strong><br><small style="color:#6b7280;">Proximal Policy Opt.</small></td>
+        <td>2,787,039</td><td>ep. 40</td>
+        <td style="color:#16a34a;font-weight:700;">✅ 0</td>
+        <td>2,875,569 ± 113,816</td><td>919,033</td><td>6,164,653</td>
+      </tr>
+      <tr class="row-a2c">
+        <td><span class="rank-badge rank-3">🥉 3°</span></td>
+        <td><strong>A2C</strong><br><small style="color:#6b7280;">Advantage Actor-Critic</small></td>
+        <td>2,834,857</td><td>ep. 3</td>
+        <td style="color:#dc2626;font-weight:700;">⚠️ 217</td>
+        <td>2,845,012 ± 12,011</td><td>744,717</td><td>6,270,421</td>
+      </tr>
+      <tr class="row-f1">
+        <td style="font-size:.78rem;color:#92400e;">📌 Ref.</td>
+        <td><strong>F₁ Solar + BESS</strong><br><small style="color:#78350f;">Sin agente RL</small></td>
+        <td>5,789,814</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+      </tr>
+      <tr class="row-f0">
+        <td style="font-size:.78rem;color:#991b1b;">📌 Ref.</td>
+        <td><strong>F₀ Baseline Diesel</strong><br><small style="color:#7f1d1d;">Sin solar, sin RL</small></td>
+        <td>7,054,000</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="stat-box">
+    <strong>🧠 Por qué SAC ganó:</strong><br>
+    SAC (off-policy) acumula experiencias en un replay buffer, lo que le permite reutilizar información de episodios anteriores y aprender políticas más estables con menor varianza (σ = 89,475 vs σ = 113,816 PPO). Su entropía regularizada evita colapsos de política que afectan a A2C (217 violations). Con 50 episodios de entrenamiento completos, SAC convergió en el ep. 48 con F₂ = 2,622,734 kg CO₂/año, evitando 4,431,266 kg CO₂/año (62.8 % vs F₀).
+  </div>
+  <div class="two-col">
+    <div class="stat-box indigo" style="margin-bottom:0;">
+      <strong>📋 Infraestructura de carga (OE2):</strong><br>
+      19 cargadores × 2 sockets = 38 puntos de carga · Mode 3 — 7.4 kW @ 230V / 32A<br>
+      BESS: 2,000 kWh / 400 kW · DoD 80% · η = 95 % · SOC: 20 %–100 %<br>
+      Solar: 4,050 kWp · FE_red = 0.4521 kg CO₂/kWh · Iquitos, Perú (PVGIS 2024)
+    </div>
+    <div class="stat-box" style="background:#fff7ed; border-left-color:#f97316; margin-bottom:0;">
+      <strong>📐 Comparativa de reducción CO₂:</strong><br>
+      F₀ → F₁: −1,264,186 kg CO₂/año  (−17.9 %) — impacto solar + BESS<br>
+      F₁ → F₂ SAC: −3,167,080 kg CO₂/año  (−54.7 %) — impacto RL<br>
+      F₀ → F₂ SAC: −4,431,266 kg CO₂/año  (−62.8 %) — impacto total
+    </div>
+  </div>
+</div>
+
+<footer>
+  pvbesscar — Tesis OE3 Selección Agente RL &nbsp;·&nbsp; Branch: smartcharger &nbsp;·&nbsp; 12 / 04 / 2026 &nbsp;·&nbsp; v11 Final
+</footer>
+
+<script>
+  function show(id, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+  }
+</script>
+</body>
+</html>

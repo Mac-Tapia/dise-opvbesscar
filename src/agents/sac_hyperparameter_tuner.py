@@ -79,8 +79,9 @@ class HyperparameterSpace:
     # Entropy coefficient: {'auto', 0.05, 0.1, 0.2, 0.5} - exploracion
     ent_coef: List[str | float] = field(default_factory=lambda: ['auto', 0.05, 0.1, 0.2, 0.5])
     
-    # Target entropy: {-50, -20, -10, -5} - para 39D action space
-    target_entropy: List[int] = field(default_factory=lambda: [-50, -20, -10, -5])
+    # Target entropy para 39D action space (motos+mototaxis+BESS = 39 acciones continuas)
+    # Valor correcto: -dim(action) = -39. Se exploran rangos ±50% alrededor de -39.
+    target_entropy: List[int] = field(default_factory=lambda: [-60, -50, -39, -25, -15])
     
     # Train frequency: {1, 2, 4, 8} - updates por environment step
     train_freq: List[int] = field(default_factory=lambda: [1, 2, 4, 8])
@@ -143,22 +144,28 @@ class TrainingResult:
     
     @property
     def score(self) -> float:
-        """Calcula score agregado (0-100) para ranking de resultados."""
-        # Normalizar componentes
-        reward_score = min(100, (self.avg_episode_reward + 10) * 5)  # -10 a +10 range
-        co2_score = min(100, self.co2_avoided_kg / 1000)  # kg/1000
-        solar_score = min(100, self.solar_utilization_pct)  # 0-100%
-        convergence_score = min(100, 438000 / max(1, self.convergence_speed))  # Inversamente proporcional
-        stability_score = min(100, 1.0 / (self.stability + 0.01) * 10)  # Inversamente proporcional
-        
-        # Pesos: prioriza CO2 (50%) luego reward (20%) luego convergencia (15%) luego stability (10%) luego solar (5%)
-        total_score = (0.50 * co2_score + 
-                      0.20 * reward_score + 
-                      0.15 * convergence_score + 
-                      0.10 * stability_score + 
-                      0.05 * solar_score)
-        
-        return min(100, total_score)
+        """Calcula score agregado (0-100) para ranking de resultados.
+
+        NOTA: co2_avoided_kg se deja en 0 durante tuning (requiere eval post-training).
+        El score se basa en avg_episode_reward (70%) + estabilidad (20%) + convergencia (10%).
+        Los rewards del proyecto Iquitos van de ~0 (ep1) a ~900+ (ep50). Max referencia=1000.
+        """
+        # Reward: escala real 0-1000+ (SAC Iquitos converge a ~900 en ep50)
+        reward_score = min(100, max(0, self.avg_episode_reward / 10.0))  # 0-1000 → 0-100
+
+        # Stabilidad: menor std = mejor (std~0 perfecto, std~500 malo)
+        stability_score = min(100, 100.0 / (1.0 + self.stability / 50.0))
+
+        # Convergencia: menos steps para completar = más rápido
+        convergence_score = min(100, 438_000 / max(1, self.convergence_speed))
+
+        # Pesos: reward (70%), estabilidad (20%), convergencia (10%)
+        # co2/solar se omiten: durante tuning corto no son medibles con precisión
+        total_score = (0.70 * reward_score +
+                      0.20 * stability_score +
+                      0.10 * convergence_score)
+
+        return min(100, max(0, total_score))
     
     def to_dict(self) -> Dict[str, Any]:
         """Convertir a diccionario para CSV."""

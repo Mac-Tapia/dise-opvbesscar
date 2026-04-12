@@ -1,0 +1,7 @@
+Comparación,Prueba,Estadístico,p-value,Rechaza H₀ (p<0.05),Reducción F2/F1 (%),Cohen d,Magnitud efecto
+F1 Baseline vs SAC,Wilcoxon signed-rank,1275.0,8.882e-16,SÍ ✓,53.92,49.23,GIGANTE
+F1 Baseline vs PPO,Wilcoxon signed-rank,1275.0,8.882e-16,SÍ ✓,50.34,27.61,GIGANTE
+F1 Baseline vs A2C,Wilcoxon signed-rank,1275.0,8.882e-16,SÍ ✓,50.87,138.32,GIGANTE
+SAC vs PPO vs A2C (Kruskal-Wallis),Kruskal-Wallis,81.65,1.861e-18,SÍ ✓,—,—,—
+SAC vs PPO (Mann-Whitney),Mann-Whitney U,121.0,3.636e-15,SÍ ✓,7.21,2.43,GIGANTE
+SAC vs A2C (Mann-Whitney),Mann-Whitney U,149.0,1.641e-14,SÍ ✓,6.21,2.16,GIGANTE

@@ -1,0 +1,84 @@
+{
+  "fecha": "2026-04-12",
+  "proyecto": "PVBESSCAR — Iquitos, Perú",
+  "hipotesis": {
+    "HG": {
+      "enunciado": "El diseño de una infraestructura de carga inteligente permite una contribución cuantificable a la reducción de CO₂ en Iquitos, 2025.",
+      "veredicto": "CONFIRMADA",
+      "evidencia": {
+        "F0_sin_proyecto_kg_año": 7054000.0,
+        "F2_SAC_optimo_kg_año": 2622735.0,
+        "co2_evitado_kg_año": 4431265.0,
+        "reduccion_vs_F0_pct": 62.82,
+        "reduccion_vs_F1_pct": 54.71,
+        "co2_directa_kg": 328652.0,
+        "co2_indirecta_kg": 3222351.0,
+        "arboles_equivalentes": 203549.0,
+        "autos_equivalentes": 2216.0,
+        "wilcoxon_stat": 1275.0,
+        "wilcoxon_pvalue": "8.882e-16",
+        "significativo_p005": true
+      }
+    },
+    "HE1": {
+      "enunciado": "La ubicación estratégica en centros con mayor área techada garantiza viabilidad técnica.",
+      "veredicto": "CONFIRMADA",
+      "evidencia": {
+        "ubicacion": "BESS Mall Shopping Center — Iquitos",
+        "area_techada_m2": 18500,
+        "solar_instalable_kwp": 4050.0,
+        "motos_dia": 270,
+        "mototaxis_dia": 39,
+        "criterios_cumplidos": "7/7"
+      }
+    },
+    "HE2": {
+      "enunciado": "El dimensionamiento solar, BESS y cargadores cubre eficientemente la demanda energética.",
+      "veredicto": "CONFIRMADA",
+      "evidencia": {
+        "solar_kwp": 4050.0,
+        "bess_kwh": 2000.0,
+        "bess_kw": 400.0,
+        "n_cargadores": 19,
+        "n_sockets": 38,
+        "potencia_instalada_kw": 281.2,
+        "demanda_ev_dia_kwh": 1118.58,
+        "cobertura_ev_pct": 98.0,
+        "autosuficiencia_pct": 49.1,
+        "excedente_solar_kwh_dia": 22016.01
+      }
+    },
+    "HE3": {
+      "enunciado": "La selección del agente IA apropiada contribuye cuantificablemente a reducir CO₂.",
+      "veredicto": "CONFIRMADA",
+      "evidencia": {
+        "agente_seleccionado": "SAC",
+        "ranking": [
+          {
+            "agente": "SAC",
+            "F2_optimo_kg": 2622735.0,
+            "reduccion_vs_F0_pct": 62.82
+          },
+          {
+            "agente": "PPO",
+            "F2_optimo_kg": 2787040.0,
+            "reduccion_vs_F0_pct": 60.49
+          },
+          {
+            "agente": "A2C",
+            "F2_optimo_kg": 2834857.0,
+            "reduccion_vs_F0_pct": 59.81
+          }
+        ],
+        "wilcoxon_F1_vs_SAC_pvalue": "8.882e-16",
+        "kruskal_wallis_H": 81.65,
+        "kruskal_wallis_pvalue": "1.861e-18",
+        "mann_whitney_SAC_vs_PPO_pvalue": "3.636e-15",
+        "mann_whitney_SAC_vs_A2C_pvalue": "1.641e-14",
+        "cohen_d_SAC": 49.23,
+        "magnitud_efecto": "GIGANTE (d >> 2.0)",
+        "todos_significativos": true
+      }
+    }
+  }
+}

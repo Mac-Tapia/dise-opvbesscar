@@ -39,7 +39,7 @@ Write-Host ""
 # Ejecutar entrenamiento y capturar TODA la salida
 try {
     # Ejecutar python con output redirection (stdout + stderr)
-    python scripts/train/train_sac_multiobjetivo.py 2>&1 | Tee-Object -FilePath $log_file | ForEach-Object {
+    python scripts/train/train_sac.py 2>&1 | Tee-Object -FilePath $log_file | ForEach-Object {
         # Filtrar y mostrar líneas importantes EN TIEMPO REAL
         $line = $_
         

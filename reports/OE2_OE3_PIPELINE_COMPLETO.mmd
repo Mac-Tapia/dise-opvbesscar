@@ -1,106 +1,110 @@
 graph TB
-    subgraph OE2["📦 FASE OE2: DIMENSIONAMIENTO (Infraestructura)"]
-        PV["☀️ Paneles Solares<br/>4,050 kWp<br/>PVGIS 8,760h"]
-        BESS["🔋 Batería<br/>2,000 kWh / 400 kW<br/>6 Fases Operación"]
-        CHG["🔌 Cargadores<br/>19 chargers × 2 sockets<br/>38 puntos de carga<br/>7.4 kW Mode 3"]
-        MALL["🏢 Demanda Mall<br/>100 kW 24h<br/>Base load"]
-        EV["🚗 Vehículos<br/>270 motos + 39 mototaxis<br/>309 día"]
-        
-        PV -->|pv_generation.csv| Data1["📊 CSV Datos OE2<br/>data/oe2/"]
-        BESS -->|BESS specs| Data1
-        CHG -->|Charger config| Data1
-        MALL -->|Demand profile| Data1
-        EV -->|EV arrival queue| Data1
+    subgraph OE2["📦 FASE OE2 — DIMENSIONAMIENTO (Infraestructura PVBESSCAR)"]
+        PV["☀️ Generación Solar<br/>4,050 kWp instalados<br/>Iquitos, Perú — PVGIS<br/>8,760 h/año (resolución horaria)"]
+        BESS["🔋 Almacenamiento BESS<br/>2,000 kWh / 400 kW<br/>DoD 80% | η 95%<br/>SOC: 20%–100%"]
+        CHG["🔌 Infraestructura de Carga<br/>19 cargadores × 2 sockets<br/>38 puntos Mode 3<br/>7.4 kW @ 230V / 32A"]
+        MALL["🏢 Carga Base Mall<br/>100 kW continuo 24 h<br/>Demanda fija"]
+        EV["🛵 Flota EV Iquitos<br/>270 motos eléctricas<br/>39 mototaxis eléctricas<br/>309 vehículos / día"]
+
+        PV -->|pv_generation_timeseries.csv| Data1["📊 Artefactos OE2<br/>data/interim/oe2/"]
+        BESS -->|bess_config.json| Data1
+        CHG -->|chargers_ev_ano_2024_v3.csv| Data1
+        MALL -->|demandamallhorakwh.csv| Data1
+        EV -->|demand_ev_anual.csv| Data1
     end
-    
-    subgraph Pipeline["🔄 VALIDACIÓN & CARGA DE DATOS"]
-        Data1 -->|Load & Validate| Loader["data_loader.py<br/>Valida 8,760 filas<br/>No 15-min ⚠️"]
-        Loader -->|Sync OE2↔OE3| Builder["dataset_builder.py<br/>Crea 394-dim obs<br/>Reward weights"]
+
+    subgraph Pipeline["🔄 VALIDACIÓN Y CARGA DE DATOS"]
+        Data1 -->|Validar integridad| Loader["data_loader.py<br/>✓ Solar: exactamente 8,760 filas<br/>✓ Cargadores: 38 sockets<br/>✓ BESS: SOC en rango 20-100%<br/>OE2ValidationError si falla"]
+        Loader -->|Construir dataset| Builder["dataset_builder_citylearn/<br/>Observaciones: 394 dim<br/>Pesos de recompensa v7.0"]
     end
-    
-    subgraph CityLearn["🌍 ENTORNO CITYLEARN v2"]
-        Env["CityLearn Environment<br/>Timestep: 1 hora = 3,600 seg<br/>Episodes: 8,760 steps = 1 año"]
-        ObsSpace["📋 Observation Space<br/>- Solar W/m²<br/>- BESS SOC %<br/>- 38 socket states<br/>- Time features (hour/month/dow)<br/>Total: 394 dimensions"]
-        ActSpace["🎮 Action Space<br/>Continuous [0,1]<br/>1 BESS + 38 sockets<br/>39 total actions"]
-        
-        Builder -->|Init env| Env
-        Env -->|Provides| ObsSpace
-        Env -->|Accepts| ActSpace
+
+    subgraph CityLearn["🌍 ENTORNO CityLearn v2"]
+        Env["CityLearn Environment<br/>1 timestep = 1 hora (3,600 s)<br/>1 episodio = 8,760 pasos = 1 año<br/>50 episodios por agente"]
+        ObsSpace["📋 Espacio de Observación (394-dim)<br/>• Irradiancia solar W/m²<br/>• Frecuencia red Hz<br/>• BESS SOC %<br/>• Estado 38 sockets × 3 vars<br/>• Tiempo: hora / mes / día semana"]
+        ActSpace["🎮 Espacio de Acción (39-dim)<br/>Continuo [0, 1]<br/>• 1 setpoint BESS<br/>• 38 setpoints sockets<br/>→ kW reales vía action_bounds"]
+
+        Builder -->|Inicializar| Env
+        Env -->|Proporciona| ObsSpace
+        Env -->|Acepta| ActSpace
     end
-    
-    subgraph Training["🤖 ENTRENAMIENTO RL - 3 AGENTES"]
-        SAC["🏆 SAC<br/>Off-Policy<br/>Soft Actor-Critic<br/>stable-baselines3"]
-        PPO["📈 PPO<br/>On-Policy<br/>Proximal Policy<br/>stable-baselines3"]
-        A2C["⚡ A2C<br/>On-Policy<br/>Actor-Critic<br/>stable-baselines3"]
-        
-        Reward["Reward Function CO2_DUAL_FOCUS v7.0<br/>w_DirectCO2=0.35 (P1 combustible evitado)<br/>w_IndirectCO2=0.30 (P2 grid termico)<br/>w_EV=0.25 (P3 satisfaccion)<br/>w_solar=0.05 (P4) | w_grid=0.05 (P5)"]
-        
-        ObsSpace -->|87,600 steps| SAC
-        ObsSpace -->|10 episodios| PPO
-        ObsSpace -->|= 10 años| A2C
-        Reward -->|Guide policy| SAC
-        Reward -->|Guide policy| PPO
-        Reward -->|Guide policy| A2C
+
+    subgraph Training["🤖 ENTRENAMIENTO RL — 3 AGENTES (50 episodios c/u)"]
+        Reward["🎯 Función de Recompensa CO2_DUAL_FOCUS v7.0<br/>w₁=0.35 CO₂ directo (P1: combustible vehicular evitado)<br/>w₂=0.30 CO₂ indirecto (P2: importaciones red × FE_red)<br/>w₃=0.25 Carga EV (P3: satisfacción deadline)<br/>w₄=0.05 Autoconsumo solar (P4)<br/>w₅=0.05 Estabilidad red (P5)<br/>R_final = 0.65×R + 0.35×r_EV,energy"]
+
+        SAC["🏆 SAC — Ganador OE3<br/>Soft Actor-Critic (off-policy)<br/>50 eps × 8,760 steps = 438,000<br/>Episodio óptimo: ep 48<br/>F₂ mín = 2,622,734 kg CO₂/año<br/>Debt violations = 0"]
+        PPO["🥈 PPO — Segundo lugar<br/>Proximal Policy Optimization<br/>50 eps × 8,760 steps = 438,000<br/>Episodio óptimo: ep 40<br/>F₂ mín = 2,787,039 kg CO₂/año"]
+        A2C["🥉 A2C — Tercer lugar<br/>Advantage Actor-Critic<br/>50 eps × 8,760 steps = 438,000<br/>Episodio óptimo: ep 3<br/>F₂ mín = 2,834,857 kg CO₂/año"]
+
+        ObsSpace --> Reward
+        Reward -->|Guiar política| SAC
+        Reward -->|Guiar política| PPO
+        Reward -->|Guiar política| A2C
     end
-    
-    subgraph Checkpoints["💾 GUARDADO DE MODELOS"]
-        SACC["checkpoints/SAC/<br/>sac_model_*.zip<br/>policy network<br/>value network<br/>optimizer state"]
-        PPOC["checkpoints/PPO/<br/>ppo_model_*.zip"]
-        A2CC["checkpoints/A2C/<br/>a2c_model_*.zip"]
-        
-        SAC -->|Save| SACC
-        PPO -->|Save| PPOC
-        A2C -->|Save| A2CC
+
+    subgraph Checkpoints["💾 CHECKPOINTS (stable-baselines3)"]
+        SACC["checkpoints/SAC/<br/>sac_ep48_best.zip<br/>policy + value networks<br/>optimizer state"]
+        PPOC["checkpoints/PPO/<br/>ppo_ep40_best.zip"]
+        A2CC["checkpoints/A2C/<br/>a2c_ep03_best.zip"]
+
+        SAC -->|Guardar| SACC
+        PPO -->|Guardar| PPOC
+        A2C -->|Guardar| A2CC
     end
-    
-    subgraph Results["📊 RESULTADOS Y METRICAS"]
-        SACJ["outputs/sac_training/<br/>result_sac.json<br/>18,621 lineas<br/>validation metrics"]
-        PPOJ["outputs/ppo_training/<br/>ppo_summary.json"]
-        A2CJ["outputs/a2c_training/<br/>result_a2c.json"]
-        
-        SACC -->|Export metrics| SACJ
-        PPOC -->|Export metrics| PPOJ
-        A2CC -->|Export metrics| A2CJ
+
+    subgraph Results["📊 MÉTRICAS Y RESULTADOS"]
+        SACJ["outputs/sac_training/<br/>sac_co2_oe3_episodios.png<br/>sac_dashboard.png<br/>result_sac.json"]
+        PPOJ["outputs/ppo_training/<br/>ppo_co2_oe3_episodios.png<br/>ppo_dashboard.png"]
+        A2CJ["outputs/a2c_training/<br/>a2c_co2_oe3_episodios.png<br/>a2c_dashboard.png"]
+
+        SACC -->|Exportar métricas| SACJ
+        PPOC -->|Exportar métricas| PPOJ
+        A2CC -->|Exportar métricas| A2CJ
     end
-    
-    subgraph Validation["✅ VALIDACIÓN DE RESULTADOS"]
-        Val["Comparison vs Baseline<br/>- CO2 avoided kg/año<br/>- Solar utilization %<br/>- Grid import kWh<br/>- EV satisfaction %<br/>- Training time sec"]
-        
-        SACJ -->|Parse| Val
-        PPOJ -->|Parse| Val
-        A2CJ -->|Parse| Val
+
+    subgraph Validation["✅ VALIDACIÓN ESTADÍSTICA"]
+        Val["Kruskal-Wallis H = 81.65, p = 1.86×10⁻¹⁸<br/>Mann-Whitney SAC vs PPO: p = 3.02×10⁻¹⁶<br/>Wilcoxon T = 0, p = 1.78×10⁻¹⁵<br/>––––––––––––––––––––<br/>F₀ Baseline diesel = 7,054,000 kg CO₂/año<br/>F₁ Solar+BESS sin RL = 5,789,814 kg CO₂/año<br/>F₂ SAC óptimo = 2,622,734 kg CO₂/año<br/>CO₂ evitado total = 4,431,266 kg/año (62.8%)"]
+
+        SACJ -->|Parsear| Val
+        PPOJ -->|Parsear| Val
+        A2CJ -->|Parsear| Val
     end
-    
-    subgraph Thesis["📄 GENERACIÓN DOCUMENTO TESIS"]
-        Report["generate_oe3_report.py<br/>Dynamic data extraction<br/>Real checkpoint values<br/>41 acápites completos"]
-        
-        Val -->|Real data| Report
-        Report -->|Generate| DocX["📖 OE3_INFORME_DETALLADO<br/>CON_DATOS_REALES.docx<br/>15-18 páginas<br/>8 tablas<br/>100% completitud<br/>✅ THESIS READY"]
+
+    subgraph Comparative["📈 ANÁLISIS COMPARATIVO"]
+        Comp["outputs/comparative_analysis/<br/>convergence_all_agents.png<br/>variance_comparison.png<br/>statistical_justification_table.png<br/>07_oe3_baseline_comparison.png"]
+        Hypo["outputs/seccion52/ + outputs/hypothesis_test/<br/>fig1_convergencia_agentes.png<br/>fig3_varianza_robustez.png<br/>hypothesis_test_co2_figura_completa.png"]
+
+        Val -->|Generar| Comp
+        Val -->|Demostrar hipótesis| Hypo
     end
-    
+
+    subgraph Thesis["📄 DOCUMENTO TESIS — v11 FINAL"]
+        DocX["📖 INFORME_OE3_SELECCION_AGENTE_RL_v11.docx<br/>594 párrafos | 36 tablas | 6,376 KB<br/>––––––––––<br/>• Prosa académica revisada (52 correcciones)<br/>• §4.6.3 Procedimiento OE3 (11 subsecciones)<br/>• §5.x Resultados descriptivos OE2 + OE3<br/>• §2.2.4 Bases teóricas GHG (7 fórmulas)<br/>• ANEXO A: 33 figs entrenamiento (SAC+PPO+A2C)<br/>• ANEXO B: 10 figs comparativo agentes<br/>• ANEXO C: 7 figs demostración hipótesis<br/>✅ LISTO PARA TESIS"]
+
+        Comp -->|Insertar gráficas| DocX
+        Hypo -->|Insertar gráficas| DocX
+        Val -->|Datos reales| DocX
+    end
+
     subgraph Tech["🛠️ STACK TECNOLÓGICO"]
-        Python["Python 3.11+<br/>type hints enabled"]
-        SB3["stable-baselines3 v2.0+<br/>SAC, PPO, A2C"]
+        Python["Python 3.11+<br/>from __future__ import annotations"]
+        SB3["stable-baselines3 v2.0+<br/>SAC / PPO / A2C"]
         Gym["Gymnasium 0.27+<br/>Standard RL API"]
         Torch["PyTorch 2.0+ CUDA<br/>GPU: RTX 4060"]
-        Data["pandas 2.0+<br/>numpy 1.25+"]
-        YAML["PyYAML 6.0<br/>configs/"]
-        DocX_lib["python-docx 0.8.11"]
-        
+        DocX_lib["python-docx<br/>scripts/analysis/"]
+
         Python -->|Runtime| SB3
         Python -->|Runtime| Gym
-        Python -->|Runtime| Torch
-        Python -->|Runtime| Data
-        YAML -->|Config| Report
-        DocX_lib -->|Generate| DocX
+        SB3 -->|GPU accel| Torch
+        DocX_lib -->|Genera| DocX
     end
-    
-    style OE2 fill:#fff3cd
-    style Pipeline fill:#d1ecf1
-    style CityLearn fill:#d4edda
-    style Training fill:#cce5ff
-    style Checkpoints fill:#e7d4f5
-    style Results fill:#f8d7da
-    style Validation fill:#d1ecf1
-    style Thesis fill:#c3e6cb
-    style Tech fill:#f0f0f0
+
+    style OE2 fill:#fff3cd,stroke:#e65100,stroke-width:2px
+    style Pipeline fill:#d1ecf1,stroke:#0288d1,stroke-width:2px
+    style CityLearn fill:#d4edda,stroke:#2e7d32,stroke-width:2px
+    style Training fill:#cce5ff,stroke:#1565c0,stroke-width:2px
+    style Checkpoints fill:#e7d4f5,stroke:#6a1b9a,stroke-width:2px
+    style Results fill:#f8d7da,stroke:#c62828,stroke-width:2px
+    style Validation fill:#d1ecf1,stroke:#00695c,stroke-width:2px
+    style Comparative fill:#fff8e1,stroke:#f57f17,stroke-width:2px
+    style Thesis fill:#c3e6cb,stroke:#1b5e20,stroke-width:3px
+    style Tech fill:#f0f0f0,stroke:#455a64,stroke-width:1px

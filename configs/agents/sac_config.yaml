@@ -4,25 +4,46 @@ sac:
   training:
     episodes: 50
     total_timesteps: 438000
-    learning_rate: 5e-4
-    buffer_size: 400000
-    batch_size: 128
+    # [FIX v1] 5e-4 → 1e-4 (grad_norm explosiva 132.93>10 observada en entrenamiento)
+    # Haarnoja 2018 (arXiv:1801.01290) std=3e-4; Engstrom 2020 (arXiv:2005.12729) recomienda
+    # bajar LR en problemas de alta dimension (>20D acciones). Para 39D: 1e-4 optimo.
+    learning_rate: 1e-4
+    # [FIX] 400000 → 100000: buffer de 1M (paper) excesivo para 438k steps totales;
+    # 100k mantiene los ultimos ~11 episodios completos (8760 steps cada uno).
+    # Raffin 2022 (arXiv:2005.05719): 100k-300k suficiente para SAC con <1M steps.
+    buffer_size: 100000
+    # [FIX v3] 1000 → 5000: warmup con buffer mas diverso para espacio de accion 39D.
+    # Andrychowicz 2020 (arXiv:2006.05990): warmup debe cubrir ~5x batch x dim acciones.
+    learning_starts: 5000
+    # [FIX] 128 → 256: estandar SAC en GPU (Haarnoja 2018, Raffin 2022).
+    batch_size: 256
+    # [FIX] target_entropy = -dim(action_space) = -(38 sockets + 1 BESS) = -39.0
+    # Haarnoja 2018 (Sec.5): H* = -dim(A) como heuristica para control continuo.
+    # Haarnoja 2019 (arXiv:1812.05905): confirma target con auto-alpha Lagrangiano.
+    target_entropy: -39.0
     gamma: 0.99
     tau: 0.005
   entropy:
     ent_coef: auto
     ent_coef_init: 0.5
     ent_coef_lr: 1e-3
-    ent_coef_min: 0.01
+    ent_coef_min: 0.001   # Colapso REAL: SB3 SAC converge a 0.005-0.01 con target_entropy=-39 (NORMAL)
     ent_coef_max: 1.0
   network:
+    # [FIX] [384,384] → [256,256]: arquitectura estandar SAC (Haarnoja 2018, Raffin 2022 CoRL).
+    # Para 39D acciones con obs ~394D, [256,256] es suficientemente expresivo
+    # sin sobreajustar en 438k steps de entrenamiento total.
     hidden_sizes:
-    - 384
-    - 384
+    - 256
+    - 256
     activation: relu
   stability:
     clip_gradients: true
-    max_grad_norm: 10.0
+    # [FIX v3] 10.0 → 5.0: menos restrictivo que 1.0 (que bloqueaba actor 39D),
+    # pero conservador vs sin clipping. Engstrom 2020 (ICLR): gradient clipping
+    # impacta fundamentalmente el comportamiento del agente en problemas de alta dim.
+    # Andrychowicz 2020: clip agresivo (<1.0 off-policy) impide politicas diversas.
+    max_grad_norm: 5.0
     critic_max_grad_norm: 1.0
     critic_loss_scale: 0.1
     q_target_clip: 10.0

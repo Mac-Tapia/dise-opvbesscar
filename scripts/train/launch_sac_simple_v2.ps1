@@ -45,7 +45,7 @@ Write-Host ""
 Push-Location $WORKSPACE
 
 # Ejecutar entrenamiento
-python scripts/train/train_sac_multiobjetivo.py
+python scripts/train/train_sac.py
 
 $exitCode = $LASTEXITCODE
 

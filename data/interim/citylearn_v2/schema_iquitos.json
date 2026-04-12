@@ -1,0 +1,95 @@
+{
+  "root_directory": "data\\interim\\citylearn_v2",
+  "central_agent": true,
+  "buildings": {
+    "IquitosEVMall": {
+      "include": true,
+      "energy_simulation": "energy_simulation.csv",
+      "weather": "weather.csv",
+      "carbon_intensity": "carbon_intensity.csv",
+      "electrical_storage": {
+        "type": "citylearn.energy_model.Battery",
+        "attributes": {
+          "capacity": 2000.0,
+          "nominal_power": 400.0,
+          "efficiency": 0.95,
+          "loss_coefficient": 0.0001,
+          "initial_soc": 0.5
+        }
+      },
+      "pv": {
+        "type": "citylearn.energy_model.PV",
+        "attributes": {
+          "nominal_power": 4050.0
+        }
+      }
+    }
+  },
+  "observations": {
+    "month": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "hour": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "day_type": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "outdoor_dry_bulb_temperature": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "diffuse_solar_irradiance": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "direct_solar_irradiance": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "carbon_intensity": {
+      "active": true,
+      "shared_in_central_agent": true
+    },
+    "indoor_dry_bulb_temperature": {
+      "active": false
+    },
+    "non_shiftable_load": {
+      "active": true
+    },
+    "solar_generation": {
+      "active": true
+    },
+    "electrical_storage_soc": {
+      "active": true
+    },
+    "net_electricity_consumption": {
+      "active": true
+    },
+    "electricity_pricing": {
+      "active": false
+    }
+  },
+  "actions": {
+    "electrical_storage": {
+      "active": true
+    }
+  },
+  "reward_function": {
+    "type": "src.citylearnv2.reward_co2.IquitosCO2Reward",
+    "attributes": {
+      "w_co2": 0.4,
+      "w_solar": 0.25,
+      "w_bess": 0.2,
+      "w_grid_stable": 0.15,
+      "co2_factor": 0.4521
+    }
+  },
+  "simulation_start_time_step": 0,
+  "simulation_end_time_step": 8759,
+  "seconds_per_time_step": 3600,
+  "random_seed": 42
+}

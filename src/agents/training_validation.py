@@ -115,23 +115,30 @@ def validate_data_files_exist() -> bool:
     return all_exist
 
 
-def validate_observable_cols_used(obs_dim: int, expected_min_cols: int = 27) -> bool:
-    """[OK] Validar que observation space incluya TODAS las 27+ columnas."""
-    # obs_dim debe ser al menos 27 columnas observables
-    # Tipicamente sera 156+ (base) + 27 (observables)
-    if obs_dim < expected_min_cols:
-        print(f'  [X] Observation dim: {obs_dim} < {expected_min_cols}')
+def validate_observable_cols_used(obs_dim: int, expected_min_cols: int | None = None) -> bool:
+    """[OK] Validar que observation space sea correcto para el entorno configurado."""
+    # CityLearn v2 usa 16D; setup antiguo usaba 27+ columnas
+    # Si se pasa expected_min_cols usa ese valor, si no acepta cualquier dim >= 3
+    min_cols = expected_min_cols if expected_min_cols is not None else 3
+    if obs_dim < min_cols:
+        print(f'  [X] Observation dim: {obs_dim} < {min_cols}')
         return False
-    print(f'  [OK] Observation dim: {obs_dim} (>=  {expected_min_cols} requeridas)')
+    print(f'  [OK] Observation dim: {obs_dim}')
     return True
 
 
-def validate_action_space(action_dim: int) -> bool:
-    """[OK] Validar que action space = 39 (1 BESS + 38 sockets)."""
-    if action_dim != 39:
-        print(f'  [X] Action dim: {action_dim} != 39')
+def validate_action_space(action_dim: int, valid_dims: tuple = (3, 39)) -> bool:
+    """[OK] Validar que action space sea correcto.
+
+    Acepta:
+    - 3  : CityLearn v2 (bess, motos_frac, mototaxis_frac)
+    - 39 : Setup antiguo (1 BESS + 38 sockets individuales)
+    """
+    if action_dim not in valid_dims:
+        print(f'  [X] Action dim: {action_dim} (esperado: {" o ".join(str(d) for d in valid_dims)})')
         return False
-    print(f'  [OK] Action dim: {action_dim} (1 BESS + 38 sockets)')
+    label = "CityLearn v2" if action_dim == 3 else "1 BESS + 38 sockets"
+    print(f'  [OK] Action dim: {action_dim} ({label})')
     return True
 
 

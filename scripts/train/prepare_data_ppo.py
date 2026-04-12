@@ -61,7 +61,7 @@ def main():
     print('='*80)
     print()
     print('Proximos pasos:')
-    print('  1. Lanzar: python scripts/train/train_sac_multiobjetivo.py')
+    print('  1. Lanzar: python scripts/train/train_sac.py')
     print('  2. Monitorear con: Get-Content training_output.log -Tail 50')
     print()
 

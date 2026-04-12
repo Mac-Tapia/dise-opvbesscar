@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -52,28 +53,66 @@ from src.agents.sac_hyperparameter_tuner import (
 
 def train_sac_with_config(config: dict, num_episodes: int = 2) -> TrainingResult:
     """
-    Entrenar SAC con una configuración dada y retornar resultados.
-    
+    Entrenar SAC con una configuración dada y retornar resultados REALES.
+
     Args:
         config: Diccionario con hiperparámetros
         num_episodes: Número de episodios a entrenar (default: 2 para testing)
-    
+
     Returns:
-        TrainingResult con todas las métricas
+        TrainingResult con métricas reales medidas durante el entrenamiento
     """
-    import torch
     import numpy as np
+    import torch
     from stable_baselines3 import SAC
+    from stable_baselines3.common.callbacks import BaseCallback
     from datetime import datetime
-    
+
+    class _EpisodeTracker(BaseCallback):
+        """Callback ligero: registra rewards por episodio y métricas finales."""
+        def __init__(self) -> None:
+            super().__init__()
+            self.episode_rewards: list[float] = []
+            self._current_reward: float = 0.0
+            self.final_alpha: float = 0.0
+            self.final_entropy: float = 0.0
+
+        def _on_step(self) -> bool:
+            rewards = self.locals.get('rewards', [0.0])
+            r = float(rewards[0]) if hasattr(rewards, '__len__') else float(rewards)
+            self._current_reward += r
+
+            dones = self.locals.get('dones', [False])
+            done = dones[0] if hasattr(dones, '__len__') else bool(dones)
+            if done:
+                self.episode_rewards.append(self._current_reward)
+                self._current_reward = 0.0
+
+            # Capturar alpha y entropy del logger SB3
+            if self.model.logger and hasattr(self.model.logger, 'name_to_value'):
+                nv = self.model.logger.name_to_value
+                if 'train/ent_coef' in nv:
+                    self.final_alpha = float(nv['train/ent_coef'])
+                if 'train/entropy' in nv:
+                    self.final_entropy = float(nv['train/entropy'])
+            return True
+
+        @property
+        def avg_reward(self) -> float:
+            return float(np.mean(self.episode_rewards)) if self.episode_rewards else 0.0
+
+        @property
+        def reward_std(self) -> float:
+            return float(np.std(self.episode_rewards)) if len(self.episode_rewards) > 1 else 0.0
+
     try:
         # Importar ambiente y datasets
         from scripts.train.train_sac import RealOE2Environment, load_datasets_from_processed
-        
+
         # Cargar datasets
         print("  [1/3] Cargando datasets...")
         datasets = load_datasets_from_processed()
-        
+
         # Crear ambiente
         print("  [2/3] Creando ambiente...")
         env = RealOE2Environment(
@@ -97,12 +136,12 @@ def train_sac_with_config(config: dict, num_episodes: int = 2) -> TrainingResult
             bess_mall_demand=datasets.get('bess_mall_demand'),
             bess_pv_generation=datasets.get('bess_pv_generation'),
         )
-        
+
         # Crear agente SAC con config
         print("  [3/3] Entrenando SAC...")
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        
-        # Convertir config de tuning a kwargs de SAC
+        t0 = time.time()
+
         sac_kwargs = {
             'learning_rate': config['learning_rate'],
             'buffer_size': config['buffer_size'],
@@ -115,23 +154,23 @@ def train_sac_with_config(config: dict, num_episodes: int = 2) -> TrainingResult
             'train_freq': (config['train_freq'], 'step'),
             'gradient_steps': 1,
             'policy_kwargs': {
-                'net_arch': dict(pi=[config['net_arch_hidden'], config['net_arch_hidden']], 
-                               qf=[config['net_arch_hidden'], config['net_arch_hidden']]),
+                'net_arch': [config['net_arch_hidden'], config['net_arch_hidden']],
                 'activation_fn': torch.nn.ReLU,
                 'log_std_init': -0.5,
             },
             'device': device,
             'verbose': 0,
         }
-        
+
         agent = SAC('MlpPolicy', env, **sac_kwargs)
-        
-        # Entrenar N episodios
-        total_timesteps = num_episodes * 8760  # N episodios = N×8760 timesteps
-        agent.learn(total_timesteps=total_timesteps, log_interval=1, progress_bar=False)
-        
-        # Recolectar métricas finales del episodio
-        # (Nota: En un escenario real, necesitarías loguear esto durante el entrenamiento)
+        tracker = _EpisodeTracker()
+
+        total_timesteps = num_episodes * 8760
+        agent.learn(total_timesteps=total_timesteps, callback=tracker,
+                    log_interval=1, progress_bar=False)
+
+        elapsed = time.time() - t0
+
         result = TrainingResult(
             learning_rate=config['learning_rate'],
             buffer_size=config['buffer_size'],
@@ -142,23 +181,22 @@ def train_sac_with_config(config: dict, num_episodes: int = 2) -> TrainingResult
             target_entropy=config['target_entropy'],
             train_freq=config['train_freq'],
             net_arch_hidden=config['net_arch_hidden'],
-            # Simular metricas (en producción, usar callbacks)
-            avg_episode_reward=np.random.randn() * 5 + 2,
-            co2_avoided_kg=np.random.randint(950_000, 1_050_000),
-            solar_utilization_pct=np.random.uniform(60, 80),
-            grid_import_kwh=np.random.randint(2_000_000, 2_500_000),
-            ev_satisfaction_pct=np.random.uniform(35, 50),
+            avg_episode_reward=tracker.avg_reward,
+            co2_avoided_kg=0.0,           # Requiere eval post-training; usar reward como proxy
+            solar_utilization_pct=0.0,    # Idem
+            grid_import_kwh=0.0,
+            ev_satisfaction_pct=0.0,
             convergence_speed=agent.num_timesteps,
-            stability=np.random.uniform(0.5, 2.0),
-            final_entropy=0.2,
-            final_alpha=0.05,
-            q_value_stability=0.8,
-            training_time_seconds=0,  # Actualizar si es necesario
+            stability=tracker.reward_std,
+            final_entropy=tracker.final_entropy,
+            final_alpha=tracker.final_alpha,
+            q_value_stability=0.0,
+            training_time_seconds=elapsed,
             total_timesteps=agent.num_timesteps,
-            episodes_completed=num_episodes,
+            episodes_completed=len(tracker.episode_rewards),
             timestamp=datetime.now().isoformat(),
         )
-        
+
         return result
         
     except Exception as e:
