@@ -1,6 +1,8 @@
 # ================================================================
 # Dockerfile.sac  —  SAC GPU Training  (PVBESSCAR / CityLearn v2)
-# Base: nvidia/cuda 12.1 + Python 3.11 + PyTorch CUDA + SB3
+# Base: nvidia/cuda 12.1 base + Python 3.11 + PyTorch CUDA + SB3
+# NOTA: Se usa nvidia/cuda:12.1.1-base (ya cacheada 340 MB).
+#       PyTorch cu121 via pip incluye sus propias libs cuDNN/NCCL.
 #
 # Objetivo: entrenamiento de SAC con RTX 4060 para reducción CO2
 # Iquitos, Perú — 38 sockets EV, 4050 kWp PV, 2000 kWh BESS
@@ -20,7 +22,7 @@
 #     python scripts/train/train_sac_citylearn.py --timesteps 438000
 # ================================================================
 
-FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+FROM nvidia/cuda:12.1.1-base-ubuntu22.04
 
 LABEL maintainer="PVBESSCAR Lab" \
       version="1.0.0" \
@@ -46,16 +48,13 @@ WORKDIR /app
 # RTX 4060 = Ada Lovelace SM 8.9, compatible con CUDA 12.x
 RUN python -m pip install --upgrade pip setuptools wheel && \
     python -m pip install --no-cache-dir \
-        torch torchvision torchaudio \
+        torch==2.3.1+cu121 torchvision==0.18.1+cu121 \
         --index-url https://download.pytorch.org/whl/cu121
 
-# ── Requirements del proyecto (sin torch/torchvision ya instalados) ───────────
-COPY requirements.txt requirements-citylearn-v2.txt ./
+# ── Requirements mínimos para SAC (sin Windows-only packages) ────────────────
+COPY requirements-sac-docker.txt ./
 
-# Filtrar: excluir torch* (ya instalado vía cu121), iquitos-citylearn (paquete local)
-RUN python -m pip install --no-cache-dir \
-        $(grep -vE '^(torch|torchvision|torchaudio|iquitos-citylearn|#|\s*$)' requirements.txt \
-          | tr '\n' ' ') || true
+RUN python -m pip install --no-cache-dir -r requirements-sac-docker.txt
 
 # ── CityLearn v2 sin dependencias conflictivas ────────────────────────────────
 RUN python -m pip install --no-cache-dir --no-deps \
@@ -90,13 +89,7 @@ RUN mkdir -p \
     data/interim/oe2/bess
 
 # ── Verificación de dependencias en build-time ───────────────────────────────
-RUN python -c " \
-import sys; assert sys.version_info >= (3,11), 'Python 3.11+ required'; \
-import torch; print(f'torch {torch.__version__} | CUDA: {torch.version.cuda}'); \
-import stable_baselines3; print(f'SB3 {stable_baselines3.__version__}'); \
-import gymnasium; print(f'gym {gymnasium.__version__}'); \
-import citylearn; print('citylearn OK'); \
-print('Todos los modulos verificados.')"
+RUN python -c "import sys; assert sys.version_info >= (3,11), 'Python 3.11+ required'; import torch; print(f'torch {torch.__version__} | CUDA: {torch.version.cuda}'); import stable_baselines3; print(f'SB3 {stable_baselines3.__version__}'); import gymnasium; print(f'gym {gymnasium.__version__}'); import citylearn; print('citylearn OK'); print('Todos los modulos verificados.')"
 
 # ── Health check ─────────────────────────────────────────────────────────────
 HEALTHCHECK --interval=60s --timeout=15s --start-period=30s --retries=3 \

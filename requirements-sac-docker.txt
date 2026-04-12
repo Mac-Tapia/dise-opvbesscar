@@ -1,0 +1,50 @@
+# requirements-sac-docker.txt
+# ============================================================
+# Dependencias MÍNIMAS para entrenamiento SAC en Docker (Linux)
+# Instalar DESPUÉS de torch CUDA (via pytorch.org/whl/cu121)
+#
+# NO incluye: NREL-PySAM, doe_xstock, eppy (C-extensions Windows)
+# NO incluye: torch* (instalado por separado vía CUDA index)
+# NO incluye: jupyter, notebooks (no necesarios en training)
+# ============================================================
+
+# Core data
+numpy==1.26.4
+pandas==2.3.3
+scipy==1.17.0
+
+# RL stack
+gymnasium==0.29.1
+stable_baselines3==2.7.1
+cloudpickle==3.1.2
+dill==0.4.1
+
+# Config / serialization
+PyYAML==6.0.3
+pydantic==2.12.5
+pydantic_core==2.41.5
+jsonschema==4.26.0
+python_dotenv==1.2.1
+
+# Visualización (gráficos de training)
+matplotlib==3.10.8
+seaborn==0.13.2
+pillow==12.1.0
+
+# TensorBoard (monitoreo en vivo)
+tensorboard==2.19.0
+protobuf==6.33.4
+grpcio==1.76.0
+absl-py==2.3.1
+Markdown==3.10.1
+
+# Solar (OE2 → timeseries PV)
+pvlib==0.14.0
+
+# Utilities
+psutil==7.2.1
+tqdm==4.67.1
+joblib==1.5.3
+# filelock, packaging, typing_extensions omitidos:
+# torch cu121 ya los instala (filelock>=3.25, typing_extensions>=4.15)
+# Pin exacto causaba ResolutionImpossible con pydantic>=4.14.1
