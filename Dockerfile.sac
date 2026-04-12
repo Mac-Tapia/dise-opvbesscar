@@ -1,0 +1,107 @@
+# ================================================================
+# Dockerfile.sac  —  SAC GPU Training  (PVBESSCAR / CityLearn v2)
+# Base: nvidia/cuda 12.1 + Python 3.11 + PyTorch CUDA + SB3
+#
+# Objetivo: entrenamiento de SAC con RTX 4060 para reducción CO2
+# Iquitos, Perú — 38 sockets EV, 4050 kWp PV, 2000 kWh BESS
+#
+# Build:
+#   docker build -f Dockerfile.sac -t pvbesscar:sac-gpu .
+#
+# Run (GPU):
+#   docker run --gpus all --rm -it \
+#     -v $(pwd)/checkpoints:/app/checkpoints \
+#     -v $(pwd)/outputs:/app/outputs \
+#     -v $(pwd)/data:/app/data:ro \
+#     pvbesscar:sac-gpu
+#
+# Run (con parámetros):
+#   docker run --gpus all --rm -it [...] pvbesscar:sac-gpu \
+#     python scripts/train/train_sac_citylearn.py --timesteps 438000
+# ================================================================
+
+FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+
+LABEL maintainer="PVBESSCAR Lab" \
+      version="1.0.0" \
+      description="SAC GPU Training — EV Charging RL — Iquitos Peru"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# ── Sistema base + Python 3.11 via deadsnakes ─────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common ca-certificates curl git tini \
+    build-essential libopenblas-dev libgomp1 libglib2.0-0 \
+    && add-apt-repository -y ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 python3.11-dev python3.11-venv \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 \
+    && update-alternatives --install /usr/bin/python  python  /usr/bin/python3.11 1 \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# ── PyTorch con CUDA 12.1 (anula cualquier versión CPU) ──────────────────────
+# RTX 4060 = Ada Lovelace SM 8.9, compatible con CUDA 12.x
+RUN python -m pip install --upgrade pip setuptools wheel && \
+    python -m pip install --no-cache-dir \
+        torch torchvision torchaudio \
+        --index-url https://download.pytorch.org/whl/cu121
+
+# ── Requirements del proyecto (sin torch/torchvision ya instalados) ───────────
+COPY requirements.txt requirements-citylearn-v2.txt ./
+
+# Filtrar: excluir torch* (ya instalado vía cu121), iquitos-citylearn (paquete local)
+RUN python -m pip install --no-cache-dir \
+        $(grep -vE '^(torch|torchvision|torchaudio|iquitos-citylearn|#|\s*$)' requirements.txt \
+          | tr '\n' ' ') || true
+
+# ── CityLearn v2 sin dependencias conflictivas ────────────────────────────────
+RUN python -m pip install --no-cache-dir --no-deps \
+    "citylearn>=2.0.0,<3.0" "jsonschema>=4.0.0,<5.0"
+
+# ── Código fuente del proyecto ────────────────────────────────────────────────
+COPY . .
+
+# Instalar paquete local (iquitos-citylearn definido en setup.py / pyproject.toml)
+RUN python -m pip install --no-deps -e .
+
+# ── Variables de entorno optimizadas para RTX 4060 ───────────────────────────
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app \
+    PYTHONIOENCODING=utf-8 \
+    CUDA_MODULE_LOADING=LAZY \
+    OMP_NUM_THREADS=8 \
+    PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512 \
+    CHECKPOINT_DIR=/app/checkpoints/SAC_CityLearn \
+    RESULTS_DIR=/app/outputs/sac_training \
+    TENSORBOARD_DIR=/app/logs/tensorboard/sac_citylearn
+
+# ── Directorios requeridos por train_sac_citylearn.py ────────────────────────
+RUN mkdir -p \
+    checkpoints/SAC_CityLearn \
+    outputs/sac_training \
+    logs/training/sac_citylearn \
+    logs/tensorboard/sac_citylearn \
+    data/interim/oe2/solar \
+    data/interim/oe2/chargers \
+    data/interim/oe2/bess
+
+# ── Verificación de dependencias en build-time ───────────────────────────────
+RUN python -c " \
+import sys; assert sys.version_info >= (3,11), 'Python 3.11+ required'; \
+import torch; print(f'torch {torch.__version__} | CUDA: {torch.version.cuda}'); \
+import stable_baselines3; print(f'SB3 {stable_baselines3.__version__}'); \
+import gymnasium; print(f'gym {gymnasium.__version__}'); \
+import citylearn; print('citylearn OK'); \
+print('Todos los modulos verificados.')"
+
+# ── Health check ─────────────────────────────────────────────────────────────
+HEALTHCHECK --interval=60s --timeout=15s --start-period=30s --retries=3 \
+    CMD python -c "import torch, stable_baselines3, citylearn; print('healthy')" || exit 1
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
+# 50 episodios x 8760 h/año = 438,000 timesteps
+CMD ["python", "scripts/train/train_sac_citylearn.py", "--timesteps", "438000"]

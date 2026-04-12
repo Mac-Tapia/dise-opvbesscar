@@ -13,12 +13,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY requirements*.txt ./
+COPY requirements.txt requirements-citylearn-v2.txt ./
 
-# Create wheels for dependencies (with caching)
+# Create wheels for dependencies (excluir paquete local iquitos-citylearn)
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel && \
-    pip wheel -r requirements.txt --no-cache-dir --wheel-dir /wheels
+    grep -vE '^(iquitos-citylearn|#|\s*$)' requirements.txt > /tmp/req_filtered.txt && \
+    pip wheel -r /tmp/req_filtered.txt --no-cache-dir --wheel-dir /wheels && \
+    pip wheel --no-deps --no-cache-dir --wheel-dir /wheels \
+        "citylearn>=2.0.0,<3.0" "jsonschema>=4.0.0,<5.0"
 
 # Stage 2: Runtime - Minimal production image
 FROM python:3.11-slim
@@ -58,9 +61,15 @@ ENV PYTHONUNBUFFERED=1 \
     OMP_NUM_THREADS=4 \
     PYTHONPATH=/app/src:/app:$PYTHONPATH
 
-# Create data directories
+# Create data and training directories
 RUN mkdir -p /app/data/interim/oe2/{solar,chargers,bess} \
     && mkdir -p /app/outputs/oe3/{checkpoints,results,analyses} \
+    && mkdir -p /app/outputs/sac_training \
+    && mkdir -p /app/checkpoints/SAC_CityLearn \
+    && mkdir -p /app/checkpoints/PPO_CityLearn \
+    && mkdir -p /app/checkpoints/A2C_CityLearn \
+    && mkdir -p /app/logs/training/sac_citylearn \
+    && mkdir -p /app/logs/tensorboard/sac_citylearn \
     && mkdir -p /app/configs
 
 # Verify Python version and key dependencies
@@ -73,5 +82,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # Use tini as init to handle signals properly
 ENTRYPOINT ["/usr/bin/tini", "--"]
 
-# Default: Run pipeline
-CMD ["python", "-m", "scripts.run_pipeline", "--config", "configs/default.yaml"]
+# Default: ejecutar entrypoint (soporte MODE=sac para entrenamiento SAC)
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+ENTRYPOINT ["/usr/bin/tini", "--", "/docker-entrypoint.sh"]
+CMD ["pipeline"]

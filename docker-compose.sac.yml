@@ -1,0 +1,182 @@
+# ================================================================
+# docker-compose.sac.yml  —  Entrenamiento SAC + monitoreo
+# PVBESSCAR — Reducción CO2 Iquitos mediante RL
+#
+# Uso rápido (GPU):
+#   docker compose -f docker-compose.sac.yml up sac-train
+#
+# Con TensorBoard en vivo:
+#   docker compose -f docker-compose.sac.yml up
+#
+# CPU (sin GPU, más lento):
+#   docker compose -f docker-compose.sac.yml --profile cpu up sac-train-cpu
+#
+# Reanudar entrenamiento (checkpoints en ./checkpoints/SAC_CityLearn/):
+#   docker compose -f docker-compose.sac.yml up sac-train
+# ================================================================
+
+services:
+
+  # ── SAC Training (GPU principal) ──────────────────────────────────────────
+  sac-train:
+    build:
+      context: .
+      dockerfile: Dockerfile.sac
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: pvbesscar:sac-gpu
+    container_name: pvbesscar-sac-train
+    hostname: pvbesscar-sac-train
+
+    # GPU: RTX 4060 (CUDA 12.1)
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+          cpus: '8'
+          memory: 16G
+        limits:
+          cpus: '12'
+          memory: 24G
+
+    # Volúmenes: persistencia de checkpoints y resultados en el host
+    volumes:
+      - ./checkpoints:/app/checkpoints          # Checkpoints SAC (auto-resume)
+      - ./outputs/sac_training:/app/outputs/sac_training   # Timeseries, gráficos, métricas
+      - ./logs:/app/logs                        # TensorBoard + training logs
+      - ./data:/app/data:ro                     # Dataset OE2 (solo lectura)
+      - ./configs:/app/configs:ro               # Configuración (solo lectura)
+
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONIOENCODING=utf-8
+      - PYTHONDONTWRITEBYTECODE=1
+      - CUDA_VISIBLE_DEVICES=0
+      - CUDA_MODULE_LOADING=LAZY
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
+      - PYTHONPATH=/app
+      - OMP_NUM_THREADS=8
+      - CHECKPOINT_DIR=/app/checkpoints/SAC_CityLearn
+      - RESULTS_DIR=/app/outputs/sac_training
+      - TENSORBOARD_DIR=/app/logs/tensorboard/sac_citylearn
+
+    # 50 episodios = 438,000 timesteps
+    command: ["python", "scripts/train/train_sac_citylearn.py", "--timesteps", "438000"]
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import torch; assert torch.cuda.is_available()"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+
+    restart: "no"    # El entrenamiento es finito — no reiniciar automáticamente
+
+    stdin_open: true
+    tty: true
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+        labels: "service=sac-train"
+
+    networks:
+      - sac-net
+
+  # ── TensorBoard — monitoreo en tiempo real ────────────────────────────────
+  sac-tensorboard:
+    image: tensorflow/tensorflow:2.15.0
+    container_name: pvbesscar-sac-tensorboard
+    hostname: pvbesscar-sac-tensorboard
+
+    depends_on:
+      - sac-train
+
+    ports:
+      - "6006:6006"    # http://localhost:6006
+
+    volumes:
+      - ./logs/tensorboard:/logs:ro    # Solo lectura — TensorBoard no escribe
+
+    command: >
+      tensorboard --logdir /logs --host 0.0.0.0 --port 6006
+      --reload_interval 30 --bind_all
+
+    restart: unless-stopped
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+    networks:
+      - sac-net
+
+  # ── SAC Training CPU (fallback — sin GPU requerida) ───────────────────────
+  sac-train-cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: pvbesscar:latest
+    container_name: pvbesscar-sac-train-cpu
+    hostname: pvbesscar-sac-train-cpu
+
+    profiles:
+      - cpu    # Solo se activa con: --profile cpu
+
+    volumes:
+      - ./checkpoints:/app/checkpoints
+      - ./outputs/sac_training:/app/outputs/sac_training
+      - ./logs:/app/logs
+      - ./data:/app/data:ro
+      - ./configs:/app/configs:ro
+
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONIOENCODING=utf-8
+      - PYTHONDONTWRITEBYTECODE=1
+      - CUDA_VISIBLE_DEVICES=-1    # Forzar CPU
+      - PYTHONPATH=/app
+      - OMP_NUM_THREADS=8
+      - CHECKPOINT_DIR=/app/checkpoints/SAC_CityLearn
+      - RESULTS_DIR=/app/outputs/sac_training
+
+    # Menos timesteps en CPU (tarda ~3x más)
+    command: ["python", "scripts/train/train_sac_citylearn.py", "--timesteps", "87600"]
+
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 16G
+        reservations:
+          cpus: '4'
+          memory: 8G
+
+    restart: "no"
+
+    stdin_open: true
+    tty: true
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    networks:
+      - sac-net
+
+networks:
+  sac-net:
+    driver: bridge
+    name: pvbesscar-sac-network
