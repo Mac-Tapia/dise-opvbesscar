@@ -1,11 +1,13 @@
 """
 Convierte reports/ARQUITECTURA_v2026.html a PDF para el Anexo D.
 
-Genera un HTML lineal (sin pestanas JS) con portada de Anexo
-y lo convierte a PDF usando Chrome headless.
+Uso:
+  python scripts/analysis/generar_arquitectura_pdf.py            # A4 completo
+  python scripts/analysis/generar_arquitectura_pdf.py --pipeline-a3  # Solo pipeline en A3 horizontal
 """
 from __future__ import annotations
 
+import argparse
 import re
 import subprocess
 import sys
@@ -13,9 +15,10 @@ import tempfile
 import time
 from pathlib import Path
 
-ROOT    = Path(__file__).resolve().parents[2]
+ROOT     = Path(__file__).resolve().parents[2]
 SRC_HTML = ROOT / "reports" / "ARQUITECTURA_v2026.html"
 OUT_PDF  = ROOT / "reports" / "ARQUITECTURA_v2026.pdf"
+OUT_PDF_PIPELINE_A3 = ROOT / "reports" / "ARQUITECTURA_v2026_Pipeline_A3.pdf"
 
 CHROME_PATHS = [
     r"C:\Program Files\Google\Chrome\Application\chrome.exe",
@@ -33,26 +36,20 @@ def find_chrome() -> str:
 
 
 def build_print_html(html: str) -> str:
-    """Transforma el HTML con pestanas en un HTML lineal para PDF."""
-    # Quitar portada de Anexo interactiva si existe
+    """Transforma el HTML con pestanas en un HTML lineal para PDF A4 completo."""
     html = re.sub(r'<!-- PORTADA ANEXO.*?</div>\s*\n', '', html, flags=re.DOTALL)
-    # Eliminar nav
     html = re.sub(r'<nav>.*?</nav>', '', html, flags=re.DOTALL)
-    # Hacer todos los panels visibles
     html = re.sub(
         r'class="panel(?: active)?"',
         'class="panel" style="display:block;padding:28px 40px 40px;"',
         html,
     )
-    # Salto de pagina antes de cada panel excepto el primero (home)
     for pid in ("pipeline", "flujo", "agentes"):
         html = html.replace(
             f'id="{pid}" class="panel"',
             f'id="{pid}" class="panel" style="display:block;padding:28px 40px 40px;page-break-before:always;"',
         )
-    # Mostrar etiquetas de seccion
     html = html.replace('.panel-print-title { display: none; }', '.panel-print-title { display: block; }')
-    # Fondo blanco
     html = html.replace('background: #eef1f6;', 'background: white;')
 
     cover = """
@@ -80,36 +77,52 @@ def build_print_html(html: str) -> str:
     return html
 
 
-def main() -> None:
-    chrome = find_chrome()
-    print(f"Navegador: {chrome}")
-    src = SRC_HTML.read_text(encoding="utf-8")
-    print(f"HTML leido: {len(src):,} bytes")
-    pdf_html = build_print_html(src)
+def build_pipeline_a3_html(html: str) -> str:
+    """Extrae SOLO el panel #pipeline para exportar en A3 landscape."""
+    html = re.sub(r'<!-- PORTADA ANEXO.*?</div>\s*\n', '', html, flags=re.DOTALL)
+    html = re.sub(r'<nav>.*?</nav>', '', html, flags=re.DOTALL)
+    # Ocultar todos los paneles menos pipeline
+    html = re.sub(
+        r'class="panel(?: active)?"',
+        'class="panel" style="display:none;"',
+        html,
+    )
+    # Mostrar solo el pipeline con estilos A3
+    html = html.replace(
+        'id="pipeline" class="panel"',
+        'id="pipeline" class="panel" style="display:block !important;padding:20px 32px 32px;"',
+    )
+    # Etiqueta de sección visible
+    html = html.replace('.panel-print-title { display: none; }', '.panel-print-title { display: block; }')
+    html = html.replace('background: #eef1f6;', 'background: white;')
+    # Inyectar @page A3 landscape al inicio del <style>
+    a3_page = "@page { size: A3 landscape; margin: 12mm 15mm; }\n"
+    html = html.replace('<style>', '<style>\n' + a3_page, 1)
+    # Reducir fuentes para A3
+    html = html.replace(
+        '.pipeline-wrap {',
+        '.pipeline-wrap { box-shadow: none !important; border: 1pt solid #e2e8f0; /* a3 */'
+    )
+    return html
 
-    with tempfile.NamedTemporaryFile(suffix=".html", mode="w", encoding="utf-8", delete=False) as tmp:
-        tmp.write(pdf_html)
-        tmp_path = tmp.name
-    print(f"HTML temporal: {tmp_path}")
 
+def _run_chrome(chrome: str, in_path: str, out_pdf: Path) -> None:
     cmd = [
         chrome,
         "--headless=new", "--disable-gpu", "--no-sandbox",
         "--disable-dev-shm-usage",
-        f"--print-to-pdf={OUT_PDF}",
+        f"--print-to-pdf={out_pdf}",
         "--print-to-pdf-no-header", "--no-margins",
         "--run-all-compositor-stages-before-draw",
-        f"file:///{tmp_path}",
+        f"file:///{in_path}",
     ]
     print("Generando PDF...")
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
     time.sleep(3)
-    Path(tmp_path).unlink(missing_ok=True)
-
-    if OUT_PDF.exists():
-        kb = OUT_PDF.stat().st_size / 1024
-        print(f"PDF generado: {OUT_PDF.name} ({kb:.1f} KB)")
-        print(f"  Ruta: {OUT_PDF}")
+    if out_pdf.exists():
+        kb = out_pdf.stat().st_size / 1024
+        print(f"PDF generado: {out_pdf.name} ({kb:.1f} KB)")
+        print(f"  Ruta: {out_pdf}")
     else:
         print("ERROR: PDF no generado")
         if result.stderr:
@@ -117,5 +130,37 @@ def main() -> None:
         sys.exit(1)
 
 
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Genera PDF de ARQUITECTURA_v2026.html")
+    parser.add_argument(
+        "--pipeline-a3", action="store_true",
+        help="Exportar solo el panel Pipeline en A3 landscape (ARQUITECTURA_v2026_Pipeline_A3.pdf)"
+    )
+    args = parser.parse_args()
+
+    chrome = find_chrome()
+    print(f"Navegador: {chrome}")
+    src = SRC_HTML.read_text(encoding="utf-8")
+    print(f"HTML leido: {len(src):,} bytes")
+
+    if args.pipeline_a3:
+        print("Modo: Pipeline A3 landscape")
+        pdf_html = build_pipeline_a3_html(src)
+        out_pdf = OUT_PDF_PIPELINE_A3
+    else:
+        print("Modo: A4 completo (portada + 4 secciones)")
+        pdf_html = build_print_html(src)
+        out_pdf = OUT_PDF
+
+    with tempfile.NamedTemporaryFile(suffix=".html", mode="w", encoding="utf-8", delete=False) as tmp:
+        tmp.write(pdf_html)
+        tmp_path = tmp.name
+    print(f"HTML temporal: {tmp_path}")
+
+    _run_chrome(chrome, tmp_path, out_pdf)
+    Path(tmp_path).unlink(missing_ok=True)
+
+
 if __name__ == "__main__":
     main()
+
