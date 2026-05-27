@@ -91,43 +91,19 @@ IQUITOS_PARAMS: dict[str, float | str | int] = {
 
 
 # ============================================================================
-# TARIFAS OSINERGMIN - Electro Oriente S.A. (Iquitos, Loreto)
-# Pliego Tarifario MT3 - Media Tension Comercial/Industrial
-# Vigente desde 2024-11-04
-# Referencia: OSINERGMIN Resolucion N° 047-2024-OS/CD
+# Constantes compartidas — importadas desde fuente única de verdad
 # ============================================================================
-# Hora Punta (HP): 18:00 - 23:00 (5 horas)
-# Hora Fuera de Punta (HFP): 00:00 - 17:59, 23:00 - 23:59 (19 horas)
-# ============================================================================
-
-# Tarifas de Energia (S/./kWh)
-TARIFA_ENERGIA_HP_SOLES = 0.45     # Hora Punta: S/.0.45/kWh
-TARIFA_ENERGIA_HFP_SOLES = 0.28    # Hora Fuera de Punta: S/.0.28/kWh
-
-# Tarifas de Potencia (S/./kW-mes)
-TARIFA_POTENCIA_HP_SOLES = 48.50   # Potencia en HP: S/.48.50/kW-mes
-TARIFA_POTENCIA_HFP_SOLES = 22.80  # Potencia en HFP: S/.22.80/kW-mes
-
-# Tipo de cambio referencial PEN/USD
-TIPO_CAMBIO_PEN_USD = 3.75
-
-# Horas de periodo punta (18:00 - 22:59, inclusive)
-HORAS_PUNTA = list(range(18, 23))  # [18, 19, 20, 21, 22]
-HORA_INICIO_HP = 18
-HORA_FIN_HP = 23  # Exclusivo (hasta las 22:59)
-
-
-# ============================================================================
-# FACTOR DE EMISION CO2 - REDUCCION INDIRECTA POR GENERACION SOLAR
-# ============================================================================
-# Sistema Electrico Aislado de Iquitos (Loreto, Peru)
-# Fuente: MINEM/OSINERGMIN - Sistema aislado Loreto
-#
-# Factor CO2 que representa la reduccion de emisiones cuando la generacion
-# solar desplaza generacion termica (diesel/residual) en el sistema aislado.
-# ============================================================================
-
-FACTOR_CO2_KG_KWH = 0.4521  # kg CO2 / kWh (sistema termico diesel/residual)
+from src.dimensionamiento.oe2._constants import (
+    TARIFA_ENERGIA_HP_SOLES,
+    TARIFA_ENERGIA_HFP_SOLES,
+    TARIFA_POTENCIA_HP_SOLES,
+    TARIFA_POTENCIA_HFP_SOLES,
+    TIPO_CAMBIO_PEN_USD,
+    HORA_INICIO_HP,
+    HORA_FIN_HP,
+    HORAS_PUNTA,
+    FACTOR_CO2_KG_KWH,
+)
 
 
 # ============================================================================
@@ -205,7 +181,7 @@ def save_matplotlib_figure(
             print(f"✓ Gráfica guardada: {output_path}")
         return output_path
     except Exception as e:
-        print(f"❌ Error guardando {filename}: {e}")
+        print(f"[ERROR] Error guardando {filename}: {e}")
         return None
 
 
@@ -266,8 +242,9 @@ class SolarSizingOutput:
     # Perdidas
     losses_total_pct: float
 
-    # GHI anual
+    # Irradiancia anual
     ghi_annual_kwh_m2: float
+    poa_annual_kwh_m2: float = 0.0   # plano del array — referencia IEC 61724-1:2017 para PR
 
     # Dias representativos segun GHI
     despejado_date: str = ""
@@ -698,8 +675,10 @@ def _evaluate_candidate_combinations(
 
             annual_ac_kwh = float(results["ac_energy_kwh"].sum())
             specific_yield = annual_ac_kwh / system_dc_kw if system_dc_kw > 0 else 0.0
-            ghi_annual = float(sim_metadata.get("ghi_annual_kwh_m2", 0.0))
-            performance_ratio = specific_yield / ghi_annual if ghi_annual > 0 else 0.0
+            poa_annual_cand = float(sim_metadata.get("poa_annual_kwh_m2", 0.0))
+            ghi_annual_cand = float(sim_metadata.get("ghi_annual_kwh_m2", 0.0))
+            _pr_ref_cand = poa_annual_cand if poa_annual_cand > 1.0 else ghi_annual_cand
+            performance_ratio = specific_yield / _pr_ref_cand if _pr_ref_cand > 0 else 0.0
             energy_per_m2 = annual_ac_kwh / area_modules if area_modules > 0 else 0.0
             score = _metric_score(metric_norm, annual_ac_kwh, energy_per_m2, performance_ratio)
 
@@ -939,6 +918,10 @@ def run_pv_simulation(
     # Parametros de temperatura SAPM
     temp_params: dict[str, Any] = _TEMP_MODEL_PARAMS.get("sapm", {}).get("open_rack_glass_glass", {})
 
+    # Strings por inversor (configuración física correcta)
+    # strings_parallel es el total del sistema; cada inversor maneja una fracción
+    strings_per_inv = max(1, strings_parallel // max(1, num_inverters))
+
     # Sistema PV
     system = PVSystem(
         surface_tilt=int(config.tilt),  # type: ignore[arg-type]
@@ -947,7 +930,7 @@ def run_pv_simulation(
         inverter_parameters=inverter_params,
         temperature_model_parameters=temp_params,
         modules_per_string=modules_per_string,
-        strings_per_inverter=strings_parallel,
+        strings_per_inverter=strings_per_inv,
     )
 
     # ModelChain
@@ -982,15 +965,26 @@ def run_pv_simulation(
         warnings.simplefilter("ignore")
         mc.run_model(weather)  # type: ignore[attr-defined]
 
+    # Extraer irradiancia POA (plano del array) para Performance Ratio correcto (IEC 61724-1:2017)
+    # PR = Y_f / Y_r = specific_yield [kWh/kWp] / poa_annual [kWh/m²]
+    try:
+        _poa_raw = mc.results.total_irrad["poa_global"]  # type: ignore[attr-defined]
+        poa_global = pd.Series(np.asarray(_poa_raw, dtype=float), index=weather.index).fillna(0).clip(lower=0)
+    except (AttributeError, KeyError, TypeError):
+        poa_global = pd.Series(np.asarray(weather["ghi"].values, dtype=float), index=weather.index).fillna(0).clip(lower=0)
+        if log:
+            print("  AVISO: POA no disponible en mc.results; usando GHI como aproximación para PR")
+
     # Extraer resultados
     # mc.results.dc puede ser DataFrame o Series dependiendo del modelo
     dc_power = _to_series_like(mc.results.dc, weather.index, fallback_column="p_mp")
     ac_power = _to_series_like(mc.results.ac, weather.index)
 
-    # Escalar por numero de inversores si > 1
+    # Escalar por numero de inversores (cada inversor tiene strings_per_inv strings)
     if num_inverters > 1:
         dc_power = dc_power * float(num_inverters)
         ac_power = ac_power * float(num_inverters)
+        # POA es intensidad de irradiancia (W/m²), independiente del número de inversores
 
     # Limpiar valores
     dc_power = dc_power.fillna(0).clip(lower=0)  # type: ignore[attr-defined]
@@ -1049,6 +1043,7 @@ def run_pv_simulation(
             "ghi_wm2": np.asarray(weather["ghi"].values, dtype=float),  # type: ignore[arg-type]
             "dni_wm2": np.asarray(weather["dni"].values, dtype=float),  # type: ignore[arg-type]
             "dhi_wm2": np.asarray(weather["dhi"].values, dtype=float),  # type: ignore[arg-type]
+            "poa_wm2": np.asarray(poa_global.values, dtype=float),       # irradiancia plano del array
             "temp_air_c": np.asarray(weather["temp_air"].values, dtype=float),  # type: ignore[arg-type]
             "wind_speed_ms": np.asarray(weather["wind_speed"].values, dtype=float),  # type: ignore[arg-type]
             "dc_power_kw": np.asarray(dc_power.values, dtype=float) / 1000,  # type: ignore[arg-type]
@@ -1104,14 +1099,18 @@ def run_pv_simulation(
         print(f"  Reduccion indirecta CO2 total: {co2_total:,.1f} kg ({co2_total/1000:,.2f} ton)")
         print(f"  [Sistema aislado Iquitos - Factor: {FACTOR_CO2_KG_KWH} kg CO2/kWh]")
 
-    # Calcular GHI anual
-    ghi_annual = weather["ghi"].sum() * dt / 1000  # kWh/m²
+    # Irradiancia anual GHI y POA (kWh/m²)
+    ghi_annual = float(weather["ghi"].fillna(0).clip(lower=0).sum() * dt / 1000)
+    poa_annual = float(poa_global.sum() * dt / 1000)
 
     metadata: dict[str, Any] = {
         "dt_hours": dt,
         "ghi_annual_kwh_m2": ghi_annual,
+        "poa_annual_kwh_m2": poa_annual,   # referencia IEC 61724-1:2017 para PR
         "losses_factor": losses_factor,
         "total_modules": total_modules,
+        "strings_per_inv": strings_per_inv,
+        "num_inverters": num_inverters,
     }
 
     return results, metadata
@@ -1123,9 +1122,11 @@ def calculate_statistics(
     system_ac_kw: float,
     ghi_annual: float,
     dt_hours: float,
+    poa_annual: float = 0.0,
 ) -> dict[str, Any]:
     """
     Calcula estadisticas detalladas del sistema.
+    poa_annual: irradiancia en plano del array [kWh/m²] — referencia IEC 61724-1:2017 para PR.
     """
     print("\n" + "=" * 60)
     print("  ESTADISTICAS DEL SISTEMA (TMY PVGIS)")
@@ -1165,8 +1166,17 @@ def calculate_statistics(
     # Horas equivalentes
     equivalent_hours = annual_ac_kwh / system_ac_kw if system_ac_kw > 0 else 0
 
-    # Performance Ratio
-    performance_ratio = specific_yield / ghi_annual if ghi_annual > 0 else 0
+    # Performance Ratio (IEC 61724-1:2017): PR = Y_f / Y_r
+    # Y_f = specific_yield [kWh/kWp]  Y_r = poa_annual / G_stc [h] = poa_annual [kWh/m²]
+    # Usar POA; caer en GHI solo si POA no disponible (PR < 1 es físicamente obligatorio)
+    _pr_ref = poa_annual if poa_annual > 1.0 else ghi_annual
+    performance_ratio = specific_yield / _pr_ref if _pr_ref > 0 else 0
+    if performance_ratio > 1.05:
+        print(
+            f"  AVISO: PR = {performance_ratio*100:.1f}% > 100% — el rendimiento específico"
+            f" ({specific_yield:.0f} kWh/kWp) supera la irradiancia de referencia"
+            f" ({_pr_ref:.0f} kWh/m²). Verificar strings_per_inverter y datos TMY."
+        )
 
     # ================================================================
     # METRICAS ECONOMICAS Y CO2 (si las columnas existen)
@@ -1197,8 +1207,10 @@ def calculate_statistics(
     print("\n=== Estadisticas del sistema (TMY PVGIS) ===")
     print(f"Energia anual AC:               {annual_ac_kwh:,.0f} kWh  ({annual_ac_kwh/1e6:.2f} GWh)")
     print(f"Yield especifico:               {specific_yield:.0f} kWh/kWp·ano  ({specific_yield/1e3:.2f} MWh/MWp·ano)")
+    print(f"GHI anual (horiz.):             {ghi_annual:.0f} kWh/m²")
+    print(f"POA anual (plano array):        {poa_annual:.0f} kWh/m²  [referencia IEC 61724-1]")
     print(f"Factor de planta (AC):          {capacity_factor*100:.1f} %")
-    print(f"Performance Ratio:              {performance_ratio*100:.1f} %")
+    print(f"Performance Ratio (POA):        {performance_ratio*100:.1f} %")
     print(f"Potencia AC maxima:             {max_power_kw:,.1f} kW")
     print(f"Potencia AC media:              {mean_power_kw:.1f} kW")
     print(f"Horas equivalentes (E/P_AC):    {equivalent_hours:,.0f} h/ano")
@@ -1219,6 +1231,8 @@ def calculate_statistics(
         "annual_ac_kwh": annual_ac_kwh,
         "annual_dc_kwh": annual_dc_kwh,
         "specific_yield": specific_yield,
+        "ghi_annual_kwh_m2_stat": ghi_annual,
+        "poa_annual_kwh_m2": poa_annual,
         "capacity_factor": capacity_factor,
         "performance_ratio": performance_ratio,
         "equivalent_hours": equivalent_hours,
@@ -1489,6 +1503,7 @@ def build_pv_timeseries_sandia(
         system_ac_kw=system_ac_kw,
         ghi_annual=sim_metadata["ghi_annual_kwh_m2"],
         dt_hours=dt_hours,
+        poa_annual=sim_metadata.get("poa_annual_kwh_m2", 0.0),
     )
 
     # 8. Energia mensual
@@ -1514,6 +1529,7 @@ def build_pv_timeseries_sandia(
         "factor_diseno": config.factor_diseno,
         "losses_total_pct": config.total_losses_pct,
         "ghi_annual_kwh_m2": sim_metadata["ghi_annual_kwh_m2"],
+        "poa_annual_kwh_m2": sim_metadata.get("poa_annual_kwh_m2", 0.0),
         "dt_hours": dt_hours,
         "time_steps_per_hour": int(1 / dt_hours),
         "selection_mode": selection_mode_norm,
@@ -1705,6 +1721,7 @@ def run_solar_sizing(
         hours_with_production=int(sim_meta["hours_with_production"]),
         losses_total_pct=float(sim_meta["losses_total_pct"]),
         ghi_annual_kwh_m2=float(sim_meta["ghi_annual_kwh_m2"]),
+        poa_annual_kwh_m2=float(sim_meta.get("poa_annual_kwh_m2", 0.0)),
         # Dias representativos
         despejado_date=str(sim_meta.get("despejado_date", "")),
         despejado_ghi=float(sim_meta.get("despejado_ghi", 0.0)),
@@ -1806,7 +1823,8 @@ def _generate_technical_report(
 | Parametro | Valor |
 |-----------|-------|
 | Fuente | PVGIS TMY (Typical Meteorological Year) |
-| GHI anual | {summary.ghi_annual_kwh_m2:,.0f} kWh/m2 |
+| GHI anual (horizontal) | {summary.ghi_annual_kwh_m2:,.0f} kWh/m2 |
+| POA anual (plano array) | {summary.poa_annual_kwh_m2:,.0f} kWh/m2 |
 | Resolucion temporal | {summary.seconds_per_time_step//60} minutos |
 
 ### 3. Componentes del Sistema
@@ -1915,7 +1933,13 @@ Este analisis utiliza **pvlib-python** con los siguientes modelos:
     (out_dir / "solar_technical_report.md").write_text(report, encoding="utf-8")
 
 
-def prepare_solar_for_citylearn(
+# REMOVED: prepare_solar_for_citylearn() — dead code (never called).
+# Wrote to data/oe2/Generacionsolar/citylearn/ (CityLearn v1 format, 4-col normalized).
+# Replaced by generate_solar_dataset_citylearn_complete() → pv_generation_citylearn2024.csv
+# and data_loader.save_citylearn_dataset() → data/iquitos_ev_mall/solar_generation.csv.
+
+
+def _prepare_solar_for_citylearn_REMOVED(
     pv_timeseries_path: Path,
     out_dir: Path,
     pv_dc_kw: float,
@@ -2079,14 +2103,14 @@ def generate_solar_dataset_citylearn_complete(
     
     if verbose:
         print("\n" + "="*90)
-        print("🌞 GENERADOR: Dataset Solar PV 2024 para CityLearn v2")
+        print("GENERADOR: Dataset Solar PV 2024 para CityLearn v2")
         print("="*90)
     
     # =========================================================================
     # PASO 1: Generar dataset base con run_solar_sizing()
     # =========================================================================
     if verbose:
-        print(f"\n1️⃣  Generando dataset solar base...")
+        print(f"\n[1/4] Generando dataset solar base...")
     
     sizing_dir = Path("data/oe2/Generacionsolar")
     sizing_result = run_solar_sizing(
@@ -2114,7 +2138,7 @@ def generate_solar_dataset_citylearn_complete(
     # PASO 2: Asegurar las 12 columnas requeridas
     # =========================================================================
     if verbose:
-        print(f"\n2️⃣  Validando columnas requeridas...")
+        print(f"\n[2/4]  Validando columnas requeridas...")
     
     # Renombrar columnas con nombres directos de pvlib a nombres finales
     column_mapping = {
@@ -2129,46 +2153,20 @@ def generate_solar_dataset_citylearn_complete(
         if old_col in df.columns and new_col not in df.columns:
             df[new_col] = df[old_col]
     
-    # Asegurar columnas de tarifa si no existen (run_solar_sizing ya debe crearlas)
-    if 'is_hora_punta' not in df.columns:
-        df['is_hora_punta'] = np.where(
-            (pd.to_datetime(df.index).hour >= 18) & 
-            (pd.to_datetime(df.index).hour < 23), 1, 0
-        )
-    
-    if 'hora_tipo' not in df.columns:
-        df['hora_tipo'] = np.where(df['is_hora_punta'] == 1, 'HP', 'HFP')
-    
-    if 'tarifa_aplicada_soles' not in df.columns:
-        df['tarifa_aplicada_soles'] = np.where(
-            df['is_hora_punta'] == 1,
-            TARIFA_ENERGIA_HP_SOLES,
-            TARIFA_ENERGIA_HFP_SOLES
-        )
-    
-    if 'ahorro_solar_soles' not in df.columns:
-        df['ahorro_solar_soles'] = df['energia_kwh'] * df['tarifa_aplicada_soles']
-    
-    # Asegurar CO2 metrics si no existen
-    if 'reduccion_indirecta_co2_kg' not in df.columns:
-        df['reduccion_indirecta_co2_kg'] = df['energia_kwh'] * FACTOR_CO2_KG_KWH
-    
-    # Seleccionar solo las 10 columnas requeridas (EXCLUSIVELY GENERACION SOLAR)
+    # Seleccionar solo columnas fisicas PV (tarifas/CO2 pertenecen al loader)
     required_columns = [
         'irradiancia_ghi',
         'temperatura_c',
         'velocidad_viento_ms',
         'potencia_kw',
         'energia_kwh',
-        'is_hora_punta',
-        'hora_tipo',
-        'tarifa_aplicada_soles',
-        'ahorro_solar_soles',
-        'reduccion_indirecta_co2_kg',
     ]
-    
-    df_final = df[required_columns].copy()
-    
+    # Incluir poa_wm2 si esta disponible (IEC 61724-1:2017)
+    if 'poa_wm2' in df.columns:
+        required_columns.append('poa_wm2')
+
+    df_final = df[[c for c in required_columns if c in df.columns]].copy()
+
     if verbose:
         for col in required_columns:
             status = "[OK]" if col in df_final.columns else "[X]"
@@ -2178,7 +2176,7 @@ def generate_solar_dataset_citylearn_complete(
     # PASO 3: VALIDACION 7-FASE
     # =========================================================================
     if verbose:
-        print(f"\n3️⃣  Validaciones (7 fases)...")
+        print(f"\n[3/4]  Validaciones (7 fases)...")
     
     validations = {}
     
@@ -2192,40 +2190,41 @@ def generate_solar_dataset_citylearn_complete(
     if verbose:
         print(f"   {'[OK]' if val1_ok else '[X]'} 1. Temporal (8760 filas, 2024, sin duplicados)")
     
-    # Validacion 2: Columnas
-    val2_ok = len(df_final.columns) == 12 and all(c in df_final.columns for c in required_columns)
+    # Validacion 2: Columnas fisicas presentes
+    core_cols = ['irradiancia_ghi', 'temperatura_c', 'velocidad_viento_ms', 'potencia_kw', 'energia_kwh']
+    val2_ok = all(c in df_final.columns for c in core_cols)
     validations['2_columnas'] = val2_ok
     if verbose:
-        print(f"   {'[OK]' if val2_ok else '[X]'} 2. Columnas (12 presentes)")
-    
+        print(f"   {'[OK]' if val2_ok else '[X]'} 2. Columnas fisicas PV presentes ({len(df_final.columns)} cols)")
+
     # Validacion 3: Integridad
     val3_ok = df_final.isnull().sum().sum() == 0
     validations['3_integridad'] = val3_ok
     if verbose:
         nulls = df_final.isnull().sum().sum()
         print(f"   {'[OK]' if val3_ok else '[X]'} 3. Integridad ({int(nulls)} valores nulos)")
-    
+
     # Validacion 4: Rangos
     temp_ok = 15 <= df_final['temperatura_c'].mean() <= 35
-    tarifa_ok = abs(df_final['tarifa_aplicada_soles'].min() - 0.28) < 0.01
-    co2_ok = df_final['reduccion_indirecta_co2_kg'].min() >= 0
-    val4_ok = temp_ok and tarifa_ok and co2_ok
+    power_ok = df_final['potencia_kw'].max() > 0
+    val4_ok = temp_ok and power_ok
     validations['4_rangos'] = val4_ok
     if verbose:
-        print(f"   {'[OK]' if val4_ok else '[X]'} 4. Rangos (temperatura, tarifas, CO2)")
-    
+        print(f"   {'[OK]' if val4_ok else '[X]'} 4. Rangos (temperatura, potencia)")
+
     # Validacion 5: Limpieza
     val5_ok = year in df_final.index.year.unique() and len(df_final.index.year.unique()) == 1
     validations['5_limpieza'] = val5_ok
     if verbose:
         print(f"   {'[OK]' if val5_ok else '[X]'} 5. Limpieza (2024 ONLY)")
-    
-    # Validacion 6: CityLearn v2
-    val6_ok = len(required_columns) == 12
-    validations['6_citylearn'] = val6_ok
+
+    # Validacion 6: Solo datos fisicos (sin columnas de tarifa/CO2)
+    no_derived = not any(c in df_final.columns for c in ['is_hora_punta', 'tarifa_aplicada_soles', 'reduccion_indirecta_co2_kg'])
+    val6_ok = no_derived
+    validations['6_sin_duplicados'] = val6_ok
     if verbose:
-        print(f"   {'[OK]' if val6_ok else '[X]'} 6. CityLearn v2 (12 columnas)")
-    
+        print(f"   {'[OK]' if val6_ok else '[X]'} 6. Sin columnas duplicadas (tarifa/CO2 en loader)")
+
     # Validacion 7: Agentes RL
     variance_ok = df_final['potencia_kw'].std() > 0 and df_final['energia_kwh'].std() > 0
     val7_ok = variance_ok
@@ -2242,7 +2241,7 @@ def generate_solar_dataset_citylearn_complete(
     # PASO 4: Guardar datasets y certificaciones
     # =========================================================================
     if verbose:
-        print(f"\n4️⃣  Guardando datasets...")
+        print(f"\n[4/4]  Guardando datasets...")
     
     # Dataset principal con indice
     output_file = output_dir / "pv_generation_citylearn2024.csv"
@@ -2263,8 +2262,8 @@ def generate_solar_dataset_citylearn_complete(
         },
         "columnas": required_columns,
         "energia_kwh": float(df_final['energia_kwh'].sum()),
-        "co2_reduccion_tons": float(df_final['reduccion_indirecta_co2_kg'].sum() / 1000),
-        "ahorro_soles": float(df_final['ahorro_solar_soles'].sum()),
+        "co2_reduccion_tons": float(df_final['energia_kwh'].sum() * FACTOR_CO2_KG_KWH / 1000),
+        "ahorro_soles": float(df_final['energia_kwh'].sum() * TARIFA_ENERGIA_HFP_SOLES),
         "validaciones": {k: bool(v) for k, v in validations.items()},
         "todas_ok": bool(all_ok),
         "status": "[OK] PRODUCTION READY" if all_ok else "[!] REVIEW REQUIRED"
@@ -2290,18 +2289,18 @@ def generate_solar_dataset_citylearn_complete(
    Filas: {len(df_final):,} (8,760 = 365 × 24)
    Columnas: {len(df_final.columns)}
    
-☀️  GENERACION:
+[SOLAR]  GENERACION:
    Energia total: {df_final['energia_kwh'].sum():,.0f} kWh/ano
    Potencia promedio: {df_final['potencia_kw'].mean():.2f} kW
    
-💰 ECONOMIA:
-   Ahorro: S/. {df_final['ahorro_solar_soles'].sum():,.2f}/ano
-   
-🌍 AMBIENTAL:
-   CO2 reduccion indirecta: {df_final['reduccion_indirecta_co2_kg'].sum()/1000:.1f} ton/ano
+[ECONOMIA] ECONOMIA:
+   Ahorro: S/. {df_final['energia_kwh'].sum() * TARIFA_ENERGIA_HFP_SOLES:,.2f}/ano
+
+[AMBIENTAL] AMBIENTAL:
+   CO2 reduccion indirecta: {df_final['energia_kwh'].sum() * FACTOR_CO2_KG_KWH / 1000:.1f} ton/ano
    
 [OK] Validaciones: 7/7 PASSED
-📋 Certificacion: {cert_file}
+[CERT] Certificacion: {cert_file}
 """)
     
     return df_final, certification
@@ -2339,7 +2338,7 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     print("="*70)
     
     # 1. Energia diaria (pv_daily_energy.csv)
-    print("\n1️⃣  Generando pv_daily_energy.csv...")
+    print("\n[1/5]  Generando pv_daily_energy.csv...")
     daily_energy = df.groupby(df['datetime'].dt.date)['ac_energy_kwh'].sum()
     df_daily = pd.DataFrame({
         'datetime': pd.to_datetime(daily_energy.index).to_series(index=range(len(daily_energy))).values,
@@ -2352,7 +2351,7 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     print(f"   [OK] Guardado: {path_daily.name} ({len(df_daily)} filas)")
     
     # 2. Energia mensual (pv_monthly_energy.csv)
-    print("2️⃣  Generando pv_monthly_energy.csv...")
+    print("[2/4]  Generando pv_monthly_energy.csv...")
     monthly_energy = df.groupby(df['datetime'].dt.to_period('M'))['ac_energy_kwh'].sum()
     df_monthly = pd.DataFrame({
         'datetime': [
@@ -2367,7 +2366,7 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     print(f"   [OK] Guardado: {path_monthly.name} ({len(df_monthly)} filas)")
     
     # 3. Perfil promedio 24h (pv_profile_24h.csv)
-    print("3️⃣  Generando pv_profile_24h.csv...")
+    print("[3/4]  Generando pv_profile_24h.csv...")
     hourly_avg = df.groupby(df['datetime'].dt.hour)['ac_energy_kwh'].mean()
     hourly_avg_per_kwp = hourly_avg / 4050.0  # 4,050 kWp instalado
     df_24h = pd.DataFrame({
@@ -2381,7 +2380,7 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     print(f"   [OK] Guardado: {path_24h.name} ({len(df_24h)} filas)")
     
     # 4. Dias representativos (maxima generacion, despejado, intermedio, nublado)
-    print("4️⃣  Generando perfiles de dias representativos...")
+    print("[4/4]  Generando perfiles de dias representativos...")
     
     # Ordenar por energia diaria para identificar tipos de dia
     daily_totals = df.groupby(df['datetime'].dt.date)['ac_energy_kwh'].sum().sort_values(ascending=False)
@@ -2448,7 +2447,7 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     print(f"   [OK] Dia nublado: {fecha_nublado} ({df_dia_nubl['ac_energy_kwh'].sum():.0f} kWh)")
     
     # 5. Perfil mensual horario (pv_profile_monthly_hourly.csv)
-    print("5️⃣  Generando pv_profile_monthly_hourly.csv...")
+    print("[5/5]  Generando pv_profile_monthly_hourly.csv...")
     monthly_hourly = df.groupby([df['datetime'].dt.month, df['datetime'].dt.hour])['ac_energy_kwh'].mean().unstack(fill_value=0)
     df_month_hour = pd.DataFrame({
         'hour': range(24),
@@ -2465,7 +2464,7 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     print(f"   [OK] Guardado: {path_month_hour.name} (24 horas × 12 meses)")
     
     # 6. Candidatos de modulos (pv_candidates_modules.csv)
-    print("6️⃣  Generando pv_candidates_modules.csv...")
+    print("[6/8]  Generando pv_candidates_modules.csv...")
     df_modules = pd.DataFrame({
         'name': [
             'Kyocera_Solar_KS20__2008__E__',
@@ -2486,7 +2485,7 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     print(f"   [OK] Guardado: {path_modules.name} ({len(df_modules)} modulos)")
     
     # 7. Candidatos de inversores (pv_candidates_inverters.csv)
-    print("7️⃣  Generando pv_candidates_inverters.csv...")
+    print("[7/8]  Generando pv_candidates_inverters.csv...")
     df_inverters = pd.DataFrame({
         'name': [
             'Power_Electronics__FS3000CU15__690V_',
@@ -2508,7 +2507,7 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     print(f"   [OK] Guardado: {path_inverters.name} ({len(df_inverters)} inversores)")
     
     # 8. Combinaciones de candidatos (pv_candidates_combinations.csv)
-    print("8️⃣  Generando pv_candidates_combinations.csv...")
+    print("[8/8]  Generando pv_candidates_combinations.csv...")
     df_combinations = pd.DataFrame({
         'module_name': ['Kyocera_Solar_KS20__2008__E__'] * 5,
         'inverter_name': [

@@ -42,12 +42,12 @@ MOTOS_TARGET_DIARIOS: int = 270     # Motos por día (Iquitos)
 MOTOTAXIS_TARGET_DIARIOS: int = 39  # mototaxis por día (Iquitos)
 VEHICLES_TARGET_DIARIOS: int = MOTOS_TARGET_DIARIOS + MOTOTAXIS_TARGET_DIARIOS  # 309 total
 
-MOTO_BATTERY_KWH: float = 4.6       # Capacidad bateria moto (kWh)
-MOTOTAXI_BATTERY_KWH: float = 7.4   # Capacidad bateria mototaxi (kWh)
+MOTO_BATTERY_KWH: float = 1.5       # Capacidad batería moto (kWh) — validado YAML/Tabla 13 OE2
+MOTOTAXI_BATTERY_KWH: float = 3.0   # Capacidad batería mototaxi (kWh) — validado YAML/OE2
 MOTO_SOC_ARRIVAL: float = 0.20      # SOC al llegar (20%)
 MOTO_SOC_TARGET: float = 0.80       # SOC objetivo (80%)
-MOTO_ENERGY_TO_CHARGE: float = (MOTO_SOC_TARGET - MOTO_SOC_ARRIVAL) * MOTO_BATTERY_KWH / 0.95  # ~2.90 kWh
-MOTOTAXI_ENERGY_TO_CHARGE: float = (MOTO_SOC_TARGET - MOTO_SOC_ARRIVAL) * MOTOTAXI_BATTERY_KWH / 0.95  # ~4.68 kWh
+MOTO_ENERGY_TO_CHARGE: float = (MOTO_SOC_TARGET - MOTO_SOC_ARRIVAL) * MOTO_BATTERY_KWH / 0.95  # ~0.95 kWh
+MOTOTAXI_ENERGY_TO_CHARGE: float = (MOTO_SOC_TARGET - MOTO_SOC_ARRIVAL) * MOTOTAXI_BATTERY_KWH / 0.95  # ~1.89 kWh
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DERIVACIÓN CIENTÍFICA DE FACTORES DE CO2 DIRECTO (IPCC 2006 Tier 1)
@@ -108,9 +108,9 @@ REWARD_CLIP_RANGE: tuple = (-0.0005, 0.0005)  # Para fallback reward single-obj
 # ============================================================================
 # CONFIGURACION PERIODOS Y HORARIOS
 # ============================================================================
-HORA_PUNTA_INICIO: int = 18  # Hora punta: 18:00
-HORA_PUNTA_FIN: int = 23     # Hora punta al 23:00
-HORAS_PICO_DIARIAS: int = 6  # 6 horas pico por día
+HORA_PUNTA_INICIO: int = 18  # HP empieza a las 18:00 (inclusive)
+HORA_PUNTA_FIN: int = 23     # HP termina a las 22:59 (exclusive: h < 23 → {18..22})
+HORAS_PICO_DIARIAS: int = 5  # 5 horas pico: 18, 19, 20, 21, 22
 
 # Horario operativo EVs (horas activas)
 EV_OPERATIONAL_HOURS_START: int = 6   # 06:00

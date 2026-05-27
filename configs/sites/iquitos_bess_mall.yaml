@@ -1,0 +1,99 @@
+# configs/sites/iquitos_bess_mall.yaml
+# ============================================================
+# SITIO VALIDADO: BESS Mall Iquitos — Ejemplo reproducible OE3
+# ============================================================
+# Resultados validados (PVBESSCAR 2024):
+#   SAC ep48 → 62.8% reducción CO₂ vs F₀
+#   Kruskal-Wallis H=81.65, p=1.86×10⁻¹⁸
+#
+# Referencia de uso:
+#   from src.core import load_site_config
+#   site = load_site_config("configs/sites/iquitos_bess_mall.yaml")
+# ============================================================
+
+site_id: iquitos_bess_mall_2024
+name: "BESS Mall Iquitos — Sistema Aislado Loreto"
+description: >
+  Estacionamiento techado en Iquitos (Loreto, Perú) con sistema fotovoltaico
+  de 4,050 kWp, BESS de 2,000 kWh / 400 kW, y 38 sockets para carga de
+  motos eléctricas (270/día) y mototaxis eléctricas (39/día).
+  Sistema aislado de la red nacional (diesel, 0.4521 kg CO₂/kWh).
+
+# ── Ubicación geográfica ────────────────────────────────────
+latitude: -3.75           # Iquitos, Loreto
+longitude: -73.25
+altitude_m: 104.0
+timezone: "America/Lima"
+year: 2024
+
+# ── Conexión eléctrica ──────────────────────────────────────
+grid:
+  co2_intensity_kg_per_kwh: 0.4521   # red aislada térmica diesel (MINEM/OSINERGMIN)
+  grid_type: isolated                  # "isolated" | "connected" | "microgrid"
+  max_import_kw: null                  # sin límite de importación (diesel backup)
+  max_export_kw: 0.0                   # sin exportación (sistema aislado)
+  tariff:
+    peak_rate_local_per_kwh: 0.45      # S/./kWh en HP (OSINERGMIN MT3, desde 2024-11-04)
+    offpeak_rate_local_per_kwh: 0.28   # S/./kWh en HFP
+    peak_hours_start: 18               # HP: 18:00 – 22:59
+    peak_hours_end: 22                 # (18 ≤ h ≤ 22, es decir HORA_FIN_HP=23 excl.)
+    currency: PEN
+    exchange_rate_to_usd: 3.75
+
+# ── Edificios / instalaciones ───────────────────────────────
+buildings:
+  - name: "Estacionamiento BESS Mall Iquitos"
+
+    # -- Área techada disponible para PV --
+    # NOTA: OE2 dimensionó 4,050 kWp instalados (src/dimensionamiento/oe2/_constants.py).
+    # El timeseries potencia_kw del CSV fue generado por solar_pvlib.py con ese diseño real.
+    # El campo pv_installed_kwp (calculado por la fórmula del framework) es una aproximación
+    # usada solo para display y normalización; la simulación usa el timeseries CSV directamente.
+    pv_area_m2: 15200.0               # área techada verificada (estacionamiento Mall Iquitos)
+    pv_panel_efficiency: 0.199        # Kyocera KS20 (2008): 19.9%
+    pv_surface_tilt_deg: 10.0         # techo casi plano
+    pv_surface_azimuth_deg: 0.0       # orientado al norte (0° = N en pvlib)
+    pv_coverage_fraction: 0.65        # 65% del área techada usable
+    pv_inverter_efficiency: 0.956     # Eaton Xpert 1670
+    pv_system_losses: 0.14            # pérdidas típicas IEC 61724-1
+    # pv_installed_kwp ≈ 1,691 kWp (formula) | OE2 real: 4,050 kWp → usar timeseries CSV
+
+    # -- Sistema de Almacenamiento (BESS) --
+    bess_capacity_kwh: 2000.0         # capacidad nominal verificada (max soc_kwh CSV)
+    bess_power_kw: 400.0              # potencia nominal (carga y descarga)
+    bess_dod: 0.80                    # DoD 80% (litio-ion industrial)
+    bess_efficiency_roundtrip: 0.95   # eficiencia roundtrip
+    bess_soc_min: 0.20                # SOC mínimo operacional
+    bess_soc_max: 1.00
+    bess_initial_soc: 0.50
+
+    # -- Carga fija (demanda mall, oficinas, servicios) --
+    fixed_load_kw: 100.0              # promedio 100 kW (2,400 kWh/día)
+    fixed_load_profile_csv: "data/oe2/demandamallkwh/demandamallhorakwh.csv"
+
+    # -- Flota de Vehículos Eléctricos --
+    ev_fleet:
+      opening_hour: 9
+      closing_hour: 22
+      vehicle_types:
+        - name: moto
+          vehicle_count: 270            # motos eléctricas verificadas (Tabla 13 OE2)
+          battery_kwh: 1.5              # batería típica moto eléctrica Iquitos
+          charger_power_kw: 7.4         # cargador AC nivel 2
+          sockets_per_charger: 2
+          co2_avoided_kg_per_kwh: 0.87  # κ_moto: (IPCC; factor gasolina Loreto)
+          avg_daily_sessions: 1.0
+          session_energy_kwh: 0.75      # carga promedio ~50% batería
+          peak_hours_share: 0.50        # 50% sesiones en HP
+          utilization_factor: 0.92      # 92% de la flota activa/día
+
+        - name: mototaxi
+          vehicle_count: 39             # mototaxis verificadas
+          battery_kwh: 3.0              # batería mototaxi (> moto)
+          charger_power_kw: 7.4
+          sockets_per_charger: 2
+          co2_avoided_kg_per_kwh: 0.54  # κ_mototaxi (IPCC; factor gas natural)
+          avg_daily_sessions: 1.0
+          session_energy_kwh: 1.5
+          peak_hours_share: 0.50
+          utilization_factor: 0.92

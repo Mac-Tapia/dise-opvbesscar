@@ -190,18 +190,13 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
             )
         _CHARGERS_COLS = [
             "ev_energia_motos_kwh", "ev_energia_mototaxis_kwh",
-            "co2_reduccion_motos_kg", "co2_reduccion_mototaxis_kg",
-            "ev_energia_total_kwh", "costo_carga_ev_soles",
-            "reduccion_directa_co2_kg", "co2_directo_acumulado_diario_kg",
-            "co2_directo_por_vehiculo_kg", "co2_directo_anual_acumulado_kg",
+            "ev_energia_total_kwh", "co2_directo_anual_acumulado_kg",
             "motos_cargadas_hora", "mototaxis_cargadas_hora",
             "total_vehiculos_cargados_hora", "motos_acumulado_diario",
             "mototaxis_acumulado_diario", "total_acumulado_diario",
             "motos_acumulado_mensual", "mototaxis_acumulado_mensual",
             "total_acumulado_mensual", "motos_acumulado_anual",
             "mototaxis_acumulado_anual", "total_acumulado_anual",
-            "co2_grid_kwh", "co2_neto_por_hora_kg", "ev_demand_kwh",
-            "is_hora_punta", "tarifa_aplicada_soles",
         ]
         for _si in range(38):  # 38 sockets
             for _sf in ("charger_power_kw", "battery_kwh", "soc_current",
@@ -213,8 +208,9 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         # Arrays horarios (8760 filas) — columnas de chargers_timeseries.csv OE2
         self._ev_motos_demand: np.ndarray = chargers_df["ev_energia_motos_kwh"].to_numpy(dtype=np.float64)
         self._ev_mototaxis_demand: np.ndarray = chargers_df["ev_energia_mototaxis_kwh"].to_numpy(dtype=np.float64)
-        self._co2_motos: np.ndarray = chargers_df["co2_reduccion_motos_kg"].to_numpy(dtype=np.float64)
-        self._co2_mototaxis: np.ndarray = chargers_df["co2_reduccion_mototaxis_kg"].to_numpy(dtype=np.float64)
+        # CO2 directo: energía EV × factor (combustible desplazado) — computed from energia_kwh
+        self._co2_motos: np.ndarray = self._ev_motos_demand * CO2_FACTOR_MOTO
+        self._co2_mototaxis: np.ndarray = self._ev_mototaxis_demand * CO2_FACTOR_MOTOTAXI
 
         # Máximos del año para normalizar observaciones de deuda
         self._daily_motos_max: float = float(
@@ -239,7 +235,7 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         solar_src = _pd.read_csv(_SOLAR_CSV)
         # Columnas numéricas OE2 solar (excluye datetime y hora_tipo categórico)
         _SOLAR_REQUIRED = ["irradiancia_ghi", "temperatura_c", "velocidad_viento_ms",
-                           "potencia_kw", "energia_kwh", "reduccion_indirecta_co2_kg"]
+                           "potencia_kw", "energia_kwh"]
         for _col in _SOLAR_REQUIRED:
             if _col not in solar_src.columns:
                 raise KeyError(f"Columna '{_col}' no encontrada en {_SOLAR_CSV}. "
@@ -250,7 +246,8 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         self._solar_ghi: np.ndarray          = solar_src["irradiancia_ghi"].to_numpy(dtype=np.float64)
         self._solar_temp: np.ndarray         = solar_src["temperatura_c"].to_numpy(dtype=np.float64)
         self._solar_viento: np.ndarray       = solar_src["velocidad_viento_ms"].to_numpy(dtype=np.float64)
-        self._solar_co2_indirect: np.ndarray = solar_src["reduccion_indirecta_co2_kg"].to_numpy(dtype=np.float64)
+        # CO2 indirecto solar: energia × factor grid (columna eliminada del CSV, se computa aquí)
+        self._solar_co2_indirect: np.ndarray = self._solar_kwh * CO2_GRID_KG_PER_KWH
         # Columnas opcionales (pueden no estar en versiones antiguas del dataset)
         self._solar_is_punta: np.ndarray     = (solar_src["is_hora_punta"].to_numpy(dtype=np.float64)
                                                  if "is_hora_punta" in solar_src.columns
@@ -285,7 +282,10 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         self._bess_pv_to_ev: np.ndarray         = bess_src["pv_to_ev_kwh"].to_numpy(dtype=np.float64)
         self._bess_pv_to_bess: np.ndarray       = bess_src["pv_to_bess_kwh"].to_numpy(dtype=np.float64)
         self._bess_pv_to_mall: np.ndarray       = bess_src["pv_to_mall_kwh"].to_numpy(dtype=np.float64)
-        self._bess_pv_curtailed: np.ndarray     = bess_src["pv_curtailed_kwh"].to_numpy(dtype=np.float64)
+        # pv_curtailed_kwh no está en el CSV — se aproxima como excedente PV no usado
+        _bess_pv = bess_src["pv_kwh"].to_numpy(dtype=np.float64)
+        _bess_load = bess_src["load_kwh"].to_numpy(dtype=np.float64)
+        self._bess_pv_curtailed: np.ndarray     = np.maximum(0.0, _bess_pv - _bess_load)
         # BESS operación
         self._bess_charge_kwh: np.ndarray       = bess_src["bess_charge_kwh"].to_numpy(dtype=np.float64)
         self._bess_discharge_kwh: np.ndarray    = bess_src["bess_discharge_kwh"].to_numpy(dtype=np.float64)
@@ -295,8 +295,8 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         self._bess_mode: np.ndarray             = bess_src["bess_mode"].map(_mode_map).fillna(0).to_numpy(dtype=np.int8)
         self._bess_to_ev: np.ndarray            = bess_src["bess_to_ev_kwh"].to_numpy(dtype=np.float64)
         self._bess_to_mall: np.ndarray          = bess_src["bess_to_mall_kwh"].to_numpy(dtype=np.float64)
-        self._bess_peak_shaving: np.ndarray     = bess_src["peak_shaving_kwh"].to_numpy(dtype=np.float64)
-        self._bess_total_disc: np.ndarray       = bess_src["bess_total_discharge_kwh"].to_numpy(dtype=np.float64)
+        self._bess_peak_shaving: np.ndarray     = np.zeros(self._n, dtype=np.float64)   # not in CSV schema
+        self._bess_total_disc: np.ndarray       = self._bess_discharge_kwh              # same metric, renamed
         # Red
         self._bess_grid_import_ev: np.ndarray   = bess_src["grid_import_ev_kwh"].to_numpy(dtype=np.float64)
         self._bess_grid_import_mall: np.ndarray = bess_src["grid_import_mall_kwh"].to_numpy(dtype=np.float64)
@@ -305,23 +305,23 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         # SOC
         self._bess_soc_ref: np.ndarray          = bess_src["soc_percent"].to_numpy(dtype=np.float64) / 100.0
         self._bess_soc_kwh: np.ndarray          = bess_src["soc_kwh"].to_numpy(dtype=np.float64)
-        # CO₂ y economía
-        self._bess_co2_avoided: np.ndarray      = bess_src["co2_avoided_indirect_kg"].to_numpy(dtype=np.float64)
+        # CO₂ y economía — co2_avoided_indirect_kg fue renombrado a co2_avoided_kg
+        self._bess_co2_avoided: np.ndarray      = bess_src["co2_avoided_kg"].to_numpy(dtype=np.float64)
         self._bess_cost_savings: np.ndarray     = bess_src["cost_savings_hp_soles"].to_numpy(dtype=np.float64)
-        # Post-BESS
-        self._bess_ev_after: np.ndarray         = bess_src["ev_demand_after_bess_kwh"].to_numpy(dtype=np.float64)
-        self._bess_mall_after: np.ndarray       = bess_src["mall_demand_after_bess_kwh"].to_numpy(dtype=np.float64)
-        self._bess_load_after: np.ndarray       = bess_src["load_after_bess_kwh"].to_numpy(dtype=np.float64)
+        # Post-BESS — computed from available data (not in CSV schema)
+        self._bess_ev_after: np.ndarray         = np.maximum(0.0, bess_src["ev_kwh"].to_numpy(dtype=np.float64) - self._bess_to_ev)
+        self._bess_mall_after: np.ndarray       = np.maximum(0.0, bess_src["mall_kwh"].to_numpy(dtype=np.float64) - self._bess_to_mall)
+        self._bess_load_after: np.ndarray       = self._bess_ev_after + self._bess_mall_after
 
         # ── chargers_timeseries.csv — columnas resumen + sockets 2D ──────
         # (los 38 sockets se almacenan en arrays 2D: shape (8760, 38))
         _N_SOCKETS = 38
         # Arrays resumen (globales del parque)
         self._chr_ev_total_kwh: np.ndarray      = chargers_df["ev_energia_total_kwh"].to_numpy(dtype=np.float64)
-        self._chr_costo_soles: np.ndarray       = chargers_df["costo_carga_ev_soles"].to_numpy(dtype=np.float64)
-        self._chr_co2_directo: np.ndarray       = chargers_df["reduccion_directa_co2_kg"].to_numpy(dtype=np.float64)
-        self._chr_co2_acum_diario: np.ndarray   = chargers_df["co2_directo_acumulado_diario_kg"].to_numpy(dtype=np.float64)
-        self._chr_co2_por_vehiculo: np.ndarray  = chargers_df["co2_directo_por_vehiculo_kg"].to_numpy(dtype=np.float64)
+        self._chr_costo_soles: np.ndarray       = np.zeros(self._n, dtype=np.float64)   # computed in loader
+        self._chr_co2_directo: np.ndarray       = self._co2_motos + self._co2_mototaxis
+        self._chr_co2_acum_diario: np.ndarray   = np.zeros(self._n, dtype=np.float64)   # not in CSV schema
+        self._chr_co2_por_vehiculo: np.ndarray  = np.zeros(self._n, dtype=np.float64)   # not in CSV schema
         self._chr_co2_acum_anual: np.ndarray    = chargers_df["co2_directo_anual_acumulado_kg"].to_numpy(dtype=np.float64)
         self._chr_motos_hora: np.ndarray        = chargers_df["motos_cargadas_hora"].to_numpy(dtype=np.float64)
         self._chr_mototaxis_hora: np.ndarray    = chargers_df["mototaxis_cargadas_hora"].to_numpy(dtype=np.float64)
@@ -335,11 +335,11 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         self._chr_motos_anual: np.ndarray       = chargers_df["motos_acumulado_anual"].to_numpy(dtype=np.float64)
         self._chr_mototaxis_anual: np.ndarray   = chargers_df["mototaxis_acumulado_anual"].to_numpy(dtype=np.float64)
         self._chr_total_anual: np.ndarray       = chargers_df["total_acumulado_anual"].to_numpy(dtype=np.float64)
-        self._chr_co2_grid_kwh: np.ndarray      = chargers_df["co2_grid_kwh"].to_numpy(dtype=np.float64)
-        self._chr_co2_neto_hora: np.ndarray     = chargers_df["co2_neto_por_hora_kg"].to_numpy(dtype=np.float64)
-        self._chr_ev_demand_kwh: np.ndarray     = chargers_df["ev_demand_kwh"].to_numpy(dtype=np.float64)
-        self._chr_is_punta: np.ndarray          = chargers_df["is_hora_punta"].to_numpy(dtype=np.float64)
-        self._chr_tarifa: np.ndarray            = chargers_df["tarifa_aplicada_soles"].to_numpy(dtype=np.float64)
+        self._chr_co2_grid_kwh: np.ndarray      = np.zeros(self._n, dtype=np.float64)   # not in CSV schema
+        self._chr_co2_neto_hora: np.ndarray     = self._co2_motos + self._co2_mototaxis
+        self._chr_ev_demand_kwh: np.ndarray     = self._chr_ev_total_kwh
+        self._chr_is_punta: np.ndarray          = np.zeros(self._n, dtype=np.float64)   # not in CSV schema
+        self._chr_tarifa: np.ndarray            = np.zeros(self._n, dtype=np.float64)   # not in CSV schema
         # Sockets 2D: shape (8760, 38) — una fila por hora, una columna por socket
         self._skt_charger_power: np.ndarray = np.stack(
             [chargers_df[f"socket_{i:03d}_charger_power_kw"].to_numpy(dtype=np.float32)
@@ -1192,6 +1192,10 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
             "dispatch_pv_to_ev_kwh":   _dp["pv_to_ev_kwh"],    # solar directo → cargadores
             "dispatch_bess_to_ev_kwh": _dp["bess_to_ev_kwh"],  # BESS descarga → cargadores
             "dispatch_grid_to_ev_kwh": _dp["grid_to_ev_kwh"],  # red diesel → cargadores
+            # ── Costo energético real del paso (importación red × tarifa) ──────────
+            # Usado por EVMetricsCallback en scripts de entrenamiento SAC/PPO/A2C
+            "cost_soles": _co2_grid_import * float(self._mall_tarifa[t]),
+            "cost_usd":   _co2_grid_import * float(self._mall_tarifa[t]) / 3.75,
         })
 
         return obs, reward, bool(terminated), bool(truncated), dict(info)

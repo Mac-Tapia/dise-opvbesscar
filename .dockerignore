@@ -1,0 +1,73 @@
+# ============================================================
+# .dockerignore — pvbesscar SAC/PPO/A2C Docker builds
+# Excluye archivos innecesarios del build context para agilizar
+# ============================================================
+
+# Checkpoints entrenados (se montan como volúmenes)
+checkpoints/
+
+# Outputs y logs (se montan como volúmenes)
+outputs/
+logs/
+monitor_logs/
+
+# Environments Python locales
+.venv/
+venv/
+env/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# VS Code / IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+notebooks/
+
+# Reports & docs (no necesarias en training)
+reports/
+docs/
+examples/
+
+# Tests
+tests/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Docker logs
+docker_build_sac.log
+*.log
+
+# Data raw y processed (se montan como volúmenes read-only)
+# NOTA: data/interim y data/oe2 SÍ se necesitan para training
+# data/raw/    ← no excluir, puede tener datos necesarios
+
+# Archivos temporales
+*.tmp
+*.temp
+*.bak
+*.swp
+~$*
+
+# Windows-specific
+Thumbs.db
+desktop.ini

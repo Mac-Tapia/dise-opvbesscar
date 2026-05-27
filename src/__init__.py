@@ -27,8 +27,6 @@ __all__ = [
     "dataset_builder_citylearn",
     # OE4: Agentes RL
     "agents",
-    # Línea base y ejecución
-    "baseline",
     # Utilidades compartidas
     "utils",
     # Callbacks de entrenamiento

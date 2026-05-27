@@ -6,6 +6,35 @@ Iquitos, Perú - Control inteligente de 38 sockets de carga (270 motos + 39 moto
 
 ---
 
+## 📢 Latest Updates (2026-05-26) - LIMPIEZA PROFUNDA + PIPELINE OE2 REPARADO ⭐⭐⭐
+
+### 🧹 Deep Repo Evaluation & Cleanup (2026-05-26)
+**Evaluación completa del repositorio: módulos huérfanos eliminados, pipeline OE2 reparado y verificado**
+
+**Módulos eliminados (huérfanos sin importadores activos):**
+- `src/agents/device_controllers.py`, `training_with_objectives.py`, `vehicle_cycle_simulator.py`, `device_communication.py`
+- `src/training_callbacks/sac_loss_interceptor.py`, `sac_metrics_robust.py`
+- `src/baseline/` (duplicado de `src/agents/no_control.py`)
+- `data/oe2/bess/bess_ano_2024_CORREGIDO.csv`, `data/oe2/citylearn/` (4 archivos obsoletos)
+
+**Pipeline OE2 reparado:**
+- `src/citylearnv2/ev_charging_wrapper.py` — `_CHARGERS_COLS` actualizado al schema lean (sin columnas derivadas); CO₂ arrays computados internamente (`co2_motos`, `co2_mototaxis`)
+- `src/dimensionamiento/oe2/generacionsolar/disenopvlib/solar_pvlib.py` — `KeyError: 'reduccion_indirecta_co2_kg'` reparado (computado de `energia_kwh * FACTOR_CO2_KG_KWH`)
+- `scripts/generate_oe2_datasets.py` — `UnicodeEncodeError` en Windows reparado (arrows `→` → `->`)
+- `src/__init__.py` — eliminado `"baseline"` de `__all__` (directorio no existe)
+
+**Reorganización de scripts y documentación:**
+- `scripts/reporting/` — todos los generadores de figuras/informes OE3
+- `scripts/analysis/` — scripts de análisis CO₂ + scripts de `analyses/`
+- `scripts/verification/` — validaciones de sincronización de datos
+- `scripts/maintenance/` — scripts de mantenimiento (fix_tb_records)
+- `docs/` — documentación movida desde root y `src/`
+- `CLAUDE.md` — guía de onboarding para Claude Code
+
+**Pipeline OE2 verificado desde cero:** Solar → Chargers → BESS → Loader en 18.2s, 8,760 filas, todos los datasets válidos
+
+---
+
 ## 📢 Latest Updates (2026-04-12) - INFORME OE3 v11 FINAL + ARQUITECTURA REDISEÑADA ⭐⭐⭐
 
 ### 🎨 Arquitectura HTML Rediseñada — Pipeline OE2→OE3 Profesional (2026-04-12)

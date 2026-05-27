@@ -329,22 +329,22 @@ MOTOTAXI_SPEC = VehicleType(
 
 
 # ============================================================================
-# TARIFAS OSINERGMIN - Electro Oriente S.A. (Iquitos, Loreto)
-# Pliego Tarifario MT3 - Media Tension Comercial/Industrial
-# Vigente desde 2024-11-04
-# Referencia: OSINERGMIN Resolucion N° 047-2024-OS/CD
+# Constantes compartidas — importadas desde fuente única de verdad
 # ============================================================================
-# Hora Punta (HP): 18:00 - 22:00 (4 horas) [Operacion del mall 18-22h]
-# Hora Fuera de Punta (HFP): 00:00 - 17:59, 22:00 - 23:59 (20 horas)
-# ============================================================================
+from src.dimensionamiento.oe2._constants import (
+    TARIFA_ENERGIA_HP_SOLES,
+    TARIFA_ENERGIA_HFP_SOLES,
+    HORA_INICIO_HP,
+    HORA_FIN_HP,   # CORREGIDO: 23 (era 22 — error histórico en este módulo)
+    HORAS_PUNTA,
+    FACTOR_CO2_KG_KWH,
+    FACTOR_CO2_GASOLINA_KG_L,
+    FACTOR_CO2_NETO_MOTO_KG_KWH,
+    FACTOR_CO2_NETO_MOTOTAXI_KG_KWH,
+)
 
-# Tarifas de Energia (S/./kWh)
-TARIFA_ENERGIA_HP_SOLES = 0.45     # Hora Punta: S/.0.45/kWh
-TARIFA_ENERGIA_HFP_SOLES = 0.28    # Hora Fuera de Punta: S/.0.28/kWh
-
-# Horas de periodo punta (18:00 - 21:59, inclusivo)
-HORA_INICIO_HP = 18
-HORA_FIN_HP = 22  # Exclusivo (hasta las 21:59)
+# Alias backward-compatible para código existente en este módulo
+FACTOR_CO2_RED_DIESEL_KG_KWH = FACTOR_CO2_KG_KWH
 
 
 # ============================================================================
@@ -415,9 +415,6 @@ HORA_FIN_HP = 22  # Exclusivo (hasta las 21:59)
 #   • co2_neto_por_hora_kg           → reduccion_directa - co2_grid = NETO REAL
 # ════════════════════════════════════════════════════════════════════════════
 
-FACTOR_CO2_GASOLINA_KG_L = 2.31         # kg CO2 / litro gasolina (IPCC)
-FACTOR_CO2_RED_DIESEL_KG_KWH = 0.4521   # kg CO2 / kWh (red Iquitos)
-
 # Capacidades de bateria y energia a cargar (20% -> 80% SOC @ 95% eficiencia)
 MOTO_BATTERY_KWH = 4.6                  # Capacidad bateria moto (kWh)
 MOTOTAXI_BATTERY_KWH = 7.4              # Capacidad bateria mototaxi (kWh)
@@ -430,10 +427,10 @@ MOTOTAXI_ENERGY_TO_CHARGE_KWH = 0.60 * MOTOTAXI_BATTERY_KWH / 0.95  # ~4.674 kWh
 #   Moto Honda Wave 125cc:     2.30 L/100km × 2.31 kg CO2/L ÷ 6.0  kWh/100km = 0.87 kg CO2/kWh
 #   Mototaxi 3 ruedas 150cc:   3.50 L/100km × 2.31 kg CO2/L ÷ 15.0 kWh/100km = 0.54 kg CO2/kWh
 # NOTA: Se corrigió 0.47 → 0.54 para alinear con train_sac/ppo/a2c (fuente IPCC idéntica)
-FACTOR_CO2_NETO_MOTO_KG_KWH      = 0.87   # kg CO2 evitado / kWh cargado (moto gasolina IPCC2006)
-FACTOR_CO2_NETO_MOTOTAXI_KG_KWH  = 0.54   # kg CO2 evitado / kWh cargado (mototaxi diesel IPCC2006)
 # Promedio ponderado por energia real CSV OE2: FRAC_M=0.8458 motos, FRAC_T=0.1542 mototaxis
-FACTOR_CO2_NETO_PROMEDIO_KG_KWH  = round(0.87 * 0.8458 + 0.54 * 0.1542, 4)  # ≈ 0.8191
+FACTOR_CO2_NETO_PROMEDIO_KG_KWH = round(
+    FACTOR_CO2_NETO_MOTO_KG_KWH * 0.8458 + FACTOR_CO2_NETO_MOTOTAXI_KG_KWH * 0.1542, 4
+)  # ≈ 0.8191
 
 
 @dataclass
@@ -1923,10 +1920,23 @@ def generate_socket_level_dataset_v3(
     # - 34 columnas agregadas globales
     # Total: 1,060 columnas (376 originales + 456 socket + 228 cargador)
     
+    # Eliminar columnas derivadas (tarifa/CO2) — pertenecen al loader, no al dimensionamiento
+    _derived_cols = [
+        'is_hora_punta', 'tarifa_aplicada_soles', 'costo_carga_ev_soles',
+        'co2_reduccion_motos_kg', 'co2_reduccion_mototaxis_kg',
+        'reduccion_directa_co2_kg', 'co2_grid_kwh', 'co2_neto_por_hora_kg',
+        'co2_directo_acumulado_diario_kg', 'co2_directo_por_vehiculo_kg',
+        'ev_demand_kwh',  # alias redundante de ev_energia_total_kwh
+    ]
+    _socket_co2_cols = [c for c in df_annual.columns if '_co2_reduccion_kg' in c]
+    _charger_co2_cols = [c for c in df_annual.columns if c.startswith('cargador_') and 'co2' in c]
+    _drop = [c for c in _derived_cols + _socket_co2_cols + _charger_co2_cols if c in df_annual.columns]
+    df_annual_out = df_annual.drop(columns=_drop)
+
     output_path_annual = output_dir / 'chargers_ev_ano_2024_v3.csv'
-    df_annual.to_csv(output_path_annual, index=True)
+    df_annual_out.to_csv(output_path_annual, index=True)
     logger.info(f"[OK] Annual dataset saved: {output_path_annual}")
-    logger.info(f"  Shape: {df_annual.shape} (8,760 rows × {len(df_annual.columns)} columns)")
+    logger.info(f"  Shape: {df_annual_out.shape} (8,760 rows × {len(df_annual_out.columns)} columns, {len(_drop)} derived cols removed)")
     logger.info(f"    - Original columns: 376")
     logger.info(f"    - Socket-level metrics: 456 (NEW)")
     logger.info(f"    - Charger-level metrics: 228 (NEW)")
@@ -1934,7 +1944,7 @@ def generate_socket_level_dataset_v3(
 
     
     # Crear DataFrame diario de ejemplo (dia 1) - mantener datetime como indice
-    df_daily = df_annual.iloc[0:24, :].copy()
+    df_daily = df_annual_out.iloc[0:24, :].copy()
     output_path_daily = output_dir / 'chargers_ev_dia_2024_v3.csv'
     df_daily.to_csv(output_path_daily, index=True)
     logger.info(f"[OK] Daily dataset saved: {output_path_daily}")

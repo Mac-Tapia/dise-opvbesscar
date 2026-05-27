@@ -74,6 +74,18 @@ try:
 except ImportError:
     HAS_CHANGE_DETECTOR = False
 
+from src.dimensionamiento.oe2._constants import (
+    BESS_CAPACITY_KWH,
+    BESS_POWER_KW,
+    BESS_DOD,
+    BESS_EFFICIENCY_ROUNDTRIP,
+    FACTOR_CO2_KG_KWH,
+    TARIFA_ENERGIA_HP_SOLES,
+    TARIFA_ENERGIA_HFP_SOLES,
+    PV_ANNUAL_CAPACITY_KWH,
+    PV_INSTALLED_KWP,
+)
+
 # Silenciar advertencias de matplotlib sobre Glyph y tight_layout
 warnings.filterwarnings('ignore', message='.*Glyph.*missing from font.*')
 warnings.filterwarnings('ignore', message='.*Axes.*not compatible with tight_layout.*')
@@ -85,16 +97,16 @@ class BalanceEnergeticoConfig:
     FIXED v5.8: BESS capacity unificado a 2,000 kWh (bess.py BESS_CAPACITY_KWH_V53)
     previousamente inconsistencia: 1,700 → 2,000 FIXED v5.8 (todos alineados a 2,000 kWh)
     """
-    pv_capacity_kwp: float = 4050.0
-    pv_annual_capacity_kwh: float = 8_292_514.17  # NEW v5.7: Capacidad anual real (8.29 GWh)
+    pv_capacity_kwp: float = PV_INSTALLED_KWP
+    pv_annual_capacity_kwh: float = PV_ANNUAL_CAPACITY_KWH
     demand_peak_limit_kw: float = 1900.0
-    bess_capacity_kwh: float = 2000.0  # FIXED v5.8: de 1700 → 2000 (bess.py v5.3)
-    bess_power_kw: float = 400.0
-    dod: float = 0.80
-    efficiency_roundtrip: float = 0.95
-    co2_intensity_kg_per_kwh: float = 0.4521
-    tariff_hp_soles_kwh: float = 0.45  # NEW v5.7: Tarifa HP (OSINERGMIN)
-    tariff_hfp_soles_kwh: float = 0.28  # NEW v5.7: Tarifa HFP (OSINERGMIN)
+    bess_capacity_kwh: float = BESS_CAPACITY_KWH
+    bess_power_kw: float = BESS_POWER_KW
+    dod: float = BESS_DOD
+    efficiency_roundtrip: float = BESS_EFFICIENCY_ROUNDTRIP
+    co2_intensity_kg_per_kwh: float = FACTOR_CO2_KG_KWH
+    tariff_hp_soles_kwh: float = TARIFA_ENERGIA_HP_SOLES
+    tariff_hfp_soles_kwh: float = TARIFA_ENERGIA_HFP_SOLES
 
 
 class BalanceEnergeticoSystem:

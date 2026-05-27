@@ -40,5 +40,69 @@
     "total_sockets": 128,
     "energy_day_kwh": 3252.0,
     "vehicles_charging_day": 3061
+  },
+  "annual_datasets": {
+    "path": "/app/data/interim/oe2/chargers/annual_datasets",
+    "scenarios": [
+      "base",
+      "high",
+      "low"
+    ],
+    "playas": {
+      "Playa_Motos": {
+        "playa": "Playa_Motos",
+        "n_chargers": 112,
+        "scenarios": {
+          "base": {
+            "path": "/app/data/interim/oe2/chargers/annual_datasets/Playa_Motos/base",
+            "n_files": 113,
+            "total_energy_year_kwh": 893812.7228342909,
+            "peak_power_kw": 345.817762530361,
+            "avg_daily_energy_kwh": 2448.8019803679204
+          },
+          "high": {
+            "path": "/app/data/interim/oe2/chargers/annual_datasets/Playa_Motos/high",
+            "n_files": 113,
+            "total_energy_year_kwh": 1072575.267401149,
+            "peak_power_kw": 414.9813150364332,
+            "avg_daily_energy_kwh": 2938.562376441504
+          },
+          "low": {
+            "path": "/app/data/interim/oe2/chargers/annual_datasets/Playa_Motos/low",
+            "n_files": 113,
+            "total_energy_year_kwh": 715050.1782674327,
+            "peak_power_kw": 276.6542100242888,
+            "avg_daily_energy_kwh": 1959.0415842943362
+          }
+        }
+      },
+      "Playa_Mototaxis": {
+        "playa": "Playa_Mototaxis",
+        "n_chargers": 16,
+        "scenarios": {
+          "base": {
+            "path": "/app/data/interim/oe2/chargers/annual_datasets/Playa_Mototaxis/base",
+            "n_files": 17,
+            "total_energy_year_kwh": 190861.85704224685,
+            "peak_power_kw": 78.87795286465797,
+            "avg_daily_energy_kwh": 522.9091973760187
+          },
+          "high": {
+            "path": "/app/data/interim/oe2/chargers/annual_datasets/Playa_Mototaxis/high",
+            "n_files": 17,
+            "total_energy_year_kwh": 229034.22845069616,
+            "peak_power_kw": 94.65354343758955,
+            "avg_daily_energy_kwh": 627.4910368512224
+          },
+          "low": {
+            "path": "/app/data/interim/oe2/chargers/annual_datasets/Playa_Mototaxis/low",
+            "n_files": 17,
+            "total_energy_year_kwh": 152689.48563379748,
+            "peak_power_kw": 63.10236229172637,
+            "avg_daily_energy_kwh": 418.327357900815
+          }
+        }
+      }
+    }
   }
 }

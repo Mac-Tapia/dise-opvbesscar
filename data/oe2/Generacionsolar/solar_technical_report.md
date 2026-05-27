@@ -16,7 +16,8 @@
 | Parametro | Valor |
 |-----------|-------|
 | Fuente | PVGIS TMY (Typical Meteorological Year) |
-| GHI anual | 1,668 kWh/m2 |
+| GHI anual (horizontal) | 1,668 kWh/m2 |
+| POA anual (plano array) | 1,675 kWh/m2 |
 | Resolucion temporal | 60 minutos |
 
 ### 3. Componentes del Sistema
@@ -74,7 +75,7 @@
 
 | Parametro | Valor |
 |-----------|-------|
-| Capacidad DC nominal | 4,050.00 kWp |
+| Capacidad DC nominal | 4,162.00 kWp |
 | Capacidad AC nominal | 3,201.00 kW |
 | Area total disponible | 20,637 m2 |
 | Area utilizada | 14,446 m2 |
@@ -83,21 +84,21 @@
 
 | Metrica | Valor |
 |---------|-------|
-| Energia anual AC | 8.293 GWh |
-| Energia anual DC | 11.804 GWh |
-| Factor de capacidad | 29.6% |
-| Performance Ratio | 122.8% |
-| Yield especifico | 2,048 kWh/kWp/ano |
-| Horas equivalentes | 2,591 h/ano |
+| Energia anual AC | 5.027 GWh |
+| Energia anual DC | 5.902 GWh |
+| Factor de capacidad | 17.9% |
+| Performance Ratio | 74.1% |
+| Yield especifico | 1,241 kWh/kWp/ano |
+| Horas equivalentes | 1,571 h/ano |
 
 ### 7. Estadisticas de Potencia
 
 | Metrica | Valor |
 |---------|-------|
-| Potencia AC maxima | 2,886.7 kW |
-| Potencia AC media | 946.6 kW |
-| Dia de maxima energia | 2024-04-23 (26,620 kWh) |
-| Instante de maxima potencia | 2024-01-01 10:00:00-05:00 |
+| Potencia AC maxima | 2,727.2 kW |
+| Potencia AC media | 573.9 kW |
+| Dia de maxima energia | 2024-03-09 (19,357 kWh) |
+| Instante de maxima potencia | 2024-10-18 11:00:00-05:00 |
 | Horas con produccion | 4,259 h/ano |
 
 ### 8. Perdidas del Sistema
@@ -110,18 +111,18 @@
 
 | Mes | Energia [kWh] |
 |-----|---------------|
-| 2024-01 | 676,769 |
-| 2024-02 | 590,946 |
-| 2024-03 | 717,204 |
-| 2024-04 | 668,941 |
-| 2024-05 | 697,094 |
-| 2024-06 | 687,133 |
-| 2024-07 | 719,079 |
-| 2024-08 | 759,620 |
-| 2024-09 | 728,083 |
-| 2024-10 | 741,874 |
-| 2024-11 | 679,244 |
-| 2024-12 | 626,526 |
+| 2024-01 | 397,171 |
+| 2024-02 | 348,998 |
+| 2024-03 | 440,486 |
+| 2024-04 | 407,819 |
+| 2024-05 | 399,626 |
+| 2024-06 | 405,978 |
+| 2024-07 | 427,088 |
+| 2024-08 | 486,915 |
+| 2024-09 | 474,927 |
+| 2024-10 | 467,620 |
+| 2024-11 | 405,349 |
+| 2024-12 | 365,211 |
 
 ### 10. Metodologia de Simulacion
 
@@ -141,4 +142,4 @@ Este analisis utiliza **pvlib-python** con los siguientes modelos:
 - Holmgren, W.F., Hansen, C.W., Mikofski, M.A. (2018). *pvlib python: a python package for modeling solar energy systems*. Journal of Open Source Software.
 
 ---
-*Generado automaticamente - 2026-02-20 21:13:11*
+*Generado automaticamente - 2026-05-26 20:27:17*

@@ -1,0 +1,83 @@
+# configs/sites/lima_parking_ev.yaml
+# ============================================================
+# SITIO EJEMPLO: Estacionamiento EV Lima — Red Nacional SIN
+# ============================================================
+# Demostración de escalabilidad: mismo framework, diferente ciudad,
+# diferente flota (carros eléctricos), diferente intensidad CO₂ de red.
+#
+# Lima está conectada al SIN (Sistema Interconectado Nacional):
+#   factor CO₂ ≈ 0.23 kg/kWh (mix hidro + gas, MINEM 2024)
+#   tarifa MT4 media tensión comercial
+# ============================================================
+
+site_id: lima_parking_ev_2024
+name: "Estacionamiento EV Lima — Red SIN"
+description: >
+  Estacionamiento en zona comercial de Lima (Miraflores) con PV en techo,
+  BESS de respaldo, y cargadores para carros eléctricos y motos.
+  Conectado al SIN. Factor CO₂ reducido por mix hidro-eléctrico peruano.
+
+latitude: -12.12
+longitude: -77.02
+altitude_m: 154.0
+timezone: "America/Lima"
+year: 2024
+
+grid:
+  co2_intensity_kg_per_kwh: 0.230    # SIN Perú (MINEM Boletin 2024, mix hidro+gas)
+  grid_type: connected
+  max_import_kw: 500.0               # límite de potencia contratada MT4
+  max_export_kw: 100.0               # permite exportar excedente (net metering Lima)
+  tariff:
+    peak_rate_local_per_kwh: 0.52    # S/./kWh HP (MT4 Lima, tarifa referencial)
+    offpeak_rate_local_per_kwh: 0.31 # S/./kWh HFP
+    peak_hours_start: 18
+    peak_hours_end: 22
+    currency: PEN
+    exchange_rate_to_usd: 3.75
+
+buildings:
+  - name: "Estacionamiento Miraflores Level 3"
+    pv_area_m2: 3500.0               # techo plano edificio 3 niveles
+    pv_panel_efficiency: 0.215        # panel monocristalino moderno
+    pv_surface_tilt_deg: 15.0
+    pv_surface_azimuth_deg: 0.0
+    pv_coverage_fraction: 0.70
+    pv_inverter_efficiency: 0.975
+    pv_system_losses: 0.12
+
+    bess_capacity_kwh: 500.0
+    bess_power_kw: 100.0
+    bess_dod: 0.85
+    bess_efficiency_roundtrip: 0.95
+    bess_soc_min: 0.15
+    bess_soc_max: 1.00
+    bess_initial_soc: 0.50
+
+    fixed_load_kw: 45.0              # consumo edificio (iluminación, ascensores)
+
+    ev_fleet:
+      opening_hour: 7
+      closing_hour: 23
+      vehicle_types:
+        - name: carro_electrico
+          vehicle_count: 80
+          battery_kwh: 40.0           # carro eléctrico típico (Nissan Leaf, BYD)
+          charger_power_kw: 22.0      # AC nivel 2 trifásico
+          sockets_per_charger: 1
+          co2_avoided_kg_per_kwh: 0.32  # κ_car (IPCC; gasolina vs electricidad Lima)
+          avg_daily_sessions: 1.0
+          session_energy_kwh: 18.0
+          peak_hours_share: 0.40
+          utilization_factor: 0.75
+
+        - name: moto
+          vehicle_count: 50
+          battery_kwh: 2.0
+          charger_power_kw: 3.7       # AC nivel 1 (moto eléctrica Lima)
+          sockets_per_charger: 2
+          co2_avoided_kg_per_kwh: 0.78
+          avg_daily_sessions: 1.5
+          session_energy_kwh: 1.0
+          peak_hours_share: 0.55
+          utilization_factor: 0.90

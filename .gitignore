@@ -35,17 +35,23 @@ ENV/
 .pytest_cache/
 .ruff_cache/
 
-# Logs and outputs (keep structure, ignore content)
-logs/*.log
-outputs/*.csv
-outputs/*.json
-outputs/*.txt
+# Logs and generated outputs
+logs/
+monitor_logs/
+outputs/
 sac_training.log
+train_ppo_log.txt
+*.log
+~$*.docx
 
 # Checkpoints (large model files)
+checkpoints/
 checkpoints/**/*.zip
 checkpoints/**/*.pkl
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Tool artifacts
+.sixth/

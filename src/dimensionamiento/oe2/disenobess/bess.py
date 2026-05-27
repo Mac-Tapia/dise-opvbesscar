@@ -127,50 +127,25 @@ class BessSimulationHour:
 
 
 # ============================================================================
-# TARIFAS OSINERGMIN - Electro Oriente S.A. (Iquitos, Loreto)
-# Pliego Tarifario MT3 - Media Tension Comercial/Industrial
-# Vigente desde 2024-11-04
-# Referencia: OSINERGMIN Resolucion N° 047-2024-OS/CD
+# Constantes compartidas — importadas desde fuente única de verdad
 # ============================================================================
-# Hora Punta (HP): 18:00 - 23:00 (5 horas)
-# Hora Fuera de Punta (HFP): 00:00 - 17:59, 23:00 - 23:59 (19 horas)
-# ============================================================================
-
-# Tarifas de Energia (S/./kWh)
-TARIFA_ENERGIA_HP_SOLES = 0.45     # Hora Punta: S/.0.45/kWh
-TARIFA_ENERGIA_HFP_SOLES = 0.28    # Hora Fuera de Punta: S/.0.28/kWh
-
-# Tarifas de Potencia (S/./kW-mes)
-TARIFA_POTENCIA_HP_SOLES = 48.50   # Potencia en HP: S/.48.50/kW-mes
-TARIFA_POTENCIA_HFP_SOLES = 22.80  # Potencia en HFP: S/.22.80/kW-mes
-
-# Factor de conversion a USD (tipo de cambio referencial)
-TIPO_CAMBIO_PEN_USD = 3.75  # PEN/USD
-
-# Tarifas en USD (referencial)
-TARIFA_ENERGIA_HP_USD = TARIFA_ENERGIA_HP_SOLES / TIPO_CAMBIO_PEN_USD   # ~0.12 USD/kWh
-TARIFA_ENERGIA_HFP_USD = TARIFA_ENERGIA_HFP_SOLES / TIPO_CAMBIO_PEN_USD  # ~0.075 USD/kWh
-
-# Horas de periodo punta (18:00 - 22:59, inclusive)
-HORAS_PUNTA = list(range(18, 23))  # [18, 19, 20, 21, 22]
-HORA_INICIO_HP = 18
-HORA_FIN_HP = 23  # Exclusivo (hasta las 22:59)
-
-# Factor de emision CO2 para generacion termica aislada (Iquitos)
-# Fuente: MINEM/OSINERGMIN - Sistema aislado Loreto (termico diesel/residual)
-FACTOR_CO2_KG_KWH = 0.4521  # kg CO2 / kWh
-
-# ===========================================================================
-# SOLAR CAPACITY v5.7 - VALIDACION ANUAL
-# ===========================================================================
-# Capacidad anual maxima de generacion solar PV
-# Fuente: CERTIFICACION_SOLAR_DATASET_2024.json (energia_kwh field)
-# Instalacion: 4,050 kWp @ 10° tilt, Iquitos (-3.75°, -73.25°)
-# Factor de planta: ~23.3% (8.29 GWh / 4,050 kW / 8,760 h)
-PV_ANNUAL_CAPACITY_KWH = 8_292_514.17  # kWh/ano = 8.29 GWh
-PV_ANNUAL_CAPACITY_GWH = PV_ANNUAL_CAPACITY_KWH / 1e6  # = 8.29 GWh
-PV_INSTALLED_KWP = 4050.0  # kWp
-PV_MAX_HOURLY_KW = 2886.69  # Max power in 1 hour (from dataset)
+from src.dimensionamiento.oe2._constants import (
+    TARIFA_ENERGIA_HP_SOLES,
+    TARIFA_ENERGIA_HFP_SOLES,
+    TARIFA_POTENCIA_HP_SOLES,
+    TARIFA_POTENCIA_HFP_SOLES,
+    TIPO_CAMBIO_PEN_USD,
+    TARIFA_ENERGIA_HP_USD,
+    TARIFA_ENERGIA_HFP_USD,
+    HORA_INICIO_HP,
+    HORA_FIN_HP,
+    HORAS_PUNTA,
+    FACTOR_CO2_KG_KWH,
+    PV_ANNUAL_CAPACITY_KWH,
+    PV_ANNUAL_CAPACITY_GWH,
+    PV_INSTALLED_KWP,
+    PV_MAX_HOURLY_KW,
+)
 
 # ===========================================================================
 # BESS v5.4 - CONFIGURACION FINAL JUSTIFICADA
@@ -250,12 +225,22 @@ PV_MAX_HOURLY_KW = 2886.69  # Max power in 1 hour (from dataset)
 # - Peak shaving MALL: Activa en HP cuando está >2,100 kW
 # ===========================================================================
 
-BESS_CAPACITY_KWH_V53 = 2000.0   # kWh - Justificacion: 100% cobertura EV + peak shaving margen
-BESS_POWER_KW_V53 = 400.0        # kW - Justificacion: 2.56x pico deficit EV, suficiente para responder picos
-BESS_DOD_V53 = 0.80              # 80% DoD - Justificacion: 1,600 kWh util (100%-20%)
-BESS_EFFICIENCY_V53 = 0.95       # 95% round-trip - Eficiencia real lithium-ion
-BESS_SOC_MIN_V53 = 0.20          # 20% SOC minimo exigido - Restriccion operacional cierre (22h)
-BESS_SOC_MAX_V53 = 1.00          # 100% SOC maximo - Limite capacidad nominal
+from src.dimensionamiento.oe2._constants import (
+    BESS_CAPACITY_KWH,
+    BESS_POWER_KW,
+    BESS_DOD,
+    BESS_EFFICIENCY_ROUNDTRIP,
+    BESS_SOC_MIN,
+    BESS_SOC_MAX,
+)
+
+# Aliases para compatibilidad con firmas de funciones existentes
+BESS_CAPACITY_KWH_V53 = BESS_CAPACITY_KWH
+BESS_POWER_KW_V53 = BESS_POWER_KW
+BESS_DOD_V53 = BESS_DOD
+BESS_EFFICIENCY_V53 = BESS_EFFICIENCY_ROUNDTRIP
+BESS_SOC_MIN_V53 = BESS_SOC_MIN
+BESS_SOC_MAX_V53 = BESS_SOC_MAX
 
 
 def load_mall_demand_real(
@@ -1427,9 +1412,7 @@ def simulate_bess_ev_exclusive(
             bess_validation_status_hourly[h] = "CRITICAL"
     
     df = pd.DataFrame({
-        'pv_kwh': pv_kwh,
-        'ev_kwh': ev_kwh,
-        'mall_kwh': mall_kwh,
+        # BESS operational flows (not duplicating input data from solar/chargers/mall CSVs)
         'load_kwh': ev_kwh + mall_kwh,
         'pv_to_ev_kwh': pv_to_ev,
         'pv_to_bess_kwh': pv_to_bess,
@@ -1444,26 +1427,19 @@ def simulate_bess_ev_exclusive(
         'grid_import_kwh': grid_to_ev + grid_to_mall,
         'soc_percent': soc * 100,
         'soc_kwh': soc * capacity_kwh,
-        'co2_avoided_indirect_kg': co2_avoided_indirect,
         # ===================================================================
-        # COLUMNAS DE TARIFAS Y COSTOS HP/HFP (v5.7)
+        # TARIFA — describe el contexto de despacho BESS (HP vs HFP)
         # ===================================================================
-        'tariff_period': tariff_period,  # "HP" o "HFP"
-        'tariff_rate_soles_kwh': tariff_rate_soles_kwh,  # Tarifa en S/./kWh
-        'cost_if_grid_import_soles': cost_if_grid_import_soles,  # Costo si todo fuera grid
-        'cost_avoided_by_bess_soles': cost_avoided_by_bess_soles,  # Costo evitado por BESS
-        'cost_savings_hp_soles': cost_savings_hp_soles,  # Ahorro en HP (descarga × diferencial)
-        'cost_savings_hfp_soles': cost_savings_hfp,  # Ahorro en HFP (PV almacenado)
-        'tariff_index_hp_hfp': tariff_index_hp_hfp,  # Factor multiplicador (HFP=1.0, HP=1.607)
+        'tariff_period': tariff_period,
+        'tariff_rate_soles_kwh': tariff_rate_soles_kwh,
         # ===================================================================
-        # COLUMNAS DE DEMANDA CORTADA POR BESS (v5.4) - Para Agente RL
+        # DEMANDA RESIDUAL POST-BESS (Para Agente RL)
         # ===================================================================
         'ev_demand_after_bess_kwh': ev_demand_after_bess,
         'mall_demand_after_bess_kwh': mall_demand_after_bess,
         'load_after_bess_kwh': load_after_bess,
         # ===================================================================
-        # COLUMNAS DE VALIDACIÓN HORARIA DE BALANCE BESS (REEMPLAZANDO BRUTOS)
-        # Reemplazan bess_charge_kwh y bess_discharge_kwh (con eficiencia aplicada)
+        # VALIDACION HORARIA DE BALANCE BESS
         # ===================================================================
         'bess_energy_stored_hourly_kwh': bess_energy_stored_hourly_kwh,
         'bess_energy_delivered_hourly_kwh': bess_energy_delivered_hourly_kwh,
@@ -3538,7 +3514,15 @@ def generate_bess_plots(
     print(f"  OK Plots guardados en: {plots_dir}")
 
 
-def prepare_citylearn_data(
+# REMOVED: prepare_citylearn_data() — wrote duplicate files to data/oe2/citylearn/ subdir
+# (building_load.csv, bess_solar_generation.csv, bess_schema_params.json).
+# These files are NOT used by the main pipeline. ev_demand_after_bess_kwh,
+# mall_demand_after_bess_kwh, load_after_bess_kwh are computed in the simulation
+# loop (lines ~1379-1381) and already present in bess_ano_2024.csv.
+# data_loader.save_citylearn_dataset() → data/iquitos_ev_mall/ is the canonical output.
+
+
+def _prepare_citylearn_data_REMOVED(
     df_sim: pd.DataFrame,
     capacity_kwh: float,
     power_kw: float,
@@ -4395,13 +4379,8 @@ def run_bess_sizing(
         json.dumps(result_dict, indent=2), encoding="utf-8"
     )
 
-    prepare_citylearn_data(
-        df_sim=df_sim,
-        capacity_kwh=capacity_kwh,
-        power_kw=power_kw,
-        pv_dc_kw=pv_dc_kw,
-        out_dir=out_dir,
-    )
+    # REMOVED: prepare_citylearn_data() call — duplicate writes to data/oe2/citylearn/.
+    # Use data_loader.save_citylearn_dataset() to build data/iquitos_ev_mall/ instead.
 
     # =============================================================================
     # ANALISIS DETALLADO DE CARACTERISTICAS BESS (NUEVO)

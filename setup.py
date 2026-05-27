@@ -2,7 +2,7 @@
 Setup configuration for PVBESSCAR package
 """
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -33,6 +33,7 @@ setup(
         "pandas>=1.3",
         "matplotlib>=3.5",
         "scipy>=1.7",
-        "citylearn>=1.6",
+        # CityLearn is optional in Python 3.11 because current releases pull
+        # dependency metadata that conflicts with the base SB3/Gymnasium stack.
     ],
 )

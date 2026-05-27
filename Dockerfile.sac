@@ -56,9 +56,19 @@ COPY requirements-sac-docker.txt ./
 
 RUN python -m pip install --no-cache-dir -r requirements-sac-docker.txt
 
+# ── Deps runtime mínimos de CityLearn (instalados SIN tocar gymnasium/torch) ──
+# platformdirs: importado directamente por citylearn/data.py (user_cache_dir)
+# scikit-learn: usado internamente por citylearn para clustering/preprocesado
+# simplejson: importado por citylearn/utilities.py
+RUN python -m pip install --no-cache-dir \
+    "platformdirs>=2.0.0" \
+    "scikit-learn==1.2.2" \
+    "simplejson>=3.0.0"
+
 # ── CityLearn v2 sin dependencias conflictivas ────────────────────────────────
+# --no-deps evita: downgrade gymnasium 0.29→0.28, instalar openstudio 62MB, eppy, sphinx...
 RUN python -m pip install --no-cache-dir --no-deps \
-    "citylearn>=2.0.0,<3.0" "jsonschema>=4.0.0,<5.0"
+    "citylearn>=2.0.0,<3.0"
 
 # ── Código fuente del proyecto ────────────────────────────────────────────────
 COPY . .

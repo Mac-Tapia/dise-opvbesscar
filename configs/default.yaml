@@ -20,10 +20,10 @@ oe1:
     vehicles_peak_mototaxis: 39
 oe2:
   data:
-    solar_file: data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv
+    solar_file: data/oe2/Generacionsolar/pv_generation_citylearn2024.csv
     chargers_file: data/oe2/chargers/chargers_ev_ano_2024_v3.csv
     bess_file: data/oe2/bess/bess_ano_2024.csv
-    mall_file: data/interim/oe2/demandamallkwh/demandamallhorakwh.csv
+    mall_file: data/oe2/demandamallkwh/demandamallhorakwh.csv
     charger_stats_file: data/oe2/chargers/chargers_real_statistics.csv
   bess:
     autonomy_hours: 4.0
