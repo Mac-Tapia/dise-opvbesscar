@@ -1,15 +1,15 @@
 ﻿Parámetro,Valor
 Prueba estadística,"Wilcoxon signed-rank (no paramétrico, muestras relacionadas)"
-Estadístico W,66795.000000
-"p-value (una cola, H₁: A > B)",7.16e-62
+Estadístico W,78.000000
+"p-value (una cola, H₁: A > B)",2.44e-04
 Nivel de significancia (α),0.05
 ¿Rechaza H₀?,SÍ ✓
-Reducción media diaria (Baseline−A2C),"11,175.55 kg/día"
-IC 95% para la diferencia,"[11,020.97, 11,330.13] kg/día"
-Reducción media porcentual,87.71%
-Tamaño del efecto (Cohen d),7.4417  (LARGE > 0.8)
-Total anual Baseline,"4,650,678.0 kg CO₂/año"
-Total anual A2C,"571,602.6 kg CO₂/año"
-Reducción total anual,"4,079,075.5 kg CO₂/año"
-Conclusión,"RECHAZA H₀: La reducción de CO₂ ES estadísticamente significativa (p = 7.16e-62 < α = 0.05).
-La infraestructura de carga inteligente con agente A2C reduce significativamente las emisiones de CO₂ en comparación con la línea base."
+Reducción media diaria (Baseline−A2C),"5,339.62 kg/día"
+IC 95% para la diferencia,"[4,417.11, 6,262.13] kg/día"
+Reducción media porcentual,35.44%
+Tamaño del efecto (Cohen d),3.6776  (LARGE > 0.8)
+Total anual Baseline,"180,822.3 kg CO₂/año"
+Total anual A2C,"116,746.9 kg CO₂/año"
+Reducción total anual,"64,075.4 kg CO₂/año"
+Conclusión,"RECHAZA H₀: La reducción de CO₂ ES estadísticamente significativa (p = 2.44e-04 < α = 0.05).
+La infraestructura de carga inteligente con el mejor agente RL reduce significativamente las emisiones de CO₂ en comparación con la línea base."

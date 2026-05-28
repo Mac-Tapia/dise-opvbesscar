@@ -1,4 +1,0 @@
-Agente,F2 mínimo (kg/año),F2 Ep1 (kg/año),Mejora total (%),σ global (kg/año),CV global (%),σ plateau (kg/año),CV plateau (%),Estabilidad plateau
-SAC,2622734,3055514,14.16,88576.0,3.319,1462.0,0.056,Alta
-PPO,2787039,3029400,8.0,112673.0,3.918,5264.0,0.188,Alta
-A2C,2834857,2922533,3.0,11890.0,0.418,1544.0,0.054,Alta

@@ -1,8 +1,0 @@
-Comparación,Estadístico,p-value,Rechaza H₀ (p<0.05),Reducción media (%),Cohen d,Magnitud efecto
-F1 Baseline vs SAC,1275.0,8.882e-16,SÍ ✓,53.92,49.2315,GIGANTE (d > 2.0)
-F1 Baseline vs PPO,1275.0,8.882e-16,SÍ ✓,50.34,27.6081,GIGANTE (d > 2.0)
-F1 Baseline vs A2C,1275.0,8.882e-16,SÍ ✓,50.87,138.3196,GIGANTE (d > 2.0)
-SAC vs PPO vs A2C (Kruskal-Wallis),81.65,1.861e-18,SÍ ✓,—,—,—
-SAC vs PPO (Mann-Whitney),121.0,3.636e-15,SÍ ✓,7.21,2.4257,GIGANTE (d > 2.0)
-SAC vs A2C (Mann-Whitney),149.0,1.641e-14,SÍ ✓,6.21,2.1578,GIGANTE (d > 2.0)
-PPO vs A2C (Mann-Whitney),885.0,5.989e-03,SÍ ✓,-1.07,-0.2757,Medio
