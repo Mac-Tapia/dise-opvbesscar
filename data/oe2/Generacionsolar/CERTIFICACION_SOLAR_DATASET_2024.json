@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-26T20:27:17.381287",
+  "timestamp": "2026-05-27T20:47:35.184439",
   "archivo": "data\\oe2\\Generacionsolar\\pv_generation_citylearn2024.csv",
   "dimensiones": {
     "filas": 8760,
@@ -16,9 +16,9 @@
     "energia_kwh",
     "poa_wm2"
   ],
-  "energia_kwh": 5027188.49388797,
-  "co2_reduccion_tons": 2272.791918086751,
-  "ahorro_soles": 1407612.7782886317,
+  "energia_kwh": 5819332.398982178,
+  "co2_reduccion_tons": 2630.920177579843,
+  "ahorro_soles": 1629413.07171501,
   "validaciones": {
     "1_temporal": true,
     "2_columnas": true,

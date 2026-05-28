@@ -23,7 +23,7 @@
 ### 3. Componentes del Sistema
 
 #### Modulo Fotovoltaico
-- **Modelo:** Kyocera_Solar_KS20__2008__E__
+- **Modelo:** Jinko_Tiger_Neo_JKM580N_72HL4_BDV__PVWatts_
 - **Base de datos:** Sandia National Laboratories
 
 #### Inversor
@@ -31,27 +31,19 @@
 - **Base de datos:** California Energy Commission (CEC)
 
 #### Seleccion de componentes (top candidatos)
-- **Modo de seleccion:** manual
-- **Metrica de seleccion local:** energy_per_m2
+- **Modo de seleccion:** pvwatts
+- **Metrica de seleccion local:** pvwatts
 
 **Top modulos (Sandia):**
 | Rank | Nombre | Pmp [W] | Area [m2] | Densidad [W/m2] | DC max [kW] |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Kyocera_Solar_KS20__2008__E__ | 20.2 | 0.072 | 280.3 | 4049.7 |
-| 2 | SolFocus_SF_1100S_CPV_28__330____2010_ | 413.2 | 1.502 | 275.1 | 3973.8 |
-| 3 | SolFocus_SF_1100S_CPV_28__315____2010_ | 388.2 | 1.502 | 258.4 | 3732.9 |
-| 4 | SunPower_SPR_315E_WHT__2007__E__ | 315.1 | 1.631 | 193.2 | 2790.6 |
-| 5 | Panasonic_VBHN235SA06B__2013_ | 238.8 | 1.260 | 189.5 | 2738.0 |
+| - | - | - | - | - | - |
 
 
 **Top inversores (CEC):**
 | Rank | Nombre | Paco [kW] | Eficiencia | N inversores | Score |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Power_Electronics__FS3000CU15__690V_ | 3201.2 | 0.980 | 1 | 0.980 |
-| 2 | Power_Electronics__FS1475CU15__600V_ | 1610.4 | 0.976 | 2 | 0.951 |
-| 3 | Power_Electronics__FS1590CU__440V_ | 1617.5 | 0.967 | 2 | 0.939 |
-| 4 | INGETEAM_POWER_TECHNOLOGY_S_A___Ingecon_Sun_1640TL_U_B630_Indoor__450V_ | 1640.0 | 0.975 | 2 | 0.933 |
-| 5 | INGETEAM_POWER_TECHNOLOGY_S_A___Ingecon_Sun_1640TL_U_B630_Outdoor__450V_ | 1640.0 | 0.975 | 2 | 0.933 |
+| - | - | - | - | - | - |
 
 
 **Top combinaciones (simulacion local):**
@@ -64,9 +56,9 @@
 
 | Parametro | Valor |
 |-----------|-------|
-| Modulos por string | 31 |
-| Strings en paralelo | 6,472 |
-| Total de modulos | 200,632 |
+| Modulos por string | 14 |
+| Strings en paralelo | 512 |
+| Total de modulos | 7,175 |
 | Numero de inversores | 2 |
 | Inclinacion (tilt) | 10.0 |
 | Azimut | 0.0 (Norte) |
@@ -78,26 +70,26 @@
 | Capacidad DC nominal | 4,162.00 kWp |
 | Capacidad AC nominal | 3,201.00 kW |
 | Area total disponible | 20,637 m2 |
-| Area utilizada | 14,446 m2 |
+| Area utilizada | 18,535 m2 |
 
 ### 6. Produccion Energetica
 
 | Metrica | Valor |
 |---------|-------|
-| Energia anual AC | 5.027 GWh |
-| Energia anual DC | 5.902 GWh |
-| Factor de capacidad | 17.9% |
-| Performance Ratio | 74.1% |
-| Yield especifico | 1,241 kWh/kWp/ano |
-| Horas equivalentes | 1,571 h/ano |
+| Energia anual AC | 5.819 GWh |
+| Energia anual DC | 5.819 GWh |
+| Factor de capacidad | 20.8% |
+| Performance Ratio | 83.5% |
+| Yield especifico | 1,398 kWh/kWp/ano |
+| Horas equivalentes | 1,818 h/ano |
 
 ### 7. Estadisticas de Potencia
 
 | Metrica | Valor |
 |---------|-------|
-| Potencia AC maxima | 2,727.2 kW |
-| Potencia AC media | 573.9 kW |
-| Dia de maxima energia | 2024-03-09 (19,357 kWh) |
+| Potencia AC maxima | 3,245.9 kW |
+| Potencia AC media | 664.3 kW |
+| Dia de maxima energia | 2024-03-09 (22,573 kWh) |
 | Instante de maxima potencia | 2024-10-18 11:00:00-05:00 |
 | Horas con produccion | 4,259 h/ano |
 
@@ -111,18 +103,18 @@
 
 | Mes | Energia [kWh] |
 |-----|---------------|
-| 2024-01 | 397,171 |
-| 2024-02 | 348,998 |
-| 2024-03 | 440,486 |
-| 2024-04 | 407,819 |
-| 2024-05 | 399,626 |
-| 2024-06 | 405,978 |
-| 2024-07 | 427,088 |
-| 2024-08 | 486,915 |
-| 2024-09 | 474,927 |
-| 2024-10 | 467,620 |
-| 2024-11 | 405,349 |
-| 2024-12 | 365,211 |
+| 2024-01 | 460,305 |
+| 2024-02 | 405,139 |
+| 2024-03 | 509,481 |
+| 2024-04 | 472,138 |
+| 2024-05 | 460,889 |
+| 2024-06 | 467,950 |
+| 2024-07 | 491,789 |
+| 2024-08 | 563,964 |
+| 2024-09 | 551,952 |
+| 2024-10 | 543,068 |
+| 2024-11 | 469,118 |
+| 2024-12 | 423,539 |
 
 ### 10. Metodologia de Simulacion
 
@@ -142,4 +134,4 @@ Este analisis utiliza **pvlib-python** con los siguientes modelos:
 - Holmgren, W.F., Hansen, C.W., Mikofski, M.A. (2018). *pvlib python: a python package for modeling solar energy systems*. Journal of Open Source Software.
 
 ---
-*Generado automaticamente - 2026-05-26 20:27:17*
+*Generado automaticamente - 2026-05-27 20:47:34*

@@ -106,31 +106,39 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class MultiObjectiveWeights:
-    """Pesos para funcion de recompensa multiobjetivo - CO2_DUAL_FOCUS (OE3 v2 2026-04-06).
+    """Pesos para funcion de recompensa multiobjetivo - CO2_DUAL_FOCUS v7.4 OE3.
 
-    [OE3 OBJETIVO 2026-04-06]: Seleccionar el agente IA de la infraestructura de carga
-    inteligente para la gestion de recarga de motos y mototaxis electricas, que contribuye
-    de manera cuantificable a la reduccion de emisiones de CO2 en la ciudad de Iquitos.
+    [OE3]: Seleccionar el agente IA de la infraestructura de carga inteligente
+    para la gestion de recarga de motos y mototaxis electricas, que contribuye
+    de manera cuantificable a la reduccion de emisiones de CO2 en Iquitos.
 
-    Prioridades de recompensa (alineadas con OE3 — CO2_DUAL_FOCUS 2026-04-06):
-    1. Direct CO2   0.35: PRIORIDAD 1 (combustible vehicular evitado — transporte)
-    2. Indirect CO2 0.30: PRIORIDAD 2 (grid import termico reducido — generacion)
-    3. EV Satisfaction 0.25: PRIORIDAD 3 (carga EVs efectiva — SOC objetivo)
-    4. Solar Self-Consumption 0.05: PRIORIDAD 4 (autoconsumo PV)
-    5. Grid Stability 0.05: PRIORIDAD 5 (suavizar picos de potencia)
+    Pesos v7.5 — tres objetivos OE3 explícitos equilibrados (suma=1.00):
+    OE3-1: direct_co2   0.25 — CO2 directa (ICE→EV electrificación vehicular)
+    OE3-2: indirect_co2 0.30 — CO2 indirecta (grid import × 0.4521 kg CO2/kWh)
+    OE3-3: ev_satisfaction 0.25 — satisfacción/cantidad carga EV (motos+mototaxis)
+           bess_solar_timing 0.10 — regla op: BESS carga solar(6-18h), NO diesel
+           solar          0.05 — autoconsumo PV
+           grid_stability 0.03 — estabilidad red (suavizado rampas)
+           cost           0.02 — costo tarifario OSINERGMIN HP/HFP
     """
-    direct_co2: float = 0.35       # PRIORIDAD 1: CO2 directo (combustible evitado, transporte)
-    co2: float = 0.30              # PRIORIDAD 2: CO2 indirecto (minimizar importacion grid termico)
-    ev_satisfaction: float = 0.25  # PRIORIDAD 3: Satisfaccion de carga EVs
-    solar: float = 0.05            # PRIORIDAD 4: Solar Self-Consumption (autoconsumo PV)
-    grid_stability: float = 0.05   # PRIORIDAD 5: Grid Stability (estabilidad rampa)
-    ev_utilization: float = 0.00   # Incluido en ev_satisfaction
+    direct_co2: float = 0.25        # OE3-1: CO2 directa (combustible ICE evitado)
+    co2: float = 0.30               # OE3-2: CO2 indirecta (minimizar import grid termico)
+    ev_satisfaction: float = 0.25   # OE3-3: satisfaccion/cantidad carga EVs
+    bess_solar_timing: float = 0.10 # regla BESS: carga con solar (6-18h), NO diesel nocturno
+    solar: float = 0.05             # autoconsumo PV (Solar Self-Consumption)
+    grid_stability: float = 0.03    # estabilidad red (suavizado rampas)
+    cost: float = 0.02              # costo tarifario OSINERGMIN HP/HFP (secundario)
+    ev_utilization: float = 0.00    # Incluido en ev_satisfaction
     peak_import_penalty: float = 0.00  # Dinamico en compute(), no como peso fijo
     operational_penalties: float = 0.0  # Penalizaciones operacionales (BESS, EV fairness)
 
     def __post_init__(self):
         # Normalizar pesos base (sin peak_import_penalty que se aplica por separado)
-        base_weights = [self.direct_co2, self.co2, self.ev_satisfaction, self.solar, self.grid_stability, self.ev_utilization]
+        base_weights = [
+            self.direct_co2, self.co2, self.ev_satisfaction,
+            self.bess_solar_timing, self.solar, self.grid_stability,
+            self.cost, self.ev_utilization,
+        ]
         total = sum(base_weights)
         if abs(total - 1.0) > 0.01:
             logger.warning(f"Pesos multiobjetivo no suman 1.0 (suma={total:.3f}), normalizando...")
@@ -138,8 +146,10 @@ class MultiObjectiveWeights:
             self.direct_co2 *= factor
             self.co2 *= factor
             self.ev_satisfaction *= factor
+            self.bess_solar_timing *= factor
             self.solar *= factor
             self.grid_stability *= factor
+            self.cost *= factor
             self.ev_utilization *= factor
 
     def as_dict(self) -> dict[str, float]:
@@ -147,8 +157,10 @@ class MultiObjectiveWeights:
             "direct_co2": self.direct_co2,
             "indirect_co2": self.co2,
             "ev_satisfaction": self.ev_satisfaction,
+            "bess_solar_timing": self.bess_solar_timing,
             "solar": self.solar,
             "grid_stability": self.grid_stability,
+            "cost": self.cost,
             "ev_utilization": self.ev_utilization,
             "peak_import_penalty": self.peak_import_penalty,
             "operational_penalties": self.operational_penalties,
@@ -969,16 +981,24 @@ def create_iquitos_reward_weights(
     Returns:
         MultiObjectiveWeights configurado
     """
-    # ACTUALIZADO 2026-04-06: CO2_DUAL_FOCUS alineado con OE3
-    # OE3: Seleccionar agente IA para gestion de recarga que contribuye cuantificablemente
-    # a la reduccion de CO2 en Iquitos.
-    # Preset default: direct_co2(0.35) + indirect_co2(0.30) + ev(0.25) + solar(0.05) + grid(0.05)
+    # ACTUALIZADO 2026-05-28: CO2_DUAL_FOCUS v7.5 alineado con OE3
+    # Pesos v7.5 canonical: direct_co2(0.25)+indirect_co2(0.30)+ev(0.25)+bess_solar(0.10)+solar(0.05)+grid(0.03)+cost(0.02)
     presets = {
-        "balanced": MultiObjectiveWeights(direct_co2=0.20, co2=0.20, solar=0.15, ev_satisfaction=0.30, ev_utilization=0.05, grid_stability=0.10),
-        "co2_focus": MultiObjectiveWeights(direct_co2=0.35, co2=0.30, solar=0.05, ev_satisfaction=0.25, ev_utilization=0.00, grid_stability=0.05),
-        "cost_focus": MultiObjectiveWeights(direct_co2=0.20, co2=0.20, solar=0.10, ev_satisfaction=0.45, ev_utilization=0.00, grid_stability=0.05),
-        "ev_focus": MultiObjectiveWeights(direct_co2=0.20, co2=0.15, solar=0.05, ev_satisfaction=0.50, ev_utilization=0.05, grid_stability=0.05),
-        "solar_focus": MultiObjectiveWeights(direct_co2=0.20, co2=0.20, solar=0.35, ev_satisfaction=0.20, ev_utilization=0.00, grid_stability=0.05),
+        "co2_focus": MultiObjectiveWeights(
+            direct_co2=0.25, co2=0.30, ev_satisfaction=0.25,
+            bess_solar_timing=0.10, solar=0.05, grid_stability=0.03, cost=0.02),
+        "balanced": MultiObjectiveWeights(
+            direct_co2=0.20, co2=0.25, ev_satisfaction=0.30,
+            bess_solar_timing=0.10, solar=0.05, grid_stability=0.05, cost=0.05),
+        "ev_focus": MultiObjectiveWeights(
+            direct_co2=0.15, co2=0.20, ev_satisfaction=0.45,
+            bess_solar_timing=0.10, solar=0.05, grid_stability=0.03, cost=0.02),
+        "cost_focus": MultiObjectiveWeights(
+            direct_co2=0.15, co2=0.25, ev_satisfaction=0.30,
+            bess_solar_timing=0.10, solar=0.05, grid_stability=0.03, cost=0.12),
+        "solar_focus": MultiObjectiveWeights(
+            direct_co2=0.15, co2=0.20, ev_satisfaction=0.20,
+            bess_solar_timing=0.10, solar=0.25, grid_stability=0.05, cost=0.05),
     }
     return presets.get(priority, presets["co2_focus"])
 

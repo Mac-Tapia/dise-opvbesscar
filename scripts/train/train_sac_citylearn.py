@@ -13,12 +13,12 @@ ESPACIO DE ACCIÓN (3D):
 
 OBJETIVO OE3: reducción cuantificable de CO2 en Iquitos mediante
 gestión inteligente de recarga de motos y mototaxis eléctricas.
-REWARD: CO2_DUAL_FOCUS v7.1 (indirect 55% + ev_complete 25% + direct 10%
-        + solar 5% + stability 5%)
+REWARD: CO2_DUAL_FOCUS v7.2 (indirect 45% + ev_complete 25% + direct 10%
+        + solar 5% + stability 5% + cost 10% OSINERGMIN)
 
 Agente: stable_baselines3.SAC (off-policy, buffer replay, mejor para
         recompensas asimétricas -- óptimo para este problema)
-Entorno: IquitosEVChargingWrapper -> obs_dim=16, action_dim=3
+Entorno: IquitosEVChargingWrapper -> obs_dim=18, action_dim=3
 
 Uso:
     python scripts/train/train_sac_citylearn.py
@@ -180,28 +180,37 @@ class PVBESSCarSAC(SAC):
                 self.critic.optimizer.zero_grad()
 
 
-# Hiperparámetros SAC optimizados v7.2
-# Refs: Haarnoja et al 2018, resultados SAC en train_sac.py v7.2
+# Hiperparámetros SAC optimizados v8.0 (config sac_config.yaml)
+# Refs: Haarnoja et al 2018, Raffin 2022, Engstrom 2020, Andrychowicz 2020
 SAC_HYPERPARAMS: dict[str, Any] = {
     "policy": "MlpPolicy",
-    "learning_rate": 3e-4,
-    "buffer_size": 200_000,       # mayor capacidad de replay (de 100k -> 200k)
-    "learning_starts": 8_760,     # 1 episodio completo de exploración antes de updates (buffer inicial robusto)
+    # [FIX v1] 3e-4 → 1e-4: grad_norm explosiva 132.93 > 10; Engstrom 2020 recomienda
+    # 1e-4 para alta dimension (39D obs). Para 3D accion + 18D obs: 1e-4 optimo.
+    "learning_rate": 1e-4,
+    # [FIX] 200k → 100k: buffer de 1M excesivo para 438k steps totales;
+    # 100k mantiene ~11 episodios completos (8760 steps). Raffin 2022: 100k suficiente.
+    "buffer_size": 100_000,
+    # [FIX v3] 8760 → 5000: warmup con buffer mas diverso para espacio 18D obs.
+    # Andrychowicz 2020: warmup debe cubrir ~5x batch x dim acciones.
+    "learning_starts": 5_000,
     "batch_size": 256,
-    "tau": 0.005,                  # soft update target network
-    # gamma=0.95: reducido respecto a default 0.99 para Iquitos (episodios largos)
-    # Beneficio neto EV siempre >0 en Iquitos, horizonte de planeacion ~10 pasos
-    "gamma": 0.95,
-    "train_freq": 1,               # actualizar cada 1 paso
+    "tau": 0.005,
+    "gamma": 0.99,
+    "train_freq": 1,
     "gradient_steps": 1,
-    "ent_coef": "auto",            # entropía automática (Haarnoja 2018)
-    "target_entropy": "auto",
+    "ent_coef": "auto",
+    # [FIX v2] "auto" → -3.0: wrapper expone 3D al agente (bess, motos_frac, mototaxis_frac)
+    # Haarnoja 2018 Sec.5: H* = -dim(A) como heuristica. "auto" → -39.0 causaba
+    # alpha→0 y policy determinista prematura (alpha collapse).
+    "target_entropy": -3.0,
     "policy_kwargs": {
-        # Red más grande para reward multi-objetivo 5 componentes
-        "net_arch": [256, 256, 128],
-        # AdamWithGradClip previene explosión de gradientes en SAC
+        # [FIX] [256,256,128] → [256,256]: arquitectura estandar SAC (Haarnoja 2018).
+        # Para obs 18D + 3D accion, [256,256] suficientemente expresivo sin sobreajuste.
+        "net_arch": [256, 256],
         "optimizer_class": AdamWithGradClip,
-        "optimizer_kwargs": {"max_grad_norm": 10.0},
+        # [FIX v3] 10.0 → 5.0: conservador vs sin clipping. Engstrom 2020: gradient
+        # clipping impacta fundamentalmente en alta dimension.
+        "optimizer_kwargs": {"max_grad_norm": 5.0},
     },
     "verbose": 1,
     "device": _DEVICE,
@@ -1559,9 +1568,9 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
     log.info("PyTorch: %s | CUDA: %s | Device: %s",
              torch.__version__, torch.cuda.is_available(),
              "cuda" if torch.cuda.is_available() else "cpu")
-    log.info("Timesteps: %d (~%.0f años)", total_timesteps, total_timesteps / 8760)
+    log.info("Timesteps: %d (%d ep × 8760 h)", total_timesteps, total_timesteps // 8760)
     log.info("Acción: [bess(-1->+1), motos_frac(0->1), mototaxis_frac(0->1)]")
-    log.info("Obs: 16D (CityLearn 11D + EV state 5D)")
+    log.info("Obs: 18D (CityLearn 11D + EV state 5D + tarifa 2D)")
     log.info("=" * 70)
 
     # 1. Reconstruir schema si se pide
@@ -1576,7 +1585,7 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
     # 2b. Validar configuración del agente
     log.info("Validando configuración del agente SAC...")
     if not validate_agent_config("SAC", num_episodes=total_timesteps // 8760,
-                                  total_timesteps=total_timesteps, obs_dim=16, action_dim=3):
+                                  total_timesteps=total_timesteps, obs_dim=18, action_dim=3):
         log.warning("[WARN] validate_agent_config reportó advertencia -- continúa entrenamiento")
 
     # 3. Cargar checkpoint o crear agente nuevo
@@ -1808,7 +1817,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--timesteps", type=int, default=TOTAL_TIMESTEPS,
-        help=f"Total de pasos de entrenamiento (default: {TOTAL_TIMESTEPS} = 50 años)"
+        help=f"Total de pasos de entrenamiento (default: {TOTAL_TIMESTEPS} = {TOTAL_TIMESTEPS // 8760} ep × 8760 h)"
     )
     parser.add_argument(
         "--rebuild-schema", action="store_true",

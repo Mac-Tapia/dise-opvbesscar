@@ -32,19 +32,23 @@ from src.core.energy_balance import PowerFlows
 class RewardWeights:
     """Configurable reward weights. Must sum to 1.0.
 
-    Validated weight sets (from literature):
-        CO2_DUAL_FOCUS (Iquitos isolated grid):
-            w_direct=0.35, w_co2=0.30, w_ev=0.25, w_solar=0.05, w_grid=0.05
+    Validated weight sets (v7.5 OE3 — tres objetivos equilibrados):
+        CO2_DUAL_FOCUS v7.5 (Iquitos isolated thermal grid):
+            w_direct=0.25 (OE3-1: CO2 directa ICE→EV)
+            w_co2=0.30    (OE3-2: CO2 indirecta grid import)
+            w_ev=0.25     (OE3-3: satisfacción/cantidad carga EV)
+            w_solar=0.05  (autoconsumo PV)
+            w_grid=0.15   (bess_solar_timing=0.10 + grid_stability=0.03 + cost=0.02)
         GRID_CONNECTED (urban, tariff-driven):
             w_direct=0.10, w_co2=0.20, w_ev=0.30, w_solar=0.10, w_grid=0.30
         EV_PRIORITY (dense urban parking):
             w_direct=0.20, w_co2=0.15, w_ev=0.50, w_solar=0.10, w_grid=0.05
     """
-    w_direct_co2: float = 0.35   # direct CO₂ reduction (EV electrification)
-    w_co2: float = 0.30          # indirect CO₂ reduction (grid displacement by PV)
-    w_ev: float = 0.25           # EV service satisfaction
+    w_direct_co2: float = 0.15   # OE3-1: CO2 directa (EV electrification vs ICE)
+    w_co2: float = 0.40          # OE3-2: CO2 indirecta (grid displacement by PV/BESS)
+    w_ev: float = 0.25           # OE3-3: EV service satisfaction / quantity charged
     w_solar: float = 0.05        # PV self-consumption
-    w_grid: float = 0.05         # grid stability / ramp penalty
+    w_grid: float = 0.15         # grid stability + BESS solar timing + tariff cost
     clip: float = 5.0            # symmetric reward clip per component
 
     def __post_init__(self) -> None:
@@ -57,8 +61,8 @@ class RewardWeights:
 
     @classmethod
     def co2_dual_focus(cls) -> "RewardWeights":
-        """Optimal for isolated thermal grids (Iquitos validated)."""
-        return cls(w_direct_co2=0.35, w_co2=0.30, w_ev=0.25, w_solar=0.05, w_grid=0.05)
+        """v7.5 OE3: Iquitos isolated thermal grid — direct_co2=0.25, indirect_co2=0.30."""
+        return cls(w_direct_co2=0.25, w_co2=0.30, w_ev=0.25, w_solar=0.05, w_grid=0.15)
 
     @classmethod
     def grid_connected(cls) -> "RewardWeights":

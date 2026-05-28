@@ -207,16 +207,19 @@ oe3:
       tariff_ev_charge_distribution_usd_per_kwh: 0.12
       tariff_usd_per_kwh: 0.28
   rewards:
-    direct_co2_weight: 0.35
-    co2_weight: 0.30
-    ev_satisfaction_weight: 0.25
-    solar_weight: 0.05
-    grid_stability_weight: 0.05
+    # Pesos v7.4 OE3 — tres objetivos explícitos (suma=1.00)
+    direct_co2_weight: 0.25     # OE3-1: CO2 directa (reducción ICE→EV)
+    indirect_co2_weight: 0.30   # OE3-2: CO2 indirecta (grid import × factor)
+    ev_satisfaction_weight: 0.25 # OE3-3: satisfacción/cantidad carga EV
+    bess_solar_timing_weight: 0.10 # regla BESS: carga solar(6-18h), NO nocturno
+    solar_weight: 0.05          # autoconsumo PV
+    grid_stability_weight: 0.03 # estabilidad red
+    cost_weight: 0.02           # costo OSINERGMIN HP/HFP
     co2_grid_factor_kg_per_kwh: 0.4521
     ev_co2_conversion_kg_per_kwh: 2.146
     hp_weight: 0.4
     hfp_weight: 0.15
-    # OE3 (2026-04-06): CO2_DUAL_FOCUS - direct(0.35)+indirect(0.30)+ev(0.25)+solar(0.05)+grid(0.05)
+    # OE3: CO2_DUAL_FOCUS v7.5 — direct_co2(0.25)+indirect_co2(0.30)+ev(0.25)+bess_solar(0.10)+solar(0.05)+grid(0.03)+cost(0.02)
   co2_emissions:
     annual_co2_budget_kg: 7000000
     bess_calendar_aging_kg_per_day: 0.01

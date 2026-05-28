@@ -15,7 +15,7 @@
     "tau": 0.005,
     "gamma": 0.99,
     "learning_starts": 5000,
-    "target_entropy": -39.0,
+    "target_entropy": -3.0,
     "entropy_coeff": "auto",
     "max_grad_norm": 5.0
   },
@@ -41,13 +41,15 @@
     "description": "v5.5 OPTIMIZED (2026-02-18): BESS 2,000 kWh @ 400 kW, 38 sockets (30 motos + 8 taxis), 4,050 kWp PV, 876 MWh/año MALL"
   },
   "rewards": {
-    "direct_co2_weight": 0.35,
-    "co2_weight": 0.30,
+    "direct_co2_weight": 0.25,
+    "indirect_co2_weight": 0.30,
     "ev_satisfaction_weight": 0.25,
-    "grid_stability_weight": 0.05,
+    "bess_solar_timing_weight": 0.10,
     "solar_weight": 0.05,
-    "primary_objective": "CO2 dual minimization (direct 0.35 + indirect 0.30) + EV satisfaction (0.25)",
-    "description": "Multi-objective 2026-04-06 CO2_DUAL_FOCUS: DirectCO2 (0.35) -> IndirectCO2 (0.30) -> EV (0.25) -> Solar (0.05) -> Grid (0.05)",
+    "grid_stability_weight": 0.03,
+    "cost_weight": 0.02,
+    "primary_objective": "CO2 dual (direct_co2=0.25 + indirect_co2=0.30) + EV satisfaction (0.25) + BESS solar timing (0.10)",
+    "description": "Multi-objective v7.5 OE3: direct_co2(0.25) + indirect_co2(0.30) + EV(0.25) + BESS_Solar(0.10) + Solar(0.05) + Grid(0.03) + Cost(0.02)",
     "dispatch_hierarchy_priorities": {
       "priority_1": "PV → EV Direct (maximize self-consumption)",
       "priority_2": "PV → BESS (charge for evening peak 17-22h)",

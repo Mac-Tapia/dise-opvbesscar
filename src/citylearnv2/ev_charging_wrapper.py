@@ -33,13 +33,21 @@ ESPACIO DE OBSERVACIÓN EXTENDIDO (16D = CityLearn 11D + EV 5D):
   [13]  ev_motos_debt_norm      — energía motos pendiente del día (0-1)
   [14]  ev_mototaxis_debt_norm  — energía mototaxis pendiente del día (0-1)
   [15]  hour_sin                — sin(2π·hour/24), señal periódica para urgencia
+  [16]  tarifa_norm             — (tarifa_total - HFP) / (HP - HFP) ∈ [0,1]; 0=HFP barato, 1=HP caro
+  [17]  is_hora_punta           — {0,1} señal binaria del período tarifario OSINERGMIN
 
-RECOMPENSA MULTI-OBJETIVO (CO2_DUAL_FOCUS v7.0, pesos OE3):
-  r_direct_co2   0.35  — CO₂ directo evitado: motos+mototaxis vs gasolina
-  r_indirect_co2 0.30  — CO₂ indirecto: grid_import × 0.4521 kg/kWh
+RECOMPENSA MULTI-OBJETIVO (CO2_DUAL_FOCUS v7.2 BESS_DISPATCH_FOCUS + COST_AWARE):
+  r_direct_co2    0.10  — CO₂ directo evitado: motos+mototaxis vs gasolina
+  r_indirect_co2  0.50  — CO₂ indirecto: grid_import × co2_factor horario
+  r_ev_complete   0.15  — EV charging completion by deadline
+  r_solar         0.05  — PV self-consumption
+  r_grid_stable   0.05  — ramp smoothing
+  r_cost          0.05  — costo OSINERGMIN HP/HFP
+  r_bess_solar    0.10  — NUEVO: timing solar BESS (+bonus solar, -penalty nocturno)
   r_ev_complete  0.25  — penalizar deuda EV incumplida al fin del día
   r_solar        0.05  — maximizar autoconsumo solar
   r_grid_stable  0.05  — penalizar rampas bruscas de importación de red
+  r_cost         0.10  — costo tarifario OSINERGMIN HP(0.45)/HFP(0.28) S/./kWh
 
 Uso:
     from src.citylearnv2.ev_charging_wrapper import IquitosEVChargingWrapper
@@ -67,17 +75,33 @@ import gymnasium
 import numpy as np
 from gymnasium import spaces
 
+from src.dimensionamiento.oe2._constants import (
+    TARIFA_ENERGIA_HP_SOLES,
+    TARIFA_ENERGIA_HFP_SOLES,
+    HORA_INICIO_HP,
+    HORA_FIN_HP,
+)
+
 logger = logging.getLogger(__name__)
 
 # ── Rutas ─────────────────────────────────────────────────────────────────────
+# El wrapper lee EXCLUSIVAMENTE de data/interim/citylearn_v2/ (datasets CityLearn v2).
+# Los archivos OE2 en data/iquitos_ev_mall/ son la fuente primaria, pero son
+# transformados por schema_builder.py antes del entrenamiento — NO se acceden
+# directamente aquí. El flujo es:
+#   OE2 raw → schema_builder.py → data/interim/citylearn_v2/ → wrapper
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-_EV_DEMAND_CSV     = _PROJECT_ROOT / "data" / "interim" / "citylearn_v2" / "ev_demand.csv"
-# Fuentes OE2 originales — cargadas DIRECTAMENTE por el wrapper (no vía CityLearn obs)
-_OE2_DATA_DIR      = _PROJECT_ROOT / "data" / "iquitos_ev_mall"
-_SOLAR_CSV         = _OE2_DATA_DIR / "solar_generation.csv"       # potencia_kw (8760h)
-_MALL_CSV          = _OE2_DATA_DIR / "mall_demand.csv"            # mall_demand_kwh (8760h)
-_BESS_CSV          = _OE2_DATA_DIR / "bess_timeseries.csv"        # soc_percent, grid_import_kwh, …
-_CHARGERS_CSV      = _OE2_DATA_DIR / "chargers_timeseries.csv"   # ev_energia_motos_kwh, co2_reduccion_motos_kg, …
+_CL_DATA_DIR        = _PROJECT_ROOT / "data" / "interim" / "citylearn_v2"
+_ENERGY_SIM_CSV     = _CL_DATA_DIR / "energy_simulation.csv"       # CityLearn v2: mall demand + solar (columnas estándar)
+_WEATHER_CSV        = _CL_DATA_DIR / "weather.csv"                  # CityLearn v2: temperatura, irradiancia
+_TARIFFS_CSV        = _CL_DATA_DIR / "tariffs_osinergmin.csv"       # wrapper: HP/HFP OSINERGMIN + mall_cost
+_EV_MOTOS_CSV       = _CL_DATA_DIR / "ev_charger_motos.csv"         # CityLearn v2: ChargerSimulation 30 sockets motos
+_EV_MOTOTAXIS_CSV   = _CL_DATA_DIR / "ev_charger_mototaxis.csv"    # CityLearn v2: ChargerSimulation 8 sockets mototaxis
+# Datasets individuales CityLearn (data/iquitos_ev_mall/) — generados por data_loader
+_OE2_DATA_DIR         = _PROJECT_ROOT / "data" / "iquitos_ev_mall"
+_BESS_CSV             = _OE2_DATA_DIR / "bess_timeseries.csv"
+_CO2_EMISSIONS_CSV    = _OE2_DATA_DIR / "co2_emissions.csv"
+_TARIFFS_IQTS_CSV     = _OE2_DATA_DIR / "tariffs_osinergmin.csv"
 
 # ── Constantes del sistema Iquitos ──────────────────────────────────────────
 CO2_GRID_KG_PER_KWH: float = 0.4521        # kg CO₂/kWh red aislada Iquitos (MINEM)
@@ -129,24 +153,51 @@ EV_MOTOS_MAX_KW: float = 222.0              # 15 carg × 2 sock × 7.4 kW
 EV_MOTOTAXIS_MAX_KW: float = 59.2          # 4  carg × 2 sock × 7.4 kW
 MAX_GRID_IMPORT_KW: float = 1500.0         # referencia de normalización: mall_peak(~1400kW)+EVs(~281kW)-solar_min(~0)=1681→1500 permite gradiente útil
 MAX_CO2_DIRECT_PER_HOUR: float = 60.0      # kg CO₂/h máximo directo (estimado)
+
+# ── Tarifas OSINERGMIN — Electro Oriente S.A., Iquitos (Res. N° 047-2024-OS/CD) ──
+# Importadas de src/dimensionamiento/oe2/_constants.py (fuente única de verdad)
+#   HP  (18-22h): 0.45 S/./kWh  |  HFP (resto): 0.28 S/./kWh
+_HORAS_PUNTA_SET: frozenset[int] = frozenset(range(HORA_INICIO_HP, HORA_FIN_HP))
+# Normalización costo: máximo teórico = importación máxima × tarifa HP
+MAX_COST_PER_STEP_SOLES: float = MAX_GRID_IMPORT_KW * TARIFA_ENERGIA_HP_SOLES  # 1500 × 0.45 = 675 S/./h
 BESS_SOC_MIN: float = 0.20                 # SOC mínimo BESS — 20% (DoD 80%), igual que EV_SOC_MIN
 BESS_SOC_MAX: float = 1.00                 # SOC máximo BESS
 BESS_MAX_KW: float = 400.0                 # Potencia máxima BESS (kW)
 BESS_CAPACITY_KWH: float = 2000.0          # Capacidad energética BESS (kWh) — OE2 v5.3
 BESS_EFF_ROUNDTRIP: float = 0.95           # Eficiencia round-trip lithium-ion (OE2 bess.py)
 
-# Pesos de recompensa OE3 CO2_DUAL_FOCUS v7.0
-# Pesos v7.1 BESS_DISPATCH_FOCUS:
-# _W_DIRECT_CO2 reducido (0.35→0.10): r_direct_co2 es casi constante
-# (EVs siempre sustituyen ICE), no guía el despacho de BESS. Un peso
-# alto crea baseline positivo que cancela la penalización de grid_import.
-# _W_INDIRECT_CO2 aumentado (0.30→0.55): señal primaria para que el agente
-# aprenda a descargar BESS en lugar de importar de red.
-_W_DIRECT_CO2: float = 0.10
-_W_INDIRECT_CO2: float = 0.55
-_W_EV_COMPLETE: float = 0.25
-_W_SOLAR: float = 0.05
-_W_GRID_STABLE: float = 0.05
+# Pesos de recompensa OE3 CO2_DUAL_FOCUS v7.4 (tres objetivos OE3 explícitos)
+# Evolución: v7.0→v7.1→v7.2→v7.3→v7.4→v7.5
+# v7.5: pesos CO2 directa/indirecta equilibrados (0.25/0.30) — OE3 tres pilares simétricos
+#
+# OBJETIVO OE3-1: Reducción CO2 DIRECTA (evitar combustión ICE motos/mototaxis)
+#   _W_DIRECT_CO2 = 0.25  — r_direct_co2: beneficio por electrificación vehicular
+#
+# OBJETIVO OE3-2: Reducción CO2 INDIRECTA (minimizar importación red diesel Iquitos)
+#   _W_INDIRECT_CO2 = 0.30 — r_indirect_co2: penaliza grid_import × co2_factor
+#
+# OBJETIVO OE3-3: Satisfacción/cantidad de carga EV (motos + mototaxis)
+#   _W_EV_COMPLETE = 0.25  — r_ev_complete: completion ratio + penalización deuda diaria
+#
+# REGLA OPERACIONAL BESS: cargar con solar (6-18h), NO con diesel nocturno
+#   _W_BESS_SOLAR = 0.10   — r_bess_solar: +bonus solar, -penalty carga nocturna
+#
+# SECUNDARIOS (suman 0.10):
+#   _W_SOLAR = 0.05        — r_solar: autoconsumo PV (superpuesto con OE3-2)
+#   _W_GRID_STABLE = 0.03  — r_grid_stable: suavizado de rampas
+#   _W_COST = 0.02         — r_cost: OSINERGMIN (señal parcialmente en OE3-2)
+#
+# Suma: 0.25+0.30+0.25+0.10+0.05+0.03+0.02 = 1.00
+_W_DIRECT_CO2: float   = 0.25   # OE3-1: CO2 directa (ICE vs EV)
+_W_INDIRECT_CO2: float  = 0.30   # OE3-2: CO2 indirecta (grid × factor)
+_W_EV_COMPLETE: float   = 0.25   # OE3-3: satisfacción/cantidad carga EV
+_W_BESS_SOLAR: float    = 0.10   # regla op: BESS carga con solar (no diesel nocturno)
+_W_SOLAR: float         = 0.05   # autoconsumo PV
+_W_GRID_STABLE: float   = 0.03   # estabilidad red
+_W_COST: float          = 0.02   # costo tarifario OSINERGMIN HP/HFP
+
+# Umbral solar mínimo para considerar que hay generación aprovechable (kW)
+_SOLAR_CHARGE_THRESHOLD_KW: float = 200.0  # ~5% de 4050 kWp instalados
 
 
 class IquitosEVChargingWrapper(gymnasium.Wrapper):
@@ -164,10 +215,9 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
     env : CityLearnEnv
         Entorno base CityLearn v2. Debe tener central_agent=True,
         1 edificio (IquitosEVMall), BESS activado.
-        non_shiftable_load debe contener solo la demanda del mall.
+        non_shiftable_load contiene solo la demanda del mall.
     ev_demand_csv : Path, optional
-        Ruta al archivo ev_demand.csv generado por schema_builder.
-        Contiene demanda horaria de motos, mototaxis y CO₂ directo.
+        Deprecado — ignorado. El wrapper lee de data/interim/citylearn_v2/.
     """
 
     metadata = {"render_modes": []}
@@ -179,38 +229,40 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
     ) -> None:
         super().__init__(env)
 
-        # ── Cargar demanda EV horaria DIRECTAMENTE desde chargers_timeseries.csv (OE2) ──
-        # Fuente primaria: data/iquitos_ev_mall/chargers_timeseries.csv
-        # (ev_demand_csv se ignora — siempre cargamos desde OE2 directo)
+        # ── Cargar datasets CityLearn v2 (data/interim/citylearn_v2/) ──────────
+        # Pipeline: OE2 raw → schema_builder.py → data/interim/citylearn_v2/ → aquí
+        # Si los archivos no existen, regenerar con build_citylearn_schema().
         import pandas as _pd
-        if not _CHARGERS_CSV.exists():
-            raise FileNotFoundError(
-                f"chargers_timeseries.csv no encontrado en {_CHARGERS_CSV}. "
-                "Verifica que la ruta data/iquitos_ev_mall/ existe con los datasets OE2."
-            )
-        _CHARGERS_COLS = [
-            "ev_energia_motos_kwh", "ev_energia_mototaxis_kwh",
-            "ev_energia_total_kwh", "co2_directo_anual_acumulado_kg",
-            "motos_cargadas_hora", "mototaxis_cargadas_hora",
-            "total_vehiculos_cargados_hora", "motos_acumulado_diario",
-            "mototaxis_acumulado_diario", "total_acumulado_diario",
-            "motos_acumulado_mensual", "mototaxis_acumulado_mensual",
-            "total_acumulado_mensual", "motos_acumulado_anual",
-            "mototaxis_acumulado_anual", "total_acumulado_anual",
-        ]
-        for _si in range(38):  # 38 sockets
-            for _sf in ("charger_power_kw", "battery_kwh", "soc_current",
-                        "soc_arrival", "soc_target", "active", "charging_power_kw"):
-                _CHARGERS_COLS.append(f"socket_{_si:03d}_{_sf}")
-        chargers_df = _pd.read_csv(_CHARGERS_CSV, usecols=_CHARGERS_COLS)
-        self._n = len(chargers_df)
 
-        # Arrays horarios (8760 filas) — columnas de chargers_timeseries.csv OE2
-        self._ev_motos_demand: np.ndarray = chargers_df["ev_energia_motos_kwh"].to_numpy(dtype=np.float64)
-        self._ev_mototaxis_demand: np.ndarray = chargers_df["ev_energia_mototaxis_kwh"].to_numpy(dtype=np.float64)
-        # CO2 directo: energía EV × factor (combustible desplazado) — computed from energia_kwh
-        self._co2_motos: np.ndarray = self._ev_motos_demand * CO2_FACTOR_MOTO
+        def _require(path: Path) -> _pd.DataFrame:
+            if not path.exists():
+                raise FileNotFoundError(
+                    f"{path.name} no encontrado en {path.parent}. "
+                    "Ejecuta: python -m src.citylearnv2.schema_builder"
+                )
+            return _pd.read_csv(path)
+
+        # ── EV charger datasets (ChargerSimulation format + ev_demand_kwh) ────
+        motos_df     = _require(_EV_MOTOS_CSV)
+        mototaxis_df = _require(_EV_MOTOTAXIS_CSV)
+        self._n = len(motos_df)
+
+        self._ev_motos_demand: np.ndarray    = motos_df["ev_demand_kwh"].to_numpy(dtype=np.float64)
+        self._ev_mototaxis_demand: np.ndarray = mototaxis_df["ev_demand_kwh"].to_numpy(dtype=np.float64)
+        # CO₂ directo: energía EV × factor emisión combustible desplazado
+        self._co2_motos: np.ndarray    = self._ev_motos_demand * CO2_FACTOR_MOTO
         self._co2_mototaxis: np.ndarray = self._ev_mototaxis_demand * CO2_FACTOR_MOTOTAXI
+
+        # ChargerSimulation fields — usados para logging y métricas
+        self._chr_motos_hora: np.ndarray    = motos_df["vehicles_per_hour"].to_numpy(dtype=np.float64)
+        self._chr_mototaxis_hora: np.ndarray = mototaxis_df["vehicles_per_hour"].to_numpy(dtype=np.float64)
+        self._chr_total_hora: np.ndarray    = self._chr_motos_hora + self._chr_mototaxis_hora
+        self._chr_ev_total_kwh: np.ndarray  = self._ev_motos_demand + self._ev_mototaxis_demand
+        self._chr_co2_directo: np.ndarray   = self._co2_motos + self._co2_mototaxis
+        self._chr_co2_neto_hora: np.ndarray = self._chr_co2_directo
+        # EV charger state (ChargerSimulation: 1=parked, 3=idle)
+        self._chr_motos_state: np.ndarray   = motos_df["electric_vehicle_charger_state"].to_numpy(dtype=np.int32)
+        self._chr_mototaxis_state: np.ndarray = mototaxis_df["electric_vehicle_charger_state"].to_numpy(dtype=np.int32)
 
         # Máximos del año para normalizar observaciones de deuda
         self._daily_motos_max: float = float(
@@ -221,53 +273,77 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         )
 
         logger.info(
-            "EV demand cargado: motos=%.0f kWh/año | mototaxis=%.0f kWh/año | "
-            "CO₂ directo=%.0f kg/año",
+            "EV charger datasets cargados (CityLearn v2): motos=%.0f kWh/año | "
+            "mototaxis=%.0f kWh/año | CO₂ directo=%.0f kg/año",
             self._ev_motos_demand.sum(),
             self._ev_mototaxis_demand.sum(),
             (self._co2_motos + self._co2_mototaxis).sum(),
         )
 
-        # ── Datos OE2 reales — cargados DIRECTAMENTE (no via obs CityLearn) ────
-        # solar_generation.csv — TODAS las columnas OE2 (8760 filas)
-        if not _SOLAR_CSV.exists():
-            raise FileNotFoundError(f"solar_generation.csv no encontrado en {_SOLAR_CSV}")
-        solar_src = _pd.read_csv(_SOLAR_CSV)
-        # Columnas numéricas OE2 solar (excluye datetime y hora_tipo categórico)
-        _SOLAR_REQUIRED = ["irradiancia_ghi", "temperatura_c", "velocidad_viento_ms",
-                           "potencia_kw", "energia_kwh"]
-        for _col in _SOLAR_REQUIRED:
-            if _col not in solar_src.columns:
-                raise KeyError(f"Columna '{_col}' no encontrada en {_SOLAR_CSV}. "
-                               f"Columnas disponibles: {list(solar_src.columns)}")
-        # Arrays principales
-        self._solar_kw: np.ndarray          = solar_src["potencia_kw"].to_numpy(dtype=np.float64)
-        self._solar_kwh: np.ndarray          = solar_src["energia_kwh"].to_numpy(dtype=np.float64)
-        self._solar_ghi: np.ndarray          = solar_src["irradiancia_ghi"].to_numpy(dtype=np.float64)
-        self._solar_temp: np.ndarray         = solar_src["temperatura_c"].to_numpy(dtype=np.float64)
-        self._solar_viento: np.ndarray       = solar_src["velocidad_viento_ms"].to_numpy(dtype=np.float64)
-        # CO2 indirecto solar: energia × factor grid (columna eliminada del CSV, se computa aquí)
+        # ── energy_simulation.csv — edificio: mall + solar + tarifas OSINERGMIN ─
+        # Fuente: data/interim/citylearn_v2/energy_simulation.csv (generado por schema_builder)
+        # Columnas requeridas por CityLearn v2 EnergySimulation + extensiones OSINERGMIN
+        energy_sim = _require(_ENERGY_SIM_CSV)
+        # solar_generation en W/kWp → convertir a kW total (× PV_NOMINAL_KWP / 1000)
+        _PV_KWP: float = 4050.0  # kWp instalados (OE2 solar_pvlib)
+        solar_gen_w_per_kwp = energy_sim["solar_generation"].to_numpy(dtype=np.float64)
+        self._solar_kw: np.ndarray           = solar_gen_w_per_kwp * _PV_KWP / 1000.0
+        self._solar_kwh: np.ndarray          = self._solar_kw                          # 1h timestep → kWh = kW
         self._solar_co2_indirect: np.ndarray = self._solar_kwh * CO2_GRID_KG_PER_KWH
-        # Columnas opcionales (pueden no estar en versiones antiguas del dataset)
-        self._solar_is_punta: np.ndarray     = (solar_src["is_hora_punta"].to_numpy(dtype=np.float64)
-                                                 if "is_hora_punta" in solar_src.columns
-                                                 else np.zeros(self._n, dtype=np.float64))
-        self._solar_tarifa: np.ndarray       = (solar_src["tarifa_aplicada_soles"].to_numpy(dtype=np.float64)
-                                                 if "tarifa_aplicada_soles" in solar_src.columns
-                                                 else np.zeros(self._n, dtype=np.float64))
-        self._solar_ahorro: np.ndarray       = (solar_src["ahorro_solar_soles"].to_numpy(dtype=np.float64)
-                                                 if "ahorro_solar_soles" in solar_src.columns
-                                                 else np.zeros(self._n, dtype=np.float64))
 
-        # ── mall_demand.csv — TODAS las columnas OE2 ─────────────────────
-        if not _MALL_CSV.exists():
-            raise FileNotFoundError(f"mall_demand.csv no encontrado en {_MALL_CSV}")
-        mall_src = _pd.read_csv(_MALL_CSV)
-        self._mall_kw: np.ndarray               = mall_src["mall_demand_kwh"].to_numpy(dtype=np.float64)
-        self._mall_co2_indirect: np.ndarray     = mall_src["mall_co2_indirect_kg"].to_numpy(dtype=np.float64)
-        self._mall_is_punta: np.ndarray         = mall_src["is_hora_punta"].to_numpy(dtype=np.float64)
-        self._mall_tarifa: np.ndarray           = mall_src["tarifa_soles_kwh"].to_numpy(dtype=np.float64)
-        self._mall_cost_soles: np.ndarray       = mall_src["mall_cost_soles"].to_numpy(dtype=np.float64)
+        # Mall demand (non_shiftable_load = SOLO MALL, sin EVs)
+        self._mall_kw: np.ndarray            = energy_sim["non_shiftable_load"].to_numpy(dtype=np.float64)
+
+        # Tarifas OSINERGMIN (Electro Oriente, Res. N° 047-2024-OS/CD)
+        # Archivo separado de energy_simulation.csv (CityLearn v2 rechaza columnas extra)
+        tariffs = _require(_TARIFFS_CSV)
+        self._mall_co2_indirect: np.ndarray  = tariffs["mall_co2_indirect_kg"].to_numpy(dtype=np.float64)
+        self._mall_is_punta: np.ndarray      = tariffs["is_hora_punta"].to_numpy(dtype=np.float64)
+        self._mall_tarifa: np.ndarray        = tariffs["tarifa_soles_kwh"].to_numpy(dtype=np.float64)
+        self._mall_cost_soles: np.ndarray    = tariffs["mall_cost_soles"].to_numpy(dtype=np.float64)
+
+        # ── weather.csv — temperatura e irradiancia ───────────────────────────
+        weather = _require(_WEATHER_CSV)
+        self._solar_ghi: np.ndarray   = (weather["diffuse_solar_irradiance"].to_numpy(dtype=np.float64)
+                                          + weather["direct_solar_irradiance"].to_numpy(dtype=np.float64))
+        self._solar_temp: np.ndarray  = weather["outdoor_dry_bulb_temperature"].to_numpy(dtype=np.float64)
+        self._solar_viento: np.ndarray = np.zeros(self._n, dtype=np.float64)   # no en weather.csv
+        self._solar_is_punta: np.ndarray = self._mall_is_punta                 # misma señal HP/HFP
+        self._solar_tarifa: np.ndarray   = self._mall_tarifa                   # misma tarifa
+        self._solar_ahorro: np.ndarray   = np.zeros(self._n, dtype=np.float64) # calculado en step()
+
+        # ── co2_emissions.csv — factores horarios todo el sistema (diesel Iquitos + ICE vehículos)
+        # Estacionalidad: lluviosa dic-may=0.43, seca jun-nov=0.47 kg CO₂/kWh
+        # HP (18-23h): factor_mes × 1.35 | HFP: factor_mes × 0.908
+        if _CO2_EMISSIONS_CSV.exists():
+            co2_df = _pd.read_csv(_CO2_EMISSIONS_CSV)
+            self._co2_factor: np.ndarray = co2_df["co2_factor_kg_kwh"].to_numpy(dtype=np.float64)
+        else:
+            from src.dimensionamiento.oe2._constants import (
+                FACTOR_CO2_HP_KG_KWH, FACTOR_CO2_HFP_KG_KWH, HORA_INICIO_HP, HORA_FIN_HP
+            )
+            _hours_tmp = np.arange(8760) % 24
+            _is_hp_tmp = (_hours_tmp >= HORA_INICIO_HP) & (_hours_tmp < HORA_FIN_HP)
+            self._co2_factor = np.where(_is_hp_tmp, FACTOR_CO2_HP_KG_KWH, FACTOR_CO2_HFP_KG_KWH)
+            logger.warning("co2_emissions.csv no encontrado — usando factores HP/HFP fijos (fallback)")
+
+        # ── tariffs_osinergmin.csv — tarifas OSINERGMIN + mecanismo compensación SSAA ─
+        # Pliego MT3 Electro Oriente — Res. N° 047-2024-OS/CD
+        # Incluye: energía HP/HFP, cargo potencia, AAPP, mecanismo compensación, ahorro social
+        if _TARIFFS_IQTS_CSV.exists():
+            _tariffs_df = _pd.read_csv(_TARIFFS_IQTS_CSV)
+            self._tarifa_energia: np.ndarray = _tariffs_df["tarifa_energia_soles_kwh"].to_numpy(dtype=np.float64)
+            self._tarifa_total: np.ndarray   = _tariffs_df["tarifa_total_soles_kwh"].to_numpy(dtype=np.float64)
+            self._mecanismo_comp: np.ndarray = _tariffs_df["mecanismo_compensacion_soles_kwh"].to_numpy(dtype=np.float64)
+            self._ahorro_social: np.ndarray  = _tariffs_df["ahorro_social_kwh_evitado_soles"].to_numpy(dtype=np.float64)
+        else:
+            _hours_tmp2 = np.arange(8760) % 24
+            _is_hp_tmp2 = (_hours_tmp2 >= HORA_INICIO_HP) & (_hours_tmp2 < HORA_FIN_HP)
+            self._tarifa_energia = np.where(_is_hp_tmp2, TARIFA_ENERGIA_HP_SOLES, TARIFA_ENERGIA_HFP_SOLES)
+            self._tarifa_total   = self._tarifa_energia + 0.0116
+            self._mecanismo_comp = 0.75 - self._tarifa_energia
+            self._ahorro_social  = self._tarifa_total + self._mecanismo_comp
+            logger.warning("tariffs_osinergmin.csv no encontrado — usando tarifas fijas (fallback)")
 
         # ── bess_timeseries.csv — TODAS las columnas OE2 (27 columnas) ───
         if not _BESS_CSV.exists():
@@ -313,55 +389,67 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         self._bess_mall_after: np.ndarray       = np.maximum(0.0, bess_src["mall_kwh"].to_numpy(dtype=np.float64) - self._bess_to_mall)
         self._bess_load_after: np.ndarray       = self._bess_ev_after + self._bess_mall_after
 
-        # ── chargers_timeseries.csv — columnas resumen + sockets 2D ──────
-        # (los 38 sockets se almacenan en arrays 2D: shape (8760, 38))
+        # ── Estadísticas acumuladas EV (derivadas de datos horarios) ─────────
+        # Calculadas a partir de los arrays cargados de ev_charger_motos/mototaxis.csv
+        # Los acumulados diario/mensual/anual se derivan de los horarios (no se guardan en CSV)
+        self._chr_costo_soles: np.ndarray    = np.zeros(self._n, dtype=np.float64)  # computed in step()
+        self._chr_co2_acum_diario: np.ndarray = np.zeros(self._n, dtype=np.float64)  # acumulado en step()
+        self._chr_co2_por_vehiculo: np.ndarray = np.zeros(self._n, dtype=np.float64)
+        self._chr_co2_acum_anual: np.ndarray = np.cumsum(self._chr_co2_directo)     # acumulado anual
+        self._chr_ev_demand_kwh: np.ndarray  = self._chr_ev_total_kwh
+        self._chr_is_punta: np.ndarray       = self._mall_is_punta                  # misma señal HP/HFP
+        self._chr_tarifa: np.ndarray         = self._mall_tarifa                    # misma tarifa OSINERGMIN
+        self._chr_co2_grid_kwh: np.ndarray   = np.zeros(self._n, dtype=np.float64)
+
+        # Acumulados diario (reset cada 24h), mensual y anual — derivados de horarios
+        _daily_motos   = self._chr_motos_hora.reshape(365, 24).cumsum(axis=1)
+        _daily_moto    = np.hstack([_daily_motos[:, h] for h in range(24)]).reshape(self._n)
+        self._chr_motos_diario: np.ndarray   = self._chr_motos_hora.reshape(365, 24).cumsum(axis=1).reshape(self._n)
+        self._chr_mototaxis_diario: np.ndarray = self._chr_mototaxis_hora.reshape(365, 24).cumsum(axis=1).reshape(self._n)
+        self._chr_total_diario: np.ndarray   = self._chr_motos_diario + self._chr_mototaxis_diario
+        self._chr_motos_anual: np.ndarray    = np.full(self._n, self._chr_motos_hora.sum(), dtype=np.float64)
+        self._chr_mototaxis_anual: np.ndarray = np.full(self._n, self._chr_mototaxis_hora.sum(), dtype=np.float64)
+        self._chr_total_anual: np.ndarray    = self._chr_motos_anual + self._chr_mototaxis_anual
+        # Mensual: acumulado por mes (simplificado con cumsum anual)
+        self._chr_motos_mensual: np.ndarray  = np.cumsum(self._chr_motos_hora)
+        self._chr_mototaxis_mensual: np.ndarray = np.cumsum(self._chr_mototaxis_hora)
+        self._chr_total_mensual: np.ndarray  = self._chr_motos_mensual + self._chr_mototaxis_mensual
+
+        # ── Sockets 2D: representación agregada (no hay datos per-socket en CL v2) ─
+        # Los charger CSVs tienen datos agregados por tipo de flota.
+        # Los arrays 2D se aproximan distribuyendo la demanda entre los sockets activos.
         _N_SOCKETS = 38
-        # Arrays resumen (globales del parque)
-        self._chr_ev_total_kwh: np.ndarray      = chargers_df["ev_energia_total_kwh"].to_numpy(dtype=np.float64)
-        self._chr_costo_soles: np.ndarray       = np.zeros(self._n, dtype=np.float64)   # computed in loader
-        self._chr_co2_directo: np.ndarray       = self._co2_motos + self._co2_mototaxis
-        self._chr_co2_acum_diario: np.ndarray   = np.zeros(self._n, dtype=np.float64)   # not in CSV schema
-        self._chr_co2_por_vehiculo: np.ndarray  = np.zeros(self._n, dtype=np.float64)   # not in CSV schema
-        self._chr_co2_acum_anual: np.ndarray    = chargers_df["co2_directo_anual_acumulado_kg"].to_numpy(dtype=np.float64)
-        self._chr_motos_hora: np.ndarray        = chargers_df["motos_cargadas_hora"].to_numpy(dtype=np.float64)
-        self._chr_mototaxis_hora: np.ndarray    = chargers_df["mototaxis_cargadas_hora"].to_numpy(dtype=np.float64)
-        self._chr_total_hora: np.ndarray        = chargers_df["total_vehiculos_cargados_hora"].to_numpy(dtype=np.float64)
-        self._chr_motos_diario: np.ndarray      = chargers_df["motos_acumulado_diario"].to_numpy(dtype=np.float64)
-        self._chr_mototaxis_diario: np.ndarray  = chargers_df["mototaxis_acumulado_diario"].to_numpy(dtype=np.float64)
-        self._chr_total_diario: np.ndarray      = chargers_df["total_acumulado_diario"].to_numpy(dtype=np.float64)
-        self._chr_motos_mensual: np.ndarray     = chargers_df["motos_acumulado_mensual"].to_numpy(dtype=np.float64)
-        self._chr_mototaxis_mensual: np.ndarray = chargers_df["mototaxis_acumulado_mensual"].to_numpy(dtype=np.float64)
-        self._chr_total_mensual: np.ndarray     = chargers_df["total_acumulado_mensual"].to_numpy(dtype=np.float64)
-        self._chr_motos_anual: np.ndarray       = chargers_df["motos_acumulado_anual"].to_numpy(dtype=np.float64)
-        self._chr_mototaxis_anual: np.ndarray   = chargers_df["mototaxis_acumulado_anual"].to_numpy(dtype=np.float64)
-        self._chr_total_anual: np.ndarray       = chargers_df["total_acumulado_anual"].to_numpy(dtype=np.float64)
-        self._chr_co2_grid_kwh: np.ndarray      = np.zeros(self._n, dtype=np.float64)   # not in CSV schema
-        self._chr_co2_neto_hora: np.ndarray     = self._co2_motos + self._co2_mototaxis
-        self._chr_ev_demand_kwh: np.ndarray     = self._chr_ev_total_kwh
-        self._chr_is_punta: np.ndarray          = np.zeros(self._n, dtype=np.float64)   # not in CSV schema
-        self._chr_tarifa: np.ndarray            = np.zeros(self._n, dtype=np.float64)   # not in CSV schema
-        # Sockets 2D: shape (8760, 38) — una fila por hora, una columna por socket
-        self._skt_charger_power: np.ndarray = np.stack(
-            [chargers_df[f"socket_{i:03d}_charger_power_kw"].to_numpy(dtype=np.float32)
-             for i in range(_N_SOCKETS)], axis=1)   # (8760, 38)
-        self._skt_battery_kwh: np.ndarray = np.stack(
-            [chargers_df[f"socket_{i:03d}_battery_kwh"].to_numpy(dtype=np.float32)
-             for i in range(_N_SOCKETS)], axis=1)
-        self._skt_soc_current: np.ndarray = np.stack(
-            [chargers_df[f"socket_{i:03d}_soc_current"].to_numpy(dtype=np.float32)
-             for i in range(_N_SOCKETS)], axis=1)
-        self._skt_soc_arrival: np.ndarray = np.stack(
-            [chargers_df[f"socket_{i:03d}_soc_arrival"].to_numpy(dtype=np.float32)
-             for i in range(_N_SOCKETS)], axis=1)
-        self._skt_soc_target: np.ndarray = np.stack(
-            [chargers_df[f"socket_{i:03d}_soc_target"].to_numpy(dtype=np.float32)
-             for i in range(_N_SOCKETS)], axis=1)
-        self._skt_active: np.ndarray = np.stack(
-            [chargers_df[f"socket_{i:03d}_active"].to_numpy(dtype=np.float32)
-             for i in range(_N_SOCKETS)], axis=1)
-        self._skt_charging_power: np.ndarray = np.stack(
-            [chargers_df[f"socket_{i:03d}_charging_power_kw"].to_numpy(dtype=np.float32)
-             for i in range(_N_SOCKETS)], axis=1)
+        _N_MOTOS   = 30   # socket_000 … socket_029
+        _N_MOTOT   = 8    # socket_030 … socket_037
+        _motos_act  = motos_df["active_sockets"].to_numpy(dtype=np.float32)
+        _motot_act  = mototaxis_df["active_sockets"].to_numpy(dtype=np.float32)
+        _motos_pw   = np.zeros((self._n, _N_MOTOS), dtype=np.float32)
+        _motot_pw   = np.zeros((self._n, _N_MOTOT), dtype=np.float32)
+        # Potencia por socket activo (distribución uniforme)
+        _motos_pw_per = np.where(_motos_act > 0, self._ev_motos_demand.astype(np.float32) / np.maximum(_motos_act, 1), 0.0)
+        _motot_pw_per = np.where(_motot_act > 0, self._ev_mototaxis_demand.astype(np.float32) / np.maximum(_motot_act, 1), 0.0)
+        for i in range(_N_MOTOS):
+            _motos_pw[:, i] = np.where(i < _motos_act, _motos_pw_per, 0.0)
+        for i in range(_N_MOTOT):
+            _motot_pw[:, i] = np.where(i < _motot_act, _motot_pw_per, 0.0)
+
+        self._skt_charging_power: np.ndarray = np.hstack([_motos_pw, _motot_pw])   # (8760, 38)
+        self._skt_charger_power: np.ndarray  = np.full((self._n, _N_SOCKETS), 7.4, dtype=np.float32)
+        self._skt_battery_kwh: np.ndarray    = np.hstack([
+            np.full((self._n, _N_MOTOS), 4.6, dtype=np.float32),
+            np.full((self._n, _N_MOTOT), 7.4, dtype=np.float32),
+        ])
+        # SOC: motos cargándose van de 0.20 → 0.80 (EV_SOC_MIN → EV_SOC_MAX)
+        self._skt_soc_arrival: np.ndarray  = np.full((self._n, _N_SOCKETS), 0.20, dtype=np.float32)
+        self._skt_soc_target: np.ndarray   = np.full((self._n, _N_SOCKETS), 0.80, dtype=np.float32)
+        _active_combined = np.hstack([
+            np.column_stack([np.where(i < _motos_act, 1.0, 0.0).astype(np.float32) for i in range(_N_MOTOS)]),
+            np.column_stack([np.where(i < _motot_act, 1.0, 0.0).astype(np.float32) for i in range(_N_MOTOT)]),
+        ])
+        self._skt_active: np.ndarray       = _active_combined
+        self._skt_soc_current: np.ndarray  = np.where(
+            _active_combined > 0, 0.50, 0.20
+        ).astype(np.float32)   # aproximación: SOC medio durante carga
 
         # Validar longitudes (todos deben ser 8760)
         for _name, _arr in [
@@ -369,30 +457,27 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
             ("bess_soc_ref",    self._bess_soc_ref),
             ("grid_import_ref", self._grid_import_ref),
             ("chr_motos_hora",  self._chr_motos_hora),
-            ("skt_active",      self._skt_active),
         ]:
             if len(_arr) != self._n:
                 raise ValueError(
-                    f"OE2 dataset '{_name}' tiene {len(_arr)} filas, "
-                    f"esperado {self._n}. Regenera los datasets OE2."
+                    f"Dataset CityLearn v2 '{_name}' tiene {len(_arr)} filas, "
+                    f"esperado {self._n}. Ejecuta: python -m src.citylearnv2.schema_builder"
                 )
 
         logger.info(
-            "OE2 (4 datasets) cargado directamente:\n"
-            "  solar  : %.1f MWh/año | irradiancia_max=%.0f W/m²\n"
-            "  mall   : %.1f MWh/año | costo_total=%.0f soles/año\n"
-            "  BESS   : SOC_ref_avg=%.0f%% | grid_import_total=%.1f MWh/año\n"
-            "  cargas : motos=%.0f kWh/año | mototaxis=%.0f kWh/año | "
-            "sockets=%d | CO₂_directo_total=%.0f kg/año",
+            "CityLearn v2 datasets cargados:\n"
+            "  solar  : %.1f MWh/año | GHI_max=%.0f W/m²\n"
+            "  mall   : %.1f MWh/año | costo=%.0f soles/año\n"
+            "  BESS   : SOC_ref_avg=%.0f%% | grid_import=%.1f MWh/año\n"
+            "  EV motos: %.0f kWh/año | EV mototaxis: %.0f kWh/año | CO₂_dir=%.0f kg/año",
             self._solar_kw.sum() / 1000,
             self._solar_ghi.max(),
             self._mall_kw.sum() / 1000,
             self._mall_cost_soles.sum(),
             self._bess_soc_ref.mean() * 100,
-            self._grid_import_ref.sum() / 1000,  # nansum no necesario — fillna a 0
+            self._grid_import_ref.sum() / 1000,
             self._ev_motos_demand.sum(),
             self._ev_mototaxis_demand.sum(),
-            _N_SOCKETS,
             self._chr_co2_directo.sum(),
         )
 
@@ -431,10 +516,15 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         self._base_obs_range: np.ndarray = np.where(_range > 1e-8, _range, 1.0).astype(np.float32)
         self._base_obs_const_mask: np.ndarray = (_range <= 1e-8)  # True donde la dim es constante
 
-        ev_low = np.array([0.0, 0.0, 0.0, 0.0, -1.0], dtype=np.float32)
-        ev_high = np.array([1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float32)
+        # ev_obs: 5 dims EV + 2 dims tarifa OSINERGMIN (tarifa_norm, is_hora_punta)
+        # [0-3] motos_norm, mototaxis_norm, motos_debt, mototaxis_debt ∈ [0, 1]
+        # [4]   hour_sin ∈ [-1, 1]
+        # [5]   tarifa_norm ∈ [0, 1]  — (tarifa_total - HFP) / (HP - HFP)
+        # [6]   is_hora_punta ∈ {0, 1} — señal binaria explícita de período tarifario
+        ev_low  = np.array([0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0], dtype=np.float32)
+        ev_high = np.array([1.0, 1.0, 1.0, 1.0,  1.0, 1.0, 1.0], dtype=np.float32)
 
-        # Obs space normalizado: base en [-1, 1]; EV dims en [-1, 1] (hour_sin) u [0, 1]
+        # Obs space normalizado: base en [-1, 1]; dims extra en sus rangos propios
         self.observation_space = spaces.Box(
             low=np.concatenate([
                 np.full(self._obs_dim_base, -1.0, dtype=np.float32),
@@ -447,9 +537,12 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
             dtype=np.float32,
         )
 
+        # Rango tarifario para normalización (HP - HFP)
+        self._tarifa_range: float = float(TARIFA_ENERGIA_HP_SOLES - TARIFA_ENERGIA_HFP_SOLES)  # 0.45-0.28=0.17
+
         logger.info(
-            "IquitosEVChargingWrapper listo: obs_dim=%d (base=%d + ev=5), action_dim=3",
-            self._obs_dim_base + 5,
+            "IquitosEVChargingWrapper listo: obs_dim=%d (base=%d + ev=5 + tarifa=2), action_dim=3",
+            self._obs_dim_base + 7,
             self._obs_dim_base,
         )
 
@@ -520,8 +613,18 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         # Señal circular de hora (urgencia de fin de día)
         hour_sin = float(np.sin(2 * np.pi * hour / 24))
 
+        # Señal tarifaria OSINERGMIN desde tariffs_osinergmin.csv
+        t_idx = min(self._t, len(self._tarifa_total) - 1)
+        tarifa_t      = float(self._tarifa_total[t_idx])
+        tarifa_norm   = float(np.clip(
+            (tarifa_t - TARIFA_ENERGIA_HFP_SOLES) / max(self._tarifa_range, 1e-6),
+            0.0, 1.0,
+        ))  # 0.0 = HFP barato, 1.0 = HP caro
+        is_punta_t = float(self._mall_is_punta[min(self._t, len(self._mall_is_punta) - 1)])
+
         ev_obs = np.array(
-            [motos_dem_norm, mototaxis_dem_norm, motos_debt_norm, mototaxis_debt_norm, hour_sin],
+            [motos_dem_norm, mototaxis_dem_norm, motos_debt_norm, mototaxis_debt_norm,
+             hour_sin, tarifa_norm, is_punta_t],
             dtype=np.float32,
         )
         return np.concatenate([base_norm, ev_obs])
@@ -646,8 +749,19 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         penalty_debt: float,
         grid_import_kw: float = 0.0,
         solar_autoconsumo_kw: float = -1.0,
+        co2_factor: float = CO2_GRID_KG_PER_KWH,
+        bess_action_raw: float = 0.0,
+        solar_gen_kw: float = 0.0,
     ) -> float:
-        """Calcula la recompensa multi-objetivo CO2_DUAL_FOCUS v7.0.
+        """Calcula la recompensa multi-objetivo CO2_DUAL_FOCUS v7.2 BESS_DISPATCH_FOCUS + COST_AWARE.
+
+        Componentes (pesos suman 1.0):
+          r_direct_co2   0.10 — CO₂ directo evitado (moto/mototaxi vs gasolina)
+          r_indirect_co2 0.45 — CO₂ indirecto por grid_import × 0.4521 kg/kWh
+          r_ev_complete  0.25 — completar carga EV antes del cierre del día
+          r_solar        0.05 — autoconsumo solar (evitar exportación)
+          r_grid_stable  0.05 — penalizar rampas bruscas de importación
+          r_cost         0.10 — costo tarifario OSINERGMIN HP(0.45)/HFP(0.28) S/./kWh
 
         Parameters
         ----------
@@ -678,9 +792,12 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         co2_direct_total = co2_motos_saved + co2_mototaxis_saved
         r_direct_co2 = float(np.clip(co2_direct_total / MAX_CO2_DIRECT_PER_HOUR, 0.0, 1.0))
 
-        # ── r_indirect_co2 (peso 0.30) ────────────────────────────────────
-        # CO₂ indirecto: importación de red × factor emisión Iquitos
-        r_indirect_co2 = -float(np.clip(grid_import_real / MAX_GRID_IMPORT_KW, 0.0, 1.0))
+        # ── r_indirect_co2 (peso 0.45) ────────────────────────────────────
+        # CO₂ indirecto: importación de red × factor horario (diesel Iquitos)
+        # Factor varía: HP(18-23h)=0.43-0.63 kg/kWh, HFP=0.39-0.43 kg/kWh (estacionalidad Loreto)
+        _co2_indirect_kg = grid_import_real * co2_factor
+        _max_co2_indirect = MAX_GRID_IMPORT_KW * float(self._co2_factor.max())  # peor caso anual
+        r_indirect_co2 = -float(np.clip(_co2_indirect_kg / max(_max_co2_indirect, 1.0), 0.0, 1.0))
 
         # ── r_ev_complete (peso 0.25) ─────────────────────────────────────
         # Bonificar completar carga EV al día; penalizar deuda incumplida (fin día)
@@ -713,13 +830,45 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         r_grid_stable = -float(np.clip(delta / MAX_GRID_IMPORT_KW, 0.0, 1.0))
         self._prev_grid_import = grid_import_real
 
-        # ── Recompensa combinada ponderada ─────────────────────────────────
+        # ── r_cost (peso 0.05) ────────────────────────────────────────────
+        # Costo tarifario real del dataset OSINERGMIN (tarifa energía + AAPP):
+        #   HP (18-23h): 0.45+0.0116=0.4616 S/./kWh | HFP: 0.28+0.0116=0.2916 S/./kWh
+        t_idx = min(self._t, len(self._tarifa_total) - 1)
+        tarifa_total_t = float(self._tarifa_total[t_idx])
+        cost_step_soles = grid_import_real * tarifa_total_t
+        r_cost = -float(np.clip(cost_step_soles / MAX_COST_PER_STEP_SOLES, 0.0, 1.0))
+
+        # ── r_bess_solar (peso 0.10) — Regla operacional de flujo BESS ───
+        # BESS debe cargarse con generación solar (6-18h) NO con diesel nocturno.
+        # Flujo correcto: Solar → BESS (día) → BESS → EV (noche/pico).
+        # bess_action_raw > 0 = cargando; < 0 = descargando.
+        hour_t = int(self._t % 24)
+        is_solar_hour = 6 <= hour_t < 18
+        r_bess_solar: float
+        if bess_action_raw > 0.05:   # BESS cargando (threshold mínimo para ignorar ruido)
+            if is_solar_hour and solar_gen_kw >= _SOLAR_CHARGE_THRESHOLD_KW:  # noqa: F821
+                # CORRECTO: carga BESS con solar disponible → bonus máximo
+                solar_frac = float(np.clip(solar_gen_kw / max(BESS_MAX_KW, 1.0), 0.0, 1.0))
+                r_bess_solar = +solar_frac   # ∈ [0, 1]
+            elif not is_solar_hour:
+                # INCORRECTO: carga BESS de noche con diesel → penalización
+                r_bess_solar = -1.0
+            else:
+                # Solar insuficiente durante el día → penalización leve
+                r_bess_solar = -0.3
+        else:
+            # BESS descargando o inactivo → neutral (no penalizar descarga)
+            r_bess_solar = 0.0
+
+        # ── Recompensa combinada ponderada v7.3 (suman 1.0) ─────────────
         reward = (
-            _W_DIRECT_CO2 * r_direct_co2
+            _W_DIRECT_CO2  * r_direct_co2
             + _W_INDIRECT_CO2 * r_indirect_co2
-            + _W_EV_COMPLETE * r_ev_complete
-            + _W_SOLAR * r_solar
-            + _W_GRID_STABLE * r_grid_stable
+            + _W_EV_COMPLETE  * r_ev_complete
+            + _W_SOLAR        * r_solar
+            + _W_GRID_STABLE  * r_grid_stable
+            + _W_COST         * r_cost
+            + _W_BESS_SOLAR   * r_bess_solar
         )
         return float(np.clip(reward, -1.0, 1.0))
 
@@ -766,7 +915,7 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
 
         Returns
         -------
-        obs : np.ndarray, shape (obs_dim_base + 5,)
+        obs : np.ndarray, shape (obs_dim_base + 7,)
         reward : float
         terminated : bool
         truncated : bool
@@ -859,6 +1008,9 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
 
         t = self._t
         hour = t % 24
+        # Factor CO₂ horario (todo el sistema: diesel Iquitos + ICE vehículos)
+        # Cargado desde co2_emissions.csv: estacionalidad mensual Loreto + variación HP/HFP
+        _co2_factor_t = float(self._co2_factor[min(t, len(self._co2_factor) - 1)])
 
         # ── Calcular despacho EV real ─────────────────────────────────────
         # Demanda base de este paso (del perfil histórico)
@@ -960,6 +1112,9 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
             base_obs, ev_motos_actual, ev_mototaxis_actual, penalty_debt_frac,
             grid_import_kw=grid_import_kw,
             solar_autoconsumo_kw=_solar_kw - grid_export_kw,
+            co2_factor=_co2_factor_t,
+            bess_action_raw=float(bess_action),
+            solar_gen_kw=float(_solar_kw),
         )
 
         # ── Construir observación extendida ───────────────────────────────
@@ -985,68 +1140,57 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         _f6d = _co2_grid_export                                      # Fase 4: solar → export
         _f6c = max(0.0, _solar_kw - _f6a - _f6b - _f6d)             # Fase 3: solar → BESS
 
-        co2_solar_f6_kg           = _solar_kw  * CO2_GRID_KG_PER_KWH  # F6 total
-        co2_solar_ev_f6a_kg       = _f6a * CO2_GRID_KG_PER_KWH        # F6a
-        co2_solar_mall_f6b_kg     = _f6b * CO2_GRID_KG_PER_KWH        # F6b
-        co2_solar_bess_f6c_kg     = _f6c * CO2_GRID_KG_PER_KWH        # F6c
-        co2_solar_export_f6d_kg   = _f6d * CO2_GRID_KG_PER_KWH        # F6d = F8
+        # Factor CO₂ horario — Iquitos diesel: estacionalidad mensual + HP/HFP
+        # HP(18-23h): factor_mes×1.35 | HFP: factor_mes×0.908  (0.43 lluv / 0.47 seca)
+        co2_solar_f6_kg           = _solar_kw  * _co2_factor_t   # F6 total (CO₂ indirecto evitado por PV)
+        co2_solar_ev_f6a_kg       = _f6a * _co2_factor_t         # F6a: solar → EV (directo)
+        co2_solar_mall_f6b_kg     = _f6b * _co2_factor_t         # F6b: solar → Mall
+        co2_solar_bess_f6c_kg     = _f6c * _co2_factor_t         # F6c: solar → BESS (diferido)
+        co2_solar_export_f6d_kg   = _f6d * _co2_factor_t         # F6d: solar → export red
 
-        # ── F7: BESS descarga → desplaza importación de red dísel ────────────────────────
-        co2_bess_discharge_f7_kg  = _co2_bess_disc * CO2_GRID_KG_PER_KWH  # definición original
+        # ── F7: BESS descarga → desplaza importación de red diesel (HP factor) ───
+        co2_bess_discharge_f7_kg  = _co2_bess_disc * _co2_factor_t
 
-        # ── FÓRMULA 0 — SIN PROYECTO (estado actual antes de implementar OE2/OE3) ──
-        # Referencia: mall en red pública diesel + parque completo de combustión sin EVs.
-        # Motos y mototaxis estacionadas en playa del mall (ref. OE2), sin cargadores instalados.
-        # → Cuantifica las emisiones ACTUALES que el proyecto eliminará (impacto TOTAL del proyecto).
-        co2_sinproyecto_mall_kg       = _mall_kw             * CO2_GRID_KG_PER_KWH  # indirecta: mall en red diesel
-        co2_sinproyecto_combustion_kg = _F0_CO2_COMBUSTION_PER_H                    # directa FIJA: OE2 — 900 motos+130 mototaxis ICE
+        # ── FÓRMULA 0 — SIN PROYECTO ────────────────────────────────────────────
+        # Mall en red diesel + parque completo combustión ICE (sin solar, BESS ni RL)
+        co2_sinproyecto_mall_kg       = _mall_kw * _co2_factor_t           # indirecto: mall red diesel
+        co2_sinproyecto_combustion_kg = _F0_CO2_COMBUSTION_PER_H           # directo: ICE fijo OE2
         co2_total_sinproyecto_kg      = co2_sinproyecto_mall_kg + co2_sinproyecto_combustion_kg
 
         # ── FÓRMULA 1 — BASELINE (sin solar, sin BESS, sin agente RL) ───────────
-        # baseline = CO₂ directa (combustión) + CO₂ indirecta (red diesel) − reducción directa (electrificación)
-        #
-        # [A] Directa: CO₂ del parque asumiendo combustión interna (referencia preelectrificación)
+        # [A] Directo combustión ICE
         co2_directo_combustion = (
-            motos_demand_t    * CO2_FACTOR_MOTO        # 0.87 kg CO₂/kWh gasolina moto
-            + mototaxis_demand_t * CO2_FACTOR_MOTOTAXI  # 0.54 kg CO₂/kWh gasolina mototaxi
+            motos_demand_t    * CO2_FACTOR_MOTO         # 0.87 kg CO₂/kWh gasolina moto 125cc
+            + mototaxis_demand_t * CO2_FACTOR_MOTOTAXI  # 0.54 kg CO₂/kWh gasolina mototaxi 150cc
         )
-        # [B] Indirecta: red pública diesel cubre mall + carga EV (sin solar ni BESS)
+        # [B] Indirecto: red diesel Iquitos cubre mall + EV (sin solar ni BESS)
         co2_indirecto_red_base = (
             _mall_kw + motos_demand_t + mototaxis_demand_t
-        ) * CO2_GRID_KG_PER_KWH  # 0.4521 kg CO₂/kWh red aislada Iquitos
-        # [C] Reducción directa: CO₂ evitado porque los EVs ya no queman combustible
+        ) * _co2_factor_t   # factor horario variable (0.39-0.63 kg CO₂/kWh según mes+periodo)
+        # [C] Reducción directa: EVs ya electrificados no queman combustible
         co2_reduccion_directa_elec = (
             ev_motos_actual    * CO2_FACTOR_MOTO
             + ev_mototaxis_actual * CO2_FACTOR_MOTOTAXI
         )
         co2_total_baseline_kg = co2_directo_combustion + co2_indirecto_red_base - co2_reduccion_directa_elec
 
-        # ── FÓRMULA 2 — CONTROL INTELIGENTE (con solar+BESS+agente RL) ──────────
-        # Emisión residual: única fuente de CO₂ que solar+BESS+agente no pudieron cubrir
-        # Definición original OE3: importación de red = net_consum CityLearn + EVs
-        co2_total_control_kg = _co2_grid_import * CO2_GRID_KG_PER_KWH
+        # ── FÓRMULA 2 — CONTROL INTELIGENTE (solar+BESS+agente RL) ─────────────
+        # Emisión residual: solo lo que solar+BESS+agente no pudieron cubrir
+        co2_total_control_kg = _co2_grid_import * _co2_factor_t  # factor horario variable
 
-        # Desglose cuantificado de CO₂ evitado por cada mecanismo del proyecto:
-        # ── [D] Reducción DIRECTA: EVs en carga → parque no quema combustible fósil ──
+        # ── [D] Reducción DIRECTA (EV eléctrico vs ICE gasolina) ────────────────
         co2_ctrl_reduc_directa_kg = (
-            ev_motos_actual    * CO2_FACTOR_MOTO        # motos eléctricas vs 125cc gasolina
-            + ev_mototaxis_actual * CO2_FACTOR_MOTOTAXI  # mototaxis eléctricas vs 150cc gasolina
+            ev_motos_actual    * CO2_FACTOR_MOTO
+            + ev_mototaxis_actual * CO2_FACTOR_MOTOTAXI
         )
-        # ── [E] Reducción INDIRECTA — solar PV (100% acreditado, sin desperdicio): ──
-        #       F6a: solar → carga EVs directamente   (desplaza red diesel en EVs)
-        co2_ctrl_reduc_solar_ev_kg    = _f6a * CO2_GRID_KG_PER_KWH
-        #       F6b: solar → mall directamente        (desplaza red diesel en mall)
-        co2_ctrl_reduc_solar_mall_kg  = _f6b * CO2_GRID_KG_PER_KWH
-        #       F6c: solar → BESS almacenado          (energía limpia guardada para cortar pico)
-        co2_ctrl_reduc_solar_bess_kg  = _f6c * CO2_GRID_KG_PER_KWH
-        #       F6d: solar exportado a red aislada    (desplaza diesel en red Iquitos)
-        co2_ctrl_reduc_solar_exp_kg   = _f6d * CO2_GRID_KG_PER_KWH
-        #       Total solar = F6a + F6b + F6c + F6d = 100% generación PV acreditada
-        co2_ctrl_reduc_solar_total_kg = _solar_kw * CO2_GRID_KG_PER_KWH
-        # ── [F] Reducción INDIRECTA — BESS descarga corta pico (tiempo diferido): ──
-        #       BESS libera energía solar almacenada (F6c previo) en hora de máxima demanda
-        #       → desplaza importación de red diesel en mall y carga EV
-        co2_ctrl_reduc_bess_desc_kg   = _co2_bess_disc * CO2_GRID_KG_PER_KWH    # definición original
+        # ── [E] Reducción INDIRECTA — PV (100% generación acreditada) ───────────
+        co2_ctrl_reduc_solar_ev_kg    = _f6a * _co2_factor_t   # solar → EV
+        co2_ctrl_reduc_solar_mall_kg  = _f6b * _co2_factor_t   # solar → Mall
+        co2_ctrl_reduc_solar_bess_kg  = _f6c * _co2_factor_t   # solar → BESS
+        co2_ctrl_reduc_solar_exp_kg   = _f6d * _co2_factor_t   # solar → red aislada
+        co2_ctrl_reduc_solar_total_kg = _solar_kw * _co2_factor_t  # total PV
+        # ── [F] Reducción INDIRECTA — BESS descarga (energia solar diferida en HP) ─
+        co2_ctrl_reduc_bess_desc_kg   = _co2_bess_disc * _co2_factor_t
 
         # ── FÓRMULA 3 — REDUCCIÓN NETA OE3 ─────────────────────────────────────
         co2_reduccion_directa_kg     = co2_ctrl_reduc_directa_kg
@@ -1192,9 +1336,17 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
             "dispatch_pv_to_ev_kwh":   _dp["pv_to_ev_kwh"],    # solar directo → cargadores
             "dispatch_bess_to_ev_kwh": _dp["bess_to_ev_kwh"],  # BESS descarga → cargadores
             "dispatch_grid_to_ev_kwh": _dp["grid_to_ev_kwh"],  # red diesel → cargadores
-            # ── Costo energético real del paso (importación red × tarifa) ──────────
-            # Usado por EVMetricsCallback en scripts de entrenamiento SAC/PPO/A2C
-            "cost_soles": _co2_grid_import * float(self._mall_tarifa[t]),
+            # ── Tarifas OSINERGMIN + Mecanismo Compensación SSAA (Iquitos) ────────
+            # Dataset tariffs_osinergmin.csv — Res. N° 047-2024-OS/CD + AAPP
+            "tarifa_energia_soles_kwh":   float(self._tarifa_energia[min(t, len(self._tarifa_energia) - 1)]),
+            "tarifa_total_soles_kwh":     float(self._tarifa_total[min(t, len(self._tarifa_total) - 1)]),
+            "mecanismo_compensacion_soles_kwh": float(self._mecanismo_comp[min(t, len(self._mecanismo_comp) - 1)]),
+            "ahorro_social_kwh_soles":    float(self._ahorro_social[min(t, len(self._ahorro_social) - 1)]),
+            # ── Costo energético real del paso (importación red × tarifa total) ──
+            # tarifa_total = energía HP/HFP + AAPP (dataset tariffs_osinergmin.csv)
+            "cost_soles": _co2_grid_import * float(self._tarifa_total[min(t, len(self._tarifa_total) - 1)]),
+            "cost_mecanismo_comp_soles": _co2_grid_import * float(self._mecanismo_comp[min(t, len(self._mecanismo_comp) - 1)]),
+            "ahorro_social_total_soles":  _co2_grid_import * float(self._ahorro_social[min(t, len(self._ahorro_social) - 1)]),
             "cost_usd":   _co2_grid_import * float(self._mall_tarifa[t]) / 3.75,
         })
 

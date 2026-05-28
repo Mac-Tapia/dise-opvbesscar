@@ -1,12 +1,58 @@
-# 🔋⚡ pvbesscar - RL-based EV Charging Optimization
+# pvbesscar - RL-based EV Charging Optimization
 
 **Optimización de carga EV con energía solar mediante Reinforcement Learning**
 
-Iquitos, Perú - Control inteligente de 38 sockets de carga (270 motos + 39 mototaxis/día) usando agentes RL (SAC/PPO/A2C) para minimizar CO₂ en red aislada.
+Iquitos, Perú — Control inteligente de 38 sockets de carga (270 motos + 39 mototaxis/día) usando agentes RL (SAC/PPO/A2C) para minimizar CO₂ en red aislada (factor 0.4521 kg CO₂/kWh).
 
 ---
 
-## 📢 Latest Updates (2026-05-26) - LIMPIEZA PROFUNDA + PIPELINE OE2 REPARADO ⭐⭐⭐
+## Latest Updates (2026-05-28) — Reward v7.5 + obs_dim=18 + Sincronización Total
+
+### Reward v7.5 — Tres objetivos OE3 equilibrados + BESS solar timing
+
+Reentrenamiento completo SAC → PPO → A2C con correcciones críticas sincronizadas en todos los archivos:
+
+**Pesos reward v7.5 (suma = 1.00) — idénticos para SAC/PPO/A2C:**
+
+| Componente | Peso | Descripción |
+|---|---|---|
+| `direct_co2` | **0.25** | OE3-1: CO₂ directa — reducción ICE→EV electrificación |
+| `indirect_co2` | **0.30** | OE3-2: CO₂ indirecta — minimizar grid import diesel |
+| `ev_satisfaction` | **0.25** | OE3-3: satisfacción/cantidad carga EV (motos+mototaxis) |
+| `bess_solar_timing` | **0.10** | regla operacional: BESS carga con solar (6-18h), NO diesel nocturno |
+| `solar` | **0.05** | autoconsumo PV |
+| `grid_stability` | **0.03** | estabilidad red (suavizado rampas) |
+| `cost` | **0.02** | costo tarifario OSINERGMIN HP/HFP |
+
+**Correcciones aplicadas:**
+- `obs_dim`: 16 → **18** (añadidas obs[16]=`tarifa_norm` y obs[17]=`is_hora_punta` — agente ve tarifa HP/HFP)
+- SAC `target_entropy`: -39.0 → **-3.0** (acción 3D, no 39D — error crítico que causaba alpha collapse)
+- SAC `learning_rate`: 3e-4 → **1e-4** (grad_norm explosiva 132.93 → estabilidad)
+- SAC `buffer_size`: 200k → **100k** (Raffin 2022: suficiente para 438k steps)
+- SAC `learning_starts`: 8760 → **5000** (warmup más rápido)
+- Regla BESS: penaliza carga nocturna con diesel (-1.0), premia carga solar (+solar_frac)
+- Archivos sincronizados (sin discrepancias): `ev_charging_wrapper.py`, `sac/ppo/a2c_config.yaml`, `agents_config.yaml`, `sac_optimized.json`, `default.yaml`, `default_optimized.yaml`, `rewards.py`, `core/reward.py`
+
+**Verificación de consistencia (72 tests pasan):**
+```
+[+] ev_charging_wrapper.py [_W_*]         OK  suma=1.00
+[+] configs/agents/sac_config.yaml        OK  suma=1.00
+[+] configs/agents/ppo_config.yaml        OK  suma=1.00
+[+] configs/agents/a2c_config.yaml        OK  suma=1.00
+[+] configs/agents/agents_config.yaml     OK  suma=1.00
+[+] configs/sac_optimized.json            OK  suma=1.00
+[+] configs/default.yaml                  OK  suma=1.00
+[+] configs/default_optimized.yaml        OK  suma=1.00 (a2c/ppo/sac)
+[+] rewards.py MultiObjectiveWeights      OK  suma=1.00
+[+] core/reward.py co2_dual_focus()       OK  suma=1.00
+[+] train_sac/ppo/a2c_citylearn.py        OK  obs_dim=18
+[+] SAC_HYPERPARAMS (te/lr/buffer)        OK  target_entropy=-3.0, lr=1e-4
+72 tests de integración: PASSED
+```
+
+---
+
+## Latest Updates (2026-05-26) — Limpieza profunda + pipeline OE2 reparado
 
 ### 🧹 Deep Repo Evaluation & Cleanup (2026-05-26)
 **Evaluación completa del repositorio: módulos huérfanos eliminados, pipeline OE2 reparado y verificado**

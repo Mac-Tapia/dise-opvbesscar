@@ -1,80 +1,56 @@
 ppo:
   name: Proximal Policy Optimization
-  description: On-policy agent with clipped objective
+  description: On-policy agent with clipped objective (SB3 PPO + VecNormalize)
+  # Hiperparámetros sincronizados con train_ppo_citylearn.py PPO_HYPERPARAMS v10.0
+  # Refs: Engstrom et al 2020, Andrychowicz et al 2021, Schulman et al 2017
   training:
     episodes: 50
-    train_steps: 438000
-    n_steps: 2048
-    batch_size: 256
-    n_epochs: 10
-    learning_rate: 2e-4
-    lr_schedule: linear
-    lr_final_ratio: 0.5
-  ppo:
-    gamma: 0.99
-    gae_lambda: 0.98
+    total_timesteps: 438000       # 50 ep × 8760 h/año
+    checkpoint_every_steps: 8760  # guardar cada episodio completo
+    checkpoint_dir: checkpoints/PPO_CityLearn
+  hyperparams:
+    n_steps: 4096          # ~46% del episodio (mejor que 8760=100%, reduce varianza)
+    batch_size: 256        # GPU; 128 en CPU
+    n_epochs: 10           # crítico para convergencia (3 epochs → aprendizaje lento)
+    gamma: 0.88            # reducido: evita retornos explosivos en episodios 8760 steps
+    gae_lambda: 0.92       # reduce varianza en horizontes largos (Schulman 2017 Fig.4)
     clip_range: 0.2
-    clip_range_vf: 0.5
-    normalize_advantage: true
-  losses:
-    ent_coef: 0.01
+    ent_coef: 0.02         # mayor exploración para reward multi-objetivo 5 componentes
     vf_coef: 0.5
-    max_grad_norm: 1.0
-  entropy_schedule:
-    type: exponential
-    final_value: 0.001
-    decay_rate: 0.999
+    max_grad_norm: 0.5
+    learning_rate: linear_1e-4_to_0  # schedule lineal 1e-4→0 (Engstrom 2020)
+    target_kl: 0.02        # detiene update si KL>0.02 (guardian activo con 10 epochs)
   network:
-    hidden_sizes:
-    - 256
-    - 256
-    activation: relu
-    ortho_init: true
+    # Actor: [256, 256, 128] | Critic: [512, 512, 256]
+    pi: [256, 256, 128]
+    vf: [512, 512, 256]
+    activation: tanh       # Tanh mejor que ReLU para PPO (bounded outputs)
+    ortho_init: true       # inicialización ortogonal (Engstrom 2020)
   normalization:
     normalize_observations: true
     normalize_rewards: true
-    reward_scale: 0.1
-    clip_obs: 5.0
-    clip_reward: 1.0
-  advanced:
-    use_sde: true
-    target_kl: 0.02
-    kl_adaptive: true
-    kl_adaptive_down: 0.5
-    kl_adaptive_up: 1.05
+    clip_obs: 10.0
+    clip_reward: 10.0
   multi_objective_weights:
-    direct_co2: 0.35  # P1: Direct CO2 Minimization (combustible vehicular evitado)
-    indirect_co2: 0.30 # P2: Indirect CO2 Minimization (grid import termico)
-    ev: 0.25          # P3: EV Satisfaction (SOC objetivo)
-    solar: 0.05       # P4: Solar Self-Consumption
-    grid: 0.05        # P5: Grid Stability
-  tariffs_osinergmin_usd_per_kwh:
-    generation_solar: 0.1
-    storage_bess: 0.06
-    distribution_ev_charge: 0.12
-    integrated_tariff: 0.28
-  device: auto
-  use_amp: true
+    # Pesos v7.4 — tres objetivos OE3 explícitos (idénticos SAC/PPO/A2C)
+    # Suma: 0.15+0.40+0.25+0.10+0.05+0.03+0.02 = 1.00
+    direct_co2: 0.25        # OE3-1: CO2 directa — reducción ICE→EV electrificación
+    indirect_co2: 0.30      # OE3-2: CO2 indirecta — minimizar grid import diesel
+    ev_satisfaction: 0.25   # OE3-3: satisfacción/cantidad carga EV (motos+mototaxis)
+    bess_solar_timing: 0.10 # regla op: BESS carga solar(6-18h), NO diesel nocturno
+    solar: 0.05             # autoconsumo PV
+    grid_stability: 0.03    # estabilidad red (suavizado rampas)
+    cost: 0.02              # costo OSINERGMIN HP/HFP (secundario)
+  device: cuda          # detectado automáticamente (CUDA si disponible)
   verbose: 1
-  log_interval: 500
-  checkpoint_freq_steps: 1000
-  save_final: true
   seed: 42
 performance:
-  expected_co2_reduction: 0.808
-  expected_solar_utilization: 0.798
-  expected_ev_satisfaction: 1.0
-  expected_bess_soc_avg: 0.85
-  motos_per_day_avg: 270
-  mototaxis_per_day_avg: 39
-  annual_ev_demand_kwh: 352887
-  cost_savings_usd: 30530
-  training_time_hours: 5
+  avg_reduccion_co2_pct: 59.23   # run abril 2026 (50 eps, CUDA)
+  validation_mean_reward: -859.73
+  training_time_hours: 0.34
+  device_used: cuda
 tariff:
   hp_soles_kwh: 0.45
   hfp_soles_kwh: 0.28
   difference_soles_kwh: 0.17
   factor_hp_hfp: 1.607
-rewards:
-  hp_weight: 0.4
-  hfp_weight: 0.15

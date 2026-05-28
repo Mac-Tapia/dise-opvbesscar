@@ -10,7 +10,7 @@ Two phases:
 - **OE2 (Dimensioning)**: Infrastructure specs — solar, BESS, chargers, demand profiles → `src/dimensionamiento/oe2/`
 - **OE3 (Control)**: Select the best RL agent to control EV charging and minimize CO₂ → `src/agents/` + `src/citylearnv2/`
 
-**Results (validated):** SAC selected as winner — 62.8% CO₂ reduction vs F₀ baseline (2,622,735 kg/year), Kruskal-Wallis H=81.65, p=1.86×10⁻¹⁸.
+**Results (validated):** SAC selected as winner — 55.6% CO₂ reduction vs F₀ (3,123,866 kg/year), corrected PVWatts+bifacial solar model (5.82 GWh/year). Statistical ranking: SAC > PPO ≈ A2C across 50 episodes each.
 
 ## Commands
 
@@ -66,19 +66,19 @@ python -c "import pandas as pd; df=pd.read_csv('data/oe2/Generacionsolar/pv_gene
 ### Data Flow: OE2 → OE3
 
 ```
-OE2 Generators (run once, or via pipeline)
-  solar_pvlib.py   → data/oe2/Generacionsolar/pv_generation_citylearn2024.csv  (8,760h, 11 cols)
-  bess.py          → data/oe2/bess/bess_ano_2024.csv                            (8,760h, 35 cols)
-  chargers.py      → data/oe2/chargers/chargers_ev_ano_2024_v3.csv              (8,760h, 1060 cols)
+OE2 Generators (run once, or via pipeline — order matters: solar+chargers → BESS)
+  solar_pvlib.py   → data/oe2/Generacionsolar/pv_generation_citylearn2024.csv  (8,760h, 11 cols)  [1]
+  chargers.py      → data/oe2/chargers/chargers_ev_ano_2024_v3.csv              (8,760h, 1060 cols) [2]
+  bess.py          → data/oe2/bess/bess_ano_2024.csv  (usa solar+chargers reales) (8,760h, 35 cols) [3]
   [external]       → data/oe2/demandamallkwh/demandamallhorakwh.csv             (8,760h, 6 cols)
          ↓ scripts/generate_oe2_datasets.py (pipeline integrado)
   src/dataset_builder_citylearn/data_loader.py (OE2DataLoader)
     — valida schema; OE2ValidationError si datos inconsistentes
     — escribe: data/iquitos_ev_mall/{solar_generation,bess_timeseries,chargers_timeseries,mall_demand}.csv
          ↓
-  src/citylearnv2/ev_charging_wrapper.py  ← lee de data/iquitos_ev_mall/ (obs 16D, action 3D)
+  src/citylearnv2/ev_charging_wrapper.py  ← lee de data/iquitos_ev_mall/ (obs 18D, action 3D)
   src/citylearnv2/env_factory.py          → CityLearnEnv + IquitosEVChargingWrapper
-    — obs_dim=16, action_dim=3: [bess_action∈[-1,+1], ev_motos_frac∈[0,1], ev_mototaxis_frac∈[0,1]]
+    — obs_dim=18, action_dim=3: [bess_action∈[-1,+1], ev_motos_frac∈[0,1], ev_mototaxis_frac∈[0,1]]
          ↓
   src/agents/{sac,ppo_sb3,a2c_sb3}.py  ← stable-baselines3 + auto-device detection
   checkpoints/{SAC,PPO,A2C}/           ← .zip snapshots; auto-resume si existe
@@ -87,7 +87,7 @@ OE2 Generators (run once, or via pipeline)
   outputs/docx/INFORME_OE3_*.docx      ← Word tesis (current: v11)
 ```
 
-**Observaciones CityLearn v2 (16D):** `[month, hour, day_type, temp, irr_diff, irr_dir, co2_intensity, mall_kw, solar_kw, bess_soc, net_elec, ev_motos_norm, ev_mototaxis_norm, ev_motos_debt, ev_mototaxis_debt, hour_sin]`
+**Observaciones CityLearn v2 (18D):** `[month, hour, day_type, temp, irr_diff, irr_dir, co2_intensity, mall_kw, solar_kw, bess_soc, net_elec, ev_motos_norm, ev_mototaxis_norm, ev_motos_debt, ev_mototaxis_debt, hour_sin, tarifa_norm, is_hora_punta]`
 
 **Señales controladas:** `bess_timeseries.csv` (BESS SOC, dispatch) + `chargers_timeseries.csv` (38 sockets, fracción carga)
 
@@ -131,7 +131,7 @@ tests/integration/                  ← 72 tests covering env, config, reward, e
 | `src/rl/obs_builder.py` | `ObsBuilder` — normalized obs vector, scales with N_types |
 | `src/dimensionamiento/oe2/disenocargadoresev/chargers.py` | Charger specs v5.4+ — `@dataclass(frozen=True)` immutable `ChargerSpec`/`ChargerSet`; stochastic EV arrival simulation |
 | `src/dataset_builder_citylearn/data_loader.py` | OE2DataLoader v5.8 — single source of truth for all data paths; `OE2ValidationError` on bad data |
-| `src/dataset_builder_citylearn/rewards.py` | `MultiObjectiveWeights` — CO2_DUAL_FOCUS v7.0 reward (5 components, weights must sum to 1.0) |
+| `src/dataset_builder_citylearn/rewards.py` | `MultiObjectiveWeights` — CO2_DUAL_FOCUS v7.5 reward (7 components, weights must sum to 1.0) |
 | `src/citylearnv2/env_factory.py` | `create_iquitos_env()` / `create_iquitos_env_for_sb3()` — entry point to training environment |
 | `src/citylearnv2/ev_charging_wrapper.py` | `IquitosEVChargingWrapper` — maps 3D action to 38 sockets + integrates CO₂ reward |
 | `src/agents/sac.py` | SAC agent with `detect_device()` (CUDA/MPS/CPU auto-select); `_patch_citylearn_sac_update()` for CityLearn compatibility |
@@ -141,16 +141,25 @@ tests/integration/                  ← 72 tests covering env, config, reward, e
 | `tests/oe2/` | Unit tests validating OE2 specs and data loader paths |
 | `tests/integration/` | Integration tests for universal env, site config, reward, energy balance |
 
-### Reward Function (CO2_DUAL_FOCUS v7.0)
+### Reward Function (CO2_DUAL_FOCUS v7.5 — Tres objetivos OE3 equilibrados)
 
 ```python
-# src/dataset_builder_citylearn/rewards.py
-r_direct_co2 = 0.35  # combustible vehicular evitado (PRIORITY 1)
-r_co2        = 0.30  # grid import × 0.4521 kg CO₂/kWh (PRIORITY 2)
-r_ev         = 0.25  # EV charge completion by deadline (PRIORITY 3)
-r_solar      = 0.05  # PV self-consumption (PRIORITY 4)
-r_grid       = 0.05  # grid stability / ramp smoothing (PRIORITY 5)
-# weights auto-normalized in __post_init__ — must sum to 1.0
+# src/citylearnv2/ev_charging_wrapper.py  ← pesos REALES usados por SAC/PPO/A2C
+# Suma: 0.25+0.30+0.25+0.10+0.05+0.03+0.02 = 1.00
+_W_DIRECT_CO2   = 0.25  # OE3-1: CO₂ directa — reducción ICE→EV (transporte)
+_W_INDIRECT_CO2 = 0.30  # OE3-2: CO₂ indirecta — grid import × 0.4521 kg CO₂/kWh
+_W_EV_COMPLETE  = 0.25  # OE3-3: EV satisfaction/cantidad carga (motos+mototaxis)
+_W_BESS_SOLAR   = 0.10  # regla op: BESS carga solar(6-18h), NO diesel nocturno
+_W_SOLAR        = 0.05  # autoconsumo PV
+_W_GRID_STABLE  = 0.03  # estabilidad red (suavizado rampas)
+_W_COST         = 0.02  # costo tarifario OSINERGMIN HP(0.45 S/./kWh 18-23h)
+                       # Fuente: Electro Oriente S.A. — Res. N° 047-2024-OS/CD
+# Evolución: v7.0→v7.1→v7.2→v7.3→v7.4→v7.5 (2026-05-28 current)
+# SINCRONIZADO en: ev_charging_wrapper.py, sac/ppo/a2c_config.yaml,
+#   agents_config.yaml, sac_optimized.json, default.yaml, default_optimized.yaml,
+#   rewards.py (MultiObjectiveWeights), core/reward.py (RewardWeights.co2_dual_focus)
+# obs_dim: 18 (base=11 + ev=5 + tarifa=2: tarifa_norm, is_hora_punta)
+# SAC: target_entropy=-3.0 (3D action), lr=1e-4, buffer=100k, learning_starts=5000
 ```
 
 ### Checkpoint Resume Pattern
@@ -171,12 +180,15 @@ agent.learn(total_timesteps=N, reset_num_timesteps=False)  # accumulates steps a
 - **`@dataclass(frozen=True)`** for all spec/config containers (see `ChargerSpec`, `ChargerSet`, `MultiObjectiveWeights`)
 - **Validate early**: call `validate_env_spaces(env)` before agent init; `OE2DataLoader` raises `OE2ValidationError` immediately on bad paths/schema
 
-## CO₂ Baselines (Thesis Results)
+## CO₂ Baselines (Resultados OE3 — PVWatts+bifacial, reward v7.5)
 
 | Baseline | CO₂ (kg/año) | Description |
 |----------|-------------|-------------|
-| F₀ | 7,054,000 | Sin solar, sin BESS, sin RL |
-| F₁ | 5,790,639 | Con solar + BESS, sin RL |
-| **F₂ SAC ep48** | **2,622,735** | Con solar + BESS + SAC (SELECTED) |
+| F₀ | 7,053,691 | Sin solar, sin BESS, sin RL |
+| F₁ | 5,777,812 | Con solar + BESS, sin RL (reference dispatch) |
+| **F₂ SAC ep50** | **3,123,866** | Con solar + BESS + SAC — **55.6% reducción vs F₀** |
+| F₂ PPO ep50 | 3,370,347 | Con solar + BESS + PPO — 52.2% reducción vs F₀ |
+| F₂ A2C ep50 | 3,370,840 | Con solar + BESS + A2C — 52.2% reducción vs F₀ |
 
-CO₂ factor grid Iquitos: **0.4521 kg CO₂/kWh** (isolated thermal grid)
+Solar PV: **5,819,332 kWh/año** (4,162 kWp PVWatts + 8.7% bifacial, Jinko Tiger Neo JKM580N-72HL4-BDV)
+CO₂ factor grid Iquitos: **0.4521 kg CO₂/kWh** (red térmica aislada)

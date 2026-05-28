@@ -35,11 +35,15 @@ a2c:
     overcharge_threshold: 0.95
     decay_rate: 0.98
   multi_objective_weights:
-    direct_co2: 0.35  # P1: Direct CO2 Minimization (combustible vehicular evitado)
-    indirect_co2: 0.30 # P2: Indirect CO2 Minimization (grid import termico)
-    ev: 0.25          # P3: EV Satisfaction (SOC objetivo)
-    solar: 0.05       # P4: Solar Self-Consumption
-    grid: 0.05        # P5: Grid Stability
+    # Pesos v7.4 — tres objetivos OE3 explícitos (idénticos SAC/PPO/A2C)
+    # Suma: 0.15+0.40+0.25+0.10+0.05+0.03+0.02 = 1.00
+    direct_co2: 0.25        # OE3-1: CO2 directa — reducción ICE→EV electrificación
+    indirect_co2: 0.30      # OE3-2: CO2 indirecta — minimizar grid import diesel
+    ev_satisfaction: 0.25   # OE3-3: satisfacción/cantidad carga EV (motos+mototaxis)
+    bess_solar_timing: 0.10 # regla op: BESS carga solar(6-18h), NO diesel nocturno
+    solar: 0.05             # autoconsumo PV
+    grid_stability: 0.03    # estabilidad red (suavizado rampas)
+    cost: 0.02              # costo OSINERGMIN HP/HFP (secundario)
   tariffs_osinergmin_usd_per_kwh:
     generation_solar: 0.1
     storage_bess: 0.06
