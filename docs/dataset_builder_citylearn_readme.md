@@ -60,7 +60,7 @@ df_solar = integrate_datasets.integrate_datasets()
 
 ```
 OE2 Módulos Base
-├── Solar       (8.29 GWh/año, 3,201 kW AC)
+├── Solar       (5.819 GWh/año, 3,201 kW AC)
 ├── Chargers    (565.9 MWh/año, 38 sockets - 270 motos + 39 mototaxis/día)
 └── BESS        (2,000 kWh, 400 kW)
         │
@@ -81,7 +81,7 @@ OE2 Módulos Base
 │  • energia_suministrada_al_ev_kwh (323 GWh)
 │  • energia_suministrada_al_mall_kwh (5,992 GWh)
 │  • energia_suministrada_a_red_kwh (1,804 GWh)
-│  • reduccion_indirecta_co2_kg_total (3,749 ton/año)
+│  • reduccion_indirecta_co2_kg_total (2,631 ton/año)
 └─ Output: pv_generation_citylearn_enhanced_v2.csv
         │
         ▼
@@ -140,25 +140,25 @@ OE2 Módulos Base
 | `energia_suministrada_al_ev_kwh` | Float | 323,327 | Solar+BESS → EV |
 | `energia_suministrada_al_mall_kwh` | Float | 5,992,294 | Solar+BESS → Mall |
 | `energia_suministrada_a_red_kwh` | Float | 1,804,800 | Solar excedente → Red |
-| `reduccion_indirecta_co2_kg_total` | Float | 3,749,046 | TODA solar × 0.4521 kg CO₂/kWh |
+| `reduccion_indirecta_co2_kg_total` | Float | 2,630,920 | TODA solar × 0.4521 kg CO₂/kWh |
 
 **Metodología CO₂ Indirecto:**
-- TODA la generación solar desplaza diesel (100% utilización)
+- TODA la generación solar generada desplaza energía térmica equivalente cuando se consume localmente o se gestiona mediante BESS
 - Factor: 0.4521 kg CO₂/kWh (sistema térmico Iquitos)
-- Total: 3,749 toneladas/año
+- Total: 2,631 toneladas/año
 
 ## 📊 Impacto Ambiental Total
 
 | Métrica | Motos | Mototaxis | Total |
 |---------|-------|-----------|-------|
 | **CO₂ Directo** | 475.8 ton | 293.2 ton | **769 ton** |
-| **CO₂ Indirecto** | — | — | **3,749 ton** |
-| **TOTAL CO₂ Reducido** | — | — | **4,518 ton/año** |
+| **CO₂ Indirecto** | — | — | **2,631 ton** |
+| **TOTAL CO₂ Reducido** | — | — | **3,400 ton/año** |
 
 **Equivalentes:**
-- 🌳 216,000+ árboles plantados (absorción anual)
-- 🚗 982,000 km de auto evitados
-- 👥 564 personas sin emisiones transporte (1 año)
+- 🌳 162,000+ árboles plantados (absorción anual aproximada)
+- 🚗 739,000 km de auto evitados (aprox.)
+- 👥 425 personas sin emisiones transporte (1 año, aprox.)
 
 ## 🔗 Integración con OE3 (Control)
 

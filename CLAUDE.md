@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Purpose
 
-**pvbesscar** optimizes EV charging for 38 electric sockets (270 motos + 39 mototaxis/day) using solar PV (4,050 kWp) + BESS (2,000 kWh / 400 kW) via RL agents (SAC/PPO/A2C) to minimize CO₂ in the isolated Iquitos grid (0.4521 kg CO₂/kWh).
+**pvbesscar** optimizes EV charging for 38 electric sockets (270 motos + 39 mototaxis/day) using solar PV (4,162 kWp DC / 3,201 kW AC; 5.819 GWh/year) + BESS (2,000 kWh / 400 kW) via RL agents (SAC/PPO/A2C) to minimize CO2 in the isolated Iquitos grid (0.4521 kg CO2/kWh).
 
 Two phases:
 - **OE2 (Dimensioning)**: Infrastructure specs — solar, BESS, chargers, demand profiles → `src/dimensionamiento/oe2/`
@@ -58,7 +58,7 @@ python scripts/reporting/generar_graficas_oe3_completo.py
 python scripts/reporting/generar_tablas_oe3.py
 
 # Verify data integrity
-python -c "import pandas as pd; df=pd.read_csv('data/oe2/Generacionsolar/pv_generation_citylearn2024.csv'); assert len(df)==8760, f'Solar ERROR: {len(df)} rows'; print('Solar OK')"
+python -c "import pandas as pd; df=pd.read_csv('data/oe2/Generacionsolar/pv_generation_citylearn2024.csv'); assert len(df)==8760, f'Solar ERROR: {len(df)} rows'; print(f'Solar OK: {df.energia_kwh.sum():,.0f} kWh/year')"
 ```
 
 ## Architecture
@@ -67,7 +67,7 @@ python -c "import pandas as pd; df=pd.read_csv('data/oe2/Generacionsolar/pv_gene
 
 ```
 OE2 Generators (run once, or via pipeline — order matters: solar+chargers → BESS)
-  solar_pvlib.py   → data/oe2/Generacionsolar/pv_generation_citylearn2024.csv  (8,760h, 11 cols)  [1]
+  solar_pvlib.py   → data/oe2/Generacionsolar/pv_generation_citylearn2024.csv  (8,760h, 5.819 GWh/year) [1]
   chargers.py      → data/oe2/chargers/chargers_ev_ano_2024_v3.csv              (8,760h, 1060 cols) [2]
   bess.py          → data/oe2/bess/bess_ano_2024.csv  (usa solar+chargers reales) (8,760h, 35 cols) [3]
   [external]       → data/oe2/demandamallkwh/demandamallhorakwh.csv             (8,760h, 6 cols)

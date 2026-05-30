@@ -59,7 +59,7 @@ Reentrenamiento completo SAC → PPO → A2C con correcciones críticas sincroni
 Se agregó el informe local de generación solar desde el procedimiento hasta los resultados descriptivos:
 
 - [Informe de generación solar: procedimiento y resultados descriptivos](data/oe2/Generacionsolar/informe_generacion_solar_procedimiento_resultados_descriptivos.md)
-- Dataset base: `data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv`
+- Dataset base canónico: `data/oe2/Generacionsolar/pv_generation_citylearn2024.csv`
 - Cobertura: 8,760 registros horarios, 365 días, zona `America/Lima`
 - Energía anual AC: **5.819 GWh/año**
 - Potencia máxima AC: **3,245.95 kW**
@@ -184,10 +184,10 @@ Secciones completas en el documento final:
 - Per vehicle: Motos 13.6 tCO₂/año, Mototaxis 9.9 tCO₂/año
 
 **REDUCCIÓN INDIRECTA (Generación - diesel desplazado):**
-- FV renewable: 8.29M kWh/año
+- FV renewable: 5.819M kWh/año
 - BESS renewable: 569k kWh/año
-- **Total renewable:** 8.41M kWh/año × 0.4521 kg CO₂/kWh
-- **TOTAL INDIRECTO: 3,804.3 tCO₂/año**
+- **Total renewable:** 6.388M kWh/año × 0.4521 kg CO₂/kWh
+- **TOTAL INDIRECTO: 2,887.6 tCO₂/año**
 
 **REDUCCIÓN TOTAL OPERACIONAL: 4,096.5 tCO₂/año**
 - Transporte directo: 243.3 tCO₂/año
@@ -236,7 +236,7 @@ Secciones completas en el documento final:
 ### ✅ OE2 (Dimensioning) - COMPLETADO (Infraestructura)
 Especificaciones de infraestructura confirmadas con visualizaciones completas de 6-FASES:
 - **19 cargadores** (15 motos + 4 mototaxis) × 2 sockets = **38 puntos de carga**
-- **Solar:** **4,050 kWp** PVGIS (hourly validated, 8,760 rows, 8.29M kWh/year)
+- **Solar:** **4,162 kWp DC / 3,201 kW AC** PVGIS/pvlib (8,760 rows, 5.819 GWh/year)
 - **BESS:** **2,000 kWh** max SOC (80% DoD, 95% efficiency, 20% min SOC)
   - **6-FASES Operacionales & Visualizadas:**
     - FASE 1 (6-9h): Carga BESS primero (PV→BESS prioritario)
@@ -369,7 +369,7 @@ assert len(df) == 8760, f'ERROR: Expected 8760 rows, got {len(df)}'
 print(f'✓ BESS data: {df.shape} rows/columns')
 
 # Check solar dataset
-df = pd.read_csv('data/interim/oe2/solar/pv_generation_timeseries.csv')
+df = pd.read_csv('data/oe2/Generacionsolar/pv_generation_citylearn2024.csv')
 assert len(df) == 8760, f'ERROR: Expected 8760 rows, got {len(df)}'
 print(f'✓ Solar data: {df.shape} rows/columns')
 
@@ -396,7 +396,7 @@ Galería interactiva con 10 gráficas completas mostrando:
 
 #### Gráfics Principales:
 1. **[00_BALANCE_INTEGRADO_COMPLETO.png](outputs/balance_energetico/00_BALANCE_INTEGRADO_COMPLETO.png)** ⭐
-   - **Generación solar real:** 6h-17h, pico 2,887 kW
+   - **Generación solar real:** 6h-17h, pico 3,246 kW
    - **Demanda EV:** perfil horario 9-22h (ramp-up 9-17h, punta 18-20h, descenso 21-22h)
      - Motos: 5.19 kWh/vehículo, 30 sockets (78.9%) | Taxis: 7.40 kWh/vehículo, 8 sockets (21.1%)
    - **Demanda Mall:** variable 0-2,763 kW
@@ -428,9 +428,9 @@ Galería interactiva con 10 gráficas completas mostrando:
 
 ### 📈 Datos Reales Integrados (2024):
 - **Generación Solar:** `data/oe2/Generacionsolar/pv_generation_citylearn2024.csv`
-  - Pico: 2,887 kW (vs. 4,050 kWp nominal)
+  - Pico: 3,245.95 kW (4,162 kWp DC / 3,201 kW AC nominal)
   - Perfil: 6h-17h (equinoxio Iquitos)
-  - Media anual: 946.6 kW
+  - Media anual: 664.3 kW
 
 - **Demanda Mall:** `data/oe2/demandamallkwh/demandamallhorakwh.csv`
   - Variable: 0 a 2,763 kW
@@ -462,7 +462,7 @@ pvbesscar/
 ├── src/
 │   ├── dimensionamiento/oe2/          # OE2: Dimensionamiento
 │   │   ├── disenocargadoresev/        # Specs chargers (19 units × 2 sockets)
-│   │   ├── generacionsolar/           # PVGIS solar generation (4,050 kWp)
+│   │   ├── generacionsolar/           # PVGIS/pvlib solar generation (4,162 kWp DC)
 │   │   └── balance_energetico/        # Energy balance validated
 │   ├── agents/                         # OE3: RL Agents (3 trained)
 │   │   ├── a2c_sb3.py                 # A2C = on-policy (59.8% CO₂ reducción vs F0)
@@ -484,7 +484,7 @@ pvbesscar/
 │   │   ├── bess/
 │   │   │   └── bess_ano_2024.csv (8,760 rows)
 │   │   ├── Generacionsolar/
-│   │   │   └── pv_generation_timeseries.csv (8,760 rows)
+│   │   │   └── pv_generation_citylearn2024.csv (8,760 rows)
 │   │   └── demandamallkwh/
 │   │       └── demand_*.csv (8,760 rows)
 │   └── interim/oe2/                    # Processed data
@@ -867,7 +867,7 @@ BESS_MIN_SOC_PERCENT: 20.0              # 20% minimum
 BESS_EFFICIENCY: 0.95                   # 95% round-trip
 
 # NORMALIZATION (977 columns)
-SOLAR_MAX_KW: 2887.0                    # Real max from PVGIS
+SOLAR_MAX_KW: 3245.95                   # Real max from PVGIS/pvlib
 MALL_MAX_KW: 3000.0                     # Real max demand
 CHARGER_MAX_KW: 3.7                     # Per socket: 7.4/2
 DEMAND_MAX_KW: 300.0                    # Peak total
@@ -881,7 +881,7 @@ MOTOTAXI_BATTERY_KWH: 7.4               # Taxi capacity
 # INFRASTRUCTURE
 N_CHARGERS: 19                          # Total chargers
 TOTAL_SOCKETS: 38                       # 19 × 2
-SOLAR_PV_KWP: 4050.0                    # Solar capacity
+SOLAR_PV_KWP: 4162.0                    # Solar DC nominal capacity
 BESS_CAPACITY_KWH: 2000.0               # BESS capacity ✅
 ```
 
@@ -936,18 +936,18 @@ TOTAL BASELINE:                          197,920 kg CO₂/año (sin reducción)
 **Componente 1: Reducción INDIRECTA por Solar PV**
 ```
 Generación Solar PV:
-├─ Capacidad instalada:                 4,050 kWp
-├─ Generación anual PVGIS:              1,217,300 MWh = 1,217,300,000 kWh
-├─ Aplicado a demanda grid (indirecto): ~1,217 MWh/año
+├─ Capacidad nominal:                   4,162 kWp DC / 3,201 kW AC
+├─ Generación anual PVGIS/pvlib:        5,819,332 kWh = 5.819 GWh
+├─ Aplicado a demanda grid (indirecto): ~5,819 MWh/año
 ├─ Factor CO₂ evitado:                  0.4521 kg CO₂/kWh
-└─ CO₂ INDIRECTO EVITADO:               1,217,300 × 0.4521 = 550,351 kg CO₂/año
+└─ CO₂ INDIRECTO EVITADO:               5,819,332 × 0.4521 = 2,630,920 kg CO₂/año
 
 Explicación:
-  Cuando el sistema solar genera 1,217 MWh/año, evita que esa energía
+  Cuando el sistema solar genera 5,819 MWh/año, evita que esa energía
   sea importada de la grid térmica de Iquitos.
   Reducción indirecta = Generación solar × factor CO₂ grid
-                     = 1,217,300 kWh × 0.4521 kg CO₂/kWh
-                     = 550,351 kg CO₂ evitado anualmente
+                     = 5,819,332 kWh × 0.4521 kg CO₂/kWh
+                     = 2,630,920 kg CO₂ evitado anualmente
 ```
 
 **Componente 2: Reducción DIRECTA por Carga EV desde Solar**
@@ -974,14 +974,14 @@ Explicación:
 ┌─────────────────────────────────────────────────────────────┐
 │ REDUCCIONES DE CO₂ CON RL SAC (ANUAL)                        │
 ├─────────────────────────────────────────────────────────────┤
-│ 1. Reducción INDIRECTA (solar vs grid):  550,351 kg CO₂    │
+│ 1. Reducción INDIRECTA (solar vs grid):  2,630,920 kg CO₂  │
 │ 2. Reducción DIRECTA (EV vs gasolina):   218,720 kg CO₂    │
 │ ─────────────────────────────────────────────────────────   │
-│ TOTAL REDUCCIÓN:                         769,071 kg CO₂    │
-│                                           (769.1 MT/año)    │
+│ TOTAL REDUCCIÓN:                         2,849,640 kg CO₂  │
+│                                           (2,849.6 t/año)   │
 │                                                              │
 │ Reducción vs Baseline:                   88.0%             │
-│ CO₂ evitado diario:                      2,108 kg/día      │
+│ CO₂ evitado diario:                      7,807 kg/día      │
 │ CO₂ evitado por vehículo (270 motos):    2.86 kg CO₂/moto  │
 │ CO₂ evitado por vehículo (39 taxis):     5.57 kg CO₂/taxi  │
 └─────────────────────────────────────────────────────────────┘
@@ -1108,14 +1108,14 @@ Por Origen de Energía (39 taxis × 365 días):
 │  REDUCCIÓN_INDIRECTA = Energía_Solar_Anual × Factor_CO₂_Grid
 │
 ├─ Sustitución:
-│  = 1,217,300 kWh × 0.4521 kg CO₂/kWh
-│  = 550,351 kg CO₂/año
+│  = 5,819,332 kWh × 0.4521 kg CO₂/kWh
+│  = 2,630,920 kg CO₂/año
 │
 ├─ Explicación:
 │  Cada kWh solar que genera evita importar 1 kWh de la grid térmica
 │  La grid emite 0.4521 kg CO₂ por kWh (fuel: diesel/gas natural)
 └─ Aplicación:
-   Reducción_Indirecta = 1,217,300 × 0.4521 = 550,351 kg CO₂ evitado
+   Reducción_Indirecta = 5,819,332 × 0.4521 = 2,630,920 kg CO₂ evitado
 ```
 
 #### **2. Reducción DIRECTA (EV vs Gasolina)**
@@ -1142,12 +1142,12 @@ c) TOTAL DIRECTO:
 ```
 ┌─ Cálculo:
 │  REDUCCIÓN_TOTAL = INDIRECTA + DIRECTA
-│  REDUCCIÓN_TOTAL = 550,351 + 205,260 = 755,611 kg CO₂/año
+│  REDUCCIÓN_TOTAL = 2,630,920 + 205,260 = 2,836,180 kg CO₂/año
 │
 ├─ Métricas Derivadas:
-│  ├─ Reducción kg/día:        755,611 ÷ 365 = 2,070 kg/día
-│  ├─ Reducción MetricTons/año: 755,611 ÷ 1000 = 755.6 MT/año
-│  ├─ Reduction %:             755,611 ÷ 857,920 × 100 = 88.1%
+│  ├─ Reducción kg/día:        2,836,180 ÷ 365 = 7,770 kg/día
+│  ├─ Reducción t/año:         2,836,180 ÷ 1000 = 2,836.2 t/año
+│  ├─ Reduction %:             depende del baseline de comparación usado
 │  │  (donde 857,920 = baseline grid 438,000 × 0.4521 + EVs 438,000 × 2.0)
 │  ├─ Equivalentes autos:      755,611 ÷ 2,400 km/8 L = 1,260 autos/año
 │  └─ Equivalentes árboles:    755,611 ÷ 92 kg/año = 8,213 árboles/año
@@ -1296,7 +1296,7 @@ outputs/comparative_analysis/
 
 | Phase | Status | Details |
 |-------|--------|---------|
-| **OE2 (Dimensioning)** | ✅ 100% Completo | Solar 4,050 kWp + BESS 2,000 kWh + 38 tomas — validado |
+| **OE2 (Dimensioning)** | ✅ 100% Completo | Solar 4,162 kWp DC / 3,201 kW AC + BESS 2,000 kWh + 38 tomas — validado |
 | **OE3 (Control RL)** | ✅ 100% Completo | SAC seleccionado — F₂=2,622,735 kg CO₂/año, 62.8% reducción |
 | **Entrenamiento (50 eps)** | ✅ 3/3 Completados | SAC ep48, PPO ep40, A2C ep3 — 438,000 pasos c/u |
 | **Validación estadística** | ✅ Completada | KW H=81.65 p=1.86×10⁻¹⁸, Wilcoxon p=8.88×10⁻¹⁶ |

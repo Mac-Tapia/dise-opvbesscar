@@ -96,8 +96,9 @@ P_PV(t) = A · η_panel · f_cov · G_eff(t) · η_inv · (1 - f_loss)
 where `G_eff(t)` is the plane-of-array irradiance (W/m²) computed by PVLib from GHI,
 temperature, wind speed, tilt, and azimuth.
 
-For Iquitos: `A = 15,200 m²`, `η = 19.9%`, `f_cov = 0.65`, `η_inv = 95.6%`.
-Peak installed: **4,050 kWp**.
+For Iquitos, the current PVGIS/pvlib dataset uses a 4,162 kWp DC / 3,201 kW AC plant,
+10° tilt, north orientation, and 18,535 m² of utilized area.
+Annual generation: **5.819 GWh/year**. Peak AC power: **3,245.95 kW**.
 
 ### 5. CO₂ Accounting — Dual Model
 

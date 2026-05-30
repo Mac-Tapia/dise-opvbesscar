@@ -1,6 +1,6 @@
 # 📋 RUTAS DEFINITORIAS DE DATASETS v5.8
 
-**Actualizado:** 17 Feb 2026  
+**Actualizado:** 30 May 2026
 **Versión anterior:** v5.7  
 **Status:** ✅ SINGLE SOURCE OF TRUTH (SSOT)
 
@@ -12,7 +12,7 @@
 
 | Dataset | Ruta Canónica | Validación |
 |---------|---------------|-----------|
-| **Solar PV** | `data/oe2/Generacionsolar/pv_generation_citylearn2024.csv` | 8,760 filas ✅ |
+| **Solar PV** | `data/oe2/Generacionsolar/pv_generation_citylearn2024.csv` | 8,760 filas, 5.819 GWh/año ✅ |
 | **BESS** | `data/oe2/bess/bess_ano_2024.csv` | 8,760 filas ✅ |
 | **Chargers EV** | `data/oe2/chargers/chargers_ev_ano_2024_v3.csv` | 8,760 filas, 38 sockets ✅ |
 | **Mall Demand** | `data/oe2/demandamallkwh/demandamallhorakwh.csv` | 8,760 filas ✅ |
@@ -23,7 +23,7 @@
 
 ### OE2 Primary (Source of Truth)
 ```
-data/oe2/Generacionsolar/pv_generation_citylearn2024.csv   → Solar (8,760 filas) ✅
+data/oe2/Generacionsolar/pv_generation_citylearn2024.csv   → Solar (8,760 filas, 5.819 GWh/año) ✅
 data/oe2/bess/bess_ano_2024.csv                             → BESS (8,760 filas) ✅
 data/oe2/chargers/chargers_ev_ano_2024_v3.csv               → Chargers (8,760 filas, 38 sockets) ✅
 data/oe2/demandamallkwh/demandamallhorakwh.csv              → Mall Demand (8,760 filas) ✅
@@ -31,7 +31,7 @@ data/oe2/demandamallkwh/demandamallhorakwh.csv              → Mall Demand (8,7
 
 ### OE2 Alternativas (válidas si primarias no existen)
 ```
-data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv
+data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv  → copia ampliada con columnas descriptivas
 data/oe2/Generacionsolar/pv_generation_citylearn_enhanced_v2.csv
 data/oe2/bess/bess_hourly_dataset_2024.csv
 ```
@@ -108,6 +108,17 @@ for name, path in canonical_datasets.items():
 | BESS primaria | bess_hourly_dataset_2024 | bess_ano_2024 |
 | Validaciones | Manual | Automated checks |
 | Documentación | Básica | Completa con ejemplos |
+
+---
+
+## 📡 Solar PV vigente
+
+- Dataset canónico: `data/oe2/Generacionsolar/pv_generation_citylearn2024.csv`
+- Informe descriptivo: `data/oe2/Generacionsolar/informe_generacion_solar_procedimiento_resultados_descriptivos.md`
+- Capacidad nominal: 4,162 kWp DC / 3,201 kW AC
+- Energía anual: 5,819,332 kWh/año
+- Potencia máxima: 3,245.95 kW
+- CO2 indirecto evitado: 2,630,920 kg CO2/año
 
 ---
 

@@ -12,6 +12,21 @@ El proyecto sigue [Versionado Semántico](https://semver.org/lang/es/):
 
 ---
 
+## [5.6] - 2026-05-30
+
+### Documentación
+
+#### Sistema Solar (PV)
+- **Informe nuevo:** `data/oe2/Generacionsolar/informe_generacion_solar_procedimiento_resultados_descriptivos.md`
+- **Dataset canónico:** `data/oe2/Generacionsolar/pv_generation_citylearn2024.csv`
+- **Capacidad DC nominal:** 4,162 kWp
+- **Capacidad AC nominal:** 3,201 kW
+- **Producción anual:** 5,819,332 kWh (5.819 GWh)
+- **Potencia máxima AC:** 3,245.95 kW
+- **Reducción indirecta:** 2,630,920 kg CO2/año
+
+---
+
 ## [5.5] - 2026-02-18
 
 ### Cambios
@@ -25,8 +40,8 @@ El proyecto sigue [Versionado Semántico](https://semver.org/lang/es/):
 - **Restricciones SOC:** Min 20%, Max 100%, Target mañana 100%, tarde 50%
 
 #### Sistema Solar (PV)
-- **Capacidad instalada:** Confirmada 4,050 kWp (DC)
-- **Producción anual:** 1,217,300 kWh (verificado en datos de 8,760 horas)
+- **Capacidad instalada:** Actualizada a 4,162 kWp DC / 3,201 kW AC
+- **Producción anual:** 5,819,332 kWh (verificado en datos de 8,760 horas)
 - **Utilización:** 79.8%
 - **Distribución:</b>
   - Consumo directo EV: 25.1% (304.9 MWh)

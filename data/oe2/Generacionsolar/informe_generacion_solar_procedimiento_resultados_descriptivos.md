@@ -2,7 +2,7 @@
 
 Proyecto: pvbesscar - Iquitos, Peru
 Modulo OE2: Dimensionamiento y perfil horario de generacion solar
-Archivo base: `data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv`
+Archivo base canónico: `data/oe2/Generacionsolar/pv_generation_citylearn2024.csv`
 
 ## 1. Objetivo
 
@@ -222,8 +222,8 @@ Desde el punto de vista ambiental, la generacion solar evita aproximadamente 2,6
 
 | Archivo | Contenido |
 |---|---|
-| `pv_generation_hourly_citylearn_v2.csv` | Perfil horario completo con energia, potencia, irradiancia, ahorro y CO2 |
-| `pv_generation_citylearn2024.csv` | Dataset compacto para CityLearn |
+| `pv_generation_citylearn2024.csv` | Dataset canónico para CityLearn |
+| `pv_generation_hourly_citylearn_v2.csv` | Perfil horario ampliado con energia, potencia, irradiancia, ahorro y CO2 |
 | `pv_daily_energy.csv` | Energia diaria |
 | `pv_monthly_energy.csv` | Energia mensual |
 | `pv_dias_representativos.csv` | Perfiles horarios de dias representativos |

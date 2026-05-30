@@ -1,228 +1,75 @@
-# 📊 Generación Solar 2024 - Documentación
+# Generacion Solar PVGIS/pvlib 2024 - Iquitos
 
-## 📍 Descripción General
+Esta carpeta contiene el dataset canónico de generación solar horaria usado por OE2, BESS, CityLearn v2 y los agentes RL del proyecto `pvbesscar`.
 
-Se ha generado un perfil completo de **generación solar horaria para el año 2024** en Iquitos, Perú para el entrenamiento de agentes RL en el sistema pvbesscar.
+## Dataset Canónico
 
-### 📌 Ubicación
-- **Latitud:** 3.74°S
-- **Longitud:** 73.27°W
-- **Ciudad:** Iquitos, Perú (Amazonía)
-- **Zona climática:** Tropical ecuatorial
+| Elemento | Valor |
+|---|---:|
+| Archivo principal | `data/oe2/Generacionsolar/pv_generation_citylearn2024.csv` |
+| Perfil ampliado | `data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv` |
+| Registros | 8,760 horas |
+| Cobertura | 365 días x 24 h |
+| Zona horaria | America/Lima |
+| Ubicación | Iquitos, Perú |
+| Latitud | -3.75 |
+| Longitud | -73.25 |
 
-### 💨 Infraestructura Solar
-- **Capacidad instalada:** 4,050 kWp
-- **Tipo de panel:** Silicio cristalino (η = 18%)
-- **Eficiencia inversor:** 96%
-- **Periodo:** Año 2024 (365 días)
+## Sistema Fotovoltaico
 
----
+| Parámetro | Valor |
+|---|---:|
+| Capacidad DC nominal | 4,162 kWp |
+| Capacidad AC nominal | 3,201 kW |
+| Módulo | Jinko Tiger Neo JKM580N 72HL4 BDV |
+| Inversor | Eaton Xpert1670 |
+| Inclinación | 10 grados |
+| Azimut | 0 grados, norte |
+| Área disponible | 20,637 m2 |
+| Área utilizada | 18,535 m2 |
 
-## 📋 Estructura del Archivo
+## Resultados Descriptivos
 
-**Archivo:** `data/oe2/Generacionsolar/solar_generation_profile_2024.csv`
+| Indicador | Valor |
+|---|---:|
+| Energía anual AC | 5,819,332 kWh |
+| Energía anual AC | 5.819 GWh |
+| Potencia media anual | 664.31 kW |
+| Potencia media en horas con producción | 1,366.36 kW |
+| Potencia máxima AC | 3,245.95 kW |
+| Hora de potencia máxima | 2024-10-18 11:00:00-05:00 |
+| Horas con producción | 4,259 h |
+| Factor de capacidad | 20.75% |
+| Performance ratio | 83.46% |
+| Yield específico | 1,398.21 kWh/kWp-año |
+| CO2 indirecto evitado | 2,630,920 kg CO2/año |
+| Ahorro solar estimado | S/ 1,629,413/año |
 
-**Tamaño:** ~818 KB
+## Archivos Relevantes
 
-**Registros:** 8,760 (1 por cada hora del año)
+| Archivo | Uso |
+|---|---|
+| `pv_generation_citylearn2024.csv` | Dataset canónico compacto para CityLearn |
+| `pv_generation_hourly_citylearn_v2.csv` | Dataset ampliado con ahorro, CO2, tarifas y alias `pv_kwh`/`pv_kw` |
+| `pv_daily_energy.csv` | Energía diaria |
+| `pv_monthly_energy.csv` | Energía mensual |
+| `pv_dias_representativos.csv` | Días de máxima generación, despejado, intermedio y nublado |
+| `solar_results.json` | Resumen técnico en JSON |
+| `CERTIFICACION_SOLAR_DATASET_2024.json` | Validación de integridad |
+| `informe_generacion_solar_procedimiento_resultados_descriptivos.md` | Informe metodológico y descriptivo completo |
+| `solar_technical_report.md` | Reporte técnico base generado por el pipeline |
 
-### Columnas
+## Uso en Código
 
-| Columna | Tipo | Unidad | Descripción |
-|---------|------|--------|-------------|
-| `fecha` | string | YYYY-MM-DD | Fecha en formato ISO (01 enero a 31 diciembre 2024) |
-| `hora` | int | 0-23 | Hora del día (0 = medianoche, 23 = 23:00) |
-| `irradiancia_ghi` | float | W/m² | Irradiancia solar global horizontal instantánea |
-| `potencia_kw` | float | kW | Potencia activa generada (AC) en el punto de interconexión |
-| `energia_kwh` | float | kWh | Energía generada en esa hora (= potencia_kw × 1h) |
-| `temperatura_c` | float | °C | Temperatura ambiente |
-| `velocidad_viento_ms` | float | m/s | Velocidad del viento a 10m |
-
----
-
-## 📈 Estadísticas Generales
-
-### Irradiancia Solar (GHI)
-```
-Mínimo:    0.00 W/m²
-Máximo:    517.34 W/m²
-Promedio:  142.38 W/m²
-Desv. Est: 166.20 W/m²
-```
-
-**Interpretación:** 
-- Irradiancia máxima moderada (~517 W/m²) típica de trópicos con alta nubosidad
-- Nubosidad media: ~50-55% (Iquitos tiene clima muy nublado)
-- Variación estacional presente
-
-### Potencia Generada (kW)
-```
-Mínimo:    0.00 kW
-Máximo:    1,982.67 kW (49% de capacidad máxima teórica)
-Promedio:  545.20 kW (13.5% de capacidad instalada)
-Desv. Est: 637.93 kW
-```
-
-**Interpretación:**
-- El sistema funciona a factor de carga promedio de 13.5% (típico para trópicos)
-- Máxima potencia ~50% de la nominal (limitado por nubosidad)
-- Variabilidad alta (desv. est. = 117% del promedio)
-
-### Energía Generada (kWh)
-```
-Total anual:   4,775,947.72 kWh (~4.78 GWh)
-Promedio/hora: 545.20 kWh
-Promedio/día:  ~13,085 kWh
-```
-
-**Interpretación:**
-- ~1.18 MWh/kWp/año (típico para ubicación tropical con nubosidad)
-- Factor de capacidad anual: 13.5%
-- Suficiente para alimentar 38 sockets con demanda de ~50 kW
-
-### Temperatura Ambiente (°C)
-```
-Mínimo:    20.41°C (madrugada)
-Máximo:    31.95°C (tarde)
-Promedio:  26.34°C (tropical)
-Desv. Est: 2.89°C (variación mínima)
-```
-
-**Interpretación:**
-- Clima muy estable todo el año (característica tropical ecuatorial)
-- Reducción de eficiencia por temperatura: ~4% anual
-
-### Velocidad del Viento (m/s)
-```
-Mínimo:    0.50 m/s
-Máximo:    3.48 m/s
-Promedio:  2.00 m/s (vientos bajos, típico Amazonía)
-Desv. Est: 0.46 m/s
-```
-
-**Interpretación:**
-- Vientos bajos (protección natural de la Amazonía)
-- Refrigeración natural limitada
-- Pérdidas por temperatura más significativas
-
----
-
-## 🔬 Metodología de Generación
-
-### Modelo de Radiación Solar
-El perfil fue generado usando un **modelo sintético realista** basado en:
-
-1. **Ecuación solar clara (Clear-Sky):**
-   - Posición solar horaria
-   - Ángulo de elevación solar
-   - Longitud geográfica
-
-2. **Factor de nubosidad variable:**
-   - Patrón mensual de nubosidad (Iquitos: 45-52% cobertura)
-   - Menor nubosidad: enero-marzo (verano austral)
-   - Mayor nubosidad: junio-agosto (invierno austral)
-
-3. **Ajustes de eficiencia:**
-   - Pérdidas por temperatura: -0.4% por °C > 25°C
-   - Pérdidas por suciedad/degradación: 2%
-   - Eficiencia inversor: 96%
-
-### Temperatura Ambiente
-```
-Tm = 26.3°C - 4°C·cos((h-14)π/12) + ruido(0, 0.5)
-```
-Donde `h` = hora del día (0-23)
-
-Patrón: Mínimo a las 5:00 AM, máximo a las 14:00 PM
-
-### Velocidad del Viento
-```
-v = 2.0 + 0.5·sin(h·π/12) + ruido(0, 0.3) [1.5, 5.0]
-```
-Variación diaria moderada, clipped a rango realista
-
----
-
-## ✅ Validación del Dataset
-
-- ✓ Total de registros: 8,760 (365 días × 24 horas)
-- ✓ Cobertura temporal: Enero 1 - Diciembre 30, 2024
-- ✓ Horas disponibles: 0-23 (todas presentes)
-- ✓ Sin valores faltantes (NaN)
-- ✓ Rangos realistas para ubicación tropical
-- ✓ Correlación temperatura-radiación válida
-- ✓ Formato CSV estándar UTF-8
-
----
-
-## 🎯 Casos de Uso
-
-### 1. Entrenamiento de Agentes RL
-- **SAC, PPO, A2C:** Agentes aprenden patrones de radiación solar
-- **Horizonte temporal:** 1 año completo (patrones estacionales)
-- **Resolución:** Horaria (compatible con CityLearn v2)
-
-### 2. Optimización de Despacho de Chargers
-- Máximo aprovechamiento de energía solar disponible
-- Minimización de carga desde grid (cost + CO₂)
-- Balance con demanda de EVs
-
-### 3. Análisis de Variabilidad
-- Pronóstico de generación solar
-- Dimensionamiento de BESS
-- Planificación de mantenimiento
-
-### 4. Evaluación de Desempeño
-- Baseline: generación sin control inteligente
-- Mejora: con control RL (esperado +20-30% solar utilization)
-
----
-
-## 📊 Visualizaciones Recomendadas
-
-Crear gráficos con:
-1. **Potencia horaria por mes** (heatmap)
-2. **Comparación radiación vs generación** (scatter)
-3. **Distribución de potencia** (histograma)
-4. **Ciclo diario promedio** (perfil horario)
-5. **Variabilidad temporal** (rolling std, seasonal decomposition)
-
----
-
-## 🔧 Integración con CityLearn
-
-El archivo está optimizado para:
-- **Cargador:** `DatasetBuilder.add_solar_timeseries()`
-- **Validación:** Exactamente 8,760 timesteps
-- **Formato:** CSV con columnas estándar
-- **Tipos:** float32 compatible con PyTorch/TensorFlow
-
-**Uso en código:**
 ```python
-solar_df = pd.read_csv("data/oe2/Generacionsolar/solar_generation_profile_2024.csv")
-# Usar columna "energia_kwh" para building.energy_simulation.solar_generation
+import pandas as pd
+
+solar_df = pd.read_csv("data/oe2/Generacionsolar/pv_generation_citylearn2024.csv")
+assert len(solar_df) == 8760
+energia_anual = solar_df["energia_kwh"].sum()
+print(f"Energía anual solar: {energia_anual:,.0f} kWh")
 ```
 
----
+## Nota
 
-## 📌 Notas Importantes
-
-1. **Año bisiesto:** 2024 es bisiesto (366 días), pero dataset usa 365 días estándar + enero 1
-2. **Completitud:** 8,760 horas = año estándar de 365 días
-3. **Precisión:** Modelo sintético con incertidumbre ±5-10% respecto a PVGIS
-4. **Licencia:** Datos generados, no hay restricciones de uso
-
----
-
-## 📍 Archivo de Salida
-
-```
-data/oe2/Generacionsolar/
-├── solar_generation_profile_2024.csv  [818 KB, 8,760 registros]
-└── README.md (este archivo)
-```
-
-**Generado:** 2026-02-04
-**Versión:** 1.0
-**Estado:** ✅ Listo para producción
-
+Los archivos históricos con nombres `solar_generation_profile_2024.csv` o rutas en `data/interim/oe2/solar/` no deben usarse como fuente primaria. La fuente de verdad actual es `pv_generation_citylearn2024.csv`.

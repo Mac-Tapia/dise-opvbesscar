@@ -4,7 +4,7 @@
 ## 🎯 Project Overview
 
 **pvbesscar** optimizes EV charging for 38 electric sockets (270 motos + 39 mototaxis/day) using:
-- **Solar PV:** 4,050 kWp generation
+- **Solar PV:** 4,162 kWp DC / 3,201 kW AC generation, 5.819 GWh/year
 - **Battery Storage (BESS):** 2,000 kWh / 400 kW with 6-phase adaptive control
 - **Reinforcement Learning:** SAC/PPO/A2C agents for CO₂ minimization
 - **Location:** Iquitos, Peru (Isolated grid, 0.4521 kg CO₂/kWh thermal generation)
