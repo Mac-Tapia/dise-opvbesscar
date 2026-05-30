@@ -11,7 +11,7 @@ import matplotlib.patches as mpatches
 import matplotlib.ticker as mticker
 from matplotlib.patches import FancyArrowPatch
 from graphics_utils import (
-    C_SAC, C_PPO, C_A2C, C_DIFF,
+    C_SAC, C_PPO, C_A2C, C_BL, C_DIFF,
     load_training_data, get_output_dir, save_figure
 )
 
@@ -29,14 +29,30 @@ sac_min_ep  = int(sac.loc[sac['co2_control_kg'].idxmin(), 'episodio'])
 ppo_min_ep  = int(ppo.loc[ppo['co2_control_kg'].idxmin(), 'episodio'])
 a2c_min_ep  = int(a2c.loc[a2c['co2_control_kg'].idxmin(), 'episodio'])
 
-# Diferencias confirmadas
-diff_sac_ppo = ppo_min_val - sac_min_val   # 164,305
-diff_sac_a2c = a2c_min_val - sac_min_val   # 212,123
-
 # Reducciones vs baseline
 red_sac = (bl_val - sac_min_val) / bl_val * 100
 red_ppo = (bl_val - ppo_min_val) / bl_val * 100
 red_a2c = (bl_val - a2c_min_val) / bl_val * 100
+
+agent_rows = [
+    {'name': 'SAC', 'value': sac_min_val, 'episode': sac_min_ep, 'reduction': red_sac, 'color': C_SAC},
+    {'name': 'PPO', 'value': ppo_min_val, 'episode': ppo_min_ep, 'reduction': red_ppo, 'color': C_PPO},
+    {'name': 'A2C', 'value': a2c_min_val, 'episode': a2c_min_ep, 'reduction': red_a2c, 'color': C_A2C},
+]
+best_agent = min(agent_rows, key=lambda row: row['value'])
+
+
+def pair_label(name_a: str, val_a: float, name_b: str, val_b: float) -> str:
+    """Etiqueta comparativa para pares de agentes; menor F2 es mejor."""
+    if np.isclose(val_a, val_b):
+        return f'{name_a} = {name_b}\n0 kg/año'
+    winner, loser = (name_a, name_b) if val_a < val_b else (name_b, name_a)
+    return f'{winner} menor que {loser}\n{abs(val_a - val_b):,.0f} kg/año'
+
+
+def delta_vs_best_text(row: dict) -> str:
+    delta = row['value'] - best_agent['value']
+    return 'óptimo' if np.isclose(delta, 0.0) else f'+{delta:,.0f} kg'
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Datos para barras
@@ -95,7 +111,7 @@ ax_abs.annotate(
 )
 ax_abs.text(
     (x[0] + x[1]) / 2, min(sac_min_val, ppo_min_val) - 90_000,
-    f'Δ SAC–PPO\n+{diff_sac_ppo:,.0f} kg/año',
+    pair_label('SAC', sac_min_val, 'PPO', ppo_min_val),
     ha='center', va='top', fontsize=10, color=C_DIFF, fontweight='bold',
     bbox=dict(boxstyle='round,pad=0.35', fc='#F4ECF7', ec=C_DIFF, lw=1.2, alpha=0.95)
 )
@@ -109,7 +125,7 @@ ax_abs.annotate(
 )
 ax_abs.text(
     (x[0] + x[2]) / 2, sac_min_val - 270_000,
-    f'Δ SAC–A2C\n+{diff_sac_a2c:,.0f} kg/año',
+    pair_label('SAC', sac_min_val, 'A2C', a2c_min_val),
     ha='center', va='top', fontsize=10, color='#404040', fontweight='bold',
     bbox=dict(boxstyle='round,pad=0.35', fc='#F5F5F5', ec='#404040', lw=1.2, alpha=0.95)
 )
@@ -119,7 +135,7 @@ ax_abs.set_xticklabels(agentes, fontsize=12)
 ax_abs.set_ylabel('$F_2$ — CO₂ anual mínimo logrado (kg CO₂/año)', fontsize=11)
 ax_abs.set_title('$F_2$ mínimo absoluto por agente vs Baseline', fontsize=12, fontweight='bold')
 ax_abs.yaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f'{v/1e6:.3f} M'))
-y_min_ax = sac_min_val - 400_000
+y_min_ax = min(valores_kg) - 400_000
 y_max_ax = bl_val + 250_000
 ax_abs.set_ylim(y_min_ax, y_max_ax)
 ax_abs.grid(True, axis='y', alpha=0.3, linestyle='--', zorder=0)
@@ -140,10 +156,6 @@ for bar, red, val in zip(bar_red, reducciones[::-1], valores_kg[::-1]):
         color=bar.get_facecolor()
     )
 
-# Diferencias porcentuales entre PPO–SAC y A2C–SAC en términos de % reducción
-diff_red_ppo_sac = red_sac - red_ppo   # SAC reduce más en % que PPO
-diff_red_a2c_sac = red_sac - red_a2c
-
 ax_red.set_xlabel('Reducción de CO₂ vs Baseline (%)', fontsize=11)
 ax_red.set_title('Reducción relativa de $F_2$ vs Baseline\n(sin control de agente RL)',
                  fontsize=12, fontweight='bold')
@@ -152,14 +164,16 @@ ax_red.xaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f'{v:.1f}%')
 ax_red.grid(True, axis='x', alpha=0.3, linestyle='--', zorder=0)
 ax_red.spines[['top', 'right']].set_visible(False)
 
-# Cuadro resumen diferencias
+delta_lines = [
+    f"  {row['name']}: {delta_vs_best_text(row)}"
+    for row in sorted(agent_rows, key=lambda item: item['value'])
+]
 resumen = (
-    f"Ventaja de SAC sobre PPO:\n"
-    f"  {diff_sac_ppo:>10,.0f} kg CO₂/año ahorro adicional\n"
-    f"  Δ% reducción: +{diff_red_ppo_sac:.2f}pp\n\n"
-    f"Ventaja de SAC sobre A2C:\n"
-    f"  {diff_sac_a2c:>10,.0f} kg CO₂/año ahorro adicional\n"
-    f"  Δ% reducción: +{diff_red_a2c_sac:.2f}pp\n\n"
+    f"Agente óptimo F₂:\n"
+    f"  {best_agent['name']} = {best_agent['value']:,.0f} kg CO₂/año\n"
+    f"  ep. {best_agent['episode']} · −{best_agent['reduction']:.1f}% vs BL\n\n"
+    f"Diferencia vs óptimo:\n"
+    + "\n".join(delta_lines) + "\n\n"
     f"Factor CO₂: 0.4521 kg/kWh\n"
     f"Red Iquitos (generación térmica)"
 )
@@ -214,7 +228,7 @@ ax.annotate('', xy=(xc[1], y_d1), xytext=(xc[2], y_d1),
             arrowprops=dict(arrowstyle='<->', color=C_DIFF, lw=2.2,
                             connectionstyle='arc3,rad=0.0'))
 ax.text((xc[1] + xc[2]) / 2, y_d1 - 55_000,
-        f'SAC–PPO: +{diff_sac_ppo:,.0f} kg/año',
+        pair_label('SAC', sac_min_val, 'PPO', ppo_min_val),
         ha='center', va='top', fontsize=10, color=C_DIFF, fontweight='bold',
         bbox=dict(boxstyle='round,pad=0.35', fc='#F4ECF7', ec=C_DIFF, lw=1.2, alpha=0.95))
 
@@ -224,7 +238,7 @@ ax.annotate('', xy=(xc[1], y_d2), xytext=(xc[3], y_d2),
             arrowprops=dict(arrowstyle='<->', color='#404040', lw=2.0,
                             connectionstyle='arc3,rad=0.0'))
 ax.text((xc[1] + xc[3]) / 2, y_d2 - 55_000,
-        f'SAC–A2C: +{diff_sac_a2c:,.0f} kg/año',
+        pair_label('SAC', sac_min_val, 'A2C', a2c_min_val),
         ha='center', va='top', fontsize=10, color='#404040', fontweight='bold',
         bbox=dict(boxstyle='round,pad=0.35', fc='#F5F5F5', ec='#404040', lw=1.2, alpha=0.95))
 
@@ -233,24 +247,27 @@ ax.set_xticklabels(agentes_c, fontsize=11)
 ax.set_ylabel('$F_2$ — CO₂ anual mínimo (kg CO₂/año)', fontsize=11)
 ax.set_title(
     'Comparativa directa de $F_2$ (CO₂ controlado, kg CO₂/año) entre agentes\n'
-    'SAC (off-policy) logra el mínimo absoluto  ·  '
+    f'{best_agent["name"]} logra el mínimo absoluto  ·  '
     'Fuente: elaboración propia en Python  ·  Iquitos, Perú  ·  50 episodios',
     fontsize=11, fontweight='bold'
 )
 ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f'{v/1e6:.3f} M'))
-ax.set_ylim(sac_min_val - 550_000, bl_val + 400_000)
+ax.set_ylim(min(valores_kg) - 550_000, bl_val + 400_000)
 ax.grid(True, axis='y', alpha=0.3, linestyle='--', zorder=0)
 ax.spines[['top', 'right']].set_visible(False)
 
 # Cuadro datos en esquina superior derecha
-info2 = (
-    f"{'Agente':<9} {'F₂ mínimo':>14}  {'Δ vs SAC':>14}  {'% reducción':>11}\n"
-    f"{'─'*54}\n"
-    f"{'Baseline':<9} {bl_val:>12,.0f} kg  {'—':>14}  {'—':>11}\n"
-    f"{'SAC':<9} {sac_min_val:>12,.0f} kg  {'—':>14}  −{red_sac:>8.1f}%\n"
-    f"{'PPO':<9} {ppo_min_val:>12,.0f} kg  +{diff_sac_ppo:>10,.0f} kg  −{red_ppo:>8.1f}%\n"
-    f"{'A2C':<9} {a2c_min_val:>12,.0f} kg  +{diff_sac_a2c:>10,.0f} kg  −{red_a2c:>8.1f}%"
-)
+info_lines = [
+    f"{'Agente':<9} {'F₂ mínimo':>14}  {'Δ vs óptimo':>14}  {'% reducción':>11}",
+    f"{'─'*58}",
+    f"{'Baseline':<9} {bl_val:>12,.0f} kg  {'—':>14}  {'—':>11}",
+]
+for row in agent_rows:
+    info_lines.append(
+        f"{row['name']:<9} {row['value']:>12,.0f} kg  "
+        f"{delta_vs_best_text(row):>14}  −{row['reduction']:>8.1f}%"
+    )
+info2 = "\n".join(info_lines)
 ax.text(
     0.50, 0.98, info2,
     transform=ax.transAxes, fontsize=8.5, family='monospace',
@@ -272,5 +289,7 @@ print(f'  PPO  mín ep.{ppo_min_ep:>2}: {ppo_min_val:>13,.0f} kg CO₂/año  −
 print(f'  A2C  mín ep.{a2c_min_ep:>2}: {a2c_min_val:>13,.0f} kg CO₂/año  −{red_a2c:.1f}% vs BL')
 print(f'  Baseline:      {bl_val:>13,.0f} kg CO₂/año')
 print(f'  ─────────────────────────────────────────────────')
-print(f'  Δ SAC–PPO : +{diff_sac_ppo:>10,.0f} kg/año  (+{diff_sac_ppo/sac_min_val*100:.2f}% sobre SAC)')
-print(f'  Δ SAC–A2C : +{diff_sac_a2c:>10,.0f} kg/año  (+{diff_sac_a2c/sac_min_val*100:.2f}% sobre SAC)')
+print(f'  Óptimo: {best_agent["name"]} ep.{best_agent["episode"]} -> {best_agent["value"]:,.0f} kg CO₂/año')
+for row in sorted(agent_rows, key=lambda item: item['value']):
+    delta = row['value'] - best_agent['value']
+    print(f'  Δ {row["name"]} vs óptimo: {delta:>10,.0f} kg/año')

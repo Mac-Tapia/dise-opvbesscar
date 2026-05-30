@@ -273,11 +273,27 @@ class PVSystemConfig:
     tilt: float = float(IQUITOS_PARAMS["surface_tilt"])
     azimuth: float = float(IQUITOS_PARAMS["surface_azimuth"])
 
-    # Modulo PV - Kyocera KS20 (maxima densidad de potencia)
-    module_name: str = "Kyocera_Solar_KS20__2008__E__"
+    # Modulo PV — Jinko Tiger Neo JKM580N-72HL4-BDV (N-type TOPCon bifacial, 580W)
+    # Fuente: Jinko datasheet F3-EN; pvlib CEC database
+    # Bifaciality 80%, temp coeff -0.29%/°C (superior a PERC para clima tropical)
+    module_name: str = "Jinko_Solar_Co___Ltd_JKM580N_72HL4_BDV"
 
     # Inversor - Eaton Xpert1670 (inversor central)
     inverter_name: str = "Eaton__Xpert1670"
+
+    # Modelo de celda: True=CEC/SDM (bifaciales modernos), False=SAPM legacy (Sandia)
+    use_cec_model: bool = True
+
+    # PVWatts mode — usa potencia DC fija cuando módulo CEC no está en la base de datos.
+    # Garantiza exactamente target_dc_kw kWp con temp coeff del Jinko Tiger Neo JKM580N.
+    # Refs: NREL PVWatts v5; De Soto et al 2006; Jinko datasheet F3-EN (gamma=-0.29%/°C)
+    pvwatts_pdc0_kw: float = 4050.0     # kWp instalados OE2 (siempre 4,050 kWp exactos)
+    pvwatts_gamma_pdc: float = -0.0029  # coef. temp. Pmax Jinko Tiger Neo JKM580N [1/°C]
+
+    # Bifacial — Jinko Tiger Neo: 80% bifaciality, tropical albedo 0.22
+    bifacial_enabled: bool = True
+    bifaciality_factor: float = 0.80   # N-type TOPCon (Jinko datasheet: >70%, best-class ~80%)
+    bifacial_albedo: float = 0.22      # grass/concrete tropical ground (NREL default)
 
     # Perdidas del sistema (%) - valores tipicos para clima tropical humedo
     soiling_loss: float = 3.0
@@ -470,10 +486,17 @@ def _interpolate_to_interval(tmy_data: pd.DataFrame, minutes: int = 15) -> pd.Da
 
 
 def _get_sandia_modules() -> pd.DataFrame:
-    """Obtiene la base de datos de modulos Sandia."""
+    """Obtiene la base de datos de modulos Sandia (legacy)."""
     _ensure_pvlib_available()
     assert pvlib is not None
     return pvlib.pvsystem.retrieve_sam("SandiaMod")  # type: ignore[attr-defined]
+
+
+def _get_cec_modules() -> pd.DataFrame:
+    """Obtiene la base de datos de modulos CEC/SAM — incluye bifaciales modernos (>500W)."""
+    _ensure_pvlib_available()
+    assert pvlib is not None
+    return pvlib.pvsystem.retrieve_sam("CECMod")  # type: ignore[attr-defined]
 
 
 def _get_cec_inverters() -> pd.DataFrame:
@@ -506,8 +529,9 @@ def _rank_modules_by_density(
     rows: list[dict[str, float | str | int]] = []
     for name in modules_db.columns:
         params = modules_db[name]
-        vmp = float(params.get("Vmpo", 0))
-        imp = float(params.get("Impo", 0))
+        # Soporta tanto Sandia (Vmpo/Impo) como CEC (V_mp_ref/I_mp_ref)
+        vmp = float(params.get("Vmpo", params.get("V_mp_ref", 0)))
+        imp = float(params.get("Impo", params.get("I_mp_ref", 0)))
         if vmp <= 0 or imp <= 0:
             continue
         pmp_w = vmp * imp
@@ -712,31 +736,56 @@ def _select_module(modules_db: pd.DataFrame, module_name: str, area_util: float)
     """
     Selecciona modulo y calcula numero maximo en el area disponible.
     """
-    if module_name in modules_db.columns:
-        params = modules_db[module_name]
-        vmp = params.get("Vmpo", 0)
-        imp = params.get("Impo", 0)
+    def _find_by_pattern(db: pd.DataFrame, *patterns: str) -> Optional[str]:
+        """Busca un modulo por patron en el nombre (case-insensitive)."""
+        for col in db.columns:
+            col_lower = col.lower()
+            if all(p.lower() in col_lower for p in patterns):
+                return col
+        return None
+
+    resolved_name = module_name
+    if module_name not in modules_db.columns:
+        # Intento 1: patron Jinko 580N (N-type TOPCon bifacial)
+        found = _find_by_pattern(modules_db, "jinko", "580", "n")
+        # Intento 2: cualquier Jinko 580
+        if not found:
+            found = _find_by_pattern(modules_db, "jinko", "580")
+        # Intento 3: cualquier Longi 580
+        if not found:
+            found = _find_by_pattern(modules_db, "longi", "580")
+        if found:
+            print(f"  WARN Modulo '{module_name}' no encontrado → usando '{found}'")
+            resolved_name = found
+
+    if resolved_name in modules_db.columns:
+        params = modules_db[resolved_name]
+        # Soporta tanto Sandia (Vmpo/Impo) como CEC (V_mp_ref/I_mp_ref)
+        vmp = float(params.get("Vmpo", params.get("V_mp_ref", 0)))
+        imp = float(params.get("Impo", params.get("I_mp_ref", 0)))
         pmp = vmp * imp
-        area = _get_module_area(params) or 0.072  # Default Kyocera KS20
+        area = _get_module_area(params) or 1.9  # Jinko 580N: ~2278×1134mm ≈ 2.58m²
         n_max = int(area_util / area) if area > 0 else 0
         density = pmp / area if area > 0 else 0
 
-        print(f"  OK Modulo: {module_name}")
+        print(f"  OK Modulo: {resolved_name}")
         print(f"    Potencia: {pmp:.2f}W")
         print(f"    Area: {area:.4f} m²")
         print(f"    Densidad: {density:.1f} W/m²")
         print(f"    Modulos maximos en techo: {n_max:,}")
 
-        return module_name, params, n_max
+        return resolved_name, params, n_max
 
-    # Buscar alternativa por maxima densidad
-    print(f"  WARN Modulo '{module_name}' no encontrado, buscando alternativa...")
+    # Buscar alternativa por maxima densidad (Sandia/CEC ambos)
+    print(f"  WARN Modulo '{module_name}' no encontrado, buscando alternativa por densidad...")
 
     best_mod = None
     best_density = 0
     for col in modules_db.columns:
         params = modules_db[col]
-        pmp = params.get("Vmpo", 0) * params.get("Impo", 0)
+        vmp = float(params.get("Vmpo", params.get("V_mp_ref", 0)))
+        imp = float(params.get("Impo", params.get("I_mp_ref", 0)))
+        pmp = vmp * imp
         area = _get_module_area(params)
         if pmp > 0 and area > 0:
             density = pmp / area
@@ -804,17 +853,20 @@ def _calculate_string_config(
     """
     Calcula configuracion optima de strings.
     """
-    vmp = float(module_params.get("Vmpo", 17.0))
-    voc = float(module_params.get("Voco", 21.0))
-    imp = float(module_params.get("Impo", 1.19))
+    # Soporta tanto Sandia (Vmpo/Voco/Impo) como CEC (V_mp_ref/V_oc_ref/I_mp_ref)
+    vmp = float(module_params.get("Vmpo", module_params.get("V_mp_ref", 43.88)))
+    voc = float(module_params.get("Voco", module_params.get("V_oc_ref", 52.50)))
+    imp = float(module_params.get("Impo", module_params.get("I_mp_ref", 13.22)))
     pmp = vmp * imp
 
     vdco = float(inverter_params.get("Vdco", 1030))
     vdcmax = float(inverter_params.get("Vdcmax", 1500))
     mppt_low = float(inverter_params.get("Mppt_low", 500))
 
-    # Coeficiente de temperatura de Voc (Sandia: V/°C)
-    beta_voc = float(module_params.get("Bvoco", -0.08))
+    # Coeficiente de temperatura de Voc:
+    # Sandia: Bvoco [V/°C] directo; CEC: derivado como -0.0025 × Voc (Jinko 580N: -0.25%/°C)
+    _voc_ref = float(module_params.get("V_oc_ref", module_params.get("Voco", voc)))
+    beta_voc = float(module_params.get("Bvoco", -0.0025 * _voc_ref))
 
     # Voc a temperatura minima (15°C en Iquitos, delta = -10°C)
     voc_cold = voc + beta_voc * (-10)
@@ -933,7 +985,11 @@ def run_pv_simulation(
         strings_per_inverter=strings_per_inv,
     )
 
-    # ModelChain
+    # Seleccionar modelo DC según base de datos del módulo
+    _use_cec = getattr(config, "use_cec_model", False)
+    _dc_model = "cec" if _use_cec else "sapm"
+
+    # ModelChain — CEC/SDM para módulos bifaciales modernos; SAPM para legado
     mc = ModelChain(
         system=system,
         location=location,
@@ -942,7 +998,7 @@ def run_pv_simulation(
         temperature_model="sapm",
         losses_model="no_loss",
         transposition_model="perez",
-        dc_model="sapm",
+        dc_model=_dc_model,
         ac_model="sandia",
     )
 
@@ -993,6 +1049,27 @@ def run_pv_simulation(
     # Aplicar perdidas del sistema
     losses_factor = config.total_losses_factor
     ac_power_final = ac_power * losses_factor
+
+    # Ganancia bifacial (Jinko Tiger Neo JKM580N, bifaciality=0.80)
+    # Modelo simplificado: rear irradiance ≈ albedo × (1+cos(tilt))/2 × row_correction
+    # row_correction=0.50 conservador para instalación en techo (sombreado trasero)
+    # Refs: Deline 2020 (NREL); Guerrero-Lemus 2021 Rev. Energy
+    if getattr(config, "bifacial_enabled", False):
+        _tilt_rad = np.radians(float(config.tilt))
+        _rear_to_front = (
+            float(getattr(config, "bifacial_albedo", 0.22))
+            * (1.0 + np.cos(_tilt_rad)) / 2.0
+            * 0.50  # factor de fila (50% de cobertura de suelo)
+        )
+        _bifacial_gain = float(getattr(config, "bifaciality_factor", 0.80)) * _rear_to_front
+        ac_power_final = ac_power_final * (1.0 + _bifacial_gain)
+        if log:
+            print(
+                f"  [BIFACIAL] Ganancia aplicada: {_bifacial_gain*100:.1f}% "
+                f"(bifaciality={getattr(config,'bifaciality_factor',0.80):.2f}, "
+                f"albedo={getattr(config,'bifacial_albedo',0.22):.2f}, "
+                f"tilt={config.tilt}°)"
+            )
 
     # Calcular energia por intervalo
     # Determinar duracion del intervalo en horas
@@ -1113,6 +1190,160 @@ def run_pv_simulation(
         "num_inverters": num_inverters,
     }
 
+    return results, metadata
+
+
+def run_pvwatts_simulation(
+    tmy_data: pd.DataFrame,
+    config: "PVSystemConfig",
+    pdc0_kw: float,
+    log: bool = True,
+) -> Tuple[pd.DataFrame, dict[str, Any]]:
+    """Simula sistema PV usando el modelo PVWatts (NREL) con potencia DC fija.
+
+    Robusto para cualquier módulo moderno: requiere solo pdc0 y gamma_pdc.
+    Garantiza exactamente pdc0_kw kWp instalados (OE2: 4,050 kWp).
+    Aplica ganancia bifacial si bifacial_enabled=True en config.
+
+    Refs: NREL PVWatts v5 (Dobos 2014); pvlib ModelChain dc_model='pvwatts'.
+    """
+    _ensure_pvlib_available()
+    assert Location is not None and PVSystem is not None and ModelChain is not None
+
+    pdc0_w = pdc0_kw * 1000.0
+    gamma_pdc = float(getattr(config, "pvwatts_gamma_pdc", -0.0029))
+
+    if log:
+        print(f"\n[PVWatts] Simulando {pdc0_kw:.0f} kWp | gamma_pdc={gamma_pdc*100:.3f}%/°C")
+
+    location = Location(
+        latitude=config.latitude,
+        longitude=config.longitude,
+        tz=config.timezone,
+        altitude=config.altitude,
+        name="Iquitos, Peru",
+    )
+
+    # Parámetros PVWatts: pdc0 en W, gamma_pdc en 1/°C
+    pvwatts_module: dict[str, Any] = {"pdc0": pdc0_w, "gamma_pdc": gamma_pdc}
+    pvwatts_inverter: dict[str, Any] = {"pdc0": pdc0_w}  # eficiencia implícita inversor
+
+    temp_params: dict[str, Any] = _TEMP_MODEL_PARAMS.get("sapm", {}).get(
+        "open_rack_glass_glass", {}
+    )
+
+    system = PVSystem(
+        surface_tilt=int(config.tilt),
+        surface_azimuth=int(config.azimuth),
+        module_parameters=pvwatts_module,
+        inverter_parameters=pvwatts_inverter,
+        temperature_model_parameters=temp_params,
+    )
+
+    mc = ModelChain(
+        system=system,
+        location=location,
+        aoi_model="physical",
+        spectral_model="no_loss",
+        temperature_model="sapm",
+        losses_model="no_loss",
+        transposition_model="perez",
+        dc_model="pvwatts",
+        ac_model="pvwatts",
+    )
+
+    weather = tmy_data[["ghi", "dni", "dhi", "temp_air", "wind_speed"]].copy()
+
+    solar_pos = location.get_solarposition(weather.index)
+    night_mask = solar_pos["apparent_zenith"] >= 90
+    weather.loc[night_mask, ["ghi", "dni", "dhi"]] = 0
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        mc.run_model(weather)
+
+    # Extraer POA
+    try:
+        _poa_raw = mc.results.total_irrad["poa_global"]
+        poa_global = pd.Series(
+            np.asarray(_poa_raw, dtype=float), index=weather.index
+        ).fillna(0).clip(lower=0)
+    except (AttributeError, KeyError, TypeError):
+        poa_global = pd.Series(
+            np.asarray(weather["ghi"].values, dtype=float), index=weather.index
+        ).fillna(0).clip(lower=0)
+
+    ac_power = _to_series_like(mc.results.ac, weather.index).fillna(0).clip(lower=0)
+
+    # Pérdidas del sistema
+    ac_power_final = ac_power * config.total_losses_factor
+
+    # Ganancia bifacial (igual que run_pv_simulation)
+    if getattr(config, "bifacial_enabled", False):
+        _tilt_rad = np.radians(float(config.tilt))
+        _rear_to_front = (
+            float(getattr(config, "bifacial_albedo", 0.22))
+            * (1.0 + np.cos(_tilt_rad)) / 2.0
+            * 0.50
+        )
+        _bifacial_gain = float(getattr(config, "bifaciality_factor", 0.80)) * _rear_to_front
+        ac_power_final = ac_power_final * (1.0 + _bifacial_gain)
+        if log:
+            print(
+                f"  [BIFACIAL] Ganancia aplicada: {_bifacial_gain*100:.1f}% "
+                f"(bifaciality={getattr(config,'bifaciality_factor',0.80):.2f}, "
+                f"albedo={getattr(config,'bifacial_albedo',0.22):.2f})"
+            )
+
+    dt = (weather.index[1] - weather.index[0]).total_seconds() / 3600 if len(weather.index) > 1 else 1.0
+    ac_energy = ac_power_final * dt / 1000.0
+
+    # Tarifas OSINERGMIN y CO2
+    results_hour = pd.to_datetime(weather.index).hour
+    is_hp = np.where((results_hour >= HORA_INICIO_HP) & (results_hour < HORA_FIN_HP), 1, 0)
+    tarifa = np.where(is_hp == 1, TARIFA_ENERGIA_HP_SOLES, TARIFA_ENERGIA_HFP_SOLES)
+
+    results = pd.DataFrame(
+        {
+            "ghi_wm2": np.asarray(weather["ghi"].values, dtype=float),
+            "temp_air_c": np.asarray(weather["temp_air"].values, dtype=float),
+            "wind_speed_ms": np.asarray(weather["wind_speed"].values, dtype=float),
+            "poa_wm2": np.asarray(poa_global.values, dtype=float),
+            "ac_power_kw": np.asarray(ac_power_final.values, dtype=float) / 1000.0,
+            "dc_energy_kwh": np.asarray(ac_energy.values, dtype=float),  # PVWatts: DC≈AC
+            "ac_energy_kwh": np.asarray(ac_energy.values, dtype=float),
+            "is_hora_punta": is_hp,
+            "tarifa_aplicada_soles": tarifa,
+            "ahorro_solar_soles": np.asarray(ac_energy.values, dtype=float) * tarifa,
+            "reduccion_indirecta_co2_kg": np.asarray(ac_energy.values, dtype=float) * FACTOR_CO2_KG_KWH,
+        },
+        index=weather.index,
+    )
+    results.index.name = "datetime"
+    results["pv_kwh"] = results["ac_energy_kwh"]
+    results["pv_kw"] = results["ac_power_kw"]
+
+    ghi_annual = float(weather["ghi"].fillna(0).clip(lower=0).sum() * dt / 1000)
+    poa_annual = float(poa_global.sum() * dt / 1000)
+
+    if log:
+        annual_kwh = float(results["ac_energy_kwh"].sum())
+        co2_total = float(results["reduccion_indirecta_co2_kg"].sum())
+        print(f"  Energia anual AC: {annual_kwh:,.0f} kWh ({annual_kwh/1e6:.3f} GWh)")
+        print(f"  CO2 reducido (indirecto): {co2_total/1000:,.0f} ton CO2/año")
+
+    metadata: dict[str, Any] = {
+        "dt_hours": dt,
+        "ghi_annual_kwh_m2": ghi_annual,
+        "poa_annual_kwh_m2": poa_annual,
+        "losses_factor": config.total_losses_factor,
+        "total_modules": int(pdc0_kw * 1000 / 580),  # referencia Jinko 580N
+        "strings_per_inv": 1,
+        "num_inverters": 1,
+        "pvwatts_model": True,
+        "pdc0_kw": pdc0_kw,
+        "gamma_pdc": gamma_pdc,
+    }
     return results, metadata
 
 
@@ -1372,31 +1603,16 @@ def build_pv_timeseries_sandia(
     # 1. Descargar datos TMY de PVGIS
     tmy_data = _get_pvgis_tmy(config.latitude, config.longitude)
 
-    # PVGIS devuelve datos en UTC. Para Iquitos (UTC-5), debemos ajustar el indice
-    # La estrategia correcta es:
-    # 1. Crear un indice naive con las horas del ano en hora LOCAL
-    # 2. Localizar a la zona horaria deseada
-    # Esto evita problemas con cambios de horario de verano (DST)
-
-    # Crear indice en hora local de Iquitos
+    # Crear indice en hora local de Iquitos (UTC-5)
     local_times = pd.date_range(
         start=f"{year}-01-01 00:00:00",
         periods=len(tmy_data),
         freq="h",
         tz=config.timezone,
     )
-
-    # Reordenar los datos TMY para que coincidan con la hora local
-    # PVGIS hora 0 UTC = hora 19:00 del dia anterior en Lima (UTC-5)
-    # Por lo tanto, la hora 5 UTC = hora 0:00 Lima
-    utc_offset_hours = 5  # Lima es UTC-5
-
-    # Rotar los datos para alinear con hora local
-    tmy_values = tmy_data.values
-    tmy_columns = tmy_data.columns
-    tmy_rotated = np.roll(tmy_values, -utc_offset_hours, axis=0)
-
-    tmy_data = pd.DataFrame(tmy_rotated, index=local_times, columns=tmy_columns)
+    utc_offset_hours = 5
+    tmy_rotated = np.roll(tmy_data.values, -utc_offset_hours, axis=0)
+    tmy_data = pd.DataFrame(tmy_rotated, index=local_times, columns=tmy_data.columns)
 
     print(f"Datos ajustados a zona horaria local: {config.timezone} (UTC-5)")
     print(f"Indice horario: {tmy_data.index[0]} -> {tmy_data.index[-1]}")
@@ -1408,11 +1624,84 @@ def build_pv_timeseries_sandia(
 
     dt_hours = seconds_per_time_step / 3600
 
-    # 3. Cargar bases de datos
+    # ── PVWatts mode (robusto): usa pdc0_kw fijo → garantiza 4,050 kWp exactos ──────
+    # Activado cuando pvwatts_pdc0_kw > 0 (default True en PVSystemConfig).
+    # Jinko Tiger Neo JKM580N-72HL4-BDV: gamma_pdc=-0.29%/°C, bifaciality=80%.
+    _pvwatts_kw = float(getattr(config, "pvwatts_pdc0_kw", 0.0))
+    if _pvwatts_kw > 0:
+        print(f"\n[PVWatts] Usando modelo PVWatts con {_pvwatts_kw:.0f} kWp")
+        print(f"  Módulo ref: Jinko Tiger Neo JKM580N-72HL4-BDV (N-type TOPCon, bifacial)")
+        results, sim_metadata = run_pvwatts_simulation(
+            tmy_data=tmy_data, config=config, pdc0_kw=_pvwatts_kw, log=True
+        )
+        system_dc_kw = _pvwatts_kw
+        system_ac_kw = target_ac_kw
+        total_modules = int(_pvwatts_kw * 1000 / 580)  # referencia Jinko 580N
+        module_name = "Jinko_Tiger_Neo_JKM580N_72HL4_BDV__PVWatts_"
+        inverter_name = "Eaton__Xpert1670"
+        modules_per_string = 14
+        strings_parallel = total_modules // modules_per_string
+        num_inverters = 2
+        module_candidates: pd.DataFrame = pd.DataFrame()
+        inverter_candidates: pd.DataFrame = pd.DataFrame()
+        selection_results: list[dict[str, Any]] = []
+
+        # Estadísticas + archivos secundarios
+        stats = calculate_statistics(
+            results=results,
+            system_dc_kw=system_dc_kw,
+            system_ac_kw=system_ac_kw,
+            ghi_annual=sim_metadata["ghi_annual_kwh_m2"],
+            dt_hours=dt_hours,
+            poa_annual=sim_metadata.get("poa_annual_kwh_m2", 0.0),
+        )
+        monthly = calculate_monthly_energy(results)
+        rep_days = calculate_representative_days(results)
+        area_modules = total_modules * (2278 * 1134 / 1e6)  # Jinko 580N: 2278×1134 mm
+
+        metadata: dict[str, Any] = {
+            "module_name": module_name,
+            "inverter_name": inverter_name,
+            "modules_per_string": modules_per_string,
+            "strings_parallel": strings_parallel,
+            "total_modules": total_modules,
+            "num_inverters": num_inverters,
+            "system_dc_kw": system_dc_kw,
+            "system_ac_kw": system_ac_kw,
+            "tilt": config.tilt,
+            "azimuth": config.azimuth,
+            "area_total_m2": config.area_total_m2,
+            "area_utilizada_m2": area_modules,
+            "factor_diseno": config.factor_diseno,
+            "losses_total_pct": config.total_losses_pct,
+            "ghi_annual_kwh_m2": sim_metadata["ghi_annual_kwh_m2"],
+            "poa_annual_kwh_m2": sim_metadata.get("poa_annual_kwh_m2", 0.0),
+            "dt_hours": dt_hours,
+            "time_steps_per_hour": int(1 / dt_hours),
+            "selection_mode": "pvwatts",
+            "selection_metric": "pvwatts",
+            "selection_results": [],
+            "module_candidates": [],
+            "inverter_candidates": [],
+            "target_annual_kwh": target_annual_kwh,
+            "monthly_energy_kwh": monthly.to_dict(),
+            "pvwatts_model": True,
+            "pvwatts_gamma_pdc": float(getattr(config, "pvwatts_gamma_pdc", -0.0029)),
+            **stats,
+            **rep_days,
+        }
+        return results, metadata
+    # ── fin PVWatts mode ──────────────────────────────────────────────────────────────
+
+    # 3. Cargar bases de datos (modelo SAPM/CEC clásico)
     print("\nCargando bases de datos...")
-    modules_db = _get_sandia_modules()
+    if getattr(config, "use_cec_model", False):
+        modules_db = _get_cec_modules()
+        print(f"   Modulos CEC (bifaciales modernos): {len(modules_db.columns)} disponibles")
+    else:
+        modules_db = _get_sandia_modules()
+        print(f"   Modulos Sandia (legado): {len(modules_db.columns)} disponibles")
     inverters_db = _get_cec_inverters()
-    print(f"   Modulos Sandia: {len(modules_db.columns)} disponibles")
     print(f"   Inversores CEC: {len(inverters_db.columns)} disponibles")
 
     # 4. Seleccionar componentes
@@ -1473,8 +1762,9 @@ def build_pv_timeseries_sandia(
         module_params, inverter_params, n_modules_max, target_dc_kw
     )
 
-    # Calcular capacidades del sistema
-    pmp = float(module_params.get("Vmpo", 17)) * float(module_params.get("Impo", 1.19))
+    # Calcular capacidades del sistema (soporta Sandia Vmpo/Impo y CEC V_mp_ref/I_mp_ref)
+    pmp = (float(module_params.get("Vmpo", module_params.get("V_mp_ref", 43.88)))
+           * float(module_params.get("Impo", module_params.get("I_mp_ref", 13.22))))
     system_dc_kw = total_modules * pmp / 1000
     system_ac_kw = target_ac_kw
     area_modules = total_modules * (_get_module_area(module_params) or 0.072)
@@ -1581,8 +1871,16 @@ def run_solar_sizing(
         factor_diseno=_get_float_from_kwargs("factor_diseno", IQUITOS_PARAMS["factor_diseno"], kwargs),
         tilt=_get_float_from_kwargs("tilt", IQUITOS_PARAMS["surface_tilt"], kwargs),
         azimuth=_get_float_from_kwargs("azimuth", IQUITOS_PARAMS["surface_azimuth"], kwargs),
-        module_name=str(kwargs.get("module_name", "Kyocera_Solar_KS20__2008__E__")),
+        # Módulo bifacial Jinko Tiger Neo JKM580N-72HL4-BDV via PVWatts
+        module_name=str(kwargs.get("module_name", "Jinko_Solar_Co___Ltd_JKM580N_72HL4_BDV")),
         inverter_name=str(kwargs.get("inverter_name", "Eaton__Xpert1670")),
+        use_cec_model=bool(kwargs.get("use_cec_model", True)),
+        # PVWatts: garantiza exactamente target_dc_kw kWp + gamma_pdc Jinko 580N
+        pvwatts_pdc0_kw=_get_float_from_kwargs("pvwatts_pdc0_kw", target_dc_kw, kwargs),
+        pvwatts_gamma_pdc=_get_float_from_kwargs("pvwatts_gamma_pdc", -0.0029, kwargs),
+        bifacial_enabled=bool(kwargs.get("bifacial_enabled", True)),
+        bifaciality_factor=_get_float_from_kwargs("bifaciality_factor", 0.80, kwargs),
+        bifacial_albedo=_get_float_from_kwargs("bifacial_albedo", 0.22, kwargs),
     )
 
     # Ejecutar simulacion

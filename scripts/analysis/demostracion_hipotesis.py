@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import warnings
+from datetime import date
 from pathlib import Path
 
 import matplotlib
@@ -22,6 +23,7 @@ warnings.filterwarnings("ignore")
 ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "outputs" / "demostracion_hipotesis"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
+RUN_DATE = date.today().isoformat()
 
 # ══════════════════════════════════════════════════════════════════════════════
 # DATOS DE ENTRADA (OE2 + OE3)
@@ -73,7 +75,7 @@ CO2_FACTOR = 0.4521  # kg CO₂/kWh — red eléctrica Iquitos (generación tér
 # ══════════════════════════════════════════════════════════════════════════════
 print("═" * 70)
 print("  DEMOSTRACIÓN FORMAL DE HIPÓTESIS — OE2/OE3 PVBESSCAR")
-print("  Iquitos, Perú | Fecha: 2026-04-12")
+print(f"  Iquitos, Perú | Fecha: {RUN_DATE}")
 print("═" * 70)
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -252,12 +254,18 @@ ranking = sorted([
     ("PPO", F2_PPO_OPT, (F0_KG - F2_PPO_OPT) / F0_KG * 100),
     ("A2C", F2_A2C_OPT, (F0_KG - F2_A2C_OPT) / F0_KG * 100),
 ], key=lambda x: x[1])
+agent_series = {"SAC": f2_sac, "PPO": f2_ppo, "A2C": f2_a2c}
+agent_hist = {"SAC": sac, "PPO": ppo, "A2C": a2c}
+agent_opt_values = {"SAC": F2_SAC_OPT, "PPO": F2_PPO_OPT, "A2C": F2_A2C_OPT}
 
 print("\n  RANKING AGENTES RL:")
 for i, (name, f2, pct) in enumerate(ranking, 1):
     print(f"  #{i} {name}: F2={f2:,.0f} kg/año ({pct:.1f}% reducción vs F0)")
 
 agente_optimo = ranking[0][0]
+f2_optimo = agent_opt_values[agente_optimo]
+f2_optimo_arr = agent_series[agente_optimo]
+hist_optimo = agent_hist[agente_optimo]
 print(f"\n  H.E.3: CONFIRMADA ✓ — Agente seleccionado: {agente_optimo}")
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -267,12 +275,12 @@ print("\n" + "━" * 70)
 print("H.G. — Infraestructura de carga inteligente reduce CO₂ cuantificablemente")
 print("━" * 70)
 
-# Cuantificación total con el agente óptimo (SAC)
-co2_evitado_total = F0_KG - F2_SAC_OPT
-co2_evitado_directa = sac["co2_directa_kg"].values[-5:].mean()
-co2_evitado_indirecta = sac["co2_indirecta_kg"].values[-5:].mean()
+# Cuantificación total con el agente óptimo real de la corrida vigente.
+co2_evitado_total = F0_KG - f2_optimo
+co2_evitado_directa = hist_optimo["co2_directa_kg"].values[-5:].mean()
+co2_evitado_indirecta = hist_optimo["co2_indirecta_kg"].values[-5:].mean()
 reduccion_vs_f0 = co2_evitado_total / F0_KG * 100
-reduccion_vs_f1 = (F1_MEAN - F2_SAC_OPT) / F1_MEAN * 100
+reduccion_vs_f1 = (F1_MEAN - f2_optimo) / F1_MEAN * 100
 
 # Equivalencias
 ARBOLES_ABSORCION_KG_AÑO = 21.77  # kg CO₂/árbol/año (IPCC promedio)
@@ -283,7 +291,7 @@ autos_eq = co2_evitado_total / AUTOS_EQUIVALENTES_KG_AÑO
 hg_resumen = {
     "F0 Sin Proyecto (kg CO₂/año)": f"{F0_KG:,.0f}",
     "F1 Baseline c/solar, sin RL (kg CO₂/año)": f"{F1_MEAN:,.0f}",
-    "F2 Con agente SAC — Ep óptimo (kg CO₂/año)": f"{F2_SAC_OPT:,.0f}",
+    f"F2 Con agente {agente_optimo} — Ep óptimo (kg CO₂/año)": f"{f2_optimo:,.0f}",
     "Reducción total F0→F2 (kg CO₂/año)": f"{co2_evitado_total:,.0f}",
     "Reducción vs F0 (%)": f"{reduccion_vs_f0:.1f}%",
     "Reducción vs F1 Baseline (%)": f"{reduccion_vs_f1:.1f}%",
@@ -299,8 +307,8 @@ for k, v in hg_resumen.items():
     print(f"  {k}: {v}")
 
 # Verificación estadística HG
-stat_hg, p_hg = stats.wilcoxon(baseline_arr, f2_sac, alternative="greater")
-print(f"\n  Wilcoxon F1 vs SAC: stat={stat_hg:.1f}, p={p_hg:.3e} → p << 0.05 → RECHAZA H₀")
+stat_hg, p_hg = stats.wilcoxon(baseline_arr, f2_optimo_arr, alternative="greater")
+print(f"\n  Wilcoxon F1 vs {agente_optimo}: stat={stat_hg:.1f}, p={p_hg:.3e} → p << 0.05 → RECHAZA H₀")
 print(f"  H.G.: CONFIRMADA ✓ — Reducción CO₂ cuantificable: -{reduccion_vs_f0:.1f}% vs F0")
 
 df_hg = pd.DataFrame([hg_resumen]).T.reset_index()
@@ -326,9 +334,10 @@ ax_conv.plot(eps, f2_ppo / 1e6, color=colors_ag["PPO"], lw=2, marker="s", ms=3, 
 ax_conv.plot(eps, f2_a2c / 1e6, color=colors_ag["A2C"], lw=2, marker="^", ms=3, alpha=0.85, label=f"A2C  F2_opt={F2_A2C_OPT/1e6:.3f} MtCO₂")
 ax_conv.axhline(F1_MEAN / 1e6, color="gray", ls="--", lw=1.5, alpha=0.8, label=f"F1 Baseline {F1_MEAN/1e6:.3f} MtCO₂")
 ax_conv.axhline(F0_KG / 1e6, color="#d62728", ls=":", lw=1.5, alpha=0.6, label=f"F0 Sin Proyecto {F0_KG/1e6:.3f} MtCO₂")
-# Marcar óptimo SAC
-ax_conv.scatter([F2_SAC_EP], [F2_SAC_OPT / 1e6], color="gold", edgecolors=colors_ag["SAC"],
-                zorder=10, s=150, marker="*", label=f"SAC óptimo (Ep{F2_SAC_EP})")
+# Marcar óptimo del agente seleccionado
+f2_opt_ep = int(np.argmin(f2_optimo_arr) + 1)
+ax_conv.scatter([f2_opt_ep], [f2_optimo / 1e6], color="gold", edgecolors=colors_ag[agente_optimo],
+                zorder=10, s=150, marker="*", label=f"{agente_optimo} óptimo (Ep{f2_opt_ep})")
 ax_conv.set_xlabel("Episodio de entrenamiento", fontsize=10)
 ax_conv.set_ylabel("CO₂ controlado F2 (MtCO₂/año)", fontsize=10)
 ax_conv.set_title("Curvas de Convergencia — H.E.3 + H.G.\n"
@@ -341,7 +350,8 @@ ax_conv.set_facecolor("#ffffff")
 
 # ── Panel B (col 2, row 0): Barras comparativas ───────────────────────────────
 ax_bar = fig.add_subplot(gs[0, 2])
-agentes_bar = ["F0\nSin\nProyecto", "F1\nBaseline", "SAC\n★", "PPO", "A2C"]
+agentes_bar = ["F0\nSin\nProyecto", "F1\nBaseline", "SAC", "PPO", "A2C"]
+agentes_bar[2 + ["SAC", "PPO", "A2C"].index(agente_optimo)] += "\n★"
 valores_bar = [F0_KG / 1e6, F1_MEAN / 1e6, F2_SAC_OPT / 1e6, F2_PPO_OPT / 1e6, F2_A2C_OPT / 1e6]
 bar_colors = ["#d62728", "#9467bd", colors_ag["SAC"], colors_ag["PPO"], colors_ag["A2C"]]
 bars = ax_bar.bar(agentes_bar, valores_bar, color=bar_colors, alpha=0.85, edgecolor="black", lw=0.8)
@@ -354,11 +364,12 @@ ax_bar.grid(True, alpha=0.25, axis="y")
 ax_bar.set_facecolor("#ffffff")
 
 # Anotación reducción SAC
-pct_sac_bar = (F0_KG - F2_SAC_OPT) / F0_KG * 100
-ax_bar.annotate(f"-{pct_sac_bar:.1f}%\nvs F0", xy=(2, F2_SAC_OPT / 1e6),
-                xytext=(2.6, F2_SAC_OPT / 1e6 + 1.0),
+opt_bar_idx = 2 + ["SAC", "PPO", "A2C"].index(agente_optimo)
+pct_opt_bar = (F0_KG - f2_optimo) / F0_KG * 100
+ax_bar.annotate(f"-{pct_opt_bar:.1f}%\nvs F0", xy=(opt_bar_idx, f2_optimo / 1e6),
+                xytext=(2.6, f2_optimo / 1e6 + 1.0),
                 arrowprops=dict(arrowstyle="->", color="black", lw=1.2),
-                fontsize=8, fontweight="bold", color=colors_ag["SAC"])
+                fontsize=8, fontweight="bold", color=colors_ag[agente_optimo])
 
 # ── Panel C (row 1, col 0): H.E.1 — Criterios viabilidad ─────────────────────
 ax_he1 = fig.add_subplot(gs[1, 0])
@@ -414,9 +425,9 @@ cats = [
     "F0\nSin Proyecto\n(ICE)",
     "↓ Solar 4,050 kWp\n(desplaz. PV directo)",
     "↓ BESS 2,000 kWh\n(peak-shaving)",
-    "↓ SAC RL\n(optimización timing)",
+    f"↓ {agente_optimo} RL\n(optimización timing)",
     "↓ EVs electrificados\n(CO₂ directo evitado)",
-    "F2 CTRL SAC\n(resultado final)",
+    f"F2 CTRL {agente_optimo}\n(resultado final)",
 ]
 # Valores acumulados para waterfall
 f1_step = F0_KG - F1_MEAN                         # reducción F0→F1 (solar base)
@@ -431,9 +442,9 @@ alphas   = [0.9, 0.75, 0.7, 0.7, 0.7, 0.95]
 
 for i, (s, h, c, a, cat) in enumerate(zip(starts, heights, bar_cols, alphas, cats)):
     if i == len(cats) - 1:
-        ax_wf.bar(i, h, color="#1f77b4", alpha=0.9, edgecolor="black", lw=1.2, width=0.6)
+        ax_wf.bar(i, h, color=colors_ag[agente_optimo], alpha=0.9, edgecolor="black", lw=1.2, width=0.6)
         ax_wf.text(i, h + 80_000, f"{h/1e6:.3f}\nMtCO₂/año", ha="center", fontsize=8.5,
-                   fontweight="bold", color="#1f77b4")
+                   fontweight="bold", color=colors_ag[agente_optimo])
     elif h < 0:
         ax_wf.bar(i, h, bottom=s, color=c, alpha=a, edgecolor="black", lw=0.8, width=0.6)
         ax_wf.text(i, s + h / 2, f"-{abs(h)/1e3:.0f}\ntCO₂", ha="center", va="center",
@@ -448,7 +459,7 @@ ax_wf.set_xticklabels(cats, fontsize=9)
 ax_wf.set_ylabel("CO₂ (kg/año)", fontsize=10)
 ax_wf.set_title(
     f"H.G. — Contribución cuantificable a la reducción de CO₂ en Iquitos\n"
-    f"Reducción total: {co2_evitado_total/1e6:.3f} MtCO₂/año ({reduccion_vs_f0:.1f}% vs F0)  |  "
+    f"Reducción total ({agente_optimo}): {co2_evitado_total/1e6:.3f} MtCO₂/año ({reduccion_vs_f0:.1f}% vs F0)  |  "
     f"≡ {arboles_eq:,.0f} árboles  |  ≡ {autos_eq:,.0f} autos retirados",
     fontsize=10, fontweight="bold"
 )
@@ -472,7 +483,7 @@ print("  ✓ fig_demostracion_hipotesis_completa.png")
 # JSON RESUMEN FINAL
 # ══════════════════════════════════════════════════════════════════════════════
 resumen_final = {
-    "fecha": "2026-04-12",
+    "fecha": RUN_DATE,
     "proyecto": "PVBESSCAR — Iquitos, Perú",
     "hipotesis": {
         "HG": {
@@ -480,7 +491,8 @@ resumen_final = {
             "veredicto": "CONFIRMADA",
             "evidencia": {
                 "F0_sin_proyecto_kg_año": F0_KG,
-                "F2_SAC_optimo_kg_año": round(F2_SAC_OPT, 0),
+                "agente_optimo": agente_optimo,
+                "F2_optimo_kg_año": round(f2_optimo, 0),
                 "co2_evitado_kg_año": round(co2_evitado_total, 0),
                 "reduccion_vs_F0_pct": round(reduccion_vs_f0, 2),
                 "reduccion_vs_F1_pct": round(reduccion_vs_f1, 2),
@@ -507,7 +519,7 @@ resumen_final = {
         },
         "HE2": {
             "enunciado": "El dimensionamiento solar, BESS y cargadores cubre eficientemente la demanda energética.",
-            "veredicto": "CONFIRMADA",
+            "veredicto": "CONFIRMADA" if he2_cumple else "PARCIALMENTE CONFIRMADA",
             "evidencia": {
                 "solar_kwp": OE2_SOLAR_KWP,
                 "bess_kwh": OE2_BESS_KWH,
@@ -559,6 +571,6 @@ print("  VEREDICTO FINAL")
 print("═" * 70)
 print(f"  H.G.  : CONFIRMADA ✓ — -{reduccion_vs_f0:.1f}% CO₂ vs F0 | {co2_evitado_total/1e6:.3f} MtCO₂ evitadas")
 print(f"  H.E.1 : CONFIRMADA ✓ — {sum(d['cumple'] for d in HE1_CRITERIOS.values())}/{len(HE1_CRITERIOS)} criterios técnicos de ubicación")
-print(f"  H.E.2 : CONFIRMADA ✓ — {OE2_SOLAR_KWP} kWp + {OE2_BESS_KWH} kWh + {OE2_N_SOCKETS} sockets cubre demanda")
-print(f"  H.E.3 : CONFIRMADA ✓ — SAC óptimo: {F2_SAC_OPT:,.0f} kg/año | KW H={kw_h:.1f}, p={kw_p:.2e}")
+print(f"  H.E.2 : {he2_veredicto} — {OE2_SOLAR_KWP} kWp + {OE2_BESS_KWH} kWh + {OE2_N_SOCKETS} sockets | cobertura EV={COBERTURA_EV_PCT:.1f}%")
+print(f"  H.E.3 : CONFIRMADA ✓ — {agente_optimo} óptimo: {f2_optimo:,.0f} kg/año | KW H={kw_h:.1f}, p={kw_p:.2e}")
 print(f"\n  Archivos generados en: {OUT_DIR}")

@@ -76,13 +76,22 @@ INTERIM_CHARGERS_PATHS: list[Path] = [
 # ============================================================================
 CITYLEARN_OUTPUT_DIR = Path("data/iquitos_ev_mall")
 
+# Dataset de factores de emisión CO₂ horarios (todo el sistema)
+# Generado por data_loader.generate_co2_emissions_dataset()
+CO2_EMISSIONS_CSV = CITYLEARN_OUTPUT_DIR / "co2_emissions.csv"
+
+# Dataset de tarifas OSINERGMIN + mecanismo compensación SSAA (Electro Oriente Iquitos)
+# Generado por data_loader.generate_tariffs_dataset()
+# Columnas: tarifa energía HP/HFP, cargo potencia, AAPP, mecanismo compensación, ahorro social
+TARIFFS_OSINERGMIN_CSV = CITYLEARN_OUTPUT_DIR / "tariffs_osinergmin.csv"
+
 # ============================================================================
 # CONSTANTES CLAVE VERIFICADAS
 # ============================================================================
 BESS_CAPACITY_KWH: float = 2000.0   # Verificado en bess_ano_2024.csv (max soc_kwh)
 N_CHARGERS: int = 19                 # Verificado en chargers_ev_ano_2024_v3.csv
 N_SOCKETS: int = N_CHARGERS * 2      # 38 sockets totales
-SOLAR_PV_KWP: float = 4050.0        # kWp instalados (max 2886.7 kW en dataset)
+SOLAR_PV_KWP: float = 4050.0        # kWp diseño nominal (PVWatts pdc0=4162 kWp, max 3245.9 kW)
 SOLAR_HOURLY_ROWS: int = 8760        # 365 días × 24 h = año completo
 
 # ============================================================================
@@ -95,6 +104,6 @@ __all__ = [
     "CHARGERS_OUTPUT_DIR", "CHARGERS_CANONICAL_CSV", "CHARGERS_DAILY_CSV", "CHARGERS_STATS_CSV",
     "MALL_DEMAND_DIR", "MALL_DEMAND_CANONICAL_CSV",
     "INTERIM_OE2_DIR", "INTERIM_SOLAR_PATHS", "INTERIM_BESS_PATH", "INTERIM_CHARGERS_PATHS",
-    "CITYLEARN_OUTPUT_DIR",
+    "CITYLEARN_OUTPUT_DIR", "CO2_EMISSIONS_CSV",
     "BESS_CAPACITY_KWH", "N_CHARGERS", "N_SOCKETS", "SOLAR_PV_KWP", "SOLAR_HOURLY_ROWS",
 ]

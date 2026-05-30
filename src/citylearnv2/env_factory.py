@@ -3,7 +3,7 @@ env_factory.py — Factory de entornos CityLearn v2 para Iquitos.
 
 Provee:
   create_iquitos_env()        → IquitosEVChargingWrapper(CityLearnEnv)
-                                obs_dim=16, action_dim=3
+                                obs_dim=18, action_dim=3
                                 [bess, ev_motos_frac, ev_mototaxis_frac]
   create_iquitos_env_for_sb3() → Monitor-wrapped gymnasium.Env compatible con SB3
 
@@ -63,7 +63,7 @@ def create_iquitos_env(
     Devuelve IquitosEVChargingWrapper(CityLearnEnv), que extiende el entorno
     base CityLearn con:
     - Acción 3D: [bess, ev_motos_frac, ev_mototaxis_frac]
-    - Obs 16D: CityLearn(11) + EV state(5)
+    - Obs 18D: CityLearn(11) + EV state(5) + tarifa(2)
     - Reward CO2_DUAL_FOCUS v7.0 alineada con OE3
 
     Apto para entrenamiento con SB3 SAC/PPO/A2C (via create_iquitos_env_for_sb3)
@@ -103,7 +103,7 @@ def create_iquitos_env(
         n_obs_base, n_act_base,
     )
 
-    # Wrapper EV: añade control de 19 cargadores (150 motos + 4 mototaxis × 2 sockets)
+    # Wrapper EV: añade control de 19 cargadores Modo 3 (38 sockets simultáneos)
     ev_csv = _DEFAULT_DATA_DIR / "ev_demand.csv"
     env = IquitosEVChargingWrapper(base_env, ev_demand_csv=ev_csv)
 
@@ -138,11 +138,11 @@ def create_iquitos_env_for_sb3(
     Returns
     -------
     gymnasium.Env (Monitor-wrapped)
-        obs_space=Box(16,), action_space=Box(3,) — listo para SB3.
+        obs_space=Box(18,), action_space=Box(3,) — listo para SB3.
     """
     ev_env = create_iquitos_env(schema_path=schema_path, rebuild=rebuild)
     # IquitosEVChargingWrapper ya cumple la API gymnasium estándar:
-    # obs_space=Box(16,), action_space=Box(3,), step/reset → gymnasium API
+    # obs_space=Box(18,), action_space=Box(3,), step/reset → gymnasium API
     # SB3 acepta directamente cualquier gymnasium.Env sin wrapper extra
     # Solo envolvemos con Monitor para que SB3 registre métricas de episodio
     try:

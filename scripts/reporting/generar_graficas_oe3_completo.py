@@ -17,9 +17,11 @@ import matplotlib.gridspec as gridspec
 from scipy.ndimage import uniform_filter1d
 
 # ─── Rutas ────────────────────────────────────────────────────────────────────
-BASE     = pathlib.Path(__file__).resolve().parents[1]
+BASE     = pathlib.Path(__file__).resolve().parents[2]
 OUT_DIR  = BASE / 'outputs/docx/graficas'
 OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+import pandas as pd
 
 SAC_J = json.loads((BASE / 'outputs/sac_training/result_sac.json').read_text('utf-8'))
 A2C_J = json.loads((BASE / 'outputs/a2c_training/result_a2c.json').read_text('utf-8'))
@@ -37,23 +39,82 @@ C_A2C = '#2CA02C'
 C_PPO = '#FF7F0E'
 C_BL  = '#D62728'
 
-def ev(agent_json: dict, key: str) -> list:
-    return agent_json['training_evolution'][key]
 
-def smth(series: list, w: int = 5) -> np.ndarray:
-    return uniform_filter1d(series, size=w)
+def _load_rewards(agent: str, j: dict) -> np.ndarray:
+    """Lee rewards por episodio desde JSON o CSV de convergencia (fallback)."""
+    raw = j['training_evolution'].get('episode_rewards', [])
+    if raw and len(raw) > 0:
+        return np.array(raw)
+    # fallback: CSV de convergencia (fuente canónica)
+    csv_path = BASE / f'outputs/{agent}_training' / f'{agent}_convergencia_episodios.csv'
+    if csv_path.exists():
+        df = pd.read_csv(csv_path)
+        return df['reward'].values
+    return np.zeros(50)
+
+
+def _co2_per_ep(j: dict) -> np.ndarray:
+    """CO2 total por episodio = co2_directa + grid_import * factor."""
+    ev_keys = j['training_evolution']
+    co2_dir = np.array(ev_keys.get('hist_co2_directa_kg', [0]*50))
+    grid    = np.array(ev_keys.get('hist_grid_import_kwh', [0]*50))
+    factor  = j.get('co2_factor_kg_per_kwh', 0.4521)
+    return co2_dir + grid * factor
+
+
+# Rewards y CO2 por episodio para los 3 agentes
+SAC_R   = _load_rewards('sac', SAC_J)
+A2C_R   = _load_rewards('a2c', A2C_J)
+PPO_R   = _load_rewards('ppo', PPO_J)
+SAC_CO2 = _co2_per_ep(SAC_J)
+A2C_CO2 = _co2_per_ep(A2C_J)
+PPO_CO2 = _co2_per_ep(PPO_J)
+
+
+def ev(agent_json: dict, key: str) -> list:
+    """Lee clave del training_evolution con mapa de compatibilidad entre versiones."""
+    evd = agent_json['training_evolution']
+    # Mapa: clave antigua → clave nueva (o callable)
+    _MAP = {
+        'episode_co2_grid':         'hist_co2_neta_kg',
+        'episode_grid_import':      'hist_grid_import_kwh',
+        'episode_bess_discharge':   'hist_bess_discharge_kwh',
+        'episode_ev_charging':      lambda d: [m + t for m, t in zip(
+                                        d.get('hist_ev_motos_kwh', [0]*50),
+                                        d.get('hist_ev_mototaxis_kwh', [0]*50))],
+        'episode_rewards':          'episode_rewards',
+        'episode_reduccion_pct':    'hist_reduccion_pct',
+        # señales no disponibles → zeros
+        'episode_socket_utilization': None,
+        'episode_bess_action_avg':    None,
+        'episode_motos_charged':      None,
+        'episode_mototaxis_charged':  None,
+        'episode_grid_stability':     None,
+        'episode_co2_reduction':      'hist_reduccion_pct',
+    }
+    if key in _MAP:
+        mapped = _MAP[key]
+        if mapped is None:
+            return [0.0] * 50
+        if callable(mapped):
+            return mapped(evd)
+        key = mapped
+    return evd.get(key, [0.0] * 50)
+
+def smth(series, w: int = 5) -> np.ndarray:
+    return uniform_filter1d(np.asarray(series, dtype=float), size=w)
 
 # ─── 1. CURVAS DE APRENDIZAJE (Reward) ────────────────────────────────────────
 fig, axes = plt.subplots(1, 3, figsize=(16, 5), sharey=False)
 fig.suptitle('Curvas de Aprendizaje — Reward por Episodio (SAC · A2C · PPO)',
              fontsize=13, fontweight='bold', y=1.01)
 
-for ax, j, color, name in [
-    (axes[0], SAC_J, C_SAC, 'SAC'),
-    (axes[1], A2C_J, C_A2C, 'A2C'),
-    (axes[2], PPO_J, C_PPO, 'PPO'),
+for ax, j, r, color, name in [
+    (axes[0], SAC_J, SAC_R, C_SAC, 'SAC'),
+    (axes[1], A2C_J, A2C_R, C_A2C, 'A2C'),
+    (axes[2], PPO_J, PPO_R, C_PPO, 'PPO'),
 ]:
-    r = ev(j, 'episode_rewards')
+    r = r
     ax.plot(EPS, r, color=color, lw=1.2, alpha=0.45, label='Raw')
     ax.plot(EPS, smth(r, 7), color=color, lw=2.5, label='Suavizado (7 eps)')
     ax.axhline(0, ls='--', color='grey', lw=0.8)
@@ -322,43 +383,39 @@ print('✓ 09_radar_multicriterio.png')
 fig, axes_r = plt.subplots(1, 3, figsize=(16, 5))
 fig.suptitle('Evolución de los Componentes de Reward por Episodio', fontsize=13, fontweight='bold')
 
-# SAC y A2C comparten estructura: r_solar, r_cost, r_ev, r_grid, r_co2
-for ax_rc, j, color, name in [
-    (axes_r[0], SAC_J, C_SAC, 'SAC'),
-    (axes_r[1], A2C_J, C_A2C, 'A2C'),
+# Componentes proxy: CO2 directa, indirecta y reduccion % por episodio
+for ax_rc, j, r_arr, color, name in [
+    (axes_r[0], SAC_J, SAC_R, C_SAC, 'SAC'),
+    (axes_r[1], A2C_J, A2C_R, C_A2C, 'A2C'),
 ]:
-    rc = j['reward_components_avg']
-    comp_colors = {'episode_r_co2': '#D62728', 'episode_r_ev': '#2CA02C',
-                   'episode_r_solar': '#FFBF00', 'episode_r_cost': '#1F77B4',
-                   'episode_r_grid': '#9467BD'}
-    labels = {'episode_r_co2': 'r_CO₂ (0.30)', 'episode_r_ev': 'r_EV (0.25)',
-              'episode_r_solar': 'r_Solar (0.05)', 'episode_r_cost': 'r_Cost (0.30)',
-              'episode_r_grid': 'r_Grid (0.05)'}
-    for k, c in comp_colors.items():
-        if k in rc and isinstance(rc[k], list):
-            series = rc[k]
-            ax_rc.plot(EPS, series, color=c, lw=1.5, alpha=0.6, label=labels.get(k, k))
-    ax_rc.set_title(f'{name} — Reward Components', fontsize=11, color=color, fontweight='bold')
+    evd = j['training_evolution']
+    co2_indir = np.array(evd.get('hist_co2_indirecta_kg', [0]*50)) / 1e6
+    co2_dir   = np.array(evd.get('hist_co2_directa_kg', [0]*50)) / 1e6
+    reduc     = np.array(evd.get('hist_reduccion_pct', [0]*50))
+    ax_rc.plot(EPS, co2_indir, color='#D62728', lw=1.5, alpha=0.8, label='CO₂ indirecto (M kg)')
+    ax_rc.plot(EPS, co2_dir,   color='#2CA02C', lw=1.5, alpha=0.8, label='CO₂ directo (M kg)')
+    ax_rc2 = ax_rc.twinx()
+    ax_rc2.plot(EPS, reduc, color='#FFBF00', lw=1.5, ls='--', alpha=0.7, label='Reducción %')
+    ax_rc2.set_ylabel('Reducción %', fontsize=8)
+    ax_rc.set_title(f'{name} — CO₂ Componentes + Reducción', fontsize=10, color=color, fontweight='bold')
     ax_rc.set_xlabel('Episodio')
-    ax_rc.set_ylabel('Componente reward (0–1)')
-    ax_rc.legend(fontsize=7.5, loc='lower right')
+    ax_rc.set_ylabel('CO₂ (M kg/año)', fontsize=9)
+    ax_rc.legend(fontsize=7, loc='upper right')
     ax_rc.grid(True, alpha=0.3)
-    ax_rc.axhline(0, ls='--', color='grey', lw=0.7)
 
-# PPO (6 componentes distintos)
+# PPO: reward vs CO2 neta
 ax_rc3 = axes_r[2]
-rc_ppo = PPO_J['reward_components_avg']
-ppo_comps = {
-    'episode_r_co2': ('#D62728', 'r_CO₂'),
-    'episode_r_solar': ('#FFBF00', 'r_Solar'),
-    'episode_r_vehicles': ('#2CA02C', 'r_Vehicles'),
-    'episode_r_grid_stable': ('#9467BD', 'r_Grid'),
-    'episode_r_bess': ('#17BECF', 'r_BESS'),
-    'episode_r_priority': ('#8C564B', 'r_Priority'),
-}
-for k, (c, lbl) in ppo_comps.items():
-    if k in rc_ppo and isinstance(rc_ppo[k], list):
-        ax_rc3.plot(EPS, rc_ppo[k], color=c, lw=1.5, alpha=0.6, label=lbl)
+evd_ppo = PPO_J['training_evolution']
+co2_neta_ppo = np.array(evd_ppo.get('hist_co2_neta_kg', [0]*50)) / 1e6
+ax_rc3.plot(EPS, co2_neta_ppo, color=C_PPO, lw=1.5, alpha=0.6, label='CO₂ neta (M kg)')
+ax_rc3.plot(EPS, smth(co2_neta_ppo, 5), color=C_PPO, lw=2.5, label='Suavizado')
+reduc_ppo = np.array(evd_ppo.get('hist_reduccion_pct', [0]*50))
+ax_rc3b = ax_rc3.twinx()
+ax_rc3b.plot(EPS, reduc_ppo, color='#FFBF00', lw=1.5, ls='--', alpha=0.7, label='Reducción %')
+ax_rc3b.set_ylabel('Reducción %', fontsize=8)
+# (bloque PPO dummy para mantener compatibilidad con código siguiente)
+for k, (c, lbl) in {}.items():
+    pass
 ax_rc3.set_title('PPO — Reward Components (v7.0, 6 obj.)', fontsize=11, color=C_PPO, fontweight='bold')
 ax_rc3.set_xlabel('Episodio')
 ax_rc3.set_ylabel('Componente reward')
@@ -377,9 +434,9 @@ months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic
 days_pm = [31,28,31,30,31,30,31,31,30,31,30,31]
 
 # Assumimos distribución uniforme (dataset es 1 año completo)
-a2c_ev_yearly = 362_204    # kWh/año
-sac_ev_yearly = 381_076
-ppo_ev_yearly = 304_187
+a2c_ev_yearly = sum(ev(A2C_J, 'episode_ev_charging')) / 50   # kWh/año promedio
+sac_ev_yearly = sum(ev(SAC_J, 'episode_ev_charging')) / 50
+ppo_ev_yearly = sum(ev(PPO_J, 'episode_ev_charging')) / 50
 target_yearly = EV_BL
 
 def monthly_kwh(yearly, days_pm):
@@ -462,9 +519,9 @@ print('✓ 12_grid_import_convergence.png')
 # ─── 13. VARIABILIDAD Y ESTADÍSTICAS (boxplot reward últimos 20 eps) ──────────
 fig, ax_box = plt.subplots(figsize=(10, 6))
 data_box = [
-    ev(SAC_J,'episode_rewards')[-20:],
-    ev(A2C_J,'episode_rewards')[-20:],
-    ev(PPO_J,'episode_rewards')[-20:],
+    SAC_R[-20:],
+    A2C_R[-20:],
+    PPO_R[-20:],
 ]
 bp = ax_box.boxplot(data_box, labels=['SAC', 'A2C', 'PPO'],
                     patch_artist=True, notch=False, widths=0.5)

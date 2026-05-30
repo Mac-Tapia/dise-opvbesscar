@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import warnings
+from datetime import date
 from pathlib import Path
 
 import matplotlib
@@ -23,6 +24,7 @@ warnings.filterwarnings("ignore")
 ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "outputs" / "seccion52"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
+RUN_DATE = date.today().isoformat()
 
 SAC_CSV = ROOT / "outputs" / "sac_training" / "sac_episodios_history.csv"
 PPO_CSV = ROOT / "outputs" / "ppo_training" / "ppo_episodios_history.csv"
@@ -419,41 +421,54 @@ plt.close()
 print("  ✓ fig4_bess_grid_estrategia.png")
 
 # ─── Guardar JSON de resultados ───────────────────────────────────────────────
-resultados = {
-    "fecha_generacion": "2026-04-12",
-    "algoritmos": {
-        "SAC": {
-            "f2_minimo_kg": int(f2_sac.min()),
-            "f2_minimo_ep": int(np.argmin(f2_sac) + 1),
-            "f2_media_kg": round(f2_sac.mean(), 0),
-            "f2_sigma_kg": round(f2_sac.std(), 0),
-            "vs_f0_pct": round((F0_KG - f2_sac.min()) / F0_KG * 100, 2),
-            "co2_evitado_kg": int(F0_KG - f2_sac.min()),
-            "cv_plateau_pct": round(plateau_sac.std() / plateau_sac.mean() * 100, 3),
-        },
-        "PPO": {
-            "f2_minimo_kg": int(f2_ppo.min()),
-            "f2_minimo_ep": int(np.argmin(f2_ppo) + 1),
-            "f2_media_kg": round(f2_ppo.mean(), 0),
-            "f2_sigma_kg": round(f2_ppo.std(), 0),
-            "vs_f0_pct": round((F0_KG - f2_ppo.min()) / F0_KG * 100, 2),
-            "co2_evitado_kg": int(F0_KG - f2_ppo.min()),
-            "cv_plateau_pct": round(plateau_ppo.std() / plateau_ppo.mean() * 100, 3),
-        },
-        "A2C": {
-            "f2_minimo_kg": int(f2_a2c.min()),
-            "f2_minimo_ep": int(np.argmin(f2_a2c) + 1),
-            "f2_media_kg": round(f2_a2c.mean(), 0),
-            "f2_sigma_kg": round(f2_a2c.std(), 0),
-            "vs_f0_pct": round((F0_KG - f2_a2c.min()) / F0_KG * 100, 2),
-            "co2_evitado_kg": int(F0_KG - f2_a2c.min()),
-            "cv_plateau_pct": round(plateau_a2c.std() / plateau_a2c.mean() * 100, 3),
-        },
+algoritmos_resultados = {
+    "SAC": {
+        "f2_minimo_kg": int(f2_sac.min()),
+        "f2_minimo_ep": int(np.argmin(f2_sac) + 1),
+        "f2_media_kg": round(f2_sac.mean(), 0),
+        "f2_sigma_kg": round(f2_sac.std(), 0),
+        "vs_f0_pct": round((F0_KG - f2_sac.min()) / F0_KG * 100, 2),
+        "co2_evitado_kg": int(F0_KG - f2_sac.min()),
+        "cv_plateau_pct": round(plateau_sac.std() / plateau_sac.mean() * 100, 3),
     },
+    "PPO": {
+        "f2_minimo_kg": int(f2_ppo.min()),
+        "f2_minimo_ep": int(np.argmin(f2_ppo) + 1),
+        "f2_media_kg": round(f2_ppo.mean(), 0),
+        "f2_sigma_kg": round(f2_ppo.std(), 0),
+        "vs_f0_pct": round((F0_KG - f2_ppo.min()) / F0_KG * 100, 2),
+        "co2_evitado_kg": int(F0_KG - f2_ppo.min()),
+        "cv_plateau_pct": round(plateau_ppo.std() / plateau_ppo.mean() * 100, 3),
+    },
+    "A2C": {
+        "f2_minimo_kg": int(f2_a2c.min()),
+        "f2_minimo_ep": int(np.argmin(f2_a2c) + 1),
+        "f2_media_kg": round(f2_a2c.mean(), 0),
+        "f2_sigma_kg": round(f2_a2c.std(), 0),
+        "vs_f0_pct": round((F0_KG - f2_a2c.min()) / F0_KG * 100, 2),
+        "co2_evitado_kg": int(F0_KG - f2_a2c.min()),
+        "cv_plateau_pct": round(plateau_a2c.std() / plateau_a2c.mean() * 100, 3),
+    },
+}
+best_name = min(algoritmos_resultados, key=lambda name: algoritmos_resultados[name]["f2_minimo_kg"])
+best_info = algoritmos_resultados[best_name]
+
+resultados = {
+    "fecha_generacion": RUN_DATE,
+    "algoritmos": algoritmos_resultados,
+    "algoritmo_optimo": best_name,
     "prueba_normalidad": "Shapiro-Wilk",
-    "prueba_inferencial": prueba_nombre,
+    "pruebas_no_parametricas": [
+        "Wilcoxon signed-rank",
+        "Kruskal-Wallis",
+        "Mann-Whitney U",
+    ],
+    "prueba_inferencial": "Wilcoxon signed-rank, Kruskal-Wallis y Mann-Whitney U (no paramétricas)",
     "alpha": 0.05,
-    "conclusion": "SAC es el algoritmo óptimo: F2 mínimo más bajo, mayor reducción CO₂ vs F0, y convergencia estable.",
+    "conclusion": (
+        f"{best_name} es el algoritmo óptimo: F2 mínimo={best_info['f2_minimo_kg']:,} kg/año "
+        f"en el episodio {best_info['f2_minimo_ep']}, reducción={best_info['vs_f0_pct']:.2f}% vs F0."
+    ),
 }
 
 with open(OUT_DIR / "resultados_seccion52.json", "w", encoding="utf-8") as f:

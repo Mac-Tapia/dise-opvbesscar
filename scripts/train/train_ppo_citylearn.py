@@ -488,7 +488,7 @@ class EVMetricsCallback(BaseCallback):
                 self._ep_solar_kwh, self._ep_mall_kwh,
             )
             log.info(
-                "  [CSV] EV motos demanda  =%9.0f kWh │ EV mototaxis demanda  =%9.0f kWh  (perfil fijo)",
+                "  [CSV] EV motos demanda  =%9.0f kWh │ EV mototaxis demanda  =%9.0f kWh  (estocástico ±15%%/día)",
                 self._ep_ev_motos_demand_kwh, self._ep_ev_mototaxis_demand_kwh,
             )
             log.info(

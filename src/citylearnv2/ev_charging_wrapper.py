@@ -9,8 +9,8 @@ y mototaxis que contribuye cuantificablemente a la reducción de CO₂ en
 Iquitos (0.4521 kg CO₂/kWh, 0.87/0.54 kg CO₂/L gasolina).
 
 INFRAESTRUCTURA v5.7:
-  - Cargadores motos     : 15 × 2 sockets × 7.4 kW = 222 kW max
-  - Cargadores mototaxis : 4  × 2 sockets × 7.4 kW = 59.2 kW max
+  - Cargadores motos     : 15 × 2 sockets Modo 3 × 7.4 kW = 222 kW max simultáneo
+  - Cargadores mototaxis : 4  × 2 sockets Modo 3 × 7.4 kW = 59.2 kW max simultáneo
   - Total EV             : 19 cargadores × 2 sockets = 38 sockets = 281.2 kW
   - BESS                 : 2,000 kWh / 400 kW, DoD 80%, efic. 95%
   - PV                   : 4,050 kWp (Iquitos, perfil PVGIS horario)
@@ -24,7 +24,7 @@ ESPACIO DE ACCIÓN EXTENDIDO (3D):
   esperar la generación solar (peak 10:00-14:00 en Iquitos).
   La deuda diaria se penaliza si no se cumple antes del cierre del día (hora 23).
 
-ESPACIO DE OBSERVACIÓN EXTENDIDO (16D = CityLearn 11D + EV 5D):
+ESPACIO DE OBSERVACIÓN EXTENDIDO (18D = CityLearn 11D + EV 5D + tarifa 2D):
   [0-10]  obs CityLearn estándar (month, hour, day_type, temp, irradiancia,
           carbon_intensity, non_shiftable_load, solar_gen, bess_soc,
           net_electricity_consumption, ...)
@@ -36,26 +36,21 @@ ESPACIO DE OBSERVACIÓN EXTENDIDO (16D = CityLearn 11D + EV 5D):
   [16]  tarifa_norm             — (tarifa_total - HFP) / (HP - HFP) ∈ [0,1]; 0=HFP barato, 1=HP caro
   [17]  is_hora_punta           — {0,1} señal binaria del período tarifario OSINERGMIN
 
-RECOMPENSA MULTI-OBJETIVO (CO2_DUAL_FOCUS v7.2 BESS_DISPATCH_FOCUS + COST_AWARE):
-  r_direct_co2    0.10  — CO₂ directo evitado: motos+mototaxis vs gasolina
-  r_indirect_co2  0.50  — CO₂ indirecto: grid_import × co2_factor horario
-  r_ev_complete   0.15  — EV charging completion by deadline
-  r_solar         0.05  — PV self-consumption
-  r_grid_stable   0.05  — ramp smoothing
-  r_cost          0.05  — costo OSINERGMIN HP/HFP
-  r_bess_solar    0.10  — NUEVO: timing solar BESS (+bonus solar, -penalty nocturno)
-  r_ev_complete  0.25  — penalizar deuda EV incumplida al fin del día
-  r_solar        0.05  — maximizar autoconsumo solar
-  r_grid_stable  0.05  — penalizar rampas bruscas de importación de red
-  r_cost         0.10  — costo tarifario OSINERGMIN HP(0.45)/HFP(0.28) S/./kWh
+RECOMPENSA MULTI-OBJETIVO (CO2_DUAL_FOCUS v8.1 + EV estocástico):
+  r_direct_co2    0.20  — CO₂ directo evitado: motos+mototaxis vs gasolina
+  r_indirect_co2  0.30  — CO₂ indirecto: grid_import × co2_factor horario
+  r_ev_complete   0.35  — completar carga EV sin deuda operativa
+  r_bess_solar    0.07  — timing solar BESS (+bonus solar, -penalty nocturno)
+  r_solar         0.04  — PV self-consumption
+  r_grid_stable   0.02  — ramp smoothing
+  r_cost          0.02  — costo OSINERGMIN HP/HFP
 
 Uso:
     from src.citylearnv2.ev_charging_wrapper import IquitosEVChargingWrapper
     from src.citylearnv2.env_factory import create_iquitos_env
 
-    base_env = create_iquitos_env()   # CityLearnEnv (solo BESS + mall, sin EVs)
-    env = IquitosEVChargingWrapper(base_env)
-    # → obs_dim = 16, action_dim = 3
+    env = create_iquitos_env()
+    # → obs_dim = 18, action_dim = 3
 
 Notas de diseño:
     - CityLearn tiene non_shiftable_load = mall_kwh (solo mall, sin EVs)
@@ -122,6 +117,16 @@ EV_MOTO_BAT_KWH: float      = 4.6    # capacidad batería moto 125cc (kWh)
 EV_MOTOTAXI_BAT_KWH: float  = 7.4    # capacidad batería mototaxi 150cc (kWh)
 EV_SOC_MIN: float = 0.20             # SOC mínimo EV — 20 % (llegada / fin descarga)
 EV_SOC_MAX: float = 0.80             # SOC máximo EV — 80 % (objetivo de carga) → DoD 80 %
+EV_SOC_ARRIVAL_MAX: float = 0.60     # SOC máximo de llegada — vehículo llega hasta 60% cargado
+EV_CHARGER_KW: float = 7.4           # potencia por socket Modo 3
+
+# Variabilidad operacional por episodio. La demanda EV no es fija: se remuestrean
+# conteos, hora de llegada, SOC inicial y tiempo disponible de carga.
+EV_STOCH_DAILY_SIGMA: float = 0.15
+EV_STOCH_ARRIVAL_OFFSETS: tuple[int, int, int] = (-1, 0, 1)
+EV_STOCH_ARRIVAL_PROBS: tuple[float, float, float] = (0.15, 0.70, 0.15)
+EV_MOTO_DWELL_HOURS: tuple[float, float, float] = (0.50, 1.50, 4.00)
+EV_MOTOTAXI_DWELL_HOURS: tuple[float, float, float] = (0.50, 1.00, 3.00)
 EV_CHARGER_EFF: float = 0.95         # eficiencia cargador Modo 3 (OE2 chargers.py)
 
 # Energía útil por visita: (SOC_MAX - SOC_MIN) × cap_bat / efic_cargador
@@ -166,34 +171,34 @@ BESS_MAX_KW: float = 400.0                 # Potencia máxima BESS (kW)
 BESS_CAPACITY_KWH: float = 2000.0          # Capacidad energética BESS (kWh) — OE2 v5.3
 BESS_EFF_ROUNDTRIP: float = 0.95           # Eficiencia round-trip lithium-ion (OE2 bess.py)
 
-# Pesos de recompensa OE3 CO2_DUAL_FOCUS v7.4 (tres objetivos OE3 explícitos)
-# Evolución: v7.0→v7.1→v7.2→v7.3→v7.4→v7.5
-# v7.5: pesos CO2 directa/indirecta equilibrados (0.25/0.30) — OE3 tres pilares simétricos
+# Pesos de recompensa OE3 CO2_DUAL_FOCUS v8.1 (demanda EV estocástica + Modo 3)
+# v8.1 prioriza cumplimiento EV para evitar políticas que reducen CO2 dejando
+# deuda de carga; CO2 indirecta sigue siendo la palanca principal de F2.
 #
 # OBJETIVO OE3-1: Reducción CO2 DIRECTA (evitar combustión ICE motos/mototaxis)
-#   _W_DIRECT_CO2 = 0.25  — r_direct_co2: beneficio por electrificación vehicular
+#   _W_DIRECT_CO2 = 0.20  — r_direct_co2: beneficio por electrificación vehicular
 #
 # OBJETIVO OE3-2: Reducción CO2 INDIRECTA (minimizar importación red diesel Iquitos)
 #   _W_INDIRECT_CO2 = 0.30 — r_indirect_co2: penaliza grid_import × co2_factor
 #
 # OBJETIVO OE3-3: Satisfacción/cantidad de carga EV (motos + mototaxis)
-#   _W_EV_COMPLETE = 0.25  — r_ev_complete: completion ratio + penalización deuda diaria
+#   _W_EV_COMPLETE = 0.35  — completion ratio + penalización deuda diaria
 #
 # REGLA OPERACIONAL BESS: cargar con solar (6-18h), NO con diesel nocturno
-#   _W_BESS_SOLAR = 0.10   — r_bess_solar: +bonus solar, -penalty carga nocturna
+#   _W_BESS_SOLAR = 0.07   — r_bess_solar: +bonus solar, -penalty carga nocturna
 #
-# SECUNDARIOS (suman 0.10):
-#   _W_SOLAR = 0.05        — r_solar: autoconsumo PV (superpuesto con OE3-2)
-#   _W_GRID_STABLE = 0.03  — r_grid_stable: suavizado de rampas
+# SECUNDARIOS (suman 0.08):
+#   _W_SOLAR = 0.04        — r_solar: autoconsumo PV (superpuesto con OE3-2)
+#   _W_GRID_STABLE = 0.02  — r_grid_stable: suavizado de rampas
 #   _W_COST = 0.02         — r_cost: OSINERGMIN (señal parcialmente en OE3-2)
 #
-# Suma: 0.25+0.30+0.25+0.10+0.05+0.03+0.02 = 1.00
-_W_DIRECT_CO2: float   = 0.25   # OE3-1: CO2 directa (ICE vs EV)
+# Suma: 0.20+0.30+0.35+0.07+0.04+0.02+0.02 = 1.00
+_W_DIRECT_CO2: float   = 0.20   # OE3-1: CO2 directa (ICE vs EV)
 _W_INDIRECT_CO2: float  = 0.30   # OE3-2: CO2 indirecta (grid × factor)
-_W_EV_COMPLETE: float   = 0.25   # OE3-3: satisfacción/cantidad carga EV
-_W_BESS_SOLAR: float    = 0.10   # regla op: BESS carga con solar (no diesel nocturno)
-_W_SOLAR: float         = 0.05   # autoconsumo PV
-_W_GRID_STABLE: float   = 0.03   # estabilidad red
+_W_EV_COMPLETE: float   = 0.35   # OE3-3: satisfacción/cantidad carga EV
+_W_BESS_SOLAR: float    = 0.07   # regla op: BESS carga con solar (no diesel nocturno)
+_W_SOLAR: float         = 0.04   # autoconsumo PV
+_W_GRID_STABLE: float   = 0.02   # estabilidad red
 _W_COST: float          = 0.02   # costo tarifario OSINERGMIN HP/HFP
 
 # Umbral solar mínimo para considerar que hay generación aprovechable (kW)
@@ -247,19 +252,38 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         mototaxis_df = _require(_EV_MOTOTAXIS_CSV)
         self._n = len(motos_df)
 
-        self._ev_motos_demand: np.ndarray    = motos_df["ev_demand_kwh"].to_numpy(dtype=np.float64)
-        self._ev_mototaxis_demand: np.ndarray = mototaxis_df["ev_demand_kwh"].to_numpy(dtype=np.float64)
-        # CO₂ directo: energía EV × factor emisión combustible desplazado
+        # Perfil base anual (8760h) — inmutable; se aplica variación por episodio en reset()
+        self._ev_motos_demand_base: np.ndarray    = motos_df["ev_demand_kwh"].to_numpy(dtype=np.float64)
+        self._ev_mototaxis_demand_base: np.ndarray = mototaxis_df["ev_demand_kwh"].to_numpy(dtype=np.float64)
+        self._ev_motos_demand    = self._ev_motos_demand_base.copy()
+        self._ev_mototaxis_demand = self._ev_mototaxis_demand_base.copy()
+        # CO₂ directo: energía EV × factor emisión combustible desplazado (base; reset() lo reemplaza)
         self._co2_motos: np.ndarray    = self._ev_motos_demand * CO2_FACTOR_MOTO
         self._co2_mototaxis: np.ndarray = self._ev_mototaxis_demand * CO2_FACTOR_MOTOTAXI
+        # Referencia ICE per-cargador (estocástica por episodio); inicializada con base para seguridad
+        self._co2_ref_motos_h: np.ndarray    = self._co2_motos.copy()
+        self._co2_ref_mototaxis_h: np.ndarray = self._co2_mototaxis.copy()
+        self._co2_ref_direct_h: np.ndarray   = self._co2_motos + self._co2_mototaxis
 
         # ChargerSimulation fields — usados para logging y métricas
-        self._chr_motos_hora: np.ndarray    = motos_df["vehicles_per_hour"].to_numpy(dtype=np.float64)
-        self._chr_mototaxis_hora: np.ndarray = mototaxis_df["vehicles_per_hour"].to_numpy(dtype=np.float64)
+        self._chr_motos_hora_base: np.ndarray = motos_df["vehicles_per_hour"].to_numpy(dtype=np.float64)
+        self._chr_mototaxis_hora_base: np.ndarray = mototaxis_df["vehicles_per_hour"].to_numpy(dtype=np.float64)
+        self._chr_motos_hora: np.ndarray    = self._chr_motos_hora_base.copy()
+        self._chr_mototaxis_hora: np.ndarray = self._chr_mototaxis_hora_base.copy()
+        self._chr_motos_active_sockets: np.ndarray = motos_df["active_sockets"].to_numpy(dtype=np.float64)
+        self._chr_mototaxis_active_sockets: np.ndarray = mototaxis_df["active_sockets"].to_numpy(dtype=np.float64)
         self._chr_total_hora: np.ndarray    = self._chr_motos_hora + self._chr_mototaxis_hora
         self._chr_ev_total_kwh: np.ndarray  = self._ev_motos_demand + self._ev_mototaxis_demand
         self._chr_co2_directo: np.ndarray   = self._co2_motos + self._co2_mototaxis
         self._chr_co2_neto_hora: np.ndarray = self._chr_co2_directo
+        self._ev_motos_arrival_soc: np.ndarray = np.full(self._n, EV_SOC_MIN, dtype=np.float64)
+        self._ev_mototaxis_arrival_soc: np.ndarray = np.full(self._n, EV_SOC_MIN, dtype=np.float64)
+        self._ev_motos_active_soc: np.ndarray = np.full(self._n, EV_SOC_MIN, dtype=np.float64)
+        self._ev_mototaxis_active_soc: np.ndarray = np.full(self._n, EV_SOC_MIN, dtype=np.float64)
+        self._ev_motos_charge_time_h: np.ndarray = np.zeros(self._n, dtype=np.float64)
+        self._ev_mototaxis_charge_time_h: np.ndarray = np.zeros(self._n, dtype=np.float64)
+        self._ev_motos_dwell_h: np.ndarray = np.zeros(self._n, dtype=np.float64)
+        self._ev_mototaxis_dwell_h: np.ndarray = np.zeros(self._n, dtype=np.float64)
         # EV charger state (ChargerSimulation: 1=parked, 3=idle)
         self._chr_motos_state: np.ndarray   = motos_df["electric_vehicle_charger_state"].to_numpy(dtype=np.int32)
         self._chr_mototaxis_state: np.ndarray = mototaxis_df["electric_vehicle_charger_state"].to_numpy(dtype=np.int32)
@@ -548,6 +572,217 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
 
     # ── Helpers ───────────────────────────────────────────────────────────────
 
+    def _sample_stochastic_fleet_episode(
+        self,
+        *,
+        base_counts: np.ndarray,
+        battery_kwh: float,
+        max_sockets: int,
+        dwell_hours: tuple[float, float, float],
+        rng: np.random.Generator,
+    ) -> dict[str, np.ndarray]:
+        """Genera un perfil EV anual estocástico agregado a resolución horaria.
+
+        Cada episodio remuestrea:
+        - número de vehículos por hora a partir del perfil OE2;
+        - hora efectiva de llegada con jitter horario;
+        - SOC de llegada por vehículo;
+        - tiempo disponible de permanencia/carga;
+        - energía horaria requerida, limitada por tomas Modo 3 simultáneas.
+        """
+        demand = np.zeros(self._n, dtype=np.float64)
+        arrivals = np.zeros(self._n, dtype=np.float64)
+        active = np.zeros(self._n, dtype=np.float64)
+        arrival_soc_sum = np.zeros(self._n, dtype=np.float64)
+        active_soc_sum = np.zeros(self._n, dtype=np.float64)
+        charge_time_sum = np.zeros(self._n, dtype=np.float64)
+        dwell_sum = np.zeros(self._n, dtype=np.float64)
+
+        offsets = np.array(EV_STOCH_ARRIVAL_OFFSETS, dtype=np.int32)
+        offset_probs = np.array(EV_STOCH_ARRIVAL_PROBS, dtype=np.float64)
+        daily_sigma = EV_STOCH_DAILY_SIGMA
+        daily_mu = -0.5 * daily_sigma * daily_sigma
+
+        for day in range(365):
+            day_scale = float(rng.lognormal(mean=daily_mu, sigma=daily_sigma))
+            day_start = day * 24
+            for h in range(24):
+                base_idx = day_start + h
+                lam = max(float(base_counts[base_idx]) * day_scale, 0.0)
+                if lam <= 1e-9:
+                    continue
+
+                n_ev = int(rng.poisson(lam))
+                if n_ev <= 0:
+                    continue
+
+                arrival_hours = np.clip(
+                    h + rng.choice(offsets, size=n_ev, p=offset_probs),
+                    0,
+                    23,
+                )
+                soc_arr = rng.triangular(
+                    EV_SOC_MIN,
+                    0.5 * (EV_SOC_MIN + EV_SOC_ARRIVAL_MAX),
+                    EV_SOC_ARRIVAL_MAX,
+                    size=n_ev,
+                )
+                dwell = rng.triangular(*dwell_hours, size=n_ev)
+                energy_required = np.maximum(EV_SOC_MAX - soc_arr, 0.0) * battery_kwh / EV_CHARGER_EFF
+                charge_time = energy_required / max(EV_CHARGER_KW, 1e-6)
+                feasible_energy = np.minimum(energy_required, EV_CHARGER_KW * dwell)
+
+                for arr_h, soc, stay_h, req_time_h, energy in zip(
+                    arrival_hours, soc_arr, dwell, charge_time, feasible_energy
+                ):
+                    arr_idx = day_start + int(arr_h)
+                    arrivals[arr_idx] += 1.0
+                    arrival_soc_sum[arr_idx] += float(soc)
+                    charge_time_sum[arr_idx] += float(req_time_h)
+                    dwell_sum[arr_idx] += float(stay_h)
+
+                    n_slots = max(1, int(math.ceil(float(stay_h))))
+                    remaining = float(energy)
+                    for slot_offset in range(n_slots):
+                        slot_h = min(int(arr_h) + slot_offset, 23)
+                        slot_idx = day_start + slot_h
+                        slots_left = max(n_slots - slot_offset, 1)
+                        # Modo 3: cada toma entrega hasta 7.4 kWh en un timestep horario.
+                        slot_energy = min(EV_CHARGER_KW, remaining / slots_left)
+                        if slot_energy <= 0.0:
+                            break
+                        demand[slot_idx] += slot_energy
+                        active[slot_idx] += 1.0
+                        active_soc_sum[slot_idx] += float(soc)
+                        remaining -= slot_energy
+
+        arrival_soc = np.divide(
+            arrival_soc_sum,
+            arrivals,
+            out=np.full(self._n, EV_SOC_MIN, dtype=np.float64),
+            where=arrivals > 0,
+        )
+        active_soc = np.divide(
+            active_soc_sum,
+            active,
+            out=np.full(self._n, EV_SOC_MIN, dtype=np.float64),
+            where=active > 0,
+        )
+        charge_time_h = np.divide(
+            charge_time_sum,
+            arrivals,
+            out=np.zeros(self._n, dtype=np.float64),
+            where=arrivals > 0,
+        )
+        dwell_h = np.divide(
+            dwell_sum,
+            arrivals,
+            out=np.zeros(self._n, dtype=np.float64),
+            where=arrivals > 0,
+        )
+
+        # Las tomas Modo 3 operan simultáneamente hasta el límite físico del patio.
+        active_sockets = np.minimum(active, float(max_sockets))
+        max_hourly_power = float(max_sockets) * EV_CHARGER_KW
+        demand = np.minimum(demand, max_hourly_power)
+
+        return {
+            "demand": demand,
+            "arrivals": arrivals,
+            "active_sockets": active_sockets,
+            "arrival_soc": arrival_soc,
+            "active_soc": active_soc,
+            "charge_time_h": charge_time_h,
+            "dwell_h": dwell_h,
+        }
+
+    def _refresh_ev_derived_arrays(self) -> None:
+        """Actualiza métricas dependientes del perfil EV estocástico del episodio."""
+        self._co2_ref_motos_h = self._ev_motos_demand * CO2_FACTOR_MOTO
+        self._co2_ref_mototaxis_h = self._ev_mototaxis_demand * CO2_FACTOR_MOTOTAXI
+        self._co2_ref_direct_h = self._co2_ref_motos_h + self._co2_ref_mototaxis_h
+        self._co2_motos = self._co2_ref_motos_h
+        self._co2_mototaxis = self._co2_ref_mototaxis_h
+
+        self._chr_total_hora = self._chr_motos_hora + self._chr_mototaxis_hora
+        self._chr_ev_total_kwh = self._ev_motos_demand + self._ev_mototaxis_demand
+        self._chr_co2_directo = self._co2_ref_direct_h
+        self._chr_co2_neto_hora = self._chr_co2_directo
+        self._chr_ev_demand_kwh = self._chr_ev_total_kwh
+        self._chr_co2_acum_anual = np.cumsum(self._chr_co2_directo)
+        self._chr_co2_acum_diario = self._chr_co2_directo.reshape(365, 24).cumsum(axis=1).reshape(self._n)
+        self._chr_co2_por_vehiculo = np.divide(
+            self._chr_co2_directo,
+            self._chr_total_hora,
+            out=np.zeros(self._n, dtype=np.float64),
+            where=self._chr_total_hora > 0,
+        )
+        self._chr_co2_grid_kwh = self._chr_ev_total_kwh * self._co2_factor
+        self._chr_costo_soles = self._chr_ev_total_kwh * self._mall_tarifa
+
+        self._chr_motos_state = np.where(self._chr_motos_active_sockets > 0, 1, 3).astype(np.int32)
+        self._chr_mototaxis_state = np.where(self._chr_mototaxis_active_sockets > 0, 1, 3).astype(np.int32)
+        self._chr_motos_diario = self._chr_motos_hora.reshape(365, 24).cumsum(axis=1).reshape(self._n)
+        self._chr_mototaxis_diario = self._chr_mototaxis_hora.reshape(365, 24).cumsum(axis=1).reshape(self._n)
+        self._chr_total_diario = self._chr_motos_diario + self._chr_mototaxis_diario
+        self._chr_motos_anual = np.full(self._n, self._chr_motos_hora.sum(), dtype=np.float64)
+        self._chr_mototaxis_anual = np.full(self._n, self._chr_mototaxis_hora.sum(), dtype=np.float64)
+        self._chr_total_anual = self._chr_motos_anual + self._chr_mototaxis_anual
+        self._chr_motos_mensual = np.cumsum(self._chr_motos_hora)
+        self._chr_mototaxis_mensual = np.cumsum(self._chr_mototaxis_hora)
+        self._chr_total_mensual = self._chr_motos_mensual + self._chr_mototaxis_mensual
+
+        self._daily_motos_max = float(max(self._ev_motos_demand.reshape(365, 24).sum(axis=1).max(), 1.0))
+        self._daily_mototaxis_max = float(max(self._ev_mototaxis_demand.reshape(365, 24).sum(axis=1).max(), 1.0))
+
+    def _refresh_socket_arrays(self) -> None:
+        """Reconstruye el estado agregado de las 38 tomas Modo 3 simultáneas."""
+        n_motos = 30
+        n_mototaxis = 8
+        n_sockets = n_motos + n_mototaxis
+
+        motos_act = np.minimum(self._chr_motos_active_sockets, n_motos).astype(np.float32)
+        motot_act = np.minimum(self._chr_mototaxis_active_sockets, n_mototaxis).astype(np.float32)
+
+        motos_pw = np.zeros((self._n, n_motos), dtype=np.float32)
+        motot_pw = np.zeros((self._n, n_mototaxis), dtype=np.float32)
+        motos_pw_per = np.where(motos_act > 0, self._ev_motos_demand.astype(np.float32) / np.maximum(motos_act, 1.0), 0.0)
+        motot_pw_per = np.where(motot_act > 0, self._ev_mototaxis_demand.astype(np.float32) / np.maximum(motot_act, 1.0), 0.0)
+        motos_pw_per = np.minimum(motos_pw_per, EV_CHARGER_KW).astype(np.float32)
+        motot_pw_per = np.minimum(motot_pw_per, EV_CHARGER_KW).astype(np.float32)
+
+        for i in range(n_motos):
+            motos_pw[:, i] = np.where(i < motos_act, motos_pw_per, 0.0)
+        for i in range(n_mototaxis):
+            motot_pw[:, i] = np.where(i < motot_act, motot_pw_per, 0.0)
+
+        motos_active = np.column_stack([
+            np.where(i < motos_act, 1.0, 0.0).astype(np.float32) for i in range(n_motos)
+        ])
+        motot_active = np.column_stack([
+            np.where(i < motot_act, 1.0, 0.0).astype(np.float32) for i in range(n_mototaxis)
+        ])
+        self._skt_active = np.hstack([motos_active, motot_active]).astype(np.float32)
+        self._skt_charging_power = np.hstack([motos_pw, motot_pw]).astype(np.float32)
+        self._skt_charger_power = np.full((self._n, n_sockets), EV_CHARGER_KW, dtype=np.float32)
+        self._skt_battery_kwh = np.hstack([
+            np.full((self._n, n_motos), EV_MOTO_BAT_KWH, dtype=np.float32),
+            np.full((self._n, n_mototaxis), EV_MOTOTAXI_BAT_KWH, dtype=np.float32),
+        ])
+
+        moto_soc = self._ev_motos_active_soc.astype(np.float32)
+        motot_soc = self._ev_mototaxis_active_soc.astype(np.float32)
+        self._skt_soc_arrival = np.hstack([
+            np.tile(moto_soc[:, None], (1, n_motos)),
+            np.tile(motot_soc[:, None], (1, n_mototaxis)),
+        ]).astype(np.float32)
+        self._skt_soc_target = np.full((self._n, n_sockets), EV_SOC_MAX, dtype=np.float32)
+        self._skt_soc_current = np.where(
+            self._skt_active > 0,
+            0.5 * (self._skt_soc_arrival + self._skt_soc_target),
+            EV_SOC_MIN,
+        ).astype(np.float32)
+
     def _get_real_bess_soc(self) -> float:
         """Lee el SOC real del battery de CityLearn, corrigiendo el off-by-one.
 
@@ -756,12 +991,13 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         """Calcula la recompensa multi-objetivo CO2_DUAL_FOCUS v7.2 BESS_DISPATCH_FOCUS + COST_AWARE.
 
         Componentes (pesos suman 1.0):
-          r_direct_co2   0.10 — CO₂ directo evitado (moto/mototaxi vs gasolina)
-          r_indirect_co2 0.45 — CO₂ indirecto por grid_import × 0.4521 kg/kWh
-          r_ev_complete  0.25 — completar carga EV antes del cierre del día
-          r_solar        0.05 — autoconsumo solar (evitar exportación)
-          r_grid_stable  0.05 — penalizar rampas bruscas de importación
-          r_cost         0.10 — costo tarifario OSINERGMIN HP(0.45)/HFP(0.28) S/./kWh
+          r_direct_co2   0.20 — CO₂ directo evitado (moto/mototaxi vs gasolina)
+          r_indirect_co2 0.30 — CO₂ indirecto por grid_import × factor horario
+          r_ev_complete  0.35 — completar carga EV sin deuda operativa
+          r_bess_solar   0.07 — BESS cargando con solar, no con diesel nocturno
+          r_solar        0.04 — autoconsumo solar (evitar exportación)
+          r_grid_stable  0.02 — penalizar rampas bruscas de importación
+          r_cost         0.02 — costo tarifario OSINERGMIN HP/HFP
 
         Parameters
         ----------
@@ -780,8 +1016,9 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         # Importación de red (física, calculada en step() por _dispatch_energy_step)
         grid_import_real = grid_import_kw
 
-        # ── r_direct_co2 (peso 0.35) ──────────────────────────────────────
-        # CO₂ directo evitado: EVs reemplazando motos/mototaxis de gasolina
+        # ── r_direct_co2 — CO₂ directo evitado vs referencia per-cargador ────
+        # Referencia = ICE equivalente de los vehículos realmente presentes × SoC llegada.
+        # r = 1.0 cuando el agente carga toda la demanda; 0.0 cuando no carga nada.
         t = self._t
         co2_motos_saved = self._co2_motos[t] * (
             ev_motos_actual / max(self._ev_motos_demand[t], 0.001)
@@ -790,7 +1027,9 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
             ev_mototaxis_actual / max(self._ev_mototaxis_demand[t], 0.001)
         ) if self._ev_mototaxis_demand[t] > 0 else 0.0
         co2_direct_total = co2_motos_saved + co2_mototaxis_saved
-        r_direct_co2 = float(np.clip(co2_direct_total / MAX_CO2_DIRECT_PER_HOUR, 0.0, 1.0))
+        # Normalizar por referencia estocástica del episodio (no por constante fija)
+        _co2_ref_t = max(float(self._co2_ref_direct_h[t]), 1e-6)
+        r_direct_co2 = float(np.clip(co2_direct_total / _co2_ref_t, 0.0, 1.0))
 
         # ── r_indirect_co2 (peso 0.45) ────────────────────────────────────
         # CO₂ indirecto: importación de red × factor horario (diesel Iquitos)
@@ -802,18 +1041,33 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         # ── r_ev_complete (peso 0.25) ─────────────────────────────────────
         # Bonificar completar carga EV al día; penalizar deuda incumplida (fin día)
         hour = int(self._t % 24)
+        day_start = (t // 24) * 24
+        day_end = min(day_start + 24, self._n)
+        daily_total = max(
+            float(self._ev_motos_demand[day_start:day_end].sum()
+                  + self._ev_mototaxis_demand[day_start:day_end].sum()),
+            1.0,
+        )
+        debt_now = float(self._ev_motos_debt + self._ev_mototaxis_debt)
+        debt_frac_now = penalty_debt if hour == 23 else float(np.clip(debt_now / daily_total, 0.0, 1.0))
+        urgency = 0.0 if hour < 15 else (0.5 if hour < 18 else (1.0 if hour < 22 else 1.5))
+
         if hour == 23 and penalty_debt > 0.0:
-            # Penalización fuerte al final del día por deuda no cumplida
-            r_ev_complete = -float(np.clip(penalty_debt, 0.0, 1.0))
+            # Penalización fuerte al final del día por deuda no cumplida.
+            r_ev_complete = -float(np.clip(0.5 + penalty_debt, 0.0, 1.0))
         else:
-            # Bonus parcial por carga efectuada respecto a demanda esperada
+            # Bonus parcial por carga efectuada respecto a demanda esperada,
+            # con presión creciente si se acumula deuda cerca del cierre.
             demand_hora = self._ev_motos_demand[t] + self._ev_mototaxis_demand[t]
             if demand_hora > 0.001:
                 ev_total_actual = ev_motos_actual + ev_mototaxis_actual
-                completion_frac = np.clip(ev_total_actual / demand_hora, 0.0, 1.0)
-                r_ev_complete = float(completion_frac - 0.5)  # centrado en 0
+                completion_frac = float(np.clip(ev_total_actual / demand_hora, 0.0, 1.0))
+                r_ev_complete = completion_frac - 0.35 - urgency * debt_frac_now
             else:
-                r_ev_complete = 0.0
+                r_ev_complete = -0.25 * urgency * debt_frac_now
+            if debt_frac_now > 0.10 and hour >= 18:
+                r_ev_complete -= 0.50
+            r_ev_complete = float(np.clip(r_ev_complete, -1.0, 1.0))
 
         # ── r_solar (peso 0.05) ───────────────────────────────────────────
         # Autoconsumo solar: penalizar si se exporta solar pudiendo usarse localmente
@@ -886,6 +1140,43 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         self._ev_mototaxis_debt = 0.0
         self._prev_grid_import = 0.0
         self._prev_bess_soc = -1.0  # -1 = no inicializado; se leerá del obs real en primer step
+
+        # ── Modelo EV estocástico por episodio ────────────────────────────────
+        # seed=None → episodio aleatorio; seed=k → evaluación reproducible.
+        # La demanda ya no es fija: varían cantidad de EVs, llegada, SOC inicial,
+        # tiempo disponible de carga y energía posible en tomas Modo 3 simultáneas.
+        _ep_rng = np.random.default_rng(seed)
+        _motos_ep = self._sample_stochastic_fleet_episode(
+            base_counts=self._chr_motos_hora_base,
+            battery_kwh=EV_MOTO_BAT_KWH,
+            max_sockets=30,
+            dwell_hours=EV_MOTO_DWELL_HOURS,
+            rng=_ep_rng,
+        )
+        _mototaxis_ep = self._sample_stochastic_fleet_episode(
+            base_counts=self._chr_mototaxis_hora_base,
+            battery_kwh=EV_MOTOTAXI_BAT_KWH,
+            max_sockets=8,
+            dwell_hours=EV_MOTOTAXI_DWELL_HOURS,
+            rng=_ep_rng,
+        )
+
+        self._ev_motos_demand = _motos_ep["demand"]
+        self._ev_mototaxis_demand = _mototaxis_ep["demand"]
+        self._chr_motos_hora = _motos_ep["arrivals"]
+        self._chr_mototaxis_hora = _mototaxis_ep["arrivals"]
+        self._chr_motos_active_sockets = _motos_ep["active_sockets"]
+        self._chr_mototaxis_active_sockets = _mototaxis_ep["active_sockets"]
+        self._ev_motos_arrival_soc = _motos_ep["arrival_soc"]
+        self._ev_mototaxis_arrival_soc = _mototaxis_ep["arrival_soc"]
+        self._ev_motos_active_soc = _motos_ep["active_soc"]
+        self._ev_mototaxis_active_soc = _mototaxis_ep["active_soc"]
+        self._ev_motos_charge_time_h = _motos_ep["charge_time_h"]
+        self._ev_mototaxis_charge_time_h = _mototaxis_ep["charge_time_h"]
+        self._ev_motos_dwell_h = _motos_ep["dwell_h"]
+        self._ev_mototaxis_dwell_h = _mototaxis_ep["dwell_h"]
+        self._refresh_ev_derived_arrays()
+        self._refresh_socket_arrays()
 
         base_result = self.env.reset(seed=seed, options=options)
         # CityLearn puede devolver solo obs o (obs, info)
@@ -1013,7 +1304,9 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         _co2_factor_t = float(self._co2_factor[min(t, len(self._co2_factor) - 1)])
 
         # ── Calcular despacho EV real ─────────────────────────────────────
-        # Demanda base de este paso (del perfil histórico)
+        # Demanda estocástica de este paso (conteos, llegada, SOC y permanencia
+        # remuestreados en reset()). Las tomas Modo 3 operan simultáneamente:
+        # motos: 30×7.4 kW; mototaxis: 8×7.4 kW.
         motos_demand_t = float(self._ev_motos_demand[t])
         mototaxis_demand_t = float(self._ev_mototaxis_demand[t])
 
@@ -1036,8 +1329,8 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         # Actualizar deuda diaria (servicio perdido no recuperable intra-día)
         # La deuda acumula la energía NO entregada en cada paso; se usa como
         # señal de penalización al cierre del día (hora 23) y como observación.
-        motos_not_charged = motos_demand_t * (1.0 - ev_motos_frac)
-        mototaxis_not_charged = mototaxis_demand_t * (1.0 - ev_mototaxis_frac)
+        motos_not_charged = max(motos_demand_t - ev_motos_actual, 0.0)
+        mototaxis_not_charged = max(mototaxis_demand_t - ev_mototaxis_actual, 0.0)
         self._ev_motos_debt += motos_not_charged
         self._ev_mototaxis_debt += mototaxis_not_charged
 
@@ -1151,18 +1444,21 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         # ── F7: BESS descarga → desplaza importación de red diesel (HP factor) ───
         co2_bess_discharge_f7_kg  = _co2_bess_disc * _co2_factor_t
 
-        # ── FÓRMULA 0 — SIN PROYECTO ────────────────────────────────────────────
-        # Mall en red diesel + parque completo combustión ICE (sin solar, BESS ni RL)
-        co2_sinproyecto_mall_kg       = _mall_kw * _co2_factor_t           # indirecto: mall red diesel
-        co2_sinproyecto_combustion_kg = _F0_CO2_COMBUSTION_PER_H           # directo: ICE fijo OE2
-        co2_total_sinproyecto_kg      = co2_sinproyecto_mall_kg + co2_sinproyecto_combustion_kg
-
-        # ── FÓRMULA 1 — BASELINE (sin solar, sin BESS, sin agente RL) ───────────
         # [A] Directo combustión ICE
         co2_directo_combustion = (
             motos_demand_t    * CO2_FACTOR_MOTO         # 0.87 kg CO₂/kWh gasolina moto 125cc
             + mototaxis_demand_t * CO2_FACTOR_MOTOTAXI  # 0.54 kg CO₂/kWh gasolina mototaxi 150cc
         )
+
+        # ── FÓRMULA 0 — SIN PROYECTO ────────────────────────────────────────────
+        # Mall en red diesel + combustión ICE equivalente a la demanda EV
+        # estocástica del episodio. Por tanto F0 también varía si cambian cantidad
+        # de EVs, SOC de llegada y tiempo de carga/permanencia.
+        co2_sinproyecto_mall_kg       = _mall_kw * _co2_factor_t
+        co2_sinproyecto_combustion_kg = co2_directo_combustion
+        co2_total_sinproyecto_kg      = co2_sinproyecto_mall_kg + co2_sinproyecto_combustion_kg
+
+        # ── FÓRMULA 1 — BASELINE (sin solar, sin BESS, sin agente RL) ───────────
         # [B] Indirecto: red diesel Iquitos cubre mall + EV (sin solar ni BESS)
         co2_indirecto_red_base = (
             _mall_kw + motos_demand_t + mototaxis_demand_t
@@ -1210,6 +1506,16 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
             "ev_mototaxis_actual_kwh": ev_mototaxis_actual,
             "ev_motos_demand_kwh":     motos_demand_t,
             "ev_mototaxis_demand_kwh": mototaxis_demand_t,
+            "ev_motos_arrival_soc_avg": float(self._ev_motos_arrival_soc[t]),
+            "ev_mototaxis_arrival_soc_avg": float(self._ev_mototaxis_arrival_soc[t]),
+            "ev_motos_charge_time_h_avg": float(self._ev_motos_charge_time_h[t]),
+            "ev_mototaxis_charge_time_h_avg": float(self._ev_mototaxis_charge_time_h[t]),
+            "ev_motos_dwell_h_avg": float(self._ev_motos_dwell_h[t]),
+            "ev_mototaxis_dwell_h_avg": float(self._ev_mototaxis_dwell_h[t]),
+            "ev_motos_active_sockets": float(self._chr_motos_active_sockets[t]),
+            "ev_mototaxis_active_sockets": float(self._chr_mototaxis_active_sockets[t]),
+            "ev_charger_mode": "Modo 3",
+            "ev_charger_kw_per_socket": EV_CHARGER_KW,
             "ev_motos_debt_kwh": self._ev_motos_debt,
             "ev_mototaxis_debt_kwh": self._ev_mototaxis_debt,
             "penalty_debt_frac": penalty_debt_frac,

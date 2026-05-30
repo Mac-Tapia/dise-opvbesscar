@@ -186,13 +186,13 @@ SAC_HYPERPARAMS: dict[str, Any] = {
     "policy": "MlpPolicy",
     # [FIX v1] 3e-4 → 1e-4: grad_norm explosiva 132.93 > 10; Engstrom 2020 recomienda
     # 1e-4 para alta dimension (39D obs). Para 3D accion + 18D obs: 1e-4 optimo.
-    "learning_rate": 1e-4,
+    "learning_rate": 5e-5,
     # [FIX] 200k → 100k: buffer de 1M excesivo para 438k steps totales;
     # 100k mantiene ~11 episodios completos (8760 steps). Raffin 2022: 100k suficiente.
     "buffer_size": 100_000,
-    # [FIX v3] 8760 → 5000: warmup con buffer mas diverso para espacio 18D obs.
-    # Andrychowicz 2020: warmup debe cubrir ~5x batch x dim acciones.
-    "learning_starts": 5_000,
+    # Warmup de un año completo para que el replay buffer vea estacionalidad,
+    # perfiles EV estocásticos y operación PV-BESS antes de updates fuertes.
+    "learning_starts": 8_760,
     "batch_size": 256,
     "tau": 0.005,
     "gamma": 0.99,
@@ -512,11 +512,12 @@ class EVMetricsCallback(BaseCallback):
                 (_f0_ann - _f2_ann) / _f0_ann * 100.0
                 if _f0_ann > 0.0 else 0.0
             )
+            _f0f2_txt = f"-{_f0f2_pct:.1f}%" if _f0f2_pct >= 0.0 else f"+{abs(_f0f2_pct):.1f}%"
             _cur_ep = self.n_calls // self.log_freq + 1
             log.info(
                 "[CO2 %5.1f%%ep] Ep %d | F0=%.0f | F1=%.0f | F2(SAC)=%.0f kg/año (*proyectado) "
-                "| vs F0: -%.1f%%",
-                _pct_ep, _cur_ep, _f0_ann, _f1_ann, _f2_ann, _f0f2_pct,
+                "| vs F0: %s",
+                _pct_ep, _cur_ep, _f0_ann, _f1_ann, _f2_ann, _f0f2_txt,
             )
 
         # Log cada episodio completo (8760 pasos)
@@ -537,6 +538,8 @@ class EVMetricsCallback(BaseCallback):
                 / self._ep_co2_sinproyecto_kg * 100.0
                 if self._ep_co2_sinproyecto_kg > 0.0 else 0.0
             )
+            def _pct_reduction_text(pct: float) -> str:
+                return f"-{pct:5.1f}%" if pct >= 0.0 else f"+{abs(pct):5.1f}%"
             log.info(
                 "-" * 70
             )
@@ -561,7 +564,7 @@ class EVMetricsCallback(BaseCallback):
                 self._ep_solar_kwh, self._ep_mall_kwh,
             )
             log.info(
-                "  [CSV] EV motos demanda  =%9.0f kWh | EV mototaxis demanda  =%9.0f kWh  (perfil fijo)",
+                "  [CSV] EV motos demanda  =%9.0f kWh | EV mototaxis demanda  =%9.0f kWh  (estocástico ±15%%/día)",
                 self._ep_ev_motos_demand_kwh, self._ep_ev_mototaxis_demand_kwh,
             )
             log.info(
@@ -618,18 +621,18 @@ class EVMetricsCallback(BaseCallback):
             log.info("=" * 70)
             log.info("Ep %d | TABLA CO2 vs ESTADO ACTUAL -- OE2/OE3 PVBESSCAR", ep_num)
             log.info(
-                "  [NOTA] F0/F1 son REFERENCIAS DETERMINISTAS (mismo perfil CSV/año). "
-                "Solo F2 varía con las decisiones del agente SAC."
+                "  [NOTA] F0/F1 usan la demanda EV estocástica del episodio "
+                "(cantidad, SOC, llegada y permanencia). F2 además varía con SAC."
             )
             log.info(
-                "  F0 SIN PROYECTO | %10.0f kg/año | REFERENCIA fija"
-                " (1,385 motos+200 mototaxis ICE/día -- OE2: 900+130 punta=65%%)",
+                "  F0 SIN PROYECTO | %10.0f kg/año | referencia ICE estocástica"
+                " equivalente a la demanda EV del episodio",
                 self._ep_co2_sinproyecto_kg,
             )
             log.info(
-                "  F1 BASELINE     | %10.0f kg/año | vs F0: -%6.1f%%"
-                " | REFERENCIA fija (sin solar, sin BESS, sin RL)",
-                self._ep_co2_baseline_kg, f0_vs_baseline_pct,
+                "  F1 BASELINE     | %10.0f kg/año | vs F0: %s"
+                " | sin solar, sin BESS, sin RL",
+                self._ep_co2_baseline_kg, _pct_reduction_text(f0_vs_baseline_pct),
             )
             # Comparativa F2 vs Ep1 y vs EpN-1 para ver aprendizaje acumulado e incremental
             _f2_ep1   = self._hist_co2_control_kg[0]  if self._hist_co2_control_kg  else self._ep_co2_control_kg
@@ -644,9 +647,9 @@ class EVMetricsCallback(BaseCallback):
             # Número del episodio anterior correcto: episodio actual - 1
             _prev_ep_label = ep_num - 1 if self._hist_co2_control_kg else ep_num
             log.info(
-                "  F2 CTRL SAC     | %10.0f kg/año | vs F0: -%6.1f%%"
+                "  F2 CTRL SAC     | %10.0f kg/año | vs F0: %s"
                 " | %s vs Ep1: %+.0f kg (%+.2f%%) | %s vs Ep%d: %+.0f kg (%+.2f%%)",
-                self._ep_co2_control_kg, f0_vs_ctrl_pct,
+                self._ep_co2_control_kg, _pct_reduction_text(f0_vs_ctrl_pct),
                 _trend_sym, -_f2_delta_ep1, -_f2_delta_pct,
                 _prv_sym, _prev_ep_label, -_f2_delta_prv, -_f2_delta_prv_pct,
             )

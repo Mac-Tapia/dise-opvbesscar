@@ -24,24 +24,24 @@ Incluye:
     >>> python scripts/regenerate_graphics_v57.py
     Esto carga balance.py que genera las 16 gráficas ✓
 
-TRANSFORMACION DE MALL CON PROYECTO v5.7:
-- ANTES (sin proyecto): Mall 100% alimentado por red publica
-- AHORA (con proyecto):
-  Recursos PV directo:    5,497,152 kWh/anio (44.4% consumo MALL)
-  Recursos BESS:            611,757 kWh/anio (4.9% consumo MALL)
-  Respaldo GRID:          6,871,501 kWh/anio (55.6% consumo MALL)
-  RESULTADO: Mall reduce dependencia de grid en 49.3% (PV+BESS combinado)
+ENTRADAS REALES (datos generados por módulos OE2):
+  Solar:    pv_generation_citylearn2024.csv   → 5,819,332 kWh/anio (4162 kWp PVWatts+bifacial 8.7%)
+  Chargers: chargers_ev_ano_2024_v3.csv       → 408,282 kWh/anio EV (motos 345,343 + mototaxis 62,938)
+  Mall:     demandamallhorakwh.csv            → 12,368,653 kWh/anio (demanda real, no controlable)
+
+DIMENSIONAMIENTO BESS (calculado sobre solar + EV reales):
+  Capacidad: 2,000 kWh  |  Potencia: 400 kW  |  DOD: 80%  |  Eficiencia: 95%
+  Criterio:  cubrir deficit EV nocturno (cuando solar < demanda EV)
 
 NOTA: El balance energetico completo del sistema está en:
       src/dimensionamiento/oe2/balance_energetico/balance.py ← TODAS las GRÁFICAS
 
-Valores v5.7 (2026-02-20):
+Valores v5.8 (2026-05-27 — bifacial corregido):
 - 38 sockets (19 cargadores x 2) @ 7.4 kW = 281.2 kW instalado
-- Demanda EV (9h-22h): 408,282 kWh/anio (1,118.6 kWh/dia)
-- PV generacion: 8,292,514 kWh/anio (4050 kWp @ 23.3% factor de planta)
-- BESS: 1,700 kWh / 400 kW (optimizado para arbitraje HP/HFP)
+- Demanda EV: 408,282 kWh/anio (motos 30 sockets + mototaxis 8 sockets)
+- PV generacion: 5,819,332 kWh/anio (4162 kWp PVWatts + 8.7% bifacial, PR=83.5%)
+- BESS: 2,000 kWh / 400 kW (DOD 80%, eficiencia 95%)
 - Tarifas OSINERGMIN: HP(18-23h) S/.0.45/kWh, HFP S/.0.28/kWh
-- Ahorro estimado arbitraje: ~S/.450,000/anio
 
 AUTO-UPDATE: Este módulo detecta automáticamente cambios en parámetros BESS
              y regenera dataset + gráficos sin intervención manual.
@@ -141,6 +141,8 @@ from src.dimensionamiento.oe2._constants import (
     HORA_FIN_HP,
     HORAS_PUNTA,
     FACTOR_CO2_KG_KWH,
+    FACTOR_CO2_HP_KG_KWH,
+    FACTOR_CO2_HFP_KG_KWH,
     PV_ANNUAL_CAPACITY_KWH,
     PV_ANNUAL_CAPACITY_GWH,
     PV_INSTALLED_KWP,
@@ -2277,9 +2279,6 @@ def simulate_bess_arbitrage_hp_hfp(
         is_hp = HORA_INICIO_HP <= hour_of_day < HORA_FIN_HP
         is_peak_hour[h] = 1 if is_hp else 0
         
-        if h == 155:
-            print(f"[DEBUG h={h}] hour_of_day={hour_of_day}, is_hp={is_hp}, HORA_INICIO_HP={HORA_INICIO_HP}, HORA_FIN_HP={HORA_FIN_HP}")
-        
         if is_hp:
             tariff_period[h] = "HP"
             tariff_soles_kwh[h] = TARIFA_ENERGIA_HP_SOLES
@@ -2287,24 +2286,22 @@ def simulate_bess_arbitrage_hp_hfp(
         else:
             tariff_period[h] = "HFP"
             tariff_soles_kwh[h] = TARIFA_ENERGIA_HFP_SOLES
-            tariff_index_hp_hfp[h] = 1.0  # Referencia base
-        
+            tariff_index_hp_hfp[h] = 1.0
+
         # ====================================
         # FUERA DE HORARIO OPERATIVO (23h-5h)
-        # BESS solo mantiene SOC, sin carga/descarga activa
         # ====================================
         if hour_of_day >= 23 or hour_of_day < 6:
             pv_to_ev[h] = 0
             pv_to_mall[h] = min(pv_h, mall_h)
             grid_to_ev[h] = ev_h if ev_h > 0 else 0
             grid_to_mall[h] = max(mall_h - pv_to_mall[h], 0)
-            grid_export[h] = max(pv_h - pv_to_mall[h], 0)  # Exportación a red
+            grid_export[h] = max(pv_h - pv_to_mall[h], 0)
             soc[h] = current_soc
-            # Calcular costo
             total_grid_h = grid_to_ev[h] + grid_to_mall[h]
             cost_grid_import_soles[h] = total_grid_h * tariff_soles_kwh[h]
             continue
-        
+
         # ====================================
         # PRIORIDAD 1: PV -> EV directo
         # ====================================
@@ -2312,147 +2309,132 @@ def simulate_bess_arbitrage_hp_hfp(
         pv_to_ev[h] = pv_direct_to_ev
         pv_remaining = pv_h - pv_direct_to_ev
         ev_deficit = ev_h - pv_direct_to_ev
-        
+
         # ====================================
-        # PERIODO HFP (FUERA DE PUNTA): CARGA BESS + ATIENDE EV 100%
-        # Estrategia: Mutuamente excluyente - CARGA O DESCARGA, nunca ambas en la misma hora
-        # Prioridad: Descargar a EV si hay deficit (EVs prioritario), luego cargar desde PV
+        # DESPACHO DINAMICO ESTOCASTICO (6h-22h)
+        # Decisiones basadas en PV real y EV real, hora a hora.
+        # La hora de cruce carga↔descarga varía cada día:
+        #   - Carga: se activa cuando PV supera demanda EV (varía con irradiación)
+        #   - Descarga: se activa cuando PV cae bajo EV demand (cruce estocástico)
+        # HP/HFP determina la AGRESIVIDAD de la descarga a mall:
+        #   - HFP: solo peak shaving duro (demanda neta > 1900 kW)
+        #   - HP: arbitraje completo (cualquier déficit de mall a tarifa cara)
         # ====================================
-        if not is_hp:
-            # DEBUG: Print para hora 155
-            if h == 155:
-                print(f"[DEBUG h={h}] ENTRANDO rama HFP (not is_hp)")
-            
-            # VALIDACIÓN CRÍTICA: CARGA Y DESCARGA MUTUAMENTE EXCLUYENTES
-            # En cada hora, BESS puede CARGARSE O DESCARGARSE, pero NO AMBAS
-            
-            # Prioridad 1 HFP: BESS -> EV (cubrir deficit de EV SOLAMENTE)
-            # Si se descarga en esta hora, NO se carga
-            has_discharged = False
-            if ev_deficit > 0 and current_soc > soc_min:
-                soc_available = (current_soc - soc_min) * capacity_kwh
-                max_discharge = min(power_kw, ev_deficit / eff_discharge, soc_available)
-                
-                if max_discharge > 0:
-                    actual_discharge = max_discharge * eff_discharge
-                    bess_discharge[h] = max_discharge
-                    bess_to_ev[h] = actual_discharge
-                    bess_to_mall[h] = 0.0  # CRÍTICO: Si descarga a EV, NO descarga a MALL
-                    current_soc -= max_discharge / capacity_kwh
+
+        PEAK_SHAVING_THRESHOLD_KW = 1900.0
+        remaining_bess_power = power_kw
+        has_discharged = False
+
+        # -------------------------------------------------------
+        # D1: BESS -> EV (máxima prioridad, siempre)
+        # Cruce dinámico: activa cuando PV < EV demanda real del día
+        # -------------------------------------------------------
+        if ev_deficit > 0 and current_soc > soc_min and remaining_bess_power > 0.01:
+            soc_available = (current_soc - soc_min) * capacity_kwh
+            max_discharge = min(remaining_bess_power, ev_deficit / eff_discharge, soc_available)
+            if max_discharge > 0:
+                actual_discharge = max_discharge * eff_discharge
+                bess_discharge[h] += max_discharge
+                bess_to_ev[h] = actual_discharge
+                current_soc -= max_discharge / capacity_kwh
+                current_soc = max(current_soc, soc_min)
+                ev_deficit -= actual_discharge
+                remaining_bess_power -= max_discharge
+                has_discharged = True
+                if is_hp:
+                    savings_bess_soles[h] += actual_discharge * tariff_difference
+
+        # -------------------------------------------------------
+        # D2a: BESS -> Mall peak shaving duro (HFP, threshold 1900 kW)
+        # Activa cuando cruce solar↓ hace que demanda neta > 1900 kW
+        # El momento del cruce varía dinámicamente según perfil PV diario
+        # -------------------------------------------------------
+        pv_available_for_mall = min(pv_remaining, mall_h)
+        mall_net_after_pv = max(mall_h - pv_available_for_mall, 0.0)
+
+        if (not is_hp
+                and mall_net_after_pv > PEAK_SHAVING_THRESHOLD_KW
+                and current_soc > soc_min
+                and remaining_bess_power > 0.01
+                and hour_of_day <= closing_hour):
+            peak_cut_kw = min(remaining_bess_power,
+                              mall_net_after_pv - PEAK_SHAVING_THRESHOLD_KW)
+            soc_available_ps = (current_soc - soc_min) * capacity_kwh
+            energy_from_bess = min(peak_cut_kw / eff_discharge, soc_available_ps)
+            if energy_from_bess > 0.01:
+                energy_to_mall = energy_from_bess * eff_discharge
+                bess_discharge[h] += peak_cut_kw
+                bess_to_mall[h] = energy_to_mall
+                current_soc -= energy_from_bess / capacity_kwh
+                current_soc = max(current_soc, soc_min)
+                remaining_bess_power -= peak_cut_kw
+                has_discharged = True
+
+        # -------------------------------------------------------
+        # D2b: BESS -> Mall arbitraje HP (solo horas punta 18-22h)
+        # Descarga agresiva para reducir compra a tarifa cara (S/.0.45/kWh)
+        # Sin umbral de potencia: cualquier déficit de mall se cubre
+        # -------------------------------------------------------
+        if (is_hp
+                and current_soc > soc_min
+                and remaining_bess_power > 0.01
+                and hour_of_day <= closing_hour):
+            mall_deficit_hp = max(mall_h - pv_available_for_mall - bess_to_mall[h], 0.0)
+            if mall_deficit_hp > 0:
+                soc_available_hp = (current_soc - soc_min) * capacity_kwh
+                max_discharge_mall = min(remaining_bess_power,
+                                         mall_deficit_hp / eff_discharge,
+                                         soc_available_hp)
+                if max_discharge_mall > 0:
+                    actual_to_mall = max_discharge_mall * eff_discharge
+                    bess_discharge[h] += max_discharge_mall
+                    bess_to_mall[h] += actual_to_mall
+                    current_soc -= max_discharge_mall / capacity_kwh
                     current_soc = max(current_soc, soc_min)
-                    ev_deficit -= actual_discharge
+                    remaining_bess_power -= max_discharge_mall
                     has_discharged = True
-                    
-                    if h == 155:
-                        print(f"[DEBUG h={h}] Descargó a EV: {actual_discharge:.2f} kWh")
-            
-            # Prioridad 2 HFP: PV excedente -> BESS (cargar para HP)
-            # SOLO si NO hubo descarga en esta hora (mutuamente excluyente)
-            if h == 155:
-                print(f"[DEBUG h={h}] Revisando carga: has_discharged={has_discharged}, pv_remaining={pv_remaining:.2f}, current_soc={current_soc:.3f}, soc_max={soc_max}")
-            
-            if not has_discharged and pv_remaining > 0 and current_soc < soc_max:
-                soc_headroom = (soc_max - current_soc) * capacity_kwh
-                max_charge = min(power_kw, pv_remaining, soc_headroom / eff_charge)
-                
-                if h == 155:
-                    print(f"[DEBUG h={h}] max_charge={max_charge:.2f}")
-                
-                if max_charge > 0:
-                    bess_charge[h] = max_charge
-                    pv_to_bess[h] = max_charge
-                    bess_to_ev[h] = 0.0  # CRÍTICO: Si carga, NO descarga a EV
-                    bess_to_mall[h] = 0.0  # CRÍTICO: Si carga, NO descarga a MALL
-                    
-                    if h == 155:
-                        print(f"[DEBUG h={h}] HFP CARGA: pv_to_bess[h]={pv_to_bess[h]:.2f}, bess_to_mall[h]={bess_to_mall[h]:.2f}")
-                    
-                    current_soc += (max_charge * eff_charge) / capacity_kwh
-                    current_soc = min(current_soc, soc_max)
-                    pv_remaining -= max_charge
-            
-            # Prioridad 3 HFP: Grid -> BESS (carga oportunista)
-            # SOLO si NO hubo descarga en esta hora
-            # Solo si SOC < 80% y es mañana (6h-12h) para prepararse para HP
-            if not has_discharged and 6 <= hour_of_day <= 12 and current_soc < 0.80:
-                soc_headroom = (0.80 - current_soc) * capacity_kwh
-                max_grid_charge = min(power_kw * 0.5, soc_headroom / eff_charge)  # 50% potencia
-                
-                if max_grid_charge > 0:
-                    bess_charge[h] += max_grid_charge
-                    grid_to_bess[h] = max_grid_charge
-                    current_soc += (max_grid_charge * eff_charge) / capacity_kwh
-                    current_soc = min(current_soc, 0.80)
-            
-            # Prioridad 5 HFP: PV -> Mall
-            pv_direct_to_mall = min(pv_remaining, mall_h)
-            pv_to_mall[h] = pv_direct_to_mall
-            pv_remaining -= pv_direct_to_mall
-            mall_deficit = mall_h - pv_direct_to_mall
-            
-            # EXPORTACIÓN a red pública
-            grid_export[h] = pv_remaining  # Todo excedente se exporta
-            
-            # Grid cubre deficits (tarifa HFP barata)
-            grid_to_ev[h] = max(ev_deficit, 0)
-            grid_to_mall[h] = max(mall_deficit, 0)
-        
-        # ====================================
-        # PERIODO HP (HORA PUNTA): DESCARGA BESS SOLAMENTE
-        # Estrategia: Minimizar compra de grid a tarifa cara, NO CARGAR
-        # CRÍTICO: En HP, SOLO DESCARGA. Nunca cargar (ni desde PV ni desde GRID)
-        # ====================================
-        else:  # is_hp == True
-            # VALIDACIÓN: En HP, NO se carga BESS (pv_to_bess y grid_to_bess deben ser 0)
-            pv_to_bess[h] = 0.0  # CRÍTICO: En HP, NO cargar desde PV
-            grid_to_bess[h] = 0.0  # CRÍTICO: En HP, NO cargar desde GRID
-            bess_charge[h] = 0.0  # CRÍTICO: En HP, NO cargar BESS
-            
-            # Prioridad 2 HP: BESS -> EV (reemplaza grid caro)
-            if ev_deficit > 0 and current_soc > soc_min:
-                soc_available = (current_soc - soc_min) * capacity_kwh
-                max_discharge = min(power_kw, ev_deficit / eff_discharge, soc_available)
-                
-                if max_discharge > 0:
-                    actual_discharge = max_discharge * eff_discharge
-                    bess_discharge[h] = max_discharge
-                    bess_to_ev[h] = actual_discharge
-                    current_soc -= max_discharge / capacity_kwh
-                    current_soc = max(current_soc, soc_min)
-                    ev_deficit -= actual_discharge
-                    
-                    # AHORRO: energia que NO compramos a tarifa HP
-                    # sino que usamos desde BESS (cargado a tarifa HFP)
-                    savings_bess_soles[h] += actual_discharge * (TARIFA_ENERGIA_HP_SOLES - TARIFA_ENERGIA_HFP_SOLES)
-            
-            # Prioridad 3 HP: PV -> Mall
-            pv_direct_to_mall = min(pv_remaining, mall_h)
-            pv_to_mall[h] = pv_direct_to_mall
-            pv_remaining -= pv_direct_to_mall
-            mall_deficit = mall_h - pv_direct_to_mall
-            
-            # Prioridad 4 HP: BESS -> Mall (reducir demanda HP si queda capacidad)
-            if mall_deficit > 0 and current_soc > soc_min and hour_of_day <= closing_hour:
-                soc_available = (current_soc - soc_min) * capacity_kwh
-                max_discharge = min(power_kw - bess_discharge[h], mall_deficit / eff_discharge, soc_available)
-                
-                if max_discharge > 0:
-                    actual_discharge = max_discharge * eff_discharge
-                    bess_discharge[h] += max_discharge
-                    bess_to_mall[h] = actual_discharge
-                    current_soc -= max_discharge / capacity_kwh
-                    current_soc = max(current_soc, soc_min)
-                    mall_deficit -= actual_discharge
-                    
-                    # Ahorro adicional por reducir demanda Mall en HP
-                    savings_bess_soles[h] += actual_discharge * (TARIFA_ENERGIA_HP_SOLES - TARIFA_ENERGIA_HFP_SOLES)
-            
-            # EXPORTACIÓN a red pública
-            grid_export[h] = pv_remaining  # Todo excedente se exporta
-            
-            # Grid cubre deficits restantes (tarifa HP cara - minimizado)
-            grid_to_ev[h] = max(ev_deficit, 0)
-            grid_to_mall[h] = max(mall_deficit, 0)
+                    savings_bess_soles[h] += actual_to_mall * tariff_difference
+
+        # -------------------------------------------------------
+        # C1: PV excedente -> BESS carga
+        # Solo cuando no hay descarga esta hora (carga y descarga mutuamente excluyentes)
+        # La hora de inicio de carga varía: cuando PV supera EV + parte de mall
+        # -------------------------------------------------------
+        if not has_discharged and not is_hp and pv_remaining > 0 and current_soc < soc_max:
+            soc_headroom = (soc_max - current_soc) * capacity_kwh
+            max_charge = min(power_kw, pv_remaining, soc_headroom / eff_charge)
+            if max_charge > 0:
+                bess_charge[h] = max_charge
+                pv_to_bess[h] = max_charge
+                current_soc += (max_charge * eff_charge) / capacity_kwh
+                current_soc = min(current_soc, soc_max)
+                pv_remaining -= max_charge
+
+        # -------------------------------------------------------
+        # C2: Grid -> BESS oportunista (solo mañana 6-10h HFP, SOC<80%)
+        # Arranque cuando PV aún es bajo y BESS amaneció descargado
+        # -------------------------------------------------------
+        if (not has_discharged and not is_hp
+                and 6 <= hour_of_day <= 10 and current_soc < 0.80):
+            soc_headroom = (0.80 - current_soc) * capacity_kwh
+            max_grid_charge = min(power_kw * 0.5, soc_headroom / eff_charge)
+            if max_grid_charge > 0:
+                bess_charge[h] += max_grid_charge
+                grid_to_bess[h] = max_grid_charge
+                current_soc += (max_grid_charge * eff_charge) / capacity_kwh
+                current_soc = min(current_soc, 0.80)
+
+        # -------------------------------------------------------
+        # PV -> Mall (excedente solar restante)
+        # -------------------------------------------------------
+        pv_direct_to_mall = min(pv_remaining, mall_h)
+        pv_to_mall[h] = pv_direct_to_mall
+        pv_remaining -= pv_direct_to_mall
+        mall_deficit = max(mall_h - pv_direct_to_mall - bess_to_mall[h], 0.0)
+
+        grid_export[h] = max(pv_remaining, 0.0)
+        grid_to_ev[h] = max(ev_deficit, 0)
+        grid_to_mall[h] = mall_deficit
         
         # Guardar SOC
         soc[h] = current_soc
@@ -2565,6 +2547,9 @@ def simulate_bess_arbitrage_hp_hfp(
         # Costo grid import (para compatibilidad)
         cost_grid_import_soles[h] = (grid_to_ev[h] + grid_to_mall[h] + grid_to_bess[h]) * tariff_soles_kwh[h]
     
+    # Factor CO₂ horario: HP=0.61, HFP=0.41 kg CO₂/kWh (generadores punta vs base)
+    co2_factor_arr = np.where(is_peak_hour, FACTOR_CO2_HP_KG_KWH, FACTOR_CO2_HFP_KG_KWH)
+
     # =====================================================
     # CREAR DATETIME INDEX
     # =====================================================
@@ -2612,8 +2597,12 @@ def simulate_bess_arbitrage_hp_hfp(
         'cost_savings_hfp_soles': cost_savings_hfp_soles,
         'savings_bess_soles': savings_bess_soles,
         'tariff_index_hp_hfp': tariff_index_hp_hfp,
-        'co2_grid_kg': (grid_to_ev + grid_to_mall + grid_to_bess) * FACTOR_CO2_KG_KWH,
-        'co2_avoided_kg': (bess_to_ev + bess_to_mall + pv_to_ev + pv_to_mall) * FACTOR_CO2_KG_KWH,
+        # CO₂ con factor horario variable (HP=0.61, HFP=0.41 kg/kWh)
+        'co2_factor_kg_kwh': co2_factor_arr,
+        'co2_grid_kg': (grid_to_ev + grid_to_mall + grid_to_bess) * co2_factor_arr,
+        'co2_direct_avoided_kg': (pv_to_ev + pv_to_mall) * co2_factor_arr,
+        'co2_indirect_avoided_kg': (bess_to_ev + bess_to_mall) * co2_factor_arr,
+        'co2_avoided_kg': (bess_to_ev + bess_to_mall + pv_to_ev + pv_to_mall) * co2_factor_arr,
         
         # ===================================================================
         # COLUMNAS DE VALIDACIÓN HORARIA DE BALANCE BESS (ARBITRAJE - SINCRONIZADO A PERFILES)
@@ -2657,10 +2646,12 @@ def simulate_bess_arbitrage_hp_hfp(
         for h in range(n_hours)
     )
     
-    # CO2
-    total_co2_kg = float((grid_to_ev + grid_to_mall + grid_to_bess).sum() * FACTOR_CO2_KG_KWH)
-    co2_avoided_by_pv_kg = float((pv_to_ev + pv_to_mall).sum() * FACTOR_CO2_KG_KWH)
-    co2_avoided_by_bess_kg = float((bess_to_ev + bess_to_mall).sum() * FACTOR_CO2_KG_KWH)
+    # CO₂ con factor horario variable (HP=0.61, HFP=0.41 kg/kWh)
+    # Directo: PV desplaza generación térmica en la misma hora
+    # Indirecto: BESS descarga en HP desplaza generadores punta (factor HP)
+    total_co2_kg = float(((grid_to_ev + grid_to_mall + grid_to_bess) * co2_factor_arr).sum())
+    co2_avoided_by_pv_kg = float(((pv_to_ev + pv_to_mall) * co2_factor_arr).sum())
+    co2_avoided_by_bess_kg = float(((bess_to_ev + bess_to_mall) * co2_factor_arr).sum())
     co2_avoided_kg = co2_avoided_by_pv_kg + co2_avoided_by_bess_kg
     
     # =====================================================================
@@ -3942,7 +3933,7 @@ def run_bess_sizing(
     pv_annual_generation = float(pv_kwh.sum())  # type: ignore[attr-defined]
     pv_utilization_percent = (pv_annual_generation / PV_ANNUAL_CAPACITY_KWH) * 100
     
-    print(f"   Capacidad anual maxima: {PV_ANNUAL_CAPACITY_KWH/1e6:.2f} GWh (8,292,514.17 kWh)")
+    print(f"   Capacidad anual maxima: {PV_ANNUAL_CAPACITY_KWH/1e6:.2f} GWh ({PV_ANNUAL_CAPACITY_KWH:,.0f} kWh)")
     print(f"   Generacion anual actual: {pv_annual_generation/1e6:.2f} GWh ({pv_annual_generation:,.0f} kWh)")
     print(f"   Utilizacion: {pv_utilization_percent:.1f}%")
     

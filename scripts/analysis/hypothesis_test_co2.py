@@ -846,6 +846,9 @@ def print_section52_text(
     print("  RESULTADOS PARA SECCION 5.2: PRUEBA DE HIPOTESIS ESTADISTICA")
     print(f"{sep}")
 
+    lbl_a = "Grupo A – Baseline"
+    lbl_b = f"Grupo B – {best_name} Smart"
+
     test_name_short = (
         "T-Student para muestras relacionadas"
         if "T-Student" in test_result["prueba"]
@@ -915,7 +918,7 @@ TABLA 1 — Estadísticos descriptivos (n = {len(grupo_a)} días, año 2024)
         )
     print(
         f" TOTAL    {monthly['co2_baseline'].sum()/1000:>13.2f}   "
-        f"{monthly['co2_agentnt'].sum()/1000:>10.2f}   "
+        f"{monthly['co2_agent'].sum()/1000:>10.2f}   "
         f"{monthly['reduccion'].sum()/1000:>16.2f}   "
         f"{monthly['reduccion'].sum()/monthly['co2_baseline'].sum()*100:>7.1f}%"
     )

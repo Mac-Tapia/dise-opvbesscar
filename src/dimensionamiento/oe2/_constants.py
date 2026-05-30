@@ -32,9 +32,19 @@ HORAS_PUNTA: list[int] = list(range(HORA_INICIO_HP, HORA_FIN_HP))
 # ============================================================================
 # FACTOR DE EMISIÓN CO₂ — red aislada Iquitos (generación térmica diesel)
 # Fuente: MINEM/OSINERGMIN — Sistema aislado Loreto
+#
+# Factores variables por período tarifario:
+#   HP (18-23h): generadores punta diesel B5 (peakers, eficiencia ~28-30%)
+#   HFP (resto): generadores base diesel B5 (carga base, eficiencia ~35-38%)
+#   Promedio ponderado (5h HP / 19h HFP): (5×0.61 + 19×0.41)/24 ≈ 0.4517 ≈ 0.4521
+# Fuente: MINEM Estadísticas Electricidad Loreto 2024 / IPCC 2006 Tier 2 diesel B5
 # ============================================================================
 
-FACTOR_CO2_KG_KWH: float = 0.4521  # kg CO₂/kWh (red térmica Iquitos)
+FACTOR_CO2_KG_KWH: float = 0.4521          # kg CO₂/kWh promedio anual (MINEM Loreto)
+# Promedios anuales de los factores horarios (calculados desde estacionalidad + HP/HFP):
+#   Base lluviosa(0.43)+seca(0.47) promedio=0.45; ×1.35 HP = 0.608; ×0.908 HFP = 0.409
+FACTOR_CO2_HP_KG_KWH: float = 0.6080       # kg CO₂/kWh HP promedio anual (18-23h)
+FACTOR_CO2_HFP_KG_KWH: float = 0.4090      # kg CO₂/kWh HFP promedio anual (resto)
 
 # Factores de conversión combustible → electricidad (reducción directa CO₂)
 FACTOR_CO2_GASOLINA_KG_L: float = 2.31         # kg CO₂/litro gasolina (IPCC)
@@ -54,13 +64,16 @@ BESS_SOC_MAX: float = 1.00          # SOC máximo (100 %)
 
 # ============================================================================
 # ESPECIFICACIÓN SOLAR PV — Instalación Iquitos 2024
+# Módulo: Jinko Tiger Neo JKM580N-72HL4-BDV (N-type TOPCon, bifacial 80%)
+# Modelo: PVWatts (NREL) + ganancia bifacial 8.7% (albedo=0.22, tilt=10°)
 # Fuente: pv_generation_citylearn2024.csv (8,760 filas horarias)
 # ============================================================================
 
-PV_INSTALLED_KWP: float = 4050.0            # kWp instalados
-PV_ANNUAL_CAPACITY_KWH: float = 8_292_514.17  # kWh/año (factor de planta ~23.3 %)
-PV_ANNUAL_CAPACITY_GWH: float = PV_ANNUAL_CAPACITY_KWH / 1e6  # 8.29 GWh
-PV_MAX_HOURLY_KW: float = 2886.69           # kW pico horario (del dataset)
+PV_INSTALLED_KWP: float = 4050.0            # kWp diseño nominal OE2
+PV_PVWATTS_PDC0_KWP: float = 4162.0        # kWp pdc0 PVWatts (config strings Jinko 580N)
+PV_ANNUAL_CAPACITY_KWH: float = 5_819_332.0  # kWh/año (PR=83.5%, 1,398 kWh/kWp)
+PV_ANNUAL_CAPACITY_GWH: float = PV_ANNUAL_CAPACITY_KWH / 1e6  # 5.82 GWh
+PV_MAX_HOURLY_KW: float = 3245.95           # kW pico horario (del dataset)
 
 # ============================================================================
 # PARÁMETROS DE UBICACIÓN — Iquitos, Loreto, Perú

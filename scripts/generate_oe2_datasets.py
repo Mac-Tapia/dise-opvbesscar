@@ -4,13 +4,16 @@
 Ejecuta los 4 módulos OE2 en secuencia y construye el dataset unificado
 para el entorno CityLearn v2 (data/iquitos_ev_mall/).
 
-Flujo canónico:
+Flujo canónico (orden de dependencias):
   1. [solar]    solar_pvlib.py     → data/oe2/Generacionsolar/pv_generation_citylearn2024.csv
-  2. [bess]     bess.py            → data/oe2/bess/bess_ano_2024.csv
-  3. [chargers] chargers.py        → data/oe2/chargers/chargers_ev_ano_2024_v3.csv
+  2. [chargers] chargers.py        → data/oe2/chargers/chargers_ev_ano_2024_v3.csv
+  3. [bess]     bess.py            → data/oe2/bess/bess_ano_2024.csv  (usa solar + chargers)
   4. [mall]     (dato externo)     → data/oe2/demandamallkwh/demandamallhorakwh.csv
   5. [loader]   data_loader.py     → data/iquitos_ev_mall/{solar,bess,chargers,mall}*.csv
   6. [validate] test final         → todos los datasets tienen 8760 filas y columnas requeridas
+
+NOTA: El BESS (paso 3) depende de solar (paso 1) y cargadores (paso 2).
+      Chargers es independiente de solar; ambos deben existir antes de BESS.
 
 Uso:
     python scripts/generate_oe2_datasets.py [--skip-solar] [--skip-bess] [--skip-chargers] [--loader-only]
@@ -68,23 +71,8 @@ def run_solar() -> None:
     print(f"\n[OK] Solar -> {SOLAR_CANONICAL_CSV} ({len(df_solar)} filas)")
 
 
-def run_bess() -> None:
-    _step("PASO 2/5 — Simulación BESS")
-    from src.dimensionamiento.oe2.disenobess.bess import run_bess_sizing
-    from src.dimensionamiento.oe2._paths import BESS_OUTPUT_DIR
-
-    run_bess_sizing(
-        out_dir=BESS_OUTPUT_DIR,
-        pv_profile_path=SOLAR_CANONICAL_CSV,
-        ev_profile_path=CHARGERS_CANONICAL_CSV,
-        mall_demand_path=MALL_DEMAND_CANONICAL_CSV,
-    )
-    assert BESS_CANONICAL_CSV.exists(), f"ERROR: {BESS_CANONICAL_CSV} no generado"
-    print(f"\n[OK] BESS -> {BESS_CANONICAL_CSV}")
-
-
 def run_chargers() -> None:
-    _step("PASO 3/5 — Dimensionamiento Cargadores EV")
+    _step("PASO 2/5 — Dimensionamiento Cargadores EV")
     from src.dimensionamiento.oe2.disenocargadoresev.chargers import (
         generate_socket_level_dataset_v3,
         generate_chargers_csv_datasets,
@@ -95,6 +83,30 @@ def run_chargers() -> None:
     generate_chargers_csv_datasets(output_dir=CHARGERS_OUTPUT_DIR)
     assert CHARGERS_CANONICAL_CSV.exists(), f"ERROR: {CHARGERS_CANONICAL_CSV} no generado"
     print(f"\n[OK] Chargers -> {CHARGERS_CANONICAL_CSV}")
+
+
+def run_bess() -> None:
+    _step("PASO 3/5 — Simulación BESS (basado en solar + cargadores EV reales)")
+    from src.dimensionamiento.oe2.disenobess.bess import run_bess_sizing
+    from src.dimensionamiento.oe2._paths import BESS_OUTPUT_DIR
+
+    assert SOLAR_CANONICAL_CSV.exists(), (
+        f"ERROR: Solar no generado: {SOLAR_CANONICAL_CSV}\n"
+        "       Ejecutar paso 1 (solar) antes del BESS."
+    )
+    assert CHARGERS_CANONICAL_CSV.exists(), (
+        f"ERROR: Cargadores EV no generados: {CHARGERS_CANONICAL_CSV}\n"
+        "       Ejecutar paso 2 (chargers) antes del BESS."
+    )
+
+    run_bess_sizing(
+        out_dir=BESS_OUTPUT_DIR,
+        pv_profile_path=SOLAR_CANONICAL_CSV,
+        ev_profile_path=CHARGERS_CANONICAL_CSV,
+        mall_demand_path=MALL_DEMAND_CANONICAL_CSV,
+    )
+    assert BESS_CANONICAL_CSV.exists(), f"ERROR: {BESS_CANONICAL_CSV} no generado"
+    print(f"\n[OK] BESS -> {BESS_CANONICAL_CSV}")
 
 
 def run_loader() -> None:
@@ -170,15 +182,15 @@ def main() -> None:
         else:
             print("[SKIP] Solar — usando datos existentes")
 
-        if not args.skip_bess:
-            run_bess()
-        else:
-            print("[SKIP] BESS — usando datos existentes")
-
         if not args.skip_chargers:
             run_chargers()
         else:
             print("[SKIP] Chargers — usando datos existentes")
+
+        if not args.skip_bess:
+            run_bess()
+        else:
+            print("[SKIP] BESS — usando datos existentes")
 
         _step("PASO 4/5 — Verificar demanda mall (dato externo)")
         assert MALL_DEMAND_CANONICAL_CSV.exists(), (
