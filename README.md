@@ -52,6 +52,24 @@ Reentrenamiento completo SAC → PPO → A2C con correcciones críticas sincroni
 
 ---
 
+## Latest Updates (2026-05-30) — Informe solar OE2 actualizado
+
+### Generación solar PVGIS/pvlib documentada
+
+Se agregó el informe local de generación solar desde el procedimiento hasta los resultados descriptivos:
+
+- [Informe de generación solar: procedimiento y resultados descriptivos](data/oe2/Generacionsolar/informe_generacion_solar_procedimiento_resultados_descriptivos.md)
+- Dataset base: `data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv`
+- Cobertura: 8,760 registros horarios, 365 días, zona `America/Lima`
+- Energía anual AC: **5.819 GWh/año**
+- Potencia máxima AC: **3,245.95 kW**
+- Factor de capacidad: **20.75%**
+- Performance ratio: **83.46%**
+- Reducción indirecta estimada: **2,630.92 tCO₂/año**
+- Ahorro solar estimado: **S/ 1,629,413/año**
+
+---
+
 ## Latest Updates (2026-05-26) — Limpieza profunda + pipeline OE2 reparado
 
 ### 🧹 Deep Repo Evaluation & Cleanup (2026-05-26)
@@ -648,25 +666,28 @@ print(f"  ✓ CV plateau = {expected_metrics['cv_plateau']*100:.3f}% (altamente 
 **Especificación de Diseño PVGIS:**
 ```
 Ubicación:              Iquitos, Perú (-3.75°, -73.25°)
-Capacidad Instalada:    4,050 kWp ✅ ACTUAL
+Capacidad DC nominal:   4,162 kWp ✅ ACTUAL
+Capacidad AC nominal:   3,201 kW
 Tecnología:             PV modules + Inverter Eaton Xpert1670
-Módulos:                Kyocera Solar KS20 (2008E)
+Módulos:                Jinko Tiger Neo JKM580N 72HL4 BDV
 Inclinación:            10° (toiture-plano optimal)
 Orientación:            0° azimuth (Norte)
-Área Total:             15,200 m²
-Pérdidas Sistema:       35% (inverter, cableado, sombras)
-Generación Anual:       1,217,300 MWh/año (PVGIS validado)
-Generación Horaria:     ~139 kW promedio
-Generación Máxima:      ~2,887 kW (mediodía pico)
-Datos Horarios:         8,760 filas (1 año completo, NO 15-min ⚠️)
-Archivo:                data/oe2/Generacionsolar/pv_generation_*.csv
+Área total disponible:  20,637 m²
+Área utilizada:         18,535 m²
+Pérdidas Sistema:       13.6% (estimadas)
+Generación Anual:       5,819,332 kWh/año = 5.819 GWh/año (PVGIS/pvlib)
+Generación Horaria:     664.3 kW promedio anual
+Generación Máxima:      3,245.95 kW (2024-10-18 11:00)
+Datos Horarios:         8,760 filas (365 días × 24 h, NO 15-min ⚠️)
+Archivo principal:      data/oe2/Generacionsolar/pv_generation_hourly_citylearn_v2.csv
+Informe descriptivo:    data/oe2/Generacionsolar/informe_generacion_solar_procedimiento_resultados_descriptivos.md
 ```
 
 **Reducción CO₂ por Solar:**
 ```
-CO₂ evitado por FV directa:      550,351 kg/año (1.22M kWh × 0.4521)
-CO₂ evitado por FV → BESS → EV:  280,437 kg/año (38 sockets × utilization)
-Total CO₂ evitado por solar:      830,788 kg/año (80.8% vs baseline)
+Factor red térmica Iquitos:      0.4521 kg CO₂/kWh
+CO₂ evitado por FV directa:      2,630,920 kg/año (5.819 GWh × 0.4521)
+Ahorro solar estimado:           S/ 1,629,413/año
 ```
 
 ---
@@ -792,9 +813,10 @@ Archivo:                          data/interim/oe2/demandamallkwh/demandamallhor
 | Componente | Especificación | Unidad | Validación |
 |-----------|-------------------|--------|-----------|
 | **SOLAR** | | | |
-| Capacidad Instalada | 4,050 | kWp | ✅ PVGIS |
-| Generación Anual | 1,217,300 | MWh | ✅ Modelo |
-| Generación Pico | 2,887 | kW | ✅ Histórico |
+| Capacidad DC nominal | 4,162 | kWp | ✅ PVGIS/pvlib |
+| Capacidad AC nominal | 3,201 | kW | ✅ Inversor |
+| Generación Anual | 5,819 | MWh | ✅ Modelo horario |
+| Generación Pico | 3,246 | kW | ✅ Histórico |
 | Datos Horarios | 8,760 | filas | ✅ 1 año |
 | | | | |
 | **BESS** | | | |
