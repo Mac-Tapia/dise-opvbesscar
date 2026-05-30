@@ -6,6 +6,20 @@ Iquitos, Perú — Control inteligente de 38 sockets de carga (270 motos + 39 mo
 
 ---
 
+## Latest Updates (2026-05-30) — Verificación final OE2 v5.2/v5.8 + CityLearn ready
+
+Se actualizó el reporte final de correcciones OE2 v5.2 con la verificación vigente del pipeline v5.8:
+
+- [Reporte final de verificación de correcciones OE2 v5.2](docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md)
+- Commit base local: `b15f6f1c` (`docs: refresh markdown solar references`)
+- Tests: `python -m pytest tests -v -ra` → **106 passed**
+- Dataset builder: `python scripts/generate_oe2_datasets.py --loader-only` → **OK**
+- CityLearn v2: `data/iquitos_ev_mall/dataset_config_v7.json` con `ready_for_citylearn_v2 = true`
+- Validaciones adicionales: mandatory dataset check, SAC sync, SAC readiness, consistencia CO2, formulas solares y Docker Compose config → **OK**
+- Nota de entrega: validación funcional aprobada; el repo aún requiere limpieza/commit porque existen cambios locales pendientes.
+
+---
+
 ## Latest Updates (2026-05-28) — Reward v7.5 + obs_dim=18 + Sincronización Total
 
 ### Reward v7.5 — Tres objetivos OE3 equilibrados + BESS solar timing

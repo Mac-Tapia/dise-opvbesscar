@@ -35,8 +35,9 @@
     "ev_annual_kwh": 52613744.0
   },
   "solar": {
-    "annual_kwh": 8292514.17,
-    "max_power_kw": 2886.69
+    "annual_kwh": 5819332.398982178,
+    "max_power_kw": 3245.947761362308,
+    "mean_power_kw": 664.3073514819838
   },
   "co2": {
     "grid_factor_kg_per_kwh": 0.4521,
@@ -47,5 +48,14 @@
     "bess": "D:\\dise\u00f1opvbesscar\\data\\oe2\\bess\\bess_ano_2024.csv",
     "chargers": "D:\\dise\u00f1opvbesscar\\data\\oe2\\chargers\\chargers_ev_ano_2024_v3.csv",
     "demand": "D:\\dise\u00f1opvbesscar\\data\\oe2\\demandamallkwh\\demandamallhorakwh.csv"
+  },
+  "validation_status": {
+    "ready_for_citylearn_v2": true,
+    "hourly_rows": 8760,
+    "combined_columns": 53,
+    "solar_rows": 8760,
+    "bess_rows": 8760,
+    "chargers_rows": 8760,
+    "demand_rows": 8760
   }
 }

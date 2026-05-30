@@ -2,6 +2,8 @@
 
 **Carpeta Centralizada**: Construcción completa de datasets para CityLearn v2 desde módulos OE2.
 
+> Actualizacion 2026-05-30: la verificacion vigente esta consolidada en `docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md`. El loader actual escribe en `data/iquitos_ev_mall/` y deja `dataset_config_v7.json` con `ready_for_citylearn_v2 = true`.
+
 ## 📋 Contenido
 
 ```
@@ -187,6 +189,7 @@ agent.learn(total_timesteps=26280)  # 365 días × 72 steps/día
 - [x] Análisis consolidado de datasets
 - [x] Documentación completa
 - [x] Pipeline automatizable
+- [x] Verificacion 2026-05-30: 106 tests passed, loader-only OK, readiness CityLearn v2 OK
 
 ## 📝 Notas Técnicas
 
@@ -205,7 +208,7 @@ agent.learn(total_timesteps=26280)  # 365 días × 72 steps/día
 
 ---
 
-**Versión**: 2.0  
-**Fecha**: 14 febrero 2026  
-**Autor**: pvbesscar project  
-**Estado**: ✅ Producción
+**Versión**: 2.1
+**Fecha**: 30 May 2026
+**Autor**: pvbesscar project
+**Estado**: ✅ Producción funcional; limpieza Git pendiente para entrega final

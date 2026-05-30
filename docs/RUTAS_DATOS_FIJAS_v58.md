@@ -115,10 +115,28 @@ for name, path in canonical_datasets.items():
 
 - Dataset canónico: `data/oe2/Generacionsolar/pv_generation_citylearn2024.csv`
 - Informe descriptivo: `data/oe2/Generacionsolar/informe_generacion_solar_procedimiento_resultados_descriptivos.md`
+- Reporte de verificacion OE2: `docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md`
 - Capacidad nominal: 4,162 kWp DC / 3,201 kW AC
 - Energía anual: 5,819,332 kWh/año
 - Potencia máxima: 3,245.95 kW
 - CO2 indirecto evitado: 2,630,920 kg CO2/año
+
+---
+
+## ✅ Verificación vigente (30 May 2026)
+
+| Check | Resultado |
+|---|---|
+| Tests automatizados | 106 passed |
+| `generate_oe2_datasets.py --loader-only` | OK |
+| `mandatory_dataset_check.py` | OK SAC/PPO/A2C |
+| `validate_sac_data_sync.py` | OK |
+| `check_sac_readiness.py` | 7 OK, 0 fallos |
+| `verify_citylearn_data.py` | OK |
+| Docker Compose config | OK |
+| CityLearn v2 ready flag | `true` |
+
+La fuente operativa actual de CityLearn v2 es `data/iquitos_ev_mall/`. Las rutas historicas en `data/interim/oe2/` se conservan solo como fallback o referencia.
 
 ---
 

@@ -1,5 +1,7 @@
 
-# DATASET PARA AGENTE RL - DEMANDA CORTADA POR BESS (v5.4)
+# DATASET PARA AGENTE RL - DEMANDA CORTADA POR BESS (v5.4) - OBSOLETO
+
+Este documento queda conservado como referencia historica. La fuente operativa vigente para CityLearn v2 es `data/iquitos_ev_mall/`, validada el 30 May 2026 en `docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md`.
 
 ## Contexto
 El BESS ha sido pre-optimizado en OE2 (Dimensionamiento) para:

@@ -14,6 +14,17 @@ El proyecto sigue [Versionado Semántico](https://semver.org/lang/es/):
 
 ## [5.6] - 2026-05-30
 
+### Verificacion final
+
+#### Correcciones OE2 v5.2 actualizadas a pipeline v5.8
+- **Reporte actualizado:** `docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md`
+- **Commit base local:** `b15f6f1c` (`docs: refresh markdown solar references`)
+- **Tests:** `python -m pytest tests -v -ra` -> 106 passed
+- **Readiness CityLearn v2:** `data/iquitos_ev_mall/dataset_config_v7.json` con `ready_for_citylearn_v2 = true`
+- **Scripts verificados:** loader-only, mandatory dataset check, SAC data sync, SAC readiness, consistencia CO2, formulas solares y verificacion CityLearn
+- **Docker Compose:** configuracion valida para `docker-compose.yml`, `docker-compose.dev.yml`, `docker-compose.fastapi.yml`, `docker-compose.sac.yml` y `docker-compose.gpu.yml`
+- **Nota:** validacion funcional completada; limpieza Git/commit queda pendiente para declarar entrega final limpia
+
 ### Documentación
 
 #### Sistema Solar (PV)
@@ -245,5 +256,5 @@ docs(changelog): actualizar v5.5 con especificaciones finales
 
 ---
 
-*Última actualización: 2026-02-18*
+*Última actualización: 2026-05-30*
 *Responsable: GitHub Copilot*

@@ -10,7 +10,9 @@ Two phases:
 - **OE2 (Dimensioning)**: Infrastructure specs — solar, BESS, chargers, demand profiles → `src/dimensionamiento/oe2/`
 - **OE3 (Control)**: Select the best RL agent to control EV charging and minimize CO₂ → `src/agents/` + `src/citylearnv2/`
 
-**Results (validated):** SAC selected as winner — 55.6% CO₂ reduction vs F₀ (3,123,866 kg/year), corrected PVWatts+bifacial solar model (5.82 GWh/year). Statistical ranking: SAC > PPO ≈ A2C across 50 episodes each.
+**Current verification snapshot (2026-05-30):** OE2 -> CityLearn v2 pipeline validated, `dataset_config_v7.json` has `ready_for_citylearn_v2 = true`, and `python -m pytest tests -v -ra` reports 106 passed. See `docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md`.
+
+**OE3 results reference:** SAC selected as winner in the thesis evaluation — 55.6% CO₂ reduction vs F₀ (3,123,866 kg/year), corrected PVWatts+bifacial solar model (5.82 GWh/year). Statistical ranking: SAC > PPO ≈ A2C across 50 episodes each.
 
 ## Commands
 
@@ -59,6 +61,8 @@ python scripts/reporting/generar_tablas_oe3.py
 
 # Verify data integrity
 python -c "import pandas as pd; df=pd.read_csv('data/oe2/Generacionsolar/pv_generation_citylearn2024.csv'); assert len(df)==8760, f'Solar ERROR: {len(df)} rows'; print(f'Solar OK: {df.energia_kwh.sum():,.0f} kWh/year')"
+python scripts/verification/verify_citylearn_data.py
+python scripts/train/check_sac_readiness.py
 ```
 
 ## Architecture

@@ -1,7 +1,7 @@
 # ✅ DOCUMENTOS DE RESULTADOS OE2 Y OE3 ENCONTRADOS
 
-**Búsqueda completada:** 2026-02-22  
-**Ubicación:** `d:\diseñopvbesscar\reports\`
+**Búsqueda completada:** 2026-05-30
+**Ubicaciones:** `docs/`, `reports/`, `outputs/`, `data/oe2/`
 
 ---
 
@@ -20,8 +20,10 @@
 
 | Documento | Tipo | Contenido Probable |
 |-----------|------|-------------------|
+| `docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md` | ✅ Reporte final | Verificacion vigente de correcciones OE2 v5.2 actualizadas a pipeline v5.8 |
 | `SECCION_525_BALANCE_ENERGETICO_ANUAL_INTEGRAL.docx` | 📋 Sección Tesis | Balance energético anual completo (sección 5.2.5) |
 | `BALANCE_ENERGETICO_INTEGRAL_PRESENTACION_EJECUTIVA.docx` | 📊 Ejecutivo | Presentación ejecutiva del balance energético |
+| `data/oe2/Generacionsolar/informe_generacion_solar_procedimiento_resultados_descriptivos.md` | 📄 Informe | Procedimiento y resultados descriptivos de generacion solar OE2 |
 
 ### **OE2 + OE3 - PIPELINE COMPLETO**
 
@@ -54,8 +56,9 @@
 👉 **Complemento:** `SECCION_4647_RESULTADOS_COMPARATIVA.docx`
 
 ### **Para Resultados OE2 (Dimensionamiento)**
-👉 **Prioridad 1:** `SECCION_525_BALANCE_ENERGETICO_ANUAL_INTEGRAL.docx`  
-👉 **Complemento:** `BALANCE_ENERGETICO_INTEGRAL_PRESENTACION_EJECUTIVA.docx`
+👉 **Prioridad 1:** `docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md`
+👉 **Prioridad 2:** `data/oe2/Generacionsolar/informe_generacion_solar_procedimiento_resultados_descriptivos.md`
+👉 **Complemento:** `SECCION_525_BALANCE_ENERGETICO_ANUAL_INTEGRAL.docx`
 
 ### **Para Síntesis OE2+OE3**
 👉 **Pipeline visual:** `OE2_OE3_PIPELINE_COMPLETO.png`  
@@ -84,6 +87,16 @@ reports/
 
 ---
 
+## ✅ VERIFICACION ACTUAL 2026-05-30
+
+- Tests automatizados: 106 passed.
+- CityLearn v2: `data/iquitos_ev_mall/dataset_config_v7.json` con `ready_for_citylearn_v2 = true`.
+- Solar OE2: 8,760 horas, 5.819 GWh/año, 3,245.95 kW pico.
+- Scripts verificados: loader-only, mandatory dataset check, sync SAC, readiness SAC, consistencia CO2 y formulas solares.
+- Docker Compose config: valido para dev, base, fastapi, sac y gpu.
+
+---
+
 ## ✅ RESUMEN DISPONIBLE
 
 **SÍ EXISTEN DOCUMENTOS DE RESULTADOS** tanto para OE2 como para OE3:
@@ -94,5 +107,3 @@ reports/
 - **Visualización:** Pipeline OE2→OE3 disponible ✓
 
 ---
-
-**¿Quieres que revise el contenido de alguno de estos documentos?**

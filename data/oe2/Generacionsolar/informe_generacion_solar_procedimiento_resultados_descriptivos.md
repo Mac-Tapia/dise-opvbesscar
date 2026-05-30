@@ -3,6 +3,7 @@
 Proyecto: pvbesscar - Iquitos, Peru
 Modulo OE2: Dimensionamiento y perfil horario de generacion solar
 Archivo base canónico: `data/oe2/Generacionsolar/pv_generation_citylearn2024.csv`
+Reporte de verificacion OE2: `docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md`
 
 ## 1. Objetivo
 
@@ -82,6 +83,8 @@ ahorro solar [S/] = energia solar [kWh] x tarifa horaria aplicada
 | Duplicados temporales | No |
 | Compatibilidad RL | Aprobada |
 | Estado | Production ready |
+
+Validacion complementaria 30 May 2026: `python -m pytest tests -v -ra` reporto 106 passed; `python scripts/generate_oe2_datasets.py --loader-only` regenero `data/iquitos_ev_mall/dataset_config_v7.json` con `ready_for_citylearn_v2 = true`.
 
 ## 6. Resultados anuales descriptivos
 

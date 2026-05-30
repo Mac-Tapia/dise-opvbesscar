@@ -266,9 +266,10 @@ def load_solar_data(
             raise OE2ValidationError(f"No numeric column found in {path}")
         power_col = numeric_cols[0]
 
-    solar_w: np.ndarray = df[power_col].values.astype(np.float64)
-    # potencia_kw and energia_kwh are already in kW/kWh units; W columns need /1000
-    solar_kw: np.ndarray = solar_w / 1000.0 if np.max(solar_w) > 1000 else solar_w
+    solar_values: np.ndarray = df[power_col].values.astype(np.float64)
+    # Only explicit watt columns need conversion. potencia_kw and energia_kwh are already kW/kWh.
+    watt_columns = {"w", "pv_generation_w", "generation_w", "power_w", "solar_power_w"}
+    solar_kw: np.ndarray = solar_values / 1000.0 if power_col.lower() in watt_columns else solar_values
 
     return SolarData(
         df=df,
@@ -665,8 +666,11 @@ def build_citylearn_dataset(
             "ev_annual_kwh": 52_613_744.0,  # From compiled dataset
         },
         "solar": {
-            "annual_kwh": 8_292_514.17,  # From pv_generation_citylearn2024.csv
-            "max_power_kw": 2886.69,  # Peak generation hour
+            "annual_kwh": float(solar.df["energia_kwh"].sum())
+            if "energia_kwh" in solar.df.columns
+            else solar.mean_kw * 8760,
+            "max_power_kw": solar.max_kw,
+            "mean_power_kw": solar.mean_kw,
         },
         "co2": {
             "grid_factor_kg_per_kwh": CO2_FACTOR_GRID_KG_PER_KWH,
@@ -677,6 +681,15 @@ def build_citylearn_dataset(
             "bess": str(bess.path),
             "chargers": str(chargers.path),
             "demand": str(demand.path),
+        },
+        "validation_status": {
+            "ready_for_citylearn_v2": True,
+            "hourly_rows": len(combined),
+            "combined_columns": int(combined.shape[1]),
+            "solar_rows": solar.n_hours,
+            "bess_rows": bess.n_hours,
+            "chargers_rows": chargers.n_hours,
+            "demand_rows": demand.n_hours,
         },
     }
 
@@ -701,11 +714,210 @@ def build_citylearn_dataset(
     return result
 
 
+def generate_tariffs_dataset(year: int = 2024) -> pd.DataFrame:
+    """Genera dataset individual de tarifas OSINERGMIN horarias para Iquitos (Electro Oriente S.A.).
+
+    Fuente: Res. N° 047-2024-OS/CD — Pliego Tarifario MT3 Media Tensión Comercial.
+    Período vigente: desde 2024-11-04. Aplicado todo el año 2024 (pliego anual único).
+
+    Componentes incluidos (Pliego MT3 Electro Oriente, Sistema Aislado Loreto):
+      1. Cargo por Energía Activa HP/HFP (S/./kWh) — varía por período tarifario
+      2. Cargo por Potencia HP/HFP (S/./kW-mes) — para cálculo de demanda mensual
+      3. Cargo por Alumbrado Público (AAPP) — obligatorio, ~0.0116 S/./kWh
+      4. Cargo Fijo Mensual — por punto de suministro (4.70 S/./mes)
+      5. Mecanismo de Compensación SSAA (Sistema Aislado):
+         - Costo real generación diesel B5 Iquitos: ~0.75 S/./kWh
+         - Subsidio gobierno = costo_real − tarifa_regulada (∈ [0.30, 0.47] S/./kWh)
+         - Fuente: MINEM — Compensación a Sistemas Aislados (fondos FISE/transferencias)
+      6. Tarifa total pagada (sin cargo potencia): energía + AAPP
+      7. Valor social completo de 1 kWh evitado: tarifa_pagada + mecanismo_compensacion
+
+    Reducción costo para el mall = grid_import_kwh × tarifa_total_soles_kwh
+    Ahorro social completo      = grid_import_kwh × (tarifa_total + mecanismo_compensacion)
+    """
+    from src.dimensionamiento.oe2._constants import (
+        TARIFA_ENERGIA_HP_SOLES,
+        TARIFA_ENERGIA_HFP_SOLES,
+        TARIFA_POTENCIA_HP_SOLES,
+        TARIFA_POTENCIA_HFP_SOLES,
+        TIPO_CAMBIO_PEN_USD,
+        HORA_INICIO_HP,
+        HORA_FIN_HP,
+    )
+
+    # ── Pliego Tarifario OSINERGMIN MT3 Electro Oriente — Res. N° 047-2024-OS/CD ──
+    CARGO_AAPP_SOLES_KWH: float = 0.0116  # Alumbrado Público (promedio MT media tensión)
+    CARGO_FIJO_SOLES_MES: float = 4.70  # Cargo fijo mensual por punto suministro
+    # Costo real estimado generación diesel B5 Iquitos (incluye O&M, depreciación)
+    # Diesel B5: ~5.2 S/./gal, generador 35% eficiencia → 8.7 kWh/gal → 0.60 S/./kWh gen.
+    # + transmisión/distribución aislada + riesgo abastecimiento → ~0.75 S/./kWh total
+    COSTO_REAL_DIESEL_SOLES_KWH: float = 0.7500
+    TIPO_CAMBIO = TIPO_CAMBIO_PEN_USD  # 3.75 S/./USD
+
+    n_hours = 8760
+    datetime_index = pd.date_range(start=f"{year}-01-01 00:00:00", periods=n_hours, freq="h")
+    month = datetime_index.month
+    hour_of_day = datetime_index.hour
+    day_of_week = datetime_index.dayofweek  # 0=lunes, 6=domingo
+
+    is_hp = ((hour_of_day >= HORA_INICIO_HP) & (hour_of_day < HORA_FIN_HP)).astype(int)
+
+    # Energía activa: HP o HFP según período tarifario
+    tarifa_energia = np.where(is_hp, TARIFA_ENERGIA_HP_SOLES, TARIFA_ENERGIA_HFP_SOLES)
+
+    # Potencia referencia: cargo mensual por kW de demanda máxima (informativo por hora)
+    # Período HP: cargo potencia HP aplica a la demanda máxima en HP del mes
+    # Período HFP: cargo potencia HFP aplica a la demanda máxima en HFP del mes
+    cargo_potencia_ref = np.where(is_hp, TARIFA_POTENCIA_HP_SOLES, TARIFA_POTENCIA_HFP_SOLES)
+
+    # AAPP: constante por kWh (toda hora, todo mes)
+    aapp = np.full(n_hours, CARGO_AAPP_SOLES_KWH)
+
+    # Tarifa total pagada por el mall (energía + AAPP, excluye cargo potencia mensual)
+    tarifa_total = tarifa_energia + aapp
+
+    # Mecanismo de Compensación SSAA — subsidio gobierno por kWh
+    # El regulador fija la tarifa por debajo del costo real; el diferencial es cubierto por el Estado
+    mecanismo_comp = COSTO_REAL_DIESEL_SOLES_KWH - tarifa_energia  # siempre positivo
+
+    # Valor social total por cada kWh reducido de la red (mall ahorra + gobierno ahorra)
+    ahorro_social_kwh = tarifa_total + mecanismo_comp  # ≈ costo_real_diesel + AAPP
+
+    # Tipo de día (informativo: laborable / sábado / domingo)
+    tipo_dia = np.where(day_of_week < 5, "laborable", np.where(day_of_week == 5, "sabado", "domingo"))
+
+    # Conversiones USD
+    tarifa_energia_usd = tarifa_energia / TIPO_CAMBIO
+    tarifa_total_usd = tarifa_total / TIPO_CAMBIO
+
+    # Horas de demanda HP en el mes (para referencia de cargo de potencia)
+    days_per_month = datetime_index.days_in_month
+    hp_hours_per_month = 5 * days_per_month  # 5h HP × días del mes
+
+    df = pd.DataFrame(
+        {
+            "datetime": datetime_index.strftime("%Y-%m-%d %H:%M:%S"),
+            # ── Identificadores de período ────────────────────────────────────────
+            "tariff_period": np.where(is_hp, "HP", "HFP"),
+            "is_peak_hour": is_hp,
+            "tipo_dia": tipo_dia,
+            # ── Cargo por Energía Activa (S/./kWh) ───────────────────────────────
+            "tarifa_energia_hp_soles_kwh": TARIFA_ENERGIA_HP_SOLES,  # 0.45 S/./kWh
+            "tarifa_energia_hfp_soles_kwh": TARIFA_ENERGIA_HFP_SOLES,  # 0.28 S/./kWh
+            "tarifa_energia_soles_kwh": tarifa_energia,  # efectiva esta hora
+            "tarifa_energia_usd_kwh": tarifa_energia_usd.round(5),
+            # ── Cargo por Potencia Activa (S/./kW-mes) ───────────────────────────
+            # (referencia mensual; el cargo real se aplica sobre demanda pico del mes)
+            "cargo_potencia_hp_soles_kw_mes": TARIFA_POTENCIA_HP_SOLES,  # 48.50 S/./kW-mes
+            "cargo_potencia_hfp_soles_kw_mes": TARIFA_POTENCIA_HFP_SOLES,  # 22.80 S/./kW-mes
+            "cargo_potencia_ref_soles_kw_mes": cargo_potencia_ref,  # aplicable esta hora
+            "hp_hours_in_month": hp_hours_per_month,  # horas HP en el mes
+            # ── Cargo por Alumbrado Público (AAPP) ───────────────────────────────
+            "cargo_aapp_soles_kwh": aapp,  # 0.0116 S/./kWh (obligatorio)
+            # ── Cargo Fijo Mensual (por punto suministro) ─────────────────────────
+            "cargo_fijo_soles_mes": CARGO_FIJO_SOLES_MES,  # 4.70 S/./mes
+            # ── Tarifa total pagada (energía + AAPP, sin cargo potencia) ──────────
+            "tarifa_total_soles_kwh": tarifa_total.round(5),
+            "tarifa_total_usd_kwh": tarifa_total_usd.round(6),
+            # ── Mecanismo de Compensación SSAA (subsidio Estado) ──────────────────
+            # Sistema Aislado Loreto: Estado cubre diferencia costo_real − tarifa_regulada
+            "costo_real_diesel_soles_kwh": COSTO_REAL_DIESEL_SOLES_KWH,  # ~0.75 S/./kWh
+            "mecanismo_compensacion_soles_kwh": mecanismo_comp.round(5),  # 0.30-0.47 S/./kWh
+            # ── Valor social total (ahorro mall + ahorro Estado por kWh evitado) ──
+            "ahorro_social_kwh_evitado_soles": ahorro_social_kwh.round(5),
+        }
+    )
+    return df
+
+
+def generate_co2_emissions_dataset(year: int = 2024) -> pd.DataFrame:
+    """Genera dataset individual de factores de emisión CO₂ horarios para todo el sistema.
+
+    Cubre TODOS los flujos del sistema: mall + EV + BESS + PV (no solo BESS).
+
+    Metodología (datos estadísticos Sistema Aislado Loreto — MINEM 2024):
+      Estacionalidad mensual (Loreto, generación 100% termoeléctrica diesel B5):
+        Temporada lluviosa (dic-may): 0.43 kg CO₂/kWh — menor demanda, mezcla eficiente
+        Temporada seca (jun-nov):    0.47 kg CO₂/kWh — mayor demanda, peakers frecuentes
+      Variación HP/HFP intra-diaria (preserva promedio mensual):
+        Hora Punta (18-23h):     factor_mes × 1.35  — generadores punta (efic. ~28-30%)
+        Hora Fuera Punta (resto): factor_mes × 0.908 — carga base (efic. ~35-38%)
+      Promedio anual ponderado: ≈ 0.45 kg CO₂/kWh ≈ MINEM Loreto (0.4521 kg/kWh)
+
+    Reducción CO₂ directa   = EV_cargado × co2_direct_* (reemplaza ICE)
+    Reducción CO₂ indirecta = (PV_gen + BESS_discharge) × co2_factor_kg_kwh (desplaza térmica)
+
+    Columnas:
+        datetime                   — marca temporal horaria
+        co2_factor_kg_kwh          — factor grid horario (mensual × HP/HFP)
+        tariff_period              — "HP" o "HFP"
+        is_peak_hour               — 1 si hora punta (18-23h), 0 si fuera de punta
+        co2_monthly_base_kg_kwh    — factor base mensual (sin variación HP/HFP)
+        co2_direct_moto_kg_kwh     — 0.87 kg CO₂/kWh (moto gasolina 125cc — IPCC 2006)
+        co2_direct_mototaxi_kg_kwh — 0.54 kg CO₂/kWh (mototaxi 150cc — IPCC 2006)
+    """
+    from src.dimensionamiento.oe2._constants import (
+        HORA_INICIO_HP,
+        HORA_FIN_HP,
+        FACTOR_CO2_NETO_MOTO_KG_KWH,
+        FACTOR_CO2_NETO_MOTOTAXI_KG_KWH,
+    )
+
+    # Factores mensuales base — estacionalidad real Sistema Aislado Loreto (MINEM 2024)
+    # Temporada lluviosa (dic-may): generación base eficiente, menor demanda
+    # Temporada seca (jun-nov): mayor demanda, peakers diesel frecuentes
+    MONTHLY_CO2_LORETO: dict[int, float] = {
+        1: 0.43,
+        2: 0.43,
+        3: 0.43,
+        4: 0.43,
+        5: 0.43,  # enero-mayo: lluviosa
+        6: 0.47,
+        7: 0.47,
+        8: 0.47,
+        9: 0.47,
+        10: 0.47,
+        11: 0.47,  # jun-nov: seca
+        12: 0.43,  # diciembre: lluviosa
+    }
+    # Multiplicadores HP/HFP que preservan el promedio mensual
+    # (5h HP × 1.35 + 19h HFP × 0.908) / 24 = 1.0 exactamente
+    HP_MULT: float = 1.35  # generadores punta diesel (eficiencia ~28-30%)
+    HFP_MULT: float = 0.908  # carga base diesel (eficiencia ~35-38%)
+
+    n_hours = 8760
+    datetime_index = pd.date_range(start=f"{year}-01-01 00:00:00", periods=n_hours, freq="h")
+    month = datetime_index.month
+    hour_of_day = datetime_index.hour
+
+    is_hp = ((hour_of_day >= HORA_INICIO_HP) & (hour_of_day < HORA_FIN_HP)).astype(int)
+
+    # Factor mensual base
+    monthly_base = np.array([MONTHLY_CO2_LORETO[m] for m in month], dtype=float)
+
+    # Factor horario = base_mensual × multiplicador_periodo
+    co2_factor = monthly_base * np.where(is_hp, HP_MULT, HFP_MULT)
+
+    df = pd.DataFrame(
+        {
+            "datetime": datetime_index.strftime("%Y-%m-%d %H:%M:%S"),
+            "co2_factor_kg_kwh": co2_factor.round(4),
+            "co2_monthly_base_kg_kwh": monthly_base,
+            "tariff_period": np.where(is_hp, "HP", "HFP"),
+            "is_peak_hour": is_hp,
+            "co2_direct_moto_kg_kwh": FACTOR_CO2_NETO_MOTO_KG_KWH,  # 0.87 kg CO₂/kWh
+            "co2_direct_mototaxi_kg_kwh": FACTOR_CO2_NETO_MOTOTAXI_KG_KWH,  # 0.54 kg CO₂/kWh
+        }
+    )
+    return df
+
+
 def _add_tariff_co2_columns(df: pd.DataFrame, n_rows: int = 8760) -> pd.DataFrame:
     """Add shared derived columns (tariff, CO2) to a CityLearn timeseries DataFrame.
 
     These columns were previously duplicated across OE2 source modules. Now they
     are computed once here and added to each CityLearn file at save time.
+    Usa factores variables HP=0.61, HFP=0.41 kg CO₂/kWh (en lugar de constante 0.4521).
 
     Args:
         df: CityLearn timeseries (must have a datetime-parseable index or an 'hour' column)
@@ -719,7 +931,8 @@ def _add_tariff_co2_columns(df: pd.DataFrame, n_rows: int = 8760) -> pd.DataFram
         TARIFA_ENERGIA_HFP_SOLES,
         HORA_INICIO_HP,
         HORA_FIN_HP,
-        FACTOR_CO2_KG_KWH,
+        FACTOR_CO2_HP_KG_KWH,
+        FACTOR_CO2_HFP_KG_KWH,
     )
 
     df = df.copy()
@@ -738,9 +951,10 @@ def _add_tariff_co2_columns(df: pd.DataFrame, n_rows: int = 8760) -> pd.DataFram
     if "tarifa_soles_kwh" not in df.columns:
         df["tarifa_soles_kwh"] = np.where(is_hp, TARIFA_ENERGIA_HP_SOLES, TARIFA_ENERGIA_HFP_SOLES)
 
-    # CO2 indirect (grid import × emission factor) — added only if a grid_import column exists
+    # CO2 con factor horario variable (HP=0.61, HFP=0.41 kg/kWh)
+    co2_factor = np.where(is_hp, FACTOR_CO2_HP_KG_KWH, FACTOR_CO2_HFP_KG_KWH)
     if "grid_import_kwh" in df.columns and "co2_grid_kg" not in df.columns:
-        df["co2_grid_kg"] = df["grid_import_kwh"] * FACTOR_CO2_KG_KWH
+        df["co2_grid_kg"] = df["grid_import_kwh"] * co2_factor
 
     return df
 
@@ -801,6 +1015,25 @@ def save_citylearn_dataset(
     demand_path = output_dir / "mall_demand.csv"
     demand_df.to_csv(demand_path, index=False)
     print(f"   [OK] Demand: {demand_path.name} ({demand_df.shape[1]} cols)")
+
+    # Save CO₂ emissions dataset (todo el sistema: diesel grid + vehículos ICE)
+    co2_df = generate_co2_emissions_dataset(year=2024)
+    co2_path = output_dir / "co2_emissions.csv"
+    co2_df.to_csv(co2_path, index=False)
+    annual_avg = co2_df["co2_factor_kg_kwh"].mean()
+    print(f"   [OK] CO2 emissions: {co2_path.name} ({len(co2_df)} filas, avg={annual_avg:.4f} kg CO2/kWh)")
+
+    # Save tariffs dataset (OSINERGMIN Electro Oriente Iquitos + mecanismo compensación SSAA)
+    tariffs_df = generate_tariffs_dataset(year=2024)
+    tariffs_path = output_dir / "tariffs_osinergmin.csv"
+    tariffs_df.to_csv(tariffs_path, index=False)
+    hp_rate = tariffs_df["tarifa_energia_hp_soles_kwh"].iloc[0]
+    hfp_rate = tariffs_df["tarifa_energia_hfp_soles_kwh"].iloc[0]
+    mc_hp = tariffs_df[tariffs_df["is_peak_hour"] == 1]["mecanismo_compensacion_soles_kwh"].mean()
+    mc_hfp = tariffs_df[tariffs_df["is_peak_hour"] == 0]["mecanismo_compensacion_soles_kwh"].mean()
+    print(
+        f"   [OK] Tarifas OSINERGMIN: {tariffs_path.name} (HP={hp_rate} / HFP={hfp_rate} S/./kWh | MeComp HP={mc_hp:.4f} / HFP={mc_hfp:.4f} S/./kWh)"
+    )
 
     # Save configuration
     config_path = output_dir / "dataset_config_v7.json"

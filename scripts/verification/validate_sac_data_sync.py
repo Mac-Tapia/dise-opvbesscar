@@ -3,12 +3,16 @@
 from __future__ import annotations
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.dataset_builder_citylearn.data_loader import (
     load_citylearn_dataset,
-    BESS_CAPACITY_KWH, TOTAL_SOCKETS, SOLAR_PV_KWP,
-    CO2_FACTOR_GRID_KG_PER_KWH, N_CHARGERS,
+    BESS_CAPACITY_KWH,
+    TOTAL_SOCKETS,
+    SOLAR_PV_KWP,
+    CO2_FACTOR_GRID_KG_PER_KWH,
+    N_CHARGERS,
 )
 
 print("=" * 70)
@@ -27,7 +31,7 @@ ok_solar = n_solar == 8760 and solar_max <= 4500
 print(f"\n[1] SOLAR")
 print(f"    Archivo : data/oe2/Generacionsolar/pv_generation_citylearn2024.csv")
 print(f"    Filas   : {n_solar}  (esperado 8760) -> {'OK' if n_solar==8760 else 'ERROR'}")
-print(f"    Max kW  : {solar_max:.1f} kW (<= 4,500 razonable con 4,050 kWp)")
+print(f"    Max kW  : {solar_max:.1f} kW (<= 4,500 razonable para el sistema PV)")
 print(f"    Anual   : {solar_sum:,.0f} kWh/año")
 if not ok_solar:
     issues.append(f"Solar: {n_solar} filas (esperado 8760)")
@@ -85,17 +89,17 @@ if not ok_cl:
     issues.append(f"CityLearn combined: {n_cl} filas, ready={ready}")
 
 # 6 Constantes SAC (data_loader.py -> train_sac.py)
-print(f"\n[6] CONSTANTES SINCRONIZADAS (data_loader -> train_sac)")
+print(f"\n[6] CONSTANTES SINCRONIZADAS (data_loader -> train_sac_citylearn)")
 print(f"    CO2_FACTOR_GRID : {CO2_FACTOR_GRID_KG_PER_KWH} kg/kWh  (esperado 0.4521)")
 print(f"    SOLAR_PV_KWP    : {SOLAR_PV_KWP} kWp  (esperado 4050)")
 print(f"    BESS_CAPACITY   : {BESS_CAPACITY_KWH} kWh  (esperado 2000)")
 print(f"    TOTAL_SOCKETS   : {TOTAL_SOCKETS}    (esperado 38)")
 
 ok_consts = (
-    CO2_FACTOR_GRID_KG_PER_KWH == 0.4521 and
-    SOLAR_PV_KWP == 4050.0 and
-    BESS_CAPACITY_KWH == 2000.0 and
-    TOTAL_SOCKETS == 38
+    CO2_FACTOR_GRID_KG_PER_KWH == 0.4521
+    and SOLAR_PV_KWP == 4050.0
+    and BESS_CAPACITY_KWH == 2000.0
+    and TOTAL_SOCKETS == 38
 )
 if not ok_consts:
     issues.append("Constantes del data_loader no coinciden con esperado")
@@ -104,7 +108,7 @@ if not ok_consts:
 print(f"\n{'='*70}")
 print("RESUMEN SINCRONIZACION SAC <-> CITYLEARN v2:")
 checks = [
-    ("Solar (8760 h, 4050 kWp)", ok_solar),
+    ("Solar (8760 h)", ok_solar),
     ("BESS (8760 h, 2000 kWh)", ok_bess),
     ("Chargers (8760 h, 38 sockets)", ok_chargers),
     ("Mall demand (8760 h)", ok_mall),

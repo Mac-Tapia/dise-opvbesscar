@@ -1,55 +1,85 @@
 #!/usr/bin/env python
-"""Verify CityLearn v2 dataset completeness"""
+"""Verify current CityLearn v2 dataset completeness.
+
+Canonical processed dataset:
+    data/iquitos_ev_mall/
+"""
+
+from __future__ import annotations
 
 import json
 from pathlib import Path
+
 import pandas as pd
 
-city_learn_dir = Path('data/oe2/citylearn')
-required_files = ['bess_schema_params.json', 'bess_solar_generation.csv', 'building_load.csv']
 
-print('=== VERIFICACION DE ARCHIVOS CITYLEARN v2 ===\n')
-for file in required_files:
-    path = city_learn_dir / file
-    exists = path.exists()
-    size = path.stat().st_size if exists else 0
-    status = '✅' if exists else '❌'
-    print(f'{status} {file}: {size:,} bytes')
+def _fail(message: str) -> None:
+    raise SystemExit(f"[ERROR] {message}")
 
-# Cargar y validar estructura
-print('\n=== VALIDACION DE ESTRUCTURA ===\n')
 
-# BESS Config
-with open(city_learn_dir / 'bess_schema_params.json') as f:
-    params = json.load(f)
-    print('✅ BESS Config loaded:')
-    cap = params['electrical_storage']['capacity']
-    pow = params['electrical_storage']['nominal_power']
-    eff = params['electrical_storage']['efficiency']
-    print(f'   - Capacity: {cap} kWh')
-    print(f'   - Power: {pow} kW')
-    print(f'   - Efficiency: {eff*100}%')
+def main() -> None:
+    dataset_dir = Path("data/iquitos_ev_mall")
+    required_files = {
+        "citylearnv2_combined_dataset.csv": "dataset combinado",
+        "solar_generation.csv": "generación solar",
+        "bess_timeseries.csv": "BESS",
+        "chargers_timeseries.csv": "cargadores EV",
+        "mall_demand.csv": "demanda mall",
+        "co2_emissions.csv": "factores CO2",
+        "tariffs_osinergmin.csv": "tarifas",
+        "dataset_config_v7.json": "configuración",
+    }
 
-# Solar data
-solar = pd.read_csv(city_learn_dir / 'bess_solar_generation.csv')
-print(f'\n✅ Solar Generation:')
-print(f'   - Filas: {len(solar)}')
-print(f'   - Min: {solar["solar_generation"].min():.1f} kW')
-print(f'   - Max: {solar["solar_generation"].max():.1f} kW')
-print(f'   - Media: {solar["solar_generation"].mean():.1f} kW')
+    print("=== VERIFICACION CITYLEARN v2 CANONICA ===\n")
 
-# Load data
-load = pd.read_csv(city_learn_dir / 'building_load.csv')
-print(f'\n✅ Building Load (Mall):')
-print(f'   - Filas: {len(load)}')
-print(f'   - Min: {load["non_shiftable_load"].min():.1f} kW')
-print(f'   - Max: {load["non_shiftable_load"].max():.1f} kW')
-print(f'   - Media: {load["non_shiftable_load"].mean():.1f} kW')
-print(f'   - Total anual: {load["non_shiftable_load"].sum():.0f} kWh')
+    if not dataset_dir.exists():
+        _fail(f"No existe {dataset_dir}. Ejecuta: python scripts/generate_oe2_datasets.py --loader-only")
 
-print('\n=== LISTO PARA TRAINING RL ===')
-print('✅ CityLearn v2 environment puede entrenarse con estos datos')
-print('\nPróximos pasos:')
-print('1. Entrenar agentes RL (SAC/PPO/A2C) con estos datos')
-print('2. Comparar mejora vs baseline (sin BESS)')
-print('3. Analizar CO2 reducido y autoconsumo solar')
+    for filename, description in required_files.items():
+        path = dataset_dir / filename
+        if not path.exists():
+            _fail(f"Falta {filename} ({description})")
+        print(f"[OK] {filename}: {path.stat().st_size:,} bytes")
+
+    print("\n=== VALIDACION DE ESTRUCTURA ===\n")
+
+    combined = pd.read_csv(dataset_dir / "citylearnv2_combined_dataset.csv")
+    solar = pd.read_csv(dataset_dir / "solar_generation.csv")
+    bess = pd.read_csv(dataset_dir / "bess_timeseries.csv")
+    chargers = pd.read_csv(dataset_dir / "chargers_timeseries.csv")
+    mall = pd.read_csv(dataset_dir / "mall_demand.csv")
+    co2 = pd.read_csv(dataset_dir / "co2_emissions.csv")
+    tariffs = pd.read_csv(dataset_dir / "tariffs_osinergmin.csv")
+
+    frames = {
+        "combined": combined,
+        "solar": solar,
+        "bess": bess,
+        "chargers": chargers,
+        "mall": mall,
+        "co2": co2,
+        "tariffs": tariffs,
+    }
+    for name, df in frames.items():
+        if len(df) != 8760:
+            _fail(f"{name}: {len(df)} filas != 8760")
+        print(f"[OK] {name}: {len(df)} filas, {len(df.columns)} columnas")
+
+    with open(dataset_dir / "dataset_config_v7.json", encoding="utf-8") as f:
+        config = json.load(f)
+
+    ready = config.get("validation_status", {}).get("ready_for_citylearn_v2", False)
+    if not ready:
+        _fail("dataset_config_v7.json no marca ready_for_citylearn_v2=true")
+
+    print("\n=== RESUMEN ===\n")
+    print(f"[OK] Solar anual: {solar['energia_kwh'].sum():,.0f} kWh")
+    print(f"[OK] Solar pico: {solar['potencia_kw'].max():,.2f} kW")
+    print(f"[OK] BESS SOC min/max: {bess['soc_percent'].min():.1f}% / {bess['soc_percent'].max():.1f}%")
+    print(f"[OK] Mall anual: {mall['mall_demand_kwh'].sum():,.0f} kWh")
+    print(f"[OK] CO2 factor promedio: {co2['co2_factor_kg_kwh'].mean():.4f} kg/kWh")
+    print("\n[PASS] CityLearn v2 está listo para entrenamiento RL.")
+
+
+if __name__ == "__main__":
+    main()

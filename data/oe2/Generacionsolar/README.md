@@ -2,6 +2,8 @@
 
 Esta carpeta contiene el dataset canónico de generación solar horaria usado por OE2, BESS, CityLearn v2 y los agentes RL del proyecto `pvbesscar`.
 
+Verificacion vigente del pipeline completo: `docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md`.
+
 ## Dataset Canónico
 
 | Elemento | Valor |
@@ -73,3 +75,5 @@ print(f"Energía anual solar: {energia_anual:,.0f} kWh")
 ## Nota
 
 Los archivos históricos con nombres `solar_generation_profile_2024.csv` o rutas en `data/interim/oe2/solar/` no deben usarse como fuente primaria. La fuente de verdad actual es `pv_generation_citylearn2024.csv`.
+
+**Ultima verificacion:** 30 May 2026, 8,760 horas, 5.819 GWh/año, `ready_for_citylearn_v2 = true`.
