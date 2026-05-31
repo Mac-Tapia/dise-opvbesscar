@@ -1425,7 +1425,7 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
             "hyperparameters":    {k: str(v) for k, v in PPO_HYPERPARAMS.items()},
         },
         "infrastructure": {
-            "pv_kwp":            4050,
+            "pv_kwp":            4162,
             "bess_kwh":          2000,
             "motos_chargers":    15,
             "mototaxis_chargers": 4,

@@ -30,25 +30,30 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 SCRIPTS: list[tuple[str, Path]] = [
-    ("CO2 trace directo/indirecto",   ROOT / "scripts" / "analysis"  / "analizar_co2_trace_oe3.py"),
-    ("Estadisticas completas OE3",    ROOT / "scripts" / "analysis"  / "demostracion_estadistica_oe3.py"),
-    ("Control operativo BESS/EV",     ROOT / "scripts" / "analysis"  / "control_operativo_bess_ev_oe3.py"),
-    ("Comparativa CO2 trace figuras", ROOT / "scripts" / "reporting" / "comparativa_agentes_co2_trace.py"),
-    ("Tablas canonicas PNG",          ROOT / "scripts" / "reporting" / "generar_tablas_oe3.py"),
+    ("CO2 trace directo/indirecto",       ROOT / "scripts" / "analysis"  / "analizar_co2_trace_oe3.py"),
+    ("Estadisticas completas OE3",        ROOT / "scripts" / "analysis"  / "demostracion_estadistica_oe3.py"),
+    ("Control operativo BESS/EV",         ROOT / "scripts" / "analysis"  / "control_operativo_bess_ev_oe3.py"),
+    ("Costos tarifarios y estabilidad",   ROOT / "scripts" / "analysis"  / "costos_estabilidad_oe3.py"),
+    ("Comparativa CO2 trace figuras",     ROOT / "scripts" / "reporting" / "comparativa_agentes_co2_trace.py"),
+    ("Tablas canonicas PNG",              ROOT / "scripts" / "reporting" / "generar_tablas_oe3.py"),
 ]
 
 EXPECTED_OUTPUTS: list[Path] = [
     ROOT / "reports" / "oe3" / "CO2_DIRECTO_INDIRECTO_TRACE_OE3.md",
     ROOT / "reports" / "oe3" / "co2_trace_direct_indirect_summary.csv",
     ROOT / "reports" / "oe3" / "CONTROL_OPERATIVO_BESS_EV_OE3.md",
+    ROOT / "reports" / "oe3" / "COSTOS_ESTABILIDAD_OE3.md",
     ROOT / "outputs" / "estadistica_oe3" / "reporte_estadistico_oe3.md",
     ROOT / "outputs" / "estadistica_oe3" / "tabla_completa_estadistica_oe3.csv",
+    ROOT / "outputs" / "estadistica_oe3" / "costos_estabilidad_consolidado.csv",
     ROOT / "outputs" / "docx" / "graficas" / "figura_pruebas_estadisticas_oe3.png",
     ROOT / "outputs" / "docx" / "graficas" / "co2_comparativa_multicriterio.png",
     ROOT / "outputs" / "docx" / "graficas" / "co2_convergencia_reward.png",
     ROOT / "outputs" / "docx" / "graficas" / "sac_convergencia_estable_inferior.png",
     ROOT / "outputs" / "docx" / "graficas" / "control_operativo_bess_ev_oe3.png",
     ROOT / "outputs" / "docx" / "graficas" / "tabla_criterios_seleccion_oe3.png",
+    ROOT / "outputs" / "docx" / "graficas" / "costos_tarifarios_oe3.png",
+    ROOT / "outputs" / "docx" / "graficas" / "estabilidad_red_oe3.png",
 ]
 
 SEP = "-" * 60

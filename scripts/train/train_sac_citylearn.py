@@ -1769,7 +1769,7 @@ def train(
             "steps_done_before_run": int(steps_done),
         },
         "infrastructure": {
-            "pv_kwp":            4050,
+            "pv_kwp":            4162,
             "bess_kwh":          2000,
             "motos_chargers":    15,
             "mototaxis_chargers": 4,

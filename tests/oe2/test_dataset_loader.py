@@ -36,7 +36,7 @@ def test_oe2_system_constants_match_architecture() -> None:
     assert BESS_MAX_POWER_KW == pytest.approx(400.0)
     assert N_CHARGERS == 19
     assert TOTAL_SOCKETS == 38
-    assert SOLAR_PV_KWP == pytest.approx(4050.0)
+    assert SOLAR_PV_KWP == pytest.approx(4162.0)
     assert CO2_FACTOR_GRID_KG_PER_KWH == pytest.approx(0.4521)
 
 

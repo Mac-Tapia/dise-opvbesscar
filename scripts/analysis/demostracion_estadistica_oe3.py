@@ -177,7 +177,9 @@ def analyse_var(
     for n1, n2 in pairs:
         a1, a2 = arrays[n1], arrays[n2]
         u, p_u = stats.mannwhitneyu(a1, a2, alternative=alt_mw)
-        w, p_w = stats.wilcoxon(a1, a2, alternative=alt_wc)
+        # Wilcoxon requiere arrays del mismo tamaño: truncar al minimo
+        min_n = min(len(a1), len(a2))
+        w, p_w = stats.wilcoxon(a1[:min_n], a2[:min_n], alternative=alt_wc)
         d = cohen_d(a1, a2)
         cl = cliff_delta(a1, a2)
         lo_b, hi_b = boot_diff_ci(a1, a2)
@@ -564,7 +566,8 @@ def main() -> None:
         ("co2_directa_kg",   "greater", "CO₂ directo evitado (ICE→EV)"),
         ("co2_indirecta_kg", "greater", "CO₂ indirecto evitado (solar+BESS)"),
         ("ev_total_kwh",     "greater", "Carga EV total (motos + mototaxis)"),
-        ("ev_mototaxis_kwh", "greater", "Carga mototaxis"),
+        ("ev_motos_kwh",     "greater", "Carga motos (270 motos/día)"),
+        ("ev_mototaxis_kwh", "greater", "Carga mototaxis (39 mototaxis/día)"),
         ("co2_control_kg",   "less",    "F2 residual (referencia complementaria)"),
     ]
 

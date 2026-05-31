@@ -69,8 +69,8 @@ BESS_SOC_MAX: float = 1.00          # SOC máximo (100 %)
 # Fuente: pv_generation_citylearn2024.csv (8,760 filas horarias)
 # ============================================================================
 
-PV_INSTALLED_KWP: float = 4050.0            # kWp diseño nominal OE2
-PV_PVWATTS_PDC0_KWP: float = 4162.0        # kWp pdc0 PVWatts (config strings Jinko 580N)
+PV_INSTALLED_KWP: float = 4162.0            # kWp DC instalados OE2 (PVWatts pdc0, Jinko Tiger Neo JKM580N-72HL4-BDV + 8.7% bifacial)
+PV_PVWATTS_PDC0_KWP: float = 4162.0        # kWp pdc0 PVWatts — valor canónico único
 PV_ANNUAL_CAPACITY_KWH: float = 5_819_332.0  # kWh/año (PR=83.5%, 1,398 kWh/kWp)
 PV_ANNUAL_CAPACITY_GWH: float = PV_ANNUAL_CAPACITY_KWH / 1e6  # 5.82 GWh
 PV_MAX_HOURLY_KW: float = 3245.95           # kW pico horario (del dataset)

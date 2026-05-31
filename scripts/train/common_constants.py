@@ -95,7 +95,7 @@ N_CHARGERS: int = 19                # 19 cargadores
 TOTAL_SOCKETS: int = 38             # 38 sockets (19 × 2)
 MOTOS_SOCKETS: int = 30             # Primeros 30 sockets para motos
 MOTOTAXIS_SOCKETS: int = 8              # Ultimos 8 sockets para mototaxis
-SOLAR_PV_KWP: float = 4050.0        # 4,050 kWp solar capacity
+SOLAR_PV_KWP: float = 4162.0        # 4,162 kWp DC (PVWatts pdc0, Jinko Tiger Neo JKM580N-72HL4-BDV + 8.7% bifacial)
 BESS_CAPACITY_KWH: float = 2000.0   # 2,000 kWh BESS capacity (v5.8 audit)
 
 # ============================================================================

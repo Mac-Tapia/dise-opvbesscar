@@ -91,7 +91,7 @@ TARIFFS_OSINERGMIN_CSV = CITYLEARN_OUTPUT_DIR / "tariffs_osinergmin.csv"
 BESS_CAPACITY_KWH: float = 2000.0   # Verificado en bess_ano_2024.csv (max soc_kwh)
 N_CHARGERS: int = 19                 # Verificado en chargers_ev_ano_2024_v3.csv
 N_SOCKETS: int = N_CHARGERS * 2      # 38 sockets totales
-SOLAR_PV_KWP: float = 4050.0        # kWp diseño nominal (PVWatts pdc0=4162 kWp, max 3245.9 kW)
+SOLAR_PV_KWP: float = 4162.0        # kWp DC instalados OE2 (PVWatts pdc0, Jinko Tiger Neo JKM580N-72HL4-BDV)
 SOLAR_HOURLY_ROWS: int = 8760        # 365 días × 24 h = año completo
 
 # ============================================================================

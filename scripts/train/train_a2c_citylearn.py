@@ -663,6 +663,23 @@ class EVMetricsCallback(BaseCallback):
             self._hist_reduccion_pct.append(reduccion_pct)
             self._hist_co2_sinproyecto_kg.append(self._ep_co2_sinproyecto_kg)
 
+            # ── Flush periódico cada 5 episodios — protege contra pérdida de datos ──
+            _FLUSH_EVERY = 5
+            if ep_num % _FLUSH_EVERY == 0 and ep_num > 0:
+                self.output_dir.mkdir(parents=True, exist_ok=True)
+                if self.trace_records:
+                    _tp = self.output_dir / "trace_a2c.csv"
+                    _hdr = not _tp.exists()
+                    pd.DataFrame(self.trace_records).to_csv(_tp, mode="a", index=False, header=_hdr)
+                    self.trace_records = []
+                    log.info("[DATA] trace_a2c.csv: flush ep%d (%d pasos)", ep_num, ep_num * 8760)
+                if self.timeseries_records:
+                    _tsp = self.output_dir / "timeseries_a2c.csv"
+                    _hdr = not _tsp.exists()
+                    pd.DataFrame(self.timeseries_records).to_csv(_tsp, mode="a", index=False, header=_hdr)
+                    self.timeseries_records = []
+                    log.info("[DATA] timeseries_a2c.csv: flush ep%d", ep_num)
+
             self._reset_ep()
 
         return True
@@ -1445,7 +1462,7 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
             "hyperparameters":    {k: str(v) for k, v in A2C_HYPERPARAMS.items()},
         },
         "infrastructure": {
-            "pv_kwp":            4050,
+            "pv_kwp":            4162,
             "bess_kwh":          2000,
             "motos_chargers":    15,
             "mototaxis_chargers": 4,

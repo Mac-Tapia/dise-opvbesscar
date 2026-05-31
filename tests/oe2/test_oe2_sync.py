@@ -98,7 +98,7 @@ class TestConstantsConsistency:
         assert LOADER_TOTAL_SOCKETS == PATHS_N_SOCKETS == PATHS_N_CHARGERS * 2
 
     def test_solar_kwp_consistent(self):
-        assert LOADER_SOLAR_KWP == PATHS_SOLAR_KWP == 4050.0
+        assert LOADER_SOLAR_KWP == PATHS_SOLAR_KWP == 4162.0
 
     def test_co2_factor_consistent(self):
         assert LOADER_CO2_FACTOR == CONST_CO2_FACTOR == 0.4521

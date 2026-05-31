@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-27T20:47:35.184439",
+  "timestamp": "2026-05-31T08:56:39.594590",
   "archivo": "data\\oe2\\Generacionsolar\\pv_generation_citylearn2024.csv",
   "dimensiones": {
     "filas": 8760,
@@ -29,5 +29,15 @@
     "7_agentes_rl": true
   },
   "todas_ok": true,
-  "status": "[OK] PRODUCTION READY"
+  "status": "[OK] PRODUCTION READY",
+  "sistema_pv": {
+    "nominal_power_kwp_dc": 4162.0,
+    "modulo": "Jinko Tiger Neo JKM580N-72HL4-BDV (N-type TOPCon, bifacial 80%)",
+    "bifacial_factor": 0.8,
+    "bifacial_albedo": 0.22,
+    "tilt_deg": 10.0,
+    "azimuth_deg": 0.0,
+    "gamma_pdc": -0.0029
+  },
+  "rendimiento_especifico_kwh_kwp": 1398.2
 }

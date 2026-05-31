@@ -39,36 +39,51 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 _DATA_IQUITOS = _PROJECT_ROOT / "data" / "iquitos_ev_mall"
 _OUTPUT_DIR   = _PROJECT_ROOT / "data" / "interim" / "citylearn_v2"
 
-# === Constantes del sistema Iquitos (OE2 v5.7) ===
-PV_NOMINAL_KWP: float         = 4050.0   # kWp instalados (OE2 solar_pvlib)
-BESS_CAPACITY_KWH: float      = 2000.0   # kWh BESS (OE2 bess.py)
-BESS_NOMINAL_POWER_KW: float  = 400.0    # kW potencia BESS
-BESS_EFFICIENCY: float        = 0.95     # eficiencia round-trip lithium-ion
-BESS_MIN_SOC: float           = 0.20     # DoD 80%
-CO2_GRID_KG_PER_KWH: float   = 0.4521   # kg CO₂/kWh (MINEM 2024, sistema aislado Iquitos)
-SECONDS_PER_TIMESTEP: int     = 3600     # 1 hora
-N_TIMESTEPS: int              = 8760     # 1 año horario
+# === Constantes del sistema — leídas automáticamente de los JSONs OE2 ===
+# Cada vez que solar_pvlib.py / bess.py / chargers.py regeneran datos, los
+# valores se actualizan automáticamente al importar este módulo.
+try:
+    from src.dimensionamiento.oe2.oe2_metadata import get_metadata as _get_oe2_meta
+    _oe2 = _get_oe2_meta()
+    PV_NOMINAL_KWP: float         = _oe2.pv_kwp_dc
+    BESS_CAPACITY_KWH: float      = _oe2.bess_capacity_kwh
+    BESS_NOMINAL_POWER_KW: float  = _oe2.bess_nominal_power_kw
+    BESS_EFFICIENCY: float        = _oe2.bess_efficiency
+    BESS_MIN_SOC: float           = _oe2.bess_soc_min
+    CO2_GRID_KG_PER_KWH: float   = _oe2.co2_factor_kg_kwh
+    N_SOCKETS_MOTOS: int          = _oe2.n_sockets_motos
+    N_SOCKETS_MOTOTAXIS: int      = _oe2.n_sockets_mototaxis
+    CHARGER_POWER_KW: float       = _oe2.charger_power_kw
+    EV_MOTO_BAT_KWH: float        = _oe2.ev_moto_bat_kwh
+    EV_MOTOTAXI_BAT_KWH: float    = _oe2.ev_mototaxi_bat_kwh
+    EV_SOC_MIN_PCT: float         = _oe2.ev_soc_min * 100.0
+    EV_SOC_MAX_PCT: float         = _oe2.ev_soc_max * 100.0
+    logger.info("schema_builder: constantes cargadas desde JSONs OE2 reales (pv_kwp=%.0f)", PV_NOMINAL_KWP)
+except Exception as _meta_exc:
+    logger.warning("schema_builder: no se pudo leer OE2Metadata (%s) — usando fallbacks", _meta_exc)
+    PV_NOMINAL_KWP: float         = 4162.0
+    BESS_CAPACITY_KWH: float      = 2000.0
+    BESS_NOMINAL_POWER_KW: float  = 400.0
+    BESS_EFFICIENCY: float        = 0.95
+    BESS_MIN_SOC: float           = 0.20
+    CO2_GRID_KG_PER_KWH: float   = 0.4521
+    N_SOCKETS_MOTOS: int          = 30
+    N_SOCKETS_MOTOTAXIS: int      = 8
+    CHARGER_POWER_KW: float       = 7.4
+    EV_MOTO_BAT_KWH: float        = 4.6
+    EV_MOTOTAXI_BAT_KWH: float    = 7.4
+    EV_SOC_MIN_PCT: float         = 20.0
+    EV_SOC_MAX_PCT: float         = 80.0
 
-# === Infraestructura cargadores EV (OE2 chargers.py v5.4) ===
-# Motos:     15 cargadores × 2 sockets = 30 sockets (socket_000 … socket_029)
-# Mototaxis: 4  cargadores × 2 sockets = 8  sockets (socket_030 … socket_037)
-N_SOCKETS_MOTOS: int      = 30
-N_SOCKETS_MOTOTAXIS: int  = 8
-CHARGER_POWER_KW: float   = 7.4     # kW por socket (Modo 3)
-CHARGER_EFF: float        = 0.95    # eficiencia cargador
-EV_MOTO_BAT_KWH: float    = 4.6    # kWh batería moto 125cc
-EV_MOTOTAXI_BAT_KWH: float = 7.4   # kWh batería mototaxi 150cc
-EV_SOC_MIN_PCT: float     = 20.0   # % SOC mínimo EV (llegada)
-EV_SOC_MAX_PCT: float     = 80.0   # % SOC máximo EV (objetivo)
+CHARGER_EFF: float        = 0.95    # eficiencia cargador (fijo diseño)
+SECONDS_PER_TIMESTEP: int = 3600    # 1 hora
+N_TIMESTEPS: int          = 8760    # 1 año horario
 
-# Potencia máxima agregada por tipo
-MAX_POWER_MOTOS_KW: float     = N_SOCKETS_MOTOS * CHARGER_POWER_KW       # 222.0 kW
-MAX_POWER_MOTOTAXIS_KW: float = N_SOCKETS_MOTOTAXIS * CHARGER_POWER_KW   # 59.2  kW
-# Capacidad de batería agregada por tipo
-TOTAL_BAT_MOTOS_KWH: float     = N_SOCKETS_MOTOS * EV_MOTO_BAT_KWH       # 138.0 kWh
-TOTAL_BAT_MOTOTAXIS_KWH: float = N_SOCKETS_MOTOTAXIS * EV_MOTOTAXI_BAT_KWH  # 59.2 kWh
-
-# Hora de cierre mall (máll cierra 22h → EVs deben salir a las 22)
+# Potencia máxima agregada por tipo (derivada de constantes leídas)
+MAX_POWER_MOTOS_KW: float     = N_SOCKETS_MOTOS * CHARGER_POWER_KW
+MAX_POWER_MOTOTAXIS_KW: float = N_SOCKETS_MOTOTAXIS * CHARGER_POWER_KW
+TOTAL_BAT_MOTOS_KWH: float    = N_SOCKETS_MOTOS * EV_MOTO_BAT_KWH
+TOTAL_BAT_MOTOTAXIS_KWH: float = N_SOCKETS_MOTOTAXIS * EV_MOTOTAXI_BAT_KWH
 MALL_CLOSE_HOUR: int = 22
 
 
@@ -227,20 +242,56 @@ def _build_weather(solar_df: pd.DataFrame, out: Path) -> Path:
 
 
 def _build_carbon_intensity(co2_df: pd.DataFrame, out: Path) -> Path:
-    """Genera carbon_intensity.csv — factor CO₂ variable por hora (sistema aislado Loreto).
+    """Genera carbon_intensity.csv — factor CO₂ variable por hora (sistema aislado diesel Loreto).
 
-    Usa co2_emissions.csv (data/iquitos_ev_mall/) con estacionalidad real MINEM:
-      lluviosa dic-may=0.43, seca jun-nov=0.47 kg CO₂/kWh base
-      HP (18-23h): factor_mes × 1.35 | HFP: factor_mes × 0.908
-    Esta señal es observada por el agente RL como `carbon_intensity`.
+    Fuente real: co2_emissions.csv (data/iquitos_ev_mall/)
+    Valores MINEM 2024 para red aislada Iquitos (generación 100% diesel):
+      Temporada lluviosa dic-may: base ~0.39 kg CO₂/kWh (caudal ríos alto, plantas diesel optimizadas)
+      Temporada seca    jun-nov:  base ~0.47 kg CO₂/kWh (demanda eléctrica máxima, más generadores)
+      Hora punta HP 18-23h:       factor × 1.35 (arranque adicional de grupos electrógenos)
+      Fuera de punta HFP:         factor × 0.908 (generadores al mínimo)
+    Media anual: ~0.4521 kg CO₂/kWh (MINEM 2024, Electro Oriente Loreto)
+    Rango: 0.3904–0.6345 kg CO₂/kWh (señal observable por el agente RL)
     """
     co2_arr = co2_df["co2_factor_kg_kwh"].to_numpy(dtype=np.float32)
     df = pd.DataFrame({"carbon_intensity": co2_arr})
     path = out / "carbon_intensity.csv"
     df.to_csv(path, index=False)
     logger.info(
-        "carbon_intensity.csv: variable %.4f–%.4f kg CO₂/kWh (lluviosa/seca × HP/HFP, MINEM Loreto)",
+        "carbon_intensity.csv: %.4f-%.4f kg CO2/kWh (diesel Iquitos: lluviosa/seca × HP/HFP, MINEM 2024)",
         float(co2_arr.min()), float(co2_arr.max()),
+    )
+    return path
+
+
+def _build_pricing(tariffs_df: pd.DataFrame, out: Path) -> Path:
+    """Genera pricing.csv — tarifas OSINERGMIN HP/HFP para CityLearn v2.
+
+    Fuente real: tariffs_osinergmin.csv (data/iquitos_ev_mall/)
+    Columna `electricity_pricing` requerida por CityLearn v2 (S./kWh):
+      HP  18-23h: tarifa_total_soles_kwh ≈ 0.4616 S./kWh (energía + cargo AAPP)
+      HFP 00-17h, 23h: tarifa_total_soles_kwh ≈ 0.2916 S./kWh
+    También incluye `electricity_pricing_predicted_*` para forecasting.
+    Señal usada por W_COST (0.02) en la función de recompensa multiobjetivo.
+    """
+    if "tarifa_total_soles_kwh" in tariffs_df.columns:
+        price_arr = tariffs_df["tarifa_total_soles_kwh"].to_numpy(dtype=np.float32)
+    elif "tarifa_energia_soles_kwh" in tariffs_df.columns:
+        price_arr = tariffs_df["tarifa_energia_soles_kwh"].to_numpy(dtype=np.float32)
+    else:
+        price_arr = tariffs_df.select_dtypes(include=[np.number]).iloc[:, 0].to_numpy(dtype=np.float32)
+
+    df = pd.DataFrame({
+        "electricity_pricing":             price_arr,
+        "electricity_pricing_predicted_1": np.roll(price_arr, -6),   # +6h ahead
+        "electricity_pricing_predicted_2": np.roll(price_arr, -12),  # +12h ahead
+        "electricity_pricing_predicted_3": np.roll(price_arr, -24),  # +24h ahead
+    })
+    path = out / "pricing.csv"
+    df.to_csv(path, index=False)
+    logger.info(
+        "pricing.csv: HP=%.4f HFP=%.4f S./kWh (OSINERGMIN Res. N 047-2024-OS/CD, Electro Oriente)",
+        float(price_arr.max()), float(price_arr.min()),
     )
     return path
 
@@ -361,7 +412,7 @@ def _build_schema_json(root_dir: str, out: Path) -> Path:
     Declara:
       - Edificio IquitosEVMall: energy_simulation + weather + carbon_intensity
       - BESS: 2000 kWh / 400 kW (OE2 bess.py v5.3)
-      - PV: 4050 kWp (OE2 solar_pvlib)
+      - PV: 4162 kWp DC (OE2 solar_pvlib, Jinko Tiger Neo JKM580N-72HL4-BDV)
       - EV chargers: motos_aggregate (222 kW, 30 sockets) + mototaxis_aggregate (59.2 kW, 8 sockets)
       - Observaciones activas para entrenamiento RL
       - Acción: electrical_storage (BESS)
@@ -373,8 +424,9 @@ def _build_schema_json(root_dir: str, out: Path) -> Path:
             "IquitosEVMall": {
                 "include": True,
                 "energy_simulation": "energy_simulation.csv",
-                "weather": "weather.csv",
-                "carbon_intensity": "carbon_intensity.csv",
+                "weather":           "weather.csv",
+                "carbon_intensity":  "carbon_intensity.csv",
+                "pricing":           "pricing.csv",
                 # BESS: OE2 bess.py v5.3 — 2000 kWh / 400 kW / DoD 80%
                 # depth_of_discharge=0.8 → min SOC = 20% (CityLearn v2 Battery API)
                 # BESS: OE2 bess.py v5.7 — 2000 kWh / 400 kW LFP
@@ -392,7 +444,7 @@ def _build_schema_json(root_dir: str, out: Path) -> Path:
                         "initial_soc":               0.5,
                     },
                 },
-                # PV: 4050 kWp (OE2 solar_pvlib, Iquitos 3.73°S 73.25°O)
+                # PV: 4162 kWp DC (OE2 solar_pvlib, Iquitos 3.73°S 73.25°O)
                 "pv": {
                     "type": "citylearn.energy_model.PV",
                     "attributes": {
@@ -454,7 +506,7 @@ def _build_schema_json(root_dir: str, out: Path) -> Path:
             "solar_generation":             {"active": True},
             "electrical_storage_soc":       {"active": True},
             "net_electricity_consumption":  {"active": True},
-            "electricity_pricing":          {"active": False},  # v2.5.0 no soporta columna en energy_simulation.csv
+            "electricity_pricing":          {"active": True, "shared_in_central_agent": True},
         },
         # ── Acción: sólo BESS (EVs controlados por el wrapper 3D) ────────────
         "actions": {
@@ -496,13 +548,24 @@ def build_citylearn_schema(
 ) -> Path:
     """Genera todos los datasets CityLearn v2 a partir de datos OE2 reales.
 
-    Lee de data/iquitos_ev_mall/ y escribe en data/interim/citylearn_v2/:
-      energy_simulation.csv    — edificio + tarifas OSINERGMIN
-      weather.csv              — meteo + predicciones
-      carbon_intensity.csv     — factor CO₂ constante
-      ev_charger_motos.csv     — ChargerSimulation 30 sockets motos
-      ev_charger_mototaxis.csv — ChargerSimulation 8 sockets mototaxis
-      schema_iquitos.json      — schema completo CityLearn v2
+    Lee de data/iquitos_ev_mall/ (fuentes OE2) y escribe en data/interim/citylearn_v2/:
+
+      Datasets CityLearn v2 (todos vinculados al schema):
+        energy_simulation.csv    ← solar_generation.csv + mall_demand.csv + weather
+        weather.csv              ← solar_generation.csv (GHI, temperatura, viento)
+        carbon_intensity.csv     ← co2_emissions.csv (factor CO₂ diesel Iquitos, 0.3904-0.6345)
+        pricing.csv              ← tariffs_osinergmin.csv (HP=0.46/HFP=0.29 S./kWh OSINERGMIN)
+        ev_charger_motos.csv     ← chargers_timeseries.csv (30 sockets, 270 motos/día)
+        ev_charger_mototaxis.csv ← chargers_timeseries.csv (8 sockets, 39 mototaxis/día)
+        schema_iquitos.json      — schema completo: BESS + PV + 2 EV charger groups
+
+      Datasets leídos por wrapper directamente (no en schema):
+        bess_timeseries.csv      ← data/iquitos_ev_mall/ (SOC ref, dispatch, co2_avoided)
+        tariffs_osinergmin.csv   ← data/interim/citylearn_v2/ (tarifa_soles, mall_cost)
+
+      Valores del sistema leídos de JSONs OE2 reales (OE2Metadata):
+        pv_kwp=4162 ← CERTIFICACION_SOLAR.json | bess=2000kWh/400kW ← bess_results.json
+        n_sockets=38 ← ESPECIFICACION_CARGADORES.json | co2_factor=0.4521 ← bess_results.json
 
     Parameters
     ----------
@@ -573,10 +636,30 @@ def build_citylearn_schema(
         _ci_df.to_csv(out / "carbon_intensity.csv", index=False)
         logger.info("carbon_intensity.csv: %.4f kg CO₂/kWh constante (fallback)", CO2_GRID_KG_PER_KWH)
 
-    # ── 5. ev_charger_motos.csv + ev_charger_mototaxis.csv ───────────────────
+    # ── 5. pricing.csv — tarifas OSINERGMIN HP/HFP (señal W_COST del reward) ──
+    if tariffs_df is not None:
+        _build_pricing(tariffs_df, out)
+    else:
+        # fallback: tarifa binaria HP/HFP desde mall_demand.csv
+        from src.dimensionamiento.oe2.oe2_metadata import get_metadata as _gm2
+        _m2 = _gm2()
+        _price_hp  = np.float32(_m2.tarifa_hp_soles_kwh)
+        _price_hfp = np.float32(_m2.tarifa_hfp_soles_kwh)
+        _is_punta  = mall_df["is_hora_punta"].to_numpy(dtype=np.int32)
+        _price_arr = np.where(_is_punta, _price_hp, _price_hfp).astype(np.float32)
+        _pr_df = pd.DataFrame({
+            "electricity_pricing":             _price_arr,
+            "electricity_pricing_predicted_1": np.roll(_price_arr, -6),
+            "electricity_pricing_predicted_2": np.roll(_price_arr, -12),
+            "electricity_pricing_predicted_3": np.roll(_price_arr, -24),
+        })
+        _pr_df.to_csv(out / "pricing.csv", index=False)
+        logger.info("pricing.csv: fallback HP=%.4f HFP=%.4f S./kWh", _price_hp, _price_hfp)
+
+    # ── 6. ev_charger_motos.csv + ev_charger_mototaxis.csv ───────────────────
     _build_ev_charger_datasets(chargers_df, hour, out)
 
-    # ── 6. schema_iquitos.json ────────────────────────────────────────────────
+    # ── 7. schema_iquitos.json ────────────────────────────────────────────────
     try:
         root_dir = str(out.relative_to(Path.cwd()))
     except ValueError:

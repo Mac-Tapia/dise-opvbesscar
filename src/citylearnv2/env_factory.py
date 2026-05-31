@@ -46,11 +46,47 @@ logger = logging.getLogger(__name__)
 _SCHEMA_PATH = _DEFAULT_DATA_DIR / "schema_iquitos.json"
 
 
-def _ensure_schema() -> Path:
-    """Genera los datos y schema si no existen todavía."""
+_OE2_SOURCE_DIR = _DEFAULT_DATA_DIR.parent.parent / "iquitos_ev_mall"
+
+
+def _schema_is_stale() -> bool:
+    """True si el schema no existe o los datos OE2 son más nuevos que él."""
     if not _SCHEMA_PATH.exists():
-        logger.info("Schema no encontrado — generando desde datos OE2...")
+        return True
+    schema_mtime = _SCHEMA_PATH.stat().st_mtime
+    # Archivos OE2 que, si cambian, obligan a regenerar el schema
+    source_files = [
+        _OE2_SOURCE_DIR / "solar_generation.csv",
+        _OE2_SOURCE_DIR / "mall_demand.csv",
+        _OE2_SOURCE_DIR / "co2_emissions.csv",
+        _OE2_SOURCE_DIR / "tariffs_osinergmin.csv",
+        _OE2_SOURCE_DIR / "chargers_timeseries.csv",
+        _OE2_SOURCE_DIR / "bess_timeseries.csv",
+    ]
+    for src in source_files:
+        if src.exists() and src.stat().st_mtime > schema_mtime:
+            logger.info("Schema desactualizado — %s es mas reciente que schema_iquitos.json", src.name)
+            return True
+    return False
+
+
+def _ensure_schema() -> Path:
+    """Garantiza que el schema CityLearn v2 existe y está actualizado respecto a los datos OE2.
+
+    Regenera automáticamente si:
+      - schema_iquitos.json no existe
+      - Cualquier dataset OE2 en data/iquitos_ev_mall/ fue modificado después del schema
+
+    Esto garantiza que cada ejecución del pipeline use datos reales actualizados.
+    """
+    if _schema_is_stale():
+        logger.info("Regenerando datasets CityLearn v2 desde datos OE2 actualizados...")
+        from src.dimensionamiento.oe2.oe2_metadata import reload_metadata
+        reload_metadata()   # refrescar metadatos desde JSONs OE2 más recientes
         build_citylearn_schema()
+        logger.info("Schema CityLearn v2 actualizado: %s", _SCHEMA_PATH)
+    else:
+        logger.debug("Schema CityLearn v2 vigente (datos OE2 sin cambios)")
     return _SCHEMA_PATH
 
 

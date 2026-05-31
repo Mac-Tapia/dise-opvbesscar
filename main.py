@@ -194,32 +194,55 @@ def _dataset_ready() -> bool:
         return False
 
 
-def paso_3_dataset_citylearn(force: bool = False) -> bool:
-    if not force and _dataset_ready():
-        print(skip("Dataset CityLearn v2 ya generado (ready_for_citylearn_v2=True)"))
-        import pandas as pd
-        for f in ["solar_generation", "bess_timeseries", "chargers_timeseries", "mall_demand"]:
-            p = ROOT / "data" / "iquitos_ev_mall" / f"{f}.csv"
-            df = pd.read_csv(p)
-            print(ok(f"  {f}.csv: {len(df)} filas"))
-        return True
+def paso_3_dataset_citylearn(skip_oe2: bool = False) -> bool:
+    """Genera el dataset CityLearn v2 ejecutando los modulos OE2 completos.
 
-    print(info("Generando dataset CityLearn v2 desde OE2 (loader-only)..."))
-    try:
-        runpy.run_path(
-            str(ROOT / "scripts" / "generate_oe2_datasets.py"),
-            run_name="__main__",
-        )
-    except SystemExit:
-        pass
-    except Exception:
-        traceback.print_exc()
+    Flujo (orden de dependencias):
+      1. solar_pvlib.py   → data/oe2/Generacionsolar/pv_generation_citylearn2024.csv
+      2. chargers.py      → data/oe2/chargers/chargers_ev_ano_2024_v3.csv
+      3. bess.py          → data/oe2/bess/bess_ano_2024.csv
+      4. data_loader.py   → data/iquitos_ev_mall/{solar,bess,chargers,mall}.csv
+
+    Usa subprocess para aislar sys.argv y pasar argumentos limpios.
+    Con --skip-oe2 solo verifica que el dataset ya exista.
+    """
+    if skip_oe2:
+        if _dataset_ready():
+            print(info("--skip-oe2: dataset CityLearn v2 ya existe"))
+            import pandas as pd
+            for f in ["solar_generation", "bess_timeseries", "chargers_timeseries", "mall_demand"]:
+                p = ROOT / "data" / "iquitos_ev_mall" / f"{f}.csv"
+                if p.exists():
+                    df = pd.read_csv(p)
+                    print(ok(f"  {f}.csv: {len(df)} filas"))
+            return True
+        print(fail("--skip-oe2 activado pero dataset no existe — omite la bandera"))
+        return False
+
+    print(info("Ejecutando pipeline OE2 completo desde modulos:"))
+    print(info("  1. solar_pvlib.py  → pv_generation_citylearn2024.csv"))
+    print(info("  2. chargers.py     → chargers_ev_ano_2024_v3.csv"))
+    print(info("  3. bess.py         → bess_ano_2024.csv (usa solar+chargers)"))
+    print(info("  4. data_loader.py  → data/iquitos_ev_mall/ (4 CSV x 8760 h)"))
+
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "generate_oe2_datasets.py")],
+        cwd=str(ROOT),
+    )
+    if result.returncode != 0:
+        print(fail("generate_oe2_datasets.py termino con error"))
         return False
 
     if _dataset_ready():
-        print(ok("Dataset CityLearn v2 generado correctamente"))
+        import pandas as pd
+        for f in ["solar_generation", "bess_timeseries", "chargers_timeseries", "mall_demand"]:
+            p = ROOT / "data" / "iquitos_ev_mall" / f"{f}.csv"
+            if p.exists():
+                df = pd.read_csv(p)
+                print(ok(f"  {f}.csv: {len(df)} filas"))
+        print(ok("Dataset CityLearn v2 generado — ready_for_citylearn_v2=True"))
         return True
-    print(fail("Dataset generado pero ready_for_citylearn_v2 no es True"))
+    print(fail("Pipeline OE2 completo pero ready_for_citylearn_v2 sigue en False"))
     return False
 
 
@@ -253,7 +276,9 @@ def paso_5_baseline(force: bool = False) -> bool:
         return True
 
     print(info("Calculando baseline (despacho sin control RL)..."))
+    _old_argv = sys.argv
     try:
+        sys.argv = [str(ROOT / "scripts" / "train" / "run_baseline.py")]
         runpy.run_path(
             str(ROOT / "scripts" / "train" / "run_baseline.py"),
             run_name="__main__",
@@ -263,6 +288,8 @@ def paso_5_baseline(force: bool = False) -> bool:
     except Exception:
         traceback.print_exc()
         return False
+    finally:
+        sys.argv = _old_argv
 
     if bl_path.exists():
         print(ok("Baseline calculado → checkpoints/Baseline/baseline_results.json"))
@@ -329,13 +356,17 @@ def paso_entrenar_agente(nombre: str, force: bool = False, skip_if_exists: bool 
     print(info(f"  Checkpoint: {cfg['final_zip'].relative_to(ROOT)}"))
     print(info(f"  Reanuda desde ultimo checkpoint si existe"))
 
+    _old_argv = sys.argv
     try:
+        sys.argv = [str(cfg["script"])]
         runpy.run_path(str(cfg["script"]), run_name="__main__")
     except SystemExit:
         pass
     except Exception:
         traceback.print_exc()
         return False
+    finally:
+        sys.argv = _old_argv
 
     if cfg["final_zip"].exists():
         sz = cfg["final_zip"].stat().st_size // 1024
@@ -367,7 +398,9 @@ EXPECTED_OE3_OUTPUTS = [
 
 def paso_9_analisis_oe3() -> bool:
     print(info("Ejecutando cadena analisis OE3 (estadisticas + figuras + tablas)..."))
+    _old_argv = sys.argv
     try:
+        sys.argv = [str(ROOT / "scripts" / "reporting" / "run_all_oe3.py")]
         runpy.run_path(
             str(ROOT / "scripts" / "reporting" / "run_all_oe3.py"),
             run_name="__main__",
@@ -377,6 +410,8 @@ def paso_9_analisis_oe3() -> bool:
     except Exception:
         traceback.print_exc()
         return False
+    finally:
+        sys.argv = _old_argv
 
     ok_files  = [p for p in EXPECTED_OE3_OUTPUTS if p.exists()]
     bad_files = [p for p in EXPECTED_OE3_OUTPUTS if not p.exists()]
@@ -564,8 +599,9 @@ def parse_args() -> argparse.Namespace:
                    help="Entrenar solo este agente (default: todos)")
     p.add_argument("--force-train",   action="store_true",
                    help="Reentrenar aunque existan checkpoints")
-    p.add_argument("--force-oe2",     action="store_true",
-                   help="Regenerar dataset CityLearn aunque exista")
+    p.add_argument("--skip-oe2",      action="store_true",
+                   help="Omite generacion OE2 (usa dataset existente). "
+                        "Por defecto siempre ejecuta los modulos desde cero.")
     p.add_argument("--dry-run",       action="store_true",
                    help="Muestra plan sin ejecutar")
     return p.parse_args()
@@ -614,11 +650,17 @@ def main() -> None:
     # ── Paso 2: Datos OE2 ───────────────────────────────────────────────────
     ejecutar(2, "Verificacion datos OE2 (8,760 h × 4 CSV)", paso_2_verificar_oe2)
 
-    # ── Paso 3: Dataset CityLearn ────────────────────────────────────────────
+    # ── Paso 3: Dataset CityLearn (desde modulos OE2 completos) ─────────────
+    skip_oe2 = getattr(args, "skip_oe2", False)
+    lbl3 = (
+        "Dataset CityLearn v2  (--skip-oe2 activo)"
+        if skip_oe2
+        else "Generacion dataset CityLearn v2  (solar+chargers+BESS+loader)"
+    )
     if not args.only_analysis:
-        ejecutar(3, "Generacion dataset CityLearn v2", paso_3_dataset_citylearn, args.force_oe2)
+        ejecutar(3, lbl3, paso_3_dataset_citylearn, skip_oe2)
     else:
-        resultados.append((3, "Generacion dataset CityLearn v2", None, 0.0))
+        resultados.append((3, lbl3, None, 0.0))
 
     # ── Paso 4: Tests ────────────────────────────────────────────────────────
     ejecutar(4, "Tests unitarios e integracion (106)", paso_4_tests)

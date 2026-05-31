@@ -110,7 +110,7 @@ def run_bess() -> None:
 
 
 def run_loader() -> None:
-    _step("PASO 5/5 — Construir dataset CityLearn v2")
+    _step("PASO 5/6 — Construir dataset OE2 unificado (data/iquitos_ev_mall/)")
     from src.dataset_builder_citylearn.data_loader import (
         build_citylearn_dataset,
         save_citylearn_dataset,
@@ -123,33 +123,105 @@ def run_loader() -> None:
         demand_path=MALL_DEMAND_CANONICAL_CSV,
     )
     out_dir = save_citylearn_dataset(dataset, output_dir=CITYLEARN_OUTPUT_DIR)
-    print(f"\n[OK] Dataset CityLearn v2 -> {out_dir}")
+    print(f"\n[OK] Dataset OE2 unificado -> {out_dir}")
+
+
+def run_schema_builder() -> None:
+    """Paso 6: Regenera TODOS los datasets CityLearn v2 desde datos OE2 actualizados.
+
+    Siempre se ejecuta — garantiza que data/interim/citylearn_v2/ esté sincronizado
+    con los datos reales de data/iquitos_ev_mall/:
+      energy_simulation.csv  ← solar_generation.csv + mall_demand.csv
+      weather.csv            ← solar_generation.csv (GHI, temperatura)
+      carbon_intensity.csv   ← co2_emissions.csv (factor CO2 diesel Iquitos 0.39-0.63)
+      pricing.csv            ← tariffs_osinergmin.csv (HP=0.46 / HFP=0.29 S./kWh)
+      ev_charger_motos.csv   ← chargers_timeseries.csv (30 sockets motos)
+      ev_charger_mototaxis.csv ← chargers_timeseries.csv (8 sockets mototaxis)
+      schema_iquitos.json    ← todos los anteriores + BESS/PV specs de OE2Metadata
+    """
+    _step("PASO 6/6 — Actualizar datasets CityLearn v2 (data/interim/citylearn_v2/)")
+    import logging
+    from src.citylearnv2.schema_builder import build_citylearn_schema
+    from src.dimensionamiento.oe2.oe2_metadata import reload_metadata
+
+    # Recargar metadatos OE2 para capturar valores recién generados
+    reload_metadata()
+
+    # Eliminar schema obsoleto para garantizar regeneración completa
+    interim_dir = _PROJECT_ROOT / "data" / "interim" / "citylearn_v2"
+    schema_file = interim_dir / "schema_iquitos.json"
+    if schema_file.exists():
+        schema_file.unlink()
+
+    logging.basicConfig(level=logging.WARNING)  # suprimir INFO redundante
+    schema_path = build_citylearn_schema()
+
+    # Verificar archivos generados
+    expected = [
+        "energy_simulation.csv",
+        "weather.csv",
+        "carbon_intensity.csv",
+        "pricing.csv",
+        "ev_charger_motos.csv",
+        "ev_charger_mototaxis.csv",
+        "schema_iquitos.json",
+    ]
+    all_ok = True
+    for fname in expected:
+        p = interim_dir / fname
+        status = "OK " if p.exists() else "FAIL"
+        print(f"  [{status}] {fname}")
+        if not p.exists():
+            all_ok = False
+
+    if all_ok:
+        print(f"\n[OK] CityLearn v2 datasets actualizados -> {interim_dir}")
+    else:
+        print("\n[WARN] Algunos datasets CityLearn v2 no se generaron")
+        sys.exit(1)
 
 
 def validate_outputs() -> None:
-    _step("VALIDACIÓN FINAL")
+    _step("VALIDACIÓN FINAL — OE2 + CityLearn v2")
     import pandas as pd
 
+    INTERIM_CL = _PROJECT_ROOT / "data" / "interim" / "citylearn_v2"
+
     required = {
-        "solar": (SOLAR_CANONICAL_CSV, "potencia_kw"),
-        "bess": (BESS_CANONICAL_CSV, "soc_percent"),
-        "chargers": (CHARGERS_CANONICAL_CSV, "ev_energia_motos_kwh"),
-        "mall": (MALL_DEMAND_CANONICAL_CSV, "mall_demand_kwh"),
-        "iquitos_solar": (CITYLEARN_OUTPUT_DIR / "solar_generation.csv", "potencia_kw"),
-        "iquitos_bess": (CITYLEARN_OUTPUT_DIR / "bess_timeseries.csv", "soc_percent"),
-        "iquitos_chargers": (CITYLEARN_OUTPUT_DIR / "chargers_timeseries.csv", "ev_energia_motos_kwh"),
-        "iquitos_mall": (CITYLEARN_OUTPUT_DIR / "mall_demand.csv", "mall_demand_kwh"),
+        # OE2 raw
+        "solar OE2":    (SOLAR_CANONICAL_CSV,       "potencia_kw"),
+        "bess OE2":     (BESS_CANONICAL_CSV,         "soc_percent"),
+        "chargers OE2": (CHARGERS_CANONICAL_CSV,     "ev_energia_motos_kwh"),
+        "mall OE2":     (MALL_DEMAND_CANONICAL_CSV,  "mall_demand_kwh"),
+        # OE2 procesados (data/iquitos_ev_mall/)
+        "solar iqts":   (CITYLEARN_OUTPUT_DIR / "solar_generation.csv",    "potencia_kw"),
+        "bess iqts":    (CITYLEARN_OUTPUT_DIR / "bess_timeseries.csv",      "soc_percent"),
+        "chargers iqts":(CITYLEARN_OUTPUT_DIR / "chargers_timeseries.csv",  "ev_energia_motos_kwh"),
+        "mall iqts":    (CITYLEARN_OUTPUT_DIR / "mall_demand.csv",          "mall_demand_kwh"),
+        "co2 iqts":     (CITYLEARN_OUTPUT_DIR / "co2_emissions.csv",        "co2_factor_kg_kwh"),
+        "tariffs iqts": (CITYLEARN_OUTPUT_DIR / "tariffs_osinergmin.csv",   "tarifa_total_soles_kwh"),
+        # CityLearn v2 (data/interim/citylearn_v2/)
+        "energy_sim":   (INTERIM_CL / "energy_simulation.csv",  "solar_generation"),
+        "weather":      (INTERIM_CL / "weather.csv",            "outdoor_dry_bulb_temperature"),
+        "carbon_int":   (INTERIM_CL / "carbon_intensity.csv",   "carbon_intensity"),
+        "pricing":      (INTERIM_CL / "pricing.csv",            "electricity_pricing"),
+        "ev_motos":     (INTERIM_CL / "ev_charger_motos.csv",   "electric_vehicle_charger_state"),
+        "ev_mototaxis": (INTERIM_CL / "ev_charger_mototaxis.csv","electric_vehicle_charger_state"),
+        "schema":       (INTERIM_CL / "schema_iquitos.json",    None),
     }
 
     all_ok = True
     for name, (path, required_col) in required.items():
         if not path.exists():
-            print(f"  [FAIL] {name}: {path} — MISSING")
+            print(f"  [FAIL] {name}: {path.name} — MISSING")
             all_ok = False
             continue
+        if path.suffix == ".json":
+            print(f"  [OK ] {name}: {path.name}")
+            continue
         df = pd.read_csv(path, nrows=1)
-        if required_col not in df.columns:
-            print(f"  [FAIL] {name}: columna '{required_col}' no encontrada")
+        if required_col and required_col not in df.columns:
+            print(f"  [FAIL] {name}: columna '{required_col}' no encontrada en {path.name}")
             all_ok = False
             continue
         n = sum(1 for _ in open(path)) - 1  # count data rows
@@ -200,6 +272,7 @@ def main() -> None:
         print(f"  [OK] Mall demand existente: {MALL_DEMAND_CANONICAL_CSV}")
 
     run_loader()
+    run_schema_builder()
     validate_outputs()
 
     elapsed = time.time() - t0

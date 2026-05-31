@@ -287,7 +287,7 @@ class PVSystemConfig:
     # PVWatts mode — usa potencia DC fija cuando módulo CEC no está en la base de datos.
     # Garantiza exactamente target_dc_kw kWp con temp coeff del Jinko Tiger Neo JKM580N.
     # Refs: NREL PVWatts v5; De Soto et al 2006; Jinko datasheet F3-EN (gamma=-0.29%/°C)
-    pvwatts_pdc0_kw: float = 4050.0     # kWp instalados OE2 (siempre 4,050 kWp exactos)
+    pvwatts_pdc0_kw: float = 4162.0     # kWp DC OE2 (PVWatts pdc0, Jinko Tiger Neo JKM580N-72HL4-BDV + 8.7% bifacial)
     pvwatts_gamma_pdc: float = -0.0029  # coef. temp. Pmax Jinko Tiger Neo JKM580N [1/°C]
 
     # Bifacial — Jinko Tiger Neo: 80% bifaciality, tropical albedo 0.22
@@ -2547,10 +2547,20 @@ def generate_solar_dataset_citylearn_complete(
     if verbose:
         print(f"   [OK] {output_file.name} ({output_file.stat().st_size/1024:.1f} KB)")
     
-    # Crear certificacion
+    # Crear certificacion — incluye especificaciones reales del sistema PV
+    _pv_cfg = IquitosPVConfig()
     certification = {
         "timestamp": pd.Timestamp.now().isoformat(),
         "archivo": str(output_file),
+        "sistema_pv": {
+            "nominal_power_kwp_dc": float(_pv_cfg.pvwatts_pdc0_kw),   # kWp DC PVWatts pdc0
+            "modulo": "Jinko Tiger Neo JKM580N-72HL4-BDV (N-type TOPCon, bifacial 80%)",
+            "bifacial_factor": float(_pv_cfg.bifaciality_factor),
+            "bifacial_albedo": float(_pv_cfg.bifacial_albedo),
+            "tilt_deg": float(_pv_cfg.tilt),
+            "azimuth_deg": float(_pv_cfg.azimuth),
+            "gamma_pdc": float(_pv_cfg.pvwatts_gamma_pdc),
+        },
         "dimensiones": {
             "filas": int(len(df_final)),
             "columnas": int(len(df_final.columns)),
@@ -2560,6 +2570,7 @@ def generate_solar_dataset_citylearn_complete(
         },
         "columnas": required_columns,
         "energia_kwh": float(df_final['energia_kwh'].sum()),
+        "rendimiento_especifico_kwh_kwp": float(df_final['energia_kwh'].sum() / _pv_cfg.pvwatts_pdc0_kw),
         "co2_reduccion_tons": float(df_final['energia_kwh'].sum() * FACTOR_CO2_KG_KWH / 1000),
         "ahorro_soles": float(df_final['energia_kwh'].sum() * TARIFA_ENERGIA_HFP_SOLES),
         "validaciones": {k: bool(v) for k, v in validations.items()},
@@ -2666,7 +2677,7 @@ def generate_pv_csv_datasets(dataset_path: Path | str, output_dir: Path | str = 
     # 3. Perfil promedio 24h (pv_profile_24h.csv)
     print("[3/4]  Generando pv_profile_24h.csv...")
     hourly_avg = df.groupby(df['datetime'].dt.hour)['ac_energy_kwh'].mean()
-    hourly_avg_per_kwp = hourly_avg / 4050.0  # 4,050 kWp instalado
+    hourly_avg_per_kwp = hourly_avg / 4162.0  # 4,162 kWp DC OE2
     df_24h = pd.DataFrame({
         'hour': range(24),
         'pv_kwh_avg': hourly_avg.values,

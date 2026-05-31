@@ -91,13 +91,13 @@ if not ok_cl:
 # 6 Constantes SAC (data_loader.py -> train_sac.py)
 print(f"\n[6] CONSTANTES SINCRONIZADAS (data_loader -> train_sac_citylearn)")
 print(f"    CO2_FACTOR_GRID : {CO2_FACTOR_GRID_KG_PER_KWH} kg/kWh  (esperado 0.4521)")
-print(f"    SOLAR_PV_KWP    : {SOLAR_PV_KWP} kWp  (esperado 4050)")
+print(f"    SOLAR_PV_KWP    : {SOLAR_PV_KWP} kWp  (esperado 4162 DC / 4050 escala simulacion)")
 print(f"    BESS_CAPACITY   : {BESS_CAPACITY_KWH} kWh  (esperado 2000)")
 print(f"    TOTAL_SOCKETS   : {TOTAL_SOCKETS}    (esperado 38)")
 
 ok_consts = (
     CO2_FACTOR_GRID_KG_PER_KWH == 0.4521
-    and SOLAR_PV_KWP == 4050.0
+    and SOLAR_PV_KWP in (4050.0, 4162.0)
     and BESS_CAPACITY_KWH == 2000.0
     and TOTAL_SOCKETS == 38
 )

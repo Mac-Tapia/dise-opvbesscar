@@ -202,7 +202,7 @@ _W_GRID_STABLE: float   = 0.02   # estabilidad red
 _W_COST: float          = 0.02   # costo tarifario OSINERGMIN HP/HFP
 
 # Umbral solar mínimo para considerar que hay generación aprovechable (kW)
-_SOLAR_CHARGE_THRESHOLD_KW: float = 200.0  # ~5% de 4050 kWp instalados
+_SOLAR_CHARGE_THRESHOLD_KW: float = 200.0  # ~5% de 4162 kWp DC diseño OE2 (≈208 kW; 200 kW conservador)
 
 
 class IquitosEVChargingWrapper(gymnasium.Wrapper):
@@ -308,8 +308,13 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         # Fuente: data/interim/citylearn_v2/energy_simulation.csv (generado por schema_builder)
         # Columnas requeridas por CityLearn v2 EnergySimulation + extensiones OSINERGMIN
         energy_sim = _require(_ENERGY_SIM_CSV)
-        # solar_generation en W/kWp → convertir a kW total (× PV_NOMINAL_KWP / 1000)
-        _PV_KWP: float = 4050.0  # kWp instalados (OE2 solar_pvlib)
+        # solar_generation en W/kWp → kW total: debe usar el mismo kWp que schema_builder
+        # Se lee automáticamente de OE2Metadata → CERTIFICACION_SOLAR_DATASET_2024.json
+        try:
+            from src.dimensionamiento.oe2.oe2_metadata import get_metadata as _gm
+            _PV_KWP: float = _gm().pv_kwp_dc   # kWp DC real leído del JSON OE2
+        except Exception:
+            _PV_KWP: float = 4162.0             # fallback si OE2Metadata no disponible
         solar_gen_w_per_kwp = energy_sim["solar_generation"].to_numpy(dtype=np.float64)
         self._solar_kw: np.ndarray           = solar_gen_w_per_kwp * _PV_KWP / 1000.0
         self._solar_kwh: np.ndarray          = self._solar_kw                          # 1h timestep → kWh = kW

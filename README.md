@@ -11,21 +11,32 @@ mediante agentes de Aprendizaje por Refuerzo (SAC, PPO, A2C) en la red aislada d
 |---|---|
 | **Actualizado** | 2026-05-31 |
 | **Branch activo** | `smartcharger` |
-| **Agente OE3 seleccionado** | **A2C** — score multiobjetivo 50 episodios (9/9 criterios) |
-| **Criterio de selección** | Mayor CO₂ evitado (directo+indirecto), mayor carga EV, menor grid import |
-| **Diseño de investigación** | Cuasi-experimental por simulación — 3 tratamientos × n=50 episodios |
-| **Fuente canónica** | `reports/oe3/agents_comparison_canonical.json` |
+| **Entrenamiento activo** | A2C ep 17/50 — pipeline desde cero con obs_dim=19 |
+| **obs_dim** | **19** (base=12 CityLearn + 5 EV dims + 2 tarifa) — incluye `electricity_pricing` |
+| **pv_kwp** | **4,162 kWp DC** (único valor canónico — eliminado 4,050 legacy) |
+| **Agente OE3 histórico** | A2C — score multiobjetivo 50 eps (obs_dim=18, referencia anterior) |
+| **Fuente canónica** | `reports/oe3/agents_comparison_canonical.json` (se regenerará post-entrenamiento) |
 
-## Resultado OE3 — Comparativa multiobjetivo (50 episodios por agente)
+## Resultado OE3 — Entrenamiento activo (obs_dim=19, pricing activo)
 
-| Rank | Agente | CO₂ evitado 50ep (kg) | CO₂ directo (kg) | CO₂ indirecto (kg) | EV equiv. | BESS (kWh) | Grid import (kWh) | Violaciones | Criterios |
-|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | **A2C** | **122,980,987** | **10,885,952** | **112,095,035** | **4,307,304** | **33,504,412** | **368,798,317** | **811** | **9/9** |
-| 2 | PPO | 122,688,120 | 10,624,191 | 112,063,929 | 4,203,700 | 31,831,147 | 370,717,132 | 2,333 | 0/9 |
-| 3 | SAC | 121,316,857 | 10,566,738 | 110,750,119 | 4,180,962 | 30,022,939 | 370,440,348 | 1,385 | 0/9 |
+> **Entrenamiento en curso (2026-05-31):** Pipeline completo desde cero con la nueva
+> arquitectura (obs_dim=19, `electricity_pricing` como observación, `pricing.csv` vinculado
+> al schema CityLearn v2, `oe2_metadata.py` — valores auto-leídos de JSONs reales).
 
-**F2 residual puntual (referencia complementaria):**
-PPO ep49 = 3,657,484 kg CO₂/año (menor F2) | A2C ep45 = 3,659,010 | SAC ep17 = 3,693,084
+**Progreso actual:**
+- A2C ep 17/50 → F2=3,674,242 kg CO₂/año (38.7% vs F0) | convergiendo
+- PPO: pendiente (inicia al terminar A2C ~2:55 PM)
+- SAC: pendiente (~3:00 PM)
+
+**Referencia histórica (obs_dim=18 — antes del 2026-05-31 tarde):**
+
+| Rank | Agente | CO₂ evitado 50ep (kg) | EV equiv. | Criterios |
+|---:|---|---:|---:|---:|
+| 1 | **A2C** | **122,980,987** | **4,307,304** | **9/9** |
+| 2 | PPO | 122,688,120 | 4,203,700 | 0/9 |
+| 3 | SAC | 121,316,857 | 4,180,962 | 0/9 |
+
+F2 histórico: PPO ep49=3,657,484 | A2C ep45=3,659,010 | SAC ep17=3,693,084 kg CO₂/año
 
 ## Metodología de investigación (OE3)
 
@@ -73,9 +84,8 @@ Reporte operativo: [reports/oe3/CONTROL_OPERATIVO_BESS_EV_OE3.md](reports/oe3/CO
 
 | Componente | Valor |
 |---|---:|
-| Solar PV DC (PVWatts) | 4,162 kWp DC / 3,201 kW AC |
-| Solar PV nominal diseño | 4,050 kWp |
-| Energía solar anual | 5,819,332 kWh/año |
+| Solar PV DC (PVWatts pdc0) | **4,162 kWp DC** / 3,201 kW AC (Jinko Tiger Neo JKM580N-72HL4-BDV + 8.7% bifacial) |
+| Energía solar anual | 5,819,332 kWh/año (yield=1,398 kWh/kWp, PR=83.5%) |
 | BESS | 2,000 kWh / 400 kW (DoD 80%, SOC mín 20%) |
 | Cargadores | 19 × 2 sockets = 38 puntos (socket_000–socket_037) |
 | Flota diaria | 270 motos + 39 mototaxis |

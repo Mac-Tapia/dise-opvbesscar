@@ -86,9 +86,9 @@ OE2 Generators (run once, or via pipeline — order matters: solar+chargers → 
     — valida schema; OE2ValidationError si datos inconsistentes
     — escribe: data/iquitos_ev_mall/{solar_generation,bess_timeseries,chargers_timeseries,mall_demand}.csv
          ↓
-  src/citylearnv2/ev_charging_wrapper.py  ← lee de data/iquitos_ev_mall/ (obs 18D, action 3D)
+  src/citylearnv2/ev_charging_wrapper.py  ← lee de data/iquitos_ev_mall/ (obs 19D, action 3D)
   src/citylearnv2/env_factory.py          → CityLearnEnv + IquitosEVChargingWrapper
-    — obs_dim=18, action_dim=3: [bess_action∈[-1,+1], ev_motos_frac∈[0,1], ev_mototaxis_frac∈[0,1]]
+    — obs_dim=19, action_dim=3: [bess_action∈[-1,+1], ev_motos_frac∈[0,1], ev_mototaxis_frac∈[0,1]]
          ↓
   src/agents/{sac,ppo_sb3,a2c_sb3}.py  ← stable-baselines3 + auto-device detection
   checkpoints/{SAC,PPO,A2C}_CityLearn/ ← .zip snapshots + vecnormalize.pkl; auto-resume si existe
@@ -97,11 +97,17 @@ OE2 Generators (run once, or via pipeline — order matters: solar+chargers → 
   outputs/docx/INFORME_OE3_*.docx      ← Word tesis (current: v11)
 ```
 
-**Observaciones CityLearn v2 (18D):** `[month, hour, day_type, temp, irr_diff, irr_dir, co2_intensity, mall_kw, solar_kw, bess_soc, net_elec, ev_motos_norm, ev_mototaxis_norm, ev_motos_debt, ev_mototaxis_debt, hour_sin, tarifa_norm, is_hora_punta]`
+**Observaciones CityLearn v2 (19D):** `[month, hour, day_type, temp, irr_diff, irr_dir, co2_intensity, mall_kw, solar_kw, bess_soc, net_elec, electricity_pricing, ev_motos_norm, ev_mototaxis_norm, ev_motos_debt, ev_mototaxis_debt, hour_sin, tarifa_norm, is_hora_punta]`
+
+Base CityLearn (12D): month, hour, day_type, temp, irr_diff, irr_dir, co2_intensity, mall_kw, solar_kw, bess_soc, net_elec, electricity_pricing (NUEVO — desde pricing.csv OSINERGMIN HP/HFP)
 
 **Señales controladas:** `bess_timeseries.csv` (BESS SOC, dispatch) + `chargers_timeseries.csv` (38 sockets, fracción carga)
 
 **Señales no controladas:** `solar_generation.csv` (PV generation) + `mall_demand.csv` (demanda fija mall)
+
+**Datasets CityLearn v2** (`data/interim/citylearn_v2/`): energy_simulation ← solar+mall | weather ← solar | carbon_intensity ← co2_emissions (0.39–0.63 kg CO₂/kWh diesel Iquitos) | **pricing ← tariffs_osinergmin (HP=0.46/HFP=0.29 S./kWh)** | ev_charger_motos | ev_charger_mototaxis | schema_iquitos.json
+
+**Constantes auto-leídas de JSONs OE2:** `src/dimensionamiento/oe2/oe2_metadata.py` (OE2Metadata) — lee CERTIFICACION_SOLAR.json (pv_kwp=4162), bess_results.json (2000 kWh/400 kW), ESPECIFICACION_CARGADORES.json (38 sockets). Elimina hardcoding que puede quedar obsoleto.
 
 **Constantes centralizadas:** `src/dimensionamiento/oe2/_constants.py` (tarifas, CO₂, BESS specs), `src/dimensionamiento/oe2/_paths.py` (rutas canónicas)
 
@@ -147,9 +153,11 @@ tests/integration/                  ← 72 tests covering env, config, reward, e
 | `src/agents/sac.py` | SAC agent with `detect_device()` (CUDA/MPS/CPU auto-select); `_patch_citylearn_sac_update()` for CityLearn compatibility |
 | `src/utils/agent_utils.py` | `validate_env_spaces(env)` — must be called before agent init |
 | `scripts/train/` | Standalone training launchers — each agent has its own `train_{agent}_citylearn.py` |
-| `scripts/analysis/demostracion_estadistica_oe3.py` | Pruebas inferenciales completas: Shapiro-Wilk, Kruskal-Wallis, Dunn Bonferroni, Mann-Whitney U (independiente), Wilcoxon (pareado), Cohen d, Cliff delta, Bootstrap IC |
+| `src/dimensionamiento/oe2/oe2_metadata.py` | `OE2Metadata` — lee JSONs OE2 reales (CERTIFICACION_SOLAR, bess_results, ESPECIFICACION_CARGADORES) en runtime; elimina constantes hardcoded |
+| `scripts/analysis/demostracion_estadistica_oe3.py` | Pruebas inferenciales completas: Shapiro-Wilk, Kruskal-Wallis, Dunn Bonferroni, Mann-Whitney U (independiente), Wilcoxon (pareado), Cohen d, Cliff delta, Bootstrap IC. Variables: co2_neta, co2_directa, co2_indirecta, ev_motos, ev_mototaxis, F2 |
+| `scripts/analysis/costos_estabilidad_oe3.py` | Costos tarifarios OSINERGMIN HP/HFP (W_COST=0.02) + estabilidad de red (W_GRID_STABLE=0.02) + exportación solar F6d — reporta los 7 componentes del reward multiobjetivo |
 | `scripts/analysis/control_operativo_bess_ev_oe3.py` | Patrón BESS/EV/pico por hora del día — documenta peak shaving y ciclo SOC |
-| `scripts/reporting/run_all_oe3.py` | **Maestro OE3** — ejecuta toda la cadena y verifica 11 archivos de salida |
+| `scripts/reporting/run_all_oe3.py` | **Maestro OE3** — ejecuta toda la cadena y verifica 15 archivos de salida (incluye costos + estabilidad) |
 | `reports/metodologia/METODOLOGIA_INVESTIGACION_OE3.md` | Metodología completa: diseño cuasi-experimental por simulación, operacionalización, muestra n=50, pruebas inferenciales separadas |
 | `tests/oe2/` | Unit tests validating OE2 specs and data loader paths |
 | `tests/integration/` | Integration tests for universal env, site config, reward, energy balance |
@@ -170,7 +178,11 @@ _W_COST         = 0.02  # costo tarifario OSINERGMIN HP(0.45 S./kWh 18-23h)
 # Evolución: v7.0→...→v7.5→v8.0→v8.1 (2026-05-31 current)
 # Los 3 agentes usan EXACTAMENTE los mismos pesos — validado por
 #   scripts/analysis/validar_condiciones_agentes.py (C4, 9 checks OK)
-# obs_dim: 18 (base=11 + ev=5 + tarifa=2: tarifa_norm, is_hora_punta)
+# obs_dim: 19 (base=12 + ev=5 + tarifa=2)
+# base 12D: month, hour, day_type, temp, irr_diff, irr_dir, co2_intensity,
+#           mall_kw, solar_kw, bess_soc, net_elec, electricity_pricing (NEW)
+# ev 5D: motos_norm, mototaxis_norm, motos_debt, mototaxis_debt, hour_sin
+# tarifa 2D: tarifa_norm (HP/HFP), is_hora_punta
 ```
 
 ### Checkpoint Resume Pattern
@@ -203,16 +215,25 @@ agent.learn(total_timesteps=N, reset_num_timesteps=False)  # accumulates steps a
 - **Pruebas inferenciales:** Shapiro-Wilk → Kruskal-Wallis → Dunn Bonferroni → Mann-Whitney U (independiente, p propio) → Wilcoxon signed-rank (pareado, p propio) → Cohen d + Cliff delta + Bootstrap IC 95%
 - **Documento completo:** `reports/metodologia/METODOLOGIA_INVESTIGACION_OE3.md`
 
-## CO₂ Baselines (Resultados OE3 canonicos — reward CO2_DUAL_FOCUS v8.1)
+## CO₂ Baselines (Resultados OE3 — reward CO2_DUAL_FOCUS v8.1)
+
+> **Entrenamiento activo (2026-05-31):** Pipeline completo desde cero con obs_dim=19 (se añadió
+> `electricity_pricing` como observación base CityLearn). Los resultados canónicos anteriores
+> (obs_dim=18) quedan como referencia histórica. Los nuevos resultados se actualizarán en
+> `reports/oe3/agents_comparison_canonical.json` al completar el entrenamiento (~260 min GPU).
+
+**Referencia histórica (obs_dim=18, previo a 2026-05-31 tarde):**
 
 | Baseline | CO₂ (kg/año) | Description |
 |----------|-------------|-------------|
-| F₀ | 7,053,999 | Sin solar, sin BESS, sin RL (referencia derivada de seccion 5.2) |
-| F₂ PPO ep49 | **3,657,484** | Menor F2 puntual complementario |
-| F₂ A2C ep45 | 3,659,010 | Agente seleccionado por score multiobjetivo 50 episodios |
-| F₂ SAC v8.2 ep17 | 3,693,084 | SAC reentrenado con VecNormalize; no supera A2C |
+| F₀ | 7,053,999 | Sin solar, sin BESS, sin RL |
+| F₂ PPO ep49 | **3,657,484** | Menor F2 puntual (obs_dim=18) |
+| F₂ A2C ep45 | 3,659,010 | Agente seleccionado multiobjetivo (obs_dim=18) |
+| F₂ SAC ep17 | 3,693,084 | SAC VecNormalize (obs_dim=18) |
 
-**Multiobjective OE3 selection:** A2C leads 9/9 criteria with 122,980,987 kg CO2 avoided in 50 episodes, 368,798,317 kWh grid import, 4,307,304 equivalent EV charge events, 33,504,412 kWh BESS discharge and 811 charge-debt violations.
+**Nuevo entrenamiento en curso (obs_dim=19, pricing activo):**
+- A2C ep 17/50 → F2=3,674,242 kg/año (38.7% vs F0) — convergiendo
+- PPO y SAC pendientes
 
-Solar PV: **5,819,332 kWh/año** (4,162 kWp PVWatts + 8.7% bifacial, Jinko Tiger Neo JKM580N-72HL4-BDV)
-CO₂ factor grid Iquitos: **0.4521 kg CO₂/kWh** (red térmica aislada)
+Solar PV: **5,819,332 kWh/año** (4,162 kWp DC PVWatts + 8.7% bifacial, Jinko Tiger Neo JKM580N-72HL4-BDV)
+CO₂ factor grid Iquitos: **0.4521 kg CO₂/kWh** variando 0.39–0.63 (estacional HP/HFP diesel, MINEM 2024)

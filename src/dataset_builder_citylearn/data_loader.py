@@ -628,18 +628,45 @@ def build_citylearn_dataset(
 
     print(f"✅ Combined dataset shape: {combined.shape} (rows, columns)")
 
-    # Build configuration dict (with ACTUAL vehicle configuration extracted from data)
+    # Build configuration dict — valores leídos de JSONs OE2 reales
+    try:
+        from src.dimensionamiento.oe2.oe2_metadata import get_metadata as _gm
+        _oe2m = _gm()
+        _pv_kwp   = _oe2m.pv_kwp_dc
+        _bess_kwh = _oe2m.bess_capacity_kwh
+        _bess_kw  = _oe2m.bess_nominal_power_kw
+        _n_chr    = _oe2m.n_chargers
+        _n_skt    = _oe2m.n_sockets
+        _chr_kw   = _oe2m.charger_power_kw
+    except Exception:
+        _pv_kwp   = SOLAR_PV_KWP
+        _bess_kwh = BESS_CAPACITY_KWH
+        _bess_kw  = BESS_MAX_POWER_KW
+        _n_chr    = N_CHARGERS
+        _n_skt    = TOTAL_SOCKETS
+        _chr_kw   = 7.4
+
+    # bess_avg_soc_percent: derivado del CSV real
+    try:
+        _bess_csv = pd.read_csv(
+            Path(__file__).resolve().parents[2] / "data/oe2/bess/bess_ano_2024.csv",
+            usecols=["soc_percent"],
+        )
+        _bess_avg_soc = float(_bess_csv["soc_percent"].mean())
+    except Exception:
+        _bess_avg_soc = 75.57
+
     config: Dict[str, Any] = {
         "version": "7.0",
         "date": "2026-02-18",
         "system": {
-            "pv_capacity_kwp": SOLAR_PV_KWP,
-            "bess_capacity_kwh": BESS_CAPACITY_KWH,
-            "bess_max_power_kw": BESS_MAX_POWER_KW,
-            "bess_avg_soc_percent": 75.57,  # From bess_ano_2024.csv
-            "n_chargers": N_CHARGERS,
-            "n_sockets": TOTAL_SOCKETS,
-            "charger_power_kw": 7.4,
+            "pv_capacity_kwp": _pv_kwp,
+            "bess_capacity_kwh": _bess_kwh,
+            "bess_max_power_kw": _bess_kw,
+            "bess_avg_soc_percent": round(_bess_avg_soc, 2),
+            "n_chargers": _n_chr,
+            "n_sockets": _n_skt,
+            "charger_power_kw": _chr_kw,
             "sockets_per_charger": 2.0,
         },
         "vehicles": {
