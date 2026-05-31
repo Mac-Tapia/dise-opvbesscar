@@ -64,15 +64,45 @@ F0_KG = 7_053_999.0
 
 # ── loaders ──────────────────────────────────────────────────────────────────
 
+CO2_FACTOR = 0.4521  # kg CO2/kWh red Iquitos
+
+
 def _ep(agent: str) -> pd.DataFrame:
     p = ROOT / "outputs" / f"{agent.lower()}_training" / f"{agent.lower()}_episodios_history.csv"
     df = pd.read_csv(p)
-    df["ev_total_kwh"] = df["ev_motos_kwh"] + df["ev_mototaxis_kwh"]
+    # Columnas derivadas
+    df["ev_total_kwh"]      = df["ev_motos_kwh"] + df["ev_mototaxis_kwh"]
+    df["solar_ev_kwh"]      = df["co2_f6a_kg"]  / CO2_FACTOR   # solar→EV en kWh
+    df["solar_bess_kwh"]    = df["co2_f6c_kg"]  / CO2_FACTOR   # solar→BESS en kWh
+    df["solar_export_kwh"]  = df["co2_f6d_kg"]  / CO2_FACTOR   # exportacion solar a red
+    df["co2_f7_penalty_kg"] = df["co2_f7_kg"]                  # CO2 por carga nocturna BESS
     return df
 
 
+def _costos(agent: str) -> pd.DataFrame | None:
+    """Carga costos_estabilidad por agente (incluye tarifa OSINERGMIN y estabilidad red)."""
+    p = ROOT / "outputs" / "estadistica_oe3" / f"costos_estabilidad_{agent.lower()}.csv"
+    if not p.exists():
+        return None
+    return pd.read_csv(p)
+
+
 def load_all() -> dict[str, pd.DataFrame]:
-    return {a: _ep(a) for a in AGENTS}
+    """Carga episodios_history y merge con costos_estabilidad para analisis completo."""
+    data = {}
+    for a in AGENTS:
+        df = _ep(a)
+        costos = _costos(a)
+        if costos is not None:
+            merge_cols = [c for c in ["episodio", "costo_total_soles", "costo_hp_soles",
+                                       "costo_hfp_soles", "r_cost_mean",
+                                       "r_grid_stable_mean", "grid_ramp_mean_kwh",
+                                       "grid_ramp_std_kwh", "grid_cv", "grid_peak_kwh"]
+                          if c in costos.columns]
+            if "episodio" in merge_cols and len(merge_cols) > 1:
+                df = df.merge(costos[merge_cols], on="episodio", how="left")
+        data[a] = df
+    return data
 
 
 # ── estadísticos básicos ──────────────────────────────────────────────────────
@@ -562,13 +592,30 @@ def main() -> None:
     data = load_all()
 
     variables = [
-        ("co2_neta_kg",      "greater", "CO₂ total evitado (directo + indirecto)"),
-        ("co2_directa_kg",   "greater", "CO₂ directo evitado (ICE→EV)"),
-        ("co2_indirecta_kg", "greater", "CO₂ indirecto evitado (solar+BESS)"),
-        ("ev_total_kwh",     "greater", "Carga EV total (motos + mototaxis)"),
-        ("ev_motos_kwh",     "greater", "Carga motos (270 motos/día)"),
-        ("ev_mototaxis_kwh", "greater", "Carga mototaxis (39 mototaxis/día)"),
-        ("co2_control_kg",   "less",    "F2 residual (referencia complementaria)"),
+        # ── CO₂ principal (multiobjetivo OE3) ────────────────────────────────
+        ("co2_neta_kg",        "greater", "CO₂ total evitado (directo + indirecto)"),
+        ("co2_directa_kg",     "greater", "CO₂ directo evitado (ICE→EV transporte)"),
+        ("co2_indirecta_kg",   "greater", "CO₂ indirecto evitado (solar+BESS, grid)"),
+        ("co2_control_kg",     "less",    "F2 residual CO₂ control (menor = mejor)"),
+        ("reduccion_pct",      "greater", "Reduccion CO₂ respecto F0 (%)"),
+        # ── Carga EV (criterio W_EV_COMPLETE = 0.35) ─────────────────────────
+        ("ev_total_kwh",       "greater", "Carga EV total (motos + mototaxis)"),
+        ("ev_motos_kwh",       "greater", "Carga motos (270 motos/dia)"),
+        ("ev_mototaxis_kwh",   "greater", "Carga mototaxis (39 mototaxis/dia)"),
+        ("debt_violations",    "less",    "Violaciones deuda EV (menor = mejor servicio)"),
+        # ── BESS y red (peak-shaving, control operativo) ──────────────────────
+        ("bess_discharge_kwh", "greater", "Descarga BESS kWh/año (mayor = mas peak-shaving)"),
+        ("grid_import_kwh",    "less",    "Importacion red kWh/año (menor = menos diesel)"),
+        # ── Solar — descomposicion F6 (W_SOLAR = 0.04, W_BESS_SOLAR = 0.07) ──
+        ("solar_ev_kwh",       "greater", "Solar directo a EV kWh/año (F6a)"),
+        ("solar_bess_kwh",     "greater", "Solar almacenado en BESS kWh/año (F6c)"),
+        ("solar_export_kwh",   "greater", "Solar exportado a red Iquitos kWh/año (F6d)"),
+        # ── Costos tarifarios OSINERGMIN (W_COST = 0.02) ─────────────────────
+        ("costo_total_soles",  "less",    "Costo energetico total S./año OSINERGMIN"),
+        ("costo_hp_soles",     "less",    "Costo hora punta HP 18-23h S./año"),
+        # ── Estabilidad de red (W_GRID_STABLE = 0.02) ────────────────────────
+        ("r_grid_stable_mean", "greater", "r_grid_stable medio (0=estable, -1=max rampa)"),
+        ("grid_ramp_mean_kwh", "less",    "Rampa media |Δgrid_import| kWh/h (menor = mas estable)"),
     ]
 
     results = []
@@ -589,17 +636,49 @@ def main() -> None:
     save_figure(results, data)
 
     print("\n" + "=" * 65)
-    print("RESUMEN EJECUTIVO")
+    print("RESUMEN EJECUTIVO — ANÁLISIS AMPLIADO")
     print("=" * 65)
-    main_r = next(r for r in results if r["col"] == "co2_neta_kg")
-    taxi_r = next(r for r in results if r["col"] == "ev_mototaxis_kwh")
+    main_r  = next(r for r in results if r["col"] == "co2_neta_kg")
+    taxi_r  = next(r for r in results if r["col"] == "ev_mototaxis_kwh")
+    grid_r  = next((r for r in results if r["col"] == "grid_import_kwh"), None)
+    bess_r  = next((r for r in results if r["col"] == "bess_discharge_kwh"), None)
+    cost_r  = next((r for r in results if r["col"] == "costo_total_soles"), None)
+    stab_r  = next((r for r in results if r["col"] == "grid_ramp_mean_kwh"), None)
+    debt_r  = next((r for r in results if r["col"] == "debt_violations"), None)
+    red_r   = next((r for r in results if r["col"] == "reduccion_pct"), None)
+
+    print("\n  -- Descriptivos principales --")
     for a in AGENTS:
         d = main_r["descriptivos"][a]
-        marker = " ← SELECCIONADO" if a == "A2C" else ""
-        print(f"  {a}: CO₂ evitado media={d['mean']:,.0f} kg/año{marker}")
-    print(f"\n  A2C > SAC (CO₂): p={main_r['mann_whitney']['A2C_vs_SAC']['p']:.2e} ✓")
-    print(f"  A2C > PPO (CO₂): p={main_r['mann_whitney']['A2C_vs_PPO']['p']:.3f} (equivalentes)")
-    print(f"  A2C > PPO (mototaxis): p={taxi_r['mann_whitney']['A2C_vs_PPO']['p']:.4f} ✓ — diferencia que define la selección")
+        marker = " <- SELECCIONADO" if a == "A2C" else ""
+        print(f"  {a}: CO2 evitado={d['mean']:,.0f} kg/ep  "
+              f"F2={main_r['descriptivos'][a]['mean']:,.0f}{marker}")
+    print()
+    print("  -- Inferencia CO2 total --")
+    print(f"  A2C > SAC: p={main_r['mann_whitney']['A2C_vs_SAC']['p']:.2e} Cliff d={main_r['cohen_d']['A2C_vs_SAC']['d']:.3f} ✓")
+    print(f"  PPO > SAC: p={main_r['mann_whitney']['PPO_vs_SAC']['p']:.2e} ✓")
+    print(f"  A2C > PPO: p={main_r['mann_whitney']['A2C_vs_PPO']['p']:.3f} (equivalentes)")
+    print()
+    print("  -- Criterio desempate: mototaxis --")
+    print(f"  Wilcoxon A2C>PPO: p={taxi_r['wilcoxon']['A2C_vs_PPO']['p']:.4e} ✓ <- define seleccion A2C")
+    print()
+    if grid_r:
+        print(f"  -- Grid import (menor = mejor): A2C={grid_r['descriptivos']['A2C']['mean']:,.0f} "
+              f"PPO={grid_r['descriptivos']['PPO']['mean']:,.0f} SAC={grid_r['descriptivos']['SAC']['mean']:,.0f} kWh/año")
+        mw = grid_r['mann_whitney'].get('A2C_vs_PPO', {})
+        print(f"  A2C vs PPO grid: p={mw.get('p','?'):.3f}")
+    if cost_r:
+        print(f"  -- Costo total (menor = mejor): A2C={cost_r['descriptivos']['A2C']['mean']:,.0f} "
+              f"PPO={cost_r['descriptivos']['PPO']['mean']:,.0f} SAC={cost_r['descriptivos']['SAC']['mean']:,.0f} S./año")
+    if stab_r:
+        print(f"  -- Rampa grid (menor = mas estable): A2C={stab_r['descriptivos']['A2C']['mean']:.1f} "
+              f"PPO={stab_r['descriptivos']['PPO']['mean']:.1f} SAC={stab_r['descriptivos']['SAC']['mean']:.1f} kWh/h")
+    if debt_r:
+        print(f"  -- Debt violations/ep: A2C={debt_r['descriptivos']['A2C']['mean']:.1f} "
+              f"PPO={debt_r['descriptivos']['PPO']['mean']:.1f} SAC={debt_r['descriptivos']['SAC']['mean']:.1f}")
+    if red_r:
+        print(f"  -- Reduccion CO2 media: A2C={red_r['descriptivos']['A2C']['mean']:.2f}% "
+              f"PPO={red_r['descriptivos']['PPO']['mean']:.2f}% SAC={red_r['descriptivos']['SAC']['mean']:.2f}%")
     print("=" * 65)
 
 
