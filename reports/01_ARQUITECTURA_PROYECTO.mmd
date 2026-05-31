@@ -17,8 +17,8 @@ graph TB
         direction LR
         CL["CityLearn v2<br/>obs_dim=18<br/>accion=3D"]
         SAC["SAC"]
-        PPO["PPO<br/>SELECCIONADO"]
-        A2C["A2C"]
+        PPO["PPO"]
+        A2C["A2C<br/>SELECCIONADO"]
 
         CL --> SAC
         CL --> PPO
@@ -26,9 +26,9 @@ graph TB
     end
 
     subgraph RESULTADOS["Resultados canonicos 2026-05-31"]
-        PPO_R["PPO<br/>F2=3,657,484 kg CO2/año<br/>Ep. 49<br/>48.15% vs F0"]
-        A2C_R["A2C<br/>F2=3,659,010 kg CO2/año<br/>Ep. 45<br/>48.13% vs F0"]
-        SAC_R["SAC v8.2<br/>F2=3,693,084 kg CO2/año<br/>Ep. 17<br/>47.65% vs F0"]
+        A2C_R["A2C<br/>Score=9/9<br/>CO2 evitado=122,980,987 kg<br/>Grid=368,798,317 kWh"]
+        PPO_R["PPO<br/>Score=0/9<br/>CO2 evitado=122,688,120 kg<br/>F2 menor complementario"]
+        SAC_R["SAC v8.2<br/>Score=0/9<br/>CO2 evitado=121,316,857 kg"]
     end
 
     OE2 -.-> OE3

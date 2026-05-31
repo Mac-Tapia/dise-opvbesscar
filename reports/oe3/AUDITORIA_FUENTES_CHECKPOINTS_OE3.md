@@ -30,6 +30,14 @@ No se usan rutas bajo `archive`, `archive_previous` ni `archive_v73_obs16`.
 | PPO | 3,657,484 | 49 | 3,396,516 | 0.034% | 1,628.46 | 7,348,969 |
 | A2C | 3,659,010 | 45 | 3,394,990 | 0.422% | 1,633.29 | 7,337,811 |
 
+## Score multiobjetivo acumulado 50 episodios
+
+| Agente | Criterios liderados | CO2 total evitado | Grid import | Carga EV total | BESS descarga | Deuda/violaciones |
+|---|---:|---:|---:|---:|---:|---:|
+| A2C | 9/9 | 122,980,987 | 368,798,317 | 13,285,495 | 33,504,412 | 811 |
+| PPO | 0/9 | 122,688,120 | 370,717,132 | 12,917,765 | 31,831,147 | 2,333 |
+| SAC | 0/9 | 121,316,857 | 370,440,348 | 12,840,008 | 30,022,939 | 1,385 |
+
 ## Lectura trace complementaria
 
 | Criterio trace | SAC | PPO | A2C | Ganador parcial |
@@ -41,8 +49,8 @@ No se usan rutas bajo `archive`, `archive_previous` ni `archive_v73_obs16`.
 
 ## Conclusion de auditoria
 
-El SAC auditado corresponde al checkpoint final vigente `checkpoints/SAC_CityLearn/sac_final.zip`; no se usaron checkpoints antiguos ni archivos archivados. SAC fue comparado con PPO y A2C, y aunque SAC v8.2 mejora la importacion de red de validacion frente a PPO, todavia queda por debajo en F2 minimo, CO2 evitado vs F0 y reward de validacion.
+El SAC auditado corresponde al checkpoint final vigente `checkpoints/SAC_CityLearn/sac_final.zip`; no se usaron checkpoints antiguos ni archivos archivados. Con el criterio multiobjetivo acumulado de 50 episodios, A2C lidera 9/9 criterios: mayor CO2 directo+indirecto evitado, menor importacion de red, mayor carga de motos/mototaxis, mayor uso util de BESS y menor deuda/violaciones de carga.
 
-Para cambiar esta conclusion en una futura corrida, el nuevo SAC debe aparecer como `outputs/sac_training/result_sac.json`, `checkpoints/SAC_CityLearn/sac_final.zip` y `checkpoints/SAC_CityLearn/vecnormalize.pkl` fuera de carpetas `archive`.
+PPO conserva el menor F2 residual puntual, pero esa lectura queda como criterio complementario y no reemplaza el score multiobjetivo acumulado.
 
 - JSON: `reports/oe3/AUDITORIA_FUENTES_CHECKPOINTS_OE3.json`

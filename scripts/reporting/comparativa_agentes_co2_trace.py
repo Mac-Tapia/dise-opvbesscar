@@ -124,7 +124,7 @@ def fig_convergencia_reward() -> None:
     )
     fig.text(
         0.5, -0.03,
-        "SAC v8.2 converge rapido con VecNormalize; PPO/A2C mantienen mejor F2 canonico aunque SAC reduce grid en validacion.",
+        "A2C lidera el score multiobjetivo de 50 episodios; PPO conserva el menor F2 puntual como lectura complementaria.",
         ha="center", fontsize=9, color="#4B5563",
     )
     plt.tight_layout()
@@ -157,7 +157,7 @@ def fig_co2_indirecto_residual() -> None:
     ax.set_ylabel("CO₂ indirecto residual (Mt CO₂/año)", fontsize=12, fontweight="bold")
     ax.set_title(
         "CO₂ indirecto residual por episodio (F2) — SAC vs PPO vs A2C\n"
-        "Criterio OE3 canónico: menor F2 = mejor control ambiental",
+        "Lectura complementaria: menor F2 residual puntual",
         fontsize=12, fontweight="bold",
     )
     ax.legend(fontsize=9, loc="upper right")
@@ -425,7 +425,7 @@ def fig_sac_diagnostico() -> None:
     ax.axvline(20, color="gray", linestyle=":", linewidth=1.5, alpha=0.6, label="ep20 (SAC congela)")
     ax.set_xlabel("Episodio", fontsize=10)
     ax.set_ylabel("Reward rolling mean", fontsize=10)
-    ax.set_title("SAC estabiliza temprano\nPPO/A2C conservan menor F2", fontsize=11, fontweight="bold")
+    ax.set_title("SAC estabiliza temprano\nA2C lidera score multiobjetivo", fontsize=11, fontweight="bold")
     ax.legend(fontsize=8)
     ax.grid(True, alpha=0.25, linestyle="--")
     ax.set_xlim(1, 50)
@@ -468,7 +468,7 @@ def fig_sac_diagnostico() -> None:
     ax.set_xlim(1, 50)
 
     fig.suptitle(
-        "Diagnóstico SAC v8.2 — mejora con VecNormalize, pero no supera el F2 de PPO/A2C\n"
+        "Diagnóstico SAC v8.2 — mejora con VecNormalize, pero no supera el score multiobjetivo de A2C\n"
         f"SAC F2={canonical['agents']['SAC']['f2_min_kg_per_year']/1e6:.4f} Mt | "
         f"PPO F2={canonical['agents']['PPO']['f2_min_kg_per_year']/1e6:.4f} Mt | "
         f"Diferencia: {(canonical['agents']['SAC']['f2_min_kg_per_year']-canonical['agents']['PPO']['f2_min_kg_per_year'])/1e3:.1f} kt CO₂/año",
@@ -476,8 +476,8 @@ def fig_sac_diagnostico() -> None:
     )
     fig.text(
         0.5, -0.04,
-        "SAC v8.2 reduce grid en validación frente a su corrida anterior, pero su mejor F2 "
-        "aún queda por encima de PPO/A2C; la selección canónica sigue minimizando CO2 residual.",
+        "SAC v8.2 reduce grid en validación frente a su corrida anterior, pero A2C lidera "
+        "CO2 evitado, grid import, carga EV, BESS y deuda/violaciones en 50 episodios.",
         ha="center", fontsize=9, color="#4B5563",
     )
     plt.tight_layout()

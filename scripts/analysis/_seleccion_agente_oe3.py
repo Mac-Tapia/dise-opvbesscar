@@ -13,23 +13,34 @@ def main() -> None:
     selected = data["metadata"]["selected_agent"]
     selected_metrics = data["agents"][selected]
     sac_metrics = data["agents"]["SAC"]
+    ppo_metrics = data["agents"]["PPO"]
 
     print("=" * 78)
     print("  SELECCION CANONICA AGENTE OE3")
     print("=" * 78)
     print(f"  Fuente: {CANONICAL.relative_to(ROOT)}")
     print(f"  Agente seleccionado: {selected}")
-    print(f"  F2 minimo: {selected_metrics['f2_min_kg_per_year']:,.0f} kg CO2/año")
-    print(f"  Episodio optimo: {selected_metrics['best_episode']}")
-    print(f"  Reduccion vs F0: {selected_metrics['co2_reduction_vs_f0_pct']:.2f}%")
+    print(
+        "  CO2 total evitado 50 episodios: "
+        f"{selected_metrics['co2_total_avoided_sum_50_kg']:,.0f} kg CO2"
+    )
+    print(
+        "  Promedio evitado por episodio: "
+        f"{selected_metrics['co2_total_avoided_mean_kg_per_episode']:,.0f} kg CO2/año"
+    )
+    print(f"  F2 minimo complementario: {selected_metrics['f2_min_kg_per_year']:,.0f} kg CO2/año")
     print()
     print("  Justificacion:")
-    print("  - El criterio operativo principal es minimizar F2 anual.")
-    print("  - PPO tiene el menor F2 entre SAC, PPO y A2C.")
+    print("  - El criterio operativo principal es maximizar CO2 reducido acumulado en 50 episodios.")
+    print("  - A2C tiene el mayor total directo + indirecto evitado.")
     print(
-        "  - SAC no gana porque su mejor F2 queda "
-        f"{sac_metrics['f2_min_kg_per_year'] - selected_metrics['f2_min_kg_per_year']:,.0f} "
-        "kg CO2/año por encima de PPO."
+        "  - SAC no gana porque su CO2 total evitado queda "
+        f"{selected_metrics['co2_total_avoided_sum_50_kg'] - sac_metrics['co2_total_avoided_sum_50_kg']:,.0f} "
+        "kg CO2 por debajo de A2C en el acumulado."
+    )
+    print(
+        "  - PPO conserva el menor F2 puntual: "
+        f"{ppo_metrics['f2_min_kg_per_year']:,.0f} kg CO2/año."
     )
     print("  - Shapiro-Wilk rechaza normalidad; se reportan pruebas no parametricas.")
     print("=" * 78)

@@ -143,21 +143,23 @@ La recompensa de validacion baja levemente de 1,519.15 a 1,517.13. Eso no invali
 CO2/grid; muestra que el reward multiobjetivo todavia distribuye peso entre CO2, cumplimiento EV,
 BESS, estabilidad y costo.
 
-## 6. Comparacion final con PPO y A2C
+## 6. Comparacion final multiobjetivo con PPO y A2C
 
-| Rank | Agente | F2 minimo kg CO2/año | Episodio | CO2 evitado vs F0 | Reward validacion | Grid validacion kWh | CV plateau |
+| Rank | Agente | Criterios liderados | CO2 total evitado kg | Grid import kWh | EV total kWh | BESS descarga kWh | Deuda/violaciones |
 |---:|---|---:|---:|---:|---:|---:|---:|
-| 1 | **PPO** | **3,657,484** | **49** | **3,396,515** | 1,628.46 | 7,348,969 | **0.034%** |
-| 2 | A2C | 3,659,010 | 45 | 3,394,989 | **1,633.29** | **7,337,811** | 0.422% |
-| 3 | SAC v8.2 | 3,693,084 | 17 | 3,360,915 | 1,517.13 | 7,345,854 | 0.036% |
+| 1 | **A2C** | **9/9** | **122,980,987** | **368,798,317** | **13,285,495** | **33,504,412** | **811** |
+| 2 | PPO | 0/9 | 122,688,120 | 370,717,132 | 12,917,765 | 31,831,147 | 2,333 |
+| 3 | SAC v8.2 | 0/9 | 121,316,857 | 370,440,348 | 12,840,008 | 30,022,939 | 1,385 |
 
-SAC v8.2 ya no esta tan lejos como el SAC anterior, pero sigue emitiendo:
+SAC v8.2 ya no esta tan lejos como el SAC anterior, pero sigue por debajo de A2C:
 
-- **35,600 kg CO2/año** mas que PPO.
-- **34,074 kg CO2/año** mas que A2C.
+- **1,664,130 kg CO2** menos evitados en 50 episodios.
+- **445,487 kWh** menos carga EV total.
+- **3,481,473 kWh** menos descarga BESS.
+- **574** deuda/violaciones adicionales.
 
-La seleccion canonica sigue siendo **PPO** porque tiene el menor `F2`. A2C queda como mejor en grid
-validation y CO2 total evitado desde trace, pero no supera a PPO en `F2`.
+La seleccion canonica actualizada es **A2C** porque lidera el score multiobjetivo de 50 episodios.
+PPO conserva el menor `F2` puntual como lectura complementaria.
 
 ## 7. Plan de mejora siguiente para SAC
 
@@ -169,8 +171,7 @@ Si se necesita una tercera corrida SAC, el plan recomendado es:
 4. Reducir memoria temprana del replay con `buffer_size=52,560` o usar curriculum de warmup.
 5. Evaluar `learning_starts=26,280` para que el critic vea tres meses antes de actualizar.
 6. Mantener critics anchos y actor moderado.
-7. Reportar siempre tres criterios separados: menor `F2`, CO2 total evitado desde trace y grid
-   validation.
+7. Reportar siempre el score multiobjetivo de 50 episodios y dejar `F2` como lectura complementaria.
 
 ## 8. Estado final de archivos
 
@@ -184,4 +185,4 @@ Si se necesita una tercera corrida SAC, el plan recomendado es:
 - `checkpoints/A2C_CityLearn/`: intacto.
 
 **Conclusion:** SAC v8.2 fue corregido y mejoro de forma medible, pero no gana. El agente OE3
-seleccionado para reportes y consultas externas sigue siendo **PPO**.
+seleccionado para reportes y consultas externas es **A2C** bajo el score multiobjetivo acumulado.

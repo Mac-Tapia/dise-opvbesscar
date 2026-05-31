@@ -8,7 +8,7 @@ emisiones en una red aislada con factor de emision `0.4521 kg CO2/kWh`.
 
 **Actualizado:** 2026-05-31
 **Branch:** `smartcharger`
-**Agente OE3 seleccionado:** **PPO**
+**Agente OE3 seleccionado:** **A2C**
 **Documento principal:** [reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md](reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md)
 
 Los reportes antiguos donde SAC o A2C aparecen como ganador quedan reemplazados por la comparativa
@@ -23,20 +23,18 @@ Para consultas automatizadas de otros agentes, usar:
 
 ## Resultado OE3
 
-Criterio operativo principal: minimizar `F2` anual (`kg CO2/año`) con 50 episodios por agente.
-La prueba de normalidad se usa solo para decidir el tipo de inferencia; no reemplaza el criterio
-operativo de seleccion. Como Shapiro-Wilk rechaza normalidad, la comparacion usa pruebas no
-parametricas.
+Criterio operativo principal: score multiobjetivo acumulado en 50 episodios. Se prioriza mayor CO2
+directo+indirecto evitado, menor importacion de red, mayor carga de motos/mototaxis, mayor uso util
+de BESS y menor deuda/violaciones de carga.
 
-| Rank | Agente | F2 minimo (kg CO2/año) | Episodio | F2 media (kg/año) | Sigma (kg/año) | Reduccion vs F0 | CV plateau |
+| Rank | Agente | Criterios liderados | CO2 total evitado kg | Grid import kWh | EV total kWh | BESS descarga kWh | Deuda/violaciones |
 |---:|---|---:|---:|---:|---:|---:|---:|
-| 1 | **PPO** | **3,657,484** | **49** | 3,695,605 | 63,818 | **48.15%** | **0.034%** |
-| 2 | A2C | 3,659,010 | 45 | 3,699,834 | 38,248 | 48.13% | 0.422% |
-| 3 | SAC v8.2 | 3,693,084 | 17 | 3,711,823 | 45,486 | 47.65% | 0.036% |
+| 1 | **A2C** | **9/9** | **122,980,987** | **368,798,317** | **13,285,495** | **33,504,412** | **811** |
+| 2 | PPO | 0/9 | 122,688,120 | 370,717,132 | 12,917,765 | 31,831,147 | 2,333 |
+| 3 | SAC v8.2 | 0/9 | 121,316,857 | 370,440,348 | 12,840,008 | 30,022,939 | 1,385 |
 
-**Conclusion:** PPO gana por el menor `F2` anual. A2C queda muy cerca, pero su `F2` minimo es
-1,526 kg CO2/año mayor que PPO. SAC v8.2 mejoro frente al SAC anterior, pero su mejor episodio
-emite 35,600 kg CO2/año mas que PPO bajo la corrida vigente.
+**Conclusion:** A2C gana por el score multiobjetivo acumulado. PPO conserva el menor `F2` puntual
+(3,657,484 kg CO2/año), pero ese valor queda como lectura complementaria.
 
 ## Estado OE2
 

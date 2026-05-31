@@ -24,7 +24,7 @@ CANONICAL_SCRIPT = BASE / "scripts" / "reporting" / "generar_tablas_oe3.py"
 
 
 def main() -> None:
-    print("OE3 canonical: PPO seleccionado. Generando tablas canonicas...")
+    print("OE3 canonical: A2C seleccionado por score multiobjetivo. Generando tablas canonicas...")
     runpy.run_path(str(CANONICAL_SCRIPT), run_name="__main__")
 
 

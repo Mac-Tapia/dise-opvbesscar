@@ -1,4 +1,4 @@
-# OE3 - Reporte mejor agente por CO2 directo, indirecto y control electrico
+# OE3 - Reporte mejor agente multiobjetivo CO2, red, EV y BESS
 
 **Fecha de actualizacion:** 2026-05-31
 **Fuente canonica:** `reports/oe3/agents_comparison_canonical.json`
@@ -8,110 +8,93 @@
 
 ## Decision ejecutiva
 
-El mejor agente OE3 bajo el criterio canonico de control ambiental es **PPO**. Su mejor episodio
-reduce el CO2 indirecto residual `F2` a **3,657,484 kg CO2/año** en el episodio **49**.
+Con el criterio multiobjetivo pedido, el agente seleccionado es **A2C**. La seleccion ya no se hace
+por el menor `F2` puntual, sino por el agente que acumula mejor desempeño en los **50 episodios**:
 
-La lectura directa desde trace confirma dos matices importantes:
+- mayor CO2 total evitado directo + indirecto,
+- menor importacion de red,
+- mayor reduccion directa de CO2,
+- mayor reduccion indirecta de CO2,
+- mayor carga de motos y mototaxis,
+- mejor control de cargadores medido por menor deuda/violaciones,
+- mayor uso util de BESS.
 
-- **PPO** tambien gana en menor CO2 indirecto emitido por red: **3,657,484 kg CO2/año**.
-- **A2C** gana si el criterio aislado es maximo CO2 total evitado directo + indirecto:
-  **2,523,717 kg CO2/año** en el episodio trace 19.
-- **SAC v8.2** mejoro frente al SAC anterior, pero no supera a PPO/A2C en `F2`.
+A2C lidera **9 de 9 criterios**. PPO conserva el menor `F2` residual puntual, pero ese criterio queda
+como lectura complementaria.
 
-La prueba de normalidad no selecciona el agente. Shapiro-Wilk solo justifica usar pruebas no
-parametricas; la seleccion se hace por metricas operativas: menor `F2`, CO2 evitado, importacion de
-red, cumplimiento EV y convergencia.
+## Score multiobjetivo 50 episodios
 
-## Ranking canonico por F2
-
-| Rank | Agente | F2 minimo kg CO2/año | Episodio | F2 media kg/año | CO2 evitado vs F0 | Reduccion vs F0 | CV plateau | Reward validacion | Grid validacion kWh |
+| Rank | Agente | Criterios liderados | CO2 total evitado kg | Grid import kWh | CO2 directo kg | CO2 indirecto kg | EV total kWh | BESS descarga kWh | Deuda/violaciones |
 |---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | **PPO** | **3,657,484** | **49** | 3,695,605 | **3,396,515** | **48.15%** | **0.034%** | 1,628.46 | 7,348,969 |
-| 2 | A2C | 3,659,010 | 45 | 3,699,834 | 3,394,989 | 48.13% | 0.422% | 1,633.29 | **7,337,811** |
-| 3 | SAC v8.2 | 3,693,084 | 17 | 3,711,823 | 3,360,915 | 47.65% | 0.036% | 1,517.13 | 7,345,854 |
+| 1 | **A2C** | **9/9** | **122,980,987** | **368,798,317** | **10,885,952** | **112,095,035** | **13,285,495** | **33,504,412** | **811** |
+| 2 | PPO | 0/9 | 122,688,120 | 370,717,132 | 10,624,191 | 112,063,929 | 12,917,765 | 31,831,147 | 2,333 |
+| 3 | SAC v8.2 | 0/9 | 121,316,857 | 370,440,348 | 10,566,738 | 110,750,119 | 12,840,008 | 30,022,939 | 1,385 |
 
-PPO gana por **1,526 kg CO2/año** frente a A2C y por **35,600 kg CO2/año** frente a SAC v8.2.
-A2C mantiene la menor importacion de red en validacion, pero su `F2` minimo queda ligeramente por
-encima de PPO.
+Ventajas cuantificables de A2C:
 
-## CO2 directo e indirecto desde trace
+| Comparacion | Ventaja A2C |
+|---|---:|
+| CO2 total evitado vs PPO | +292,867 kg CO2 |
+| CO2 total evitado vs SAC | +1,664,130 kg CO2 |
+| Menor grid import vs PPO | -1,918,815 kWh |
+| Menor grid import vs SAC | -1,642,032 kWh |
+| Mayor carga EV total vs PPO | +367,730 kWh |
+| Mayor carga EV total vs SAC | +445,487 kWh |
+| Menor deuda/violaciones vs PPO | -1,522 |
+| Menor deuda/violaciones vs SAC | -574 |
 
-| Criterio trace | Ganador | Episodio | Valor kg CO2/año | PPO | A2C | SAC v8.2 |
-|---|---|---:|---:|---:|---:|---:|
-| Maximo CO2 total evitado directo + indirecto | A2C | 19 | 2,523,717 | 2,469,954 | **2,523,717** | 2,434,161 |
-| Maximo CO2 directo evitado | PPO | 48 | 227,155 | **227,155** | 225,136 | 220,168 |
-| Maximo CO2 indirecto evitado | A2C | 1 | 2,377,543 | 2,365,179 | **2,377,543** | 2,286,741 |
-| Minimo CO2 indirecto emitido por red | PPO | 49 | 3,657,484 | **3,657,484** | 3,659,010 | 3,693,084 |
+## Carga de motos y mototaxis
 
-Esta tabla explica por que puede aparecer A2C como lider en CO2 evitado total desde trace, mientras
-PPO sigue siendo el agente seleccionado: OE3 prioriza el menor CO2 residual operativo (`F2`), no solo
-la suma de CO2 evitado.
+| Agente | Motos kWh 50 ep | Mototaxis kWh 50 ep | EV total kWh 50 ep |
+|---|---:|---:|---:|
+| **A2C** | **11,247,831** | **2,037,664** | **13,285,495** |
+| PPO | 11,056,358 | 1,861,407 | 12,917,765 |
+| SAC v8.2 | 11,009,496 | 1,830,512 | 12,840,008 |
 
-## Diagnostico SAC v8.2
+## CO2 directo e indirecto
 
-SAC no perdio por usar datos antiguos. La verificacion de `training_validation.py`, el wrapper
-CityLearn y los resultados guardados confirman que usa los mismos datos reales actuales que PPO/A2C:
-`data/iquitos_ev_mall/` y `data/interim/citylearn_v2/`.
+| Agente | CO2 directo evitado kg | CO2 indirecto evitado kg | CO2 total evitado kg |
+|---|---:|---:|---:|
+| **A2C** | **10,885,952** | **112,095,035** | **122,980,987** |
+| PPO | 10,624,191 | 112,063,929 | 122,688,120 |
+| SAC v8.2 | 10,566,738 | 110,750,119 | 121,316,857 |
 
-El problema del SAC anterior era principalmente de regimen de entrenamiento:
+## Red y BESS
 
-- No usaba `VecNormalize`; PPO/A2C si normalizaban observaciones y retornos.
-- `gamma=0.99` era demasiado largo para episodios anuales de 8,760 pasos.
-- El replay buffer conservaba transiciones tempranas suboptimas.
-- La exploracion de `ent_coef="auto"` y `target_entropy=-3.0` convergia a una politica conservadora.
-- La arquitectura de critic era menor que la usada por PPO/A2C.
+| Agente | Grid import kWh 50 ep | BESS descarga kWh 50 ep | Deuda/violaciones |
+|---|---:|---:|---:|
+| **A2C** | **368,798,317** | **33,504,412** | **811** |
+| SAC v8.2 | 370,440,348 | 30,022,939 | 1,385 |
+| PPO | 370,717,132 | 31,831,147 | 2,333 |
 
-Los ajustes aplicados en SAC v8.2 fueron:
+## F2 residual complementario
 
-| Parametro | SAC anterior | SAC v8.2 |
+| Agente | F2 minimo kg CO2/año | Episodio |
 |---|---:|---:|
-| Normalizacion entorno | No | `VecNormalize(norm_obs=True, norm_reward=True)` |
-| `learning_rate` | `5e-5` | `1e-4` |
-| `buffer_size` | `100000` | `87600` |
-| `learning_starts` | `8760` | `17520` |
-| `batch_size` | `256` | `512` en CUDA |
-| `gamma` | `0.99` | `0.95` |
-| `gradient_steps` | `1` | `2` |
-| `ent_coef` | `auto` | `auto_0.2` |
-| `target_entropy` | `-3.0` | `-2.0` |
-| Critic | `[256,256]` | `qf=[512,512,256]` |
+| PPO | **3,657,484** | 49 |
+| A2C | 3,659,010 | 45 |
+| SAC v8.2 | 3,693,084 | 17 |
 
-## Resultado SAC antes vs despues
+PPO tiene el menor `F2` puntual por **1,526 kg CO2/año** frente a A2C. Sin embargo, A2C supera a
+PPO en el acumulado de 50 episodios y en los criterios operativos de carga EV, red, BESS y deuda de
+carga.
 
-| Version SAC | Mejor F2 kg CO2/año | Episodio | Reward validacion | CO2 evitado validacion kg | Grid validacion kWh | Estado |
-|---|---:|---:|---:|---:|---:|---|
-| SAC anterior archivado | 3,720,640 | 33 | 1,519.15 | 2,400,665 | 7,456,699 | Resultado/traces archivados; checkpoints archivados eliminados |
-| SAC v8.2 actual | **3,693,084** | **17** | 1,517.13 | **2,438,610** | **7,345,854** | Checkpoint final vigente + `vecnormalize.pkl` |
+## Pruebas estadisticas sobre CO2 total evitado por episodio
 
-Mejoras de SAC v8.2 frente al SAC anterior:
+| Prueba | Resultado | Interpretacion |
+|---|---:|---|
+| Shapiro-Wilk SAC | W=0.598363, p=1.842e-10 | No normal |
+| Shapiro-Wilk PPO | W=0.677219, p=3.301e-09 | No normal |
+| Shapiro-Wilk A2C | W=0.962455, p=1.127e-01 | Compatible con normalidad |
+| Kruskal-Wallis | H=57.557340, p=3.174e-13 | Hay diferencias entre agentes |
+| Mann-Whitney U A2C > PPO | U=1353, p=2.399e-01 | Ventaja acumulada de A2C no significativa frente a PPO |
+| Mann-Whitney U A2C > SAC | U=2226, p=8.784e-12 | A2C supera a SAC |
+| Mann-Whitney U PPO > SAC | U=2171, p=1.107e-10 | PPO supera a SAC |
+| Wilcoxon A2C > PPO | W=766, p=1.093e-01 | Ventaja pareada no significativa frente a PPO |
+| Wilcoxon A2C > SAC | W=1251, p=6.768e-13 | A2C supera a SAC |
 
-- `F2` baja **27,556 kg CO2/año**.
-- Grid import de validacion baja **110,845 kWh/año**.
-- CO2 evitado de validacion sube **37,944 kg CO2/año**.
-- La convergencia queda estable: `CV plateau = 0.036%`.
+## Resultado final
 
-La mejora es real, pero no alcanza para ganar: SAC v8.2 queda **35,600 kg CO2/año** por encima de
-PPO en `F2`.
-
-## Estado de checkpoints y archivos
-
-- Checkpoints SAC archivados anteriores: eliminados por instruccion del usuario.
-- Checkpoints PPO/A2C: no se tocaron.
-- SAC vigente: `checkpoints/SAC_CityLearn/sac_final.zip`.
-- Normalizacion SAC vigente: `checkpoints/SAC_CityLearn/vecnormalize.pkl`.
-- Resultado SAC vigente: `outputs/sac_training/result_sac.json`.
-- Trace SAC vigente: `outputs/sac_training/trace_sac.csv`.
-
-## Veredicto final
-
-| Criterio | Mejor agente | Justificacion |
-|---|---|---|
-| Seleccion canonica OE3 | **PPO** | Menor `F2`: 3,657,484 kg CO2/año |
-| CO2 total evitado desde trace | A2C | Mayor suma directa + indirecta: 2,523,717 kg CO2/año |
-| CO2 directo evitado | PPO | 227,155 kg CO2/año |
-| Menor importacion de red en validacion | A2C | 7,337,811 kWh/año |
-| SAC mejorado | No seleccionado | Mejoro, pero su `F2` sigue +35,600 kg CO2/año sobre PPO |
-
-**Conclusion:** para informes y consultas de otros agentes debe usarse **PPO** como agente OE3
-seleccionado. A2C puede citarse como mejor en CO2 total evitado desde trace y en grid validation,
-pero no reemplaza a PPO en el criterio canonico de menor CO2 residual.
+**A2C** es el agente seleccionado bajo el criterio multiobjetivo de 50 episodios. Reduce la mayor
+cantidad total de CO2, importa menos energia de red, carga mas motos y mototaxis, usa mas BESS y
+mantiene menos deuda/violaciones de carga.

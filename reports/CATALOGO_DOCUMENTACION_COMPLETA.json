@@ -6,7 +6,7 @@
     {
       "path": "reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md",
       "tipo": "informe",
-      "descripcion": "Comparativa actualizada SAC/PPO/A2C y seleccion PPO"
+      "descripcion": "Comparativa actualizada SAC/PPO/A2C y seleccion A2C multiobjetivo"
     },
     {
       "path": "reports/oe3/agents_comparison_canonical.json",
@@ -16,7 +16,7 @@
     {
       "path": "reports/oe3/agents_comparison_canonical.csv",
       "tipo": "csv",
-      "descripcion": "Tabla comparativa canónica de F2 y métricas descriptivas"
+      "descripcion": "Tabla comparativa canónica multiobjetivo de 50 episodios"
     },
     {
       "path": "reports/oe3/CO2_DIRECTO_INDIRECTO_TRACE_OE3.md",
@@ -50,29 +50,32 @@
     }
   ],
   "resultado_oe3": {
-    "agente_seleccionado": "PPO",
-    "criterio": "F2 minimo anual",
+    "agente_seleccionado": "A2C",
+    "criterio": "score multiobjetivo acumulado 50 episodios",
     "ranking": [
       {
         "rank": 1,
-        "agente": "PPO",
-        "f2_minimo_kg_anio": 3657484,
-        "episodio_optimo": 49,
-        "reduccion_vs_f0_pct": 48.15
+        "agente": "A2C",
+        "criterios_liderados": "9/9",
+        "co2_total_evitado_kg_50ep": 122980987,
+        "grid_import_kwh_50ep": 368798317,
+        "ev_total_kwh_50ep": 13285495
       },
       {
         "rank": 2,
-        "agente": "A2C",
-        "f2_minimo_kg_anio": 3659010,
-        "episodio_optimo": 45,
-        "reduccion_vs_f0_pct": 48.13
+        "agente": "PPO",
+        "criterios_liderados": "0/9",
+        "co2_total_evitado_kg_50ep": 122688120,
+        "grid_import_kwh_50ep": 370717132,
+        "ev_total_kwh_50ep": 12917765
       },
       {
         "rank": 3,
         "agente": "SAC v8.2",
-        "f2_minimo_kg_anio": 3693084,
-        "episodio_optimo": 17,
-        "reduccion_vs_f0_pct": 47.65
+        "criterios_liderados": "0/9",
+        "co2_total_evitado_kg_50ep": 121316857,
+        "grid_import_kwh_50ep": 370440348,
+        "ev_total_kwh_50ep": 12840008
       }
     ]
   },

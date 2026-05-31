@@ -142,6 +142,6 @@
     "validation_mean_co2_avoided_kg": 2438609.557786389,
     "validation_mean_grid_import_kwh": 7345853.826036684,
     "vecnormalize_path": "checkpoints/SAC_CityLearn/vecnormalize.pkl",
-    "selection_status": "No seleccionado; PPO mantiene menor F2 canonico."
+    "selection_status": "No seleccionado; A2C lidera el score multiobjetivo acumulado de 50 episodios. PPO mantiene menor F2 puntual como lectura complementaria."
   }
 }

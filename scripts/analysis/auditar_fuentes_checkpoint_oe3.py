@@ -126,6 +126,7 @@ def main() -> None:
         )
     )["algoritmos"]
     trace_summary = pd.read_csv(OUT_DIR / "co2_trace_direct_indirect_summary.csv")
+    canonical = json.loads((OUT_DIR / "agents_comparison_canonical.json").read_text(encoding="utf-8"))
 
     payload = {
         "fecha_actualizacion": RUN_DATE,
@@ -195,6 +196,24 @@ def main() -> None:
             f"{validation['mean_reward']:,.2f} | {validation['mean_grid_import_kwh']:,.0f} |"
         )
     lines.append("")
+    lines.append("## Score multiobjetivo acumulado 50 episodios")
+    lines.append("")
+    lines.append(
+        "| Agente | Criterios liderados | CO2 total evitado | Grid import | Carga EV total | "
+        "BESS descarga | Deuda/violaciones |"
+    )
+    lines.append("|---|---:|---:|---:|---:|---:|---:|")
+    for agent in canonical["ranking"]:
+        metrics = canonical["agents"][agent]
+        lines.append(
+            f"| {agent} | {metrics['multiobjective_wins_50']}/{metrics['multiobjective_criteria_total']} | "
+            f"{metrics['co2_total_avoided_sum_50_kg']:,.0f} | "
+            f"{metrics['grid_import_sum_50_kwh']:,.0f} | "
+            f"{metrics['ev_total_sum_50_kwh']:,.0f} | "
+            f"{metrics['bess_discharge_sum_50_kwh']:,.0f} | "
+            f"{metrics['debt_violations_sum_50']:,.0f} |"
+        )
+    lines.append("")
     lines.append("## Lectura trace complementaria")
     lines.append("")
     lines.append(
@@ -225,15 +244,15 @@ def main() -> None:
     lines.append("")
     lines.append(
         "El SAC auditado corresponde al checkpoint final vigente `checkpoints/SAC_CityLearn/sac_final.zip`; "
-        "no se usaron checkpoints antiguos ni archivos archivados. SAC fue comparado con PPO y A2C, "
-        "y aunque SAC v8.2 mejora la importacion de red de validacion frente a PPO, todavia queda "
-        "por debajo en F2 minimo, CO2 evitado vs F0 y reward de validacion."
+        "no se usaron checkpoints antiguos ni archivos archivados. Con el criterio multiobjetivo "
+        "acumulado de 50 episodios, A2C lidera 9/9 criterios: mayor CO2 directo+indirecto evitado, "
+        "menor importacion de red, mayor carga de motos/mototaxis, mayor uso util de BESS y menor "
+        "deuda/violaciones de carga."
     )
     lines.append("")
     lines.append(
-        "Para cambiar esta conclusion en una futura corrida, el nuevo SAC debe aparecer como "
-        "`outputs/sac_training/result_sac.json`, `checkpoints/SAC_CityLearn/sac_final.zip` y "
-        "`checkpoints/SAC_CityLearn/vecnormalize.pkl` fuera de carpetas `archive`."
+        "PPO conserva el menor F2 residual puntual, pero esa lectura queda como criterio "
+        "complementario y no reemplaza el score multiobjetivo acumulado."
     )
     lines.append("")
     lines.append(f"- JSON: `{OUT_JSON.relative_to(ROOT).as_posix()}`")

@@ -6,8 +6,8 @@
     "source_generation_date": "2026-05-31",
     "training_run_date": "2026-05-30",
     "branch": "smartcharger",
-    "selected_agent": "PPO",
-    "selection_criterion": "Minimize annual F2 emissions (kg CO2/year)",
+    "selected_agent": "A2C",
+    "selection_criterion": "Multiobjective score over 50 episodes: maximize direct+indirect CO2 avoided, minimize grid import and charge debt, maximize EV charging and useful BESS discharge.",
     "normality_usage": "Normality tests guide statistical method selection only; they do not replace operational ranking metrics.",
     "canonical_report": "reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md",
     "source_audit": "reports/oe3/AUDITORIA_FUENTES_CHECKPOINTS_OE3.md",
@@ -33,8 +33,8 @@
     "action_dim": 3
   },
   "ranking": [
-    "PPO",
     "A2C",
+    "PPO",
     "SAC"
   ],
   "agents": {
@@ -47,66 +47,203 @@
       "f2_sigma_kg_per_year": 45486,
       "co2_reduction_vs_f0_pct": 47.65,
       "co2_avoided_vs_f0_kg_per_year": 3360915,
+      "co2_total_avoided_sum_50_kg": 121316857,
+      "co2_total_avoided_mean_kg_per_episode": 2426337,
+      "co2_direct_avoided_sum_50_kg": 10566738,
+      "co2_indirect_avoided_sum_50_kg": 110750119,
+      "co2_reduction_vs_f0_sum_50_kg": 167108824,
+      "co2_reduction_vs_f0_mean_kg_per_episode": 3342176,
+      "grid_import_sum_50_kwh": 370440348,
+      "grid_import_mean_kwh_per_episode": 7408807,
+      "ev_motos_sum_50_kwh": 11009496,
+      "ev_mototaxis_sum_50_kwh": 1830512,
+      "ev_total_sum_50_kwh": 12840008,
+      "bess_discharge_sum_50_kwh": 30022939,
+      "debt_violations_sum_50": 1385,
+      "multiobjective_wins_50": 0,
+      "multiobjective_criteria_total": 9,
       "cv_plateau_pct": 0.036,
       "validation_mean_reward": 1517.1255922538833,
       "validation_mean_co2_avoided_kg": 2438609.557786389,
       "validation_mean_grid_import_kwh": 7345853.826036684,
-      "selection_note": "Not selected; F2 minimum is 35,600 kg CO2/year higher than PPO."
+      "selection_note": "Not selected; wins fewer multiobjective criteria and cumulative total CO2 avoided is 1,664,130 kg lower than A2C."
     },
     "PPO": {
-      "rank": 1,
-      "selected": true,
+      "rank": 2,
+      "selected": false,
       "f2_min_kg_per_year": 3657484,
       "best_episode": 49,
       "f2_mean_kg_per_year": 3695605,
       "f2_sigma_kg_per_year": 63818,
       "co2_reduction_vs_f0_pct": 48.15,
       "co2_avoided_vs_f0_kg_per_year": 3396515,
+      "co2_total_avoided_sum_50_kg": 122688120,
+      "co2_total_avoided_mean_kg_per_episode": 2453762,
+      "co2_direct_avoided_sum_50_kg": 10624191,
+      "co2_indirect_avoided_sum_50_kg": 112063929,
+      "co2_reduction_vs_f0_sum_50_kg": 167919709,
+      "co2_reduction_vs_f0_mean_kg_per_episode": 3358394,
+      "grid_import_sum_50_kwh": 370717132,
+      "grid_import_mean_kwh_per_episode": 7414343,
+      "ev_motos_sum_50_kwh": 11056358,
+      "ev_mototaxis_sum_50_kwh": 1861407,
+      "ev_total_sum_50_kwh": 12917765,
+      "bess_discharge_sum_50_kwh": 31831147,
+      "debt_violations_sum_50": 2333,
+      "multiobjective_wins_50": 0,
+      "multiobjective_criteria_total": 9,
       "cv_plateau_pct": 0.034,
       "validation_mean_reward": 1628.4648027213454,
       "validation_mean_co2_avoided_kg": 2416092.5925824405,
       "validation_mean_grid_import_kwh": 7348968.902899796,
-      "selection_note": "Selected because it has the lowest annual F2 emissions."
+      "selection_note": "Not selected; wins fewer multiobjective criteria and cumulative total CO2 avoided is 292,867 kg lower than A2C."
     },
     "A2C": {
-      "rank": 2,
-      "selected": false,
+      "rank": 1,
+      "selected": true,
       "f2_min_kg_per_year": 3659010,
       "best_episode": 45,
       "f2_mean_kg_per_year": 3699834,
       "f2_sigma_kg_per_year": 38248,
       "co2_reduction_vs_f0_pct": 48.13,
       "co2_avoided_vs_f0_kg_per_year": 3394989,
+      "co2_total_avoided_sum_50_kg": 122980987,
+      "co2_total_avoided_mean_kg_per_episode": 2459620,
+      "co2_direct_avoided_sum_50_kg": 10885952,
+      "co2_indirect_avoided_sum_50_kg": 112095035,
+      "co2_reduction_vs_f0_sum_50_kg": 167708235,
+      "co2_reduction_vs_f0_mean_kg_per_episode": 3354165,
+      "grid_import_sum_50_kwh": 368798317,
+      "grid_import_mean_kwh_per_episode": 7375966,
+      "ev_motos_sum_50_kwh": 11247831,
+      "ev_mototaxis_sum_50_kwh": 2037664,
+      "ev_total_sum_50_kwh": 13285495,
+      "bess_discharge_sum_50_kwh": 33504412,
+      "debt_violations_sum_50": 811,
+      "multiobjective_wins_50": 9,
+      "multiobjective_criteria_total": 9,
       "cv_plateau_pct": 0.422,
       "validation_mean_reward": 1633.2862134672,
       "validation_mean_co2_avoided_kg": 2412246.1675903993,
       "validation_mean_grid_import_kwh": 7337810.999349495,
-      "selection_note": "Not selected; F2 minimum is 1,526 kg CO2/year higher than PPO."
+      "selection_note": "Selected because it leads the multiobjective score over 50 episodes."
     }
   },
+  "multiobjective_criteria": [
+    {
+      "key": "co2_total_avoided_sum_50_kg",
+      "label": "Mayor CO2 total evitado",
+      "mode": "max",
+      "winner": "A2C"
+    },
+    {
+      "key": "grid_import_sum_50_kwh",
+      "label": "Menor importacion de red",
+      "mode": "min",
+      "winner": "A2C"
+    },
+    {
+      "key": "co2_direct_avoided_sum_50_kg",
+      "label": "Mayor CO2 directo evitado",
+      "mode": "max",
+      "winner": "A2C"
+    },
+    {
+      "key": "co2_indirect_avoided_sum_50_kg",
+      "label": "Mayor CO2 indirecto evitado",
+      "mode": "max",
+      "winner": "A2C"
+    },
+    {
+      "key": "ev_motos_sum_50_kwh",
+      "label": "Mayor carga motos",
+      "mode": "max",
+      "winner": "A2C"
+    },
+    {
+      "key": "ev_mototaxis_sum_50_kwh",
+      "label": "Mayor carga mototaxis",
+      "mode": "max",
+      "winner": "A2C"
+    },
+    {
+      "key": "ev_total_sum_50_kwh",
+      "label": "Mayor carga EV total",
+      "mode": "max",
+      "winner": "A2C"
+    },
+    {
+      "key": "bess_discharge_sum_50_kwh",
+      "label": "Mayor uso util BESS",
+      "mode": "max",
+      "winner": "A2C"
+    },
+    {
+      "key": "debt_violations_sum_50",
+      "label": "Menor deuda/violaciones de carga",
+      "mode": "min",
+      "winner": "A2C"
+    }
+  ],
   "statistics": {
+    "selection_metric": "co2_total_avoided_kg_per_episode",
     "normality": {
       "test": "Shapiro-Wilk",
       "alpha": 0.05,
       "results": {
         "SAC": {
-          "w": 0.385369385274814,
-          "p_value": 3.635139169328492e-13,
+          "w": 0.5983626841181606,
+          "p_value": 1.8417838048491106e-10,
           "normal": false
         },
         "PPO": {
-          "w": 0.606314361481983,
-          "p_value": 2.4195869678452666e-10,
+          "w": 0.677219173306334,
+          "p_value": 3.301206334959906e-09,
           "normal": false
         },
         "A2C": {
-          "w": 0.8343410413360832,
-          "p_value": 5.983678153554231e-06,
-          "normal": false
+          "w": 0.9624547223574454,
+          "p_value": 0.11265304188069963,
+          "normal": true
         }
       }
     },
     "non_parametric_tests": {
+      "kruskal_wallis": {
+        "h": 57.55734039735097,
+        "p_value": 3.1738203190516266e-13,
+        "reject_h0": true
+      },
+      "mann_whitney_u": {
+        "a2c_greater_than_ppo": {
+          "u": 1353.0,
+          "p_value": 0.23990240460084722
+        },
+        "a2c_greater_than_sac": {
+          "u": 2226.0,
+          "p_value": 8.7843693861643e-12
+        },
+        "ppo_greater_than_sac": {
+          "u": 2171.0,
+          "p_value": 1.1066416641990815e-10
+        }
+      },
+      "wilcoxon_signed_rank": {
+        "a2c_greater_than_ppo": {
+          "w": 766.0,
+          "p_value": 0.10933120087929726
+        },
+        "a2c_greater_than_sac": {
+          "w": 1251.0,
+          "p_value": 6.767919558114954e-13
+        },
+        "ppo_greater_than_sac": {
+          "w": 1188.0,
+          "p_value": 1.40654421443287e-09
+        }
+      }
+    },
+    "residual_f2_reference_tests": {
       "kruskal_wallis": {
         "h": 30.593504635761576,
         "p_value": 2.2735519245924768e-07,
@@ -124,20 +261,6 @@
         "a2c_less_than_sac": {
           "u": 852.0,
           "p_value": 0.0030692180123729207
-        }
-      },
-      "wilcoxon_signed_rank": {
-        "ppo_less_than_sac": {
-          "w": 258.0,
-          "p_value": 7.451807177627501e-05
-        },
-        "ppo_less_than_a2c": {
-          "w": 385.0,
-          "p_value": 0.00703926736624183
-        },
-        "a2c_less_than_sac": {
-          "w": 336.0,
-          "p_value": 0.0015496299801922575
         }
       }
     }

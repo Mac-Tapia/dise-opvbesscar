@@ -5,13 +5,13 @@
 
 ## OE3 - Control RL
 
-El resultado vigente de seleccion de agente es **PPO**. SAC fue reentrenado en v8.2 con
-`VecNormalize` el 2026-05-30/31, pero no supera el F2 de PPO/A2C. Los documentos antiguos que
-indicaban SAC o A2C como ganador son historicos y no deben usarse para reportes nuevos.
+El resultado vigente de seleccion de agente es **A2C** bajo el score multiobjetivo acumulado de
+50 episodios. SAC fue reentrenado en v8.2 con `VecNormalize` el 2026-05-30/31, pero no supera a A2C
+en CO2 total evitado, grid import, carga EV, BESS ni deuda/violaciones.
 
 | Prioridad | Documento | Uso |
 |---:|---|---|
-| 1 | `reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md` | Informe principal de comparativa SAC/PPO/A2C y seleccion PPO |
+| 1 | `reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md` | Informe principal de comparativa SAC/PPO/A2C y seleccion A2C |
 | 2 | `reports/oe3/agents_comparison_canonical.json` | Fuente estructurada para consultas desde otros agentes |
 | 3 | `reports/oe3/agents_comparison_canonical.csv` | Tabla comparativa para hojas de calculo/reportes |
 | 4 | `reports/oe3/AUDITORIA_FUENTES_CHECKPOINTS_OE3.md` | Auditoria de checkpoints finales y resultados guardados vigentes |
@@ -23,15 +23,14 @@ indicaban SAC o A2C como ganador son historicos y no deben usarse para reportes 
 
 Resumen vigente:
 
-| Rank | Agente | F2 minimo (kg CO2/año) | Episodio | Reduccion vs F0 |
-|---:|---|---:|---:|---:|
-| 1 | **PPO** | **3,657,484** | **49** | **48.15%** |
-| 2 | A2C | 3,659,010 | 45 | 48.13% |
-| 3 | SAC v8.2 | 3,693,084 | 17 | 47.65% |
+| Rank | Agente | Criterios liderados | CO2 total evitado kg | Grid import kWh | EV total kWh | Deuda/violaciones |
+|---:|---|---:|---:|---:|---:|---:|
+| 1 | **A2C** | **9/9** | **122,980,987** | **368,798,317** | **13,285,495** | **811** |
+| 2 | PPO | 0/9 | 122,688,120 | 370,717,132 | 12,917,765 | 2,333 |
+| 3 | SAC v8.2 | 0/9 | 121,316,857 | 370,440,348 | 12,840,008 | 1,385 |
 
-Lectura complementaria desde `trace`: por CO2 evitado total directo + indirecto, A2C lidera
-con 2,523,717 kg CO2/año evitados en el episodio trace 19. Esta lectura no reemplaza el criterio
-canonico F2, donde PPO sigue siendo el agente seleccionado por menor CO2 indirecto emitido.
+Lectura complementaria: PPO conserva el menor F2 puntual con 3,657,484 kg CO2/año en el episodio 49,
+pero no reemplaza el criterio multiobjetivo acumulado.
 
 ## OE2 - Dimensionamiento
 

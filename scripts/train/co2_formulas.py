@@ -9,9 +9,10 @@ current source of truth for agent selection is:
 
   reports/oe3/agents_comparison_canonical.json
 
-Canonical OE3 result as of 2026-05-31: PPO selected, F2 minimum
-3,657,484 kg CO2/year in episode 49. SAC v8.2 was retrained with VecNormalize
-and remains third at 3,693,084 kg CO2/year.
+Canonical OE3 result as of 2026-05-31: A2C selected by the 50-episode
+multiobjective score. A2C leads 9/9 criteria with 122,980,987 kg CO2 avoided,
+lowest grid import, highest EV charge, highest useful BESS discharge and lowest
+charge debt/violations. PPO keeps the lowest point F2 as a complementary metric.
 """
 
 from dataclasses import dataclass

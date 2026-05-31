@@ -19,16 +19,18 @@ def main() -> None:
     print(f"  Fecha:  {data['metadata']['updated_at']}")
     print(f"  Criterio principal: {data['metadata']['selection_criterion']}")
     print()
-    print(f"  {'Rank':>4}  {'Agente':<6} {'F2 minimo':>14} {'Ep':>4} {'F2 media':>14} {'Red. F0':>9} {'CV':>8}")
-    print("  " + "-" * 70)
+    print(
+        f"  {'Rank':>4}  {'Agente':<6} {'CO2 evitado 50ep':>18} "
+        f"{'Prom/ep':>14} {'F2 minimo':>14} {'CV':>8}"
+    )
+    print("  " + "-" * 82)
     for agent, metrics in agents:
         selected = " *" if metrics["selected"] else ""
         print(
             f"  {metrics['rank']:>4}  {agent + selected:<6} "
+            f"{metrics['co2_total_avoided_sum_50_kg']:>18,.0f} "
+            f"{metrics['co2_total_avoided_mean_kg_per_episode']:>14,.0f} "
             f"{metrics['f2_min_kg_per_year']:>14,.0f} "
-            f"{metrics['best_episode']:>4} "
-            f"{metrics['f2_mean_kg_per_year']:>14,.0f} "
-            f"{metrics['co2_reduction_vs_f0_pct']:>8.2f}% "
             f"{metrics['cv_plateau_pct']:>7.3f}%"
         )
 

@@ -36,15 +36,15 @@
     </section>
     <section>
       <h2>OE3 - Seleccion de agente RL</h2>
-      <p>El criterio principal es minimizar F2 anual. La normalidad guia la inferencia estadistica, no la decision operacional.</p>
+      <p>El criterio principal es el score multiobjetivo acumulado de 50 episodios. F2 queda como lectura complementaria.</p>
       <table>
         <thead>
-          <tr><th>Rank</th><th>Agente</th><th>F2 minimo (kg CO2/año)</th><th>Episodio</th><th>F2 media</th><th>Reduccion vs F0</th></tr>
+          <tr><th>Rank</th><th>Agente</th><th>Criterios liderados</th><th>CO2 total evitado</th><th>Grid import</th><th>EV total</th></tr>
         </thead>
         <tbody>
-          <tr class="win"><td>1</td><td><strong>PPO</strong></td><td><strong>3,657,484</strong></td><td>49</td><td>3,695,605</td><td><strong>48.15%</strong></td></tr>
-          <tr><td>2</td><td>A2C</td><td>3,659,010</td><td>45</td><td>3,699,834</td><td>48.13%</td></tr>
-          <tr><td>3</td><td>SAC v8.2</td><td>3,693,084</td><td>17</td><td>3,711,823</td><td>47.65%</td></tr>
+          <tr class="win"><td>1</td><td><strong>A2C</strong></td><td><strong>9/9</strong></td><td><strong>122,980,987 kg</strong></td><td><strong>368,798,317 kWh</strong></td><td><strong>13,285,495 kWh</strong></td></tr>
+          <tr><td>2</td><td>PPO</td><td>0/9</td><td>122,688,120 kg</td><td>370,717,132 kWh</td><td>12,917,765 kWh</td></tr>
+          <tr><td>3</td><td>SAC v8.2</td><td>0/9</td><td>121,316,857 kg</td><td>370,440,348 kWh</td><td>12,840,008 kWh</td></tr>
         </tbody>
       </table>
     </section>

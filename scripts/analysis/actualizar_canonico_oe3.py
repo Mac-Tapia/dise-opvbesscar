@@ -78,6 +78,16 @@ def cv_plateau(series: np.ndarray, window: int = 15) -> float:
 
 def agent_metrics(agent: str, result: dict, history: pd.DataFrame) -> dict:
     f2 = history["co2_control_kg"].astype(float).to_numpy()
+    direct_avoided = history["co2_directa_kg"].astype(float).to_numpy()
+    indirect_avoided = history["co2_indirecta_kg"].astype(float).to_numpy()
+    total_avoided = direct_avoided + indirect_avoided
+    f0_reduction = F0_REFERENCE_KG - f2
+    grid_import = history["grid_import_kwh"].astype(float).to_numpy()
+    ev_motos = history["ev_motos_kwh"].astype(float).to_numpy()
+    ev_mototaxis = history["ev_mototaxis_kwh"].astype(float).to_numpy()
+    ev_total = ev_motos + ev_mototaxis
+    bess_discharge = history["bess_discharge_kwh"].astype(float).to_numpy()
+    debt_violations = history["debt_violations"].astype(float).to_numpy()
     best_idx = int(np.argmin(f2))
     best_row = history.iloc[best_idx]
     f2_min = float(best_row["co2_control_kg"])
@@ -92,6 +102,21 @@ def agent_metrics(agent: str, result: dict, history: pd.DataFrame) -> dict:
         "f2_sigma_kg_per_year": int(round(float(np.std(f2, ddof=0)))),
         "co2_reduction_vs_f0_pct": round((F0_REFERENCE_KG - f2_min) / F0_REFERENCE_KG * 100, 2),
         "co2_avoided_vs_f0_kg_per_year": int(round(F0_REFERENCE_KG - f2_min)),
+        "co2_total_avoided_sum_50_kg": int(round(float(np.sum(total_avoided)))),
+        "co2_total_avoided_mean_kg_per_episode": int(round(float(np.mean(total_avoided)))),
+        "co2_direct_avoided_sum_50_kg": int(round(float(np.sum(direct_avoided)))),
+        "co2_indirect_avoided_sum_50_kg": int(round(float(np.sum(indirect_avoided)))),
+        "co2_reduction_vs_f0_sum_50_kg": int(round(float(np.sum(f0_reduction)))),
+        "co2_reduction_vs_f0_mean_kg_per_episode": int(round(float(np.mean(f0_reduction)))),
+        "grid_import_sum_50_kwh": int(round(float(np.sum(grid_import)))),
+        "grid_import_mean_kwh_per_episode": int(round(float(np.mean(grid_import)))),
+        "ev_motos_sum_50_kwh": int(round(float(np.sum(ev_motos)))),
+        "ev_mototaxis_sum_50_kwh": int(round(float(np.sum(ev_mototaxis)))),
+        "ev_total_sum_50_kwh": int(round(float(np.sum(ev_total)))),
+        "bess_discharge_sum_50_kwh": int(round(float(np.sum(bess_discharge)))),
+        "debt_violations_sum_50": int(round(float(np.sum(debt_violations)))),
+        "multiobjective_wins_50": 0,
+        "multiobjective_criteria_total": 0,
         "cv_plateau_pct": round(cv_plateau(f2), 3),
         "validation_mean_reward": float(validation.get("mean_reward", np.nan)),
         "validation_mean_co2_avoided_kg": float(validation.get("mean_co2_avoided_kg", np.nan)),
@@ -107,27 +132,37 @@ def parse_run_date(result: dict) -> str:
     return RUN_DATE
 
 
-def build_statistics(series: dict[str, np.ndarray]) -> dict:
+def build_statistics(
+    f2_series: dict[str, np.ndarray],
+    avoided_series: dict[str, np.ndarray],
+) -> dict:
     normality = {}
     for agent in AGENTS:
-        w, p_value = stats.shapiro(series[agent])
+        w, p_value = stats.shapiro(avoided_series[agent])
         normality[agent] = {
             "w": float(w),
             "p_value": float(p_value),
             "normal": bool(p_value >= 0.05),
         }
 
-    h, kw_p = stats.kruskal(series["SAC"], series["PPO"], series["A2C"])
+    h, kw_p = stats.kruskal(avoided_series["SAC"], avoided_series["PPO"], avoided_series["A2C"])
 
     def mann(a: str, b: str) -> dict:
-        u, p_value = stats.mannwhitneyu(series[a], series[b], alternative="less")
+        u, p_value = stats.mannwhitneyu(avoided_series[a], avoided_series[b], alternative="greater")
         return {"u": float(u), "p_value": float(p_value)}
 
     def wilcoxon(a: str, b: str) -> dict:
-        w, p_value = stats.wilcoxon(series[a], series[b], alternative="less")
+        w, p_value = stats.wilcoxon(avoided_series[a], avoided_series[b], alternative="greater")
         return {"w": float(w), "p_value": float(p_value)}
 
+    f2_h, f2_kw_p = stats.kruskal(f2_series["SAC"], f2_series["PPO"], f2_series["A2C"])
+
+    def f2_mann_less(a: str, b: str) -> dict:
+        u, p_value = stats.mannwhitneyu(f2_series[a], f2_series[b], alternative="less")
+        return {"u": float(u), "p_value": float(p_value)}
+
     return {
+        "selection_metric": "co2_total_avoided_kg_per_episode",
         "normality": {
             "test": "Shapiro-Wilk",
             "alpha": 0.05,
@@ -140,14 +175,26 @@ def build_statistics(series: dict[str, np.ndarray]) -> dict:
                 "reject_h0": bool(kw_p < 0.05),
             },
             "mann_whitney_u": {
-                "ppo_less_than_sac": mann("PPO", "SAC"),
-                "ppo_less_than_a2c": mann("PPO", "A2C"),
-                "a2c_less_than_sac": mann("A2C", "SAC"),
+                "a2c_greater_than_ppo": mann("A2C", "PPO"),
+                "a2c_greater_than_sac": mann("A2C", "SAC"),
+                "ppo_greater_than_sac": mann("PPO", "SAC"),
             },
             "wilcoxon_signed_rank": {
-                "ppo_less_than_sac": wilcoxon("PPO", "SAC"),
-                "ppo_less_than_a2c": wilcoxon("PPO", "A2C"),
-                "a2c_less_than_sac": wilcoxon("A2C", "SAC"),
+                "a2c_greater_than_ppo": wilcoxon("A2C", "PPO"),
+                "a2c_greater_than_sac": wilcoxon("A2C", "SAC"),
+                "ppo_greater_than_sac": wilcoxon("PPO", "SAC"),
+            },
+        },
+        "residual_f2_reference_tests": {
+            "kruskal_wallis": {
+                "h": float(f2_h),
+                "p_value": float(f2_kw_p),
+                "reject_h0": bool(f2_kw_p < 0.05),
+            },
+            "mann_whitney_u": {
+                "ppo_less_than_sac": f2_mann_less("PPO", "SAC"),
+                "ppo_less_than_a2c": f2_mann_less("PPO", "A2C"),
+                "a2c_less_than_sac": f2_mann_less("A2C", "SAC"),
             },
         },
     }
@@ -173,6 +220,19 @@ def write_csv(payload: dict) -> None:
                 "best_episode": m["best_episode"],
                 "f2_mean_kg_per_year": m["f2_mean_kg_per_year"],
                 "f2_sigma_kg_per_year": m["f2_sigma_kg_per_year"],
+                "co2_total_avoided_sum_50_kg": m["co2_total_avoided_sum_50_kg"],
+                "co2_total_avoided_mean_kg_per_episode": m["co2_total_avoided_mean_kg_per_episode"],
+                "co2_direct_avoided_sum_50_kg": m["co2_direct_avoided_sum_50_kg"],
+                "co2_indirect_avoided_sum_50_kg": m["co2_indirect_avoided_sum_50_kg"],
+                "co2_reduction_vs_f0_sum_50_kg": m["co2_reduction_vs_f0_sum_50_kg"],
+                "grid_import_sum_50_kwh": m["grid_import_sum_50_kwh"],
+                "ev_motos_sum_50_kwh": m["ev_motos_sum_50_kwh"],
+                "ev_mototaxis_sum_50_kwh": m["ev_mototaxis_sum_50_kwh"],
+                "ev_total_sum_50_kwh": m["ev_total_sum_50_kwh"],
+                "bess_discharge_sum_50_kwh": m["bess_discharge_sum_50_kwh"],
+                "debt_violations_sum_50": m["debt_violations_sum_50"],
+                "multiobjective_wins_50": m["multiobjective_wins_50"],
+                "multiobjective_criteria_total": m["multiobjective_criteria_total"],
                 "co2_reduction_vs_f0_pct": m["co2_reduction_vs_f0_pct"],
                 "co2_avoided_vs_f0_kg_per_year": m["co2_avoided_vs_f0_kg_per_year"],
                 "cv_plateau_pct": m["cv_plateau_pct"],
@@ -242,58 +302,85 @@ def write_md(payload: dict) -> None:
     md.append("## Criterio de seleccion")
     md.append("")
     md.append(
-        "El criterio principal de OE3 es minimizar `F2` anual (`kg CO2/año`) porque representa "
-        "las emisiones con solar + BESS + control RL. Menor `F2` implica mejor resultado "
-        "ambiental operativo."
+        "El criterio principal actualizado de OE3 es un **score multiobjetivo de 50 episodios**. "
+        "Se cuentan los liderazgos por criterio: mayor CO2 total evitado, menor importacion de red, "
+        "mayor CO2 directo evitado, mayor CO2 indirecto evitado, mayor carga de motos/mototaxis, "
+        "mayor uso util de BESS y menor deuda/violaciones de carga."
     )
     md.append("")
     md.append(
-        "La prueba de normalidad no se usa para elegir el agente. Se usa para decidir el tipo "
-        "de inferencia: Shapiro-Wilk rechaza normalidad en las tres series, por lo que se usan "
-        "pruebas no parametricas (Kruskal-Wallis, Mann-Whitney U y Wilcoxon signed-rank)."
+        "`F2` se mantiene como lectura complementaria de CO2 residual minimo, pero no reemplaza "
+        "la seleccion multiobjetivo. La prueba de normalidad solo decide el tipo de inferencia; "
+        "no elige el agente."
     )
     md.append("")
     md.append("## Tabla comparativa")
     md.append("")
     md.append(
-        "| Rank | Agente | F2 minimo (kg CO2/año) | Episodio optimo | F2 media (kg/año) | "
-        "Sigma (kg/año) | CO2 evitado vs F0 (kg/año) | Reduccion vs F0 | CV plateau | "
-        "Reward validacion | Grid import validacion (kWh) |"
+        "| Rank | Agente | Criterios liderados | CO2 total evitado 50 ep (kg) | "
+        "Grid import 50 ep (kWh) | CO2 directo 50 ep (kg) | CO2 indirecto 50 ep (kg) | "
+        "Motos 50 ep (kWh) | Mototaxis 50 ep (kWh) | BESS descarga 50 ep (kWh) | "
+        "Deuda/violaciones | F2 minimo (kg/año) |"
     )
-    md.append("|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
+    md.append("|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
     for agent in ranking:
         m = payload["agents"][agent]
         name = f"**{agent}**" if m["selected"] else agent
         b = "**" if m["selected"] else ""
         md.append(
-            f"| {m['rank']} | {name} | {b}{fmt_int(m['f2_min_kg_per_year'])}{b} | "
-            f"{b}{m['best_episode']}{b} | {fmt_int(m['f2_mean_kg_per_year'])} | "
-            f"{fmt_int(m['f2_sigma_kg_per_year'])} | {b}{fmt_int(m['co2_avoided_vs_f0_kg_per_year'])}{b} | "
-            f"{b}{m['co2_reduction_vs_f0_pct']:.2f}%{b} | "
-            f"{b}{m['cv_plateau_pct']:.3f}%{b} | "
-            f"{m['validation_mean_reward']:,.2f} | {m['validation_mean_grid_import_kwh']:,.2f} |"
+            f"| {m['rank']} | {name} | {b}{m['multiobjective_wins_50']}/{m['multiobjective_criteria_total']}{b} | "
+            f"{b}{fmt_int(m['co2_total_avoided_sum_50_kg'])}{b} | "
+            f"{fmt_int(m['grid_import_sum_50_kwh'])} | "
+            f"{fmt_int(m['co2_direct_avoided_sum_50_kg'])} | "
+            f"{fmt_int(m['co2_indirect_avoided_sum_50_kg'])} | "
+            f"{fmt_int(m['ev_motos_sum_50_kwh'])} | "
+            f"{fmt_int(m['ev_mototaxis_sum_50_kwh'])} | "
+            f"{fmt_int(m['bess_discharge_sum_50_kwh'])} | "
+            f"{fmt_int(m['debt_violations_sum_50'])} | "
+            f"{fmt_int(m['f2_min_kg_per_year'])} |"
         )
     md.append("")
     md.append(f"## Por que {selected} gana")
     md.append("")
     md.append(
-        f"{selected} tiene el menor `F2` anual: **{fmt_int(selected_metrics['f2_min_kg_per_year'])} "
-        f"kg CO2/año** en el episodio {selected_metrics['best_episode']}."
+        f"{selected} lidera **{selected_metrics['multiobjective_wins_50']}/"
+        f"{selected_metrics['multiobjective_criteria_total']} criterios** del score multiobjetivo. "
+        f"Tambien tiene la mayor reduccion acumulada directa + indirecta en 50 episodios: "
+        f"**{fmt_int(selected_metrics['co2_total_avoided_sum_50_kg'])} kg CO2**."
     )
     for agent in ranking:
         if agent == selected:
             continue
-        diff = payload["agents"][agent]["f2_min_kg_per_year"] - selected_metrics["f2_min_kg_per_year"]
+        diff = selected_metrics["co2_total_avoided_sum_50_kg"] - payload["agents"][agent]["co2_total_avoided_sum_50_kg"]
         md.append(
-            f"{agent} queda con **{fmt_int(abs(diff))} kg CO2/año** mas que {selected} "
-            "bajo el criterio canonico de minimizacion de emisiones."
+            f"{agent} reduce **{fmt_int(diff)} kg CO2** menos que {selected} "
+            "en el acumulado de 50 episodios."
+        )
+    md.append("")
+    md.append("Criterios liderados:")
+    md.append("")
+    md.append("| Criterio | Direccion | Ganador | Valor |")
+    md.append("|---|---|---|---:|")
+    for criterion in payload["multiobjective_criteria"]:
+        m = payload["agents"][criterion["winner"]]
+        value = m[criterion["key"]]
+        direction = "mayor" if criterion["mode"] == "max" else "menor"
+        md.append(
+            f"| {criterion['label']} | {direction} | {criterion['winner']} | {fmt_int(value)} |"
         )
     md.append("")
     sac = payload["agents"]["SAC"]
     md.append(
         "SAC v8.2 mejoro despues de activar `VecNormalize` y ajustar hiperparametros, "
-        f"pero su mejor `F2` actual es **{fmt_int(sac['f2_min_kg_per_year'])} kg CO2/año** "
-        f"en el episodio {sac['best_episode']}; por eso no supera a PPO/A2C en la seleccion canonica."
+        f"pero su reduccion acumulada es **{fmt_int(sac['co2_total_avoided_sum_50_kg'])} kg CO2**, "
+        f"por debajo de {selected}."
+    )
+    md.append("")
+    md.append(
+        f"Lectura complementaria: PPO conserva el menor `F2` residual puntual "
+        f"(**{fmt_int(payload['agents']['PPO']['f2_min_kg_per_year'])} kg CO2/año**, ep"
+        f"{payload['agents']['PPO']['best_episode']}), pero ese no es el criterio principal "
+        "actualizado."
     )
     md.append("")
     if trace:
@@ -320,6 +407,8 @@ def write_md(payload: dict) -> None:
     stats_payload = payload["statistics"]
     md.append("## Inferencia estadistica")
     md.append("")
+    md.append("Las pruebas se aplican sobre la serie por episodio de `co2_directa_kg + co2_indirecta_kg`.")
+    md.append("")
     md.append("| Prueba | Resultado | Interpretacion |")
     md.append("|---|---:|---|")
     for agent in ("SAC", "PPO", "A2C"):
@@ -332,17 +421,30 @@ def write_md(payload: dict) -> None:
     md.append(f"| Kruskal-Wallis | H={kw['h']:.6f}, p={kw['p_value']:.3e} | Hay diferencias entre agentes |")
     mw = stats_payload["non_parametric_tests"]["mann_whitney_u"]
     md.append(
-        f"| Mann-Whitney U PPO < SAC | U={mw['ppo_less_than_sac']['u']:.0f}, "
-        f"p={mw['ppo_less_than_sac']['p_value']:.3e} | PPO emite menos que SAC |"
+        f"| Mann-Whitney U A2C > PPO | U={mw['a2c_greater_than_ppo']['u']:.0f}, "
+        f"p={mw['a2c_greater_than_ppo']['p_value']:.3e} | A2C reduce mas que PPO |"
     )
     md.append(
-        f"| Mann-Whitney U PPO < A2C | U={mw['ppo_less_than_a2c']['u']:.0f}, "
-        f"p={mw['ppo_less_than_a2c']['p_value']:.3e} | PPO se compara contra A2C |"
+        f"| Mann-Whitney U A2C > SAC | U={mw['a2c_greater_than_sac']['u']:.0f}, "
+        f"p={mw['a2c_greater_than_sac']['p_value']:.3e} | A2C reduce mas que SAC |"
+    )
+    md.append(
+        f"| Mann-Whitney U PPO > SAC | U={mw['ppo_greater_than_sac']['u']:.0f}, "
+        f"p={mw['ppo_greater_than_sac']['p_value']:.3e} | PPO reduce mas que SAC |"
     )
     wx = stats_payload["non_parametric_tests"]["wilcoxon_signed_rank"]
     md.append(
-        f"| Wilcoxon PPO < A2C | W={wx['ppo_less_than_a2c']['w']:.0f}, "
-        f"p={wx['ppo_less_than_a2c']['p_value']:.3e} | Comparacion pareada PPO/A2C |"
+        f"| Wilcoxon A2C > PPO | W={wx['a2c_greater_than_ppo']['w']:.0f}, "
+        f"p={wx['a2c_greater_than_ppo']['p_value']:.3e} | Comparacion pareada A2C/PPO |"
+    )
+    md.append(
+        f"| Wilcoxon A2C > SAC | W={wx['a2c_greater_than_sac']['w']:.0f}, "
+        f"p={wx['a2c_greater_than_sac']['p_value']:.3e} | Comparacion pareada A2C/SAC |"
+    )
+    f2_tests = stats_payload["residual_f2_reference_tests"]
+    md.append(
+        f"| F2 residual Kruskal-Wallis | H={f2_tests['kruskal_wallis']['h']:.6f}, "
+        f"p={f2_tests['kruskal_wallis']['p_value']:.3e} | Referencia complementaria de CO2 residual |"
     )
     md.append("")
     md.append("## Archivos obsoletos")
@@ -362,8 +464,15 @@ def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     loaded = {agent: load_agent(agent) for agent in AGENTS}
-    series = {
+    f2_series = {
         agent: history["co2_control_kg"].astype(float).to_numpy()
+        for agent, (_, history, _) in loaded.items()
+    }
+    avoided_series = {
+        agent: (
+            history["co2_directa_kg"].astype(float).to_numpy()
+            + history["co2_indirecta_kg"].astype(float).to_numpy()
+        )
         for agent, (_, history, _) in loaded.items()
     }
     metrics = {
@@ -371,18 +480,52 @@ def main() -> None:
         for agent, (result, history, _) in loaded.items()
     }
 
-    ranking = sorted(AGENTS, key=lambda agent: metrics[agent]["f2_min_kg_per_year"])
+    multiobjective_criteria = [
+        {"key": "co2_total_avoided_sum_50_kg", "label": "Mayor CO2 total evitado", "mode": "max"},
+        {"key": "grid_import_sum_50_kwh", "label": "Menor importacion de red", "mode": "min"},
+        {"key": "co2_direct_avoided_sum_50_kg", "label": "Mayor CO2 directo evitado", "mode": "max"},
+        {"key": "co2_indirect_avoided_sum_50_kg", "label": "Mayor CO2 indirecto evitado", "mode": "max"},
+        {"key": "ev_motos_sum_50_kwh", "label": "Mayor carga motos", "mode": "max"},
+        {"key": "ev_mototaxis_sum_50_kwh", "label": "Mayor carga mototaxis", "mode": "max"},
+        {"key": "ev_total_sum_50_kwh", "label": "Mayor carga EV total", "mode": "max"},
+        {"key": "bess_discharge_sum_50_kwh", "label": "Mayor uso util BESS", "mode": "max"},
+        {"key": "debt_violations_sum_50", "label": "Menor deuda/violaciones de carga", "mode": "min"},
+    ]
+    criterion_winners = []
+    for criterion in multiobjective_criteria:
+        key = criterion["key"]
+        if criterion["mode"] == "max":
+            winner = max(AGENTS, key=lambda agent: metrics[agent][key])
+        else:
+            winner = min(AGENTS, key=lambda agent: metrics[agent][key])
+        metrics[winner]["multiobjective_wins_50"] += 1
+        criterion_winners.append({**criterion, "winner": winner})
+
+    for agent in AGENTS:
+        metrics[agent]["multiobjective_criteria_total"] = len(multiobjective_criteria)
+
+    ranking = sorted(
+        AGENTS,
+        key=lambda agent: (
+            metrics[agent]["multiobjective_wins_50"],
+            metrics[agent]["co2_total_avoided_sum_50_kg"],
+        ),
+        reverse=True,
+    )
     selected = ranking[0]
-    selected_f2 = metrics[selected]["f2_min_kg_per_year"]
+    selected_total = metrics[selected]["co2_total_avoided_sum_50_kg"]
     for rank, agent in enumerate(ranking, start=1):
         metrics[agent]["rank"] = rank
         metrics[agent]["selected"] = agent == selected
-        diff = metrics[agent]["f2_min_kg_per_year"] - selected_f2
+        diff = selected_total - metrics[agent]["co2_total_avoided_sum_50_kg"]
         if agent == selected:
-            metrics[agent]["selection_note"] = "Selected because it has the lowest annual F2 emissions."
+            metrics[agent]["selection_note"] = (
+                "Selected because it leads the multiobjective score over 50 episodes."
+            )
         else:
             metrics[agent]["selection_note"] = (
-                f"Not selected; F2 minimum is {diff:,.0f} kg CO2/year higher than {selected}."
+                f"Not selected; wins fewer multiobjective criteria and cumulative total CO2 avoided "
+                f"is {diff:,.0f} kg lower than {selected}."
             )
 
     run_dates = sorted({parse_run_date(result) for result, _, _ in loaded.values()})
@@ -397,7 +540,10 @@ def main() -> None:
             "training_run_date": training_run_date,
             "branch": "smartcharger",
             "selected_agent": selected,
-            "selection_criterion": "Minimize annual F2 emissions (kg CO2/year)",
+            "selection_criterion": (
+                "Multiobjective score over 50 episodes: maximize direct+indirect CO2 avoided, "
+                "minimize grid import and charge debt, maximize EV charging and useful BESS discharge."
+            ),
             "normality_usage": (
                 "Normality tests guide statistical method selection only; they do not replace "
                 "operational ranking metrics."
@@ -430,7 +576,8 @@ def main() -> None:
         },
         "ranking": ranking,
         "agents": metrics,
-        "statistics": build_statistics(series),
+        "multiobjective_criteria": criterion_winners,
+        "statistics": build_statistics(f2_series, avoided_series),
         "deprecated_or_removed": [
             "outputs/docx/INFORME_OE3_SELECCION_AGENTE_RL_v10.docx",
             "outputs/docx/INFORME_OE3_SELECCION_AGENTE_RL_v11.docx",
@@ -449,7 +596,11 @@ def main() -> None:
     print(f"Agente seleccionado: {selected}")
     for agent in ranking:
         m = metrics[agent]
-        print(f"  {agent}: F2={m['f2_min_kg_per_year']:,.0f} kg CO2/año ep{m['best_episode']}")
+        print(
+            f"  {agent}: score={m['multiobjective_wins_50']}/{m['multiobjective_criteria_total']} | "
+            f"CO2 evitado 50 ep={m['co2_total_avoided_sum_50_kg']:,.0f} kg | "
+            f"F2={m['f2_min_kg_per_year']:,.0f} kg CO2/año ep{m['best_episode']}"
+        )
 
 
 if __name__ == "__main__":

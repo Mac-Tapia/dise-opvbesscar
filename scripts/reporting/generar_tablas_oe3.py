@@ -84,11 +84,11 @@ def generate_selection_table(data: dict) -> Path:
     columns = [
         "Rank",
         "Agente",
-        "F2 minimo\nkg CO2/año",
-        "Ep.",
-        "F2 media\nkg CO2/año",
-        "Sigma",
-        "Red. vs F0",
+        "CO2 total evitado\n50 ep kg",
+        "Promedio\nkg/ep",
+        "CO2 directo\n50 ep kg",
+        "CO2 indirecto\n50 ep kg",
+        "F2 minimo\nkg/año",
         "CV plateau",
     ]
     rows = []
@@ -100,11 +100,11 @@ def generate_selection_table(data: dict) -> Path:
             [
                 str(metrics["rank"]),
                 agent,
+                _fmt_int(metrics["co2_total_avoided_sum_50_kg"]),
+                _fmt_int(metrics["co2_total_avoided_mean_kg_per_episode"]),
+                _fmt_int(metrics["co2_direct_avoided_sum_50_kg"]),
+                _fmt_int(metrics["co2_indirect_avoided_sum_50_kg"]),
                 _fmt_int(metrics["f2_min_kg_per_year"]),
-                str(metrics["best_episode"]),
-                _fmt_int(metrics["f2_mean_kg_per_year"]),
-                _fmt_int(metrics["f2_sigma_kg_per_year"]),
-                f"{metrics['co2_reduction_vs_f0_pct']:.2f}%",
                 f"{metrics['cv_plateau_pct']:.3f}%",
             ]
         )
@@ -127,19 +127,19 @@ def generate_co2_summary_table(data: dict) -> Path:
     ppo = data["agents"]["PPO"]
     columns = ["Concepto", "Valor", "Unidad", "Nota"]
     rows = [
-        ["Agente seleccionado", selected_agent, "-", "Menor F2 anual"],
+        ["Agente seleccionado", selected_agent, "-", "Mayor CO2 evitado acumulado"],
         ["F0 referencia", _fmt_int(system["f0_reference_kg_co2_year"]), "kg CO2/año", "Sin solar/BESS/RL"],
-        [f"F2 {selected_agent}", _fmt_int(selected["f2_min_kg_per_year"]), "kg CO2/año", f"Episodio {selected['best_episode']}"],
-        [f"CO2 evitado {selected_agent}", _fmt_int(selected["co2_avoided_vs_f0_kg_per_year"]), "kg CO2/año", f"{selected['co2_reduction_vs_f0_pct']:.2f}% vs F0"],
-        ["Diferencia PPO vs A2C", _fmt_int(a2c["f2_min_kg_per_year"] - ppo["f2_min_kg_per_year"]), "kg CO2/año", "A2C emite mas"],
-        ["Diferencia PPO vs SAC", _fmt_int(sac["f2_min_kg_per_year"] - ppo["f2_min_kg_per_year"]), "kg CO2/año", "SAC emite mas"],
+        [f"CO2 total evitado {selected_agent}", _fmt_int(selected["co2_total_avoided_sum_50_kg"]), "kg CO2/50 ep", "Directo + indirecto"],
+        [f"Promedio evitado {selected_agent}", _fmt_int(selected["co2_total_avoided_mean_kg_per_episode"]), "kg CO2/ep", "Media anual por episodio"],
+        ["F2 PPO vs A2C", _fmt_int(a2c["f2_min_kg_per_year"] - ppo["f2_min_kg_per_year"]), "kg CO2/año", "PPO menor F2 puntual"],
+        ["F2 PPO vs SAC", _fmt_int(sac["f2_min_kg_per_year"] - ppo["f2_min_kg_per_year"]), "kg CO2/año", "PPO menor F2 puntual"],
         ["Solar PV", _fmt_int(system["solar_kwp_dc_pvwatts"]), "kWp DC", "PVWatts/pdc0"],
         ["Solar PV nominal", _fmt_int(system["solar_kwp_nominal_design"]), "kWp", "Diseno OE2"],
         ["BESS", _fmt_int(system["bess_kwh"]), "kWh", "400 kW"],
     ]
     return _save_table(
         "tabla_co2_componentes_ppo_ep49.png",
-        f"OE3 - Resumen CO2 canonico para {selected_agent} episodio {selected['best_episode']}",
+        f"OE3 - Resumen CO2 canonico multiobjetivo para {selected_agent}",
         columns,
         rows,
         selected_row=2,
