@@ -9,7 +9,10 @@
     "selected_agent": "PPO",
     "selection_criterion": "Minimize annual F2 emissions (kg CO2/year)",
     "normality_usage": "Normality tests guide statistical method selection only; they do not replace operational ranking metrics.",
-    "canonical_report": "reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md"
+    "canonical_report": "reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md",
+    "source_audit": "reports/oe3/AUDITORIA_FUENTES_CHECKPOINTS_OE3.md",
+    "operational_report": "reports/oe3/REPORTE_MEJOR_AGENTE_CO2_DIRECTO_INDIRECTO.md",
+    "source_policy": "Use only current final checkpoints in checkpoints/{AGENT}_CityLearn and current outputs/{agent}_training results; exclude archive, archive_previous and archive_v73_obs16."
   },
   "system": {
     "solar_kwp_nominal_design": 4050,

@@ -16,6 +16,8 @@ canonica de mayo de 2026. Para consultas automatizadas de otros agentes, usar:
 
 - [reports/oe3/agents_comparison_canonical.json](reports/oe3/agents_comparison_canonical.json)
 - [reports/oe3/agents_comparison_canonical.csv](reports/oe3/agents_comparison_canonical.csv)
+- [reports/oe3/AUDITORIA_FUENTES_CHECKPOINTS_OE3.md](reports/oe3/AUDITORIA_FUENTES_CHECKPOINTS_OE3.md)
+- [reports/oe3/REPORTE_MEJOR_AGENTE_CO2_DIRECTO_INDIRECTO.md](reports/oe3/REPORTE_MEJOR_AGENTE_CO2_DIRECTO_INDIRECTO.md)
 - [outputs/hypothesis_test/RESULTADOS_HIPOTESIS_CO2_COMPLETO.json](outputs/hypothesis_test/RESULTADOS_HIPOTESIS_CO2_COMPLETO.json)
 
 ## Resultado OE3
@@ -57,6 +59,8 @@ Referencia OE2 vigente: [docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md
 | Informe OE3 actualizado | `reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md` |
 | Datos OE3 para otros agentes | `reports/oe3/agents_comparison_canonical.json` |
 | Tabla OE3 para hojas/calculo | `reports/oe3/agents_comparison_canonical.csv` |
+| Auditoria de fuentes OE3 | `reports/oe3/AUDITORIA_FUENTES_CHECKPOINTS_OE3.md` |
+| Informe CO2 directo/indirecto OE3 | `reports/oe3/REPORTE_MEJOR_AGENTE_CO2_DIRECTO_INDIRECTO.md` |
 | Hipotesis CO2 actualizada | `outputs/hypothesis_test/RESULTADOS_HIPOTESIS_CO2_COMPLETO.json` |
 | Solar OE2 | `data/oe2/Generacionsolar/pv_generation_citylearn2024.csv` |
 | Cargadores OE2 | `data/oe2/chargers/chargers_ev_ano_2024_v3.csv` |

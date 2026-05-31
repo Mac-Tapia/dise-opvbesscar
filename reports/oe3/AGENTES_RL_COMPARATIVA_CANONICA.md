@@ -16,6 +16,20 @@ dataset solar vigente reporta `4,162 kWp DC` como potencia PVWatts/pdc0 y `3,201
 - Fuente versionada para consultas: `reports/oe3/agents_comparison_canonical.json`.
 - Tabla versionada: `reports/oe3/agents_comparison_canonical.csv`.
 - Lectura directa desde traces: `reports/oe3/CO2_DIRECTO_INDIRECTO_TRACE_OE3.md`.
+- Auditoria de fuentes vigentes: `reports/oe3/AUDITORIA_FUENTES_CHECKPOINTS_OE3.md`.
+- Informe operativo CO2/control/convergencia: `reports/oe3/REPORTE_MEJOR_AGENTE_CO2_DIRECTO_INDIRECTO.md`.
+
+## Auditoria de fuentes vigentes
+
+La comparacion usa solo checkpoints finales y resultados guardados actuales:
+
+| Agente | Checkpoint final | Result JSON | Estado |
+|---|---|---|---|
+| SAC | `checkpoints/SAC_CityLearn/sac_final.zip` | `outputs/sac_training/result_sac.json` | vigente/no archive |
+| PPO | `checkpoints/PPO_CityLearn/ppo_final.zip` | `outputs/ppo_training/result_ppo.json` | vigente/no archive |
+| A2C | `checkpoints/A2C_CityLearn/a2c_final.zip` | `outputs/a2c_training/result_a2c.json` | vigente/no archive |
+
+No se usan rutas bajo `archive`, `archive_previous` ni `archive_v73_obs16`.
 
 ## Criterio de seleccion
 

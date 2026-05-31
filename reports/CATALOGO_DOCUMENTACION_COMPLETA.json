@@ -34,6 +34,16 @@
       "descripcion": "Tabla de rankings trace por CO2 directo, indirecto y total evitado"
     },
     {
+      "path": "reports/oe3/AUDITORIA_FUENTES_CHECKPOINTS_OE3.md",
+      "tipo": "auditoria",
+      "descripcion": "Verificacion de checkpoints finales y resultados guardados vigentes"
+    },
+    {
+      "path": "reports/oe3/REPORTE_MEJOR_AGENTE_CO2_DIRECTO_INDIRECTO.md",
+      "tipo": "informe",
+      "descripcion": "Comparacion operativa SAC/PPO/A2C con CO2 directo, indirecto, eficiencia y convergencia"
+    },
+    {
       "path": "docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md",
       "tipo": "reporte",
       "descripcion": "Verificacion OE2 v5.2 actualizada a pipeline v5.8"

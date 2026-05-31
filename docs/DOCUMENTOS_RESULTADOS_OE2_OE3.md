@@ -13,9 +13,11 @@ como ganador son historicos y no deben usarse para reportes nuevos.
 | 1 | `reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md` | Informe principal de comparativa SAC/PPO/A2C y seleccion PPO |
 | 2 | `reports/oe3/agents_comparison_canonical.json` | Fuente estructurada para consultas desde otros agentes |
 | 3 | `reports/oe3/agents_comparison_canonical.csv` | Tabla comparativa para hojas de calculo/reportes |
-| 4 | `reports/oe3/CO2_DIRECTO_INDIRECTO_TRACE_OE3.md` | Reporte trace de CO2 directo e indirecto |
-| 5 | `reports/oe3/co2_trace_direct_indirect_summary.json` | Fuente estructurada del analisis trace CO2 directo/indirecto |
-| 6 | `outputs/hypothesis_test/RESULTADOS_HIPOTESIS_CO2_COMPLETO.json` | Resumen estadistico no parametrico actualizado |
+| 4 | `reports/oe3/AUDITORIA_FUENTES_CHECKPOINTS_OE3.md` | Auditoria de checkpoints finales y resultados guardados vigentes |
+| 5 | `reports/oe3/REPORTE_MEJOR_AGENTE_CO2_DIRECTO_INDIRECTO.md` | Informe operativo CO2 directo/indirecto, eficiencia y convergencia |
+| 6 | `reports/oe3/CO2_DIRECTO_INDIRECTO_TRACE_OE3.md` | Reporte trace de CO2 directo e indirecto |
+| 7 | `reports/oe3/co2_trace_direct_indirect_summary.json` | Fuente estructurada del analisis trace CO2 directo/indirecto |
+| 8 | `outputs/hypothesis_test/RESULTADOS_HIPOTESIS_CO2_COMPLETO.json` | Resumen estadistico no parametrico actualizado |
 
 Resumen vigente:
 
