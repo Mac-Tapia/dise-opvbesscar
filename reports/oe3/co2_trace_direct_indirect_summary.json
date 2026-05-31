@@ -1,0 +1,296 @@
+{
+  "fecha_actualizacion": "2026-05-31",
+  "fuente": "outputs/*_training/trace_*.csv",
+  "metodologia": {
+    "episodio_completo_horas": 8760,
+    "episodios_usados_por_agente": 50,
+    "episodios_parciales": "ignorados",
+    "co2_total_avoided_kg": "co2_avoided_indirect_kg + co2_avoided_direct_kg",
+    "co2_net_trace_balance_kg": "co2_grid_kg - co2_total_avoided_kg"
+  },
+  "quality": {
+    "SAC": {
+      "source": "outputs/sac_training/trace_sac.csv",
+      "rows_total": 438000,
+      "episodes_full": 50,
+      "rows_ignored_partial_episode": 0,
+      "episode_column_unique_values": 50,
+      "episode_reconstruction": "bloques secuenciales de 8760 filas"
+    },
+    "PPO": {
+      "source": "outputs/ppo_training/trace_ppo.csv",
+      "rows_total": 438272,
+      "episodes_full": 50,
+      "rows_ignored_partial_episode": 272,
+      "episode_column_unique_values": 51,
+      "episode_reconstruction": "bloques secuenciales de 8760 filas"
+    },
+    "A2C": {
+      "source": "outputs/a2c_training/trace_a2c.csv",
+      "rows_total": 438272,
+      "episodes_full": 50,
+      "rows_ignored_partial_episode": 272,
+      "episode_column_unique_values": 1,
+      "episode_reconstruction": "bloques secuenciales de 8760 filas"
+    }
+  },
+  "seleccion_por_reduccion_total_directa_indirecta": {
+    "criterion": "max_total_avoided",
+    "agent": "A2C",
+    "episode_trace": 2,
+    "co2_indirect_emitted_kg": 3642435.831558771,
+    "co2_indirect_avoided_kg": 2356240.9786658525,
+    "co2_direct_avoided_kg": 163607.31500748862,
+    "co2_total_avoided_kg": 2519848.293673341,
+    "co2_net_trace_balance_kg": 1122587.5378854298,
+    "grid_import_kwh": 7336663.2865328165,
+    "ev_charging_kwh": 194046.56821048737,
+    "solar_generation_kwh": 5819332.392967329
+  },
+  "seleccion_por_menor_emision_indirecta": {
+    "criterion": "min_indirect_emitted",
+    "agent": "A2C",
+    "episode_trace": 2,
+    "co2_indirect_emitted_kg": 3642435.831558771,
+    "co2_indirect_avoided_kg": 2356240.9786658525,
+    "co2_direct_avoided_kg": 163607.31500748862,
+    "co2_total_avoided_kg": 2519848.293673341,
+    "co2_net_trace_balance_kg": 1122587.5378854298,
+    "grid_import_kwh": 7336663.2865328165,
+    "ev_charging_kwh": 194046.56821048737,
+    "solar_generation_kwh": 5819332.392967329
+  },
+  "seleccion_por_mayor_reduccion_directa": {
+    "criterion": "max_direct_avoided",
+    "agent": "A2C",
+    "episode_trace": 39,
+    "co2_indirect_emitted_kg": 3674518.5700509357,
+    "co2_indirect_avoided_kg": 2230353.578643507,
+    "co2_direct_avoided_kg": 226635.15282110884,
+    "co2_total_avoided_kg": 2456988.7314646156,
+    "co2_net_trace_balance_kg": 1217529.8385863202,
+    "grid_import_kwh": 7372825.978340724,
+    "ev_charging_kwh": 276314.47895753867,
+    "solar_generation_kwh": 5820577.72896045
+  },
+  "seleccion_por_mayor_reduccion_indirecta": {
+    "criterion": "max_indirect_avoided",
+    "agent": "PPO",
+    "episode_trace": 1,
+    "co2_indirect_emitted_kg": 3843765.469943098,
+    "co2_indirect_avoided_kg": 2367896.871635362,
+    "co2_direct_avoided_kg": 75885.71143079917,
+    "co2_total_avoided_kg": 2443782.5830661613,
+    "co2_net_trace_balance_kg": 1399982.8868769365,
+    "grid_import_kwh": 7641032.770209543,
+    "ev_charging_kwh": 92291.76245543668,
+    "solar_generation_kwh": 5819332.392967329
+  },
+  "rankings": {
+    "total_avoided_direct_plus_indirect": [
+      {
+        "criterion": "max_total_avoided",
+        "agent": "A2C",
+        "episode_trace": 2,
+        "co2_indirect_emitted_kg": 3642435.831558771,
+        "co2_indirect_avoided_kg": 2356240.9786658525,
+        "co2_direct_avoided_kg": 163607.31500748862,
+        "co2_total_avoided_kg": 2519848.293673341,
+        "co2_net_trace_balance_kg": 1122587.5378854298,
+        "grid_import_kwh": 7336663.2865328165,
+        "ev_charging_kwh": 194046.56821048737,
+        "solar_generation_kwh": 5819332.392967329
+      },
+      {
+        "criterion": "max_total_avoided",
+        "agent": "PPO",
+        "episode_trace": 10,
+        "co2_indirect_emitted_kg": 3692268.453514471,
+        "co2_indirect_avoided_kg": 2262754.5454187794,
+        "co2_direct_avoided_kg": 219432.78350106007,
+        "co2_total_avoided_kg": 2482187.3289198396,
+        "co2_net_trace_balance_kg": 1210081.1245946316,
+        "grid_import_kwh": 7381609.417101946,
+        "ev_charging_kwh": 265670.6676606658,
+        "solar_generation_kwh": 5820822.270849769
+      },
+      {
+        "criterion": "max_total_avoided",
+        "agent": "SAC",
+        "episode_trace": 5,
+        "co2_indirect_emitted_kg": 3714661.750324933,
+        "co2_indirect_avoided_kg": 2228643.541293688,
+        "co2_direct_avoided_kg": 211072.53100294777,
+        "co2_total_avoided_kg": 2439716.0722966357,
+        "co2_net_trace_balance_kg": 1274945.6780282971,
+        "grid_import_kwh": 7433324.563125663,
+        "ev_charging_kwh": 256082.8111736538,
+        "solar_generation_kwh": 5819332.392967329
+      }
+    ],
+    "direct_avoided": [
+      {
+        "criterion": "max_direct_avoided",
+        "agent": "A2C",
+        "episode_trace": 39,
+        "co2_indirect_emitted_kg": 3674518.5700509357,
+        "co2_indirect_avoided_kg": 2230353.578643507,
+        "co2_direct_avoided_kg": 226635.15282110884,
+        "co2_total_avoided_kg": 2456988.7314646156,
+        "co2_net_trace_balance_kg": 1217529.8385863202,
+        "grid_import_kwh": 7372825.978340724,
+        "ev_charging_kwh": 276314.47895753867,
+        "solar_generation_kwh": 5820577.72896045
+      },
+      {
+        "criterion": "max_direct_avoided",
+        "agent": "PPO",
+        "episode_trace": 35,
+        "co2_indirect_emitted_kg": 3664527.4884652505,
+        "co2_indirect_avoided_kg": 2239733.789280508,
+        "co2_direct_avoided_kg": 225617.42158500158,
+        "co2_total_avoided_kg": 2465351.2108655097,
+        "co2_net_trace_balance_kg": 1199176.2775997408,
+        "grid_import_kwh": 7370542.22560153,
+        "ev_charging_kwh": 275424.7676952136,
+        "solar_generation_kwh": 5821168.45518857
+      },
+      {
+        "criterion": "max_direct_avoided",
+        "agent": "SAC",
+        "episode_trace": 21,
+        "co2_indirect_emitted_kg": 3704240.676888644,
+        "co2_indirect_avoided_kg": 2205438.793888427,
+        "co2_direct_avoided_kg": 220434.89691880546,
+        "co2_total_avoided_kg": 2425873.690807232,
+        "co2_net_trace_balance_kg": 1278366.986081412,
+        "grid_import_kwh": 7387403.604834336,
+        "ev_charging_kwh": 267626.53449473844,
+        "solar_generation_kwh": 5819332.392967329
+      }
+    ],
+    "indirect_avoided": [
+      {
+        "criterion": "max_indirect_avoided",
+        "agent": "PPO",
+        "episode_trace": 1,
+        "co2_indirect_emitted_kg": 3843765.469943098,
+        "co2_indirect_avoided_kg": 2367896.871635362,
+        "co2_direct_avoided_kg": 75885.71143079917,
+        "co2_total_avoided_kg": 2443782.5830661613,
+        "co2_net_trace_balance_kg": 1399982.8868769365,
+        "grid_import_kwh": 7641032.770209543,
+        "ev_charging_kwh": 92291.76245543668,
+        "solar_generation_kwh": 5819332.392967329
+      },
+      {
+        "criterion": "max_indirect_avoided",
+        "agent": "A2C",
+        "episode_trace": 2,
+        "co2_indirect_emitted_kg": 3642435.831558771,
+        "co2_indirect_avoided_kg": 2356240.9786658525,
+        "co2_direct_avoided_kg": 163607.31500748862,
+        "co2_total_avoided_kg": 2519848.293673341,
+        "co2_net_trace_balance_kg": 1122587.5378854298,
+        "grid_import_kwh": 7336663.2865328165,
+        "ev_charging_kwh": 194046.56821048737,
+        "solar_generation_kwh": 5819332.392967329
+      },
+      {
+        "criterion": "max_indirect_avoided",
+        "agent": "SAC",
+        "episode_trace": 1,
+        "co2_indirect_emitted_kg": 3873658.325380992,
+        "co2_indirect_avoided_kg": 2287541.6684630276,
+        "co2_direct_avoided_kg": 112692.0706721965,
+        "co2_total_avoided_kg": 2400233.739135224,
+        "co2_net_trace_balance_kg": 1473424.5862457682,
+        "grid_import_kwh": 7701151.7452646345,
+        "ev_charging_kwh": 137389.01093591208,
+        "solar_generation_kwh": 5819332.392967329
+      }
+    ],
+    "indirect_emitted_min": [
+      {
+        "criterion": "min_indirect_emitted",
+        "agent": "A2C",
+        "episode_trace": 2,
+        "co2_indirect_emitted_kg": 3642435.831558771,
+        "co2_indirect_avoided_kg": 2356240.9786658525,
+        "co2_direct_avoided_kg": 163607.31500748862,
+        "co2_total_avoided_kg": 2519848.293673341,
+        "co2_net_trace_balance_kg": 1122587.5378854298,
+        "grid_import_kwh": 7336663.2865328165,
+        "ev_charging_kwh": 194046.56821048737,
+        "solar_generation_kwh": 5819332.392967329
+      },
+      {
+        "criterion": "min_indirect_emitted",
+        "agent": "PPO",
+        "episode_trace": 26,
+        "co2_indirect_emitted_kg": 3658365.647194405,
+        "co2_indirect_avoided_kg": 2245410.947033941,
+        "co2_direct_avoided_kg": 220162.67073554438,
+        "co2_total_avoided_kg": 2465573.6177694853,
+        "co2_net_trace_balance_kg": 1192792.0294249197,
+        "grid_import_kwh": 7362422.312544436,
+        "ev_charging_kwh": 268637.31187095126,
+        "solar_generation_kwh": 5819332.392967329
+      },
+      {
+        "criterion": "min_indirect_emitted",
+        "agent": "SAC",
+        "episode_trace": 37,
+        "co2_indirect_emitted_kg": 3695753.7978247474,
+        "co2_indirect_avoided_kg": 2212917.8428970594,
+        "co2_direct_avoided_kg": 217601.43020094236,
+        "co2_total_avoided_kg": 2430519.2730980017,
+        "co2_net_trace_balance_kg": 1265234.5247267457,
+        "grid_import_kwh": 7372611.408895842,
+        "ev_charging_kwh": 264409.8356121825,
+        "solar_generation_kwh": 5821289.54945259
+      }
+    ],
+    "trace_net_balance_min": [
+      {
+        "criterion": "min_trace_net_balance",
+        "agent": "A2C",
+        "episode_trace": 2,
+        "co2_indirect_emitted_kg": 3642435.831558771,
+        "co2_indirect_avoided_kg": 2356240.9786658525,
+        "co2_direct_avoided_kg": 163607.31500748862,
+        "co2_total_avoided_kg": 2519848.293673341,
+        "co2_net_trace_balance_kg": 1122587.5378854298,
+        "grid_import_kwh": 7336663.2865328165,
+        "ev_charging_kwh": 194046.56821048737,
+        "solar_generation_kwh": 5819332.392967329
+      },
+      {
+        "criterion": "min_trace_net_balance",
+        "agent": "PPO",
+        "episode_trace": 19,
+        "co2_indirect_emitted_kg": 3664862.844984457,
+        "co2_indirect_avoided_kg": 2250962.251461538,
+        "co2_direct_avoided_kg": 223834.80101976442,
+        "co2_total_avoided_kg": 2474797.0524813025,
+        "co2_net_trace_balance_kg": 1190065.7925031544,
+        "grid_import_kwh": 7373571.664091522,
+        "ev_charging_kwh": 273212.4507086684,
+        "solar_generation_kwh": 5819332.392967329
+      },
+      {
+        "criterion": "min_trace_net_balance",
+        "agent": "SAC",
+        "episode_trace": 39,
+        "co2_indirect_emitted_kg": 3697094.4321457497,
+        "co2_indirect_avoided_kg": 2213534.713770951,
+        "co2_direct_avoided_kg": 219779.93035001578,
+        "co2_total_avoided_kg": 2433314.644120967,
+        "co2_net_trace_balance_kg": 1263779.7880247827,
+        "grid_import_kwh": 7372818.857766813,
+        "ev_charging_kwh": 266919.2669064536,
+        "solar_generation_kwh": 5820577.72896045
+      }
+    ]
+  }
+}

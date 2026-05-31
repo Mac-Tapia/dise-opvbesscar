@@ -2548,7 +2548,7 @@ def generate_solar_dataset_citylearn_complete(
         print(f"   [OK] {output_file.name} ({output_file.stat().st_size/1024:.1f} KB)")
     
     # Crear certificacion — incluye especificaciones reales del sistema PV
-    _pv_cfg = IquitosPVConfig()
+    _pv_cfg = PVSystemConfig()
     certification = {
         "timestamp": pd.Timestamp.now().isoformat(),
         "archivo": str(output_file),

@@ -140,8 +140,7 @@ def generate_co2_summary_table(data: dict) -> Path:
         [f"Promedio evitado {selected_agent}", _fmt_int(selected["co2_total_avoided_mean_kg_per_episode"]), "kg CO2/ep", "Media anual por episodio"],
         ["F2 PPO vs A2C", _fmt_int(a2c["f2_min_kg_per_year"] - ppo["f2_min_kg_per_year"]), "kg CO2/año", "PPO menor F2 puntual"],
         ["F2 PPO vs SAC", _fmt_int(sac["f2_min_kg_per_year"] - ppo["f2_min_kg_per_year"]), "kg CO2/año", "PPO menor F2 puntual"],
-        ["Solar PV", _fmt_int(system["solar_kwp_dc_pvwatts"]), "kWp DC", "PVWatts/pdc0"],
-        ["Solar PV nominal", _fmt_int(system["solar_kwp_nominal_design"]), "kWp", "Diseno OE2"],
+        ["Solar PV DC", _fmt_int(system["solar_kwp_dc_pvwatts"]), "kWp DC", "PVWatts pdc0 OE2 (Jinko Tiger Neo)"],
         ["BESS", _fmt_int(system["bess_kwh"]), "kWh", "400 kW"],
     ]
     return _save_table(
