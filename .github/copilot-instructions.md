@@ -24,7 +24,7 @@ agents (SAC/PPO/A2C) to reduce CO2 in an isolated grid (`0.4521 kg CO2/kWh`).
 - BESS: 2,000 kWh / 400 kW.
 - Chargers: 19 chargers x 2 sockets = 38 sockets.
 - Fleet: 270 motos + 39 mototaxis per day.
-- CityLearn v2: `obs_dim=18`, action dimension 3.
+- CityLearn v2: `obs_dim=19`, action dimension 3.
 
 ## OE3 Canonical Ranking
 

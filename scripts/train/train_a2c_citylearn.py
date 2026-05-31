@@ -7,7 +7,7 @@ Entrenamiento del agente A2C usando stable-baselines3 A2C con
 StableBaselines3Wrapper(CityLearnEnv) — entorno nativo CityLearn v2.
 
 Agente: stable_baselines3.A2C (Advantage Actor-Critic, PyTorch)
-Entorno: IquitosEVChargingWrapper(CityLearnEnv) — obs_dim=18, action_dim=3
+Entorno: IquitosEVChargingWrapper(CityLearnEnv) — obs_dim=19, action_dim=3
 Reward : CO2_DUAL_FOCUS v8.1 — pesos en src/citylearnv2/ev_charging_wrapper.py:
          direct=0.20 + indirect=0.30 + ev_complete=0.35 + bess_solar=0.07
          + solar=0.04 + grid_stable=0.02 + cost=0.02  (suma=1.00)
@@ -1318,7 +1318,7 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
     log.info("PyTorch: %s | CUDA: %s | Device: %s", torch.__version__, torch.cuda.is_available(), A2C_HYPERPARAMS["device"])
     log.info("Total timesteps: {:,} ({} ep × 8760 h)".format(total_timesteps, total_timesteps // 8760))
     log.info("Acción: 3D [bess(-1→+1), ev_motos_frac(0→1), ev_mototaxis_frac(0→1)]")
-    log.info("Obs: 18D (CityLearn 11D + EV state 5D + tarifa 2D)")
+    log.info("Obs: 19D (CityLearn 12D + EV state 5D + tarifa 2D) — incluye electricity_pricing")
     log.info("=" * 70)
 
     # 1. Construir schema si es necesario
@@ -1348,7 +1348,7 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
     # 2b. Validar configuración del agente
     log.info("Validando configuración del agente A2C...")
     if not validate_agent_config("A2C", num_episodes=total_timesteps // 8760,
-                                  total_timesteps=total_timesteps, obs_dim=18, action_dim=3):
+                                  total_timesteps=total_timesteps, obs_dim=19, action_dim=3):
         log.warning("[WARN] validate_agent_config reportó advertencia — continúa entrenamiento")
 
     # 3. Cargar o crear modelo A2C

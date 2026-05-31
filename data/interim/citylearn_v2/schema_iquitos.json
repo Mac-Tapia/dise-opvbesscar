@@ -7,6 +7,7 @@
       "energy_simulation": "energy_simulation.csv",
       "weather": "weather.csv",
       "carbon_intensity": "carbon_intensity.csv",
+      "pricing": "pricing.csv",
       "electrical_storage": {
         "type": "citylearn.energy_model.Battery",
         "attributes": {
@@ -20,7 +21,7 @@
       "pv": {
         "type": "citylearn.energy_model.PV",
         "attributes": {
-          "nominal_power": 4050.0
+          "nominal_power": 4162.0
         }
       },
       "ev_chargers": {
@@ -106,7 +107,8 @@
       "active": true
     },
     "electricity_pricing": {
-      "active": false
+      "active": true,
+      "shared_in_central_agent": true
     }
   },
   "actions": {

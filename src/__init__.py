@@ -46,7 +46,7 @@ OE2_CONFIG = {
         "technology": "LiFePO4",
     },
     "pv": {
-        "capacity_kwp": 4050,
+        "capacity_kwp": 4162,
         "location": "Iquitos, Perú",
         "latitude": -3.75,
         "longitude": -73.27,

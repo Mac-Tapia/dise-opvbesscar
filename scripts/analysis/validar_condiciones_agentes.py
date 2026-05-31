@@ -5,7 +5,7 @@ condiciones de entrenamiento — solo deben diferir en hiperparametros.
 
 Condiciones verificadas:
   C1  Mismo factory: create_iquitos_env_for_sb3()
-  C2  Mismo obs_dim=18 y action_dim=3
+  C2  Mismo obs_dim=19 y action_dim=3
   C3  Mismo VecNormalize (norm_obs, norm_reward, clip_obs, clip_reward)
   C4  Mismos pesos reward (CO2_DUAL_FOCUS v8.1) desde ev_charging_wrapper.py
   C5  Misma arquitectura de red (pi, vf/qf, activation_fn)
@@ -81,7 +81,7 @@ try:
     act_dim = env.action_space.shape[0]
     env.close()
     logging.disable(logging.NOTSET)
-    check(obs_dim == 18, f"obs_dim={obs_dim} (correcto)", f"obs_dim={obs_dim} (esperado 18)")
+    check(obs_dim == 19, f"obs_dim={obs_dim} (correcto)", f"obs_dim={obs_dim} (esperado 19)")
     check(act_dim == 3,  f"action_dim={act_dim} (correcto)", f"action_dim={act_dim} (esperado 3)")
 except Exception as e:
     print(f"  {FAIL} No se pudo instanciar entorno: {e}")

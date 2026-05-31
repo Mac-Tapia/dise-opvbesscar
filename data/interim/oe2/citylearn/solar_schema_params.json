@@ -1,7 +1,7 @@
 {
   "photovoltaic": {
     "type": "PV",
-    "nominal_power": 4050.0,
+    "nominal_power": 4162.0,
     "efficiency": 0.9192831278023936
   },
   "solar_generation_path": "/app/data/interim/oe2/citylearn/solar_generation.csv",

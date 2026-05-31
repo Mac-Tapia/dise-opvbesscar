@@ -3,7 +3,7 @@ env_factory.py — Factory de entornos CityLearn v2 para Iquitos.
 
 Provee:
   create_iquitos_env()        → IquitosEVChargingWrapper(CityLearnEnv)
-                                obs_dim=18, action_dim=3
+                                obs_dim=19, action_dim=3
                                 [bess, ev_motos_frac, ev_mototaxis_frac]
   create_iquitos_env_for_sb3() → Monitor-wrapped gymnasium.Env compatible con SB3
 
@@ -115,7 +115,7 @@ def create_iquitos_env(
     Returns
     -------
     IquitosEVChargingWrapper
-        Entorno con obs_dim=18, action_dim=3.
+        Entorno con obs_dim=19, action_dim=3.
     """
     if rebuild:
         build_citylearn_schema()

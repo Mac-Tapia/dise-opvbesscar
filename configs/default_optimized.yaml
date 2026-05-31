@@ -138,7 +138,7 @@ oe2:
     surface_tilt: 10.0
     target_ac_kw: 3201.2
     target_annual_kwh: 1217300.0
-    target_dc_kw: 4050.0
+    target_dc_kw: 4162.0
     use_pvlib: true
 oe3:
   baseline_episodes: 3

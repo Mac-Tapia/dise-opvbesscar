@@ -61,11 +61,11 @@ REQUIRED_CONTEXT = {
     'CO2_FACTOR_KG_PER_KWH': 0.4521,
     'BESS_CAPACITY_KWH': 2000.0,
     'BESS_MAX_KWH': 2000.0,
-    'SOLAR_MAX_KW': 4050.0,
+    'SOLAR_MAX_KW': 4162.0,
     'CHARGERS_COUNT': 19,
     'TOTAL_SOCKETS': 38,
     'ACTION_DIM': 3,
-    'OBS_DIM': 18,
+    'OBS_DIM': 19,
 }
 
 # ARCHIVOS DE DATOS OBLIGATORIOS
@@ -129,7 +129,7 @@ def validate_observable_cols_used(obs_dim: int, expected_min_cols: int | None = 
     if obs_dim != expected:
         print(f'  [X] Observation dim: {obs_dim} != {expected}')
         return False
-    print(f'  [OK] Observation dim: {obs_dim} (CityLearn 11D + EV 5D + tarifa 2D)')
+    print(f'  [OK] Observation dim: {obs_dim} (CityLearn 12D + EV 5D + tarifa 2D — electricity_pricing activo)')
     return True
 
 

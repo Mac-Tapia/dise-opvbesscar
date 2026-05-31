@@ -32,7 +32,7 @@ reward_weights:
   # OE3: Seleccionar agente IA para la gestion de recarga de motos y mototaxis
   # electricas que contribuye cuantificablemente a la reduccion de CO2 en Iquitos.
 infrastructure:
-  solar_capacity_kwp: 4050.0
+  solar_capacity_kwp: 4162.0
   bess_capacity_kwh: 2000
   bess_power_kw: 400.0
   bess_min_soc_percent: 20.0

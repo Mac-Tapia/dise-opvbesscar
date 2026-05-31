@@ -1,6 +1,6 @@
 PVBESSCAR integra dimensionamiento OE2 y control OE3 para optimizar carga de vehiculos electricos en Iquitos, Peru. La infraestructura vigente usa generacion solar fotovoltaica de 4,162 kWp DC, BESS de 2,000 kWh / 400 kW, 19 cargadores Mode 3 con 38 sockets y una flota diaria de 270 motos mas 39 mototaxis. El factor de emision de la red aislada de Iquitos es 0.4521 kg CO2/kWh.
 
-La fase OE2 genera y valida los datasets horarios de 8,760 filas para solar, demanda, BESS y cargadores. La salida canonica de OE2 alimenta CityLearn v2 mediante `data/iquitos_ev_mall/`, con `obs_dim=18` y accion 3D para BESS, fraccion de carga de motos y fraccion de carga de mototaxis.
+La fase OE2 genera y valida los datasets horarios de 8,760 filas para solar, demanda, BESS y cargadores. La salida canonica de OE2 alimenta CityLearn v2 mediante `data/iquitos_ev_mall/`, con `obs_dim=19` y accion 3D para BESS, fraccion de carga de motos y fraccion de carga de mototaxis.
 
 La fase OE3 entrena tres agentes RL: SAC, PPO y A2C. En la comparativa canonica actualizada el criterio principal es el score multiobjetivo acumulado de 50 episodios: CO2 directo e indirecto evitado, importacion de red, carga equivalente de motos/mototaxis, BESS y deuda/violaciones. La prueba de normalidad se usa para decidir el metodo estadistico, no para seleccionar el agente.
 

@@ -24,17 +24,18 @@ ESPACIO DE ACCIÓN EXTENDIDO (3D):
   esperar la generación solar (peak 10:00-14:00 en Iquitos).
   La deuda diaria se penaliza si no se cumple antes del cierre del día (hora 23).
 
-ESPACIO DE OBSERVACIÓN EXTENDIDO (18D = CityLearn 11D + EV 5D + tarifa 2D):
-  [0-10]  obs CityLearn estándar (month, hour, day_type, temp, irradiancia,
+ESPACIO DE OBSERVACIÓN EXTENDIDO (19D = CityLearn 12D + EV 5D + tarifa 2D):
+  [0-11]  obs CityLearn estándar (month, hour, day_type, temp, irr_diff, irr_dir,
           carbon_intensity, non_shiftable_load, solar_gen, bess_soc,
-          net_electricity_consumption, ...)
-  [11]  ev_motos_demand_norm    — demanda motos hora actual (normaliz. 0-1)
-  [12]  ev_mototaxis_demand_norm — demanda mototaxis hora actual
-  [13]  ev_motos_debt_norm      — energía motos pendiente del día (0-1)
-  [14]  ev_mototaxis_debt_norm  — energía mototaxis pendiente del día (0-1)
-  [15]  hour_sin                — sin(2π·hour/24), señal periódica para urgencia
-  [16]  tarifa_norm             — (tarifa_total - HFP) / (HP - HFP) ∈ [0,1]; 0=HFP barato, 1=HP caro
-  [17]  is_hora_punta           — {0,1} señal binaria del período tarifario OSINERGMIN
+          net_electricity_consumption, electricity_pricing)
+  — electricity_pricing: tarifa HP/HFP normalizada por CityLearn desde pricing.csv
+  [12]  ev_motos_demand_norm    — demanda motos hora actual (normaliz. 0-1)
+  [13]  ev_mototaxis_demand_norm — demanda mototaxis hora actual
+  [14]  ev_motos_debt_norm      — energía motos pendiente del día (0-1)
+  [15]  ev_mototaxis_debt_norm  — energía mototaxis pendiente del día (0-1)
+  [16]  hour_sin                — sin(2π·hour/24), señal periódica para urgencia
+  [17]  tarifa_norm             — (tarifa_total - HFP) / (HP - HFP) ∈ [0,1]; 0=HFP barato, 1=HP caro
+  [18]  is_hora_punta           — {0,1} señal binaria del período tarifario OSINERGMIN
 
 RECOMPENSA MULTI-OBJETIVO (CO2_DUAL_FOCUS v8.1 + EV estocástico):
   r_direct_co2    0.20  — CO₂ directo evitado: motos+mototaxis vs gasolina
@@ -50,7 +51,7 @@ Uso:
     from src.citylearnv2.env_factory import create_iquitos_env
 
     env = create_iquitos_env()
-    # → obs_dim = 18, action_dim = 3
+    # → obs_dim = 19, action_dim = 3
 
 Notas de diseño:
     - CityLearn tiene non_shiftable_load = mall_kwh (solo mall, sin EVs)

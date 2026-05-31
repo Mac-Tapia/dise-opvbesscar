@@ -1,6 +1,6 @@
 PVBESSCAR optimiza carga EV en Iquitos con solar PV de 4,162 kWp DC, BESS de 2,000 kWh / 400 kW y 38 sockets para 270 motos y 39 mototaxis diarios.
 
-OE2 valida datasets horarios de 8,760 filas y OE3 entrena SAC, PPO y A2C en CityLearn v2 con `obs_dim=18` y accion 3D.
+OE2 valida datasets horarios de 8,760 filas y OE3 entrena SAC, PPO y A2C en CityLearn v2 con `obs_dim=19` y accion 3D.
 
 El resultado canonico actualizado al 2026-05-31 selecciona A2C por score multiobjetivo acumulado: lidera 9/9 criterios con 122,980,987 kg CO2 evitados, menor grid import, 4,307,304 cargas EV equivalentes, mayor uso BESS y menor deuda/violaciones. PPO conserva el menor F2 puntual como lectura complementaria.
 

@@ -18,7 +18,7 @@ REWARD: CO2_DUAL_FOCUS v8.1 (direct 20% + indirect 30% + ev_complete 35%
 
 Agente: stable_baselines3.SAC (off-policy, buffer replay, mejor para
         recompensas asimétricas -- óptimo para este problema)
-Entorno: IquitosEVChargingWrapper -> obs_dim=18, action_dim=3
+Entorno: IquitosEVChargingWrapper -> obs_dim=19, action_dim=3
 
 Uso:
     python scripts/train/train_sac_citylearn.py
@@ -1584,7 +1584,7 @@ def train(
     log.info("Timesteps: %d (%d ep × 8760 h)", total_timesteps, total_timesteps // 8760)
     log.info("Modo fresh: %s", "SI (sin resume)" if fresh else "NO (resume si existe)")
     log.info("Acción: [bess(-1->+1), motos_frac(0->1), mototaxis_frac(0->1)]")
-    log.info("Obs: 18D (CityLearn 11D + EV state 5D + tarifa 2D)")
+    log.info("Obs: 19D (CityLearn 12D + EV state 5D + tarifa 2D) — incluye electricity_pricing")
     log.info("=" * 70)
 
     # 1. Reconstruir schema si se pide
@@ -1617,7 +1617,7 @@ def train(
     # 2b. Validar configuración del agente
     log.info("Validando configuración del agente SAC...")
     if not validate_agent_config("SAC", num_episodes=total_timesteps // 8760,
-                                  total_timesteps=total_timesteps, obs_dim=18, action_dim=3):
+                                  total_timesteps=total_timesteps, obs_dim=19, action_dim=3):
         log.warning("[WARN] validate_agent_config reportó advertencia -- continúa entrenamiento")
 
     # 3. Cargar checkpoint o crear agente nuevo

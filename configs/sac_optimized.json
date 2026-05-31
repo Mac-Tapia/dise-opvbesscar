@@ -99,7 +99,7 @@
     }
   },
   "infrastructure": {
-    "solar_capacity_kwp": 4050.0,
+    "solar_capacity_kwp": 4162.0,
     "solar_energy_annual_mwh": 5819.3,
     "bess_capacity_nominal_kwh": 2000.0,
     "bess_power_kw": 400.0,

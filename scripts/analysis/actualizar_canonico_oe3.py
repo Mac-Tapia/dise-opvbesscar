@@ -309,7 +309,7 @@ def write_md(payload: dict) -> None:
     md.append(
         f"**Alcance:** SAC v8.2 reentrenado el 2026-05-30/31 con VecNormalize; "
         f"PPO y A2C vigentes del 2026-05-28. Reward `{REWARD_VERSION}`, "
-        "`obs_dim=18`, accion 3D y 50 episodios por agente."
+        "`obs_dim=19`, accion 3D y 50 episodios por agente."
     )
     md.append("")
     md.append(
@@ -699,7 +699,6 @@ def main() -> None:
             "vehicle_count_policy": vehicle_ref["method"],
         },
         "system": {
-            "solar_kwp_nominal_design": 4050,
             "solar_kwp_dc_pvwatts": 4162,
             "solar_energy_kwh_year": 5_819_332,
             "bess_kwh": 2000,
@@ -713,7 +712,7 @@ def main() -> None:
             "episodes_per_agent": 50,
             "timesteps_per_agent": 438000,
             "reward_version": REWARD_VERSION,
-            "obs_dim": 18,
+            "obs_dim": 19,
             "action_dim": 3,
         },
         "vehicle_count_reference": vehicle_ref,

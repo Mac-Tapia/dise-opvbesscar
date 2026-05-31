@@ -30,8 +30,8 @@ IQUITOS_LON = -73.25
 IQUITOS_TZ = "America/Lima"  # UTC-5
 IQUITOS_ALT = 104.0
 
-# Especificaciones del sistema (4,050 kWp)
-SYSTEM_DC_KWP = 4050
+# Especificaciones del sistema (4,162 kWp DC PVWatts pdc0)
+SYSTEM_DC_KWP = 4162
 SYSTEM_AC_KW = 3200  # Inversor ~79% de DC rating
 INVERTER_EFFICIENCY = 0.96
 

@@ -2,7 +2,7 @@
   "version": "7.0",
   "date": "2026-02-18",
   "system": {
-    "pv_capacity_kwp": 4050.0,
+    "pv_capacity_kwp": 4162.0,
     "bess_capacity_kwh": 2000.0,
     "bess_max_power_kw": 400.0,
     "n_chargers": 19,

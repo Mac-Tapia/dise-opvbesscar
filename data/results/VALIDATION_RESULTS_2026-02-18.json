@@ -177,7 +177,7 @@
   },
   "infrastructure_summary": {
     "solar_pv": {
-      "capacity_kw": 4050,
+      "capacity_kw": 4162,
       "annual_output_mwh": 8292.5,
       "technology": "Photovoltaic",
       "location": "Iquitos, Peru (3.74S, 73.24W)"

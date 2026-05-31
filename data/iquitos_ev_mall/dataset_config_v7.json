@@ -2,10 +2,10 @@
   "version": "7.0",
   "date": "2026-02-18",
   "system": {
-    "pv_capacity_kwp": 4050.0,
+    "pv_capacity_kwp": 4162.0,
     "bess_capacity_kwh": 2000.0,
     "bess_max_power_kw": 400.0,
-    "bess_avg_soc_percent": 75.57,
+    "bess_avg_soc_percent": 56.89,
     "n_chargers": 19,
     "n_sockets": 38,
     "charger_power_kw": 7.4,
@@ -52,7 +52,7 @@
   "validation_status": {
     "ready_for_citylearn_v2": true,
     "hourly_rows": 8760,
-    "combined_columns": 53,
+    "combined_columns": 56,
     "solar_rows": 8760,
     "bess_rows": 8760,
     "chargers_rows": 8760,
