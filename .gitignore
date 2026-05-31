@@ -44,10 +44,17 @@ train_ppo_log.txt
 *.log
 ~$*.docx
 
-# Checkpoints (large model files)
+# Excepciones: tablas estadisticas canonicas versionadas
+!outputs/estadistica_oe3/
+!outputs/estadistica_oe3/**
+
+# Checkpoints (large model files — use Git LFS or manual transfer for deployment)
 checkpoints/
 checkpoints/**/*.zip
 checkpoints/**/*.pkl
+
+# Excepciones: vecnormalize final para despliegue
+!checkpoints/*_CityLearn/vecnormalize.pkl
 
 # OS
 .DS_Store

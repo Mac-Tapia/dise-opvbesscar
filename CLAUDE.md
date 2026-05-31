@@ -91,7 +91,7 @@ OE2 Generators (run once, or via pipeline — order matters: solar+chargers → 
     — obs_dim=18, action_dim=3: [bess_action∈[-1,+1], ev_motos_frac∈[0,1], ev_mototaxis_frac∈[0,1]]
          ↓
   src/agents/{sac,ppo_sb3,a2c_sb3}.py  ← stable-baselines3 + auto-device detection
-  checkpoints/{SAC,PPO,A2C}/           ← .zip snapshots; auto-resume si existe
+  checkpoints/{SAC,PPO,A2C}_CityLearn/ ← .zip snapshots + vecnormalize.pkl; auto-resume si existe
          ↓
   outputs/docx/graficas/               ← PNG figuras para tesis
   outputs/docx/INFORME_OE3_*.docx      ← Word tesis (current: v11)
