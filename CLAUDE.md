@@ -55,9 +55,15 @@ python scripts/train/train_a2c_citylearn.py
 # Run baseline (uncontrolled dispatch)
 python scripts/train/run_baseline.py
 
-# Generate OE3 figures and tables
-python scripts/reporting/generar_graficas_oe3_completo.py
-python scripts/reporting/generar_tablas_oe3.py
+# Regenerar toda la cadena OE3 (un solo comando — siempre actualiza todos los archivos)
+python scripts/reporting/run_all_oe3.py
+
+# Scripts OE3 individuales
+python scripts/analysis/demostracion_estadistica_oe3.py   # pruebas estadísticas inferenciales
+python scripts/analysis/control_operativo_bess_ev_oe3.py  # patron BESS/EV/pico por hora
+python scripts/analysis/analizar_co2_trace_oe3.py         # CO2 directo+indirecto desde trace
+python scripts/reporting/comparativa_agentes_co2_trace.py # figuras convergencia
+python scripts/reporting/generar_tablas_oe3.py            # tablas PNG canonicas
 
 # Verify data integrity
 python -c "import pandas as pd; df=pd.read_csv('data/oe2/Generacionsolar/pv_generation_citylearn2024.csv'); assert len(df)==8760, f'Solar ERROR: {len(df)} rows'; print(f'Solar OK: {df.energia_kwh.sum():,.0f} kWh/year')"
@@ -141,7 +147,10 @@ tests/integration/                  ← 72 tests covering env, config, reward, e
 | `src/agents/sac.py` | SAC agent with `detect_device()` (CUDA/MPS/CPU auto-select); `_patch_citylearn_sac_update()` for CityLearn compatibility |
 | `src/utils/agent_utils.py` | `validate_env_spaces(env)` — must be called before agent init |
 | `scripts/train/` | Standalone training launchers — each agent has its own `train_{agent}_citylearn.py` |
-| `scripts/analysis/` | Thesis document generation (Word sections, statistical tests) |
+| `scripts/analysis/demostracion_estadistica_oe3.py` | Pruebas inferenciales completas: Shapiro-Wilk, Kruskal-Wallis, Dunn Bonferroni, Mann-Whitney U (independiente), Wilcoxon (pareado), Cohen d, Cliff delta, Bootstrap IC |
+| `scripts/analysis/control_operativo_bess_ev_oe3.py` | Patrón BESS/EV/pico por hora del día — documenta peak shaving y ciclo SOC |
+| `scripts/reporting/run_all_oe3.py` | **Maestro OE3** — ejecuta toda la cadena y verifica 11 archivos de salida |
+| `reports/metodologia/METODOLOGIA_INVESTIGACION_OE3.md` | Metodología completa: diseño cuasi-experimental por simulación, operacionalización, muestra n=50, pruebas inferenciales separadas |
 | `tests/oe2/` | Unit tests validating OE2 specs and data loader paths |
 | `tests/integration/` | Integration tests for universal env, site config, reward, energy balance |
 
@@ -184,7 +193,19 @@ agent.learn(total_timesteps=N, reset_num_timesteps=False)  # accumulates steps a
 - **`@dataclass(frozen=True)`** for all spec/config containers (see `ChargerSpec`, `ChargerSet`, `MultiObjectiveWeights`)
 - **Validate early**: call `validate_env_spaces(env)` before agent init; `OE2DataLoader` raises `OE2ValidationError` immediately on bad paths/schema
 
-## CO₂ Baselines (Resultados OE3 canonicos — reward v7.5)
+## Research Design (OE3 — Metodología de investigación)
+
+- **Tipo:** Aplicada, cuantitativa
+- **Nivel:** Explicativo-causal
+- **Diseño:** Cuasi-experimental por simulación (Campbell & Stanley, 1966; Hernández Sampieri et al., 2014)
+  - VI manipulada: tipo de algoritmo RL (SAC, PPO, A2C) — 3 tratamientos
+  - VD medidas: CO₂ total evitado, carga EV motos+mototaxis, grid import, BESS descarga
+  - Variables controladas: solar 5.819 GWh, BESS 2000 kWh/400 kW, factor CO₂ 0.4521 kg/kWh
+- **Muestra:** n=50 episodios/agente (N=150 total) — no probabilística por saturación estadística (CV plateau <0.5%)
+- **Pruebas inferenciales:** Shapiro-Wilk → Kruskal-Wallis → Dunn Bonferroni → Mann-Whitney U (independiente, p propio) → Wilcoxon signed-rank (pareado, p propio) → Cohen d + Cliff delta + Bootstrap IC 95%
+- **Documento completo:** `reports/metodologia/METODOLOGIA_INVESTIGACION_OE3.md`
+
+## CO₂ Baselines (Resultados OE3 canonicos — reward CO2_DUAL_FOCUS v8.1)
 
 | Baseline | CO₂ (kg/año) | Description |
 |----------|-------------|-------------|

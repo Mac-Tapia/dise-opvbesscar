@@ -1,8 +1,30 @@
-# OE3 - Comparativa canonica de agentes RL
+# OE3 — Comparativa canónica de agentes RL
 
-**Fecha de actualizacion:** 2026-05-31
-**Decision vigente:** **A2C seleccionado**
-**Alcance:** SAC v8.2 reentrenado el 2026-05-30/31 con VecNormalize; PPO y A2C vigentes del 2026-05-28. Reward `CO2_DUAL_FOCUS v8.1`, `obs_dim=18`, accion 3D y 50 episodios por agente.
+**Fecha de actualización:** 2026-05-31
+**Decisión vigente:** **A2C seleccionado**
+**Criterio:** score multiobjetivo 50 episodios — mayor CO₂ evitado (directo+indirecto), mayor carga EV, menor grid import
+**Alcance:** SAC v8.2 reentrenado 2026-05-30 con VecNormalize; PPO y A2C del 2026-05-28. Reward `CO2_DUAL_FOCUS v8.1`, `obs_dim=18`, acción 3D, 50 episodios por agente.
+
+## Fuentes
+
+- Canónico JSON: `reports/oe3/agents_comparison_canonical.json`
+- Canónico CSV: `reports/oe3/agents_comparison_canonical.csv`
+- CO₂ trace: `reports/oe3/CO2_DIRECTO_INDIRECTO_TRACE_OE3.md`
+- Estadísticas: `outputs/estadistica_oe3/reporte_estadistico_oe3.md`
+- Control operativo BESS/EV: `reports/oe3/CONTROL_OPERATIVO_BESS_EV_OE3.md`
+- Regenerar todo: `python scripts/reporting/run_all_oe3.py`
+
+## Criterio de selección
+
+Score multiobjetivo acumulado sobre los 50 episodios, 9 criterios:
+mayor CO₂ total evitado, menor grid import, mayor CO₂ directo, mayor CO₂ indirecto,
+mayor carga motos equiv., mayor carga mototaxis equiv., mayor EV total equiv.,
+mayor uso BESS, menor violaciones de carga.
+**A2C lidera los 9 criterios.**
+
+El F2 residual mínimo puntual (PPO=3,657,484 vs A2C=3,659,010 kg, diff=1,526 kg=0.04%)
+se reporta como lectura complementaria. La diferencia es estadísticamente no distinguible
+en magnitud práctica (Cohen d=0.080 negligible, bootstrap IC incluye cero).
 
 Nota solar: los modulos OE2 mantienen `4,050 kWp` como capacidad nominal de diseno, mientras el dataset solar vigente reporta `4,162 kWp DC` como potencia PVWatts/pdc0 y `3,201 kW AC`.
 
