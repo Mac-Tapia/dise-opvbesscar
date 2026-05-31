@@ -12,7 +12,7 @@ Two phases:
 
 **Current verification snapshot (2026-05-30):** OE2 -> CityLearn v2 pipeline validated, `dataset_config_v7.json` has `ready_for_citylearn_v2 = true`, and `python -m pytest tests -v -ra` reports 106 passed. See `docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md`.
 
-**OE3 results reference:** SAC selected as winner in the thesis evaluation — 55.6% CO₂ reduction vs F₀ (3,123,866 kg/year), corrected PVWatts+bifacial solar model (5.82 GWh/year). Statistical ranking: SAC > PPO ≈ A2C across 50 episodes each.
+**OE3 results reference (canonical, 2026-05-30):** PPO is selected under the current May 2026 F2 comparison. Use `reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md`, `reports/oe3/agents_comparison_canonical.json`, and `reports/oe3/agents_comparison_canonical.csv`. Older SAC/A2C selections are historical snapshots and must not be used for new reports.
 
 ## Commands
 
@@ -116,10 +116,10 @@ examples/single_building/run.py     ← reproducible demo (Iquitos validated res
 tests/integration/                  ← 72 tests covering env, config, reward, energy balance
 ```
 
-**Observation space:** `obs_dim = 15 + N_types × 3`  
+**Observation space:** `obs_dim = 15 + N_types × 3`
 `[time(5), solar(5), bess(2), grid(3), EV_type_j(demand_norm, debt_norm, satisfaction) × N_types]`
 
-**Action space:** `dim = 1 + N_types`  
+**Action space:** `dim = 1 + N_types`
 `[bess_action ∈ [-1,+1], ev_frac_j ∈ [0,1] × N_types]`
 
 **Site configs:** `configs/sites/iquitos_bess_mall.yaml` (validated, isolated grid), `configs/sites/lima_parking_ev.yaml` (urban SIN grid, carros eléctricos)
@@ -184,15 +184,14 @@ agent.learn(total_timesteps=N, reset_num_timesteps=False)  # accumulates steps a
 - **`@dataclass(frozen=True)`** for all spec/config containers (see `ChargerSpec`, `ChargerSet`, `MultiObjectiveWeights`)
 - **Validate early**: call `validate_env_spaces(env)` before agent init; `OE2DataLoader` raises `OE2ValidationError` immediately on bad paths/schema
 
-## CO₂ Baselines (Resultados OE3 — PVWatts+bifacial, reward v7.5)
+## CO₂ Baselines (Resultados OE3 canonicos — reward v7.5)
 
 | Baseline | CO₂ (kg/año) | Description |
 |----------|-------------|-------------|
-| F₀ | 7,053,691 | Sin solar, sin BESS, sin RL |
-| F₁ | 5,777,812 | Con solar + BESS, sin RL (reference dispatch) |
-| **F₂ SAC ep50** | **3,123,866** | Con solar + BESS + SAC — **55.6% reducción vs F₀** |
-| F₂ PPO ep50 | 3,370,347 | Con solar + BESS + PPO — 52.2% reducción vs F₀ |
-| F₂ A2C ep50 | 3,370,840 | Con solar + BESS + A2C — 52.2% reducción vs F₀ |
+| F₀ | 7,053,999 | Sin solar, sin BESS, sin RL (referencia derivada de seccion 5.2) |
+| **F₂ PPO ep49** | **3,657,483** | Con solar + BESS + PPO — **48.15% reducción vs F₀** |
+| F₂ A2C ep45 | 3,659,010 | Con solar + BESS + A2C — 48.13% reducción vs F₀ |
+| F₂ SAC ep33 | 3,720,640 | Con solar + BESS + SAC — 47.25% reducción vs F₀ |
 
 Solar PV: **5,819,332 kWh/año** (4,162 kWp PVWatts + 8.7% bifacial, Jinko Tiger Neo JKM580N-72HL4-BDV)
 CO₂ factor grid Iquitos: **0.4521 kg CO₂/kWh** (red térmica aislada)

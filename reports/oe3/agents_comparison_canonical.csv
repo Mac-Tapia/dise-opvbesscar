@@ -1,0 +1,4 @@
+rank,agent,selected,f2_min_kg_per_year,best_episode,f2_mean_kg_per_year,f2_sigma_kg_per_year,co2_reduction_vs_f0_pct,co2_avoided_vs_f0_kg_per_year,cv_plateau_pct,validation_mean_reward,validation_mean_co2_avoided_kg,validation_mean_grid_import_kwh,selection_note
+1,PPO,true,3657483,49,3695605,63818,48.15,3396516,0.034,1628.4648027213454,2416092.5925824405,7348968.902899796,"Seleccionado: menor F2 anual"
+2,A2C,false,3659010,45,3699834,38248,48.13,3394989,0.422,1633.2862134672,2412246.1675903993,7337810.999349495,"Segundo: F2 1,527 kg/año mayor que PPO"
+3,SAC,false,3720640,33,3747127,42424,47.25,3333359,0.065,1519.1468534858413,2400665.4256318016,7456698.972722041,"No seleccionado: F2 63,157 kg/año mayor que PPO"

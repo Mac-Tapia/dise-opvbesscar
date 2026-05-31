@@ -2,15 +2,15 @@
 # -*- coding: utf-8 -*-
 
 Demuestra el uso del framework universal PVBESSCAR con el sitio validado de
-Iquitos. Ejecuta 3 episodios con un agente SAC preentrenado (o aleatorio si
+Iquitos. Ejecuta episodios con un agente preentrenado (o aleatorio si
 no hay checkpoint) y reporta métricas de CO₂ y satisfacción EV.
 
 Uso:
     python examples/single_building/run.py [--episodes 3] [--random-agent]
 
 Referencia de resultados validados:
-    SAC ep48: CO₂ = 2,622,735 kg/año, reducción = 62.8% vs F₀
-    Kruskal-Wallis H = 81.65, p = 1.86×10⁻¹⁸ (SAC > PPO > A2C)
+    PPO ep49: F2 = 3,657,483 kg/año, reducción = 48.15% vs F₀
+    Fuente: reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md
 """
 from __future__ import annotations
 
@@ -189,9 +189,9 @@ def main() -> None:
     print()
     print("  Baseline de referencia (validado PVBESSCAR 2024):")
     print(f"    F₀ (sin control):    7,054 t CO₂/año")
-    print(f"    F₂ SAC ep48:        2,622 t CO₂/año  (62.8% reducción)")
+    print(f"    F₂ PPO ep49:        3,657 t CO₂/año  (48.15% reducción)")
     print()
-    print("  Para entrenar: python scripts/train/train_sac_citylearn.py")
+    print("  Para ranking canonico: python scripts/analysis/_ranking_oe3.py")
     print("  Para otros sitios: editar configs/sites/ y repetir este script")
     print("=" * 70)
 

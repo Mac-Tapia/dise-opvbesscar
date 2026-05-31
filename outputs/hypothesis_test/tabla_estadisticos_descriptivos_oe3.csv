@@ -1,0 +1,4 @@
+Agente,N_episodios,F2_minimo_kg_anio,Episodio_optimo,F2_media_kg_anio,F2_sigma_kg_anio,CV_plateau_pct,Reduccion_vs_F0_pct,CO2_evitado_vs_F0_kg_anio,Rank,Seleccionado
+PPO,50,3657483,49,3695605,63818,0.034,48.15,3396516,1,SI
+A2C,50,3659010,45,3699834,38248,0.422,48.13,3394989,2,NO
+SAC,50,3720640,33,3747127,42424,0.065,47.25,3333359,3,NO

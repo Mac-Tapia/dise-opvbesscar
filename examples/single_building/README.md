@@ -212,25 +212,20 @@ The control problem is a finite-horizon MDP `(S, A, P, R, γ)`:
 - **Reward** R: CO2_DUAL_FOCUS, discounted with `γ = 0.99`
 - **Episode length**: 8,760 steps (one full year, hourly)
 
-The SAC agent (Haarnoja et al., 2018) maximizes the entropy-regularized objective:
-
-```
-J(π) = Σ_t E_{(s,a)~ρ_π} [R(s,a,s') + α·H(π(·|s))]
-```
-
-where `α` is the temperature coefficient controlling exploration vs exploitation.
+The example can load a trained RL agent or run with a random policy. The canonical OE3
+selection is now PPO; older SAC numbers are historical and should not be used for reports.
 
 ---
 
-## Validated Results
+## Canonical OE3 Results
 
-| Metric | F₀ (no control) | F₁ (PV+BESS, no RL) | **F₂ SAC ep48** |
-|--------|----------------|---------------------|-----------------|
-| CO₂ (kg/año) | 7,054,000 | 5,790,639 | **2,622,735** |
-| CO₂ reduction | — | 17.9% | **62.8%** |
-| EV satisfaction | — | — | ≥ 0.94 |
+| Metric | F₀ (no control) | **F₂ PPO ep49** |
+|--------|----------------|-----------------|
+| CO₂ (kg/año) | 7,053,999 | **3,657,483** |
+| CO₂ reduction | — | **48.15%** |
 
-**Statistical significance**: Kruskal-Wallis H = 81.65, p = 1.86 × 10⁻¹⁸ (SAC > PPO > A2C).
+**Statistical significance**: Shapiro-Wilk rejects normality, so the canonical report uses
+non-parametric tests. See `reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md`.
 
 ---
 

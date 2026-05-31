@@ -1,0 +1,4 @@
+Agente,W_Shapiro_Wilk,p_value,alpha,Normal_p_mayor_alpha,Decision
+SAC,0.5369368485652878,2.5093185366434065e-11,0.05,NO,"No normal; usar pruebas no parametricas"
+PPO,0.6063143614819836,2.41958696784531e-10,0.05,NO,"No normal; usar pruebas no parametricas"
+A2C,0.8343410413360813,5.983678153553541e-06,0.05,NO,"No normal; usar pruebas no parametricas"

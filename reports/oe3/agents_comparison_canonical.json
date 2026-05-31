@@ -1,0 +1,148 @@
+{
+  "metadata": {
+    "project": "pvbesscar",
+    "location": "Iquitos, Peru",
+    "updated_at": "2026-05-30",
+    "source_generation_date": "2026-05-29",
+    "training_run_date": "2026-05-28",
+    "branch": "smartcharger",
+    "selected_agent": "PPO",
+    "selection_criterion": "Minimize annual F2 emissions (kg CO2/year)",
+    "normality_usage": "Normality tests guide statistical method selection only; they do not replace operational ranking metrics.",
+    "canonical_report": "reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md"
+  },
+  "system": {
+    "solar_kwp_nominal_design": 4050,
+    "solar_kwp_dc_pvwatts": 4162,
+    "solar_energy_kwh_year": 5819332,
+    "bess_kwh": 2000,
+    "bess_kw": 400,
+    "chargers": 19,
+    "sockets": 38,
+    "daily_motos": 270,
+    "daily_mototaxis": 39,
+    "grid_emission_factor_kg_co2_kwh": 0.4521,
+    "f0_reference_kg_co2_year": 7053999,
+    "episodes_per_agent": 50,
+    "timesteps_per_agent": 438000,
+    "reward_version": "v7.5",
+    "obs_dim": 18,
+    "action_dim": 3
+  },
+  "ranking": [
+    "PPO",
+    "A2C",
+    "SAC"
+  ],
+  "agents": {
+    "PPO": {
+      "rank": 1,
+      "selected": true,
+      "f2_min_kg_per_year": 3657483,
+      "best_episode": 49,
+      "f2_mean_kg_per_year": 3695605,
+      "f2_sigma_kg_per_year": 63818,
+      "co2_reduction_vs_f0_pct": 48.15,
+      "co2_avoided_vs_f0_kg_per_year": 3396516,
+      "cv_plateau_pct": 0.034,
+      "validation_mean_reward": 1628.4648027213454,
+      "validation_mean_co2_avoided_kg": 2416092.5925824405,
+      "validation_mean_grid_import_kwh": 7348968.902899796,
+      "selection_note": "Selected because it has the lowest annual F2 emissions."
+    },
+    "A2C": {
+      "rank": 2,
+      "selected": false,
+      "f2_min_kg_per_year": 3659010,
+      "best_episode": 45,
+      "f2_mean_kg_per_year": 3699834,
+      "f2_sigma_kg_per_year": 38248,
+      "co2_reduction_vs_f0_pct": 48.13,
+      "co2_avoided_vs_f0_kg_per_year": 3394989,
+      "cv_plateau_pct": 0.422,
+      "validation_mean_reward": 1633.2862134672,
+      "validation_mean_co2_avoided_kg": 2412246.1675903993,
+      "validation_mean_grid_import_kwh": 7337810.999349495,
+      "selection_note": "Second place; F2 minimum is 1,527 kg CO2/year higher than PPO."
+    },
+    "SAC": {
+      "rank": 3,
+      "selected": false,
+      "f2_min_kg_per_year": 3720640,
+      "best_episode": 33,
+      "f2_mean_kg_per_year": 3747127,
+      "f2_sigma_kg_per_year": 42424,
+      "co2_reduction_vs_f0_pct": 47.25,
+      "co2_avoided_vs_f0_kg_per_year": 3333359,
+      "cv_plateau_pct": 0.065,
+      "validation_mean_reward": 1519.1468534858413,
+      "validation_mean_co2_avoided_kg": 2400665.4256318016,
+      "validation_mean_grid_import_kwh": 7456698.972722041,
+      "selection_note": "Not selected; F2 minimum is 63,157 kg CO2/year higher than PPO."
+    }
+  },
+  "statistics": {
+    "normality": {
+      "test": "Shapiro-Wilk",
+      "alpha": 0.05,
+      "results": {
+        "SAC": {
+          "w": 0.5369368485652878,
+          "p_value": 2.5093185366434065e-11,
+          "normal": false
+        },
+        "PPO": {
+          "w": 0.6063143614819836,
+          "p_value": 2.41958696784531e-10,
+          "normal": false
+        },
+        "A2C": {
+          "w": 0.8343410413360813,
+          "p_value": 5.983678153553541e-06,
+          "normal": false
+        }
+      }
+    },
+    "non_parametric_tests": {
+      "kruskal_wallis": {
+        "h": 53.023618543046325,
+        "p_value": 3.0624395729831876e-12,
+        "reject_h0": true
+      },
+      "mann_whitney_u": {
+        "ppo_less_than_sac": {
+          "u": 412.0,
+          "p_value": 3.880371607030353e-09
+        },
+        "ppo_less_than_a2c": {
+          "u": 746.0,
+          "p_value": 0.00025922501634543686
+        },
+        "a2c_less_than_sac": {
+          "u": 344.0,
+          "p_value": 2.1551716775116374e-10
+        }
+      },
+      "wilcoxon_signed_rank": {
+        "ppo_less_than_sac": {
+          "w": 23.0,
+          "p_value": 5.684341886080801e-13
+        },
+        "ppo_less_than_a2c": {
+          "w": 385.0,
+          "p_value": 0.00703926736624183
+        },
+        "a2c_less_than_sac": {
+          "w": 0.0,
+          "p_value": 8.881784197001252e-16
+        }
+      }
+    }
+  },
+  "deprecated_or_removed": [
+    "outputs/docx/INFORME_OE3_SELECCION_AGENTE_RL_v10.docx",
+    "outputs/docx/INFORME_OE3_SELECCION_AGENTE_RL_v11.docx",
+    "outputs/hypothesis_test/hypothesis_test_co2_figura_completa.png",
+    "legacy HTML/PDF reports that identified SAC or A2C as the selected agent"
+  ]
+}

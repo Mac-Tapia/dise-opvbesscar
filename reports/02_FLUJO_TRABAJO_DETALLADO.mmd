@@ -1,71 +1,36 @@
 graph LR
-    subgraph ETAPA1["ETAPA 1 — Inputs del Proyecto"]
-        MALLF["📊 Demanda Mall<br/>demandamallhorakwh.csv<br/>100 kW base continuo<br/>8,760 h/año"]
-        SOLF["☀️ Generación Solar PV<br/>pv_generation_timeseries.csv<br/>4,050 kWp instalados<br/>8,760 filas HORARIAS ⚠️"]
-        EV_F["🛵 Perfiles Demanda EV<br/>demand_ev_anual.csv<br/>270 motos + 39 mototaxis<br/>38 sockets activos"]
-        CFG["⚙️ Configuración<br/>configs/default.yaml<br/>BESS 2,000 kWh / 400 kW<br/>FE_red = 0.4521 kg CO₂/kWh"]
+    subgraph ETAPA1["ETAPA 1 - Datos OE2"]
+        SOLF["Solar PV<br/>pv_generation_citylearn2024.csv<br/>4,162 kWp DC<br/>8,760 filas"]
+        EV_F["Cargadores EV<br/>270 motos + 39 mototaxis<br/>38 sockets"]
+        BESSF["BESS<br/>2,000 kWh / 400 kW"]
+        CFG["Config<br/>FE_red = 0.4521 kg CO2/kWh"]
     end
 
-    subgraph ETAPA2["ETAPA 2 — Carga y Validación OE2"]
-        DL["📥 Data Loader<br/>data_loader.py<br/>✓ Solar: exactamente 8,760 filas<br/>✓ Cargadores: 38 sockets<br/>✓ BESS: SOC en rango válido"]
-        VAL["✅ Validación<br/>OE2ValidationError<br/>si solar ≠ 8,760 h<br/>si cargadores ≠ 38<br/>si SOC fuera de (20%, 100%)"]
+    subgraph ETAPA2["ETAPA 2 - CityLearn v2"]
+        DL["OE2DataLoader<br/>validacion de schema"]
+        CL["IquitosEVChargingWrapper<br/>obs_dim=18<br/>action_dim=3"]
     end
 
-    subgraph ETAPA3["ETAPA 3 — Artefactos OE2"]
-        CHARGERS["🔌 Especificación Cargadores<br/>chargers.py (frozen dataclass)<br/>19 unidades × 2 sockets<br/>7.4 kW @ 230V / 32A Mode 3"]
-        BESS_CFG["🔋 Configuración BESS<br/>2,000 kWh / 400 kW<br/>DoD 80% | η_c=η_d=95%<br/>SOC_min=20% | SOC_max=100%"]
+    subgraph ETAPA3["ETAPA 3 - Entrenamiento"]
+        SAC["SAC<br/>50 episodios<br/>438,000 pasos"]
+        PPO["PPO<br/>50 episodios<br/>438,000 pasos"]
+        A2C["A2C<br/>50 episodios<br/>438,000 pasos"]
     end
 
-    subgraph ETAPA4["ETAPA 4 — Entorno CityLearn v2"]
-        CL["🏗️ CityLearn Environment<br/>• Observación: 394-dim<br/>  (solar / BESS / 38 sockets / tiempo)<br/>• Acción: 39-dim continuo (0-1)<br/>  (1 BESS + 38 cargadores)<br/>• Horizonte: 8,760 pasos = 1 año"]
+    subgraph ETAPA4["ETAPA 4 - Seleccion canonica"]
+        RANK["Ranking F2 minimo<br/>1 PPO: 3,657,483<br/>2 A2C: 3,659,010<br/>3 SAC: 3,720,640"]
+        DOC["reports/oe3/<br/>AGENTES_RL_COMPARATIVA_CANONICA.md<br/>agents_comparison_canonical.json/csv"]
     end
 
-    subgraph ETAPA5["ETAPA 5 — Recompensa y Agentes"]
-        RW["🎯 Recompensa CO2_DUAL_FOCUS v7.0<br/>w₁=0.35 CO₂ directo   w₂=0.30 CO₂ indirecto<br/>w₃=0.25 Carga EV       w₄=0.05 Solar<br/>w₅=0.05 Red estable<br/>R_final = 0.65×R + 0.35×r_EV"]
-        AGENTS["🤖 Inicializar 3 Agentes<br/>SAC / PPO / A2C (sb3)<br/>policy=MlpPolicy<br/>validate_env_spaces() ✓"]
-    end
-
-    subgraph ETAPA6["ETAPA 6 — Entrenamiento (50 episodios × 8,760 pasos)"]
-        TRN["🔄 agent.learn(438,000 steps)<br/>Checkpoint cada episodio<br/>Auto-resume desde último .zip<br/>reset_num_timesteps=False<br/>GPU RTX 4060 (~5-7 h por agente)"]
-    end
-
-    subgraph ETAPA7["ETAPA 7 — Evaluación y Resultados"]
-        EVAL["📊 Métricas Reales (CSVs 11-12/04/2026)<br/>SAC ★: F₂=2,622,734 kg CO₂/año (ep 48)<br/>PPO 🥈: F₂=2,787,039 kg CO₂/año (ep 40)<br/>A2C 🥉: F₂=2,834,857 kg CO₂/año (ep 3)<br/>F₀ Baseline diesel: 7,054,000 kg CO₂/año<br/>CO₂ evitado SAC: 4,431,266 kg/año (62.8%)"]
-        CSV["💾 Artefactos<br/>result_sac.json | ppo_summary.json<br/>50 PNG por agente<br/>comparative_analysis/ + seccion52/"]
-    end
-
-    subgraph ETAPA8["ETAPA 8 — Validación Estadística"]
-        STAT["📐 Pruebas no paramétricas<br/>Kruskal-Wallis H=81.65 — p=1.86e-18<br/>Mann-Whitney SAC vs PPO — p=3.02e-16<br/>Wilcoxon T=0 — p=1.78e-15<br/>SAC reduce CO2 estadisticamente superior"]
-    end
-
-    subgraph ETAPA9["ETAPA 9 — Documento Tesis v11 ✅"]
-        DOC["📖 INFORME_OE3_SELECCION_AGENTE_RL_v11.docx<br/>594 parrafos — 36 tablas — 6,376 KB<br/>§2.2.4 GHG — §4.6.3 Procedimiento OE3<br/>ANEXO A: 33 figs — ANEXO B: 10 figs — ANEXO C: 7 figs<br/>LISTO PARA ASESOR"]
-    end
-
-    MALLF --> DL
     SOLF --> DL
     EV_F --> DL
+    BESSF --> DL
     CFG --> DL
-
-    DL --> VAL
-    VAL --> CHARGERS
-    VAL --> BESS_CFG
-    CHARGERS --> CL
-    BESS_CFG --> CL
-    CL --> RW
-    RW --> AGENTS
-    AGENTS --> TRN
-    TRN --> EVAL
-    EVAL --> CSV
-    CSV --> STAT
-    STAT --> DOC
-
-    style ETAPA1 fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    style ETAPA2 fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    style ETAPA3 fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    style ETAPA4 fill:#f1f8e9,stroke:#558b2f,stroke-width:2px
-    style ETAPA5 fill:#ffe0b2,stroke:#ff6f00,stroke-width:2px
-    style ETAPA6 fill:#e0f2f1,stroke:#00695c,stroke-width:2px
-    style ETAPA7 fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    style ETAPA8 fill:#e8eaf6,stroke:#283593,stroke-width:2px
-    style ETAPA9 fill:#c8e6c9,stroke:#1b5e20,stroke-width:3px
+    DL --> CL
+    CL --> SAC
+    CL --> PPO
+    CL --> A2C
+    SAC --> RANK
+    PPO --> RANK
+    A2C --> RANK
+    RANK --> DOC
