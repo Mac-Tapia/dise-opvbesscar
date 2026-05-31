@@ -95,6 +95,23 @@ TENSORBOARD_DIR: Path = _PROJECT_ROOT / "logs" / "tensorboard" / "a2c_citylearn"
 
 _DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
+# ── GPU optimizations ────────────────────────────────────────────────────────
+# TF32 acelera matmul ~5-10x en Ampere/Ada (RTX 30xx/40xx) sin perdida de precision
+if _DEVICE == "cuda":
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
+    torch.backends.cudnn.benchmark = True       # auto-tune kernels al primer forward
+    torch.backends.cudnn.deterministic = False   # no forzar determinismo = mas rapido
+    _gpu_name = torch.cuda.get_device_name(0)
+    _gpu_mem_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
+    _cuda_ver: str | None = getattr(torch.version, "cuda", None)
+    print(f"GPU: {_gpu_name}")
+    print(f"   VRAM: {_gpu_mem_gb:.1f} GB | CUDA: {_cuda_ver}")
+    print("   [GPU MAX] TF32 ON | cuDNN benchmark ON | deterministic OFF")
+else:
+    print("CPU mode -- GPU no disponible, entrenamiento mas lento")
+# ─────────────────────────────────────────────────────────────────────────────
+
 # Hiperparámetros A2C optimizados para sistema Iquitos PV-BESS-EV
 # A2C: on-policy, sin buffer, actualizaciones frecuentes (menor varianza que PPO)
 # Refs: Mnih et al 2016 A3C; SB3 A2C documentation

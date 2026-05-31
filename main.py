@@ -112,16 +112,26 @@ def paso_1_entorno() -> bool:
             print(fail(f"{display} no instalado"))
             errores.append(f"Falta {display}")
 
-    # GPU
+    # GPU — detección y configuración global
     try:
         import torch  # type: ignore
         if torch.cuda.is_available():
-            gpu = torch.cuda.get_device_name(0)
-            print(ok(f"GPU CUDA disponible: {gpu}"))
+            gpu_name = torch.cuda.get_device_name(0)
+            gpu_mem  = torch.cuda.get_device_properties(0).total_memory / 1e9
+            cuda_ver = getattr(torch.version, "cuda", "?")
+            # Aplicar optimizaciones GPU globales (afectan a todos los scripts de entrenamiento)
+            torch.backends.cuda.matmul.allow_tf32 = True   # ~5-10x en Ampere/Ada
+            torch.backends.cudnn.allow_tf32       = True
+            torch.backends.cudnn.benchmark        = True   # auto-tune kernels
+            torch.backends.cudnn.deterministic    = False
+            print(ok(f"GPU CUDA: {gpu_name}"))
+            print(ok(f"   VRAM: {gpu_mem:.1f} GB | CUDA: {cuda_ver} | PyTorch: {torch.__version__}"))
+            print(ok("   TF32 ON | cuDNN benchmark ON | deterministic OFF"))
         elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             print(ok("GPU MPS disponible (Apple Silicon)"))
         else:
             print(warn("GPU no detectada — entrenamiento en CPU (mas lento)"))
+            print(warn("   A2C ~22 min | PPO ~23 min | SAC ~172 min"))
     except Exception:
         print(warn("No se pudo verificar GPU"))
 
@@ -265,29 +275,37 @@ def paso_5_baseline(force: bool = False) -> bool:
 #  PASOS 6-8 — ENTRENAMIENTO RL
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _gpu_available() -> bool:
+    try:
+        import torch  # type: ignore
+        return bool(torch.cuda.is_available())
+    except Exception:
+        return False
+
+
 AGENT_CONFIG = {
     "A2C": {
         "script":    ROOT / "scripts" / "train" / "train_a2c_citylearn.py",
         "final_zip": ROOT / "checkpoints" / "A2C_CityLearn" / "a2c_final.zip",
         "vec_norm":  ROOT / "checkpoints" / "A2C_CityLearn" / "vecnormalize.pkl",
-        "tiempo_cpu": "~22 min",
-        "tipo":      "on-policy",
+        "tiempo_cpu": "~22 min CPU | ~4 min GPU",
+        "tipo":      "on-policy | TF32+cuDNN benchmark",
         "seleccionado": True,
     },
     "PPO": {
         "script":    ROOT / "scripts" / "train" / "train_ppo_citylearn.py",
         "final_zip": ROOT / "checkpoints" / "PPO_CityLearn" / "ppo_final.zip",
         "vec_norm":  ROOT / "checkpoints" / "PPO_CityLearn" / "vecnormalize.pkl",
-        "tiempo_cpu": "~23 min",
-        "tipo":      "on-policy",
+        "tiempo_cpu": "~23 min CPU | ~4 min GPU",
+        "tipo":      "on-policy | TF32+cuDNN benchmark | batch 256(GPU)/128(CPU)",
         "seleccionado": False,
     },
     "SAC": {
         "script":    ROOT / "scripts" / "train" / "train_sac_citylearn.py",
         "final_zip": ROOT / "checkpoints" / "SAC_CityLearn" / "sac_final.zip",
         "vec_norm":  ROOT / "checkpoints" / "SAC_CityLearn" / "vecnormalize.pkl",
-        "tiempo_cpu": "~172 min",
-        "tipo":      "off-policy (replay buffer)",
+        "tiempo_cpu": "~172 min CPU | ~20 min GPU",
+        "tipo":      "off-policy (replay buffer) | TF32+cuDNN | batch 512(GPU)/256(CPU)",
         "seleccionado": False,
     },
 }
@@ -296,14 +314,18 @@ AGENT_CONFIG = {
 def paso_entrenar_agente(nombre: str, force: bool = False, skip_if_exists: bool = False) -> bool:
     cfg = AGENT_CONFIG[nombre]
     marker = " [SELECCIONADO]" if cfg["seleccionado"] else ""
-    label = f"Entrenar {nombre}{marker} ({cfg['tipo']}, {cfg['tiempo_cpu']} CPU)"
+    gpu = _gpu_available()
+    label = f"Entrenar {nombre}{marker} ({cfg['tipo'].split('|')[0].strip()}, {cfg['tiempo_cpu']})"
 
     if not force and skip_if_exists and cfg["final_zip"].exists():
         sz = cfg["final_zip"].stat().st_size // 1024
         print(skip(f"{label} — checkpoint final existe ({sz}KB)"))
         return True
 
+    gpu = _gpu_available()
+    device_str = "CUDA GPU" if gpu else "CPU"
     print(info(label))
+    print(info(f"  Device: {device_str} | TF32+cuDNN benchmark {'ON' if gpu else 'N/A'}"))
     print(info(f"  Checkpoint: {cfg['final_zip'].relative_to(ROOT)}"))
     print(info(f"  Reanuda desde ultimo checkpoint si existe"))
 
@@ -612,10 +634,12 @@ def main() -> None:
         [args.agent] if args.agent
         else ["A2C", "PPO", "SAC"]
     )
+    _gpu = _gpu_available()
+    _t = "GPU" if _gpu else "CPU"
     step_labels = {
-        "A2C": (6, "Entrenamiento A2C  [SELECCIONADO] (~22 min CPU)"),
-        "PPO": (7, "Entrenamiento PPO  (~23 min CPU)"),
-        "SAC": (8, "Entrenamiento SAC  (~172 min CPU)"),
+        "A2C": (6, f"Entrenamiento A2C  [SELECCIONADO | {_t}] (~{'4' if _gpu else '22'} min)"),
+        "PPO": (7, f"Entrenamiento PPO  [{_t}] (~{'4' if _gpu else '23'} min)"),
+        "SAC": (8, f"Entrenamiento SAC  [{_t}] (~{'20' if _gpu else '172'} min)"),
     }
     for ag in ["A2C", "PPO", "SAC"]:
         snum, slabel = step_labels[ag]

@@ -97,6 +97,23 @@ def _lr_schedule(remaining: float) -> float:
 
 _DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
+# ── GPU optimizations ────────────────────────────────────────────────────────
+# TF32 acelera matmul ~5-10x en Ampere/Ada (RTX 30xx/40xx) sin perdida de precision
+if _DEVICE == "cuda":
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
+    torch.backends.cudnn.benchmark = True       # auto-tune kernels al primer forward
+    torch.backends.cudnn.deterministic = False   # no forzar determinismo = mas rapido
+    _gpu_name = torch.cuda.get_device_name(0)
+    _gpu_mem_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
+    _cuda_ver: str | None = getattr(torch.version, "cuda", None)
+    print(f"GPU: {_gpu_name}")
+    print(f"   VRAM: {_gpu_mem_gb:.1f} GB | CUDA: {_cuda_ver}")
+    print("   [GPU MAX] TF32 ON | cuDNN benchmark ON | deterministic OFF")
+else:
+    print("CPU mode -- GPU no disponible, entrenamiento mas lento")
+# ─────────────────────────────────────────────────────────────────────────────
+
 PPO_HYPERPARAMS: dict = {
     "policy": "MlpPolicy",
     # n_steps=4096: ~46% del episodio (mejor que 8760=100%, que aumenta varianza)
