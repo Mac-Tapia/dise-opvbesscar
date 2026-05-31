@@ -13,8 +13,8 @@ ESPACIO DE ACCIÓN (3D):
 
 OBJETIVO OE3: reducción cuantificable de CO2 en Iquitos mediante
 gestión inteligente de recarga de motos y mototaxis eléctricas.
-REWARD: CO2_DUAL_FOCUS v7.2 (indirect 45% + ev_complete 25% + direct 10%
-        + solar 5% + stability 5% + cost 10% OSINERGMIN)
+REWARD: CO2_DUAL_FOCUS v8.1 (direct 20% + indirect 30% + ev_complete 35%
+        + bess_solar 7% + solar 4% + stability 2% + cost 2% OSINERGMIN)
 
 Agente: stable_baselines3.SAC (off-policy, buffer replay, mejor para
         recompensas asimétricas -- óptimo para este problema)
@@ -24,6 +24,7 @@ Uso:
     python scripts/train/train_sac_citylearn.py
     python scripts/train/train_sac_citylearn.py --timesteps 8760  # 1 año
     python scripts/train/train_sac_citylearn.py --rebuild-schema  # regenerar datos
+    python scripts/train/train_sac_citylearn.py --fresh  # entrenamiento limpio
 
 Checkpoints: checkpoints/SAC_CityLearn/sac_<steps>_steps.zip
 =======================================================================
@@ -87,7 +88,7 @@ from stable_baselines3.common.callbacks import (
     CheckpointCallback,
 )
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
 # Módulo local CityLearn v2 con wrapper EV
 from src.citylearnv2.env_factory import create_iquitos_env_for_sb3
@@ -180,37 +181,34 @@ class PVBESSCarSAC(SAC):
                 self.critic.optimizer.zero_grad()
 
 
-# Hiperparámetros SAC optimizados v8.0 (config sac_config.yaml)
+# Hiperparámetros SAC v8.2: corrida limpia comparable con PPO/A2C.
 # Refs: Haarnoja et al 2018, Raffin 2022, Engstrom 2020, Andrychowicz 2020
 SAC_HYPERPARAMS: dict[str, Any] = {
     "policy": "MlpPolicy",
-    # [FIX v1] 3e-4 → 1e-4: grad_norm explosiva 132.93 > 10; Engstrom 2020 recomienda
-    # 1e-4 para alta dimension (39D obs). Para 3D accion + 18D obs: 1e-4 optimo.
-    "learning_rate": 5e-5,
-    # [FIX] 200k → 100k: buffer de 1M excesivo para 438k steps totales;
-    # 100k mantiene ~11 episodios completos (8760 steps). Raffin 2022: 100k suficiente.
-    "buffer_size": 100_000,
-    # Warmup de un año completo para que el replay buffer vea estacionalidad,
-    # perfiles EV estocásticos y operación PV-BESS antes de updates fuertes.
-    "learning_starts": 8_760,
-    "batch_size": 256,
-    "tau": 0.005,
-    "gamma": 0.99,
+    # 1e-4 evita que SAC quede subentrenado tras el warmup; VecNormalize controla escala.
+    "learning_rate": 1e-4,
+    # 10 episodios completos: suficiente diversidad estacional sin arrastrar política vieja.
+    "buffer_size": 87_600,
+    # Dos años de warmup para cubrir estacionalidad y demanda EV estocástica antes de updates.
+    "learning_starts": 17_520,
+    "batch_size": 512 if _DEVICE == "cuda" else 256,
+    "tau": 0.01,
+    # Horizonte efectivo menor para episodios de 8760 h; alinea mejor con PPO/A2C.
+    "gamma": 0.95,
     "train_freq": 1,
-    "gradient_steps": 1,
-    "ent_coef": "auto",
-    # [FIX v2] "auto" → -3.0: wrapper expone 3D al agente (bess, motos_frac, mototaxis_frac)
-    # Haarnoja 2018 Sec.5: H* = -dim(A) como heuristica. "auto" → -39.0 causaba
-    # alpha→0 y policy determinista prematura (alpha collapse).
-    "target_entropy": -3.0,
+    "gradient_steps": 2,
+    # Mayor exploración inicial y objetivo de entropía menos restrictivo para 3 acciones.
+    "ent_coef": "auto_0.2",
+    "target_entropy": -2.0,
     "policy_kwargs": {
-        # [FIX] [256,256,128] → [256,256]: arquitectura estandar SAC (Haarnoja 2018).
-        # Para obs 18D + 3D accion, [256,256] suficientemente expresivo sin sobreajuste.
-        "net_arch": [256, 256],
+        # Actor parecido a PPO/A2C; críticos más anchos para Q(s,a) multiobjetivo.
+        "net_arch": dict(
+            pi=[256, 256, 128],
+            qf=[512, 512, 256],
+        ),
+        "activation_fn": torch.nn.Tanh,
         "optimizer_class": AdamWithGradClip,
-        # [FIX v3] 10.0 → 5.0: conservador vs sin clipping. Engstrom 2020: gradient
-        # clipping impacta fundamentalmente en alta dimension.
-        "optimizer_kwargs": {"max_grad_norm": 5.0},
+        "optimizer_kwargs": {"max_grad_norm": 1.0},
     },
     "verbose": 1,
     "device": _DEVICE,
@@ -1564,7 +1562,19 @@ def _make_env(rebuild: bool = False):
     return _factory
 
 
-def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) -> None:
+def _checkpoint_step(path: Path) -> int:
+    """Extrae el número de steps de sac_<steps>_steps.zip para ordenar checkpoints."""
+    for part in path.stem.split("_"):
+        if part.isdigit():
+            return int(part)
+    return -1
+
+
+def train(
+    total_timesteps: int = TOTAL_TIMESTEPS,
+    rebuild_schema: bool = False,
+    fresh: bool = False,
+) -> None:
     """Loop principal de entrenamiento SAC SB3 en entorno Iquitos EV."""
     log.info("=" * 70)
     log.info("SAC SB3 -- Iquitos PV-BESS-EV + Control Cargadores")
@@ -1572,6 +1582,7 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
              torch.__version__, torch.cuda.is_available(),
              "cuda" if torch.cuda.is_available() else "cpu")
     log.info("Timesteps: %d (%d ep × 8760 h)", total_timesteps, total_timesteps // 8760)
+    log.info("Modo fresh: %s", "SI (sin resume)" if fresh else "NO (resume si existe)")
     log.info("Acción: [bess(-1->+1), motos_frac(0->1), mototaxis_frac(0->1)]")
     log.info("Obs: 18D (CityLearn 11D + EV state 5D + tarifa 2D)")
     log.info("=" * 70)
@@ -1581,9 +1592,27 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
         log.info("Reconstruyendo schema y ev_demand.csv desde datos OE2...")
         build_citylearn_schema()
 
-    # 2. Crear entorno vectorizado
-    log.info("Inicializando IquitosEVChargingWrapper(CityLearnEnv)...")
-    env = DummyVecEnv([_make_env(rebuild=False)])
+    # 2. Crear entorno vectorizado + VecNormalize como PPO/A2C.
+    CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
+    log.info("Inicializando IquitosEVChargingWrapper(CityLearnEnv) + VecNormalize...")
+    vec_env = DummyVecEnv([_make_env(rebuild=False)])
+    vecnorm_path = CHECKPOINT_DIR / "vecnormalize.pkl"
+    if vecnorm_path.exists() and not fresh:
+        env = VecNormalize.load(str(vecnorm_path), vec_env)
+        env.training = True
+        env.norm_reward = True
+        log.info("VecNormalize cargado desde: %s", vecnorm_path)
+    else:
+        if fresh and vecnorm_path.exists():
+            log.info("Modo fresh: se ignora VecNormalize existente: %s", vecnorm_path)
+        env = VecNormalize(
+            vec_env,
+            norm_obs=True,
+            norm_reward=True,
+            clip_obs=10.0,
+            clip_reward=10.0,
+        )
+    log.info("Entorno: obs=%s | action=%s", env.observation_space, env.action_space)
 
     # 2b. Validar configuración del agente
     log.info("Validando configuración del agente SAC...")
@@ -1592,17 +1621,20 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
         log.warning("[WARN] validate_agent_config reportó advertencia -- continúa entrenamiento")
 
     # 3. Cargar checkpoint o crear agente nuevo
-    CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
-    existing_ckpts = sorted(CHECKPOINT_DIR.glob("sac_*_steps.zip"))
-    model: SAC
+    existing_ckpts = [] if fresh else sorted(
+        CHECKPOINT_DIR.glob("sac_*_steps.zip"),
+        key=_checkpoint_step,
+    )
+    model: PVBESSCarSAC
+    steps_done = 0
 
     if existing_ckpts:
         latest_ckpt = existing_ckpts[-1]
         log.info("Cargando checkpoint: %s", latest_ckpt)
         try:
-            model = PVBESSCarSAC.load(latest_ckpt, env=env, device="auto")
-            start_steps = model.num_timesteps
-            log.info("Reanudando desde paso %d", start_steps)
+            model = PVBESSCarSAC.load(latest_ckpt, env=env, device=_DEVICE)
+            steps_done = model.num_timesteps
+            log.info("Reanudando desde paso %d", steps_done)
         except Exception as e:
             log.warning("Error cargando checkpoint: %s -- iniciando nuevo", e)
             model = PVBESSCarSAC(
@@ -1617,6 +1649,11 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
             tensorboard_log=str(TENSORBOARD_DIR),
             **SAC_HYPERPARAMS,
         )
+    remaining_steps = total_timesteps if fresh else max(total_timesteps - steps_done, 0)
+    if remaining_steps == 0:
+        log.info("Ya completado el objetivo de %d timesteps.", total_timesteps)
+        return
+    log.info("Pasos restantes: %d", remaining_steps)
 
     log.info(
         "Parámetros del modelo: %d",
@@ -1629,6 +1666,7 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
         save_path=str(CHECKPOINT_DIR),
         name_prefix="sac",
         save_replay_buffer=True,
+        save_vecnormalize=True,
         verbose=1,
     )
     ev_metrics_cb = EVMetricsCallback(log_freq=8760, verbose=1)
@@ -1643,7 +1681,7 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
     log.info("Iniciando entrenamiento SAC...")
     t0 = time.time()
     model.learn(
-        total_timesteps=total_timesteps,
+        total_timesteps=remaining_steps,
         callback=callbacks,
         reset_num_timesteps=False,  # acumular pasos si es resume
         tb_log_name=f"sac_{_ts}",
@@ -1654,7 +1692,8 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
     # 6. Guardar modelo final
     final_path = CHECKPOINT_DIR / "sac_final"
     model.save(str(final_path))
-    log.info("Modelo final guardado: %s.zip", final_path)
+    env.save(str(vecnorm_path))
+    log.info("Modelo final guardado: %s.zip | VecNormalize: %s", final_path, vecnorm_path)
 
     # 7. Validación post-entrenamiento (10 episodios determinísticos)
     log.info("=" * 70)
@@ -1665,6 +1704,8 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
     val_co2_avoided: list[float] = []
     val_solar: list[float] = []
     val_grid: list[float] = []
+    env.training = False
+    env.norm_reward = False
     _val_env_raw = create_iquitos_env_for_sb3()
     for ep_v in range(N_VAL):
         obs_v, _ = _val_env_raw.reset()
@@ -1674,7 +1715,8 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
         ep_sol = 0.0
         ep_grid = 0.0
         while not done_v:
-            act_v, _ = model.predict(obs_v[np.newaxis], deterministic=True)
+            obs_model = env.normalize_obs(obs_v[np.newaxis])
+            act_v, _ = model.predict(obs_model, deterministic=True)
             obs_v, rew_v, term_v, trunc_v, info_v = _val_env_raw.step(act_v[0])
             done_v = bool(term_v) or bool(trunc_v)
             ep_rew += float(rew_v)
@@ -1688,6 +1730,8 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
         log.info("  Val ep %2d/%d: reward=%8.2f | CO2_evitado=%7.1f kg | solar=%7.1f kWh",
                  ep_v + 1, N_VAL, ep_rew, ep_co2, ep_sol)
     _val_env_raw.close()
+    env.training = True
+    env.norm_reward = True
     log.info("  Validación: reward_mean=%.2f ± %.2f | CO2_mean=%.1f kg | solar_mean=%.1f kWh",
              float(np.mean(val_rewards)), float(np.std(val_rewards)),
              float(np.mean(val_co2_avoided)), float(np.mean(val_solar)))
@@ -1720,6 +1764,9 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
             "device":             str("cuda" if torch.cuda.is_available() else "cpu"),
             "episodes_completed": len(_ep_cb._episodes),
             "hyperparameters":    {k: str(v) for k, v in SAC_HYPERPARAMS.items()},
+            "fresh_start":         bool(fresh),
+            "vecnormalize":        str(vecnorm_path),
+            "steps_done_before_run": int(steps_done),
         },
         "infrastructure": {
             "pv_kwp":            4050,
@@ -1781,6 +1828,7 @@ def train(total_timesteps: int = TOTAL_TIMESTEPS, rebuild_schema: bool = False) 
             "trace":       str(RESULTS_DIR / "trace_sac.csv"),
             "timeseries":  str(RESULTS_DIR / "timeseries_sac.csv"),
             "result":      str(RESULTS_DIR / "result_sac.json"),
+            "vecnormalize": str(vecnorm_path),
         },
     }
     result_path = RESULTS_DIR / "result_sac.json"
@@ -1826,10 +1874,18 @@ if __name__ == "__main__":
         "--rebuild-schema", action="store_true",
         help="Regenerar CSVs y ev_demand.csv desde datos OE2 aunque ya existan"
     )
+    parser.add_argument(
+        "--fresh", action="store_true",
+        help="Ignorar checkpoints y VecNormalize existentes; iniciar entrenamiento limpio"
+    )
     args = parser.parse_args()
 
     try:
-        train(total_timesteps=args.timesteps, rebuild_schema=args.rebuild_schema)
+        train(
+            total_timesteps=args.timesteps,
+            rebuild_schema=args.rebuild_schema,
+            fresh=args.fresh,
+        )
     except KeyboardInterrupt:
         log.info("Entrenamiento interrumpido por usuario.")
     except Exception as exc:

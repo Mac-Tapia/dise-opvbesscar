@@ -1,6 +1,6 @@
 # OE3 - Auditoria de fuentes, checkpoints y resultados
 
-**Fecha de actualizacion:** 2026-05-30
+**Fecha de actualizacion:** 2026-05-31
 
 ## Politica de fuentes
 
@@ -18,7 +18,7 @@ No se usan rutas bajo `archive`, `archive_previous` ni `archive_v73_obs16`.
 
 | Agente | Timestamp result | Checkpoint final | Result JSON | Trace filas | Episodios trace completos | Filas parciales ignoradas | Estado |
 |---|---|---|---|---:|---:|---:|---|
-| SAC | 20260528_070628 | `checkpoints/SAC_CityLearn/sac_final.zip` | `outputs/sac_training/result_sac.json` | 438,000 | 50 | 0 | vigente/no archive |
+| SAC | 20260530_221733 | `checkpoints/SAC_CityLearn/sac_final.zip` | `outputs/sac_training/result_sac.json` | 438,000 | 50 | 0 | vigente/no archive |
 | PPO | 20260528_083447 | `checkpoints/PPO_CityLearn/ppo_final.zip` | `outputs/ppo_training/result_ppo.json` | 438,272 | 50 | 272 | vigente/no archive |
 | A2C | 20260528_090107 | `checkpoints/A2C_CityLearn/a2c_final.zip` | `outputs/a2c_training/result_a2c.json` | 438,272 | 50 | 272 | vigente/no archive |
 
@@ -26,23 +26,23 @@ No se usan rutas bajo `archive`, `archive_previous` ni `archive_v73_obs16`.
 
 | Agente | F2 minimo | Episodio F2 | CO2 evitado vs F0 | CV plateau | Reward validacion | Grid validacion |
 |---|---:|---:|---:|---:|---:|---:|
-| SAC | 3,720,640 | 33 | 3,333,359 | 0.065% | 1,519.15 | 7,456,699 |
-| PPO | 3,657,483 | 49 | 3,396,516 | 0.034% | 1,628.46 | 7,348,969 |
-| A2C | 3,659,010 | 45 | 3,394,989 | 0.422% | 1,633.29 | 7,337,811 |
+| SAC | 3,693,084 | 17 | 3,360,916 | 0.036% | 1,517.13 | 7,345,854 |
+| PPO | 3,657,484 | 49 | 3,396,516 | 0.034% | 1,628.46 | 7,348,969 |
+| A2C | 3,659,010 | 45 | 3,394,990 | 0.422% | 1,633.29 | 7,337,811 |
 
 ## Lectura trace complementaria
 
 | Criterio trace | SAC | PPO | A2C | Ganador parcial |
 |---|---:|---:|---:|---|
-| CO2 total evitado maximo | 2,456,969 | 2,469,954 | 2,523,717 | A2C |
-| CO2 directo evitado maximo | 223,937 | 227,155 | 225,136 | PPO |
-| CO2 indirecto evitado maximo | 2,287,691 | 2,365,179 | 2,377,543 | A2C |
-| CO2 indirecto residual minimo | 3,720,640 | 3,657,484 | 3,659,010 | PPO |
+| CO2 total evitado maximo | 2,434,161 | 2,469,954 | 2,523,717 | A2C |
+| CO2 directo evitado maximo | 220,168 | 227,155 | 225,136 | PPO |
+| CO2 indirecto evitado maximo | 2,286,741 | 2,365,179 | 2,377,543 | A2C |
+| CO2 indirecto residual minimo | 3,693,084 | 3,657,484 | 3,659,010 | PPO |
 
 ## Conclusion de auditoria
 
-El SAC auditado corresponde al checkpoint final vigente `checkpoints/SAC_CityLearn/sac_final.zip`; no se usaron checkpoints antiguos ni archivos archivados. SAC fue comparado con PPO y A2C, pero en los resultados guardados vigentes queda por debajo en F2 minimo, CO2 evitado vs F0, reward de validacion e importacion de red.
+El SAC auditado corresponde al checkpoint final vigente `checkpoints/SAC_CityLearn/sac_final.zip`; no se usaron checkpoints antiguos ni archivos archivados. SAC fue comparado con PPO y A2C, y aunque SAC v8.2 mejora la importacion de red de validacion frente a PPO, todavia queda por debajo en F2 minimo, CO2 evitado vs F0 y reward de validacion.
 
-Si existe un SAC mejorado mas nuevo que debe cambiar esta conclusion, no esta guardado en las rutas vigentes auditadas. Debe aparecer como nuevo `result_sac.json` y nuevo `sac_final.zip` fuera de carpetas `archive` para ser usado como fuente canonica.
+Para cambiar esta conclusion en una futura corrida, el nuevo SAC debe aparecer como `outputs/sac_training/result_sac.json`, `checkpoints/SAC_CityLearn/sac_final.zip` y `checkpoints/SAC_CityLearn/vecnormalize.pkl` fuera de carpetas `archive`.
 
 - JSON: `reports/oe3/AUDITORIA_FUENTES_CHECKPOINTS_OE3.json`

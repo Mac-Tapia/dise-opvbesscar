@@ -5,10 +5,10 @@ VALIDACION CENTRALIZADA - Asegurar que TODOS los agentes entrenan COMPLETAMENTE.
 
 Este modulo valida que cada agente (SAC, PPO, A2C) cumpla con:
 1. 50 EPISODIOS COMPLETOS (438,000 timesteps = 1 ano × 50)
-2. TODOS los DATASETS cargados (solar, chargers, BESS, mall, context)
-3. TODAS las 27 COLUMNAS OBSERVABLES integradas
-4. MULTIOBJETIVO con pesos consistentes
-5. INDEPENDENCIA de algoritmo (sin simplificaciones)
+2. TODOS los DATASETS reales cargados (OE2 raw + CityLearn v2 intermedio)
+3. OBSERVACION/ACCION consistentes con IquitosEVChargingWrapper
+4. MULTIOBJETIVO CO2_DUAL_FOCUS v8.1 con pesos consistentes
+5. INDEPENDENCIA de algoritmo: SAC, PPO y A2C usan el mismo entorno
 6. VALIDACION PRE/POST entrenamiento
 """
 
@@ -23,58 +23,66 @@ REQUIRED_EPISODES = 50
 TIMESTEPS_PER_YEAR = 8760
 REQUIRED_TOTAL_TIMESTEPS = REQUIRED_EPISODES * TIMESTEPS_PER_YEAR  # 438,000
 
-# 27 COLUMNAS OBSERVABLES DEFINIDAS (TODAS DEBEN USARSE)
+# Columnas fuente OE2/CityLearn que deben existir en los datasets reales.
 OBSERVABLE_COLS_REQUIRED = {
     'CHARGERS': [
-        'is_hora_punta', 'tarifa_aplicada_soles', 'ev_energia_total_kwh',
-        'ev_costo_carga_soles', 'ev_energia_motos_kwh', 'ev_energia_mototaxis_kwh',
-        'ev_co2_reduccion_motos_kg', 'ev_co2_reduccion_mototaxis_kg',
-        'ev_reduccion_directa_co2_kg', 'ev_demand_kwh'
+        'vehicles_per_hour', 'ev_demand_kwh', 'active_sockets',
+        'electric_vehicle_charger_state',
     ],
     'SOLAR': [
-        'is_hora_punta', 'tarifa_aplicada_soles', 'ahorro_solar_soles',
-        'reduccion_indirecta_co2_kg', 'co2_evitado_mall_kg', 'co2_evitado_ev_kg'
+        'solar_generation_kwh',
     ],
     'BESS': [
-        'bess_soc_percent', 'bess_charge_kwh', 'bess_discharge_kwh',
-        'bess_to_mall_kwh', 'bess_to_ev_kwh'
+        'pv_kwh', 'ev_kwh', 'mall_kwh', 'bess_charge_kwh',
+        'bess_discharge_kwh', 'bess_to_mall_kwh', 'bess_to_ev_kwh',
     ],
     'MALL': [
-        'mall_demand_kwh', 'mall_demand_reduction_kwh', 'mall_cost_soles'
+        'mall_demand_kwh',
     ],
-    'TOTALES': [
-        'total_reduccion_co2_kg', 'total_costo_soles', 'total_ahorro_soles'
+    'CO2_TARIFFS': [
+        'co2_factor_kg_kwh', 'tarifa_energia_soles_kwh',
+        'tarifa_total_soles_kwh',
     ]
 }
 
-# MULTIOBJETIVO PESOS (DEBEN SER CONSISTENTES)
+# MULTIOBJETIVO CO2_DUAL_FOCUS v8.1 (DEBE SER CONSISTENTE EN LOS 3 AGENTES)
 REQUIRED_WEIGHTS = {
-    'co2': 0.45,
-    'solar': 0.15,
-    'vehicles_charged': 0.25,
-    'grid_stable': 0.05,
-    'bess_efficiency': 0.05,
-    'prioritization': 0.05,
+    'direct_co2': 0.20,
+    'indirect_co2': 0.30,
+    'ev_complete': 0.35,
+    'bess_solar': 0.07,
+    'solar': 0.04,
+    'grid_stable': 0.02,
+    'cost': 0.02,
 }
 
 # CONTEXTOINQUITOS
 REQUIRED_CONTEXT = {
     'CO2_FACTOR_KG_PER_KWH': 0.4521,
-    'BESS_CAPACITY_KWH': 2000.0,  # 2,000 kWh max SOC (v5.8 verified 2026-02-18)
+    'BESS_CAPACITY_KWH': 2000.0,
     'BESS_MAX_KWH': 2000.0,
-    'SOLAR_MAX_KW': 4100.0,
+    'SOLAR_MAX_KW': 4050.0,
     'CHARGERS_COUNT': 19,
     'TOTAL_SOCKETS': 38,
-    'MOTOS': 270,
-    'MOTOTAXIS': 39,
+    'ACTION_DIM': 3,
+    'OBS_DIM': 18,
 }
 
 # ARCHIVOS DE DATOS OBLIGATORIOS
 REQUIRED_DATA_FILES = {
-    'solar': 'data/oe2/Generacionsolar/pv_generation_citylearn2024.csv',
-    'chargers': 'data/oe2/chargers/chargers_ev_ano_2024_v3.csv',
-    'mall': 'data/oe2/demandamallkwh/demandamallhorakwh.csv',
-    'bess': 'data/oe2/bess/bess_ano_2024.csv',
+    'raw_solar': 'data/iquitos_ev_mall/solar_generation.csv',
+    'raw_chargers': 'data/iquitos_ev_mall/chargers_timeseries.csv',
+    'raw_mall': 'data/iquitos_ev_mall/mall_demand.csv',
+    'raw_bess': 'data/iquitos_ev_mall/bess_timeseries.csv',
+    'raw_co2': 'data/iquitos_ev_mall/co2_emissions.csv',
+    'raw_tariffs': 'data/iquitos_ev_mall/tariffs_osinergmin.csv',
+    'cl_energy': 'data/interim/citylearn_v2/energy_simulation.csv',
+    'cl_weather': 'data/interim/citylearn_v2/weather.csv',
+    'cl_carbon': 'data/interim/citylearn_v2/carbon_intensity.csv',
+    'cl_ev_motos': 'data/interim/citylearn_v2/ev_charger_motos.csv',
+    'cl_ev_mototaxis': 'data/interim/citylearn_v2/ev_charger_mototaxis.csv',
+    'cl_tariffs': 'data/interim/citylearn_v2/tariffs_osinergmin.csv',
+    'cl_schema': 'data/interim/citylearn_v2/schema_iquitos.json',
 }
 
 
@@ -117,48 +125,60 @@ def validate_data_files_exist() -> bool:
 
 def validate_observable_cols_used(obs_dim: int, expected_min_cols: int | None = None) -> bool:
     """[OK] Validar que observation space sea correcto para el entorno configurado."""
-    # CityLearn v2 usa 16D; setup antiguo usaba 27+ columnas
-    # Si se pasa expected_min_cols usa ese valor, si no acepta cualquier dim >= 3
-    min_cols = expected_min_cols if expected_min_cols is not None else 3
-    if obs_dim < min_cols:
-        print(f'  [X] Observation dim: {obs_dim} < {min_cols}')
+    expected = expected_min_cols if expected_min_cols is not None else REQUIRED_CONTEXT['OBS_DIM']
+    if obs_dim != expected:
+        print(f'  [X] Observation dim: {obs_dim} != {expected}')
         return False
-    print(f'  [OK] Observation dim: {obs_dim}')
+    print(f'  [OK] Observation dim: {obs_dim} (CityLearn 11D + EV 5D + tarifa 2D)')
     return True
 
 
-def validate_action_space(action_dim: int, valid_dims: tuple = (3, 39)) -> bool:
+def validate_action_space(action_dim: int, valid_dims: tuple = (3,)) -> bool:
     """[OK] Validar que action space sea correcto.
 
-    Acepta:
-    - 3  : CityLearn v2 (bess, motos_frac, mototaxis_frac)
-    - 39 : Setup antiguo (1 BESS + 38 sockets individuales)
+    CityLearn v2 actual expone 3 acciones:
+    - bess_action
+    - ev_motos_frac
+    - ev_mototaxis_frac
     """
     if action_dim not in valid_dims:
-        print(f'  [X] Action dim: {action_dim} (esperado: {" o ".join(str(d) for d in valid_dims)})')
+        print(f'  [X] Action dim: {action_dim} (esperado: 3)')
         return False
-    label = "CityLearn v2" if action_dim == 3 else "1 BESS + 38 sockets"
-    print(f'  [OK] Action dim: {action_dim} ({label})')
+    print(f'  [OK] Action dim: {action_dim} (bess, motos_frac, mototaxis_frac)')
     return True
 
 
 def validate_reward_weights() -> bool:
-    """[OK] Validar que pesos multiobjetivo suman 1.0 y son correctos."""
+    """[OK] Validar pesos reales del wrapper CO2_DUAL_FOCUS v8.1."""
     try:
-        from dataset_builder_citylearn.rewards import create_iquitos_reward_weights
-        weights = create_iquitos_reward_weights('co2_focus')
-        
-        # Verificar estructura - usar getattr para objetos dataclass
-        if hasattr(weights, '__dict__'):
-            weight_dict = weights.__dict__
-        elif isinstance(weights, dict):
-            weight_dict = weights
+        from src.citylearnv2 import ev_charging_wrapper as wrapper
+
+        actual = {
+            'direct_co2': wrapper._W_DIRECT_CO2,
+            'indirect_co2': wrapper._W_INDIRECT_CO2,
+            'ev_complete': wrapper._W_EV_COMPLETE,
+            'bess_solar': wrapper._W_BESS_SOLAR,
+            'solar': wrapper._W_SOLAR,
+            'grid_stable': wrapper._W_GRID_STABLE,
+            'cost': wrapper._W_COST,
+        }
+
+        all_ok = True
+        for key, expected in REQUIRED_WEIGHTS.items():
+            value = float(actual[key])
+            if abs(value - expected) < 1e-9:
+                print(f'  [OK] Reward {key:13s}: {value:.2f}')
+            else:
+                print(f'  [X] Reward {key:13s}: {value:.2f} != {expected:.2f}')
+                all_ok = False
+
+        total = sum(float(v) for v in actual.values())
+        if abs(total - 1.0) < 1e-9:
+            print(f'  [OK] Reward sum: {total:.2f}')
         else:
-            weight_dict = {}
-        
-        # Puede ser dataclass o dict
-        print(f'  [OK] Reward weights loaded (co2_focus mode)')
-        return True
+            print(f'  [X] Reward sum: {total:.2f} != 1.00')
+            all_ok = False
+        return all_ok
     except Exception as e:
         print(f'  [X] Reward weights error: {e}')
         return False
@@ -167,13 +187,14 @@ def validate_reward_weights() -> bool:
 def validate_context_iquitos() -> bool:
     """[OK] Validar contexto de Iquitos con constantes correctas."""
     try:
-        from dataset_builder_citylearn.rewards import IquitosContext
-        context = IquitosContext()
-        
+        from src.citylearnv2 import ev_charging_wrapper as wrapper
+
         checks = {
-            'CO2 factor': (abs(context.co2_factor_kg_per_kwh - 0.4521) < 0.0001, context.co2_factor_kg_per_kwh),
-            'Chargers': (context.n_chargers == 19, context.n_chargers),
-            'Total sockets': (context.total_sockets == 38, context.total_sockets),
+            'CO2 factor': (abs(wrapper.CO2_GRID_KG_PER_KWH - REQUIRED_CONTEXT['CO2_FACTOR_KG_PER_KWH']) < 0.0001, wrapper.CO2_GRID_KG_PER_KWH),
+            'BESS capacity': (abs(wrapper.BESS_CAPACITY_KWH - REQUIRED_CONTEXT['BESS_CAPACITY_KWH']) < 0.1, wrapper.BESS_CAPACITY_KWH),
+            'BESS power': (abs(wrapper.BESS_MAX_KW - 400.0) < 0.1, wrapper.BESS_MAX_KW),
+            'Motos max kW': (abs(wrapper.EV_MOTOS_MAX_KW - 222.0) < 0.1, wrapper.EV_MOTOS_MAX_KW),
+            'Mototaxis max kW': (abs(wrapper.EV_MOTOTAXIS_MAX_KW - 59.2) < 0.1, wrapper.EV_MOTOTAXIS_MAX_KW),
         }
         
         all_ok = True
@@ -219,7 +240,7 @@ def validate_agent_config(agent_name: str, num_episodes: int, total_timesteps: i
         print(f'  - Observation: {obs_dim} dims')
         print(f'  - Action: {action_dim} dims')
         print(f'  - Datasets: TODOS cargados')
-        print(f'  - Multiobjetivo: SI (27 columnas observables)')
+        print(f'  - Multiobjetivo: SI (CO2_DUAL_FOCUS v8.1)')
         print(f'  - Validacion: OK [OK]')
     else:
         print(f'[RESULTADO] [X] {agent_name} NO LISTO - Revisar errores arriba')
@@ -239,16 +260,17 @@ def main():
     print(f'\nRequisitos globales:')
     print(f'  - Episodios por agente: {REQUIRED_EPISODES} (ano completo)')
     print(f'  - Timesteps totales: {REQUIRED_TOTAL_TIMESTEPS:,}')
-    print(f'  - Columnas observables: {total_cols}')
-    print(f'  - Acciones controlables: 39 (1 BESS + 38 sockets)')
-    print(f'  - Multiobjetivo: SI')
-    print(f'  - Independencia de algoritmo: SI')
+    print(f'  - Columnas fuente verificadas: {total_cols}')
+    print(f'  - Observation dim: {REQUIRED_CONTEXT["OBS_DIM"]}')
+    print(f'  - Acciones controlables: 3 (BESS + motos + mototaxis)')
+    print(f'  - Multiobjetivo: SI (CO2_DUAL_FOCUS v8.1)')
+    print(f'  - Independencia de algoritmo: SI, mismo wrapper para SAC/PPO/A2C')
     
     # Validar each agent
     agents_config = [
-        ('SAC (Off-policy)', 50, 438_000, 246, 39),  # SAC puede usar 246-dim obs
-        ('PPO (On-policy)', 50, 438_000, 156, 39),   # PPO usa 156-dim obs
-        ('A2C (On-policy)', 50, 438_000, 156, 39),   # A2C usa 156-dim obs
+        ('SAC (Off-policy)', 50, 438_000, 18, 3),
+        ('PPO (On-policy)', 50, 438_000, 18, 3),
+        ('A2C (On-policy)', 50, 438_000, 18, 3),
     ]
     
     results = []

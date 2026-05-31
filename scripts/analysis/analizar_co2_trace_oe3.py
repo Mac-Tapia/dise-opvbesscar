@@ -15,6 +15,7 @@ guardan una columna episode incompleta o incluyen un episodio parcial final.
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -28,6 +29,7 @@ OUT_DIR = BASE / "reports" / "oe3"
 OUT_MD = OUT_DIR / "CO2_DIRECTO_INDIRECTO_TRACE_OE3.md"
 OUT_CSV = OUT_DIR / "co2_trace_direct_indirect_summary.csv"
 OUT_JSON = OUT_DIR / "co2_trace_direct_indirect_summary.json"
+RUN_DATE = date.today().isoformat()
 
 
 def fmt_num(value: float, decimals: int = 2) -> str:
@@ -196,7 +198,7 @@ def main() -> None:
     pd.DataFrame(summary_rows).to_csv(OUT_CSV, index=False)
 
     payload = {
-        "fecha_actualizacion": "2026-05-30",
+        "fecha_actualizacion": RUN_DATE,
         "fuente": "outputs/*_training/trace_*.csv",
         "metodologia": {
             "episodio_completo_horas": ROWS_PER_EPISODE,
@@ -217,7 +219,7 @@ def main() -> None:
     md: list[str] = []
     md.append("# OE3 - Reporte CO2 directo e indirecto desde trace")
     md.append("")
-    md.append("**Fecha de actualizacion:** 2026-05-30")
+    md.append(f"**Fecha de actualizacion:** {RUN_DATE}")
     md.append("**Fuente:** `outputs/*_training/trace_*.csv`")
     md.append("")
     md.append("## Decision")

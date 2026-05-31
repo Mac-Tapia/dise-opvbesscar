@@ -80,6 +80,7 @@ def _save_table(filename: str, title: str, columns: list[str], rows: list[list[s
 
 def generate_selection_table(data: dict) -> Path:
     agents = sorted(data["agents"].items(), key=lambda item: item[1]["rank"])
+    selected_agent = data["metadata"]["selected_agent"]
     columns = [
         "Rank",
         "Agente",
@@ -110,7 +111,7 @@ def generate_selection_table(data: dict) -> Path:
 
     return _save_table(
         "tabla_criterios_seleccion_oe3.png",
-        "OE3 - Comparativa canonica de agentes RL (PPO seleccionado)",
+        f"OE3 - Comparativa canonica de agentes RL ({selected_agent} seleccionado)",
         columns,
         rows,
         selected_row=selected_row,
@@ -119,15 +120,17 @@ def generate_selection_table(data: dict) -> Path:
 
 def generate_co2_summary_table(data: dict) -> Path:
     system = data["system"]
-    ppo = data["agents"]["PPO"]
+    selected_agent = data["metadata"]["selected_agent"]
+    selected = data["agents"][selected_agent]
     sac = data["agents"]["SAC"]
     a2c = data["agents"]["A2C"]
+    ppo = data["agents"]["PPO"]
     columns = ["Concepto", "Valor", "Unidad", "Nota"]
     rows = [
-        ["Agente seleccionado", "PPO", "-", "Menor F2 anual"],
+        ["Agente seleccionado", selected_agent, "-", "Menor F2 anual"],
         ["F0 referencia", _fmt_int(system["f0_reference_kg_co2_year"]), "kg CO2/año", "Sin solar/BESS/RL"],
-        ["F2 PPO", _fmt_int(ppo["f2_min_kg_per_year"]), "kg CO2/año", "Episodio 49"],
-        ["CO2 evitado PPO", _fmt_int(ppo["co2_avoided_vs_f0_kg_per_year"]), "kg CO2/año", "48.15% vs F0"],
+        [f"F2 {selected_agent}", _fmt_int(selected["f2_min_kg_per_year"]), "kg CO2/año", f"Episodio {selected['best_episode']}"],
+        [f"CO2 evitado {selected_agent}", _fmt_int(selected["co2_avoided_vs_f0_kg_per_year"]), "kg CO2/año", f"{selected['co2_reduction_vs_f0_pct']:.2f}% vs F0"],
         ["Diferencia PPO vs A2C", _fmt_int(a2c["f2_min_kg_per_year"] - ppo["f2_min_kg_per_year"]), "kg CO2/año", "A2C emite mas"],
         ["Diferencia PPO vs SAC", _fmt_int(sac["f2_min_kg_per_year"] - ppo["f2_min_kg_per_year"]), "kg CO2/año", "SAC emite mas"],
         ["Solar PV", _fmt_int(system["solar_kwp_dc_pvwatts"]), "kWp DC", "PVWatts/pdc0"],
@@ -136,7 +139,7 @@ def generate_co2_summary_table(data: dict) -> Path:
     ]
     return _save_table(
         "tabla_co2_componentes_ppo_ep49.png",
-        "OE3 - Resumen CO2 canonico para PPO episodio 49",
+        f"OE3 - Resumen CO2 canonico para {selected_agent} episodio {selected['best_episode']}",
         columns,
         rows,
         selected_row=2,
@@ -149,7 +152,7 @@ def main() -> None:
     path2 = generate_co2_summary_table(data)
     print(f"Tabla 1 guardada: {path1}")
     print(f"Tabla 2 guardada: {path2}")
-    print("Agente OE3 seleccionado: PPO")
+    print(f"Agente OE3 seleccionado: {data['metadata']['selected_agent']}")
 
 
 if __name__ == "__main__":

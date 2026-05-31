@@ -4,6 +4,6 @@ La fase OE2 genera y valida los datasets horarios de 8,760 filas para solar, dem
 
 La fase OE3 entrena tres agentes RL: SAC, PPO y A2C. En la comparativa canonica actualizada el criterio principal es minimizar F2 anual, expresado en kg CO2/año. La prueba de normalidad se usa para decidir el metodo estadistico, no para seleccionar el agente. Como Shapiro-Wilk rechaza normalidad en las tres series, la inferencia se reporta con pruebas no parametricas.
 
-El resultado vigente selecciona PPO. PPO obtiene F2 minimo de 3,657,483 kg CO2/año en el episodio 49, con reduccion de 48.15% frente a F0. A2C queda segundo con 3,659,010 kg CO2/año en el episodio 45. SAC queda tercero con 3,720,640 kg CO2/año en el episodio 33.
+El resultado vigente selecciona PPO. PPO obtiene F2 minimo de 3,657,484 kg CO2/año en el episodio 49, con reduccion de 48.15% frente a F0. A2C queda segundo con 3,659,010 kg CO2/año en el episodio 45. SAC v8.2 queda tercero con 3,693,084 kg CO2/año en el episodio 17 despues de reentrenarse con VecNormalize.
 
 Los reportes antiguos donde SAC o A2C figuran como ganadores son instantaneas historicas. La fuente documental y estructurada para informes nuevos esta en `reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md`, `reports/oe3/agents_comparison_canonical.json` y `reports/oe3/agents_comparison_canonical.csv`.

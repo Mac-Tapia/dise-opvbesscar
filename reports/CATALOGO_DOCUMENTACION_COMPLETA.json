@@ -1,5 +1,5 @@
 {
-  "fecha_actualizacion": "2026-05-30",
+  "fecha_actualizacion": "2026-05-31",
   "proyecto": "PVBESSCAR",
   "estado": "catalogo canonico actualizado",
   "documentos_canonicos": [
@@ -56,7 +56,7 @@
       {
         "rank": 1,
         "agente": "PPO",
-        "f2_minimo_kg_anio": 3657483,
+        "f2_minimo_kg_anio": 3657484,
         "episodio_optimo": 49,
         "reduccion_vs_f0_pct": 48.15
       },
@@ -69,10 +69,10 @@
       },
       {
         "rank": 3,
-        "agente": "SAC",
-        "f2_minimo_kg_anio": 3720640,
-        "episodio_optimo": 33,
-        "reduccion_vs_f0_pct": 47.25
+        "agente": "SAC v8.2",
+        "f2_minimo_kg_anio": 3693084,
+        "episodio_optimo": 17,
+        "reduccion_vs_f0_pct": 47.65
       }
     ]
   },

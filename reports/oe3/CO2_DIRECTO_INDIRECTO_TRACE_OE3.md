@@ -1,6 +1,6 @@
 # OE3 - Reporte CO2 directo e indirecto desde trace
 
-**Fecha de actualizacion:** 2026-05-30
+**Fecha de actualizacion:** 2026-05-31
 **Fuente:** `outputs/*_training/trace_*.csv`
 
 ## Decision
@@ -24,7 +24,7 @@ Si el criterio es **menor CO2 indirecto emitido por importacion de red** (`co2_g
 |---:|---|---:|---|---:|---:|---:|---:|---:|
 | 1 | A2C | 19 | CO2 total evitado | 2,523,717 | 2,523,717 | 2,299,823 | 223,894 | 3,691,968 |
 | 2 | PPO | 48 | CO2 total evitado | 2,469,954 | 2,469,954 | 2,242,799 | 227,155 | 3,660,595 |
-| 3 | SAC | 9 | CO2 total evitado | 2,456,969 | 2,456,969 | 2,249,751 | 207,218 | 3,736,781 |
+| 3 | SAC | 41 | CO2 total evitado | 2,434,161 | 2,434,161 | 2,215,728 | 218,433 | 3,694,826 |
 
 ## Ranking por CO2 directo evitado
 
@@ -32,7 +32,7 @@ Si el criterio es **menor CO2 indirecto emitido por importacion de red** (`co2_g
 |---:|---|---:|---|---:|---:|---:|---:|---:|
 | 1 | PPO | 48 | CO2 dir. evitado | 227,155 | 2,469,954 | 2,242,799 | 227,155 | 3,660,595 |
 | 2 | A2C | 35 | CO2 dir. evitado | 225,136 | 2,461,967 | 2,236,832 | 225,136 | 3,670,317 |
-| 3 | SAC | 14 | CO2 dir. evitado | 223,937 | 2,401,051 | 2,177,114 | 223,937 | 3,739,560 |
+| 3 | SAC | 27 | CO2 dir. evitado | 220,168 | 2,430,744 | 2,210,575 | 220,168 | 3,700,571 |
 
 ## Ranking por CO2 indirecto evitado
 
@@ -40,7 +40,7 @@ Si el criterio es **menor CO2 indirecto emitido por importacion de red** (`co2_g
 |---:|---|---:|---|---:|---:|---:|---:|---:|
 | 1 | A2C | 1 | CO2 ind. evitado | 2,377,543 | 2,462,081 | 2,377,543 | 84,538 | 3,810,765 |
 | 2 | PPO | 1 | CO2 ind. evitado | 2,365,179 | 2,442,920 | 2,365,179 | 77,741 | 3,844,560 |
-| 3 | SAC | 1 | CO2 ind. evitado | 2,287,691 | 2,397,334 | 2,287,691 | 109,643 | 3,875,134 |
+| 3 | SAC | 1 | CO2 ind. evitado | 2,286,741 | 2,397,279 | 2,286,741 | 110,538 | 3,868,617 |
 
 ## Ranking por menor CO2 indirecto emitido
 
@@ -48,7 +48,7 @@ Si el criterio es **menor CO2 indirecto emitido por importacion de red** (`co2_g
 |---:|---|---:|---|---:|---:|---:|---:|---:|
 | 1 | PPO | 49 | CO2 ind. emitido | 3,657,484 | 2,465,741 | 2,243,142 | 222,599 | 3,657,484 |
 | 2 | A2C | 45 | CO2 ind. emitido | 3,659,010 | 2,468,179 | 2,246,403 | 221,776 | 3,659,010 |
-| 3 | SAC | 33 | CO2 ind. emitido | 3,720,640 | 2,404,578 | 2,187,247 | 217,331 | 3,720,640 |
+| 3 | SAC | 17 | CO2 ind. emitido | 3,693,084 | 2,432,762 | 2,215,865 | 216,897 | 3,693,084 |
 
 ## Calidad de datos trace
 

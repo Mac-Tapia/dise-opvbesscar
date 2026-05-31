@@ -231,7 +231,7 @@ for name, arr_all, arr_plateau in [("SAC", f2_sac, plateau_sac), ("PPO", f2_ppo,
     mejora_total = (arr_all[0] - arr_all.min()) / arr_all[0] * 100
     robustez_rows.append({
         "Agente": name,
-        "F2 mínimo (kg/año)": int(arr_all.min()),
+        "F2 mínimo (kg/año)": int(round(float(arr_all.min()))),
         "F2 Ep1 (kg/año)": int(arr_all[0]),
         "Mejora total (%)": round(mejora_total, 2),
         "σ global (kg/año)": round(arr_all.std(), 0),
@@ -240,7 +240,7 @@ for name, arr_all, arr_plateau in [("SAC", f2_sac, plateau_sac), ("PPO", f2_ppo,
         "CV plateau (%)": round(cv_plateau, 3),
         "Estabilidad plateau": "Alta" if cv_plateau < 1.0 else "Media" if cv_plateau < 3.0 else "Baja",
     })
-    print(f"  {name}: min={int(arr_all.min()):,} kg, mejora={mejora_total:.1f}%, CV_plateau={cv_plateau:.3f}%")
+    print(f"  {name}: min={arr_all.min():,.0f} kg, mejora={mejora_total:.1f}%, CV_plateau={cv_plateau:.3f}%")
 
 df_robustez = pd.DataFrame(robustez_rows)
 df_robustez.to_csv(OUT_DIR / "tabla_4_robustez_estocastica.csv", index=False)
@@ -423,30 +423,30 @@ print("  ✓ fig4_bess_grid_estrategia.png")
 # ─── Guardar JSON de resultados ───────────────────────────────────────────────
 algoritmos_resultados = {
     "SAC": {
-        "f2_minimo_kg": int(f2_sac.min()),
+        "f2_minimo_kg": int(round(float(f2_sac.min()))),
         "f2_minimo_ep": int(np.argmin(f2_sac) + 1),
         "f2_media_kg": round(f2_sac.mean(), 0),
         "f2_sigma_kg": round(f2_sac.std(), 0),
         "vs_f0_pct": round((F0_KG - f2_sac.min()) / F0_KG * 100, 2),
-        "co2_evitado_kg": int(F0_KG - f2_sac.min()),
+        "co2_evitado_kg": int(round(float(F0_KG - f2_sac.min()))),
         "cv_plateau_pct": round(plateau_sac.std() / plateau_sac.mean() * 100, 3),
     },
     "PPO": {
-        "f2_minimo_kg": int(f2_ppo.min()),
+        "f2_minimo_kg": int(round(float(f2_ppo.min()))),
         "f2_minimo_ep": int(np.argmin(f2_ppo) + 1),
         "f2_media_kg": round(f2_ppo.mean(), 0),
         "f2_sigma_kg": round(f2_ppo.std(), 0),
         "vs_f0_pct": round((F0_KG - f2_ppo.min()) / F0_KG * 100, 2),
-        "co2_evitado_kg": int(F0_KG - f2_ppo.min()),
+        "co2_evitado_kg": int(round(float(F0_KG - f2_ppo.min()))),
         "cv_plateau_pct": round(plateau_ppo.std() / plateau_ppo.mean() * 100, 3),
     },
     "A2C": {
-        "f2_minimo_kg": int(f2_a2c.min()),
+        "f2_minimo_kg": int(round(float(f2_a2c.min()))),
         "f2_minimo_ep": int(np.argmin(f2_a2c) + 1),
         "f2_media_kg": round(f2_a2c.mean(), 0),
         "f2_sigma_kg": round(f2_a2c.std(), 0),
         "vs_f0_pct": round((F0_KG - f2_a2c.min()) / F0_KG * 100, 2),
-        "co2_evitado_kg": int(F0_KG - f2_a2c.min()),
+        "co2_evitado_kg": int(round(float(F0_KG - f2_a2c.min()))),
         "cv_plateau_pct": round(plateau_a2c.std() / plateau_a2c.mean() * 100, 3),
     },
 }

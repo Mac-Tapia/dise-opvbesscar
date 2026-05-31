@@ -6,13 +6,14 @@ emisiones en una red aislada con factor de emision `0.4521 kg CO2/kWh`.
 
 ## Estado Canonico
 
-**Actualizado:** 2026-05-30
+**Actualizado:** 2026-05-31
 **Branch:** `smartcharger`
 **Agente OE3 seleccionado:** **PPO**
 **Documento principal:** [reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md](reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md)
 
 Los reportes antiguos donde SAC o A2C aparecen como ganador quedan reemplazados por la comparativa
-canonica de mayo de 2026. Para consultas automatizadas de otros agentes, usar:
+canonica de mayo de 2026. SAC fue reentrenado en v8.2 con `VecNormalize` el 2026-05-30/31.
+Para consultas automatizadas de otros agentes, usar:
 
 - [reports/oe3/agents_comparison_canonical.json](reports/oe3/agents_comparison_canonical.json)
 - [reports/oe3/agents_comparison_canonical.csv](reports/oe3/agents_comparison_canonical.csv)
@@ -29,13 +30,13 @@ parametricas.
 
 | Rank | Agente | F2 minimo (kg CO2/año) | Episodio | F2 media (kg/año) | Sigma (kg/año) | Reduccion vs F0 | CV plateau |
 |---:|---|---:|---:|---:|---:|---:|---:|
-| 1 | **PPO** | **3,657,483** | **49** | 3,695,605 | 63,818 | **48.15%** | **0.034%** |
+| 1 | **PPO** | **3,657,484** | **49** | 3,695,605 | 63,818 | **48.15%** | **0.034%** |
 | 2 | A2C | 3,659,010 | 45 | 3,699,834 | 38,248 | 48.13% | 0.422% |
-| 3 | SAC | 3,720,640 | 33 | 3,747,127 | 42,424 | 47.25% | 0.065% |
+| 3 | SAC v8.2 | 3,693,084 | 17 | 3,711,823 | 45,486 | 47.65% | 0.036% |
 
 **Conclusion:** PPO gana por el menor `F2` anual. A2C queda muy cerca, pero su `F2` minimo es
-1,527 kg CO2/año mayor que PPO. SAC no gana porque su mejor episodio emite 63,157 kg CO2/año mas que
-PPO bajo la corrida vigente.
+1,526 kg CO2/año mayor que PPO. SAC v8.2 mejoro frente al SAC anterior, pero su mejor episodio
+emite 35,600 kg CO2/año mas que PPO bajo la corrida vigente.
 
 ## Estado OE2
 
@@ -61,6 +62,7 @@ Referencia OE2 vigente: [docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md
 | Tabla OE3 para hojas/calculo | `reports/oe3/agents_comparison_canonical.csv` |
 | Auditoria de fuentes OE3 | `reports/oe3/AUDITORIA_FUENTES_CHECKPOINTS_OE3.md` |
 | Informe CO2 directo/indirecto OE3 | `reports/oe3/REPORTE_MEJOR_AGENTE_CO2_DIRECTO_INDIRECTO.md` |
+| Diagnostico SAC v8.2 | `reports/oe3/DIAGNOSTICO_SAC_PLAN_REENTRENAMIENTO.md` |
 | Hipotesis CO2 actualizada | `outputs/hypothesis_test/RESULTADOS_HIPOTESIS_CO2_COMPLETO.json` |
 | Solar OE2 | `data/oe2/Generacionsolar/pv_generation_citylearn2024.csv` |
 | Cargadores OE2 | `data/oe2/chargers/chargers_ev_ano_2024_v3.csv` |
@@ -84,6 +86,7 @@ python scripts/generate_oe2_datasets.py --loader-only
 # Consultar ranking OE3 canonico
 python scripts/analysis/_ranking_oe3.py
 python scripts/analysis/_seleccion_agente_oe3.py
+python scripts/analysis/actualizar_canonico_oe3.py
 
 # Regenerar tablas OE3 desde la fuente canonica
 python scripts/reporting/generar_tablas_oe3.py

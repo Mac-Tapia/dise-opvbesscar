@@ -72,7 +72,7 @@ def _save(fig: plt.Figure, name: str) -> None:
     print(f"  guardado: {path.name}")
 
 
-def _add_ppo_selected_marker(ax: plt.Axes, x: float, y: float, label: str = "PPO ep49 (seleccionado)") -> None:
+def _add_ppo_selected_marker(ax: plt.Axes, x: float, y: float, label: str = "agente seleccionado") -> None:
     ax.annotate(
         label,
         xy=(x, y),
@@ -119,12 +119,12 @@ def fig_convergencia_reward() -> None:
     ax_roll.set_title("Reward rolling mean 10 episodios", fontsize=11, fontweight="bold")
 
     fig.suptitle(
-        "Convergencia OE3 — SAC vs PPO vs A2C | 50 episodios × 8,760 h | reward v7.5",
+        "Convergencia OE3 — SAC vs PPO vs A2C | 50 episodios × 8,760 h | reward CO2_DUAL_FOCUS v8.1",
         fontsize=13, fontweight="bold",
     )
     fig.text(
         0.5, -0.03,
-        "SAC mejorado converge ~ep18 a plateau ≈1,480 (200 pts por debajo de PPO/A2C). PPO y A2C mejoran hasta ep49-50.",
+        "SAC v8.2 converge rapido con VecNormalize; PPO/A2C mantienen mejor F2 canonico aunque SAC reduce grid en validacion.",
         ha="center", fontsize=9, color="#4B5563",
     )
     plt.tight_layout()
@@ -248,19 +248,35 @@ def fig_grid_import() -> None:
     ax.grid(True, alpha=0.25, linestyle="--")
     ax.set_xlim(1, 50)
 
-    # Anotar diferencia SAC vs PPO
+    # Anotar diferencia SAC vs PPO en validacion
     y_ppo = val_imports["PPO"] / 1e6
     y_sac = val_imports["SAC"] / 1e6
     diff_kwh = val_imports["SAC"] - val_imports["PPO"]
     diff_co2 = diff_kwh * 0.4521 / 1e3
+    if diff_kwh >= 0:
+        diff_text = (
+            f"SAC importa\n+{diff_kwh/1e3:.1f} MWh vs PPO\n"
+            f"≡ +{diff_co2:.1f} t CO₂/año"
+        )
+        diff_color = "#991B1B"
+        diff_face = "#FEF2F2"
+        text_y = y_sac + 0.05
+    else:
+        diff_text = (
+            f"SAC importa\n{abs(diff_kwh)/1e3:.1f} MWh menos vs PPO\n"
+            f"≡ {abs(diff_co2):.1f} t CO₂/año menos"
+        )
+        diff_color = "#14532D"
+        diff_face = "#DFF3E7"
+        text_y = y_sac + 0.04
     ax.annotate(
-        f"SAC importa\n+{diff_kwh/1e3:.1f} MWh extra\n≡ +{diff_co2:.1f} t CO₂/año",
+        diff_text,
         xy=(50, y_sac),
-        xytext=(42, y_sac + 0.05),
+        xytext=(40, text_y),
         fontsize=8.5,
-        color="#991B1B",
-        arrowprops=dict(arrowstyle="->", color="#991B1B", lw=1.5),
-        bbox=dict(boxstyle="round,pad=0.3", facecolor="#FEF2F2", edgecolor="#991B1B", alpha=0.85),
+        color=diff_color,
+        arrowprops=dict(arrowstyle="->", color=diff_color, lw=1.5),
+        bbox=dict(boxstyle="round,pad=0.3", facecolor=diff_face, edgecolor=diff_color, alpha=0.85),
     )
 
     fig.text(
@@ -297,18 +313,19 @@ def fig_comparativa_multicriterio() -> None:
     ax = axes[0]
     vals = [canonical["agents"][a]["f2_min_kg_per_year"] / 1e6 for a in AGENTS]
     bars = ax.bar(x, vals, width, color=bar_colors, alpha=0.82, edgecolor="white", linewidth=2)
+    best_idx = int(np.argmin(vals))
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=11, fontweight="bold")
     ax.set_ylabel("Mt CO₂/año", fontsize=10)
     ax.set_title("CO₂ indirecto residual mínimo (F2)\n↓ menor = mejor control ambiental",
                  fontsize=11, fontweight="bold")
     ax.grid(axis="y", alpha=0.25, linestyle="--")
-    bars[0].set_edgecolor("#14532D")
-    bars[0].set_linewidth(3)
+    bars[best_idx].set_edgecolor("#14532D")
+    bars[best_idx].set_linewidth(3)
     for bar, val in zip(bars, vals):
         ax.text(bar.get_x() + bar.get_width() / 2., bar.get_height() + 0.002,
                 f"{val:.4f}", ha="center", va="bottom", fontsize=9.5, fontweight="bold")
-    ax.text(0, vals[0] - 0.004, "★ PPO", ha="center", fontsize=9, color="#14532D", fontweight="bold")
+    ax.text(best_idx, vals[best_idx] - 0.004, f"★ {labels[best_idx]}", ha="center", fontsize=9, color="#14532D", fontweight="bold")
     y_min = min(vals) * 0.994
     ax.set_ylim(y_min, max(vals) * 1.008)
 
@@ -316,18 +333,19 @@ def fig_comparativa_multicriterio() -> None:
     ax = axes[1]
     vals2 = [best_trace("max_total_avoided", a, "co2_total_avoided_kg") / 1e6 for a in AGENTS]
     bars2 = ax.bar(x, vals2, width, color=bar_colors, alpha=0.82, edgecolor="white", linewidth=2)
+    best_idx2 = int(np.argmax(vals2))
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=11, fontweight="bold")
     ax.set_ylabel("Mt CO₂ evitados/año", fontsize=10)
     ax.set_title("CO₂ total evitado máximo (directo+indirecto)\n↑ mayor = mejor sustitución",
                  fontsize=11, fontweight="bold")
     ax.grid(axis="y", alpha=0.25, linestyle="--")
-    bars2[1].set_edgecolor("#14532D")
-    bars2[1].set_linewidth(3)
+    bars2[best_idx2].set_edgecolor("#14532D")
+    bars2[best_idx2].set_linewidth(3)
     for bar, val in zip(bars2, vals2):
         ax.text(bar.get_x() + bar.get_width() / 2., bar.get_height() + 0.0002,
                 f"{val:.4f}", ha="center", va="bottom", fontsize=9.5, fontweight="bold")
-    ax.text(1, vals2[1] + 0.004, "★ A2C", ha="center", fontsize=9, color="#14532D", fontweight="bold")
+    ax.text(best_idx2, vals2[best_idx2] + 0.004, f"★ {labels[best_idx2]}", ha="center", fontsize=9, color="#14532D", fontweight="bold")
     y_min2 = min(vals2) * 0.997
     ax.set_ylim(y_min2, max(vals2) * 1.012)
 
@@ -335,35 +353,37 @@ def fig_comparativa_multicriterio() -> None:
     ax = axes[2]
     vals3 = [best_trace("max_direct_avoided", a, "co2_direct_avoided_kg") / 1e3 for a in AGENTS]
     bars3 = ax.bar(x, vals3, width, color=bar_colors, alpha=0.82, edgecolor="white", linewidth=2)
+    best_idx3 = int(np.argmax(vals3))
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=11, fontweight="bold")
     ax.set_ylabel("t CO₂ evitados/año", fontsize=10)
     ax.set_title("CO₂ directo evitado máximo (ICE→EV)\n↑ mayor = más motos/mototaxis electrificados",
                  fontsize=11, fontweight="bold")
     ax.grid(axis="y", alpha=0.25, linestyle="--")
-    bars3[0].set_edgecolor("#14532D")
-    bars3[0].set_linewidth(3)
+    bars3[best_idx3].set_edgecolor("#14532D")
+    bars3[best_idx3].set_linewidth(3)
     for bar, val in zip(bars3, vals3):
         ax.text(bar.get_x() + bar.get_width() / 2., bar.get_height() + 0.3,
                 f"{val:.1f}", ha="center", va="bottom", fontsize=9.5, fontweight="bold")
-    ax.text(0, vals3[0] + 2, "★ PPO", ha="center", fontsize=9, color="#14532D", fontweight="bold")
+    ax.text(best_idx3, vals3[best_idx3] + 2, f"★ {labels[best_idx3]}", ha="center", fontsize=9, color="#14532D", fontweight="bold")
 
     # Panel 4: Grid import validación (menor = mejor)
     ax = axes[3]
     vals4 = [canonical["agents"][a]["validation_mean_grid_import_kwh"] / 1e6 for a in AGENTS]
     bars4 = ax.bar(x, vals4, width, color=bar_colors, alpha=0.82, edgecolor="white", linewidth=2)
+    best_idx4 = int(np.argmin(vals4))
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=11, fontweight="bold")
     ax.set_ylabel("M kWh/año", fontsize=10)
     ax.set_title("Grid import validación\n↓ menor = menor dependencia red diesel",
                  fontsize=11, fontweight="bold")
     ax.grid(axis="y", alpha=0.25, linestyle="--")
-    bars4[1].set_edgecolor("#14532D")
-    bars4[1].set_linewidth(3)
+    bars4[best_idx4].set_edgecolor("#14532D")
+    bars4[best_idx4].set_linewidth(3)
     for bar, val in zip(bars4, vals4):
         ax.text(bar.get_x() + bar.get_width() / 2., bar.get_height() + 0.005,
                 f"{val:.3f}", ha="center", va="bottom", fontsize=9.5, fontweight="bold")
-    ax.text(1, vals4[1] - 0.015, "★ A2C", ha="center", fontsize=9, color="#14532D", fontweight="bold")
+    ax.text(best_idx4, vals4[best_idx4] - 0.015, f"★ {labels[best_idx4]}", ha="center", fontsize=9, color="#14532D", fontweight="bold")
     y_min4 = min(vals4) * 0.996
     ax.set_ylim(y_min4, max(vals4) * 1.006)
 
@@ -399,13 +419,13 @@ def fig_sac_diagnostico() -> None:
                 linestyle=LS[agent], label=f"{agent}")
 
     ax.axhspan(1440, 1520, alpha=0.12, color=COLORS["SAC"],
-               label="SAC plateau ≈1,480 (opt. local)")
+               label="SAC v8.2 plateau ≈1,460-1,480")
     ax.axhline(1677, color=COLORS["PPO"], linestyle=":", linewidth=1.5, alpha=0.7,
                label="PPO plateau ≈1,677")
     ax.axvline(20, color="gray", linestyle=":", linewidth=1.5, alpha=0.6, label="ep20 (SAC congela)")
     ax.set_xlabel("Episodio", fontsize=10)
     ax.set_ylabel("Reward rolling mean", fontsize=10)
-    ax.set_title("SAC estabiliza ep≈20\nPPO/A2C siguen mejorando", fontsize=11, fontweight="bold")
+    ax.set_title("SAC estabiliza temprano\nPPO/A2C conservan menor F2", fontsize=11, fontweight="bold")
     ax.legend(fontsize=8)
     ax.grid(True, alpha=0.25, linestyle="--")
     ax.set_xlim(1, 50)
@@ -430,7 +450,7 @@ def fig_sac_diagnostico() -> None:
     ax.set_xlim(1, 50)
     ax.set_ylim(0, None)
 
-    # Subplot 3: Grid import (causa directa del CO2 de SAC)
+    # Subplot 3: Grid import y F2
     ax = axes[2]
     for agent in AGENTS:
         df = load_episodios(agent)
@@ -441,14 +461,14 @@ def fig_sac_diagnostico() -> None:
 
     ax.set_xlabel("Episodio", fontsize=10)
     ax.set_ylabel("Grid import (M kWh/año)", fontsize=10)
-    ax.set_title("SAC importa más de la red diesel\n→ causa directa del mayor CO₂",
+    ax.set_title("SAC mejora grid validación\npero F2 sigue por encima",
                  fontsize=11, fontweight="bold")
     ax.legend(fontsize=8)
     ax.grid(True, alpha=0.25, linestyle="--")
     ax.set_xlim(1, 50)
 
     fig.suptitle(
-        "Diagnóstico SAC mejorado — convergencia estable a óptimo local inferior\n"
+        "Diagnóstico SAC v8.2 — mejora con VecNormalize, pero no supera el F2 de PPO/A2C\n"
         f"SAC F2={canonical['agents']['SAC']['f2_min_kg_per_year']/1e6:.4f} Mt | "
         f"PPO F2={canonical['agents']['PPO']['f2_min_kg_per_year']/1e6:.4f} Mt | "
         f"Diferencia: {(canonical['agents']['SAC']['f2_min_kg_per_year']-canonical['agents']['PPO']['f2_min_kg_per_year'])/1e3:.1f} kt CO₂/año",
@@ -456,8 +476,8 @@ def fig_sac_diagnostico() -> None:
     )
     fig.text(
         0.5, -0.04,
-        "SAC estabiliza ~ep20 con ent_coef que decrece rápido → menos exploración → óptimo local inferior."
-        " PPO y A2C (on-policy) continúan mejorando hasta ep49-50.",
+        "SAC v8.2 reduce grid en validación frente a su corrida anterior, pero su mejor F2 "
+        "aún queda por encima de PPO/A2C; la selección canónica sigue minimizando CO2 residual.",
         ha="center", fontsize=9, color="#4B5563",
     )
     plt.tight_layout()
@@ -474,9 +494,12 @@ def main() -> None:
 
     canonical = load_canonical()
     print(f"  Agente seleccionado: {canonical['metadata']['selected_agent']}")
-    print(f"  PPO F2 mínimo: {canonical['agents']['PPO']['f2_min_kg_per_year']:,.0f} kg CO2/año (ep49)")
-    print(f"  A2C F2 mínimo: {canonical['agents']['A2C']['f2_min_kg_per_year']:,.0f} kg CO2/año (ep45)")
-    print(f"  SAC F2 mínimo: {canonical['agents']['SAC']['f2_min_kg_per_year']:,.0f} kg CO2/año (ep33)")
+    for agent in AGENTS:
+        metrics = canonical["agents"][agent]
+        print(
+            f"  {agent} F2 mínimo: {metrics['f2_min_kg_per_year']:,.0f} kg CO2/año "
+            f"(ep{metrics['best_episode']})"
+        )
     print()
 
     print("[1] Convergencia reward...")

@@ -9,8 +9,9 @@ current source of truth for agent selection is:
 
   reports/oe3/agents_comparison_canonical.json
 
-Canonical OE3 result as of 2026-05-30: PPO selected, F2 minimum
-3,657,483 kg CO2/year in episode 49.
+Canonical OE3 result as of 2026-05-31: PPO selected, F2 minimum
+3,657,484 kg CO2/year in episode 49. SAC v8.2 was retrained with VecNormalize
+and remains third at 3,693,084 kg CO2/year.
 """
 
 from dataclasses import dataclass

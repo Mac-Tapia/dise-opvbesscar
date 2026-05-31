@@ -2,9 +2,9 @@
   "metadata": {
     "project": "pvbesscar",
     "location": "Iquitos, Peru",
-    "updated_at": "2026-05-30",
-    "source_generation_date": "2026-05-29",
-    "training_run_date": "2026-05-28",
+    "updated_at": "2026-05-31",
+    "source_generation_date": "2026-05-31",
+    "training_run_date": "2026-05-30",
     "branch": "smartcharger",
     "selected_agent": "PPO",
     "selection_criterion": "Minimize annual F2 emissions (kg CO2/year)",
@@ -28,7 +28,7 @@
     "f0_reference_kg_co2_year": 7053999,
     "episodes_per_agent": 50,
     "timesteps_per_agent": 438000,
-    "reward_version": "v7.5",
+    "reward_version": "CO2_DUAL_FOCUS v8.1",
     "obs_dim": 18,
     "action_dim": 3
   },
@@ -38,15 +38,30 @@
     "SAC"
   ],
   "agents": {
+    "SAC": {
+      "rank": 3,
+      "selected": false,
+      "f2_min_kg_per_year": 3693084,
+      "best_episode": 17,
+      "f2_mean_kg_per_year": 3711823,
+      "f2_sigma_kg_per_year": 45486,
+      "co2_reduction_vs_f0_pct": 47.65,
+      "co2_avoided_vs_f0_kg_per_year": 3360915,
+      "cv_plateau_pct": 0.036,
+      "validation_mean_reward": 1517.1255922538833,
+      "validation_mean_co2_avoided_kg": 2438609.557786389,
+      "validation_mean_grid_import_kwh": 7345853.826036684,
+      "selection_note": "Not selected; F2 minimum is 35,600 kg CO2/year higher than PPO."
+    },
     "PPO": {
       "rank": 1,
       "selected": true,
-      "f2_min_kg_per_year": 3657483,
+      "f2_min_kg_per_year": 3657484,
       "best_episode": 49,
       "f2_mean_kg_per_year": 3695605,
       "f2_sigma_kg_per_year": 63818,
       "co2_reduction_vs_f0_pct": 48.15,
-      "co2_avoided_vs_f0_kg_per_year": 3396516,
+      "co2_avoided_vs_f0_kg_per_year": 3396515,
       "cv_plateau_pct": 0.034,
       "validation_mean_reward": 1628.4648027213454,
       "validation_mean_co2_avoided_kg": 2416092.5925824405,
@@ -66,22 +81,7 @@
       "validation_mean_reward": 1633.2862134672,
       "validation_mean_co2_avoided_kg": 2412246.1675903993,
       "validation_mean_grid_import_kwh": 7337810.999349495,
-      "selection_note": "Second place; F2 minimum is 1,527 kg CO2/year higher than PPO."
-    },
-    "SAC": {
-      "rank": 3,
-      "selected": false,
-      "f2_min_kg_per_year": 3720640,
-      "best_episode": 33,
-      "f2_mean_kg_per_year": 3747127,
-      "f2_sigma_kg_per_year": 42424,
-      "co2_reduction_vs_f0_pct": 47.25,
-      "co2_avoided_vs_f0_kg_per_year": 3333359,
-      "cv_plateau_pct": 0.065,
-      "validation_mean_reward": 1519.1468534858413,
-      "validation_mean_co2_avoided_kg": 2400665.4256318016,
-      "validation_mean_grid_import_kwh": 7456698.972722041,
-      "selection_note": "Not selected; F2 minimum is 63,157 kg CO2/year higher than PPO."
+      "selection_note": "Not selected; F2 minimum is 1,526 kg CO2/year higher than PPO."
     }
   },
   "statistics": {
@@ -90,54 +90,54 @@
       "alpha": 0.05,
       "results": {
         "SAC": {
-          "w": 0.5369368485652878,
-          "p_value": 2.5093185366434065e-11,
+          "w": 0.385369385274814,
+          "p_value": 3.635139169328492e-13,
           "normal": false
         },
         "PPO": {
-          "w": 0.6063143614819836,
-          "p_value": 2.41958696784531e-10,
+          "w": 0.606314361481983,
+          "p_value": 2.4195869678452666e-10,
           "normal": false
         },
         "A2C": {
-          "w": 0.8343410413360813,
-          "p_value": 5.983678153553541e-06,
+          "w": 0.8343410413360832,
+          "p_value": 5.983678153554231e-06,
           "normal": false
         }
       }
     },
     "non_parametric_tests": {
       "kruskal_wallis": {
-        "h": 53.023618543046325,
-        "p_value": 3.0624395729831876e-12,
+        "h": 30.593504635761576,
+        "p_value": 2.2735519245924768e-07,
         "reject_h0": true
       },
       "mann_whitney_u": {
         "ppo_less_than_sac": {
-          "u": 412.0,
-          "p_value": 3.880371607030353e-09
+          "u": 503.0,
+          "p_value": 1.3288213902005047e-07
         },
         "ppo_less_than_a2c": {
           "u": 746.0,
           "p_value": 0.00025922501634543686
         },
         "a2c_less_than_sac": {
-          "u": 344.0,
-          "p_value": 2.1551716775116374e-10
+          "u": 852.0,
+          "p_value": 0.0030692180123729207
         }
       },
       "wilcoxon_signed_rank": {
         "ppo_less_than_sac": {
-          "w": 23.0,
-          "p_value": 5.684341886080801e-13
+          "w": 258.0,
+          "p_value": 7.451807177627501e-05
         },
         "ppo_less_than_a2c": {
           "w": 385.0,
           "p_value": 0.00703926736624183
         },
         "a2c_less_than_sac": {
-          "w": 0.0,
-          "p_value": 8.881784197001252e-16
+          "w": 336.0,
+          "p_value": 0.0015496299801922575
         }
       }
     }

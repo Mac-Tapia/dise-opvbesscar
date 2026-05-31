@@ -1,12 +1,13 @@
 # Documentos vigentes OE2 y OE3
 
-**Actualizado:** 2026-05-30
+**Actualizado:** 2026-05-31
 **Estado:** indice canonico para consultas de informes y agentes externos.
 
 ## OE3 - Control RL
 
-El resultado vigente de seleccion de agente es **PPO**. Los documentos antiguos que indicaban SAC o A2C
-como ganador son historicos y no deben usarse para reportes nuevos.
+El resultado vigente de seleccion de agente es **PPO**. SAC fue reentrenado en v8.2 con
+`VecNormalize` el 2026-05-30/31, pero no supera el F2 de PPO/A2C. Los documentos antiguos que
+indicaban SAC o A2C como ganador son historicos y no deben usarse para reportes nuevos.
 
 | Prioridad | Documento | Uso |
 |---:|---|---|
@@ -15,17 +16,18 @@ como ganador son historicos y no deben usarse para reportes nuevos.
 | 3 | `reports/oe3/agents_comparison_canonical.csv` | Tabla comparativa para hojas de calculo/reportes |
 | 4 | `reports/oe3/AUDITORIA_FUENTES_CHECKPOINTS_OE3.md` | Auditoria de checkpoints finales y resultados guardados vigentes |
 | 5 | `reports/oe3/REPORTE_MEJOR_AGENTE_CO2_DIRECTO_INDIRECTO.md` | Informe operativo CO2 directo/indirecto, eficiencia y convergencia |
-| 6 | `reports/oe3/CO2_DIRECTO_INDIRECTO_TRACE_OE3.md` | Reporte trace de CO2 directo e indirecto |
-| 7 | `reports/oe3/co2_trace_direct_indirect_summary.json` | Fuente estructurada del analisis trace CO2 directo/indirecto |
-| 8 | `outputs/hypothesis_test/RESULTADOS_HIPOTESIS_CO2_COMPLETO.json` | Resumen estadistico no parametrico actualizado |
+| 6 | `reports/oe3/DIAGNOSTICO_SAC_PLAN_REENTRENAMIENTO.md` | Diagnostico de SAC v8.2, mejoras y plan siguiente |
+| 7 | `reports/oe3/CO2_DIRECTO_INDIRECTO_TRACE_OE3.md` | Reporte trace de CO2 directo e indirecto |
+| 8 | `reports/oe3/co2_trace_direct_indirect_summary.json` | Fuente estructurada del analisis trace CO2 directo/indirecto |
+| 9 | `outputs/hypothesis_test/RESULTADOS_HIPOTESIS_CO2_COMPLETO.json` | Resumen estadistico no parametrico actualizado |
 
 Resumen vigente:
 
 | Rank | Agente | F2 minimo (kg CO2/año) | Episodio | Reduccion vs F0 |
 |---:|---|---:|---:|---:|
-| 1 | **PPO** | **3,657,483** | **49** | **48.15%** |
+| 1 | **PPO** | **3,657,484** | **49** | **48.15%** |
 | 2 | A2C | 3,659,010 | 45 | 48.13% |
-| 3 | SAC | 3,720,640 | 33 | 47.25% |
+| 3 | SAC v8.2 | 3,693,084 | 17 | 47.65% |
 
 Lectura complementaria desde `trace`: por CO2 evitado total directo + indirecto, A2C lidera
 con 2,523,717 kg CO2/año evitados en el episodio trace 19. Esta lectura no reemplaza el criterio

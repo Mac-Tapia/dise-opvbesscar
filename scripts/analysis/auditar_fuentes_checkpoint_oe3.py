@@ -15,6 +15,7 @@ No se aceptan rutas bajo `archive`, `archive_previous` ni `archive_v73_obs16`.
 from __future__ import annotations
 
 import json
+from datetime import date
 from datetime import datetime
 from pathlib import Path
 
@@ -27,6 +28,7 @@ OUT_MD = OUT_DIR / "AUDITORIA_FUENTES_CHECKPOINTS_OE3.md"
 OUT_JSON = OUT_DIR / "AUDITORIA_FUENTES_CHECKPOINTS_OE3.json"
 AGENTS = ("sac", "ppo", "a2c")
 ARCHIVE_MARKERS = {"archive", "archive_previous", "archive_v73_obs16"}
+RUN_DATE = date.today().isoformat()
 
 
 def rel(path: Path) -> str:
@@ -126,7 +128,7 @@ def main() -> None:
     trace_summary = pd.read_csv(OUT_DIR / "co2_trace_direct_indirect_summary.csv")
 
     payload = {
-        "fecha_actualizacion": "2026-05-30",
+        "fecha_actualizacion": RUN_DATE,
         "politica_fuentes": {
             "usar": [
                 "checkpoints/{AGENT}_CityLearn/{agent}_final.zip",
@@ -145,7 +147,7 @@ def main() -> None:
     lines: list[str] = []
     lines.append("# OE3 - Auditoria de fuentes, checkpoints y resultados")
     lines.append("")
-    lines.append("**Fecha de actualizacion:** 2026-05-30")
+    lines.append(f"**Fecha de actualizacion:** {RUN_DATE}")
     lines.append("")
     lines.append("## Politica de fuentes")
     lines.append("")
@@ -224,14 +226,14 @@ def main() -> None:
     lines.append(
         "El SAC auditado corresponde al checkpoint final vigente `checkpoints/SAC_CityLearn/sac_final.zip`; "
         "no se usaron checkpoints antiguos ni archivos archivados. SAC fue comparado con PPO y A2C, "
-        "pero en los resultados guardados vigentes queda por debajo en F2 minimo, CO2 evitado vs F0, "
-        "reward de validacion e importacion de red."
+        "y aunque SAC v8.2 mejora la importacion de red de validacion frente a PPO, todavia queda "
+        "por debajo en F2 minimo, CO2 evitado vs F0 y reward de validacion."
     )
     lines.append("")
     lines.append(
-        "Si existe un SAC mejorado mas nuevo que debe cambiar esta conclusion, no esta guardado en las "
-        "rutas vigentes auditadas. Debe aparecer como nuevo `result_sac.json` y nuevo `sac_final.zip` "
-        "fuera de carpetas `archive` para ser usado como fuente canonica."
+        "Para cambiar esta conclusion en una futura corrida, el nuevo SAC debe aparecer como "
+        "`outputs/sac_training/result_sac.json`, `checkpoints/SAC_CityLearn/sac_final.zip` y "
+        "`checkpoints/SAC_CityLearn/vecnormalize.pkl` fuera de carpetas `archive`."
     )
     lines.append("")
     lines.append(f"- JSON: `{OUT_JSON.relative_to(ROOT).as_posix()}`")

@@ -1,135 +1,110 @@
 {
+  "metadata": {
+    "version": "SAC v8.2",
+    "updated_local": "2026-05-31",
+    "status": "current_reference",
+    "note": "La fuente ejecutable es scripts/train/train_sac_citylearn.py. Este JSON documenta la configuracion vigente y el resultado SAC v8.2 para evitar referencias a rutas OE2 antiguas."
+  },
+  "source_of_truth": {
+    "training_script": "scripts/train/train_sac_citylearn.py",
+    "env_factory": "src/citylearnv2/env_factory.py:create_iquitos_env_for_sb3",
+    "wrapper": "src/citylearnv2/ev_charging_wrapper.py:IquitosEVChargingWrapper",
+    "reward_profile": "CO2_DUAL_FOCUS v8.1"
+  },
   "training": {
     "episodes": 50,
     "timesteps_per_episode": 8760,
     "total_timesteps": 438000,
-    "validation_episodes": 50,
+    "validation_episodes": 10,
     "device": "cuda",
-    "batch_size": 256,
-    "buffer_size": 100000,
-    "network_architecture": [
-      256,
-      256
-    ],
-    "learning_rate": 0.0001,
-    "tau": 0.005,
-    "gamma": 0.99,
-    "learning_starts": 5000,
-    "target_entropy": -3.0,
-    "entropy_coeff": "auto",
-    "max_grad_norm": 5.0
-  },
-  "data": {
-    "solar_file": "data/oe2/Generacionsolar/pv_generation_timeseries.csv",
-    "chargers_file": "data/oe2/chargers/chargers_ev_ano_2024_v3.csv",
-    "bess_file": "data/oe2/bess/bess_ano_2024.csv",
-    "mall_file": "data/oe2/demandamallkwh/demandamallhorakwh.csv",
-    "year": 2024,
-    "total_hours": 8760,
-    "chargers_total": 19,
-    "chargers_motos": 15,
-    "chargers_mototaxis": 4,
-    "sockets_total": 38,
-    "sockets_motos": 30,
-    "sockets_mototaxis": 8,
-    "bess_capacity_nominal_kwh": 2000.0,
-    "bess_capacity_usable_kwh": 1600,
-    "bess_power_kw": 400.0,
-    "bess_dod": 0.8,
-    "bess_soc_min": 0.2,
-    "bess_efficiency": 0.95,
-    "description": "v5.5 OPTIMIZED (2026-02-18): BESS 2,000 kWh @ 400 kW, 38 sockets (30 motos + 8 taxis), 4,050 kWp PV, 876 MWh/año MALL"
-  },
-  "rewards": {
-    "direct_co2_weight": 0.25,
-    "indirect_co2_weight": 0.30,
-    "ev_satisfaction_weight": 0.25,
-    "bess_solar_timing_weight": 0.10,
-    "solar_weight": 0.05,
-    "grid_stability_weight": 0.03,
-    "cost_weight": 0.02,
-    "primary_objective": "CO2 dual (direct_co2=0.25 + indirect_co2=0.30) + EV satisfaction (0.25) + BESS solar timing (0.10)",
-    "description": "Multi-objective v7.5 OE3: direct_co2(0.25) + indirect_co2(0.30) + EV(0.25) + BESS_Solar(0.10) + Solar(0.05) + Grid(0.03) + Cost(0.02)",
-    "dispatch_hierarchy_priorities": {
-      "priority_1": "PV → EV Direct (maximize self-consumption)",
-      "priority_2": "PV → BESS (charge for evening peak 17-22h)",
-      "priority_3": "PV → MALL (reduce grid import)",
-      "priority_4": "BESS discharge (evening 17-22h for peak demand)",
-      "priority_5": "Grid import (only when necessary)"
+    "fresh_start_required": true,
+    "vecnormalize": {
+      "enabled": true,
+      "norm_obs": true,
+      "norm_reward": true,
+      "clip_obs": 10.0,
+      "clip_reward": 10.0
     },
-    "soc_constraints": {
-      "soc_min_percent": 20,
-      "soc_max_percent": 100,
-      "soc_target_morning": 100,
-      "soc_minimum_evening": 50,
-      "soc_closure_22h": 20,
-      "peak_shaving_activation_soc": 50,
-      "peak_shaving_threshold_kw": 1900
+    "batch_size": 512,
+    "buffer_size": 87600,
+    "learning_rate": 0.0001,
+    "tau": 0.01,
+    "gamma": 0.95,
+    "learning_starts": 17520,
+    "train_freq": 1,
+    "gradient_steps": 2,
+    "target_entropy": -2.0,
+    "entropy_coeff": "auto_0.2",
+    "max_grad_norm": 1.0,
+    "network_architecture": {
+      "actor_pi": [
+        256,
+        256,
+        128
+      ],
+      "critic_qf": [
+        512,
+        512,
+        256
+      ],
+      "activation": "torch.nn.Tanh"
+    },
+    "checkpoint_policy": {
+      "directory": "checkpoints/SAC_CityLearn",
+      "save_every_steps": 8760,
+      "resume_sort": "numeric_by_step",
+      "fresh_cli": "python scripts/train/train_sac_citylearn.py --fresh --timesteps 438000"
     }
   },
-  "reference_metrics": {
-    "_description": "Métricas de referencia - v5.5 Sistema integrado solar+BESS+EV (2026-02-18)",
-    "_validation_date": "2026-02-18",
-    "_system_config": "OE2 v5.5: 4,050 kWp PV + 2,000 kWh BESS @ 400 kW + 38 sockets + 876 MWh/año MALL",
-    "_training_config": "SAC CO2_DUAL_FOCUS v7.0: DirectCO2 (0.35) + IndirectCO2 (0.30) + EV (0.25) + Solar (0.05) + Grid (0.05)",
-    "co2_reduction_annual": {
-      "co2_grid_emitted_without_control_kg": 557680,
-      "co2_avoided_indirect_pv_kg": 550351,
-      "co2_avoided_direct_ev_kg": 280437,
-      "co2_avoided_total_kg": 830788,
-      "co2_net_reduction_kg": 273108,
-      "reduction_pct": 49.0,
-      "factor_grid_kg_per_kwh": 0.4521,
-      "factor_ev_kg_per_kwh_moto": 0.87,
-      "factor_ev_kg_per_kwh_mototaxi": 0.47
+  "data": {
+    "year": 2024,
+    "total_hours": 8760,
+    "primary_source_dir": "data/iquitos_ev_mall",
+    "primary_files": {
+      "solar": "data/iquitos_ev_mall/solar_generation.csv",
+      "chargers": "data/iquitos_ev_mall/chargers_timeseries.csv",
+      "bess": "data/iquitos_ev_mall/bess_timeseries.csv",
+      "mall": "data/iquitos_ev_mall/mall_demand.csv",
+      "co2": "data/iquitos_ev_mall/co2_emissions.csv",
+      "tariffs": "data/iquitos_ev_mall/tariffs_osinergmin.csv"
     },
-    "energy_distribution": {
-      "pv_total_generated_kwh": 1217305,
-      "pv_to_ev_direct_kwh": 305820,
-      "pv_to_bess_charge_kwh": 678629,
-      "pv_to_mall_direct_kwh": 148595,
-      "pv_curtailment_kwh": 84261,
-      "pv_utilization_pct": 79.8,
-      "bess_charge_annual_kwh": 580200,
-      "bess_discharge_annual_kwh": 209374,
-      "bess_to_ev_kwh": 204073,
-      "bess_cycles_equivalent": 392
+    "citylearn_intermediate_dir": "data/interim/citylearn_v2",
+    "citylearn_files": {
+      "schema": "data/interim/citylearn_v2/schema_iquitos.json",
+      "energy_simulation": "data/interim/citylearn_v2/energy_simulation.csv",
+      "weather": "data/interim/citylearn_v2/weather.csv",
+      "carbon_intensity": "data/interim/citylearn_v2/carbon_intensity.csv",
+      "ev_charger_motos": "data/interim/citylearn_v2/ev_charger_motos.csv",
+      "ev_charger_mototaxis": "data/interim/citylearn_v2/ev_charger_mototaxis.csv",
+      "tariffs_osinergmin": "data/interim/citylearn_v2/tariffs_osinergmin.csv"
     },
-    "demand_coverage": {
-      "ev_annual_demand_kwh": 769310,
-      "ev_coverage_pv_pct": 27.6,
-      "ev_coverage_bess_pct": 26.5,
-      "ev_coverage_grid_pct": 45.9,
-      "mall_annual_demand_kwh": 876000,
-      "mall_coverage_pv_pct": 20.4,
-      "mall_coverage_bess_pct": 0.0,
-      "mall_coverage_grid_pct": 79.6
-    },
-    "economic_metrics": {
-      "tariff_savings_soles": 30530,
-      "tariff_hp_soles_per_kwh": 0.45,
-      "tariff_hfp_soles_per_kwh": 0.28,
-      "hours_peak_annual": 1825,
-      "cost_reduction_pct": 15.2
-    },
-    "vehicle_charging": {
-      "motos_charged_annual": 98550,
-      "motos_per_day": 270,
-      "mototaxis_charged_annual": 14235,
-      "mototaxis_per_day": 39,
-      "total_charges_annual": 112785,
-      "energy_per_moto_charge_kwh": 2.906,
-      "energy_per_mototaxi_charge_kwh": 4.674
+    "description": "OE2 raw -> schema_builder.py -> data/interim/citylearn_v2 -> IquitosEVChargingWrapper. Los tres agentes usan el mismo wrapper."
+  },
+  "rewards": {
+    "direct_co2_weight": 0.20,
+    "indirect_co2_weight": 0.30,
+    "ev_satisfaction_weight": 0.35,
+    "bess_solar_timing_weight": 0.07,
+    "solar_weight": 0.04,
+    "grid_stability_weight": 0.02,
+    "cost_weight": 0.02,
+    "sum": 1.0,
+    "primary_objective": "Reducir CO2 directa e indirecta manteniendo cumplimiento EV y operacion BESS solar.",
+    "dispatch_hierarchy_priorities": {
+      "priority_1": "PV -> EV directo",
+      "priority_2": "PV -> BESS durante horas solares",
+      "priority_3": "PV -> Mall",
+      "priority_4": "BESS -> EV/Mall en horario no solar o punta",
+      "priority_5": "Grid import residual"
     }
   },
   "infrastructure": {
     "solar_capacity_kwp": 4050.0,
-    "solar_energy_annual_mwh": 1217.3,
+    "solar_energy_annual_mwh": 5819.3,
     "bess_capacity_nominal_kwh": 2000.0,
-    "bess_capacity_usable_kwh": 1600,
     "bess_power_kw": 400.0,
     "bess_efficiency_pct": 95,
-    "bess_dod_pct": 80,
+    "bess_soc_min_pct": 20,
     "chargers_total": 19,
     "chargers_motos": 15,
     "chargers_mototaxis": 4,
@@ -137,19 +112,36 @@
     "sockets_motos": 30,
     "sockets_mototaxis": 8,
     "power_per_socket_kw": 7.4,
-    "total_power_installed_kw": 281.2,
-    "mall_demand_annual_kwh": 876000,
-    "mall_demand_avg_kw": 100,
-    "ev_demand_annual_kwh": 352887,
-    "motos_daily": 270,
-    "mototaxis_daily": 39
+    "ev_motos_max_kw": 222.0,
+    "ev_mototaxis_max_kw": 59.2,
+    "total_ev_power_installed_kw": 281.2,
+    "mall_demand_annual_mwh": 12368.7,
+    "ev_motos_annual_kwh": 345343,
+    "ev_mototaxis_annual_kwh": 62938,
+    "ev_total_annual_kwh": 408281
   },
-  "gpu": {
-    "device_name": "NVIDIA GeForce RTX 4060 Laptop",
-    "memory_gb": 8.6,
-    "cuda_version": "12.1",
-    "estimated_speed_ts_per_sec": 1350,
-    "estimated_training_minutes": 1.1,
-    "estimated_training_seconds": 65
+  "previous_sac_diagnosis": {
+    "previous_timestamp": "20260528_070628",
+    "previous_best_f2_control_kg_year": 3720640.468297403,
+    "previous_best_episode": 33,
+    "previous_validation_mean_reward": 1519.1468534858413,
+    "main_causes": [
+      "SAC no usaba VecNormalize mientras PPO/A2C si.",
+      "El resume de checkpoints usaba orden lexicografico.",
+      "gamma=0.99 y learning_rate=5e-5 fueron conservadores para episodios de 8760 horas.",
+      "Replay buffer off-policy retuvo transiciones suboptimas tempranas."
+    ]
+  },
+  "current_sac_v82_result": {
+    "timestamp": "20260530_221733",
+    "fresh_start": true,
+    "best_f2_control_kg_year": 3693083.64851598,
+    "best_episode": 17,
+    "f2_mean_kg_year": 3711822.5154892886,
+    "validation_mean_reward": 1517.1255922538833,
+    "validation_mean_co2_avoided_kg": 2438609.557786389,
+    "validation_mean_grid_import_kwh": 7345853.826036684,
+    "vecnormalize_path": "checkpoints/SAC_CityLearn/vecnormalize.pkl",
+    "selection_status": "No seleccionado; PPO mantiene menor F2 canonico."
   }
 }

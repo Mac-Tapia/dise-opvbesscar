@@ -1,5 +1,5 @@
 {
-  "fecha_actualizacion": "2026-05-30",
+  "fecha_actualizacion": "2026-05-31",
   "politica_fuentes": {
     "usar": [
       "checkpoints/{AGENT}_CityLearn/{agent}_final.zip",
@@ -17,63 +17,63 @@
   "auditoria": [
     {
       "agent": "SAC",
-      "timestamp": "20260528_070628",
+      "timestamp": "20260530_221733",
       "training": {
         "total_timesteps": 438000,
         "episodes_completed": 50,
-        "duration_seconds": 5087.255581140518,
-        "speed_steps_per_second": 86.09750247731887,
+        "duration_seconds": 10306.008525133133,
+        "speed_steps_per_second": 42.49947969011038,
         "device": "cuda"
       },
       "validation": {
         "num_episodes": 10,
-        "mean_reward": 1519.1468534858413,
-        "std_reward": 3.650653340894803,
-        "mean_co2_avoided_kg": 2400665.4256318016,
+        "mean_reward": 1517.1255922538833,
+        "std_reward": 1.5580254964555513,
+        "mean_co2_avoided_kg": 2438609.557786389,
         "mean_solar_kwh": 5819332.395698241,
-        "mean_grid_import_kwh": 7456698.972722041
+        "mean_grid_import_kwh": 7345853.826036684
       },
       "files": {
         "result": {
           "path": "outputs/sac_training/result_sac.json",
           "exists": true,
-          "size_bytes": 3191082,
-          "last_write_time": "2026-05-28T08:34:42",
+          "size_bytes": 3191900,
+          "last_write_time": "2026-05-31T01:12:51",
           "uses_archive_path": false
         },
         "model": {
           "path": "checkpoints/SAC_CityLearn/sac_final.zip",
           "exists": true,
-          "size_bytes": 3212412,
-          "last_write_time": "2026-05-28T08:31:17",
+          "size_bytes": 14288968,
+          "last_write_time": "2026-05-31T01:09:21",
           "uses_archive_path": false
         },
         "expected_model": {
           "path": "checkpoints/SAC_CityLearn/sac_final.zip",
           "exists": true,
-          "size_bytes": 3212412,
-          "last_write_time": "2026-05-28T08:31:17",
+          "size_bytes": 14288968,
+          "last_write_time": "2026-05-31T01:09:21",
           "uses_archive_path": false
         },
         "trace": {
           "path": "outputs/sac_training/trace_sac.csv",
           "exists": true,
-          "size_bytes": 59587054,
-          "last_write_time": "2026-05-30T19:37:16",
+          "size_bytes": 59702852,
+          "last_write_time": "2026-05-31T01:09:13",
           "uses_archive_path": false
         },
         "convergence": {
           "path": "outputs/sac_training/sac_convergencia_episodios.csv",
           "exists": true,
-          "size_bytes": 3757,
-          "last_write_time": "2026-05-28T08:31:17",
+          "size_bytes": 3828,
+          "last_write_time": "2026-05-31T01:09:21",
           "uses_archive_path": false
         },
         "episodes_history": {
           "path": "outputs/sac_training/sac_episodios_history.csv",
           "exists": true,
-          "size_bytes": 15934,
-          "last_write_time": "2026-05-28T08:31:11",
+          "size_bytes": 15923,
+          "last_write_time": "2026-05-31T01:09:15",
           "uses_archive_path": false
         }
       },
@@ -231,16 +231,16 @@
   ],
   "resultado_guardado_actual": {
     "SAC": {
-      "f2_minimo_kg": 3720640,
-      "f2_minimo_ep": 33,
-      "f2_media_kg": 3747127.0,
-      "f2_sigma_kg": 42424.0,
-      "vs_f0_pct": 47.25,
-      "co2_evitado_kg": 3333359,
-      "cv_plateau_pct": 0.065
+      "f2_minimo_kg": 3693084,
+      "f2_minimo_ep": 17,
+      "f2_media_kg": 3711823.0,
+      "f2_sigma_kg": 45486.0,
+      "vs_f0_pct": 47.65,
+      "co2_evitado_kg": 3360916,
+      "cv_plateau_pct": 0.036
     },
     "PPO": {
-      "f2_minimo_kg": 3657483,
+      "f2_minimo_kg": 3657484,
       "f2_minimo_ep": 49,
       "f2_media_kg": 3695605.0,
       "f2_sigma_kg": 63818.0,
@@ -254,7 +254,7 @@
       "f2_media_kg": 3699834.0,
       "f2_sigma_kg": 38248.0,
       "vs_f0_pct": 48.13,
-      "co2_evitado_kg": 3394989,
+      "co2_evitado_kg": 3394990,
       "cv_plateau_pct": 0.422
     }
   }
