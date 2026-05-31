@@ -197,14 +197,15 @@ oe3:
       log_interval: 250
       max_grad_norm: 0.75
       multi_objective_weights:
-        # Pesos v7.4 OE3 (suma=1.00)
-        direct_co2: 0.25
-        indirect_co2: 0.30
-        ev_satisfaction: 0.25
-        bess_solar_timing: 0.10
-        solar: 0.05
-        grid_stability: 0.03
-        cost: 0.02
+      # CO2_DUAL_FOCUS v8.1 — fuente activa: src/citylearnv2/ev_charging_wrapper.py
+      # Los 3 agentes (SAC/PPO/A2C) usan EXACTAMENTE estos pesos. Suma = 1.00
+      direct_co2:          0.20  # OE3-1: CO2 directa (ICE->EV electrificacion vehicular)
+      indirect_co2:        0.30  # OE3-2: CO2 indirecta (grid import x 0.4521 kg CO2/kWh)
+      ev_complete:         0.35  # OE3-3: satisfaccion/cantidad carga EV (motos+mototaxis)
+      bess_solar_timing:   0.07  # regla op: BESS carga solar(6-18h), NO diesel nocturno
+      solar:               0.04  # autoconsumo PV
+      grid_stability:      0.02  # estabilidad red (suavizado rampas)
+      cost:                0.02  # costo OSINERGMIN HP/HFP
       n_steps: 8
       progress_interval_episodes: 1
       resume_checkpoints: false
@@ -235,14 +236,15 @@ oe3:
       log_interval: 250
       max_grad_norm: 0.5
       multi_objective_weights:
-        # Pesos v7.4 OE3 (suma=1.00)
-        direct_co2: 0.25
-        indirect_co2: 0.30
-        ev_satisfaction: 0.25
-        bess_solar_timing: 0.10
-        solar: 0.05
-        grid_stability: 0.03
-        cost: 0.02
+      # CO2_DUAL_FOCUS v8.1 — fuente activa: src/citylearnv2/ev_charging_wrapper.py
+      # Los 3 agentes (SAC/PPO/A2C) usan EXACTAMENTE estos pesos. Suma = 1.00
+      direct_co2:          0.20  # OE3-1: CO2 directa (ICE->EV electrificacion vehicular)
+      indirect_co2:        0.30  # OE3-2: CO2 indirecta (grid import x 0.4521 kg CO2/kWh)
+      ev_complete:         0.35  # OE3-3: satisfaccion/cantidad carga EV (motos+mototaxis)
+      bess_solar_timing:   0.07  # regla op: BESS carga solar(6-18h), NO diesel nocturno
+      solar:               0.04  # autoconsumo PV
+      grid_stability:      0.02  # estabilidad red (suavizado rampas)
+      cost:                0.02  # costo OSINERGMIN HP/HFP
       n_epochs: 20
       n_steps: 8192
       progress_interval_episodes: 1
@@ -277,14 +279,15 @@ oe3:
       learning_starts: 2000
       log_interval: 100
       multi_objective_weights:
-        # Pesos v7.4 OE3 (suma=1.00)
-        direct_co2: 0.25
-        indirect_co2: 0.30
-        ev_satisfaction: 0.25
-        bess_solar_timing: 0.10
-        solar: 0.05
-        grid_stability: 0.03
-        cost: 0.02
+      # CO2_DUAL_FOCUS v8.1 — fuente activa: src/citylearnv2/ev_charging_wrapper.py
+      # Los 3 agentes (SAC/PPO/A2C) usan EXACTAMENTE estos pesos. Suma = 1.00
+      direct_co2:          0.20  # OE3-1: CO2 directa (ICE->EV electrificacion vehicular)
+      indirect_co2:        0.30  # OE3-2: CO2 indirecta (grid import x 0.4521 kg CO2/kWh)
+      ev_complete:         0.35  # OE3-3: satisfaccion/cantidad carga EV (motos+mototaxis)
+      bess_solar_timing:   0.07  # regla op: BESS carga solar(6-18h), NO diesel nocturno
+      solar:               0.04  # autoconsumo PV
+      grid_stability:      0.02  # estabilidad red (suavizado rampas)
+      cost:                0.02  # costo OSINERGMIN HP/HFP
       prefer_citylearn: false
       progress_interval_episodes: 1
       resume_checkpoints: false

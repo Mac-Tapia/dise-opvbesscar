@@ -106,27 +106,27 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class MultiObjectiveWeights:
-    """Pesos para funcion de recompensa multiobjetivo - CO2_DUAL_FOCUS v7.4 OE3.
+    """Pesos para funcion de recompensa multiobjetivo - CO2_DUAL_FOCUS v8.1 OE3.
 
     [OE3]: Seleccionar el agente IA de la infraestructura de carga inteligente
     para la gestion de recarga de motos y mototaxis electricas, que contribuye
     de manera cuantificable a la reduccion de emisiones de CO2 en Iquitos.
 
-    Pesos v7.5 — tres objetivos OE3 explícitos equilibrados (suma=1.00):
-    OE3-1: direct_co2   0.25 — CO2 directa (ICE→EV electrificación vehicular)
-    OE3-2: indirect_co2 0.30 — CO2 indirecta (grid import × 0.4521 kg CO2/kWh)
-    OE3-3: ev_satisfaction 0.25 — satisfacción/cantidad carga EV (motos+mototaxis)
-           bess_solar_timing 0.10 — regla op: BESS carga solar(6-18h), NO diesel
-           solar          0.05 — autoconsumo PV
-           grid_stability 0.03 — estabilidad red (suavizado rampas)
-           cost           0.02 — costo tarifario OSINERGMIN HP/HFP
+    Pesos v8.1 — siete componentes OE3 explícitos equilibrados (suma=1.00):
+    OE3-1: direct_co2        0.20 — CO2 directa (ICE->EV electrificacion)
+      OE3-2: indirect_co2       0.30 — CO2 indirecta (grid import x 0.4521 kg CO2/kWh)
+      OE3-3: ev_complete        0.35 — satisfaccion/cantidad carga EV (motos+mototaxis)
+             bess_solar_timing  0.07 — regla BESS: carga solar, NO diesel nocturno
+             solar              0.04 — autoconsumo PV
+             grid_stability     0.02 — estabilidad red (suavizado rampas)
+             cost               0.02 — costo OSINERGMIN HP/HFP
     """
-    direct_co2: float = 0.25        # OE3-1: CO2 directa (combustible ICE evitado)
+    direct_co2: float = 0.20        # OE3-1: CO2 directa (combustible ICE evitado)
     co2: float = 0.30               # OE3-2: CO2 indirecta (minimizar import grid termico)
-    ev_satisfaction: float = 0.25   # OE3-3: satisfaccion/cantidad carga EVs
-    bess_solar_timing: float = 0.10 # regla BESS: carga con solar (6-18h), NO diesel nocturno
-    solar: float = 0.05             # autoconsumo PV (Solar Self-Consumption)
-    grid_stability: float = 0.03    # estabilidad red (suavizado rampas)
+    ev_satisfaction: float = 0.35   # OE3-3: satisfaccion/cantidad carga EVs
+    bess_solar_timing: float = 0.07 # regla BESS: carga con solar (6-18h), NO diesel nocturno
+    solar: float = 0.04             # autoconsumo PV (Solar Self-Consumption)
+    grid_stability: float = 0.02    # estabilidad red (suavizado rampas)
     cost: float = 0.02              # costo tarifario OSINERGMIN HP/HFP (secundario)
     ev_utilization: float = 0.00    # Incluido en ev_satisfaction
     peak_import_penalty: float = 0.00  # Dinamico en compute(), no como peso fijo
@@ -981,12 +981,12 @@ def create_iquitos_reward_weights(
     Returns:
         MultiObjectiveWeights configurado
     """
-    # ACTUALIZADO 2026-05-28: CO2_DUAL_FOCUS v7.5 alineado con OE3
-    # Pesos v7.5 canonical: direct_co2(0.25)+indirect_co2(0.30)+ev(0.25)+bess_solar(0.10)+solar(0.05)+grid(0.03)+cost(0.02)
+    # ACTUALIZADO 2026-05-28: CO2_DUAL_FOCUS v8.1 alineado con OE3
+    # Pesos v8.1 canonical: direct_co2(0.20)+indirect_co2(0.30)+ev_complete(0.35)+bess_solar(0.07)+solar(0.04)+grid(0.03)+cost(0.02)
     presets = {
         "co2_focus": MultiObjectiveWeights(
-            direct_co2=0.25, co2=0.30, ev_satisfaction=0.25,
-            bess_solar_timing=0.10, solar=0.05, grid_stability=0.03, cost=0.02),
+            direct_co2=0.20, co2=0.30, ev_satisfaction=0.35,
+              bess_solar_timing=0.07, solar=0.04, grid_stability=0.02, cost=0.02),
         "balanced": MultiObjectiveWeights(
             direct_co2=0.20, co2=0.25, ev_satisfaction=0.30,
             bess_solar_timing=0.10, solar=0.05, grid_stability=0.05, cost=0.05),

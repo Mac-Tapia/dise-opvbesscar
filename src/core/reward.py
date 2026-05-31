@@ -1,6 +1,6 @@
 """src.core.reward — Universal multi-objective reward for PVBESS-EV RL agents.
 
-Implements the CO2_DUAL_FOCUS reward model (v8.0 universal) derived from:
+Implements the CO2_DUAL_FOCUS reward model (v8.1 universal) derived from:
   - PVBESSCAR OE3 validated results (Kruskal-Wallis H=81.65, p=1.86e-18)
   - Wali et al. (2025) STET: voltage-based performance metric
   - Nikolay et al. (2025) Nat. Commun. Eng.: user satisfaction formulation
@@ -32,13 +32,13 @@ from src.core.energy_balance import PowerFlows
 class RewardWeights:
     """Configurable reward weights. Must sum to 1.0.
 
-    Validated weight sets (v7.5 OE3 — tres objetivos equilibrados):
-        CO2_DUAL_FOCUS v7.5 (Iquitos isolated thermal grid):
-            w_direct=0.25 (OE3-1: CO2 directa ICE→EV)
+    Validated weight sets (v8.1 OE3 — siete componentes equilibrados):
+        CO2_DUAL_FOCUS v8.1 (Iquitos isolated thermal grid):
+            w_direct=0.20 (OE3-1: CO2 directa ICE→EV)
             w_co2=0.30    (OE3-2: CO2 indirecta grid import)
-            w_ev=0.25     (OE3-3: satisfacción/cantidad carga EV)
+            w_ev=0.35     (OE3-3: satisfaccion/cantidad carga EV)
             w_solar=0.05  (autoconsumo PV)
-            w_grid=0.15   (bess_solar_timing=0.10 + grid_stability=0.03 + cost=0.02)
+            w_grid=0.11   (bess_solar_timing=0.07 + grid_stability=0.02 + cost=0.02)
         GRID_CONNECTED (urban, tariff-driven):
             w_direct=0.10, w_co2=0.20, w_ev=0.30, w_solar=0.10, w_grid=0.30
         EV_PRIORITY (dense urban parking):
@@ -61,8 +61,8 @@ class RewardWeights:
 
     @classmethod
     def co2_dual_focus(cls) -> "RewardWeights":
-        """v7.5 OE3: Iquitos isolated thermal grid — direct_co2=0.25, indirect_co2=0.30."""
-        return cls(w_direct_co2=0.25, w_co2=0.30, w_ev=0.25, w_solar=0.05, w_grid=0.15)
+        """v8.1 OE3: Iquitos isolated thermal grid — direct_co2=0.20, ev_complete=0.35, indirect=0.30."""
+        return cls(w_direct_co2=0.20, w_co2=0.30, w_ev=0.35, w_solar=0.04, w_grid=0.11)
 
     @classmethod
     def grid_connected(cls) -> "RewardWeights":

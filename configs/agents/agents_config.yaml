@@ -20,7 +20,7 @@ environment:
   episode_length: 8760
   time_step_minutes: 60
 reward_weights:
-  # Pesos v7.4 — tres objetivos OE3 explícitos (idénticos SAC/PPO/A2C)
+  # Pesos v8.1 — tres objetivos OE3 explícitos (idénticos SAC/PPO/A2C)
   # Suma: 0.15+0.40+0.25+0.10+0.05+0.03+0.02 = 1.00
   direct_co2: 0.25        # OE3-1: CO2 directa — reducción ICE→EV electrificación
   indirect_co2: 0.30      # OE3-2: CO2 indirecta — minimizar grid import diesel
