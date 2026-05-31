@@ -7,8 +7,10 @@ Entrenamiento del agente A2C usando stable-baselines3 A2C con
 StableBaselines3Wrapper(CityLearnEnv) — entorno nativo CityLearn v2.
 
 Agente: stable_baselines3.A2C (Advantage Actor-Critic, PyTorch)
-Entorno: CityLearnEnv → StableBaselines3Wrapper (gymnasium-compatible)
-Reward : CO2_DUAL_FOCUS v7.2 (indirect 45% + ev 25% + direct 10% + solar 5% + grid 5% + cost 10%)
+Entorno: IquitosEVChargingWrapper(CityLearnEnv) — obs_dim=18, action_dim=3
+Reward : CO2_DUAL_FOCUS v8.1 — pesos en src/citylearnv2/ev_charging_wrapper.py:
+         direct=0.20 + indirect=0.30 + ev_complete=0.35 + bess_solar=0.07
+         + solar=0.04 + grid_stable=0.02 + cost=0.02  (suma=1.00)
 
 Diferencias con PPO:
   - A2C: on-policy, sin replay buffer, actualización paso a paso

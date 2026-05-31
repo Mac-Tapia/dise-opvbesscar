@@ -15,7 +15,7 @@ ESPACIO DE ACCIÓN (3D — después del wrapper):
 Pipeline:
   CityLearnEnv(mall only, BESS, PV)
       ↓
-  IquitosEVChargingWrapper   ← añade control EV + reward CO2_DUAL_FOCUS v7.0
+  IquitosEVChargingWrapper   ← añade control EV + reward CO2_DUAL_FOCUS v8.1
       ↓ (para SB3)
   Monitor(SB3)               ← registra métricas episodio, compatible con PPO/A2C/SAC
 """
@@ -64,7 +64,7 @@ def create_iquitos_env(
     base CityLearn con:
     - Acción 3D: [bess, ev_motos_frac, ev_mototaxis_frac]
     - Obs 18D: CityLearn(11) + EV state(5) + tarifa(2)
-    - Reward CO2_DUAL_FOCUS v7.0 alineada con OE3
+    - Reward CO2_DUAL_FOCUS v8.1 (pesos en ev_charging_wrapper.py)
 
     Apto para entrenamiento con SB3 SAC/PPO/A2C (via create_iquitos_env_for_sb3)
     o directamente en bucle de episodios manuales.
@@ -79,7 +79,7 @@ def create_iquitos_env(
     Returns
     -------
     IquitosEVChargingWrapper
-        Entorno con obs_dim=16, action_dim=3.
+        Entorno con obs_dim=18, action_dim=3.
     """
     if rebuild:
         build_citylearn_schema()

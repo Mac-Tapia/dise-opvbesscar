@@ -141,7 +141,7 @@ tests/integration/                  ← 72 tests covering env, config, reward, e
 | `src/rl/obs_builder.py` | `ObsBuilder` — normalized obs vector, scales with N_types |
 | `src/dimensionamiento/oe2/disenocargadoresev/chargers.py` | Charger specs v5.4+ — `@dataclass(frozen=True)` immutable `ChargerSpec`/`ChargerSet`; stochastic EV arrival simulation |
 | `src/dataset_builder_citylearn/data_loader.py` | OE2DataLoader v5.8 — single source of truth for all data paths; `OE2ValidationError` on bad data |
-| `src/dataset_builder_citylearn/rewards.py` | `MultiObjectiveWeights` — CO2_DUAL_FOCUS v7.5 reward (7 components, weights must sum to 1.0) |
+| `src/dataset_builder_citylearn/rewards.py` | `MultiObjectiveWeights` — CO2_DUAL_FOCUS v8.1 reward (7 components, weights must sum to 1.0) |
 | `src/citylearnv2/env_factory.py` | `create_iquitos_env()` / `create_iquitos_env_for_sb3()` — entry point to training environment |
 | `src/citylearnv2/ev_charging_wrapper.py` | `IquitosEVChargingWrapper` — maps 3D action to 38 sockets + integrates CO₂ reward |
 | `src/agents/sac.py` | SAC agent with `detect_device()` (CUDA/MPS/CPU auto-select); `_patch_citylearn_sac_update()` for CityLearn compatibility |
@@ -154,25 +154,23 @@ tests/integration/                  ← 72 tests covering env, config, reward, e
 | `tests/oe2/` | Unit tests validating OE2 specs and data loader paths |
 | `tests/integration/` | Integration tests for universal env, site config, reward, energy balance |
 
-### Reward Function (CO2_DUAL_FOCUS v7.5 — Tres objetivos OE3 equilibrados)
+### Reward Function (CO2_DUAL_FOCUS v8.1 — fuente única: ev_charging_wrapper.py)
 
 ```python
-# src/citylearnv2/ev_charging_wrapper.py  ← pesos REALES usados por SAC/PPO/A2C
-# Suma: 0.25+0.30+0.25+0.10+0.05+0.03+0.02 = 1.00
-_W_DIRECT_CO2   = 0.25  # OE3-1: CO₂ directa — reducción ICE→EV (transporte)
+# src/citylearnv2/ev_charging_wrapper.py  ← UNICA FUENTE de pesos para SAC/PPO/A2C
+# Suma: 0.20+0.30+0.35+0.07+0.04+0.02+0.02 = 1.00
+_W_DIRECT_CO2   = 0.20  # OE3-1: CO₂ directa — reducción ICE→EV (transporte)
 _W_INDIRECT_CO2 = 0.30  # OE3-2: CO₂ indirecta — grid import × 0.4521 kg CO₂/kWh
-_W_EV_COMPLETE  = 0.25  # OE3-3: EV satisfaction/cantidad carga (motos+mototaxis)
-_W_BESS_SOLAR   = 0.10  # regla op: BESS carga solar(6-18h), NO diesel nocturno
-_W_SOLAR        = 0.05  # autoconsumo PV
-_W_GRID_STABLE  = 0.03  # estabilidad red (suavizado rampas)
-_W_COST         = 0.02  # costo tarifario OSINERGMIN HP(0.45 S/./kWh 18-23h)
+_W_EV_COMPLETE  = 0.35  # OE3-3: EV satisfaction/cantidad carga (motos+mototaxis)
+_W_BESS_SOLAR   = 0.07  # regla op: BESS carga solar, no diesel nocturno
+_W_SOLAR        = 0.04  # autoconsumo PV
+_W_GRID_STABLE  = 0.02  # estabilidad red (suavizado rampas)
+_W_COST         = 0.02  # costo tarifario OSINERGMIN HP(0.45 S./kWh 18-23h)
                        # Fuente: Electro Oriente S.A. — Res. N° 047-2024-OS/CD
-# Evolución: v7.0→v7.1→v7.2→v7.3→v7.4→v7.5 (2026-05-28 current)
-# SINCRONIZADO en: ev_charging_wrapper.py, sac/ppo/a2c_config.yaml,
-#   agents_config.yaml, sac_optimized.json, default.yaml, default_optimized.yaml,
-#   rewards.py (MultiObjectiveWeights), core/reward.py (RewardWeights.co2_dual_focus)
+# Evolución: v7.0→...→v7.5→v8.0→v8.1 (2026-05-31 current)
+# Los 3 agentes usan EXACTAMENTE los mismos pesos — validado por
+#   scripts/analysis/validar_condiciones_agentes.py (C4, 9 checks OK)
 # obs_dim: 18 (base=11 + ev=5 + tarifa=2: tarifa_norm, is_hora_punta)
-# SAC: target_entropy=-3.0 (3D action), lr=1e-4, buffer=100k, learning_starts=5000
 ```
 
 ### Checkpoint Resume Pattern
