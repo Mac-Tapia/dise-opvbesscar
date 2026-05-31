@@ -6,7 +6,7 @@ Hereda de citylearn.reward_function.RewardFunction y es compatible con
 cualquier agente de CityLearn (native SAC) o SB3 (PPO, A2C via wrapper).
 
 Pesos OE3 v7.0 CO2_DUAL_FOCUS:
-  r_indirect_co2   : 0.40  — minimizar importación de red (0.4521 kg CO₂/kWh)
+  r_indirect_co2   : 0.30  — minimizar importación de red (0.4521 kg CO₂/kWh)
   r_solar          : 0.25  — maximizar autoconsumo solar
   r_bess_util      : 0.20  — penalizar SOC muy bajo/alto (evitar ciclos innecesarios)
   r_grid_stable    : 0.15  — penalizar cambios bruscos de red

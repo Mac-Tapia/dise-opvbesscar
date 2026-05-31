@@ -177,13 +177,13 @@ src/citylearnv2/env_factory.py
 
 src/citylearnv2/ev_charging_wrapper.py
   IquitosEVChargingWrapper        ← mapea acción 3D a 38 sockets
-  Reward CO2_DUAL_FOCUS v8.1:
-    W_DIRECT_CO2   = 0.25  (CO₂ ICE→EV)
-    W_INDIRECT_CO2 = 0.30  (CO₂ importación red)
-    W_EV_COMPLETE  = 0.25  (carga EV satisfecha)
-    W_BESS_SOLAR   = 0.10  (BESS carga con solar)
-    W_SOLAR        = 0.05  (autoconsumo PV)
-    W_GRID_STABLE  = 0.03  (suavizado rampas)
+  Reward CO2_DUAL_FOCUS v8.1 (suma = 1.00):
+    W_DIRECT_CO2   = 0.20  (OE3-1 CO₂ directa ICE→EV)
+    W_INDIRECT_CO2 = 0.30  (OE3-2 CO₂ indirecta grid import)
+    W_EV_COMPLETE  = 0.35  (OE3-3 carga EV satisfecha ← mayor prioridad)
+    W_BESS_SOLAR   = 0.07  (BESS carga con solar, no diesel)
+    W_SOLAR        = 0.04  (autoconsumo PV)
+    W_GRID_STABLE  = 0.02  (suavizado rampas)
     W_COST         = 0.02  (tarifa HP OSINERGMIN)
 ```
 

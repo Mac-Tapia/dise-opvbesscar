@@ -22,10 +22,10 @@ environment:
 reward_weights:
   # Pesos v8.1 — tres objetivos OE3 explícitos (idénticos SAC/PPO/A2C)
   # Suma: 0.15+0.40+0.25+0.10+0.05+0.03+0.02 = 1.00
-  direct_co2: 0.25        # OE3-1: CO2 directa — reducción ICE→EV electrificación
+  direct_co2: 0.20        # OE3-1: CO2 directa — reducción ICE→EV electrificación
   indirect_co2: 0.30      # OE3-2: CO2 indirecta — minimizar grid import diesel
-  ev_satisfaction: 0.25   # OE3-3: satisfacción/cantidad carga EV (motos+mototaxis)
-  bess_solar_timing: 0.10 # regla op: BESS carga solar(6-18h), NO diesel nocturno
+  ev_satisfaction: 0.35   # OE3-3: satisfaccion/cantidad carga EV (motos+mototaxis)
+  bess_solar_timing: 0.07 # regla op: BESS carga solar(6-18h), NO diesel nocturno
   solar: 0.05             # autoconsumo PV
   grid_stability: 0.03    # estabilidad red (suavizado rampas)
   cost: 0.02              # costo OSINERGMIN HP/HFP (secundario)

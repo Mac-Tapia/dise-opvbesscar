@@ -1031,14 +1031,14 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         _co2_ref_t = max(float(self._co2_ref_direct_h[t]), 1e-6)
         r_direct_co2 = float(np.clip(co2_direct_total / _co2_ref_t, 0.0, 1.0))
 
-        # ── r_indirect_co2 (peso 0.45) ────────────────────────────────────
+        # ── r_indirect_co2 (peso 0.30) ────────────────────────────────────
         # CO₂ indirecto: importación de red × factor horario (diesel Iquitos)
         # Factor varía: HP(18-23h)=0.43-0.63 kg/kWh, HFP=0.39-0.43 kg/kWh (estacionalidad Loreto)
         _co2_indirect_kg = grid_import_real * co2_factor
         _max_co2_indirect = MAX_GRID_IMPORT_KW * float(self._co2_factor.max())  # peor caso anual
         r_indirect_co2 = -float(np.clip(_co2_indirect_kg / max(_max_co2_indirect, 1.0), 0.0, 1.0))
 
-        # ── r_ev_complete (peso 0.25) ─────────────────────────────────────
+        # ── r_ev_complete (peso 0.35) ─────────────────────────────────────
         # Bonificar completar carga EV al día; penalizar deuda incumplida (fin día)
         hour = int(self._t % 24)
         day_start = (t // 24) * 24
@@ -1069,7 +1069,7 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
                 r_ev_complete -= 0.50
             r_ev_complete = float(np.clip(r_ev_complete, -1.0, 1.0))
 
-        # ── r_solar (peso 0.05) ───────────────────────────────────────────
+        # ── r_solar (peso 0.04) ───────────────────────────────────────────
         # Autoconsumo solar: penalizar si se exporta solar pudiendo usarse localmente
         # solar_autoconsumo_kw viene del dispatch (PV local = PV total - export)
         if solar_gen > 0.001:
@@ -1092,7 +1092,7 @@ class IquitosEVChargingWrapper(gymnasium.Wrapper):
         cost_step_soles = grid_import_real * tarifa_total_t
         r_cost = -float(np.clip(cost_step_soles / MAX_COST_PER_STEP_SOLES, 0.0, 1.0))
 
-        # ── r_bess_solar (peso 0.10) — Regla operacional de flujo BESS ───
+        # ── r_bess_solar (peso 0.07) — Regla operacional de flujo BESS ───
         # BESS debe cargarse con generación solar (6-18h) NO con diesel nocturno.
         # Flujo correcto: Solar → BESS (día) → BESS → EV (noche/pico).
         # bess_action_raw > 0 = cargando; < 0 = descargando.

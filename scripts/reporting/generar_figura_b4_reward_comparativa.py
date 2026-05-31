@@ -194,7 +194,7 @@ tabla = (
     f"{'A2C':<8} {a2c_ep50:>9.1f} {a2c_mu:>10.1f} {a2c_cv:>5.2f}%\n"
     f"{'─'*38}\n"
     f"Pesos reward: CO₂dir=0.35 | CO₂ind=0.30\n"
-    f"              EV=0.25 | Solar=0.05 | Grid=0.05\n"
+    f"              EV=0.35 | Solar=0.04 | Grid=0.02\n"
     f"Factor CO₂: 0.4521 kg/kWh (Iquitos)"
 )
 

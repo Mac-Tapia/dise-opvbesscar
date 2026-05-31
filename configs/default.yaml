@@ -220,7 +220,7 @@ oe3:
     ev_co2_conversion_kg_per_kwh: 2.146
     hp_weight: 0.4
     hfp_weight: 0.15
-    # OE3: CO2_DUAL_FOCUS v8.1 — direct_co2(0.25)+indirect_co2(0.30)+ev(0.25)+bess_solar(0.10)+solar(0.05)+grid(0.03)+cost(0.02)
+    # OE3: CO2_DUAL_FOCUS v8.1 — direct_co2(0.20)+indirect_co2(0.30)+ev_complete(0.35)+bess_solar(0.07)+solar(0.04)+grid(0.03)+cost(0.02)
   co2_emissions:
     annual_co2_budget_kg: 7000000
     bess_calendar_aging_kg_per_day: 0.01
