@@ -13,7 +13,9 @@ como ganador son historicos y no deben usarse para reportes nuevos.
 | 1 | `reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md` | Informe principal de comparativa SAC/PPO/A2C y seleccion PPO |
 | 2 | `reports/oe3/agents_comparison_canonical.json` | Fuente estructurada para consultas desde otros agentes |
 | 3 | `reports/oe3/agents_comparison_canonical.csv` | Tabla comparativa para hojas de calculo/reportes |
-| 4 | `outputs/hypothesis_test/RESULTADOS_HIPOTESIS_CO2_COMPLETO.json` | Resumen estadistico no parametrico actualizado |
+| 4 | `reports/oe3/CO2_DIRECTO_INDIRECTO_TRACE_OE3.md` | Reporte trace de CO2 directo e indirecto |
+| 5 | `reports/oe3/co2_trace_direct_indirect_summary.json` | Fuente estructurada del analisis trace CO2 directo/indirecto |
+| 6 | `outputs/hypothesis_test/RESULTADOS_HIPOTESIS_CO2_COMPLETO.json` | Resumen estadistico no parametrico actualizado |
 
 Resumen vigente:
 
@@ -22,6 +24,10 @@ Resumen vigente:
 | 1 | **PPO** | **3,657,483** | **49** | **48.15%** |
 | 2 | A2C | 3,659,010 | 45 | 48.13% |
 | 3 | SAC | 3,720,640 | 33 | 47.25% |
+
+Lectura complementaria desde `trace`: por CO2 evitado total directo + indirecto, A2C lidera
+con 2,523,717 kg CO2/año evitados en el episodio trace 19. Esta lectura no reemplaza el criterio
+canonico F2, donde PPO sigue siendo el agente seleccionado por menor CO2 indirecto emitido.
 
 ## OE2 - Dimensionamiento
 

@@ -19,6 +19,21 @@
       "descripcion": "Tabla comparativa canónica de F2 y métricas descriptivas"
     },
     {
+      "path": "reports/oe3/CO2_DIRECTO_INDIRECTO_TRACE_OE3.md",
+      "tipo": "informe",
+      "descripcion": "Analisis trace de CO2 directo e indirecto por agente"
+    },
+    {
+      "path": "reports/oe3/co2_trace_direct_indirect_summary.json",
+      "tipo": "json",
+      "descripcion": "Fuente estructurada del analisis trace CO2 directo/indirecto"
+    },
+    {
+      "path": "reports/oe3/co2_trace_direct_indirect_summary.csv",
+      "tipo": "csv",
+      "descripcion": "Tabla de rankings trace por CO2 directo, indirecto y total evitado"
+    },
+    {
       "path": "docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md",
       "tipo": "reporte",
       "descripcion": "Verificacion OE2 v5.2 actualizada a pipeline v5.8"
@@ -50,6 +65,15 @@
         "reduccion_vs_f0_pct": 47.25
       }
     ]
+  },
+  "resultado_trace_directo_indirecto": {
+    "criterio_total_evitado": "co2_avoided_indirect_kg + co2_avoided_direct_kg",
+    "agente_lider_total_evitado": "A2C",
+    "episodio_trace_total_evitado": 19,
+    "co2_total_evitado_kg_anio": 2523717,
+    "agente_lider_menor_indirecto_emitido": "PPO",
+    "episodio_trace_menor_indirecto_emitido": 49,
+    "co2_indirecto_emitido_kg_anio": 3657484
   },
   "artefactos_historicos_retirados": [
     "outputs/docx/INFORME_OE3_SELECCION_AGENTE_RL_v10.docx",

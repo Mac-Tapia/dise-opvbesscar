@@ -15,6 +15,7 @@ dataset solar vigente reporta `4,162 kWp DC` como potencia PVWatts/pdc0 y `3,201
 - Resumen de seccion 5.2: `outputs/seccion52/resultados_seccion52.json`.
 - Fuente versionada para consultas: `reports/oe3/agents_comparison_canonical.json`.
 - Tabla versionada: `reports/oe3/agents_comparison_canonical.csv`.
+- Lectura directa desde traces: `reports/oe3/CO2_DIRECTO_INDIRECTO_TRACE_OE3.md`.
 
 ## Criterio de seleccion
 
@@ -42,6 +43,14 @@ de emisiones y por tanto PPO queda primero.
 SAC no gana en la corrida vigente porque su mejor `F2` es **3,720,640 kg CO2/año**, equivalente a
 **63,157 kg CO2/año** mas que PPO. Aunque SAC mantiene bajo `CV plateau`, su nivel de emisiones
 controladas queda por encima de PPO y A2C.
+
+## Lectura complementaria desde trace
+
+El reporte `reports/oe3/CO2_DIRECTO_INDIRECTO_TRACE_OE3.md` calcula directamente las columnas
+`co2_grid_kg`, `co2_avoided_indirect_kg` y `co2_avoided_direct_kg` de los traces de entrenamiento.
+Con el criterio de mayor CO2 evitado total directo + indirecto, **A2C** lidera con **2,523,717 kg
+CO2/año evitados** en el episodio trace 19. Esta lectura es complementaria: para el criterio OE3
+canonico de menor F2/CO2 indirecto residual, **PPO** se mantiene como agente seleccionado.
 
 ## Inferencia estadistica
 
