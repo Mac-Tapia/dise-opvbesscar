@@ -9,6 +9,10 @@ El resultado vigente de seleccion de agente es **A2C** bajo el score multiobjeti
 50 episodios. SAC fue reentrenado en v8.2 con `VecNormalize` el 2026-05-30/31, pero no supera a A2C
 en CO2 total evitado, grid import, carga EV, BESS ni deuda/violaciones.
 
+La seleccion anterior por **F2 puntual** favorecia a PPO. La seleccion vigente cambia a A2C porque
+el criterio pedido es operativo y acumulado en 50 episodios: mas CO2 total evitado, menos importacion
+de red, mas cargas equivalentes de motos/mototaxis, mas uso BESS y menos violaciones.
+
 | Prioridad | Documento | Uso |
 |---:|---|---|
 | 1 | `reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md` | Informe principal de comparativa SAC/PPO/A2C y seleccion A2C |
@@ -23,11 +27,11 @@ en CO2 total evitado, grid import, carga EV, BESS ni deuda/violaciones.
 
 Resumen vigente:
 
-| Rank | Agente | Criterios liderados | CO2 total evitado kg | Grid import kWh | EV total kWh | Deuda/violaciones |
+| Rank | Agente | Criterios liderados | CO2 total evitado kg | Grid import kWh | EV equiv 50 ep | Deuda/violaciones |
 |---:|---|---:|---:|---:|---:|---:|
-| 1 | **A2C** | **9/9** | **122,980,987** | **368,798,317** | **13,285,495** | **811** |
-| 2 | PPO | 0/9 | 122,688,120 | 370,717,132 | 12,917,765 | 2,333 |
-| 3 | SAC v8.2 | 0/9 | 121,316,857 | 370,440,348 | 12,840,008 | 1,385 |
+| 1 | **A2C** | **9/9** | **122,980,987** | **368,798,317** | **4,307,304** | **811** |
+| 2 | PPO | 0/9 | 122,688,120 | 370,717,132 | 4,203,700 | 2,333 |
+| 3 | SAC v8.2 | 0/9 | 121,316,857 | 370,440,348 | 4,180,962 | 1,385 |
 
 Lectura complementaria: PPO conserva el menor F2 puntual con 3,657,484 kg CO2/año en el episodio 49,
 pero no reemplaza el criterio multiobjetivo acumulado.

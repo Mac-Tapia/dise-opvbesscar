@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Script temporal: validar fórmulas CO2 y ranking agentes OE3."""
+"""Valida formulas CO2 y ranking de validacion OE3."""
 from __future__ import annotations
 import json, pathlib
 
-BASE = pathlib.Path(__file__).resolve().parents[1]
+BASE = pathlib.Path(__file__).resolve().parents[2]
 CO2_GRID  = 0.4521
 CO2_MOTO  = 0.87
 CO2_TAXIS = 0.54
@@ -25,11 +25,11 @@ print(f'CO2 grid Iquitos: {CO2_GRID} kg/kWh | CO2 moto: {CO2_MOTO} | CO2 mototax
 print()
 
 # FORMULA 1 - BASELINE
-co2_ev_bl  = ev_kwh * CO2_GRID
+co2_ev_bl  = co2_bl['co2_indirecto_ev_baseline']
 co2_mall_bl = mall_kwh * CO2_GRID
 co2_total_bl_calc = co2_ev_bl + co2_mall_bl
 print('--- FORMULA 1 BASELINE ---')
-print(f'CO2 indirecto EV   = {ev_kwh:,.1f} x {CO2_GRID} = {co2_ev_bl:,.1f} kg/anyo')
+print(f'CO2 vehicular baseline = {co2_ev_bl:,.1f} kg/anyo (componente guardado en baseline JSON)')
 print(f'CO2 indirecto Mall = {mall_kwh:,.1f} x {CO2_GRID} = {co2_mall_bl:,.1f} kg/anyo')
 print(f'CO2 TOTAL calc     = {co2_total_bl_calc:,.1f} kg/anyo')
 co2_bl_json = co2_bl['co2_total_baseline']
@@ -42,7 +42,7 @@ co2_dir_bl = co2_bl.get('co2_reduccion_directa_baseline', 330029.7)
 print(f'CO2 reduccion directa (electrificacion) = {co2_dir_bl:,.1f} kg/anyo')
 ev_bl_moto  = ev_kwh * CO2_MOTO
 difference_direct = ev_bl_moto - co2_ev_bl
-print(f'Diferencia fosil-electrico motos       = {ev_kwh:,.1f} x ({CO2_MOTO}-{CO2_GRID}) = {difference_direct:,.1f} kg/anyo')
+print(f'Chequeo directo moto simplificado      = {ev_bl_moto:,.1f} kg/anyo; diferencia vs baseline mixto = {difference_direct:,.1f} kg/anyo')
 print()
 
 # FORMULA 2 - CONTROL
@@ -54,8 +54,8 @@ for ag, d in agents_raw.items():
     eps = int(d['training'].get('episodes_completed', d['training'].get('episodes', 50)))
     grid_val    = v.get('mean_grid_import_kwh', 0)
     co2_ctrl    = grid_val * CO2_GRID
-    co2_dir_ep  = sm.get('total_co2_avoided_direct_kg', 0) / max(eps, 1)
-    co2_ind_ep  = sm.get('total_co2_avoided_indirect_kg', 0) / max(eps, 1)
+    co2_dir_ep  = sm.get('total_co2_directa_kg', sm.get('total_co2_avoided_direct_kg', 0)) / max(eps, 1)
+    co2_ind_ep  = sm.get('total_co2_indirecta_kg', sm.get('total_co2_avoided_indirect_kg', 0)) / max(eps, 1)
     co2_total_avoided = v.get('mean_co2_avoided_kg', 0)
     delta       = co2_bl_json - co2_ctrl
     red_pct     = delta / co2_bl_json * 100

@@ -24,17 +24,20 @@ Para consultas automatizadas de otros agentes, usar:
 ## Resultado OE3
 
 Criterio operativo principal: score multiobjetivo acumulado en 50 episodios. Se prioriza mayor CO2
-directo+indirecto evitado, menor importacion de red, mayor carga de motos/mototaxis, mayor uso util
-de BESS y menor deuda/violaciones de carga.
+directo+indirecto evitado, menor importacion de red, mayor carga de motos/mototaxis en eventos
+equivalentes, mayor uso util de BESS y menor deuda/violaciones de carga.
 
-| Rank | Agente | Criterios liderados | CO2 total evitado kg | Grid import kWh | EV total kWh | BESS descarga kWh | Deuda/violaciones |
+| Rank | Agente | Criterios liderados | CO2 total evitado kg | Grid import kWh | EV equiv 50 ep | BESS descarga kWh | Deuda/violaciones |
 |---:|---|---:|---:|---:|---:|---:|---:|
-| 1 | **A2C** | **9/9** | **122,980,987** | **368,798,317** | **13,285,495** | **33,504,412** | **811** |
-| 2 | PPO | 0/9 | 122,688,120 | 370,717,132 | 12,917,765 | 31,831,147 | 2,333 |
-| 3 | SAC v8.2 | 0/9 | 121,316,857 | 370,440,348 | 12,840,008 | 30,022,939 | 1,385 |
+| 1 | **A2C** | **9/9** | **122,980,987** | **368,798,317** | **4,307,304** | **33,504,412** | **811** |
+| 2 | PPO | 0/9 | 122,688,120 | 370,717,132 | 4,203,700 | 31,831,147 | 2,333 |
+| 3 | SAC v8.2 | 0/9 | 121,316,857 | 370,440,348 | 4,180,962 | 30,022,939 | 1,385 |
 
 **Conclusion:** A2C gana por el score multiobjetivo acumulado. PPO conserva el menor `F2` puntual
 (3,657,484 kg CO2/año), pero ese valor queda como lectura complementaria.
+
+Conteo EV: A2C carga **3,871,470 motos equivalentes** y **435,835 mototaxis equivalentes** en los
+50 episodios. Ningun agente tiene cero violaciones acumuladas; A2C tiene el menor total.
 
 ## Estado OE2
 

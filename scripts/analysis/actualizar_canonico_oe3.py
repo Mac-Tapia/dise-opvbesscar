@@ -35,6 +35,9 @@ AGENTS = ("SAC", "PPO", "A2C")
 F0_REFERENCE_KG = 7_053_999
 RUN_DATE = date.today().isoformat()
 REWARD_VERSION = "CO2_DUAL_FOCUS v8.1"
+CO2_FACTOR_IQUITOS = 0.4521
+MOTOS_DATASET = ROOT / "data" / "interim" / "citylearn_v2" / "ev_charger_motos.csv"
+MOTOTAXIS_DATASET = ROOT / "data" / "interim" / "citylearn_v2" / "ev_charger_mototaxis.csv"
 
 
 def fmt_int(value: float) -> str:
@@ -71,12 +74,35 @@ def load_agent(agent: str) -> tuple[dict, pd.DataFrame, pd.DataFrame]:
     return result, history, convergence
 
 
+def load_vehicle_energy_reference() -> dict:
+    """Energia media por evento de carga equivalente del dataset real OE2/CityLearn."""
+    motos = pd.read_csv(MOTOS_DATASET)
+    mototaxis = pd.read_csv(MOTOTAXIS_DATASET)
+    kwh_per_moto = float(motos["ev_demand_kwh"].sum() / motos["vehicles_per_hour"].sum())
+    kwh_per_mototaxi = float(
+        mototaxis["ev_demand_kwh"].sum() / mototaxis["vehicles_per_hour"].sum()
+    )
+    return {
+        "moto_kwh_per_equivalent_charge": kwh_per_moto,
+        "mototaxi_kwh_per_equivalent_charge": kwh_per_mototaxi,
+        "source": {
+            "motos": str(MOTOS_DATASET.relative_to(ROOT)),
+            "mototaxis": str(MOTOTAXIS_DATASET.relative_to(ROOT)),
+        },
+        "method": (
+            "Vehicle counts are equivalent full-charge events derived from EV kWh divided by "
+            "dataset kWh per vehicle. PPO/A2C trace count columns are not populated, so direct "
+            "trace count columns are not used for cross-agent ranking."
+        ),
+    }
+
+
 def cv_plateau(series: np.ndarray, window: int = 15) -> float:
     tail = series[-window:]
     return float(np.std(tail, ddof=0) / np.mean(tail) * 100)
 
 
-def agent_metrics(agent: str, result: dict, history: pd.DataFrame) -> dict:
+def agent_metrics(agent: str, result: dict, history: pd.DataFrame, vehicle_ref: dict) -> dict:
     f2 = history["co2_control_kg"].astype(float).to_numpy()
     direct_avoided = history["co2_directa_kg"].astype(float).to_numpy()
     indirect_avoided = history["co2_indirecta_kg"].astype(float).to_numpy()
@@ -88,6 +114,12 @@ def agent_metrics(agent: str, result: dict, history: pd.DataFrame) -> dict:
     ev_total = ev_motos + ev_mototaxis
     bess_discharge = history["bess_discharge_kwh"].astype(float).to_numpy()
     debt_violations = history["debt_violations"].astype(float).to_numpy()
+    solar_export_co2 = history["co2_f6d_kg"].astype(float).to_numpy()
+    motos_equiv = float(np.sum(ev_motos) / vehicle_ref["moto_kwh_per_equivalent_charge"])
+    mototaxis_equiv = float(
+        np.sum(ev_mototaxis) / vehicle_ref["mototaxi_kwh_per_equivalent_charge"]
+    )
+    total_equiv = motos_equiv + mototaxis_equiv
     best_idx = int(np.argmin(f2))
     best_row = history.iloc[best_idx]
     f2_min = float(best_row["co2_control_kg"])
@@ -113,8 +145,15 @@ def agent_metrics(agent: str, result: dict, history: pd.DataFrame) -> dict:
         "ev_motos_sum_50_kwh": int(round(float(np.sum(ev_motos)))),
         "ev_mototaxis_sum_50_kwh": int(round(float(np.sum(ev_mototaxis)))),
         "ev_total_sum_50_kwh": int(round(float(np.sum(ev_total)))),
+        "ev_motos_equiv_count_50": int(round(motos_equiv)),
+        "ev_mototaxis_equiv_count_50": int(round(mototaxis_equiv)),
+        "ev_total_equiv_count_50": int(round(total_equiv)),
+        "ev_total_equiv_mean_per_episode": int(round(total_equiv / len(history))),
         "bess_discharge_sum_50_kwh": int(round(float(np.sum(bess_discharge)))),
         "debt_violations_sum_50": int(round(float(np.sum(debt_violations)))),
+        "zero_violation_episodes_50": int(np.sum(debt_violations == 0)),
+        "solar_export_f6d_sum_50_kwh": int(round(float(np.sum(solar_export_co2) / CO2_FACTOR_IQUITOS))),
+        "solar_export_f6d_co2_equiv_sum_50_kg": int(round(float(np.sum(solar_export_co2)))),
         "multiobjective_wins_50": 0,
         "multiobjective_criteria_total": 0,
         "cv_plateau_pct": round(cv_plateau(f2), 3),
@@ -229,8 +268,15 @@ def write_csv(payload: dict) -> None:
                 "ev_motos_sum_50_kwh": m["ev_motos_sum_50_kwh"],
                 "ev_mototaxis_sum_50_kwh": m["ev_mototaxis_sum_50_kwh"],
                 "ev_total_sum_50_kwh": m["ev_total_sum_50_kwh"],
+                "ev_motos_equiv_count_50": m["ev_motos_equiv_count_50"],
+                "ev_mototaxis_equiv_count_50": m["ev_mototaxis_equiv_count_50"],
+                "ev_total_equiv_count_50": m["ev_total_equiv_count_50"],
+                "ev_total_equiv_mean_per_episode": m["ev_total_equiv_mean_per_episode"],
                 "bess_discharge_sum_50_kwh": m["bess_discharge_sum_50_kwh"],
                 "debt_violations_sum_50": m["debt_violations_sum_50"],
+                "zero_violation_episodes_50": m["zero_violation_episodes_50"],
+                "solar_export_f6d_sum_50_kwh": m["solar_export_f6d_sum_50_kwh"],
+                "solar_export_f6d_co2_equiv_sum_50_kg": m["solar_export_f6d_co2_equiv_sum_50_kg"],
                 "multiobjective_wins_50": m["multiobjective_wins_50"],
                 "multiobjective_criteria_total": m["multiobjective_criteria_total"],
                 "co2_reduction_vs_f0_pct": m["co2_reduction_vs_f0_pct"],
@@ -307,6 +353,14 @@ def write_md(payload: dict) -> None:
         "mayor CO2 directo evitado, mayor CO2 indirecto evitado, mayor carga de motos/mototaxis, "
         "mayor uso util de BESS y menor deuda/violaciones de carga."
     )
+    md.append(
+        "Para motos y mototaxis se reportan **eventos de carga equivalentes**, no solo kWh: "
+        "los kWh EV de cada agente se dividen por la energia media por vehiculo del dataset real "
+        f"({fmt_float(payload['vehicle_count_reference']['moto_kwh_per_equivalent_charge'], 3)} kWh/moto "
+        f"y {fmt_float(payload['vehicle_count_reference']['mototaxi_kwh_per_equivalent_charge'], 3)} "
+        "kWh/mototaxi). Las columnas directas de conteo en trace no se usan para comparar porque "
+        "PPO/A2C las guardaron en cero."
+    )
     md.append("")
     md.append(
         "`F2` se mantiene como lectura complementaria de CO2 residual minimo, pero no reemplaza "
@@ -314,15 +368,34 @@ def write_md(payload: dict) -> None:
         "no elige el agente."
     )
     md.append("")
+    md.append("## Por que cambio de PPO a A2C")
+    md.append("")
+    md.append(
+        "La comparacion no cambio porque PPO o A2C se hayan reentrenado; PPO y A2C siguen usando "
+        "los resultados vigentes del 2026-05-28. Lo que cambio fue el criterio de decision:"
+    )
+    md.append("")
+    md.append("- Si se usa solo el **menor F2 puntual**, gana **PPO** con 3,657,484 kg CO2/año en el episodio 49.")
+    md.append(
+        "- Si se usa el **score multiobjetivo acumulado de 50 episodios** pedido para operacion, "
+        "gana **A2C** porque lidera CO2 total evitado, importacion de red, conteo EV equivalente, "
+        "BESS y violaciones."
+    )
+    md.append(
+        "- SAC fue el unico agente reentrenado en v8.2; ese reentrenamiento mejora SAC frente a su "
+        "version anterior, pero no cambia los resultados guardados de PPO/A2C ni alcanza a A2C "
+        "en el acumulado operativo."
+    )
+    md.append("")
     md.append("## Tabla comparativa")
     md.append("")
     md.append(
         "| Rank | Agente | Criterios liderados | CO2 total evitado 50 ep (kg) | "
         "Grid import 50 ep (kWh) | CO2 directo 50 ep (kg) | CO2 indirecto 50 ep (kg) | "
-        "Motos 50 ep (kWh) | Mototaxis 50 ep (kWh) | BESS descarga 50 ep (kWh) | "
+        "EV equiv 50 ep | Motos 50 ep (kWh) | Mototaxis 50 ep (kWh) | BESS descarga 50 ep (kWh) | "
         "Deuda/violaciones | F2 minimo (kg/año) |"
     )
-    md.append("|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
+    md.append("|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
     for agent in ranking:
         m = payload["agents"][agent]
         name = f"**{agent}**" if m["selected"] else agent
@@ -333,12 +406,78 @@ def write_md(payload: dict) -> None:
             f"{fmt_int(m['grid_import_sum_50_kwh'])} | "
             f"{fmt_int(m['co2_direct_avoided_sum_50_kg'])} | "
             f"{fmt_int(m['co2_indirect_avoided_sum_50_kg'])} | "
+            f"{fmt_int(m['ev_total_equiv_count_50'])} | "
             f"{fmt_int(m['ev_motos_sum_50_kwh'])} | "
             f"{fmt_int(m['ev_mototaxis_sum_50_kwh'])} | "
             f"{fmt_int(m['bess_discharge_sum_50_kwh'])} | "
             f"{fmt_int(m['debt_violations_sum_50'])} | "
             f"{fmt_int(m['f2_min_kg_per_year'])} |"
         )
+    md.append("")
+    md.append("## Carga de motos y mototaxis en numeros")
+    md.append("")
+    md.append(
+        "Los valores son conteos equivalentes de cargas completas, derivados del dataset vigente "
+        "`data/interim/citylearn_v2/ev_charger_*.csv`."
+    )
+    md.append("")
+    md.append("| Agente | Motos equiv 50 ep | Mototaxis equiv 50 ep | Total equiv 50 ep | Promedio equiv/episodio |")
+    md.append("|---|---:|---:|---:|---:|")
+    for agent in ranking:
+        m = payload["agents"][agent]
+        name = f"**{agent}**" if m["selected"] else agent
+        b = "**" if m["selected"] else ""
+        md.append(
+            f"| {name} | {b}{fmt_int(m['ev_motos_equiv_count_50'])}{b} | "
+            f"{b}{fmt_int(m['ev_mototaxis_equiv_count_50'])}{b} | "
+            f"{b}{fmt_int(m['ev_total_equiv_count_50'])}{b} | "
+            f"{b}{fmt_int(m['ev_total_equiv_mean_per_episode'])}{b} |"
+        )
+    md.append("")
+    md.append("A2C carga mas vehiculos equivalentes: +103,604 frente a PPO y +126,342 frente a SAC v8.2.")
+    md.append("")
+    md.append("## Red, exportacion, violaciones y estabilidad")
+    md.append("")
+    md.append(
+        "`solar_export_f6d` se estima desde `co2_f6d_kg / 0.4521`; los traces horarios no guardan "
+        "`grid_export_kwh` de forma comparable para los tres agentes."
+    )
+    md.append("")
+    md.append(
+        "| Agente | Grid import 50 ep (kWh) | Solar export F6d 50 ep (kWh) | "
+        "Violaciones total | Episodios sin violacion | CV plateau F2 | Reward validacion |"
+    )
+    md.append("|---|---:|---:|---:|---:|---:|---:|")
+    for agent in ranking:
+        m = payload["agents"][agent]
+        name = f"**{agent}**" if m["selected"] else agent
+        b = "**" if m["selected"] else ""
+        md.append(
+            f"| {name} | {b}{fmt_int(m['grid_import_sum_50_kwh'])}{b} | "
+            f"{b}{fmt_int(m['solar_export_f6d_sum_50_kwh'])}{b} | "
+            f"{b}{fmt_int(m['debt_violations_sum_50'])}{b} | "
+            f"{fmt_int(m['zero_violation_episodes_50'])} | "
+            f"{fmt_float(m['cv_plateau_pct'], 3)}% | "
+            f"{fmt_float(m['validation_mean_reward'], 2)} |"
+        )
+    md.append("")
+    md.append(
+        "Ningun agente termina los 50 episodios con cero violaciones acumuladas. A2C tiene la menor "
+        "cantidad total de violaciones; SAC tiene mas episodios sin violacion, pero queda por debajo "
+        "en CO2, red, carga EV y BESS. PPO es el mas estable por CV plateau, aunque no supera a A2C "
+        "en el score operativo."
+    )
+    md.append(
+        "En validacion, A2C tambien obtiene el mayor reward medio y la menor importacion de red. "
+        "SAC obtiene el mayor CO2 evitado medio de validacion, pero con menor reward, menor carga EV "
+        "acumulada, menor BESS y mas violaciones que A2C en entrenamiento."
+    )
+    md.append("")
+    md.append(
+        "Recomendacion de produccion: implementar **A2C** como politica principal, con guardas de "
+        "deuda de carga, limites operativos de BESS y monitoreo de grid import. PPO queda como "
+        "referencia de estabilidad y F2 puntual; SAC v8.2 queda como respaldo experimental."
+    )
     md.append("")
     md.append(f"## Por que {selected} gana")
     md.append("")
@@ -475,8 +614,9 @@ def main() -> None:
         )
         for agent, (_, history, _) in loaded.items()
     }
+    vehicle_ref = load_vehicle_energy_reference()
     metrics = {
-        agent: agent_metrics(agent, result, history)
+        agent: agent_metrics(agent, result, history, vehicle_ref)
         for agent, (result, history, _) in loaded.items()
     }
 
@@ -485,9 +625,9 @@ def main() -> None:
         {"key": "grid_import_sum_50_kwh", "label": "Menor importacion de red", "mode": "min"},
         {"key": "co2_direct_avoided_sum_50_kg", "label": "Mayor CO2 directo evitado", "mode": "max"},
         {"key": "co2_indirect_avoided_sum_50_kg", "label": "Mayor CO2 indirecto evitado", "mode": "max"},
-        {"key": "ev_motos_sum_50_kwh", "label": "Mayor carga motos", "mode": "max"},
-        {"key": "ev_mototaxis_sum_50_kwh", "label": "Mayor carga mototaxis", "mode": "max"},
-        {"key": "ev_total_sum_50_kwh", "label": "Mayor carga EV total", "mode": "max"},
+        {"key": "ev_motos_equiv_count_50", "label": "Mayor carga motos equivalentes", "mode": "max"},
+        {"key": "ev_mototaxis_equiv_count_50", "label": "Mayor carga mototaxis equivalentes", "mode": "max"},
+        {"key": "ev_total_equiv_count_50", "label": "Mayor carga EV total equivalente", "mode": "max"},
         {"key": "bess_discharge_sum_50_kwh", "label": "Mayor uso util BESS", "mode": "max"},
         {"key": "debt_violations_sum_50", "label": "Menor deuda/violaciones de carga", "mode": "min"},
     ]
@@ -542,7 +682,8 @@ def main() -> None:
             "selected_agent": selected,
             "selection_criterion": (
                 "Multiobjective score over 50 episodes: maximize direct+indirect CO2 avoided, "
-                "minimize grid import and charge debt, maximize EV charging and useful BESS discharge."
+                "minimize grid import and charge debt, maximize EV equivalent charge counts and "
+                "useful BESS discharge."
             ),
             "normality_usage": (
                 "Normality tests guide statistical method selection only; they do not replace "
@@ -555,6 +696,7 @@ def main() -> None:
                 "Use only current final checkpoints in checkpoints/{AGENT}_CityLearn and current "
                 "outputs/{agent}_training results; exclude archive, archive_previous and archive_v73_obs16."
             ),
+            "vehicle_count_policy": vehicle_ref["method"],
         },
         "system": {
             "solar_kwp_nominal_design": 4050,
@@ -574,9 +716,25 @@ def main() -> None:
             "obs_dim": 18,
             "action_dim": 3,
         },
+        "vehicle_count_reference": vehicle_ref,
         "ranking": ranking,
         "agents": metrics,
         "multiobjective_criteria": criterion_winners,
+        "production_readiness": {
+            "recommended_agent": selected,
+            "recommended_reason": (
+                "A2C leads the operational multiobjective score, charges the largest equivalent "
+                "vehicle count, imports the least grid energy and has the fewest total charge "
+                "debt violations."
+            ),
+            "most_stable_by_cv_plateau": min(AGENTS, key=lambda agent: metrics[agent]["cv_plateau_pct"]),
+            "most_zero_violation_episodes": max(
+                AGENTS, key=lambda agent: metrics[agent]["zero_violation_episodes_50"]
+            ),
+            "no_agent_has_zero_total_violations": all(
+                metrics[agent]["debt_violations_sum_50"] > 0 for agent in AGENTS
+            ),
+        },
         "statistics": build_statistics(f2_series, avoided_series),
         "deprecated_or_removed": [
             "outputs/docx/INFORME_OE3_SELECCION_AGENTE_RL_v10.docx",

@@ -2,8 +2,8 @@ PVBESSCAR integra dimensionamiento OE2 y control OE3 para optimizar carga de veh
 
 La fase OE2 genera y valida los datasets horarios de 8,760 filas para solar, demanda, BESS y cargadores. La salida canonica de OE2 alimenta CityLearn v2 mediante `data/iquitos_ev_mall/`, con `obs_dim=18` y accion 3D para BESS, fraccion de carga de motos y fraccion de carga de mototaxis.
 
-La fase OE3 entrena tres agentes RL: SAC, PPO y A2C. En la comparativa canonica actualizada el criterio principal es el score multiobjetivo acumulado de 50 episodios: CO2 directo e indirecto evitado, importacion de red, carga EV, BESS y deuda/violaciones. La prueba de normalidad se usa para decidir el metodo estadistico, no para seleccionar el agente.
+La fase OE3 entrena tres agentes RL: SAC, PPO y A2C. En la comparativa canonica actualizada el criterio principal es el score multiobjetivo acumulado de 50 episodios: CO2 directo e indirecto evitado, importacion de red, carga equivalente de motos/mototaxis, BESS y deuda/violaciones. La prueba de normalidad se usa para decidir el metodo estadistico, no para seleccionar el agente.
 
-El resultado vigente selecciona A2C bajo el score multiobjetivo acumulado de 50 episodios. A2C lidera 9 de 9 criterios: 122,980,987 kg CO2 total evitado, 368,798,317 kWh de importacion de red, 13,285,495 kWh de carga EV, 33,504,412 kWh de descarga BESS y 811 deuda/violaciones. PPO conserva el menor F2 puntual con 3,657,484 kg CO2/año, como lectura complementaria.
+El resultado vigente selecciona A2C bajo el score multiobjetivo acumulado de 50 episodios. A2C lidera 9 de 9 criterios: 122,980,987 kg CO2 total evitado, 368,798,317 kWh de importacion de red, 4,307,304 cargas EV equivalentes, 33,504,412 kWh de descarga BESS y 811 deuda/violaciones. PPO conserva el menor F2 puntual con 3,657,484 kg CO2/año, como lectura complementaria.
 
 Los reportes antiguos donde SAC o A2C figuran como ganadores son instantaneas historicas. La fuente documental y estructurada para informes nuevos esta en `reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md`, `reports/oe3/agents_comparison_canonical.json` y `reports/oe3/agents_comparison_canonical.csv`.

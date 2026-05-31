@@ -7,12 +7,13 @@
     "training_run_date": "2026-05-30",
     "branch": "smartcharger",
     "selected_agent": "A2C",
-    "selection_criterion": "Multiobjective score over 50 episodes: maximize direct+indirect CO2 avoided, minimize grid import and charge debt, maximize EV charging and useful BESS discharge.",
+    "selection_criterion": "Multiobjective score over 50 episodes: maximize direct+indirect CO2 avoided, minimize grid import and charge debt, maximize EV equivalent charge counts and useful BESS discharge.",
     "normality_usage": "Normality tests guide statistical method selection only; they do not replace operational ranking metrics.",
     "canonical_report": "reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md",
     "source_audit": "reports/oe3/AUDITORIA_FUENTES_CHECKPOINTS_OE3.md",
     "operational_report": "reports/oe3/REPORTE_MEJOR_AGENTE_CO2_DIRECTO_INDIRECTO.md",
-    "source_policy": "Use only current final checkpoints in checkpoints/{AGENT}_CityLearn and current outputs/{agent}_training results; exclude archive, archive_previous and archive_v73_obs16."
+    "source_policy": "Use only current final checkpoints in checkpoints/{AGENT}_CityLearn and current outputs/{agent}_training results; exclude archive, archive_previous and archive_v73_obs16.",
+    "vehicle_count_policy": "Vehicle counts are equivalent full-charge events derived from EV kWh divided by dataset kWh per vehicle. PPO/A2C trace count columns are not populated, so direct trace count columns are not used for cross-agent ranking."
   },
   "system": {
     "solar_kwp_nominal_design": 4050,
@@ -31,6 +32,15 @@
     "reward_version": "CO2_DUAL_FOCUS v8.1",
     "obs_dim": 18,
     "action_dim": 3
+  },
+  "vehicle_count_reference": {
+    "moto_kwh_per_equivalent_charge": 2.9053130521442023,
+    "mototaxi_kwh_per_equivalent_charge": 4.6753136465304435,
+    "source": {
+      "motos": "data\\interim\\citylearn_v2\\ev_charger_motos.csv",
+      "mototaxis": "data\\interim\\citylearn_v2\\ev_charger_mototaxis.csv"
+    },
+    "method": "Vehicle counts are equivalent full-charge events derived from EV kWh divided by dataset kWh per vehicle. PPO/A2C trace count columns are not populated, so direct trace count columns are not used for cross-agent ranking."
   },
   "ranking": [
     "A2C",
@@ -58,8 +68,15 @@
       "ev_motos_sum_50_kwh": 11009496,
       "ev_mototaxis_sum_50_kwh": 1830512,
       "ev_total_sum_50_kwh": 12840008,
+      "ev_motos_equiv_count_50": 3789435,
+      "ev_mototaxis_equiv_count_50": 391527,
+      "ev_total_equiv_count_50": 4180962,
+      "ev_total_equiv_mean_per_episode": 83619,
       "bess_discharge_sum_50_kwh": 30022939,
       "debt_violations_sum_50": 1385,
+      "zero_violation_episodes_50": 45,
+      "solar_export_f6d_sum_50_kwh": 25520507,
+      "solar_export_f6d_co2_equiv_sum_50_kg": 11537821,
       "multiobjective_wins_50": 0,
       "multiobjective_criteria_total": 9,
       "cv_plateau_pct": 0.036,
@@ -88,8 +105,15 @@
       "ev_motos_sum_50_kwh": 11056358,
       "ev_mototaxis_sum_50_kwh": 1861407,
       "ev_total_sum_50_kwh": 12917765,
+      "ev_motos_equiv_count_50": 3805565,
+      "ev_mototaxis_equiv_count_50": 398135,
+      "ev_total_equiv_count_50": 4203700,
+      "ev_total_equiv_mean_per_episode": 84074,
       "bess_discharge_sum_50_kwh": 31831147,
       "debt_violations_sum_50": 2333,
+      "zero_violation_episodes_50": 35,
+      "solar_export_f6d_sum_50_kwh": 26109780,
+      "solar_export_f6d_co2_equiv_sum_50_kg": 11804231,
       "multiobjective_wins_50": 0,
       "multiobjective_criteria_total": 9,
       "cv_plateau_pct": 0.034,
@@ -118,8 +142,15 @@
       "ev_motos_sum_50_kwh": 11247831,
       "ev_mototaxis_sum_50_kwh": 2037664,
       "ev_total_sum_50_kwh": 13285495,
+      "ev_motos_equiv_count_50": 3871470,
+      "ev_mototaxis_equiv_count_50": 435835,
+      "ev_total_equiv_count_50": 4307304,
+      "ev_total_equiv_mean_per_episode": 86146,
       "bess_discharge_sum_50_kwh": 33504412,
       "debt_violations_sum_50": 811,
+      "zero_violation_episodes_50": 22,
+      "solar_export_f6d_sum_50_kwh": 26261213,
+      "solar_export_f6d_co2_equiv_sum_50_kg": 11872694,
       "multiobjective_wins_50": 9,
       "multiobjective_criteria_total": 9,
       "cv_plateau_pct": 0.422,
@@ -155,20 +186,20 @@
       "winner": "A2C"
     },
     {
-      "key": "ev_motos_sum_50_kwh",
-      "label": "Mayor carga motos",
+      "key": "ev_motos_equiv_count_50",
+      "label": "Mayor carga motos equivalentes",
       "mode": "max",
       "winner": "A2C"
     },
     {
-      "key": "ev_mototaxis_sum_50_kwh",
-      "label": "Mayor carga mototaxis",
+      "key": "ev_mototaxis_equiv_count_50",
+      "label": "Mayor carga mototaxis equivalentes",
       "mode": "max",
       "winner": "A2C"
     },
     {
-      "key": "ev_total_sum_50_kwh",
-      "label": "Mayor carga EV total",
+      "key": "ev_total_equiv_count_50",
+      "label": "Mayor carga EV total equivalente",
       "mode": "max",
       "winner": "A2C"
     },
@@ -185,6 +216,13 @@
       "winner": "A2C"
     }
   ],
+  "production_readiness": {
+    "recommended_agent": "A2C",
+    "recommended_reason": "A2C leads the operational multiobjective score, charges the largest equivalent vehicle count, imports the least grid energy and has the fewest total charge debt violations.",
+    "most_stable_by_cv_plateau": "PPO",
+    "most_zero_violation_episodes": "SAC",
+    "no_agent_has_zero_total_violations": true
+  },
   "statistics": {
     "selection_metric": "co2_total_avoided_kg_per_episode",
     "normality": {

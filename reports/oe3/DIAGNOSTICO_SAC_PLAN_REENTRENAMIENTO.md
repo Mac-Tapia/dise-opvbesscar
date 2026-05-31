@@ -145,21 +145,23 @@ BESS, estabilidad y costo.
 
 ## 6. Comparacion final multiobjetivo con PPO y A2C
 
-| Rank | Agente | Criterios liderados | CO2 total evitado kg | Grid import kWh | EV total kWh | BESS descarga kWh | Deuda/violaciones |
+| Rank | Agente | Criterios liderados | CO2 total evitado kg | Grid import kWh | EV equiv 50 ep | BESS descarga kWh | Deuda/violaciones |
 |---:|---|---:|---:|---:|---:|---:|---:|
-| 1 | **A2C** | **9/9** | **122,980,987** | **368,798,317** | **13,285,495** | **33,504,412** | **811** |
-| 2 | PPO | 0/9 | 122,688,120 | 370,717,132 | 12,917,765 | 31,831,147 | 2,333 |
-| 3 | SAC v8.2 | 0/9 | 121,316,857 | 370,440,348 | 12,840,008 | 30,022,939 | 1,385 |
+| 1 | **A2C** | **9/9** | **122,980,987** | **368,798,317** | **4,307,304** | **33,504,412** | **811** |
+| 2 | PPO | 0/9 | 122,688,120 | 370,717,132 | 4,203,700 | 31,831,147 | 2,333 |
+| 3 | SAC v8.2 | 0/9 | 121,316,857 | 370,440,348 | 4,180,962 | 30,022,939 | 1,385 |
 
 SAC v8.2 ya no esta tan lejos como el SAC anterior, pero sigue por debajo de A2C:
 
 - **1,664,130 kg CO2** menos evitados en 50 episodios.
-- **445,487 kWh** menos carga EV total.
+- **126,342** cargas EV equivalentes menos.
 - **3,481,473 kWh** menos descarga BESS.
 - **574** deuda/violaciones adicionales.
 
 La seleccion canonica actualizada es **A2C** porque lidera el score multiobjetivo de 50 episodios.
-PPO conserva el menor `F2` puntual como lectura complementaria.
+PPO conserva el menor `F2` puntual como lectura complementaria. El cambio PPO -> A2C se debe al
+cambio de criterio de decision, no a un reentrenamiento de PPO/A2C: si se mira solo F2 puntual gana
+PPO; si se mira operacion acumulada y multiobjetivo gana A2C.
 
 ## 7. Plan de mejora siguiente para SAC
 

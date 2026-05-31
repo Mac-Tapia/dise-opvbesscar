@@ -51,7 +51,7 @@
   ],
   "resultado_oe3": {
     "agente_seleccionado": "A2C",
-    "criterio": "score multiobjetivo acumulado 50 episodios",
+    "criterio": "score multiobjetivo acumulado 50 episodios; PPO solo gana F2 puntual complementario",
     "ranking": [
       {
         "rank": 1,
@@ -59,7 +59,11 @@
         "criterios_liderados": "9/9",
         "co2_total_evitado_kg_50ep": 122980987,
         "grid_import_kwh_50ep": 368798317,
-        "ev_total_kwh_50ep": 13285495
+        "ev_total_kwh_50ep": 13285495,
+        "ev_total_equiv_50ep": 4307304,
+        "motos_equiv_50ep": 3871470,
+        "mototaxis_equiv_50ep": 435835,
+        "debt_violations_50ep": 811
       },
       {
         "rank": 2,
@@ -67,7 +71,11 @@
         "criterios_liderados": "0/9",
         "co2_total_evitado_kg_50ep": 122688120,
         "grid_import_kwh_50ep": 370717132,
-        "ev_total_kwh_50ep": 12917765
+        "ev_total_kwh_50ep": 12917765,
+        "ev_total_equiv_50ep": 4203700,
+        "motos_equiv_50ep": 3805565,
+        "mototaxis_equiv_50ep": 398135,
+        "debt_violations_50ep": 2333
       },
       {
         "rank": 3,
@@ -75,7 +83,11 @@
         "criterios_liderados": "0/9",
         "co2_total_evitado_kg_50ep": 121316857,
         "grid_import_kwh_50ep": 370440348,
-        "ev_total_kwh_50ep": 12840008
+        "ev_total_kwh_50ep": 12840008,
+        "ev_total_equiv_50ep": 4180962,
+        "motos_equiv_50ep": 3789435,
+        "mototaxis_equiv_50ep": 391527,
+        "debt_violations_50ep": 1385
       }
     ]
   },

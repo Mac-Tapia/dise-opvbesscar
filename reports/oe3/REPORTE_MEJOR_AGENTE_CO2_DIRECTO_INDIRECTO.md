@@ -15,20 +15,25 @@ por el menor `F2` puntual, sino por el agente que acumula mejor desempeño en lo
 - menor importacion de red,
 - mayor reduccion directa de CO2,
 - mayor reduccion indirecta de CO2,
-- mayor carga de motos y mototaxis,
+- mayor carga de motos y mototaxis medida en eventos equivalentes de carga,
 - mejor control de cargadores medido por menor deuda/violaciones,
 - mayor uso util de BESS.
 
 A2C lidera **9 de 9 criterios**. PPO conserva el menor `F2` residual puntual, pero ese criterio queda
 como lectura complementaria.
 
+El cambio de PPO a A2C no viene de reentrenar PPO/A2C. PPO y A2C mantienen los resultados guardados
+del 2026-05-28. El cambio viene de separar dos criterios: **PPO gana solo el F2 puntual**, mientras
+**A2C gana el multiobjetivo acumulado de 50 episodios**. SAC fue el unico reentrenado en v8.2; mejoro
+respecto a su version anterior, pero no alcanzo a A2C en los acumulados operativos.
+
 ## Score multiobjetivo 50 episodios
 
-| Rank | Agente | Criterios liderados | CO2 total evitado kg | Grid import kWh | CO2 directo kg | CO2 indirecto kg | EV total kWh | BESS descarga kWh | Deuda/violaciones |
+| Rank | Agente | Criterios liderados | CO2 total evitado kg | Grid import kWh | CO2 directo kg | CO2 indirecto kg | EV equiv 50 ep | BESS descarga kWh | Deuda/violaciones |
 |---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | **A2C** | **9/9** | **122,980,987** | **368,798,317** | **10,885,952** | **112,095,035** | **13,285,495** | **33,504,412** | **811** |
-| 2 | PPO | 0/9 | 122,688,120 | 370,717,132 | 10,624,191 | 112,063,929 | 12,917,765 | 31,831,147 | 2,333 |
-| 3 | SAC v8.2 | 0/9 | 121,316,857 | 370,440,348 | 10,566,738 | 110,750,119 | 12,840,008 | 30,022,939 | 1,385 |
+| 1 | **A2C** | **9/9** | **122,980,987** | **368,798,317** | **10,885,952** | **112,095,035** | **4,307,304** | **33,504,412** | **811** |
+| 2 | PPO | 0/9 | 122,688,120 | 370,717,132 | 10,624,191 | 112,063,929 | 4,203,700 | 31,831,147 | 2,333 |
+| 3 | SAC v8.2 | 0/9 | 121,316,857 | 370,440,348 | 10,566,738 | 110,750,119 | 4,180,962 | 30,022,939 | 1,385 |
 
 Ventajas cuantificables de A2C:
 
@@ -38,18 +43,25 @@ Ventajas cuantificables de A2C:
 | CO2 total evitado vs SAC | +1,664,130 kg CO2 |
 | Menor grid import vs PPO | -1,918,815 kWh |
 | Menor grid import vs SAC | -1,642,032 kWh |
-| Mayor carga EV total vs PPO | +367,730 kWh |
-| Mayor carga EV total vs SAC | +445,487 kWh |
+| Mayor carga EV total vs PPO | +103,604 eventos equivalentes |
+| Mayor carga EV total vs SAC | +126,342 eventos equivalentes |
 | Menor deuda/violaciones vs PPO | -1,522 |
 | Menor deuda/violaciones vs SAC | -574 |
 
 ## Carga de motos y mototaxis
 
-| Agente | Motos kWh 50 ep | Mototaxis kWh 50 ep | EV total kWh 50 ep |
-|---|---:|---:|---:|
-| **A2C** | **11,247,831** | **2,037,664** | **13,285,495** |
-| PPO | 11,056,358 | 1,861,407 | 12,917,765 |
-| SAC v8.2 | 11,009,496 | 1,830,512 | 12,840,008 |
+Los conteos no salen de las columnas directas del trace porque PPO/A2C las guardaron en cero.
+Se calculan como eventos equivalentes de carga: kWh EV dividido por la energia media del dataset real
+(`2.905 kWh/moto` y `4.675 kWh/mototaxi`).
+
+| Agente | Motos equiv 50 ep | Mototaxis equiv 50 ep | Total equiv 50 ep | Promedio equiv/episodio |
+|---|---:|---:|---:|---:|
+| **A2C** | **3,871,470** | **435,835** | **4,307,304** | **86,146** |
+| PPO | 3,805,565 | 398,135 | 4,203,700 | 84,074 |
+| SAC v8.2 | 3,789,435 | 391,527 | 4,180,962 | 83,619 |
+
+A2C carga la mayor cantidad de motos y mototaxis en numeros: 65,905 motos equivalentes y
+37,700 mototaxis equivalentes mas que PPO; 82,034 motos y 44,308 mototaxis mas que SAC v8.2.
 
 ## CO2 directo e indirecto
 
@@ -61,11 +73,16 @@ Ventajas cuantificables de A2C:
 
 ## Red y BESS
 
-| Agente | Grid import kWh 50 ep | BESS descarga kWh 50 ep | Deuda/violaciones |
-|---|---:|---:|---:|
-| **A2C** | **368,798,317** | **33,504,412** | **811** |
-| SAC v8.2 | 370,440,348 | 30,022,939 | 1,385 |
-| PPO | 370,717,132 | 31,831,147 | 2,333 |
+| Agente | Grid import kWh 50 ep | Solar export F6d kWh 50 ep | BESS descarga kWh 50 ep | Deuda/violaciones | Episodios sin violacion | CV plateau F2 |
+|---|---:|---:|---:|---:|---:|---:|
+| **A2C** | **368,798,317** | **26,261,213** | **33,504,412** | **811** | 22 | 0.422% |
+| PPO | 370,717,132 | 26,109,780 | 31,831,147 | 2,333 | 35 | **0.034%** |
+| SAC v8.2 | 370,440,348 | 25,520,507 | 30,022,939 | 1,385 | **45** | 0.036% |
+
+Ningun agente tiene cero violaciones acumuladas en los 50 episodios. A2C es el mejor en total de
+violaciones; SAC tiene mas episodios sin violacion, pero pierde en CO2, importacion de red, carga EV
+y BESS. PPO es el mas estable por CV plateau, aunque no es el mejor para produccion por sus 2,333
+violaciones y mayor importacion de red.
 
 ## F2 residual complementario
 
@@ -78,6 +95,17 @@ Ventajas cuantificables de A2C:
 PPO tiene el menor `F2` puntual por **1,526 kg CO2/año** frente a A2C. Sin embargo, A2C supera a
 PPO en el acumulado de 50 episodios y en los criterios operativos de carga EV, red, BESS y deuda de
 carga.
+
+## Validacion post-entrenamiento
+
+| Agente | Reward validacion | Grid import validacion kWh/año | CO2 evitado validacion kg/año | Lectura |
+|---|---:|---:|---:|---|
+| **A2C** | **1,633.29** | **7,337,811** | 2,412,246 | Mejor reward y menor importacion de red |
+| PPO | 1,628.46 | 7,348,969 | 2,416,093 | Segundo reward; peor grid |
+| SAC v8.2 | 1,517.13 | 7,345,854 | **2,438,610** | Mayor CO2 evitado validacion, pero menor reward |
+
+La validacion confirma que SAC mejoro en CO2 evitado medio, pero no supera el criterio operativo
+completo: queda con menor reward, menor carga EV acumulada, menor uso BESS y mas violaciones que A2C.
 
 ## Pruebas estadisticas sobre CO2 total evitado por episodio
 
@@ -97,4 +125,5 @@ carga.
 
 **A2C** es el agente seleccionado bajo el criterio multiobjetivo de 50 episodios. Reduce la mayor
 cantidad total de CO2, importa menos energia de red, carga mas motos y mototaxis, usa mas BESS y
-mantiene menos deuda/violaciones de carga.
+mantiene menos deuda/violaciones de carga. Es el candidato de produccion, con guardas operativas
+para deuda de carga, limites BESS y monitoreo de importacion de red.

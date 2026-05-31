@@ -10,9 +10,9 @@ Two phases:
 - **OE2 (Dimensioning)**: Infrastructure specs — solar, BESS, chargers, demand profiles → `src/dimensionamiento/oe2/`
 - **OE3 (Control)**: Select the best RL agent to control EV charging and minimize CO₂ → `src/agents/` + `src/citylearnv2/`
 
-**Current verification snapshot (2026-05-30):** OE2 -> CityLearn v2 pipeline validated, `dataset_config_v7.json` has `ready_for_citylearn_v2 = true`, and `python -m pytest tests -v -ra` reports 106 passed. See `docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md`.
+**Current verification snapshot (2026-05-31):** OE2 -> CityLearn v2 pipeline validated, `dataset_config_v7.json` has `ready_for_citylearn_v2 = true`, and `python -m pytest tests -v -ra` reports 106 passed. See `docs/REPORTE_FINAL_VERIFICACION_CORRECCIONES_OE2_v52.md`.
 
-**OE3 results reference (canonical, 2026-05-30):** PPO is selected under the current May 2026 F2 comparison. Use `reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md`, `reports/oe3/agents_comparison_canonical.json`, and `reports/oe3/agents_comparison_canonical.csv`. Older SAC/A2C selections are historical snapshots and must not be used for new reports.
+**OE3 results reference (canonical, 2026-05-31):** A2C is selected under the current multiobjective 50-episode operational score. PPO still has the best single-episode F2 residual, so do not describe PPO as the production-selected agent unless the question is specifically about F2 only. Use `reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md`, `reports/oe3/agents_comparison_canonical.json`, and `reports/oe3/agents_comparison_canonical.csv`. Older SAC/PPO/A2C selections are historical snapshots and must not be used for new reports.
 
 ## Commands
 
@@ -189,9 +189,11 @@ agent.learn(total_timesteps=N, reset_num_timesteps=False)  # accumulates steps a
 | Baseline | CO₂ (kg/año) | Description |
 |----------|-------------|-------------|
 | F₀ | 7,053,999 | Sin solar, sin BESS, sin RL (referencia derivada de seccion 5.2) |
-| **F₂ PPO ep49** | **3,657,483** | Con solar + BESS + PPO — **48.15% reducción vs F₀** |
-| F₂ A2C ep45 | 3,659,010 | Con solar + BESS + A2C — 48.13% reducción vs F₀ |
-| F₂ SAC ep33 | 3,720,640 | Con solar + BESS + SAC — 47.25% reducción vs F₀ |
+| F₂ PPO ep49 | **3,657,484** | Menor F2 puntual complementario |
+| F₂ A2C ep45 | 3,659,010 | Agente seleccionado por score multiobjetivo 50 episodios |
+| F₂ SAC v8.2 ep17 | 3,693,084 | SAC reentrenado con VecNormalize; no supera A2C |
+
+**Multiobjective OE3 selection:** A2C leads 9/9 criteria with 122,980,987 kg CO2 avoided in 50 episodes, 368,798,317 kWh grid import, 4,307,304 equivalent EV charge events, 33,504,412 kWh BESS discharge and 811 charge-debt violations.
 
 Solar PV: **5,819,332 kWh/año** (4,162 kWp PVWatts + 8.7% bifacial, Jinko Tiger Neo JKM580N-72HL4-BDV)
 CO₂ factor grid Iquitos: **0.4521 kg CO₂/kWh** (red térmica aislada)
