@@ -44,6 +44,12 @@ train_ppo_log.txt
 *.log
 ~$*.docx
 
+# Local secrets and TLS material
+.env
+.env.*
+!.env.example
+deploy/nginx/certs/
+
 # Excepciones: tablas estadisticas canonicas versionadas
 !outputs/estadistica_oe3/
 !outputs/estadistica_oe3/**
