@@ -144,13 +144,21 @@ Ajusta parámetros en `configs/default.yaml`:
 
 ## 🧪 Metodología de investigación
 
-### Tipo de metodología
+### Enfoque de investigación
 
-La investigación es de tipo aplicada y de enfoque cuantitativo. Es aplicada porque desarrolla una infraestructura de carga inteligente para motocicletas y mototaxis eléctricas orientada a resolver un problema concreto: reducir emisiones de CO₂ en Iquitos. Es cuantitativa porque el desempeño del sistema se evalúa mediante variables medibles, como CO₂ evitado, energía EV cargada, importación de red, uso del BESS y métricas de entrenamiento de los agentes.
+El enfoque es cuantitativo porque el desempeño del sistema se evalúa mediante variables medibles: CO₂ evitado, energía EV cargada, importación de red, uso del BESS, costos y métricas de entrenamiento. Estas variables se contrastan mediante estadística inferencial, de acuerdo con Hernández Sampieri et al. (2014).
+
+### Tipo de investigación
+
+La investigación es aplicada porque desarrolla una solución operativa para un problema concreto: seleccionar el agente de aprendizaje por refuerzo que reduce emisiones de CO₂ en la infraestructura EV+BESS+solar de Iquitos, conforme al criterio metodológico de investigación aplicada descrito por Murillo Vargas (2010) y Arias (2012).
+
+### Nivel de investigación
+
+El nivel es explicativo-causal porque el estudio busca determinar el efecto del algoritmo de control sobre las variables dependientes ambientales y operativas, no solo describir resultados. Esta clasificación se sustenta en Hernández Sampieri et al. (2014) y Tamayo y Tamayo (2003).
 
 ### Diseño metodológico
 
-El estudio adopta un diseño cuasi-experimental por simulación. En OE3 se manipula deliberadamente la variable independiente, correspondiente al tipo de algoritmo de aprendizaje por refuerzo evaluado (SAC, PPO y A2C), y se mide su efecto sobre variables dependientes como CO₂ total evitado, carga EV, importación de red y operación del BESS. La comparación se realiza bajo condiciones controladas y reproducibles de simulación anual, manteniendo constantes la generación solar, la demanda, la capacidad BESS y el factor de emisión de la red.
+El diseño es cuasi-experimental por simulación. En OE3 se manipula deliberadamente la variable independiente —tipo de algoritmo RL: SAC, PPO y A2C— y se mide su efecto sobre CO₂ total evitado, carga EV, importación de red y operación del BESS. Es cuasi-experimental porque conserva control y comparación de tratamientos, pero los episodios de aprendizaje son secuenciales y no admiten aleatorización completa sin alterar el entrenamiento, según Campbell y Stanley (1966), Hernández Sampieri et al. (2014), Law (2015) y Montgomery (2017).
 
 ### Método de investigación
 
