@@ -1,136 +1,83 @@
+# docker-compose.dev.yml
+# Stack operativo A2C completo desde cero — sin nginx (acceso directo puerto 8000)
+#
+# Uso:
+#   docker compose -f docker-compose.dev.yml --env-file .env.local up -d --build
+#   docker compose -f docker-compose.dev.yml logs -f a2c-api
+
+name: pvbesscar-dev
+
 services:
-  # Development Jupyter Lab
-  dev-notebook:
+
+  # ── API FastAPI + A2C inference ───────────────────────────────
+  a2c-api:
     build:
       context: .
-      dockerfile: Dockerfile
-      args:
-        - BUILDKIT_INLINE_CACHE=1
-    image: pvbesscar:dev
-    container_name: pvbesscar-dev-notebook
-    hostname: pvbesscar-dev-notebook
-    
+      dockerfile: Dockerfile.fastapi
+    image: pvbesscar-api:dev
+    container_name: a2c-api
     ports:
-      - "8888:8888"
-    
-    volumes:
-      - .:/workspace
-      - ./outputs:/workspace/outputs
-      - jupyter_data:/root/.jupyter
-    
+      - "8000:8000"
     environment:
-      - JUPYTER_ENABLE_LAB=yes
-      - PYTHONUNBUFFERED=1
-      - PYTHONPATH=/workspace
-    
-    command: jupyter lab --ip=0.0.0.0 --allow-root --no-browser --NotebookApp.token='' --NotebookApp.password=''
-    
+      API_KEY:         ${API_KEY:?API_KEY requerida}
+      MONGODB_URL:     mongodb://pvbesscar:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/pvbesscar?authSource=admin
+      MONGODB_DB:      pvbesscar
+      CHECKPOINT_PATH: /app/checkpoints/A2C_CityLearn/a2c_final
+      CORS_ORIGINS:    "*"
+      MAX_CONCURRENT:  "2"
+      PYTHONPATH:      /app/src:/app
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./checkpoints:/app/checkpoints:ro
+      - ./data:/app/data:ro
+      - ./configs:/app/configs:ro
+      - api_outputs:/app/outputs
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request,json,sys; r=urllib.request.urlopen('http://localhost:8000/health',timeout=10); d=json.loads(r.read()); sys.exit(0 if d.get('model_ready') else 1)"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 90s
     restart: unless-stopped
-    
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
-    
     deploy:
       resources:
         limits:
-          cpus: '8'
-          memory: 16G
-        reservations:
-          cpus: '4'
+          cpus: "4"
           memory: 8G
-  
-  # Unit tests
-  dev-tests:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - BUILDKIT_INLINE_CACHE=1
-    image: pvbesscar:dev
-    container_name: pvbesscar-dev-tests
-    hostname: pvbesscar-dev-tests
-    
-    volumes:
-      - .:/workspace
-      - test_results:/workspace/test_results
-    
-    working_dir: /workspace
-    
-    environment:
-      - PYTHONUNBUFFERED=1
-      - PYTHONPATH=/workspace
-    
-    command: pytest -v --cov=. --cov-report=html:test_results/coverage
-    
-    restart: "no"
-    
     logging:
       driver: "json-file"
       options:
-        max-size: "5m"
+        max-size: "50m"
+        max-file: "3"
+
+  # ── MongoDB ───────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7.0
+    container_name: pvbesscar-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: pvbesscar
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:?password requerida}
+      MONGO_INITDB_DATABASE:      pvbesscar
+    volumes:
+      - mongodb_data:/data/db
+      - ./deploy/mongo/init.js:/docker-entrypoint-initdb.d/init.js:ro
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
         max-file: "2"
-  
-  # Linting and formatting
-  dev-lint:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - BUILDKIT_INLINE_CACHE=1
-    image: pvbesscar:dev
-    container_name: pvbesscar-dev-lint
-    hostname: pvbesscar-dev-lint
-    
-    volumes:
-      - .:/workspace
-    
-    working_dir: /workspace
-    
-    environment:
-      - PYTHONUNBUFFERED=1
-    
-    command: sh -c "pylint **/*.py && black --check . && isort --check-only ."
-    
-    restart: "no"
-    
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "1"
-  
-  # Type checking
-  dev-type-check:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - BUILDKIT_INLINE_CACHE=1
-    image: pvbesscar:dev
-    container_name: pvbesscar-dev-type-check
-    hostname: pvbesscar-dev-type-check
-    
-    volumes:
-      - .:/workspace
-    
-    working_dir: /workspace
-    
-    environment:
-      - PYTHONUNBUFFERED=1
-    
-    command: mypy . --ignore-missing-imports
-    
-    restart: "no"
-    
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "1"
 
 volumes:
-  jupyter_data:
-  test_results:
+  mongodb_data:
+  api_outputs:

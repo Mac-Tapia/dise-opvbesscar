@@ -1,53 +1,104 @@
-# Dockerfile.fastapi
-# Imagen API operativa del agente A2C — pvbesscar
-# Base: pytorch/pytorch — ya trae torch + CUDA instalados
-# Solo descarga: SB3, CityLearn, FastAPI (~50 MB total)
+# Dockerfile.fastapi — API operativa A2C pvbesscar
+# Misma estrategia que Dockerfile.sac:
+#   Base nvidia/cuda:12.1.1 (~340 MB, ya cacheada si se usó Dockerfile.sac)
+#   + Python 3.11 via deadsnakes
+#   + torch==2.3.1+cu121 desde pytorch.org/whl/cu121 (~2 GB, sin NCCL/triton)
+#   + SB3, CityLearn, FastAPI (~100 MB)
+# Total descarga primera vez: ~2.5 GB  (vs 3.7 GB pytorch/pytorch + deps)
+# Segunda vez: 0 MB (todo en caché Docker)
 
-FROM pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
 
 LABEL maintainer="pvbesscar" \
       version="1.0.0" \
       description="A2C Operational API — REST + WebSocket, pvbesscar OE3"
 
-WORKDIR /app
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Deps del sistema mínimas
+# ── Sistema base + Python 3.11 ────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl tini \
+    software-properties-common ca-certificates curl git tini \
+    build-essential libopenblas-dev libgomp1 libglib2.0-0 \
+    && add-apt-repository -y ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 python3.11-dev python3.11-venv \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11 \
+    && update-alternatives --install /usr/bin/python  python  /usr/bin/python3.11 1 \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalar solo las deps que no trae la imagen base (~50 MB)
-COPY requirements.docker.api.txt ./
-RUN pip install --no-cache-dir -r requirements.docker.api.txt
+WORKDIR /app
 
-# Código fuente del proyecto
-COPY src/ ./src/
-COPY configs/ ./configs/
+# ── PyTorch CUDA 12.1 (misma versión que Dockerfile.sac) ─────────────────────
+RUN python -m pip install --upgrade pip setuptools wheel && \
+    python -m pip install --no-cache-dir \
+        torch==2.3.1+cu121 \
+        --index-url https://download.pytorch.org/whl/cu121
+
+# ── SB3 + CityLearn + dependencias ML ────────────────────────────────────────
+RUN python -m pip install --no-cache-dir \
+    stable_baselines3==2.7.1 \
+    gymnasium==0.29.1 \
+    numpy==1.26.4 \
+    pandas==2.3.3 \
+    scipy==1.17.0 \
+    PyYAML>=6.0 \
+    python-dotenv>=1.0
+
+RUN python -m pip install --no-cache-dir \
+    "platformdirs>=2.0.0" \
+    "scikit-learn==1.2.2" \
+    "simplejson>=3.0.0"
+
+RUN python -m pip install --no-cache-dir --no-deps "citylearn>=2.0.0,<3.0"
+
+# ── FastAPI + MongoDB async ───────────────────────────────────────────────────
+RUN python -m pip install --no-cache-dir \
+    fastapi \
+    uvicorn[standard] \
+    motor \
+    pymongo \
+    pydantic
+
+# ── Código fuente del proyecto ────────────────────────────────────────────────
+COPY src/       ./src/
+COPY configs/   ./configs/
 COPY fastapi_websocket_server.py ./
 COPY scripts/infer/run_a2c_operational.py ./scripts/infer/
 COPY setup.py pyproject.toml ./
-RUN pip install -e . --no-deps --quiet
+RUN python -m pip install --no-deps -e .
 
-# Variables de entorno base
+# ── Variables de entorno ──────────────────────────────────────────────────────
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app/src:/app \
+    PYTHONIOENCODING=utf-8 \
+    CUDA_MODULE_LOADING=LAZY \
     OMP_NUM_THREADS=4 \
     PORT=8000
 
-# Directorios de runtime (datos y checkpoints se montan como volúmenes)
-RUN mkdir -p /app/data/interim/citylearn_v2 \
-             /app/checkpoints/A2C_CityLearn \
+# ── Directorios de runtime (volúmenes montados en compose) ───────────────────
+RUN mkdir -p /app/checkpoints/A2C_CityLearn \
+             /app/data/interim/citylearn_v2 \
              /app/outputs/infer \
              /app/logs
 
+# ── Verificación en build-time ────────────────────────────────────────────────
+RUN python -c "\
+import sys; assert sys.version_info >= (3,11); \
+import torch; print(f'torch {torch.__version__} | CUDA: {torch.version.cuda}'); \
+import stable_baselines3; print(f'SB3 {stable_baselines3.__version__}'); \
+import citylearn; print('citylearn OK'); \
+import fastapi; print(f'fastapi {fastapi.__version__}'); \
+print('Todos los modulos verificados.')"
+
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=15s --start-period=90s --retries=5 \
     CMD python -c "\
-import urllib.request, json, sys; \
-r = urllib.request.urlopen('http://localhost:8000/health', timeout=10); \
-d = json.loads(r.read()); \
+import urllib.request,json,sys; \
+r=urllib.request.urlopen('http://localhost:8000/health',timeout=10); \
+d=json.loads(r.read()); \
 sys.exit(0 if d.get('model_ready') else 1)"
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
