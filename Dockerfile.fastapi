@@ -65,7 +65,7 @@ COPY src/       ./src/
 COPY configs/   ./configs/
 COPY fastapi_websocket_server.py ./
 COPY scripts/infer/run_a2c_operational.py ./scripts/infer/
-COPY setup.py pyproject.toml ./
+COPY setup.py pyproject.toml README.md ./
 RUN python -m pip install --no-deps -e .
 
 # ── Variables de entorno ──────────────────────────────────────────────────────

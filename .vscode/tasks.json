@@ -45,6 +45,32 @@
 				"$env:PYTHONIOENCODING='utf-8'; Write-Host '═════════════════════════════════════════════════════════════════' -ForegroundColor Cyan; Write-Host 'FASE 3/3: ENTRENAR PPO - COMPLETE PIPELINE' -ForegroundColor Green; Write-Host '═════════════════════════════════════════════════════════════════' -ForegroundColor Cyan; Write-Host ''; Write-Host 'Checkpoints: Limpios ✓ | Datasets: Validados ✓ | Iniciando...'; Write-Host ''; python scripts/train/train_ppo_multiobjetivo.py 2>&1"
 			],
 			"isBackground": true
+		},
+		{
+			"label": "Docker: build a2c-api visible",
+			"type": "shell",
+			"command": "docker",
+			"args": [
+				"compose",
+				"--progress=plain",
+				"-f",
+				"docker-compose.dev.yml",
+				"--env-file",
+				".env.local",
+				"build",
+				"a2c-api"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"focus": true,
+				"panel": "dedicated",
+				"clear": true
+			},
+			"problemMatcher": []
 		}
 	]
 }
