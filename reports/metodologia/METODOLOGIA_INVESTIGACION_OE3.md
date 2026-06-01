@@ -2,7 +2,7 @@
 
 **Versión:** 2026-05-31
 **Sección de tesis:** Capítulo III — Metodología
-**Ajuste:** diseño cuasi-experimental por simulación (antes: no experimental)
+**Diseño:** cuasi-experimental por simulación
 
 ---
 
@@ -45,15 +45,11 @@ condiciones controladas de simulación.
 
 ## 3.3 Diseño de investigación
 
-### 3.3.1 Justificación del cambio de diseño
+### 3.3.1 Justificación del diseño cuasi-experimental
 
-En el protocolo inicial se calificó el diseño como **no experimental** con el argumento de
-que los datos de demanda, generación solar y precios tarifarios son históricos y no pueden
-manipularse. Esa calificación corresponde a la fase OE2 (dimensionamiento), que es
-efectivamente no experimental porque solo se observan datos reales.
-
-La fase OE3 (selección del agente de control) tiene un carácter distinto: el investigador
-**manipula deliberadamente la variable independiente** —el tipo de algoritmo de
+La fase OE3 (selección del agente de control) se clasifica como cuasi-experimental por
+simulación porque el investigador **manipula deliberadamente la variable independiente**
+—el tipo de algoritmo de
 aprendizaje por refuerzo— y mide el efecto sobre las variables dependientes en un entorno
 controlado de simulación. Esta característica es constitutiva del diseño experimental
 según Hernández Sampieri et al. (2014, p. 129):
