@@ -126,11 +126,11 @@ Ajusta parámetros en `configs/default.yaml`:
 
 ### Tipo de metodología
 
-La investigación es de tipo aplicativa–descriptiva. Es aplicativa porque desarrolla el diseño de una infraestructura de carga inteligente para motocicletas y mototaxis eléctricas orientada a resolver un problema concreto (reducción de CO₂ en Iquitos, 2025). Es descriptiva porque caracteriza el sistema y presenta los resultados esperados del diseño mediante modelado y simulación (sin intervención ni manipulación de variables en campo), reportando métricas técnicas y ambientales relevantes.
+La investigación es de tipo aplicada y de enfoque cuantitativo. Es aplicada porque desarrolla una infraestructura de carga inteligente para motocicletas y mototaxis eléctricas orientada a resolver un problema concreto: reducir emisiones de CO₂ en Iquitos. Es cuantitativa porque el desempeño del sistema se evalúa mediante variables medibles, como CO₂ evitado, energía EV cargada, importación de red, uso del BESS y métricas de entrenamiento de los agentes.
 
 ### Diseño metodológico
 
-El estudio adopta un diseño no experimental–transversal porque no se manipulan deliberadamente las variables independientes ni se asignan tratamientos; en su lugar, se observan y miden los fenómenos en su contexto natural y en un único momento temporal para su análisis. En esta investigación, ello significa caracterizar el sistema de movilidad y las condiciones eléctricas de Iquitos (2025) sin intervenir en campo; las variaciones se exploran solo a nivel teórico mediante modelado y simulación, con el propósito de evaluar el desempeño esperado del diseño de la infraestructura de carga inteligente para motos y mototaxis eléctricas.
+El estudio adopta un diseño cuasi-experimental por simulación. En OE3 se manipula deliberadamente la variable independiente, correspondiente al tipo de algoritmo de aprendizaje por refuerzo evaluado (SAC, PPO y A2C), y se mide su efecto sobre variables dependientes como CO₂ total evitado, carga EV, importación de red y operación del BESS. La comparación se realiza bajo condiciones controladas y reproducibles de simulación anual, manteniendo constantes la generación solar, la demanda, la capacidad BESS y el factor de emisión de la red.
 
 ### Método de investigación
 
