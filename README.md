@@ -258,6 +258,28 @@ python scripts/train/train_sac_citylearn.py  # ~181 min GPU
 python scripts/verification/verify_citylearn_data.py
 ```
 
+### API Docker operativa y simulación visible
+
+```powershell
+# Levantar API A2C + MongoDB en la rama actual
+docker compose -f docker-compose.dev.yml --env-file .env.local up -d --build
+
+# Generar evidencia visible con trace horario multiobjetivo
+python scripts/reporting/generar_reporte_api_docker.py
+# → outputs/api_docker_test/latest/index.html
+# → outputs/api_docker_test/latest/figuras/resumen_operativo.png
+# → outputs/api_docker_test/latest/figuras/control_tiempo_real.png
+# → outputs/api_docker_test/latest/trace_simulacion.csv
+
+# Dashboard WebSocket para ver la ejecución en tiempo real
+start http://localhost:8000/dashboard/realtime
+```
+
+La simulación API expone los pesos multiobjetivo y los valores anuales de CO₂ directa,
+CO₂ indirecta, servicio EV/deuda, control BESS, autoconsumo solar, estabilidad de red,
+costo OSINERGMIN, tomas activas, despacho PV→EV/BESS→EV/Grid→EV y trace horario para
+graficar control BESS, uso de solar, balance energético y reducción de CO₂.
+
 ---
 
 ## Figuras generadas
