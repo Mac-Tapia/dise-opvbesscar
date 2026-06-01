@@ -14,7 +14,9 @@ COPY requirements.docker.api.txt ./
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel && \
-    pip wheel -r requirements.docker.api.txt --no-cache-dir --wheel-dir /wheels
+    pip wheel --extra-index-url https://download.pytorch.org/whl/cpu \
+        "torch>=2.3,<3.0" --no-cache-dir --wheel-dir /wheels && \
+    pip wheel -r requirements.docker.api.txt --no-cache-dir --wheel-dir /wheels --find-links /wheels
 
 # ── Stage 2: Runtime API ──────────────────────────────────────────
 FROM python:3.11-slim

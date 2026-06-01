@@ -3,7 +3,8 @@
 # NO incluir torchvision — no se usa en inferencia SB3 A2C
 
 # RL / ML core
-torch>=2.3,<3.0
+# NOTA: torch se instala CPU-only desde el Dockerfile via --index-url whl/cpu
+# No incluir torch aquí para evitar conflicto de index-url
 stable_baselines3==2.7.1
 gymnasium==0.29.1
 
