@@ -1,37 +1,24 @@
 # Dockerfile.fastapi
 # Imagen API operativa del agente A2C — pvbesscar
-# Multi-stage: hereda deps ML del builder, añade FastAPI encima
+# Base: pytorch/pytorch — ya trae torch + CUDA instalados
+# Solo descarga: SB3, CityLearn, FastAPI (~50 MB total)
 
-# ── Stage 1: Builder (deps ML pesados) ───────────────────────────
-FROM python:3.11-slim AS builder
-WORKDIR /build
+FROM pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential git libopenblas-dev libgomp1 \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY requirements.docker.api.txt ./
-
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip setuptools wheel && \
-    pip wheel --extra-index-url https://download.pytorch.org/whl/cpu \
-        "torch>=2.3,<3.0" --no-cache-dir --wheel-dir /wheels && \
-    pip wheel -r requirements.docker.api.txt --no-cache-dir --wheel-dir /wheels --find-links /wheels
-
-# ── Stage 2: Runtime API ──────────────────────────────────────────
-FROM python:3.11-slim
 LABEL maintainer="pvbesscar" \
       version="1.0.0" \
       description="A2C Operational API — REST + WebSocket, pvbesscar OE3"
 
 WORKDIR /app
 
+# Deps del sistema mínimas
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libopenblas-dev libgomp1 curl tini \
+    curl tini \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /wheels /wheels
-RUN pip install --no-index --find-links /wheels /wheels/*.whl && rm -rf /wheels
+# Instalar solo las deps que no trae la imagen base (~50 MB)
+COPY requirements.docker.api.txt ./
+RUN pip install --no-cache-dir -r requirements.docker.api.txt
 
 # Código fuente del proyecto
 COPY src/ ./src/
@@ -39,7 +26,7 @@ COPY configs/ ./configs/
 COPY fastapi_websocket_server.py ./
 COPY scripts/infer/run_a2c_operational.py ./scripts/infer/
 COPY setup.py pyproject.toml ./
-RUN pip install -e . --no-deps
+RUN pip install -e . --no-deps --quiet
 
 # Variables de entorno base
 ENV PYTHONUNBUFFERED=1 \
@@ -56,7 +43,7 @@ RUN mkdir -p /app/data/interim/citylearn_v2 \
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=15s --start-period=90s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=3 \
     CMD python -c "\
 import urllib.request, json, sys; \
 r = urllib.request.urlopen('http://localhost:8000/health', timeout=10); \

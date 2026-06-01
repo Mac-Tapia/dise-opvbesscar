@@ -1,15 +1,13 @@
 # requirements.docker.api.txt
-# Dependencias mínimas para la imagen Docker de inferencia A2C (sin conflictos de versión)
-# NO incluir torchvision — no se usa en inferencia SB3 A2C
+# Dependencias adicionales para la imagen Docker de inferencia A2C
+# La imagen base pytorch/pytorch ya incluye: torch, numpy, cuda
+# Solo instalar lo que falta (~50 MB total)
 
-# RL / ML core
-# NOTA: torch se instala CPU-only desde el Dockerfile via --index-url whl/cpu
-# No incluir torch aquí para evitar conflicto de index-url
+# RL
 stable_baselines3==2.7.1
 gymnasium==0.29.1
 
-# Data
-numpy==1.26.4
+# Data (numpy ya viene en la base, actualizar si es necesario)
 pandas==2.3.3
 scipy==1.17.0
 
