@@ -205,9 +205,10 @@ agent.learn(total_timesteps=N, reset_num_timesteps=False)  # accumulates steps a
 
 ## Research Design (OE3 — Metodología de investigación)
 
-- **Tipo:** Aplicada, cuantitativa
-- **Nivel:** Explicativo-causal
-- **Diseño:** Cuasi-experimental por simulación (Campbell & Stanley, 1966; Hernández Sampieri et al., 2014)
+- **Enfoque:** Cuantitativo — variables métricas y pruebas inferenciales (Hernández Sampieri et al., 2014).
+- **Tipo:** Aplicada — selección operativa del agente RL para reducir CO₂ en EV+BESS+solar (Murillo Vargas, 2010; Arias, 2012).
+- **Nivel:** Explicativo-causal — estima el efecto del algoritmo de control sobre CO₂, carga EV, grid import y BESS (Hernández Sampieri et al., 2014; Tamayo y Tamayo, 2003).
+- **Diseño:** Cuasi-experimental por simulación — tres tratamientos RL, control de variables extrañas y episodios secuenciales sin aleatorización completa (Campbell & Stanley, 1966; Hernández Sampieri et al., 2014; Law, 2015; Montgomery, 2017).
   - VI manipulada: tipo de algoritmo RL (SAC, PPO, A2C) — 3 tratamientos
   - VD medidas: CO₂ total evitado, carga EV motos+mototaxis, grid import, BESS descarga
   - Variables controladas: solar 5.819 GWh, BESS 2000 kWh/400 kW, factor CO₂ 0.4521 kg/kWh

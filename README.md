@@ -81,9 +81,10 @@ mediante agentes de Aprendizaje por Refuerzo (SAC, PPO, A2C) en la red aislada d
 
 ## Metodología de investigación (OE3)
 
-- **Tipo:** Aplicada, cuantitativa
-- **Nivel:** Explicativo-causal
-- **Diseño:** Cuasi-experimental por simulación (Hernández Sampieri et al., 2014; Campbell & Stanley, 1966)
+- **Enfoque:** Cuantitativo, porque CO₂ evitado, energía EV, grid import, BESS y costos se miden numéricamente y se contrastan con estadística inferencial (Hernández Sampieri et al., 2014).
+- **Tipo:** Aplicada, porque resuelve el problema operativo de seleccionar el agente RL que reduce CO₂ en la infraestructura EV+BESS+solar de Iquitos (Murillo Vargas, 2010; Arias, 2012).
+- **Nivel:** Explicativo-causal, porque evalúa el efecto del algoritmo de control sobre las variables dependientes bajo condiciones controladas (Hernández Sampieri et al., 2014; Tamayo y Tamayo, 2003).
+- **Diseño:** Cuasi-experimental por simulación, con tres tratamientos RL y control de variables extrañas (Campbell & Stanley, 1966; Hernández Sampieri et al., 2014; Law, 2015; Montgomery, 2017).
   - Variable independiente manipulada: tipo de algoritmo RL (3 tratamientos: SAC, PPO, A2C)
   - Variables dependientes medidas: CO₂ total evitado, carga EV motos/mototaxis, grid import, BESS
   - Variables controladas: solar 5.819 GWh, BESS 2,000 kWh/400 kW, factor CO₂ 0.4521 kg/kWh

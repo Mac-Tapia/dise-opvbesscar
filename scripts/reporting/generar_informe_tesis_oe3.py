@@ -204,16 +204,21 @@ def cap_metodologia(doc: Document) -> None:
     h1(doc, "2. METODOLOGÍA DE INVESTIGACIÓN")
     h2(doc, "2.1 Diseño de investigación")
     table_simple(doc,
-        ["Aspecto", "Descripción"],
+        ["Aspecto", "Clasificación", "Justificación y sustento"],
         [
-            ["Tipo", "Aplicada, cuantitativa"],
-            ["Nivel", "Explicativo-causal"],
-            ["Diseño", "Cuasi-experimental por simulación (Campbell & Stanley 1966; Hernández Sampieri 2014)"],
-            ["VI manipulada", "Tipo de algoritmo RL: SAC, PPO, A2C (3 tratamientos)"],
-            ["VD medidas", "CO₂ total evitado, carga EV motos+mototaxis, grid import, BESS descarga"],
-            ["Variables controladas", "Solar 5,819 GWh, BESS 2,000 kWh/400 kW, CO₂ 0.4521 kg/kWh"],
-            ["Muestra", "n=50 episodios/agente (N=150 total) — saturación estadística CV<0.5%"],
-            ["Entorno simulación", "CityLearn v2.5.0 + IquitosEVChargingWrapper (obs_dim=19)"],
+            ["Enfoque", "Cuantitativo",
+             "Variables métricas y contraste inferencial: CO₂ evitado, carga EV, grid import, BESS y costos (Hernández Sampieri et al. 2014)."],
+            ["Tipo", "Aplicada",
+             "Resuelve un problema operativo concreto: seleccionar el agente RL que reduce CO₂ en EV+BESS+solar de Iquitos (Murillo Vargas 2010; Arias 2012)."],
+            ["Nivel", "Explicativo-causal",
+             "Evalúa el efecto del algoritmo de control sobre las variables dependientes bajo condiciones controladas (Hernández Sampieri et al. 2014; Tamayo y Tamayo 2003)."],
+            ["Diseño", "Cuasi-experimental por simulación",
+             "Tres tratamientos RL (SAC, PPO, A2C), control de variables extrañas y episodios secuenciales sin aleatorización completa (Campbell & Stanley 1966; Law 2015; Montgomery 2017)."],
+            ["VI manipulada", "Tipo de algoritmo RL", "SAC, PPO y A2C como tres tratamientos comparables."],
+            ["VD medidas", "Resultados ambientales y operativos", "CO₂ total evitado, carga EV motos+mototaxis, grid import y BESS descarga."],
+            ["Variables controladas", "Condiciones de simulación", "Solar 5,819 GWh, BESS 2,000 kWh/400 kW y factor CO₂ 0.4521 kg/kWh."],
+            ["Muestra", "n=50 episodios/agente", "N=150 total; saturación estadística verificada por CV plateau <0.5%."],
+            ["Entorno simulación", "CityLearn v2.5.0 + IquitosEVChargingWrapper", "obs_dim=19, acción 3D y trazabilidad reproducible."],
         ],
         "Tabla 2.1 — Diseño metodológico OE3")
     h2(doc, "2.2 Función de recompensa multiobjetivo — CO2_DUAL_FOCUS v8.1")

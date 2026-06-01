@@ -2,26 +2,40 @@
 
 **Versión:** 2026-05-31
 **Sección de tesis:** Capítulo III — Metodología
-**Diseño:** cuasi-experimental por simulación
+**Clasificación metodológica:** enfoque cuantitativo; tipo aplicada; nivel
+explicativo-causal; diseño cuasi-experimental por simulación
 
 ---
 
-## 3.1 Tipo de investigación
+## Síntesis metodológica justificada
 
-La investigación es de tipo **aplicada** y de enfoque **cuantitativo**.
+| Aspecto | Clasificación adoptada | Justificación aplicada al estudio | Sustento bibliográfico |
+|---|---|---|---|
+| **Enfoque** | Cuantitativo | Las variables se expresan numéricamente: CO₂ evitado, energía EV cargada, importación de red, estado del BESS, costos y métricas de entrenamiento. Los resultados se contrastan con pruebas estadísticas inferenciales. | Hernández Sampieri et al. (2014, p. 4) |
+| **Tipo** | Aplicada | La investigación resuelve un problema práctico: seleccionar el agente RL que optimiza la operación EV+BESS+solar para reducir CO₂ en la red aislada de Iquitos. | Murillo Vargas (2010); Arias (2012) |
+| **Nivel** | Explicativo-causal | El estudio no solo describe el desempeño de SAC, PPO y A2C; busca explicar el efecto causal del algoritmo de control sobre las variables dependientes bajo condiciones controladas. | Hernández Sampieri et al. (2014, pp. 95–96); Tamayo y Tamayo (2003, p. 46) |
+| **Diseño** | Cuasi-experimental por simulación | Se manipula la variable independiente (tipo de algoritmo RL) y se miden efectos sobre variables dependientes. Es cuasi-experimental porque los episodios RL son secuenciales y no admiten aleatorización completa sin alterar el aprendizaje. | Campbell y Stanley (1966); Hernández Sampieri et al. (2014, pp. 151–165); Law (2015); Banks et al. (2010); Montgomery (2017) |
+
+---
+
+## 3.1 Enfoque y tipo de investigación
+
+El enfoque de la investigación es **cuantitativo** y el tipo de investigación es
+**aplicada**.
+
+El enfoque es **cuantitativo** porque las variables de interés —CO₂ evitado, energía EV
+cargada, importación de red, estado de carga del BESS, costo tarifario y métricas de
+entrenamiento— se expresan en unidades métricas medibles y se analizan mediante
+procedimientos estadísticos formales (Hernández Sampieri et al., 2014, p. 4). El proceso
+sigue la secuencia: planteamiento del problema → marco teórico → hipótesis →
+operacionalización de variables → recolección de datos por simulación → análisis
+estadístico → conclusiones.
 
 Es **aplicada** porque se orienta a resolver un problema concreto: la gestión óptima de la
 carga de vehículos eléctricos (motos y mototaxis) mediante agentes de aprendizaje por
 refuerzo (RL) en el sistema fotovoltaico-BESS del complejo comercial de Iquitos, con el
 fin de minimizar las emisiones de CO₂ de la red eléctrica aislada (Murillo Vargas, 2010;
 Arias, 2012). Los resultados tienen aplicación directa en la operación del sistema real.
-
-Es **cuantitativa** porque las variables de interés —CO₂ evitado, energía EV cargada,
-importación de red, estado de carga del BESS— se expresan en unidades métricas medibles
-y se analizan mediante procedimientos estadísticos formales (Hernández Sampieri et al.,
-2014, p. 4). El proceso sigue la secuencia: planteamiento del problema → marco teórico →
-hipótesis → operacionalización de variables → recolección de datos por simulación →
-análisis estadístico → conclusiones.
 
 ---
 
