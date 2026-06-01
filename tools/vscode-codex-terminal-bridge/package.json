@@ -1,0 +1,52 @@
+{
+  "name": "codex-terminal-bridge",
+  "displayName": "Codex Terminal Bridge",
+  "description": "Runs approved workspace commands in the VS Code integrated terminal through a local file bridge.",
+  "version": "0.1.0",
+  "publisher": "codex-local",
+  "license": "UNLICENSED",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:codexTerminalBridge.start",
+    "onCommand:codexTerminalBridge.stop",
+    "onCommand:codexTerminalBridge.runCommand",
+    "onCommand:codexTerminalBridge.runDockerBuild"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "codexTerminalBridge.start",
+        "title": "Codex: Start Terminal Bridge"
+      },
+      {
+        "command": "codexTerminalBridge.stop",
+        "title": "Codex: Stop Terminal Bridge"
+      },
+      {
+        "command": "codexTerminalBridge.runCommand",
+        "title": "Codex: Run Command in Integrated Terminal"
+      },
+      {
+        "command": "codexTerminalBridge.runDockerBuild",
+        "title": "Codex: Run Docker A2C Build"
+      }
+    ],
+    "configuration": {
+      "title": "Codex Terminal Bridge",
+      "properties": {
+        "codexTerminalBridge.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically watch the workspace command bridge on VS Code startup."
+        }
+      }
+    }
+  }
+}

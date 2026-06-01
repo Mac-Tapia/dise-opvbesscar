@@ -62,3 +62,6 @@ Thumbs.db
 
 # Tool artifacts
 .sixth/
+.vscode/codex-terminal-bridge/
+tools/vscode-codex-terminal-bridge/*.vsix
+tools/vscode-codex-terminal-bridge/node_modules/
