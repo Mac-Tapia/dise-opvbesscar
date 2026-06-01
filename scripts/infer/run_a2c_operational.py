@@ -106,8 +106,7 @@ def run_episode(model, vec_env) -> dict[str, Any]:
     grid_import_kwh = 0.0
     bess_discharge_kwh = 0.0
     solar_kwh       = 0.0
-    cost_hp_soles   = 0.0
-    cost_hfp_soles  = 0.0
+    cost_soles      = 0.0
     total_reward    = 0.0
     n_steps         = 0
 
@@ -116,51 +115,44 @@ def run_episode(model, vec_env) -> dict[str, Any]:
         obs, reward, done_arr, info = vec_env.step(action)
         done = bool(done_arr[0]) if hasattr(done_arr, "__len__") else bool(done_arr)
 
-        if info and len(info) > 0:
-            i = info[0]
-            co2_direct_kg   += float(i.get("co2_direct_kg",   0.0))
-            co2_indirect_kg += float(i.get("co2_indirect_kg", 0.0))
-            ev_motos_kwh    += float(i.get("ev_motos_kwh",    0.0))
-            ev_mototaxis_kwh += float(i.get("ev_mototaxis_kwh", 0.0))
-            grid_import_kwh += float(i.get("grid_import_kwh", 0.0))
-            bess_discharge_kwh += float(i.get("bess_discharge_kwh", 0.0))
-            solar_kwh       += float(i.get("solar_kwh",       0.0))
-
-            hour = step % 24
-            if 18 <= hour < 23:
-                cost_hp_soles  += float(i.get("grid_import_kwh", 0.0)) * TARIFA_HP
-            else:
-                cost_hfp_soles += float(i.get("grid_import_kwh", 0.0)) * TARIFA_HFP
+        if info:
+            i = info[0] if isinstance(info, (list, tuple)) else info
+            # Claves reales devueltas por IquitosEVChargingWrapper.step()
+            co2_direct_kg   += float(i.get("co2_reduccion_directa_kg",    0.0))
+            co2_indirect_kg += float(i.get("co2_reduccion_indirecta_kg",  0.0))
+            ev_motos_kwh    += float(i.get("ev_motos_actual_kwh",          0.0))
+            ev_mototaxis_kwh += float(i.get("ev_mototaxis_actual_kwh",     0.0))
+            grid_import_kwh += float(i.get("grid_import_kwh",              0.0))
+            bess_discharge_kwh += float(i.get("bess_discharge_kwh",        0.0))
+            solar_kwh       += float(i.get("solar_generation_kwh",         0.0))
+            cost_soles      += float(i.get("cost_soles",                   0.0))
 
         total_reward += float(reward[0]) if hasattr(reward, "__len__") else float(reward)
         step += 1
         n_steps += 1
 
     elapsed = time.time() - t0
-    co2_total_kg    = co2_direct_kg + co2_indirect_kg
-    co2_f2_kg_yr    = F0_REFERENCE - co2_total_kg
-    reduction_pct   = co2_total_kg / F0_REFERENCE * 100.0
-    ev_total_kwh    = ev_motos_kwh + ev_mototaxis_kwh
-    cost_total      = cost_hp_soles + cost_hfp_soles
+    co2_total_kg  = co2_direct_kg + co2_indirect_kg
+    co2_f2_kg_yr  = F0_REFERENCE - co2_total_kg
+    reduction_pct = co2_total_kg / F0_REFERENCE * 100.0
+    ev_total_kwh  = ev_motos_kwh + ev_mototaxis_kwh
 
     return {
-        "steps":               n_steps,
-        "elapsed_s":           round(elapsed, 2),
-        "total_reward":        round(total_reward, 4),
-        "co2_direct_kg":       round(co2_direct_kg, 2),
-        "co2_indirect_kg":     round(co2_indirect_kg, 2),
-        "co2_total_avoided_kg": round(co2_total_kg, 2),
-        "co2_f2_residual_kg_yr": round(co2_f2_kg_yr, 2),
-        "co2_reduction_vs_f0_pct": round(reduction_pct, 4),
-        "ev_motos_kwh":        round(ev_motos_kwh, 2),
-        "ev_mototaxis_kwh":    round(ev_mototaxis_kwh, 2),
-        "ev_total_kwh":        round(ev_total_kwh, 2),
-        "grid_import_kwh":     round(grid_import_kwh, 2),
-        "bess_discharge_kwh":  round(bess_discharge_kwh, 2),
-        "solar_kwh":           round(solar_kwh, 2),
-        "cost_hp_soles":       round(cost_hp_soles, 2),
-        "cost_hfp_soles":      round(cost_hfp_soles, 2),
-        "cost_total_soles":    round(cost_total, 2),
+        "steps":                  n_steps,
+        "elapsed_s":              round(elapsed, 2),
+        "total_reward":           round(total_reward, 4),
+        "co2_direct_kg":          round(co2_direct_kg,    2),
+        "co2_indirect_kg":        round(co2_indirect_kg,  2),
+        "co2_total_avoided_kg":   round(co2_total_kg,     2),
+        "co2_f2_residual_kg_yr":  round(co2_f2_kg_yr,     2),
+        "co2_reduction_vs_f0_pct": round(reduction_pct,   4),
+        "ev_motos_kwh":           round(ev_motos_kwh,     2),
+        "ev_mototaxis_kwh":       round(ev_mototaxis_kwh, 2),
+        "ev_total_kwh":           round(ev_total_kwh,     2),
+        "grid_import_kwh":        round(grid_import_kwh,  2),
+        "bess_discharge_kwh":     round(bess_discharge_kwh, 2),
+        "solar_kwh":              round(solar_kwh,        2),
+        "cost_total_soles":       round(cost_soles,       2),
     }
 
 

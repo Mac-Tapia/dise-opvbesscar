@@ -278,19 +278,14 @@ def _run_episode_sync(ep_num: int, deterministic: bool) -> dict[str, Any]:
 
         if info:
             i = info[0] if isinstance(info, (list, tuple)) else info
-            co2_direct   += float(i.get("co2_direct_kg",   0.0))
-            co2_indirect += float(i.get("co2_indirect_kg", 0.0))
-            ev_motos     += float(i.get("ev_motos_kwh",    0.0))
-            ev_mototaxis += float(i.get("ev_mototaxis_kwh",0.0))
-            g_kwh         = float(i.get("grid_import_kwh", 0.0))
-            grid_kwh     += g_kwh
-            bess_kwh     += float(i.get("bess_discharge_kwh", 0.0))
-            solar_kwh    += float(i.get("solar_kwh",       0.0))
-            hour = step % 24
-            if 18 <= hour < 23:
-                cost_hp  += g_kwh * TARIFA_HP
-            else:
-                cost_hfp += g_kwh * TARIFA_HFP
+            co2_direct   += float(i.get("co2_reduccion_directa_kg",   0.0))
+            co2_indirect += float(i.get("co2_reduccion_indirecta_kg", 0.0))
+            ev_motos     += float(i.get("ev_motos_actual_kwh",         0.0))
+            ev_mototaxis += float(i.get("ev_mototaxis_actual_kwh",     0.0))
+            grid_kwh     += float(i.get("grid_import_kwh",             0.0))
+            bess_kwh     += float(i.get("bess_discharge_kwh",          0.0))
+            solar_kwh    += float(i.get("solar_generation_kwh",        0.0))
+            cost_hp      += float(i.get("cost_soles",                  0.0))
         step += 1
 
     co2_total = co2_direct + co2_indirect
@@ -311,9 +306,7 @@ def _run_episode_sync(ep_num: int, deterministic: bool) -> dict[str, Any]:
         "grid_import_kwh":       round(grid_kwh,      2),
         "bess_discharge_kwh":    round(bess_kwh,      2),
         "solar_kwh":             round(solar_kwh,     2),
-        "cost_hp_soles":         round(cost_hp,       2),
-        "cost_hfp_soles":        round(cost_hfp,      2),
-        "cost_total_soles":      round(cost_hp + cost_hfp, 2),
+        "cost_total_soles":      round(cost_hp,       2),
     }
 
 
