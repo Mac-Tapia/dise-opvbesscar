@@ -10,13 +10,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential git libopenblas-dev libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt requirements.api.txt ./
+COPY requirements.docker.api.txt ./
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip setuptools wheel && \
-    grep -vE '^(iquitos-citylearn|#|\s*$)' requirements.txt > /tmp/req_base.txt && \
-    pip wheel -r /tmp/req_base.txt --no-cache-dir --wheel-dir /wheels && \
-    pip wheel -r requirements.api.txt --no-cache-dir --wheel-dir /wheels
+    pip wheel -r requirements.docker.api.txt --no-cache-dir --wheel-dir /wheels
 
 # ── Stage 2: Runtime API ──────────────────────────────────────────
 FROM python:3.11-slim
@@ -31,7 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /wheels /wheels
-RUN pip install --no-index --no-cache-dir /wheels/* && rm -rf /wheels
+RUN pip install --no-index --find-links /wheels /wheels/*.whl && rm -rf /wheels
 
 # Código fuente del proyecto
 COPY src/ ./src/

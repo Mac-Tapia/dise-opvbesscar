@@ -1,0 +1,28 @@
+# requirements.docker.api.txt
+# Dependencias mínimas para la imagen Docker de inferencia A2C (sin conflictos de versión)
+# NO incluir torchvision — no se usa en inferencia SB3 A2C
+
+# RL / ML core
+torch>=2.3,<3.0
+stable_baselines3==2.7.1
+gymnasium==0.29.1
+
+# Data
+numpy==1.26.4
+pandas==2.3.3
+scipy==1.17.0
+
+# CityLearn v2
+citylearn>=2.0.0,<3.0
+jsonschema>=4.0.0,<5.0
+
+# FastAPI + async MongoDB
+fastapi
+uvicorn[standard]
+motor
+pymongo
+pydantic
+
+# Entorno
+PyYAML>=6.0
+python-dotenv>=1.0
