@@ -1,27 +1,69 @@
-# FastAPI Application Dockerfile
+# Dockerfile.fastapi
+# Imagen API operativa del agente A2C — pvbesscar
+# Multi-stage: hereda deps ML del builder, añade FastAPI encima
+
+# ── Stage 1: Builder (deps ML pesados) ───────────────────────────
+FROM python:3.11-slim AS builder
+WORKDIR /build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential git libopenblas-dev libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt requirements.api.txt ./
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip setuptools wheel && \
+    grep -vE '^(iquitos-citylearn|#|\s*$)' requirements.txt > /tmp/req_base.txt && \
+    pip wheel -r /tmp/req_base.txt --no-cache-dir --wheel-dir /wheels && \
+    pip wheel -r requirements.api.txt --no-cache-dir --wheel-dir /wheels
+
+# ── Stage 2: Runtime API ──────────────────────────────────────────
 FROM python:3.11-slim
+LABEL maintainer="pvbesscar" \
+      version="1.0.0" \
+      description="A2C Operational API — REST + WebSocket, pvbesscar OE3"
 
 WORKDIR /app
 
-# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
+    libopenblas-dev libgomp1 curl tini \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and install Python requirements
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir fastapi uvicorn pymongo motor
+COPY --from=builder /wheels /wheels
+RUN pip install --no-index --no-cache-dir /wheels/* && rm -rf /wheels
 
-# Copy application (versión con WebSocket)
-COPY fastapi_websocket_server.py .
+# Código fuente del proyecto
+COPY src/ ./src/
+COPY configs/ ./configs/
+COPY fastapi_websocket_server.py ./
+COPY scripts/infer/run_a2c_operational.py ./scripts/infer/
+COPY setup.py pyproject.toml ./
+RUN pip install -e . --no-deps
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+# Variables de entorno base
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app/src:/app \
+    OMP_NUM_THREADS=4 \
+    PORT=8000
 
-# Expose port
+# Directorios de runtime (datos y checkpoints se montan como volúmenes)
+RUN mkdir -p /app/data/interim/citylearn_v2 \
+             /app/checkpoints/A2C_CityLearn \
+             /app/outputs/infer \
+             /app/logs
+
 EXPOSE 8000
 
-# Run application
-CMD ["python", "fastapi_websocket_server.py"]
+HEALTHCHECK --interval=30s --timeout=15s --start-period=90s --retries=3 \
+    CMD python -c "\
+import urllib.request, json, sys; \
+r = urllib.request.urlopen('http://localhost:8000/health', timeout=10); \
+d = json.loads(r.read()); \
+sys.exit(0 if d.get('model_ready') else 1)"
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["uvicorn", "fastapi_websocket_server:app", \
+     "--host", "0.0.0.0", "--port", "8000", \
+     "--workers", "1", "--log-level", "info"]

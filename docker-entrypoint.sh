@@ -82,6 +82,41 @@ case "$MODE" in
         --NotebookApp.token='' --NotebookApp.password=''
     ;;
 
+  # ── Inferencia operativa A2C (modo producción, sin entrenamiento) ──
+  infer)
+    EPISODES=${EPISODES:-1}
+    OUTPUT=${OUTPUT_FILE:-""}
+    echo ">> A2C Inferencia Operativa — $EPISODES episodio(s)"
+    echo "   Checkpoint: ${CHECKPOINT_PATH:-checkpoints/A2C_CityLearn/a2c_final}"
+    echo "   Output:     ${OUTPUT:-stdout}"
+    ARGS="--episodes $EPISODES"
+    [ -n "$CHECKPOINT_PATH" ] && ARGS="$ARGS --checkpoint $CHECKPOINT_PATH"
+    [ -n "$OUTPUT" ]          && ARGS="$ARGS --output $OUTPUT"
+    exec python scripts/infer/run_a2c_operational.py $ARGS
+    ;;
+
+  # ── API REST + WebSocket (FastAPI) ───────────────────────────
+  serve | api)
+    PORT=${PORT:-8000}
+    WORKERS=${WORKERS:-1}
+    echo ">> FastAPI REST+WebSocket en http://0.0.0.0:$PORT"
+    echo "   Checkpoint: ${CHECKPOINT_PATH:-checkpoints/A2C_CityLearn/a2c_final}"
+    echo "   MongoDB:    ${MONGODB_URL:-mongodb://localhost:27017}"
+    echo "   Auth:       $([ -n "$API_KEY" ] && echo 'API Key activa' || echo 'SIN AUTH — solo desarrollo')"
+    exec uvicorn fastapi_websocket_server:app \
+        --host 0.0.0.0 \
+        --port "$PORT" \
+        --workers "$WORKERS" \
+        --log-level info \
+        --no-access-log
+    ;;
+
+  # ── Análisis OE3 completo (post-entrenamiento) ───────────────
+  analyze)
+    echo ">> Cadena OE3 completa (análisis estadístico + figuras)"
+    exec python scripts/reporting/run_all_oe3.py
+    ;;
+
   # ── Shell interactiva para debug ──────────────────────────────
   shell | bash)
     exec /bin/bash

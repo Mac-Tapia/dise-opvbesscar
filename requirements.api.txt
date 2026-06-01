@@ -1,0 +1,21 @@
+# requirements.api.txt
+# Dependencias FastAPI para despliegue operativo del agente A2C
+# Instalar sobre la imagen base pvbesscar (que ya tiene SB3, torch, numpy, pandas)
+# pip install -r requirements.api.txt
+
+# API Framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+
+# WebSocket support (incluido en uvicorn[standard])
+websockets==13.1
+
+# MongoDB async driver
+motor==3.6.0
+pymongo==4.10.1
+
+# Validación y modelos
+pydantic==2.10.3
+
+# CORS y security
+python-multipart==0.0.12

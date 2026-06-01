@@ -1,0 +1,218 @@
+# docker-compose.operational.yml
+# Stack operativo del agente A2C seleccionado — pvbesscar OE3
+#
+# Uso:
+#   docker compose -f docker-compose.operational.yml up -d
+#
+# Variables de entorno requeridas (.env.operational):
+#   API_KEY=<clave-secreta-aleatoria>
+#   CHECKPOINT_PATH=/app/checkpoints/A2C_CityLearn/a2c_final
+#   MONGODB_URL=mongodb://pvbesscar:secret@mongodb:27017/pvbesscar?authSource=admin
+#   MONGO_INITDB_ROOT_PASSWORD=<password-mongo>
+#   CORS_ORIGINS=http://localhost:3000,https://tu-dominio.com
+#
+# Arquitectura:
+#   nginx (443/80) → a2c-api (8000) → mongodb (27017)
+#                                    → redis (6379) [caché estado]
+
+name: pvbesscar-operational
+
+services:
+
+  # ── Nginx — TLS termination + reverse proxy ───────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: pvbesscar-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/nginx/certs:/etc/nginx/certs:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      a2c-api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - pvbesscar-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── A2C API — FastAPI REST + WebSocket ───────────────────────
+  a2c-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILDKIT_INLINE_CACHE: "1"
+    image: pvbesscar:operational
+    container_name: a2c-api
+    hostname: a2c-api
+
+    environment:
+      # Auth — OBLIGATORIO en producción
+      API_KEY: ${API_KEY:?API_KEY es obligatoria}
+      # Modelo
+      CHECKPOINT_PATH: ${CHECKPOINT_PATH:-/app/checkpoints/A2C_CityLearn/a2c_final}
+      VECNORM_PATH:    ${VECNORM_PATH:-}
+      # Base de datos
+      MONGODB_URL:     ${MONGODB_URL:-mongodb://pvbesscar:secret@mongodb:27017/pvbesscar?authSource=admin}
+      MONGODB_DB:      pvbesscar
+      # CORS
+      CORS_ORIGINS:    ${CORS_ORIGINS:-http://localhost:3000}
+      # Concurrencia
+      MAX_CONCURRENT:  ${MAX_CONCURRENT:-2}
+      PORT:            "8000"
+      WORKERS:         "1"
+      # Python
+      PYTHONUNBUFFERED: "1"
+      PYTHONPATH:       /app/src:/app
+      OMP_NUM_THREADS:  "4"
+
+    volumes:
+      # Checkpoints — SOLO LECTURA (artefactos entrenados, no modificar)
+      - ./checkpoints:/app/checkpoints:ro
+      # Datos CityLearn — SOLO LECTURA
+      - ./data:/app/data:ro
+      # Outputs (resultados inferencia)
+      - operational_outputs:/app/outputs
+      # Configs — SOLO LECTURA
+      - ./configs:/app/configs:ro
+
+    command: ["serve"]
+
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; r=urllib.request.urlopen('http://localhost:8000/health',timeout=5); print(r.read())"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 60s
+
+    restart: unless-stopped
+
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 8G
+        reservations:
+          cpus: "2"
+          memory: 4G
+
+    networks:
+      - pvbesscar-net
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service=a2c-api"
+
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  # ── MongoDB — Persistencia episodios y métricas ───────────────
+  mongodb:
+    image: mongo:7.0
+    container_name: pvbesscar-mongodb
+    hostname: mongodb
+
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: pvbesscar
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:?password requerida}
+      MONGO_INITDB_DATABASE:      pvbesscar
+
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+      - ./deploy/mongo/init.js:/docker-entrypoint-initdb.d/init.js:ro
+
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    restart: unless-stopped
+
+    networks:
+      - pvbesscar-net
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+    # Solo accesible internamente — no exponer 27017 en producción
+    expose:
+      - "27017"
+
+  # ── Mongo Express — Panel admin (solo desarrollo) ─────────────
+  mongo-admin:
+    image: mongo-express:1.0
+    container_name: pvbesscar-mongo-admin
+    profiles: ["dev"]                # Solo con --profile dev
+    ports:
+      - "127.0.0.1:8081:8081"        # Solo localhost
+    environment:
+      ME_CONFIG_MONGODB_URL:              mongodb://pvbesscar:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/
+      ME_CONFIG_MONGODB_ADMINUSERNAME:    pvbesscar
+      ME_CONFIG_MONGODB_ADMINPASSWORD:    ${MONGO_INITDB_ROOT_PASSWORD}
+      ME_CONFIG_BASICAUTH_USERNAME:       admin
+      ME_CONFIG_BASICAUTH_PASSWORD:       ${MONGO_EXPRESS_PASSWORD:-admin123}
+      ME_CONFIG_BASICAUTH:                "true"
+    depends_on:
+      - mongodb
+    networks:
+      - pvbesscar-net
+    restart: unless-stopped
+
+  # ── Inferencia CLI — Job único (run-and-exit) ─────────────────
+  a2c-infer-job:
+    image: pvbesscar:operational
+    container_name: a2c-infer-job
+    profiles: ["infer"]              # Solo con --profile infer
+
+    environment:
+      CHECKPOINT_PATH: ${CHECKPOINT_PATH:-/app/checkpoints/A2C_CityLearn/a2c_final}
+      EPISODES:        ${EPISODES:-5}
+      OUTPUT_FILE:     /app/outputs/infer/result_$(date +%Y%m%d_%H%M%S).json
+      PYTHONPATH:      /app/src:/app
+      OMP_NUM_THREADS: "4"
+
+    volumes:
+      - ./checkpoints:/app/checkpoints:ro
+      - ./data:/app/data:ro
+      - operational_outputs:/app/outputs
+
+    command: ["infer"]
+
+    networks:
+      - pvbesscar-net
+
+    restart: "no"
+
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 8G
+
+volumes:
+  mongodb_data:
+  mongodb_config:
+  operational_outputs:
+  nginx_logs:
+
+networks:
+  pvbesscar-net:
+    driver: bridge
