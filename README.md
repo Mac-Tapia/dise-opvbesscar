@@ -79,13 +79,14 @@ mediante agentes de Aprendizaje por Refuerzo (SAC, PPO, A2C) en la red aislada d
 
 ---
 
-## Metodología de investigación (OE3)
+## Metodología de investigación del proyecto
 
-- **Enfoque:** Cuantitativo, porque CO₂ evitado, energía EV, grid import, BESS y costos se miden numéricamente y se contrastan con estadística inferencial (Hernández Sampieri et al., 2014).
-- **Tipo:** Aplicada, porque resuelve el problema operativo de seleccionar el agente RL que reduce CO₂ en la infraestructura EV+BESS+solar de Iquitos (Murillo Vargas, 2010; Arias, 2012).
-- **Nivel:** Explicativo-causal, porque evalúa el efecto del algoritmo de control sobre las variables dependientes bajo condiciones controladas (Hernández Sampieri et al., 2014; Tamayo y Tamayo, 2003).
-- **Diseño:** Cuasi-experimental por simulación, con tres tratamientos RL y control de variables extrañas (Campbell & Stanley, 1966; Hernández Sampieri et al., 2014; Law, 2015; Montgomery, 2017).
-  - Variable independiente manipulada: tipo de algoritmo RL (3 tratamientos: SAC, PPO, A2C)
+- **Enfoque:** Cuantitativo, porque cobertura, demanda, potencia PV, capacidad BESS, cargadores, energía EV, grid import, costos y CO₂ evitado se miden numéricamente y se contrastan con estadística descriptiva e inferencial (Hernández Sampieri et al., 2014).
+- **Tipo:** Aplicada, porque resuelve el problema de diseñar una infraestructura de carga inteligente EV+BESS+solar y su control RL para reducir CO₂ en Iquitos (Murillo Vargas, 2010; Arias, 2012).
+- **Nivel:** Explicativo-causal, porque explica cómo la infraestructura y la estrategia de control producen cambios medibles en CO₂, carga EV, importación de red y uso del BESS (Hernández Sampieri et al., 2014; Tamayo y Tamayo, 2003).
+- **Diseño único:** Cuasi-experimental por simulación para todo el proyecto. OE1, OE2 y OE3 son etapas del mismo diseño: ubicación estratégica, dimensionamiento técnico y comparación de tratamientos RL en simulación controlada (Campbell & Stanley, 1966; Hernández Sampieri et al., 2014; Law, 2015; Montgomery, 2017).
+  - Variable independiente: infraestructura de carga inteligente EV+BESS+solar con estrategia de control RL
+  - Manipulación operativa en simulación: tipo de algoritmo RL (3 tratamientos: SAC, PPO, A2C)
   - Variables dependientes medidas: CO₂ total evitado, carga EV motos/mototaxis, grid import, BESS
   - Variables controladas: solar 5.819 GWh, BESS 2,000 kWh/400 kW, factor CO₂ 0.4521 kg/kWh
 - **Muestra:** n=50 episodios/agente (N=150) — saturación estadística verificada por CV plateau <0.5%

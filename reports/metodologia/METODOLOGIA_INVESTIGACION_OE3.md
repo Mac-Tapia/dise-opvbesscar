@@ -1,4 +1,4 @@
-# Metodología de la investigación — OE3
+# Metodología de la investigación — Proyecto PVBESSCAR
 
 **Versión:** 2026-05-31
 **Sección de tesis:** Capítulo III — Metodología
@@ -9,12 +9,12 @@ explicativo-causal; diseño cuasi-experimental por simulación
 
 ## Síntesis metodológica justificada
 
-| Aspecto | Clasificación adoptada | Justificación aplicada al estudio | Sustento bibliográfico |
+| Aspecto | Clasificación adoptada | Justificación aplicada al proyecto | Sustento bibliográfico |
 |---|---|---|---|
-| **Enfoque** | Cuantitativo | Las variables se expresan numéricamente: CO₂ evitado, energía EV cargada, importación de red, estado del BESS, costos y métricas de entrenamiento. Los resultados se contrastan con pruebas estadísticas inferenciales. | Hernández Sampieri et al. (2014, p. 4) |
-| **Tipo** | Aplicada | La investigación resuelve un problema práctico: seleccionar el agente RL que optimiza la operación EV+BESS+solar para reducir CO₂ en la red aislada de Iquitos. | Murillo Vargas (2010); Arias (2012) |
-| **Nivel** | Explicativo-causal | El estudio no solo describe el desempeño de SAC, PPO y A2C; busca explicar el efecto causal del algoritmo de control sobre las variables dependientes bajo condiciones controladas. | Hernández Sampieri et al. (2014, pp. 95–96); Tamayo y Tamayo (2003, p. 46) |
-| **Diseño** | Cuasi-experimental por simulación | Se manipula la variable independiente (tipo de algoritmo RL) y se miden efectos sobre variables dependientes. Es cuasi-experimental porque los episodios RL son secuenciales y no admiten aleatorización completa sin alterar el aprendizaje. | Campbell y Stanley (1966); Hernández Sampieri et al. (2014, pp. 151–165); Law (2015); Banks et al. (2010); Montgomery (2017) |
+| **Enfoque** | Cuantitativo | Todo el proyecto trabaja con variables numéricas: cobertura y demanda del punto de carga, potencia PV, capacidad BESS, número de cargadores, energía EV, importación de red, costos, CO₂ evitado y métricas de los agentes. Los resultados se contrastan con estadística descriptiva e inferencial. | Hernández Sampieri et al. (2014, p. 4) |
+| **Tipo** | Aplicada | La investigación resuelve un problema práctico: diseñar una infraestructura de carga inteligente EV+BESS+solar y seleccionar su estrategia de control para reducir CO₂ en Iquitos. | Murillo Vargas (2010); Arias (2012) |
+| **Nivel** | Explicativo-causal | El proyecto no solo caracteriza ubicación, infraestructura y agentes; explica cómo la configuración técnica y el control inteligente producen cambios medibles en la reducción de CO₂ y en la operación energética. | Hernández Sampieri et al. (2014, pp. 95–96); Tamayo y Tamayo (2003, p. 46) |
+| **Diseño** | Cuasi-experimental por simulación | El proyecto completo se desarrolla bajo un único diseño: se construye un sistema simulado controlado a partir de OE1 y OE2, y en OE3 se manipula la estrategia de control RL para medir su efecto. OE1, OE2 y OE3 son etapas del mismo diseño, no diseños distintos. | Campbell y Stanley (1966); Hernández Sampieri et al. (2014, pp. 151–165); Law (2015); Banks et al. (2010); Montgomery (2017) |
 
 ---
 
@@ -23,19 +23,21 @@ explicativo-causal; diseño cuasi-experimental por simulación
 El enfoque de la investigación es **cuantitativo** y el tipo de investigación es
 **aplicada**.
 
-El enfoque es **cuantitativo** porque las variables de interés —CO₂ evitado, energía EV
-cargada, importación de red, estado de carga del BESS, costo tarifario y métricas de
-entrenamiento— se expresan en unidades métricas medibles y se analizan mediante
-procedimientos estadísticos formales (Hernández Sampieri et al., 2014, p. 4). El proceso
-sigue la secuencia: planteamiento del problema → marco teórico → hipótesis →
-operacionalización de variables → recolección de datos por simulación → análisis
-estadístico → conclusiones.
+El enfoque es **cuantitativo** porque las variables de interés del proyecto —cobertura
+de servicio, demanda de motos y mototaxis, potencia fotovoltaica, capacidad BESS,
+número de cargadores, energía EV cargada, importación de red, costos, CO₂ evitado,
+estado de carga del BESS y métricas de entrenamiento— se expresan en unidades métricas
+medibles y se analizan mediante procedimientos estadísticos formales (Hernández
+Sampieri et al., 2014, p. 4). El proceso sigue la secuencia: planteamiento del problema
+→ marco teórico → hipótesis → operacionalización de variables → recolección de datos
+por simulación → análisis estadístico → conclusiones.
 
 Es **aplicada** porque se orienta a resolver un problema concreto: la gestión óptima de la
-carga de vehículos eléctricos (motos y mototaxis) mediante agentes de aprendizaje por
-refuerzo (RL) en el sistema fotovoltaico-BESS del complejo comercial de Iquitos, con el
-fin de minimizar las emisiones de CO₂ de la red eléctrica aislada (Murillo Vargas, 2010;
-Arias, 2012). Los resultados tienen aplicación directa en la operación del sistema real.
+carga de vehículos eléctricos (motos y mototaxis) mediante una infraestructura compuesta
+por ubicación estratégica, generación fotovoltaica, almacenamiento BESS, cargadores y
+agentes de aprendizaje por refuerzo (RL), con el fin de minimizar las emisiones de CO₂
+de la red eléctrica aislada de Iquitos (Murillo Vargas, 2010; Arias, 2012). Los
+resultados tienen aplicación directa en el diseño y la operación del sistema real.
 
 ---
 
@@ -43,29 +45,36 @@ Arias, 2012). Los resultados tienen aplicación directa en la operación del sis
 
 El nivel de investigación es **explicativo-causal**.
 
-Es explicativo porque no se limita a describir el comportamiento de los agentes ni a
-establecer relaciones de asociación, sino que busca determinar *por qué* un agente produce
-mayor reducción de CO₂ que otro: la política aprendida (variable independiente) *causa*
-diferencias medibles en las emisiones y en la carga de vehículos eléctricos (variables
-dependientes), lo que se verifica con pruebas estadísticas de hipótesis de causalidad
-(Hernández Sampieri et al., 2014, pp. 95–96; Tamayo y Tamayo, 2003, p. 46).
+Es explicativo porque no se limita a describir la ubicación, el dimensionamiento o el
+comportamiento de los agentes, sino que busca determinar cómo el diseño de la
+infraestructura inteligente incide en la reducción de CO₂. La relación causal se evalúa
+en un entorno controlado de simulación: la infraestructura EV+BESS+solar establece las
+condiciones técnicas del sistema y la estrategia de control RL modifica la operación de
+carga, produciendo diferencias medibles en emisiones, energía EV, importación de red y
+uso del BESS (Hernández Sampieri et al., 2014, pp. 95–96; Tamayo y Tamayo, 2003, p. 46).
 
-El estudio posee también un componente descriptivo en sus primeras etapas (caracterización
-del sistema, dimensionamiento OE2), pero la contribución central es explicativa: la
-comparación causal entre los tres tratamientos experimentales (SAC, PPO, A2C) bajo
-condiciones controladas de simulación.
+Los objetivos específicos no constituyen diseños de investigación separados. OE1
+(ubicación), OE2 (dimensionamiento) y OE3 (selección del agente) son etapas articuladas
+del mismo diseño metodológico: OE1 define el escenario físico, OE2 fija la infraestructura
+y OE3 contrasta la operación inteligente bajo condiciones controladas.
 
 ---
 
 ## 3.3 Diseño de investigación
 
-### 3.3.1 Justificación del diseño cuasi-experimental
+### 3.3.1 Justificación del diseño único del proyecto
 
-La fase OE3 (selección del agente de control) se clasifica como cuasi-experimental por
-simulación porque el investigador **manipula deliberadamente la variable independiente**
-—el tipo de algoritmo de
-aprendizaje por refuerzo— y mide el efecto sobre las variables dependientes en un entorno
-controlado de simulación. Esta característica es constitutiva del diseño experimental
+El proyecto adopta un **único diseño cuasi-experimental por simulación**. OE1, OE2 y OE3
+no son metodologías independientes; son etapas del mismo procedimiento metodológico. OE1
+determina el escenario físico de aplicación, OE2 dimensiona la infraestructura
+EV+BESS+solar y OE3 ejecuta la comparación de tratamientos de control dentro del sistema
+simulado ya definido.
+
+El diseño se clasifica como cuasi-experimental por simulación porque el investigador
+construye un entorno controlado del sistema de carga inteligente y **manipula
+deliberadamente la variable independiente operativa** —la estrategia de control mediante
+agentes de aprendizaje por refuerzo— para medir sus efectos sobre las variables
+dependientes. Esta característica es constitutiva del diseño experimental
 según Hernández Sampieri et al. (2014, p. 129):
 
 > "Los experimentos manipulan tratamientos, estímulos, influencias o intervenciones
@@ -75,21 +84,23 @@ según Hernández Sampieri et al. (2014, p. 129):
 La simulación por computadora es reconocida en la literatura metodológica como
 instrumento válido para producir datos experimentales cuando el sistema real no puede
 someterse directamente a tratamientos (Law, 2015, p. 1; Banks et al., 2010, p. 3;
-Montgomery, 2017, p. 11). La condición experimental se cumple porque:
+Montgomery, 2017, p. 11). La condición cuasi-experimental del proyecto se cumple porque:
 
-1. **Manipulación de la VI**: se ejecutan tres tratamientos diferenciados (SAC, PPO, A2C)
-   sobre el mismo entorno de simulación.
-2. **Medición de las VD**: CO₂ evitado, carga EV y variables operativas se registran en
+1. **Construcción de un sistema controlado**: OE1 y OE2 fijan ubicación, demanda,
+   generación PV, BESS, cargadores y condiciones de red.
+2. **Manipulación de la VI operativa**: se ejecutan tres tratamientos diferenciados
+   (SAC, PPO, A2C) sobre el mismo entorno de simulación.
+3. **Medición de las VD**: CO₂ evitado, carga EV y variables operativas se registran en
    cada episodio con precisión de cuatro decimales.
-3. **Control de variables extrañas**: el entorno de simulación mantiene constantes la
+4. **Control de variables extrañas**: el entorno de simulación mantiene constantes la
    generación solar (5,819,332 kWh/año), la especificación del BESS (2,000 kWh / 400 kW),
    la demanda del mall y el factor de emisión de la red (0.4521 kg CO₂/kWh), de modo que
    las diferencias observadas entre agentes solo pueden atribuirse al algoritmo de control.
 
 ### 3.3.2 Diseño cuasi-experimental por simulación
 
-El diseño se clasifica como **cuasi-experimental** (Hernández Sampieri et al., 2014,
-pp. 151–165; Campbell & Stanley, 1966) en lugar de experimental puro por la siguiente
+El diseño del proyecto se clasifica como **cuasi-experimental** (Hernández Sampieri et al.,
+2014, pp. 151–165; Campbell & Stanley, 1966) en lugar de experimental puro por la siguiente
 razón: los episodios de simulación son secuenciales —no se asignan aleatoriamente a
 condiciones—, lo cual impide cumplir el requisito de aleatorización completa del diseño
 experimental verdadero. El proceso de entrenamiento es acumulativo: el agente aprende de
@@ -136,7 +147,7 @@ inicio del entrenamiento RL y las observaciones son los 50 episodios consecutivo
 
 | Variable | Tipo | Definición conceptual | Definición operacional | Escala |
 |---|---|---|---|---|
-| Algoritmo de control RL | Categórica nominal | Tipo de agente de aprendizaje por refuerzo utilizado para gestionar la carga EV y el BESS | SAC (Soft Actor-Critic), PPO (Proximal Policy Optimization), A2C (Advantage Actor-Critic) | Nominal (3 niveles) |
+| Infraestructura de carga inteligente EV+BESS+solar con estrategia de control RL | Mixta: técnica y categórica nominal | Sistema integrado de ubicación, generación fotovoltaica, almacenamiento, cargadores y agente inteligente para gestionar la carga de motos y mototaxis eléctricas | OE1 fija la ubicación; OE2 dimensiona PV, BESS y cargadores; OE3 manipula el algoritmo RL de control: SAC, PPO y A2C | Razón para capacidad/potencia; nominal para algoritmo RL |
 
 ### Variables dependientes principales
 

@@ -203,13 +203,14 @@ agent.learn(total_timesteps=N, reset_num_timesteps=False)  # accumulates steps a
 - **`@dataclass(frozen=True)`** for all spec/config containers (see `ChargerSpec`, `ChargerSet`, `MultiObjectiveWeights`)
 - **Validate early**: call `validate_env_spaces(env)` before agent init; `OE2DataLoader` raises `OE2ValidationError` immediately on bad paths/schema
 
-## Research Design (OE3 — Metodología de investigación)
+## Research Design (Proyecto completo — Metodología de investigación)
 
-- **Enfoque:** Cuantitativo — variables métricas y pruebas inferenciales (Hernández Sampieri et al., 2014).
-- **Tipo:** Aplicada — selección operativa del agente RL para reducir CO₂ en EV+BESS+solar (Murillo Vargas, 2010; Arias, 2012).
-- **Nivel:** Explicativo-causal — estima el efecto del algoritmo de control sobre CO₂, carga EV, grid import y BESS (Hernández Sampieri et al., 2014; Tamayo y Tamayo, 2003).
-- **Diseño:** Cuasi-experimental por simulación — tres tratamientos RL, control de variables extrañas y episodios secuenciales sin aleatorización completa (Campbell & Stanley, 1966; Hernández Sampieri et al., 2014; Law, 2015; Montgomery, 2017).
-  - VI manipulada: tipo de algoritmo RL (SAC, PPO, A2C) — 3 tratamientos
+- **Enfoque:** Cuantitativo — cobertura, demanda, PV, BESS, cargadores, energía EV, costos, CO₂ y métricas RL son variables numéricas (Hernández Sampieri et al., 2014).
+- **Tipo:** Aplicada — diseña infraestructura de carga inteligente EV+BESS+solar y control RL para reducir CO₂ en Iquitos (Murillo Vargas, 2010; Arias, 2012).
+- **Nivel:** Explicativo-causal — estima cómo la infraestructura y la estrategia de control modifican CO₂, carga EV, grid import y BESS (Hernández Sampieri et al., 2014; Tamayo y Tamayo, 2003).
+- **Diseño único:** Cuasi-experimental por simulación para todo el proyecto. OE1, OE2 y OE3 son etapas del mismo diseño, no diseños de investigación separados (Campbell & Stanley, 1966; Hernández Sampieri et al., 2014; Law, 2015; Montgomery, 2017).
+  - VI: infraestructura de carga inteligente EV+BESS+solar con estrategia de control RL
+  - Manipulación operativa: tipo de algoritmo RL (SAC, PPO, A2C) — 3 tratamientos
   - VD medidas: CO₂ total evitado, carga EV motos+mototaxis, grid import, BESS descarga
   - Variables controladas: solar 5.819 GWh, BESS 2000 kWh/400 kW, factor CO₂ 0.4521 kg/kWh
 - **Muestra:** n=50 episodios/agente (N=150 total) — no probabilística por saturación estadística (CV plateau <0.5%)
