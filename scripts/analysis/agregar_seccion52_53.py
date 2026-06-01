@@ -11,7 +11,7 @@ CANONICAL_REPORT = ROOT / "reports" / "oe3" / "AGENTES_RL_COMPARATIVA_CANONICA.m
 def main() -> None:
     print("Generador historico de secciones 5.2/5.3 deshabilitado.")
     print(f"Use el informe canonico OE3: {CANONICAL_REPORT.relative_to(ROOT)}")
-    print("Agente OE3 vigente: PPO")
+    print("Agente OE3 vigente: A2C")
 
 
 if __name__ == "__main__":

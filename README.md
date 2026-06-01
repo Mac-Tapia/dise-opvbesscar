@@ -17,7 +17,7 @@ mediante agentes de Aprendizaje por Refuerzo (SAC, PPO, A2C) en la red aislada d
 | **Reward** | CO2_DUAL_FOCUS v8.1 (7 componentes, Σ=1.00) |
 | **Agente seleccionado OE3** | **A2C** — 6/9 criterios multiobjetivo, 48.36% reducción CO₂ vs F0 |
 | **Fuente canónica** | `reports/oe3/agents_comparison_canonical.json` |
-| **Informe tesis** | `outputs/docx/INFORME_OE3_SELECCION_AGENTE_RL_v12.docx` (2.9 MB) |
+| **Informe tesis DOCX** | `outputs/docx/INFORME_OE3_SELECCION_AGENTE_RL_v12.docx` (2.9 MB, versionado en esta rama) |
 
 ---
 
@@ -97,6 +97,8 @@ mediante agentes de Aprendizaje por Refuerzo (SAC, PPO, A2C) en la red aislada d
   - Cohen d + Cliff delta + Bootstrap IC 95% (B=10,000)
 
 **Documento completo:** [reports/metodologia/METODOLOGIA_INVESTIGACION_OE3.md](reports/metodologia/METODOLOGIA_INVESTIGACION_OE3.md)
+
+**Informe Word vigente:** [outputs/docx/INFORME_OE3_SELECCION_AGENTE_RL_v12.docx](outputs/docx/INFORME_OE3_SELECCION_AGENTE_RL_v12.docx)
 
 ---
 
@@ -273,7 +275,7 @@ python scripts/verification/verify_citylearn_data.py
 | `costos_tarifarios_oe3.png` | `outputs/docx/graficas/` | Costos OSINERGMIN HP/HFP por agente |
 | `estabilidad_red_oe3.png` | `outputs/docx/graficas/` | Rampas y variabilidad grid_import |
 | `tabla_criterios_seleccion_oe3.png` | `outputs/docx/graficas/` | Tabla canónica criterios OE3 |
-| `tabla_co2_componentes_ppo_ep49.png` | `outputs/docx/graficas/` | Desglose CO₂ PPO ep26 (mejor F2) |
+| `tabla_co2_componentes_ppo_ep49.png` | `outputs/docx/graficas/` | Desglose CO₂ PPO episodio 49 (mejor F2 puntual) |
 
 ---
 

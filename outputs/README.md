@@ -1,29 +1,37 @@
 # outputs
 
-Esta carpeta contiene artefactos generados por entrenamientos, hipotesis y documentos historicos.
-No debe usarse como fuente primaria para seleccionar el agente OE3.
+Esta carpeta contiene artefactos generados y consolidados para la tesis PVBESSCAR.
+Los archivos listados aqui son los vigentes para la rama `smartcharger`.
 
-**Fuente canonica vigente:** `reports/oe3/`
-**Agente seleccionado:** PPO
-**Fecha:** 2026-05-30
+**Fuente canonica de resultados OE3:** `reports/oe3/`
+**Agente seleccionado:** A2C
+**Metodologia:** un solo diseno cuasi-experimental por simulacion para todo el proyecto
+**Fecha:** 2026-05-31
 
-## Archivos versionados vigentes
+## Documentos versionados vigentes
 
 | Archivo | Uso |
 |---|---|
-| `hypothesis_test/RESULTADOS_HIPOTESIS_CO2_COMPLETO.json` | Resumen estadistico actualizado con PPO seleccionado |
-| `hypothesis_test/tabla_estadisticos_descriptivos_oe3.csv` | Descriptivos SAC/PPO/A2C para F2 |
-| `hypothesis_test/tabla_normalidad_shapiro_wilk_oe3.csv` | Pruebas de normalidad por agente |
-| `hypothesis_test/tabla_pruebas_no_parametricas_oe3.csv` | Kruskal-Wallis, Mann-Whitney U y Wilcoxon |
-| `docx/graficas/tabla_criterios_seleccion_oe3.png` | Tabla grafica de comparativa canonica PPO/A2C/SAC |
-| `docx/graficas/tabla_co2_componentes_ppo_ep49.png` | Resumen grafico CO2 del PPO episodio 49 |
-| `sac_training/timeseries_sac.csv`, `sac_training/trace_sac.csv` | Trazas SAC versionadas con Git LFS por reproducibilidad |
+| `docx/INFORME_OE3_SELECCION_AGENTE_RL_v12.docx` | Informe Word vigente de tesis OE3, generado por `scripts/reporting/generar_informe_tesis_oe3.py` |
+| `docx/graficas/*.png` | Figuras vigentes integradas al informe Word |
+| `estadistica_oe3/reporte_estadistico_oe3.md` | Reporte estadistico inferencial vigente |
+| `estadistica_oe3/tabla_completa_estadistica_oe3.csv` | Tabla estadistica completa |
+| `estadistica_oe3/costos_estabilidad_consolidado.csv` | Costos y estabilidad consolidados |
+| `CHECKLIST_PUBLICACION_GITHUB.md` | Checklist actualizado de publicacion en la rama `smartcharger` |
 
-## Archivos retirados
+## Fuentes canonicas relacionadas
 
-Los informes Word y figuras que indicaban SAC/A2C como seleccionados fueron retirados del control de
-versiones para evitar reportes desactualizados en GitHub. Para generar informes nuevos, consultar:
-
+- `README.md`
+- `reports/metodologia/METODOLOGIA_INVESTIGACION_OE3.md`
 - `reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md`
 - `reports/oe3/agents_comparison_canonical.json`
 - `reports/oe3/agents_comparison_canonical.csv`
+- `reports/oe3/CO2_DIRECTO_INDIRECTO_TRACE_OE3.md`
+- `reports/oe3/CONTROL_OPERATIVO_BESS_EV_OE3.md`
+- `reports/oe3/COSTOS_ESTABILIDAD_OE3.md`
+
+## Nota de control
+
+Aunque `outputs/` esta ignorado por defecto para evitar subir artefactos grandes o
+temporales, los documentos anteriores se agregan explicitamente a Git porque son los
+artefactos finales vigentes citados por el README.

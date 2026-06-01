@@ -94,7 +94,7 @@ OE2 Generators (run once, or via pipeline — order matters: solar+chargers → 
   checkpoints/{SAC,PPO,A2C}_CityLearn/ ← .zip snapshots + vecnormalize.pkl; auto-resume si existe
          ↓
   outputs/docx/graficas/               ← PNG figuras para tesis
-  outputs/docx/INFORME_OE3_*.docx      ← Word tesis (current: v11)
+  outputs/docx/INFORME_OE3_SELECCION_AGENTE_RL_v12.docx ← Word tesis vigente
 ```
 
 **Observaciones CityLearn v2 (19D):** `[month, hour, day_type, temp, irr_diff, irr_dir, co2_intensity, mall_kw, solar_kw, bess_soc, net_elec, electricity_pricing, ev_motos_norm, ev_mototaxis_norm, ev_motos_debt, ev_mototaxis_debt, hour_sin, tarifa_norm, is_hora_punta]`

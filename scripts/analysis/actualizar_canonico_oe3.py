@@ -739,8 +739,13 @@ def main() -> None:
             "outputs/docx/INFORME_OE3_SELECCION_AGENTE_RL_v10.docx",
             "outputs/docx/INFORME_OE3_SELECCION_AGENTE_RL_v11.docx",
             "outputs/hypothesis_test/hypothesis_test_co2_figura_completa.png",
-            "legacy HTML/PDF reports that identified SAC or A2C as the selected agent",
+            "legacy HTML/PDF reports with obsolete agent or methodology statements",
         ],
+        "current_documents": {
+            "thesis_docx": "outputs/docx/INFORME_OE3_SELECCION_AGENTE_RL_v12.docx",
+            "methodology": "reports/metodologia/METODOLOGIA_INVESTIGACION_OE3.md",
+            "readme": "README.md",
+        },
     }
 
     OUT_JSON.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")

@@ -13,7 +13,7 @@ def main() -> None:
     print("Generador historico de informe OE3 deshabilitado.")
     print(f"Informe canonico: {CANONICAL_REPORT.relative_to(ROOT)}")
     print(f"Datos estructurados: {CANONICAL_JSON.relative_to(ROOT)}")
-    print("Agente OE3 vigente: PPO")
+    print("Agente OE3 vigente: A2C")
 
 
 if __name__ == "__main__":
