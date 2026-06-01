@@ -48,7 +48,8 @@ RUN python -m pip install --no-cache-dir \
 RUN python -m pip install --no-cache-dir \
     "platformdirs>=2.0.0" \
     "scikit-learn==1.2.2" \
-    "simplejson>=3.0.0"
+    "simplejson>=3.0.0" \
+    "requests>=2.31.0"
 
 RUN python -m pip install --no-cache-dir --no-deps "citylearn>=2.0.0,<3.0"
 

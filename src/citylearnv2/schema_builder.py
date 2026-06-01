@@ -661,9 +661,9 @@ def build_citylearn_schema(
 
     # ── 7. schema_iquitos.json ────────────────────────────────────────────────
     try:
-        root_dir = str(out.relative_to(Path.cwd()))
+        root_dir = out.relative_to(Path.cwd()).as_posix()
     except ValueError:
-        root_dir = str(out.resolve())
+        root_dir = out.resolve().as_posix()
 
     schema_path = _build_schema_json(root_dir, out)
 

@@ -1,5 +1,5 @@
 {
-  "root_directory": "data\\interim\\citylearn_v2",
+  "root_directory": "data/interim/citylearn_v2",
   "central_agent": true,
   "buildings": {
     "IquitosEVMall": {

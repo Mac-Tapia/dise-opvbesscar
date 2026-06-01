@@ -41,10 +41,32 @@ TARIFA_HP    = 0.46            # S./kWh — OSINERGMIN Res. 047-2024-OS/CD
 TARIFA_HFP   = 0.29            # S./kWh
 
 
+def install_numpy_pickle_compat() -> None:
+    """Map NumPy 2 pickle module paths when running with NumPy 1.x."""
+    try:
+        import numpy.core as np_core
+        import numpy.core.numeric as np_numeric
+        import numpy.core.multiarray as np_multiarray
+        import numpy.core.umath as np_umath
+        import numpy.core._multiarray_umath as np_multiarray_umath
+
+        if not hasattr(np, "_core"):
+            setattr(np, "_core", np_core)
+        sys.modules.setdefault("numpy._core", np_core)
+        sys.modules.setdefault("numpy._core.numeric", np_numeric)
+        sys.modules.setdefault("numpy._core.multiarray", np_multiarray)
+        sys.modules.setdefault("numpy._core.umath", np_umath)
+        sys.modules.setdefault("numpy._core._multiarray_umath", np_multiarray_umath)
+    except Exception as exc:
+        log.debug("No se pudo instalar compatibilidad NumPy pickle: %s", exc)
+
+
 # ─── Carga del modelo ─────────────────────────────────────────────────────────
 
 def load_a2c_model(checkpoint_path: str):
     """Carga el modelo A2C + VecNormalize desde checkpoint SB3."""
+    install_numpy_pickle_compat()
+
     from stable_baselines3 import A2C
     from stable_baselines3.common.vec_env import VecNormalize, DummyVecEnv
 
@@ -62,6 +84,8 @@ def load_a2c_model(checkpoint_path: str):
 
 def load_vecnormalize(pkl_path: str | None, env):
     """Carga estadísticas VecNormalize si existen."""
+    install_numpy_pickle_compat()
+
     from stable_baselines3.common.vec_env import VecNormalize, DummyVecEnv
 
     if pkl_path and Path(pkl_path).exists():

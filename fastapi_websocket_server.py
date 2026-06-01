@@ -94,6 +94,26 @@ class AppState:
 state = AppState()
 
 
+def _install_numpy_pickle_compat() -> None:
+    """Map NumPy 2 pickle module paths when running with NumPy 1.x."""
+    try:
+        import numpy.core as np_core
+        import numpy.core.numeric as np_numeric
+        import numpy.core.multiarray as np_multiarray
+        import numpy.core.umath as np_umath
+        import numpy.core._multiarray_umath as np_multiarray_umath
+
+        if not hasattr(np, "_core"):
+            setattr(np, "_core", np_core)
+        sys.modules.setdefault("numpy._core", np_core)
+        sys.modules.setdefault("numpy._core.numeric", np_numeric)
+        sys.modules.setdefault("numpy._core.multiarray", np_multiarray)
+        sys.modules.setdefault("numpy._core.umath", np_umath)
+        sys.modules.setdefault("numpy._core._multiarray_umath", np_multiarray_umath)
+    except Exception as exc:
+        log.debug("No se pudo instalar compatibilidad NumPy pickle: %s", exc)
+
+
 # ─── Lifespan ─────────────────────────────────────────────────────────────────
 
 @asynccontextmanager
@@ -111,8 +131,8 @@ async def lifespan(app: FastAPI):
         client = AsyncIOMotorClient(MONGODB_URL, serverSelectionTimeoutMS=5000)
         await client.admin.command("ping")
         state.db = client[MONGODB_DB]
-        await state.db["episodes"].create_index("run_id", unique=True)
-        await state.db["episodes"].create_index("timestamp")
+        await state.db["episodes"].create_index("run_id", unique=True, sparse=True)
+        await state.db["episodes"].create_index([("timestamp", -1)])
         log.info("MongoDB conectado: %s/%s", MONGODB_URL, MONGODB_DB)
     except Exception as exc:
         log.warning("MongoDB no disponible: %s — operando sin persistencia", exc)
@@ -135,6 +155,8 @@ async def lifespan(app: FastAPI):
 
 def _load_model_sync() -> None:
     """Carga el modelo en hilo separado (no bloquea el event loop)."""
+    _install_numpy_pickle_compat()
+
     from stable_baselines3 import A2C
     from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
