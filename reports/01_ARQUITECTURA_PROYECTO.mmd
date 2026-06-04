@@ -25,10 +25,10 @@ graph TB
         CL --> A2C
     end
 
-    subgraph RESULTADOS["Resultados canonicos 2026-05-31"]
-        A2C_R["A2C<br/>Score=9/9<br/>CO2 evitado=122,980,987 kg<br/>Grid=368,798,317 kWh"]
-        PPO_R["PPO<br/>Score=0/9<br/>CO2 evitado=122,688,120 kg<br/>F2 menor complementario"]
-        SAC_R["SAC v8.2<br/>Score=0/9<br/>CO2 evitado=121,316,857 kg"]
+    subgraph RESULTADOS["Resultados canonicos 2026-05-31 (obs_dim=19)"]
+        A2C_R["A2C<br/>Score=6/9<br/>CO2 evitado=123,017,056 kg<br/>Grid=369,272,325 kWh"]
+        PPO_R["PPO<br/>Score=3/9<br/>CO2 evitado=123,122,792 kg<br/>F2 menor complementario"]
+        SAC_R["SAC v8.2<br/>Score=0/9<br/>CO2 evitado=121,199,821 kg"]
     end
 
     OE2 -.-> OE3

@@ -1,5 +1,5 @@
 {
-  "fecha_actualizacion": "2026-05-31",
+  "fecha_actualizacion": "2026-06-04",
   "proyecto": "PVBESSCAR",
   "estado": "catalogo canonico actualizado",
   "documentos_canonicos": [
@@ -52,53 +52,54 @@
   "resultado_oe3": {
     "agente_seleccionado": "A2C",
     "criterio": "score multiobjetivo acumulado 50 episodios; PPO solo gana F2 puntual complementario",
+    "obs_dim": 19,
     "ranking": [
       {
         "rank": 1,
         "agente": "A2C",
-        "criterios_liderados": "9/9",
-        "co2_total_evitado_kg_50ep": 122980987,
-        "grid_import_kwh_50ep": 368798317,
-        "ev_total_kwh_50ep": 13285495,
-        "ev_total_equiv_50ep": 4307304,
-        "motos_equiv_50ep": 3871470,
-        "mototaxis_equiv_50ep": 435835,
-        "debt_violations_50ep": 811
+        "criterios_liderados": "6/9",
+        "co2_total_evitado_kg_50ep": 123017056,
+        "grid_import_kwh_50ep": 369272325,
+        "ev_total_kwh_50ep": 13255065,
+        "ev_total_equiv_50ep": 4302379,
+        "motos_equiv_50ep": 3875653,
+        "mototaxis_equiv_50ep": 426726,
+        "debt_violations_50ep": 1001
       },
       {
         "rank": 2,
         "agente": "PPO",
-        "criterios_liderados": "0/9",
-        "co2_total_evitado_kg_50ep": 122688120,
-        "grid_import_kwh_50ep": 370717132,
-        "ev_total_kwh_50ep": 12917765,
-        "ev_total_equiv_50ep": 4203700,
-        "motos_equiv_50ep": 3805565,
-        "mototaxis_equiv_50ep": 398135,
-        "debt_violations_50ep": 2333
+        "criterios_liderados": "3/9",
+        "co2_total_evitado_kg_50ep": 123122792,
+        "grid_import_kwh_50ep": 370480810,
+        "ev_total_kwh_50ep": 12906702,
+        "ev_total_equiv_50ep": 4197493,
+        "motos_equiv_50ep": 3795419,
+        "mototaxis_equiv_50ep": 402074,
+        "debt_violations_50ep": 2219
       },
       {
         "rank": 3,
         "agente": "SAC v8.2",
         "criterios_liderados": "0/9",
-        "co2_total_evitado_kg_50ep": 121316857,
-        "grid_import_kwh_50ep": 370440348,
-        "ev_total_kwh_50ep": 12840008,
-        "ev_total_equiv_50ep": 4180962,
-        "motos_equiv_50ep": 3789435,
-        "mototaxis_equiv_50ep": 391527,
-        "debt_violations_50ep": 1385
+        "co2_total_evitado_kg_50ep": 121199821,
+        "grid_import_kwh_50ep": 370494668,
+        "ev_total_kwh_50ep": 12834283,
+        "ev_total_equiv_50ep": 4178910,
+        "motos_equiv_50ep": 3787250,
+        "mototaxis_equiv_50ep": 391661,
+        "debt_violations_50ep": 1405
       }
     ]
   },
   "resultado_trace_directo_indirecto": {
     "criterio_total_evitado": "co2_avoided_indirect_kg + co2_avoided_direct_kg",
     "agente_lider_total_evitado": "A2C",
-    "episodio_trace_total_evitado": 19,
-    "co2_total_evitado_kg_anio": 2523717,
-    "agente_lider_menor_indirecto_emitido": "PPO",
-    "episodio_trace_menor_indirecto_emitido": 49,
-    "co2_indirecto_emitido_kg_anio": 3657484
+    "episodio_trace_total_evitado": 2,
+    "co2_total_evitado_kg_anio": 2519848,
+    "agente_lider_menor_indirecto_emitido": "A2C",
+    "episodio_trace_menor_indirecto_emitido": 2,
+    "co2_indirecto_emitido_kg_anio": 3642436
   },
   "artefactos_historicos_retirados": [
     "outputs/docx/INFORME_OE3_SELECCION_AGENTE_RL_v10.docx",

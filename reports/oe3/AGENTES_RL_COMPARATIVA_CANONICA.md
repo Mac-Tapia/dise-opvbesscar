@@ -40,7 +40,7 @@ Para motos y mototaxis se reportan **eventos de carga equivalentes**, no solo kW
 
 La comparacion no cambio porque PPO o A2C se hayan reentrenado; PPO y A2C siguen usando los resultados vigentes del 2026-05-28. Lo que cambio fue el criterio de decision:
 
-- Si se usa solo el **menor F2 puntual**, gana **PPO** con 3,657,484 kg CO2/año en el episodio 49.
+- Si se usa solo el **menor F2 puntual**, gana **PPO** con 3,658,366 kg CO2/año en el episodio 26.
 - Si se usa el **score multiobjetivo acumulado de 50 episodios** pedido para operacion, gana **A2C** porque lidera CO2 total evitado, importacion de red, conteo EV equivalente, BESS y violaciones.
 - SAC fue el unico agente reentrenado en v8.2; ese reentrenamiento mejora SAC frente a su version anterior, pero no cambia los resultados guardados de PPO/A2C ni alcanza a A2C en el acumulado operativo.
 

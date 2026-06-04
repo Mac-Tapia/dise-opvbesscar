@@ -2,12 +2,12 @@
 
 ## Current Canonical Context
 
-**Updated:** 2026-05-30
+**Updated:** 2026-06-04
 **Branch:** `smartcharger`
-**OE3 selected agent:** **PPO**
+**OE3 selected agent:** **A2C**
 **Canonical report:** `reports/oe3/AGENTES_RL_COMPARATIVA_CANONICA.md`
 
-Do not use older SAC/A2C selection snapshots for new reports. For any OE3 comparison, read:
+Do not use older SAC/PPO selection snapshots for new reports. For any OE3 comparison, read:
 
 - `reports/oe3/agents_comparison_canonical.json`
 - `reports/oe3/agents_comparison_canonical.csv`
@@ -28,11 +28,11 @@ agents (SAC/PPO/A2C) to reduce CO2 in an isolated grid (`0.4521 kg CO2/kWh`).
 
 ## OE3 Canonical Ranking
 
-| Rank | Agent | F2 minimum (kg CO2/year) | Best episode | Reduction vs F0 |
-|---:|---|---:|---:|---:|
-| 1 | **PPO** | **3,657,483** | **49** | **48.15%** |
-| 2 | A2C | 3,659,010 | 45 | 48.13% |
-| 3 | SAC | 3,720,640 | 33 | 47.25% |
+| Rank | Agent | F2 minimum (kg CO2/year) | Best episode | Reduction vs F0 | Multiobjective wins |
+|---:|---|---:|---:|---:|---:|
+| 1 | **A2C** | **3,642,436** | **2** | **48.36%** | **6/9** |
+| 2 | PPO | 3,658,366 | 26 | 48.14% | 3/9 |
+| 3 | SAC | 3,695,754 | 37 | 47.61% | 0/9 |
 
 Normality tests are only used to choose statistical tests. Since Shapiro-Wilk rejects normality,
 use non-parametric tests for inference.

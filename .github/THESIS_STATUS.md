@@ -1,18 +1,18 @@
 # PVBESSCAR - Thesis Status
 
-**Updated:** 2026-05-30
+**Updated:** 2026-06-04
 **Branch:** `smartcharger`
 **Status:** OE2 validated, OE3 canonical comparison updated.
 
 ## Canonical OE3 Result
 
-The current selected agent is **PPO**, not SAC or A2C.
+The current selected agent is **A2C**, not SAC or PPO.
 
-| Rank | Agent | F2 minimum (kg CO2/year) | Best episode | Reduction vs F0 |
-|---:|---|---:|---:|---:|
-| 1 | **PPO** | **3,657,483** | **49** | **48.15%** |
-| 2 | A2C | 3,659,010 | 45 | 48.13% |
-| 3 | SAC | 3,720,640 | 33 | 47.25% |
+| Rank | Agent | F2 minimum (kg CO2/year) | Best episode | Reduction vs F0 | Multiobjective wins |
+|---:|---|---:|---:|---:|---:|
+| 1 | **A2C** | **3,642,436** | **2** | **48.36%** | **6/9** |
+| 2 | PPO | 3,658,366 | 26 | 48.14% | 3/9 |
+| 3 | SAC | 3,695,754 | 37 | 47.61% | 0/9 |
 
 Canonical files:
 

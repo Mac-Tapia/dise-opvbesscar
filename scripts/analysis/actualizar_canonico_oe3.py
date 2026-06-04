@@ -375,7 +375,7 @@ def write_md(payload: dict) -> None:
         "los resultados vigentes del 2026-05-28. Lo que cambio fue el criterio de decision:"
     )
     md.append("")
-    md.append("- Si se usa solo el **menor F2 puntual**, gana **PPO** con 3,657,484 kg CO2/año en el episodio 49.")
+    md.append("- Si se usa solo el **menor F2 puntual**, gana **PPO** con 3,658,366 kg CO2/año en el episodio 26.")
     md.append(
         "- Si se usa el **score multiobjetivo acumulado de 50 episodios** pedido para operacion, "
         "gana **A2C** porque lidera CO2 total evitado, importacion de red, conteo EV equivalente, "
