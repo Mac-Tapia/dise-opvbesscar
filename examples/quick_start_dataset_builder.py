@@ -134,7 +134,9 @@ print("""
 PRÓXIMOS PASOS:
 
 1. Para training con SAC/PPO/A2C:
-   python -m scripts.train.train_ppo_multiobjetivo.py --dataset data/processed/citylearn/iquitos_ev_mall/
+   python scripts/train/train_a2c_citylearn.py   # agente seleccionado
+   python scripts/train/train_ppo_citylearn.py
+   python scripts/train/train_sac_citylearn.py
 
 2. Para análisis de datos:
    import pandas as pd

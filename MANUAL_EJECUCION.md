@@ -37,7 +37,7 @@ El proyecto tiene dos fases encadenadas. Cada fase produce artefactos que consum
 │    src/citylearnv2/env_factory.py                                       │
 │      create_iquitos_env_for_sb3()                                       │
 │         → CityLearnEnv + IquitosEVChargingWrapper                      │
-│         → obs_dim=18, action_dim=3                                      │
+│         → obs_dim=19, action_dim=3                                      │
 │         → reward CO2_DUAL_FOCUS v8.1 (7 componentes, suma=1.0)         │
 │         │                                                               │
 │         ▼  scripts/train/train_{a2c,ppo,sac}_citylearn.py              │
